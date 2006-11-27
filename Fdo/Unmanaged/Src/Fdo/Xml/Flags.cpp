@@ -33,7 +33,6 @@ FdoXmlFlags::FdoXmlFlags( FdoString* url, ErrorLevel errorLevel, FdoBoolean name
     mSchemaNameAsPrefix = false;
     mUseGmlId = false;
     mSchemaMappings = NULL;
-    mElementDefaultNullability = false;
 }
 
 FdoXmlFlags::~FdoXmlFlags() 

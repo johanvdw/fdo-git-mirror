@@ -811,7 +811,6 @@ bool FdoLex::getnumber(FdoCommonParse *pParse, bool sign)
 
     bool		dot;					// Dot flag
     double      rnum;					// Real number 
-    FdoInt64    i64num;
     wchar_t		str[maxCharLength];		// Input char storage
 	wchar_t*	pstr = str;
 
@@ -832,17 +831,8 @@ bool FdoLex::getnumber(FdoCommonParse *pParse, bool sign)
 		*pstr = m_ch;
 		pstr++;
         m_ch = if_getch(pParse);
-        // Some RDBMS's (e.g. SqlServer) put dots after integers that don't
-        // fit in an int32. Therefore, ignore the dot if it is not followed
-        // by a digit. This allows dot-terminated integers, outside the int32 range,
-        // to be parsed as int64.
-        if ( iswdigit(m_ch) ) {
-            pstr = getdigits(pParse, pstr);
-            dot = true;
-        }
-        else {
-            pstr--;
-        }
+        pstr = getdigits(pParse, pstr);
+        dot = true;
     } 
 	else 
 	{
@@ -878,53 +868,22 @@ bool FdoLex::getnumber(FdoCommonParse *pParse, bool sign)
 	{        
 		// Integer number 
 		*pstr = CHR_NULL;
-
-#ifdef _WIN32
-        i64num = _wtoi64( str );
-#else
-        i64num = atoll ( (const char*) FdoStringP(str) );   
-#endif
-
-
-        FdoStringP checkStr = FdoStringP::Format(
-#ifdef _WIN32
-            L"%I64d",
-#else
-            L"%lld",
-#endif
-            i64num
-        );
-
-
-        if ( checkStr == str ) {
-            if (i64num <= LONG_MAX && i64num >= LONG_MIN) 
-		    {
-			    try  
-			    {
-				    FDO_SAFE_RELEASE(m_data);
-				    m_data = FdoInt32Value::Create((FdoInt32)i64num);
-	                return true;
-			    } catch (...) {
-			    }
-            }
-            else 
-            {
-			    try  
-			    {
-				    FDO_SAFE_RELEASE(m_data);
-				    m_data = FdoInt64Value::Create(i64num);
-	                return true;
-			    } catch (...) {
-			    }
-            }
-        }
-
 #ifdef _WIN32
         rnum = _wtof(str);
 #else
         wchar_t *end;
         rnum =  wcstod(str, NULL);
 #endif
+        if (rnum < (double)LONG_MAX && rnum > (double)LONG_MIN) 
+		{
+			try  
+			{
+				FDO_SAFE_RELEASE(m_data);
+				m_data = FdoInt32Value::Create((FdoInt32)rnum);
+	            return true;
+			} catch (...) {
+			}
+        }
     }
 	else 
 	{

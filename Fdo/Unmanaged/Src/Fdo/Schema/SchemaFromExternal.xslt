@@ -32,7 +32,6 @@
 <!-- The URL prefix for the target namespace of each schema -->
 <xsl:param name="customer_url" select="'fdo.osgeo.org/schemas/feature'"/>
 <xsl:param name="schema_name_as_prefix" select="'no'"/>
-<xsl:param name="element_default_nullability" select="'no'"/>
 <xsl:param name="use_gml_id" select="'no'"/>
 
 <!-- used for looking up cross-schema references -->
@@ -2244,23 +2243,7 @@
 			<!-- Elements under a choice are always optional -->
 			<xsl:text>0</xsl:text>
 		</xsl:when>
-    <xsl:when test="@nillable='true'">
-      <xsl:text>0</xsl:text>
-    </xsl:when>
-    <xsl:when test="@nillable='false'">
-      <xsl:choose>
-        <xsl:when test="$minOccurs='0' or @minOccurs='0'" >
-          <xsl:text>0</xsl:text>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:text>1</xsl:text>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:when>
-    <xsl:when test="not(@minOccurs) and not(@nillable) and $element_default_nullability='yes'">
-      <xsl:text>0</xsl:text>
-    </xsl:when>
-    <xsl:otherwise>
+		<xsl:otherwise>
 			<xsl:choose>
 				<xsl:when test="$minOccurs='0' or @minOccurs='0'" >
 					<xsl:text>0</xsl:text>
@@ -3212,17 +3195,15 @@
             </xsl:element>
         </xsl:when>
         <xsl:when test="$baseType">
-            <xsl:if test="not ($baseType='AbstractGeometryType' or $baseType='_Geometry')">
-                <xsl:element name="GeometryTypes">
-                    <xsl:call-template name="geometry_types">
-                        <xsl:with-param name="geometryTypes">
-                            <xsl:call-template name="get_new_geometry_types">
-                                <xsl:with-param name="typeName" select="$baseType"/>
-                            </xsl:call-template>
-                        </xsl:with-param>
-                    </xsl:call-template>
-                </xsl:element>
-            </xsl:if>
+            <xsl:element name="GeometryTypes">
+                <xsl:call-template name="geometry_types">
+                    <xsl:with-param name="geometryTypes">
+                        <xsl:call-template name="get_new_geometry_types">
+                            <xsl:with-param name="typeName" select="$baseType"/>
+                        </xsl:call-template>
+                    </xsl:with-param>
+                </xsl:call-template>
+            </xsl:element>
         </xsl:when>
     </xsl:choose>
 </xsl:template>
