@@ -68,8 +68,7 @@ void FdoPropertyValueConstraintList::Set( FdoPropertyValueConstraint* pConstrain
     // types do not match.
     if ( pConstraint->GetConstraintType() == FdoPropertyValueConstraintType_List ) {
         FdoPropertyValueConstraintList* pListConstraint = (FdoPropertyValueConstraintList*) pConstraint;
-        FdoPtr<FdoDataValueCollection> myConstraintList = GetConstraintList();
-        myConstraintList->Clear();
+        m_constraintList->Clear();
         FdoPtr<FdoDataValueCollection> valueList = pListConstraint->GetConstraintList();
 
         // Copy constraint values to this element.
@@ -79,7 +78,7 @@ void FdoPropertyValueConstraintList::Set( FdoPropertyValueConstraint* pConstrain
             // For the purposes of XML reading and SDF Provider ApplySchema, reusing the value
             // is fine, but is not ok in the general case. 
             // TODO: Change the following to make a copy of the data value.
-            myConstraintList->Add( FdoPtr<FdoDataValue>(valueList->GetItem(idx)) );
+            m_constraintList->Add( FdoPtr<FdoDataValue>(valueList->GetItem(idx)) );
         }
     }
 }

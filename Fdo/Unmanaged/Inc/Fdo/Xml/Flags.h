@@ -230,21 +230,6 @@ private:
     FdoBoolean mSchemaNameAsPrefix;
     FdoBoolean mUseGmlId;
     FdoPhysicalSchemaMappingCollection* mSchemaMappings;
-
-/// \cond DOXYGEN-IGNORE
-private:
-    FdoBoolean mElementDefaultNullability;
-public:
-    void SetElementDefaultNullability( FdoBoolean pValue )
-    {
-        mElementDefaultNullability = pValue;
-    }
-
-    FdoBoolean GetElementDefaultNullability() const
-    {
-        return mElementDefaultNullability;
-    }
-/// \endcond
 };
 
 /// \brief

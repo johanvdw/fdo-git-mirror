@@ -140,13 +140,15 @@ void FdoOwsOgcFilterSerializer::ProcessComparisonCondition (FdoComparisonConditi
 		mWriter->WriteEndElement();
 		mWriter->WriteStartElement(FdoOwsGlobals::Literal);
 		FdoPtr<FdoExpression> rExpr = filter.GetRightExpression ();
-		FdoStringValue* pliteral = static_cast<FdoStringValue *>(rExpr.p);
-		mWriter->WriteCharacters(pliteral->GetString());
+		FdoPtr<FdoStringValue> literal = static_cast<FdoStringValue *>(rExpr.p);
+		if (literal == NULL)
+            throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_109_INVALID_FDO_COMPARISON_CONDITION), "Invalid FDO In condition."));
+		mWriter->WriteCharacters(literal->GetString());
 		// Write end tag "</Literal>"
 		mWriter->WriteEndElement();  
 		// Write end tag "</PropertyIsLike>"
 		mWriter->WriteEndElement();
-        return;
+		break;
 	}
 	default:
         throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_83_UNSUPPORTED_COMPARISON_OPERATION), "Unsupported FDO comparison operation."));

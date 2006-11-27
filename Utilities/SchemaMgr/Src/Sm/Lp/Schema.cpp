@@ -75,7 +75,7 @@ const FdoSmLpClassCollection* FdoSmLpSchema::RefClasses() const
 const FdoSmLpClassDefinition* FdoSmLpSchema::RefClass(FdoStringP className) const
 {
 	// Cast this to allow behind-the-scenes loading of this schema.
-	return (FdoSmLpClassDefinition*)(((FdoSmLpSchema*) this)->LoadClass(className));
+	return ((FdoSmLpSchema*) this)->LoadClass(className);
 }
 
 const FdoSmLpSAD* FdoSmLpSchema::RefSAD() const
@@ -114,7 +114,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className ) c
 {
 	FdoStringP					        schemaName;
 	FdoStringP					        localClassName;
-	const FdoSmLpClassDefinition*      	pFoundClass = NULL;
+	const FdoSmLpClassDefinition*	pFoundClass = NULL;
 
 	// Check if class name qualified by schema name.
 	FdoStringP leftString = className.Left( L":" );
@@ -132,7 +132,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className ) c
 
     if( wcscmp(schemaName, GetName()) == 0 )
     {
-        pFoundClass = (FdoSmLpClassDefinition*)(((FdoSmLpSchema*) this)->LoadClass( localClassName ));
+        pFoundClass = ((FdoSmLpSchema*) this)->LoadClass( localClassName );
         if ( pFoundClass )
             return( pFoundClass );
     }
@@ -174,21 +174,12 @@ void FdoSmLpSchema::TableToClasses(
     for ( idx = 0; idx < mClasses->GetCount(); idx++ ) {
         const FdoSmLpClassDefinition* pClass = mClasses->RefItem(idx);
 
-        const FdoSmPhDbObject* smPhDbObject = NULL;
-        const FdoSmLpDbObject* smLpDbObject = pClass->RefDbObject();
-
-        if (smLpDbObject != NULL)
-            smPhDbObject = smLpDbObject->RefDbObject();
-
-        FdoSmPhOwnerP owner = ((FdoSmLpSchema *)this)->GetPhysicalSchema()->FindOwner(ownerName, databaseName);
-
-        if ( smPhDbObject != NULL ) {
-            if ((tableName.ICompare(pClass->GetDbObjectName()) == 0) &&
-                (FdoStringP(owner->GetName()).ICompare(smPhDbObject->GetParent()->GetName()) == 0) &&
-                (databaseName.ICompare(smPhDbObject->GetParent()->GetParent()->GetName()) == 0)) {
-                    FdoSmLpQClassDefinitionP qClass = new FdoSmLpQClassDefinition( pClass );
-                    classes->Add( qClass );
-            }
+        if ( (tableName.ICompare(pClass->GetDbObjectName()) == 0) &&
+             (ownerName.ICompare(pClass->GetOwner()) == 0) &&
+             (databaseName.ICompare(pClass->GetDatabase()) == 0)
+        ) {
+            FdoSmLpQClassDefinitionP qClass = new FdoSmLpQClassDefinition( pClass );
+            classes->Add( qClass );
         }
     }
 }
@@ -434,7 +425,7 @@ void FdoSmLpSchema::LoadSchema()
 	}
 }
 
-FdoSmLpClassDefinitionP FdoSmLpSchema::LoadClass(FdoStringP className, FdoString* schemaName )
+FdoSmLpClassDefinition* FdoSmLpSchema::LoadClass(FdoStringP className, FdoString* schemaName )
 {
     FdoSmLpClassDefinition* cls = mClasses->FindItem(className);
     if( cls != NULL )

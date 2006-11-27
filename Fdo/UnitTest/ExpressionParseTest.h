@@ -26,13 +26,11 @@ class ExpressionParseTest : public CppUnit::TestCase
   FDO_CPPUNIT_DEFINE(testExpressions);
   FDO_CPPUNIT_DEFINE(testFGFT);
   FDO_CPPUNIT_DEFINE(testLargeExpressions);
-  FDO_CPPUNIT_DEFINE(testBoundaryValues);
 
   CPPUNIT_TEST_SUITE(ExpressionParseTest);
   CPPUNIT_TEST(testExpressions);
   CPPUNIT_TEST(testFGFT);
   CPPUNIT_TEST(testLargeExpressions);
-  CPPUNIT_TEST(testBoundaryValues);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -46,9 +44,6 @@ protected:
 	void testExpressions();
     void testFGFT();
     void testLargeExpressions();
-    void testBoundaryValues();
-
-    FdoPtr<FdoDataValue> roundTripBoundaryValue( FdoDataValue* pVal);
 };
 
 #endif

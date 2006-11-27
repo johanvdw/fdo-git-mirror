@@ -820,19 +820,11 @@ FdoDataPropertyDefinition * FdoCommonSchemaUtil::DeepCopyFdoDataPropertyDefiniti
                 FdoPtr<FdoPropertyValueConstraintRange> newPropValConstraintRange;
                 newPropValConstraintRange = FdoPropertyValueConstraintRange::Create();
                 newPropValConstraintRange->SetMaxInclusive(sourcePropValConstraintRange->GetMaxInclusive());
-                FdoPtr<FdoDataValue> maxValue = sourcePropValConstraintRange->GetMaxValue();
-                if (maxValue)
-                {
-                    FdoPtr<FdoDataValue> copiedMaxValue = FdoCommonSchemaUtil::CopyDataValue(FdoPtr<FdoDataValue>(maxValue));
-                    newPropValConstraintRange->SetMaxValue(copiedMaxValue);
-                }
+                FdoPtr<FdoDataValue> copiedMaxValue = FdoCommonSchemaUtil::CopyDataValue(FdoPtr<FdoDataValue>(sourcePropValConstraintRange->GetMaxValue()));
+                newPropValConstraintRange->SetMaxValue(copiedMaxValue);
                 newPropValConstraintRange->SetMinInclusive(sourcePropValConstraintRange->GetMinInclusive());
-                FdoPtr<FdoDataValue> minValue = sourcePropValConstraintRange->GetMinValue();
-                if (minValue)
-                {
-                    FdoPtr<FdoDataValue> copiedMinValue = FdoCommonSchemaUtil::CopyDataValue(minValue);
-                    newPropValConstraintRange->SetMinValue(copiedMinValue);
-                }
+                FdoPtr<FdoDataValue> copiedMinValue = FdoCommonSchemaUtil::CopyDataValue(FdoPtr<FdoDataValue>(sourcePropValConstraintRange->GetMinValue()));
+                newPropValConstraintRange->SetMinValue(copiedMinValue);
                 newProperty->SetValueConstraint(newPropValConstraintRange);
             }
             break;

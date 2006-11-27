@@ -67,8 +67,8 @@ public:
     /// as read-write smart pointer.
     FdoSmPhColumnsP GetPkeyColumns();
 
-    // Reverse-engineer an association property name from this foreign key's name.
-    virtual FdoStringP GetBestPropertyName() const;
+    /// Returns true if this Foreign Key exists in the RDBMS
+	bool GetExists();
 
     /// Add a column to this Foreign Key.
     void AddFkeyColumn( FdoSmPhColumnP fkeyColumn, FdoStringP pkeyColumnName  );
