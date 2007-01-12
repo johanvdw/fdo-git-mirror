@@ -96,6 +96,7 @@ libFDOSrc_la_SOURCES = \
   Schema/FeatureSchema.cpp \
   Schema/FeatureSchemaCollection.cpp \
   Schema/GeometricPropertyDefinition.cpp \
+  Schema/SchemaInternal.cpp \
   Schema/ObjectPropertyDefinition.cpp \
   Schema/PropertyDefinition.cpp \
   Schema/PropertyDefinitionCollection.cpp \
