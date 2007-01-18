@@ -45,6 +45,8 @@
 /// there will be an upper limit of the number of objects of that class that have non-null values for the property.
 class FdoPropertyValueConstraintList : public FdoPropertyValueConstraint
 {
+    friend class FdoInternalPropertyValueConstraintList;
+
 protected:
     /// Constructs a default instance of a FdoPropertyValueConstraintList.
     FdoPropertyValueConstraintList();
@@ -97,18 +99,6 @@ public:
     // Returns true if this list constraint is the same as pConstraint
     // (same constraint type and all members have the same values).
     virtual bool Equals( FdoPropertyValueConstraint* pConstraint );
-
-    // \brief
-    // Checks if a constraint domain is contained within another
-    // 
-    // \param value 
-    // The Property Value constraint to compare with
-    // 
-    // \return
-    // Returns true if this constraint's domain is a superset of the domain
-    // for pConstraint (all values that do not violate pConstraint also do not
-    // violate this constraint).
-    virtual bool Contains( FdoPropertyValueConstraint* pConstraint );
 
 private:
     // Builds dictionary from given data values, filtering out duplicates.

@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 
@@ -115,7 +116,7 @@ FdoString* FdoInt32Value::ToString()
     return m_toString;
 }
 
-FdoInt32Value* FdoInt32Value::Create(
+FdoInt32Value* FdoInternalInt32Value::Create(
     FdoDataValue* src, 
     FdoBoolean truncate, 
     FdoBoolean nullIfIncompatible
@@ -140,7 +141,7 @@ FdoInt32Value* FdoInt32Value::Create(
     return ret;
 }
 
-FdoCompareType FdoInt32Value::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalInt32Value::DoCompare( FdoDataValue* other )
 {
     FdoCompareType compare = FdoCompareType_Undefined;
 
@@ -151,7 +152,7 @@ FdoCompareType FdoInt32Value::DoCompare( FdoDataValue* other )
     // Same type, do simple comparison
     case FdoDataType_Int32:
         {
-            FdoInt32 num1 = GetInt32();
+            FdoInt32 num1 = (*this)->GetInt32();
             FdoInt32 num2 = static_cast<FdoInt32Value*>(other)->GetInt32();
 
             compare = FdoCompare( num1, num2 );
@@ -161,8 +162,8 @@ FdoCompareType FdoInt32Value::DoCompare( FdoDataValue* other )
     // Other values's type has smaller range. Convert other value to this value's type and compare.
     case FdoDataType_Byte:
     case FdoDataType_Int16:
-        otherValue = FdoInt32Value::Create( other );
-        compare = thisValue->Compare( otherValue );
+        otherValue = FdoInternalInt32Value::Create( other );
+        compare = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(thisValue))->Compare( otherValue );
         break;
 
     // Other value's type has larger range, invoke that type to do a reverse comparison.
@@ -176,9 +177,9 @@ FdoCompareType FdoInt32Value::DoCompare( FdoDataValue* other )
     case FdoDataType_Single:
         // Double has larger range and precision that either int32 or single so convert
         // both to double and compare.
-        thisValue = FdoDoubleValue::Create( this );
-        otherValue = FdoDoubleValue::Create( other );
-        compare = thisValue->Compare( otherValue );
+        thisValue = FdoInternalDoubleValue::Create( (FdoDataValue*) this );
+        otherValue = FdoInternalDoubleValue::Create( other );
+        compare = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(thisValue))->Compare( otherValue );
         break;
     }
 

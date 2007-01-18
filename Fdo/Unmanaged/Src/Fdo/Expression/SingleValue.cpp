@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 
@@ -111,7 +112,7 @@ FdoString* FdoSingleValue::ToString()
     return m_toString;
 }
 
-FdoSingleValue* FdoSingleValue::Create(
+FdoSingleValue* FdoInternalSingleValue::Create(
     FdoDataValue* src, 
     FdoBoolean truncate, 
     FdoBoolean nullIfIncompatible
@@ -144,7 +145,7 @@ FdoSingleValue* FdoSingleValue::Create(
     return ret;
 }
 
-FdoCompareType FdoSingleValue::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalSingleValue::DoCompare( FdoDataValue* other )
 {
     FdoCompareType compare = FdoCompareType_Undefined;
 
@@ -154,7 +155,7 @@ FdoCompareType FdoSingleValue::DoCompare( FdoDataValue* other )
     // Same type, do simple comparison
     case FdoDataType_Single:
         {
-            FdoFloat num1 = GetSingle();
+            FdoFloat num1 = (*this)->GetSingle();
             FdoFloat num2 = static_cast<FdoSingleValue*>(other)->GetSingle();
 
             compare = FdoCompare( num1, num2 );
@@ -164,7 +165,7 @@ FdoCompareType FdoSingleValue::DoCompare( FdoDataValue* other )
     // Other values's type has smaller range. Convert other value to this value's type and compare.
     case FdoDataType_Byte:
     case FdoDataType_Int16:
-        otherValue = FdoSingleValue::Create( other );
+        otherValue = FdoInternalSingleValue::Create( other );
         compare = Compare( otherValue );
         break;
 

@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 
@@ -120,7 +121,7 @@ FdoString* FdoInt64Value::ToString()
     return m_toString;
 }
 
-FdoInt64Value* FdoInt64Value::Create(
+FdoInt64Value* FdoInternalInt64Value::Create(
     FdoDataValue* src, 
     FdoBoolean truncate, 
     FdoBoolean nullIfIncompatible
@@ -149,20 +150,20 @@ FdoInt64Value* FdoInt64Value::Create(
     return ret;
 }
 
-FdoCompareType FdoInt64Value::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalInt64Value::DoCompare( FdoDataValue* other )
 {
     FdoCompareType compare = FdoCompareType_Undefined;
 
     FdoPtr<FdoDataValue> thisValue;
     FdoPtr<FdoDataValue> otherValue;
     FdoDouble doubleValue;
-    FdoInt64Value roundValue;
+    FdoInt64 roundValue;
     
     switch ( other->GetDataType() ) {
     // Same type, do simple comparison
     case FdoDataType_Int64:
         {
-            FdoInt64 num1 = GetInt64();
+            FdoInt64 num1 = (*this)->GetInt64();
             FdoInt64 num2 = static_cast<FdoInt64Value*>(other)->GetInt64();
 
             compare = FdoCompare( num1, num2 );
@@ -173,8 +174,8 @@ FdoCompareType FdoInt64Value::DoCompare( FdoDataValue* other )
     case FdoDataType_Byte:
     case FdoDataType_Int16:
     case FdoDataType_Int32:
-        otherValue = FdoInt64Value::Create( other );
-        compare = thisValue->Compare( otherValue );
+        otherValue = FdoInternalInt64Value::Create( other );
+        compare = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(thisValue))->Compare( otherValue );
         break;
 
     // These floating-point type have larger range but less precision.
@@ -184,22 +185,22 @@ FdoCompareType FdoInt64Value::DoCompare( FdoDataValue* other )
         // Convert this int64 to the other type and compare.
         switch ( other->GetDataType() ) {
         case FdoDataType_Decimal:
-            thisValue = FdoDecimalValue::Create( this );
+            thisValue = FdoInternalDecimalValue::Create( (FdoDataValue*) this );
             doubleValue = static_cast<FdoDecimalValue*>((FdoDataValue*)thisValue)->GetDecimal();
             break;
 
         case FdoDataType_Double:
-            thisValue = FdoDoubleValue::Create( this );
+            thisValue = FdoInternalDoubleValue::Create( (FdoDataValue*) this );
             doubleValue = static_cast<FdoDoubleValue*>((FdoDataValue*)thisValue)->GetDouble();
             break;
 
         case FdoDataType_Single:
-            thisValue = FdoSingleValue::Create( this );
+            thisValue = FdoInternalSingleValue::Create( (FdoDataValue*) this );
             doubleValue = (FdoDouble) (static_cast<FdoSingleValue*>((FdoDataValue*)thisValue)->GetSingle());
             break;
         }
 
-        compare = thisValue->Compare( other );
+        compare = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(thisValue))->Compare( other );
 
         // Int64 value many have been rounded by conversion. Rounded value might be equal to 
         // other value when Int64 value is not. 
@@ -216,10 +217,10 @@ FdoCompareType FdoInt64Value::DoCompare( FdoDataValue* other )
                 // rounded value in int64 range
                 roundValue = (FdoInt64) doubleValue;
 
-            if ( roundValue < GetInt64() ) 
+            if ( roundValue < (*this)->GetInt64() ) 
                 // Int64 value was rounded down so it is actually greater than other value
                 compare = FdoCompareType_Greater;
-            if ( roundValue > GetInt64() ) 
+            if ( roundValue > (*this)->GetInt64() ) 
                 // Int32 value was rounded down so it is actually greater than single value
                 compare = FdoCompareType_Less;
         }
