@@ -271,6 +271,7 @@
 ////////////////////////////////////////////////////////////////
 // Raster
 //
+#include <Fdo/Raster/DataValueCollection.h>
 #include <Fdo/Raster/IRaster.h>
 #include <Fdo/Raster/IRasterPropertyDictionary.h>
 #include <Fdo/Raster/RasterDataOrganization.h>

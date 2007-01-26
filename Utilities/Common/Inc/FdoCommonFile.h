@@ -557,7 +557,6 @@ public:
     /// \param path 
     /// The relative path.
     /// 
-    /// \return
     /// Returns absolute path if can be transformed or passed parameter
     /// otherwise.
     /// 
@@ -581,7 +580,6 @@ public:
     /// \param path 
     /// The path.
     /// 
-    /// \return
     /// Returns true if the specified name points to an absolute directory and false
     /// otherwise.
     /// 
@@ -593,9 +591,7 @@ public:
     /// \param path 
     /// The path.
     /// 
-    /// \return
-    /// Returns true if the specified loaction points to a directory and false
-    /// otherwise.
+    /// Returns nothing.
     /// 
     static bool GetFileDirectoryAndName(const wchar_t *location, FdoStringP& directory, FdoStringP& name);
 
