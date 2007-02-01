@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 
@@ -111,7 +112,7 @@ FdoString* FdoDecimalValue::ToString()
     return m_toString;
 }
 
-FdoDecimalValue* FdoDecimalValue::Create(
+FdoDecimalValue* FdoInternalDecimalValue::Create(
     FdoDataValue* src, 
     FdoBoolean truncate, 
     FdoBoolean nullIfIncompatible
@@ -152,7 +153,7 @@ FdoDecimalValue* FdoDecimalValue::Create(
     return ret;
 }
 
-FdoCompareType FdoDecimalValue::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalDecimalValue::DoCompare( FdoDataValue* other )
 {
     FdoCompareType compare = FdoCompareType_Undefined;
     FdoPtr<FdoDataValue> otherValue;
@@ -161,7 +162,7 @@ FdoCompareType FdoDecimalValue::DoCompare( FdoDataValue* other )
     // Same type, do simple comparison
     case FdoDataType_Decimal:
         {
-            FdoDouble num1 = GetDecimal();
+            FdoDouble num1 = (*this)->GetDecimal();
             FdoDouble num2 = static_cast<FdoDecimalValue*>(other)->GetDecimal();
 
             compare = FdoCompare( num1, num2 );
@@ -173,7 +174,7 @@ FdoCompareType FdoDecimalValue::DoCompare( FdoDataValue* other )
     case FdoDataType_Int16:
     case FdoDataType_Int32:
     case FdoDataType_Single:
-        otherValue = FdoDecimalValue::Create( other );
+        otherValue = FdoInternalDecimalValue::Create( other );
         compare = Compare( otherValue );
         break;
 

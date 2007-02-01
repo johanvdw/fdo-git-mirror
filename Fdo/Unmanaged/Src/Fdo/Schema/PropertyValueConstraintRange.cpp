@@ -20,7 +20,17 @@
 #include <Fdo/Schema/PropertyValueConstraintRange.h>
 #include "XmlContext.h"
 #include "StringUtility.h"
+#include <Fdo/Expression/ByteValue.h>
+#include <Fdo/Expression/DateTimeValue.h>
+#include <Fdo/Expression/DecimalValue.h>
+#include <Fdo/Expression/DoubleValue.h>
+#include <Fdo/Expression/Int16Value.h>
+#include <Fdo/Expression/Int32Value.h>
+#include <Fdo/Expression/Int64Value.h>
+#include <Fdo/Expression/SingleValue.h>
+#include <Fdo/Expression/StringValue.h>
 #include "../Expression/ExpressionInternal.h"
+#include "SchemaInternal.h"
 
 
 // Constructs a default instance of a FdoPropertyValueConstraintRange.
@@ -184,19 +194,19 @@ bool FdoPropertyValueConstraintRange::Equals( FdoPropertyValueConstraint* pConst
     FdoPtr<FdoDataValue> myMinValue = GetMinValue();
     FdoPtr<FdoDataValue> theirMinValue = pRangeConstraint->GetMinValue();
 
-    if ( FdoInternalDataValue::Compare(myMinValue, theirMinValue) != FdoCompareType_Equal ) 
+    if ( FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(myMinValue))->Compare(theirMinValue) != FdoCompareType_Equal ) 
         return false;
 
     FdoPtr<FdoDataValue> myMaxValue = GetMaxValue();
     FdoPtr<FdoDataValue> theirMaxValue = pRangeConstraint->GetMaxValue();
 
-    if ( FdoInternalDataValue::Compare(myMaxValue, theirMaxValue) != FdoCompareType_Equal ) 
+    if ( FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(myMinValue))->Compare(theirMaxValue) != FdoCompareType_Equal ) 
         return false;
 
     return true;
 }
 
-bool FdoPropertyValueConstraintRange::Contains( FdoPropertyValueConstraint* pConstraint )
+bool FdoInternalPropertyValueConstraintRange::Contains( FdoPropertyValueConstraint* pConstraint )
 {
     // Not equal if other constraint is not a range.
     if ( pConstraint->GetConstraintType() != FdoPropertyValueConstraintType_Range )
@@ -205,8 +215,8 @@ bool FdoPropertyValueConstraintRange::Contains( FdoPropertyValueConstraint* pCon
     FdoPropertyValueConstraintRange* pRangeConstraint = (FdoPropertyValueConstraintRange*) pConstraint;
 
     FdoCompareType compare = CompareEnd( 
-        GetMinInclusive(), 
-        FdoPtr<FdoDataValue>(GetMinValue()),
+        (*this)->GetMinInclusive(), 
+        FdoPtr<FdoDataValue>((*this)->GetMinValue()),
         pRangeConstraint->GetMinInclusive(), 
         FdoPtr<FdoDataValue>(pRangeConstraint->GetMinValue()),
         false
@@ -217,8 +227,8 @@ bool FdoPropertyValueConstraintRange::Contains( FdoPropertyValueConstraint* pCon
         return false;
 
     compare = CompareEnd( 
-        GetMaxInclusive(), 
-        FdoPtr<FdoDataValue>(GetMaxValue()),
+        (*this)->GetMaxInclusive(), 
+        FdoPtr<FdoDataValue>((*this)->GetMaxValue()),
         pRangeConstraint->GetMaxInclusive(), 
         FdoPtr<FdoDataValue>(pRangeConstraint->GetMaxValue()),
         true
@@ -252,7 +262,7 @@ FdoStringP FdoPropertyValueConstraintRange::ValueToString( FdoPtr<FdoDataValue> 
     return stringContainer;
 }
 
-FdoCompareType FdoPropertyValueConstraintRange::CompareEnd( FdoBoolean myInclusive, FdoPtr<FdoDataValue> myValue, FdoBoolean theirInclusive, FdoPtr<FdoDataValue> theirValue, FdoBoolean isMax )
+FdoCompareType FdoInternalPropertyValueConstraintRange::CompareEnd( FdoBoolean myInclusive, FdoPtr<FdoDataValue> myValue, FdoBoolean theirInclusive, FdoPtr<FdoDataValue> theirValue, FdoBoolean isMax )
 {
     // Equal if both values are null.
     if ( (!myValue || myValue->IsNull()) && (!theirValue || theirValue->IsNull()) ) 
@@ -266,7 +276,7 @@ FdoCompareType FdoPropertyValueConstraintRange::CompareEnd( FdoBoolean myInclusi
         // This value null, comparison depends on whether min or max
         return isMax ? FdoCompareType_Greater : FdoCompareType_Less;
 
-    FdoCompareType result = FdoInternalDataValue::Compare( myValue, theirValue );
+    FdoCompareType result = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(myValue))->Compare( theirValue );
 
     // Values are equal. However, if inclusivities not the same then they are 
     // not equal

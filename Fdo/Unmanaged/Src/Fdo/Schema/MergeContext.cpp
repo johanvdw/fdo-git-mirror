@@ -23,6 +23,7 @@
 #include <Fdo/Schema/AssociationPropertyDefinition.h>
 #include <Fdo/Commands/CommandType.h>
 #include <Fdo/Commands/Feature/ISelect.h>
+#include "SchemaInternal.h"
 
 FdoSchemaMergeContext::FdoSchemaMergeContext( FdoFeatureSchemaCollection* schemas, bool defaultCapability ) :
     mIgnoreStates(true),
@@ -391,7 +392,7 @@ bool FdoSchemaMergeContext::CheckModDataConstraint( FdoDataPropertyDefinition* o
                     canMod = false;
                 }
                 else {
-                    if ( !newConstraint->Contains( oldConstraint ) ) {
+                    if ( !FdoPtr<FdoInternalPropertyValueConstraint>(FdoInternalPropertyValueConstraint::Create(newConstraint))->Contains( oldConstraint ) ) {
                         // Making constraint more restrictive not yet supported, since existing 
                         // property values might violate constraint.
                         AddError( 

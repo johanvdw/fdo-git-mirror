@@ -225,6 +225,7 @@ public:
 
     const FdoSmLpClassDefinition* RefClass(FdoStringP className) const;
 
+
 protected:
     /// Loads an instance of a LogicalPhysicalSchema from the FDO
     /// database.
