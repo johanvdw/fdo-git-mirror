@@ -21,6 +21,7 @@
 #include <Fdo/Schema/PropertyValueConstraintList.h>
 #include "XmlContext.h"
 #include "StringUtility.h"
+#include "SchemaInternal.h"
 
 // Constructs a default instance of a FdoPropertyValueConstraintList.
 FdoPropertyValueConstraintList::FdoPropertyValueConstraintList():m_constraintList( NULL )
@@ -121,7 +122,7 @@ bool FdoPropertyValueConstraintList::Equals( FdoPropertyValueConstraint* pConstr
     return equals;
 }
 
-bool FdoPropertyValueConstraintList::Contains( FdoPropertyValueConstraint* pConstraint )
+bool FdoInternalPropertyValueConstraintList::Contains( FdoPropertyValueConstraint* pConstraint )
 {
     bool contains = false;
     FdoInt32 idx;
@@ -134,8 +135,8 @@ bool FdoPropertyValueConstraintList::Contains( FdoPropertyValueConstraint* pCons
         // Contains other list if all other list values in this list. Build dictionaries from lists to 
         // weed out duplicate values.
 
-        FdoDictionaryP myValues = ValuesToDictionary( m_constraintList );
-        FdoDictionaryP theirValues = ValuesToDictionary( valueList );
+        FdoDictionaryP myValues = (*this)->ValuesToDictionary( (*this)->m_constraintList );
+        FdoDictionaryP theirValues = (*this)->ValuesToDictionary( valueList );
 
         // Can't contain other constraint list if it has more values
         if ( myValues->GetCount() >= theirValues->GetCount() ) {

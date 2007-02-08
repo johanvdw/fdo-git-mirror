@@ -25,6 +25,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -123,7 +124,7 @@ FdoString* FdoByteValue::ToString()
     return m_toString;
 }
 
-FdoCompareType FdoByteValue::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalByteValue::DoCompare( FdoDataValue* other )
 {
     FdoCompareType compare = FdoCompareType_Undefined;
     
@@ -132,7 +133,7 @@ FdoCompareType FdoByteValue::DoCompare( FdoDataValue* other )
     // Same type, do simple comparison
     case FdoDataType_Byte:
         {
-            FdoByte byte1 = GetByte();
+            FdoByte byte1 = (*this)->GetByte();
             FdoByte byte2 = static_cast<FdoByteValue*>(other)->GetByte();
 
             compare = FdoCompare( byte1, byte2 );

@@ -594,7 +594,7 @@ public:
     /// The path.
     /// 
     /// \return
-    /// Returns true if the specified loaction points to a directory and false
+    /// Returns true if the specified location points to a directory and false
     /// otherwise.
     /// 
     static bool GetFileDirectoryAndName(const wchar_t *location, FdoStringP& directory, FdoStringP& name);

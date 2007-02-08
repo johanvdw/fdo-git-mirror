@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -140,11 +141,11 @@ FdoString* FdoDateTimeValue::ToString()
     return m_toString;
 }
 
-FdoCompareType FdoDateTimeValue::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalDateTimeValue::DoCompare( FdoDataValue* other )
 {
     // Only DateTime to DateTime comparisons currently supported
-    if ( other->GetDataType() == GetDataType() ) {
-        FdoDateTime dt1 = GetDateTime();
+    if ( other->GetDataType() == (*this)->GetDataType() ) {
+        FdoDateTime dt1 = (*this)->GetDateTime();
         FdoDateTime dt2 = static_cast<FdoDateTimeValue*>(other)->GetDateTime();
 
         // Can't compare if one value has date component and the other does not

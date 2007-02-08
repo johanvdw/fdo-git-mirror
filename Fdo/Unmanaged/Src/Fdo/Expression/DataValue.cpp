@@ -19,6 +19,7 @@
 #include <Fdo/Expression/ExpressionException.h>
 #include <Fdo/Expression/IExpressionProcessor.h>
 #include "StringUtility.h"
+#include "ExpressionInternal.h"
 
 #include <time.h>
 
@@ -335,9 +336,9 @@ void FdoDataValue::SetNull()
 	m_isNull = true;
 }
 
-FdoCompareType FdoDataValue::Compare( FdoDataValue* other )
+FdoCompareType FdoInternalDataValue::Compare( FdoDataValue* other )
 {
-    if ( (!this) || IsNull() ) {
+    if ( !((FdoDataValue*)(*this)) || (*this)->IsNull() ) {
         if ( !other || other->IsNull() ) 
             // Equal if both null
             return FdoCompareType_Equal;
@@ -354,9 +355,9 @@ FdoCompareType FdoDataValue::Compare( FdoDataValue* other )
     return DoCompare( other );
 }
 
-FdoCompareType FdoDataValue::ReverseCompare( FdoDataValue* other )
+FdoCompareType FdoInternalDataValue::ReverseCompare( FdoDataValue* other )
 {
-    FdoCompareType compare = other->Compare( this );
+    FdoCompareType compare = FdoPtr<FdoInternalDataValue>(FdoInternalDataValue::Create(other))->Compare( (*this) );
 
     // Reverse greater and less than return values.
     if ( compare == FdoCompareType_Greater ) 
@@ -367,7 +368,7 @@ FdoCompareType FdoDataValue::ReverseCompare( FdoDataValue* other )
     return compare;
 }
 
-FdoCompareType FdoDataValue::DoCompare( FdoDataValue* other )
+FdoCompareType FdoInternalDataValue::DoCompare( FdoDataValue* other )
 {
     return FdoCompareType_Undefined;
 }
