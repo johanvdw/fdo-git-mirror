@@ -650,7 +650,7 @@ void FdoRdbmsPvcInsertHandler::CreateInsertStringForColumn(
     }
     if ( !emptyBlobAdded )
     {
-        valuesString += mFdoConnection->GetBindString( bindCount+1, propertyDefinition );
+        valuesString += mFdoConnection->GetBindString( bindCount+1, (propType == FdoPropertyType_GeometricProperty ));
     }
     bindCount++;
 }
