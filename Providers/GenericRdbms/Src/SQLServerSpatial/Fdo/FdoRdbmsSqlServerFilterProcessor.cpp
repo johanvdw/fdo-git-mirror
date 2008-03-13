@@ -300,13 +300,9 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
     buf += "(";
     buf += "geometry::STGeomFromText('";
     buf += geom2D->GetText();
-
-    // Set the SRID
-	const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomProp)->GetColumn();
-    FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
-    buf += FdoStringP::Format(L"', %ld)", geomCol->GetSRID());  
-
+    buf += "', 0)"; // TODO: SRID=0. 
     buf += ")";
+
     buf += "=1";
 
     AppendString((const wchar_t*)buf);
