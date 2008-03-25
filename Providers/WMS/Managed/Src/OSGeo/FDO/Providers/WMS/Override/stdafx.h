@@ -27,8 +27,6 @@
 #include "CommonUtilities.h"
 #include "Namespace.h"
 
-#include "..\mgCommandType.h"
-
 #using <mscorlib.dll>
 #using <System.dll>
 

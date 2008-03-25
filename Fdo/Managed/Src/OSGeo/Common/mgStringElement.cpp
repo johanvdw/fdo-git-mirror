@@ -42,10 +42,3 @@ System::Void NAMESPACE_OSGEO_COMMON::StringElement::ReleaseUnmanagedObject()
         EXCEPTION_HANDLER(GetImpObj()->Release())
 	Detach();
 }
-
-System::String* NAMESPACE_OSGEO_COMMON::StringElement::get_String()
-{
-	FdoString *str = NULL;
-	EXCEPTION_HANDLER(str = GetImpObj()->GetString())
-	return str;
-}
