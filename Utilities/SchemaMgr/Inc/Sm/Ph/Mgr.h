@@ -517,15 +517,7 @@ public:
     // The default is Lax.
     virtual CoordinateSystemMatchLevel GetCoordinateSystemMatchLevel();
 
-    // Returns whether or not the provider supports numeric coordinate system
-    // names.
-    virtual bool SupportsNumericCoordinateSystemName();
-
     virtual bool SupportsAnsiQuotes();
-
-    // Default implementation returns false (one autoincrement column per table).
-    // Providers that support multiple autoincrement columns per table must override.
-    virtual bool SupportsMultipleAutoIncrementColumns() const;
 
     virtual bool IsRdbUnicode() = 0;
 
@@ -688,8 +680,6 @@ public:
 	virtual void SetStaticReader( FdoStringP readerName, FdoPtr<FdoSmPhReader> reader ) = 0;
 	virtual FdoPtr<FdoSmPhReader> GetStaticReader( FdoStringP readerName ) = 0;
 
-    virtual FdoStringP ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className);
-
 protected:
     void SetDefaultOwnerName( FdoStringP name)
     {
@@ -763,6 +753,5 @@ private:
 
 
 #endif
-
 
 

@@ -38,13 +38,8 @@
  * Notes        : N/A
  *
  *****************************************************************************/
-/*
- * Made one change in Sep 18, 2008
- * From: Only records in DBF file which start with cVALID_RECORD_ID can be accepted as valid record.
- * To: Only records in DBF file which start cDELETED_RECORD_ID can be accepted as deleted record.
-*/
 RowData::RowData (ColumnInfo* pColumnInfo, void* buffer) :
-    mDeleted (true),                                   // change default value from "false" to "true" 
+    mDeleted (false),
     mColumnInfo (pColumnInfo),
     mBuffer (buffer),
     mReading (NULL != buffer)
@@ -79,8 +74,8 @@ RowData::RowData (ColumnInfo* pColumnInfo, void* buffer) :
         // all fields are space padded
         memset (mBuffer, ' ', size);
     }
-    else if (cDELETED_RECORD_ID != ((char*)buffer)[0])  // change from cVALID_RECORD_ID to cDELETED_RECORD_ID 
-        SetDeleted (false);                             // change from "true" to "false" 
+    else if (cVALID_RECORD_ID != ((char*)buffer)[0])
+        SetDeleted (true);
 }
 
 void* RowData::operator new (size_t nSize, ColumnInfo* pColumnInfo, void* buffer)

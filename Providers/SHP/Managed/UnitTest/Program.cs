@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.Text;
 
 //FdoWrapper
-using OSGeo.FDO.Common;
+using OSGeo.Common;
 
 //framework
 using unit_test.Framework;
