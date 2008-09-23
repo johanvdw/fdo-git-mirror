@@ -110,7 +110,7 @@ FdoPhysicalSchemaMappingP FdoSmLpSchema::GetSchemaMappings( bool bIncludeDefault
     return (FdoPhysicalSchemaMapping*) NULL;
 }
 
-const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bool searchAllSchemas ) const
+const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className ) const
 {
 	FdoStringP					        schemaName;
 	FdoStringP					        localClassName;
@@ -156,7 +156,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bo
 		pFoundClass = mClasses->RefItem( localClassName );
 
 	// If not in this schema, search all schemas.
-	if ( !pFoundClass && searchAllSchemas) 
+	if ( !pFoundClass ) 
 		pFoundClass = mpSchemas->FindClass( schemaName, localClassName );
 	
 	return( pFoundClass );
@@ -554,7 +554,7 @@ void FdoSmLpSchema::AddCreateNoMetaError( FdoSmPhOwnerP owner )
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_33),
+				SM_NLSID(0x000008BEL, "Cannot add feature schema '%1$ls' to datastore '%2$ls'; datastore has no FDO metadata tables (f_schemainfo)"),
 				GetName(),
                 owner ? owner->GetName() : L""
 			)
@@ -567,7 +567,7 @@ void FdoSmLpSchema::AddDeleteNoMetaError( FdoSmPhOwnerP owner )
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_34),
+				SM_NLSID(0x000008BFL, "Cannot delete default feature schema '%1$ls' from datastore '%2$ls'"),
 				(FdoString*) GetName(),
                 owner ? owner->GetName() : L""
 			)
@@ -579,12 +579,12 @@ void FdoSmLpSchema::AddSchemaNameLengthError( FdoString* schemaName, FdoSize max
 {
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
-            FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_318),
+            FdoStringP::Format(
+                L"Cannot add schema with name that exceeds %d characters: '%ls'",
                 maxLen,
                 schemaName
-			)
-		)
+		    )
+        )
 	);
 }
 
@@ -606,5 +606,4 @@ void FdoSmLpSchema::XMLSerialize( FILE* xmlFp, int ref ) const
 
 	fprintf( xmlFp, "</schema >\n" );
 }
-
 

@@ -101,11 +101,6 @@ FdoSmPhMgr::CoordinateSystemMatchLevel FdoSmPhSqsMgr::GetCoordinateSystemMatchLe
     return level;
 }
 
-bool FdoSmPhSqsMgr::SupportsNumericCoordinateSystemName()
-{
-    return true;
-}
-
 bool FdoSmPhSqsMgr::IsGeogLatLong()
 {
     FdoVectorP verTokens = FdoVector::Create( GetDbVersion(), L"." );
@@ -441,19 +436,4 @@ FdoSmPhSqsMgr::SqsStringMap::SqsStringMap()
     // No reserved words for SqlServer
 };
 
-
-FdoStringP FdoSmPhSqsMgr::ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className)
-{
-    FdoSmPhOwnerP pOwner = GetOwner();
-    bool hasMetaSchema = pOwner ? pOwner->GetHasMetaSchema() : false;
-
-    // Qualify default db object name by user.
-
-    if (hasMetaSchema)
-        // When datastore has MetaSchema, default user is dbo.
-        return FdoStringP(L"dbo.") + className;
-    else
-        // Otherwise, default user is the feature schema name.
-        return schemaName + FdoStringP(L".") + className;
-}
 

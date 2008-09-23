@@ -514,56 +514,43 @@ void FdoSmLpSpatialContext::Finalize()
                 // Try match by name first.
                 if ( mCoordSysName != L"" ) 
                 {
-                    // There is a special case handling in case the name is a numeric value. In this
-                    // case, if the provider supports this, the process just sets the SRID number.
-                    // If the provider does not suuport numeric coordinate system names, an error
-                    // must be reported.
+                    csys = owner->FindCoordinateSystem( mCoordSysName );
 
-                    if (( mCoordSysName.IsNumber() ) && ( mPhysicalSchema->SupportsNumericCoordinateSystemName() ) )
+                    if ( csys )
                     {
-                        SetSrid( mCoordSysName.ToLong() );
                         nameMatched = true;
-                    }
-                    else
-                    {
-                        csys = owner->FindCoordinateSystem( mCoordSysName );
 
-                        if ( csys )
+                        if ( mCoordSysWkt == L"" ) 
                         {
-                            nameMatched = true;
-
-                            if ( mCoordSysWkt == L"" ) 
-                            {
-                                // WKT not specified so set it from matched coordinate system.
-                                SetCoordinateSystemWkt( csys->GetWkt() );
-                            }
-                            else if ( mCoordSysWkt != csys->GetWkt() )
-                            {
-                                // WKT mismatch so this is not the right coordinate system.
-                                // This is an error when strict matching is enforced by the provider.
-                                // Otherwise, try to match by WKT.
-                                nameMatched = false;
-                                if ( matchLevel == FdoSmPhMgr::CoordinateSystemMatchLevel_Strict )
-                                {
-                                    AddMismatchedWktError();
-                                    matchError = true;
-                                }
-                            }
-
-                            if ( nameMatched ) 
-                                SetSrid( csys->GetSrid() );
+                            // WKT not specified so set it from matched coordinate system.
+                            SetCoordinateSystemWkt( csys->GetWkt() );
                         }
-                        else 
+                        else if ( mCoordSysWkt != csys->GetWkt() )
                         {
-                            if ( matchLevel == FdoSmPhMgr::CoordinateSystemMatchLevel_Strict ) 
+                            // WKT mismatch so this is not the right coordinate system.
+                            // This is an error when strict matching is enforced by the provider.
+                            // Otherwise, try to match by WKT.
+                            nameMatched = false;
+                            if ( matchLevel == FdoSmPhMgr::CoordinateSystemMatchLevel_Strict )
                             {
-                                // When strict matching is enforced by the provider,
-                                // log error if name specified but doesn't match a 
-                                // datastore coordinate system.
-                                // Otherwise, try to match by WKT.
-                                AddNoCsysError();
+                                AddMismatchedWktError();
                                 matchError = true;
                             }
+                        }
+
+                        if ( nameMatched ) 
+                            SetSrid( csys->GetSrid() );
+                    }
+                    else 
+                    {
+                        if ( matchLevel == FdoSmPhMgr::CoordinateSystemMatchLevel_Strict ) 
+                        {
+                            // When strict matching is enforced by the provider,
+                            // log error if name specified but doesn't match a 
+                            // datastore coordinate system.
+                            // Otherwise, try to match by WKT.
+                            AddNoCsysError();
+                            matchError = true;
                         }
                     }
                 }
@@ -614,7 +601,7 @@ void FdoSmLpSpatialContext::AddNoMetaNameChangeError( FdoSmPhOwnerP owner)
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_39),
+				SM_NLSID(0x000008C4L, "Cannot create spatial context '%1$ls' in datastore '%2$ls'; datastore has no FDO metadata tables so spatial context name must be a valid column name"),
 				(FdoString*) GetName(),
                 owner ? owner->GetName() : L""
 			)
@@ -627,7 +614,7 @@ void FdoSmLpSpatialContext::AddNoMetaNameLengthError( FdoSmPhOwnerP owner, FdoSi
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_40),
+				SM_NLSID(0x000008C5L, "Cannot create spatial context '%1$ls' in datastore '%2$ls'; datastore has no FDO metadata tables amd spatial context name exceeds %3$d characters"),
 				(FdoString*) GetName(),
                 owner ? owner->GetName() : L"",
                 maxLen
@@ -641,7 +628,7 @@ void FdoSmLpSpatialContext::AddNoCsysError()
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_41),
+				SM_NLSID(0x000008C6L, "Error creating spatial context %1$ls, coordinate system %2$ls is not in current datastore."),
                 GetName(), 
                 (FdoString*) mCoordSysName
 			)
@@ -654,7 +641,7 @@ void FdoSmLpSpatialContext::AddNoWktError()
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_42),
+				SM_NLSID(0x000008C7L, "Error creating spatial context %1$ls, coordinate system catalog does not contain entry for WKT '%2$ls'"),
                 GetName(), 
                 (FdoString*) mCoordSysWkt
 			)
@@ -667,7 +654,7 @@ void FdoSmLpSpatialContext::AddMismatchedWktError()
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_43),
+				SM_NLSID(0x000008C8L, "Error creating spatial context %1$ls (SRID=%2$ld), the WKT provided does not match the catalog."),
                 GetName(), 
                 GetSrid()
 			)

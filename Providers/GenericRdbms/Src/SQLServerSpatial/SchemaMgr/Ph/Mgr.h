@@ -50,7 +50,6 @@ public:
     FdoStringP GetDbVersion();
 
     virtual CoordinateSystemMatchLevel GetCoordinateSystemMatchLevel();
-    virtual bool SupportsNumericCoordinateSystemName();
 
     bool IsGeogLatLong();
 
@@ -163,8 +162,6 @@ public:
     // Resets bind values for bind fields created by MakeByDbObjectBinds.
     void SetByDbObjectBinds (FdoSmPhRowP binds, FdoStringP object_owner, FdoStringP object_name);
 
-    virtual FdoStringP ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className);
-
 protected:
 
     virtual FdoSmPhDatabaseP CreateDatabase(FdoStringP database);
@@ -195,5 +192,4 @@ typedef FdoPtr<FdoSmPhSqsMgr> FdoSmPhSqsMgrP;
 
 
 #endif
-
 

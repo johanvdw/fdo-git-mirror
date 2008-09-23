@@ -262,8 +262,7 @@ FdoSmPhOwnerP FdoSmPhMgr::FindOwner(FdoStringP ownerName, FdoStringP database, b
     }
 
 
-
-    return( pOwner );
+	return( pOwner );
 }
 
 FdoSmPhOwnerP FdoSmPhMgr::GetOwner(FdoStringP ownerName, FdoStringP database, bool caseSensitive)
@@ -582,19 +581,9 @@ FdoSmPhMgr::CoordinateSystemMatchLevel FdoSmPhMgr::GetCoordinateSystemMatchLevel
     return CoordinateSystemMatchLevel_Lax;
 }
 
-bool FdoSmPhMgr::SupportsNumericCoordinateSystemName()
-{
-    return false;
-}
-
 bool FdoSmPhMgr::SupportsAnsiQuotes()
 {
     return true;
-}
-
-bool FdoSmPhMgr::SupportsMultipleAutoIncrementColumns() const
-{
-    return false;
 }
 
 bool FdoSmPhMgr::IsRdbObjNameAscii7()
@@ -822,9 +811,4 @@ void FdoSmPhMgr::XMLSerialize( FdoString* sFileName ) const
 
 	fclose(xmlFp);
 
-}
-
-FdoStringP FdoSmPhMgr::ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className)
-{
-    return className;
 }
