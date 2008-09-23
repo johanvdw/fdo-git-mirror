@@ -154,8 +154,6 @@ EXTRA_DIST = \
     Fdo/Commands/Schema/IDescribeSchema.h \
     Fdo/Commands/Schema/IDescribeSchemaMapping.h \
     Fdo/Commands/Schema/IDestroySchema.h \
-    Fdo/Commands/Schema/IGetClassNames.h \
-    Fdo/Commands/Schema/IGetSchemaNames.h \
     Fdo/Commands/Schema/PhysicalClassMapping.h \
     Fdo/Commands/Schema/PhysicalElementMapping.h \
     Fdo/Commands/Schema/PhysicalElementMappingCollection.h \
@@ -382,6 +380,5 @@ uninstall :
 	@rm -drf $(INSTALL_DIR)/Fdo
 	@rm -drf $(INSTALL_DIR)/Common
 	@rm -drf $(INSTALL_DIR)/Geometry
-
 
 

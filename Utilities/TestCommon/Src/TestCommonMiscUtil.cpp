@@ -99,7 +99,7 @@ FdoPtr<FdoIInsert>  TestCommonMiscUtil::InsertObject( FdoIConnection* connection
 
         propertyValue = AddNewProperty( propertyValues, propName);
         
-        propertyValue->SetValue( ArgsToLiteral(arguments) );
+        propertyValue->SetValue( ArgsToDataValue(arguments) );
 
         propName = va_arg(arguments,FdoString*);
     }
@@ -125,7 +125,7 @@ void TestCommonMiscUtil::DeleteObjects( FdoIConnection* connection, FdoStringP s
     if ( propName != NULL ) {
 
         FdoPtr<FdoIdentifier> pIdent = FdoIdentifier::Create( propName );
-        FdoPtr<FdoComparisonCondition> pCompare = FdoComparisonCondition::Create(pIdent, FdoComparisonOperations_EqualTo, ArgsToLiteral(arguments) );
+        FdoPtr<FdoComparisonCondition> pCompare = FdoComparisonCondition::Create(pIdent, FdoComparisonOperations_EqualTo, ArgsToDataValue(arguments) );
        
         deleteCommand->SetFilter( pCompare );
     }
@@ -135,14 +135,12 @@ void TestCommonMiscUtil::DeleteObjects( FdoIConnection* connection, FdoStringP s
     deleteCommand->Execute();
 }
 
-FdoPtr<FdoLiteralValue> TestCommonMiscUtil::ArgsToLiteral( va_list& arguments )
+FdoPtr<FdoDataValue> TestCommonMiscUtil::ArgsToDataValue( va_list& arguments )
 {
-    FdoPtr<FdoLiteralValue> literalValue;
+    FdoPtr<FdoDataValue> dataValue;
     FdoBoolean boolArg;
     FdoByte byteArg;
-    FdoInt16 int16Arg;
     FdoInt32 int32Arg;
-    FdoInt64 int64Arg;
     FdoFloat floatArg;
     FdoDouble doubleArg;
     FdoString* strArg;
@@ -153,51 +151,39 @@ FdoPtr<FdoLiteralValue> TestCommonMiscUtil::ArgsToLiteral( va_list& arguments )
     switch ( dataType ) {
     case FdoDataType_Boolean:
         boolArg = (FdoBoolean) va_arg(arguments,int);
-        literalValue = FdoDataValue::Create(boolArg);
+        dataValue = FdoDataValue::Create(boolArg);
         break;
     case FdoDataType_Byte:
         byteArg = (FdoByte) va_arg(arguments,int);
-        literalValue = FdoDataValue::Create(byteArg);
-        break;
-    case FdoDataType_Int16:
-        int16Arg = va_arg(arguments,int);
-        literalValue = FdoDataValue::Create(int16Arg);
+        dataValue = FdoDataValue::Create(byteArg);
         break;
     case FdoDataType_Int32:
         int32Arg = va_arg(arguments,FdoInt32);
-        literalValue = FdoDataValue::Create(int32Arg);
-        break;
-    case FdoDataType_Int64:
-        int64Arg = va_arg(arguments,FdoInt64);
-        literalValue = FdoDataValue::Create(int64Arg);
+        dataValue = FdoDataValue::Create(int32Arg);
         break;
     case FdoDataType_Single:
         floatArg = (FdoFloat) va_arg(arguments,double);
-        literalValue = FdoDataValue::Create(floatArg);
+        dataValue = FdoDataValue::Create(floatArg);
         break;
     case FdoDataType_Double:
     case FdoDataType_Decimal:
         doubleArg = (FdoDouble) va_arg(arguments,double);
-        literalValue = FdoDataValue::Create(doubleArg, dataType);
+        dataValue = FdoDataValue::Create(doubleArg, dataType);
         break;
     case FdoDataType_String:
         strArg = va_arg(arguments,FdoString*);
-        literalValue = FdoDataValue::Create(strArg);
+        dataValue = FdoDataValue::Create(strArg);
         break;
     case FdoDataType_DateTime:
         dateTimeArg = va_arg(arguments,FdoDateTime *);
-        literalValue = FdoDataValue::Create(*dateTimeArg);
-        break;
-    case -1:
-        literalValue = va_arg(arguments,FdoGeometryValue *);
-        FDO_SAFE_ADDREF(literalValue.p);
+        dataValue = FdoDataValue::Create(*dateTimeArg);
         break;
     default:
         throw FdoException::Create( L"TestCommonMiscUtil::InsertObject dataType not yet implemented; please implement" );
         break;
     }
 
-    return literalValue;
+    return dataValue;
 }
 
 #ifdef _WIN32

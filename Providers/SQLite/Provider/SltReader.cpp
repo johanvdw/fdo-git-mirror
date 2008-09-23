@@ -42,15 +42,15 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Mem *pOut;
 
   pVm = (Vdbe *)pStmt;
-  if( pVm && pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
-      //We compile without thread safety anyway...
+  if( pVm && pVm->resOnStack && i<pVm->nResColumn && i>=0 ){
+      //we compile SQLite without thread safety...
     //sqlite3_mutex_enter(pVm->db->mutex);
     vals = sqlite3_data_count(pStmt);
-    pOut = &pVm->pResultSet[i];
+    pOut = &pVm->pTos[(1-vals)+i];
   }else{
-    static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+    static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL };
     if( pVm->db ){
-        //We compile without thread safety anyway...
+        //we compile SQLite without thread safety...
       //sqlite3_mutex_enter(pVm->db->mutex);
       sqlite3Error(pVm->db, SQLITE_RANGE, 0);
     }
@@ -58,7 +58,6 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   }
   return pOut;
 }
-
 
 
 //constructor taking a general sql statement, which we will step through
@@ -524,12 +523,13 @@ bool SltReader::ReadNext()
             //we have had at least once successful hit
             if (m_closeOpcode != -1)
             {
-                //Set the next row ID we need into the live compiled bytecode.
-                //Note that this is not the same as sqlite_bind_int64, because
-                //the execution engine copies the variables from the statement into
-                //internal memory, which we are setting directly here.
-                v->aMem[1].u.i = m_curfid;
+                //in order to bind a value to the execution engine
+                //it must think that it is not in the middle of executing
+                //so we set its program counter to -1 in order to directly
+                //set the next row ID we need into the live compiled bytecode.
+                v->pc = -1;
 
+                sqlite3_bind_int64(m_pStmt, 1, m_curfid);
 
                 //now set the VDBE program counter to the instruction that
                 //fetches the row we set above -- this is to skip initialization
@@ -538,7 +538,7 @@ bool SltReader::ReadNext()
                 //to skip the initialization as well (it would lock the table again without
                 //it being freed, since we are not going to finish the previous step
                 //which would have freed the previous lock.
-                v->pc = 5;
+                v->pc = 4;
             }
             else
             {
@@ -584,16 +584,10 @@ bool SltReader::ReadNext()
 
 done:
     //execute the instructions that end the VDBE execution loop
-    //This is analogous as the ending in ReadNext() when we run
-    //out of rows
     if (m_closeOpcode != -1)
     {
         v->pc = m_closeOpcode;
         int rc = sqlite3_step(m_pStmt);
-
-        //must set this back so that Close() does not
-        //reattempt to end the VDBE execution
-        m_closeOpcode = -1;
     }
 
 	return false;
@@ -604,42 +598,23 @@ void SltReader::Close()
 	if (!m_pStmt)
 		return;
 
-    //execute the instructions that end the VDBE execution loop
-    //in case the reader is being closed prematurely
-    if (m_closeOpcode != -1)
-    {
-        Vdbe* v = (Vdbe*)m_pStmt;
-        v->pc = m_closeOpcode;
-        int rc = sqlite3_step(m_pStmt);
-
-        //must set this back so that a second call to Close() does not
-        //reattempt to end the VDBE execution
-        m_closeOpcode = -1;
-    }
-
-    //remember the underlying ephemeral database, 
-    //before killing the statement, so that we can free it,
-    //after we commit it... Phew.
-    sqlite3* db = sqlite3_db_handle(m_pStmt); 
-
-    //Finalize the statemenet, in case of ephemeral db, or release it to cache otherwise
-    //We must do this before committing the transaction, in case we are being Closed()
-    //before we were done calling ReadNext()
-    if (m_closeDB)
-    {
-        sqlite3_finalize(m_pStmt);
-    }
-    else //otherwise just release the cached statement we were using
-        m_connection->ReleaseParsedStatement(m_sql, m_pStmt);
+    sqlite3* db = sqlite3_db_handle(m_pStmt);
 
     int rc;
+
     if (m_bUseTransaction)
         rc = sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
 
     //Close the database as well, if it was an ephemeral database
     //used to return computed data
     if (m_closeDB)
+    {
+        sqlite3_finalize(m_pStmt);
         sqlite3_close(db);
+    }
+    else //otherwise just release the cached statement we were using
+        m_connection->ReleaseParsedStatement(m_sql, m_pStmt);
+
 
 	m_pStmt = NULL;
 }

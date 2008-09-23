@@ -582,11 +582,6 @@ FdoSmPhMgr::CoordinateSystemMatchLevel FdoSmPhMgr::GetCoordinateSystemMatchLevel
     return CoordinateSystemMatchLevel_Lax;
 }
 
-bool FdoSmPhMgr::SupportsNumericCoordinateSystemName()
-{
-    return false;
-}
-
 bool FdoSmPhMgr::SupportsAnsiQuotes()
 {
     return true;
@@ -822,9 +817,4 @@ void FdoSmPhMgr::XMLSerialize( FdoString* sFileName ) const
 
 	fclose(xmlFp);
 
-}
-
-FdoStringP FdoSmPhMgr::ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className)
-{
-    return className;
 }

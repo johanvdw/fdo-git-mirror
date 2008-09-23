@@ -92,7 +92,6 @@ class MasterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(keyFilterBeforeDelete);
     CPPUNIT_TEST(deleteTest);
     CPPUNIT_TEST(keyFilterAfterDelete);
-    CPPUNIT_TEST(dataTypeKeyFilter);
     CPPUNIT_TEST(coordSysTest);
     CPPUNIT_TEST(selectDistinctTests);
     CPPUNIT_TEST(selectAggregatesTest);
@@ -102,7 +101,6 @@ class MasterTest : public CppUnit::TestFixture
 	CPPUNIT_TEST(noGeomObject); 
 	CPPUNIT_TEST(numberFilter); 
 	CPPUNIT_TEST(inFilter); 
-	CPPUNIT_TEST(inFilterOptimize); 
 	CPPUNIT_TEST(likeFilter);
 	CPPUNIT_TEST(orFilter);
 	CPPUNIT_TEST(dateFilter); 
@@ -134,7 +132,6 @@ public:
     void updateTest();
     void keyFilterBeforeDelete();
     void keyFilterAfterDelete();
-    void dataTypeKeyFilter();
     void stringFilter();
     void rtreeFilter();
     void spatialFilter();
@@ -156,9 +153,6 @@ public:
 	void noGeomObject();
 	void numberFilter();
 	void inFilter();
-
-    // Tests that the query optimizer handles in conditions properly.
-	void inFilterOptimize();
 	void likeFilter();
 	void orFilter();
 	void dateFilter();
@@ -166,27 +160,6 @@ public:
 	void selectAggregatesSpatialExtentsTest();
 
 	void CreateEmptyShpFileWithConstraints(FdoIConnection* conn);
-
-    void inFilterOptimize_CreateData( FdoIConnection* conn );
-    void inFilterOptimize_Select( 
-        FdoIConnection* conn,
-        FdoString* className, 
-        FdoString* filterString, 
-        FdoString* id1, 
-        FdoDataType type1,
-        FdoString** expected1,
-        FdoString* id2 = NULL, 
-        FdoDataType type2 = FdoDataType_String,
-        FdoString** expected2 = NULL 
-    );
-    FdoStringP MasterTest::inFilterOptimize_GetIdValue( 
-        FdoIFeatureReader* rdr,
-        FdoString* propName, 
-        FdoDataType propType
-    );
-
-    void dataTypeFilter_CreateData( FdoIConnection* conn );
-    void dataTypeFilter_CreateClass( FdoClassesP pClasses, FdoString* className, FdoDataType idType );
 };
 
 #endif

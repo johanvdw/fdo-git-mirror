@@ -709,8 +709,6 @@ class OgrDescribeSchema : public OgrCommand<FdoIDescribeSchema>
     public:
         OGR_API virtual FdoString* GetSchemaName() { return L"OGRSchema"; }
         OGR_API virtual void SetSchemaName(FdoString* value) { ; }
-        OGR_API virtual FdoStringCollection* GetClassNames() { return NULL; }
-        OGR_API virtual void SetClassNames(FdoStringCollection* value) { ; }
         OGR_API virtual FdoFeatureSchemaCollection* Execute() { return m_connection->DescribeSchema();}
 };
 

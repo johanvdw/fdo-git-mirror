@@ -48,7 +48,26 @@ FdoSmPhMgrP FdoSchemaManager::GetPhysicalSchema(void)
 
 FdoFeatureSchemasP FdoSchemaManager::GetFdoSchemas( FdoStringP schemaName)
 {
-    return GetFdoSchemasEx(schemaName, NULL);
+    try
+    {
+        // Load all constraints in one select, for performance.
+        GetPhysicalSchema()->SetBulkLoadConstraints(true);
+        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
+
+        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
+
+        return pLpSchemaColl->GetFdoSchemas( schemaName );
+    }
+    catch (FdoSchemaException *ex)
+    {
+        // Catch and rethrow FdoSchemaExceptions here so the following
+        // catch for FdoExceptions doesn't get them.
+        throw ex;
+    }
+    catch (FdoException *ex)
+    {
+        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
+    }
 }
 
 FdoSchemaMappingsP FdoSchemaManager::GetSchemaMappings( 
@@ -620,76 +639,3 @@ FdoSmLpSpatialContextMgrP FdoSchemaManager::CreateLpSpatialContextMgr( FdoSmPhMg
 {
 	return new FdoSmLpSpatialContextMgr(physMgr);
 }
-
-FdoStringCollection* FdoSchemaManager::GetClassNames(const wchar_t* schemaName)
-{
-    try
-    {
-        // Load all constraints in one select, for performance.
-        GetPhysicalSchema()->SetBulkLoadConstraints(true);
-        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
-
-        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-
-        return pLpSchemaColl->GetClassNames( schemaName );
-    }
-    catch (FdoSchemaException *ex)
-    {
-        // Catch and rethrow FdoSchemaExceptions here so the following
-        // catch for FdoExceptions doesn't get them.
-        throw ex;
-    }
-    catch (FdoException *ex)
-    {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
-    }
-}
-
-FdoFeatureSchemasP FdoSchemaManager::GetFdoSchemasEx( FdoStringP schemaName, FdoStringCollection* classNames)
-{
-    try
-    {
-        // Load all constraints in one select, for performance.
-        GetPhysicalSchema()->SetBulkLoadConstraints(true);
-        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
-
-        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-
-        return pLpSchemaColl->GetFdoSchemasEx( schemaName, classNames );
-    }
-    catch (FdoSchemaException *ex)
-    {
-        // Catch and rethrow FdoSchemaExceptions here so the following
-        // catch for FdoExceptions doesn't get them.
-        throw ex;
-    }
-    catch (FdoException *ex)
-    {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
-    }
-}
-
-FdoStringCollection* FdoSchemaManager::GetSchemaNames()
-{
-    try
-    {
-        // Load all constraints in one select, for performance.
-        GetPhysicalSchema()->SetBulkLoadConstraints(true);
-        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
-
-        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-
-        return pLpSchemaColl->GetSchemaNames();
-    }
-    catch (FdoSchemaException *ex)
-    {
-        // Catch and rethrow FdoSchemaExceptions here so the following
-        // catch for FdoExceptions doesn't get them.
-        throw ex;
-    }
-    catch (FdoException *ex)
-    {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
-    }
-}
-

@@ -74,7 +74,7 @@ namespace unit_test.ProviderTests
                 Console.WriteLine(WholeSpan.Seconds.ToString() + " seconds\n" );
 #endif
             }
-            catch (OSGeo.FDO.Common.Exception ex)
+            catch (OSGeo.Common.Exception ex)
             {
                 Debug.Fail(ex.Message);
             }

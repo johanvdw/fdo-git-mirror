@@ -91,13 +91,7 @@ inline FdoByteArray* ByteArrayToFdoByteArray(System::Byte mgBuffer __gc[])
 	{
 		umBuffer[i] = mgBuffer[i];
 	}
-
-    FdoByteArray* ba = FdoByteArray::Create(umBuffer, mgBuffer->Length);
-    
-    if (umBuffer) 
-        delete umBuffer;
-	
-    return ba;
+	return FdoByteArray::Create(umBuffer, mgBuffer->Length);
 }
 
 inline System::String* FdoStringArrayToStringArray(const FdoString** umArray, FdoInt32 len) []

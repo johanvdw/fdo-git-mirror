@@ -110,7 +110,7 @@ FdoPhysicalSchemaMappingP FdoSmLpSchema::GetSchemaMappings( bool bIncludeDefault
     return (FdoPhysicalSchemaMapping*) NULL;
 }
 
-const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bool searchAllSchemas ) const
+const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className ) const
 {
 	FdoStringP					        schemaName;
 	FdoStringP					        localClassName;
@@ -156,7 +156,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bo
 		pFoundClass = mClasses->RefItem( localClassName );
 
 	// If not in this schema, search all schemas.
-	if ( !pFoundClass && searchAllSchemas) 
+	if ( !pFoundClass ) 
 		pFoundClass = mpSchemas->FindClass( schemaName, localClassName );
 	
 	return( pFoundClass );
@@ -606,5 +606,4 @@ void FdoSmLpSchema::XMLSerialize( FILE* xmlFp, int ref ) const
 
 	fprintf( xmlFp, "</schema >\n" );
 }
-
 

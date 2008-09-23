@@ -46,8 +46,6 @@ class SltDescribeSchema : public SltCommand<FdoIDescribeSchema>
     public:
         virtual FdoString* GetSchemaName()                      { return L"SQLiteSchema"; }
         virtual void SetSchemaName(FdoString* value)            { ; }
-        virtual FdoStringCollection* GetClassNames()            { return NULL; }
-        virtual void SetClassNames(FdoStringCollection* value)  { ; }
         virtual FdoFeatureSchemaCollection* Execute()   
         { 
             return m_connection->DescribeSchema(); 
@@ -608,11 +606,12 @@ class SltApplySchema : public SltCommand<FdoIApplySchema>
 
 public:
     SltApplySchema(SltConnection* connection)
-        : SltCommand<FdoIApplySchema>(connection),
-          m_schema(NULL)
+        : SltCommand<FdoIApplySchema>(connection)
                                                                             { }
 
-    virtual ~SltApplySchema()                                               { FDO_SAFE_RELEASE(m_schema); }
+    virtual ~SltApplySchema()
+                                                                            { }
+
    
     //-------------------------------------------------------------------------
     // FdoIApplySchema
@@ -620,18 +619,11 @@ public:
 
     virtual FdoFeatureSchema*           GetFeatureSchema()                  { return FDO_SAFE_ADDREF(m_schema); }
     virtual void                        SetFeatureSchema(FdoFeatureSchema* value) 
-    {
-        FDO_SAFE_RELEASE(m_schema);
-        m_schema = FDO_SAFE_ADDREF(value); 
-    }
-
+                                                                            { m_schema = FDO_SAFE_ADDREF(value); }
     virtual FdoPhysicalSchemaMapping*   GetPhysicalMapping()                { return NULL; }
-    
     virtual void                        SetPhysicalMapping(FdoPhysicalSchemaMapping* value) 
                                                                             { }
-    
     virtual FdoBoolean                  GetIgnoreStates()                   { return true; } 
-    
     virtual void                        SetIgnoreStates( FdoBoolean ignoreStates ) 
                                                                             { }
     

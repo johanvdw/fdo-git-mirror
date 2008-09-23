@@ -29,9 +29,6 @@ class DescribeSchemaTest : public CppUnit::TestCase
 {
   CPPUNIT_TEST_SUITE( DescribeSchemaTest );
   CPPUNIT_TEST( describe );
-  CPPUNIT_TEST( getSchemaNames );
-  CPPUNIT_TEST( getClassNames );
-  CPPUNIT_TEST( describeWithClassNames );
 
   // Quick test any database specified in "datastore" env.
   //CPPUNIT_TEST( describe2 );
@@ -50,9 +47,6 @@ protected:
     virtual void dropDb();
     virtual void describe ();
     void describe2 ();
-    virtual void getSchemaNames();
-    virtual void getClassNames();
-    virtual void describeWithClassNames();
     virtual FdoInt32 GetLockTypeCount();
     virtual void LoadTestData(FdoIConnection* connection/*, FdoSchemaManagerP sm*/);
     virtual FdoString** GetSchema();
