@@ -19,16 +19,13 @@
 #ifndef CPP_UNIT_FDOINSERTTEST_H
 #define CPP_UNIT_FDOINSERTTEST_H
 
-#include <TestCommonInsert.h>
-
-
 /*
  * A test case for the insert.
  */
 
-class FdoInsertTest : public TestCommonInsert
+class FdoInsertTest : public CppUnit::TestCase
 {
-  CPPUNIT_TEST_SUB_SUITE (FdoInsertTest, TestCommonInsert);
+  CPPUNIT_TEST_SUITE( FdoInsertTest );
   CPPUNIT_TEST( insert );
   CPPUNIT_TEST( insertEmptyProps );
   CPPUNIT_TEST( insert2 );
@@ -71,9 +68,6 @@ public:
 
 protected:
     virtual void  set_provider() {};   
-
-    virtual void CreateConnection( Context& context, FdoBoolean recreateDb = false );
-
     void insertDate (FdoIConnection *connection, FdoDateTime dateTime, FdoString *colorIndex);
     void insertDateVerification (FdoIConnection *connection, int numOfSuccess);
     void insertDateCleanUp (FdoIConnection *connection);
@@ -115,8 +109,6 @@ protected:
 
     virtual FdoFloat GetSmallestSingleValue();
     virtual FdoDouble GetSmallestDoubleValue();
-
-    virtual bool DefaultsTime();
 
     wchar_t  mSuffix[12];
     bool m_DisableFailures;

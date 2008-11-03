@@ -57,9 +57,6 @@ FdoRdbmsPvcInsertHandler::~FdoRdbmsPvcInsertHandler()
         {
             for (int j=0; j<mInsertQueryCache[i].count; j++)
             {
-                if ( mInsertQueryCache[i].bind[j].null_ind ) 
-                    free(mInsertQueryCache[i].bind[j].null_ind);
-
                 if (NULL != mInsertQueryCache[i].bind[j].value.strvalue)
                     // the BLOB value was not allocated
                     if (mInsertQueryCache[i].bind[j].type != FdoDataType_BLOB)
@@ -75,7 +72,6 @@ FdoRdbmsPvcInsertHandler::~FdoRdbmsPvcInsertHandler()
 							mInsertQueryCache[i].bind[j].valueNeedsFree = false;
 						}
             }
-
             delete [] mInsertQueryCache[i].bind;
 			mInsertQueryCache[i].bind = NULL;
         }
@@ -154,7 +150,7 @@ long FdoRdbmsPvcInsertHandler::Execute( const FdoSmLpClassDefinition *classDefin
         FdoStringP colSpecString(L"");
 		FdoStringP insertStartString(L"");
 		FdoStringP whereString(L"");
-        int        bindCount = 0;
+		int bindCount = 0;
         // Reparse each time in the LOBs are involved
         // (the insert stm. may be different depending on the current values)
         if(insertQuery->qid != -1 && !FdoRdbmsLobUtility::ContainsLobs( classDefinition ) )
@@ -221,10 +217,6 @@ long FdoRdbmsPvcInsertHandler::Execute( const FdoSmLpClassDefinition *classDefin
             if (!bind)
                 throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_11, "Memory error"));
             memset (bind, 0, sizeof(FdoRdbmsPvcBindDef) * bindCount);
-
-            for ( int i = 0; i < bindCount; i++ ) 
-                mConnection->GetGdbiCommands()->alcnullind(1, &(bind[i].null_ind));
-
             int bind_no = 0;
             SetBindVariables(classDefinition, L"", bind_no, propValCollection, bind, gid);
 			
@@ -246,7 +238,7 @@ long FdoRdbmsPvcInsertHandler::Execute( const FdoSmLpClassDefinition *classDefin
 			else if (bind[i].type != FdoDataType_BLOB && bind[i].type != FdoDataType_String && bind[i].value.strvalue )
                 memset(bind[i].value.strvalue, 0, bind[i].len );
 
-            mConnection->GetGdbiCommands()->set_null( bind[i].null_ind, 0, 0 );
+            mConnection->GetGdbiCommands()->set_null( &bind[i].null_ind, 0, 0 );
         }
 
         SetBindValues(classDefinition, propValCollection, insertQuery, handleForeignAutoincrementedId);
@@ -263,11 +255,6 @@ long FdoRdbmsPvcInsertHandler::Execute( const FdoSmLpClassDefinition *classDefin
         {
             mConnection->GetGdbiCommands()->free_cursor( insertQuery->qid );
             insertQuery->qid = -1;
-            for ( int i = 0; i < insertQuery->count; i++ ) 
-            {
-                if ( insertQuery->bind[i].null_ind )
-                    free(insertQuery->bind[i].null_ind);
-            }
             delete [] insertQuery->bind;
             insertQuery->bind = NULL;
         }
@@ -341,7 +328,7 @@ void FdoRdbmsPvcInsertHandler::CreateInsertString(const FdoSmLpClassDefinition *
                     if( column == NULL || ( ! mInsertAutoIncrementProperties && column->GetAutoincrement() ) )
                         continue;
 					// Check for property that has a default value defined
-					if (column->GetDefaultValue() && !(column->GetDefaultValue()->IsNull()))
+					if (column->GetDefaultValue() != L"")
 					{
 						//check if the column value is in propValCollection
 						// Try to find this property in the input values
@@ -680,6 +667,18 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
 	DbiConnection *mConnection = mFdoConnection->GetDbiConnection();
     FdoRdbmsSpatialManagerP spatialManager = mFdoConnection->GetSpatialManager();
 
+	// Determine if the id property is autoincremented
+	bool featIdAutoincremented = false;
+    const FdoSmLpPropertyDefinition *featIdProp = classDefinition->RefFeatIdProperty();
+	if ( featIdProp ) 
+	{
+		const FdoSmLpSimplePropertyDefinition* simpleProp =
+			static_cast<const FdoSmLpSimplePropertyDefinition*>(featIdProp);
+
+		const FdoSmPhColumn *column = simpleProp->RefColumn();
+		featIdAutoincremented = (column && column->GetAutoincrement() );
+	}
+	
     for (i=0; i<propValCollection->GetCount(); i++)
     {
         bool   isAssociation = false;
@@ -689,30 +688,33 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
             throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_39, "Property value is NULL"));
         FdoPtr<FdoIdentifier>identifier = propertyValue->GetName();
 
-        //
-        // Only association properties will end up in the property value collection with composite names as <prop1>.<prop2>
-        int length;
-        if( identifier->GetScope( length ) && length == 1 )
-            isAssociation = true;
-
         const FdoSmPhColumn *columnDef = NULL;
-        const FdoSmLpPropertyDefinitionCollection * propertyDefs = classDefinition->RefProperties();
-        const FdoSmLpPropertyDefinition * propertyDef = propertyDefs->RefItem(identifier->GetName());
-        if ( propertyDef && !isAssociation ) 
+        if (handleForeignAutoincrementedId)
         {
+            const FdoSmLpPropertyDefinitionCollection * propertyDefs = classDefinition->RefProperties();
+            const FdoSmLpPropertyDefinition * propertyDef = propertyDefs->RefItem(identifier->GetName());
             FdoPropertyType propertyDefType = propertyDef->GetPropertyType();
             if (FdoPropertyType_DataProperty == propertyDefType)
             {
-	            const FdoSmLpSimplePropertyDefinition* simplePropDef =
-		            static_cast<const FdoSmLpSimplePropertyDefinition*>(propertyDef);
+		        const FdoSmLpSimplePropertyDefinition* simplePropDef =
+			        static_cast<const FdoSmLpSimplePropertyDefinition*>(propertyDef);
                 if ( simplePropDef != NULL )
                     columnDef = simplePropDef->RefColumn();
             }
         }
 
-        // Nothing to do if autogenerated property.
-        if( !mInsertAutoIncrementProperties && columnDef && columnDef->GetAutoincrement() )
+        // Nothing to do if FeatId column is autoincremented
+        if( ! mInsertAutoIncrementProperties && featIdAutoincremented && wcscmp( featIdProp->GetName(), identifier->GetText() ) == 0 )
             continue;
+        // Same for other autogenerated properties.
+        else if( handleForeignAutoincrementedId && ! mInsertAutoIncrementProperties && columnDef && columnDef->GetAutoincrement() )
+            continue;
+
+        //
+        // Only association properties will end up in the property value collection with composite names as <prop1>.<prop2>
+        int length;
+        if( identifier->GetScope( length ) && length == 1 )
+            isAssociation = true;
 
         const wchar_t* name  = identifier->GetText();
         for (j=i+1; j<propValCollection->GetCount(); j++)
@@ -768,7 +770,7 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
         {
             if (wcscmp(name, bind[j].propertyName) == 0)
             {
-                mConnection->GetGdbiCommands()->set_nnull( bind[j].null_ind, 0, 0 );
+                mConnection->GetGdbiCommands()->set_nnull( &bind[j].null_ind, 0, 0 );
 
                 if (bind[j].type == FdoRdbmsDataType_Geometry) {
 
@@ -777,6 +779,8 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
                     FdoIGeometry *newGeomValue = NULL;
                     if ( ba )
                     {
+                        mConnection->GetSchemaUtil()->SetActiveSpatialContext( classDefinition, name );
+
                         newGeomValue = mFdoConnection->TransformGeometry( 
                             FdoPtr<FdoIGeometry>(gf->CreateGeometryFromFgf(ba)), 
                             geomPropDef, 
@@ -797,7 +801,7 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
                         }
                     }
                     else
-                        mConnection->GetGdbiCommands()->set_null( bind[j].null_ind, 0, 0 );
+                        mConnection->GetGdbiCommands()->set_null( &bind[j].null_ind, 0, 0 );
 
                     FdoIGeometry *oldGeomValue = (FdoIGeometry*) bind[j].value.strvalue;
                     FDO_SAFE_RELEASE( oldGeomValue );
@@ -1005,7 +1009,7 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
                                     bind[j].len = byteArr->GetCount();
 
                                     mConnection->GetGdbiCommands()->bind(insertQuery->qid, temp, RDBI_BLOB, bind[j].len,
-                                                        (char*)bind[j].value.strvalue, bind[j].null_ind );
+                                                        (char*)bind[j].value.strvalue, &bind[j].null_ind );
                                 }
                             }
                             break;
@@ -1044,7 +1048,7 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
 				strncpy((char*)bind[index].value.strvalue, charVal, bind[index].len);
 				((char*)bind[index].value.strvalue)[bind[index].len-1] = '\0';
 			}
-            mConnection->GetGdbiCommands()->set_nnull( bind[index].null_ind, 0, 0 );
+            mConnection->GetGdbiCommands()->set_nnull( &bind[index].null_ind, 0, 0 );
 
             if (geomSiKeys->GetCount() > 1)
             {
@@ -1061,7 +1065,7 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
 				    strncpy((char*)bind[index].value.strvalue, charVal, bind[index].len);
 				    ((char*)bind[index].value.strvalue)[bind[index].len-1] = '\0';
 			    }
-                mConnection->GetGdbiCommands()->set_nnull( bind[index].null_ind, 0, 0 );
+                mConnection->GetGdbiCommands()->set_nnull( &bind[index].null_ind, 0, 0 );
             }
         }
     }
@@ -1144,7 +1148,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                     continue;
 
 				//Check if property has a default value
-				if (column->GetDefaultValue() && !(column->GetDefaultValue()->IsNull()))
+				if (column->GetDefaultValue() != L"")
 				{
 					// Try to find this property in the input values
 					bool found = false;
@@ -1213,7 +1217,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 						bind[bind_no].valueNeedsFree = true;
 					}
                     mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                        (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                        (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                 }
                 bind_no++;
 
@@ -1253,7 +1257,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                         bind[bind_no].len = sizeof(FdoIGeometry *);
                         sprintf(temp, "%d", bind_no+1); // Parm name are one based
                         mConnection->GetGdbiCommands()->bind(gid, temp, RDBI_GEOMETRY, bind[bind_no].len,
-                                            (char *)&bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                            (char *)&bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                         bind_no++;
 						const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomProp)->GetColumn();
 						FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
@@ -1282,7 +1286,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
 					        bind[bind_no].valueNeedsFree = true;
                             mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                                (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                                (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                             bind_no++;
 
                             // Handle Y ordinate column.
@@ -1297,7 +1301,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
 					        bind[bind_no].valueNeedsFree = true;
                             mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                                (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                                (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                             bind_no++;
 
                             // Handle Z ordinate column.
@@ -1314,7 +1318,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
     					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
 					            bind[bind_no].valueNeedsFree = true;
                                 mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                                    (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                                    (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                                 bind_no++;
                             }
                         }
@@ -1349,7 +1353,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 					}
 					bind[bind_no].valueNeedsFree = true;
                     mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                        (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                        (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                     bind_no++;
 
                     colName = columnSi2->GetName();
@@ -1371,7 +1375,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 					}
 					bind[bind_no].valueNeedsFree = true;
                     mConnection->GetGdbiCommands()->bind(gid, temp, rdbi_type, bind[bind_no].len,
-                                        (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                        (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
                     bind_no++;
                 }
                 break;
@@ -1418,7 +1422,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                         bind[bind_no].value.strvalue = new char[bind[bind_no].len];
                         bind[bind_no].valueNeedsFree = true;
                         mConnection->GetGdbiCommands()->bind(gid, temp, RDBI_STRING, bind[bind_no].len,
-                                          (char*)bind[bind_no].value.strvalue, bind[bind_no].null_ind);
+                                          (char*)bind[bind_no].value.strvalue, &bind[bind_no].null_ind);
 
                         bind_no++;
                     }

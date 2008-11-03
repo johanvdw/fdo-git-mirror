@@ -153,7 +153,6 @@ class FdoSmPhSpatialContextWriter;
 class FdoSmPhSpatialContextGroupWriter;
 class FdoSmPhSpatialContextGeomWriter;
 class FdoSmPhReader;
-class FdoSmPhNullIndicator;
 
 /* TODO
 class FdoSmPhIndexWriter;
@@ -306,10 +305,11 @@ public:
     );
     virtual FdoPtr<FdoSmPhRdPropertyReader> CreateRdPropertyReader( FdoSmPhDbObjectP dbObject );
 
-    /// Creates a Null indicator object, which hides the provider specific
-    /// details about null indicators
-
-    virtual FdoPtr<FdoSmPhNullIndicator> CreateNullIndicator() = 0;
+    /// The following functions retrieve a database from the current connection.
+    //
+    /// Parameters:
+    ///  database: the name of the database to retrieve. If L"" then the default 
+    ///      database is retrieved.
 
     /// Get read-only pointer to database, NULL if database not found
     const FdoSmPhDatabase* RefDatabase(FdoStringP database = L"") const;
@@ -482,23 +482,10 @@ public:
     /// Given a field value, returns the formatted equivalent that can be 
     /// embedded in a SQL statement.
 	//
-    /// If value is null then "null" is returned.
-    /// Otherwise if valueType is string then "'[value]'" is returned.
-    /// Otherwise if valueType is datetime then "'YYYY-MM-DD-HH-MI-SS.SSSSS'" is returned.
-    /// Otherwise "[value]" is returned
-	virtual FdoStringP FormatSQLVal( FdoDataValue* value );
-
-    /// Given a field value, returns the formatted equivalent that can be 
-    /// embedded in a SQL statement.
-	//
     /// If value is zero length then "null" is returned.
     /// Otherwise if valueType is string or date then "'[value]'" is returned.
     /// Otherwise "[value]" is returned
 	virtual FdoStringP FormatSQLVal( FdoStringP value, FdoSmPhColType valueType ) = 0;
-
-    // Converts value, retrieved from RDBMS, from string to Data Value.
-    // Is able to handle data constraint and default values.
-    virtual FdoPtr<FdoDataValue> ParseSQLVal( FdoStringP stringValue );
 
     /// Given a column name, returns the name formatted for inclusion in 
     /// a SQL order by clause.
@@ -530,15 +517,7 @@ public:
     // The default is Lax.
     virtual CoordinateSystemMatchLevel GetCoordinateSystemMatchLevel();
 
-    // Returns whether or not the provider supports numeric coordinate system
-    // names.
-    virtual bool SupportsNumericCoordinateSystemName();
-
     virtual bool SupportsAnsiQuotes();
-
-    // Default implementation returns false (one autoincrement column per table).
-    // Providers that support multiple autoincrement columns per table must override.
-    virtual bool SupportsMultipleAutoIncrementColumns() const;
 
     virtual bool IsRdbUnicode() = 0;
 
@@ -701,8 +680,6 @@ public:
 	virtual void SetStaticReader( FdoStringP readerName, FdoPtr<FdoSmPhReader> reader ) = 0;
 	virtual FdoPtr<FdoSmPhReader> GetStaticReader( FdoStringP readerName ) = 0;
 
-    virtual FdoStringP ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className);
-
 protected:
     void SetDefaultOwnerName( FdoStringP name)
     {
@@ -776,6 +753,5 @@ private:
 
 
 #endif
-
 
 

@@ -421,16 +421,9 @@ void RecommitTest::multibranch (void)
 
 void RecommitTest::activateSpatialContext (const FdoString* spatialContextName)
 {
-    try
-    {
-        FdoPtr<FdoIActivateSpatialContext> command = (FdoIActivateSpatialContext*)mConnection->CreateCommand (FdoCommandType_ActivateSpatialContext);
-        command->SetName (spatialContextName);
-        command->Execute ();
-    }
-    catch(FdoException *ex)
-    {
-        ex->Release();
-    }
+    FdoPtr<FdoIActivateSpatialContext> command = (FdoIActivateSpatialContext*)mConnection->CreateCommand (FdoCommandType_ActivateSpatialContext);
+    command->SetName (spatialContextName);
+    command->Execute ();
 }
 
 void RecommitTest::activateLongTransaction (const FdoString *LTName)

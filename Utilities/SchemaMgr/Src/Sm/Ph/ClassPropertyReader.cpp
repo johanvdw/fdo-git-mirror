@@ -186,7 +186,7 @@ FdoStringP FdoSmPhClassPropertyReader::GetRootObjectName()
 	return(mPropReader->GetRootObjectName());
 }
 
-FdoPtr<FdoDataValue> FdoSmPhClassPropertyReader::GetDefaultValue()
+FdoStringP FdoSmPhClassPropertyReader::GetDefaultValue()
 {
 	// Make sure there is a current row.
 	CheckGet();

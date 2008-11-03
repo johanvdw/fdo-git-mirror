@@ -32,7 +32,6 @@ FdoSmLpSchema::FdoSmLpSchema(FdoSmPhSchemaReaderP rdr,  FdoSmPhMgrP physicalSche
 	mPhysicalSchema(physicalSchema),
 	mpSchemas(schemas),
 	mbSchemaLoaded(false),
-    mbSADLoaded(false),
 	mTableMapping(FdoSmOvTableMappingType_Default)
 {
 	// this is the schema 
@@ -54,7 +53,6 @@ FdoSmLpSchema::FdoSmLpSchema(
 	mPhysicalSchema(physicalSchema),
 	mpSchemas(schemas),
 	mbSchemaLoaded(false),
-    mbSADLoaded(false),
     mTableMapping(FdoSmOvTableMappingType_Default)
 {
 	// this is the schema 
@@ -82,13 +80,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::RefClass(FdoStringP className) cons
 
 const FdoSmLpSAD* FdoSmLpSchema::RefSAD() const
 {
-    if ( !mbSADLoaded )
-    {
-        FdoSmPhSADReaderP pSADReader = new FdoSmPhSADReader( FdoSmPhMgr::SchemaType, mPhysicalSchema, GetName() );
-	    ((FdoSmLpSchema*)this)->LoadSAD(pSADReader);
-
-        mbSADLoaded = true;
-    }
+	((FdoSmLpSchema*) this)->LoadSchema();
 
 	return FdoSmLpSchemaElement::RefSAD();
 }
@@ -118,7 +110,7 @@ FdoPhysicalSchemaMappingP FdoSmLpSchema::GetSchemaMappings( bool bIncludeDefault
     return (FdoPhysicalSchemaMapping*) NULL;
 }
 
-const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bool searchAllSchemas ) const
+const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className ) const
 {
 	FdoStringP					        schemaName;
 	FdoStringP					        localClassName;
@@ -132,7 +124,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bo
 	}
 	else {
 		// Qualified so split into schema name and class name
-        if ( ((const wchar_t*)leftString)[0] != '\0' )
+		if ( leftString.GetLength() > 0 ) 
 			schemaName = leftString;
 
 		localClassName = className.Right( L":" );
@@ -164,7 +156,7 @@ const FdoSmLpClassDefinition* FdoSmLpSchema::FindClass( FdoStringP className, bo
 		pFoundClass = mClasses->RefItem( localClassName );
 
 	// If not in this schema, search all schemas.
-	if ( !pFoundClass && searchAllSchemas) 
+	if ( !pFoundClass ) 
 		pFoundClass = mpSchemas->FindClass( schemaName, localClassName );
 	
 	return( pFoundClass );
@@ -474,16 +466,11 @@ void FdoSmLpSchema::LoadSchema()
 	if ( !mbSchemaLoaded ) {
 		LoadClasses();
 
-		mbSchemaLoaded = true;
-	}
-    if ( !mbSADLoaded ) {
-        FdoSmPhSADReaderP pSADReader = new FdoSmPhSADReader( FdoSmPhMgr::SchemaType, mPhysicalSchema, GetName() );
+		FdoSmPhSADReaderP pSADReader = new FdoSmPhSADReader( FdoSmPhMgr::SchemaType, mPhysicalSchema, GetName() );
 		LoadSAD(pSADReader);
 
-        mbSADLoaded = true;
-    }
-
-
+		mbSchemaLoaded = true;
+	}
 }
 
 FdoSmLpClassDefinitionP FdoSmLpSchema::LoadClass(FdoStringP className, FdoString* schemaName )
@@ -522,7 +509,6 @@ void FdoSmLpSchema::DeleteSchema()
 	DeleteSAD();
 
 	mbSchemaLoaded = false;
-    mbSADLoaded = false;
 }
 
 void FdoSmLpSchema::AddSchemaExistsError()
@@ -568,7 +554,7 @@ void FdoSmLpSchema::AddCreateNoMetaError( FdoSmPhOwnerP owner )
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_33),
+				SM_NLSID(0x000008BEL, "Cannot add feature schema '%1$ls' to datastore '%2$ls'; datastore has no FDO metadata tables (f_schemainfo)"),
 				GetName(),
                 owner ? owner->GetName() : L""
 			)
@@ -581,7 +567,7 @@ void FdoSmLpSchema::AddDeleteNoMetaError( FdoSmPhOwnerP owner )
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_34),
+				SM_NLSID(0x000008BFL, "Cannot delete default feature schema '%1$ls' from datastore '%2$ls'"),
 				(FdoString*) GetName(),
                 owner ? owner->GetName() : L""
 			)
@@ -593,12 +579,12 @@ void FdoSmLpSchema::AddSchemaNameLengthError( FdoString* schemaName, FdoSize max
 {
 	GetErrors()->Add( FdoSmErrorType_Other, 
         FdoSchemaException::Create(
-            FdoSmError::NLSGetMessage(
-				FDO_NLSID(FDOSM_318),
+            FdoStringP::Format(
+                L"Cannot add schema with name that exceeds %d characters: '%ls'",
                 maxLen,
                 schemaName
-			)
-		)
+		    )
+        )
 	);
 }
 
@@ -620,7 +606,4 @@ void FdoSmLpSchema::XMLSerialize( FILE* xmlFp, int ref ) const
 
 	fprintf( xmlFp, "</schema >\n" );
 }
-
-
-
 

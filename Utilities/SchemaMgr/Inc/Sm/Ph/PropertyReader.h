@@ -105,7 +105,7 @@ public:
 	int GetScale();
 
     /// Default Value
-	FdoPtr<FdoDataValue> GetDefaultValue();
+	FdoStringP GetDefaultValue();
 
     /// Table name
 	FdoStringP GetTableName();

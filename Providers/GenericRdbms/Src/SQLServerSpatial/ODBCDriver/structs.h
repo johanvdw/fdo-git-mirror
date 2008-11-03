@@ -56,7 +56,7 @@ typedef SQLHSTMT odbcdr_cursor_handle_def;		/* 1 per SQL statement		*/
  */
 
 typedef PBYTE       odbcdr_geom_def;        /* SqlServer geometry (image)   */
-typedef SQLLEN      odbcdr_geomNI_def;      /* Null indicator from SqlServer */
+typedef SQLINTEGER  odbcdr_geomNI_def;      /* Null indicator from SqlServer */
 
 typedef ut_da_def   odbcdr_geom_list_def;   /* List of odbcdr_geom_def *'s   */
 typedef ut_da_def   odbcdr_geomNI_list_def; /* List of odbcdr_geomNI_def *'s*/
@@ -107,10 +107,10 @@ typedef struct cursor_def {					/* Statement linked list		*/
     odbcdr_geom_col_list_def *bound_geometries;   /* odbcdr -->SqlServer buffer  */
     odbcdr_geom_col_list_def *defined_geometries; /* SqlServer-->odbcdr buffer  */
  
-    SQLLEN		        lenDataParam;
+    SDWORD		        lenDataParam;
 
     PBYTE               odbcdr_geom;    /* define a working area for fething bound geoms */
-    SQLLEN              *odbcdr_geomNI;
+    SQLINTEGER          *odbcdr_geomNI;
 
     PBYTE               odbcdr_blob_tmp;    /* define a working area for fething geoms as Blobs*/
     int                 odbcdr_blob_tmp_size;

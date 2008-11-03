@@ -472,9 +472,9 @@ void ShpFileSet::PopulateRTree ()
     {
         GetShapeIndexFile ()->GetObjectAt (i, offset, length);
 
-		// Ignore corrupted entries.
-		if (length < 0)
-			continue;
+        // Ignore corrupted entries.
+        if (length < 0)
+            continue;
 
         shape = GetShapeFile ()->GetObjectAt (offset, type);
         if (eNullShape != type)
@@ -498,10 +498,10 @@ void ShpFileSet::GetObjectAt (RowData** row, eShapeTypes& type, Shape** shape, i
         // seek to the shape offset
         GetShapeIndexFile ()->GetObjectAt (nRecordNumber, offset, length);
 		
-		if (length < 0 )
-			*shape = NullShape::NewNullShape (nRecordNumber);
-		else
-			*shape = GetShapeFile ()->GetObjectAt (offset, type);
+        if (length < 0 )
+            *shape = NullShape::NewNullShape (nRecordNumber);
+        else
+            *shape = GetShapeFile ()->GetObjectAt (offset, type);
     }
 }
 
@@ -865,7 +865,6 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
     FdoGeometryValue* geometry;
     FdoStringValue* string;
     FdoDecimalValue* decimal;
-    FdoDoubleValue* dbl;
     FdoInt32Value* int32;
     FdoDateTimeValue* datetime;
     FdoDateTime _datetime;
@@ -928,22 +927,19 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
                                     break;
 
                                 case kColumnDecimalType:
-                                    // NOTE: this could either be a decimal, double or int32 value
+                                    // NOTE: this could either be a decimal or int32 value
                                     decimal = dynamic_cast<FdoDecimalValue*>(expression.p);
-                                    dbl = dynamic_cast<FdoDoubleValue*>(expression.p);
                                     int32 = dynamic_cast<FdoInt32Value*>(expression.p);
 
-                                    if ((decimal == NULL) && (int32 == NULL) && (dbl == NULL) && (expression != NULL))
+                                    if ((decimal == NULL) && (int32 == NULL) && (expression != NULL))
                                         throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnDecimalType))));
 
-                                    if ( ((int32 == NULL) || (int32->IsNull())) && ((decimal == NULL) || (decimal->IsNull())) && ((dbl == NULL) || (dbl->IsNull())) )
+                                    if ( ((int32 == NULL) || (int32->IsNull())) && ((decimal == NULL) || (decimal->IsNull())) )
                                         row->SetData (j, true, 0.0);
                                     else if (int32 != NULL)
                                         row->SetData (j, false, (double)int32->GetInt32 ());
                                     else if (decimal != NULL)
                                         row->SetData (j, false, decimal->GetDecimal ());
-                                    else if (dbl != NULL)
-                                        row->SetData (j, false, dbl->GetDouble ());
                                     break;
 
                                 case kColumnDateType:

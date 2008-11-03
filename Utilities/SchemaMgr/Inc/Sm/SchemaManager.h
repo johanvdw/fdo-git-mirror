@@ -142,15 +142,6 @@ public:
     /// a retrieve from database, the next time these schemas are accessed.
 	void Clear( bool bClearAll = false );
 
-    /// Retrieve the collection of available feature class names
-    FdoStringCollection* GetClassNames(const wchar_t* schemaName);
-
-    /// Retrieve the collection of schemas containing only the specified feature classes
-    FdoFeatureSchemasP GetFdoSchemasEx(FdoStringP schemaName, FdoStringCollection* classNames);
-
-    /// Retrieve the collection of available schema names
-    FdoStringCollection* GetSchemaNames();
-
 protected:
 	FdoSchemaManager();
 	virtual ~FdoSchemaManager(void);
@@ -202,6 +193,5 @@ protected:
 typedef FdoPtr<FdoSchemaManager> FdoSchemaManagerP;
 
 #endif
-
 
 

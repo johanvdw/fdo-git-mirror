@@ -23,8 +23,6 @@ libFdoRdbms_Schema_la_SOURCES = \
   FdoRdbmsApplySchemaCommand.cpp \
   FdoRdbmsDestroySchemaCommand.cpp \
   FdoRdbmsDescribeSchemaCommand.cpp \
-  FdoRdbmsGetClassNamesCommand.cpp \
-  FdoRdbmsGetSchemaNamesCommand.cpp \
   FdoRdbmsSchemaUtil.cpp \
   FdoRdbmsDescribeSchemaMappingCommand.cpp
 
@@ -33,8 +31,6 @@ noinst_HEADERS = $(libFdoRdbms_Schema_la_SOURCES) \
   FdoRdbmsDescribeSchemaCommand.h \
   FdoRdbmsDescribeSchemaMappingCommand.h \
   FdoRdbmsDestroySchemaCommand.h \
-  FdoRdbmsGetClassNamesCommand.h \
-  FdoRdbmsGetSchemaNamesCommand.h \
   FdoRdbmsSchemaUtil.h
 
 INCLUDES = \
@@ -72,5 +68,4 @@ INCLUDES = \
 libFdoRdbms_Schema_la_LDFLAGS =
 
 CXXFLAGS = @CXXFLAGS@ -DFULLPROTO -D__USE_GNU -DLINUX
-
 

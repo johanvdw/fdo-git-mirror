@@ -44,7 +44,7 @@ FdoSmPhOwner::FdoSmPhOwner(
 	FdoSchemaElementState elementState
 ) : 
     FdoSmPhDbElement(name, (FdoSmPhMgr*) NULL, pDatabase, elementState ),
-    mDbObjectsCached(false), mDbComponentsCached(false)
+    mDbObjectsCached(false)
 {
     SetHasMetaSchema( hasMetaSchema );
     mLtMode = NoLtLock;
@@ -82,18 +82,11 @@ FdoSmPhOwner::FdoSmPhOwner(
     AddCandDbObject( GetManager()->GetDcDbObjectName(L"f_spatialcontextgroup") );
 
     mCandIndexes = FdoDictionary::Create();   
-    mNextIndexTableCandIdx = 0;
-    mNextIndexRootTableCandIdx = 0;
-
-    mNextBaseCandIdx = 0;
+    mCandIndexesLoadedTables = false;
+    mCandIndexesLoadedRootTables = false;
 
     mSpatialContextsLoaded = false;
-
     mCoordinateSystemsLoaded = false;
-
-    mNextBaseCandIdx = 0;
-
-    mBulkLoadPkeys = false;
 }
 
 FdoSmPhOwner::~FdoSmPhOwner(void)
@@ -251,29 +244,6 @@ FdoSmPhDbObjectP FdoSmPhOwner::GetDbObject(FdoStringP dbObject)
         );
 
     return(pDbObject);
-}
-
-FdoSmPhDbObjectP FdoSmPhOwner::FindReferencedDbObject(FdoStringP dbObject, FdoStringP owner, FdoStringP database )
-{   
-    FdoSmPhDbObjectP pDbObject;
-
-    // Look for referenced object in the cache for its owner.
-    FdoSmPhOwnerP refOwner = GetManager()->FindOwner( owner, database );
-
-    if ( refOwner ) {
-        pDbObject = refOwner->GetDbObjects()->FindItem( dbObject );
-
-        if ( !pDbObject ) {
-            // Not in cache. Set up base objects for bulk loading
-            LoadBaseObjectCands();
-
-            // Find the object. This causes the bulk loading of it and some other
-            // objects into the schema cache.
-            pDbObject = refOwner->FindDbObject( dbObject );
-        }
-    }
-
-    return pDbObject;
 }
 
 FdoSmPhDbObjectP FdoSmPhOwner::GetCachedDbObject(FdoInt32 idx)
@@ -590,96 +560,83 @@ FdoSmPhDbObjectsP FdoSmPhOwner::CacheDbObjects( bool cacheComponents )
     // skip if all objects already cached.
     if ( !mDbObjectsCached ) {
         mDbObjectsCached = true;
-        mDbComponentsCached = cacheComponents;
 
-        ReadAndCacheDbObjects(cacheComponents);
+        // No need for fetch candidates since this function caches all object for this owner.
+        mCandDbObjects->Clear();
 
-    }
-    else if (cacheComponents && !mDbComponentsCached) {
-        mDbComponentsCached = true;
+        FdoSmPhRdDbObjectReaderP objReader;
+        FdoSmPhRdViewReaderP viewReader;
+        FdoSmPhRdColumnReaderP columnReader;
+        FdoSmPhRdBaseObjectReaderP baseObjectReader;
+        FdoSmPhRdConstraintReaderP ukeyReader;
+        FdoSmPhRdConstraintReaderP ckeyReader;
+        FdoSmPhRdFkeyReaderP fkeyReader;
+        FdoSmPhRdPkeyReaderP pkeyReader;
 
-        ReadAndCacheDbObjects(cacheComponents);
-    }
+       // Create reader for owner's db objects
+        objReader = CreateDbObjectReader();
 
+        if ( cacheComponents ) {
+            // Caching db object components so create readers for components.
+            // This function does interleaved fetches from each reader so all readers
+            // (including dbObject reader) must return rows ordered by dbObject name.
+            //
+            // Doing a single query per owner for each component is more efficient than
+            // a query per dbObject.
+            viewReader = CreateViewReader();
+            columnReader = CreateColumnReader();
+            baseObjectReader = CreateBaseObjectReader();
+            ukeyReader = CreateConstraintReader( L"", L"U" );
+            ckeyReader = CreateConstraintReader( L"", L"C" );
+            fkeyReader = CreateFkeyReader();
+            pkeyReader = CreatePkeyReader();
+        }
 
-    return GetDbObjects();
-}
+        while ( objReader->ReadNext() ) {
+            // Cache the current dbObject
+            FdoSmPhDbObjectP dbObject = CacheDbObject( objReader );
 
-void FdoSmPhOwner::ReadAndCacheDbObjects(bool cacheComponents)
-{
-    // No need for fetch candidates since this function caches all object for this owner.
-    mCandDbObjects->Clear();
+            if ( dbObject && cacheComponents ) {
 
-    FdoSmPhRdDbObjectReaderP objReader;
-    FdoSmPhRdViewReaderP viewReader;
-    FdoSmPhRdColumnReaderP columnReader;
-    FdoSmPhRdBaseObjectReaderP baseObjectReader;
-    FdoSmPhRdConstraintReaderP ukeyReader;
-    FdoSmPhRdConstraintReaderP ckeyReader;
-    FdoSmPhRdFkeyReaderP fkeyReader;
-    FdoSmPhRdPkeyReaderP pkeyReader;
+                if ( columnReader ) 
+                    dbObject->CacheColumns( columnReader );
 
-   // Create reader for owner's db objects
-    objReader = CreateDbObjectReader();
+                if ( baseObjectReader ) 
+                    dbObject->CacheBaseObjects( baseObjectReader );
 
-    if ( cacheComponents ) {
-        // Caching db object components so create readers for components.
-        // This function does interleaved fetches from each reader so all readers
-        // (including dbObject reader) must return rows ordered by dbObject name.
-        //
-        // Doing a single query per owner for each component is more efficient than
-        // a query per dbObject.
-        viewReader = CreateViewReader();
-        columnReader = CreateColumnReader();
-        baseObjectReader = CreateBaseObjectReader();
-        ukeyReader = CreateConstraintReader( L"", L"U" );
-        ckeyReader = CreateConstraintReader( L"", L"C" );
-        fkeyReader = CreateFkeyReader();
-        pkeyReader = CreatePkeyReader();
-    }
+                if ( fkeyReader ) 
+                    dbObject->CacheFkeys( fkeyReader );
 
-    while ( objReader->ReadNext() ) {
-        // Cache the current dbObject
-        FdoSmPhDbObjectP dbObject = CacheDbObject( objReader );
+                if ( pkeyReader ) 
+                    dbObject->CachePkeys( pkeyReader );
 
-        if ( dbObject && cacheComponents ) {
+                // Load the components into the db object.
+                FdoSmPhTableP table = dbObject->SmartCast<FdoSmPhTable>();
 
-            if ( columnReader ) 
-                dbObject->CacheColumns( columnReader );
+                if ( table ) {
+                    if ( ukeyReader ) 
+                        table->CacheUkeys( ukeyReader );
 
-            if ( baseObjectReader ) 
-                dbObject->CacheBaseObjects( baseObjectReader );
+                    if ( ckeyReader ) 
+                        table->CacheCkeys( ckeyReader );
+                }
 
-            if ( fkeyReader ) 
-                dbObject->CacheFkeys( fkeyReader );
+                // Load the components into the db object.
+                FdoSmPhViewP view = dbObject->SmartCast<FdoSmPhView>();
 
-            if ( pkeyReader ) 
-                dbObject->CachePkeys( pkeyReader );
-
-            // Load the components into the db object.
-            FdoSmPhTableP table = dbObject->SmartCast<FdoSmPhTable>();
-
-            if ( table ) {
-                if ( ukeyReader ) 
-                    table->CacheUkeys( ukeyReader );
-
-                if ( ckeyReader ) 
-                    table->CacheCkeys( ckeyReader );
-            }
-
-            // Load the components into the db object.
-            FdoSmPhViewP view = dbObject->SmartCast<FdoSmPhView>();
-
-            if ( view ) {
-                if ( viewReader ) 
-                    view->CacheView( viewReader );
+                if ( view ) {
+                    if ( viewReader ) 
+                        view->CacheView( viewReader );
+                }
             }
         }
+
+        // At this point, all geometric columns have been bulk loaded so need
+        // to bulk load spatial contexts as well.
+        GetManager()->SetBulkLoadSpatialContexts(true);
     }
 
-    // At this point, all geometric columns have been bulk loaded so need
-    // to bulk load spatial contexts as well.
-    GetManager()->SetBulkLoadSpatialContexts(true);
+    return GetDbObjects();
 }
 
 FdoSmPhDbObjectP FdoSmPhOwner::CacheDbObject(
@@ -983,7 +940,6 @@ FdoSmPhDbObjectP FdoSmPhOwner::CacheCandDbObjects( FdoStringP objectName )
 
     // Read the candidates.
     FdoSmPhRdDbObjectReaderP objReader;
-    FdoSmPhRdPkeyReaderP pkeyReader;
     FdoSmPhRdConstraintReaderP ukeyReader;
     FdoSmPhRdConstraintReaderP ckeyReader;
     FdoSmPhRdColumnReaderP columnReader;
@@ -1009,9 +965,6 @@ FdoSmPhDbObjectP FdoSmPhOwner::CacheCandDbObjects( FdoStringP objectName )
         // The join is used to limit results to those needed for this schema.
 
         if ( first ) {
-            if ( GetBulkLoadPkeys() ) 
-                pkeyReader = CreatePkeyReader();
-
             if ( GetManager()->GetBulkLoadConstraints() ) {
                 ukeyReader = CreateConstraintReader( cands, L"U" );
                 ckeyReader = CreateConstraintReader( cands, L"C" );
@@ -1041,9 +994,6 @@ FdoSmPhDbObjectP FdoSmPhOwner::CacheCandDbObjects( FdoStringP objectName )
 
             if ( columnReader ) 
                 dbObject->CacheColumns( columnReader );
-
-            if ( pkeyReader ) 
-                dbObject->CachePkeys( pkeyReader );
 
             if ( table ) {
                 if ( ukeyReader ) 
@@ -1208,16 +1158,6 @@ void FdoSmPhOwner::CacheCandIndexes( FdoStringP objectName )
     }
 }
 
-bool FdoSmPhOwner::GetBulkLoadPkeys()
-{
-    return mBulkLoadPkeys;
-}
-
-void FdoSmPhOwner::SetBulkLoadPkeys( bool bulkLoad )
-{
-    mBulkLoadPkeys = bulkLoad;
-}
-
 bool FdoSmPhOwner::CacheObjectIndexes( FdoSmPhRdIndexReaderP indexReader )
 {
     // Get current dbObject name
@@ -1231,44 +1171,12 @@ bool FdoSmPhOwner::CacheObjectIndexes( FdoSmPhRdIndexReaderP indexReader )
     return ( table != NULL );
 }
 
-void FdoSmPhOwner::LoadBaseObjectCands()
-{
-    int idx1;
-    int idx2;
-
-    if ( mDbObjects ) {
-        // Check each dbObject not yet checked
-        for ( idx1 = mNextBaseCandIdx; idx1 < mDbObjects->GetCount(); idx1++ ) {
-            FdoSmPhDbObjectP dbObject = mDbObjects->GetItem(idx1);
-
-            FdoSmPhBaseObjectsP baseObjects = dbObject->GetBaseObjects();
-
-            // Add each base object to it's owner's candidates list.
-            for ( idx2 = 0; idx2 < baseObjects->GetCount(); idx2++ ) {
-                FdoSmPhBaseObjectP baseObject = baseObjects->GetItem(idx2);
-
-                FdoSmPhOwnerP baseOwner = GetManager()->FindOwner( baseObject->GetOwnerName(), baseObject->GetDatabaseName() );
-
-                if ( baseOwner ) {
-                    baseOwner->AddCandDbObject( baseObject->GetObjectName() );
-                    // Need primary keys of base objects (to determine view identity properties)
-                    // so bulk load them.
-                    baseOwner->SetBulkLoadPkeys(true);
-                }
-            }
-        }
-
-        mNextBaseCandIdx = mDbObjects->GetCount();
-    }
-}
-
 void FdoSmPhOwner::LoadIndexTableCands()
 {
     FdoInt32 idx;
 
-    if ( mDbObjects ) {
-        // Check each dbObject not yet checked
-        for ( idx = mNextIndexTableCandIdx; idx < mDbObjects->GetCount(); idx++ ) {
+    if ( !mCandIndexesLoadedTables ) {
+        for ( idx = 0; idx < mDbObjects->GetCount(); idx++ ) {
             FdoSmPhDbObjectP dbObject = mDbObjects->GetItem( idx );
             FdoSmPhTableP table = dbObject->SmartCast<FdoSmPhTable>();
 
@@ -1305,7 +1213,7 @@ void FdoSmPhOwner::LoadIndexTableCands()
             }
         }
 
-        mNextIndexTableCandIdx = mDbObjects->GetCount();
+        mCandIndexesLoadedTables = true;
     }
 }
 
@@ -1313,29 +1221,24 @@ void FdoSmPhOwner::LoadIndexRootTableCands()
 {
     FdoInt32 idx;
 
-    if ( mDbObjects ) {
-        // Check each dbObject not yet checked
-        for ( idx = mNextIndexRootTableCandIdx; idx < mDbObjects->GetCount(); idx++ ) {
+    if ( !mCandIndexesLoadedRootTables ) {
+        for ( idx = 0; idx < mDbObjects->GetCount(); idx++ ) {
             FdoSmPhDbObjectP dbObject = mDbObjects->GetItem( idx );
             if ( dbObject->GetPkeyColumns()->GetCount() == 0 ) {
                 FdoSmPhDbObjectP rootObject = dbObject->GetLowestRootObject();
                 
-                // Loading indexes into this owner so skip any base objects in 
-                // other owners.
-                if ( GetQName() == rootObject->GetParent()->GetQName() ) {
-                    if ( rootObject && (dbObject->GetQName() != rootObject->GetQName()) ) {
-                        // Object has no primary key but has a root object. We might 
-                        // use root object's indexes to generate object's identity.
-                        FdoSmPhTableP table = rootObject->SmartCast<FdoSmPhTable>();
+                if ( rootObject && (dbObject->GetQName() != rootObject->GetQName()) ) {
+                    // Object has no primary key but has a root object. We might 
+                    // use root object's indexes to generate object's identity.
+                    FdoSmPhTableP table = rootObject->SmartCast<FdoSmPhTable>();
 
-                        if ( table && !table->IndexesLoaded() )
-                            AddCandIndex( table->GetName() );
-                    }
+                    if ( table && !table->IndexesLoaded() )
+                        AddCandIndex( table->GetName() );
                 }
             }
         }
 
-        mNextIndexRootTableCandIdx = mDbObjects->GetCount();
+        mCandIndexesLoadedRootTables = true;
     }
 }
 

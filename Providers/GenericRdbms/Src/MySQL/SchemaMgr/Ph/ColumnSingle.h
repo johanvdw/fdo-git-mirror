@@ -32,11 +32,11 @@ public:
         FdoSmPhDbObject* parentObject,
         bool bNullable,
         FdoStringP rootColumnName = L"",
-		FdoPtr<FdoDataValue> defaultValue = (FdoDataValue*) NULL,
+		FdoStringP defaultValue = L"",
         FdoSmPhRdColumnReader* reader = NULL
     ) :
         FdoSmPhMySqlColumn (reader),
-        FdoSmPhColumn      ( columnName, L"FLOAT", elementState, parentObject, bNullable, rootColumnName, defaultValue)
+        FdoSmPhColumn      ( columnName, L"DOUBLE", elementState, parentObject, bNullable, rootColumnName, defaultValue)
     {}
 
     virtual ~FdoSmPhMySqlColumnSingle(void) {}
