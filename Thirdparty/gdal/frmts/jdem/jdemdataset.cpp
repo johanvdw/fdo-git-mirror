@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jdemdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: jdemdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  JDEM Reader
  * Purpose:  All code for Japanese DEM Reader
@@ -29,7 +29,7 @@
 
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: jdemdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: jdemdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_JDEM(void);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfadictionary.cpp 13343 2007-12-15 05:11:11Z warmerdam $
+ * $Id: hfadictionary.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFADictionary class for managing the
@@ -32,9 +32,9 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: hfadictionary.cpp 13343 2007-12-15 05:11:11Z warmerdam $");
+CPL_CVSID("$Id: hfadictionary.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
-static const char *apszDefDefn[] = {
+static char *apszDefDefn[] = {
 
     "Edsc_Table",
     "{1:lnumrows,}Edsc_Table",
@@ -62,7 +62,7 @@ static const char *apszDefDefn[] = {
 
     "Eimg_NonInitializedValue", 
     "{1:*bvalueBD,}Eimg_NonInitializedValue",
-
+    
     NULL,
     NULL };
     
@@ -70,7 +70,7 @@ static const char *apszDefDefn[] = {
 
 /************************************************************************/
 /* ==================================================================== */
-/*	                       HFADictionary                            */
+/*      		       HFADictionary                            */
 /* ==================================================================== */
 /************************************************************************/
 

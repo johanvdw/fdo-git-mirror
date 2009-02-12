@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlfeatureclass.cpp 15086 2008-07-31 16:07:39Z warmerdam $
+ * $Id: gmlfeatureclass.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeatureClass.
@@ -47,8 +47,6 @@ GMLFeatureClass::GMLFeatureClass( const char *pszName )
     m_pszExtraInfo = NULL;
     m_bHaveExtents = FALSE;
     m_nFeatureCount = -1; // unknown
-
-    m_nGeometryType = 0; // wkbUnknown
 }
 
 /************************************************************************/
@@ -267,11 +265,6 @@ int GMLFeatureClass::InitializeFromXML( CPLXMLNode *psRoot )
     if( strlen( pszGPath ) > 0 )
         SetGeometryElement( pszGPath );
 
-    if( CPLGetXMLValue( psRoot, "GeometryType", NULL ) != NULL )
-    {
-        SetGeometryType( atoi(CPLGetXMLValue( psRoot, "GeometryType", NULL )) );
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Collect dataset specific info.                                  */
 /* -------------------------------------------------------------------- */
@@ -335,12 +328,6 @@ int GMLFeatureClass::InitializeFromXML( CPLXMLNode *psRoot )
                 poPDefn->SetType( GMLPT_Integer );
             else if( EQUAL(pszType,"Real") )
                 poPDefn->SetType( GMLPT_Real );
-            else if( EQUAL(pszType,"StringList") ) 
-                poPDefn->SetType( GMLPT_StringList );
-            else if( EQUAL(pszType,"IntegerList") )
-                poPDefn->SetType( GMLPT_IntegerList );
-            else if( EQUAL(pszType,"RealList") )
-                poPDefn->SetType( GMLPT_RealList );
             else if( EQUAL(pszType,"Complex") )
                 poPDefn->SetType( GMLPT_Complex );
             else
@@ -378,14 +365,6 @@ CPLXMLNode *GMLFeatureClass::SerializeToXML()
     if( GetGeometryElement() != NULL && strlen(GetGeometryElement()) > 0 )
         CPLCreateXMLElementAndValue( psRoot, "GeometryElementPath", 
                                      GetGeometryElement() );
-    
-    if( GetGeometryType() != 0 /* wkbUnknown */ )
-    {
-        char szValue[128];
-
-        sprintf( szValue, "%d", GetGeometryType() );
-        CPLCreateXMLElementAndValue( psRoot, "GeometryType", szValue );
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Write out dataset specific information.                         */
@@ -459,18 +438,6 @@ CPLXMLNode *GMLFeatureClass::SerializeToXML()
             
           case GMLPT_Complex:
             pszTypeName = "Complex";
-            break;
-
-          case GMLPT_IntegerList:
-            pszTypeName = "IntegerList";
-            break;
-
-          case GMLPT_RealList:
-            pszTypeName = "RealList";
-            break;
-
-          case GMLPT_StringList:
-            pszTypeName = "StringList";
             break;
         }
 

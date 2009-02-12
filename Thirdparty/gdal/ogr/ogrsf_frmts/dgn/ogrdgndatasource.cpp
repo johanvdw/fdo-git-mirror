@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdgndatasource.cpp 12822 2007-11-16 22:52:15Z rouault $
+ * $Id: ogrdgndatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdgndatasource.cpp 12822 2007-11-16 22:52:15Z rouault $");
+CPL_CVSID("$Id: ogrdgndatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                         OGRDGNDataSource()                           */
@@ -299,13 +299,11 @@ OGRLayer *OGRDGNDataSource::CreateLayer( const char *pszLayerName,
         }
         else
         {
-            CSLDestroy(papszTuple);
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "ORIGIN is not a valid 2d or 3d tuple.\n"
                       "Separate tuple values with comma." );
             return FALSE;
         }
-        CSLDestroy(papszTuple);
     }
 
 /* -------------------------------------------------------------------- */

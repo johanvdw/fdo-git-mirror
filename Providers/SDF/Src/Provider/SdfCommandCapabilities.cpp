@@ -97,7 +97,6 @@ FdoInt32* SdfCommandCapabilities::GetCommands(FdoInt32& size)
 		FdoCommandType_SelectAggregates,
         FdoCommandType_CreateDataStore,
 		FdoCommandType_DestroyDataStore,
-        FdoCommandType_ExtendedSelect,
         SdfCommandType_ExtendedSelect,
         SdfCommandType_CreateSDFFile
     };

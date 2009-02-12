@@ -108,51 +108,51 @@ void SqlServerFdoSpatialContextTest::testAdjustExtents( )
         while ( reader->ReadNext() ) {
             FdoStringP scName = reader->GetName();
             if ( scName == L"SC_XLT" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 0, 10, 10 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 0, 10, 10 );
                 count++;
             }
             else if ( scName == L"SC_YLT" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 0, 100, 100 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 0, 100, 100 );
                 count++;
             }
             else if ( scName == L"SC_XEQ_TOL" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 5, 0, 5.001, 10  );
+                VldAdjustedExtent( scName, reader->GetExtent(), 5, 0, 5.001, 10  );
                 count++;
             }
             else if ( scName == L"SC_XEQ_1" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 5, 0, 6, 10 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 5, 0, 6, 10 );
                 count++;
             }
             else if ( scName == L"SC_XEQ_HT_POS" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 5, 1, 5.25, 1.25 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 5, 1, 5.25, 1.25 );
                 count++;
             }
             else if ( scName == L"SC_XEQ_HT_NEG" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 5, 0.3, 5.7, 1 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 5, 0.3, 5.7, 1 );
                 count++;
             }
             else if ( scName == L"SC_YEQ_TOL" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 3, 5, 3.001 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 3, 5, 3.001 );
                 count++;
             }
             else if ( scName == L"SC_YEQ_1" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 25.3, 100, 26.3 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 25.3, 100, 26.3 );
                 count++;
             }
             else if ( scName == L"SC_YEQ_WD_POS" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 5, 1.25, 5.1, 1.35 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 5, 1.25, 5.1, 1.35 );
                 count++;
             }
             else if ( scName == L"SC_YEQ_WD_NEG" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 4.8, 1.25, 5, 1.45 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 4.8, 1.25, 5, 1.45 );
                 count++;
             }
             else if ( scName == L"SC_XYEQ_TOL" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 0, 2.1, 2.1 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 0, 2.1, 2.1 );
                 count++;
             }
             else if ( scName == L"SC_XYEQ_1" ) {
-                TestCommonMiscUtil::VldExtent( scName, reader->GetExtent(), 0, 5, 1, 6 );
+                VldAdjustedExtent( scName, reader->GetExtent(), 0, 5, 1, 6 );
                 count++;
             }
         }
@@ -175,86 +175,23 @@ void SqlServerFdoSpatialContextTest::testAdjustExtents( )
     }
 }
 
-void SqlServerFdoSpatialContextTest::testNumericCoordinateSystemNames( )
+void SqlServerFdoSpatialContextTest::VldAdjustedExtent( FdoStringP scName, FdoByteArray* ba, double minx, double miny, double maxx, double maxy )
 {
-    FdoPtr<FdoIConnection> connection;
-    StaticConnection* staticConn = NULL;
+    FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
+    FdoPtr<FdoIGeometry> geom = gf->CreateGeometryFromFgf(ba);
+    FdoPtr<FdoIEnvelope> env = geom->GetEnvelope();
 
-    try {
-        staticConn = UnitTestUtil::NewStaticConnection();
-        staticConn->connect();
-        UnitTestUtil::CreateDBNoMeta( 
-            staticConn->CreateSchemaManager(),
-            UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX)
-        );
+    char message[1000];
 
-        // open the datastore
-		printf( "Initializing Connection ... \n" );
-		connection = UnitTestUtil::CreateConnection(
-			false,
-			false,
-            DB_NAME_SUFFIX,
-            0,
-            NULL,
-            0
-		);
+    sprintf( message, "Wrong minx for %ls", (FdoString*) scName );
+    CPPUNIT_ASSERT_MESSAGE( message, minx == env->GetMinX() );
 
-		printf( "Creating Spatial Contexts ... \n" );
-        UnitTestUtil::CreateSpatialContext( connection, L"NumCordSysName", L"11", 10, 0, 0, 10 ); 
+    sprintf( message, "Wrong miny for %ls", (FdoString*) scName );
+    CPPUNIT_ASSERT_MESSAGE( message, miny == env->GetMinY() );
 
-        connection->Close();
-        connection->Open();
+    sprintf( message, "Wrong maxx for %ls", (FdoString*) scName );
+    CPPUNIT_ASSERT_MESSAGE( message, maxx == env->GetMaxX() );
 
-        // Check if the coordinate system is created.
-		printf( "Cross-checking Spatial Contexts ... \n" );
-        FdoPtr<FdoIGetSpatialContexts> cmd = (FdoIGetSpatialContexts*) connection->CreateCommand( FdoCommandType_GetSpatialContexts );
-        cmd->SetActiveOnly(false);
-
-        FdoPtr<FdoISpatialContextReader> reader = cmd->Execute();
-        bool found = false;
-
-        while ( reader->ReadNext() )
-        {
-            FdoStringP scName = reader->GetName();
-            FdoStringP scCoordSysName = reader->GetCoordinateSystem();
-            if ( ( scName == L"NumCordSysName" ) && ( scCoordSysName == L"11" ) )
-                found = true;
-        }
-
-        // Process cross-check result.
-        if ( !found )
-            throw FdoException::Create(L"Expected spatial context not found");
-        else
-		    printf( " ... Expected spatial context found \n" );
-
-        // Close connections.
-        delete staticConn;
-        connection->Close();
-
-    }
-    catch (FdoException *exp)
-    {
-        try
-        {
-            if ( staticConn ) delete staticConn;
-            if ( connection ) connection->Close();
-        }
-        catch ( ... )
-        {
-        }
-		UnitTestUtil::FailOnException( exp );
-    }
-    catch ( ... )
-    {
-        try
-        {
-            if ( staticConn ) delete staticConn;
-            if ( connection ) connection->Close();
-        }
-        catch ( ... )
-        {
-        }
-
-        throw;
-    }
+    sprintf( message, "Wrong maxy for %ls", (FdoString*) scName );
+    CPPUNIT_ASSERT_MESSAGE( message, maxy == env->GetMaxY() );
 }

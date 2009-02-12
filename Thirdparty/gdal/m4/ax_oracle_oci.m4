@@ -1,4 +1,4 @@
-dnl $Id: ax_oracle_oci.m4 15794 2008-11-23 07:37:52Z ilucena $
+dnl $Id: ax_oracle_oci.m4 10641 2007-01-17 23:09:44Z mloskot $
 dnl
 dnl @synopsis AX_LIB_ORACLE_OCI([MINIMUM-VERSION])
 dnl
@@ -32,11 +32,8 @@ dnl
 dnl @category InstalledPackages
 dnl @category Cxx
 dnl @author Mateusz Loskot <mateusz@loskot.net>
-dnl @version $Date: 2008-11-22 23:37:52 -0800 (Sat, 22 Nov 2008) $
+dnl @version $Date: 2007-01-17 15:09:44 -0800 (Wed, 17 Jan 2007) $
 dnl @license AllPermissive
-dnl          Copying and distribution of this file, with or without modification,
-dnl          are permitted in any medium without royalty provided the copyright notice and
-dnl          this notice are preserved.
 dnl
 AC_DEFUN([AX_LIB_ORACLE_OCI],
 [
@@ -264,7 +261,7 @@ if (envh) OCIHandleFree(envh, OCI_HTYPE_ENV);
                 AC_MSG_CHECKING([for Oracle version >= 10.x to use -lnnz10 flag])
                 oracle_nnz10_check=`expr $oracle_version_number \>\= 10 \* 1000000`
                 if test "$oracle_nnz10_check" = "1"; then
-                    ORACLE_OCI_LDFLAGS="$ORACLE_OCI_LDFLAGS -lnnz$oracle_version_major"
+                    ORACLE_OCI_LDFLAGS="$ORACLE_OCI_LDFLAGS -lnnz10"
                     AC_MSG_RESULT([yes])
                 else
                     AC_MSG_RESULT([no])

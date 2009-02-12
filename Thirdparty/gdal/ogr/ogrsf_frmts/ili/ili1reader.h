@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1reader.h 13902 2008-02-29 22:26:44Z rouault $
+ * $Id: ili1reader.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -47,6 +47,5 @@ public:
 };
 
 IILI1Reader *CreateILI1Reader();
-void DestroyILI1Reader(IILI1Reader* reader);
 
 #endif

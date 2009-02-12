@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgutility.h 10931 2007-03-11 11:22:31Z mloskot $
+ * $Id: ogrpgutility.h 11225 2007-04-08 14:51:34Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private utilities for OGR/PostgreSQL driver.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.h 14816 2008-07-05 08:54:56Z rouault $
+ * $Id: gdal.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C/Public declarations.
@@ -176,7 +176,6 @@ typedef struct {
 
 #define GDAL_DCAP_CREATE     "DCAP_CREATE"
 #define GDAL_DCAP_CREATECOPY "DCAP_CREATECOPY"
-#define GDAL_DCAP_VIRTUALIO  "DCAP_VIRTUALIO"
 
 void CPL_DLL CPL_STDCALL GDALAllRegister( void );
 
@@ -187,8 +186,6 @@ GDALDatasetH CPL_DLL CPL_STDCALL
 GDALCreateCopy( GDALDriverH, const char *, GDALDatasetH,
                 int, char **, GDALProgressFunc, void * );
 
-GDALDriverH CPL_DLL CPL_STDCALL GDALIdentifyDriver( const char * pszFilename,
-                                            char ** papszFileList );
 GDALDatasetH CPL_DLL CPL_STDCALL
 GDALOpen( const char *pszFilename, GDALAccess eAccess );
 GDALDatasetH CPL_DLL CPL_STDCALL GDALOpenShared( const char *, GDALAccess );
@@ -197,19 +194,10 @@ int          CPL_DLL CPL_STDCALL GDALDumpOpenDatasets( FILE * );
 GDALDriverH CPL_DLL CPL_STDCALL GDALGetDriverByName( const char * );
 int CPL_DLL         CPL_STDCALL GDALGetDriverCount( void );
 GDALDriverH CPL_DLL CPL_STDCALL GDALGetDriver( int );
-void        CPL_DLL CPL_STDCALL GDALDestroyDriver( GDALDriverH );
 int         CPL_DLL CPL_STDCALL GDALRegisterDriver( GDALDriverH );
 void        CPL_DLL CPL_STDCALL GDALDeregisterDriver( GDALDriverH );
 void        CPL_DLL CPL_STDCALL GDALDestroyDriverManager( void );
 CPLErr      CPL_DLL CPL_STDCALL GDALDeleteDataset( GDALDriverH, const char * );
-CPLErr      CPL_DLL CPL_STDCALL GDALRenameDataset( GDALDriverH, 
-                                                   const char * pszNewName,
-                                                   const char * pszOldName );
-CPLErr      CPL_DLL CPL_STDCALL GDALCopyDatasetFiles( GDALDriverH, 
-                                                      const char * pszNewName,
-                                                      const char * pszOldName);
-int         CPL_DLL CPL_STDCALL GDALValidateCreationOptions( GDALDriverH,
-                                                             char** papszCreationOptions);
 
 /* The following are deprecated */
 const char CPL_DLL * CPL_STDCALL GDALGetDriverShortName( GDALDriverH );
@@ -278,7 +266,6 @@ void CPL_DLL CPL_STDCALL GDALSetDescription( GDALMajorObjectH, const char * );
 /* ==================================================================== */
 
 GDALDriverH CPL_DLL CPL_STDCALL GDALGetDatasetDriver( GDALDatasetH );
-char CPL_DLL ** CPL_STDCALL GDALGetFileList( GDALDatasetH );
 void CPL_DLL CPL_STDCALL   GDALClose( GDALDatasetH );
 int CPL_DLL CPL_STDCALL     GDALGetRasterXSize( GDALDatasetH );
 int CPL_DLL CPL_STDCALL     GDALGetRasterYSize( GDALDatasetH );
@@ -322,19 +309,6 @@ void CPL_DLL CPL_STDCALL GDALGetOpenDatasets( GDALDatasetH **hDS, int *pnCount )
 int CPL_DLL CPL_STDCALL GDALGetAccess( GDALDatasetH hDS );
 void CPL_DLL CPL_STDCALL GDALFlushCache( GDALDatasetH hDS );
 
-CPLErr CPL_DLL CPL_STDCALL 
-              GDALCreateDatasetMaskBand( GDALDatasetH hDS, int nFlags );
-
-CPLErr CPL_DLL CPL_STDCALL GDALDatasetCopyWholeRaster(
-    GDALDatasetH hSrcDS, GDALDatasetH hDstDS, char **papszOptions, 
-    GDALProgressFunc pfnProgress, void *pProgressData );
-
-CPLErr CPL_DLL 
-GDALRegenerateOverviews( GDALRasterBandH hSrcBand, 
-                         int nOverviewCount, GDALRasterBandH *pahOverviewBands,
-                         const char *pszResampling, 
-                         GDALProgressFunc pfnProgress, void *pProgressData );
-
 /* ==================================================================== */
 /*      GDALRasterBand ... one band/channel in a dataset.               */
 /* ==================================================================== */
@@ -345,7 +319,7 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
  */
 #define SRCVAL(papoSource, eSrcType, ii) \
       (eSrcType == GDT_Byte ? \
-          ((GByte *)papoSource)[ii] : \
+          ((char *)papoSource)[ii] : \
       (eSrcType == GDT_Float32 ? \
           ((float *)papoSource)[ii] : \
       (eSrcType == GDT_Float64 ? \
@@ -468,16 +442,6 @@ CPLErr CPL_DLL CPL_STDCALL GDALSetDefaultRAT( GDALRasterBandH,
 CPLErr CPL_DLL CPL_STDCALL GDALAddDerivedBandPixelFunc( const char *pszName,
                                     GDALDerivedPixelFunc pfnPixelFunc );
 
-GDALRasterBandH CPL_DLL CPL_STDCALL GDALGetMaskBand( GDALRasterBandH hBand );
-int CPL_DLL CPL_STDCALL GDALGetMaskFlags( GDALRasterBandH hBand );
-CPLErr CPL_DLL CPL_STDCALL 
-                       GDALCreateMaskBand( GDALRasterBandH hBand, int nFlags );
-
-#define GMF_ALL_VALID     0x01
-#define GMF_PER_DATASET   0x02
-#define GMF_ALPHA         0x04
-#define GMF_NODATA        0x08
-
 /* -------------------------------------------------------------------- */
 /*      Helper functions.                                               */
 /* -------------------------------------------------------------------- */
@@ -490,61 +454,21 @@ void CPL_DLL CPL_STDCALL
                    void * pDstData, GDALDataType eDstType, int nDstPixelOffset,
                    int nWordCount );
 
-void CPL_DLL 
-GDALCopyBits( const GByte *pabySrcData, int nSrcOffset, int nSrcStep, 
-              GByte *pabyDstData, int nDstOffset, int nDstStep,
-              int nBitCount, int nStepCount );
-
-int CPL_DLL CPL_STDCALL GDALLoadWorldFile( const char *, double * );
-int CPL_DLL CPL_STDCALL GDALReadWorldFile( const char *, const char *,
-                                           double * );
-int CPL_DLL CPL_STDCALL GDALWriteWorldFile( const char *, const char *,
-                                            double * );
-int CPL_DLL CPL_STDCALL GDALLoadTabFile( const char *, double *, char **,
-                                         int *, GDAL_GCP ** );
-int CPL_DLL CPL_STDCALL GDALReadTabFile( const char *, double *, char **,
-                                         int *, GDAL_GCP ** );
-char CPL_DLL ** CPL_STDCALL GDALLoadRPBFile( const char *pszFilename, 
-                                             char **papszSiblingFiles );
-CPLErr CPL_DLL CPL_STDCALL GDALWriteRPBFile( const char *pszFilename, 
-                                             char **papszMD );
-char CPL_DLL ** CPL_STDCALL GDALLoadIMDFile( const char *pszFilename, 
-                                             char **papszSiblingFiles );
-CPLErr CPL_DLL CPL_STDCALL GDALWriteIMDFile( const char *pszFilename, 
-                                             char **papszMD );
+int CPL_DLL CPL_STDCALL GDALReadWorldFile( const char *pszBaseFilename, 
+                       const char *pszExtension, 
+                       double * padfGeoTransform );
+int CPL_DLL CPL_STDCALL GDALWriteWorldFile( const char *pszBaseFilename, 
+                       const char *pszExtension, 
+                       double * padfGeoTransform );
+int CPL_DLL CPL_STDCALL GDALReadTabFile( const char *pszBaseFilename, 
+                             double *padfGeoTransform, char **ppszWKT,
+                             int *pnGCPCount, GDAL_GCP **ppasGCPs );
 
 const char CPL_DLL * CPL_STDCALL GDALDecToDMS( double, const char *, int );
 double CPL_DLL CPL_STDCALL GDALPackedDMSToDec( double );
 double CPL_DLL CPL_STDCALL GDALDecToPackedDMS( double );
 
-/* Note to developers : please keep this section in sync with ogr_core.h */
-
-#ifndef GDAL_VERSION_INFO_DEFINED
-#define GDAL_VERSION_INFO_DEFINED
 const char CPL_DLL * CPL_STDCALL GDALVersionInfo( const char * );
-#endif
-
-#ifndef GDAL_CHECK_VERSION
-
-/** Return TRUE if GDAL library version at runtime matches nVersionMajor.nVersionMinor.
-
-    The purpose of this method is to ensure that calling code will run with the GDAL
-    version it is compiled for. It is primarly intented for external plugins.
-
-    @param nVersionMajor Major version to be tested against
-    @param nVersionMinor Minor version to be tested against
-    @param pszCallingComponentName If not NULL, in case of version mismatch, the method
-                                   will issue a failure mentionning the name of
-                                   the calling component.
-  */
-int CPL_DLL CPL_STDCALL GDALCheckVersion( int nVersionMajor, int nVersionMinor,
-                                          const char* pszCallingComponentName);
-
-/** Helper macro for GDALCheckVersion */
-#define GDAL_CHECK_VERSION(pszCallingComponentName) \
- GDALCheckVersion(GDAL_VERSION_MAJOR, GDAL_VERSION_MINOR, pszCallingComponentName)
-
-#endif
 
 typedef struct { 
     double      dfLINE_OFF;
@@ -600,9 +524,6 @@ int CPL_DLL CPL_STDCALL GDALGetColorEntryCount( GDALColorTableH );
 const GDALColorEntry CPL_DLL * CPL_STDCALL GDALGetColorEntry( GDALColorTableH, int );
 int CPL_DLL CPL_STDCALL GDALGetColorEntryAsRGB( GDALColorTableH, int, GDALColorEntry *);
 void CPL_DLL CPL_STDCALL GDALSetColorEntry( GDALColorTableH, int, const GDALColorEntry * );
-void CPL_DLL CPL_STDCALL GDALCreateColorRamp( GDALColorTableH hTable, 
-            int nStartIndex, const GDALColorEntry *psStartColor,
-            int nEndIndex, const GDALColorEntry *psEndColor );
 
 /* ==================================================================== */
 /*      Raster Attribute Table						*/

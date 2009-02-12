@@ -1,8 +1,10 @@
+// ReflectanceCalculator.h: interface for the ReflectanceCalculator class.
+//
+//////////////////////////////////////////////////////////////////////
+
 /******************************************************************************
- * $Id: reflectancecalculator.h 15064 2008-07-28 19:10:23Z mloskot $
  *
- * Purpose:  Interface of ReflectanceCalculator class. Calculate reflectance
- *           values from radiance, for visual bands.
+ * Purpose:  Calculate reflectance values from radiance, for visual bands.
  * Author:   Bas Retsios, retsios@itc.nl
  *
  ******************************************************************************

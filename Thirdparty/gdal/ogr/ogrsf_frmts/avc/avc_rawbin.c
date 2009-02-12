@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_rawbin.c,v 1.14 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_rawbin.c,v 1.13 2005/06/03 03:49:59 daniel Exp $
  *
  * Name:     avc_rawbin.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -30,10 +30,6 @@
  **********************************************************************
  *
  * $Log: avc_rawbin.c,v $
- * Revision 1.14  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.13  2005/06/03 03:49:59  daniel
  * Update email address, website url, and copyright dates
  *
@@ -319,8 +315,7 @@ void AVCRawBinReadString(AVCRawBinFile *psFile, int nBytesToRead, GByte *pBuf)
 
     pBuf[nBytesToRead] = '\0';
 
-    pszConvBuf = AVCE00ConvertFromArcDBCS(psFile->psDBCSInfo,
-                                          pBuf, 
+    pszConvBuf = AVCE00ConvertFromArcDBCS(psFile->psDBCSInfo, pBuf, 
                                           nBytesToRead);
 
     if (pszConvBuf != pBuf)
@@ -415,7 +410,7 @@ GBool AVCRawBinEOF(AVCRawBinFile *psFile)
      */
     if (psFile->nCurPos == 0 && psFile->nCurSize == 0)
     {
-        GByte c;
+        char c;
         /* Set bDisableReadBytesEOFError=TRUE to temporarily disable 
          * the EOF error message from AVCRawBinReadBytes().
          */
@@ -507,8 +502,7 @@ double  AVCRawBinReadDouble(AVCRawBinFile *psFile)
  * CPLGetLastErrNo() can be used to test if a write operation was 
  * succesful.
  **********************************************************************/
-void AVCRawBinWriteBytes(AVCRawBinFile *psFile, int nBytesToWrite, 
-                         const GByte *pBuf)
+void AVCRawBinWriteBytes(AVCRawBinFile *psFile, int nBytesToWrite, GByte *pBuf)
 {
     /*----------------------------------------------------------------
      * Make sure file is opened with Write access
@@ -521,7 +515,7 @@ void AVCRawBinWriteBytes(AVCRawBinFile *psFile, int nBytesToWrite,
         return;
     }
 
-    if (VSIFWrite((void*)pBuf, nBytesToWrite, 1, psFile->fp) != 1)
+    if (VSIFWrite(pBuf, nBytesToWrite, 1, psFile->fp) != 1)
         CPLError(CE_Failure, CPLE_FileIO,
                  "Writing to %s failed.", psFile->pszFname);
 
@@ -620,7 +614,7 @@ void AVCRawBinWriteZeros(AVCRawBinFile *psFile, int nBytesToWrite)
  * succesful.
  **********************************************************************/
 void AVCRawBinWritePaddedString(AVCRawBinFile *psFile, int nFieldSize,
-                                const GByte *pszString)
+                                const char *pszString)
 {
     char acSpaces[8] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
     int i, nLen, numSpaces;
@@ -629,14 +623,14 @@ void AVCRawBinWritePaddedString(AVCRawBinFile *psFile, int nFieldSize,
      * convert strings to the proper multibyte encoding.
      */
     pszString = AVCE00Convert2ArcDBCS(psFile->psDBCSInfo,
-                                      pszString, nFieldSize);
+                                           pszString, nFieldSize);
 
-    nLen = strlen((const char *)pszString);
+    nLen = strlen(pszString);
     nLen = MIN(nLen, nFieldSize);
     numSpaces = nFieldSize - nLen;
 
     if (nLen > 0)
-        AVCRawBinWriteBytes(psFile, nLen, pszString);
+        AVCRawBinWriteBytes(psFile, nLen, (GByte*)pszString);
 
     /* Write spaces by 8 bytes chunks.  The last chunk may be less than 8 bytes
      */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pg.h 15753 2008-11-17 22:04:09Z rouault $
+ * $Id: ogr_pg.h 11225 2007-04-08 14:51:34Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL driver.
@@ -28,46 +28,11 @@
  ****************************************************************************/
 
 #ifndef _OGR_PG_H_INCLUDED
-#define _OGR_PG_H_INCLUDED
+#define _OGR_PG_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 #include "libpq-fe.h"
 #include "cpl_string.h"
-
-
-/* These are the OIDs for some builtin types, as returned by PQftype(). */
-/* They were copied from pg_type.h in src/include/catalog/pg_type.h */
-
-#define BOOLOID                 16
-#define BYTEAOID                17
-#define CHAROID                 18
-#define NAMEOID                 19
-#define INT8OID                 20
-#define INT2OID                 21
-#define INT2VECTOROID           22
-#define INT4OID                 23
-#define REGPROCOID              24
-#define TEXTOID                 25
-#define OIDOID                  26
-#define TIDOID                  27
-#define XIDOID                  28
-#define CIDOID                  29
-#define OIDVECTOROID            30
-#define FLOAT4OID               700
-#define FLOAT8OID               701
-#define INT4ARRAYOID            1007
-#define TEXTARRAYOID            1009
-#define BPCHARARRAYOID          1014
-#define VARCHARARRAYOID         1015
-#define FLOAT4ARRAYOID          1021
-#define FLOAT8ARRAYOID          1022
-#define BPCHAROID		1042
-#define VARCHAROID		1043
-#define DATEOID			1082
-#define TIMEOID			1083
-#define TIMESTAMPOID	        1114
-#define TIMESTAMPTZOID	        1184
-#define NUMERICOID              1700
 
 /************************************************************************/
 /*                            OGRPGLayer                                */
@@ -88,13 +53,10 @@ class OGRPGLayer : public OGRLayer
 
     int                 iNextShapeId;
 
-    static char        *GByteArrayToBYTEA( const GByte* pabyData, int nLen);
-    static char        *GeometryToBYTEA( OGRGeometry * );
-    static GByte       *BYTEAToGByteArray( const char *pszBytea, int* pnLength );
-    static OGRGeometry *BYTEAToGeometry( const char * );
-    static OGRGeometry *HEXToGeometry( const char * );
-    static OGRGeometry *EWKBToGeometry( GByte* pabyWKB, int nLength );
-    static char        *GeometryToHex( OGRGeometry * poGeometry, int nSRSId );
+    char               *GeometryToBYTEA( OGRGeometry * );
+    OGRGeometry        *BYTEAToGeometry( const char * );
+    OGRGeometry        *HEXToGeometry( const char * );
+    char               *GeometryToHex( OGRGeometry * poGeometry, int nSRSId );
     Oid                 GeometryToOID( OGRGeometry * );
     OGRGeometry        *OIDToGeometry( Oid );
 
@@ -102,7 +64,7 @@ class OGRPGLayer : public OGRLayer
 
     char               *pszQueryStatement;
 
-    const char         *pszCursorName;
+    char               *pszCursorName;
     PGresult           *hCursorResult;
     int                 bCursorActive;
 
@@ -116,20 +78,17 @@ class OGRPGLayer : public OGRLayer
     int                 bHasFid;
     char                *pszFIDColumn;
 
-    int                 bCanUseBinaryCursor;
-
     int                 ParsePGDate( const char *, OGRField * );
-
-    void                SetInitialQueryCursor();
-
-    OGRErr              RunGetExtentRequest( OGREnvelope *psExtent, int bForce,
-                                             CPLString osCommand);
 
   public:
                         OGRPGLayer();
     virtual             ~OGRPGLayer();
 
     virtual void        ResetReading();
+
+    virtual OGRFeature *GetNextFeature();
+
+    virtual OGRFeature *GetFeature( long nFeatureId );
 
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
@@ -138,6 +97,8 @@ class OGRPGLayer : public OGRLayer
     virtual OGRErr      RollbackTransaction();
 
     virtual OGRSpatialReference *GetSpatialRef();
+
+    virtual int         TestCapability( const char * );
 
     virtual const char *GetFIDColumn();
     virtual const char *GetGeometryColumn();
@@ -157,9 +118,7 @@ class OGRPGTableLayer : public OGRPGLayer
     int                 bUpdateAccess;
 
     OGRFeatureDefn     *ReadTableDefinition(const char * pszTableName,
-                                            const char * pszSchemaName,
-                                            const char * pszGeomColumnIn,
-                                            int bAdvertizeGeomColumn);
+                                            const char * pszSchemaName);
 
     void                BuildWhere(void);
     char               *BuildFields(void);
@@ -168,9 +127,6 @@ class OGRPGTableLayer : public OGRPGLayer
     char               *pszTableName;
     char               *pszSchemaName;
     char               *pszSqlTableName;
-
-    /* Name of the parent table with the geometry definition if it is a derived table or NULL */
-    char               *pszSqlGeomParentTableName; 
 
     CPLString           osQuery;
     CPLString           osWHERE;
@@ -187,15 +143,11 @@ public:
                         OGRPGTableLayer( OGRPGDataSource *,
                                          const char * pszTableName,
                                          const char * pszSchemaName,
-                                         const char * pszGeomColumnIn,
-                                         int bUpdate,
-                                         int bAdvertizeGeomColumn,
-                                         int nSRSId = -2 );
+                                         int bUpdate, int nSRSId = -2 );
                         ~OGRPGTableLayer();
 
     virtual OGRFeature *GetFeature( long nFeatureId );
     virtual void        ResetReading();
-    virtual OGRFeature *GetNextFeature();
     virtual int         GetFeatureCount( int );
 
     virtual void        SetSpatialFilter( OGRGeometry * );
@@ -213,7 +165,7 @@ public:
 
     virtual int         TestCapability( const char * );
 
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
+	virtual OGRErr		GetExtent( OGREnvelope *psExtent, int bForce );
 
     const char*         GetTableName() { return pszTableName; }
     const char*         GetSchemaName() { return pszSchemaName; }
@@ -238,9 +190,9 @@ class OGRPGResultLayer : public OGRPGLayer
 
     char                *pszRawStatement;
 
-    CPLString           osWHERE;
+    PGresult            *hInitialResult;
 
-    OGRFeatureDefn     *ReadResultDefinition(PGresult *hInitialResultIn);
+    int                 nFeatureCount;
 
   public:
                         OGRPGResultLayer( OGRPGDataSource *,
@@ -248,16 +200,12 @@ class OGRPGResultLayer : public OGRPGLayer
                                           PGresult *hInitialResult );
     virtual             ~OGRPGResultLayer();
 
+    void                SetSpatialFilter( OGRGeometry * ) {}
+
+    OGRFeatureDefn     *ReadResultDefinition();
+
     virtual void        ResetReading();
     virtual int         GetFeatureCount( int );
-
-    virtual void        SetSpatialFilter( OGRGeometry * );
-
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
-
-    virtual int         TestCapability( const char * );
-
-    virtual OGRFeature *GetNextFeature();
 };
 
 /************************************************************************/
@@ -297,14 +245,10 @@ class OGRPGDataSource : public OGRDataSource
 
     OGRPGTableLayer     *poLayerInCopyMode;
 
-    void                OGRPGDecodeVersionString(PGver* psVersion, char* pszVer);
-
   public:
-    PGver               sPostgreSQLVersion;
     PGver               sPostGISVersion;
 
     int                 bUseBinaryCursor;
-    int                 bBinaryTimeFormatIsInt8;
 
   public:
                         OGRPGDataSource();
@@ -317,9 +261,7 @@ class OGRPGDataSource : public OGRDataSource
     OGRErr              InitializeMetadataTables();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
-    int                 OpenTable( const char * pszTableName, const char * pszSchemaName,
-                                   const char * pszGeomColumnIn, int bUpdate, int bTestOpen,
-                                   int bAdvertizeGeomColumn );
+    int                 OpenTable( const char * pszTableName, const char * pszSchemaName, int bUpdate, int bTestOpen );
 
     const char          *GetName() { return pszName; }
     int                 GetLayerCount() { return nLayers; }

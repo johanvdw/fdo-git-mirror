@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.h 14662 2008-06-08 14:51:41Z rouault $
+ * $Id: dted_api.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  Public (C callable) interface for DTED/CDED reading.
@@ -61,27 +61,17 @@
 #endif
 #endif
 
-#ifndef ABS
-#define ABS(x)  (((x)>=0) ? (x) : -(x))
-#endif
-
-#ifndef MIN
-#define MIN(x,y) (((x)<(y)) ? (x) : (y))
-#endif
-
-#define VSIFTellL ftell
-#define VSIFOpenL fopen
-#define VSIFCloseL fclose
-#define VSIFReadL fread
-#define VSIFWriteL fwrite
+#define VSIFTell ftell
+#define VSIFOpen fopen
+#define VSIFClose fclose
+#define VSIFRead fread
 #define CPLMalloc malloc
 #define CPLCalloc calloc
 #define CPLFree free
 #define GInt16  short
 #define GByte   unsigned char
-#define VSIFSeekL fseek
+#define VSIFSeek fseek
 #define CPLAssert assert
-#define VSIStrdup strdup
 
 #endif
 
@@ -129,27 +119,8 @@ typedef struct {
 DTEDInfo *DTEDOpen( const char * pszFilename, const char * pszAccess,
                     int bTestOpen );
 
-/**     Read one single sample. The coordinates are given from the
-        top-left corner of the file (contrary to the internal
-        organisation or a DTED file)
-*/
-int DTEDReadPoint( DTEDInfo * psDInfo, int nXOff, int nYOff, GInt16* panVal);
-
-/**    Read one profile line.  These are organized in bottom to top
-       order starting from the leftmost column (0).
-*/
 int DTEDReadProfile( DTEDInfo * psDInfo, int nColumnOffset,
                      GInt16 * panData );
-
-/* Extented version of DTEDReadProfile that enable the user to specify */
-/* whether he wants the checksums to be verified */
-int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
-                       GInt16 * panData, int bVerifyChecksum );
-
-/**    Write one profile line.
-       @warning Contrary to DTEDReadProfile,
-                the profile should be organized from top to bottom
-*/
 int DTEDWriteProfile( DTEDInfo *psDInfo, int nColumnOffset, GInt16 *panData);
 
 void DTEDClose( DTEDInfo * );
@@ -179,8 +150,7 @@ typedef enum {
     DTEDMD_HORIZACCURACY = 16,          /* ACC 4+4 */
     DTEDMD_REL_HORIZACCURACY = 17,      /* ACC 12+4 */
     DTEDMD_REL_VERTACCURACY = 18,       /* ACC 16+4 */
-    DTEDMD_HORIZDATUM = 19,             /* DSI 145+5 */ 
-    DTEDMD_MAX = 19
+    DTEDMD_MAX = 18
 } DTEDMetaDataCode;
 
     

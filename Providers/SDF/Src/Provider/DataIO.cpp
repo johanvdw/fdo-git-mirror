@@ -103,8 +103,6 @@ void DataIO::WriteProperty(FdoPropertyDefinition* pd, FdoPropertyValue* pv, Bina
     }
     else
     {
-        if(expression == NULL)
-            return;
         //we have a geometric property
         FdoPtr<FdoByteArray> byteArray = ((FdoGeometryValue*)(expression.p))->GetGeometry();
 

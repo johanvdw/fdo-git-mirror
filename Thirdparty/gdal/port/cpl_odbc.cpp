@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.cpp 15782 2008-11-21 22:04:29Z rouault $
+ * $Id: cpl_odbc.cpp 12532 2007-10-25 02:52:21Z mloskot $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -35,7 +35,7 @@
 
 #ifndef WIN32CE /* ODBC is not supported on Windows CE. */
 
-CPL_CVSID("$Id: cpl_odbc.cpp 15782 2008-11-21 22:04:29Z rouault $");
+CPL_CVSID("$Id: cpl_odbc.cpp 12532 2007-10-25 02:52:21Z mloskot $");
 
 #ifndef SQLColumns_TABLE_CAT 
 #define SQLColumns_TABLE_CAT 1
@@ -89,27 +89,22 @@ int CPLODBCDriverInstaller::InstallDriver( const char* pszDriver,
         // Failure is likely related to no write permissions to
         // system-wide default location, so try to install to HOME
        
-        static char* pszEnvIni = NULL;
-        if (pszEnvIni == NULL)
-        {
-            // Read HOME location
-            char* pszEnvHome = NULL;
-            pszEnvHome = getenv("HOME");
+        // Read HOME location
+        char* pszEnvHome = NULL;
+        pszEnvHome = getenv("HOME");
 
-            CPLAssert( NULL != pszEnvHome );
-            CPLDebug( "ODBC", "HOME=%s", pszEnvHome );
+        CPLAssert( NULL != pszEnvHome );
+        CPLDebug( "ODBC", "HOME=%s", pszEnvHome );
 
-            // Set ODBCSYSINI variable pointing to HOME location
-            pszEnvIni = (char *)CPLMalloc( strlen(pszEnvHome) + 12 );
+        // Set ODBCSYSINI variable pointing to HOME location
+        char* pszEnvIni = (char *)CPLMalloc( strlen(pszEnvHome) + 12 );
 
-            sprintf( pszEnvIni, "ODBCSYSINI=%s", pszEnvHome );
-            /* a 'man putenv' shows that we cannot free pszEnvIni */
-            /* because the pointer is used directly by putenv in old glibc */
-            putenv( pszEnvIni );
+        sprintf( pszEnvIni, "ODBCSYSINI=%s", pszEnvHome );
+        putenv( pszEnvIni );
 
-            CPLDebug( "ODBC", pszEnvIni );
-        }
-
+        CPLDebug( "ODBC", pszEnvIni );
+        //CPLFree( pszEnvIni );
+        
         // Try to install ODBC driver in new location
         if ( FALSE == SQLInstallDriverEx( pszDriver, NULL, m_szPathOut,
                 ODBC_FILENAME_MAX, NULL, fRequest,
@@ -468,8 +463,6 @@ int CPLODBCStatement::CollectResultsInfo()
         szName[nNameLength] = '\0';  // Paranoid
         m_papszColTypeNames[iCol] = CPLStrdup((const char*)szName);
 
-//        CPLDebug( "ODBC", "%s %s %d", m_papszColNames[iCol], 
-//                  szName, m_panColType[iCol] );
     }
 
     return TRUE;
@@ -702,12 +695,12 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
     
     for( iCol = 0; iCol < m_nColCount; iCol++ )
     {
-        char szWrkData[513];
+        char szWrkData[512];
         _SQLLEN cbDataLen;
         SQLSMALLINT nFetchType = GetTypeMapping( m_panColType[iCol] );
 
-        // Handle values other than WCHAR and BINARY as CHAR.
-        if( nFetchType != SQL_C_BINARY && nFetchType != SQL_C_WCHAR )
+        // For now we will fetch data in binary and string formats only
+        if ( nFetchType != SQL_C_BINARY )
             nFetchType = SQL_C_CHAR;
 
         szWrkData[0] = '\0';
@@ -740,7 +733,7 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
                 cbDataLen = (_SQLLEN)(sizeof(szWrkData)-1);
                 if (nFetchType == SQL_C_CHAR) 
                     while ((cbDataLen > 1) && (szWrkData[cbDataLen - 1] == 0)) 
-                        --cbDataLen; // trimming the extra terminators: bug 990
+                        --cbDataLen;  // trimming the extra terminators: bug 990
             }
 			
             m_papszColValues[iCol] = (char *) CPLMalloc(cbDataLen+1);
@@ -781,21 +774,19 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
 
                 m_papszColValues[iCol] = (char *) 
                     CPLRealloc( m_papszColValues[iCol], 
-                                m_panColValueLengths[iCol] + nChunkLen + 2 );
+                                m_panColValueLengths[iCol] + nChunkLen + 1 );
                 memcpy( m_papszColValues[iCol] + m_panColValueLengths[iCol], 
                         szWrkData, nChunkLen );
                 m_panColValueLengths[iCol] += nChunkLen;
                 m_papszColValues[iCol][m_panColValueLengths[iCol]] = '\0';
-                m_papszColValues[iCol][m_panColValueLengths[iCol]+1] = '\0';
             }
         }
         else
         {
             m_panColValueLengths[iCol] = cbDataLen;
-            m_papszColValues[iCol] = (char *) CPLMalloc(cbDataLen+2);
+            m_papszColValues[iCol] = (char *) CPLMalloc(cbDataLen+1);
             memcpy( m_papszColValues[iCol], szWrkData, cbDataLen );
             m_papszColValues[iCol][cbDataLen] = '\0';
-            m_papszColValues[iCol][cbDataLen+1] = '\0';
         }
 
         // Trim white space off end, if there is any.
@@ -806,19 +797,6 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
 
             while ( iEnd > 0 && pszTarget[iEnd - 1] == ' ' )
                 pszTarget[--iEnd] = '\0';
-        }
-
-        // Convert WCHAR to UTF-8, assuming the WCHAR is UCS-2.
-        if( nFetchType == SQL_C_WCHAR && m_papszColValues[iCol] != NULL 
-            && m_panColValueLengths[iCol] > 0 )
-        {
-            wchar_t *pwszSrc = (wchar_t *) m_papszColValues[iCol];
-
-            m_papszColValues[iCol] = 
-                CPLRecodeFromWChar( pwszSrc, CPL_ENC_UCS2, CPL_ENC_UTF8 );
-            m_panColValueLengths[iCol] = strlen(m_papszColValues[iCol]);
-
-            CPLFree( pwszSrc );
         }
     }
 
@@ -1531,12 +1509,10 @@ SQLSMALLINT CPLODBCStatement::GetTypeMapping( SQLSMALLINT nTypeCode )
         case SQL_CHAR:
         case SQL_VARCHAR:
         case SQL_LONGVARCHAR:
-            return SQL_C_CHAR;
-
         case SQL_WCHAR:
         case SQL_WVARCHAR:
         case SQL_WLONGVARCHAR:
-            return SQL_C_WCHAR;
+            return SQL_C_CHAR;
 
         case SQL_DECIMAL:
         case SQL_NUMERIC:
@@ -1558,6 +1534,9 @@ SQLSMALLINT CPLODBCStatement::GetTypeMapping( SQLSMALLINT nTypeCode )
         case SQL_BIT:
         case SQL_TINYINT:
         case SQL_BIGINT:
+        case SQL_TYPE_DATE:
+        case SQL_TYPE_TIME:
+        case SQL_TYPE_TIMESTAMP:
 /*        case SQL_TYPE_UTCDATETIME:
         case SQL_TYPE_UTCTIME:*/
         case SQL_INTERVAL_MONTH:
@@ -1575,18 +1554,6 @@ SQLSMALLINT CPLODBCStatement::GetTypeMapping( SQLSMALLINT nTypeCode )
         case SQL_INTERVAL_MINUTE_TO_SECOND:
         case SQL_GUID:
             return SQL_C_CHAR;
-
-        case SQL_DATE:
-        case SQL_TYPE_DATE:
-            return SQL_C_DATE;
-
-        case SQL_TIME:
-        case SQL_TYPE_TIME:
-            return SQL_C_TIME;
-
-        case SQL_TIMESTAMP:
-        case SQL_TYPE_TIMESTAMP:
-            return SQL_C_TIMESTAMP;
 
         case SQL_BINARY:
         case SQL_VARBINARY:

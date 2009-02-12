@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_tabfile.cpp,v 1.72 2008/11/17 22:06:21 aboudreault Exp $
+ * $Id: mitab_tabfile.cpp,v 1.59 2006/02/08 05:02:58 dmorissette Exp $
  *
  * Name:     mitab_tabfile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -32,46 +32,114 @@
  **********************************************************************
  *
  * $Log: mitab_tabfile.cpp,v $
- * Revision 1.72  2008/11/17 22:06:21  aboudreault
- * Added support to use OFTDateTime/OFTDate/OFTTime type when compiled with
- * OGR and fixed reading/writing support for these types.
+ * Revision 1.59  2006/02/08 05:02:58  dmorissette
+ * Fixed crash when attempting to write TABPolyline object with an invalid
+ * geometry (GDAL bug 1059)
  *
- * Revision 1.71  2008/09/26 14:40:24  aboudreault
- * Fixed bug: MITAB doesn't support writing DateTime type (bug 1948)
+ * Revision 1.58  2005/10/13 20:12:03  fwarmerdam
+ * layers with just regions can't be set as type wkbPolygon because they may
+ * have multipolygons (bug GDAL:958)
+ *     http://bugzilla.remotesensing.org/show_bug.cgi?id=958
  *
- * Revision 1.70  2008/06/13 18:39:21  aboudreault
- * Fixed problem with corrupt pointer if file not found (bug 1899) and
- * fixed tabdump build problem if DEBUG option not provided (bug 1898)
+ * Revision 1.57  2005/10/04 15:44:31  dmorissette
+ * First round of support for Collection objects. Currently supports reading
+ * from .TAB/.MAP and writing to .MIF. Still lacks symbol support and write
+ * support. (Based in part on patch and docs from Jim Hope, bug 1126)
  *
- * Revision 1.69  2008/03/05 20:59:10  dmorissette
- * Purged CVS logs in header
+ * Revision 1.56  2004/09/17 19:26:23  fwarmerdam
+ * Several fixes in error/failure cases in TABFile::Open() care of
+ * Stephen Cheesman of GeoSoft.
  *
- * Revision 1.68  2008/03/05 20:35:39  dmorissette
- * Replace MITAB 1.x SetFeature() with a CreateFeature() for V2.x (bug 1859)
+ * Revision 1.55  2004/06/30 20:29:04  dmorissette
+ * Fixed refs to old address danmo@videotron.ca
  *
- * Revision 1.67  2008/01/29 21:56:39  dmorissette
- * Update dataset version properly for Date/Time/DateTime field types (#1754)
+ * Revision 1.54  2004/05/20 13:49:46  fwarmerdam
+ * Removed special bailout for m_poMAPFile == NULL in TABFile::Close().
+ * It is important to cleanup other used memory.
  *
- * Revision 1.66  2008/01/29 20:46:32  dmorissette
- * Added support for v9 Time and DateTime fields (byg 1754)
+ * Revision 1.53  2003/01/18 20:22:39  daniel
+ * Fixed leak of TABMAPObjHdr when writing NONE geometries in SetFeature()
  *
- * Revision 1.65  2007/09/12 20:22:31  dmorissette
- * Added TABFeature::CreateFromMapInfoType()
+ * Revision 1.52  2002/09/23 13:15:35  warmerda
+ * fixed memory leak in SetMIFCoordSys
  *
- * Revision 1.64  2007/06/21 14:00:23  dmorissette
- * Added missing cast in isspace() calls to avoid failed assertion on Windows
- * (MITAB bug 1737, GDAL ticket 1678))
+ * Revision 1.51  2002/09/23 13:06:21  warmerda
+ * ensure pre-created m_poDefn is referenced properly
  *
- * Revision 1.63  2007/06/12 13:52:38  dmorissette
- * Added IMapInfoFile::SetCharset() method (bug 1734)
+ * Revision 1.50  2002/08/27 17:19:22  warmerda
+ * auto-add FID column if there aren't any columns
  *
- * Revision 1.62  2007/06/12 12:50:40  dmorissette
- * Use Quick Spatial Index by default until bug 1732 is fixed (broken files
- * produced by current coord block splitting technique).
+ * Revision 1.49  2002/03/26 01:48:40  daniel
+ * Added Multipoint object type (V650)
  *
- * Revision 1.61  2007/03/21 21:15:56  dmorissette
- * Added SetQuickSpatialIndexMode() which generates a non-optimal spatial
- * index but results in faster write time (bug 1669)
+ * Revision 1.48  2001/11/19 15:08:50  daniel
+ * Handle the case of TAB_GEOM_NONE with the new TABMAPObjHdr classes.
+ *
+ * Revision 1.47  2001/11/17 21:54:06  daniel
+ * Made several changes in order to support writing objects in 16 bits 
+ * coordinate format. New TABMAPObjHdr-derived classes are used to hold 
+ * object info in mem until block is full.
+ *
+ * Revision 1.46  2001/09/19 21:39:31  warmerda
+ * improved capabilities logic
+ *
+ * Revision 1.45  2001/09/14 19:14:43  warmerda
+ * added attribute query support
+ *
+ * Revision 1.44  2001/09/14 03:23:55  warmerda
+ * Substantial upgrade to support spatial queries using spatial indexes
+ *
+ * Revision 1.43  2001/03/15 03:57:51  daniel
+ * Added implementation for new OGRLayer::GetExtent(), returning data MBR.
+ *
+ * Revision 1.42  2001/03/09 04:14:19  daniel
+ * Fixed problem creating new files with mixed case extensions (e.g. ".Tab")
+ *
+ * Revision 1.41  2001/01/23 21:23:42  daniel
+ * Added projection bounds lookup table, called from TABFile::SetProjInfo()
+ *
+ * Revision 1.40  2001/01/22 16:03:58  warmerda
+ * expanded tabs
+ *
+ * Revision 1.39  2000/12/15 05:32:31  daniel
+ * Handle table type LINKED the same way as table type NATIVE.
+ * Make sure max char field width is 254 in AddFieldNative().
+ *
+ * Revision 1.38  2000/10/18 03:53:16  daniel
+ * GetBounds() now calculates bounds based on +/- 1e9 integer coordinates limit
+ *
+ * Revision 1.37  2000/09/20 18:32:02  daniel
+ * Accept "FORMAT: DBF" in version 100 .tab headers
+ *
+ * Revision 1.36  2000/09/07 23:32:13  daniel
+ * Added RecordDeletedFlag to TABFeature with get/set methods
+ *
+ * Revision 1.35  2000/07/04 01:50:02  warmerda
+ * removed unprotected debugging printf.
+ *
+ * Revision 1.34  2000/06/28 00:31:05  warmerda
+ * Try to set geometry type on OGRFeatureDefn by feature count
+ *
+ * Revision 1.33  2000/03/19 23:22:43  daniel
+ * Fixed test on return value of SetSpatialRef() in SetMIFCoordSys()
+ *
+ * Revision 1.32  2000/02/28 17:11:14  daniel
+ * Support indexed fields and new V450 object types
+ *
+ * Revision 1.31  2000/02/18 20:45:56  daniel
+ * Validate field names on write
+ *
+ * Revision 1.30  2000/01/26 18:18:01  warmerda
+ * fixed capabilities test
+ *
+ * Revision 1.29  2000/01/18 23:13:05  daniel
+ * Added missing m_poDefn->Reference()
+ *
+ * Revision 1.28  2000/01/18 22:14:36  daniel
+ * Fixed compile warnings
+ *
+ * Revision 1.27  2000/01/16 19:08:49  daniel
+ * Added support for reading 'Table Type DBF' tables
  *
  * ...
  *
@@ -101,6 +169,7 @@ TABFile::TABFile()
     m_pszFname = NULL;
     m_papszTABFile = NULL;
     m_nVersion = 300;
+    m_pszCharset = NULL;
     m_eTableType = TABTableNative;
 
     m_poMAPFile = NULL;
@@ -272,7 +341,6 @@ int TABFile::Open(const char *pszFname, const char *pszAccess,
             CPLErrorReset();
 
         CPLFree(m_pszFname);
-        m_pszFname = NULL;
         return -1;
     }
 
@@ -339,7 +407,6 @@ int TABFile::Open(const char *pszFname, const char *pszAccess,
          * Close() call... we will just set some defaults here.
          *------------------------------------------------------------*/
         m_nVersion = 300;
-        CPLFree(m_pszCharset);
         m_pszCharset = CPLStrdup("Neutral");
         m_eTableType = TABTableNative;
 
@@ -529,7 +596,6 @@ int TABFile::ParseTABFileFirstPass(GBool bTestOpenNoError)
                  * so we set default values for the other params.
                  */
                 bInsideTableDef = TRUE;
-                CPLFree(m_pszCharset);
                 m_pszCharset = CPLStrdup("Neutral");
                 m_eTableType = TABTableNative;
             }
@@ -544,7 +610,6 @@ int TABFile::ParseTABFileFirstPass(GBool bTestOpenNoError)
         }
         else if (EQUAL(papszTok[0], "!charset"))
         {
-            CPLFree(m_pszCharset);
             m_pszCharset = CPLStrdup(papszTok[1]);
         }
         else if (EQUAL(papszTok[0], "Definition") &&
@@ -775,49 +840,8 @@ int TABFile::ParseTABFileFields()
                                                                TABFDate,
                                                                0,
                                                                0);
-                    poFieldDefn = new OGRFieldDefn(papszTok[0], 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDate);
-#else
-                                                   OFTString);
-#endif
+                    poFieldDefn = new OGRFieldDefn(papszTok[0], OFTString);
                     poFieldDefn->SetWidth(10);
-                }
-                else if (numTok >= 2 && EQUAL(papszTok[1], "time"))
-                {
-                    /*-------------------------------------------------
-                     * TIME type (returned as a string: "HH:MM:SS")
-                     *------------------------------------------------*/
-                    nStatus = m_poDATFile->ValidateFieldInfoFromTAB(iField, 
-                                                               papszTok[0],
-                                                               TABFTime,
-                                                               0,
-                                                               0);
-                    poFieldDefn = new OGRFieldDefn(papszTok[0], 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTTime);
-#else
-                                                   OFTString);
-#endif
-                    poFieldDefn->SetWidth(8);
-                }
-                else if (numTok >= 2 && EQUAL(papszTok[1], "datetime"))
-                {
-                    /*-------------------------------------------------
-                     * DATETIME type (returned as a string: "DD/MM/YYYY HH:MM:SS")
-                     *------------------------------------------------*/
-                    nStatus = m_poDATFile->ValidateFieldInfoFromTAB(iField, 
-                                                               papszTok[0],
-                                                               TABFDateTime,
-                                                               0,
-                                                               0);
-                    poFieldDefn = new OGRFieldDefn(papszTok[0], 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDateTime);
-#else
-                                                   OFTString);
-#endif
-                    poFieldDefn->SetWidth(19);
                 }
                 else if (numTok >= 2 && EQUAL(papszTok[1], "logical"))
                 {
@@ -943,7 +967,7 @@ int TABFile::WriteTABFile()
                                               poFieldDefn->GetWidth(),
                                               poFieldDefn->GetPrecision());
                     break;
-                case TABFInteger:
+                  case TABFInteger:
                     pszFieldType = "Integer";
                     break;
                   case TABFSmallInt:
@@ -957,12 +981,6 @@ int TABFile::WriteTABFile()
                     break;
                   case TABFDate:
                     pszFieldType = "Date";
-                    break;
-                  case TABFTime:
-                    pszFieldType = "Time";
-                    break;
-                  case TABFDateTime:
-                    pszFieldType = "DateTime";
                     break;
                   default:
                     // Unsupported field type!!!  This should never happen.
@@ -1087,38 +1105,6 @@ int TABFile::Close()
 
     return 0;
 }
-
-/**********************************************************************
- *                   TABFile::SetQuickSpatialIndexMode()
- *
- * Select "quick spatial index mode". 
- *
- * The default behavior of MITAB is to generate an optimized spatial index,
- * but this results in slower write speed. 
- *
- * Applications that want faster write speed and do not care
- * about the performance of spatial queries on the resulting file can
- * use SetQuickSpatialIndexMode() to require the creation of a non-optimal
- * spatial index (actually emulating the type of spatial index produced
- * by MITAB before version 1.6.0). In this mode writing files can be 
- * about 5 times faster, but spatial queries can be up to 30 times slower.
- *
- * Returns 0 on success, -1 on error.
- **********************************************************************/
-int TABFile::SetQuickSpatialIndexMode(GBool bQuickSpatialIndexMode/*=TRUE*/)
-{
-    if (m_eAccessMode != TABWrite || m_poMAPFile == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-                 "SetQuickSpatialIndexMode() failed: file not opened for write access.");
-        return -1;
-    }
-
-
-    return m_poMAPFile->SetQuickSpatialIndexMode(bQuickSpatialIndexMode);
-}
-
-
 
 /**********************************************************************
  *                   TABFile::GetNextFeatureId()
@@ -1279,11 +1265,82 @@ TABFeature *TABFile::GetFeatureRef(int nFeatureId)
 
     /*-----------------------------------------------------------------
      * Create new feature object of the right type
-     * Unsupported object types are returned as raw TABFeature (i.e. NONE
-     * geometry)
      *----------------------------------------------------------------*/
-    m_poCurFeature = TABFeature::CreateFromMapInfoType(m_poMAPFile->GetCurObjType(), 
-                                                       m_poDefn);
+    switch(m_poMAPFile->GetCurObjType())
+    {
+      case TAB_GEOM_NONE:
+        m_poCurFeature = new TABFeature(m_poDefn);
+        break;
+      case TAB_GEOM_SYMBOL_C:
+      case TAB_GEOM_SYMBOL:
+        m_poCurFeature = new TABPoint(m_poDefn);
+        break;
+      case TAB_GEOM_FONTSYMBOL_C:
+      case TAB_GEOM_FONTSYMBOL:
+        m_poCurFeature = new TABFontPoint(m_poDefn);
+        break;
+      case TAB_GEOM_CUSTOMSYMBOL_C:
+      case TAB_GEOM_CUSTOMSYMBOL:
+        m_poCurFeature = new TABCustomPoint(m_poDefn);
+        break;
+      case TAB_GEOM_LINE_C:
+      case TAB_GEOM_LINE:
+      case TAB_GEOM_PLINE_C:
+      case TAB_GEOM_PLINE:
+      case TAB_GEOM_MULTIPLINE_C:
+      case TAB_GEOM_MULTIPLINE:
+      case TAB_GEOM_V450_MULTIPLINE_C:
+      case TAB_GEOM_V450_MULTIPLINE:
+       m_poCurFeature = new TABPolyline(m_poDefn);
+        break;
+      case TAB_GEOM_ARC_C:
+      case TAB_GEOM_ARC:
+        m_poCurFeature = new TABArc(m_poDefn);
+        break;
+
+      case TAB_GEOM_REGION_C:
+      case TAB_GEOM_REGION:
+      case TAB_GEOM_V450_REGION_C:
+      case TAB_GEOM_V450_REGION:
+        m_poCurFeature = new TABRegion(m_poDefn);
+        break;
+      case TAB_GEOM_RECT_C:
+      case TAB_GEOM_RECT:
+      case TAB_GEOM_ROUNDRECT_C:
+      case TAB_GEOM_ROUNDRECT:
+        m_poCurFeature = new TABRectangle(m_poDefn);
+        break;
+      case TAB_GEOM_ELLIPSE_C:
+      case TAB_GEOM_ELLIPSE:
+        m_poCurFeature = new TABEllipse(m_poDefn);
+        break;
+      case TAB_GEOM_TEXT_C:
+      case TAB_GEOM_TEXT:
+        m_poCurFeature = new TABText(m_poDefn);
+        break;
+      case TAB_GEOM_MULTIPOINT_C:
+      case TAB_GEOM_MULTIPOINT:
+        m_poCurFeature = new TABMultiPoint(m_poDefn);
+        break;
+      case TAB_GEOM_COLLECTION_C:
+      case TAB_GEOM_COLLECTION:
+        m_poCurFeature = new TABCollection(m_poDefn);  
+        break;
+      default:
+        /*-------------------------------------------------------------
+         * Unsupported feature type... we still return a valid feature
+         * with NONE geometry after producing a Warning.
+         * Callers can trap that case by checking CPLGetLastErrorNo() 
+         * against TAB_WarningFeatureTypeNotSupported
+         *------------------------------------------------------------*/
+//        m_poCurFeature = new TABDebugFeature(m_poDefn);
+        m_poCurFeature = new TABFeature(m_poDefn);
+
+        CPLError(CE_Warning, TAB_WarningFeatureTypeNotSupported,
+                 "Unsupported object type %d (0x%2.2x).  Feature will be "
+                 "returned with NONE geometry.", 
+                 m_poMAPFile->GetCurObjType(), m_poMAPFile->GetCurObjType() );
+    }
 
     /*-----------------------------------------------------------------
      * Read fields from the .DAT file
@@ -1326,7 +1383,7 @@ TABFeature *TABFile::GetFeatureRef(int nFeatureId)
 }
 
 /**********************************************************************
- *                   TABFile::WriteFeature()
+ *                   TABFile::SetFeature()
  *
  * Write a feature to this dataset.  
  *
@@ -1338,19 +1395,19 @@ TABFeature *TABFile::GetFeatureRef(int nFeatureId)
  * error happened in which case, CPLError() will have been called to
  * report the reason of the failure.
  **********************************************************************/
-int TABFile::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
+int TABFile::SetFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
 {
     if (m_eAccessMode != TABWrite)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
-                 "WriteFeature() can be used only with Write access.");
+                 "SetFeature() can be used only with Write access.");
         return -1;
     }
 
     if (nFeatureId != -1)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
-                 "WriteFeature(): random access not implemented yet.");
+                 "SetFeature(): random access not implemented yet.");
         return -1;
     }
 
@@ -1360,7 +1417,7 @@ int TABFile::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
     if (m_poMAPFile == NULL)
     {
         CPLError(CE_Failure, CPLE_IllegalArg,
-                 "WriteFeature() failed: file is not opened!");
+                 "SetFeature() failed: file is not opened!");
         return -1;
     }
 
@@ -1413,6 +1470,8 @@ int TABFile::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
     TABMAPObjHdr *poObjHdr = 
         TABMAPObjHdr::NewObj(poFeature->ValidateMapInfoType(m_poMAPFile),
                              nFeatureId);
+    TABMAPObjectBlock *poObjBlock = NULL;
+
     
     /*-----------------------------------------------------------------
      * ValidateMapInfoType() may have returned TAB_GEOM_NONE if feature
@@ -1428,74 +1487,33 @@ int TABFile::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
         return -1;
     }
 
-    /*-----------------------------------------------------------------
-     * The ValidateMapInfoType() call above has forced calculation of the
-     * feature's IntMBR. Store that value in the ObjHdr for use by
-     * PrepareNewObj() to search the best node to insert the feature.
-     *----------------------------------------------------------------*/
-    if ( poObjHdr && poObjHdr->m_nType != TAB_GEOM_NONE)
-    {
-        poFeature->GetIntMBR(poObjHdr->m_nMinX, poObjHdr->m_nMinY,
-                             poObjHdr->m_nMaxX, poObjHdr->m_nMaxY);
-    }
-
     if ( poObjHdr == NULL || m_poMAPFile == NULL ||
-         m_poMAPFile->PrepareNewObj(poObjHdr) != 0 ||
-         poFeature->WriteGeometryToMAPFile(m_poMAPFile, poObjHdr) != 0 ||
-         m_poMAPFile->CommitNewObj(poObjHdr) != 0 )
+        m_poMAPFile->PrepareNewObj(nFeatureId, poObjHdr->m_nType) != 0 ||
+         poFeature->WriteGeometryToMAPFile(m_poMAPFile, poObjHdr) != 0 )
     {
         CPLError(CE_Failure, CPLE_FileIO,
                  "Failed writing geometry for feature id %d in %s",
                  nFeatureId, m_pszFname);
-        if (poObjHdr)
-            delete poObjHdr;
         return -1;
     }
 
-    delete poObjHdr;
+    if (poObjHdr->m_nType == TAB_GEOM_NONE)
+    {
+        // NONE objects have no reference in the ObjectBlocks.  Just flush it.
+        delete poObjHdr;
+    }
+    else if ( (poObjBlock = m_poMAPFile->GetCurObjBlock()) == NULL ||
+              poObjBlock->AddObject(poObjHdr) != 0 )
+    {
+        CPLError(CE_Failure, CPLE_FileIO,
+                 "Failed writing object header for feature id %d in %s",
+                 nFeatureId, m_pszFname);
+        return -1;
+    }
 
     return nFeatureId;
 }
 
-
-/**********************************************************************
- *                   TABFile::CreateFeature()
- *
- * Write a new feature to this dataset. The passed in feature is updated 
- * with the new feature id.
- *
- * Returns OGRERR_NONE on success, or an appropriate OGRERR_ code if an
- * error happened in which case, CPLError() will have been called to
- * report the reason of the failure.
- **********************************************************************/
-OGRErr TABFile::CreateFeature(TABFeature *poFeature)
-{
-    int nFeatureId = -1;
-
-    nFeatureId = WriteFeature(poFeature, -1);
-
-    if (nFeatureId == -1)
-        return OGRERR_FAILURE;
-
-    poFeature->SetFID(nFeatureId);
-
-    return OGRERR_NONE;
-}
-
-/**********************************************************************
- *                   TABFile::SetFeature()
- *
- * Implementation of OGRLayer's SetFeature(), enabled only for
- * random write access   
- **********************************************************************/
-OGRErr TABFile::SetFeature( OGRFeature *poFeature )
-
-{
-//TODO: See CreateFeature()
-// Need to convert OGRFeature to TABFeature, extract FID and then forward
-// forward call to SetFeature(TABFeature, fid)
-    return OGRERR_UNSUPPORTED_OPERATION;
-}
 
 
 /**********************************************************************
@@ -1596,15 +1614,6 @@ int TABFile::SetFeatureDefn(OGRFeatureDefn *poFeatureDefn,
                 break;
               case OFTReal:
                 eMapInfoType = TABFFloat;
-                break;
-              case OFTDateTime:
-                eMapInfoType = TABFDateTime;
-                break;
-              case OFTDate:
-                eMapInfoType = TABFDate;
-                break;
-              case OFTTime:
-                eMapInfoType = TABFTime;
                 break;
               case OFTString:
               default:
@@ -1749,42 +1758,10 @@ int TABFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
         break;
       case TABFDate:
         /*-------------------------------------------------
-         * DATE type (V450, returned as a string: "DD/MM/YYYY")
+         * DATE type (returned as a string: "DD/MM/YYYY")
          *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDate);
-#else
-                                                   OFTString);
-#endif
+        poFieldDefn = new OGRFieldDefn(pszCleanName, OFTString);
         poFieldDefn->SetWidth(10);
-        m_nVersion = MAX(m_nVersion, 450);
-        break;
-      case TABFTime:
-        /*-------------------------------------------------
-         * TIME type (V900, returned as a string: "HH:MM:SS")
-         *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTTime);
-#else
-                                                   OFTString);
-#endif
-        poFieldDefn->SetWidth(8);
-        m_nVersion = MAX(m_nVersion, 900);
-        break;
-      case TABFDateTime:
-        /*-------------------------------------------------
-         * DATETIME type (V900, returned as a string: "DD/MM/YYYY HH:MM:SS")
-         *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDateTime);
-#else
-                                                   OFTString);
-#endif
-        poFieldDefn->SetWidth(19);
-        m_nVersion = MAX(m_nVersion, 900);
         break;
       case TABFLogical:
         /*-------------------------------------------------
@@ -2296,6 +2273,7 @@ int TABFile::SetProjInfo(TABProjInfo *poPI)
 
     return 0;
 }
+
 
 
 /************************************************************************/

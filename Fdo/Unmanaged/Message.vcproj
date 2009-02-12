@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="Message"
 	ProjectGUID="{128627BF-DC54-4180-B90E-08A3F4104352}"
 	RootNamespace="Message"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -75,8 +74,6 @@
 				ProgramDatabaseFile="$(OutDir)/FDOMessage.pdb"
 				SubSystem="2"
 				ResourceOnlyDLL="true"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Release/FDOMessage.lib"
 				TargetMachine="1"
 			/>
@@ -99,9 +96,12 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Creating Library and Versioning FDOMessage.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.3.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -162,8 +162,6 @@
 				ProgramDatabaseFile="$(OutDir)/FDOMessage.pdb"
 				SubSystem="2"
 				ResourceOnlyDLL="true"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win64/Release/FDOMessage.lib"
 				TargetMachine="17"
 			/>
@@ -186,9 +184,12 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Creating Library and Versioning FDOMessage.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.3.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -250,8 +251,6 @@
 				ProgramDatabaseFile="$(OutDir)/FDOMessage.pdb"
 				SubSystem="2"
 				ResourceOnlyDLL="true"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Debug/FDOMessage.lib"
 			/>
 			<Tool
@@ -273,9 +272,12 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Creating Library and Versioning FDOMessage.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.3.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -336,8 +338,6 @@
 				ProgramDatabaseFile="$(OutDir)/FDOMessage.pdb"
 				SubSystem="2"
 				ResourceOnlyDLL="true"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win64/Debug/FDOMessage.lib"
 				TargetMachine="17"
 			/>
@@ -360,9 +360,12 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Creating Library and Versioning FDOMessage.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.3.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOMessage.dll&#x0D;&#x0A;"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalnumeric.cpp 12592 2007-10-30 20:22:28Z mloskot $
+ * $Id: gdalnumeric.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Python Bindings
  * Purpose:  GDAL/numpy bindings (all custom)
@@ -28,16 +28,10 @@
  ****************************************************************************/
 
 #include "gdal.h"
+#include "Python.h"
 #include "gdal_py.h"
-#ifdef _DEBUG
-#undef _DEBUG
-#include "Python.h"
-#define _DEBUG
-#else
-#include "Python.h"
-#endif
 
-CPL_CVSID("$Id: gdalnumeric.cpp 12592 2007-10-30 20:22:28Z mloskot $");
+CPL_CVSID("$Id: gdalnumeric.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 PyObject *py_NumPyArrayToGDALFilename( PyObject *self, PyObject *args )
 

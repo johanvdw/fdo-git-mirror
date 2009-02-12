@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerfilebase.cpp 14430 2008-05-10 18:42:32Z warmerdam $
+ * $Id: tigerfilebase.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerBaseFile class, providing common services to all
@@ -33,7 +33,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: tigerfilebase.cpp 14430 2008-05-10 18:42:32Z warmerdam $");
+CPL_CVSID("$Id: tigerfilebase.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           TigerFileBase()                            */
@@ -223,7 +223,7 @@ void TigerFileBase::EstablishFeatureCount()
         CPLError( CE_Warning, CPLE_FileIO,
                   "TigerFileBase::EstablishFeatureCount(): "
                   "File length %d doesn't divide by record length %d.\n",
-                  (int) nFileSize, (int) nRecordLength );
+                  nFileSize, nRecordLength );
     }
 
     nFeatures = nFileSize / nRecordLength;

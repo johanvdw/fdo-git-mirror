@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtigerdatasource.cpp 14288 2008-04-13 15:56:22Z rouault $
+ * $Id: ogrtigerdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: ogrtigerdatasource.cpp 14288 2008-04-13 15:56:22Z rouault $");
+CPL_CVSID("$Id: ogrtigerdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */
@@ -118,7 +118,7 @@ TigerVersion TigerClassifyVersion( int nVersionCode )
 /*                         TigerVersionString()                         */
 /************************************************************************/
 
-const char * TigerVersionString( TigerVersion nVersion )
+char * TigerVersionString( TigerVersion nVersion )
 {
 
   if (nVersion == TIGER_1990_Precensus) { return "TIGER_1990_Precensus"; }

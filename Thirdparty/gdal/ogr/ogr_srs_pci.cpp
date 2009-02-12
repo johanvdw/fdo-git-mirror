@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_pci.cpp 15826 2008-11-27 22:28:25Z warmerdam $
+ * $Id: ogr_srs_pci.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from PCI georeferencing
@@ -32,17 +32,17 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_pci.cpp 15826 2008-11-27 22:28:25Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_pci.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 typedef struct 
 {
     const char  *pszPCIDatum;
-    int         nEPSGCode;
-    double      dfSemiMajor;
-    double      dfSemiMinor;
+    int    nEPSGCode;
+    double dfSemiMajor;
+    double dfSemiMinor;
 } PCIDatums;
 
-static const PCIDatums aoDatums[] =
+static PCIDatums aoDatums[] =
 {
     { "D-01", 4267, 0, 0 },   // NAD27 (USA, NADCON)
     { "D-03", 4267, 0, 0 },   // NAD27 (Canada, NTv1)
@@ -91,39 +91,39 @@ static const PCIDatums aoDatums[] =
     { NULL, 0 }
 };
 
-static const PCIDatums aoEllips[] =
+static PCIDatums aoEllips[] =
 {
-    { "E000", 7008, 0, 0 },     // Clarke, 1866 (NAD1927)
-    { "E001", 7034, 0, 0 },     // Clarke, 1880
-    { "E002", 7004, 0, 0 },     // Bessel, 1841
+    { "E000", 7008, 0, 0 },   // Clarke, 1866 (NAD1927)
+    { "E001", 7034, 0, 0 },   // Clarke, 1880
+    { "E002", 7004, 0, 0 },   // Bessel, 1841
     { "E003", 0, 6378157.5,6356772.2 },   // New International, 1967
-    { "E004", 7022, 0, 0 },     // International, 1924 (Hayford, 1909)
-    { "E005", 7043, 0, 0 },     // WGS, 1972
-    { "E006", 7042, 0, 0 },     // Everest, 1830
+    { "E004", 7022, 0, 0 },   // International, 1924 (Hayford, 1909)
+    { "E005", 7043, 0, 0 },   // WGS, 1972
+    { "E006", 7042, 0, 0 },   // Everest, 1830
     { "E007", 0, 6378145.,6356759.769356 }, // WGS, 1966
-    { "E008", 7019, 0, 0 },     // GRS, 1980 (NAD1983)
-    { "E009", 7001, 0, 0 },     // Airy, 1830
-    { "E010", 7018, 0, 0 },     // Modified Everest 
-    { "E011", 7002, 0, 0 },     // Modified Airy
-    { "E012", 7030, 0, 0 },     // WGS, 1984 (GPS)
+    { "E008", 7019, 0, 0 },   // GRS, 1980 (NAD1983)
+    { "E009", 7001, 0, 0 },   // Airy, 1830
+    { "E010", 7018, 0, 0 },   // Modified Everest 
+    { "E011", 7002, 0, 0 },   // Modified Airy
+    { "E012", 7030, 0, 0 },   // WGS, 1984 (GPS)
     { "E013", 0, 6378155.,6356773.3205 }, // Southeast Asia
-    { "E014", 7003, 0, 0 },     // Australian National, 1965
-    { "E015", 7024, 0, 0 },     // Krassovsky, 1940
-    { "E016", 7053, 0, 0 },     // Hough
+    { "E014", 7003, 0, 0 },   // Australian National, 1965
+    { "E015", 7024, 0, 0 },   // Krassovsky, 1940
+    { "E016", 0, 6378270.,6356794.343479 }, // Hough
     { "E017", 0, 6378166.,6356784.283666 }, // Mercury, 1960
     { "E018", 0, 6378150.,6356768.337303 }, //  Modified Mercury, 1968
-    { "E019", 7052, 0, 0},      // normal sphere
-    { "E333", 7046, 0, 0 },     // Bessel 1841 (Japan By Law)
+    { "E019", 0, 6370997.,6370997.}, // normal sphere
+    { "E333", 7046, 0, 0 },    // Bessel 1841 (Japan By Law)
     { "E600", 0, 6378144.0,6356759.0 }, // D-PAF (Orbits)
-    { "E900", 7006, 0, 0 },     // Bessel, 1841 (Namibia)
-    { "E901", 7044, 0, 0 },     // Everest, 1956
-    { "E902", 7056, 0, 0 },     // Everest, 1969
-    { "E903", 7016, 0, 0 },     // Everest (Sabah & Sarawak)
-    { "E904", 7020, 0, 0 },     // Helmert, 1906
+    { "E900", 7006, 0, 0 },   // Bessel, 1841 (Namibia)
+    { "E901", 7044, 0, 0 },   // Everest, 1956
+    { "E902", 0, 6377295.664,6356094.667915 }, // Everest, 1969
+    { "E903", 7016, 0, 0 },   // Everest (Sabah & Sarawak)
+    { "E904", 7020, 0, 0 },   // Helmert, 1906
     { "E905", 0, 6378136.,6356751.301569 }, // SGS 85
     { "E906", 0, 6378165.,6356783.286959 }, // WGS 60
-    { "E907", 7036, 0, 0 },     // South American, 1969
-    { "E910", 7041, 0, 0 },     // ATS77
+    { "E907", 7036, 0, 0 },   // South American, 1969
+    { "E910", 7041, 0, 0 },   // ATS77
     { NULL, 0 }
 };
 
@@ -289,8 +289,6 @@ OGRErr OSRImportFromPCI( OGRSpatialReferenceH hSRS, const char *pszProj,
                          const char *pszUnits, double *padfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromPCI", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->importFromPCI( pszProj,
                                                           pszUnits,
                                                           padfPrjParams );
@@ -348,8 +346,6 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                                            double *padfPrjParams )
 
 {
-    Clear();
-
     if( pszProj == NULL )
         return OGRERR_CORRUPT_DATA;
 
@@ -417,10 +413,8 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
 
     else if( EQUALN( pszProj, "ER", 2 ) )
     {
-        // PCI and GCTP don't support natural origin lat. 
-        SetEquirectangular2( 0.0, padfPrjParams[2],
-                             padfPrjParams[3], 
-                             padfPrjParams[6], padfPrjParams[7] );
+        SetEquirectangular( padfPrjParams[3], padfPrjParams[2],
+                            padfPrjParams[6], padfPrjParams[7] );
     }
 
     else if( EQUALN( pszProj, "GNO", 3 ) )
@@ -580,7 +574,7 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
     if( strlen(szEarthModel) > 0 
         && (poRoot == NULL || IsProjected() || IsGeographic()) )
     {
-        const PCIDatums   *paoDatum = aoDatums;
+        PCIDatums   *paoDatum = aoDatums;
 
         // Search for matching datum
         while ( paoDatum->pszPCIDatum )
@@ -619,10 +613,10 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                     
                     PCIGetEllipsoidInfo( paoDatum->nEPSGCode, &pszName,
                                          &dfSemiMajor, &dfInvFlattening );
-                    SetGeogCS( CPLString().Printf(
+                    SetGeogCS( CPLSPrintf(
                                    "Unknown datum based upon the %s ellipsoid",
                                    pszName ),
-                               CPLString().Printf(
+                               CPLSPrintf(
                                    "Not specified (based on %s spheroid)",
                                    pszName ),
                                pszName, dfSemiMajor, dfInvFlattening,
@@ -730,8 +724,6 @@ OGRErr OSRExportToPCI( OGRSpatialReferenceH hSRS,
                        double **ppadfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToPCI", CE_Failure );
-
     *ppszProj = NULL;
     *ppszUnits = NULL;
     *ppadfPrjParams = NULL;
@@ -863,7 +855,7 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
         CPLPrintStringFill( szProj, "ER", 16 );
         (*ppadfPrjParams)[2] = GetNormProjParm( SRS_PP_CENTRAL_MERIDIAN, 0.0 );
         (*ppadfPrjParams)[3] =
-            GetNormProjParm( SRS_PP_STANDARD_PARALLEL_1, 0.0 );
+            GetNormProjParm( SRS_PP_LATITUDE_OF_ORIGIN, 0.0 );
         (*ppadfPrjParams)[6] = GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
         (*ppadfPrjParams)[7] = GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
     }
@@ -1047,7 +1039,7 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
         double      dfSemiMajor = GetSemiMajor();
         double      dfInvFlattening = GetInvFlattening();
 
-        const PCIDatums   *paoDatum = aoEllips;
+        PCIDatums   *paoDatum = aoEllips;
 
 #ifdef DEBUG
         CPLDebug( "OSR_PCI",
@@ -1095,7 +1087,7 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
 /* -------------------------------------------------------------------- */
 /*      Translate the linear units.                                     */
 /* -------------------------------------------------------------------- */
-    const char  *pszUnits;
+    char        *pszUnits;
         
     if( EQUALN( szProj, "LONG/LAT", 8 ) )
         pszUnits = "DEGREE";

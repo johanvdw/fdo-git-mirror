@@ -1,32 +1,83 @@
 /******************************************************************************
- * $Id: Dataset.i 14911 2008-07-14 21:35:45Z tamas $
+ * $Id: Dataset.i 10775 2007-02-06 20:57:44Z warmerdam $
  *
  * Name:     Dataset.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.16  2006/12/02 05:15:30  hobu
+ * Dataset.ReadRaster
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.15  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.14  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.13  2005/07/18 16:13:31  kruland
+ * Added MajorObject.i an interface specification to the MajorObject baseclass.
+ * Used inheritance in Band.i, Driver.i, and Dataset.i to access MajorObject
+ * functionality.
+ * Adjusted Makefile to have PYTHON be a variable, gdal wrapper depend on
+ * MajorObject.i, use rm (instead of libtool's wrapped RM) for removal because
+ * the libtool didn't accept -r.
+ *
+ * Revision 1.12  2005/07/15 19:00:55  kruland
+ * Implement the SetMetadata/GetMetadata methods as in Band.i
+ *
+ * Revision 1.11  2005/07/15 16:55:21  kruland
+ * Implemented SetDescription and GetDescription.
+ *
+ * Revision 1.10  2005/03/10 17:18:55  hobu
+ * #ifdefs for csharp
+ *
+ * Revision 1.9  2005/02/23 21:37:18  kruland
+ * Added GetProjectionRef().  Commented missing methods.
+ *
+ * Revision 1.8  2005/02/23 17:46:39  kruland
+ * Added r/o attribute RasterCount.
+ * Added AddBand method.
+ * Added WriteRaster method.
+ *
+ * Revision 1.7  2005/02/21 14:51:32  kruland
+ * Needed to rename GDALDriver to GDALDriverShadow in the last commit.
+ *
+ * Revision 1.6  2005/02/20 19:42:53  kruland
+ * Rename the Swig shadow classes so the names do not give the impression that
+ * they are any part of the GDAL/OSR apis.  There were no bugs with the old
+ * names but they were confusing.
+ *
+ * Revision 1.5  2005/02/17 17:27:13  kruland
+ * Changed the handling of fixed size double arrays to make it fit more
+ * naturally with GDAL/OSR usage.  Declare as typedef double * double_17;
+ * If used as return argument use:  function ( ... double_17 argout ... );
+ * If used as value argument use: function (... double_17 argin ... );
+ *
+ * Revision 1.4  2005/02/16 17:41:19  kruland
+ * Added a few more methods to Dataset and marked the ones still missing.
+ *
+ * Revision 1.3  2005/02/15 20:50:49  kruland
+ * Added SetProjection.
+ *
+ * Revision 1.2  2005/02/15 16:53:36  kruland
+ * Removed use of vector<double> in the ?etGeoTransform() methods.  Use fixed
+ * length double array type instead.
+ *
+ * Revision 1.1  2005/02/15 05:56:49  kruland
+ * Created the Dataset shadow class definition.  Does not rely on the C++ api
+ * in gdal_priv.h.  Need to remove the vector<>s and replace with fixed
+ * size arrays.
+ *
+ *
+*/
 
 %{
 
@@ -39,23 +90,14 @@ CPLErr DSReadRaster_internal( GDALDatasetShadow *obj,
                             int *buf_size, char **buf,
                             int band_list, int *pband_list )
 {
-  CPLErr result;
-  *buf_size = (size_t)buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8) * band_list;
-  *buf = (char*) VSIMalloc3( buf_xsize, buf_ysize, (GDALGetDataTypeSize( buf_type ) / 8) * band_list );
-  if (*buf)
-  {
-    result = GDALDatasetRasterIO(obj, GF_Read, xoff, yoff, xsize, ysize,
-                                    (void*) *buf, buf_xsize, buf_ysize, buf_type,
-                                    band_list, pband_list, 0, 0, 0 );
-    if ( result != CE_None ) {
-        free( *buf );
-        *buf = 0;
-        *buf_size = 0;
-    }
-  }
-  else
-  {
-    result = CE_Failure;
+  *buf_size = buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8) * band_list;
+  *buf = (char*) malloc( *buf_size );
+
+  CPLErr result = GDALDatasetRasterIO(obj, GF_Read, xoff, yoff, xsize, ysize,
+                                (void*) *buf, buf_xsize, buf_ysize, buf_type,
+                                band_list, pband_list, 0, 0, 0 );
+  if ( result != CE_None ) {
+    free( *buf );
     *buf = 0;
     *buf_size = 0;
   }
@@ -128,31 +170,13 @@ public:
 
   // The (int,int*) arguments are typemapped.  The name of the first argument
   // becomes the kwarg name for it.
-#ifndef SWIGCSHARP  
 %feature("kwargs") BuildOverviews;
 %apply (int nList, int* pList) { (int overviewlist, int *pOverviews) };
-#else
-%apply (void *buffer_ptr) {int *pOverviews};
-#endif
   int BuildOverviews( const char *resampling = "NEAREST",
-                      int overviewlist = 0 , int *pOverviews = 0,
-                      GDALProgressFunc callback = NULL,
-                      void* callback_data=NULL ) {
-                      
-    return GDALBuildOverviews(  self, 
-                                resampling, 
-                                overviewlist, 
-                                pOverviews, 
-                                0, 
-                                0, 
-                                callback, 
-                                callback_data);
+                      int overviewlist = 0 , int *pOverviews = 0 ) {
+    return GDALBuildOverviews( self, resampling, overviewlist, pOverviews, 0, 0, 0, 0);
   }
-#ifndef SWIGCSHARP
 %clear (int overviewlist, int *pOverviews);
-#else
-%clear (int *pOverviews);
-#endif
 
   int GetGCPCount() {
     return GDALGetGCPCount( self );
@@ -161,8 +185,7 @@ public:
   const char *GetGCPProjection() {
     return GDALGetGCPProjection( self );
   }
-  
-#ifndef SWIGCSHARP
+
   void GetGCPs( int *nGCPs, GDAL_GCP const **pGCPs ) {
     *nGCPs = GDALGetGCPCount( self );
     *pGCPs = GDALGetGCPs( self );
@@ -171,7 +194,6 @@ public:
   CPLErr SetGCPs( int nGCPs, GDAL_GCP const *pGCPs, const char *pszGCPProjection ) {
     return GDALSetGCPs( self, nGCPs, pGCPs, pszGCPProjection );
   }
-#endif
 
   void FlushCache() {
     GDALFlushCache( self );
@@ -183,17 +205,6 @@ public:
     return GDALAddBand( self, datatype, options );
   }
 
-  CPLErr CreateMaskBand( int nFlags ) {
-      return GDALCreateDatasetMaskBand( self, nFlags );
-  }
-
-%apply (char **options) {char **};
-  char **GetFileList() {
-    return GDALGetFileList( self );
-  }
-%clear char **;
-
-#ifndef SWIGCSHARP
 %feature("kwargs") WriteRaster;
 %apply (int nLen, char *pBuf) { (int buf_len, char *buf_string) };
 %apply (int *optional_int) { (int*) };
@@ -240,9 +251,9 @@ public:
 %clear (GDALDataType *buf_type);
 %clear (int*);
 %clear (int buf_len, char *buf_string);
-#endif
 
-#ifndef SWIGCSHARP
+
+
 %feature("kwargs") ReadRaster;
 %apply (int *optional_int) { (GDALDataType *buf_type) };
 %apply (int nList, int *pList ) { (int band_list, int *pband_list ) };
@@ -293,7 +304,6 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
   
 %clear (int *buf_len, char **buf );
 %clear (int*);
-#endif
 
 
 /* NEEDED */

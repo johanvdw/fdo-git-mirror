@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_s57.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogr_s57.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for classes binding S57 support onto OGRLayer,

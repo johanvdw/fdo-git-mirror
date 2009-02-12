@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceos.c 12600 2007-11-01 14:09:01Z dron $
+ * $Id: ceos.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  Core CEOS functions.
@@ -29,7 +29,7 @@
 
 #include "ceos.h"
 
-CPL_CVSID("$Id: ceos.c 12600 2007-11-01 14:09:01Z dron $");
+CPL_CVSID("$Id: ceos.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /* Function implementations of functions described in ceos.h */
 
@@ -140,8 +140,7 @@ void PutCeosRecordStruct(CeosRecord_t *record,const void *struct_ptr)
     }
 }
 
-void GetCeosField(CeosRecord_t *record, int32 start_byte,
-                  const char *format, void *value)
+void GetCeosField(CeosRecord_t *record, int32 start_byte, char *format, void *value)
 {
     int field_size;
     char *d_ptr;

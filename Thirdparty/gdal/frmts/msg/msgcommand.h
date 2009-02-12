@@ -1,8 +1,10 @@
+// msgcommand.h: interface for the msgcommand class.
+//
+//////////////////////////////////////////////////////////////////////
+
 /******************************************************************************
- * $Id: msgcommand.h 15085 2008-07-31 13:41:31Z mloskot $
  *
- * Purpose:  Interface of MSGCommand class. Parse the src_dataset string
- *           that is meant for the MSG driver.
+ * Purpose:  Parse the src_dataset string that is meant for the MSG driver.
  * Author:   Bas Retsios, retsios@itc.nl
  *
  ******************************************************************************
@@ -27,8 +29,12 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef GDAL_MSG_MSGCOMMAND_H_INCLUDED
-#define GDAL_MSG_MSGCOMMAND_H_INCLUDED
+#if !defined(AFX_MSGCOMMAND_H__64E1CE65_4F49_4198_9C4C_13625CF54EC5__INCLUDED_)
+#define AFX_MSGCOMMAND_H__64E1CE65_4F49_4198_9C4C_13625CF54EC5__INCLUDED_
+
+#if _MSC_VER > 1000
+#pragma once
+#endif // _MSC_VER > 1000
 
 #include <string>
 
@@ -38,7 +44,7 @@ public:
   MSGCommand();
   virtual ~MSGCommand();
 
-  std::string parse(std::string const& command_line);
+  std::string parse(std::string command_line);
   std::string sFileName(int iSatellite, int iSequence, int iStrip);
   std::string sPrologueFileName(int iSatellite, int iSequence);
   std::string sCycle(int iCycle);
@@ -52,17 +58,16 @@ public:
   int channel[12];
 
 private:
-  std::string sTrimSpaces(std::string const& str);
-  std::string sNextTerm(std::string const& str, int & iPos);
+  std::string sTrimSpaces(std::string str);
+  std::string sNextTerm(std::string str, int & iPos);
   int iDaysInMonth(int iMonth, int iYear);
   static std::string sChannel(int iChannel);
-  static int iChannel(std::string const& sChannel);
-  static std::string sTimeStampToFolder(std::string& sTimeStamp);
+  static int iChannel(std::string sChannel);
+  static std::string sTimeStampToFolder(std::string & sTimeStamp);
   std::string sRootFolder;
   std::string sTimeStamp;
   int iStep;
   bool fUseTimestampFolder;
 };
 
-#endif // GDAL_MSG_MSGCOMMAND_H_INCLUDED
-
+#endif // !defined(AFX_MSGCOMMAND_H__64E1CE65_4F49_4198_9C4C_13625CF54EC5__INCLUDED_)

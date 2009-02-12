@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrct.cpp 15384 2008-09-16 08:32:39Z dron $
+ * $Id: ogrct.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSCoordinateTransformation class.
@@ -38,7 +38,7 @@
 #include "proj_api.h"
 #endif
 
-CPL_CVSID("$Id: ogrct.cpp 15384 2008-09-16 08:32:39Z dron $");
+CPL_CVSID("$Id: ogrct.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /* ==================================================================== */
 /*      PROJ.4 interface stuff.                                         */
@@ -67,16 +67,10 @@ static char        *(*pfn_pj_strerrno)(int) = NULL;
 static char        *(*pfn_pj_get_def)(projPJ,int) = NULL;
 static void         (*pfn_pj_dalloc)(void *) = NULL;
 
-#if (defined(WIN32) || defined(WIN32CE)) && !defined(__MINGW32__)
+#if defined(WIN32) || defined(WIN32CE)
 #  define LIBNAME      "proj.dll"
-#elif defined(__CYGWIN__) || defined(__MINGW32__)
-// XXX: If PROJ.4 library was properly built using libtool in Cygwin or MinGW
-// environments it has the interface version number embedded in the file name
-// (it is CURRENT-AGE number). If DLL came somewhere else (e.g. from MSVC
-// build) it can be named either way, so use PROJSO environment variable to
-// specify the right library name. By default assume that in Cygwin/MinGW all
-// components were buit in the same way.
-#  define LIBNAME      "libproj-0.dll"
+#elif defined(__CYGWIN__)
+#  define LIBNAME      "libproj.dll"
 #elif defined(__APPLE__)
 #  define LIBNAME      "libproj.dylib"
 #else
@@ -126,20 +120,6 @@ public:
 };
 
 /************************************************************************/
-/*                        GetProjLibraryName()                          */
-/************************************************************************/
-
-static const char* GetProjLibraryName()
-{
-    const char *pszLibName = LIBNAME;
-#if !defined(WIN32CE)
-    if( CPLGetConfigOption("PROJSO",NULL) != NULL )
-        pszLibName = CPLGetConfigOption("PROJSO",NULL);
-#endif
-    return pszLibName;
-}
-
-/************************************************************************/
 /*                          LoadProjLibrary()                           */
 /************************************************************************/
 
@@ -148,14 +128,17 @@ static int LoadProjLibrary()
 {
     CPLMutexHolderD( &hPROJMutex );
     static int  bTriedToLoad = FALSE;
-    const char *pszLibName;
+    const char *pszLibName = LIBNAME;
     
     if( bTriedToLoad )
-        return( pfn_pj_transform != NULL );
+        return( pfn_pj_init != NULL );
 
     bTriedToLoad = TRUE;
 
-    pszLibName = GetProjLibraryName();
+#if !defined(WIN32CE)
+    if( CPLGetConfigOption("PROJSO",NULL) != NULL )
+        pszLibName = CPLGetConfigOption("PROJSO",NULL);
+#endif
 
 #ifdef PROJ_STATIC
     pfn_pj_init = pj_init;
@@ -298,7 +281,7 @@ OGRCreateCoordinateTransformation( OGRSpatialReference *poSource,
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "Unable to load PROJ.4 library (%s), creation of\n"
                   "OGRCoordinateTransformation failed.",
-                  GetProjLibraryName() );
+                  LIBNAME );
         return NULL;
     }
 
@@ -464,22 +447,13 @@ int OGRProj4CT::Initialize( OGRSpatialReference * poSourceIn,
 /* -------------------------------------------------------------------- */
 /*      Establish PROJ.4 handle for source if projection.               */
 /* -------------------------------------------------------------------- */
-    // OGRThreadSafety: The following variable is not a thread safety issue 
-    // since the only issue is incrementing while accessing which at worse 
-    // means debug output could be one "increment" late. 
-    static int   nDebugReportCount = 0;
-
-    char        *pszProj4Defn = NULL;
+    char        *pszProj4Defn;
 
     if( poSRSSource->exportToProj4( &pszProj4Defn ) != OGRERR_NONE )
-    {
-        CPLFree( pszProj4Defn );
         return FALSE;
-    }
 
     if( strlen(pszProj4Defn) == 0 )
     {
-        CPLFree( pszProj4Defn );
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "No PROJ.4 translation for source SRS, coordinate\n"
                   "transformation initialization has failed." );
@@ -507,28 +481,19 @@ int OGRProj4CT::Initialize( OGRSpatialReference * poSourceIn,
         }
     }
     
-    if( nDebugReportCount < 10 )
-        CPLDebug( "OGRCT", "Source: %s", pszProj4Defn );
-    
     CPLFree( pszProj4Defn );
-
+    
     if( psPJSource == NULL )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Establish PROJ.4 handle for target if projection.               */
 /* -------------------------------------------------------------------- */
-    pszProj4Defn = NULL;
-
     if( poSRSTarget->exportToProj4( &pszProj4Defn ) != OGRERR_NONE )
-    {
-        CPLFree( pszProj4Defn );
         return FALSE;
-    }
 
     if( strlen(pszProj4Defn) == 0 )
     {
-        CPLFree( pszProj4Defn );
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "No PROJ.4 translation for destination SRS, coordinate\n"
                   "transformation initialization has failed." );
@@ -542,12 +507,6 @@ int OGRProj4CT::Initialize( OGRSpatialReference * poSourceIn,
                   "Failed to initialize PROJ.4 with `%s'.", 
                   pszProj4Defn );
     
-    if( nDebugReportCount < 10 )
-    {
-        CPLDebug( "OGRCT", "Target: %s", pszProj4Defn );
-        nDebugReportCount++;
-    }
-
     CPLFree( pszProj4Defn );
     
     if( psPJTarget == NULL )

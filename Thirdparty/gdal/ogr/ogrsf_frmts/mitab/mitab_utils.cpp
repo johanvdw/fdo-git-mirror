@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_utils.cpp,v 1.22 2008/07/21 16:04:58 dmorissette Exp $
+ * $Id: mitab_utils.cpp,v 1.20 2005/08/07 21:02:14 fwarmerdam Exp $
  *
  * Name:     mitab_utils.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -30,12 +30,6 @@
  **********************************************************************
  *
  * $Log: mitab_utils.cpp,v $
- * Revision 1.22  2008/07/21 16:04:58  dmorissette
- * Fixed const char * warnings with GCC 4.3 (GDAL ticket #2325)
- *
- * Revision 1.21  2006/12/01 16:53:15  dmorissette
- * Wrapped <mbctype.h> stuff with !defined(WIN32CE) (done by mloskot in OGR)
- *
  * Revision 1.20  2005/08/07 21:02:14  fwarmerdam
  * avoid warnings about testing for characters > 255.
  *
@@ -666,7 +660,7 @@ char *TABCleanFieldName(const char *pszSrcName)
 typedef struct 
 {
     int         nUnitId;
-    const char *pszAbbrev;
+    char        *pszAbbrev;
 } MapInfoUnitsInfo;
 
 static MapInfoUnitsInfo gasUnitsList[] = 

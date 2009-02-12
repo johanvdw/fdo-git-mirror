@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqldatasource.cpp 14887 2008-07-11 13:31:22Z warmerdam $
+ * $Id: ogrmysqldatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDataSource class.
@@ -36,7 +36,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqldatasource.cpp 14887 2008-07-11 13:31:22Z warmerdam $");
+CPL_CVSID("$Id: ogrmysqldatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 /************************************************************************/
 /*                         OGRMySQLDataSource()                         */
 /************************************************************************/
@@ -133,7 +133,7 @@ int OGRMySQLDataSource::Open( const char * pszNewName, int bUpdate,
     int nPort = 0, i;
     char **papszTableNames=NULL;
     std::string oHost, oPassword, oUser, oDB;
-    char *apszArgv[2] = { (char*) "org", NULL };
+    char *apszArgv[2] = { "org", NULL };
     char **papszArgv = apszArgv;
     int  nArgc = 1;
     const char *client_groups[] = {"client", "ogr", NULL };
@@ -199,29 +199,23 @@ int OGRMySQLDataSource::Open( const char * pszNewName, int bUpdate,
 /* -------------------------------------------------------------------- */
     hConn = mysql_init( NULL );
 
+
+/* -------------------------------------------------------------------- */
+/*      Set the timeout for the connection if the users has specified.  */
+/* -------------------------------------------------------------------- */
+
+    const char *pszTimeoutLength = 
+        CPLGetConfigOption( "MYSQL_TIMEOUT", "0" );  
+
+    unsigned int timeout = atoi(pszTimeoutLength);        
+    mysql_options(hConn, MYSQL_OPT_CONNECT_TIMEOUT, (char*)&timeout);
+    
     if( hConn == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "mysql_init() failed." );
     }
 
-/* -------------------------------------------------------------------- */
-/*      Set desired options on the connection: charset and timeout.     */
-/* -------------------------------------------------------------------- */
-    if( hConn )
-    {
-        const char *pszTimeoutLength = 
-            CPLGetConfigOption( "MYSQL_TIMEOUT", "0" );  
-        
-        unsigned int timeout = atoi(pszTimeoutLength);        
-        mysql_options(hConn, MYSQL_OPT_CONNECT_TIMEOUT, (char*)&timeout);
-
-        mysql_options(hConn, MYSQL_SET_CHARSET_NAME, "utf8" );
-    }
-    
-/* -------------------------------------------------------------------- */
-/*      Perform connection.                                             */
-/* -------------------------------------------------------------------- */
     if( hConn
         && mysql_real_connect( hConn, 
                                oHost.length() ? oHost.c_str() : NULL,
@@ -488,23 +482,21 @@ OGRSpatialReference *OGRMySQLDataSource::FetchSRS( int nId )
 
     if( papszRow != NULL && papszRow[0] != NULL )
     {
-        pszWKT = CPLStrdup(papszRow[0]);
+        pszWKT =papszRow[0];
     }
 
+    // make sure to attempt to free results of successful queries
+    hResult = mysql_store_result( GetConn() );
     if( hResult != NULL )
         mysql_free_result( hResult );
-    hResult = NULL;
-
-    poSRS = new OGRSpatialReference();
-    char* pszWKTOri = pszWKT;
-    if( pszWKT == NULL || poSRS->importFromWkt( &pszWKT ) != OGRERR_NONE )
-    {
-        delete poSRS;
-        CPLFree(pszWKTOri);
-        poSRS = NULL;
-    }
-
-    CPLFree(pszWKTOri);
+	hResult = NULL;
+		
+     poSRS = new OGRSpatialReference();
+     if( pszWKT == NULL || poSRS->importFromWkt( &pszWKT ) != OGRERR_NONE )
+     {
+         delete poSRS;
+         poSRS = NULL;
+     }
 
 /* -------------------------------------------------------------------- */
 /*      Add to the cache.                                               */
@@ -514,7 +506,6 @@ OGRSpatialReference *OGRMySQLDataSource::FetchSRS( int nId )
         CPLRealloc(papoSRS, sizeof(void*) * (nKnownSRID + 1) );
     panSRID[nKnownSRID] = nId;
     papoSRS[nKnownSRID] = poSRS;
-    nKnownSRID ++;
 
     return poSRS;
 }
@@ -575,7 +566,6 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         if( hResult != NULL )
             mysql_free_result( hResult );
         hResult = NULL;
-        CPLFree(pszWKT);
         return nSRSId;
     }
 
@@ -599,14 +589,13 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
     if( papszRow != NULL && papszRow[0] != NULL )
     {
         nSRSId = atoi(papszRow[0]) + 1;
+        if( hResult != NULL )
+            mysql_free_result( hResult );
+        hResult = NULL;
     }
     else
         nSRSId = 1;
-
-    if( hResult != NULL )
-        mysql_free_result( hResult );
-    hResult = NULL;
-
+    
 /* -------------------------------------------------------------------- */
 /*      Try adding the SRS to the SRS table.                            */
 /* -------------------------------------------------------------------- */
@@ -622,9 +611,7 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
     if( hResult != NULL )
         mysql_free_result( hResult );
     hResult = NULL;
-
-    CPLFree(pszWKT);
-
+           
     return nSRSId;
 }
 
@@ -806,7 +793,7 @@ int OGRMySQLDataSource::DeleteLayer( int iLayer)
     char        		szCommand[1024];
 
     sprintf( szCommand,
-             "DROP TABLE `%s` ",
+             "DROP TABLE %s ",
              osLayerName.c_str() );
 
     if( !mysql_query(GetConn(), szCommand ) )
@@ -843,12 +830,6 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
     int                 nDimension = 3; // MySQL only supports 2d currently
 
 
-/* -------------------------------------------------------------------- */
-/*      Make sure there isn't an active transaction already.            */
-/* -------------------------------------------------------------------- */
-    InterruptLongResult();
-
-
     if( CSLFetchBoolean(papszOptions,"LAUNDER",TRUE) )
         pszLayerName = LaunderName( pszLayerNameIn );
     else
@@ -877,12 +858,12 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
             }
             else
             {
+                CPLFree( pszLayerName );
                 CPLError( CE_Failure, CPLE_AppDefined,
                           "Layer %s already exists, CreateLayer failed.\n"
                           "Use the layer creation option OVERWRITE=YES to "
                           "replace it.",
                           pszLayerName );
-                CPLFree( pszLayerName );
                 return NULL;
             }
         }
@@ -903,14 +884,14 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
     if( wkbFlatten(eType) == wkbNone )
     {
         sprintf( szCommand,
-                 "CREATE TABLE `%s` ( "
+                 "CREATE TABLE %s ( "
                  "   %s INT UNIQUE NOT NULL AUTO_INCREMENT )",
                  pszLayerName, pszExpectedFIDName );
     }
     else
     {
         sprintf( szCommand,
-                 "CREATE TABLE `%s` ( "
+                 "CREATE TABLE %s ( "
                  "   %s INT UNIQUE NOT NULL AUTO_INCREMENT, "
                  "   %s GEOMETRY NOT NULL )",
                  pszLayerName, pszExpectedFIDName, pszGeomColumnName );
@@ -1077,7 +1058,7 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
     if( eType != wkbNone && (pszSI == NULL || CSLTestBoolean(pszSI)) )
     {
         sprintf( szCommand,
-                 "ALTER TABLE `%s` ADD SPATIAL INDEX(`%s`) ",
+                 "ALTER TABLE %s ADD SPATIAL INDEX(%s) ",
                  pszLayerName,
                  pszGeomColumnName);
 

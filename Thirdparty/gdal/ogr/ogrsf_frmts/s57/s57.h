@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57.h 11537 2007-05-16 03:35:17Z warmerdam $
+ * $Id: s57.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for S-57 translator not including the
@@ -298,7 +298,7 @@ class CPL_DLL S57Reader
     DDFModule           *GetModule() { return poModule; }
     const char          *GetDSNM() { return pszDSNM; }
 
-    int                 Ingest();
+    void                Ingest();
     int                 ApplyUpdates( DDFModule * );
     int                 FindAndApplyUpdates( const char *pszPath=NULL );
 
@@ -344,13 +344,13 @@ public:
                                    const char *pszCOMT = NULL );
     int                 WriteDSPM( int nScale = 0 );
 
-// semi-private - for sophisticated writers.
-    DDFRecord           *MakeRecord();
-    DDFModule           *poModule;
-
 private:
-    int                 nNext0001Index;
+    DDFModule           *poModule;
     S57ClassRegistrar   *poRegistrar;
+
+    int                 nNext0001Index;
+
+    DDFRecord           *MakeRecord();
 
     int                 nCOMF;  /* Coordinate multiplier */
     int                 nSOMF;  /* Vertical (sounding) multiplier */

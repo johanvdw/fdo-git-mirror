@@ -1,10 +1,212 @@
 /******************************************************************************
- * $Id: typemaps_python.i 15400 2008-09-21 22:52:46Z warmerdam $
+ * $Id: typemaps_python.i 11951 2007-08-23 21:49:52Z warmerdam $
  *
  * Name:     typemaps_python.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
+ *
+
+ *
+ * $Log$
+ * Revision 1.48  2006/12/18 21:27:49  hobu
+ * add back the  IF_ERROR_RETURN_NONE typemap because we're using it for GetStatistics
+ *
+ * Revision 1.47  2006/11/15 23:40:01  hobu
+ * dump the tostring arginit typemap
+ *
+ * Revision 1.46  2006/11/15 23:09:29  hobu
+ * try testing for a given string for the tostring arginit
+ *
+ * Revision 1.45  2006/11/07 05:37:30  hobu
+ * an arginit typemap for the tostring typemap
+ *
+ * Revision 1.44  2006/11/05 20:30:10  hobu
+ * swig no longer puts language-specific stuff in the first argument of
+ * typemaps.  We already have everything conditionalized in gdal_typemaps.i
+ * for each language anyway.  These changes just silence the warnings.
+ *
+ * Revision 1.43  2005/10/11 15:20:28  kruland
+ * Removed the unused IF_ERROR_RETURN_NONE typemap.
+ * Removed the unnecessary $result=0 from typemaps.  These lines were to correct
+ * a bug in SWIG versions <= 1.3.24.
+ *
+ * Revision 1.42  2005/10/11 14:11:43  kruland
+ * Fix memory bug in typemap(out) char **options.  The returned array of strings
+ * is owned by the dataset.
+ *
+ * Revision 1.41  2005/10/03 20:13:33  kruland
+ * Clean up the CPLErr typemap to account for the new-er %exception code.
+ *
+ * Revision 1.40  2005/09/29 14:02:23  kruland
+ * Fixed memcpy in %typemap(in,numinputs=1) (int nGCPs, GDAL_GCP const *pGCPs)
+ *
+ * Revision 1.39  2005/09/13 02:58:41  kruland
+ * Use the ogr_error_map.i include file.
+ *
+ * Revision 1.38  2005/09/13 02:10:19  kruland
+ * Make fixes to the in ColorMap typemap.  Possible problems by using
+ * references to temporaries.
+ *
+ * Revision 1.37  2005/09/02 15:24:38  kruland
+ * Remove old and confusing comment which is no longer required.
+ *
+ * Revision 1.36  2005/08/08 17:07:16  kruland
+ * Added python typemaps for CPLXMLNode* in and return for the ParseXMLString
+ * and SerializeXMLTree methods.
+ *
+ * Revision 1.35  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.34  2005/08/04 20:47:24  kruland
+ * Added a new binding to support RasterBand::GetNoDataValue(), GetMaximum(), GetMinimum(),
+ * GetOffset(), GetScale() returning None when the attribute is not set.
+ *
+ * Revision 1.33  2005/07/15 20:28:16  kruland
+ * It seems that in Python 2.3 (maybe 2.4 as well), sequence objects (lists) are also
+ * mapping objects (dicts).  Fortunately, dicts are not lists.  So, in the in char **dict
+ * typemap, we need to first test if the arg is a sequence then test for mapping.
+ *
+ * Revision 1.32  2005/07/15 19:01:45  kruland
+ * Typemap out char **options needs to return a list instead of tuple to satisfy
+ * the gdalautotests.
+ *
+ * Revision 1.31  2005/07/15 18:34:59  kruland
+ * Revised the char **<-dict in mapping.  It now allows either dictionaries,
+ * or sequences of strings.  Added a typecheck so overloading works.  This
+ * typemap is only used in SetMetadata.
+ *
+ * Revision 1.30  2005/07/15 17:08:00  kruland
+ * - Initialize the local pointer variables in
+ *   (in,numinputs=0)(int *nLen,char**pBuf) argout typemap.
+ * - Fix the freearg typemap for int *nLen,char **pBuf.
+ * - Initialize the local pointer variables in
+ *   (in,numinputs=0)(int*nGCPs, GDAL_GCP*pGCPs) argout typemap.
+ * - Fix the ret CPLErr typemap for the not using exceptions case.
+ *   The use exception case is probably still broken.
+ *
+ * Revision 1.29  2005/07/15 15:08:19  kruland
+ * - Use the method SWIG_ConvertPtr instead of the #define'd name
+ * SWIG_Python_ConvertPtr.  The other name is available in older versions of swig.
+ * - Use PyInt_FromLong instead of SWIG_From_int.
+ * - In all the typemaps which use t_output_helper, implement code which forces
+ * initialization of $result to 0 at the beginning of the wrapper.
+ *
+ * Revision 1.28  2005/06/22 18:46:22  kruland
+ * Be consistant about using 'python' in %typemap decls.
+ * Removed references to 'python' in the %typemap comment strings to improve greps.
+ * Use $result instead of resultobj.
+ * Renamed type for OGRErr out typemap to OGRErr instead of THROW_OGR_ERROR.
+ * First cut at CPLErr out typemap which uses the bUseExceptions flag.
+ *
+ * Revision 1.27  2005/02/24 18:37:20  kruland
+ * Moved the c# typemaps to its own file.
+ *
+ * Revision 1.26  2005/02/24 17:35:15  hobu
+ * add the python name to the THROW_OGR_ERROR typemap
+ *
+ * Revision 1.25  2005/02/24 16:36:31  kruland
+ * Added IF_FALSE_RETURN_NONE typemap for GCPsToGeoTransform method.
+ * Changed GCPs typemaps to use new object rather than raw tuple.
+ * Added out typemap for char **s.  Currently used in osr.GetProjectionMethods.
+ *
+ * Revision 1.24  2005/02/24 16:13:57  hobu
+ * freearg patch for tostring argin typemap
+ * Added dummy typemaps (just copied the python ones)
+ * for the typemaps used in OGR for C#
+ *
+ * Revision 1.23  2005/02/23 21:01:10  hobu
+ * swap the decref with the asstring in the
+ * tostring argin typemap
+ *
+ * Revision 1.22  2005/02/23 17:45:35  kruland
+ * Change the optional_int macro to perform a cast to support the integer
+ * typedefs such as GDALDataType.
+ *
+ * Revision 1.21  2005/02/22 15:36:17  kruland
+ * Added ARRAY_TYPEMAP(4) for ogr.Geometry.GetEnvelope().
+ * Added a char* typemap (tostring argin), which calls str() on its argument
+ * to coerce into a string representation.
+ *
+ * Revision 1.20  2005/02/21 19:03:17  kruland
+ * Use Py_XDECREF() in the argout buffer typemap.
+ * Added a convienence fragment for constructing python sequences from integer
+ * arrays.
+ *
+ * Revision 1.19  2005/02/20 19:43:33  kruland
+ * Implement another argout typemap for fixed length double arrays.
+ *
+ * Revision 1.18  2005/02/18 19:34:08  hobu
+ * typo in OGRErrMessages
+ *
+ * Revision 1.17  2005/02/18 17:59:20  kruland
+ * Added nicely worded OGR exception mapping mechanism.
+ *
+ * Revision 1.16  2005/02/18 17:28:07  kruland
+ * Fixed bugs in THROW_OGR_ERROR typemap.  When no error is found, and no
+ * argouts, return None.
+ * Fixed bug in IF_ERR_RETURN_NONE typemap to return None if there are no
+ * argouts to return.
+ *
+ * Revision 1.15  2005/02/18 16:54:35  kruland
+ * Removed IGNORE_RC exception macro.
+ * Removed fragments.i %include because it's not included in swig 1.3.24.
+ * Defined out typemap IF_ERR_RETURN_NONE.
+ * Defined out typemap THROW_OGR_ERROR.  (untested).
+ *
+ * Revision 1.14  2005/02/17 21:14:48  kruland
+ * Use swig library's typemaps.i and fragments.i to support returning
+ * multiple argument values as a tuple.  Use this in all the custom
+ * argout typemaps.
+ *
+ * Revision 1.13  2005/02/17 17:27:13  kruland
+ * Changed the handling of fixed size double arrays to make it fit more
+ * naturally with GDAL/OSR usage.  Declare as typedef double * double_17;
+ * If used as return argument use:  function ( ... double_17 argout ... );
+ * If used as value argument use: function (... double_17 argin ... );
+ *
+ * Revision 1.12  2005/02/17 03:42:10  kruland
+ * Added macro to define typemaps for optional arguments to functions.
+ * The optional argument must be coded as a pointer in the function decl.
+ * The function must properly interpret a null pointer as default.
+ *
+ * Revision 1.11  2005/02/16 17:49:40  kruland
+ * Added in typemap for Lists of GCPs.
+ * Added 'python' to all the freearg typemaps too.
+ *
+ * Revision 1.10  2005/02/16 17:18:03  hobu
+ * put "python" name on the typemaps that are specific
+ * to python
+ *
+ * Revision 1.9  2005/02/16 16:53:45  kruland
+ * Minor comment change.
+ *
+ * Revision 1.8  2005/02/15 20:53:11  kruland
+ * Added typemap(in) char ** from PyString which allows the pointer (to char*)
+ * to change but assumes the contents do not change.
+ *
+ * Revision 1.7  2005/02/15 19:49:42  kruland
+ * Added typemaps for arbitrary char* buffers with length.
+ *
+ * Revision 1.6  2005/02/15 17:05:13  kruland
+ * Use CPLParseNameValue instead of strchr() in typemap(out) char **dict.
+ *
+ * Revision 1.5  2005/02/15 16:52:41  kruland
+ * Added a swig macro for handling fixed length double array arguments.  Used
+ * for Band::ComputeMinMax( double[2] ), and Dataset::?etGeoTransform() methods.
+ *
+ * Revision 1.4  2005/02/15 06:00:28  kruland
+ * Fixed critical bug in %typemap(in) std::vector<double>.  Used incorrect python
+ * parse call.
+ * Removed some stray cout's.
+ * Gave the "argument" to the %typemap(out) char** mapping.  This makes it easier
+ * to control its application.
+ *
+ * Revision 1.3  2005/02/14 23:56:02  hobu
+ * Added log info and C99-style comments
+ *
  *
 */
 
@@ -92,12 +294,11 @@
 %typemap(out,fragment="OGRErrMessages") OGRErr
 {
   /* %typemap(out) OGRErr */
-  if ( result != 0 && bUseExceptions) {
+  if ( result != 0) {
     PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
     SWIG_fail;
   }
 }
-
 %typemap(ret) OGRErr
 {
   /* %typemap(ret) OGRErr */
@@ -106,7 +307,7 @@
     resultobj = 0;
   }
   if (resultobj == 0) {
-    resultobj = PyInt_FromLong( $1 );
+    resultobj = PyInt_FromLong( 0 );
   }
 }
 
@@ -192,31 +393,9 @@ CreateTupleFromDoubleArray( double *first, unsigned int size ) {
     }
   }
 }
-
-/*
- *  Typemap for counted arrays of doubles <- PySequence
- */
-%typemap(in,numinputs=1) (int nList, double* pList)
+%typemap(freearg) (int nList, int* pList)
 {
-  /* %typemap(in,numinputs=1) (int nList, double* pList)*/
-  /* check if is List */
-  if ( !PySequence_Check($input) ) {
-    PyErr_SetString(PyExc_TypeError, "not a sequence");
-    SWIG_fail;
-  }
-  $1 = PySequence_Size($input);
-  $2 = (double*) malloc($1*sizeof(double));
-  for( int i = 0; i<$1; i++ ) {
-    PyObject *o = PySequence_GetItem($input,i);
-    if ( !PyArg_Parse(o,"d",&$2[i]) ) {
-      SWIG_fail;
-    }
-  }
-}
-
-%typemap(freearg) (int nList, double* pList)
-{
-  /* %typemap(freearg) (int nList, double* pList) */
+  /* %typemap(freearg) (int nList, int* pList) */
   if ($2) {
     free((void*) $2);
   }
@@ -459,8 +638,6 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
   /* %typemap(freearg) char **options */
   CSLDestroy( $1 );
 }
-
-
 /*
  * Typemap converts an array of strings into a list of strings
  * with the assumption that the called object maintains ownership of the
@@ -468,7 +645,7 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
  */
 %typemap(out) char **options
 {
-  /* %typemap(out) char **options -> ( string ) */
+  /* %typemap(out) char ** -> ( string ) */
   char **stringarray = $1;
   if ( stringarray == NULL ) {
     $result = Py_None;
@@ -477,8 +654,8 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
   else {
     int len = CSLCount( stringarray );
     $result = PyList_New( len );
-    for ( int i = 0; i < len; ++i ) {
-      PyObject *o = PyString_FromString( stringarray[i] );
+    for ( int i = 0; i < len; ++i, ++stringarray ) {
+      PyObject *o = PyString_FromString( *stringarray );
       PyList_SetItem($result, i, o );
     }
   }
@@ -560,7 +737,7 @@ OPTIONAL_POD(int,i);
  */
 
 
-%typemap(in) (tostring argin) (PyObject * str=0)
+%typemap(in) (tostring argin) (PyObject *str)
 {
   /* %typemap(in) (tostring argin) */
   str = PyObject_Str( $input );
@@ -685,310 +862,10 @@ static PyObject *XMLTreeToPyList( CPLXMLNode *psTree )
 %typemap(out,fragment="XMLTreeToPyList") (CPLXMLNode*)
 {
   /* %typemap(out) (CPLXMLNode*) */
-
-  CPLXMLNode *psXMLTree = $1;
-  int         bFakeRoot = FALSE;
-
-  if( psXMLTree != NULL && psXMLTree->psNext != NULL )
-  {
-	CPLXMLNode *psFirst = psXMLTree;
-
-	/* create a "pseudo" root if we have multiple elements */
-        psXMLTree = CPLCreateXMLNode( NULL, CXT_Element, "" );
-	psXMLTree->psChild = psFirst;
-        bFakeRoot = TRUE;
-  }
-
-  $result = XMLTreeToPyList( psXMLTree );
-
-  if( bFakeRoot )
-  {
-        psXMLTree->psChild = NULL;
-        CPLDestroyXMLNode( psXMLTree );
-  }
+  $result = XMLTreeToPyList( $1 );
 }
 %typemap(ret) (CPLXMLNode*)
 {
   /* %typemap(ret) (CPLXMLNode*) */
   if ( $1 ) CPLDestroyXMLNode( $1 );
 }
-
-/* Check inputs to ensure they are not NULL but instead empty #1775 */
-%define CHECK_NOT_UNDEF(type, param, msg)
-%typemap(check) (const char *pszNewDesc)
-{
-    /* %typemap(check) (type *param) */
-    if ( bUseExceptions && !$1) {
-        PyErr_SetString( PyExc_RuntimeError, "Description cannot be None" );
-        SWIG_fail;
-    }
-}
-%enddef
-
-//CHECK_NOT_UNDEF(char, method, method)
-//CHECK_NOT_UNDEF(const char, name, name)
-//CHECK_NOT_UNDEF(const char, request, request)
-//CHECK_NOT_UNDEF(const char, cap, capability)
-//CHECK_NOT_UNDEF(const char, statement, statement)
-CHECK_NOT_UNDEF(const char, pszNewDesc, description)
-CHECK_NOT_UNDEF(OSRCoordinateTransformationShadow, , coordinate transformation)
-CHECK_NOT_UNDEF(OGRGeometryShadow, other, other geometry)
-CHECK_NOT_UNDEF(OGRGeometryShadow, other_disown, other geometry)
-CHECK_NOT_UNDEF(OGRGeometryShadow, geom, geometry)
-CHECK_NOT_UNDEF(OGRFieldDefnShadow, defn, field definition)
-CHECK_NOT_UNDEF(OGRFieldDefnShadow, field_defn, field definition)
-CHECK_NOT_UNDEF(OGRFeatureShadow, feature, feature)
-
-
-/* ==================================================================== */
-/*	Support function for progress callbacks to python.                  */
-/* ==================================================================== */
-
-/*  The following scary, scary, voodoo -- hobu                          */
-/*                                                                      */
-/*  A number of things happen as part of callbacks in GDAL.  First,     */
-/*  there is a generic callback function internal to GDAL called        */
-/*  GDALTermProgress, which just outputs generic progress counts to the */
-/*  terminal as you would expect.  This callback function is a special  */
-/*  case.  Alternatively, a user can pass in a Python function that     */
-/*  can be used as a callback, and it will be eval'd by GDAL during     */
-/*  its update loop.  The typemaps here handle taking in                */
-/*  GDALTermProgress and the Python function.                           */
-
-/*  This arginit does some magic because it must create a               */
-/*  psProgressInfo that is global to the wrapper function.  The noblock */
-/*  option here allows it to end up being global and not being          */
-/*  instantiated within a {} block.  Both the callback_data and the     */
-/*  callback typemaps will then use this struct to hold pointers to the */
-/*  callback and callback_data PyObject*'s.                             */
-
-%typemap(arginit, noblock=1) ( void* callback_data=NULL)
-{
-    /* %typemap(arginit) ( const char* callback_data=NULL)  */
-        PyProgressData *psProgressInfo;
-        psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-        psProgressInfo->nLastReported = -1;
-        psProgressInfo->psPyCallback = NULL;
-        psProgressInfo->psPyCallbackData = NULL;
-
-}
-
-/*  This is kind of silly, but this typemap takes the $input'ed         */
-/*  PyObject* and hangs it on the struct's callback data *and* sets     */
-/*  the argument to the psProgressInfo void* that will eventually be    */
-/*  passed into the function as its callback data.  Confusing.  Sorry.  */
-%typemap(in) (void* callback_data=NULL) 
-{
-    /* %typemap(in) ( void* callback_data=NULL)  */
-  
-        psProgressInfo->psPyCallbackData = $input ;
-        $1 = psProgressInfo;
-
-}
-
-/*  Here is our actual callback function.  It could be a generic GDAL   */
-/*  callback function like GDALTermProgress, or it might be a user-     */
-/*  defined callback function that is actually a Python function.       */
-/*  If we were the generic function, set our argument to that,          */
-/*  otherwise, setup the psProgressInfo's callback to be our PyObject*  */
-/*  and set our callback function to be PyProgressProxy, which is       */
-/*  defined in gdal_python.i                                            */
-%typemap(in) ( GDALProgressFunc callback = NULL) 
-{
-    /* %typemap(in) (GDALProgressFunc callback = NULL) */
-    /* callback_func typemap */
-    if ($input && $input != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( $input, 
-                         (void**)&cbfunction, 
-                         SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
-                         SWIG_POINTER_EXCEPTION | 0 );
-
-        if ( cbfunction == GDALTermProgress ) {
-            $1 = GDALTermProgress;
-        } else {
-            if (!PyFunction_Check($input)) {
-                PyErr_SetString( PyExc_RuntimeError, 
-                                 "Object given is not a Python function" );
-                SWIG_fail;
-            }
-            psProgressInfo->psPyCallback = $input;
-            $1 = PyProgressProxy;
-        }
-        
-    }
-
-}
-
-/*  clean up our global (to the wrapper function) psProgressInfo        */
-/*  struct now that we're done with it.                                 */
-%typemap(freearg) (void* callback_data=NULL) 
-{
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-  
-        CPLFree(psProgressInfo);
-
-}
-
-
-%typemap(arginit) ( GUInt32 ) 
-{
-    /* %typemap(out) ( GUInt32 )  */
-
-	$1 = 0;
-
-}
-
-%typemap(out) ( GUInt32 ) 
-{
-    /* %typemap(out) ( GUInt32 )  */
-
-	$result = PyLong_FromUnsignedLong($1);
-
-}
-
-%typemap(in) ( GUInt32 ) 
-{
-    /* %typemap(in) ( GUInt32 )  */
-
-    if (PyLong_Check($input) || PyInt_Check($input)) {
-		$1 = PyLong_AsUnsignedLong($input);
-	}
-
-}
-
-
-%define OBJECT_LIST_INPUT(type)
-%typemap(in, numinputs=1) (int object_list_count, type **poObjects)
-{
-  /*  OBJECT_LIST_INPUT %typemap(in) (int itemcount, type *optional_##type)*/
-  if ( $input == Py_None ) {
-    PyErr_SetString( PyExc_TypeError, "Input must be a list, not None" );
-    SWIG_fail;
-  }
-
-  if ( !PySequence_Check($input) ) {
-    PyErr_SetString(PyExc_TypeError, "not a sequence");
-    SWIG_fail;
-  }
-  $1 = PySequence_Size($input);
-  $2 = (type**) CPLMalloc($1*sizeof(type*));
-  
-  for( int i = 0; i<$1; i++ ) {
-
-      PyObject *o = PySequence_GetItem($input,i);
-      PySwigObject *sobj = SWIG_Python_GetSwigThis(o);
-      type* rawobjectpointer = NULL;
-      if (sobj) {
-          Py_DECREF(sobj);
-      } else {
-          SWIG_fail;
-      }
-      rawobjectpointer = (type*) sobj->ptr;
-      /* FIXME remove this when Frank confirms this typemap works */
-      int v = GDALGetRasterBandXSize(rawobjectpointer);
-      $2[i] = rawobjectpointer;
-
-  }
-}
-
-%typemap(freearg)  (int object_list_count, type **poObjects)
-{
-  /* OBJECT_LIST_INPUT %typemap(freearg) (int object_list_count, type **poObjects)*/
-  if ( $2 ) {
-      for (int i = 0; i< $1; i++) {
-          CPLFree($2[i]);
-      }
-  }
-  CPLFree( $2 );
-}
-%enddef
-
-OBJECT_LIST_INPUT(GDALRasterBandShadow);
-
-/* ***************************************************************************
- *                       GetHistogram()
- * Python is somewhat special in that we don't want the caller
- * to pass in the histogram array to populate.  Instead we allocate
- * it internally, call the C level, and then turn the result into 
- * a list object. 
- */
-
-%typemap(arginit) (int buckets, int* panHistogram)
-{
-  /* %typemap(in) int buckets, int* panHistogram -> list */
-  $2 = (int *) CPLCalloc(sizeof(int),$1);
-}
-
-%typemap(in, numinputs=1) (int buckets, int* panHistogram)
-{
-  /* %typemap(in) int buckets, int* panHistogram -> list */
-  int requested_buckets;
-  SWIG_AsVal_int($input, &requested_buckets);
-  if( requested_buckets != $1 )
-  { 
-    $1 = requested_buckets;
-    $2 = (int *) CPLRealloc($2,sizeof(int) * requested_buckets);
-  }
-}
-
-%typemap(freearg)  (int buckets, int* panHistogram)
-{
-  /* %typemap(freearg) (int buckets, int* panHistogram)*/
-  if ( $2 ) {
-    CPLFree( $2 );
-  }
-}
-
-%typemap(argout) (int buckets, int* panHistogram)
-{
-  /* %typemap(out) int buckets, int* panHistogram -> list */
-  int *integerarray = $2;
-  if ( integerarray == NULL ) {
-    $result = Py_None;
-    Py_INCREF( $result );
-  }
-  else {
-    $result = PyList_New( $1 );
-    for ( int i = 0; i < $1; ++i ) {
-      PyObject *o =  PyInt_FromLong( integerarray[i] );
-      PyList_SetItem($result, i, o );
-    }
-  }
-}
-
-/* ***************************************************************************
- *                       GetDefaultHistogram()
- */
-
-%typemap(arginit, noblock=1) (double *min_ret, double *max_ret, int *buckets_ret, int **ppanHistogram)
-{
-   double min_val, max_val;
-   int buckets_val;
-   int *panHistogram;
-
-  /* frankwdebug */
-
-   $1 = &min_val;
-   $2 = &max_val;
-   $3 = &buckets_val;
-   $4 = &panHistogram;
-}
-
-%typemap(argout) (double *min_ret, double *max_ret, int *buckets_ret, int** ppanHistogram)
-{
-  int i;
-  PyObject *psList = NULL;
-
-  /* frankwdebug */
-
-  psList = PyList_New(buckets_val);
-  for( i = 0; i < buckets_val; i++ )
-    PyList_SetItem(psList, i, Py_BuildValue("i", panHistogram[i] ));
-
-  CPLFree( panHistogram );
-
-  $result = Py_BuildValue( "(ddiO)", min_val, max_val, buckets_val, psList );
-  Py_XDECREF(psList);
-}
-

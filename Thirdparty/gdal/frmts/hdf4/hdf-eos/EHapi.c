@@ -1,12 +1,3 @@
-/*****************************************************************************
- * $Id: EHapi.c 12769 2007-11-14 15:12:27Z dron $
- *
- * This module has a number of additions and improvements over the original
- * implementation to be suitable for usage in GDAL HDF driver.
- *
- * Andrey Kiselev <dron@ak4719.spb.edu> is responsible for all the changes.
- ****************************************************************************/
-
 /*
 Copyright (C) 1996 Hughes and Applied Research Corporation
 
@@ -15,17 +6,23 @@ for any purpose without fee is hereby granted, provided that the above
 copyright notice appear in all copies and that both that copyright notice and 
 this permission notice appear in supporting documentation.
 */
+#ifdef WIN32
+#include <windows.h>	//bwf
+#include <winbase.h>	//bwf
+#define sleep Sleep
+#endif
 
 #include <errno.h>
 #include "mfhdf.h"
 #include "HdfEosDef.h"
 
 /* Set maximun number of HDF-EOS files to HDF limit (MAX_FILE) */
-#define NEOSHDF MAX_FILE
-static uint8 EHXtypeTable[NEOSHDF];
-static uint8 EHXacsTable[NEOSHDF];
-static int32 EHXfidTable[NEOSHDF];
-static int32 EHXsdTable[NEOSHDF];
+/* #define NEOSHDF MAX_FILE */
+#define NEOSHDF 200
+uint8 EHXtypeTable[NEOSHDF];
+uint8 EHXacsTable[NEOSHDF];
+int32 EHXfidTable[NEOSHDF];
+int32 EHXsdTable[NEOSHDF];
 
 /* define a macro for the string size of the utility strings and some dimension
    list strings. The value in previous versions of this code may not be 
@@ -43,8 +40,12 @@ static int32 EHXsdTable[NEOSHDF];
 
 #define MAX_RETRIES 10
 
+#define INT32  INT
+#define INT32V INTV
+#define PINT32 PINT
+
 /* Function Prototypes */
-static intn EHmetalist(char *, char *);
+intn EHmetalist(char *, char *);
 
 
 /*----------------------------------------------------------------------------|
@@ -241,6 +242,8 @@ EHopen(char *filename, intn access)
                     HEpush(DFE_FNF, "EHopen", __FILE__, __LINE__);
                     sprintf(errbuf, "\"%s\" cannot be opened for READ/WRITE access, will retry %d times.", filename,  (MAX_RETRIES - retryCount - 1));
                     HEreport("%s\n", errbuf);
+
+                    sleep(1);
                     }
                 retryCount++;
                 }
@@ -283,7 +286,7 @@ EHopen(char *filename, intn access)
 		       /* --------------------------------------------- */
 		       if (attrIndex == -1)
 		       {
-			  metabuf = (char *) calloc(32000, 1);
+		   	  metabuf = (char *) calloc(32000, 1);
 			  if(metabuf == NULL)
 			  { 
 			      HEpush(DFE_NOSPACE,"EHopen", __FILE__, __LINE__);
@@ -348,6 +351,8 @@ EHopen(char *filename, intn access)
                     HEpush(DFE_FNF, "EHopen", __FILE__, __LINE__);
                     sprintf(errbuf, "\"%s\" cannot be opened for READONLY access, will retry %d times.", filename,  (MAX_RETRIES - retryCount - 1));
                     HEreport("%s\n", errbuf);
+
+                    sleep(1);
                     }
                 retryCount++;
                 }
@@ -739,14 +744,15 @@ EHgetversion(int32 fid, char *version)
 float64
 EHconvAng(float64 inAngle, intn code)
 {
-#define RADIANS_TO_DEGREES 180. / 3.14159265358979324
-#define DEGREES_TO_RADIANS 3.14159265358979324 / 180.
-
     int32           min;	/* Truncated Minutes */
     int32           deg;	/* Truncated Degrees */
 
     float64         sec;	/* Seconds */
     float64         outAngle = 0.0;	/* Angle in desired units */
+    float64         pi = 3.14159265358979324;	/* Pi */
+    float64         r2d = 180 / pi;	/* Radians to degrees conversion */
+    float64         d2r = 1 / r2d;	/* Degrees to radians conversion */
+
 
     switch (code)
     {
@@ -754,14 +760,14 @@ EHconvAng(float64 inAngle, intn code)
 	/* Convert radians to degrees */
 	/* -------------------------- */
     case HDFE_RAD_DEG:
-	outAngle = inAngle * RADIANS_TO_DEGREES;
+	outAngle = inAngle * r2d;
 	break;
 
 
 	/* Convert degrees to radians */
 	/* -------------------------- */
     case HDFE_DEG_RAD:
-	outAngle = inAngle * DEGREES_TO_RADIANS;
+	outAngle = inAngle * d2r;
 	break;
 
 
@@ -799,7 +805,7 @@ EHconvAng(float64 inAngle, intn code)
 	/* Convert radians to packed degrees */
 	/* --------------------------------- */
     case HDFE_RAD_DMS:
-	inAngle = inAngle * RADIANS_TO_DEGREES;
+	inAngle = inAngle * r2d;
 	deg = inAngle;
 	min = (inAngle - deg) * 60;
 	sec = (inAngle - deg - min / 60.0) * 3600;
@@ -825,14 +831,14 @@ EHconvAng(float64 inAngle, intn code)
 	min = (inAngle - deg * 1000000) / 1000;
 	sec = (inAngle - deg * 1000000 - min * 1000);
 	outAngle = deg + min / 60.0 + sec / 3600.0;
-	outAngle = outAngle * DEGREES_TO_RADIANS;
+	outAngle = outAngle * d2r;
 	break;
     }
     return (outAngle);
 }
 
-#undef TO_DEGREES
-#undef TO_RADIANS
+
+
 
 
 /*----------------------------------------------------------------------------|
@@ -848,8 +854,8 @@ EHconvAng(float64 inAngle, intn code)
 |  count          int32               Number of string entries                |
 |                                                                             |
 |  INPUTS:                                                                    |
-|  instring       const char          Input string                            |
-|  delim          const char          string delimitor                        |
+|  instring       char                Input string                            |
+|  delim          char                string delimitor                        |
 |                                                                             |
 |  OUTPUTS:                                                                   |
 |  pntr           char *              Pointer array to beginning of each      |
@@ -867,7 +873,7 @@ EHconvAng(float64 inAngle, intn code)
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 int32
-EHparsestr(const char *instring, const char delim, char *pntr[], int32 len[])
+EHparsestr(char *instring, char delim, char *pntr[], int32 len[])
 {
     int32           i;		/* Loop index */
     int32           prevDelimPos = 0;	/* Previous delimitor position */
@@ -891,7 +897,7 @@ EHparsestr(const char *instring, const char delim, char *pntr[], int32 len[])
     /* --------------------------------------------------------------------- */
     if (&pntr[0] != NULL)
     {
-	pntr[0] = (char *)instring;
+	pntr[0] = instring;
     }
     /* If delimitor not found ... */
     /* -------------------------- */
@@ -928,7 +934,7 @@ EHparsestr(const char *instring, const char delim, char *pntr[], int32 len[])
 		    }
 		    /* Point to beginning of string entry */
 		    /* ---------------------------------- */
-		    pntr[count] = (char *)instring + i + 1;
+		    pntr[count] = instring + i + 1;
 		}
 		/* Reset previous delimitor position and increment counter */
 		/* ------------------------------------------------------- */
@@ -964,9 +970,9 @@ EHparsestr(const char *instring, const char delim, char *pntr[], int32 len[])
 |  indx           int32               Element index (0 - based)               |
 |                                                                             |
 |  INPUTS:                                                                    |
-|  target         const char          Target string                           |
-|  search         const char          Search string                           |
-|  delim          const char          Delimitor                               |
+|  target         char                Target string                           |
+|  search         char                Search string                           |
+|  delim          char                Delimitor                               |
 |                                                                             |
 |  OUTPUTS:                                                                   |
 |             None                                                            |
@@ -982,7 +988,7 @@ EHparsestr(const char *instring, const char delim, char *pntr[], int32 len[])
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 int32
-EHstrwithin(const char *target, const char *search, const char delim)
+EHstrwithin(char *target, char *search, char delim)
 {
     intn            found = 0;	/* Target string found flag */
 
@@ -1146,9 +1152,9 @@ EHloadliststr(char *ptr[], int32 nentries, char *liststr, char delim)
 |  INPUTS:                                                                    |
 |  fid            int32               HDF-EOS file ID                         |
 |  vgid           int32               Vgroup ID                               |
-|  objectname     const char          object name                             |
+|  objectname     char                object name                             |
 |  code           intn                object code (0 - Vgroup, 1 - Vdata)     |
-|  access         const char          access ("w/r")                          |
+|  access         char                access ("w/r")                          |
 |                                                                             |
 |                                                                             |
 |  OUTPUTS:                                                                   |
@@ -1164,8 +1170,7 @@ EHloadliststr(char *ptr[], int32 nentries, char *liststr, char delim)
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 int32
-EHgetid(int32 fid, int32 vgid, const char *objectname, intn code,
-        const char *access)
+EHgetid(int32 fid, int32 vgid, char *objectname, intn code, char *access)
 {
     intn            i;		/* Loop index */
 
@@ -3235,21 +3240,21 @@ EHattrinfo(int32 fid, int32 attrVgrpID, char *attrname, int32 * numbertype,
 int32
 EHattrcat(int32 fid, int32 attrVgrpID, char *attrnames, int32 * strbufsize)
 {
-    intn            i;		        /* Loop index */
+    intn            i;		/* Loop index */
 
-    int32           nObjects;	        /* # of objects in Vgroup */
-    int32          *tags;	        /* Pnt to Vgroup object tags array */
-    int32          *refs;	        /* Pnt to Vgroup object refs array */
-    int32           vdataID;	        /* Attribute Vdata ID */
+    int32           nObjects;	/* # of objects in Vgroup */
+    int32          *tags;	/* Pnt to Vgroup object tags array */
+    int32          *refs;	/* Pnt to Vgroup object refs array */
+    int32           vdataID;	/* Attribute Vdata ID */
 
-    int32           nattr = 0;	        /* Number of attributes */
-    int32           slen;	        /* String length */
+    int32           nattr = 0;	/* Number of attributes */
+    int32           slen;	/* String length */
 
-    char            name[80];	        /* Attribute name */
-    static const char indxstr[] = "INDXMAP:"; /* Index Mapping reserved
-                                                 string */
-    static const char fvstr[] = "_FV_";	/* Flag Value reserved string */
-    static const char bsom[] = "_BLKSOM:";/* Block SOM Offset reserved string */
+    char            name[80];	/* Attribute name */
+    char           *indxstr = "INDXMAP:";	/* Index Mapping reserved
+						 * string */
+    char           *fvstr = "_FV_";	/* Flag Value reserved string */
+    char           *bsom = "_BLKSOM:";	/* Block SOM Offset reserved string */
 
 
     /* Set string buffer size to 0 */
@@ -3536,60 +3541,3 @@ EHclose(int32 fid)
 
     return (status);
 }
-
-/*----------------------------------------------------------------------------|
-|  BEGIN_PROLOG                                                               |
-|                                                                             |
-|  FUNCTION: EHnumstr                                                         |
-|                                                                             |
-|  DESCRIPTION: Returns numerical type code of the given string               |
-|               representation.                                               |
-|                                                                             |
-|                                                                             |
-|  Return Value    Type     Units     Description                             |
-|  ============   ======  =========   =====================================   |
-|  numbertype     int32               numerical type code                     |
-|                                                                             |
-|  INPUTS:                                                                    |
-|  strcode        const char          string representation of the type code  |
-|                                                                             |
-|                                                                             |
-|  OUTPUTS:                                                                   |
-|             None                                                            |
-|                                                                             |
-|  NOTES:                                                                     |
-|                                                                             |
-|                                                                             |
-|   Date     Programmer   Description                                         |
-|  ======   ============  =================================================   |
-|  Nov 07   Andrey Kiselev  Original Programmer                               |
-|                                                                             |
-|  END_PROLOG                                                                 |
------------------------------------------------------------------------------*/
-int32
-EHnumstr(const char *strcode)
-{
-    if (strcmp(strcode, "DFNT_UCHAR8") == 0)
-        return DFNT_UCHAR8;
-    else if (strcmp(strcode, "DFNT_CHAR8") == 0)
-        return DFNT_CHAR8;
-    else if (strcmp(strcode, "DFNT_FLOAT32") == 0)
-        return DFNT_FLOAT32;
-    else if (strcmp(strcode, "DFNT_FLOAT64") == 0)
-        return DFNT_FLOAT64;
-    else if (strcmp(strcode, "DFNT_INT8") == 0)
-        return DFNT_INT8;
-    else if (strcmp(strcode, "DFNT_UINT8") == 0)
-        return DFNT_UINT8;
-    else if (strcmp(strcode, "DFNT_INT16") == 0)
-        return DFNT_INT16;
-    else if (strcmp(strcode, "DFNT_UINT16") == 0)
-        return DFNT_UINT16;
-    else if (strcmp(strcode, "DFNT_INT32") == 0)
-        return DFNT_INT32;
-    else if (strcmp(strcode, "DFNT_UINT32") == 0)
-        return DFNT_UINT32;
-    else
-        return DFNT_NONE;
-}
-

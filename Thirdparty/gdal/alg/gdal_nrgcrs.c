@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_nrgcrs.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gdal_nrgcrs.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implemention of the GDALTransformer wrapper around CRS.C functions

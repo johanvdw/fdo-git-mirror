@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnopen.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: dgnopen.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access Library file open code.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnopen.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: dgnopen.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            DGNTestOpen()                             */

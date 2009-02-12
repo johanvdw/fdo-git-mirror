@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_py.h 12592 2007-10-30 20:22:28Z mloskot $
+ * $Id: gdal_py.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Python Bindings
  * Purpose:  Declarations of entry points in source files other than that
@@ -32,13 +32,7 @@
 #ifndef _GDAL_PY_INCLUDED
 #define _GDAL_PY_INCLUDED
 
-#ifdef _DEBUG
-#undef _DEBUG
 #include "Python.h"
-#define _DEBUG
-#else
-#include "Python.h"
-#endif
 
 CPL_C_START
 

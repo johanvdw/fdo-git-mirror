@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgmllayer.cpp 14501 2008-05-21 18:01:05Z rouault $
+ * $Id: ogrgmllayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  Implements OGRGMLLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_port.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgmllayer.cpp 14501 2008-05-21 18:01:05Z rouault $");
+CPL_CVSID("$Id: ogrgmllayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRGMLLayer()                              */
@@ -124,10 +124,7 @@ OGRFeature *OGRGMLLayer::GetNextFeature()
             delete poGMLFeature;
 
         if( poGeom != NULL )
-        {
             delete poGeom;
-            poGeom = NULL;
-        }
 
         poGMLFeature = poDS->GetReader()->NextFeature();
         if( poGMLFeature == NULL )
@@ -261,7 +258,7 @@ OGRErr OGRGMLLayer::CreateFeature( OGRFeature *poFeature )
     if( poFeature->GetFID() == OGRNullFID )
         poFeature->SetFID( iNextGMLId++ );
 
-    VSIFPrintf( fp, "    <ogr:%s fid=\"F%ld\">\n", 
+    VSIFPrintf( fp, "    <ogr:%s fid=\"F%d\">\n", 
                 poFeatureDefn->GetName(),
                 poFeature->GetFID() );
 
@@ -340,9 +337,6 @@ int OGRGMLLayer::TestCapability( const char * pszCap )
 
         return poFClass->GetFeatureCount() != -1;
     }
-
-    else if( EQUAL(pszCap,OLCStringsAsUTF8) )
-        return TRUE;
 
     else 
         return FALSE;

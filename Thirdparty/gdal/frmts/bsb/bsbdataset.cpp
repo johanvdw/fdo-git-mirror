@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsbdataset.cpp 14967 2008-07-19 11:32:52Z rouault $
+ * $Id: bsbdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  BSB Reader
  * Purpose:  BSBDataset implementation for BSB format.
@@ -30,16 +30,15 @@
 #include "gdal_pam.h"
 #include "bsb_read.h"
 #include "cpl_string.h"
-#include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: bsbdataset.cpp 14967 2008-07-19 11:32:52Z rouault $");
+CPL_CVSID("$Id: bsbdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_BSB(void);
 CPL_C_END
 
-//Disabled as people may worry about the BSB patent
-//#define BSB_CREATE
+// Define for BSB support, disable now since it doesn't really work.
+#undef BSB_CREATE
 
 /************************************************************************/
 /* ==================================================================== */
@@ -53,7 +52,7 @@ class BSBDataset : public GDALPamDataset
 {
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
-    const char  *pszGCPProjection;
+    char        *pszGCPProjection;
 
     double      adfGeoTransform[6];
     int         bGeoTransformSet;
@@ -499,39 +498,6 @@ const GDAL_GCP *BSBDataset::GetGCPs()
 }
 
 #ifdef BSB_CREATE
-
-/************************************************************************/
-/*                             BSBIsSRSOK()                             */
-/************************************************************************/
-
-static int BSBIsSRSOK(const char *pszWKT)
-{
-    int bOK = FALSE;
-    OGRSpatialReference oSRS, oSRS_WGS84, oSRS_NAD83;
-
-    if( pszWKT != NULL && pszWKT[0] != '\0' )
-    {
-        char* pszTmpWKT = (char*)pszWKT;
-        oSRS.importFromWkt( &pszTmpWKT );
-
-        oSRS_WGS84.SetWellKnownGeogCS( "WGS84" );
-        oSRS_NAD83.SetWellKnownGeogCS( "NAD83" );
-        if ( (oSRS.IsSameGeogCS(&oSRS_WGS84) || oSRS.IsSameGeogCS(&oSRS_NAD83)) &&
-              oSRS.IsGeographic() && oSRS.GetPrimeMeridian() == 0.0 )
-        {
-            bOK = TRUE;
-        }
-    }
-
-    if (!bOK)
-    {
-        CPLError(CE_Warning, CPLE_NotSupported,
-                "BSB only supports WGS84 or NAD83 geographic projections.\n");
-    }
-
-    return bOK;
-}
-
 /************************************************************************/
 /*                           BSBCreateCopy()                            */
 /************************************************************************/
@@ -608,23 +574,19 @@ BSBCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     else
     {
         GDALColorTable	*poCT = poBand->GetColorTable();
-        int nColorTableSize = poCT->GetColorEntryCount();
-        if (nColorTableSize > 255)
-            nColorTableSize = 255;
 
-        for( iColor = 0; iColor < nColorTableSize; iColor++ )
+        nPCTSize = poCT->GetColorEntryCount();
+        for( iColor = 0; iColor < nPCTSize; iColor++ )
         {
             GDALColorEntry	sEntry;
 
             poCT->GetColorEntryAsRGB( iColor, &sEntry );
-
-            anRemap[iColor] = iColor + 1;
+            
+            anRemap[iColor] = (unsigned char) (iColor + 1);
             abyPCT[(iColor+1)*3 + 0] = (unsigned char) sEntry.c1;
             abyPCT[(iColor+1)*3 + 1] = (unsigned char) sEntry.c2;
             abyPCT[(iColor+1)*3 + 2] = (unsigned char) sEntry.c3;
         }
-
-        nPCTSize = nColorTableSize + 1;
 
         // Add entries for pixel values which apparently will not occur.
         for( iColor = nPCTSize; iColor < 256; iColor++ )
@@ -678,7 +640,7 @@ BSBCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                   nPCTSize );
     }
 
-    while( nPCTSize > 128 )
+    while( nPCTSize > 127 )
     {
         int nBestRange = 768;
         int iBestMatch1=-1, iBestMatch2=-1;
@@ -729,59 +691,6 @@ BSBCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         BSBClose( psBSB );
         return NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Write the GCPs.                                                 */
-/* -------------------------------------------------------------------- */
-    double adfGeoTransform[6];
-    int nGCPCount = poSrcDS->GetGCPCount();
-    if (nGCPCount)
-    {
-        const char* pszGCPProjection = poSrcDS->GetGCPProjection();
-        if ( BSBIsSRSOK(pszGCPProjection) )
-        {
-            const GDAL_GCP * pasGCPList = poSrcDS->GetGCPs();
-            for( i = 0; i < nGCPCount; i++ )
-            {
-                VSIFPrintfL( psBSB->fp, 
-                            "REF/%d,%f,%f,%f,%f\n", 
-                            i+1,
-                            pasGCPList[i].dfGCPPixel, pasGCPList[i].dfGCPLine,
-                            pasGCPList[i].dfGCPY, pasGCPList[i].dfGCPX);
-            }
-        }
-    }
-    else if (poSrcDS->GetGeoTransform(adfGeoTransform) == CE_None)
-    {
-        const char* pszProjection = poSrcDS->GetProjectionRef();
-        if ( BSBIsSRSOK(pszProjection) )
-        {
-            VSIFPrintfL( psBSB->fp, 
-                        "REF/%d,%d,%d,%f,%f\n",
-                        1,
-                        0, 0,
-                        adfGeoTransform[3] + 0 * adfGeoTransform[4] + 0 * adfGeoTransform[5],
-                        adfGeoTransform[0] + 0 * adfGeoTransform[1] + 0 * adfGeoTransform[2]);
-            VSIFPrintfL( psBSB->fp, 
-                        "REF/%d,%d,%d,%f,%f\n",
-                        2,
-                        nXSize, 0,
-                        adfGeoTransform[3] + nXSize * adfGeoTransform[4] + 0 * adfGeoTransform[5],
-                        adfGeoTransform[0] + nXSize * adfGeoTransform[1] + 0 * adfGeoTransform[2]);
-            VSIFPrintfL( psBSB->fp, 
-                        "REF/%d,%d,%d,%f,%f\n",
-                        3,
-                        nXSize, nYSize,
-                        adfGeoTransform[3] + nXSize * adfGeoTransform[4] + nYSize * adfGeoTransform[5],
-                        adfGeoTransform[0] + nXSize * adfGeoTransform[1] + nYSize * adfGeoTransform[2]);
-            VSIFPrintfL( psBSB->fp, 
-                        "REF/%d,%d,%d,%f,%f\n",
-                        4,
-                        0, nYSize,
-                        adfGeoTransform[3] + 0 * adfGeoTransform[4] + nYSize * adfGeoTransform[5],
-                        adfGeoTransform[0] + 0 * adfGeoTransform[1] + nYSize * adfGeoTransform[2]);
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -844,6 +753,10 @@ void GDALRegister_BSB()
                                    "frmt_various.html#BSB" );
 #ifdef BSB_CREATE
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
+        poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
+"<CreationOptionList>\n"
+"   <Option name='NA' type='string'/>\n"
+"</CreationOptionList>\n" );
 #endif
         poDriver->pfnOpen = BSBDataset::Open;
 #ifdef BSB_CREATE

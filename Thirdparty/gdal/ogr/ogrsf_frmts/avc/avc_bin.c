@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_bin.c,v 1.30 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_bin.c,v 1.28 2006/06/14 16:31:28 daniel Exp $
  *
  * Name:     avc_bin.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -30,14 +30,6 @@
  **********************************************************************
  *
  * $Log: avc_bin.c,v $
- * Revision 1.30  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
- * Revision 1.29  2006/08/17 18:56:42  dmorissette
- * Support for reading standalone info tables (just tables, no coverage
- * data) by pointing AVCE00ReadOpen() to the info directory (bug 1549).
- *
  * Revision 1.28  2006/06/14 16:31:28  daniel
  * Added support for AVCCoverPC2 type (bug 1491)
  *
@@ -1310,10 +1302,10 @@ int _AVCBinReadNextTxt(AVCRawBinFile *psFile, AVCTxt *psTxt,
 
     numCharsToRead = ((int)(psTxt->numChars + 3)/4)*4;
     if (psTxt->pszText == NULL ||
-        ((int)(strlen((char*)psTxt->pszText)+3)/4)*4 < numCharsToRead )
+        ((int)(strlen(psTxt->pszText)+3)/4)*4 < numCharsToRead )
     {
-        psTxt->pszText = (GByte*)CPLRealloc(psTxt->pszText,
-                                            (numCharsToRead+1)*sizeof(char));
+        psTxt->pszText = (char*)CPLRealloc(psTxt->pszText,
+                                           (numCharsToRead+1)*sizeof(char));
     }
 
     AVCRawBinReadString(psFile, numCharsToRead, psTxt->pszText);
@@ -1464,10 +1456,10 @@ int _AVCBinReadNextPCCoverageTxt(AVCRawBinFile *psFile, AVCTxt *psTxt,
     psTxt->numChars = MIN(psTxt->numChars, numCharsToRead);
 
     if (psTxt->pszText == NULL ||
-        ((int)(strlen((char*)psTxt->pszText)+3)/4)*4 < numCharsToRead )
+        ((int)(strlen(psTxt->pszText)+3)/4)*4 < numCharsToRead )
     {
-        psTxt->pszText = (GByte*)CPLRealloc(psTxt->pszText,
-                                            (numCharsToRead+5)*sizeof(char));
+        psTxt->pszText = (char*)CPLRealloc(psTxt->pszText,
+                                           (numCharsToRead+5)*sizeof(char));
     }
 
 
@@ -1614,7 +1606,7 @@ int _AVCBinReadNextArcDir(AVCRawBinFile *psFile, AVCTableDef *psArcDir)
 
     /* Arc/Info Table name 
      */
-    AVCRawBinReadString(psFile, 32, (GByte *)psArcDir->szTableName);
+    AVCRawBinReadString(psFile, 32, psArcDir->szTableName);
     psArcDir->szTableName[32] = '\0';
 
     if (AVCRawBinEOF(psFile))
@@ -1622,7 +1614,7 @@ int _AVCBinReadNextArcDir(AVCRawBinFile *psFile, AVCTableDef *psArcDir)
 
     /* "ARC####" basename for .DAT and .NIT files
      */
-    AVCRawBinReadString(psFile, 8, (GByte *)psArcDir->szInfoFile);
+    AVCRawBinReadString(psFile, 8, psArcDir->szInfoFile);
     psArcDir->szInfoFile[7] = '\0';
     for (i=6; i>0 && psArcDir->szInfoFile[i]==' '; i--)
         psArcDir->szInfoFile[i] = '\0';
@@ -1637,7 +1629,7 @@ int _AVCBinReadNextArcDir(AVCRawBinFile *psFile, AVCTableDef *psArcDir)
 
     AVCRawBinFSeek(psFile, 10, SEEK_CUR);     /* Skip 10 bytes */
     
-    AVCRawBinReadBytes(psFile, 2, (GByte *)psArcDir->szExternal);
+    AVCRawBinReadBytes(psFile, 2, psArcDir->szExternal);
     psArcDir->szExternal[2] = '\0';
 
     AVCRawBinFSeek(psFile, 300, SEEK_CUR);  /* Skip the remaining 300 bytes */
@@ -1660,7 +1652,7 @@ int _AVCBinReadNextArcDir(AVCRawBinFile *psFile, AVCTableDef *psArcDir)
  **********************************************************************/
 int _AVCBinReadNextArcNit(AVCRawBinFile *psFile, AVCFieldInfo *psField)
 {
-    AVCRawBinReadString(psFile, 16, (GByte *)psField->szName);
+    AVCRawBinReadString(psFile, 16, psField->szName);
     psField->szName[16] = '\0';
 
     if (AVCRawBinEOF(psFile))
@@ -1680,7 +1672,7 @@ int _AVCBinReadNextArcNit(AVCRawBinFile *psFile, AVCFieldInfo *psField)
     psField->v12       = AVCRawBinReadInt16(psFile);  /* Always -1 ? */
     psField->v13       = AVCRawBinReadInt16(psFile);  /* Always -1 ? */
 
-    AVCRawBinReadString(psFile, 16, (GByte *)psField->szAltName);   /* Always Blank ? */
+    AVCRawBinReadString(psFile, 16, psField->szAltName);   /* Always Blank ? */
     psField->szAltName[16] = '\0';
 
     AVCRawBinFSeek(psFile, 56, SEEK_CUR);             /* Skip 56 bytes */
@@ -1804,13 +1796,6 @@ char **AVCBinReadListTables(const char *pszInfoPath, const char *pszCoverName,
 
     if (ppapszArcDatFiles)
         *ppapszArcDatFiles = NULL;
-
-    /*----------------------------------------------------------------- 
-     * For AVCCoverV7Tables type we do not look for tables for a specific
-     * coverage, we return all tables from the info dir.
-     *----------------------------------------------------------------*/
-    if (eCoverType == AVCCoverV7Tables)
-        pszCoverName = NULL;
 
     /*----------------------------------------------------------------- 
      * All tables that belong to a given coverage have their name starting
@@ -1960,7 +1945,7 @@ AVCBinFile *_AVCBinReadOpenTable(const char *pszInfoPath,
         {
             /* Read the relative file path, and remove trailing spaces.
              */
-            AVCRawBinReadBytes(hFile, 80, (GByte *)sTableDef.szDataFile);
+            AVCRawBinReadBytes(hFile, 80, sTableDef.szDataFile);
             sTableDef.szDataFile[80] = '\0';
 
             for(i = strlen(sTableDef.szDataFile)-1;
@@ -2137,7 +2122,7 @@ AVCBinFile *_AVCBinReadOpenTable(const char *pszInfoPath,
             pasFieldDef[i].nType1*10 == AVC_FT_FIXNUM )
         {
             psFile->cur.pasFields[i].pszStr = 
-                (GByte*)CPLCalloc(pasFieldDef[i].nSize+1, sizeof(char));
+                (char*)CPLCalloc(pasFieldDef[i].nSize+1, sizeof(char));
         }
     }
 
@@ -2452,7 +2437,7 @@ AVCBinFile *_AVCBinReadOpenDBFTable(const char *pszDBFFilename,
             pasFieldDef[iField].nType1*10 == AVC_FT_FIXNUM )
         {
             psFile->cur.pasFields[iField].pszStr = 
-                (GByte*)CPLCalloc(pasFieldDef[iField].nSize+1, sizeof(GByte));
+                (char*)CPLCalloc(pasFieldDef[iField].nSize+1, sizeof(char));
         }
     }
 
@@ -2512,7 +2497,7 @@ int _AVCBinReadNextDBFTableRec(DBFHandle hDBFFile, int *piRecordIndex,
             const char *pszValue;
             pszValue = DBFReadStringAttribute(hDBFFile, 
                                               *piRecordIndex, i);
-            strncpy((char*)pasFields[i].pszStr, pszValue, pasDef[i].nSize);
+            strncpy(pasFields[i].pszStr, pszValue, pasDef[i].nSize);
             pasFields[i].pszStr[pasDef[i].nSize] = '\0';
         }
         else if (nType == AVC_FT_BININT && pasDef[i].nSize == 4)

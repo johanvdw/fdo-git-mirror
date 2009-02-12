@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdgnlayer.cpp 14288 2008-04-13 15:56:22Z rouault $
+ * $Id: ogrdgnlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRDGNLayer class.
@@ -32,7 +32,7 @@
 #include "ogr_featurestyle.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrdgnlayer.cpp 14288 2008-04-13 15:56:22Z rouault $");
+CPL_CVSID("$Id: ogrdgnlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRDGNLayer()                              */
@@ -62,7 +62,7 @@ OGRDGNLayer::OGRDGNLayer( const char * pszName, DGNHandle hDGN,
         CPLError( CE_Warning, CPLE_AppDefined, 
                   "DGN_LINK_FORMAT=%s, but only FIRST, LIST or STRING supported.",
                   pszLinkFormat );
-        pszLinkFormat = (char *) "FIRST";
+        pszLinkFormat = "FIRST";
         eLinkFieldType = OFTInteger;
     }
     pszLinkFormat = CPLStrdup(pszLinkFormat);
@@ -897,7 +897,6 @@ DGNElemCore **OGRDGNLayer::TranslateLabel( OGRFeature *poFeature )
         /* poLabel->ForeColor(); */
 
         /* get font id */
-
     }
 
     papsGroup = (DGNElemCore **) CPLCalloc(sizeof(void*),2);
@@ -907,9 +906,6 @@ DGNElemCore **OGRDGNLayer::TranslateLabel( OGRFeature *poFeature )
                            poPoint->getX(), 
                            poPoint->getY(), 
                            poPoint->getZ() );
-
-    if( poLabel )
-        delete poLabel;
 
     return papsGroup;
 }
@@ -1035,7 +1031,7 @@ OGRErr OGRDGNLayer::CreateFeatureWithGeom( OGRFeature *poFeature,
     int nStyle = poFeature->GetFieldAsInteger( "Style" );
 
     nLevel = MAX(0,MIN(63,nLevel));
-    nColor = MAX(0,MIN(255,nColor));
+    nColor = MAX(0,MIN(255,nGraphicGroup));
     nWeight = MAX(0,MIN(31,nWeight));
     nStyle = MAX(0,MIN(7,nStyle));
 

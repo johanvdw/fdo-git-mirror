@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sar_ceosdataset.cpp 13229 2007-12-04 15:21:54Z warmerdam $
+ * $Id: sar_ceosdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -32,7 +32,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sar_ceosdataset.cpp 13229 2007-12-04 15:21:54Z warmerdam $");
+CPL_CVSID("$Id: sar_ceosdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_SAR_CEOS(void);
@@ -55,7 +55,7 @@ static GInt16 CastToGInt16(float val)
     return (GInt16) temp;    
 }
 
-static const char *CeosExtension[][6] = { 
+char *CeosExtension[][6] = { 
 { "vol", "led", "img", "trl", "nul", "ext" },
 { "vol", "lea", "img", "trl", "nul", "ext" },
 { "vol", "led", "img", "tra", "nul", "ext" },
@@ -79,9 +79,6 @@ static const char *CeosExtension[][6] = {
 
 /* Ers-1 from D-PAF */
 { "VDF", "LF", "SLC", "", "", "ext" },
-
-/* Radarsat-1 per #2051 */
-{ "vol", "sarl", "sard", "sart", "nvol", "ext" },
 
 /* end marker */
 { NULL, NULL, NULL, NULL, NULL, NULL } 
@@ -1574,12 +1571,6 @@ GDALDataset *SAR_CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
         || poOpenInfo->pabyHeader[7] != 0x12 )
         return NULL;
 
-    // some products (#1862) have byte swapped record length/number
-    // values and will blow stuff up -- explicitly ignore if record index
-    // value appears to be little endian.
-    if( poOpenInfo->pabyHeader[0] != 0 )
-        return NULL;
-
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -1820,11 +1811,6 @@ GDALDataset *SAR_CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
             poDS->SetBand( poDS->nBands+1, 
                            new CCPRasterBand( poDS, poDS->nBands+1, eType ) );
         }
-
-        /* mark this as a Scattering Matrix product */
-        if ( poDS->GetRasterCount() == 4 ) {
-            poDS->SetMetadataItem( "MATRIX_REPRESENTATION", "SCATTERING" );
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -1837,12 +1823,6 @@ GDALDataset *SAR_CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
             poDS->SetBand( poDS->nBands+1, 
                            new PALSARRasterBand( poDS, poDS->nBands+1 ) );
         }
-
-        /* mark this as a Symmetrized Covariance product if appropriate */
-        if ( poDS->GetRasterCount() == 6 ) {
-            poDS->SetMetadataItem( "MATRIX_REPRESENTATION", 
-                "SYMMETRIZED_COVARIANCE" );
-        } 
     }
 
 /* -------------------------------------------------------------------- */
@@ -1997,7 +1977,7 @@ ProcessData( FILE *fp, int fileid, CeosSARVolume_t *sar, int max_records,
             }
 	}
 
-        VSIFRead( temp_body, 1, MAX(0,record->Length-__CEOS_HEADER_LENGTH),fp);
+        VSIFRead( temp_body, 1, record->Length - __CEOS_HEADER_LENGTH, fp );
 
 	InitCeosRecordWithHeader( record, temp_buffer, temp_body );
 

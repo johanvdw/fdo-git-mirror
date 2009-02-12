@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtlayer.cpp 13808 2008-02-17 16:29:35Z warmerdam $
+ * $Id: ogrvrtlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: ogrvrtlayer.cpp 13808 2008-02-17 16:29:35Z warmerdam $");
+CPL_CVSID("$Id: ogrvrtlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 typedef struct 
 {
@@ -104,10 +104,7 @@ OGRVRTLayer::~OGRVRTLayer()
         if( bSrcLayerFromSQL && poSrcLayer )
             poSrcDS->ReleaseResultSet( poSrcLayer );
 
-        if( bSrcDSShared )
-            OGRSFDriverRegistrar::GetRegistrar()->ReleaseDataSource( poSrcDS );
-        else
-            delete poSrcDS;
+        OGRSFDriverRegistrar::GetRegistrar()->ReleaseDataSource( poSrcDS );
     }
 
     if( poFeatureDefn )
@@ -161,8 +158,7 @@ int OGRVRTLayer::Initialize( CPLXMLNode *psLTree, const char *pszVRTDirectory )
         return FALSE;
     }
 
-    if( CSLTestBoolean(CPLGetXMLValue( psLTree, "SrcDataSource.relativetoVRT", 
-                                       "0")) )
+    if( atoi(CPLGetXMLValue( psLTree, "SrcDataSource.relativetoVRT", "0")) )
     {
         pszSrcDSName = CPLStrdup(
             CPLProjectRelativeFilename( pszVRTDirectory, pszSrcDSName ) );
@@ -173,32 +169,10 @@ int OGRVRTLayer::Initialize( CPLXMLNode *psLTree, const char *pszVRTDirectory )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Are we accessing this datasource in shared mode?  We default    */
-/*      to shared for SrcSQL requests, but we also allow the XML to     */
-/*      control our shared setting with an attribute on the             */
-/*      datasource element.                                             */
-/* -------------------------------------------------------------------- */
-    const char *pszSharedSetting = CPLGetXMLValue( psLTree, 
-                                                   "SrcDataSource.shared",
-                                                   NULL );
-    if( pszSharedSetting == NULL )
-    {
-        if( CPLGetXMLValue( psLTree, "SrcSQL", NULL ) == NULL )
-            pszSharedSetting = "OFF";
-        else
-            pszSharedSetting = "ON";
-    }
-
-    bSrcDSShared = CSLTestBoolean( pszSharedSetting );
-
-/* -------------------------------------------------------------------- */
 /*      Try to access the datasource.                                   */
 /* -------------------------------------------------------------------- */
     CPLErrorReset();
-    if( bSrcDSShared )
-        poSrcDS = poReg->OpenShared( pszSrcDSName, FALSE, NULL );
-    else
-        poSrcDS = poReg->Open( pszSrcDSName, FALSE, NULL );
+    poSrcDS = poReg->OpenShared( pszSrcDSName, FALSE, NULL );
 
     if( poSrcDS == NULL ) 
     {
@@ -476,7 +450,7 @@ int OGRVRTLayer::ResetSourceReading()
 /*      Do we want to let source layer do spatial restriction?          */
 /* -------------------------------------------------------------------- */
     char *pszFilter = NULL;
-    if( m_poFilterGeom && bUseSpatialSubquery && eGeometryType == VGS_PointFromColumns )
+    if( m_poFilterGeom && m_bFilterIsEnvelope && bUseSpatialSubquery )
     {
         const char *pszXField, *pszYField;
 
@@ -589,12 +563,6 @@ OGRFeature *OGRVRTLayer::TranslateFeature( OGRFeature *poSrcFeat )
         poDstFeat->SetFID( poSrcFeat->GetFID() );
     else
         poDstFeat->SetFID( poSrcFeat->GetFieldAsInteger( iFIDField ) );
-    
-/* -------------------------------------------------------------------- */
-/*      Handle style string.                                            */
-/* -------------------------------------------------------------------- */
-    if( poSrcFeat->GetStyleString() != NULL )
-        poDstFeat->SetStyleString(poSrcFeat->GetStyleString());
     
 /* -------------------------------------------------------------------- */
 /*      Handle the geometry.  Eventually there will be several more     */

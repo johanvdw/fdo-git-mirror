@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP
-/* $Id: vrt_tutorial.dox 15819 2008-11-27 16:32:15Z warmerdam $ */
+/* $Id: vrt_tutorial.dox 8739 2005-10-28 16:59:51Z pnagy $ */
 #endif /* DOXYGEN_SKIP */
 
 /*!
@@ -31,10 +31,6 @@ loaded from utm.tif might look like this:
   </VRTRasterBand>
 </VRTDataset>
 \endcode
-
-Many aspects of the VRT file are a direct XML encoding of the 
-<a href="gdal_datamodel.html">GDAL Data Model</a> which should be reviewed
-for understanding of the semantics of various elements.<p>
 
 VRT files can be produced by translating to VRT format.  The resulting file can
 then be edited to modify mappings, add metadata or other purposes.  VRT files
@@ -72,7 +68,16 @@ known GEOGCS names, and PROJ.4 format) is also allowed in the SRS element.
 
 <li> <b>GeoTransform</b>: This element contains a six value affine 
 geotransformation for the dataset, mapping between pixel/line coordinates 
-and georeferenced coordinates.<P>
+and georeferenced coordinates.  The list of values is the data of the SRS 
+element, and the values are separated by commas.
+<P>
+The parameter order is as follows:
+    [0] top left x;
+    [1] w-e pixel resolution;
+    [2] rotation, 0 if image is "north up";
+    [3] top left y;
+    [4] rotation, 0 if image is "north up";
+    [5] n-s pixel resolution.
 
 \code
   <GeoTransform>440720.0,  60,  0.0,  3751320.0,  0.0, -60.0</GeoTransform>
@@ -90,7 +95,7 @@ as the data of the element.
 \endcode
 
 <li> <b>VRTRasterBand</b>: This represents one band of a dataset.  It will
-have a ataType attribute with the type of the pixel data associated with
+have a dataType attribute with the type of the pixel data associated with
 this band (use names Byte, UInt16, Int16, UInt32, Int32, Float32, Float64, 
 CInt16, CInt32, CFloat32 or CFloat64) and the band this element represents
 (1 based).  This element may have Metadata, ColorInterp, NoDataValue, 
@@ -183,74 +188,13 @@ The relativeToVRT attribute on the SourceFilename indicates whether the
 filename should be interpreted as relative to the .vrt file (value is 1)
 or not relative to the .vrt file (value is 0).  The default is 0.
 
-Some characteristics of the source band can be specified in the optional
-SourceProperties tag to enable the VRT driver to differ the opening of the source
-dataset until it really needs to read data from it. This is particularly useful
-when building VRTs with a big number of source datasets. The needed parameters are the
-raster dimensions, the size of the blocks and the data type. If the SourceProperties
-tag is not present, the source dataset will be opened at the same time as the VRT itself.
-
 \code
     <SimpleSource>
       <SourceFilename relativeToVRT="1">utm.tif</SourceFilename>
       <SourceBand>1</SourceBand>
-      <SourceProperties RasterXSize="512" RasterYSize="512" DataType="Byte" BlockXSize="128" BlockYSize="128"/>
       <SrcRect xOff="0" yOff="0" xSize="512" ySize="512"/>
       <DstRect xOff="0" yOff="0" xSize="512" ySize="512"/>
     </SimpleSource>
-\endcode
-
-<li> <b>AveragedSource</b>: The AveragedSource is derived from the
-SimpleSource and shares the same properties except that it uses an averaging
-resampling instead of a nearest neighbour algorithm as in SimpleSource, when
-the size of the destination rectangle is not the same as the size of the source
-rectangle
-
-<li> <b>ComplexSource</b>: The ComplexSource is derived from the
-SimpleSource (so it shares the SourceFilename, SourceBand, SrcRect and 
-DestRect elements), but it provides support to rescale and offset
-the range of the source values. Certain regions of the source
-can be masked by specifying the NODATA value.
-
-The ComplexSource supports adding a custom lookup table to transform 
-the source values to the destination. The LUT can be specified using
-the following form:
-
-\code
-    <LUT>[src value 1]:[dest value 1],[src value 2]:[dest value 2],...</LUT>
-\endcode
-
-The intermediary values are calculated using a linear interpolation
-between the bounding destination values of the corresponding range.
-
-The ComplexSource supports fetching a color component from a source raster
-band that has a color table. The ColorTableComponent value is the index of the
-color component to extract : 1 for the red band, 2 for the green band, 3 for
-the blue band or 4 for the alpha band.
-
-When transforming the source values the operations are executed
-in the following order:
-
-<ol>
-<li>Nodata masking</li>
-<li>Color table expansion</li>
-<li>Applying the scale ratio</li>
-<li>Applying the scale offset</li>
-<li>Table lookup</li>
-</ol>
-
-\code
-    <ComplexSource>
-      <SourceFilename relativeToVRT="1">utm.tif</SourceFilename>
-      <SourceBand>1</SourceBand>
-      <ScaleOffset>0</ScaleOffset>
-      <ScaleRatio>1</ScaleRatio>
-      <ColorTableComponent>1</ColorTableComponent>
-      <LUT>0:0,2345.12:64,56789.5:128,2364753.02:255</LUT>
-      <NODATA>0</NODATA>
-      <SrcRect xOff="0" yOff="0" xSize="512" ySize="512"/>
-      <DstRect xOff="0" yOff="0" xSize="512" ySize="512"/>
-    </ComplexSource>
 \endcode
 
 <li> <b>KernelFilteredSource</b>: This is a pixel source derived from the
@@ -283,10 +227,10 @@ but for which no format specific driver exists.  This can be accomplished
 by writing a .vrt file describing the raw file.  
 
 For example, the following .vrt describes a raw raster file containing
-floating point complex pixels in a file called <i>l2p3hhsso.img</i>.  The
-image data starts from the first byte (ImageOffset=0).  The byte offset
-between pixels is 8 (PixelOffset=8), the size of a CFloat32.  The byte offset
-from the start of one line to the start of the next is 9376 bytes
+floating point complex pixels in a file called l2p3hhsso.img.  The image
+data starts from the first byte (ImageOffset=0).  The byte offset between
+pixels is 8 (PixelOffset=8), the size of a CFloat32.  The byte offset
+from the start of one line to the start of the next is 9376 bytes 
 (LineOffset=9376) which is the width (1172) times the size of a pixel (8). 
 
 \code
@@ -665,15 +609,5 @@ CPLErr TestFunction(void **papoSources, int nSources, void *pData,
     return CE_None;
 }
 \endcode
-
-
-\section gdal_vrttut_mt Multi-threading issues
-
-When using VRT datasets in a multi-threading environment, you should be
-careful to open the VRT dataset by the thread that will use it afterwards. The
-reason for that is that the VRT dataset uses GDALOpenShared when opening the
-underlying datasets. So, if you open twice the same VRT dataset by the same
-thread, both VRT datasets will share the same handles to the underlying
-datasets.
 
 */

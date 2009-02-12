@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_miffile.cpp,v 1.49 2008/11/17 22:06:21 aboudreault Exp $
+ * $Id: mitab_miffile.cpp,v 1.41 2005/10/13 20:12:03 fwarmerdam Exp $
  *
  * Name:     mitab_miffile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -32,32 +32,6 @@
  **********************************************************************
  *
  * $Log: mitab_miffile.cpp,v $
- * Revision 1.49  2008/11/17 22:06:21  aboudreault
- * Added support to use OFTDateTime/OFTDate/OFTTime type when compiled with
- * OGR and fixed reading/writing support for these types.
- *
- * Revision 1.48  2008/09/26 14:40:24  aboudreault
- * Fixed bug: MITAB doesn't support writing DateTime type (bug 1948)
- *
- * Revision 1.47  2008/03/05 20:35:39  dmorissette
- * Replace MITAB 1.x SetFeature() with a CreateFeature() for V2.x (bug 1859)
- *
- * Revision 1.46  2008/02/01 20:30:59  dmorissette
- * Use %.15g instead of %.16g as number precision in .MIF output
- *
- * Revision 1.45  2008/01/29 21:56:39  dmorissette
- * Update dataset version properly for Date/Time/DateTime field types (#1754)
- *
- * Revision 1.44  2008/01/29 20:46:32  dmorissette
- * Added support for v9 Time and DateTime fields (byg 1754)
- *
- * Revision 1.43  2007/09/14 15:35:21  dmorissette
- * Fixed problem with MIF parser being confused by special attribute
- * names (bug 1795)
- *
- * Revision 1.42  2007/06/12 13:52:37  dmorissette
- * Added IMapInfoFile::SetCharset() method (bug 1734)
- *
  * Revision 1.41  2005/10/13 20:12:03  fwarmerdam
  * layers with just regions can't be set as type wkbPolygon because they may
  * have multipolygons (bug GDAL:958)
@@ -179,7 +153,8 @@
 MIFFile::MIFFile()
 {
     m_pszFname = NULL;
-    m_nVersion = 300;
+    m_pszVersion = NULL;
+    m_pszCharset = NULL;
 
     // Tab is default delimiter in MIF spec if not explicitly specified.  Use
     // that by default for read mode. In write mode, we will use "," as 
@@ -386,7 +361,7 @@ int MIFFile::Open(const char *pszFname, const char *pszAccess,
      *----------------------------------------------------------------*/
     if (m_eAccessMode == TABWrite)
     {
-        m_nVersion = 300;
+        m_pszVersion = CPLStrdup("300");
         m_pszCharset = CPLStrdup("Neutral");
     }
 
@@ -474,30 +449,12 @@ int MIFFile::ParseMIFHeader()
         while(pszLine && (*pszLine == ' ' || *pszLine == '\t') )
             pszLine++;  // skip leading spaces
 
-        if (bColumns == TRUE && nColumns >0)
-        {
-            if (nColumns == 0)
-            {
-                // Permit to 0 columns
-                bColumns = FALSE;
-            }
-            else if (AddFields(pszLine) == 0)
-            {
-                nColumns--;
-                if (nColumns == 0)
-                  bColumns = FALSE;
-            }
-            else
-            {
-                bColumns = FALSE;
-            }
-        }
-        else if (EQUALN(pszLine,"VERSION",7))
+        if (EQUALN(pszLine,"VERSION",7))
         {
             papszToken = CSLTokenizeStringComplex(pszLine," ()\t",TRUE,FALSE); 
             bColumns = FALSE; bCoordSys = FALSE;
             if (CSLCount(papszToken)  == 2)
-              m_nVersion = atoi(papszToken[1]);
+              m_pszVersion = CPLStrdup(papszToken[1]);
 
             CSLDestroy(papszToken);
         
@@ -505,13 +462,11 @@ int MIFFile::ParseMIFHeader()
         else if (EQUALN(pszLine,"CHARSET",7))
         {
             papszToken = CSLTokenizeStringComplex(pszLine," ()\t",TRUE,FALSE); 
-            bColumns = FALSE; bCoordSys = FALSE;
+             bColumns = FALSE; bCoordSys = FALSE;
           
             if (CSLCount(papszToken)  == 2)
-            {
-                CPLFree(m_pszCharset);
-                m_pszCharset = CPLStrdup(papszToken[1]);
-            }
+              m_pszCharset = CPLStrdup(papszToken[1]);
+
             CSLDestroy(papszToken);
         
         }
@@ -595,6 +550,24 @@ int MIFFile::ParseMIFHeader()
                 m_nAttribut = 0;
             }
             CSLDestroy(papszToken);
+        }
+        else if (bColumns == TRUE && nColumns >0)
+        {
+            if (nColumns == 0)
+            {
+                // Permit to 0 columns
+                bColumns = FALSE;
+            }
+            else if (AddFields(pszLine) == 0)
+            {
+                nColumns--;
+                if (nColumns == 0)
+                  bColumns = FALSE;
+            }
+            else
+            {
+                bColumns = FALSE;
+            }
         }
         else if (bCoordSys == TRUE)
         {
@@ -708,24 +681,9 @@ int  MIFFile::AddFields(const char *pszLine)
     else if (numTok >= 2 && EQUAL(papszToken[1], "date"))
     {
         /*-------------------------------------------------
-         * DATE type (returned as a string: "DD/MM/YYYY" or "YYYYMMDD")
+         * DATE type (returned as a string: "DD/MM/YYYY")
          *------------------------------------------------*/
         nStatus = AddFieldNative(papszToken[0], TABFDate);
-    }
-    else if (numTok >= 2 && EQUAL(papszToken[1], "time"))
-    {
-        /*-------------------------------------------------
-         *  TIME type (v900, returned as a string: "HH:MM:SS" or "HHMMSSmmm")
-         *------------------------------------------------*/
-        nStatus = AddFieldNative(papszToken[0], TABFTime);
-    }
-    else if (numTok >= 2 && EQUAL(papszToken[1], "datetime"))
-    {
-        /*-------------------------------------------------
-         * DATETIME type (v900, returned as a string: "DD/MM/YYYY HH:MM:SS",
-         * "YYYY/MM/DD HH:MM:SS" or "YYYYMMDDHHMMSSmmm")
-         *------------------------------------------------*/
-        nStatus = AddFieldNative(papszToken[0], TABFDateTime);
     }
     else if (numTok >= 2 && EQUAL(papszToken[1], "logical"))
     {
@@ -956,7 +914,7 @@ int MIFFile::WriteMIFHeader()
      * Start writing header.
      *----------------------------------------------------------------*/
     m_bHeaderWrote = TRUE;
-    m_poMIFFile->WriteLine("Version %d\n", m_nVersion);
+    m_poMIFFile->WriteLine("Version %s\n", m_pszVersion);
     m_poMIFFile->WriteLine("Charset \"%s\"\n", m_pszCharset);
 
     // Delimiter is not required if you use \t as delimiter
@@ -996,7 +954,7 @@ int MIFFile::WriteMIFHeader()
     if (m_pszCoordSys && m_bBoundsSet)
     {
         m_poMIFFile->WriteLine("CoordSys %s "
-                               "Bounds (%.15g, %.15g) (%.15g, %.15g)\n",
+                               "Bounds (%.16g, %.16g) (%.16g, %.16g)\n",
                                m_pszCoordSys, 
                                m_dXMin, m_dYMin, m_dXMax, m_dYMax);
     }
@@ -1043,14 +1001,6 @@ int MIFFile::WriteMIFHeader()
             break;
           case TABFDate:
             m_poMIFFile->WriteLine("  %s Date\n",
-                                   poFieldDefn->GetNameRef());
-            break;
-          case TABFTime:
-            m_poMIFFile->WriteLine("  %s Time\n",
-                                   poFieldDefn->GetNameRef());
-            break;
-          case TABFDateTime:
-            m_poMIFFile->WriteLine("  %s DateTime\n",
                                    poFieldDefn->GetNameRef());
             break;
           case TABFChar:
@@ -1126,8 +1076,8 @@ int MIFFile::Close()
     CPLFree(m_pszFname);
     m_pszFname = NULL;
 
-    m_nVersion = 0;
-
+    CPLFree(m_pszVersion);
+    m_pszVersion = NULL;
     CPLFree(m_pszCharset);
     m_pszCharset = NULL;
 
@@ -1439,24 +1389,33 @@ TABFeature *MIFFile::GetFeatureRef(int nFeatureId)
 }
 
 /**********************************************************************
- *                   MIFFile::CreateFeature()
+ *                   MIFFile::SetFeature()
  *
- * Write a new feature to this dataset. The passed in feature is updated 
- * with the new feature id.
+ * Write a feature to this dataset.  
  *
- * Returns OGRERR_NONE on success, or an appropriate OGRERR_ code if an
+ * For now only sequential writes are supported (i.e. with nFeatureId=-1)
+ * but eventually we should be able to do random access by specifying
+ * a value through nFeatureId.
+ *
+ * Returns the new featureId (> 0) on success, or -1 if an
  * error happened in which case, CPLError() will have been called to
  * report the reason of the failure.
  **********************************************************************/
-OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
+int MIFFile::SetFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
 {
-    int nFeatureId = -1;
-
+    
     if (m_eAccessMode != TABWrite)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
-                 "CreateFeature() can be used only with Write access.");
-        return OGRERR_UNSUPPORTED_OPERATION;
+                 "SetFeature() can be used only with Write access.");
+        return -1;
+    }
+
+    if (nFeatureId != -1)
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "SetFeature(): random access not implemented yet.");
+        return -1;
     }
 
     /*-----------------------------------------------------------------
@@ -1465,8 +1424,8 @@ OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
     if (m_poMIDFile == NULL)
     {
         CPLError(CE_Failure, CPLE_IllegalArg,
-                 "CreateFeature() failed: file is not opened!");
-        return OGRERR_FAILURE;
+                 "SetFeature() failed: file is not opened!");
+        return -1;
     }
 
     if (m_bHeaderWrote == FALSE)
@@ -1496,7 +1455,7 @@ OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
         CPLError(CE_Failure, CPLE_FileIO,
                  "Failed writing geometry for feature id %d in %s",
                  nFeatureId, m_pszFname);
-        return OGRERR_FAILURE;
+        return -1;
     }
 
     if (m_poMIDFile == NULL ||
@@ -1505,12 +1464,11 @@ OGRErr MIFFile::CreateFeature(TABFeature *poFeature)
         CPLError(CE_Failure, CPLE_FileIO,
                  "Failed writing attributes for feature id %d in %s",
                  nFeatureId, m_pszFname);
-        return OGRERR_FAILURE;
+        return -1;
     }
 
-    poFeature->SetFID(nFeatureId);
-
-    return OGRERR_NONE;
+   
+    return nFeatureId; 
 }
 
 
@@ -1596,15 +1554,6 @@ int MIFFile::SetFeatureDefn(OGRFeatureDefn *poFeatureDefn,
                 break;
               case OFTReal:
                 eMapInfoType = TABFFloat;
-                break;
-              case OFTDateTime:
-                eMapInfoType = TABFDateTime;
-                break;
-              case OFTDate:
-                eMapInfoType = TABFDate;
-                break;
-              case OFTTime:
-                eMapInfoType = TABFTime;
                 break;
               case OFTString:
               default:
@@ -1733,44 +1682,11 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
         break;
       case TABFDate:
         /*-------------------------------------------------
-         * DATE type (V450, returned as a string: "DD/MM/YYYY" or "YYYYMMDD")
+         * DATE type (returned as a string: "DD/MM/YYYY")
          *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDate);
-#else
-                                                   OFTString);
-#endif
+        poFieldDefn = new OGRFieldDefn(pszCleanName, OFTString);
         poFieldDefn->SetWidth(10);
-        m_nVersion = MAX(m_nVersion, 450);
         break;
-      case TABFTime:
-        /*-------------------------------------------------
-         * TIME type (v900, returned as a string: "HH:MM:SS" or "HHMMSSmmm")
-         *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTTime);
-#else
-                                                   OFTString);
-#endif
-        poFieldDefn->SetWidth(9);
-        m_nVersion = MAX(m_nVersion, 900);
-        break;
-      case TABFDateTime:
-        /*-------------------------------------------------
-         * DATETIME type (v900, returned as a string: "DD/MM/YYYY HH:MM:SS",
-         * "YYYY/MM/DD HH:MM:SS" or "YYYYMMDDHHMMSSmmm")
-         *------------------------------------------------*/
-        poFieldDefn = new OGRFieldDefn(pszCleanName, 
-#ifdef MITAB_USE_OFTDATETIME
-                                                   OFTDateTime);
-#else
-                                                   OFTString);
-#endif
-        poFieldDefn->SetWidth(19);
-        break;
-        m_nVersion = MAX(m_nVersion, 900);
       case TABFLogical:
         /*-------------------------------------------------
          * LOGICAL type (value "T" or "F")

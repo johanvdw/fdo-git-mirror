@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreaderp.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gmlreaderp.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Private Declarations for OGR free GML Reader code.

@@ -66,7 +66,6 @@ typedef struct {
 	wchar_t           columnNameW[GDBI_SCHEMA_ELEMENT_NAME_SIZE * sizeof(wchar_t) + 1]; // Not table qualified
 	wchar_t           columnPosition[3 * sizeof(wchar_t) + 1];  // 1- based
     FdoPropertyType   propertyType;
-    bool              isSystem;
 } FdoRdbmsPropertyInfoDef;
 
 typedef std::map<std::string, ValueDef *> StrMap;
@@ -154,9 +153,9 @@ class FdoRdbmsFeatureReader: public FdoIFeatureReader
 
       FdoRdbmsFeatureReader & operator=(const FdoRdbmsFeatureReader &right);
 
-      const char*	 Property2ColName( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found = NULL, int *index = NULL );
-      const wchar_t* Property2ColNameW( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found = NULL, int *index = NULL );
-      const char*	 Property2ColNameChar( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found = NULL, int *index = NULL );
+      const char*	 Property2ColName( const wchar_t *propName, FdoPropertyType *type, bool *found = NULL, int *index = NULL );
+      const wchar_t* Property2ColNameW( const wchar_t *propName, FdoPropertyType *type, bool *found = NULL, int *index = NULL );
+      const char*	 Property2ColNameChar( const wchar_t *propName, FdoPropertyType *type, bool *found = NULL, int *index = NULL );
 
       const char* GetDbAliasName( const wchar_t *propName, FdoPropertyType *type = NULL );
 
@@ -172,14 +171,6 @@ class FdoRdbmsFeatureReader: public FdoIFeatureReader
 
 	  // Derive the given expression's property type and data type:
 	  void GetExpressionType(FdoIConnection* connection, FdoClassDefinition* classDef, const char* colName, FdoExpression* expr, FdoPropertyType &propType, FdoDataType &dataType);
-    
-      inline FdoRdbmsPropertyInfoDef* GetPropertyInfoDef(int pos)
-      {
-          if (pos >= (int)mPropertyInfoDefs.size())
-              mPropertyInfoDefs.push_back(new FdoRdbmsPropertyInfoDef());
-          return mPropertyInfoDefs.at(pos);
-      }
-
 
 protected:
     virtual ~FdoRdbmsFeatureReader();
@@ -195,6 +186,9 @@ private:
     // This is an internal method to support the DataReader
     FdoPropertyType GetPropertyType(FdoString* propertyName);
 
+    // Methods in aid of overriding the Active spatial context
+    void ChangeActiveSpatialContext();
+    void RestoreActiveSpatialContext();
     // Method in aid of GetGeometry()
     FdoByteArray* GetGeometry(const wchar_t* propertyName, bool checkIsNullOnly);
     FdoByteArray* GetGeometry(const wchar_t* propertyName, bool checkIsNullOnly, GdbiQueryResult *query);
@@ -288,12 +282,12 @@ public:
 	vector<int>							mFilterLogicalOps;
 
 	// A cache of property definition names to avoid expensive string conversions
-    std::vector<FdoRdbmsPropertyInfoDef*>   mPropertyInfoDefs;
-	int                                     mNumPropertyInfoDefs;
-	int                                     mLastPropertyInfoDef;
-	int						                m_cacheHits;
-	int						                m_cacheMissed1;
-	int						                m_cacheMissed2;
+	FdoRdbmsPropertyInfoDef   *mPropertyInfoDefs;
+	int                       mNumPropertyInfoDefs;
+	int                       mLastPropertyInfoDef;
+	int						  m_cacheHits;
+	int						  m_cacheMissed1;
+	int						  m_cacheMissed2;
 };
 
 #endif // FDORDBMSFEATUREREADER_H

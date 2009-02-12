@@ -37,9 +37,7 @@ private:
     virtual ~ArcSDEInsertCommand (void);
 
     void insertOneRow (SE_STREAM &stream, CHAR* table_name, FdoClassDefinition* classDef,
-                       FdoPropertyValueCollection* values, FdoPropertyValueCollection *idCollection,
-					   int uuidColumns=0,
-					   CHAR **uuid_list=NULL );
+                       FdoPropertyValueCollection* values, FdoPropertyValueCollection *idCollection);
 
 public:
     //

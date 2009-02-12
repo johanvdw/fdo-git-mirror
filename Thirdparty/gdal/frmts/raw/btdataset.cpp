@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: btdataset.cpp 12232 2007-09-23 18:13:59Z rouault $
+ * $Id: btdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  VTP .bt Driver
  * Purpose:  Implementation of VTP .bt elevation format read/write support.
@@ -31,7 +31,7 @@
 #include "rawdataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: btdataset.cpp 12232 2007-09-23 18:13:59Z rouault $");
+CPL_CVSID("$Id: btdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_BT(void);
@@ -101,7 +101,6 @@ class BTRasterBand : public GDALRasterBand
 
     virtual const char* GetUnitType();
     virtual CPLErr SetUnitType(const char*);
-	virtual double GetNoDataValue( int* = NULL );
 };
 
 
@@ -248,16 +247,6 @@ CPLErr BTRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 
     return CE_None;
 }
-
-
-double BTRasterBand::GetNoDataValue( int* pbSuccess /*= NULL */ )
-{
-	if(pbSuccess != NULL)
-		*pbSuccess = TRUE;
-
-	return -32768;
-}
-
 
 /************************************************************************/
 /*                            GetUnitType()                             */
@@ -514,11 +503,11 @@ CPLErr BTDataset::SetProjection( const char *pszNewProjection )
     const char  *pszPrjFile = CPLResetExtension( GetDescription(), "prj" );
     FILE * fp;
 
-    fp = VSIFOpenL( pszPrjFile, "wt" );
+    fp = VSIFOpen( pszPrjFile, "wt" );
     if( fp != NULL )
     {
-        VSIFPrintfL( fp, "%s\n", pszProjection );
-        VSIFCloseL( fp );
+        VSIFPrintf( fp, "%s\n", pszProjection );
+        VSIFClose( fp );
         abyHeader[60] = 1;
     }
     else
@@ -542,7 +531,7 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Verify that this is some form of binterr file.                  */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 256)
+    if( poOpenInfo->nHeaderBytes < 256 || poOpenInfo->fp == NULL )
         return NULL;
 
     if( strncmp( (const char *) poOpenInfo->pabyHeader, "binterr", 7 ) != 0 )
@@ -618,7 +607,7 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
                                                      "prj" );
         FILE *fp;
 
-        fp = VSIFOpenL( pszPrjFile, "rt" );
+        fp = VSIFOpen( pszPrjFile, "rt" );
         if( fp != NULL )
         {
             char *pszBuffer, *pszBufPtr;
@@ -626,8 +615,8 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
             int nBytes;
 
             pszBuffer = (char *) CPLMalloc(nBufMax);
-            nBytes = VSIFReadL( pszBuffer, 1, nBufMax-1, fp );
-            VSIFCloseL( fp );
+            nBytes = VSIFRead( pszBuffer, 1, nBufMax-1, fp );
+            VSIFClose( fp );
 
             pszBuffer[nBytes] = '\0';
 
@@ -752,6 +741,8 @@ GDALDataset *BTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Re-open the file with the desired access.                       */
 /* -------------------------------------------------------------------- */
+    VSIFClose( poOpenInfo->fp );
+    poOpenInfo->fp = NULL;
 
     if( poOpenInfo->eAccess == GA_Update )
         poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb+" );

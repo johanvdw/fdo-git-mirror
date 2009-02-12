@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdodsdriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrdodsdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdodsdriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrdodsdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRDODSDriver()                            */
@@ -92,8 +92,6 @@ int OGRDODSDriver::TestCapability( const char * pszCap )
 void RegisterOGRDODS()
 
 {
-    if (! GDAL_CHECK_VERSION("OGR/DODS driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRDODSDriver );
 }
 

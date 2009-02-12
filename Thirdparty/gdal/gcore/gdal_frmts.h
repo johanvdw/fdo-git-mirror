@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_frmts.h 15668 2008-10-31 20:37:01Z ilucena $
+ * $Id: gdal_frmts.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL
  * Purpose:  Prototypes for all format specific driver initializations.
@@ -46,7 +46,6 @@ void CPL_DLL GDALRegister_SAR_CEOS(void);
 void CPL_DLL GDALRegister_SDTS(void);
 void CPL_DLL GDALRegister_ELAS(void);
 void CPL_DLL GDALRegister_EHdr(void);
-void CPL_DLL GDALRegister_GenBin(void);
 void CPL_DLL GDALRegister_PAux(void);
 void CPL_DLL GDALRegister_ENVI(void);
 void CPL_DLL GDALRegister_DOQ1(void);
@@ -67,7 +66,6 @@ void CPL_DLL GDALRegister_Envisat(void);
 void CPL_DLL GDALRegister_FITS(void);
 void CPL_DLL GDALRegister_ECW(void);
 void CPL_DLL GDALRegister_JP2ECW(void);
-void CPL_DLL GDALRegister_ECW_JP2ECW();
 void CPL_DLL GDALRegister_FujiBAS(void);
 void CPL_DLL GDALRegister_FIT(void);
 void CPL_DLL GDALRegister_VRT(void);
@@ -82,7 +80,6 @@ void CPL_DLL GDALRegister_XPM(void);
 void CPL_DLL GDALRegister_BMP(void);
 void CPL_DLL GDALRegister_GSC(void);
 void CPL_DLL GDALRegister_NITF(void);
-void CPL_DLL GDALRegister_RPFTOC(void);
 void CPL_DLL GDALRegister_MrSID(void);
 void CPL_DLL GDALRegister_PCIDSK(void);
 void CPL_DLL GDALRegister_BT(void);
@@ -101,40 +98,15 @@ void CPL_DLL GDALRegister_RMF(void);
 void CPL_DLL GDALRegister_HDF5(void);
 void CPL_DLL GDALRegister_HDF5Image(void);
 void CPL_DLL GDALRegister_MSGN(void);
-void CPL_DLL GDALRegister_MSG(void);
 void CPL_DLL GDALRegister_RIK(void);
 void CPL_DLL GDALRegister_Leveller(void);
 void CPL_DLL GDALRegister_SGI(void);
-void CPL_DLL GDALRegister_SRTMHGT(void);
 void CPL_DLL GDALRegister_DIPEx(void);
-void CPL_DLL GDALRegister_ISIS3(void);
 void CPL_DLL GDALRegister_ISIS2(void);
 void CPL_DLL GDALRegister_PDS(void);
 void CPL_DLL GDALRegister_IDRISI(void);
 void CPL_DLL GDALRegister_Terragen(void);
 void CPL_DLL GDALRegister_WCS(void);
-void CPL_DLL GDALRegister_WMS(void);
-void CPL_DLL GDALRegister_HTTP(void);
-void CPL_DLL GDALRegister_SDE(void);
-void CPL_DLL GDALRegister_GSAG(void);
-void CPL_DLL GDALRegister_GSBG(void);
-void CPL_DLL GDALRegister_GS7BG(void);
-void CPL_DLL GDALRegister_GRIB(void);
-void CPL_DLL GDALRegister_INGR(void);
-void CPL_DLL GDALRegister_ERS(void);
-void CPL_DLL GDALRegister_PALSARJaxa(void);
-void CPL_DLL GDALRegister_DIMAP();
-void CPL_DLL GDALRegister_GFF(void);
-void CPL_DLL GDALRegister_COSAR(void);
-void CPL_DLL GDALRegister_TSX(void);
-void CPL_DLL GDALRegister_ADRG(void);
-void CPL_DLL GDALRegister_COASP(void);
-void CPL_DLL GDALRegister_BLX(void);
-void CPL_DLL GDALRegister_LCP(void);
-void CPL_DLL GDALRegister_PGCHIP(void);
-void CPL_DLL GDALRegister_TMS(void);
-void CPL_DLL GDALRegister_EIR(void);
-void CPL_DLL GDALRegister_GEOR(void);
 CPL_C_END
 
 #endif /* ndef GDAL_FRMTS_H_INCLUDED */

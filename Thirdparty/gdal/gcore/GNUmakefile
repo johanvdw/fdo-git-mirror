@@ -6,17 +6,18 @@ OBJ	=	gdalopeninfo.o gdaldrivermanager.o gdaldriver.o gdaldataset.o \
 		gdalcolortable.o gdalmajorobject.o overview.o \
 		gdaldefaultoverviews.o gdalpamdataset.o gdalpamrasterband.o \
 		gdaljp2metadata.o gdaljp2box.o gdalmultidomainmetadata.o \
-		gdal_rat.o gdalgmlcoverage.o gdalpamproxydb.o \
-		gdalallvalidmaskband.o gdalnodatamaskband.o gdal_rpcimdio.o \
- 		gdalproxydataset.o gdalproxypool.o \
-		gdalnodatavaluesmaskband.o
+		gdal_rat.o gdalgmlcoverage.o
 
 # Enable the following if you want to use MITAB's code to convert
 # .tab coordinate systems into well known text.  But beware that linking
 # against static libraries becomes more complicated because of the odd
 # call out.
 
-CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) $(PAM_SETTING)
+ifeq ($(OGR_ENABLED),yes)
+CXXFLAGS 	:=	-DHAVE_MITAB $(CXXFLAGS)
+endif
+
+CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
 default:	$(OBJ)
 

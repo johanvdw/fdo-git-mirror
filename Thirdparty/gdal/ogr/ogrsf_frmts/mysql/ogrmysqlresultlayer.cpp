@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqlresultlayer.cpp 14272 2008-04-12 13:47:54Z rouault $
+ * $Id: ogrmysqlresultlayer.cpp 11523 2007-05-15 14:38:49Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLResultLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 14272 2008-04-12 13:47:54Z rouault $");
+CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 11523 2007-05-15 14:38:49Z mloskot $");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */
@@ -303,14 +303,3 @@ int OGRMySQLResultLayer::GetFeatureCount( int bForce )
     // ... not till MySQL grows up (HB)
     return OGRMySQLLayer::GetFeatureCount( bForce );
 }
-
-/************************************************************************/
-/*                           TestCapability()                           */
-/************************************************************************/
-
-int OGRMySQLResultLayer::TestCapability( const char * pszCap )
-
-{
-    return FALSE;
-}
-

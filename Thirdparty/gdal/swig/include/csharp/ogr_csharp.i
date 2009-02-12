@@ -1,32 +1,25 @@
-/******************************************************************************
- * $Id: ogr_csharp.i 15475 2008-10-07 21:40:20Z tamas $
+/*
+ * $Id: ogr_csharp.i 10370 2006-11-23 22:51:35Z tamas $
+ */
+
+/*
+ * $Log$
+ * Revision 1.4  2006/11/23 22:50:53  tamas
+ * C# ExportToWkb support
  *
- * Name:     ogr_csharp.i
- * Project:  GDAL CSharp Interface
- * Purpose:  OGR CSharp SWIG Interface declarations.
- * Author:   Tamas Szekeres, szekerest@gmail.com
+ * Revision 1.3  2006/09/07 10:26:31  tamas
+ * Added default exception support
  *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
+ * Revision 1.2  2005/09/06 01:51:04  kruland
+ * Removed GetDriverByName, GetDriver, Open, OpenShared because they are defined
+ * in ogr now.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Revision 1.1  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ */
  
 %include cpl_exceptions.i
 
@@ -38,12 +31,9 @@
 
 %include typemaps_csharp.i
 
-DEFINE_EXTERNAL_CLASS(OSRSpatialReferenceShadow, OSGeo.OSR.SpatialReference)
-DEFINE_EXTERNAL_CLASS(OSRCoordinateTransformationShadow, OSGeo.OSR.CoordinateTransformation)
-
 
 %typemap(cscode, noblock="1") OGRGeometryShadow {
-  public int ExportToWkb( byte[] buffer, wkbByteOrder byte_order ) {
+  public int ExportToWkb( byte[] buffer, int byte_order ) {
       int retval;
       int size = WkbSize();
       if (buffer.Length < size)
@@ -60,32 +50,6 @@ DEFINE_EXTERNAL_CLASS(OSRCoordinateTransformationShadow, OSGeo.OSR.CoordinateTra
       return retval;
   }
   public int ExportToWkb( byte[] buffer ) {
-      return ExportToWkb( buffer, wkbByteOrder.wkbXDR);
-  }
-  
-  public static $csclassname CreateFromWkb(byte[] wkb){
-     if (wkb.Length == 0)
-        throw new ArgumentException("Buffer size is small (CreateFromWkb)");
-     $csclassname retval;   
-     IntPtr ptr = Marshal.AllocHGlobal(wkb.Length * Marshal.SizeOf(wkb[0]));
-     try {
-         Marshal.Copy(wkb, 0, ptr, wkb.Length);
-         retval =  new $csclassname(wkbGeometryType.wkbUnknown, null, wkb.Length, ptr, null);
-      } finally {
-          Marshal.FreeHGlobal(ptr);
-      }
-      return retval;  
-  }
-  
-  public static $csclassname CreateFromWkt(string wkt){
-     return new $csclassname(wkbGeometryType.wkbUnknown, wkt, 0, IntPtr.Zero, null);
-  }
-  
-  public static $csclassname CreateFromGML(string gml){
-     return new $csclassname(wkbGeometryType.wkbUnknown, null, 0, IntPtr.Zero, gml);
-  }
-  
-  public Geometry(wkbGeometryType type) : this(OgrPINVOKE.new_Geometry((int)type, null, 0, IntPtr.Zero, null), true, null) {
-    if (OgrPINVOKE.SWIGPendingException.Pending) throw OgrPINVOKE.SWIGPendingException.Retrieve();
+      return ExportToWkb( buffer, ogr.wkbXDR);
   }
 }

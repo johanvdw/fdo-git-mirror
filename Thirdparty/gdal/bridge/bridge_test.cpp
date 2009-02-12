@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bridge_test.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: bridge_test.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Bridge
  * Purpose:  Simple mainline for testing bridge.  This is a slightly modified

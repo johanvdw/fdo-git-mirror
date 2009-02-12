@@ -38,7 +38,6 @@ UnitTest_SOURCES = \
   SelectTests.cpp \
   SelectAggregatesTests.cpp \
   InsertTests.cpp \
-  InsertTests2.cpp \
   DeleteTests.cpp \
   SchemaTests.cpp \
   OverridesTest.cpp \
@@ -69,7 +68,6 @@ noinst_HEADERS = $(UnitTest_SOURCES) \
   SpatialFilterTests.h \
   DeleteTests.h \
   InsertTests.h \
-  InsertTests2.h \
   SchemaTests.h \
   FidelityTests.h \
   OverridesTest.h \

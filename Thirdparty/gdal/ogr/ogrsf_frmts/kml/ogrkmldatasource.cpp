@@ -1,14 +1,12 @@
 /******************************************************************************
- * $Id: ogrkmldatasource.cpp 14947 2008-07-17 18:16:40Z condit $
+ * $Id: ogrkmldatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDataSource class.
- * Author:   Christopher Condit, condit@sdsc.edu;
- *           Jens Oberender, j.obi@troja.net
+ * Author:   Christopher Condit, condit@sdsc.edu
  *
  ******************************************************************************
  * Copyright (c) 2006, Christopher Condit
- *               2007, Jens Oberender
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,265 +30,156 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_error.h"
-#include "cpl_minixml.h"
 
 /************************************************************************/
-/*                         OGRKMLDataSource()                           */
+/*                         OGRKMLDataSource()                         */
 /************************************************************************/
-
 OGRKMLDataSource::OGRKMLDataSource()
 {
-    pszName_ = NULL;
-    pszNameField_ = NULL;
-    pszDescriptionField_ = NULL;
-    pszAltitudeMode_ = NULL;
-    papoLayers_ = NULL;
-    nLayers_ = 0;
+    pszName = NULL;
+    pszNameField = NULL;
+    papoLayers = NULL;
+    nLayers = 0;
     
-    fpOutput_ = NULL;
+    fpOutput = NULL;
 
-    papszCreateOptions_ = NULL;
-	
-	bIssuedCTError_ = false;
-
-#ifdef HAVE_EXPAT
-    poKMLFile_ = NULL;
-#endif
+    papszCreateOptions = NULL;
 }
 
 /************************************************************************/
-/*                        ~OGRKMLDataSource()                           */
+/*                        ~OGRKMLDataSource()                         */
 /************************************************************************/
-
 OGRKMLDataSource::~OGRKMLDataSource()
 {
-    if( fpOutput_ != NULL )
+    if( fpOutput != NULL )
     {
-        VSIFPrintf( fpOutput_, "%s", "</Folder></Document></kml>\n" );
-
-        if( fpOutput_ != stdout )
-            VSIFClose( fpOutput_ );
+        VSIFPrintf( fpOutput, "%s", 
+                    "</Folder></Document></kml>\n" );
+        
+        if( fpOutput != stdout )
+            VSIFClose( fpOutput );
     }
 
-    CSLDestroy( papszCreateOptions_ );
-    CPLFree( pszName_ );
-    CPLFree( pszNameField_ );
-    CPLFree( pszDescriptionField_ );
-    CPLFree( pszAltitudeMode_ );
+    CSLDestroy( papszCreateOptions );
+    CPLFree( pszName );
+    CPLFree( pszNameField );
 
-    for( int i = 0; i < nLayers_; i++ )
+    for( int i = 0; i < nLayers; i++ )
     {
-        delete papoLayers_[i];
+        delete papoLayers[i];
     }
-
-    CPLFree( papoLayers_ );
-
-#ifdef HAVE_EXPAT    
-    delete poKMLFile_;
-#endif
+    
+    CPLFree( papoLayers );
+    
 }
 
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
-
-#ifdef HAVE_EXPAT
 int OGRKMLDataSource::Open( const char * pszNewName, int bTestOpen )
 {
+    FILE        *fp;
+    char        szHeader[1000];	
+	
     CPLAssert( NULL != pszNewName );
 
-    int nCount = 0;
-    OGRKMLLayer *poLayer = NULL;
-    OGRwkbGeometryType poGeotype;
-
 /* -------------------------------------------------------------------- */
-/*      Create a KML object and open the source file.                   */
+/*      Open the source file.                                           */
 /* -------------------------------------------------------------------- */
-    poKMLFile_ = new KMLVector();
-
-    if( !poKMLFile_->open( pszNewName ) )
+    fp = VSIFOpen( pszNewName, "r" );
+    if( fp == NULL )
     {
-        delete poKMLFile_;
-        poKMLFile_ = NULL;
-        return FALSE;
-    }
+        if( !bTestOpen )
+            CPLError( CE_Failure, CPLE_OpenFailed, 
+                      "Failed to open KML file `%s'.", 
+                      pszNewName );
 
-    pszName_ = CPLStrdup( pszNewName );
-
-/* -------------------------------------------------------------------- */
-/*      If we aren't sure it is KML, validate it by start parsing       */
-/* -------------------------------------------------------------------- */
-    if( bTestOpen && !poKMLFile_->isValid() )
-    {
-        delete poKMLFile_;
-        poKMLFile_ = NULL;
         return FALSE;
     }
 
 /* -------------------------------------------------------------------- */
-/*      Prescan the KML file so we can later work with the structure    */
+/*      If we aren't sure it is KML, load a header chunk and check      */
+/*      for signs it is KML                                             */
 /* -------------------------------------------------------------------- */
-    poKMLFile_->parse();
-
-/* -------------------------------------------------------------------- */
-/*      Classify the nodes                                              */
-/* -------------------------------------------------------------------- */
-    poKMLFile_->classifyNodes();
-
-/* -------------------------------------------------------------------- */
-/*      Eliminate the empty containers                                  */
-/* -------------------------------------------------------------------- */
-    poKMLFile_->eliminateEmpty();
-
-/* -------------------------------------------------------------------- */
-/*      Find layers to use in the KML structure                         */
-/* -------------------------------------------------------------------- */
-    poKMLFile_->findLayers(NULL);
-
-/* -------------------------------------------------------------------- */
-/*      Print the structure                                             */
-/* -------------------------------------------------------------------- */
-    if( CPLGetConfigOption("KML_DEBUG",NULL) != NULL )
-        poKMLFile_->print(3);
-
-    nLayers_ = poKMLFile_->getNumLayers();
-
-/* -------------------------------------------------------------------- */
-/*      Allocate memory for the Layers                                  */
-/* -------------------------------------------------------------------- */
-    papoLayers_ = (OGRKMLLayer **)
-        CPLMalloc( sizeof(OGRKMLLayer *) * nLayers_ );
-
-    OGRSpatialReference *poSRS = new OGRSpatialReference("GEOGCS[\"WGS 84\", "
-        "   DATUM[\"WGS_1984\","
-        "       SPHEROID[\"WGS 84\",6378137,298.257223563,"
-        "           AUTHORITY[\"EPSG\",\"7030\"]],"
-        "           AUTHORITY[\"EPSG\",\"6326\"]],"
-        "       PRIMEM[\"Greenwich\",0,"
-        "           AUTHORITY[\"EPSG\",\"8901\"]],"
-        "       UNIT[\"degree\",0.01745329251994328,"
-        "           AUTHORITY[\"EPSG\",\"9122\"]],"
-        "           AUTHORITY[\"EPSG\",\"4326\"]]");
-
-/* -------------------------------------------------------------------- */
-/*      Create the Layers and fill them                                 */
-/* -------------------------------------------------------------------- */
-    for( nCount = 0; nCount < nLayers_; nCount++ )
+    if( bTestOpen )
     {
-        if( !poKMLFile_->selectLayer(nCount) )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "There are no layers or a layer can not be found!");
-            break;
+        VSIFRead( szHeader, 1, sizeof(szHeader), fp );
+        szHeader[sizeof(szHeader)-1] = '\0';
+			
+        if( szHeader[0] != '<' 
+            || strstr(szHeader, "http://earth.google.com/kml/2.0") == NULL )
+        {			
+            VSIFClose( fp );
+            return FALSE;
         }
-
-        if( poKMLFile_->getCurrentType() == Point )
-            poGeotype = wkbPoint;
-        else if( poKMLFile_->getCurrentType() == LineString )
-            poGeotype = wkbLineString;
-        else if( poKMLFile_->getCurrentType() == Polygon )
-            poGeotype = wkbPolygon;
-        else
-            poGeotype = wkbUnknown;
-
-/* -------------------------------------------------------------------- */
-/*      Create the layer object.                                        */
-/* -------------------------------------------------------------------- */
-        CPLString sName( poKMLFile_->getCurrentName() );
-
-        if( sName.empty() )
-        {
-            sName.Printf( "Layer #%d", nCount );
-        }
-
-        poLayer = new OGRKMLLayer( sName.c_str(), poSRS, FALSE, poGeotype, this );
-
-        poLayer->SetLayerNumber( nCount );
-
-/* -------------------------------------------------------------------- */
-/*      Add layer to data source layer list.                            */
-/* -------------------------------------------------------------------- */
-        papoLayers_[nCount] = poLayer;
     }
     
-    poSRS->Release();
-    
+	VSIFClose( fp );
+	
+	CPLError( CE_Failure, CPLE_AppDefined, 
+              "Reading KML files is not currently supported\n");
+
     return TRUE;	
 }
-#endif /* HAVE_EXPAT */
+
+/************************************************************************/
+/*                         TranslateKMLSchema()                         */
+/************************************************************************/
+OGRKMLLayer *OGRKMLDataSource::TranslateKMLSchema( KMLFeatureClass *poClass )
+{
+    CPLAssert( NULL != poClass );
+
+    OGRKMLLayer *poLayer;
+    poLayer = new OGRKMLLayer( poClass->GetName(), NULL, FALSE, 
+                               wkbUnknown, this );
+
+    return poLayer;
+}
 
 /************************************************************************/
 /*                               Create()                               */
 /************************************************************************/
-
-int OGRKMLDataSource::Create( const char* pszName, char** papszOptions )
+int OGRKMLDataSource::Create( const char *pszFilename, 
+                              char **papszOptions )
 {
-    CPLAssert( NULL != pszName );
+    CPLAssert( NULL != pszFilename );
 
-    if( fpOutput_ != NULL )
+    if( fpOutput != NULL )
     {
         CPLAssert( FALSE );
         return FALSE;
     }
 
-    if (CSLFetchNameValue(papszOptions, "NameField"))
-        pszNameField_ = CPLStrdup(CSLFetchNameValue(papszOptions, "NameField"));
-    else
-        pszNameField_ = CPLStrdup("Name");
-    
-    if (CSLFetchNameValue(papszOptions, "DescriptionField"))
-        pszDescriptionField_ = CPLStrdup(CSLFetchNameValue(papszOptions, "DescriptionField"));
-    else
-        pszDescriptionField_ = CPLStrdup("Description");
-
-    pszAltitudeMode_ = CPLStrdup(CSLFetchNameValue(papszOptions, "AltitudeMode")); 
-    if( (NULL != pszAltitudeMode_) && strlen(pszAltitudeMode_) > 0) 
-    {
-        //Check to see that the specified AltitudeMode is valid 
-        if ( EQUAL(pszAltitudeMode_, "clampToGround")
-             || EQUAL(pszAltitudeMode_, "relativeToGround")
-             || EQUAL(pszAltitudeMode_, "absolute")) 
-        { 
-            CPLDebug("KML", "Using '%s' for AltitudeMode", pszAltitudeMode_); 
-        } 
-        else 
-        { 
-            CPLFree( pszAltitudeMode_ ); 
-            pszAltitudeMode_ = NULL; 
-            CPLError( CE_Warning, CPLE_AppDefined, "Invalide AltitideMode specified, ignoring" );  
-        } 
-    } 
-    else 
-    { 
-        CPLFree( pszAltitudeMode_ ); 
-        pszAltitudeMode_ = NULL; 
-    } 
+    pszNameField = CPLStrdup(CSLFetchNameValue(papszOptions, "NameField"));
+    CPLDebug("KML", "Using the field '%s' for name element", pszNameField);
     
 /* -------------------------------------------------------------------- */
 /*      Create the output file.                                         */
 /* -------------------------------------------------------------------- */
-    pszName_ = CPLStrdup( pszName );
+    pszName = CPLStrdup( pszFilename );
 
-    if( EQUAL(pszName, "stdout") )
-        fpOutput_ = stdout;
+    
+    if( EQUAL(pszFilename,"stdout") )
+        fpOutput = stdout;
     else
-        fpOutput_ = VSIFOpen( pszName, "wt+" );
+        fpOutput = VSIFOpen( pszFilename, "wt+" );
 
-    if( fpOutput_ == NULL )
+    if( fpOutput == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "Failed to create KML file %s.", pszName );
+                  "Failed to create KML file %s.", 
+                  pszFilename );
         return FALSE;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Write out "standard" header.                                    */
 /* -------------------------------------------------------------------- */
-    VSIFPrintf( fpOutput_, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" );	
+    VSIFPrintf( fpOutput, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" );	
 
-    nSchemaInsertLocation_ = VSIFTell( fpOutput_ );
+    nSchemaInsertLocation = VSIFTell( fpOutput );
     
-    VSIFPrintf( fpOutput_, "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n<Document>" );
+    VSIFPrintf( fpOutput, "<kml xmlns=\"http://earth.google.com/kml/2.0\">\n<Document>" );
 
     return TRUE;
 }
@@ -310,23 +199,22 @@ OGRKMLDataSource::CreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      Verify we are in update mode.                                   */
 /* -------------------------------------------------------------------- */
-    if( fpOutput_ == NULL )
+    if( fpOutput == NULL )
     {
         CPLError( CE_Failure, CPLE_NoWriteAccess,
                   "Data source %s opened for read access.\n"
                   "New layer %s cannot be created.\n",
-                  pszName_, pszLayerName );
+                  pszName, pszLayerName );
 
         return NULL;
     }
 
 /* -------------------------------------------------------------------- */
-/*      Close the previous layer (if there is one open)                 */
+/*      Close the previous layer (if there is one open)         */
 /* -------------------------------------------------------------------- */
     if (GetLayerCount() > 0)
-    {
-        VSIFPrintf( fpOutput_, "</Folder>\n");
-    }
+        VSIFPrintf( fpOutput, "</Folder>\n");
+
     
 /* -------------------------------------------------------------------- */
 /*      Ensure name is safe as an element name.                         */
@@ -340,23 +228,22 @@ OGRKMLDataSource::CreateLayer( const char * pszLayerName,
                   "Layer name '%s' adjusted to '%s' for XML validity.",
                   pszLayerName, pszCleanLayerName );
     }
-    VSIFPrintf( fpOutput_, "<Folder><name>%s</name>\n", pszCleanLayerName);
+    VSIFPrintf( fpOutput, "<Folder><name>%s</name>\n", pszCleanLayerName);
     
 /* -------------------------------------------------------------------- */
 /*      Create the layer object.                                        */
 /* -------------------------------------------------------------------- */
     OGRKMLLayer *poLayer;
     poLayer = new OGRKMLLayer( pszCleanLayerName, poSRS, TRUE, eType, this );
-    
     CPLFree( pszCleanLayerName );
 
 /* -------------------------------------------------------------------- */
 /*      Add layer to data source layer list.                            */
 /* -------------------------------------------------------------------- */
-    papoLayers_ = (OGRKMLLayer **)
-        CPLRealloc( papoLayers_,  sizeof(OGRKMLLayer *) * (nLayers_+1) );
+    papoLayers = (OGRKMLLayer **)
+        CPLRealloc( papoLayers,  sizeof(OGRKMLLayer *) * (nLayers+1) );
     
-    papoLayers_[nLayers_++] = poLayer;
+    papoLayers[nLayers++] = poLayer;
 
     return poLayer;
 }
@@ -364,11 +251,10 @@ OGRKMLDataSource::CreateLayer( const char * pszLayerName,
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
-
 int OGRKMLDataSource::TestCapability( const char * pszCap )
 
 {
-    if( EQUAL(pszCap, ODsCCreateLayer) )
+    if( EQUAL(pszCap,ODsCCreateLayer) )
         return TRUE;
     else
         return FALSE;
@@ -377,22 +263,32 @@ int OGRKMLDataSource::TestCapability( const char * pszCap )
 /************************************************************************/
 /*                              GetLayer()                              */
 /************************************************************************/
-
 OGRLayer *OGRKMLDataSource::GetLayer( int iLayer )
 {
-    if( iLayer < 0 || iLayer >= nLayers_ )
+    if( iLayer < 0 || iLayer >= nLayers )
         return NULL;
     else
-        return papoLayers_[iLayer];
+        return papoLayers[iLayer];
 }
 
 /************************************************************************/
 /*                            GrowExtents()                             */
 /************************************************************************/
-
 void OGRKMLDataSource::GrowExtents( OGREnvelope *psGeomBounds )
 {
     CPLAssert( NULL != psGeomBounds );
 
-    oEnvelope_.Merge( *psGeomBounds );
+    sBoundingRect.Merge( *psGeomBounds );
+}
+
+/************************************************************************/
+/*                            InsertHeader()                            */
+/*                                                                      */
+/*      This method is used to update boundedby info for a              */
+/*      dataset, and insert schema descriptions depending on            */
+/*      selection options in effect.                                    */
+/************************************************************************/
+void OGRKMLDataSource::InsertHeader()
+{    
+        return;
 }

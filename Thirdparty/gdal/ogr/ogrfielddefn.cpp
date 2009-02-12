@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfielddefn.cpp 14372 2008-04-30 04:53:13Z warmerdam $
+ * $Id: ogrfielddefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFieldDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfielddefn.cpp 14372 2008-04-30 04:53:13Z warmerdam $");
+CPL_CVSID("$Id: ogrfielddefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */
@@ -334,6 +334,9 @@ const char * OGRFieldDefn::GetFieldTypeName( OGRFieldType eType )
       case OFTString:
         return "String";
 
+      case OFTWideString:
+        return "WideString";
+
       case OFTIntegerList:
         return "IntegerList";
 
@@ -342,6 +345,9 @@ const char * OGRFieldDefn::GetFieldTypeName( OGRFieldType eType )
 
       case OFTStringList:
         return "StringList";
+
+      case OFTWideStringList:
+        return "WideStringList";
 
       case OFTBinary:
         return "Binary";

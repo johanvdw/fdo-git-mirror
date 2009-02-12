@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: EnvisatFile.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.

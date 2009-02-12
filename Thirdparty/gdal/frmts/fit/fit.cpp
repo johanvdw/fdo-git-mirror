@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fit.cpp 14048 2008-03-20 18:47:21Z rouault $
+ * $Id: fit.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -30,7 +30,7 @@
 #include <limits.h>
 #include "fit.h"
 
-CPL_CVSID("$Id: fit.cpp 14048 2008-03-20 18:47:21Z rouault $");
+CPL_CVSID("$Id: fit.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 GDALDataType fitDataType(int dtype) {
     switch (dtype) {
@@ -171,7 +171,7 @@ int fitGetColorModel(GDALColorInterp colorInterp, int nBands) {
         CPLError(CE_Failure, CPLE_NotSupported, 
                  "FIT write - unsupported combination (band 1 = %s) "
                  "- ignoring color model",
-                 GDALGetColorInterpretationName(colorInterp));
+                 GDALGetColorInterpretationName(colorInterp), nBands);
         return 0;
 
     default:

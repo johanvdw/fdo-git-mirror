@@ -40,16 +40,16 @@ FdoFunctionSubstr::FdoFunctionSubstr ()
     //       to indicate an invalid data type because this function does not
     //       support this type. 
 
-    tmp_buffer           = NULL;
     function_definition  = NULL;
-
-    is_validated         = false;
 
     number_of_parameters = 0;
 
     para1_data_type      = FdoDataType_CLOB;
     para2_data_type      = FdoDataType_CLOB;
     para3_data_type      = FdoDataType_CLOB;
+
+    first = true;
+    tmp_buffer = NULL;
 
 }  //  FdoFunctionSubstr ()
 
@@ -62,9 +62,10 @@ FdoFunctionSubstr::~FdoFunctionSubstr ()
 
 {
 
-    // Delete the function definition and any local buffer.
+    // Delete the function definition.
 
     FDO_SAFE_RELEASE(function_definition);
+
     delete [] tmp_buffer;
 
 }  //  ~FdoFunctionSubstr ()
@@ -124,135 +125,83 @@ FdoLiteralValue *FdoFunctionSubstr::Evaluate (
 
     // Declare and initialize all necessary local variables.
 
-    bool                   is_NULL_value      = false;
+    bool                   is_NULL_value                = false;
 
-    FdoInt64               start_pos          =  0,
-                           substring_length   =  0,
-                           base_string_length = -1;
+    FdoInt64               start_pos                    = 0,
+                           string_length                = -1,
+                           substring_length             = 0;
 
-    FdoString              *base_string       = NULL;
+    FdoString              *base_string;
 
     FdoPtr<FdoStringValue> string_value;
 
-    if (!is_validated) {
-
+    if (first)
+    {
         Validate(literal_values);
-        result          = FdoStringValue::Create();
+        return_string_value = FdoStringValue::Create();
         tmp_buffer      = new wchar_t[INIT_ALLOCATE_SIZE+1];
         tmp_buffer_size = INIT_ALLOCATE_SIZE;
-        is_validated    = true;
+        first = false;
+    }
 
-    }  //  if (!is_validated) ...
 
-    // Get the string from which to extract a substring and determine the
-    // string length. If no value is provided, set the result to indicate a
-    // NULL string and terminate the function.
+    // Get the string from which to extract a substring. If no value is pro-
+    // vided, terminate the function.
 
     string_value = (FdoStringValue *) literal_values->GetItem(0);
-    if (string_value->IsNull()) {
-
-        result->SetNull();
-        return FDO_SAFE_ADDREF(result.p);
-
-    }  //  if (string_value->IsNull()) ...
+    if (string_value->IsNull())
+    {
+        return_string_value->SetNull();
+        return FDO_SAFE_ADDREF(return_string_value.p);
+    }
     else
       base_string = string_value->GetString();
+    string_length = wcslen(base_string);
 
-    base_string_length = wcslen(base_string);
-
-    // Next, get the start position for the substring. The following scenarios
-    // must be handled:
-    //
-    //  - If no value is provided, an empty string is returned back to the
-    //    caller.
-    //  - If the value is positiv, it defines the start position.
-    //  - If the value is negativ, this means that the substring is to be
-    //    retrieved from the string end position minus the provided number.
-    //    If the string length minus the provided number is less than 0, an
-    //    empty string is returned.
+    // Next, get the start position for the substring. If no value is pro-
+    // vided, an empty string is returned back to the calling routine. If
+    // the value is negativ, the position is corrected to 0.
+    // NOTE: The user supplied start position is 1-based whereas strings are
+    //       0-based. Therefore, the retrieved start position needs to be
+    //       adjusted.
 
     start_pos =
         GetNumericValue(literal_values, 1, para2_data_type, &is_NULL_value);
-    if (is_NULL_value) {
-
-        result->SetNull();
-        return FDO_SAFE_ADDREF(result.p);
-
-    }  //  if (is_NULL_value) ...
-
-    if (start_pos < 0) {
-
-        start_pos = base_string_length + start_pos;
-        if (start_pos < 0) {
-
-            result->SetNull();
-            return FDO_SAFE_ADDREF(result.p);
-
-        }  //  if (start_pos < 0) ...
-
-    }  // if (start_pos < 0) ...
-    else {
-
-      // If the entered value is 0, it is treated the same as if the value
-      // would have been 1.
-      // NOTE: The implementation of the default expression functions is based
-      //       on the behavior of the Oracle implementation because Oracle is
-      //       the only RDBMS system that supports all of the expression func-
-      //       tions that the Expression Engine has to support. This specific
-      //       behavior is different from MySQL (returns an empty string in
-      //       this case) and SQL Server (starts at 1 but shortens the number
-      //       of characters to be extracted).
-
-      if (start_pos == 0)
-          start_pos = 1;
-
-      if (start_pos > base_string_length) {
-
-          result->SetNull();
-          return FDO_SAFE_ADDREF(result.p);
-
-      }  // if (start_pos > base_string_length) ...
-
-      // The user supplied start position is 1-based whereas strings are
-      // 0-based. Therefore, the retrieved start position needs to be
-      // adjusted.
-
-      start_pos = start_pos - 1;
-
-    }  //  else ...
+    if (is_NULL_value)
+    {
+        return_string_value->SetNull();
+        return FDO_SAFE_ADDREF(return_string_value.p);
+    }
+    start_pos = start_pos - 1;
+    if (start_pos < 0)
+        start_pos = 0;
 
     // If a third argument was supplied, it represents the length of the sub-
     // string to extract. Get the argument value. If no value is supplied, an
     // empty string is returned back to the calling routine. A negativ number
-    // is not valid. If, however, provided, an empty string is returned as the
-    // result of this request.
+    // is valid as it indicates to extract to the end of the original string.
 
     if (literal_values->GetCount() == 3) {
 
         substring_length = 
             GetNumericValue(
                         literal_values, 2, para3_data_type, &is_NULL_value);
-        if (is_NULL_value) {
-
-            result->SetNull();
-            return FDO_SAFE_ADDREF(result.p);
-
-        }  //  if (is_NULL_value) ...
-
-        if (substring_length < 0) {
-
-            result->SetNull();
-            return FDO_SAFE_ADDREF(result.p);
-
-        }  //  if (substring_length < 0) ...
+        if (is_NULL_value)
+        {
+            return_string_value->SetNull();
+            return FDO_SAFE_ADDREF(return_string_value.p);
+        }
+        if (substring_length < 0)
+        {
+            return_string_value->SetNull();
+            return FDO_SAFE_ADDREF(return_string_value.p);
+        }
 
     } //  if (literal_values->GetCount() == 3) ...
     else
-      substring_length = base_string_length;
+      substring_length = string_length;
 
-    // Adjust the internal buffer if required, copy the requested substring to
-    // the internal buffer, set the value of the function result and return the
-    // result back to the calling routine.
+    // Create the resulting string and return it back to the calling routine.
 
     if (substring_length > tmp_buffer_size) {
 
@@ -260,12 +209,12 @@ FdoLiteralValue *FdoFunctionSubstr::Evaluate (
         tmp_buffer_size = (size_t)substring_length;
         tmp_buffer      = new wchar_t[tmp_buffer_size + 1];
 
-    }  //  if (substring_length > tmp_buffer_size) ...
+    } 
 
     wcsncpy(tmp_buffer, base_string+start_pos, (size_t)substring_length);
     tmp_buffer[substring_length] = '\0';
-    result->SetString(tmp_buffer);
-    return FDO_SAFE_ADDREF(result.p);
+    return_string_value->SetString(tmp_buffer);
+    return FDO_SAFE_ADDREF(return_string_value.p);
 
 }  //  Evaluate ()
 
@@ -292,98 +241,98 @@ void FdoFunctionSubstr::CreateFunctionDefinition ()
 
     // Declare and initialize all necessary local variables.
 
-    FdoString                                *desc                   = NULL;
+    FdoString                               *desc                   = NULL;
 
-    FdoStringP                               arg1_description;
-    FdoStringP                               arg2_description;
-    FdoStringP                               arg3_description;
-    FdoStringP                               str_arg_literal;
-    FdoStringP                               start_pos_arg_literal;
-    FdoStringP                               substr_length_arg_literal;
+    FdoStringP                              arg1_description;
+    FdoStringP                              arg2_description;
+    FdoStringP                              arg3_description;
+    FdoStringP                              str_arg_literal;
+    FdoStringP                              start_pos_arg_literal;
+    FdoStringP                              substr_length_arg_literal;
 
-    FdoPtr<FdoArgumentDefinition>            str_arg;
+    FdoPtr<FdoArgumentDefinition>           str_arg;
 
-    FdoPtr<FdoArgumentDefinition>            byte_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            dcl_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            dbl_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            int16_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            int32_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            int64_pos_arg;
-    FdoPtr<FdoArgumentDefinition>            sgl_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           byte_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           dcl_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           dbl_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           int16_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           int32_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           int64_pos_arg;
+    FdoPtr<FdoArgumentDefinition>           sgl_pos_arg;
 
-    FdoPtr<FdoArgumentDefinition>            byte_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            dcl_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            dbl_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            int16_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            int32_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            int64_lng_arg;
-    FdoPtr<FdoArgumentDefinition>            sgl_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           byte_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           dcl_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           dbl_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           int16_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           int32_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           int64_lng_arg;
+    FdoPtr<FdoArgumentDefinition>           sgl_lng_arg;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_byte_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_byte_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dcl_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dcl_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_dbl_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_dbl_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int16_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int16_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int32_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int32_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_int64_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_int64_sgl_args;
 
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_byte_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_dcl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_dbl_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_int16_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_int32_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_int64_args;
-    FdoPtr<FdoArgumentDefinitionCollection>  str_sgl_sgl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_byte_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_dcl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_dbl_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_int16_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_int32_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_int64_args;
+    FdoPtr<FdoArgumentDefinitionCollection> str_sgl_sgl_args;
 
-    FdoPtr<FdoSignatureDefinition>           signature;
+    FdoPtr<FdoSignatureDefinition>          signature;
     FdoPtr<FdoSignatureDefinitionCollection> signatures;
 
     // Get the general descriptions for the arguments.
@@ -410,7 +359,7 @@ void FdoFunctionSubstr::CreateFunctionDefinition ()
                 FdoException::NLSGetMessage(FUNCTION_SUBSTR_LENGTH_ARG_LIT,
                                             "optional length of substring");
 
-    str_arg = FdoArgumentDefinition::Create(
+    str_arg   = FdoArgumentDefinition::Create(
                     str_arg_literal, arg1_description, FdoDataType_String);
 
     byte_pos_arg  =
@@ -939,10 +888,6 @@ FdoInt64 FdoFunctionSubstr::GetNumericValue (
 
     // Declare all necessary local variables and initialize them.
 
-    FdoFloat                f_num_value;
-
-    FdoDouble               d_num_value;
-
     FdoPtr<FdoByteValue>    byte_value;
     FdoPtr<FdoDecimalValue> decimal_value;
     FdoPtr<FdoDoubleValue>  double_value;
@@ -970,13 +915,8 @@ FdoInt64 FdoFunctionSubstr::GetNumericValue (
 
       case FdoDataType_Decimal:
         decimal_value =(FdoDecimalValue *) literal_values->GetItem(pos);
-        if (!decimal_value->IsNull()) {
-
-            d_num_value = decimal_value->GetDecimal();
-            return (FdoInt64) ((d_num_value < 0) ? ceil(d_num_value)
-                                                 : floor(d_num_value));
-
-        }  //  if (!decimal_value->IsNull()) ...
+        if (!decimal_value->IsNull())
+            return (FdoInt64) (floor(decimal_value->GetDecimal()));
         else {
 
           *is_NULL_value = true;
@@ -987,13 +927,8 @@ FdoInt64 FdoFunctionSubstr::GetNumericValue (
 
       case FdoDataType_Double:
         double_value = (FdoDoubleValue *) literal_values->GetItem(pos);
-        if (!double_value->IsNull()) {
-
-            d_num_value = double_value->GetDouble();
-            return (FdoInt64) ((d_num_value < 0) ? ceil(d_num_value)
-                                                 : floor(d_num_value));
-
-        }  //  if (!double_value->IsNull()) ...
+        if (!double_value->IsNull())
+            return (FdoInt64) (floor(double_value->GetDouble()));
         else {
 
           *is_NULL_value = true;
@@ -1040,13 +975,8 @@ FdoInt64 FdoFunctionSubstr::GetNumericValue (
 
       case FdoDataType_Single:
         single_value = (FdoSingleValue *) literal_values->GetItem(pos);
-        if (!single_value->IsNull()) {
-
-            f_num_value = single_value->GetSingle();
-            return (FdoInt64) ((f_num_value < 0) ? ceil(f_num_value)
-                                                 : floor(f_num_value));
-
-        }  //  if (!single_value->IsNull()) ...
+        if (!single_value->IsNull())
+            return (FdoInt64) (floor(single_value->GetSingle()));
         else {
 
           *is_NULL_value = true;
@@ -1068,7 +998,7 @@ FdoInt64 FdoFunctionSubstr::GetNumericValue (
               "Expression Engine: Unexpected result for function '%1$ls'",
               FDO_FUNCTION_SUBSTR));
 
-}  //  GetNumericValue ()
+}  //  GetPaddingLength ()
 
 void FdoFunctionSubstr::Validate (FdoLiteralValueCollection *literal_values)
 

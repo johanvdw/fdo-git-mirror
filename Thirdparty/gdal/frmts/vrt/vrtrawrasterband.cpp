@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrawrasterband.cpp 15394 2008-09-19 18:20:39Z rouault $
+ * $Id: vrtrawrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRawRasterBand
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: vrtrawrasterband.cpp 15394 2008-09-19 18:20:39Z rouault $");
+CPL_CVSID("$Id: vrtrawrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -248,15 +248,12 @@ void VRTRawRasterBand::ClearRawLink()
 {
     if( poRawRaster != NULL )
     {
-        FILE* fp = poRawRaster->GetFP();
+        if( poRawRaster->GetFP() != NULL )
+        {
+            CPLCloseShared( poRawRaster->GetFP() );
+        }
         delete poRawRaster;
         poRawRaster = NULL;
-        /* We close the file after deleting the raster band */
-        /* since data can be flushed in the destructor */
-        if( fp != NULL )
-        {
-            CPLCloseShared( fp );
-        }
     }
     CPLFree( pszSourceFilename );
     pszSourceFilename = NULL;
@@ -320,12 +317,6 @@ CPLErr VRTRawRasterBand::XMLInit( CPLXMLNode * psTree,
         nPixelOffset = nWordDataSize;
     else
         nPixelOffset = atoi(CPLGetXMLValue( psTree, "PixelOffset", "0") );
-    if (nPixelOffset <= 0)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Invalid value for <PixelOffset> element : %d", nPixelOffset );
-        return CE_Failure;
-    }
     
     if( CPLGetXMLValue( psTree, "LineOffset", NULL ) == NULL )
         nLineOffset = nWordDataSize * GetXSize();

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2layer.cpp 13906 2008-03-01 13:08:28Z rouault $
+ * $Id: ogrili2layer.cpp 11557 2007-05-18 18:11:25Z pka $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrili2layer.cpp 13906 2008-03-01 13:08:28Z rouault $");
+CPL_CVSID("$Id: ogrili2layer.cpp 11557 2007-05-18 18:11:25Z pka $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */
@@ -43,6 +43,8 @@ OGRILI2Layer::OGRILI2Layer( const char * pszName,
                           OGRILI2DataSource *poDSIn )
 
 {
+    poFilterGeom = NULL;
+
     if( poSRSIn == NULL )
         poSRS = NULL;
     else
@@ -70,14 +72,26 @@ OGRILI2Layer::~OGRILI2Layer()
     if( poSRS != NULL )
         poSRS->Release();
 
-    listFeatureIt = listFeature.begin();
-    while(listFeatureIt != listFeature.end())
-    {
-      OGRFeature *poFeature = *(listFeatureIt++);
-      delete poFeature;
-    }
+    if( poFilterGeom != NULL )
+        delete poFilterGeom;
 }
 
+/************************************************************************/
+/*                          SetSpatialFilter()                          */
+/************************************************************************/
+
+void OGRILI2Layer::SetSpatialFilter( OGRGeometry * poGeomIn )
+
+{
+    if( poFilterGeom != NULL )
+    {
+        delete poFilterGeom;
+        poFilterGeom = NULL;
+    }
+
+    if( poGeomIn != NULL )
+        poFilterGeom = poGeomIn->clone();
+}
 
 /************************************************************************/
 /*                             SetFeature()                             */
@@ -102,7 +116,7 @@ void OGRILI2Layer::ResetReading(){
 
 OGRFeature *OGRILI2Layer::GetNextFeature() {
     OGRFeature *poFeature = NULL;
-    while (listFeatureIt != listFeature.end())
+    if (listFeatureIt != listFeature.end())
     {
       poFeature = *(listFeatureIt++);
       //apply filters
@@ -119,16 +133,16 @@ OGRFeature *OGRILI2Layer::GetNextFeature() {
 /*                          GetFeatureCount()                           */
 /************************************************************************/
 
-int OGRILI2Layer::GetFeatureCount( int bForce )
-{
-    if (m_poFilterGeom == NULL && m_poAttrQuery == NULL)
-    {
-        return listFeature.size();
-    }
-    else
-    {
-        return OGRLayer::GetFeatureCount(bForce);
-    }
+int OGRILI2Layer::GetFeatureCount( int bForce ) {
+  return listFeature.size(); //nTotalILI2Count;
+}
+
+/************************************************************************/
+/*                             GetExtent()                              */
+/************************************************************************/
+
+OGRErr OGRILI2Layer::GetExtent(OGREnvelope *psExtent, int bForce ) {
+  return OGRLayer::GetExtent( psExtent, bForce );
 }
 
 static char* d2str(double val)

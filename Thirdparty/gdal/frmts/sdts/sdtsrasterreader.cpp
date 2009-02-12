@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsrasterreader.cpp 14523 2008-05-25 19:14:38Z rouault $
+ * $Id: sdtsrasterreader.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSRasterReader class.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsrasterreader.cpp 14523 2008-05-25 19:14:38Z rouault $");
+CPL_CVSID("$Id: sdtsrasterreader.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          SDTSRasterReader()                          */
@@ -346,7 +346,6 @@ int SDTSRasterReader::GetBlock( int nXOffset, int nYOffset, void * pData )
 {
     DDFRecord   *poRecord;
     int         nBytesPerValue;
-    int         iTry;
     
     CPLAssert( nXOffset == 0 );
 
@@ -360,43 +359,29 @@ int SDTSRasterReader::GetBlock( int nXOffset, int nYOffset, void * pData )
     else
         nBytesPerValue = 4;
 
-    for(iTry=0;iTry<2;iTry++)
+/* -------------------------------------------------------------------- */
+/*      Read through till we find the desired record.                   */
+/* -------------------------------------------------------------------- */
+    CPLErrorReset();
+    while( (poRecord = oDDFModule.ReadRecord()) != NULL )
     {
-    /* -------------------------------------------------------------------- */
-    /*      Read through till we find the desired record.                   */
-    /* -------------------------------------------------------------------- */
-        CPLErrorReset();
-        while( (poRecord = oDDFModule.ReadRecord()) != NULL )
-        {
-            if( poRecord->GetIntSubfield( "CELL", 0, "ROWI", 0 )
-                == nYOffset + nYStart )
-            {
-                break;
-            }
-        }
-
-        if( CPLGetLastErrorType() == CE_Failure )
-            return FALSE;
-
-    /* -------------------------------------------------------------------- */
-    /*      If we didn't get what we needed just start over.                */
-    /* -------------------------------------------------------------------- */
-        if( poRecord == NULL )
-        {
-            if (iTry == 0)
-                oDDFModule.Rewind();
-            else
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                          "Cannot read scanline %d.  Raster access failed.\n",
-                          nYOffset );
-                return FALSE;
-            }
-        }
-        else
+        if( poRecord->GetIntSubfield( "CELL", 0, "ROWI", 0 )
+            == nYOffset + nYStart )
         {
             break;
         }
+    }
+
+    if( CPLGetLastErrorType() == CE_Failure )
+        return FALSE;
+
+/* -------------------------------------------------------------------- */
+/*      If we didn't get what we needed just start over.                */
+/* -------------------------------------------------------------------- */
+    if( poRecord == NULL )
+    {
+        oDDFModule.Rewind();
+        return GetBlock( nXOffset, nYOffset, pData );
     }
 
 /* -------------------------------------------------------------------- */

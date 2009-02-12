@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00write.c,v 1.21 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_e00write.c,v 1.20 2006/06/27 18:38:43 dmorissette Exp $
  *
  * Name:     avc_e00write.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -31,10 +31,6 @@
  **********************************************************************
  *
  * $Log: avc_e00write.c,v $
- * Revision 1.21  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.20  2006/06/27 18:38:43  dmorissette
  * Cleaned up E00 reading (bug 1497, patch from James F.)
  *
@@ -932,8 +928,8 @@ int     AVCE00DeleteCoverage(const char *pszCoverToDelete)
             if (unlink(pszFname) != 0)
             {
                 CPLError(CE_Failure, CPLE_FileIO, 
-                         "Failed deleting %s%s", 
-                         pszCoverPath, papszFiles[i]);
+                         "Failed deleting %s%s: %s", 
+                         pszCoverPath, papszFiles[i], strerror);
                 nStatus = -1;
                 break;
             }
@@ -965,8 +961,8 @@ int     AVCE00DeleteCoverage(const char *pszCoverToDelete)
                  unlink(pszFname) != 0)
             {
                 CPLError(CE_Failure, CPLE_FileIO, 
-                         "Failed deleting %s%s", 
-                         pszInfoPath, papszFiles[i]);
+                         "Failed deleting %s%s: %s", 
+                         pszInfoPath, papszFiles[i], strerror);
                 nStatus = -1;
                 break;
             }
@@ -977,8 +973,8 @@ int     AVCE00DeleteCoverage(const char *pszCoverToDelete)
                  unlink(pszFname) != 0)
             {
                 CPLError(CE_Failure, CPLE_FileIO, 
-                         "Failed deleting %s%s", 
-                         pszInfoPath, papszFiles[i]);
+                         "Failed deleting %s%s: %s", 
+                         pszInfoPath, papszFiles[i], strerror);
                 nStatus = -1;
                 break;
             }
@@ -999,7 +995,7 @@ int     AVCE00DeleteCoverage(const char *pszCoverToDelete)
     {
 #ifndef AVC_IGNORE_RMDIR_ERROR
         CPLError(CE_Failure, CPLE_FileIO, 
-                 "Failed deleting directory %s", pszCoverPath);
+                 "Failed deleting directory %s: %s", pszCoverPath, strerror);
         nStatus = -1;
 #endif
     }

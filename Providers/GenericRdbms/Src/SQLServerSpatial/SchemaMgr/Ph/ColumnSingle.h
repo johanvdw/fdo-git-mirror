@@ -32,7 +32,7 @@ public:
         FdoSmPhDbObject* parentObject,
         bool bNullable,
         FdoStringP rootColumnName = L"",
-		FdoPtr<FdoDataValue> defaultValue = (FdoDataValue*) NULL,
+		FdoStringP defaultValue = L"",
         FdoSmPhRdColumnReader* reader = NULL
     ) :
         FdoSmPhSqsColumn (reader),

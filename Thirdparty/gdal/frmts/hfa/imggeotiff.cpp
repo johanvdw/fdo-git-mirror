@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: imggeotiff.cpp 15824 2008-11-27 22:24:32Z warmerdam $
+ * $Id: imggeotiff.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Mapping Imagine georeferencing to GeoTIFF georeferencing.
@@ -36,7 +36,7 @@
 #include "geo_keyp.h"
 #include "geovalues.h"
 
-CPL_CVSID("$Id: imggeotiff.cpp 15824 2008-11-27 22:24:32Z warmerdam $");
+CPL_CVSID("$Id: imggeotiff.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #ifndef PI
 #  define PI 3.14159265358979323846
@@ -695,7 +695,7 @@ CPLErr ImagineToGeoTIFFProjection( HFAHandle hHFA, TIFF * hTIFF )
                     CT_Equirectangular );
         GTIFKeySet( hGTiff, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
                     psProParameters->proParams[4] * RAD_TO_DEG );
-        GTIFKeySet( hGTiff, ProjStandardParallel1GeoKey, TYPE_DOUBLE, 1,
+        GTIFKeySet( hGTiff, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
                     psProParameters->proParams[5] * RAD_TO_DEG );
         GTIFKeySet( hGTiff, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
                     psProParameters->proParams[6] );

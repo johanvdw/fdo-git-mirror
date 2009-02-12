@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.i 15643 2008-10-29 21:18:47Z warmerdam $
+ * $Id: gdal.i 10098 2006-10-15 20:58:32Z fwarmerdam $
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
@@ -372,7 +372,7 @@
 #include "ogr_api.h"
 #include "gdalwarper.h"
 
-CPL_CVSID("$Id: gdal.i 15643 2008-10-29 21:18:47Z warmerdam $");
+CPL_CVSID("$Id: gdal.i 10098 2006-10-15 20:58:32Z fwarmerdam $");
 
 /*
 ** this seems to be required for SWIG 1.3 because of my hacky SWIG_GetPtr_2 
@@ -2289,16 +2289,11 @@ py_OSRExportToProj4(PyObject *self, PyObject *args) {
     }
 	
     err = OSRExportToProj4( _arg0, &wkt );
-    if( wkt != NULL )
-    {
-        ret = Py_BuildValue( "s", wkt );
-        OGRFree( wkt );
-    }
-    else
-    {
-        ret = Py_BuildValue( "s", "");
-    }
+    if( wkt == NULL )
+	wkt = "";
 
+    ret = Py_BuildValue( "s", wkt );
+    OGRFree( wkt );
     return ret;
 }
 %}

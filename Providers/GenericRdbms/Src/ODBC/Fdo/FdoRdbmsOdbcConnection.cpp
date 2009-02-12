@@ -254,26 +254,18 @@ const char* FdoRdbmsOdbcConnection::FdoToDbiTime( FdoDateTime  when )
 {
     char *ret = GetDbiConnection()->GetUtility()->newCharP();
 
-    if ( when.IsDateTime())
+    if ((0 != when.hour) || (0 != when.minute) || (0 != when.seconds))
     {
-        // "1979-11-30 10:32:12"
+        // "1979-11-30 00:00:00"
         sprintf (ret, "%4d-%02d-%02d %02d:%02d:%02d",
             when.year,
             when.month,
             when.day,
             when.hour,
             when.minute,
-            (int)when.seconds);
+            when.seconds);
     }
-	else if (when.IsTime())
-	{
-        // "10:32:12"
-        sprintf (ret, "%02d:%02d:%02d",
-            when.hour,
-            when.minute,
-            (int)when.seconds);
-	}
-    else if (when.IsDate())
+    else
     {
         // "1979-11-30"
         sprintf (ret, "%4d-%02d-%02d",
@@ -281,8 +273,6 @@ const char* FdoRdbmsOdbcConnection::FdoToDbiTime( FdoDateTime  when )
             when.month,
             when.day);
     }
-	else
-		 throw FdoException::Create(NlsMsgGet(FDORDBMS_480, "Incomplete date/time setting."));
 
     return (ret);
 }

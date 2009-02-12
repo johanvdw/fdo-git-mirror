@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdgndriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrdgndriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRDGNDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_dgn.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdgndriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrdgndriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRDGNDriver()                             */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa.h 15774 2008-11-20 20:31:17Z warmerdam $
+ * $Id: hfa.h 11315 2007-04-20 18:07:18Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Public (C callable) interface for the Erdas Imagine reading
@@ -61,13 +61,13 @@ typedef struct {
 
 
 typedef struct {
-	char * proName;		    /* projection name */
-	Eprj_Coordinate upperLeftCenter;    /* map coordinates of center of
+	char * proName;		/* projection name */
+	Eprj_Coordinate upperLeftCenter;	/* map coordinates of center of
 						   upper left pixel */
-	Eprj_Coordinate lowerRightCenter;   /* map coordinates of center of
+	Eprj_Coordinate lowerRightCenter;	/* map coordinates of center of
 						   lower right pixel */
-	Eprj_Size pixelSize;		    /* pixel size in map units */
-	char * units;		    /* units of the map */
+	Eprj_Size pixelSize;			/* pixel size in map units */
+	char * units;			/* units of the map */
 } Eprj_MapInfo;
 
 typedef enum {
@@ -92,11 +92,11 @@ typedef enum {
 } Eprj_DatumType;
 
 typedef struct {
-	char *datumname;		/* name of the datum */
-	Eprj_DatumType type;		/* The datum type */
+	char * datumname;		/* name of the datum */
+	Eprj_DatumType type;			/* The datum type */
 	double  params[7];		/* The parameters for type
 						   EPRJ_DATUM_PARAMETRIC */
-	char *gridname;		/* name of the grid file */
+	char * gridname;		/* name of the grid file */
 } Eprj_Datum;
 
 typedef struct {
@@ -120,12 +120,6 @@ typedef struct {
 	Eprj_Spheroid proSpheroid;	/* projection spheroid */
 } Eprj_ProParameters;
 
-typedef struct {
-    int		order;
-    double      polycoefmtx[12];
-    double      polycoefvector[2];
-} Efga_Polynomial;
-
 /* -------------------------------------------------------------------- */
 /*      Prototypes                                                      */
 /* -------------------------------------------------------------------- */
@@ -144,7 +138,6 @@ int CPL_DLL HFACreateOverview( HFAHandle hHFA, int nBand, int nOverviewLevel);
 
 const Eprj_MapInfo CPL_DLL *HFAGetMapInfo( HFAHandle );
 int CPL_DLL HFAGetGeoTransform( HFAHandle, double* );
-CPLErr CPL_DLL HFASetGeoTransform( HFAHandle, const char*, const char*,double*);
 CPLErr CPL_DLL HFASetMapInfo( HFAHandle, const Eprj_MapInfo * );
 const Eprj_Datum CPL_DLL *HFAGetDatum( HFAHandle );
 CPLErr CPL_DLL HFASetDatum( HFAHandle, const Eprj_Datum * );
@@ -159,11 +152,9 @@ CPLErr CPL_DLL HFAGetBandInfo( HFAHandle hHFA, int nBand, int * pnDataType,
                                int * pnBlockXSize, int * pnBlockYSize, 
                                int * pnOverviews, int *pnCompressionType );
 int    CPL_DLL HFAGetBandNoData( HFAHandle hHFA, int nBand, double *pdfValue );
-CPLErr CPL_DLL HFASetBandNoData( HFAHandle hHFA, int nBand, double dfValue );
 CPLErr CPL_DLL HFAGetOverviewInfo( HFAHandle hHFA, int nBand, int nOverview, 
                                    int * pnXSize, int * pnYSize,
-                                   int * pnBlockXSize, int * pnBlockYSize,
-                                   int * pnHFADataType );
+                                   int * pnBlockXSize, int * pnBlockYSize );
 CPLErr CPL_DLL HFAGetRasterBlock( HFAHandle hHFA, int nBand, int nXBlock, 
                                   int nYBlock, void * pData );
 CPLErr CPL_DLL HFAGetOverviewRasterBlock( HFAHandle hHFA, int nBand, 
@@ -180,8 +171,7 @@ void HFASetBandName( HFAHandle hHFA, int nBand, const char *pszName );
 int     CPL_DLL HFAGetDataTypeBits( int );
 const char CPL_DLL *HFAGetDataTypeName( int );
 CPLErr	CPL_DLL HFAGetPCT( HFAHandle, int, int *, 
-                           double **, double **, double ** , double **,
-                           double **);
+                           double **, double **, double ** , double **);
 CPLErr  CPL_DLL HFASetPCT( HFAHandle, int, int, double *, double *, double *, double * );
 void    CPL_DLL HFADumpTree( HFAHandle, FILE * );
 void    CPL_DLL HFADumpDictionary( HFAHandle, FILE * );
@@ -202,27 +192,6 @@ HFACreateLayer( HFAHandle psInfo, HFAEntry *poParent,
                 GIntBig nStackValidFlagsOffset, 
                 GIntBig nStackDataOffset,
                 int nStackCount, int nStackIndex );
-
-int CPL_DLL
-HFAReadXFormStack( HFAHandle psInfo, 
-                   Efga_Polynomial **ppasPolyListForward,
-                   Efga_Polynomial **ppasPolyListReverse );
-CPLErr CPL_DLL
-HFAWriteXFormStack( HFAHandle psInfo, int nBand, int nXFormCount,
-                    Efga_Polynomial **ppasPolyListForward,
-                    Efga_Polynomial **ppasPolyListReverse );
-int CPL_DLL 
-HFAEvaluateXFormStack( int nStepCount, int bForward,
-                       Efga_Polynomial *pasPolyList,
-                       double *pdfX, double *pdfY );
-
-char CPL_DLL **HFAReadCameraModel( HFAHandle psInfo );
-
-char *
-HFAPCSStructToWKT( const Eprj_Datum *psDatum,
-                   const Eprj_ProParameters *psPro,
-                   const Eprj_MapInfo *psMapInfo,
-                   HFAEntry *poMapInformation );
 
 /* -------------------------------------------------------------------- */
 /*      data types.                                                     */

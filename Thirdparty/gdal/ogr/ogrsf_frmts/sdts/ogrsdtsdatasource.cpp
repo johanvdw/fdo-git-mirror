@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdtsdatasource.cpp 13025 2007-11-25 18:03:46Z rouault $
+ * $Id: ogrsdtsdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implements OGRSDTSDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdtsdatasource.cpp 13025 2007-11-25 18:03:46Z rouault $");
+CPL_CVSID("$Id: ogrsdtsdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRSDTSDataSource()                          */
@@ -107,8 +107,7 @@ int OGRSDTSDataSource::Open( const char * pszFilename, int bTestOpen )
 /* -------------------------------------------------------------------- */
 /*      Verify that the extension is DDF if we are testopening.         */
 /* -------------------------------------------------------------------- */
-    if( bTestOpen && !(strlen(pszFilename) > 4 &&
-        EQUAL(pszFilename+strlen(pszFilename)-4,".ddf")) )
+    if( bTestOpen && !EQUAL(pszFilename+strlen(pszFilename)-4,".ddf") )
         return FALSE;
     
 /* -------------------------------------------------------------------- */

@@ -22,7 +22,7 @@ using System.IO;
 using OSGeo.FDO.Connections;
 using OSGeo.FDO.Commands;
 using OSGeo.FDO.Commands.Feature;
-using OSGeo.FDO.Geometry;
+using OSGeo.Geometry;
 
 using unit_test.Framework;
 
@@ -73,7 +73,7 @@ namespace unit_test.ProviderTests
                 Console.WriteLine(count + " features in " + (double)clsspan.Ticks / TimeSpan.TicksPerSecond + " seconds");   
 #endif
             }
-            catch (OSGeo.FDO.Common.Exception ex)
+            catch (OSGeo.Common.Exception ex)
             {
                 ShpTests.Fail (ex);
             }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: geotiff_proj4.c,v 1.23 2007/03/13 18:04:33 fwarmerdam Exp $
+ * $Id: geotiff_proj4.c,v 1.22 2005/03/04 04:32:37 fwarmerdam Exp $
  *
  * Project:  libgeotiff
  * Purpose:  Code to convert a normalized GeoTIFF definition into a PROJ.4
@@ -29,9 +29,6 @@
  ******************************************************************************
  *
  * $Log: geotiff_proj4.c,v $
- * Revision 1.23  2007/03/13 18:04:33  fwarmerdam
- * added new zealand map grid support per bug 1519
- *
  * Revision 1.22  2005/03/04 04:32:37  fwarmerdam
  * added cylindricalequalarea support
  *
@@ -499,13 +496,7 @@ char * GTIFGetProj4Defn( GTIFDefn * psDefn )
 /* -------------------------------------------------------------------- */
     else if( psDefn->CTProjection == CT_NewZealandMapGrid )
     {
-        sprintf( szProjection+strlen(szProjection),
-                 "+proj=nzmg +lat_0=%.9f +lon_0=%.9f"
-                 " +x_0=%.3f +y_0=%.3f ",
-                 psDefn->ProjParm[0],
-                 psDefn->ProjParm[1],
-                 psDefn->ProjParm[5],
-                 psDefn->ProjParm[6] );
+        /* this appears to be an unsupported formulation with PROJ.4 */
     }
     
 /* -------------------------------------------------------------------- */

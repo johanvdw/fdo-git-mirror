@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_unix_stdio_64.cpp 15219 2008-08-25 20:38:56Z mloskot $
+ * $Id: cpl_vsil_unix_stdio_64.cpp 11305 2007-04-20 16:31:38Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Unix platforms with fseek64()
@@ -26,13 +26,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- ****************************************************************************
- *
- * NB: Note that in wrappers we are always saving the error state (errno
- * variable) to avoid side effects during debug prints or other possible
- * standard function calls (error states will be overwritten after such
- * a call).
- *
  ****************************************************************************/
 
 #include "cpl_port.h"
@@ -46,9 +39,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <errno.h>
 
-CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 15219 2008-08-25 20:38:56Z mloskot $");
+CPL_CVSID("$Id: cpl_vsil_unix_stdio_64.cpp 11305 2007-04-20 16:31:38Z warmerdam $");
 
 #if defined(UNIX_STDIO_64)
 
@@ -134,8 +126,6 @@ class VSIUnixStdioHandle : public VSIVirtualHandle
 int VSIUnixStdioHandle::Close()
 
 {
-    VSIDebug1( "VSIUnixStdioHandle::Close(%p)", fp );
-
     return fclose( fp );
 }
 
@@ -146,36 +136,7 @@ int VSIUnixStdioHandle::Close()
 int VSIUnixStdioHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
 {
-    int     nResult = VSI_FSEEK64( fp, nOffset, nWhence );
-    int     nError = errno;
-
-#ifdef VSI_DEBUG
-
-    if( nWhence == SEEK_SET )
-    {
-        VSIDebug3( "VSIUnixStdioHandle::Seek(%p,%d,SEEK_SET) = %d",
-                   fp, nOffset, nResult );
-    }
-    else if( nWhence == SEEK_END )
-    {
-        VSIDebug3( "VSIUnixStdioHandle::Seek(%p,%d,SEEK_END) = %d",
-                   fp, nOffset, nResult );
-    }
-    else if( nWhence == SEEK_CUR )
-    {
-        VSIDebug3( "VSIUnixStdioHandle::Seek(%p,%d,SEEK_CUR) = %d",
-                   fp, nOffset, nResult );
-    }
-    else
-    {
-        VSIDebug4( "VSIUnixStdioHandle::Seek(%p,%d,%d-Unknown) = %d",
-                   fp, nOffset, nWhence, nResult );
-    }
-
-#endif 
-
-    errno = nError;
-    return nResult;
+    return( VSI_FSEEK64( fp, nOffset, nWhence ) );
 }
 
 /************************************************************************/
@@ -185,13 +146,7 @@ int VSIUnixStdioHandle::Seek( vsi_l_offset nOffset, int nWhence )
 vsi_l_offset VSIUnixStdioHandle::Tell()
 
 {
-    vsi_l_offset    nOffset = VSI_FTELL64( fp );
-    int             nError = errno;
-
-    VSIDebug2( "VSIUnixStdioHandle::Tell(%p) = %ld", fp, (long)nOffset );
-
-    errno = nError;
-    return nOffset;
+    return( VSI_FTELL64( fp ) );
 }
 
 /************************************************************************/
@@ -201,8 +156,6 @@ vsi_l_offset VSIUnixStdioHandle::Tell()
 int VSIUnixStdioHandle::Flush()
 
 {
-    VSIDebug1( "VSIUnixStdioHandle::Flush(%p)", fp );
-
     return fflush( fp );
 }
 
@@ -213,14 +166,7 @@ int VSIUnixStdioHandle::Flush()
 size_t VSIUnixStdioHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 
 {
-    size_t  nResult = fread( pBuffer, nSize, nCount, fp );
-    int     nError = errno;
-
-    VSIDebug4( "VSIUnixStdioHandle::Read(%p,%ld,%ld) = %ld", 
-               fp, (long)nSize, (long)nCount, (long)nResult );
-
-    errno = nError;
-    return nResult;
+    return fread( pBuffer, nSize, nCount, fp );
 }
 
 /************************************************************************/
@@ -231,14 +177,7 @@ size_t VSIUnixStdioHandle::Write( const void * pBuffer, size_t nSize,
                                   size_t nCount )
 
 {
-    size_t  nResult = fwrite( pBuffer, nSize, nCount, fp );
-    int     nError = errno;
-
-    VSIDebug4( "VSIUnixStdioHandle::Write(%p,%ld,%ld) = %ld", 
-               fp, (long)nSize, (long)nCount, (long)nResult );
-
-    errno = nError;
-    return nResult;
+    return fwrite( pBuffer, nSize, nCount, fp );
 }
 
 /************************************************************************/
@@ -266,23 +205,15 @@ VSIUnixStdioFilesystemHandler::Open( const char *pszFilename,
                                      const char *pszAccess )
 
 {
-    FILE    *fp = VSI_FOPEN64( pszFilename, pszAccess );
-    int     nError = errno;
+    FILE *fp = VSI_FOPEN64( pszFilename, pszAccess );
     
-    VSIDebug3( "VSIUnixStdioFilesystemHandler::Open(\"%s\",\"%s\") = %p",
-               pszFilename, pszAccess, fp );
-
     if( fp == NULL )
-    {
-        errno = nError;
         return NULL;
-    }
 
     VSIUnixStdioHandle *poHandle = new VSIUnixStdioHandle;
     
     poHandle->fp = fp;
 
-    errno = nError;
     return poHandle;
 }
 
@@ -355,28 +286,9 @@ char **VSIUnixStdioFilesystemHandler::ReadDir( const char *pszPath )
 
     if ( (hDir = opendir(pszPath)) != NULL )
     {
-        /* In case of really big number of files in the directory, CSLAddString */
-        /* can be slow (see #2158). We then directly build the list. */
-        int nItems=0;
-        int nAllocatedItems=0;
         while( (psDirEntry = readdir(hDir)) != NULL )
         {
-            if (nItems == 0)
-            {
-                papszDir = (char**) CPLCalloc(2,sizeof(char*));
-                nAllocatedItems = 1;
-            }
-            else if (nItems >= nAllocatedItems)
-            {
-                nAllocatedItems = nAllocatedItems * 2;
-                papszDir = (char**)CPLRealloc(papszDir, 
-                                              (nAllocatedItems+2)*sizeof(char*));
-            }
-
-            papszDir[nItems] = CPLStrdup(psDirEntry->d_name);
-            papszDir[nItems+1] = NULL;
-
-            nItems++;
+            papszDir = CSLAddString(papszDir, psDirEntry->d_name);
         }
 
         closedir( hDir );
@@ -398,7 +310,8 @@ char **VSIUnixStdioFilesystemHandler::ReadDir( const char *pszPath )
 void VSIInstallLargeFileHandler()
 
 {
-    VSIFileManager::InstallHandler( "", new VSIUnixStdioFilesystemHandler );
+    VSIFileManager::InstallHandler( string(""), 
+                                    new VSIUnixStdioFilesystemHandler );
 }
 
 #endif /* ndef WIN32 */

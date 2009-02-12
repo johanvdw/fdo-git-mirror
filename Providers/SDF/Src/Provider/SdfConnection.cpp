@@ -69,16 +69,6 @@
 #include "PropertyIndex.h"
 
 
-#include <FdoExpressionEngine.h>
-#include <FdoExpressionEngineFunctionCollection.h>
-#include <Functions/Geometry/FdoFunctionX.h>
-#include <Functions/Geometry/FdoFunctionY.h>
-#include <Functions/Geometry/FdoFunctionZ.h>
-#include <Functions/Geometry/FdoFunctionM.h>
-
-bool SdfConnection::m_bInitFunctions = false;
-
-
 SdfConnection::SdfConnection()
 : m_mbsFullPath(NULL),
   mConnectionString ((wchar_t*)NULL),
@@ -86,13 +76,10 @@ SdfConnection::SdfConnection()
   m_connState(FdoConnectionState_Closed),
   m_connInfo(NULL),
   m_bReadOnly(false),
-  m_lMaxCacheSize(-1),
   m_dbSchema(NULL),
   m_dbExtendedInfo(NULL)
 {
     m_bCreate = false;
-	InitFunctions();
-
 }
 
 SdfConnection::~SdfConnection()
@@ -115,53 +102,6 @@ SdfConnection* SdfConnection::Create()
 {
     return new SdfConnection();
 }
-
-void SdfConnection::InitFunctions()
-{
-
-	FdoCommonThreadMutex mutex;
-
-	try {
-		mutex.Enter();
-		if (!m_bInitFunctions)
-		{
-			FdoPtr<FdoExpressionEngineFunctionCollection> customFuncs = FdoExpressionEngineFunctionCollection::Create();
-
-			// Add function X to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcX = FdoFunctionX::Create();
-			customFuncs->Add( funcX );
-
-			// Add function Y to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcY = FdoFunctionY::Create();
-			customFuncs->Add( funcY );
-
-			// Add function Z to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcZ = FdoFunctionZ::Create();
-			customFuncs->Add( funcZ );
-
-			// Add function M to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcM = FdoFunctionM::Create();
-			customFuncs->Add( funcM );
-
-			FdoExpressionEngine::RegisterFunctions(customFuncs);
-
-			m_bInitFunctions = true;
-		}
-		mutex.Leave();
-	}
-	catch (FdoException *)
-    {
-        mutex.Leave();
-        throw;
-    }
-    catch (...)
-    {
-        mutex.Leave();
-        throw;
-    }
-
-}
-
 
 
 FdoIConnectionCapabilities* SdfConnection::GetConnectionCapabilities()
@@ -320,10 +260,7 @@ FdoConnectionState SdfConnection::Open( SdfCompareHandler* cmpHandler )
         m_env = NULL;
         throw FdoConnectionException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_2_ALLOCATE_ENV_HANDLE_FAILED)));
     }
- 
-    if ( m_lMaxCacheSize > 0 ) 
-        m_env->SetMaxCacheSize(m_lMaxCacheSize);
-
+    
     try
     {
         //get the SDF schema. It could be empty..., but we still have an object for it
@@ -428,13 +365,11 @@ FdoICommand* SdfConnection::CreateCommand(FdoInt32 commandType)
     case FdoCommandType_DestroyDataStore:
         return new SdfDeleteDataStore(this);
 
-    case FdoCommandType_ExtendedSelect:
-    case SdfCommandType_ExtendedSelect:
-        return new SdfExtendedSelect( new SdfImpExtendedSelect( this ) );
-
     case SdfCommandType_CreateSDFFile:
         return new SdfCreateSDFFile(this);
 
+    case SdfCommandType_ExtendedSelect:
+        return new SdfExtendedSelect( new SdfImpExtendedSelect( this ) );
     default:
         throw FdoConnectionException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_3_COMMAND_NOT_SUPPORTED)));
     }
@@ -535,13 +470,6 @@ void SdfConnection::UpdateConnectionString()
         m_bReadOnly = true;
     else
         m_bReadOnly = false;
-
-    const wchar_t* strMaxCacheSize = dict->GetProperty(PROP_NAME_MAXCACHESIZE);
-
-    if ( strMaxCacheSize && (strMaxCacheSize[0] != 0) ) 
-        m_lMaxCacheSize = FdoStringP(strMaxCacheSize).ToLong();
-    else
-        m_lMaxCacheSize = -1;
 
     FdoCommonConnStringParser parser (NULL, GetConnectionString ());
     // check the validity of the connection string, i.e. it doesn’t contain unknown properties

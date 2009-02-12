@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultipolygon.cpp 14336 2008-04-20 14:36:09Z rouault $
+ * $Id: ogrmultipolygon.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPolygon class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultipolygon.cpp 14336 2008-04-20 14:36:09Z rouault $");
+CPL_CVSID("$Id: ogrmultipolygon.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRMultiPolygon()                           */
@@ -295,7 +295,6 @@ OGRErr OGRMultiPolygon::exportToWkt( char ** ppszDstText ) const
 /* -------------------------------------------------------------------- */
     if( nValidPolys == 0 )
     {
-        CPLFree( papszLines );
         *ppszDstText = CPLStrdup("MULTIPOLYGON EMPTY");
         return OGRERR_NONE;
     }
@@ -314,15 +313,13 @@ OGRErr OGRMultiPolygon::exportToWkt( char ** ppszDstText ) const
 /* -------------------------------------------------------------------- */
     strcpy( *ppszDstText, "MULTIPOLYGON (" );
 
-    int bMustWriteComma = FALSE;
     for( iLine = 0; iLine < getNumGeometries(); iLine++ )
     {                                                           
         if( papszLines[iLine] == NULL )
             continue;
 
-        if( bMustWriteComma )
+        if( iLine > 0 )
             strcat( *ppszDstText, "," );
-        bMustWriteComma = TRUE;
         
         strcat( *ppszDstText, papszLines[iLine] + 8 );
         VSIFree( papszLines[iLine] );

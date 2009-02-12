@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h 15372 2008-09-14 17:38:49Z rouault $
+ * $Id: cpl_port.h 11983 2007-08-28 17:35:15Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -80,10 +80,8 @@
 #  ifndef _CRT_NONSTDC_NO_DEPRECATE
 #    define _CRT_NONSTDC_NO_DEPRECATE
 #  endif
-#  ifdef MSVC_USE_VLD
-#    include <vld.h>
-#  endif
 #endif
+
 
 #include "cpl_config.h"
 
@@ -111,7 +109,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <limits.h>
 
 #if !defined(WIN32CE)
 #  include <time.h>
@@ -130,7 +127,9 @@
 #endif
 
 #ifdef HAVE_DIRECT_H
+#ifdef WIN32
 #  include <direct.h>
+#endif
 #endif
 
 #ifdef _AIX
@@ -177,22 +176,16 @@ typedef int             GBool;
 #define VSI_LARGE_API_SUPPORTED
 typedef __int64          GIntBig;
 typedef unsigned __int64 GUIntBig;
-#define CPL_FRMT_GIB     "%I64d"
-#define CPL_FRMT_GUIB     "%I64u"
 
 #elif HAVE_LONG_LONG
 
 typedef long long        GIntBig;
 typedef unsigned long long GUIntBig;
-#define CPL_FRMT_GIB     "%lld"
-#define CPL_FRMT_GUIB     "%llu"
 
 #else
 
 typedef long             GIntBig;
 typedef unsigned long    GUIntBig;
-#define CPL_FRMT_GIB     "%ld"
-#define CPL_FRMT_GUIB     "%lu"
 
 #endif
 
@@ -211,11 +204,7 @@ typedef unsigned long    GUIntBig;
 #if defined(_MSC_VER) && !defined(CPL_DISABLE_DLL)
 #  define CPL_DLL     __declspec(dllexport)
 #else
-#  if defined(USE_GCC_VISIBILITY_FLAG)
-#    define CPL_DLL     __attribute__ ((visibility("default")))
-#  else
-#    define CPL_DLL
-#  endif
+#  define CPL_DLL
 #endif
 #endif
 
@@ -238,13 +227,6 @@ typedef unsigned long    GUIntBig;
 #  define FORCE_CDECL  __cdecl
 #else
 #  define FORCE_CDECL 
-#endif
-
-/* TODO : support for other compilers needed */
-#if defined(__GNUC__)
-#define CPL_INLINE inline
-#else
-#define CPL_INLINE
 #endif
 
 #ifndef NULL
@@ -274,7 +256,7 @@ typedef unsigned long    GUIntBig;
 /*      effects.                                                        */
 /* -------------------------------------------------------------------- */
 #ifndef CPLIsEqual
-#  define CPLIsEqual(x,y) (fabs((x) - (y)) < 0.0000000000001)
+#  define CPLIsEqual(x,y) (fabs(fabs(x) - fabs(y)) < 0.0000000000001)
 #endif
 
 #ifndef EQUAL
@@ -299,15 +281,14 @@ char * strdup (char *instr);
 
 /* -------------------------------------------------------------------- */
 /*      Handle isnan() and isinf().  Note that isinf() and isnan()      */
-/*      are supposed to be macros according to C99, defined in math.h   */
-/*      Some systems (ie. Tru64) don't have isinf() at all, so if       */
-/*      the macro is not defined we just assume nothing is infinite.    */
-/*      This may mean we have no real CPLIsInf() on systems with isinf()*/
+/*      are supposed to be macros according to C99.  Some systems       */
+/*      (ie. Tru64) don't have isinf() at all, so if the macro is       */
+/*      not defined we just assume nothing is infinite.  This may       */
+/*      mean we have no real CPLIsInf() on systems with an isinf()      */
 /*      function but no corresponding macro, but I can live with        */
 /*      that since it isn't that important a test.                      */
 /* -------------------------------------------------------------------- */
 #ifdef _MSC_VER
-#  include <float.h>
 #  define CPLIsNan(x) _isnan(x)
 #  define CPLIsInf(x) (!_isnan(x) && !_finite(x))
 #  define CPLIsFinite(x) _finite(x)
@@ -400,7 +381,7 @@ char * strdup (char *instr);
                                                             
 
 /* Until we have a safe 64 bits integer data type defined, we'll replace
- * this version of the CPL_SWAP64() macro with a less efficient one.
+m * this version of the CPL_SWAP64() macro with a less efficient one.
  */
 /*
 #define CPL_SWAP64(x) \
@@ -441,23 +422,6 @@ char * strdup (char *instr);
 #  define CPL_MSBPTR64(x)       CPL_SWAP64PTR(x)
 #endif
 
-/** Return a Int16 from the 2 bytes ordered in LSB order at address x */
-#define CPL_LSBINT16PTR(x)    ((*(GByte*)(x)) | ((*(GByte*)((x)+1)) << 8))
-
-/** Return a Int32 from the 4 bytes ordered in LSB order at address x */
-#define CPL_LSBINT32PTR(x)    ((*(GByte*)(x)) | ((*(GByte*)((x)+1)) << 8) | \
-                              ((*(GByte*)((x)+2)) << 16) | ((*(GByte*)((x)+3)) << 24))
-
-
-/* Utility macro to explicitly mark intentionally unreferenced parameters. */
-#ifndef UNREFERENCED_PARAM 
-#  ifdef UNREFERENCED_PARAMETER /* May be defined by Windows API */
-#    define UNREFERENCED_PARAM(param) UNREFERENCED_PARAMETER(param)
-#  else
-#    define UNREFERENCED_PARAM(param) ((void)param)
-#  endif /* UNREFERENCED_PARAMETER */
-#endif /* UNREFERENCED_PARAM */
-
 /***********************************************************************
  * Define CPL_CVSID() macro.  It can be disabled during a build by
  * defining DISABLE_CPLID in the compiler options.
@@ -471,12 +435,6 @@ char * strdup (char *instr);
 static char *cvsid_aw() { return( cvsid_aw() ? ((char *) NULL) : cpl_cvsid ); }
 #else
 #  define CPL_CVSID(string)
-#endif
-
-#if defined(__GNUC__) && __GNUC__ >= 3
-#define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )  __attribute__((__format__ (__printf__, format_idx, arg_idx)))
-#else
-#define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )
 #endif
 
 #endif /* ndef CPL_BASE_H_INCLUDED */

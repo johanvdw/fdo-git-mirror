@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 14881 2008-07-10 20:30:19Z rouault $
+ * $Id: ogrpolygon.cpp 11427 2007-05-07 19:16:26Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -32,7 +32,7 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 14881 2008-07-10 20:30:19Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 11427 2007-05-07 19:16:26Z warmerdam $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -339,7 +339,7 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
     OGRwkbByteOrder     eByteOrder;
     int                 nDataOffset, b3D;
     
-    if( nSize < 9 && nSize != -1 )
+    if( nSize < 21 && nSize != -1 )
         return OGRERR_NOT_ENOUGH_DATA;
 
 /* -------------------------------------------------------------------- */
@@ -634,16 +634,6 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
     OGRErr      eErr;
 
 /* -------------------------------------------------------------------- */
-/*      If we have no valid exterior ring, return POLYGON EMPTY.        */
-/* -------------------------------------------------------------------- */
-    if (getExteriorRing() == NULL ||
-        getExteriorRing()->IsEmpty())
-    {
-        *ppszDstText = CPLStrdup("POLYGON EMPTY");
-        return OGRERR_NONE;
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Build a list of strings containing the stuff for each ring.     */
 /* -------------------------------------------------------------------- */
     papszRings = (char **) CPLCalloc(sizeof(char *),nRingCount);
@@ -666,6 +656,16 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
 
         nNonEmptyRings++;
     }
+    
+/* -------------------------------------------------------------------- */
+/*      If we have no valid rings, return POLYGON EMPTY.                */
+/* -------------------------------------------------------------------- */
+    if( nNonEmptyRings == 0 )
+    {
+        CPLFree( papszRings );
+        *ppszDstText = CPLStrdup("POLYGON EMPTY");
+        return OGRERR_NONE;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Allocate exactly the right amount of space for the              */
@@ -684,10 +684,7 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
     for( iRing = 0; iRing < nRingCount; iRing++ )
     {                                                           
         if( papszRings[iRing] == NULL )
-        {
-            CPLDebug( "OGR", "OGRPolygon::exportToWkt() - skipping empty ring.");
             continue;
-        }
 
         if( iRing > 0 )
             strcat( *ppszDstText, "," );
@@ -796,46 +793,14 @@ int OGR_G_Centroid( OGRGeometryH hPolygon, OGRGeometryH hCentroidPoint )
 /*                           PointOnSurface()                           */
 /************************************************************************/
 
-int OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
+int OGRPolygon::PointOnSurface( OGRPoint * ) const
 
 {
-    if( poPoint == NULL )
-        return OGRERR_FAILURE;
- 
-#ifndef HAVE_GEOS
+    // notdef ... not implemented yet.
+    
     return OGRERR_FAILURE;
-#else
-    GEOSGeom hThisGeosGeom = NULL;
-    GEOSGeom hOtherGeosGeom = NULL;
-     
-    hThisGeosGeom = exportToGEOS();
- 
-    if( hThisGeosGeom != NULL )
-    {
-     	hOtherGeosGeom = GEOSPointOnSurface( hThisGeosGeom );
-        OGRPoint *poInsidePoint = (OGRPoint *) 
-            OGRGeometryFactory::createFromGEOS( hOtherGeosGeom );
- 
-        GEOSGeom_destroy( hThisGeosGeom );
-        GEOSGeom_destroy( hOtherGeosGeom );
- 
-        if( poPoint == NULL 
-            || wkbFlatten(poPoint->getGeometryType()) != wkbPoint )
-            return OGRERR_FAILURE;
- 
- 	poPoint->setX( poInsidePoint->getX() );
- 	poPoint->setY( poInsidePoint->getY() );
- 
-        delete poInsidePoint;
- 
-     	return OGRERR_NONE;
-    }
-    else
-    {
-     	return OGRERR_FAILURE;
-    }
-#endif /* HAVE_GEOS */
 }
+
 
 
 /************************************************************************/
@@ -885,11 +850,7 @@ OGRBoolean OGRPolygon::Equals( OGRGeometry * poOther ) const
     if( getNumInteriorRings() != poOPoly->getNumInteriorRings() )
         return FALSE;
 
-    if( getExteriorRing() == NULL && poOPoly->getExteriorRing() == NULL )
-        /* ok */;
-    else if( getExteriorRing() == NULL || poOPoly->getExteriorRing() == NULL )
-        return FALSE;
-    else if( !getExteriorRing()->Equals( poOPoly->getExteriorRing() ) )
+    if( !getExteriorRing()->Equals( poOPoly->getExteriorRing() ) )
         return FALSE;
     
     // we should eventually test the SRS.
@@ -1015,25 +976,3 @@ void OGRPolygon::setCoordinateDimension( int nNewDimension )
     OGRGeometry::setCoordinateDimension( nNewDimension );
 }
 
-
-/************************************************************************/
-/*                               IsEmpty()                              */
-/************************************************************************/
-
-OGRBoolean OGRPolygon::IsEmpty(  ) const
-{
-    for( int iRing = 0; iRing < nRingCount; iRing++ )
-        if (papoRings[iRing]->IsEmpty() == FALSE)
-            return FALSE;
-    return TRUE;
-}
-
-/************************************************************************/
-/*                       OGRPolygon::segmentize()                       */
-/************************************************************************/
-
-void OGRPolygon::segmentize( double dfMaxLength )
-{
-    for( int iRing = 0; iRing < nRingCount; iRing++ )
-        papoRings[iRing]->segmentize(dfMaxLength);
-}

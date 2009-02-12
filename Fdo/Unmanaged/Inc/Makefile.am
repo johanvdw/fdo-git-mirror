@@ -99,11 +99,9 @@ EXTRA_DIST = \
     Fdo/Commands/Feature/IBaseSelect.h \
     Fdo/Commands/Feature/IDataReader.h \
     Fdo/Commands/Feature/IDelete.h \
-    Fdo/Commands/Feature/IExtendedSelect.h \
     Fdo/Commands/Feature/IFeatureReader.h \
     Fdo/Commands/Feature/IInsert.h \
     Fdo/Commands/Feature/IReader.h \
-    Fdo/Commands/Feature/IScrollableFeatureReader.h \
     Fdo/Commands/Feature/ISelect.h \
     Fdo/Commands/Feature/ISelectAggregates.h \
     Fdo/Commands/Feature/IUpdate.h \
@@ -156,8 +154,6 @@ EXTRA_DIST = \
     Fdo/Commands/Schema/IDescribeSchema.h \
     Fdo/Commands/Schema/IDescribeSchemaMapping.h \
     Fdo/Commands/Schema/IDestroySchema.h \
-    Fdo/Commands/Schema/IGetClassNames.h \
-    Fdo/Commands/Schema/IGetSchemaNames.h \
     Fdo/Commands/Schema/PhysicalClassMapping.h \
     Fdo/Commands/Schema/PhysicalElementMapping.h \
     Fdo/Commands/Schema/PhysicalElementMappingCollection.h \
@@ -384,6 +380,5 @@ uninstall :
 	@rm -drf $(INSTALL_DIR)/Fdo
 	@rm -drf $(INSTALL_DIR)/Common
 	@rm -drf $(INSTALL_DIR)/Geometry
-
 
 

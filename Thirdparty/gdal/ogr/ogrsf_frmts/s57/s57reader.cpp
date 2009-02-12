@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57reader.cpp 12146 2007-09-13 20:14:10Z warmerdam $
+ * $Id: s57reader.cpp 11628 2007-06-09 04:39:43Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Reader class.
@@ -35,7 +35,7 @@
 #include <string>
 #include <fstream>
 
-CPL_CVSID("$Id: s57reader.cpp 12146 2007-09-13 20:14:10Z warmerdam $");
+CPL_CVSID("$Id: s57reader.cpp 11628 2007-06-09 04:39:43Z warmerdam $");
 
 #ifndef PI
 #define PI  3.14159265358979323846
@@ -342,19 +342,18 @@ void S57Reader::Rewind()
 /*      indexes.                                                        */
 /************************************************************************/
 
-int S57Reader::Ingest()
+void S57Reader::Ingest()
 
 {
     DDFRecord   *poRecord;
     
     if( poModule == NULL || bFileIngested )
-        return TRUE;
+        return;
 
 /* -------------------------------------------------------------------- */
 /*      Read all the records in the module, and place them in           */
 /*      appropriate indexes.                                            */
 /* -------------------------------------------------------------------- */
-    CPLErrorReset();
     while( (poRecord = poModule->ReadRecord()) != NULL )
     {
         DDFField        *poKeyField = poRecord->GetField(1);
@@ -432,18 +431,13 @@ int S57Reader::Ingest()
         }
     }
 
-    if( CPLGetLastErrorType() == CE_Failure )
-        return FALSE;
-
     bFileIngested = TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      If update support is enabled, read and apply them.              */
 /* -------------------------------------------------------------------- */
     if( nOptionFlags & S57M_UPDATES )
-        return FindAndApplyUpdates();
-    else
-        return TRUE;
+        FindAndApplyUpdates();
 }
 
 /************************************************************************/
@@ -500,8 +494,8 @@ int S57Reader::GetNextFEIndex( int nRCNM )
 OGRFeature * S57Reader::ReadNextFeature( OGRFeatureDefn * poTarget )
 
 {
-    if( !bFileIngested && !Ingest() )
-        return NULL;
+    if( !bFileIngested )
+        Ingest();
 
 /* -------------------------------------------------------------------- */
 /*      Special case for "in progress" multipoints being split up.      */
@@ -2175,8 +2169,8 @@ int S57Reader::CollectClassList(int *panClassCount, int nMaxClass )
 {
     int         bSuccess = TRUE;
 
-    if( !bFileIngested && !Ingest() )
-        return FALSE;
+    if( !bFileIngested )
+        Ingest();
 
     for( int iFEIndex = 0; iFEIndex < oFE_Index.GetCount(); iFEIndex++ )
     {
@@ -2529,13 +2523,11 @@ int S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
 /* -------------------------------------------------------------------- */
 /*      Ensure base file is loaded.                                     */
 /* -------------------------------------------------------------------- */
-    if( !bFileIngested && !Ingest() )
-        return FALSE;
+    Ingest();
 
 /* -------------------------------------------------------------------- */
 /*      Read records, and apply as updates.                             */
 /* -------------------------------------------------------------------- */
-    CPLErrorReset();
     while( (poRecord = poUpdateModule->ReadRecord()) != NULL )
     {
         DDFField        *poKeyField = poRecord->GetField(1);
@@ -2650,7 +2642,7 @@ int S57Reader::ApplyUpdates( DDFModule *poUpdateModule )
         }
     }
 
-    return CPLGetLastErrorType() != CE_Failure;
+    return TRUE;
 }
 
 /************************************************************************/
@@ -2680,8 +2672,8 @@ int S57Reader::FindAndApplyUpdates( const char * pszPath )
     for( iUpdate = 1; bSuccess; iUpdate++ )
     {
         //Creaing file extension
-        CPLString extension;
-        CPLString dirname;
+        std::string extension;
+        std::string dirname;
         if( 1 <= iUpdate &&  iUpdate < 10 )
         {
             char buf[2];
@@ -2712,10 +2704,10 @@ int S57Reader::FindAndApplyUpdates( const char * pszPath )
         char    *pszUpdateFilename = 
             CPLStrdup(CPLResetExtension(pszPath,extension.c_str()));
 
-        FILE *file = VSIFOpen( pszUpdateFilename, "r" );
+        std::ifstream file(pszUpdateFilename);
         if( file )
         {
-            VSIFClose( file );
+            file.close();
             bSuccess = oUpdateModule.Open( pszUpdateFilename, TRUE );
             if( bSuccess )
                 CPLDebug( "S57", "Applying feature updates from %s.", 
@@ -2728,10 +2720,10 @@ int S57Reader::FindAndApplyUpdates( const char * pszPath )
         }
         else // file is store on Primar generated cd
         {
+            file.close();
             char* pszBaseFileDir = CPLStrdup(CPLGetDirname(pszPath));
             char* pszFileDir = CPLStrdup(CPLGetDirname(pszBaseFileDir));
-
-            CPLString remotefile(pszFileDir);
+            std::string remotefile(pszFileDir);
             remotefile.append( "/" );
             remotefile.append( dirname );
             remotefile.append( "/" );
@@ -2778,8 +2770,7 @@ OGRErr S57Reader::GetExtent( OGREnvelope *psExtent, int bForce )
     if( !bForce && !bFileIngested )
         return OGRERR_FAILURE;
 
-    if( !Ingest() )
-        return OGRERR_FAILURE;
+    Ingest();
 
 /* -------------------------------------------------------------------- */
 /*      We will scan all the low level vector elements for extents      */

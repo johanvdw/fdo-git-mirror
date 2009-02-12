@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gml.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogr_gml.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Declarations for OGR wrapper classes for GML, and GML<->OGR

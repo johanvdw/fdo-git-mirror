@@ -43,14 +43,13 @@ public:
 protected:
 	virtual void  set_provider() {}   
 	virtual FdoStringP  get_lt_mode() { return L"";} 
-    virtual void SetLtMode();
 
 	void predelete();
     void Cmd_ListDatastores ();
 	void Cmd_CreateDatastore ();
 	void Cmd_DestroyDatastore ();
     virtual void TestReservedName();
-	virtual int  ListDatastores( bool include );
+	int  ListDatastores( bool include );
     void CreateDatastore(FdoIConnection* connection, FdoString* dsName, bool setHasMetaSchema = true, bool hasMetaSchema = true);
 	void DestroyDatastore(bool ignoreEx);
 	void ListDatabaseProperties(FdoIDataStorePropertyDictionary* dictionary);

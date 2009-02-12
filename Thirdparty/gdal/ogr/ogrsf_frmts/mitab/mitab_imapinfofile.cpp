@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_imapinfofile.cpp,v 1.28 2008/11/17 22:06:21 aboudreault Exp $
+ * $Id: mitab_imapinfofile.cpp,v 1.21 2005/05/19 21:10:50 fwarmerdam Exp $
  *
  * Name:     mitab_imapinfo
  * Project:  MapInfo mid/mif Tab Read/Write library
@@ -9,7 +9,7 @@
  * Author:   Daniel Morissette, dmorissette@dmsolutions.ca
  *
  **********************************************************************
- * Copyright (c) 1999-2008, Daniel Morissette
+ * Copyright (c) 1999-2001, Daniel Morissette
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,29 +31,6 @@
  **********************************************************************
  *
  * $Log: mitab_imapinfofile.cpp,v $
- * Revision 1.28  2008/11/17 22:06:21  aboudreault
- * Added support to use OFTDateTime/OFTDate/OFTTime type when compiled with
- * OGR and fixed reading/writing support for these types.
- *
- * Revision 1.27  2008/09/26 14:40:24  aboudreault
- * Fixed bug: MITAB doesn't support writing DateTime type (bug 1948)
- *
- * Revision 1.26  2008/03/07 20:16:17  dmorissette
- * Fixed typos in comments
- *
- * Revision 1.25  2008/03/05 20:35:39  dmorissette
- * Replace MITAB 1.x SetFeature() with a CreateFeature() for V2.x (bug 1859)
- *
- * Revision 1.24  2007/06/21 14:00:23  dmorissette
- * Added missing cast in isspace() calls to avoid failed assertion on Windows
- * (MITAB bug 1737, GDAL ticket 1678))
- *
- * Revision 1.23  2007/06/12 14:43:19  dmorissette
- * Use iswspace instead of sispace in IMapInfoFile::SmartOpen() (bug 1737)
- *
- * Revision 1.22  2007/06/12 13:52:37  dmorissette
- * Added IMapInfoFile::SetCharset() method (bug 1734)
- *
  * Revision 1.21  2005/05/19 21:10:50  fwarmerdam
  * changed to use OGRLayers spatial filter support
  *
@@ -124,11 +101,7 @@
 #include "mitab.h"
 #include "mitab_utils.h"
 
-#ifdef __HP_aCC
-#  include <wchar.h>      /* iswspace() */
-#else
-#  include <wctype.h>      /* iswspace() */
-#endif
+#include <ctype.h>      /* isspace() */
 
 /**********************************************************************
  *                   IMapInfoFile::IMapInfoFile()
@@ -140,7 +113,6 @@ IMapInfoFile::IMapInfoFile()
     m_nCurFeatureId = 0;
     m_poCurFeature = NULL;
     m_bBoundsSet = FALSE;
-    m_pszCharset = NULL;
 }
 
 
@@ -156,9 +128,6 @@ IMapInfoFile::~IMapInfoFile()
         delete m_poCurFeature;
         m_poCurFeature = NULL;
     }
-
-    CPLFree(m_pszCharset);
-    m_pszCharset = NULL;
 }
 
 /**********************************************************************
@@ -250,7 +219,7 @@ IMapInfoFile *IMapInfoFile::SmartOpen(const char *pszFname,
 /**********************************************************************
  *                   IMapInfoFile::GetNextFeature()
  *
- * Standard OGR GetNextFeature implementation.  This method is used
+ * Standard OGR GetNextFeature implementation.  This methode is used
  * to retreive the next OGRFeature.
  **********************************************************************/
 OGRFeature *IMapInfoFile::GetNextFeature()
@@ -282,7 +251,7 @@ OGRFeature *IMapInfoFile::GetNextFeature()
 /**********************************************************************
  *                   IMapInfoFile::CreateFeature()
  *
- * Standard OGR CreateFeature implementation.  This method is used
+ * Standard OGR CreateFeature implementation.  This methode is used
  * to create a new feature in current dataset 
  **********************************************************************/
 OGRErr     IMapInfoFile::CreateFeature(OGRFeature *poFeature)
@@ -388,7 +357,10 @@ OGRErr     IMapInfoFile::CreateFeature(OGRFeature *poFeature)
     }
     
 
-    eErr = CreateFeature(poTABFeature);
+    if (SetFeature(poTABFeature) > -1)
+        eErr = OGRERR_NONE;
+    else
+        eErr = OGRERR_FAILURE;
 
     delete poTABFeature;
     
@@ -398,7 +370,7 @@ OGRErr     IMapInfoFile::CreateFeature(OGRFeature *poFeature)
 /**********************************************************************
  *                   IMapInfoFile::GetFeature()
  *
- * Standard OGR GetFeature implementation.  This method is used
+ * Standard OGR GetFeature implementation.  This methode is used
  * to get the wanted (nFeatureId) feature, a NULL value will be 
  * returned on error.
  **********************************************************************/
@@ -443,24 +415,6 @@ OGRErr IMapInfoFile::CreateField( OGRFieldDefn *poField, int bApproxOK )
         if( nWidth == 0 )
             nWidth = 32;
     }
-    else if( poField->GetType() == OFTDate )
-    {
-        eTABType = TABFDate;
-        if( nWidth == 0 )
-            nWidth = 10;
-    }
-    else if( poField->GetType() == OFTTime )
-    {
-        eTABType = TABFTime;
-        if( nWidth == 0 )
-            nWidth = 8;
-    }
-    else if( poField->GetType() == OFTDateTime )
-    {
-        eTABType = TABFDateTime;
-        if( nWidth == 0 )
-            nWidth = 19;
-    }
     else if( poField->GetType() == OFTString )
     {
         eTABType = TABFChar;
@@ -486,23 +440,3 @@ OGRErr IMapInfoFile::CreateField( OGRFieldDefn *poField, int bApproxOK )
     else
         return OGRERR_FAILURE;
 }
-
-
-/**********************************************************************
- *                   IMapInfoFile::SetCharset()
- *
- * Set the charset for the tab header. 
- *
- *
- * Returns 0 on success, -1 on error.
- **********************************************************************/
-int IMapInfoFile::SetCharset(const char* pszCharset)
-{
-    if(pszCharset && strlen(pszCharset) > 0)
-    {
-        CPLFree(m_pszCharset);
-        m_pszCharset = CPLStrdup(pszCharset);
-    }
-    return 0;
-}
-

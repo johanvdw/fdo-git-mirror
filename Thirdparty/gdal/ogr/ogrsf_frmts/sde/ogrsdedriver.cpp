@@ -1,11 +1,9 @@
 /******************************************************************************
- * $Id: ogrsdedriver.cpp 14165 2008-03-31 17:50:47Z rouault $
+ * $Id: ogrsdedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDEDriver class.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
- * Copyright (c) 2008, Shawn Gervais <project10@project10.net> 
- * Copyright (c) 2008, Howard Butler <hobu.inc@gmail.com>
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
@@ -32,7 +30,7 @@
 #include "ogr_sde.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsdedriver.cpp 14165 2008-03-31 17:50:47Z rouault $");
+CPL_CVSID("$Id: ogrsdedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRSDEDriver()                            */
@@ -63,40 +61,24 @@ OGRDataSource *OGRSDEDriver::Open( const char * pszFilename,
 {
     OGRSDEDataSource     *poDS;
 
-    poDS = new OGRSDEDataSource();
-
-    if( !poDS->Open( pszFilename, bUpdate ) )
+    if( bUpdate )
     {
-        delete poDS;
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "SDE Driver doesn't support update." );
         return NULL;
     }
-    else
-        return poDS;
-}
-
-/************************************************************************/
-/*                                Open()                                */
-/************************************************************************/
-
-OGRDataSource *OGRSDEDriver::CreateDataSource( const char * pszName,
-                                               char **papszOptions)
     
-{
-    OGRSDEDataSource     *poDS;
-
     poDS = new OGRSDEDataSource();
 
-    if( !poDS->Open( pszName, TRUE ) )
+    if( !poDS->Open( pszFilename ) )
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_AppDefined,
-          "ArcSDE driver doesn't currently support database or service "
-          "creation.  Please create the service before using.");
         return NULL;
     }
     else
         return poDS;
 }
+
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
@@ -104,13 +86,6 @@ OGRDataSource *OGRSDEDriver::CreateDataSource( const char * pszName,
 int OGRSDEDriver::TestCapability( const char * pszCap )
 
 {
-    if( EQUAL(pszCap, ODsCCreateLayer) )
-        return TRUE;
-    if( EQUAL(pszCap, ODsCDeleteLayer) )
-        return true;
-    if( EQUAL(pszCap, ODrCCreateDataSource) )
-        return TRUE;
-      
     return FALSE;
 }
 
@@ -121,8 +96,6 @@ int OGRSDEDriver::TestCapability( const char * pszCap )
 void RegisterOGRSDE()
 
 {
-    if (! GDAL_CHECK_VERSION("OGR SDE"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRSDEDriver );
 }
 

@@ -17,6 +17,8 @@
 
 AUTOMAKE_OPTIONS = foreign
 
+INSTALL_DIR  = /usr/local/fdo-3.3.0
+
 SUBDIRS = doc_src
 
 DIST_SUBDIRS = doc_src
@@ -25,7 +27,7 @@ EXTRA_DIST = XmlSchema/FdoMySQLOverride.xsd XmlSchema/FdoRdbmsOverride.xsd XmlSc
 
 #install doc files
 install :
-	@if [ ! -d $(prefix)/docs ]; then mkdir -p $(prefix)/docs; fi
-	@if [ ! -d $(prefix)/docs/XmlSchema ]; then mkdir -p $(prefix)/docs/XmlSchema; fi
-	@$(FDO)/Install/XsdInstallPaths/XsdInstallPaths ./XmlSchema $(prefix)/docs/XmlSchema/XmlSchema
+	@if [ ! -d $(INSTALL_DIR)/docs ]; then mkdir -p $(INSTALL_DIR)/docs; fi
+	@if [ ! -d $(INSTALL_DIR)/docs/XmlSchema ]; then mkdir -p $(INSTALL_DIR)/docs/XmlSchema; fi
+	@$(FDO)/Install/XsdInstallPaths/XsdInstallPaths ./XmlSchema $(INSTALL_DIR)/docs/XmlSchema/XmlSchema
 

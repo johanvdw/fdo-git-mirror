@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrs57driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57Driver
@@ -30,7 +30,7 @@
 #include "ogr_s57.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrs57driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrs57driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 S57ClassRegistrar *OGRS57Driver::poRegistrar = NULL;
 

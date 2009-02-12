@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.cpp 14635 2008-06-06 04:35:05Z warmerdam $
+ * $Id: hdf5dataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 Datasets. Open HDF5 file, fetch metadata and list of
@@ -29,15 +29,13 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#define H5_USE_16_API
-
 #include "hdf5.h"
 
 #include "gdal_priv.h"
 #include "cpl_string.h"
 #include "hdf5dataset.h"
 
-CPL_CVSID("$Id: hdf5dataset.cpp 14635 2008-06-06 04:35:05Z warmerdam $");
+CPL_CVSID("$Id: hdf5dataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_HDF5(void);
@@ -292,10 +290,6 @@ void HDF5Dataset::DestroyH5Objects( HDF5GroupObjects *poH5Object )
     if( poH5Object->pszName != NULL ) {
 	CPLFree( poH5Object->pszName );
     }
-
-    if( poH5Object->pszUnderscorePath != NULL ) {
-	CPLFree( poH5Object->pszUnderscorePath );
-    }
 /* -------------------------------------------------------------------- */
 /*      All Children are visited and can be deleted.                    */
 /* -------------------------------------------------------------------- */
@@ -342,7 +336,7 @@ char* CreatePath( HDF5GroupObjects *poH5Object )
 
 	if( strlen( poH5Object->pszName ) == 1 ) {
 	    strcat(pszPath, poH5Object->pszName );
-	    strcpy(pszUnderscoreSpaceInName, poH5Object->pszName);
+	    strcat(pszUnderscoreSpaceInName, poH5Object->pszName);
 	}
 	else {
 /* -------------------------------------------------------------------- */

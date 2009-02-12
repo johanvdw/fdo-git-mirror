@@ -30,7 +30,7 @@ FdoAssociationSelectTest::~FdoAssociationSelectTest(void)
 {
 }
 
-void FdoAssociationSelectTest::masterTestNoObj( AssociationSelectType type, bool assocIsFeat, bool ownerIsFeat, int circularType  )
+void FdoAssociationSelectTest::masterTestNoObj( AssociationSelectType type, bool assocIsFeat, bool ownerIsFeat  )
 {
     bool        failed = true;
     try
@@ -39,36 +39,16 @@ void FdoAssociationSelectTest::masterTestNoObj( AssociationSelectType type, bool
        if( type == Select_NoIdentity )
        {
            if( assocIsFeat )
-           {
-               if ( circularType > 0 )
-                   mInsertUtil->insert_NoIdentAssocFeatClassCirc(circularType);
-               else
-                   mInsertUtil->insert_NoIdentAssocFeatClass();
-           }
+            mInsertUtil->insert_NoIdentAssocFeatClass();
            else
-           {
-               if ( circularType > 0 )
-                   mInsertUtil->insert_NoIdentCirc(circularType);
-               else
-                   mInsertUtil->insert_NoIdent();
-           }
+            mInsertUtil->insert_NoIdent();
        }
        else
        {
            if( ownerIsFeat )
-           {
-               if ( circularType > 0 )
-                   mInsertUtil->insert_WithIdentCirc(circularType);
-               else
-                   mInsertUtil->insert_WithIdent();
-           }
+                mInsertUtil->insert_WithIdent();
            else
-           {
-               if ( circularType > 0 )
-                   mInsertUtil->insert_WithIdentNoFeatClassCirc(circularType);
-               else
-                   mInsertUtil->insert_WithIdentNoFeatClass();
-           }
+                mInsertUtil->insert_WithIdentNoFeatClass();
        }
 
         FdoPtr<FdoIConnection> connection = UnitTestUtil::GetConnection(DB_SUFFIX);
@@ -110,7 +90,7 @@ void FdoAssociationSelectTest::masterTestNoObj( AssociationSelectType type, bool
                             failed = false;
                     }
                }
-               if( circularType == 0 && type == Select_NoIdentity && ! myReader->IsNull( L"Association Prop2") )
+               if( type == Select_NoIdentity && ! myReader->IsNull( L"Association Prop2") )
                {
                    int featid;
                    if( ownerIsFeat )
@@ -322,23 +302,6 @@ void FdoAssociationSelectTest::select_NoIdentObjNested()
     mInsertUtil->insert_NoIdentObjNested();
     masterTestWithObj( Select_NoIdentityObjNested );
 }
-
-void FdoAssociationSelectTest::select_NoIdentFeatClassCirc()
-{
-    masterTestNoObj( Select_WithIdentityAssociated, false, false, 1 );
-}
-
-void FdoAssociationSelectTest::select_NoIdentNoFeatClassCirc()
-{
-    masterTestNoObj( Select_WithIdentityAssociated, false, false, 2 );
-}
-
-void FdoAssociationSelectTest::select_NoIdentBothClassCirc()
-{
-    masterTestNoObj( Select_WithIdentityAssociated, false, false, 3 );
-}
-
-
 
 
 

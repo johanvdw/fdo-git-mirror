@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pgeo.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_pgeo.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for Personal Geodatabase driver.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_ODBC_H_INCLUDED
-#define _OGR_ODBC_H_INCLUDED
+#define _OGR_ODBC_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_odbc.h"

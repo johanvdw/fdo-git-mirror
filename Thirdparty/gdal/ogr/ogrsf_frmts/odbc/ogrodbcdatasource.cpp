@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbcdatasource.cpp 11839 2007-08-03 17:45:30Z warmerdam $
+ * $Id: ogrodbcdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrodbcdatasource.cpp 11839 2007-08-03 17:45:30Z warmerdam $");
+CPL_CVSID("$Id: ogrodbcdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 /************************************************************************/
 /*                         OGRODBCDataSource()                          */
 /************************************************************************/
@@ -427,7 +427,6 @@ OGRLayer * OGRODBCDataSource::ExecuteSQL( const char *pszSQLCommand,
 /* -------------------------------------------------------------------- */
     CPLODBCStatement *poStmt = new CPLODBCStatement( &oSession );
 
-    CPLDebug( "ODBC", "ExecuteSQL(%s) called.", pszSQLCommand );
     poStmt->Append( pszSQLCommand );
     if( !poStmt->ExecuteSQL() )
     {

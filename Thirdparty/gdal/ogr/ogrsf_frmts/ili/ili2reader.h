@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2reader.h 13906 2008-03-01 13:08:28Z rouault $
+ * $Id: ili2reader.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Public Declarations for Reader code.
@@ -54,6 +54,5 @@ public:
 };
 
 IILI2Reader *CreateILI2Reader();
-void DestroyILI2Reader(IILI2Reader* reader);
 
 #endif

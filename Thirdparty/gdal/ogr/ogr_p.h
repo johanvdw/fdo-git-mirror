@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_p.h 14288 2008-04-13 15:56:22Z rouault $
+ * $Id: ogr_p.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Some private helper functions and stuff for OGR implementation.
@@ -79,7 +79,7 @@ CPL_C_END
 #define SPF_OGR_GEOM_WKT 3
 #define SPECIAL_FIELD_COUNT 4
 
-extern const char* SpecialFieldNames[SPECIAL_FIELD_COUNT];
-extern const swq_field_type SpecialFieldTypes[SPECIAL_FIELD_COUNT];
+extern char* SpecialFieldNames[SPECIAL_FIELD_COUNT];
+extern swq_field_type SpecialFieldTypes[SPECIAL_FIELD_COUNT];
 
 #endif /* ndef _OGR_P_H_INCLUDED */

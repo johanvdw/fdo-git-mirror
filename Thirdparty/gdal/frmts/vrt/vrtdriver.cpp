@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtdriver.cpp 14111 2008-03-29 00:14:10Z warmerdam $
+ * $Id: vrtdriver.cpp 12515 2007-10-23 14:46:32Z mloskot $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDriver
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtdriver.cpp 14111 2008-03-29 00:14:10Z warmerdam $");
+CPL_CVSID("$Id: vrtdriver.cpp 12515 2007-10-23 14:46:32Z mloskot $");
 
 /************************************************************************/
 /*                             VRTDriver()                              */
@@ -138,12 +138,10 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
-    VRTDataset *poVRTDS = NULL;
+    VRTDataset *poVRTDS;
 
     (void) bStrict;
     (void) papszOptions;
-
-    CPLAssert( NULL != poSrcDS );
 
 /* -------------------------------------------------------------------- */
 /*      If the source dataset is a virtual dataset then just write      */
@@ -152,6 +150,9 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
     if( EQUAL(poSrcDS->GetDriver()->GetDescription(),"VRT") )
     {
+        FILE *fpVRT;
+        
+        fpVRT = VSIFOpen( pszFilename, "w" );
 
     /* -------------------------------------------------------------------- */
     /*      Convert tree to a single block of XML text.                     */
@@ -224,19 +225,6 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     poVRTDS->SetMetadata( poSrcDS->GetMetadata() );
 
 /* -------------------------------------------------------------------- */
-/*      Copy any special domains that should be transportable.          */
-/* -------------------------------------------------------------------- */
-    char **papszMD;
-
-    papszMD = poSrcDS->GetMetadata( "RPC" );
-    if( papszMD )
-        poVRTDS->SetMetadata( papszMD, "RPC" );
-
-    papszMD = poSrcDS->GetMetadata( "IMD" );
-    if( papszMD )
-        poVRTDS->SetMetadata( papszMD, "IMD" );
-
-/* -------------------------------------------------------------------- */
 /*      GCPs                                                            */
 /* -------------------------------------------------------------------- */
     if( poSrcDS->GetGCPCount() > 0 )
@@ -301,7 +289,6 @@ void GDALRegister_VRT()
         poDriver->pfnOpen = VRTDataset::Open;
         poDriver->pfnCreateCopy = VRTCreateCopy;
         poDriver->pfnCreate = VRTDataset::Create;
-        poDriver->pfnIdentify = VRTDataset::Identify;
 
         poDriver->AddSourceParser( "SimpleSource", 
                                    VRTParseCoreSources );

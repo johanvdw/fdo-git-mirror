@@ -1,23 +1,26 @@
 #!/bin/sh
-#
-# $Id: mkgdaldist.sh 15028 2008-07-25 17:34:16Z mloskot $
-#
-# mkgdaldist.sh - prepares GDAL source distribution package
+# 
+# $Id: mkgdaldist.sh 12580 2007-10-29 08:18:09Z mloskot $
 #
 if [ $# -lt 1 ] ; then
-  echo "Usage: mkgdaldist.sh <version> [-date date] [-branch branch]"
+  echo "Usage: mkgdaldist.sh <version> [-date date] [-branch branch] [-install]"
   echo " <version> - version number used in name of generated archive."
   echo " -date     - date of package generation, current date used if not provided"
   echo " -branch   - path to SVN branch, trunk is used if not provided"
+  echo " -install  - force to install package on remote server"
   echo "Example: mkgdaldist.sh 1.1.4"
   exit
 fi
 
-#
-# Processing script input arguments
-#
 GDAL_VERSION=$1
 COMPRESSED_VERSION=`echo $GDAL_VERSION | tr -d .`
+
+if test "$GDAL_VERSION" != "`cat VERSION`" ; then
+  echo
+  echo "NOTE: local VERSION file (`cat VERSION`) does not match supplied version ($GDAL_VERSION)."
+  echo "      Consider updating local VERSION file, and commiting to SVN." 
+  echo
+fi
 
 if test "$2" = "-date" ; then 
   forcedate=$3
@@ -32,11 +35,7 @@ if test "$2" = "-branch"; then
 else
   forcebranch="trunk"
 fi
- 
-#
-# Checkout GDAL sources from the repository
-#
-echo "* Downloading GDAL sources from SVN..."
+  
 rm -rf dist_wrk  
 mkdir dist_wrk
 cd dist_wrk
@@ -47,20 +46,16 @@ SVNMODULE="gdal"
 
 echo "Generating package '${GDAL_VERSION}' from '${SVNBRANCH}' branch"
 echo
- 
+
 svn export ${SVNURL}/${SVNBRANCH}/${SVNMODULE} ${SVNMODULE}
 
 if [ \! -d gdal ] ; then
-	echo "svn checkout reported an error ... abandoning mkgdaldist"
-	cd ..
-	rm -rf dist_wrk
-	exit
+    echo "svn checkout reported an error ... abandoning mkgdaldist"
+  cd ..
+  rm -rf dist_wrk
+  exit
 fi
 
-#
-# Make some updates and cleaning
-#
-echo "* Updating release date..."
 if test "$forcedate" != "no" ; then
   echo "Forcing Date To: $forcedate"
   rm -f gdal/gcore/gdal_new.h  
@@ -68,49 +63,14 @@ if test "$forcedate" != "no" ; then
   mv gdal/gcore/gdal_new.h gdal/gcore/gdal.h
 fi
 
-echo "* Cleaning .svn directories under $PWD..."
-find gdal -name .svn | xargs rm -rf
+find gdal -name .svn -exec rm -rf {} \;
 
-#
-# Generate man pages
-#
-echo "* Generating man pages..."
-CWD=${PWD}
-cd gdal
-if test -d "man"; then
-    rm -rf man
-fi
-
-(cat Doxyfile ; echo "ENABLED_SECTIONS=man"; echo "INPUT=doc ogr"; echo "FILE_PATTERNS=*utilities.dox"; echo "GENERATE_HTML=NO"; echo "GENERATE_MAN=YES") | doxygen -
-
-if test ! -d "man"; then
-    echo " make man failed"
-fi
-cd ${CWD}
-
-#
 # Generate SWIG interface for C#
-#
-echo "* Generating SWIG C# interfaces..."
-CWD=${PWD}
+cwd=${PWD}
 cd gdal/swig/csharp
 ./mkinterface.sh
-cd ${CWD}
+cd ${cwd}
 
-#
-# Generate SWIG interface for Perl
-#
-echo "* Generating SWIG Perl interfaces..."
-CWD=${PWD}
-cd gdal/swig/perl
-rm *wrap*
-make generate
-cd ${CWD}
-
-#
-# Make distribution packages
-#
-echo "* Making distribution packages..."
 rm -rf gdal/viewer
 rm -rf gdal/dist_docs
 
@@ -125,8 +85,13 @@ tar cf ../gdal-${GDAL_VERSION}.tar gdal-${GDAL_VERSION}
 gzip -9 ../gdal-${GDAL_VERSION}.tar
 zip -r ../gdal${COMPRESSED_VERSION}.zip gdal-${GDAL_VERSION}
 
-echo "* Cleaning..."
 cd ..
 rm -rf dist_wrk
 
-echo "*** The End ***"
+TARGETDIR=remotesensing.org:/ftp/remotesensing/pub/gdal
+if test "$2" = "-install" ; then
+
+  echo "Installing: " $TARGETDIR/gdal-${GDAL_VERSION}.tar.gz 
+  echo "       and: " $TARGETDIR/gdal${COMPRESSED_VERSION}.zip
+  scp gdal-${GDAL_VERSION}.tar.gz $TARGETDIR/gdal${COMPRESSED_VERSION}.zip $TARGETDIR
+fi

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeotablelayer.cpp 15796 2008-11-23 16:08:33Z rouault $
+ * $Id: ogrpgeotablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoTableLayer class, access to an existing table.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_pgeo.h"
 
-CPL_CVSID("$Id: ogrpgeotablelayer.cpp 15796 2008-11-23 16:08:33Z rouault $");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */
@@ -179,12 +179,10 @@ CPLErr OGRPGeoTableLayer::Initialize( const char *pszTableName,
 /* -------------------------------------------------------------------- */
 /*      Set geometry type.                                              */
 /*                                                                      */
-/*      NOTE: per reports from Craig Miller, it seems we cannot really  */
+/*      ... per reports from Craig Miller, it seems we cannot really    */
 /*      trust the ShapeType value.  At the very least "line" tables     */
 /*      sometimes have multilinestrings.  So for now we just always     */
 /*      return wkbUnknown.                                              */
-/*                                                                      */
-/*      TODO - mloskot: Similar issue has been reported in Ticket #1484 */
 /* -------------------------------------------------------------------- */
 #ifdef notdef
     poFeatureDefn->SetGeomType( eOGRType );
@@ -322,15 +320,6 @@ int OGRPGeoTableLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCCreateField) )
         return bUpdateAccess;
 
-    else if( EQUAL(pszCap,OLCRandomRead) )
-        return TRUE;
-
-    else if( EQUAL(pszCap,OLCFastFeatureCount) )
-        return m_poFilterGeom == NULL;
-
-    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
-        return FALSE;
-
     else 
         return OGRPGeoLayer::TestCapability( pszCap );
 }
@@ -362,7 +351,7 @@ int OGRPGeoTableLayer::GetFeatureCount( int bForce )
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "GetFeatureCount() failed on query %s.\n%s",
                   oStmt.GetCommand(), poDS->GetSession()->GetLastError() );
-        return OGRPGeoLayer::GetFeatureCount(bForce);
+        return -1;
     }
 
     return atoi(oStmt.GetColData(0));

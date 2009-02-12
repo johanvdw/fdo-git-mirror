@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecwcreatecopy.cpp 15484 2008-10-08 16:45:31Z warmerdam $
+ * $Id: ecwcreatecopy.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  ECW CreateCopy method implementation.
@@ -35,7 +35,7 @@
 #include "jp2userbox.h"
 #include "gdaljp2metadata.h"
 
-CPL_CVSID("$Id: ecwcreatecopy.cpp 15484 2008-10-08 16:45:31Z warmerdam $");
+CPL_CVSID("$Id: ecwcreatecopy.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 CPLErr CPL_DLL GTIFMemBufFromWkt( const char *pszWKT, 
@@ -87,9 +87,6 @@ public:
 
     NCSFileViewFileInfoEx sFileInfo;
     GDALDataType eWorkDT;
-
-    JP2UserBox** papoJP2UserBox;
-    int          nJP2UserBox;
 };
 
 /************************************************************************/
@@ -104,8 +101,6 @@ GDALECWCompressor::GDALECWCompressor()
     m_bCancelled = FALSE;
     pfnProgress = GDALDummyProgress;
     pProgressData = NULL;
-    papoJP2UserBox = NULL;
-    nJP2UserBox = 0;
 }
 
 /************************************************************************/
@@ -115,10 +110,6 @@ GDALECWCompressor::GDALECWCompressor()
 GDALECWCompressor::~GDALECWCompressor()
 
 {
-    int i;
-    for(i=0;i<nJP2UserBox;i++)
-        delete papoJP2UserBox[i];
-    CPLFree(papoJP2UserBox);
 }
 
 /************************************************************************/
@@ -414,14 +405,9 @@ CPLErr GDALECWCompressor::WriteJP2Box( GDALJP2Box * poBox )
     poECWBox->SetData( poBox->GetDataLength(), 
                        poBox->GetWritableData() );
 
-    AddBox( poECWBox );
+    AddBox( poECWBox ); // never freed?
 
     delete poBox;
-
-    papoJP2UserBox =(JP2UserBox**) CPLRealloc(papoJP2UserBox,
-                                    (nJP2UserBox + 1) * sizeof(JP2UserBox*));
-    papoJP2UserBox[nJP2UserBox] = poECWBox;
-    nJP2UserBox ++;
 
     return CE_None;
 }
@@ -432,13 +418,12 @@ CPLErr GDALECWCompressor::WriteJP2Box( GDALJP2Box * poBox )
 
 static int ECWTranslateFromWKT( const char *pszWKT, 
                                 char *pszProjection,
-                                int nProjectionLen,
-                                char *pszDatum,
-                                int nDatumLen)
+                                char *pszDatum )
 
 {
     OGRSpatialReference oSRS;
     char *pszWKTIn = (char *) pszWKT;
+    char **papszCSLookup;
 
     strcpy( pszProjection, "RAW" );
     strcpy( pszDatum, "RAW" );
@@ -488,27 +473,124 @@ static int ECWTranslateFromWKT( const char *pszWKT,
         if( oErr.GetErrorNumber() == NCS_SUCCESS
             && pszEPSGProj != NULL && pszEPSGDatum != NULL )
         {
-            strncpy( pszProjection, pszEPSGProj, nProjectionLen );
-            strncpy( pszDatum, pszEPSGDatum, nDatumLen );
-            pszProjection[nProjectionLen - 1] = 0;
-            pszDatum[nDatumLen - 1] = 0;
-            NCSFree( pszEPSGProj );
-            NCSFree( pszEPSGDatum );
+            strcpy( pszProjection, pszEPSGProj );
+            strcpy( pszDatum, pszEPSGDatum );
             return TRUE;
         }
+    }
+        
+/* -------------------------------------------------------------------- */
+/*      Is our GEOGCS name already defined in ecw_cs.dat?               */
+/* -------------------------------------------------------------------- */
+    const char *pszMatch = NULL;
+    const char *pszGEOGCS = oSRS.GetAttrValue( "GEOGCS" );
+    const char *pszWKTDatum = oSRS.GetAttrValue( "DATUM" );
 
-        NCSFree( pszEPSGProj );
-        NCSFree( pszEPSGDatum );
+    papszCSLookup = ECWGetCSList();
 
+    if( pszGEOGCS != NULL )
+        pszMatch = CSLFetchNameValue( papszCSLookup, pszGEOGCS );
+
+    if( pszMatch != NULL && EQUALN(pszMatch,"GEOGCS",6) )
+    {
+        strcpy( pszDatum, pszGEOGCS );
     }
 
 /* -------------------------------------------------------------------- */
-/*      Fallback to translating based on the ecw_cs.wkt file, and       */
-/*      various jiffy rules.                                            */
+/*      Is this a "well known" geographic coordinate system?            */
 /* -------------------------------------------------------------------- */
-    char szUnits[32];
+    if( EQUAL(pszDatum,"RAW") )
+    {
+        if( nEPSGCode == 4326 
+            || (strstr(pszGEOGCS,"WGS") && strstr(pszGEOGCS,"84") )
+            || (strstr(pszWKTDatum,"WGS") && strstr(pszWKTDatum,"84") ) )
+            strcpy( pszDatum, "WGS84" );
 
-    return oSRS.exportToERM( pszProjection, pszDatum, szUnits ) == OGRERR_NONE;
+        else if( nEPSGCode == 4322 
+            || (strstr(pszGEOGCS,"WGS") && strstr(pszGEOGCS,"72") )
+            || (strstr(pszWKTDatum,"WGS") && strstr(pszWKTDatum,"72") ) )
+            strcpy( pszDatum, "WGS72DOD" );
+        
+        else if( nEPSGCode == 4267 
+            || (strstr(pszGEOGCS,"NAD") && strstr(pszGEOGCS,"27") )
+            || (strstr(pszWKTDatum,"NAD") && strstr(pszWKTDatum,"27") ) )
+            strcpy( pszDatum, "NAD27" );
+        
+        else if( nEPSGCode == 4269 
+            || (strstr(pszGEOGCS,"NAD") && strstr(pszGEOGCS,"83") )
+            || (strstr(pszWKTDatum,"NAD") && strstr(pszWKTDatum,"83") ) )
+            strcpy( pszDatum, "NAD83" );
+
+        else if( nEPSGCode == 4277 )
+            strcpy( pszDatum, "OSGB36" );
+
+        else if( nEPSGCode == 4278 )
+            strcpy( pszDatum, "OSGB78" );
+
+        else if( nEPSGCode == 4201 )
+            strcpy( pszDatum, "ADINDAN" );
+
+        else if( nEPSGCode == 4202 )
+            strcpy( pszDatum, "AGD66" );
+
+        else if( nEPSGCode == 4203 )
+            strcpy( pszDatum, "AGD84" );
+
+        else if( nEPSGCode == 4209 )
+            strcpy( pszDatum, "ARC1950" );
+
+        else if( nEPSGCode == 4210 )
+            strcpy( pszDatum, "ARC1960" );
+
+        else if( nEPSGCode == 4275 )
+            strcpy( pszDatum, "NTF" );
+
+        else if( nEPSGCode == 4284 )
+            strcpy( pszDatum, "PULKOVO" );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Are we working with a geographic (geodetic) coordinate system?  */
+/* -------------------------------------------------------------------- */
+
+    if( oSRS.IsGeographic() )
+    {
+        strcpy( pszProjection, "GEODETIC" );
+        return TRUE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Is this a UTM projection?                                       */
+/* -------------------------------------------------------------------- */
+    int bNorth, nZone;
+
+    nZone = oSRS.GetUTMZone( &bNorth );
+    if( nZone > 0 )
+    {
+        if( bNorth )
+            sprintf( pszProjection, "NUTM%02d", nZone );
+        else
+            sprintf( pszProjection, "SUTM%02d", nZone );
+        return TRUE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Is our GEOGCS name already defined in ecw_cs.dat?               */
+/* -------------------------------------------------------------------- */
+    const char *pszPROJCS = oSRS.GetAttrValue( "PROJCS" );
+
+    if( pszPROJCS != NULL )
+        pszMatch = CSLFetchNameValue( papszCSLookup, pszGEOGCS );
+    else
+        pszMatch = NULL;
+
+    if( pszMatch != NULL && EQUALN(pszMatch,"PROJCS",6) )
+    {
+        strcpy( pszProjection, pszPROJCS );
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 /************************************************************************/
@@ -795,23 +877,19 @@ CPLErr GDALECWCompressor::Initialize(
     strcpy( szDatum, "RAW" );
     
     if( CSLFetchNameValue(papszOptions, "PROJ") != NULL )
-    {
-        strncpy( szProjection, 
-                CSLFetchNameValue(papszOptions, "PROJ"), sizeof(szProjection) );
-        szProjection[sizeof(szProjection)-1] = 0;
-    }
+        strcpy( szProjection, 
+                CSLFetchNameValue(papszOptions, "PROJ") );
 
     if( CSLFetchNameValue(papszOptions, "DATUM") != NULL )
     {
-        strncpy( szDatum, CSLFetchNameValue(papszOptions, "DATUM"), sizeof(szDatum) );
-        szDatum[sizeof(szDatum)-1] = 0;
+        strcpy( szDatum, CSLFetchNameValue(papszOptions, "DATUM") );
         if( EQUAL(szProjection,"RAW") )
             strcpy( szProjection, "GEODETIC" );
     }
 
     if( EQUAL(szProjection,"RAW") && pszWKT != NULL )
     {
-        ECWTranslateFromWKT( pszWKT, szProjection, sizeof(szProjection), szDatum, sizeof(szDatum) );
+        ECWTranslateFromWKT( pszWKT, szProjection, szDatum );
     }
 
     psClient->szDatum = szDatum;
@@ -920,11 +998,8 @@ CPLErr GDALECWCompressor::Initialize(
     }
     else
     {
-        char* pszErrorMessage = oError.GetErrorMessage();
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "%s", pszErrorMessage );
-        NCSFree(pszErrorMessage);
-
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "%s", oError.GetErrorMessage() );
         return CE_Failure;
     }
 }
@@ -957,28 +1032,6 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     if( poSrcDS->GetGCPCount() > 0 )
         pszWKT = poSrcDS->GetGCPProjection();
-
-/* -------------------------------------------------------------------- */
-/*      Confirm the datatype is 8bit.  It appears no other datatype     */
-/*      is supported in ECW format.                                     */
-/* -------------------------------------------------------------------- */
-    if( eType != GDT_Byte )
-    {
-        if( bStrict )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Attempt to create ECW file with pixel data type %s failed.\n"
-                      "Only Byte data type supported.",
-                      GDALGetDataTypeName( eType ) );
-        }
-        else
-        {
-            CPLError( CE_Warning, CPLE_AppDefined,
-                      "ECW only supports Byte pixel data type, ignoring request for %s.",
-                      GDALGetDataTypeName( eType ) );
-            eType = GDT_Byte;
-        }
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Setup the compressor.                                           */
@@ -1065,16 +1118,6 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
                   
         return NULL;
     }
-    
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
-                  "ECW driver ignores color table. "
-                  "The source raster band will be considered as grey level.\n"
-                  "Consider using color table expansion (-expand option in gdal_translate)\n");
-        if (bStrict)
-            return NULL;
-    }
 
     return ECWCreateCopy( pszFilename, poSrcDS, bStrict, papszOptions, 
                           pfnProgress, pProgressData, FALSE );
@@ -1114,16 +1157,6 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
                       poSrcDS->GetRasterBand(1)->GetRasterDataType()) );
 
         return NULL;
-    }
-
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
-                  "JP2ECW driver ignores color table. "
-                  "The source raster band will be considered as grey level.\n"
-                  "Consider using color table expansion (-expand option in gdal_translate)\n");
-        if (bStrict)
-            return NULL;
     }
 
     return ECWCreateCopy( pszFilename, poSrcDS, bStrict, papszOptions, 
@@ -1273,7 +1306,6 @@ ECWWriteDataset::~ECWWriteDataset()
         oCompressor.CloseDown();
     }
 
-    CPLFree( pabyBILBuffer );
     CPLFree( pszProjection );
     CSLDestroy( papszOptions );
     CPLFree( pszFilename );
@@ -1385,12 +1417,9 @@ CPLErr ECWWriteDataset::FlushLine()
         CPLFree( papOutputLine );
         if( oError.GetErrorNumber() != NCS_SUCCESS )
         {
-            char* pszErrorMessage = oError.GetErrorMessage();
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Scanline write write failed.\n%s",
-                      pszErrorMessage );
-            NCSFree(pszErrorMessage);
-
+                      oError.GetErrorMessage() );
             return CE_Failure;
         }
     }

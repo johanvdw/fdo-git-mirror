@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rawdataset.h 14719 2008-06-17 21:19:41Z rouault $
+ * $Id: rawdataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Raw Translator
  * Purpose:  Implementation of RawDataset class.  Intented to be subclassed
@@ -72,6 +72,9 @@ protected:
     int         nLineSize;
     int		bNativeOrder;
 
+    int		bNoDataSet;
+    double	dfNoDataValue;
+    
     int		nLoadedScanline;
     void	*pLineBuffer;
     int         bDirty;
@@ -80,8 +83,6 @@ protected:
     GDALColorInterp eInterp;
 
     char           **papszCategoryNames;
-    
-    int         bOwnsFP;
 
     int         Seek( vsi_l_offset, int );
     size_t      Read( void *, size_t, size_t );
@@ -102,13 +103,13 @@ protected:
                                 vsi_l_offset nImgOffset, int nPixelOffset,
                                 int nLineOffset,
                                 GDALDataType eDataType, int bNativeOrder,
-                                int bIsVSIL = FALSE, int bOwnsFP = FALSE );
+                                int bIsVSIL = FALSE );
 
                  RawRasterBand( FILE * fpRaw, 
                                 vsi_l_offset nImgOffset, int nPixelOffset,
                                 int nLineOffset,
                                 GDALDataType eDataType, int bNativeOrder,
-                                int nXSize, int nYSize, int bIsVSIL = FALSE, int bOwnsFP = FALSE );
+                                int nXSize, int nYSize, int bIsVSIL = FALSE );
 
                  ~RawRasterBand();
 
@@ -122,13 +123,15 @@ protected:
     virtual CPLErr SetColorTable( GDALColorTable * ); 
     virtual CPLErr SetColorInterpretation( GDALColorInterp );
 
+    virtual CPLErr  SetNoDataValue( double );
+    virtual double  GetNoDataValue( int *pbSuccess = NULL );
+
     virtual char **GetCategoryNames();
     virtual CPLErr SetCategoryNames( char ** );
 
     virtual CPLErr  FlushCache();
 
     CPLErr          AccessLine( int iLine );
-
     // this is deprecated.
     void	 StoreNoDataValue( double );
 
@@ -139,6 +142,5 @@ protected:
     int          GetNativeOrder() { return bNativeOrder; }
     int          GetIsVSIL() { return bIsVSIL; }
     FILE        *GetFP() { return fpRaw; }
-    int          GetOwnsFP() { return bOwnsFP; }
 };
 

@@ -7,7 +7,6 @@ Options:
 	[--libs]
 	[--dep-libs]
 	[--cflags]
-	[--datadir]
 	[--version]
 	[--ogr-enabled]
 	[--formats]
@@ -30,10 +29,6 @@ case $1 in
 
   --cflags)
     echo $CONFIG_CFLAGS
-    ;;
-
-  --datadir)
-    echo $CONFIG_DATA
     ;;
 
   --prefix)

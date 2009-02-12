@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmemlayer.cpp 13236 2007-12-04 20:08:56Z warmerdam $
+ * $Id: ogrmemlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_mem.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrmemlayer.cpp 13236 2007-12-04 20:08:56Z warmerdam $");
+CPL_CVSID("$Id: ogrmemlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRMemLayer()                             */
@@ -351,8 +351,6 @@ OGRErr OGRMemLayer::CreateField( OGRFieldDefn *poField, int bApproxOK )
         if( papoFeatures[i] != NULL )
             papoFeatures[i]->RemapFields( NULL, panRemap );
     }
-
-    CPLFree( panRemap );
 
     return OGRERR_NONE;
 }

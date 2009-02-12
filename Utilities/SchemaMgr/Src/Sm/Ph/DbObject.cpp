@@ -270,19 +270,6 @@ FdoStringP FdoSmPhDbObject::GetBestClassName() const
     return FdoStringP(GetName()).Replace(L":",L"_").Replace(L".",L"_");
 }
 
-FdoStringP FdoSmPhDbObject::GetBestClassName(FdoStringP schemaName) const
-{
-    FdoStringP classifiedObjectName;
-    // Only tables and views are supported
-    if ( ((FdoSmPhDbObject*)this)->ClassifyObjectType(true) )
-    {
-        classifiedObjectName = ((FdoSmPhDbObject*)this)->GetClassifiedObjectName(schemaName);
-    }
-
-    // Filter out characters not allowed in schema element names.
-    return FdoStringP(classifiedObjectName).Replace(L":",L"_").Replace(L".",L"_");
-}
-
 bool FdoSmPhDbObject::GetHasData()
 {
 	if ( GetElementState() == FdoSchemaElementState_Added ) 
@@ -462,7 +449,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnChar(
 	bool bNullable, 
     int length,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -481,7 +468,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnDate(
 	FdoStringP columnName, 
 	bool bNullable, 
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -502,7 +489,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnDecimal(
     int length,
     int scale,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -529,7 +516,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnSingle(
 	FdoStringP columnName, 
 	bool bNullable, 
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -554,7 +541,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnDouble(
 	FdoStringP columnName, 
 	bool bNullable, 
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -608,7 +595,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnBool(
 	FdoStringP columnName, 
 	bool bNullable, 
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -627,7 +614,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnByte(
 	FdoStringP columnName, 
 	bool bNullable, 
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -647,7 +634,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnInt16(
 	bool bNullable, 
 	bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -667,7 +654,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnInt32(
 	bool bNullable, 
 	bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -687,7 +674,7 @@ FdoSmPhColumnP FdoSmPhDbObject::CreateColumnInt64(
 	bool bNullable, 
 	bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     bool bAttach
 )
 {
@@ -1254,8 +1241,6 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
 {
     // Create column based on column type and reader fields.
 
-    FdoPtr<FdoDataValue> defaultValue = GetManager()->ParseSQLVal( colRdr->GetString(L"", L"default_value") );
-
     switch ( colRdr->GetType() ) {
     case FdoSmPhColType_BLOB:
         return NewColumnBLOB(
@@ -1273,7 +1258,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1285,7 +1270,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             colRdr->GetLong(L"",L"size"),
             colRdr->GetLong(L"",L"scale"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1295,7 +1280,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1305,7 +1290,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1327,7 +1312,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1337,7 +1322,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1348,7 +1333,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             colRdr->GetBoolean(L"",L"nullable"),
 			colRdr->GetBoolean(L"",L"is_autoincremented"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1359,7 +1344,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             colRdr->GetBoolean(L"",L"nullable"),
 			colRdr->GetBoolean(L"",L"is_autoincremented"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1370,7 +1355,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             colRdr->GetBoolean(L"",L"nullable"),
 			colRdr->GetBoolean(L"",L"is_autoincremented"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1381,7 +1366,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
             colRdr->GetBoolean(L"",L"nullable"),
             colRdr->GetLong(L"",L"size"),
             L"",
-			defaultValue,
+			colRdr->GetString(L"", L"default_value"),
             colRdr
         );
 
@@ -1578,34 +1563,4 @@ void FdoSmPhDbObject::AddReferenceLoopError(void)
 }
 
 */
-
-bool FdoSmPhDbObject::ClassifyObjectType(FdoBoolean classifyDefaultTypes )
-{
-    FdoSmPhTableP pTable = SmartCast<FdoSmPhTable>();
-    FdoSmPhViewP pView = SmartCast<FdoSmPhView>();
-
-    return ( pTable || pView );
-}
-
-FdoStringP FdoSmPhDbObject::GetClassifiedObjectName( FdoStringP schemaName )
-{
-    FdoStringP classifiedObjectName;
-
-    // Don't reverse-engineer the special spatial context referencer table.
-    if ( GetManager()->GetRealDbObjectName(FdoSmPhMgr::ScInfoNoMetaTable) != GetName() ) {
-        classifiedObjectName = GetBestClassName();
-
-        if ( classifiedObjectName.GetLength() > 0 ) {
-            if ( (schemaName != L"") && (GetBestSchemaName() != schemaName) )
-            {
-                // DbObject is for a different feature schema.
-                classifiedObjectName = L"";
-            }
-
-        }
-    }
-
-    return classifiedObjectName;
-}
-
 

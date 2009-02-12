@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalopeninfo.cpp 14752 2008-06-22 18:35:16Z warmerdam $
+ * $Id: gdalopeninfo.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -30,7 +30,7 @@
 #include "gdal_priv.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: gdalopeninfo.cpp 14752 2008-06-22 18:35:16Z warmerdam $");
+CPL_CVSID("$Id: gdalopeninfo.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -42,8 +42,7 @@ CPL_CVSID("$Id: gdalopeninfo.cpp 14752 2008-06-22 18:35:16Z warmerdam $");
 /*                            GDALOpenInfo()                            */
 /************************************************************************/
 
-GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, GDALAccess eAccessIn,
-                            char **papszSiblingsIn )
+GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, GDALAccess eAccessIn )
 
 {
 /* -------------------------------------------------------------------- */
@@ -94,21 +93,10 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, GDALAccess eAccessIn,
                 nHeaderBytes = (int) VSIFRead( pabyHeader, 1, 1024, fp );
 
                 VSIRewind( fp );
-            }
-            /* XXX: ENOENT is used to catch the case of virtual filesystem
-             * when we do not have a real file with such a name. Under some
-             * circumstances EINVAL reported instead of ENOENT in Windows
-             * (for filenames containing colon, e.g. "smth://name"). 
-             * See also: #2437 */
+            } 
             else if( errno == 27 /* "File to large" */ 
-                     || errno == ENOENT || errno == EINVAL
-#ifdef EOVERFLOW
-                     || errno == EOVERFLOW
-#else
-                     || errno == 75 /* Linux EOVERFLOW */
-                     || errno == 79 /* Solaris EOVERFLOW */ 
-#endif
-                     )
+                     || errno == ENOENT 
+                     || errno == 79 /* EOVERFLOW - value too large */ )
             {
                 fp = VSIFOpenL( pszFilename, "rb" );
                 if( fp != NULL )
@@ -122,31 +110,6 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, GDALAccess eAccessIn,
         else if( VSI_ISDIR( sStat.st_mode ) )
             bIsDirectory = TRUE;
     }
-
-/* -------------------------------------------------------------------- */
-/*      Capture sibling list either from passed in values, or by        */
-/*      scanning for them.                                              */
-/* -------------------------------------------------------------------- */
-    if( papszSiblingsIn != NULL )
-    {
-        papszSiblingFiles = CSLDuplicate( papszSiblingsIn );
-    }
-    else if( bStatOK && !bIsDirectory )
-    {
-        if( CSLTestBoolean( 
-                CPLGetConfigOption( "GDAL_DISABLE_READDIR_ON_OPEN", "NO" )) )
-        {
-            /* skip reading the directory */
-            papszSiblingFiles = NULL;
-        }
-        else
-        {
-            CPLString osDir = CPLGetDirname( pszFilename );
-            papszSiblingFiles = VSIReadDir( osDir );
-        }
-    }
-    else
-        papszSiblingFiles = NULL;
 }
 
 /************************************************************************/
@@ -161,6 +124,5 @@ GDALOpenInfo::~GDALOpenInfo()
 
     if( fp != NULL )
         VSIFClose( fp );
-    CSLDestroy( papszSiblingFiles );
 }
 

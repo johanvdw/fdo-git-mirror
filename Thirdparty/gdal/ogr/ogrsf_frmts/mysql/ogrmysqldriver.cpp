@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqldriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrmysqldriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_mysql.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrmysqldriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrmysqldriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRMySQLDriver()                           */
@@ -124,8 +124,6 @@ int OGRMySQLDriver::TestCapability( const char * pszCap )
 void RegisterOGRMySQL()
 
 {
-    if (! GDAL_CHECK_VERSION("MySQL driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRMySQLDriver );
 }
 

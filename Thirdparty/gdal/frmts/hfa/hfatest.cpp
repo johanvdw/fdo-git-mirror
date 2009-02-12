@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatest.cpp 12436 2007-10-16 03:38:27Z warmerdam $
+ * $Id: hfatest.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Testing mainline for HFA services - transitory.
@@ -29,7 +29,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfatest.cpp 12436 2007-10-16 03:38:27Z warmerdam $");
+CPL_CVSID("$Id: hfatest.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -135,7 +135,7 @@ int main( int argc, char ** argv )
             {
                 HFAGetOverviewInfo( hHFA, i, iOverview, 
                                     &nXSize, &nYSize, 
-                                    &nBlockXSize, &nBlockYSize, NULL );
+                                    &nBlockXSize, &nBlockYSize );
                 printf( "  Overview: %dx%d (blocksize %dx%d)\n", 
                         nXSize, nYSize, nBlockXSize, nBlockYSize );
             }

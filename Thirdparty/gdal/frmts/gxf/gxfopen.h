@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfopen.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gxfopen.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GXF Reader
  * Purpose:  GXF-3 access function declarations.

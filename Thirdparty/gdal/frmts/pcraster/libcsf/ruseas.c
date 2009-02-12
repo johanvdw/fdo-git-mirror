@@ -489,8 +489,6 @@ int RuseAs(
 			m->file2app  = INT2tLdd;
 			m->app2file = illegal;
 			return 0;
-                  default:
-                    assert( FALSE );
 		}
 	default: M_ERROR(CANT_USE_AS_LDD);
 		 return 1;

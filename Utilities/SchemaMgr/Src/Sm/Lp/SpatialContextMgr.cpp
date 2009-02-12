@@ -43,7 +43,7 @@ FdoSmLpSpatialContextP FdoSmLpSpatialContextMgr::FindSpatialContext( FdoStringP 
     return mSpatialContexts->FindSpatialContext(scName);
 }
 
-FdoSmLpSpatialContextGeomP FdoSmLpSpatialContextMgr::FindSpatialContextGeom( FdoStringP dbObjectName, FdoStringP columnName )
+FdoSmPhSpatialContextGeomP FdoSmLpSpatialContextMgr::FindSpatialContextGeom( FdoStringP dbObjectName, FdoStringP columnName )
 {
     CreateSpatialContexts();
 

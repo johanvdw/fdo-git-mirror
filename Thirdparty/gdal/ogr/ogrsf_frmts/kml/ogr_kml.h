@@ -1,15 +1,13 @@
 /******************************************************************************
- * $Id: ogr_kml.h 14315 2008-04-18 12:52:56Z condit $
+ * $Id: ogr_kml.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  KML Driver
  * Purpose:  Declarations for OGR wrapper classes for KML, and OGR->KML
  *           translation of geometry.
- * Author:   Christopher Condit, condit@sdsc.edu;
- *           Jens Oberender, j.obi@troja.net
+ * Author:   Christopher Condit, condit@sdsc.edu
  *
  ******************************************************************************
  * Copyright (c) 2006, Christopher Condit
- *               2007, Jens Oberender
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,10 +31,7 @@
 #define OGR_KML_H_INCLUDED
 
 #include "ogrsf_frmts.h"
-
-#ifdef HAVE_EXPAT
-#  include "kmlvector.h"
-#endif
+#include "kmlreader.h"
 
 class OGRKMLDataSource;
 
@@ -46,46 +41,43 @@ class OGRKMLDataSource;
 
 class OGRKMLLayer : public OGRLayer
 {
-public:
+    OGRSpatialReference *poSRS;
+    OGRFeatureDefn     *poFeatureDefn;
 
-    OGRKMLLayer( const char* pszName_, 
-                 OGRSpatialReference* poSRS, 
-                 int bWriter,
-                 OGRwkbGeometryType eType,
-                 OGRKMLDataSource* poDS );
-    ~OGRKMLLayer();
+    int                 iNextKMLId;
+    int                 nTotalKMLCount;
 
-    //
-    // OGRLayer Interface
-    //
-    OGRFeatureDefn* GetLayerDefn();
-    OGRSpatialReference* GetSpatialRef();
-    OGRErr GetExtent( OGREnvelope* psExtent, int bForce = TRUE );
-    OGRErr CreateFeature( OGRFeature* poFeature );
-    OGRErr CreateField( OGRFieldDefn* poField, int bApproxOK = TRUE );
-    void ResetReading();
-    OGRFeature* GetNextFeature();
-    int GetFeatureCount( int bForce = TRUE );
-    int TestCapability( const char* pszCap );
+    int                 bWriter;
 
-    //
-    // OGRKMLLayer Interface
-    //
-    void SetLayerNumber( int nLayer );
+    OGRKMLDataSource    *poDS;
 
-private:
-    OGRKMLDataSource* poDS_;
-    OGRSpatialReference* poSRS_;
-	OGRCoordinateTransformation *poCT_;
-	
-    OGRFeatureDefn* poFeatureDefn_;
+    KMLFeatureClass     *poFClass;
 
-    int iNextKMLId_;
-    int nTotalKMLCount_;
-    int bWriter_;
-    int nLayerNumber_;
-    int nWroteFeatureCount_;
-    char* pszName_;
+  public:
+                        OGRKMLLayer( const char * pszName, 
+                                     OGRSpatialReference *poSRS, 
+                                     int bWriter,
+                                     OGRwkbGeometryType eType,
+                                     OGRKMLDataSource *poDS );
+
+                        ~OGRKMLLayer();
+
+    void                ResetReading();
+    OGRFeature *        GetNextFeature();
+
+    int                 GetFeatureCount( int bForce = TRUE );
+    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+
+    OGRErr              CreateFeature( OGRFeature *poFeature );
+    
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
+
+    virtual OGRErr      CreateField( OGRFieldDefn *poField,
+                                     int bApproxOK = TRUE );
+
+    virtual OGRSpatialReference *GetSpatialRef();
+    
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -94,67 +86,55 @@ private:
 
 class OGRKMLDataSource : public OGRDataSource
 {
-public:
-    OGRKMLDataSource();
-    ~OGRKMLDataSource();
-
-    //
-    // OGRDataSource Interface
-    //
-    int Open( const char* pszName, int bTestOpen );
-    const char* GetName() { return pszName_; }
-    int GetLayerCount() { return nLayers_; }
-    OGRLayer* GetLayer( int nLayer );
-    OGRLayer* CreateLayer( const char* pszName,
-                           OGRSpatialReference* poSRS = NULL,
-                           OGRwkbGeometryType eGType = wkbUnknown,
-                           char** papszOptions = NULL );
-    int TestCapability( const char* pszCap );
+    OGRKMLLayer     **papoLayers;
+    int                 nLayers;
     
-    //
-    // OGRKMLDataSource Interface
-    //
-    int Create( const char* pszName, char** papszOptions );    
-    const char* GetNameField() const { return pszNameField_; }
-    const char* GetDescriptionField() const { return pszDescriptionField_; }
-    const char* GetAltitudeMode() { return pszAltitudeMode_; }
-    FILE* GetOutputFP() { return fpOutput_; }
-    void GrowExtents( OGREnvelope *psGeomBounds );
-#ifdef HAVE_EXPAT
-    KML* GetKMLFile() { return poKMLFile_; };
-#endif
+    char                *pszName;
+    
+    OGRKMLLayer         *TranslateKMLSchema( KMLFeatureClass * );
 
-	bool IsFirstCTError() { return !bIssuedCTError_; }
-	void IssuedFirstCTError() { bIssuedCTError_ = true; }
-
-private:
-
-#ifdef HAVE_EXPAT
-    KML* poKMLFile_;
-#endif
-
-    char* pszName_;
-
-    OGRKMLLayer** papoLayers_;
-    int nLayers_;
-
-    //The name of the field to use for the KML name element
-    char* pszNameField_;
-    char* pszDescriptionField_;
-
-    //The KML altitude mode to use 
- 	char* pszAltitudeMode_; 
-
-    char** papszCreateOptions_;
+    //The name of the field to use for 
+    char                *pszNameField;
+    
+    char               **papszCreateOptions;
 
     // output related parameters 
-    FILE* fpOutput_;
+    FILE                *fpOutput;
+    OGREnvelope         sBoundingRect;
+    int                 nBoundedByLocation;
+    
+    int                 nSchemaInsertLocation;
 
-    OGREnvelope oEnvelope_;
-    int nSchemaInsertLocation_;
-	
-	//Have we issued a coordinate transformation already for this datasource
-	bool bIssuedCTError_;		
+    // input related parameters.
+    //IKMLReader          *poReader;
+
+    void                InsertHeader();
+
+    
+  public:
+                        OGRKMLDataSource();
+                        ~OGRKMLDataSource();
+
+    int                 Open( const char *, int bTestOpen );
+    int                 Create( const char *pszFile, char **papszOptions );
+
+    const char          *GetName() { return pszName; }
+    const char          *GetNameField() { return pszNameField; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
+
+    virtual OGRLayer    *CreateLayer( const char *, 
+                                      OGRSpatialReference * = NULL,
+                                      OGRwkbGeometryType = wkbUnknown,
+                                      char ** = NULL );
+
+    int                 TestCapability( const char * );
+
+    FILE                *GetOutputFP() { return fpOutput; }
+    //IKMLReader          *GetReader() { return poReader; }
+
+    void                GrowExtents( OGREnvelope *psGeomBounds );
+    
 };
 
 /************************************************************************/
@@ -163,17 +143,16 @@ private:
 
 class OGRKMLDriver : public OGRSFDriver
 {
-public:
-    ~OGRKMLDriver();
+  public:
+                ~OGRKMLDriver();
+                
+    const char *GetName();
+    OGRDataSource *Open( const char *, int );
 
-    //
-    // OGRSFDriver Interface
-    //
-    const char* GetName();
-    OGRDataSource* Open( const char * pszName_, int bUpdate );
-    OGRDataSource* CreateDataSource( const char *pszName_, char** papszOptions );
-    int TestCapability( const char* pszCap );
+    virtual OGRDataSource *CreateDataSource( const char *pszName,
+                                             char ** = NULL );
+    
+    int                 TestCapability( const char * );
 };
 
 #endif /* OGR_KML_H_INCLUDED */
-

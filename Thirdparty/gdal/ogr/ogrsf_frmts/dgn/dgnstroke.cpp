@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: dgnstroke.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Code to stroke Arcs/Ellipses into polylines.
@@ -30,7 +30,7 @@
 #include "dgnlibp.h"
 #include <math.h>
 
-CPL_CVSID("$Id: dgnstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: dgnstroke.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define DEG_TO_RAD (PI/180.0)
 

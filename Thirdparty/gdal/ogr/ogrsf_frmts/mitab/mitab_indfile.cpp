@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_indfile.cpp,v 1.13 2008/01/29 20:46:32 dmorissette Exp $
+ * $Id: mitab_indfile.cpp,v 1.11 2005/04/29 19:08:56 dmorissette Exp $
  *
  * Name:     mitab_indfile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -31,13 +31,6 @@
  **********************************************************************
  *
  * $Log: mitab_indfile.cpp,v $
- * Revision 1.13  2008/01/29 20:46:32  dmorissette
- * Added support for v9 Time and DateTime fields (byg 1754)
- *
- * Revision 1.12  2007/12/11 03:43:03  dmorissette
- * Added reporting access mode to error message in TABINDFile::Open()
- * (GDAL changeset r12460, ticket 1620)
- *
  * Revision 1.11  2005/04/29 19:08:56  dmorissette
  * Produce an error if m_nSubtreeDepth > 255 when creating a .IND (OGR bug 839)
  *
@@ -188,7 +181,7 @@ int TABINDFile::Open(const char *pszFname, const char *pszAccess,
     {
         if (!bTestOpenNoError)
             CPLError(CE_Failure, CPLE_FileIO,
-                     "Open() failed for %s (%s)", m_pszFname, pszAccess);
+                     "Open() failed for %s", m_pszFname);
 
         CPLFree(m_pszFname);
         m_pszFname = NULL;
@@ -740,16 +733,6 @@ int TABINDFile::CreateIndex(TABFieldType eType, int nFieldSize)
         (m_eAccessMode != TABWrite && m_eAccessMode != TABReadWrite))
         return -1;
 
-    // __TODO__
-    // We'll need more work in TABDATFile::WriteDateTimeField() before
-    // we can support indexes on fields of type DateTime (see bug #1844)
-    if (eType == TABFDateTime)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-                 "Index on fields of type DateTime not supported yet.");
-        return -1;
-    }
-
     /*-----------------------------------------------------------------
      * Look for an empty slot in the current array, if there is none
      * then extend the array.
@@ -799,8 +782,6 @@ int TABINDFile::CreateIndex(TABFieldType eType, int nFieldSize)
                       (eType == TABFFloat)    ? 8:
                       (eType == TABFDecimal)  ? 8:
                       (eType == TABFDate)     ? 4:
-                      (eType == TABFTime)     ? 4:
-                      (eType == TABFDateTime) ? 8:
                       (eType == TABFLogical)  ? 4: MIN(128,nFieldSize));
 
     m_papoIndexRootNodes[nNewIndexNo] = new TABINDNode(m_eAccessMode);
@@ -1130,8 +1111,6 @@ int TABINDNode::SetFieldType(TABFieldType eType)
         (eType == TABFFloat && m_nKeyLength != 8) ||
         (eType == TABFDecimal && m_nKeyLength != 8) ||
         (eType == TABFDate && m_nKeyLength != 4) ||
-        (eType == TABFTime && m_nKeyLength != 4) ||
-        (eType == TABFDateTime && m_nKeyLength != 8) ||
         (eType == TABFLogical && m_nKeyLength != 4) )
     {
         CPLError(CE_Failure, CPLE_IllegalArg,

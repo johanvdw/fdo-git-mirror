@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocistatement.cpp 14387 2008-05-07 16:14:03Z tamas $
+ * $Id: ogrocistatement.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCIStatement, which encapsulates the 
@@ -31,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocistatement.cpp 14387 2008-05-07 16:14:03Z tamas $");
+CPL_CVSID("$Id: ogrocistatement.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGROCIStatement()                           */
@@ -324,17 +324,11 @@ CPLErr OGROCIStatement::Execute( const char *pszSQLStatement,
         OCIDefine *hDefn = NULL;
 
         if( oField.GetWidth() > 0 )
-            /* extra space needed for the decimal separator the string 
-            terminator and the negative sign (Tamas Szekeres)*/
-            nBufWidth = oField.GetWidth() + 3;
+            nBufWidth = oField.GetWidth() + 2;
         else if( oField.GetType() == OFTInteger )
             nBufWidth = 22;
         else if( oField.GetType() == OFTReal )
             nBufWidth = 36;
-        else if ( oField.GetType() == OFTDateTime )
-            nBufWidth = 40;
-        else if ( oField.GetType() == OFTDate )
-            nBufWidth = 20;
 
         papszCurColumn[nOGRField] = (char *) CPLMalloc(nBufWidth+2);
         CPLAssert( ((long) papszCurColumn[nOGRField]) % 2 == 0 );

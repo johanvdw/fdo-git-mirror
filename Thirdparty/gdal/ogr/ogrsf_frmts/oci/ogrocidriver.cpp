@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocidriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrocidriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDriver class.
@@ -29,7 +29,7 @@
 
 #include "ogr_oci.h"
 
-CPL_CVSID("$Id: ogrocidriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrocidriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGROCIDriver()                            */
@@ -116,8 +116,6 @@ int OGROCIDriver::TestCapability( const char * pszCap )
 void RegisterOGROCI()
 
 {
-    if (! GDAL_CHECK_VERSION("OCI driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGROCIDriver );
 }
 

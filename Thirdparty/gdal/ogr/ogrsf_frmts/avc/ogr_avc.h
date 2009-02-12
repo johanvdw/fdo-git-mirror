@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_avc.h 14784 2008-06-28 22:25:49Z warmerdam $
+ * $Id: ogr_avc.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Arc/Info Coverage (E00 & Binary) Reader
  * Purpose:  Declarations for OGR wrapper classes for coverage access.
@@ -163,7 +163,7 @@ class OGRAVCBinDataSource : public OGRAVCDataSource
 };
 
 /************************************************************************/
-/*                           OGRAVCBinDriver                            */
+/*                             OGRAVCDriver                             */
 /************************************************************************/
 
 class OGRAVCBinDriver : public OGRSFDriver
@@ -243,21 +243,6 @@ class OGRAVCE00DataSource : public OGRAVCDataSource
     OGRLayer *GetLayer( int );
     int TestCapability( const char * );
     virtual OGRSpatialReference *GetSpatialRef();
-};
-
-/************************************************************************/
-/*                           OGRAVCE00Driver                            */
-/************************************************************************/
-
-class OGRAVCE00Driver : public OGRSFDriver
-{
-  public:
-    		~OGRAVCE00Driver();
-                
-    const char *GetName();
-    OGRDataSource *Open( const char *, int );
-
-    int                 TestCapability( const char * );
 };
 
 #endif /* _OGR_AVC_H_INCLUDED */

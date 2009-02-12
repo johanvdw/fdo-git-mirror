@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vrt.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_vrt.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VRT driver.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_VRT_H_INCLUDED
-#define _OGR_VRT_H_INCLUDED
+#define _OGR_VRT_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
@@ -56,7 +56,6 @@ class OGRVRTLayer : public OGRLayer
     OGRLayer            *poSrcLayer;
     int                 bNeedReset;
     int                 bSrcLayerFromSQL;
-    int                 bSrcDSShared;
 
     // Layer spatial reference system, and srid.
     OGRSpatialReference *poSRS;

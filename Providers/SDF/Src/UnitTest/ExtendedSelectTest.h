@@ -54,8 +54,6 @@ protected:
 	void MemoryBasedTest() { MainTest(false,false); }
 	void ExtendedPropTest() { MainTest(true,true); }
 	void WorldTest(FdoIConnection* conn);
-	void WorldTestWFile(FdoIConnection* conn);
-	void WorldTestWoFile(FdoIConnection* conn);
 	void WorldTest_SDF();
 	void WorldTest_SDF_name1();
 	void WorldTest_SDF_name2();

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinestring.cpp 14883 2008-07-10 21:03:05Z rouault $
+ * $Id: ogrlinestring.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLineString geometry class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrlinestring.cpp 14883 2008-07-10 21:03:05Z rouault $");
+CPL_CVSID("$Id: ogrlinestring.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRLineString()                            */
@@ -683,7 +683,7 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
 {
     OGRwkbByteOrder     eByteOrder;
     
-    if( nSize < 9 && nSize != -1 )
+    if( nSize < 21 && nSize != -1 )
         return OGRERR_NOT_ENOUGH_DATA;
 
 /* -------------------------------------------------------------------- */
@@ -1000,7 +1000,7 @@ OGRErr OGRLineString::exportToWkt( char ** ppszDstText ) const
                       "OGRLineString::exportToWkt() ... buffer overflow.\n"
                       "nMaxString=%d, strlen(*ppszDstText) = %d, i=%d\n"
                       "*ppszDstText = %s", 
-                      nMaxString, (int) strlen(*ppszDstText), i, *ppszDstText );
+                      nMaxString, strlen(*ppszDstText), i, *ppszDstText );
 
             VSIFree( *ppszDstText );
             *ppszDstText = NULL;
@@ -1245,92 +1245,4 @@ OGRErr OGRLineString::transform( OGRCoordinateTransformation *poCT )
         return OGRERR_NONE;
     }
 #endif
-}
-
-/************************************************************************/
-/*                               IsEmpty()                              */
-/************************************************************************/
-
-OGRBoolean OGRLineString::IsEmpty(  ) const
-{
-    return (nPointCount == 0);
-}
-
-/************************************************************************/
-/*                     OGRLineString::segmentize()                      */
-/************************************************************************/
-
-void OGRLineString::segmentize( double dfMaxLength )
-{
-    if (dfMaxLength <= 0)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "dfMaxLength must be strictly positive");
-        return;
-    }
-
-    int i;
-    OGRRawPoint* paoNewPoints = NULL;
-    double* padfNewZ = NULL;
-    int nNewPointCount = 0;
-    double dfSquareMaxLength = dfMaxLength * dfMaxLength;
-
-    for( i = 0; i < nPointCount; i++ )
-    {
-        paoNewPoints = (OGRRawPoint *)
-            OGRRealloc(paoNewPoints, sizeof(OGRRawPoint) * (nNewPointCount + 1));
-        paoNewPoints[nNewPointCount] = paoPoints[i];
-
-        if( getCoordinateDimension() == 3 )
-        {
-            padfNewZ = (double *)
-                OGRRealloc(padfNewZ, sizeof(double) * (nNewPointCount + 1));
-            padfNewZ[nNewPointCount] = padfZ[i];
-        }
-
-        nNewPointCount++;
-
-        if (i == nPointCount - 1)
-            break;
-
-        double dfX = paoPoints[i+1].x - paoPoints[i].x;
-        double dfY = paoPoints[i+1].y - paoPoints[i].y;
-        double dfSquareDist = dfX * dfX + dfY * dfY;
-        if (dfSquareDist > dfSquareMaxLength)
-        {
-            int nIntermediatePoints = (int)floor(sqrt(dfSquareDist / dfSquareMaxLength));
-            int j;
-
-            paoNewPoints = (OGRRawPoint *)
-                OGRRealloc(paoNewPoints, sizeof(OGRRawPoint) * (nNewPointCount + nIntermediatePoints));
-            if( getCoordinateDimension() == 3 )
-            {
-                padfNewZ = (double *)
-                    OGRRealloc(padfNewZ, sizeof(double) * (nNewPointCount + nIntermediatePoints));
-            }
-
-            for(j=1;j<=nIntermediatePoints;j++)
-            {
-                paoNewPoints[nNewPointCount + j - 1].x = paoPoints[i].x + j * dfX / (nIntermediatePoints + 1);
-                paoNewPoints[nNewPointCount + j - 1].y = paoPoints[i].y + j * dfY / (nIntermediatePoints + 1);
-                if( getCoordinateDimension() == 3 )
-                {
-                    /* No interpolation */
-                    padfNewZ[nNewPointCount + j - 1] = 0;
-                }
-            }
-
-            nNewPointCount += nIntermediatePoints;
-        }
-    }
-
-    OGRFree(paoPoints);
-    paoPoints = paoNewPoints;
-    nPointCount = nNewPointCount;
-
-    if( getCoordinateDimension() == 3 )
-    {
-        OGRFree(padfZ);
-        padfZ = padfNewZ;
-    }
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: thinplatespline.cpp 15547 2008-10-17 17:45:03Z rouault $
+ * $Id: thinplatespline.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Warp API
  * Purpose:  Implemenentation of 2D Thin Plate Spline transformer. 
@@ -73,8 +73,8 @@ void VizGeorefSpline2D::grow_points()
         index = (int *) VSIMalloc( sizeof(int) * new_max );
         for( i = 0; i < VIZGEOREF_MAX_VARS; i++ )
         {
-            rhs[i] = (double *) VSICalloc( sizeof(double), new_max );
-            coef[i] = (double *) VSICalloc( sizeof(double), new_max );
+            rhs[i] = (double *) VSIMalloc( sizeof(double) * new_max );
+            coef[i] = (double *) VSIMalloc( sizeof(double) * new_max );
         }
     }
     else
@@ -201,7 +201,7 @@ int VizGeorefSpline2D::solve(void)
 	
     // More than 2 points - first we have to check if it is 1D or 2D case
 		
-    double xmax = x[0], xmin = x[0], ymax = y[0], ymin = y[0];
+    double xmax = FLT_MIN, xmin = FLT_MAX, ymax = FLT_MIN, ymin = FLT_MAX;
     double delx, dely;
     double xx, yy;
     double sumx = 0.0f, sumy= 0.0f, sumx2 = 0.0f, sumy2 = 0.0f, sumxy = 0.0f;
@@ -276,14 +276,14 @@ int VizGeorefSpline2D::solve(void)
     type = VIZ_GEOREF_SPLINE_FULL;
     // Make the necessary memory allocations
     if ( _AA )
-        CPLFree(_AA);
+        delete _AA;
     if ( _Ainv )
-        CPLFree(_Ainv);
+        delete _Ainv;
 	
     _nof_eqs = _nof_points + 3;
 	
-    _AA = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
-    _Ainv = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    _AA = ( double * )calloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    _Ainv = ( double * )calloc( _nof_eqs * _nof_eqs, sizeof( double ) );
 	
     // Calc the values of the matrix A
     for ( r = 0; r < 3; r++ )
@@ -521,7 +521,7 @@ int matrixInvert( int N, double input[], double output[] )
         ftemp = temp[ k*2*N + k ];
         if ( ftemp == 0.0f ) // matrix cannot be inverted
         {
-            delete[] temp;
+            delete temp;
             return false;
         }
 		

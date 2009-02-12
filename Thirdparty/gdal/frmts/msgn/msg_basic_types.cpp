@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msg_basic_types.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: msg_basic_types.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  MSG Native Reader
  * Purpose:  Basic types implementation.
@@ -30,7 +30,7 @@
 #include "msg_basic_types.h"
 #include "cpl_port.h"
 
-CPL_CVSID("$Id: msg_basic_types.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: msg_basic_types.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #include <stdio.h>
 

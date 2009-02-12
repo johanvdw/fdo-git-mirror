@@ -151,7 +151,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnChar(
     bool bNullable,
     int length,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -163,7 +163,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnDate(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -177,7 +177,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnDecimal(
     int length,
     int scale,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -189,7 +189,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnSingle(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -201,7 +201,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnDouble(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -227,10 +227,20 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnBool(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
+	if (defaultValue.GetLength() > 0)
+	{
+		bool isBool = defaultValue.ToBoolean();
+		if (isBool == true)
+			defaultValue = L"1";
+		else if (isBool == false)
+			defaultValue = L"0";
+		else
+			defaultValue = L"";
+	}
     return new FdoSmPhSqsColumnBool(columnName, elementState, this, bNullable, rootColumnName, defaultValue, colRdr);
 }
 
@@ -239,7 +249,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnByte(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -252,7 +262,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnInt16(
     bool bNullable,
     bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -265,7 +275,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnInt32(
     bool bNullable,
     bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -278,7 +288,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnInt64(
     bool bNullable,
     bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -314,7 +324,7 @@ FdoSmPhColumnP FdoSmPhSqsDbObject::NewColumnDbObject(
         bNullable, 
         (int) GetManager()->DbObjectNameMaxLen(), 
         rootColumnName,
-		(FdoDataValue*) NULL,
+		L"",
         colRdr
     );
 }

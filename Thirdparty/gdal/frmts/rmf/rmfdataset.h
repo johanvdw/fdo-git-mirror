@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rmfdataset.h 15709 2008-11-11 16:04:17Z dron $
+ * $Id: rmfdataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Private class declarations for the RMF classes used to read/write
@@ -30,12 +30,6 @@
 
 #include "gdal_priv.h"
 
-#define RMF_HEADER_SIZE         320
-#define RMF_EXT_HEADER_SIZE     320
-
-#define RMF_COMPRESSION_NONE    0
-#define RMF_COMPRESSION_LZW     1
-
 enum RMFType
 {
     RMFT_RSW,       // Raster map
@@ -49,7 +43,7 @@ enum RMFType
 typedef struct
 {
 #define RMF_SIGNATURE_SIZE 4
-    char        bySignature[RMF_SIGNATURE_SIZE];// "RSW" for raster
+    char        szSignature[RMF_SIGNATURE_SIZE];// "RSW" for raster
                                                 // map or "MTW" for DEM
     GUInt32     iVersion;
     GUInt32     nSize;                          // File size in bytes
@@ -96,24 +90,11 @@ typedef struct
     GByte       iInverse;
 #define RMF_INVISIBLE_COLORS_SIZE 32
     GByte       abyInvisibleColors[RMF_INVISIBLE_COLORS_SIZE];
-    double      adfElevMinMax[2];
+    double      dfElevMinMax[2];
     double      dfNoData;
     GUInt32     iElevationUnit;
     GByte       iElevationType;
-    GUInt32     nExtHdrOffset;
-    GUInt32     nExtHdrSize;
 } RMFHeader;
-
-/************************************************************************/
-/*                            RMFExtHeader                              */
-/************************************************************************/
-
-typedef struct
-{
-    GInt32      nEllipsoid;
-    GInt32      nDatum;
-    GInt32      nZone;
-} RMFExtHeader;
 
 /************************************************************************/
 /*                              RMFDataset                              */
@@ -123,8 +104,9 @@ class RMFDataset : public GDALDataset
 {
     friend class RMFRasterBand;
 
+#define RMF_HEADER_SIZE 320
+    GByte           abyHeader[RMF_HEADER_SIZE];
     RMFHeader       sHeader;
-    RMFExtHeader    sExtHeader;
     RMFType         eRMFType;
     GUInt32         nXTiles;
     GUInt32         nYTiles;
@@ -136,23 +118,21 @@ class RMFDataset : public GDALDataset
     double          adfGeoTransform[6];
     char            *pszProjection;
 
-    char            *pszUnitType;
-
-    int             bBigEndian;
     int             bHeaderDirty;
 
     const char      *pszFilename;
     FILE            *fp;
 
-    CPLErr          WriteHeader();
     static int      LZWDecompress( const GByte*, GUInt32, GByte*, GUInt32 );
-    int             (*Decompress)( const GByte*, GUInt32, GByte*, GUInt32 );
+ 
+  protected:
+    CPLErr              WriteHeader();
+    int                 (*Decompress)( const GByte*, GUInt32, GByte*, GUInt32 );
 
   public:
                 RMFDataset();
                 ~RMFDataset();
 
-    static int          Identify( GDALOpenInfo * poOpenInfo );
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char *, int, int, int,
                                  GDALDataType, char ** );
@@ -186,10 +166,8 @@ class RMFRasterBand : public GDALRasterBand
 
     virtual CPLErr          IReadBlock( int, int, void * );
     virtual CPLErr          IWriteBlock( int, int, void * );
-    virtual const char      *GetUnitType();
     virtual GDALColorInterp GetColorInterpretation();
     virtual GDALColorTable  *GetColorTable();
-    virtual CPLErr          SetUnitType(const char *);
-    virtual CPLErr          SetColorTable( GDALColorTable * );
+    CPLErr                  SetColorTable( GDALColorTable * );
 };
 

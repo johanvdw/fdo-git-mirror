@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bmpdataset.cpp 14230 2008-04-08 20:38:18Z warmerdam $
+ * $Id: bmpdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Microsoft Windows Bitmap
  * Purpose:  Read/write MS Windows Device Independent Bitmap (DIB) files
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: bmpdataset.cpp 14230 2008-04-08 20:38:18Z warmerdam $");
+CPL_CVSID("$Id: bmpdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_BMP(void);
@@ -85,7 +85,7 @@ enum BMPLCSType                 // Type of logical color space.
     BMPLT_CALIBRATED_RGB = 0,   // This value indicates that endpoints and gamma
                                 // values are given in the appropriate fields.
     BMPLT_DEVICE_RGB = 1,
-    BMPLT_DEVICE_CMYK = 2
+    BMPLT_DEVICE_CMYK = 2,
 };
 
 typedef struct
@@ -233,7 +233,6 @@ class BMPDataset : public GDALPamDataset
                 BMPDataset();
                 ~BMPDataset();
 
-    static int           Identify( GDALOpenInfo * );
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
@@ -285,7 +284,6 @@ BMPRasterBand::BMPRasterBand( BMPDataset *poDS, int nBand )
     // We will read one scanline per time. Scanlines in BMP aligned at 4-byte
     // boundary
     nBlockXSize = poDS->GetRasterXSize();
-    // FIXME? : risk of overflow in multiplication and addition
     nScanSize =
         ((poDS->GetRasterXSize() * poDS->sInfoHeader.iBitCount + 31) & ~31) / 8;
     nBlockYSize = 1;
@@ -296,7 +294,7 @@ BMPRasterBand::BMPRasterBand( BMPDataset *poDS, int nBand )
               nBand, nBlockXSize, nBlockYSize, nScanSize );
 #endif
 
-    pabyScan = (GByte *) VSIMalloc( nScanSize );
+    pabyScan = (GByte *) CPLMalloc( nScanSize );
 }
 
 /************************************************************************/
@@ -338,7 +336,7 @@ CPLErr BMPRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         {
             CPLError( CE_Failure, CPLE_FileIO,
                       "Can't seek to offset %ld in input file to read data.",
-                      (long) iScanOffset );
+                      iScanOffset );
             return CE_Failure;
         }
     }
@@ -353,8 +351,7 @@ CPLErr BMPRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         else
         {
             CPLError( CE_Failure, CPLE_FileIO,
-                      "Can't read from offset %ld in input file.", 
-                      (long) iScanOffset );
+                      "Can't read from offset %ld in input file.", iScanOffset );
             return CE_Failure;
         }
     }
@@ -533,7 +530,7 @@ CPLErr BMPRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Can't seek to offset %ld in output file to write data.\n%s",
-                  (long) iScanOffset, VSIStrerror( errno ) );
+                  iScanOffset, VSIStrerror( errno ) );
         return CE_Failure;
     }
 
@@ -687,25 +684,15 @@ BMPComprRasterBand::BMPComprRasterBand( BMPDataset *poDS, int nBand )
     GUInt32         iComprSize, iUncomprSize;
 
     iComprSize = poDS->sFileHeader.iSize - poDS->sFileHeader.iOffBits;
-    // FIXME? : risk of overflow in multiplication
     iUncomprSize = poDS->GetRasterXSize() * poDS->GetRasterYSize();
-    pabyComprBuf = (GByte *) VSIMalloc( iComprSize );
-    pabyUncomprBuf = (GByte *) VSIMalloc( iUncomprSize );
-    if (pabyComprBuf == NULL ||
-        pabyUncomprBuf == NULL)
-    {
-        CPLFree(pabyComprBuf);
-        pabyComprBuf = NULL;
-        CPLFree(pabyUncomprBuf);
-        pabyUncomprBuf = NULL;
-        return;
-    }
+    pabyComprBuf = (GByte *) CPLMalloc( iComprSize );
+    pabyUncomprBuf = (GByte *) CPLMalloc( iUncomprSize );
 
 #ifdef DEBUG
     CPLDebug( "BMP", "RLE compression detected." );
     CPLDebug ( "BMP", "Size of compressed buffer %ld bytes,"
                " size of uncompressed buffer %ld bytes.",
-               (long) iComprSize, (long) iUncomprSize );
+               iComprSize, iUncomprSize );
 #endif
 
     VSIFSeekL( poDS->fp, poDS->sFileHeader.iOffBits, SEEK_SET );
@@ -956,37 +943,24 @@ CPLErr BMPDataset::IRasterIO( GDALRWFlag eRWFlag,
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int BMPDataset::Identify( GDALOpenInfo *poOpenInfo )
-
-{
-    if( poOpenInfo->nHeaderBytes < 2
-        || poOpenInfo->pabyHeader[0] != 'B' 
-        || poOpenInfo->pabyHeader[1] != 'M' )
-        return FALSE;
-    else
-        return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
 GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
 {
-    if( !Identify( poOpenInfo ) )
+    if( poOpenInfo->fp == NULL )
+        return NULL;
+
+    if( !EQUALN((const char *) poOpenInfo->pabyHeader, "BM", 2) )
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     BMPDataset      *poDS;
-    VSIStatBufL     sStat;
+    VSIStatBuf      sStat;
 
     poDS = new BMPDataset();
-    poDS->eAccess = poOpenInfo->eAccess;
 
     if( poOpenInfo->eAccess == GA_ReadOnly )
         poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
@@ -995,7 +969,7 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
     if ( !poDS->fp )
         return NULL;
 
-    VSIStatL(poOpenInfo->pszFilename, &sStat);
+    CPLStat(poOpenInfo->pszFilename, &sStat);
 
 /* -------------------------------------------------------------------- */
 /*      Read the BMPFileHeader. We need iOffBits value only             */
@@ -1140,14 +1114,7 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
             else
                 poDS->nColorTableSize = 1 << poDS->sInfoHeader.iBitCount;
             poDS->pabyColorTable =
-                (GByte *)VSIMalloc2( poDS->nColorElems, poDS->nColorTableSize );
-            if (poDS->pabyColorTable == NULL)
-            {
-                CPLError(CE_Failure, CPLE_OutOfMemory, "Color palette will be ignored");
-                poDS->nColorTableSize = 0;
-                break;
-            }
-
+                (GByte *)CPLMalloc( poDS->nColorElems * poDS->nColorTableSize );
             VSIFSeekL( poDS->fp, BFH_SIZE + poDS->sInfoHeader.iSize, SEEK_SET );
             VSIFReadL( poDS->pabyColorTable, poDS->nColorElems,
                       poDS->nColorTableSize, poDS->fp );
@@ -1184,33 +1151,13 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
     ||   poDS->sInfoHeader.iCompression == BMPC_BITFIELDS )
     {
         for( iBand = 1; iBand <= poDS->nBands; iBand++ )
-        {
-            BMPRasterBand* band = new BMPRasterBand( poDS, iBand );
-            poDS->SetBand( iBand, band );
-            if (band->pabyScan == NULL)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                          "The BMP file is probably corrupted or too large. Image width = %d", poDS->nRasterXSize);
-                delete poDS;
-                return NULL;
-            }
-        }
+            poDS->SetBand( iBand, new BMPRasterBand( poDS, iBand ) );
     }
     else if ( poDS->sInfoHeader.iCompression == BMPC_RLE8
               || poDS->sInfoHeader.iCompression == BMPC_RLE4 )
     {
         for( iBand = 1; iBand <= poDS->nBands; iBand++ )
-        {
-            BMPComprRasterBand* band = new BMPComprRasterBand( poDS, iBand );
-            poDS->SetBand( iBand, band);
-            if (band->pabyUncomprBuf == NULL)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                          "The BMP file is probably corrupted or too large. Image width = %d", poDS->nRasterXSize);
-                delete poDS;
-                return NULL;
-            }
-        }
+            poDS->SetBand( iBand, new BMPComprRasterBand( poDS, iBand ) );
     }
     else
     {
@@ -1222,12 +1169,17 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Check for world file.                                           */
 /* -------------------------------------------------------------------- */
     poDS->bGeoTransformValid =
-        GDALReadWorldFile( poOpenInfo->pszFilename, NULL,
+        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld",
                            poDS->adfGeoTransform );
 
     if( !poDS->bGeoTransformValid )
         poDS->bGeoTransformValid =
-            GDALReadWorldFile( poOpenInfo->pszFilename, ".wld",
+            GDALReadWorldFile( poOpenInfo->pszFilename, ".bpw",
+                               poDS->adfGeoTransform );
+
+    if( !poDS->bGeoTransformValid )
+        poDS->bGeoTransformValid =
+            GDALReadWorldFile( poOpenInfo->pszFilename, ".bmpw",
                                poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */
@@ -1485,11 +1437,8 @@ void GDALRegister_BMP()
 "   <Option name='WORLDFILE' type='boolean' description='Write out world file'/>"
 "</CreationOptionList>" );
 
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-
         poDriver->pfnOpen = BMPDataset::Open;
         poDriver->pfnCreate = BMPDataset::Create;
-        poDriver->pfnIdentify = BMPDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

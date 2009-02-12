@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_usgs.cpp 15826 2008-11-27 22:28:25Z warmerdam $
+ * $Id: ogr_srs_usgs.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from USGS georeferencing
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_usgs.cpp 15826 2008-11-27 22:28:25Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_usgs.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*  GCTP projection codes.                                              */
@@ -78,35 +78,10 @@ CPL_CVSID("$Id: ogr_srs_usgs.cpp 15826 2008-11-27 22:28:25Z warmerdam $");
                         // (added by Raj Gejjagaraguppe ARC for MODIS) 
 
 /************************************************************************/
-/*  GCTP ellipsoid codes.                                               */
-/************************************************************************/
-
-#define CLARKE1866          0L
-#define CLARKE1880          1L
-#define BESSEL              2L
-#define INTERNATIONAL1967   3L
-#define INTERNATIONAL1909   4L
-#define WGS72               5L
-#define EVEREST             6L
-#define WGS66               7L
-#define GRS1980             8L
-#define AIRY                9L
-#define MODIFIED_EVEREST    10L
-#define MODIFIED_AIRY       11L
-#define WGS84               12L
-#define SOUTHEAST_ASIA      13L
-#define AUSTRALIAN_NATIONAL 14L
-#define KRASSOVSKY          15L
-#define HOUGH               16L
-#define MERCURY1960         17L
-#define MODIFIED_MERCURY    18L
-#define SPHERE              19L
-
-/************************************************************************/
 /*  Correspondence between GCTP and EPSG ellipsoid codes.               */
 /************************************************************************/
 
-static const long aoEllips[] =
+static long aoEllips[] =
 {
     7008,   // Clarke, 1866 (NAD1927)
     7034,   // Clarke, 1880
@@ -124,14 +99,14 @@ static const long aoEllips[] =
     0,// FIXME: Southeast Asia --- skipped
     7003,   // Australian National, 1965
     7024,   // Krassovsky, 1940
-    7053,   // Hough
+    0,// FIXME: Hough --- skipped
     0,// FIXME: Mercury, 1960 --- skipped
     0,// FIXME: Modified Mercury, 1968 --- skipped
     7047,   // Sphere, rad 6370997 m (normal sphere)
     7006,   // Bessel, 1841 (Namibia)
     7016,   // Everest (Sabah & Sarawak)
     7044,   // Everest, 1956
-    7056,   // Everest, Malaysia 1969
+    0,// FIXME: Everest, Malaysia 1969 --- skipped
     7018,   // Everest, Malay & Singapr 1948
     0,// FIXME: Everest, Pakistan --- skipped
     7022,   // Hayford (International 1924) XXX?
@@ -141,7 +116,7 @@ static const long aoEllips[] =
     0// FIXME: WGS 60 --- skipped
 };
 
-#define NUMBER_OF_ELLIPSOIDS    (int)(sizeof(aoEllips)/sizeof(aoEllips[0]))
+#define NUMBER_OF_ELLIPSOIDS    (sizeof(aoEllips)/sizeof(aoEllips[0]))
 
 /************************************************************************/
 /*                        USGSGetUOMLengthInfo()                        */
@@ -305,16 +280,9 @@ OGRErr OSRImportFromUSGS( OGRSpatialReferenceH hSRS, long iProjsys,
                           long iZone, double *padfPrjParams, long iDatum )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromUSGS", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->importFromUSGS( iProjsys, iZone,
                                                            padfPrjParams,
                                                            iDatum );
-}
-
-static double OGRSpatialReferenceUSGSUnpackNoOp(double dfVal)
-{
-    return dfVal;
 }
 
 /************************************************************************/
@@ -328,11 +296,9 @@ static double OGRSpatialReferenceUSGSUnpackNoOp(double dfVal)
  * software. GCTP operates on angles in packed DMS format (see
  * CPLDecToPackedDMS() function for details), so all angle values (latitudes,
  * longitudes, azimuths, etc.) specified in the padfPrjParams array should
- * be in the packed DMS format, unless bAnglesInPackedDMSFormat is set to FALSE.
+ * be in the packed DMS format.
  *
  * This function is the equivalent of the C function OSRImportFromUSGS().
- * Note that the bAnglesInPackedDMSFormat parameter is only present in the C++
- * method. The C function assumes bAnglesInPackedFormat = TRUE.
  *
  * @param iProjSys Input projection system code, used in GCTP.
  *
@@ -484,7 +450,7 @@ static double OGRSpatialReferenceUSGSUnpackNoOp(double dfVal)
  * fields are set to zero too.
  * </pre>
  *
- * @param iDatum Input spheroid.<p>
+ * @param iDatum Output spheroid.<p>
  *
  * If the datum code is negative, the first two values in the parameter array
  * (parm) are used to define the values as follows:
@@ -550,17 +516,11 @@ static double OGRSpatialReferenceUSGSUnpackNoOp(double dfVal)
 
 OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                                             double *padfPrjParams,
-                                            long iDatum, int bAnglesInPackedDMSFormat )
+                                            long iDatum )
 
 {
     if( !padfPrjParams )
         return OGRERR_CORRUPT_DATA;
-
-    double (*pfnUnpackAnglesFn)(double);
-    if (bAnglesInPackedDMSFormat)
-        pfnUnpackAnglesFn = CPLPackedDMSToDec;
-    else
-        pfnUnpackAnglesFn = OGRSpatialReferenceUSGSUnpackNoOp;
 
 /* -------------------------------------------------------------------- */
 /*      Operate on the basis of the projection code.                    */
@@ -580,9 +540,9 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                         iZone = (long) padfPrjParams[2];
                     else if (padfPrjParams[0] != 0.0 && padfPrjParams[1] != 0.0)
                     {
-                        iZone = (long)(((pfnUnpackAnglesFn(padfPrjParams[0])
+                        iZone = (long)(((CPLPackedDMSToDec(padfPrjParams[0])
                                          + 180.0) / 6.0) + 1.0);
-                        if ( pfnUnpackAnglesFn(padfPrjParams[0]) < 0 )
+                        if ( CPLPackedDMSToDec(padfPrjParams[0]) < 0 )
                             bNorth = FALSE;
                     }
                 }
@@ -605,154 +565,153 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                 else if ( iDatum != 8 )
                     CPLError( CE_Warning, CPLE_AppDefined,
                               "Wrong datum for State Plane projection %d. "
-                              "Should be 0 or 8.", (int) iDatum );
+                              "Should be 0 or 8.", iDatum );
                 
                 SetStatePlane( iZone, bNAD83 );
             }
             break;
 
         case ALBERS:
-            SetACEA( pfnUnpackAnglesFn(padfPrjParams[2]),
-                     pfnUnpackAnglesFn(padfPrjParams[3]),
-                     pfnUnpackAnglesFn(padfPrjParams[5]),
-                     pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetACEA( CPLPackedDMSToDec(padfPrjParams[2]),
+                     CPLPackedDMSToDec(padfPrjParams[3]),
+                     CPLPackedDMSToDec(padfPrjParams[5]),
+                     CPLPackedDMSToDec(padfPrjParams[4]),
                      padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case LAMCC:
-            SetLCC( pfnUnpackAnglesFn(padfPrjParams[2]),
-                    pfnUnpackAnglesFn(padfPrjParams[3]),
-                    pfnUnpackAnglesFn(padfPrjParams[5]),
-                    pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetLCC( CPLPackedDMSToDec(padfPrjParams[2]),
+                    CPLPackedDMSToDec(padfPrjParams[3]),
+                    CPLPackedDMSToDec(padfPrjParams[5]),
+                    CPLPackedDMSToDec(padfPrjParams[4]),
                     padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case MERCAT:
-            SetMercator( pfnUnpackAnglesFn(padfPrjParams[5]),
-                         pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetMercator( CPLPackedDMSToDec(padfPrjParams[5]),
+                         CPLPackedDMSToDec(padfPrjParams[4]),
                          1.0,
                          padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case PS:
-            SetPS( pfnUnpackAnglesFn(padfPrjParams[5]),
-                   pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetPS( CPLPackedDMSToDec(padfPrjParams[5]),
+                   CPLPackedDMSToDec(padfPrjParams[4]),
                    1.0,
                    padfPrjParams[6], padfPrjParams[7] );
 
             break;
 
         case POLYC:
-            SetPolyconic( pfnUnpackAnglesFn(padfPrjParams[5]),
-                          pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetPolyconic( CPLPackedDMSToDec(padfPrjParams[5]),
+                          CPLPackedDMSToDec(padfPrjParams[4]),
                           padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case EQUIDC:
             if ( padfPrjParams[8] )
             {
-                SetEC( pfnUnpackAnglesFn(padfPrjParams[2]),
-                       pfnUnpackAnglesFn(padfPrjParams[3]),
-                       pfnUnpackAnglesFn(padfPrjParams[5]),
-                       pfnUnpackAnglesFn(padfPrjParams[4]),
+                SetEC( CPLPackedDMSToDec(padfPrjParams[2]),
+                       CPLPackedDMSToDec(padfPrjParams[3]),
+                       CPLPackedDMSToDec(padfPrjParams[5]),
+                       CPLPackedDMSToDec(padfPrjParams[4]),
                        padfPrjParams[6], padfPrjParams[7] );
             }
             else
             {
-                SetEC( pfnUnpackAnglesFn(padfPrjParams[2]),
-                       pfnUnpackAnglesFn(padfPrjParams[2]),
-                       pfnUnpackAnglesFn(padfPrjParams[5]),
-                       pfnUnpackAnglesFn(padfPrjParams[4]),
+                SetEC( CPLPackedDMSToDec(padfPrjParams[2]),
+                       CPLPackedDMSToDec(padfPrjParams[2]),
+                       CPLPackedDMSToDec(padfPrjParams[5]),
+                       CPLPackedDMSToDec(padfPrjParams[4]),
                        padfPrjParams[6], padfPrjParams[7] );
             }
             break;
 
         case TM:
-            SetTM( pfnUnpackAnglesFn(padfPrjParams[5]),
-                   pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetTM( CPLPackedDMSToDec(padfPrjParams[5]),
+                   CPLPackedDMSToDec(padfPrjParams[4]),
                    padfPrjParams[2],
                    padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case STEREO:
-            SetStereographic( pfnUnpackAnglesFn(padfPrjParams[5]),
-                              pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetStereographic( CPLPackedDMSToDec(padfPrjParams[5]),
+                              CPLPackedDMSToDec(padfPrjParams[4]),
                               1.0,
                               padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case LAMAZ:
-            SetLAEA( pfnUnpackAnglesFn(padfPrjParams[5]),
-                     pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetLAEA( CPLPackedDMSToDec(padfPrjParams[5]),
+                     CPLPackedDMSToDec(padfPrjParams[4]),
                      padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case AZMEQD:
-            SetAE( pfnUnpackAnglesFn(padfPrjParams[5]),
-                   pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetAE( CPLPackedDMSToDec(padfPrjParams[5]),
+                   CPLPackedDMSToDec(padfPrjParams[4]),
                    padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case GNOMON:
-            SetGnomonic( pfnUnpackAnglesFn(padfPrjParams[5]),
-                         pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetGnomonic( CPLPackedDMSToDec(padfPrjParams[5]),
+                         CPLPackedDMSToDec(padfPrjParams[4]),
                          padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case ORTHO:
-            SetOrthographic( pfnUnpackAnglesFn(padfPrjParams[5]),
-                             pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetOrthographic( CPLPackedDMSToDec(padfPrjParams[5]),
+                             CPLPackedDMSToDec(padfPrjParams[4]),
                              padfPrjParams[6], padfPrjParams[7] );
             break;
 
         // FIXME: GVNSP --- General Vertical Near-Side Perspective skipped
 
         case SNSOID:
-            SetSinusoidal( pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetSinusoidal( CPLPackedDMSToDec(padfPrjParams[4]),
                            padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case EQRECT:
-            SetEquirectangular2( 0.0,
-                                 pfnUnpackAnglesFn(padfPrjParams[4]),
-                                 pfnUnpackAnglesFn(padfPrjParams[5]),
-                                 padfPrjParams[6], padfPrjParams[7] );
+            SetEquirectangular( CPLPackedDMSToDec(padfPrjParams[5]),
+                                CPLPackedDMSToDec(padfPrjParams[4]),
+                                padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case MILLER:
-            SetMC( pfnUnpackAnglesFn(padfPrjParams[5]),
-                   pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetMC( CPLPackedDMSToDec(padfPrjParams[5]),
+                   CPLPackedDMSToDec(padfPrjParams[4]),
                    padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case VGRINT:
-            SetVDG( pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetVDG( CPLPackedDMSToDec(padfPrjParams[4]),
                     padfPrjParams[6], padfPrjParams[7] );
             break;
 
         case HOM:
             if ( padfPrjParams[12] )
             {
-                SetHOM( pfnUnpackAnglesFn(padfPrjParams[5]),
-                        pfnUnpackAnglesFn(padfPrjParams[4]),
-                        pfnUnpackAnglesFn(padfPrjParams[3]),
+                SetHOM( CPLPackedDMSToDec(padfPrjParams[5]),
+                        CPLPackedDMSToDec(padfPrjParams[4]),
+                        CPLPackedDMSToDec(padfPrjParams[3]),
                         0.0, padfPrjParams[2],
                         padfPrjParams[6],  padfPrjParams[7] );
             }
             else
             {
-                SetHOM2PNO( pfnUnpackAnglesFn(padfPrjParams[5]),
-                            pfnUnpackAnglesFn(padfPrjParams[9]),
-                            pfnUnpackAnglesFn(padfPrjParams[8]),
-                            pfnUnpackAnglesFn(padfPrjParams[11]),
-                            pfnUnpackAnglesFn(padfPrjParams[10]),
+                SetHOM2PNO( CPLPackedDMSToDec(padfPrjParams[5]),
+                            CPLPackedDMSToDec(padfPrjParams[9]),
+                            CPLPackedDMSToDec(padfPrjParams[8]),
+                            CPLPackedDMSToDec(padfPrjParams[11]),
+                            CPLPackedDMSToDec(padfPrjParams[10]),
                             padfPrjParams[2],
                             padfPrjParams[6],  padfPrjParams[7] );
             }
             break;
 
         case ROBIN:
-            SetRobinson( pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetRobinson( CPLPackedDMSToDec(padfPrjParams[4]),
                          padfPrjParams[6], padfPrjParams[7] );
             break;
 
@@ -763,7 +722,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
         // FIXME: GOODE --- Interrupted Goode skipped
 
         case MOLL:
-            SetMollweide( pfnUnpackAnglesFn(padfPrjParams[4]),
+            SetMollweide( CPLPackedDMSToDec(padfPrjParams[4]),
                           padfPrjParams[6], padfPrjParams[7] );
             break;
 
@@ -771,13 +730,9 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
 
         // FIXME: HAMMER --- Hammer skipped
 
-        case WAGIV:
-            SetWagner( 4, 0.0, padfPrjParams[6], padfPrjParams[7] );
-            break;
+        // FIXME: WAGIV --- Wagner IV skipped
 
-        case WAGVII:
-            SetWagner( 7, 0.0, padfPrjParams[6], padfPrjParams[7] );
-            break;
+        // FIXME: WAGVII --- Wagner VII skipped
 
         // FIXME: OBEQA --- Oblated Equal Area skipped
 
@@ -790,8 +745,8 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
         // FIXME: ISINUS --- Integrized Sinusoidal skipped
 
         default:
-            CPLDebug( "OSR_USGS", "Unsupported projection: %ld", iProjSys );
-            SetLocalCS( CPLString().Printf("GCTP projection number %ld", iProjSys) );
+            CPLDebug( "OSR_USGS", "Unsupported projection: %d", iProjSys );
+            SetLocalCS( CPLSPrintf("GCTP projection number %d", iProjSys) );
             break;
             
     }
@@ -836,12 +791,11 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
             {
                 USGSGetEllipsoidInfo( 7008, &pszName, &dfSemiMajor,
                                       &dfInvFlattening );
-                SetGeogCS( CPLString().Printf(
+                SetGeogCS( CPLSPrintf(
                                "Unknown datum based upon the %s ellipsoid",
                                pszName ),
-                           CPLString().Printf( 
-                               "Not specified (based on %s spheroid)",
-                               pszName ),
+                           CPLSPrintf( "Not specified (based on %s spheroid)",
+                                       pszName ),
                            pszName, dfSemiMajor, dfInvFlattening,
                            NULL, 0.0, NULL, 0.0 );
                 SetAuthority( "SPHEROID", "EPSG", 7008 );
@@ -850,10 +804,10 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
             {
                 USGSGetEllipsoidInfo( 7047, &pszName, &dfSemiMajor,
                                       &dfInvFlattening );
-                SetGeogCS( CPLString().Printf(
+                SetGeogCS( CPLSPrintf(
                                "Unknown datum based upon the %s ellipsoid",
                                pszName ),
-                           CPLString().Printf( "Not specified (based on %s spheroid)",
+                           CPLSPrintf( "Not specified (based on %s spheroid)",
                                        pszName ),
                            pszName, dfSemiMajor, dfInvFlattening,
                            NULL, 0.0, NULL, 0.0 );
@@ -861,14 +815,14 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
             }
 
         }
-        else if ( iDatum < NUMBER_OF_ELLIPSOIDS && aoEllips[iDatum] )
+        else if ( iDatum < (int) NUMBER_OF_ELLIPSOIDS && aoEllips[iDatum] )
         {
             if( USGSGetEllipsoidInfo( aoEllips[iDatum], &pszName,
                                        &dfSemiMajor, &dfInvFlattening ) )
             {
-                SetGeogCS( CPLString().Printf("Unknown datum based upon the %s ellipsoid",
+                SetGeogCS( CPLSPrintf("Unknown datum based upon the %s ellipsoid",
                                       pszName ),
-                           CPLString().Printf( "Not specified (based on %s spheroid)",
+                           CPLSPrintf( "Not specified (based on %s spheroid)",
                                        pszName ),
                            pszName, dfSemiMajor, dfInvFlattening,
                            NULL, 0.0, NULL, 0.0 );
@@ -879,7 +833,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
                 CPLError( CE_Warning, CPLE_AppDefined,
                           "Failed to lookup datum code %d, likely due to missing GDAL gcs.csv\n"
                           " file.  Falling back to use WGS84.", 
-                          (int) iDatum );
+                          iDatum );
                 SetWellKnownGeogCS("WGS84" );
             }
         }
@@ -888,7 +842,7 @@ OGRErr OGRSpatialReference::importFromUSGS( long iProjSys, long iZone,
             CPLError( CE_Warning, CPLE_AppDefined,
                       "Wrong datum code %d. Supported datums 0--%d only.\n"
                       "Setting WGS84 as a fallback.",
-                      (int) iDatum, NUMBER_OF_ELLIPSOIDS );
+                      iDatum, NUMBER_OF_ELLIPSOIDS );
             SetWellKnownGeogCS( "WGS84" );
         }
 
@@ -916,8 +870,6 @@ OGRErr OSRExportToUSGS( OGRSpatialReferenceH hSRS,
                         double **ppadfPrjParams, long *piDatum )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToUSGS", CE_Failure );
-
     *ppadfPrjParams = NULL;
 
     return ((OGRSpatialReference *) hSRS)->exportToUSGS( piProjSys, piZone,
@@ -1156,7 +1108,7 @@ OGRErr OGRSpatialReference::exportToUSGS( long *piProjSys, long *piZone,
         (*ppadfPrjParams)[4] = CPLDecToPackedDMS(
             GetNormProjParm( SRS_PP_CENTRAL_MERIDIAN, 0.0 ) );
         (*ppadfPrjParams)[5] = CPLDecToPackedDMS(
-            GetNormProjParm( SRS_PP_STANDARD_PARALLEL_1, 0.0 ) );
+            GetNormProjParm( SRS_PP_LATITUDE_OF_ORIGIN, 0.0 ) );
         (*ppadfPrjParams)[6] = GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
         (*ppadfPrjParams)[7] = GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
     }
@@ -1234,20 +1186,6 @@ OGRErr OGRSpatialReference::exportToUSGS( long *piProjSys, long *piZone,
         (*ppadfPrjParams)[7] = GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
     }
 
-    else if( EQUAL(pszProjection, SRS_PT_WAGNER_IV) )
-    {
-        *piProjSys = WAGIV;
-        (*ppadfPrjParams)[6] = GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
-        (*ppadfPrjParams)[7] = GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
-    }
-
-    else if( EQUAL(pszProjection, SRS_PT_WAGNER_VII) )
-    {
-        *piProjSys = WAGVII;
-        (*ppadfPrjParams)[6] = GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
-        (*ppadfPrjParams)[7] = GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
-    }
-
     // Projection unsupported by GCTP
     else
     {
@@ -1262,67 +1200,61 @@ OGRErr OGRSpatialReference::exportToUSGS( long *piProjSys, long *piZone,
 /* -------------------------------------------------------------------- */
     const char  *pszDatum = GetAttrValue( "DATUM" );
 
-    if ( pszDatum )
+    if( EQUAL( pszDatum, SRS_DN_NAD27 ) )
+        *piDatum = 0L;
+
+    else if( EQUAL( pszDatum, SRS_DN_NAD83 ) )
+        *piDatum = 8L;
+
+    else if( EQUAL( pszDatum, SRS_DN_WGS84 ) )
+        *piDatum = 12L;
+
+    // If not found well known datum, translate ellipsoid
+    else
     {
-        if( EQUAL( pszDatum, SRS_DN_NAD27 ) )
-            *piDatum = CLARKE1866;
+        double      dfSemiMajor = GetSemiMajor();
+        double      dfInvFlattening = GetInvFlattening();
 
-        else if( EQUAL( pszDatum, SRS_DN_NAD83 ) )
-            *piDatum = GRS1980;
-
-        else if( EQUAL( pszDatum, SRS_DN_WGS84 ) )
-            *piDatum = WGS84;
-
-        // If not found well known datum, translate ellipsoid
-        else
+#ifdef DEBUG
+        CPLDebug( "OSR_USGS",
+                  "Datum \"%s\" unsupported by USGS GCTP. "
+                  "Try to translate ellipsoid definition.", pszDatum );
+#endif
+        
+        for ( i = 0; i < (int) NUMBER_OF_ELLIPSOIDS; i++ )
         {
-            double      dfSemiMajor = GetSemiMajor();
-            double      dfInvFlattening = GetInvFlattening();
+            double  dfSM;
+            double  dfIF;
 
+            USGSGetEllipsoidInfo( aoEllips[i], NULL, &dfSM, &dfIF );
+            if( ABS( dfSemiMajor - dfSM ) < 0.01
+                && ABS( dfInvFlattening - dfIF ) < 0.0001 )
+            {
+                *piDatum = i;
+                break;
+            }
+        }
+
+        if ( i == NUMBER_OF_ELLIPSOIDS )    // Didn't found matches; set
+        {                                   // custom ellipsoid parameters
 #ifdef DEBUG
             CPLDebug( "OSR_USGS",
-                      "Datum \"%s\" unsupported by USGS GCTP. "
-                      "Try to translate ellipsoid definition.", pszDatum );
+                      "Ellipsoid \"%s\" unsupported by USGS GCTP. "
+                      "Custom ellipsoid definition will be used.", pszDatum );
 #endif
-            
-            for ( i = 0; i < NUMBER_OF_ELLIPSOIDS; i++ )
+            *piDatum = -1;
+            (*ppadfPrjParams)[0] = dfSemiMajor;
+            if ( ABS( dfInvFlattening ) < 0.000000000001 )
             {
-                double  dfSM;
-                double  dfIF;
-
-                USGSGetEllipsoidInfo( aoEllips[i], NULL, &dfSM, &dfIF );
-                if( ABS( dfSemiMajor - dfSM ) < 0.01
-                    && ABS( dfInvFlattening - dfIF ) < 0.0001 )
-                {
-                    *piDatum = i;
-                    break;
-                }
+                (*ppadfPrjParams)[1] = dfSemiMajor;
             }
-
-            if ( i == NUMBER_OF_ELLIPSOIDS )    // Didn't found matches; set
-            {                                   // custom ellipsoid parameters
-#ifdef DEBUG
-                CPLDebug( "OSR_USGS",
-                          "Ellipsoid \"%s\" unsupported by USGS GCTP. "
-                          "Custom ellipsoid definition will be used.",
-                          pszDatum );
-#endif
-                *piDatum = -1;
-                (*ppadfPrjParams)[0] = dfSemiMajor;
-                if ( ABS( dfInvFlattening ) < 0.000000000001 )
-                {
-                    (*ppadfPrjParams)[1] = dfSemiMajor;
-                }
-                else
-                {
-                    (*ppadfPrjParams)[1] =
-                        dfSemiMajor * (1.0 - 1.0/dfInvFlattening);
-                }
+            else
+            {
+                (*ppadfPrjParams)[1] =
+                    dfSemiMajor * (1.0 - 1.0/dfInvFlattening);
             }
         }
     }
-    else
-        *piDatum = -1;
 
     return OGRERR_NONE;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgeoloc.cpp 14735 2008-06-20 21:13:29Z rouault $
+ * $Id: gdalgeoloc.cpp 12447 2007-10-16 20:36:35Z warmerdam $
  *
  * Project:  GDAL
  * Purpose:  Implements Geolocation array based transformer.
@@ -37,12 +37,7 @@ SHPHandle hSHP = NULL;
 DBFHandle hDBF = NULL;
 #endif
 
-CPL_CVSID("$Id: gdalgeoloc.cpp 14735 2008-06-20 21:13:29Z rouault $");
-
-CPL_C_START
-CPLXMLNode *GDALSerializeGeoLocTransformer( void *pTransformArg );
-void *GDALDeserializeGeoLocTransformer( CPLXMLNode *psTree );
-CPL_C_END
+CPL_CVSID("$Id: gdalgeoloc.cpp 12447 2007-10-16 20:36:35Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -87,8 +82,6 @@ typedef struct {
     double           dfLINE_OFFSET;
     double           dfLINE_STEP;
 
-    char **          papszGeolocationInfo;
-
 } GDALGeoLocTransformInfo;
 
 /************************************************************************/
@@ -105,16 +98,12 @@ static int GeoLocLoadFullData( GDALGeoLocTransformInfo *psTransform )
     psTransform->nGeoLocYSize = nYSize;
     
     psTransform->padfGeoLocY = (double *) 
-        VSIMalloc(sizeof(double) * nXSize * nYSize);
+        CPLMalloc(sizeof(double) * nXSize * nYSize);
     psTransform->padfGeoLocX = (double *) 
-        VSIMalloc(sizeof(double) * nXSize * nYSize);
+        CPLMalloc(sizeof(double) * nXSize * nYSize);
     
     if( psTransform->padfGeoLocX == NULL )
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "GeoLocLoadFullData : Out of memory");
         return FALSE;
-    }
 
     if( GDALRasterIO( psTransform->hBand_X, GF_Read, 
                       0, 0, nXSize, nYSize,
@@ -314,22 +303,6 @@ static int GeoLocGenerateBackMap( GDALGeoLocTransformInfo *psTransform )
             }
         }
     }
-
-#ifdef notdef
-    GDALDatasetH hBMDS = GDALCreate( GDALGetDriverByName( "GTiff" ),
-                                     "backmap.tif", nBMXSize, nBMYSize, 2, 
-                                     GDT_Float32, NULL );
-    GDALSetGeoTransform( hBMDS, psTransform->adfBackMapGeoTransform );
-    GDALRasterIO( GDALGetRasterBand(hBMDS,1), GF_Write, 
-                  0, 0, nBMXSize, nBMYSize, 
-                  psTransform->pafBackMapX, nBMXSize, nBMYSize, 
-                  GDT_Float32, 0, 0 );
-    GDALRasterIO( GDALGetRasterBand(hBMDS,2), GF_Write, 
-                  0, 0, nBMXSize, nBMYSize, 
-                  psTransform->pafBackMapY, nBMXSize, nBMYSize, 
-                  GDT_Float32, 0, 0 );
-    GDALClose( hBMDS );
-#endif
 
     CPLFree( pabyValidFlag );
 
@@ -609,8 +582,7 @@ void *GDALCreateGeoLocTransformer( GDALDatasetH hBaseDS,
     psTransform->sTI.pszClassName = "GDALGeoLocTransformer";
     psTransform->sTI.pfnTransform = GDALGeoLocTransform;
     psTransform->sTI.pfnCleanup = GDALDestroyGeoLocTransformer;
-    psTransform->sTI.pfnSerialize = GDALSerializeGeoLocTransformer;
-    psTransform->papszGeolocationInfo = CSLDuplicate( papszGeolocationInfo );
+    psTransform->sTI.pfnSerialize = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Pull geolocation info from the options/metadata.                */
@@ -637,10 +609,6 @@ void *GDALCreateGeoLocTransformer( GDALDatasetH hBaseDS,
     {
         psTransform->hDS_X = hBaseDS;
         GDALReferenceDataset( psTransform->hDS_X );
-        psTransform->papszGeolocationInfo = 
-            CSLSetNameValue( psTransform->papszGeolocationInfo, 
-                             "X_DATASET", 
-                             GDALGetDescription( hBaseDS ) );
     }
 
     pszDSName = CSLFetchNameValue( papszGeolocationInfo, "Y_DATASET" );
@@ -652,17 +620,6 @@ void *GDALCreateGeoLocTransformer( GDALDatasetH hBaseDS,
     {
         psTransform->hDS_Y = hBaseDS;
         GDALReferenceDataset( psTransform->hDS_Y );
-        psTransform->papszGeolocationInfo = 
-            CSLSetNameValue( psTransform->papszGeolocationInfo, 
-                             "Y_DATASET", 
-                             GDALGetDescription( hBaseDS ) );
-    }
-
-    if (psTransform->hDS_X == NULL ||
-        psTransform->hDS_Y == NULL)
-    {
-        GDALDestroyGeoLocTransformer( psTransform );
-        return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -675,13 +632,6 @@ void *GDALCreateGeoLocTransformer( GDALDatasetH hBaseDS,
 
     nBand = MAX(1,atoi(CSLFetchNameValue( papszGeolocationInfo, "Y_BAND" )));
     psTransform->hBand_Y = GDALGetRasterBand( psTransform->hDS_Y, nBand );
-
-    if (psTransform->hBand_X == NULL ||
-        psTransform->hBand_Y == NULL)
-    {
-        GDALDestroyGeoLocTransformer( psTransform );
-        return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Load the geolocation array.                                     */
@@ -708,9 +658,6 @@ void GDALDestroyGeoLocTransformer( void *pTransformAlg )
 
     CPLFree( psTransform->pafBackMapX );
     CPLFree( psTransform->pafBackMapY );
-    CSLDestroy( psTransform->papszGeolocationInfo );
-    CPLFree( psTransform->padfGeoLocX );
-    CPLFree( psTransform->padfGeoLocY );
              
     if( psTransform->hDS_X != NULL 
         && GDALDereferenceDataset( psTransform->hDS_X ) == 0 )
@@ -892,107 +839,4 @@ int GDALGeoLocTransform( void *pTransformArg, int bDstToSrc,
 #endif
 
     return TRUE;
-}
-
-/************************************************************************/
-/*                   GDALSerializeGeoLocTransformer()                   */
-/************************************************************************/
-
-CPLXMLNode *GDALSerializeGeoLocTransformer( void *pTransformArg )
-
-{
-    VALIDATE_POINTER1( pTransformArg, "GDALSerializeGeoLocTransformer", NULL );
-
-    CPLXMLNode *psTree;
-    GDALGeoLocTransformInfo *psInfo = 
-        (GDALGeoLocTransformInfo *)(pTransformArg);
-
-    psTree = CPLCreateXMLNode( NULL, CXT_Element, "GeoLocTransformer" );
-
-/* -------------------------------------------------------------------- */
-/*      Serialize bReversed.                                            */
-/* -------------------------------------------------------------------- */
-    CPLCreateXMLElementAndValue( 
-        psTree, "Reversed", 
-        CPLString().Printf( "%d", psInfo->bReversed ) );
-                                 
-/* -------------------------------------------------------------------- */
-/*      geoloc metadata.                                                */
-/* -------------------------------------------------------------------- */
-    char **papszMD = psInfo->papszGeolocationInfo;
-    CPLXMLNode *psMD= CPLCreateXMLNode( psTree, CXT_Element, 
-                                        "Metadata" );
-
-    for( int i = 0; papszMD != NULL && papszMD[i] != NULL; i++ )
-    {
-        const char *pszRawValue;
-        char *pszKey;
-        CPLXMLNode *psMDI;
-                
-        pszRawValue = CPLParseNameValue( papszMD[i], &pszKey );
-                
-        psMDI = CPLCreateXMLNode( psMD, CXT_Element, "MDI" );
-        CPLSetXMLValue( psMDI, "#key", pszKey );
-        CPLCreateXMLNode( psMDI, CXT_Text, pszRawValue );
-                
-        CPLFree( pszKey );
-    }
-
-    return psTree;
-}
-
-/************************************************************************/
-/*                   GDALDeserializeGeoLocTransformer()                 */
-/************************************************************************/
-
-void *GDALDeserializeGeoLocTransformer( CPLXMLNode *psTree )
-
-{
-    void *pResult;
-    int bReversed;
-    char **papszMD = NULL;
-    CPLXMLNode *psMDI, *psMetadata;
-
-/* -------------------------------------------------------------------- */
-/*      Collect metadata.                                               */
-/* -------------------------------------------------------------------- */
-    psMetadata = CPLGetXMLNode( psTree, "Metadata" );
-
-    if( psMetadata->eType != CXT_Element
-        || !EQUAL(psMetadata->pszValue,"Metadata") )
-        return NULL;
-    
-    for( psMDI = psMetadata->psChild; psMDI != NULL; 
-         psMDI = psMDI->psNext )
-    {
-        if( !EQUAL(psMDI->pszValue,"MDI") 
-            || psMDI->eType != CXT_Element 
-            || psMDI->psChild == NULL 
-            || psMDI->psChild->psNext == NULL 
-            || psMDI->psChild->eType != CXT_Attribute
-            || psMDI->psChild->psChild == NULL )
-            continue;
-        
-        papszMD = 
-            CSLSetNameValue( papszMD, 
-                             psMDI->psChild->psChild->pszValue, 
-                             psMDI->psChild->psNext->pszValue );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Get other flags.                                                */
-/* -------------------------------------------------------------------- */
-    bReversed = atoi(CPLGetXMLValue(psTree,"Reversed","0"));
-
-/* -------------------------------------------------------------------- */
-/*      Generate transformation.                                        */
-/* -------------------------------------------------------------------- */
-    pResult = GDALCreateGeoLocTransformer( NULL, papszMD, bReversed );
-    
-/* -------------------------------------------------------------------- */
-/*      Cleanup GCP copy.                                               */
-/* -------------------------------------------------------------------- */
-    CSLDestroy( papszMD );
-
-    return pResult;
 }

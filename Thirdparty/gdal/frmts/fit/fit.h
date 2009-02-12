@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fit.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: fit.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.

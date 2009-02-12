@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnwritetest.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: dgnwritetest.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Test program for use of write api.
@@ -29,7 +29,7 @@
 
 #include "dgnlib.h"
 
-CPL_CVSID("$Id: dgnwritetest.c 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: dgnwritetest.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                                main()                                */

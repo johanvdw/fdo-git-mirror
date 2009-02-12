@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtfilters.cpp 15541 2008-10-16 13:54:16Z dron $
+ * $Id: vrtfilters.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of some filter types.
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtfilters.cpp 15541 2008-10-16 13:54:16Z dron $");
+CPL_CVSID("$Id: vrtfilters.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -183,7 +183,6 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
     int nExtraYSize = nBufYSize + 2 * nExtraEdgePixels;
     GByte *pabyWorkData;
 
-    // FIXME? : risk of multiplication overflow
     pabyWorkData = (GByte *) 
         VSICalloc( nExtraXSize * nExtraYSize,
                    (GDALGetDataTypeSize(eOperDataType) / 8) );
@@ -209,7 +208,7 @@ VRTFilteredSource::RasterIO( int nXOff, int nYOff, int nXSize, int nYSize,
         || eOperDataType != eBufType )
     {
         pabyOutData = (GByte *) 
-            VSIMalloc3(nBufXSize, nBufYSize, nPixelOffset );
+            VSIMalloc( nBufXSize * nBufYSize * nPixelOffset );
 
         if( pabyOutData == NULL )
         {
@@ -452,10 +451,7 @@ FilterData( int nXSize, int nYSize, GDALDataType eType,
 /* -------------------------------------------------------------------- */
     if( eType == GDT_Float32 )
     {
-        int iX, iY;
-
-        int bHasNoData;
-        float fNoData = poRasterBand->GetNoDataValue(&bHasNoData);
+        int iX, iY; 
 
         for( iY = 0; iY < nYSize; iY++ )
         {
@@ -464,41 +460,31 @@ FilterData( int nXSize, int nYSize, GDALDataType eType,
                 int    iYY, iKern = 0;
                 double dfSum = 0.0, dfKernSum = 0.0;
                 float  fResult;
-                int    iIndex = (iY+nKernelSize/2 ) * (nXSize+2*nExtraEdgePixels) + iX + nKernelSize/2;
-                float  fCenter = ((float *)pabySrcData)[iIndex];
 
-                // Check if center srcpixel is NoData
-                if(!bHasNoData || fCenter != fNoData)
+                for( iYY = 0; iYY < nKernelSize; iYY++ )
                 {
-                    for( iYY = 0; iYY < nKernelSize; iYY++ )
-                    {
-                        int i;
-                        float *pafData = ((float *)pabySrcData) 
-                                + (iY+iYY) * (nXSize+2*nExtraEdgePixels) + iX;
+                    int i;
+                    float *pafData = ((float *)pabySrcData) 
+                        + (iY+iYY) * (nXSize+2*nExtraEdgePixels) + iX;
 
-                        for( i = 0; i < nKernelSize; i++, pafData++, iKern++ )
-                        {
-                            if(!bHasNoData || *pafData != fNoData)
-                            {
-                                dfSum += *pafData * padfKernelCoefs[iKern];
-                                dfKernSum += padfKernelCoefs[iKern];
-                            }
-                        }
-                    }
-                    if( bNormalized )
+                    for( i = 0; i < nKernelSize; i++, pafData++, iKern++ )
                     {
-                        if( dfKernSum != 0.0 )
-                            fResult = (float) (dfSum / dfKernSum);
-                        else
-                            fResult = 0.0;
+                        dfSum += *pafData * padfKernelCoefs[iKern];
+                        dfKernSum += padfKernelCoefs[iKern];
                     }
+                }
+
+                if( bNormalized )
+                {
+                    if( dfKernSum != 0.0 )
+                        fResult = (float) (dfSum / dfKernSum);
                     else
-                        fResult = (float) dfSum;
-
-                    ((float *) pabyDstData)[iX + iY * nXSize] = fResult;
+                        fResult = 0.0;
                 }
                 else
-                    ((float *) pabyDstData)[iX + iY * nXSize] = fNoData;
+                    fResult = (float) dfSum;
+
+                ((float *) pabyDstData)[iX + iY * nXSize] = fResult;
             }
         }
     }
@@ -535,10 +521,8 @@ CPLErr VRTKernelFilteredSource::XMLInit( CPLXMLNode *psTree,
     {
         CSLDestroy( papszCoefItems );
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Got wrong number of filter kernel coefficients (%s).\n"
-                  "Expected %d, got %d.", 
-                  CPLGetXMLValue(psTree,"Kernel.Coefs",""),
-                  nNewKernelSize * nNewKernelSize, nCoefs );
+                  "Got wrong number of filter kernel coefficients (%s)", 
+                  CPLGetXMLValue(psTree,"Kernel.Coefs","") );
         return CE_Failure;
     }
 

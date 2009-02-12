@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: pcidskdataset.cpp 12493 2007-10-22 14:08:09Z dron $
+ * $Id: pcidskdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software
- * Author:   Andrey Kiselev, dron@ak4719.spb.edu
+ * Author:   Andrey Kiselev, dron@remotesensing.org
  *
  ******************************************************************************
- * Copyright (c) 2003, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2003, Andrey Kiselev <dron@remotesensing.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,7 @@
 
 #include "gdal_pcidsk.h"
 
-CPL_CVSID("$Id: pcidskdataset.cpp 12493 2007-10-22 14:08:09Z dron $");
+CPL_CVSID("$Id: pcidskdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_PCIDSK(void);
@@ -362,25 +362,13 @@ GDALDataType PCIDSKDataset::PCIDSKTypeToGDAL( const char *pszType )
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int PCIDSKDataset::Identify( GDALOpenInfo * poOpenInfo )
-{
-    if( poOpenInfo->nHeaderBytes < 512 
-        || !EQUALN((const char *) poOpenInfo->pabyHeader, "PCIDSK  ", 8) )
-        return FALSE;
-    else
-        return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
 GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
 {
-    if( !Identify( poOpenInfo ) )
+    if( poOpenInfo->nHeaderBytes < 512 
+        || !EQUALN((const char *) poOpenInfo->pabyHeader, "PCIDSK  ", 8) )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -829,14 +817,14 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                     for ( j = 0; j < nXCoeffs; j++ )
                     {
                         poDS->adfGeoTransform[j] =
-                            CPLScanDouble( szTemp + 26 * j, 26 );
+                            CPLScanDouble( szTemp + 26 * j, 26, "C" );
                     }
                     VSIFSeekL( poDS->fp, nGeoDataOffset + 1642, SEEK_SET );
                     VSIFReadL( szTemp, 1, nYCoeffs * 26, poDS->fp );
                     for ( j = 0; j < nYCoeffs; j++ )
                     {
                         poDS->adfGeoTransform[j + 3] =
-                            CPLScanDouble( szTemp + 26 * j, 26 );
+                            CPLScanDouble( szTemp + 26 * j, 26, "C" );
                     }
 
                     oSRS.importFromPCI( szProj, NULL, NULL );
@@ -878,7 +866,7 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                     for ( j = 0; j < 17; j++ )
                     {
                         adfProjParms[j] =
-                            CPLScanDouble( szTemp + 26 * j, 26 );
+                            CPLScanDouble( szTemp + 26 * j, 26, "C" );
                     }
 
                     // Read geotransform coefficients
@@ -887,14 +875,14 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                     for ( j = 0; j < nXCoeffs; j++ )
                     {
                         poDS->adfGeoTransform[j] =
-                            CPLScanDouble( szTemp + 26 * j, 26 );;
+                            CPLScanDouble( szTemp + 26 * j, 26, "C" );;
                     }
                     VSIFSeekL( poDS->fp, nGeoDataOffset + 2526, SEEK_SET );
                     VSIFReadL( szTemp, 1, nYCoeffs * 26, poDS->fp );
                     for ( j = 0; j < nYCoeffs; j++ )
                     {
                         poDS->adfGeoTransform[j + 3] =
-                            CPLScanDouble( szTemp + 26 * j, 26 );
+                            CPLScanDouble( szTemp + 26 * j, 26, "C" );
                     }
 
                     oSRS.importFromPCI( szProj, szUnits, adfProjParms );
@@ -939,22 +927,22 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                             CPLCalloc( poDS->nGCPCount, sizeof(GDAL_GCP) );
                         GDALInitGCPs( poDS->nGCPCount, poDS->pasGCPList );
                         if ( EQUALN( szTemp + 64, "FEET     ", 9 ) )
-                            dfUnitConv = CPLAtof(SRS_UL_FOOT_CONV);
+                            dfUnitConv = atof(SRS_UL_FOOT_CONV);
                         for ( j = 0; j < poDS->nGCPCount; j++ )
                         {
                             VSIFSeekL( poDS->fp, nGcpDataOffset + j * 128 + 512,
                                        SEEK_SET );
                             VSIFReadL( szTemp, 1, 128, poDS->fp );
                             poDS->pasGCPList[j].dfGCPPixel =
-                                CPLScanDouble( szTemp + 6, 18 );
+                                CPLScanDouble( szTemp + 6, 18, "C" );
                             poDS->pasGCPList[j].dfGCPLine = 
-                                CPLScanDouble( szTemp + 24, 18 );
+                                CPLScanDouble( szTemp + 24, 18, "C" );
                             poDS->pasGCPList[j].dfGCPX = 
-                                CPLScanDouble( szTemp + 60, 18 );
+                                CPLScanDouble( szTemp + 60, 18, "C" );
                             poDS->pasGCPList[j].dfGCPY = 
-                                CPLScanDouble( szTemp + 78, 18 );
+                                CPLScanDouble( szTemp + 78, 18, "C" );
                             poDS->pasGCPList[j].dfGCPZ =
-                                CPLScanDouble( szTemp + 96, 18 ) / dfUnitConv;
+                                CPLScanDouble(szTemp + 96, 18, "C")/dfUnitConv;
                         }
                     }
                 }
@@ -1547,7 +1535,6 @@ void GDALRegister_PCIDSK()
 "   <Option name='BANDDESCn' type='string' description='Text describing contents of the specified band'/>"
 "</CreationOptionList>" ); 
 
-        poDriver->pfnIdentify = PCIDSKDataset::Identify;
         poDriver->pfnOpen = PCIDSKDataset::Open;
         poDriver->pfnCreate = PCIDSKDataset::Create;
         poDriver->pfnCreateCopy = PCIDSKDataset::CreateCopy;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeodriver.cpp 15783 2008-11-21 22:08:00Z rouault $
+ * $Id: ogrpgeodriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -30,7 +30,7 @@
 #include "ogr_pgeo.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgeodriver.cpp 15783 2008-11-21 22:08:00Z rouault $");
+CPL_CVSID("$Id: ogrpgeodriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -163,16 +163,12 @@ bool OGRPGeoDriver::InstallMdbDriver()
 bool OGRPGeoDriver::FindDriverLib()
 {
     // Default name and path of driver library
-    const char* aszDefaultLibName[] = {
-        "libmdbodbc.so",
-        "libmdbodbc.so.0" /* for Ubuntu 8.04 support */
-    };
-    const int nLibNames = sizeof(aszDefaultLibName) / sizeof(aszDefaultLibName[0]);
+    const char szDefaultLibName[] = "libmdbodbc.so";
     const char* libPath[] = { 
         "/usr/lib",
         "/usr/local/lib"
     };
-    const int nLibPaths = sizeof(libPath) / sizeof(libPath[0]);
+    const int nLibPaths = 2;
 
     CPLString strLibPath("");
 
@@ -187,7 +183,7 @@ bool OGRPGeoDriver::FindDriverLib()
              && VSI_ISDIR( sStatBuf.st_mode ) ) 
         {
             // Find default library in custom directory
-            const char* pszDriverFile = CPLFormFilename( pszDrvCfg, aszDefaultLibName[0], NULL );
+            const char* pszDriverFile = CPLFormFilename( pszDrvCfg, szDefaultLibName, NULL );
             CPLAssert( 0 != pszDriverFile );
         
             strLibPath = pszDriverFile;
@@ -204,17 +200,14 @@ bool OGRPGeoDriver::FindDriverLib()
     // Try to find library in default path
     for ( int i = 0; i < nLibPaths; i++ )
     {
-        for ( int j = 0; j < nLibNames; j++ )
-        {
-            const char* pszDriverFile = CPLFormFilename( libPath[i], aszDefaultLibName[j], NULL );
-            CPLAssert( 0 != pszDriverFile );
+        const char* pszDriverFile = CPLFormFilename( libPath[i], szDefaultLibName, NULL );
+        CPLAssert( 0 != pszDriverFile );
 
-            if ( LibraryExists( pszDriverFile ) )
-            {
-                // Save default driver path
-                osDriverFile = pszDriverFile;
-                return true;
-            }
+        if ( LibraryExists( pszDriverFile ) )
+        {
+            // Save default driver path
+            osDriverFile = pszDriverFile;
+            return true;
         }
     }
 

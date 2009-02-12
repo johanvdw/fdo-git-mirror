@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.h 14307 2008-04-16 05:00:05Z warmerdam $
+ * $Id: cpl_csv.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Common Portability Library
  * Purpose:  Functions for reading and scaning CSV (comma separated,
@@ -51,7 +51,6 @@ char CPL_DLL **CSVScanFile( const char *, int, const char *,
                             CSVCompareCriteria );
 char CPL_DLL **CSVScanFileByName( const char *, const char *, const char *,
                                   CSVCompareCriteria );
-char CPL_DLL **CSVGetNextLine( const char * );
 int CPL_DLL CSVGetFieldId( FILE *, const char * );
 int CPL_DLL CSVGetFileFieldId( const char *, const char * );
 

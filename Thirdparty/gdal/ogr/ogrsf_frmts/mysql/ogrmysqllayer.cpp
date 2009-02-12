@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqllayer.cpp 14272 2008-04-12 13:47:54Z rouault $
+ * $Id: ogrmysqllayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqllayer.cpp 14272 2008-04-12 13:47:54Z rouault $");
+CPL_CVSID("$Id: ogrmysqllayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRMySQLLayer()                            */
@@ -202,10 +202,8 @@ OGRFeature *OGRMySQLLayer::RecordToFeature( char **papszRow,
                 panLengths[iField] - 4 );
 
             if( poGeometry != NULL )
-            {
-                poGeometry->assignSpatialReference( poSRS );
                 poFeature->SetGeometryDirectly( poGeometry );
-            }
+
             continue;
         }
 
@@ -300,6 +298,35 @@ OGRFeature *OGRMySQLLayer::GetFeature( long nFeatureId )
     return OGRLayer::GetFeature( nFeatureId );
 }
 
+/************************************************************************/
+/*                           TestCapability()                           */
+/************************************************************************/
+
+int OGRMySQLLayer::TestCapability( const char * pszCap )
+
+{
+    if( EQUAL(pszCap,OLCRandomRead) )
+        return FALSE;
+
+    else if( EQUAL(pszCap,OLCFastFeatureCount) )
+        return TRUE;
+
+    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
+        return TRUE;
+
+    else if( EQUAL(pszCap,OLCTransactions) )
+        return FALSE;
+
+	else if( EQUAL(pszCap,OLCFastGetExtent) )
+		return FALSE;
+
+    else
+        return FALSE;
+}
+
+
+
+    
 /************************************************************************/
 /*                            GetFIDColumn()                            */
 /************************************************************************/

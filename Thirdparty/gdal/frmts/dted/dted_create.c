@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_create.c 12223 2007-09-21 23:46:17Z rouault $
+ * $Id: dted_create.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTEDCreate() portion of DTED API.
@@ -30,7 +30,7 @@
 #include "dted_api.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: dted_create.c 12223 2007-09-21 23:46:17Z rouault $");
+CPL_CVSID("$Id: dted_create.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define DTED_ABS_VERT_ACC "NA  "
 #define DTED_SECURITY     "U"
@@ -150,7 +150,7 @@ const char *DTEDCreate( const char *pszFilename, int nLevel,
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpenL( pszFilename, "wb" );
+    fp = VSIFOpen( pszFilename, "wb" );
 
     if( fp == NULL )
     {
@@ -177,7 +177,7 @@ const char *DTEDCreate( const char *pszFilename, int nLevel,
     DTEDFormat( achRecord + 51, "%04d", nYSize );
     DTEDFormat( achRecord + 55, "%c", '0' );
 
-    if( VSIFWriteL( achRecord, DTED_UHL_SIZE, 1, fp ) != 1 )
+    if( VSIFWrite( achRecord, DTED_UHL_SIZE, 1, fp ) != 1 )
         return "UHL record write failed.";
 
 /* -------------------------------------------------------------------- */
@@ -233,7 +233,7 @@ const char *DTEDCreate( const char *pszFilename, int nLevel,
     DTEDFormat( achRecord + 285, "%04d", nXSize );
     DTEDFormat( achRecord + 289, "%02d", 0 );
 
-    if( VSIFWriteL( achRecord, DTED_DSI_SIZE, 1, fp ) != 1 )
+    if( VSIFWrite( achRecord, DTED_DSI_SIZE, 1, fp ) != 1 )
         return "DSI record write failed.";
 
 /* -------------------------------------------------------------------- */
@@ -250,7 +250,7 @@ const char *DTEDCreate( const char *pszFilename, int nLevel,
 
     DTEDFormat( achRecord + 55, "00" );
     
-    if( VSIFWriteL( achRecord, DTED_ACC_SIZE, 1, fp ) != 1 )
+    if( VSIFWrite( achRecord, DTED_ACC_SIZE, 1, fp ) != 1 )
         return "ACC record write failed.";
 
 /* -------------------------------------------------------------------- */
@@ -270,11 +270,11 @@ const char *DTEDCreate( const char *pszFilename, int nLevel,
         achRecord[4] = (GByte) (iProfile / 256);
         achRecord[5] = (GByte) (iProfile % 256);
 
-        if( VSIFWriteL( achRecord, nYSize*2 + 12, 1, fp ) != 1 )
+        if( VSIFWrite( achRecord, nYSize*2 + 12, 1, fp ) != 1 )
             return "Data record write failed.";
     }
 
-    VSIFCloseL( fp );
+    VSIFClose( fp );
 
     return NULL;
 }

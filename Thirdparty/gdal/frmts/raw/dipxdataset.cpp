@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dipxdataset.cpp 14049 2008-03-20 19:01:59Z rouault $
+ * $Id: dipxdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dipxdataset.cpp 14049 2008-03-20 19:01:59Z rouault $");
+CPL_CVSID("$Id: dipxdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_DIPEx(void);
@@ -177,8 +177,8 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
     if( VSIFReadL( &(poDS->sHeader), 1024, 1, poDS->fp ) != 1 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Attempt to read 1024 byte header filed on file %s\n",
-                  poOpenInfo->pszFilename );
+                  "Attempt to read 1024 byte header filed on file:\n", 
+                  "%s\n", poOpenInfo->pszFilename );
         return NULL;
     }
 

@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: hdf4dataset.h 15691 2008-11-07 09:54:58Z dron $
+ * $Id: hdf4dataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Header file for HDF4 datasets reader.
- * Author:   Andrey Kiselev, dron@ak4719.spb.edu
+ * Author:   Andrey Kiselev, dron@remotesensing.org
  *
  ******************************************************************************
- * Copyright (c) 2002, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2002, Andrey Kiselev <dron@remotesensing.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,6 @@
 #define _HDF4DATASET_H_INCLUDED_
 
 #include "cpl_list.h"
-#include "gdal_pam.h"
 
 typedef enum			// Types of dataset:
 {
@@ -43,15 +42,15 @@ typedef enum			// Types of dataset:
 
 typedef enum			// Types of data products:
 {
-    H4ST_GDAL,		        // HDF written by GDAL
-    H4ST_EOS_GRID,              // HDF-EOS Grid
-    H4ST_EOS_SWATH,             // HDF-EOS Swath
-    H4ST_EOS_SWATH_GEOL,        // HDF-EOS Swath Geolocation Array
-    H4ST_SEAWIFS_L1A,		// SeaWiFS Level-1A Data
-    H4ST_SEAWIFS_L2,		// SeaWiFS Level-2 Data
-    H4ST_SEAWIFS_L3,		// SeaWiFS Level-3 Standard Mapped Image
-    H4ST_HYPERION_L1,           // Hyperion L1 Data Product
-    H4ST_UNKNOWN
+    GDAL_HDF4,			// HDF written by GDAL
+    EOS_GRID,                   // HDF-EOS Grid
+    EOS_SWATH,                  // HDF-EOS Swath
+    EOS_SWATH_GEOL,             // HDF-EOS Swath Geolocation Array
+    SEAWIFS_L1A,		// SeaWiFS Level-1A Data
+    SEAWIFS_L2,			// SeaWiFS Level-2 Data
+    SEAWIFS_L3,			// SeaWiFS Level-3 Standard Mapped Image
+    HYPERION_L1,                // Hyperion L1 Data Product
+    UNKNOWN
 } HDF4SubdatasetType;
 
 /************************************************************************/
@@ -60,22 +59,22 @@ typedef enum			// Types of data products:
 /* ==================================================================== */
 /************************************************************************/
 
-class HDF4Dataset : public GDALPamDataset
+class HDF4Dataset : public GDALDataset
 {
 
   private:
 
     int         bIsHDFEOS;
 
-    static char **HDF4EOSTokenizeAttrs( const char *pszString );
-    static char **HDF4EOSGetObject( char **papszAttrList, char **ppszAttrName,
-                                    char **ppszAttrValue );
+    char        **HDF4EOSTokenizeAttrs( const char *pszString ) const;
+    char        **HDF4EOSGetObject( char **papszAttrList, char **ppszAttrName,
+                                    char **ppszAttrValue ) const;
      
   protected:
 
     FILE	*fp;
-    int32	hGR, hSD;
-    int32	nImages;
+    int32	hHDF4, hSD, hGR;
+    int32	nDatasets, nImages;
     HDF4DatasetType iDatasetType;
     HDF4SubdatasetType iSubdatasetType;
     const char	*pszSubdatasetType;
@@ -83,28 +82,26 @@ class HDF4Dataset : public GDALPamDataset
     char	**papszGlobalMetadata;
     char	**papszSubDatasets;
 
-    CPLErr              ReadGlobalAttributes( int32 );
-
-    static GDALDataType GetDataType( int32 ) ;
-    static const char   *GetDataTypeName( int32 );
-    static int          GetDataTypeSize( int32 );
-    static double       AnyTypeToDouble( int32, void * );
-    static char         **TranslateHDF4Attributes( int32, int32, char *,
-                                                   int32, int32, char ** );
-    static char         **TranslateHDF4EOSAttributes( int32, int32, int32,
-                                                      char ** );
+    GDALDataType GetDataType( int32 ) const;
+    const char  *GetDataTypeName( int32 ) const;
+    int         GetDataTypeSize( int32 ) const;
+    double      AnyTypeToDouble( int32, void * ) const;
+    char        **TranslateHDF4Attributes( int32, int32, char *,
+                                           int32, int32, char ** ) const;
+    char        ** TranslateHDF4EOSAttributes( int32, int32, int32,
+                                               char ** ) const;
+    CPLErr      ReadGlobalAttributes( int32 );
 
   public:
                 HDF4Dataset();
 		~HDF4Dataset();
     
-    virtual char        **GetMetadata( const char * pszDomain = "" );
-    static GDALDataset  *Open( GDALOpenInfo * );
-    static int          Identify( GDALOpenInfo * );
+    virtual char **GetMetadata( const char * pszDomain = "" );
+    static GDALDataset *Open( GDALOpenInfo * );
 };
 
-char *SPrintArray( GDALDataType eDataType, const void *paDataArray,
-                   int nValues, const char *pszDelimiter );
+char *SPrintArray( GDALDataType eDataType, void *paDataArray,
+                          int nValues, char * pszDelimiter );
 
 
 #endif /* _HDF4DATASET_H_INCLUDED_ */

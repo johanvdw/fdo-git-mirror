@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: usgsdemdataset.cpp 14517 2008-05-24 17:16:45Z rouault $
+ * $Id: usgsdemdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  USGS DEM Driver
  * Purpose:  All reader for USGS DEM Reader
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: usgsdemdataset.cpp 14517 2008-05-24 17:16:45Z rouault $");
+CPL_CVSID("$Id: usgsdemdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_USGSDEM(void);
@@ -102,7 +102,6 @@ class USGSDEMDataset : public GDALPamDataset
                 USGSDEMDataset();
 		~USGSDEMDataset();
     
-    static int  Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
     CPLErr 	GetGeoTransform( double * padfTransform );
     const char *GetProjectionRef();
@@ -322,7 +321,7 @@ int USGSDEMDataset::LoadFromFile(FILE *InDem)
         VSIFSeek(InDem, 1024, 0); 	// New Format
         fscanf(InDem, "%d", &i);
         fscanf(InDem, "%d", &j);
-        if ((i!=1)||(j!=1 && j != 0))	// File OK?
+        if ((i!=1)||(j!=1))			// File OK?
         {
             VSIFSeek(InDem, 893, 0); 	// Undocumented Format (39109h1.dem)
             fscanf(InDem, "%d", &i);
@@ -523,30 +522,6 @@ const char *USGSDEMDataset::GetProjectionRef()
     return pszProjection;
 }
 
-
-/************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int USGSDEMDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-    if( poOpenInfo->fp == NULL || poOpenInfo->nHeaderBytes < 200 )
-        return FALSE;
-
-    if( !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     0",6)
-        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     1",6)
-        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     2",6) 
-        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     3",6) )
-        return FALSE;
-
-    if( !EQUALN((const char *) poOpenInfo->pabyHeader+150, "     1",6) 
-        && !EQUALN((const char *) poOpenInfo->pabyHeader+150, "     4",6))
-        return FALSE;
-
-    return TRUE;
-}
-
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
@@ -554,7 +529,16 @@ int USGSDEMDataset::Identify( GDALOpenInfo * poOpenInfo )
 GDALDataset *USGSDEMDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if( !Identify( poOpenInfo ) )
+    if( poOpenInfo->fp == NULL || poOpenInfo->nHeaderBytes < 200 )
+        return NULL;
+
+    if( !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     0",6)
+        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     1",6)
+        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     2",6) 
+        && !EQUALN((const char *) poOpenInfo->pabyHeader+156, "     3",6) )
+        return NULL;
+
+    if( !EQUALN((const char *) poOpenInfo->pabyHeader+150, "     1",6) )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -622,7 +606,7 @@ void GDALRegister_USGSDEM()
 "<CreationOptionList>"
 "   <Option name='PRODUCT' type='string-select' description='Specific Product Type'>"
 "       <Value>DEFAULT</Value>"
-"       <Value>CDED50K</Value>"
+"       <Value>CDED50</Value>"
 "   </Option>"
 "   <Option name='TOPLEFT' type='string' description='Top left product corner (ie. 117d15w,52d30n'/>"
 "   <Option name='RESAMPLE' type='string-select' description='Resampling kernel to use if resampled.'>"
@@ -637,14 +621,10 @@ void GDALRegister_USGSDEM()
 "   <Option name='PRODUCER' type='string' description='Producer Agency (up to 60 characters)'/>"
 "   <Option name='OriginCode' type='string' description='Origin code (up to 4 characters, YT for Yukon)'/>"
 "   <Option name='ProcessCode' type='string' description='Processing Code (8=ANUDEM, 9=FME, A=TopoGrid)'/>"
-"   <Option name='ZRESOLUTION' type='float' description='Scaling factor for elevation values'/>"
-"   <Option name='NTS' type='string' description='NTS Mapsheet name, used to derive TOPLEFT.'/>"
-"   <Option name='INTERNALNAME' type='string' description='Dataset name written into file header.'/>"
 "</CreationOptionList>" );
         
         poDriver->pfnOpen = USGSDEMDataset::Open;
         poDriver->pfnCreateCopy = USGSDEMCreateCopy;
-        poDriver->pfnIdentify = USGSDEMDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

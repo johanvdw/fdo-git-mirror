@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sdts.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_sdts.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  STS Translator
  * Purpose:  Definition of classes finding SDTS support into OGRDriver
@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_SDTS_H_INCLUDED
-#define _OGR_SDTS_H_INCLUDED
+#define _OGR_SDTS_H_INLLUDED
 
 #include "sdts_al.h"
 #include "ogrsf_frmts.h"

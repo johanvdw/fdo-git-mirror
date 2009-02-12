@@ -34,7 +34,7 @@ veryclean: clean
 generate: makedir ${WRAPPERS}
   
 build: generate ${JAVA_MODULES}
-	-cp ./.libs/*.so ./
+	cp ./.libs/*.so ./
 	ant
 
 install: generate

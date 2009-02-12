@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi_mem.cpp 15219 2008-08-25 20:38:56Z mloskot $
+ * $Id: cpl_vsi_mem.cpp 11305 2007-04-20 16:31:38Z warmerdam $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of Memory Buffer virtual IO functions.
@@ -42,7 +42,7 @@
 #endif
 
 
-CPL_CVSID("$Id: cpl_vsi_mem.cpp 15219 2008-08-25 20:38:56Z mloskot $");
+CPL_CVSID("$Id: cpl_vsi_mem.cpp 11305 2007-04-20 16:31:38Z warmerdam $");
 
 /*
 ** Notes on Multithreading:
@@ -107,7 +107,6 @@ class VSIMemHandle : public VSIVirtualHandle
   public:
     VSIMemFile    *poFile;
     vsi_l_offset  nOffset;
-    int           bUpdate;
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -139,7 +138,6 @@ public:
     virtual int      Mkdir( const char *pszDirname, long nMode );
     virtual int      Rmdir( const char *pszDirname );
     virtual char   **ReadDir( const char *pszDirname );
-    static  void     NormalizePath( CPLString & );
 };
 
 /************************************************************************/
@@ -220,9 +218,7 @@ bool VSIMemFile::SetLength( vsi_l_offset nNewLength )
 int VSIMemHandle::Close()
 
 {
-    if( --(poFile->nRefCount) == 0 )
-        delete poFile;
-
+    poFile->nRefCount--;
     poFile = NULL;
 
     return 0;
@@ -255,22 +251,8 @@ int VSIMemHandle::Seek( vsi_l_offset nOffset, int nWhence )
     
     if( this->nOffset > poFile->nLength )
     {
-        if( !bUpdate ) // Read-only files cannot be extended by seek.
-        {
-            CPLDebug( "VSIMemHandle", 
-                      "Attempt to extend read-only file '%s' to length %d from %d, .", 
-                      poFile->osFilename.c_str(), 
-                      (int) this->nOffset, (int) poFile->nLength );
-
-            this->nOffset = poFile->nLength;
-            errno = EACCES;
+        if( !poFile->SetLength( this->nOffset ) )
             return -1;
-        }
-        else // Writeable files are zero-extended by seek past end.
-        {
-            if( !poFile->SetLength( this->nOffset ) )
-                return -1;
-        }
     }
 
     return 0;
@@ -315,12 +297,6 @@ size_t VSIMemHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 size_t VSIMemHandle::Write( const void * pBuffer, size_t nSize, size_t nCount )
 
 {
-    if( !bUpdate )
-    {
-        errno = EACCES;
-        return 0;
-    }
-
     // FIXME: Integer overflow check should be placed here:
     size_t nBytesToWrite = nSize * nCount; 
 
@@ -372,10 +348,7 @@ VSIMemFilesystemHandler::~VSIMemFilesystemHandler()
     std::map<CPLString,VSIMemFile*>::const_iterator iter;
 
     for( iter = oFileList.begin(); iter != oFileList.end(); iter++ )
-    {
-        iter->second->nRefCount--;
         delete iter->second;
-    }
 
     if( hMutex != NULL )
         CPLDestroyMutex( hMutex );
@@ -393,16 +366,14 @@ VSIMemFilesystemHandler::Open( const char *pszFilename,
 {
     CPLMutexHolder oHolder( &hMutex );
     VSIMemFile *poFile;
-    CPLString osFilename = pszFilename;
-    NormalizePath( osFilename );
 
 /* -------------------------------------------------------------------- */
 /*      Get the filename we are opening, create if needed.              */
 /* -------------------------------------------------------------------- */
-    if( oFileList.find(osFilename) == oFileList.end() )
+    if( oFileList.find(pszFilename) == oFileList.end() )
         poFile = NULL;
     else
-        poFile = oFileList[osFilename];
+        poFile = oFileList[pszFilename];
 
     if( strstr(pszAccess,"w") == NULL && poFile == NULL )
     {
@@ -417,9 +388,8 @@ VSIMemFilesystemHandler::Open( const char *pszFilename,
         else
         {
             poFile = new VSIMemFile;
-            poFile->osFilename = osFilename;
+            poFile->osFilename = pszFilename;
             oFileList[poFile->osFilename] = poFile;
-            poFile->nRefCount++; // for file list
         }
     }
 
@@ -436,11 +406,6 @@ VSIMemFilesystemHandler::Open( const char *pszFilename,
 
     poHandle->poFile = poFile;
     poHandle->nOffset = 0;
-    if( strstr(pszAccess,"w") || strstr(pszAccess,"+") 
-        || strstr(pszAccess,"a") )
-        poHandle->bUpdate = TRUE;
-    else
-        poHandle->bUpdate = FALSE;
 
     poFile->nRefCount++;
 
@@ -460,16 +425,13 @@ int VSIMemFilesystemHandler::Stat( const char * pszFilename,
 {
     CPLMutexHolder oHolder( &hMutex );
 
-    CPLString osFilename = pszFilename;
-    NormalizePath( osFilename );
-
-    if( oFileList.find(osFilename) == oFileList.end() )
+    if( oFileList.find(pszFilename) == oFileList.end() )
     {
         errno = ENOENT;
         return -1;
     }
 
-    VSIMemFile *poFile = oFileList[osFilename];
+    VSIMemFile *poFile = oFileList[pszFilename];
 
     memset( pStatBuf, 0, sizeof(VSIStatBufL) );
 
@@ -496,24 +458,19 @@ int VSIMemFilesystemHandler::Unlink( const char * pszFilename )
 {
     CPLMutexHolder oHolder( &hMutex );
 
-    CPLString osFilename = pszFilename;
-    NormalizePath( osFilename );
-
     VSIMemFile *poFile;
 
-    if( oFileList.find(osFilename) == oFileList.end() )
+    if( oFileList.find(pszFilename) == oFileList.end() )
     {
         errno = ENOENT;
         return -1;
     }
     else
     {
-        poFile = oFileList[osFilename];
+        poFile = oFileList[pszFilename];
+        delete poFile;
 
-        if( --(poFile->nRefCount) == 0 )
-            delete poFile;
-
-        oFileList.erase( oFileList.find(osFilename) );
+        oFileList.erase( oFileList.find(pszFilename) );
 
         return 0;
     }
@@ -529,11 +486,7 @@ int VSIMemFilesystemHandler::Mkdir( const char * pszPathname,
 {
     CPLMutexHolder oHolder( &hMutex );
 
-    CPLString osPathname = pszPathname;
-
-    NormalizePath( osPathname );
-
-    if( oFileList.find(osPathname) != oFileList.end() )
+    if( oFileList.find(pszPathname) != oFileList.end() )
     {
         errno = EEXIST;
         return -1;
@@ -541,10 +494,9 @@ int VSIMemFilesystemHandler::Mkdir( const char * pszPathname,
 
     VSIMemFile *poFile = new VSIMemFile;
 
-    poFile->osFilename = osPathname;
+    poFile->osFilename = pszPathname;
     poFile->bIsDirectory = TRUE;
-    oFileList[osPathname] = poFile;
-    poFile->nRefCount++; /* referenced by file list */
+    oFileList[pszPathname] = poFile;
 
     return 0;
 }
@@ -568,68 +520,7 @@ int VSIMemFilesystemHandler::Rmdir( const char * pszPathname )
 char **VSIMemFilesystemHandler::ReadDir( const char *pszPath )
 
 {
-    CPLMutexHolder oHolder( &hMutex );
-
-    CPLString osPath = pszPath;
-
-    NormalizePath( osPath );
-
-    std::map<CPLString,VSIMemFile*>::const_iterator iter;
-    char **papszDir = NULL;
-    int nPathLen = strlen(osPath);
-
-    if( osPath[nPathLen-1] == '/' )
-        nPathLen--;
-
-    /* In case of really big number of files in the directory, CSLAddString */
-    /* can be slow (see #2158). We then directly build the list. */
-    int nItems=0;
-    int nAllocatedItems=0;
-
-    for( iter = oFileList.begin(); iter != oFileList.end(); iter++ )
-    {
-        const char *pszFilePath = iter->second->osFilename.c_str();
-        if( EQUALN(osPath,pszFilePath,nPathLen)
-            && pszFilePath[nPathLen] == '/' 
-            && strstr(pszFilePath+nPathLen+1,"/") == NULL )
-        {
-            if (nItems == 0)
-            {
-                papszDir = (char**) CPLCalloc(2,sizeof(char*));
-                nAllocatedItems = 1;
-            }
-            else if (nItems >= nAllocatedItems)
-            {
-                nAllocatedItems = nAllocatedItems * 2;
-                papszDir = (char**)CPLRealloc(papszDir, 
-                                              (nAllocatedItems+2)*sizeof(char*));
-            }
-
-            papszDir[nItems] = CPLStrdup(pszFilePath+nPathLen+1);
-            papszDir[nItems+1] = NULL;
-
-            nItems++;
-        }
-    }
-
-    return papszDir;
-}
-
-/************************************************************************/
-/*			NormalizePath() 				*/
-/************************************************************************/
-
-void VSIMemFilesystemHandler::NormalizePath( CPLString &oPath )
-
-{
-    int  i, nSize = oPath.size();
-
-    for( i = 0; i < nSize; i++ )
-    {
-        if( oPath[i] == '\\' )
-            oPath[i] = '/';
-    }
-
+    return NULL;
 }
 
 /************************************************************************/
@@ -691,7 +582,8 @@ void VSIMemFilesystemHandler::NormalizePath( CPLString &oPath )
 
 void VSIInstallMemFileHandler()
 {
-    VSIFileManager::InstallHandler( "/vsimem/", new VSIMemFilesystemHandler );
+    VSIFileManager::InstallHandler( std::string("/vsimem/"), 
+                                    new VSIMemFilesystemHandler );
 }
 
 /************************************************************************/
@@ -743,7 +635,6 @@ FILE *VSIFileFromMemBuffer( const char *pszFilename,
     {
         CPLMutexHolder oHolder( &poHandler->hMutex );
         poHandler->oFileList[poFile->osFilename] = poFile;
-        poFile->nRefCount++;
     }
 
     return (FILE *) poHandler->Open( pszFilename, "r+" );
@@ -762,7 +653,7 @@ FILE *VSIFileFromMemBuffer( const char *pszFilename,
  * caller otherwise the underlying file will remain in existance. 
  *
  * @param pszFilename the name of the file to grab the buffer of.
- * @param pnDataLength (file) length returned in this variable.
+ * @param buffer (file) length returned in this variable.
  * @param bUnlinkAndSeize TRUE to remove the file, or FALSE to leave unaltered.
  *
  * @return pointer to memory buffer or NULL on failure.
@@ -796,9 +687,8 @@ GByte *VSIGetMemFileBuffer( const char *pszFilename,
         else
             poFile->bOwnData = FALSE;
 
-        poHandler->oFileList.erase( poHandler->oFileList.find(pszFilename) );
-        --(poFile->nRefCount);
         delete poFile;
+        poHandler->oFileList.erase( poHandler->oFileList.find(pszFilename) );
     }
 
     return pabyData;

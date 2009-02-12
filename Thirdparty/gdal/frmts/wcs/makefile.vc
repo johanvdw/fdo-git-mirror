@@ -1,7 +1,7 @@
 
-OBJ	=	wcsdataset.obj httpdriver.obj
+OBJ	=	wcsdataset.obj cpl_http.obj
 
-EXTRAFLAGS = -DHAVE_CURL $(CURL_CFLAGS) $(CURL_INC)
+EXTRAFLAGS = 	$(CURL_INC) -DHAVE_CURL
 
 GDAL_ROOT	=	..\..
 

@@ -1,43 +1,185 @@
 /******************************************************************************
- * $Id: gdal.i 15319 2008-09-06 16:31:53Z warmerdam $
+ * $Id: gdal.i 11531 2007-05-16 02:37:55Z warmerdam $
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.47  2006/11/25 21:24:25  tamas
+ * Added XMLNode support for C#
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.46  2006/11/23 18:36:35  fwarmerdam
+ * added GeneralCmdLineProcessor
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.45  2006/11/20 12:58:12  tamas
+ * Added GDALColorEntry for the SWIG C# binding
+ *
+ * Revision 1.44  2006/11/18 09:25:53  ajolma
+ * make it possible to switch to CPAN namespace with symbol PERL_CPAN_NAMESPACE
+ *
+ * Revision 1.43  2006/11/11 19:33:47  tamas
+ * Controlling the owner of the objects returned by the static/non static members for the csharp binding
+ *
+ * Revision 1.42  2006/11/04 22:11:36  tamas
+ * include for gdal csharp specific extensions
+ *
+ * Revision 1.41  2006/06/27 13:15:32  ajolma
+ * removed throw from GDALAutoCreateWarpedVRT
+ *
+ * Revision 1.40  2006/02/02 20:52:40  collinsb
+ * Added SWIG JAVA bindings
+ *
+ * Revision 1.39  2006/01/17 04:38:44  cfis
+ * Grouped all renames together and added section for Ruby.
+ *
+ * Revision 1.38  2005/09/13 18:37:25  kruland
+ * Added binding for GDALGetDriver.
+ *
+ * Revision 1.37  2005/09/13 16:09:12  kruland
+ * Import gdal_perl.i for SWIGPERL.
+ *
+ * Revision 1.36  2005/09/06 01:43:06  kruland
+ * Include gdal_typemaps.i if no other file is specified.
+ *
+ * Revision 1.35  2005/09/02 21:42:42  kruland
+ * The compactdefaultargs feature should be turned on for all bindings not just
+ * python.
+ *
+ * Revision 1.34  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ * Revision 1.33  2005/08/09 17:40:09  kruland
+ * Added support for ruby.
+ *
+ * Revision 1.32  2005/08/08 17:06:40  kruland
+ * Added bindings for ParseXMLString and SerializeXMLTree.
+ *
+ * Revision 1.31  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.30  2005/08/05 18:48:59  hobu
+ * gross hack of duplicate function names for the
+ * GCP stuff because C# module of swig is stupid
+ *
+ * Revision 1.29  2005/08/04 19:18:01  kruland
+ * The Open() and OpenShared() methods were incrementing the gdal internal
+ * reference count by mistake.
+ *
+ * Revision 1.28  2005/07/20 16:33:52  kruland
+ * Added wrapper for GDALGetDriverCount.
+ * Added %init for PHP.
+ *
+ * Revision 1.27  2005/07/18 16:13:32  kruland
+ * Added MajorObject.i an interface specification to the MajorObject baseclass.
+ * Used inheritance in Band.i, Driver.i, and Dataset.i to access MajorObject
+ * functionality.
+ * Adjusted Makefile to have PYTHON be a variable, gdal wrapper depend on
+ * MajorObject.i, use rm (instead of libtool's wrapped RM) for removal because
+ * the libtool didn't accept -r.
+ *
+ * Revision 1.26  2005/07/15 16:58:04  kruland
+ * In the %exception spec, if an error is detected while UseExceptions(),
+ * SWIG_fail immediately.
+ *
+ * Revision 1.25  2005/07/15 15:10:03  kruland
+ * Move the #ifdef SWIGPYTHON to include the exception flags.
+ * Correct some %inline to use %{ %}.
+ *
+ * Revision 1.24  2005/06/23 14:46:39  kruland
+ * Switch from using the poor-form exception in the custom CPLErrorHandler to
+ * using a global variable flag.
+ *
+ * Revision 1.23  2005/06/22 18:48:23  kruland
+ * Added bUseExceptions flag and supporting methods UseExceptions(),
+ * DontUseExceptions() to the python binding.  This allows the user
+ * to determine if method invocations will throw exceptions in scripts or
+ * use the old return value method.
+ * Added PythonErrorHandler, a special CPLErrorHandler which will throw.
+ *
+ * Revision 1.22  2005/03/10 17:18:15  hobu
+ * #ifdefs for csharp
+ *
+ * Revision 1.21  2005/02/24 17:20:02  hobu
+ * return the dataset in AutoCreateWarpedVRT
+ *
+ * Revision 1.20  2005/02/24 16:34:14  kruland
+ * Defined GCP as an object.  Manipulate as an object.  Defined __str__
+ * and serialize as python only methods.
+ *
+ * Revision 1.19  2005/02/23 21:38:28  kruland
+ * Added AutoCreateWarpedVRT() global algorithm method.  Commented missing methods.
+ *
+ * Revision 1.18  2005/02/22 23:30:14  kruland
+ * Increment the reference count in the Dataset factory methods: Open, OpenShared.
+ *
+ * Revision 1.17  2005/02/20 19:42:53  kruland
+ * Rename the Swig shadow classes so the names do not give the impression that
+ * they are any part of the GDAL/OSR apis.  There were no bugs with the old
+ * names but they were confusing.
+ *
+ * Revision 1.16  2005/02/18 18:41:37  kruland
+ * Added %feature("autodoc");
+ *
+ * Revision 1.15  2005/02/18 16:09:53  kruland
+ * Added %feature("compactdefaultargs") which in python (and perhaps others)
+ * allows SWIG to code default arguments for C functions (like GDALDecToDMS).
+ * This also fixes a problem with Dataset::SetMetadata and there not being
+ * a %typecheck for char** <- dict.
+ *
+ * Revision 1.14  2005/02/17 21:12:48  kruland
+ * Added some more module level functions.
+ *
+ * Revision 1.13  2005/02/17 17:27:13  kruland
+ * Changed the handling of fixed size double arrays to make it fit more
+ * naturally with GDAL/OSR usage.  Declare as typedef double * double_17;
+ * If used as return argument use:  function ( ... double_17 argout ... );
+ * If used as value argument use: function (... double_17 argin ... );
+ *
+ * Revision 1.12  2005/02/16 18:40:34  kruland
+ * Added typedef for GDALColorInterp.
+ *
+ * Revision 1.11  2005/02/16 16:55:49  kruland
+ * Added typedef for CPLErr to prevent wrapping of the enum.
+ * Moved the AllRegister method definition.
+ *
+ * Revision 1.10  2005/02/15 22:31:52  kruland
+ * Moved CPL wrapping to cpl.i
+ *
+ * Revision 1.9  2005/02/15 22:02:16  kruland
+ * Previous revision introduced a problem.  Put the #defines CPL_* back in
+ * until the cpl specific code is cleaned up.
+ *
+ * Revision 1.8  2005/02/15 21:40:00  kruland
+ * Stripped out all the extras by no longer including gdal.h or gdal_priv.h.
+ * Added CreateShared() method.
+ *
+ * Revision 1.7  2005/02/15 16:51:20  kruland
+ * Removed use of <vector> and <algorith> stdlib includes.  Added typedefs for
+ * the fixed size array types which are needed for new mapping mechanism.
+ *
+ * Revision 1.6  2005/02/15 06:25:42  kruland
+ * Moved the Band definition to Band.i.
+ *
+ * Revision 1.5  2005/02/15 06:01:15  kruland
+ * Moved the Dataset definition to Dataset.i.
+ *
+ * Revision 1.4  2005/02/14 23:50:16  hobu
+ * Added log info
+ *
+*/
 
 #ifdef PERL_CPAN_NAMESPACE
 %module "Geo::GDAL"
-#elif defined(SWIGCSHARP)
-%module Gdal
 #else
 %module gdal
-#endif
-
-#ifdef SWIGCSHARP
-%include swig_csharp_extensions.i
 #endif
 
 %feature ("compactdefaultargs");
@@ -62,103 +204,16 @@ typedef void GDALMajorObjectShadow;
 typedef void GDALDriverShadow;
 typedef void GDALDatasetShadow;
 typedef void GDALRasterBandShadow;
-typedef void GDALColorTableShadow;
-typedef void GDALRasterAttributeTableShadow;
-typedef void GDALTransformerInfoShadow;
 
 typedef int FALSE_IS_ERR;
 
 %}
 
-//************************************************************************
-//
-// Enums.
-//
-//************************************************************************
-
-#ifndef SWIGCSHARP
-typedef int GDALPaletteInterp;
 typedef int GDALColorInterp;
 typedef int GDALAccess;
 typedef int GDALDataType;
 typedef int CPLErr;
 typedef int GDALResampleAlg;
-#else
-/*! Pixel data types */
-%rename (DataType) GDALDataType;
-typedef enum {
-    GDT_Unknown = 0,
-    /*! Eight bit unsigned integer */           GDT_Byte = 1,
-    /*! Sixteen bit unsigned integer */         GDT_UInt16 = 2,
-    /*! Sixteen bit signed integer */           GDT_Int16 = 3,
-    /*! Thirty two bit unsigned integer */      GDT_UInt32 = 4,
-    /*! Thirty two bit signed integer */        GDT_Int32 = 5,
-    /*! Thirty two bit floating point */        GDT_Float32 = 6,
-    /*! Sixty four bit floating point */        GDT_Float64 = 7,
-    /*! Complex Int16 */                        GDT_CInt16 = 8,
-    /*! Complex Int32 */                        GDT_CInt32 = 9,
-    /*! Complex Float32 */                      GDT_CFloat32 = 10,
-    /*! Complex Float64 */                      GDT_CFloat64 = 11,
-    GDT_TypeCount = 12          /* maximum type # + 1 */
-} GDALDataType;
-
-/*! Types of color interpretation for raster bands. */
-%rename (ColorInterp) GDALColorInterp;
-typedef enum
-{
-    GCI_Undefined=0,
-    /*! Greyscale */                                      GCI_GrayIndex=1,
-    /*! Paletted (see associated color table) */          GCI_PaletteIndex=2,
-    /*! Red band of RGBA image */                         GCI_RedBand=3,
-    /*! Green band of RGBA image */                       GCI_GreenBand=4,
-    /*! Blue band of RGBA image */                        GCI_BlueBand=5,
-    /*! Alpha (0=transparent, 255=opaque) */              GCI_AlphaBand=6,
-    /*! Hue band of HLS image */                          GCI_HueBand=7,
-    /*! Saturation band of HLS image */                   GCI_SaturationBand=8,
-    /*! Lightness band of HLS image */                    GCI_LightnessBand=9,
-    /*! Cyan band of CMYK image */                        GCI_CyanBand=10,
-    /*! Magenta band of CMYK image */                     GCI_MagentaBand=11,
-    /*! Yellow band of CMYK image */                      GCI_YellowBand=12,
-    /*! Black band of CMLY image */                       GCI_BlackBand=13,
-    /*! Y Luminance */                                    GCI_YCbCr_YBand=14,
-    /*! Cb Chroma */                                      GCI_YCbCr_CbBand=15,
-    /*! Cr Chroma */                                      GCI_YCbCr_CrBand=16,
-    /*! Max current value */                              GCI_Max=16
-} GDALColorInterp;
-
-/*! Types of color interpretations for a GDALColorTable. */
-%rename (PaletteInterp) GDALPaletteInterp;
-typedef enum 
-{
-  /*! Grayscale (in GDALColorEntry.c1) */                      GPI_Gray=0,
-  /*! Red, Green, Blue and Alpha in (in c1, c2, c3 and c4) */  GPI_RGB=1,
-  /*! Cyan, Magenta, Yellow and Black (in c1, c2, c3 and c4)*/ GPI_CMYK=2,
-  /*! Hue, Lightness and Saturation (in c1, c2, and c3) */     GPI_HLS=3
-} GDALPaletteInterp;
-
-/*! Flag indicating read/write, or read-only access to data. */
-%rename (Access) GDALAccess;
-typedef enum {
-    /*! Read only (no update) access */ GA_ReadOnly = 0,
-    /*! Read/write access. */           GA_Update = 1
-} GDALAccess;
-
-/*! Read/Write flag for RasterIO() method */
-%rename (RWFlag) GDALRWFlag;
-typedef enum {
-    /*! Read data */   GF_Read = 0,
-    /*! Write data */  GF_Write = 1
-} GDALRWFlag;
-
-/*! Warp Resampling Algorithm */
-%rename (ResampleAlg) GDALResampleAlg;
-typedef enum {
-  /*! Nearest neighbour (select on one input pixel) */ GRA_NearestNeighbour=0,
-  /*! Bilinear (2x2 kernel) */                         GRA_Bilinear=1,
-  /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
-  /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
-} GDALResampleAlg;
-#endif
 
 #if defined(SWIGPYTHON)
 %include "gdal_python.i"
@@ -234,7 +289,6 @@ typedef enum {
 #else
 %rename (GCP) GDAL_GCP;
 %rename (GCPsToGeoTransform) GDALGCPsToGeoTransform;
-%rename (VersionInfo) GDALVersionInfo;
 %rename (AllRegister) GDALAllRegister;
 %rename (GetCacheMax) GDALGetCacheMax;
 %rename (SetCacheMax) GDALSetCacheMax;
@@ -258,7 +312,7 @@ typedef enum {
 // GDALColorEntry
 //
 //************************************************************************
-#if !defined(SWIGPERL) && !defined(SWIGJAVA)
+#if defined(SWIGCSHARP)
 %rename (ColorEntry) GDALColorEntry;
 typedef struct
 {
@@ -444,30 +498,24 @@ FALSE_IS_ERR GDALGCPsToGeoTransform( int nGCPs, GDAL_GCP const * pGCPs,
 // Define the ColorTable object.
 //
 //************************************************************************
-#if !defined(SWIGJAVA)
 %include "ColorTable.i"
+
+//************************************************************************
+//
+// Define the global methods
+//
+//************************************************************************
+//
+// Missing
+//
+// GeneralCmdLineProcessor
+// TermProgress
+//
+#if defined(SWIGCSHARP)
+%static_owner
 #endif
 
-//************************************************************************
-//
-// Define the RasterAttributeTable object.
-//
-//************************************************************************
-%include "RasterAttributeTable.i"
-
-
-//************************************************************************
-//
-// Raster Operations
-//
-//************************************************************************
-%include "Operations.i"
-
-const char *GDALVersionInfo( const char *request = "VERSION_NUM" );
-
 void GDALAllRegister();
-
-void GDALDestroyDriverManager();
 
 int GDALGetCacheMax();
 
@@ -492,7 +540,6 @@ const char *GDALDecToDMS( double, const char *, int = 2 );
 double GDALPackedDMSToDec( double );
 
 double GDALDecToPackedDMS( double );
-
 
 #if defined(SWIGCSHARP)
 %newobject CPLParseXMLString;
@@ -558,16 +605,6 @@ GDALDatasetShadow* OpenShared( char const* name, GDALAccess eAccess = GA_ReadOnl
 }
 %}
 
-%apply (char **options) {char **papszSiblings};
-%inline %{
-GDALDriverShadow *IdentifyDriver( const char *pszDatasource, 
-				  char **papszSiblings = NULL ) {
-    return (GDALDriverShadow *) GDALIdentifyDriver( pszDatasource, 
-	                                            papszSiblings );
-}
-%}
-%clear char **papszSiblings;
-
 //************************************************************************
 //
 // Define Algorithms
@@ -575,22 +612,43 @@ GDALDriverShadow *IdentifyDriver( const char *pszDatasource,
 //************************************************************************
 
 // Missing
+// ComputeMedianCutPCT
+// DitherRGB2PCT
+// RGBFile2PCTFile
+// AutoCreateWarpedVRT
+// ReprojectImage
 // CreateAndReprojectImage
 // GCPsToGeoTransform
 
+%newobject AutoCreateWarpedVRT;
+%inline %{
+GDALDatasetShadow *AutoCreateWarpedVRT( GDALDatasetShadow *src_ds,
+                                        const char *src_wkt = 0,
+                                        const char *dst_wkt = 0,
+                                        GDALResampleAlg eResampleAlg = GRA_NearestNeighbour,
+                                        double maxerror = 0.0 ) {
+  GDALDatasetShadow *ds = GDALAutoCreateWarpedVRT( src_ds, src_wkt,
+                                                   dst_wkt,
+                                                   eResampleAlg,
+                                                   maxerror,
+                                                   0 );
+  if (ds == 0) {
+    /*throw CPLGetLastErrorMsg(); causes a SWIG_exception later*/
+  }
+  return ds;
+  
+}
+%}
+#if defined(SWIGCSHARP)
+%object_owner
+#endif
 
+%newobject AutoCreateWarpedVRT;
 %apply (char **options) {char **};
 %inline %{
   char **GeneralCmdLineProcessor( char **papszArgv, int nOptions = 0 ) {
-    int nResArgCount;
-
-    nResArgCount = 
-      GDALGeneralCmdLineProcessor( CSLCount(papszArgv), &papszArgv, nOptions ); 
-
-    if( nResArgCount <= 0 )
-        return NULL;
-    else
-        return papszArgv;
+    GDALGeneralCmdLineProcessor( CSLCount(papszArgv), &papszArgv, nOptions ); 
+    return papszArgv;
   }
 %}
 %clear char **;

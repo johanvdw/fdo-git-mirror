@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxf_proj4.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gxf_proj4.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GXF Reader
  * Purpose:  Handle GXF to PROJ.4 projection transformation.
@@ -30,7 +30,7 @@
 
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxf_proj4.c 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: gxf_proj4.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                     GXFGetMapProjectionAsPROJ4()                     */

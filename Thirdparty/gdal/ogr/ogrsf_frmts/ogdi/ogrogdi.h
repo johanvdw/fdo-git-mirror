@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdi.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogrogdi.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGDI Bridge
  * Purpose:  Private definitions within the OGDI driver to implement
@@ -30,7 +30,7 @@
  ****************************************************************************/
 
 #ifndef _OGDOGDI_H_INCLUDED
-#define _OGDOGDI_H_INCLUDED
+#define _OGDOGDI_H_INLLUDED
 
 #include <math.h>
 extern "C" {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_csv.h 15684 2008-11-03 20:37:19Z rouault $
+ * $Id: ogr_csv.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CSV Translator
  * Purpose:  Definition of classes for OGR .csv driver.
@@ -28,18 +28,9 @@
  ****************************************************************************/
 
 #ifndef _OGR_CSV_H_INCLUDED
-#define _OGR_CSV_H_INCLUDED
+#define _OGR_CSV_H_INLLUDED
 
 #include "ogrsf_frmts.h"
-
-typedef enum
-{
-    OGR_CSV_GEOM_NONE,
-    OGR_CSV_GEOM_AS_WKT,
-    OGR_CSV_GEOM_AS_XYZ,
-    OGR_CSV_GEOM_AS_XY,
-    OGR_CSV_GEOM_AS_YX,
-} OGRCSVGeometryFormat;
 
 class OGRCSVDataSource;
 
@@ -63,7 +54,6 @@ class OGRCSVLayer : public OGRLayer
     int                 bInWriteMode;
     int                 bUseCRLF;
     int                 bNeedRewind;
-    OGRCSVGeometryFormat eGeometryFormat;
 
   public:
     OGRCSVLayer( const char *pszName, FILE *fp, const char *pszFilename,
@@ -85,7 +75,6 @@ class OGRCSVLayer : public OGRLayer
     virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 
     void                SetCRLF(int);
-    void                SetWriteGeometry(OGRCSVGeometryFormat eGeometryFormat);
 };
 
 /************************************************************************/

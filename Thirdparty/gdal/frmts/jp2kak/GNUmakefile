@@ -1,19 +1,18 @@
 
 include ../../GDALmake.opt
 
-ifneq (($KAKDIR),)
-ifneq ($(HAVE_LIBTOOL),yes)
-include $(GDAL_ROOT)/frmts/jp2kak/jp2kak.lst
-endif
-endif
-
 OBJ	=	jp2kakdataset.o
 
 KAKINC = -I$(KAKDIR)/coresys/common -I$(KAKDIR)/apps/compressed_io \
-	-I$(KAKDIR)/apps/jp2 -I$(KAKDIR)/apps/image -I$(KAKDIR)/apps/args \
-	-I$(KAKDIR)/apps/support -I$(KAKDIR)/apps/kdu_compress
+	-I$(KAKDIR)/apps/jp2 -I$(KAKDIR)/apps/image -I$(KAKDIR)/apps/args 
 
-APPOBJ  = $(KAK_OBJ)
+APPOBJ  = $(KAKDIR)/apps/make/args.o $(KAKDIR)/apps/make/image_in.o \
+	$(KAKDIR)/apps/make/image_out.o $(KAKDIR)/apps/make/jp2.o \
+	$(KAKDIR)/apps/make/mj2.o $(KAKDIR)/apps/make/palette.o \
+	$(KAKDIR)/apps/make/roi_sources.o 
+
+# The following are just for Kakadu 5.1 or later.
+APPOBJ +=	$(KAKDIR)/apps/make/kdu_tiff.o $(KAKDIR)/apps/make/jpx.o
 
 INSTOBJ = $(foreach d,$(APPOBJ),../o/$(notdir $(d)))
 
@@ -30,4 +29,4 @@ clean:
 install-obj:	$(O_OBJ)
 	cp $(APPOBJ) ../o
 
-$(OBJ) $(O_OBJ):	subfile_source.h
+$(OBJ) $(O_OBJ):	jp2kak_roi.h subfile_source.h dbg_file_source.h

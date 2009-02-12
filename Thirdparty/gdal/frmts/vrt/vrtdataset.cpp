@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtdataset.cpp 13685 2008-02-03 19:42:27Z rouault $
+ * $Id: vrtdataset.cpp 12515 2007-10-23 14:46:32Z mloskot $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDataset
@@ -32,7 +32,7 @@
 #include "cpl_minixml.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: vrtdataset.cpp 13685 2008-02-03 19:42:27Z rouault $");
+CPL_CVSID("$Id: vrtdataset.cpp 12515 2007-10-23 14:46:32Z mloskot $");
 
 /************************************************************************/
 /*                            VRTDataset()                             */
@@ -46,7 +46,6 @@ VRTDataset::VRTDataset( int nXSize, int nYSize )
     pszProjection = NULL;
 
     bNeedsFlush = FALSE;
-    bWritable = TRUE;
 
     bGeoTransformSet = FALSE;
     adfGeoTransform[0] = 0.0;
@@ -64,20 +63,6 @@ VRTDataset::VRTDataset( int nXSize, int nYSize )
     
     GDALRegister_VRT();
     poDriver = (GDALDriver *) GDALGetDriverByName( "VRT" );
-}
-
-/************************************************************************/
-/*                              VRTCreate()                             */
-/************************************************************************/
-
-/**
- * @see VRTDataset::VRTDataset()
- */
-
-VRTDatasetH CPL_STDCALL VRTCreate(int nXSize, int nYSize)
-
-{
-    return ( new VRTDataset(nXSize, nYSize) );
 }
 
 /************************************************************************/
@@ -108,7 +93,7 @@ void VRTDataset::FlushCache()
 {
     GDALDataset::FlushCache();
 
-    if( !bNeedsFlush || bWritable == FALSE)
+    if( !bNeedsFlush )
         return;
 
     bNeedsFlush = FALSE;
@@ -152,21 +137,6 @@ void VRTDataset::FlushCache()
     VSIFCloseL( fpVRT );
 
     CPLFree( pszXML );
-}
-
-/************************************************************************/
-/*                            VRTFlushCache()                           */
-/************************************************************************/
-
-/**
- * @see VRTDataset::FlushCache()
- */
-
-void CPL_STDCALL VRTFlushCache( VRTDatasetH hDataset )
-{
-    VALIDATE_POINTER0( hDataset, "VRTFlushCache" );
-
-    ((VRTDataset *)hDataset)->FlushCache();
 }
 
 /************************************************************************/
@@ -273,22 +243,6 @@ CPLXMLNode *VRTDataset::SerializeToXML( const char *pszVRTPath )
     }
 
     return psDSTree;
-}
-
-/************************************************************************/
-/*                          VRTSerializeToXML()                         */
-/************************************************************************/
-
-/**
- * @see VRTDataset::SerializeToXML()
- */
-
-CPLXMLNode * CPL_STDCALL VRTSerializeToXML( VRTDatasetH hDataset,
-                                            const char *pszVRTPath )
-{
-    VALIDATE_POINTER1( hDataset, "VRTSerializeToXML", NULL );
-
-    return ((VRTDataset *)hDataset)->SerializeToXML(pszVRTPath);
 }
 
 /************************************************************************/
@@ -591,23 +545,6 @@ CPLErr VRTDataset::SetMetadataItem( const char *pszName,
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int VRTDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-    if( (poOpenInfo->nHeaderBytes > 20 
-         && EQUALN((const char *)poOpenInfo->pabyHeader,"<VRTDataset",11)) )
-        return TRUE;
-
-    if( EQUALN(poOpenInfo->pszFilename,"<VRTDataset",11) )
-        return TRUE;
-
-    return FALSE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
@@ -620,7 +557,9 @@ GDALDataset *VRTDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Does this appear to be a virtual dataset definition XML         */
 /*      file?                                                           */
 /* -------------------------------------------------------------------- */
-    if( !Identify( poOpenInfo ) )
+    if( (poOpenInfo->nHeaderBytes < 20 
+         || !EQUALN((const char *)poOpenInfo->pabyHeader,"<VRTDataset",11))
+        && !EQUALN(poOpenInfo->pszFilename,"<VRTDataset",11) )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -628,30 +567,27 @@ GDALDataset *VRTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     char        *pszXML;
 
-    FILE        *fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
-    if( fp != NULL )
+    if( poOpenInfo->fp != NULL )
     {
         unsigned int nLength;
      
-        VSIFSeekL( fp, 0, SEEK_END );
-        nLength = VSIFTellL( fp );
-        VSIFSeekL( fp, 0, SEEK_SET );
+        VSIFSeek( poOpenInfo->fp, 0, SEEK_END );
+        nLength = VSIFTell( poOpenInfo->fp );
+        VSIFSeek( poOpenInfo->fp, 0, SEEK_SET );
         
         nLength = MAX(0,nLength);
         pszXML = (char *) VSIMalloc(nLength+1);
         
         if( pszXML == NULL )
         {
-            VSIFCloseL(fp);
             CPLError( CE_Failure, CPLE_OutOfMemory, 
                       "Failed to allocate %d byte buffer to hold VRT xml file.",
                       nLength );
             return NULL;
         }
         
-        if( VSIFReadL( pszXML, 1, nLength, fp ) != nLength )
+        if( VSIFRead( pszXML, 1, nLength, poOpenInfo->fp ) != nLength )
         {
-            VSIFCloseL(fp);
             CPLFree( pszXML );
             CPLError( CE_Failure, CPLE_FileIO,
                       "Failed to read %d bytes from VRT xml file.",
@@ -661,8 +597,6 @@ GDALDataset *VRTDataset::Open( GDALOpenInfo * poOpenInfo )
         
         pszXML[nLength] = '\0';
         pszVRTPath = CPLStrdup(CPLGetPath(poOpenInfo->pszFilename));
-
-        VSIFCloseL(fp);
     }
 /* -------------------------------------------------------------------- */
 /*      Or use the filename as the XML input.                           */
@@ -686,7 +620,7 @@ GDALDataset *VRTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Open overviews.                                                 */
 /* -------------------------------------------------------------------- */
-    if( fp != NULL && poDS != NULL )
+    if( poOpenInfo->fp != NULL && poDS != NULL )
         poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return poDS;
@@ -880,24 +814,7 @@ CPLErr VRTDataset::AddBand( GDALDataType eType, char **papszOptions )
 }
 
 /************************************************************************/
-/*                              VRTAddBand()                            */
-/************************************************************************/
-
-/**
- * @see VRTDataset::VRTAddBand().
- */
-
-int CPL_STDCALL VRTAddBand( VRTDatasetH hDataset, GDALDataType eType, 
-                            char **papszOptions )
-
-{
-    VALIDATE_POINTER1( hDataset, "VRTAddBand", 0 );
-
-    return ((VRTDataset *) hDataset)->AddBand(eType, papszOptions);
-}
-
-/************************************************************************/
-/*                               Create()                               */
+/*                             VRTCreate()                              */
 /************************************************************************/
 
 GDALDataset *
@@ -906,8 +823,8 @@ VRTDataset::Create( const char * pszName,
                     GDALDataType eType, char ** papszOptions )
 
 {
-    VRTDataset *poDS = NULL;
-    int        iBand = 0;
+    VRTDataset *poDS;
+    int        iBand;
 
     (void) papszOptions;
 

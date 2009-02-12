@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosdataset.cpp 12285 2007-10-01 04:04:24Z warmerdam $
+ * $Id: ceosdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -30,7 +30,7 @@
 #include "ceosopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: ceosdataset.cpp 12285 2007-10-01 04:04:24Z warmerdam $");
+CPL_CVSID("$Id: ceosdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_CEOS(void);
@@ -147,7 +147,7 @@ GDALDataset *CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Before trying CEOSOpen() we first verify that the first         */
 /*      record is in fact a CEOS file descriptor record.                */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 100 )
+    if( poOpenInfo->fp == NULL || poOpenInfo->nHeaderBytes < 100 )
         return NULL;
 
     if( poOpenInfo->pabyHeader[4] != 0x3f

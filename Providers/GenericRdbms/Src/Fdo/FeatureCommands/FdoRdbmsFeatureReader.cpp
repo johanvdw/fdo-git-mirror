@@ -37,9 +37,9 @@ using namespace std;
 
 //#define FDORDBMS_SHOW_CACHE_PERF
 
-#define  PROPERTY2COLNAME( p1, p2 ) (Property2ColName( p1, p2, false))
-#define  PROPERTY2COLNAME_IDX( p1, p2, p3, p4 ) (Property2ColName( p1, p2, false, p3, p4))
-#define  PROPERTY2COLNAME_IDX_W( p1, p2, p3, p4 ) (Property2ColNameW( p1, p2, false, p3, p4))
+#define  PROPERTY2COLNAME( p1, p2 ) (Property2ColName( p1, p2))
+#define  PROPERTY2COLNAME_IDX( p1, p2, p3, p4 ) (Property2ColName( p1, p2, p3, p4))
+#define  PROPERTY2COLNAME_IDX_W( p1, p2, p3, p4 ) (Property2ColNameW( p1, p2, p3, p4))
 
 static  char  *strEndOfRecordExp = "End of feature data or NextFeature not called";
 static  char  *strObjPropetryExp = "Property '%1$ls' is an object property and cannot be returned through a basic type; use GetFeatureObject";
@@ -63,6 +63,7 @@ public:
         if (mFdoClassDefinition)
             mFdoClassDefinition->AddRef();
 
+        mPropertyInfoDefs = NULL;
         mNumPropertyInfoDefs = 0;
         mLastPropertyInfoDef = 0;
     }
@@ -110,7 +111,7 @@ private:
 			throw ""; \
 		} \
         bool isNull = false; \
-		value = function( GetPropertyInfoDef(cacheIndex)->columnPosition, &isNull, NULL ); \
+		value = function( mPropertyInfoDefs[cacheIndex].columnPosition, &isNull, NULL ); \
         if( isNull ) \
             throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp,  propertyName )); \
     } \
@@ -179,6 +180,7 @@ FdoRdbmsFeatureReader::FdoRdbmsFeatureReader( FdoIConnection *connection, GdbiQu
     mColList = NULL;
 
 	// Columns cache for fast property-column match retrieval
+    mPropertyInfoDefs = NULL;
     mNumPropertyInfoDefs = 0;
     mLastPropertyInfoDef = 0;
 
@@ -187,8 +189,11 @@ FdoRdbmsFeatureReader::FdoRdbmsFeatureReader( FdoIConnection *connection, GdbiQu
 	m_cacheMissed2 = 0;
 
     // TODO: push down to Schema Manager, rather than hard-code property names.
-    mClassIdColName = Property2ColName( L"ClassId", NULL, true );
-    mRevNumColName = Property2ColName( L"RevisionNumber", NULL, true );
+    mClassIdColName = Property2ColName( L"ClassId", NULL );
+    mRevNumColName = Property2ColName( L"RevisionNumber", NULL );
+
+    // Change the active SC if contains geometries
+    ChangeActiveSpatialContext();
 
     mSecondarySpatialFilters = FDO_SAFE_ADDREF(secondarySpatialFilters);
 
@@ -218,12 +223,11 @@ FdoRdbmsFeatureReader::~FdoRdbmsFeatureReader()
   if( mColList != NULL )
       delete[] mColList;
 
-  for(int i = 0; i < (int)mPropertyInfoDefs.size(); i++)
-  {
-      FdoRdbmsPropertyInfoDef* val = mPropertyInfoDefs.at(i);
-      delete val;
-  }
-  mPropertyInfoDefs.clear();
+  if ( mPropertyInfoDefs != NULL )
+      delete[] mPropertyInfoDefs;
+
+  // Restore the active Spatial Context.
+  RestoreActiveSpatialContext();
 
 #ifdef	FDORDBMS_SHOW_CACHE_PERF
   printf("[Columns cache: Hits=%ld Missed1==%ld Missed2==%ld]\n", m_cacheHits, m_cacheMissed1, m_cacheMissed2);
@@ -233,18 +237,18 @@ FdoRdbmsFeatureReader::~FdoRdbmsFeatureReader()
     mFdoConnection->Release();
 }
 
-const char* FdoRdbmsFeatureReader::Property2ColName( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found, int *index )
+const char* FdoRdbmsFeatureReader::Property2ColName( const wchar_t *propName, FdoPropertyType *type, bool *found, int *index )
 {
-	return Property2ColNameChar( propName, type, systemOnly, found, index );
+	return Property2ColNameChar( propName, type, found, index );
 }
 
-const wchar_t* FdoRdbmsFeatureReader::Property2ColNameW( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found, int *index )
+const wchar_t* FdoRdbmsFeatureReader::Property2ColNameW( const wchar_t *propName, FdoPropertyType *type, bool *found, int *index )
 {
-	const char*  col = Property2ColNameChar( propName, type, systemOnly, found, index );
-	return ( col ? GetPropertyInfoDef(*index)->columnNameW : (const wchar_t*)NULL );
+	const char*  col = Property2ColNameChar( propName, type, found, index );
+	return ( col ? mPropertyInfoDefs[*index].columnNameW : (const wchar_t*)NULL );
 }
 
-const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName, FdoPropertyType *type, bool systemOnly, bool *found, int *index )
+const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName, FdoPropertyType *type, bool *found, int *index )
 {
     const char*             string = NULL;
 	FdoStringP				colName;
@@ -259,29 +263,31 @@ const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName
     if( found )
         *found = false;
 
+    if ( mPropertyInfoDefs == NULL )
+    {
+        const FdoSmLpPropertyDefinitionCollection *propertyDefinitions = mClassDefinition->RefProperties();
+        int numProps = propertyDefinitions->GetCount();
+        mPropertyInfoDefs = new FdoRdbmsPropertyInfoDef[ numProps ];
+        mNumPropertyInfoDefs = 0;
+    }
+
     // Optimize the linear search in the cache: 
     // Chances are it's the A) next property (usually fetched in order) 
     // or B) the current property (after IsNull)
     for ( int i = mLastPropertyInfoDef; !found2 && i < mNumPropertyInfoDefs; i++ )
     {
-        cacheElem = GetPropertyInfoDef(i);
+        cacheElem = &mPropertyInfoDefs[i];
 	
-       found2 = 
-           ( FdoCommonOSUtil::wcsicmp( propName, cacheElem->propertyName ) == 0) &&
-           ( cacheElem->isSystem || (!systemOnly) );
-
+       found2 = ( FdoCommonOSUtil::wcsicmp( propName, cacheElem->propertyName ) == 0);
        cacheIndex = i;	
     }
 
     for ( int i = 0; !found2 && i < mLastPropertyInfoDef; i++ )
     {
-        cacheElem = GetPropertyInfoDef(i);
+        cacheElem = &mPropertyInfoDefs[i];
 
-       found2 = 
-           ( FdoCommonOSUtil::wcsicmp( propName, cacheElem->propertyName ) == 0) &&
-           ( cacheElem->isSystem || (!systemOnly) );
-
-       cacheIndex = i;
+		found2 = ( FdoCommonOSUtil::wcsicmp( propName, cacheElem->propertyName ) == 0);
+        cacheIndex = i;
     }
 
     // Fast return if property found in the cache 
@@ -338,31 +344,23 @@ const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName
             string = mConnection->GetUtility()->UnicodeToUtf8((const wchar_t *)colName);
 
             // Cache
-            cacheElem = GetPropertyInfoDef(mNumPropertyInfoDefs);
+            cacheElem = &mPropertyInfoDefs[mNumPropertyInfoDefs];
 
             wcscpy( cacheElem->propertyName, propName );
             strcpy( cacheElem->columnQName, string );
 			wcscpy( cacheElem->columnNameW, colName );
             cacheElem->propertyType = propType;
-            cacheElem->isSystem = propertyDefinition->GetIsSystem();
 			wcscpy(cacheElem->columnPosition, L""); 
 
 			cacheIndex = mNumPropertyInfoDefs;
+
+            if ( index )
+                *index = cacheIndex;
 
             // Remember this
             mLastPropertyInfoDef = mNumPropertyInfoDefs;
 
             mNumPropertyInfoDefs++;
-
-            if ( cacheElem->isSystem || (!systemOnly)) 
-            {
-                if ( index )
-                    *index = cacheIndex;
-            }
-            else
-            {
-                return NULL;
-            }
 		}
 		else // Object, Association properties etc.
 		{
@@ -372,11 +370,6 @@ const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName
 			return NULL;
 		}
 	}
-	else if ( systemOnly ) 
-	{
-        // If it is a system property, it can't be a computed property.
-        return NULL;
-    }
 	else
 	{
 		m_cacheMissed2++;
@@ -392,7 +385,7 @@ const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName
         string = mConnection->GetUtility()->UnicodeToUtf8((const wchar_t *)colName);
 
         // Cache
-        cacheElem = GetPropertyInfoDef(mNumPropertyInfoDefs);
+        cacheElem = &mPropertyInfoDefs[mNumPropertyInfoDefs];
 
         wcscpy( cacheElem->propertyName, propName );
 		strcpy( cacheElem->columnQName, string );
@@ -423,7 +416,7 @@ const char* FdoRdbmsFeatureReader::Property2ColNameChar( const wchar_t *propName
 		wcscpy( cacheElem->columnPosition, colPos );
 	}
 
-	return GetPropertyInfoDef(cacheIndex)->columnQName;
+	return mPropertyInfoDefs[cacheIndex].columnQName;
 }
 
 const char* FdoRdbmsFeatureReader::GetDbAliasName( const wchar_t *propName, FdoPropertyType *type )
@@ -438,23 +431,9 @@ const char* FdoRdbmsFeatureReader::GetDbAliasName( const wchar_t *propName, FdoP
     {
         FdoPtr<FdoIdentifier>ident = mProperties->GetItem( i );
         FdoComputedIdentifier  *compIdent = dynamic_cast<FdoComputedIdentifier *>(ident.p);
-        if( compIdent != NULL && (0==wcscmp(ident->GetName(), propName)) )
+        if( compIdent != NULL )
         {
-            char colName[3*GDBI_MAXIMUM_TEXT_SIZE];
-
-            // Returned buffer from MakeDbValidName is volatile and can be trashed by
-            // calls to GetClassDefinition(). Save away buffer in local variable.
-            const char* p = mConnection->GetSchemaUtil()->MakeDBValidName(propName);
-            bool colNameNull = false;
-            if ( p ) 
-            {
-                strcpy(colName, p);
-            }
-            else
-            {
-                colName[0] = '\0';
-                colNameNull = true;
-            }
+            const char* colName = mConnection->GetSchemaUtil()->MakeDBValidName(propName);
 
             // Get the type from the function type 
 			if ( type != NULL ) 
@@ -462,18 +441,10 @@ const char* FdoRdbmsFeatureReader::GetDbAliasName( const wchar_t *propName, FdoP
 				FdoPtr<FdoExpression>   expr = compIdent->GetExpression();
                 FdoPtr<FdoClassDefinition> classDef = GetClassDefinition();
                 FdoDataType tempDataType;
-                GetExpressionType(mFdoConnection, classDef, colNameNull ? (const char*) NULL : colName, expr, *type, tempDataType);
+                GetExpressionType(mFdoConnection, classDef, colName, expr, *type, tempDataType);
 			}
 			
-            if ( colNameNull ) 
-                return NULL;
-
-            // Copy colName back to volatile buffer. Caller responsible for using colName
-            // before it gets trashed.
-            char* p2 = mConnection->GetUtility()->newCharP();
-            strcpy(p2, colName);
-
-            return p2;
+            return colName;
         }
     }
     return NULL;
@@ -1337,7 +1308,7 @@ const wchar_t* FdoRdbmsFeatureReader::GetString( const wchar_t *propertyName )
 			throw "";
 		}
 
-        const wchar_t* value = mAttrQueryCache[mAttrsQidIdx].query->GetString( GetPropertyInfoDef(cacheIndex)->columnPosition, &isNull, NULL );
+        const wchar_t* value = mAttrQueryCache[mAttrsQidIdx].query->GetString( mPropertyInfoDefs[cacheIndex].columnPosition, &isNull, NULL );
         if( isNull )
             throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp,  propertyName ));
 
@@ -1425,7 +1396,8 @@ FdoIStreamReader* FdoRdbmsFeatureReader::GetLOBStreamReader(const wchar_t* prope
         if( isNull )
             throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp, propertyName ));
         // Look up the LOB type based on the property name - assume FdoDataType_BLOB for now
-        lobReader = FdoRdbmsBLOBStreamReader::Create( mFdoConnection, mAttrQueryCache[mAttrsQidIdx].query, lobLocator );
+        //lobReader = FdoRdbmsBLOBStreamReader::Create( mFdoConnection, mAttrQueryCache[mAttrsQidIdx].qid, lobLocator );
+        assert(false); // FIXME
     }
     catch ( char * )
     {
@@ -1463,8 +1435,9 @@ FdoLOBValue* FdoRdbmsFeatureReader::GetLOB(const wchar_t* propertyName)
             throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp, propertyName ));
 
         // Look up the LOB type based on the property name - assume FdoDataType_BLOB for now
-        FdoRdbmsBLOBStreamReader *blobReader = FdoRdbmsBLOBStreamReader::Create( mFdoConnection, mAttrQueryCache[mAttrsQidIdx].query, lobLocator );
-
+        //FdoRdbmsBLOBStreamReader *blobReader = FdoRdbmsBLOBStreamReader::Create( mFdoConnection, mAttrQueryCache[mAttrsQidIdx].qid, lobLocator );
+        assert(false); // FIXME
+#if 0 // FIXME
         FdoInt64 lob_size = blobReader->GetLength();
         FdoByteArray * byteArray = FdoByteArray::Create( (FdoInt32)lob_size );
         blobReader->ReadNext( byteArray, 0, (FdoInt32)lob_size );
@@ -1472,7 +1445,7 @@ FdoLOBValue* FdoRdbmsFeatureReader::GetLOB(const wchar_t* propertyName)
         blobReader->Release();
 
         pLobVal = FdoBLOBValue::Create( byteArray );
-
+#endif
     }
     catch ( char * )
     {
@@ -1505,7 +1478,7 @@ bool FdoRdbmsFeatureReader::IsNull( const wchar_t *propertyName )
         {
             case FdoPropertyType_DataProperty:
                 if (colNameW != NULL)
-                    return mAttrQueryCache[mAttrsQidIdx].query->GetIsNull( GetPropertyInfoDef(cacheIndex)->columnPosition );
+                    return mAttrQueryCache[mAttrsQidIdx].query->GetIsNull( mPropertyInfoDefs[cacheIndex].columnPosition );
 
                 throw "";
 
@@ -1656,6 +1629,7 @@ FdoByteArray* FdoRdbmsFeatureReader::GetGeometry(const wchar_t* propertyName, bo
 {
     FdoPtr<FdoIGeometry> pgeom;
     FdoByteArray	*byteArray = NULL;
+    bool            isSupportedType = false;
     bool            unsupportedTypeExp = false;
 
     if( ! mIsFeatureQuery )
@@ -1717,12 +1691,21 @@ FdoByteArray* FdoRdbmsFeatureReader::GetGeometry(const wchar_t* propertyName, bo
                 mConnection->GetUtility()->UnicodeToUtf8(colNameZW);
         }
 
+        bool isNull = false;
+
         if ( ( FdoSmOvGeometricColumnType_Default == columnType &&
                FdoSmOvGeometricContentType_Default == contentType ) ||
              ( FdoSmOvGeometricColumnType_Default == columnType &&
                FdoSmOvGeometricContentType_Default == contentType ) )
         {
-        	byteArray = mFdoConnection->GetGeometryValue( query, pGeometricProperty, GetPropertyInfoDef(cacheIndex)->columnPosition, checkIsNullOnly, unsupportedTypeExp );
+        	FdoIGeometry	*geom = NULL;
+            query->GetBinaryValue( mPropertyInfoDefs[cacheIndex].columnPosition, sizeof(FdoIGeometry *), (char*)&geom, &isNull, NULL);
+
+            pgeom = mFdoConnection->TransformGeometry( 
+                geom, 
+                pGeometricProperty, 
+                true 
+            );
         }
         else if ( FdoSmOvGeometricColumnType_Double == columnType &&
                   FdoSmOvGeometricContentType_Ordinates == contentType )
@@ -1740,10 +1723,7 @@ FdoByteArray* FdoRdbmsFeatureReader::GetGeometry(const wchar_t* propertyName, bo
 
             if (isNullX || isNullY || isNullZ)
             {
-                if (!checkIsNullOnly)
-                {
-                    throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp, propertyName ));
-                }
+                isNull = true;
             }
             else
             {
@@ -1754,8 +1734,35 @@ FdoByteArray* FdoRdbmsFeatureReader::GetGeometry(const wchar_t* propertyName, bo
                     dimensionality |= FdoDimensionality_Z;
 
                 pgeom = gf->CreatePoint(dimensionality, ordinates);
+            }
+        }
+
+        if ( pgeom && pgeom->GetDerivedType() != FdoGeometryType_None )
+            isSupportedType = true;
+
+        if ( pgeom != NULL )
+        {
+            if ( isSupportedType )
+            {
+				FdoPtr<FdoFgfGeometryFactory>  gf = FdoFgfGeometryFactory::GetInstance();
 				byteArray = gf->GetFgf( pgeom );
             }
+            else
+            {
+                if ( checkIsNullOnly )
+                {
+                    byteArray = FdoByteArray::Create( (FdoInt32) 1);
+                }
+                else
+                {
+                    unsupportedTypeExp = true;
+                    throw FdoCommandException::Create( NlsMsgGet(FDORDBMS_116, "Unsupported geometry type" ) );
+                }
+            }
+        }
+        else if (!checkIsNullOnly)// isNull indicator is not set by GDBI for geometry columns
+        {
+            throw FdoCommandException::Create(NlsMsgGet1( FDORDBMS_385, strNUllPropetryExp, propertyName ));
         }
     }
     catch ( FdoCommandException* exc )
@@ -1848,7 +1855,7 @@ bool FdoRdbmsFeatureReader::ReadNextWithLocalFilter()
     for (FdoInt32 i = 0;  i < numFilters && !doSecFilter;  i++)
     { 
         FdoPtr<FdoRdbmsSpatialSecondaryFilter> filter = mSecondarySpatialFilters->GetItem(i);
-        doSecFilter = mFdoConnection->NeedsSecondaryFiltering( filter );
+		doSecFilter = ( filter->GetOperation() != FdoSpatialOperations_EnvelopeIntersects );
 	}
 
     while (!mPropertiesFetched && !noMore)
@@ -2017,7 +2024,7 @@ bool FdoRdbmsFeatureReader::ReadNext( )
 		{
 			mLastPropertyInfoDef++;
 			PROPERTY2COLNAME_IDX( mClassIdColName, NULL, NULL, &cacheIndex );
-            mQueryResult->GetBinaryValue( GetPropertyInfoDef(cacheIndex)->columnPosition, sizeof(long),
+            mQueryResult->GetBinaryValue( mPropertyInfoDefs[cacheIndex].columnPosition, sizeof(long),
                         (char *)&dbiFeature.classid, NULL, NULL );
 		}
 
@@ -2027,7 +2034,7 @@ bool FdoRdbmsFeatureReader::ReadNext( )
 		{
 			mLastPropertyInfoDef++;
 			PROPERTY2COLNAME_IDX( mRevNumColName, NULL, NULL, &cacheIndex );
-            mQueryResult->GetBinaryValue( GetPropertyInfoDef(cacheIndex)->columnPosition, sizeof(long),
+            mQueryResult->GetBinaryValue( mPropertyInfoDefs[cacheIndex].columnPosition, sizeof(long),
                         (char *)&dbiFeature.changeseq, &isNull, NULL );
 		}
 
@@ -2161,5 +2168,54 @@ int FdoRdbmsFeatureReader::GetAttributeQuery( wchar_t* className )
         mAttrQueryCache[nextIdx].class_name[GDBI_SCHEMA_ELEMENT_NAME_SIZE - 1] = '\0';
         return (mLastAttrQueryIdx = nextIdx );
     }
+}
+
+void  FdoRdbmsFeatureReader::ChangeActiveSpatialContext()
+{
+#pragma message ("ToDo: FdoRdbmsFeatureReader::ChangeActiveSpatialContext")
+/* TODO
+    dbi_plan_info_def       plan_info;
+    int                     found = false;
+
+    mOldActiveSC = -1;
+    mNewActiveSC = -1;
+
+    if (!mIsFeatureQuery)
+        return;
+
+    const FdoSmLpFeatureClass*  feat = static_cast<const FdoSmLpFeatureClass *>( mClassDefinition );
+    const FdoSmLpGeometricPropertyDefinition *geom = feat->RefGeometryProperty();
+
+    if ( geom == NULL)
+        return;
+
+    FdoStringP  assocSC = geom->GetSpatialContextAssociation();
+
+    // Find the plan number by name
+    mConnection->dbi_plan_find( (char*)(const char*)assocSC, &plan_info, &found );
+
+    if ( !found )
+        throw FdoSpatialContextMismatchException::Create(
+            NlsMsgGet1( FDORDBMS_322,
+                "Spatial context '%1$ls' not found", (FdoString *) assocSC)
+            );
+
+    mOldActiveSC = mConnection->dbi_plan_active_get();
+    mNewActiveSC = plan_info.plan;
+
+    if (  mOldActiveSC != mNewActiveSC )
+        mConnection->dbi_plan_active_set( mNewActiveSC );
+*/
+}
+
+void  FdoRdbmsFeatureReader::RestoreActiveSpatialContext()
+{
+#pragma message ("ToDo: FdoRdbmsFeatureReader::RestoreActiveSpatialContext")
+//TODO
+/*
+    // Restore the original active spatial context
+    if ( mOldActiveSC != -1 && mOldActiveSC != mNewActiveSC )
+        mConnection->dbi_plan_active_set( mOldActiveSC );
+*/
 }
 

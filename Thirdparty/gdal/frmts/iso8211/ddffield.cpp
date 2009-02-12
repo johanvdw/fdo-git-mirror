@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddffield.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ddffield.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFField class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddffield.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ddffield.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 // Note, we implement no constructor for this class to make instantiation
 // cheaper.  It is required that the Initialize() be called before anything

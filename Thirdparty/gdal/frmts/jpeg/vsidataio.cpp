@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsidataio.cpp 15508 2008-10-09 21:24:31Z warmerdam $
+ * $Id: vsidataio.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement JPEG read/write io indirection through VSI.
@@ -30,7 +30,7 @@
 
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: vsidataio.cpp 15508 2008-10-09 21:24:31Z warmerdam $");
+CPL_CVSID("$Id: vsidataio.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 #include "jpeglib.h"
@@ -129,63 +129,6 @@ fill_input_buffer (j_decompress_ptr cinfo)
   return TRUE;
 }
 
-/* 
- * The Intel IPP performance libraries do not necessarily read the 
- * entire contents of the buffer with each pass, so each re-fill
- * copies the remaining buffer bytes to the front of the buffer,
- * then fills up the rest with new data.
- */
-#ifdef IPPJ_HUFF
-METHODDEF(boolean)
-fill_input_buffer_ipp (j_decompress_ptr cinfo)
-{
-  my_src_ptr src = (my_src_ptr) cinfo->src;
-  size_t bytes_left = src->pub.bytes_in_buffer;
-  size_t bytes_to_read = INPUT_BUF_SIZE - bytes_left;
-  size_t nbytes;
-
-  if(src->start_of_file || cinfo->progressive_mode)
-  {
-    return fill_input_buffer(cinfo);
-  }
-
-  memmove(src->buffer,src->pub.next_input_byte,bytes_left);
-
-  nbytes = VSIFReadL(src->buffer + bytes_left, 1, bytes_to_read, src->infile);
-
-  if(nbytes <= 0)
-  {
-    if(src->start_of_file)
-    {
-      /* Treat empty input file as fatal error */
-      ERREXIT(cinfo, JERR_INPUT_EMPTY);
-    }
-
-    if(src->pub.bytes_in_buffer == 0 && cinfo->unread_marker == 0)
-    {
-      WARNMS(cinfo, JWRN_JPEG_EOF);
-
-      /* Insert a fake EOI marker */
-      src->buffer[0] = (JOCTET)0xFF;
-      src->buffer[1] = (JOCTET)JPEG_EOI;
-      nbytes = 2;
-    }
-
-    src->pub.next_input_byte = src->buffer;
-    src->pub.bytes_in_buffer = bytes_left + nbytes;
-    src->start_of_file = FALSE;
-
-    return TRUE;
-  }
-
-  src->pub.next_input_byte = src->buffer;
-  src->pub.bytes_in_buffer = bytes_left + nbytes;
-  src->start_of_file = FALSE;
-
-  return TRUE;
-}
-#endif /* IPPJ_HUFF */
-
 
 /*
  * Skip data --- used to skip over a potentially large amount of
@@ -276,11 +219,7 @@ void jpeg_vsiio_src (j_decompress_ptr cinfo, FILE * infile)
 
   src = (my_src_ptr) cinfo->src;
   src->pub.init_source = init_source;
-#ifdef IPPJ_HUFF
-  src->pub.fill_input_buffer = fill_input_buffer_ipp;
-#else
   src->pub.fill_input_buffer = fill_input_buffer;
-#endif
   src->pub.skip_input_data = skip_input_data;
   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
   src->pub.term_source = term_source;
@@ -355,20 +294,9 @@ METHODDEF(boolean)
 empty_output_buffer (j_compress_ptr cinfo)
 {
   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
-  size_t bytes_to_write = OUTPUT_BUF_SIZE;
 
-#ifdef IPPJ_HUFF
-/*
- * The Intel IPP performance libraries do not necessarily fill up
- * the whole output buffer with each compression pass, so we only
- * want to write out the parts of the buffer that are full.
- */
-  if(! cinfo->progressive_mode) {
-    bytes_to_write -= dest->pub.free_in_buffer;
-  }
-#endif
-
-  if (VSIFWriteL(dest->buffer, 1, bytes_to_write, dest->outfile) != bytes_to_write)
+  if (VSIFWriteL(dest->buffer, 1, OUTPUT_BUF_SIZE, dest->outfile) !=
+      (size_t) OUTPUT_BUF_SIZE)
     ERREXIT(cinfo, JERR_FILE_WRITE);
 
   dest->pub.next_output_byte = dest->buffer;
@@ -376,6 +304,7 @@ empty_output_buffer (j_compress_ptr cinfo)
 
   return TRUE;
 }
+
 
 /*
  * Terminate destination --- called by jpeg_finish_compress

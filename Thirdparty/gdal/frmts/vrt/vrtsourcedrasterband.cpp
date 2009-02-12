@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtsourcedrasterband.cpp 14998 2008-07-22 21:18:04Z rouault $
+ * $Id: vrtsourcedrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSourcedRasterBand
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtsourcedrasterband.cpp 14998 2008-07-22 21:18:04Z rouault $");
+CPL_CVSID("$Id: vrtsourcedrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -229,23 +229,6 @@ CPLErr VRTSourcedRasterBand::AddSource( VRTSource *poNewSource )
 }
 
 /************************************************************************/
-/*                              VRTAddSource()                          */
-/************************************************************************/
-
-/**
- * @see VRTSourcedRasterBand::AddSource().
- */
-
-CPLErr CPL_STDCALL VRTAddSource( VRTSourcedRasterBandH hVRTBand,
-                                 VRTSourceH hNewSource )
-{
-    VALIDATE_POINTER1( hVRTBand, "VRTAddSource", CE_Failure );
-
-    return ((VRTSourcedRasterBand *) hVRTBand)->
-        AddSource( (VRTSource *)hNewSource );
-}
-
-/************************************************************************/
 /*                              XMLInit()                               */
 /************************************************************************/
 
@@ -412,46 +395,17 @@ CPLErr VRTSourcedRasterBand::AddSimpleSource( GDALRasterBand *poSrcBand,
 }
 
 /************************************************************************/
-/*                         VRTAddSimpleSource()                         */
-/************************************************************************/
-
-/**
- * @see VRTSourcedRasterBand::AddSimpleSource().
- */
-
-CPLErr CPL_STDCALL VRTAddSimpleSource( VRTSourcedRasterBandH hVRTBand,
-                                       GDALRasterBandH hSrcBand, 
-                                       int nSrcXOff, int nSrcYOff, 
-                                       int nSrcXSize, int nSrcYSize, 
-                                       int nDstXOff, int nDstYOff, 
-                                       int nDstXSize, int nDstYSize,
-                                       const char *pszResampling,
-                                       double dfNoDataValue )
-{
-    VALIDATE_POINTER1( hVRTBand, "VRTAddSimpleSource", CE_Failure );
-
-    return ((VRTSourcedRasterBand *) hVRTBand)->AddSimpleSource(
-                                            (GDALRasterBand *)hSrcBand, 
-                                            nSrcXOff, nSrcYOff, 
-                                            nSrcXSize, nSrcYSize, 
-                                            nDstXOff, nDstYOff, 
-                                            nDstXSize, nDstYSize,
-                                            pszResampling, dfNoDataValue );
-}
-
-/************************************************************************/
 /*                          AddComplexSource()                          */
 /************************************************************************/
 
 CPLErr VRTSourcedRasterBand::AddComplexSource( GDALRasterBand *poSrcBand, 
-                                               int nSrcXOff, int nSrcYOff, 
-                                               int nSrcXSize, int nSrcYSize, 
-                                               int nDstXOff, int nDstYOff, 
-                                               int nDstXSize, int nDstYSize,
-                                               double dfScaleOff,
-                                               double dfScaleRatio,
-                                               double dfNoDataValue,
-                                               int nColorTableComponent)
+                                        int nSrcXOff, int nSrcYOff, 
+                                        int nSrcXSize, int nSrcYSize, 
+                                        int nDstXOff, int nDstYOff, 
+                                        int nDstXSize, int nDstYSize,
+                                        double dfScaleOff, 
+                                        double dfScaleRatio,
+                                        double dfNoDataValue )
 
 {
 /* -------------------------------------------------------------------- */
@@ -498,8 +452,6 @@ CPLErr VRTSourcedRasterBand::AddComplexSource( GDALRasterBand *poSrcBand,
           
     }
 
-    poSource->nColorTableComponent = nColorTableComponent;
-
 /* -------------------------------------------------------------------- */
 /*      If we can get the associated GDALDataset, add a reference to it.*/
 /* -------------------------------------------------------------------- */
@@ -510,36 +462,6 @@ CPLErr VRTSourcedRasterBand::AddComplexSource( GDALRasterBand *poSrcBand,
 /*      add to list.                                                    */
 /* -------------------------------------------------------------------- */
     return AddSource( poSource );
-}
-
-/************************************************************************/
-/*                         VRTAddComplexSource()                        */
-/************************************************************************/
-
-/**
- * @see VRTSourcedRasterBand::AddComplexSource().
- */
-
-CPLErr CPL_STDCALL VRTAddComplexSource( VRTSourcedRasterBandH hVRTBand,
-                                        GDALRasterBandH hSrcBand, 
-                                        int nSrcXOff, int nSrcYOff, 
-                                        int nSrcXSize, int nSrcYSize, 
-                                        int nDstXOff, int nDstYOff, 
-                                        int nDstXSize, int nDstYSize,
-                                        double dfScaleOff, 
-                                        double dfScaleRatio,
-                                        double dfNoDataValue )
-{
-    VALIDATE_POINTER1( hVRTBand, "VRTAddComplexSource", CE_Failure );
-
-    return ((VRTSourcedRasterBand *) hVRTBand)->AddComplexSource(
-                                            (GDALRasterBand *)hSrcBand, 
-                                            nSrcXOff, nSrcYOff, 
-                                            nSrcXSize, nSrcYSize, 
-                                            nDstXOff, nDstYOff, 
-                                            nDstXSize, nDstYSize,
-                                            dfScaleOff, dfScaleRatio,
-                                            dfNoDataValue );
 }
 
 /************************************************************************/
@@ -564,24 +486,6 @@ CPLErr VRTSourcedRasterBand::AddFuncSource( VRTImageReadFunc pfnReadFunc,
 /*      add to list.                                                    */
 /* -------------------------------------------------------------------- */
     return AddSource( poFuncSource );
-}
-
-/************************************************************************/
-/*                          VRTAddFuncSource()                          */
-/************************************************************************/
-
-/**
- * @see VRTSourcedRasterBand::AddFuncSource().
- */
-
-CPLErr CPL_STDCALL VRTAddFuncSource( VRTSourcedRasterBandH hVRTBand,
-                                     VRTImageReadFunc pfnReadFunc, 
-                                     void *pCBData, double dfNoDataValue )
-{
-    VALIDATE_POINTER1( hVRTBand, "VRTAddFuncSource", CE_Failure );
-
-    return ((VRTSourcedRasterBand *) hVRTBand)->
-        AddFuncSource( pfnReadFunc, pCBData, dfNoDataValue );
 }
 
 /************************************************************************/

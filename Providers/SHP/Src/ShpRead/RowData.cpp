@@ -39,9 +39,9 @@
  *
  *****************************************************************************/
 /*
- * Made one change in Sep 18, 2008
+ * Made one change in Oct 21, 2008
  * From: Only records in DBF file which start with cVALID_RECORD_ID can be accepted as valid record.
- * To: Only records in DBF file which start cDELETED_RECORD_ID can be accepted as deleted record.
+ * To: Only records in DBF file which start with cDELETED_RECORD_ID can be accepted as deleted record.
 */
 RowData::RowData (ColumnInfo* pColumnInfo, void* buffer) :
     mDeleted (true),                                   // change default value from "false" to "true" 
@@ -374,49 +374,31 @@ void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, WCHAR* 
 			{
                 data->value.dData = atof((const char*)raw);
 
-                // A) In case the number is in scientific format (containing 'E' or 'e') no extra processing
-                // is required.
-
-				// B) In case the locale is using ',' as decimal separator, then atof() truncates
+				// In case the locale is using ',' as decimal separator, then atof() truncates
 				// the number to its integer value. Note errno doesn't seem to be reliable since it returns
 				// ERANGE even in valid cases. The code below will do a conversion on the same
 				// string with '.' replaced by ',' then the largest value (that is, not truncated) 
-				// will be selected for output. 
-
+				// will be selected for output.
 				char	buffer[50];
 				size_t	length = strlen((const char*)raw);
 				memcpy(buffer, (const char*)raw, length);
 				buffer[length] = '\0';
-
-                bool isScientific = false;
-                char *p = &buffer[length - 1];
-
-                // Check for scientific format
-                while (p > buffer && !isScientific)
+				char *p = &buffer[length - 1];
+				while (p > buffer)
 				{
-					isScientific = (*p == 'E' || *p == 'e');
+					if (*p == '.')
+					{
+						*p = ',';
+						break;
+					}
 					p--;
 				}
 
-                if (!isScientific)
-                {
-				    char *p = &buffer[length - 1];
-				    while (p > buffer)
-				    {
-					    if (*p == '.')
-					    {
-						    *p = ',';
-						    break;
-					    }
-					    p--;
-				    }
-
-				    double value = atof(buffer);
-    				
-				    // Select the not truncated value.
-				    if (fabs(value) > fabs(data->value.dData))
-					    data->value.dData = value;
-                }
+				double value = atof(buffer);
+				
+				// Select the not triuncated value.
+				if (fabs(value) > fabs(data->value.dData))
+					data->value.dData = value;
 			}
             break;
 

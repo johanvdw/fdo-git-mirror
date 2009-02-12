@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iomhelper.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: iomhelper.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 1/2 Translator
  * Purpose:  Implementation of ILI1Reader class.
@@ -31,7 +31,7 @@
 #include "iomhelper.h"
 #include "cpl_port.h"
 
-CPL_CVSID("$Id: iomhelper.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: iomhelper.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 IOM_OBJECT GetAttrObj(IOM_BASKET model, IOM_OBJECT obj, const char* attrname) {

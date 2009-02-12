@@ -1,36 +1,6 @@
-/******************************************************************************
- * $Id: GDALColorTable.cs 13677 2008-02-02 23:05:45Z tamas $
- *
- * Name:     GDALColorTable.cs
- * Project:  GDAL CSharp Interface
- * Purpose:  A sample app for demonstrating the usage of the ColorTable object.
- * Author:   Tamas Szekeres, szekerest@gmail.com
- *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
 using System;
 
-using OSGeo.GDAL;
+using GDAL;
 
 
 /**
@@ -67,7 +37,7 @@ class GDALColorTable {
             /* -------------------------------------------------------------------- */
             /*      Register driver(s).                                             */
             /* -------------------------------------------------------------------- */
-            Gdal.AllRegister();
+            gdal.AllRegister();
             
             Driver dv = null;
             Dataset ds = null, ds_out = null;
@@ -78,17 +48,12 @@ class GDALColorTable {
             /* -------------------------------------------------------------------- */
             /*      Open dataset.                                                   */
             /* -------------------------------------------------------------------- */
-            ds = Gdal.Open(file, Access.GA_ReadOnly);
+            ds = gdal.Open(file, gdalconst.GA_ReadOnly);
             ba = ds.GetRasterBand(1);
             ct = ba.GetRasterColorTable();
 
             if( ct != null )
                 Console.WriteLine( "Band has a color table with " + ct.GetCount() + " entries.");
-            else 
-            {
-                Console.WriteLine( "Data source has no color table");
-                return;
-            }
 
             buffer = new byte [ds.RasterXSize * ds.RasterYSize];
             ba.ReadRaster(0, 0, ds.RasterXSize, ds.RasterYSize, buffer,
@@ -97,12 +62,12 @@ class GDALColorTable {
             /* -------------------------------------------------------------------- */
             /*      Get driver                                                      */
             /* -------------------------------------------------------------------- */	
-            dv = Gdal.GetDriverByName("GTiff");
+            dv = gdal.GetDriverByName("GTiff");
 
             ds_out = dv.Create(file_out, ds.RasterXSize, ds.RasterYSize,
                 ds.RasterCount, ba.DataType, new string [] {});
             ba_out = ds_out.GetRasterBand(1);
-            ct_out = new ColorTable(PaletteInterp.GPI_RGB);
+            ct_out = new ColorTable(gdalconst.GPI_RGB);
 
             ba_out.WriteRaster(0, 0, ds.RasterXSize, ds.RasterYSize, buffer,
                 ds.RasterXSize, ds.RasterYSize, 0, 0);

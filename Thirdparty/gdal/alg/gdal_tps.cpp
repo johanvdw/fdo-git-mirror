@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_tps.cpp 12686 2007-11-09 19:31:29Z warmerdam $
+ * $Id: gdal_tps.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Thin Plate Spline transformer (GDAL wrapper portion)
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdal_tps.cpp 12686 2007-11-09 19:31:29Z warmerdam $");
+CPL_CVSID("$Id: gdal_tps.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg );
@@ -158,8 +158,6 @@ void *GDALCreateTPSTransformer( int nGCPCount, const GDAL_GCP *pasGCPList,
 void GDALDestroyTPSTransformer( void *pTransformArg )
 
 {
-    VALIDATE_POINTER0( pTransformArg, "GDALDestroyTPSTransformer" );
-
     TPSTransformInfo *psInfo = (TPSTransformInfo *) pTransformArg;
 
     delete psInfo->poForward;
@@ -202,8 +200,6 @@ int GDALTPSTransform( void *pTransformArg, int bDstToSrc,
                       int *panSuccess )
 
 {
-    VALIDATE_POINTER1( pTransformArg, "GDALTPSTransform", 0 );
-
     int    i;
     TPSTransformInfo *psInfo = (TPSTransformInfo *) pTransformArg;
 
@@ -236,10 +232,8 @@ int GDALTPSTransform( void *pTransformArg, int bDstToSrc,
 CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg )
 
 {
-    VALIDATE_POINTER1( pTransformArg, "GDALSerializeTPSTransformer", NULL );
-
     CPLXMLNode *psTree;
-    TPSTransformInfo *psInfo = static_cast<TPSTransformInfo *>(pTransformArg);
+    TPSTransformInfo *psInfo = (TPSTransformInfo *) pTransformArg;
 
     psTree = CPLCreateXMLNode( NULL, CXT_Element, "TPSTransformer" );
 
@@ -248,7 +242,7 @@ CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     CPLCreateXMLElementAndValue( 
         psTree, "Reversed", 
-        CPLString().Printf( "%d", psInfo->bReversed ) );
+        CPLSPrintf( "%d", psInfo->bReversed ) );
                                  
 /* -------------------------------------------------------------------- */
 /*	Attach GCP List. 						*/
@@ -272,20 +266,20 @@ CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg )
                 CPLSetXMLValue( psXMLGCP, "Info", psGCP->pszInfo );
 
             CPLSetXMLValue( psXMLGCP, "#Pixel", 
-                            CPLString().Printf( "%.4f", psGCP->dfGCPPixel ) );
+                            CPLSPrintf( "%.4f", psGCP->dfGCPPixel ) );
 
             CPLSetXMLValue( psXMLGCP, "#Line", 
-                            CPLString().Printf( "%.4f", psGCP->dfGCPLine ) );
+                            CPLSPrintf( "%.4f", psGCP->dfGCPLine ) );
 
             CPLSetXMLValue( psXMLGCP, "#X", 
-                            CPLString().Printf( "%.12E", psGCP->dfGCPX ) );
+                            CPLSPrintf( "%.12E", psGCP->dfGCPX ) );
 
             CPLSetXMLValue( psXMLGCP, "#Y", 
-                            CPLString().Printf( "%.12E", psGCP->dfGCPY ) );
+                            CPLSPrintf( "%.12E", psGCP->dfGCPY ) );
 
             if( psGCP->dfGCPZ != 0.0 )
                 CPLSetXMLValue( psXMLGCP, "#GCPZ", 
-                                CPLString().Printf( "%.12E", psGCP->dfGCPZ ) );
+                                CPLSPrintf( "%.12E", psGCP->dfGCPZ ) );
         }
     }
 

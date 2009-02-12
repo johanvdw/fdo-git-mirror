@@ -34,8 +34,6 @@ class FdoInt32Value : public FdoDataValue
 /// \cond DOXYGEN-IGNORE
     friend class FdoByteValue;
     friend class FdoInt16Value;
-    friend class FdoStringValue;
-    friend class FdoDataValue;
 protected:
     /// \brief
     /// Constructs a default instance of an FdoInt32Value with a
@@ -150,48 +148,27 @@ protected:
     /// 
     /// \param src 
     /// Input the other FdoDataValue. Must be of one of the following types:
-    ///     FdoDataType_Boolean
     ///     FdoDataType_Byte
-    ///     FdoDataType_Decimal
-    ///     FdoDataType_Double
     ///     FdoDataType_Int16
     ///     FdoDataType_Int32
-    ///     FdoDataType_Int64
-    ///     FdoDataType_Single
-    ///     FdoDataType_String
-    ///         - value must be numeric.
-    ///
-    /// In all other cases, the src type is considered incompatible with this type.
+    /// \param truncate 
+    /// Input in the future, will determine what to do if source value does not fit in the int32
+    /// number range:
+    ///     true - truncate the value to fit.
+    ///     false - throw an exception
     /// \param nullIfIncompatible 
-    /// Input will determine what to do if the source value cannot be converted to 
-    /// this type:
+    /// Input in the future, will determine what to do if source value type is not compatible with the 
+    /// FDO int32 type:
     ///     true - return NULL.
     ///     false - throw an exception
     /// 
-    /// \param shift 
-    /// Input determines whether non integer values can be converted:
-    ///     true - convert values by rounding them.
-    ///     false - behaviour depends on nullIfIncompatible:
-    ///         true - return NULL.
-    ///         false - throw an exception
-    /// \param truncate 
-    /// Input determines what to do if source value is outside the FdoInt32 range
-    //  ( LONG_MIN to LONG_MAX ):
-    ///     true - convert values less than LONG_MIN to LONG_MIN, convert values greater than LONG_MAX to LONG_MAX
-    ///     false - behaviour depends on nullIfIncompatible:
-    ///         true - return NULL.
-    ///         false - throw an exception
     /// \return
-    /// Returns an FdoInt32Value, whose value is converted from the src value. 
-    /// If src is an FdoBooleanValue:
-    ///     false is converted to 0
-    ///     true is converted to 1
-    ///
+    /// Returns an FdoInt32Value
+    /// 
     static FdoInt32Value* Create(
         FdoDataValue* src, 
-        FdoBoolean nullIfIncompatible = false,
-        FdoBoolean shift = true, 
-        FdoBoolean truncate = false 
+        FdoBoolean truncate = false, 
+        FdoBoolean nullIfIncompatible = false
     );
 
     // See FdoDataValue::DoCompare()

@@ -1,13 +1,23 @@
 /*
- * $Id: osr_python.i 11532 2007-05-16 02:47:33Z hobu $
+ * $Id: osr_python.i 8192 2005-09-02 21:42:42Z kruland $
  *
  * python specific code for ogr bindings.
  */
 
+/*
+ * $Log$
+ * Revision 1.2  2005/09/02 21:42:42  kruland
+ * The compactdefaultargs feature should be turned on for all bindings not just
+ * python.
+ *
+ * Revision 1.1  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ */
 
 %feature("autodoc");
-
-%include "python_exceptions.i"
 
 %{
 static PyObject *

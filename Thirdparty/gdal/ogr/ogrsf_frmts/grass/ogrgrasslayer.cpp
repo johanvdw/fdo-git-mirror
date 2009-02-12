@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrasslayer.cpp 15235 2008-08-27 19:44:56Z rouault $
+ * $Id: ogrgrasslayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSLayer class.
@@ -31,7 +31,7 @@
 #include "ogrgrass.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgrasslayer.cpp 15235 2008-08-27 19:44:56Z rouault $");
+CPL_CVSID("$Id: ogrgrasslayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRGRASSLayer()                            */
@@ -207,9 +207,6 @@ OGRGRASSLayer::OGRGRASSLayer( int layerIndex,  struct Map_info * map )
 	    poSRS = new OGRSpatialReference ( srsWkt );
 	    CPLFree ( srsWkt );
 	}
-
-        G_free_key_value(projinfo);
-        G_free_key_value(projunits);
     }
 }
 

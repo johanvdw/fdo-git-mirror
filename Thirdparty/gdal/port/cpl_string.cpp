@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_string.cpp 14693 2008-06-12 18:21:54Z rouault $
+ * $Id: cpl_string.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Name:     cpl_string.cpp
  * Project:  CPL - Common Portability Library
@@ -47,14 +47,13 @@
 
 #include "cpl_string.h"
 #include "cpl_vsi.h"
-#include "cpl_multiproc.h"
 
 #if defined(WIN32CE)
 #  include <wce_errno.h>
 #  include <wce_string.h>
 #endif
 
-CPL_CVSID("$Id: cpl_string.cpp 14693 2008-06-12 18:21:54Z rouault $");
+CPL_CVSID("$Id: cpl_string.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /*=====================================================================
                     StringList manipulation functions.
@@ -66,8 +65,6 @@ CPL_CVSID("$Id: cpl_string.cpp 14693 2008-06-12 18:21:54Z rouault $");
  * Append a string to a StringList and return a pointer to the modified
  * StringList.
  * If the input StringList is NULL, then a new StringList is created.
- * Note that CSLAddString performance when building a list is in O(n^2)
- * which can cause noticable slow down when n > 10000.
  **********************************************************************/
 char **CSLAddString(char **papszStrList, const char *pszNewString)
 {
@@ -93,26 +90,11 @@ char **CSLAddString(char **papszStrList, const char *pszNewString)
     return papszStrList;
 }
 
-/************************************************************************/
-/*                              CSLCount()                              */
-/************************************************************************/
-
-/**
- * Return number of items in a string list.
+/**********************************************************************
+ *                       CSLCount()
  *
- * Returns the number of items in a string list, not counting the 
- * terminating NULL.  Passing in NULL is safe, and will result in a count
- * of zero.  
- *
- * Lists are counted by iterating through them so long lists will
- * take more time than short lists.  Care should be taken to avoid using
- * CSLCount() as an end condition for loops as it will result in O(n^2)
- * behavior. 
- *
- * @param papszStrList the string list to count.
- * 
- * @return the number of entries.
- */
+ * Return the number of lines in a Stringlist.
+ **********************************************************************/
 int CSLCount(char **papszStrList)
 {
     int nItems=0;
@@ -156,18 +138,11 @@ const char * CSLGetField( char ** papszStrList, int iField )
     return( papszStrList[iField] );
 }
 
-/************************************************************************/
-/*                             CSLDestroy()                             */
-/************************************************************************/
-
-/**
- * Free string list.
- * 
- * Frees the passed string list (null terminated array of strings).
- * It is safe to pass NULL. 
+/**********************************************************************
+ *                       CSLDestroy()
  *
- * @param papszStrList the list to free.
- */
+ * Free all memory used by a StringList.
+ **********************************************************************/
 void CPL_STDCALL CSLDestroy(char **papszStrList)
 {
     char **papszPtr;
@@ -185,22 +160,13 @@ void CPL_STDCALL CSLDestroy(char **papszStrList)
     }
 }
 
-/************************************************************************/
-/*                            CSLDuplicate()                            */
-/************************************************************************/
 
-/**
- * Clone a string list.
+/**********************************************************************
+ *                       CSLDuplicate()
  *
- * Efficiently allocates a copy of a string list.  The returned list is
- * owned by the caller and should be freed with CSLDestroy().
- *
- * @param papszStrList the input string list.
- * 
- * @return newly allocated copy.
- */
-
-char **CSLDuplicate(char **papszStrList)
+ * Allocate and return a copy of a StringList.
+ **********************************************************************/
+char    **CSLDuplicate(char **papszStrList)
 {
     char **papszNewList, **papszSrc, **papszDst;
     int  nLines;
@@ -266,25 +232,13 @@ char **CSLMerge( char **papszOrig, char **papszOverride )
     return papszOrig;
 }
 
-/************************************************************************/
-/*                              CSLLoad()                               */
-/************************************************************************/
-
-/**
- * Load a text file into a string list.
+/**********************************************************************
+ *                       CSLLoad()
  *
- * The VSI*L API is used, so VSIFOpenL() supported objects that aren't
- * physical files can also be accessed.  Files are returned as a string list,
- * with one item in the string list per line.  End of line markers are
- * stripped (by CPLReadLineL()). 
+ * Load a test file into a stringlist.
  *
- * If reading the file fails a CPLError() will be issued and NULL returned.
- *
- * @param pszFname the name of the file to read.
- * 
- * @return a string list with the files lines, now owned by caller.
- */
-
+ * Lines are limited in length by the size of the CPLReadLine() buffer.
+ **********************************************************************/
 char **CSLLoad(const char *pszFname)
 {
     FILE        *fp;
@@ -310,9 +264,8 @@ char **CSLLoad(const char *pszFname)
     else
     {
         /* Unable to open file */
-        CPLError( CE_Failure, CPLE_OpenFailed,
-                  "CSLLoad(\"%s\") failed: unable to open output file.",
-                  pszFname );
+        CPLError(CE_Failure, CPLE_OpenFailed,
+                 "CSLLoad(%s): %s", pszFname, strerror(errno));
     }
 
     return papszStrList;
@@ -333,15 +286,16 @@ int  CSLSave(char **papszStrList, const char *pszFname)
 
     if (papszStrList)
     {
-        if ((fp = VSIFOpenL(pszFname, "wt")) != NULL)
+        if ((fp = VSIFOpen(pszFname, "wt")) != NULL)
         {
             while(*papszStrList != NULL)
             {
-                if( VSIFPrintfL( fp, "%s\n", *papszStrList ) < 1 )
+                if (VSIFPuts(*papszStrList, fp) == EOF ||
+                    VSIFPutc('\n', fp) == EOF)
                 {
-                    CPLError( CE_Failure, CPLE_FileIO,
-                    "CSLSave(\"%s\") failed: unable to write to output file.",
-                              pszFname );
+                    CPLError(CE_Failure, CPLE_FileIO,
+                             "CSLSave(%s): %s", pszFname, 
+                             strerror(errno));
                     break;  /* A Problem happened... abort */
                 }
 
@@ -349,14 +303,13 @@ int  CSLSave(char **papszStrList, const char *pszFname)
                 papszStrList++;
             }
 
-            VSIFCloseL(fp);
+            VSIFClose(fp);
         }
         else
         {
             /* Unable to open file */
-            CPLError( CE_Failure, CPLE_OpenFailed,
-                      "CSLSave(\"%s\") failed: unable to open output file.",
-                      pszFname );
+            CPLError(CE_Failure, CPLE_OpenFailed,
+                     "CSLSave(%s): %s", pszFname, strerror(errno));
         }
     }
 
@@ -576,20 +529,11 @@ char **CSLRemoveStrings(char **papszStrList, int nFirstLineToDelete,
 
 /************************************************************************/
 /*                           CSLFindString()                            */
+/*                                                                      */
+/*      Find a string within a string list.  The string must match      */
+/*      the full length, but the comparison is case insensitive.        */
+/*      Return -1 on failure.                                           */
 /************************************************************************/
-
-/**
- * Find a string within a string list.
- *
- * Returns the index of the entry in the string list that contains the 
- * target string.  The string in the string list must be a full match for
- * the target, but the search is case insensitive. 
- * 
- * @param papszList the string list to be searched.
- * @param pszTarget the string to be searched for. 
- * 
- * @return the index of the string within the list or -1 on failure.
- */
 
 int CSLFindString( char ** papszList, const char * pszTarget )
 
@@ -607,39 +551,6 @@ int CSLFindString( char ** papszList, const char * pszTarget )
 
     return -1;
 }
-
-/************************************************************************/
-/*                           CSLPartialFindString()                     */
-/************************************************************************/
-
-/**
- * Find a substring within a string list.
- *
- * Returns the index of the entry in the string list that contains the 
- * target string as a substring.  The search is case sensitive (unlike 
- * CSLFindString()). 
- * 
- * @param papszHaystack the string list to be searched.
- * @param pszNeedle the substring to be searched for. 
- * 
- * @return the index of the string within the list or -1 on failure.
- */
-
-int CSLPartialFindString( char **papszHaystack, const char * pszNeedle )
-{
-    int i;
-    if (papszHaystack == NULL || pszNeedle == NULL)
-        return -1;
-
-    for (i = 0; papszHaystack[i] != NULL; i++) 
-    {
-        if (strstr(papszHaystack[i],pszNeedle))
-            return i;
-    }
-
-    return -1;
-}
-
 
 /**********************************************************************
  *                       CSLTokenizeString()
@@ -675,58 +586,9 @@ char ** CSLTokenizeStringComplex( const char * pszString,
 
 /************************************************************************/
 /*                         CSLTokenizeString2()                         */
+/*                                                                      */
+/*      The ultimate tokenizer?                                         */
 /************************************************************************/
-
-/**
- * Tokenize a string. 
- *
- * This function will split a string into tokens based on specified'
- * delimeter(s) with a variety of options.  The returned result is a
- * string list that should be freed with CSLDestroy() when no longer
- * needed.
- * 
- * The available parsing options are:
- * 
- * - CSLT_ALLOWEMPTYTOKENS: allow the return of empty tokens when two 
- * delimiters in a row occur with no other text between them.  If not set, 
- * empty tokens will be discarded;
- * - CSLT_STRIPLEADSPACES: strip leading space characters from the token (as
- * reported by isspace());
- * - CSLT_STRIPENDSPACES: strip ending space characters from the token (as
- * reported by isspace());
- * - CSLT_HONOURSTRINGS: double quotes can be used to hold values that should 
- * not be broken into multiple tokens; 
- * - CSLT_PRESERVEQUOTES: string quotes are carried into the tokens when this
- * is set, otherwise they are removed;
- * - CSLT_PRESERVEESCAPES: if set backslash escapes (for backslash itself, 
- * and for literal double quotes) will be preserved in the tokens, otherwise
- * the backslashes will be removed in processing.
- *
- * \b Example:
- * 
- * Parse a string into tokens based on various white space (space, newline, 
- * tab) and then print out results and cleanup.  Quotes may be used to hold 
- * white space in tokens.
-
-\code
-    char **papszTokens;
-    int i;
-
-    papszTokens = 
-        CSLTokenizeString2( pszCommand, " \t\n", 
-                            CSLT_HONOURSTRINGS | CSLT_ALLOWEMPTYTOKENS );
-
-    for( i = 0; papszTokens != NULL && papszTokens[i] != NULL; i++ )
-        printf( "arg %d: '%s'", papszTokens[i] );
-    CSLDestroy( papszTokens );
-\endcode
-
- * @param pszString the string to be split into tokens.
- * @param pszDelimiters one or more characters to be used as token delimeters.
- * @param nCSLTFlags an ORing of one or more of the CSLT_ flag values.
- *
- * @return a string list of tokens owned by the caller.
- */
 
 char ** CSLTokenizeString2( const char * pszString,
                             const char * pszDelimiters,
@@ -739,8 +601,6 @@ char ** CSLTokenizeString2( const char * pszString,
     int         nTokenMax, nTokenLen;
     int         bHonourStrings = (nCSLTFlags & CSLT_HONOURSTRINGS);
     int         bAllowEmptyTokens = (nCSLTFlags & CSLT_ALLOWEMPTYTOKENS);
-    int         bStripLeadSpaces = (nCSLTFlags & CSLT_STRIPLEADSPACES);
-    int         bStripEndSpaces = (nCSLTFlags & CSLT_STRIPENDSPACES);
 
     pszToken = (char *) CPLCalloc(10,1);
     nTokenMax = 10;
@@ -748,7 +608,6 @@ char ** CSLTokenizeString2( const char * pszString,
     while( pszString != NULL && *pszString != '\0' )
     {
         int     bInString = FALSE;
-        int     bStartString = TRUE;
 
         nTokenLen = 0;
         
@@ -786,37 +645,31 @@ char ** CSLTokenizeString2( const char * pszString,
                 }
             }
 
-            /*
-             * Within string constants we allow for escaped quotes, but in
-             * processing them we will unescape the quotes and \\ sequence
-             * reduces to \
-             */
-            if( bInString && pszString[0] == '\\' )
+            /* Within string constants we allow for escaped quotes, but
+               in processing them we will unescape the quotes */
+            if( bInString && pszString[0] == '\\' && pszString[1] == '"' )
             {
-                if ( pszString[1] == '"' || pszString[1] == '\\' )
+                if( nCSLTFlags & CSLT_PRESERVEESCAPES )
                 {
-                    if( nCSLTFlags & CSLT_PRESERVEESCAPES )
-                    {
-                        pszToken[nTokenLen] = *pszString;
-                        nTokenLen++;
-                    }
-
-                    pszString++;
+                    pszToken[nTokenLen] = *pszString;
+                    nTokenLen++;
                 }
+
+                pszString++;
             }
 
-            /*
-             * Strip spaces at the token start if requested.
-             */
-            if ( !bInString && bStripLeadSpaces
-                 && bStartString && isspace((unsigned char)*pszString) )
-                continue;
+            /* Within string constants a \\ sequence reduces to \ */
+            else if( bInString 
+                     && pszString[0] == '\\' && pszString[1] == '\\' )
+            {
+                if( nCSLTFlags & CSLT_PRESERVEESCAPES )
+                {
+                    pszToken[nTokenLen] = *pszString;
+                    nTokenLen++;
+                }
+                pszString++;
+            }
 
-            bStartString = FALSE;
-
-            /*
-             * Extend token buffer if we are running close to its end.
-             */
             if( nTokenLen >= nTokenMax-3 )
             {
                 nTokenMax = nTokenMax * 2 + 10;
@@ -825,15 +678,6 @@ char ** CSLTokenizeString2( const char * pszString,
 
             pszToken[nTokenLen] = *pszString;
             nTokenLen++;
-        }
-
-        /*
-         * Strip spaces at the token end if requested.
-         */
-        if ( !bInString && bStripEndSpaces )
-        {
-            while ( nTokenLen && isspace((unsigned char)pszToken[nTokenLen - 1]) )
-                nTokenLen--;
         }
 
         pszToken[nTokenLen] = '\0';
@@ -887,7 +731,7 @@ char ** CSLTokenizeString2( const char * pszString,
  * My own version of CPLSPrintf() that works with 10 static buffer.
  *
  * It returns a ref. to a static buffer that should not be freed and
- * is valid only until the next call to CPLSPrintf(). 
+ * is valid only until the next call to CPLSPrintf().
  *
  * NOTE: This function should move to cpl_conv.cpp. 
  **********************************************************************/
@@ -895,46 +739,28 @@ char ** CSLTokenizeString2( const char * pszString,
  */
 #define CPLSPrintf_BUF_SIZE 8000
 #define CPLSPrintf_BUF_Count 10
+static CPL_THREADLOCAL char gszCPLSPrintfBuffer[CPLSPrintf_BUF_Count][CPLSPrintf_BUF_SIZE];
+static CPL_THREADLOCAL int gnCPLSPrintfBuffer = 0;
 
 const char *CPLSPrintf(const char *fmt, ...)
 {
     va_list args;
 
-/* -------------------------------------------------------------------- */
-/*      Get the thread local buffer ring data.                          */
-/* -------------------------------------------------------------------- */
-    char *pachBufRingInfo = (char *) CPLGetTLS( CTLS_CPLSPRINTF );
-
-    if( pachBufRingInfo == NULL )
-    {
-        pachBufRingInfo = (char *) 
-            CPLCalloc(1,sizeof(int)+CPLSPrintf_BUF_Count*CPLSPrintf_BUF_SIZE);
-        CPLSetTLS( CTLS_CPLSPRINTF, pachBufRingInfo, TRUE );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Work out which string in the "ring" we want to use this         */
-/*      time.                                                           */
-/* -------------------------------------------------------------------- */
-    int *pnBufIndex = (int *) pachBufRingInfo;
-    int nOffset = sizeof(int) + *pnBufIndex * CPLSPrintf_BUF_SIZE;
-    char *pachBuffer = pachBufRingInfo + nOffset;
-
-    *pnBufIndex = (*pnBufIndex + 1) % CPLSPrintf_BUF_Count;
-
-/* -------------------------------------------------------------------- */
-/*      Format the result.                                              */
-/* -------------------------------------------------------------------- */
-
     va_start(args, fmt);
 #if defined(HAVE_VSNPRINTF)
-    vsnprintf(pachBuffer, CPLSPrintf_BUF_SIZE-1, fmt, args);
+    vsnprintf(gszCPLSPrintfBuffer[gnCPLSPrintfBuffer], CPLSPrintf_BUF_SIZE-1,
+              fmt, args);
 #else
-    vsprintf(pachBuffer, fmt, args);
+    vsprintf(gszCPLSPrintfBuffer[gnCPLSPrintfBuffer], fmt, args);
 #endif
     va_end(args);
     
-    return pachBuffer;
+   int nCurrent = gnCPLSPrintfBuffer;
+
+    if (++gnCPLSPrintfBuffer == CPLSPrintf_BUF_Count)
+      gnCPLSPrintfBuffer = 0;
+
+    return gszCPLSPrintfBuffer[nCurrent];
 }
 
 /**********************************************************************
@@ -944,37 +770,25 @@ const char *CPLSPrintf(const char *fmt, ...)
  *
  * Returns the modified StringList.
  **********************************************************************/
-char **CSLAppendPrintf(char **papszStrList, const char *fmt, ...)
+char **CSLAppendPrintf(char **papszStrList, char *fmt, ...)
 {
-    CPLString osWork;
     va_list args;
 
-    va_start( args, fmt );
-    osWork.vPrintf( fmt, args );
-    va_end( args );
+    va_start(args, fmt);
+#if defined(HAVE_VSNPRINTF)
+    vsnprintf(gszCPLSPrintfBuffer[gnCPLSPrintfBuffer], CPLSPrintf_BUF_SIZE-1,
+              fmt, args);
+#else
+    vsprintf(gszCPLSPrintfBuffer[gnCPLSPrintfBuffer], fmt, args);
+#endif
+    va_end(args);
 
-    return CSLAddString(papszStrList, osWork);
-}
+    int nCurrent = gnCPLSPrintfBuffer;
 
-/************************************************************************/
-/*                            CPLVASPrintf()                            */
-/*                                                                      */
-/*      This is intended to serve as an easy to use C callabable        */
-/*      vasprintf() alternative.  Used in the geojson library for       */
-/*      instance.                                                       */
-/************************************************************************/
+    if (++gnCPLSPrintfBuffer == CPLSPrintf_BUF_Count)
+      gnCPLSPrintfBuffer = 0;
 
-int CPLVASPrintf( char **buf, const char *fmt, va_list ap )
-
-{
-    CPLString osWork;
-
-    osWork.vPrintf( fmt, ap );
-
-    if( buf )
-        *buf = strdup(osWork.c_str());
-
-    return strlen(osWork);
+    return CSLAddString(papszStrList, gszCPLSPrintfBuffer[nCurrent]);
 }
 
 /************************************************************************/
@@ -1070,43 +884,6 @@ const char *CSLFetchNameValue(char **papszStrList, const char *pszName)
         papszStrList++;
     }
     return NULL;
-}
-
-/************************************************************************/
-/*                            CSLFindName()                             */
-/************************************************************************/
-
-/**
- * Find StringList entry with given key name.
- *
- * @param papszStrList the string list to search.
- * @param pszName the key value to look for (case insensitive).
- *
- * @return -1 on failure or the list index of the first occurance 
- * matching the given key.
- */
-
-int CSLFindName(char **papszStrList, const char *pszName)
-{
-    size_t nLen;
-    int    iIndex = 0;
-
-    if (papszStrList == NULL || pszName == NULL)
-        return -1;
-
-    nLen = strlen(pszName);
-    while(*papszStrList != NULL)
-    {
-        if (EQUALN(*papszStrList, pszName, nLen)
-            && ( (*papszStrList)[nLen] == '=' || 
-                 (*papszStrList)[nLen] == ':' ) )
-        {
-            return iIndex;
-        }
-        iIndex++;
-        papszStrList++;
-    }
-    return -1;
 }
 
 /**********************************************************************
@@ -1384,12 +1161,12 @@ void CSLSetNameValueSeparator( char ** papszList, const char *pszSeparator )
  *
  * CPLES_BackslashQuotable(0): This scheme turns a binary string into 
  * a form suitable to be placed within double quotes as a string constant.
- * The backslash, quote, '\\0' and newline characters are all escaped in 
+ * The backslash, quote, '\0' and newline characters are all escaped in 
  * the usual C style. 
  *
  * CPLES_XML(1): This scheme converts the '<', '<' and '&' characters into
  * their XML/HTML equivelent (&gt;, &lt; and &amp;) making a string safe
- * to embed as CDATA within an XML element.  The '\\0' is not escaped and 
+ * to embed as CDATA within an XML element.  The '\0' is not escaped and 
  * should not be included in the input.
  *
  * CPLES_URL(2): Everything except alphanumerics and the underscore are 
@@ -1474,7 +1251,7 @@ char *CPLEscapeString( const char *pszInput, int nLength,
             }
             else
             {
-                sprintf( pszOutput+iOut, "%%%02X", pszInput[iIn] );
+                sprintf( pszOutput, "%%%02X", pszInput[iIn] );
                 iOut += 3;
             }
         }
@@ -1596,7 +1373,7 @@ char *CPLEscapeString( const char *pszInput, int nLength,
  *
  * @param pszInput the input string.  This is a zero terminated string.
  * @param pnLength location to return the length of the unescaped string, 
- * which may in some cases include embedded '\\0' characters.
+ * which may in some cases include embedded '\0' characters.
  * @param nScheme the escaped scheme to undo (see CPLEscapeString() for a
  * list). 
  * 
@@ -1774,11 +1551,9 @@ char *CPLBinaryToHex( int nBytes, const GByte *pabyData )
 /**
  * Hexadecimal to binary translation
  *
- * @param pszHex the input hex encoded string.
- * @param pnBytes the returned count of decoded bytes placed here.
- *
- * @return returns binary buffer of data - free with CPLFree().
- */
+ * @param 
+
+*/
 
 GByte *CPLHexToBinary( const char *pszHex, int *pnBytes )
 
@@ -1822,98 +1597,4 @@ GByte *CPLHexToBinary( const char *pszHex, int *pnBytes )
     *pnBytes = iDst;
 
     return pabyWKB;
-}
-
-
-
-/************************************************************************/
-/*                         CPLGetValueType()                            */
-/************************************************************************/
-
-/**
- * Detect the type of the value contained in a string, whether it is
- * a real, an integer or a string
- * Leading and trailing spaces are skipped in the analysis.
- *
- * @param pszValue the string to analyze
- *
- * @return returns the type of the value contained in the string.
- */
-
-CPLValueType CPLGetValueType(const char* pszValue)
-{
-    /*
-    doubles : "+25.e+3", "-25.e-3", "25.e3", "25e3", " 25e3 "
-    not doubles: "25e 3", "25e.3", "-2-5e3", "2-5e3", "25.25.3"
-    */
-
-    int bFoundDot = FALSE;
-    int bFoundExponent = FALSE;
-    int bIsLastCharExponent = FALSE;
-    int bIsReal = FALSE;
-
-    if (pszValue == NULL)
-        return CPL_VALUE_STRING;
-
-    /* Skip leading + or - */
-    if (*pszValue == '+' || *pszValue == '-')
-        pszValue ++;
-
-    /* Skip leading spaces */
-    while( isspace( *pszValue ) )
-        pszValue ++;
-
-    for(; *pszValue != '\0'; pszValue++ )
-    {
-        if( isdigit( *pszValue))
-        {
-            bIsLastCharExponent = FALSE;
-            /* do nothing */
-        }
-        else if ( isspace (*pszValue) )
-        {
-            const char* pszTmp = pszValue;
-            while( isspace( *pszTmp ) )
-                pszTmp ++;
-            if (*pszTmp == 0)
-                break;
-            else
-                return CPL_VALUE_STRING;
-        }
-        else if ( *pszValue == '-' || *pszValue == '+' )
-        {
-            if (bIsLastCharExponent)
-            {
-                /* do nothing */
-            }
-            else
-                return CPL_VALUE_STRING;
-            bIsLastCharExponent = FALSE;
-        }
-        else if ( *pszValue == '.')
-        {
-            bIsReal = TRUE;
-            if (!bFoundDot && bIsLastCharExponent == FALSE)
-                bFoundDot = TRUE;
-            else
-                return CPL_VALUE_STRING;
-            bIsLastCharExponent = FALSE;
-        }
-        else if (*pszValue == 'D' || *pszValue == 'd'
-                 || *pszValue == 'E' || *pszValue == 'e' )
-        {
-            bIsReal = TRUE;
-            if (!bFoundExponent)
-                bFoundExponent = TRUE;
-            else
-                return CPL_VALUE_STRING;
-            bIsLastCharExponent = TRUE;
-        }
-        else 
-        {
-            return CPL_VALUE_STRING;
-        }
-    }
-
-    return (bIsReal) ? CPL_VALUE_REAL : CPL_VALUE_INTEGER;
 }

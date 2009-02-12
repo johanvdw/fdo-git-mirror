@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitflib.h 11920 2007-08-21 20:45:05Z rouault $
+ * $Id: nitflib.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Main GDAL independent include file for NITF support.  
@@ -98,17 +98,6 @@ typedef struct {
     int nLocOffset;
     int nLocSize;
 } NITFLocation;
-
-typedef struct
-{
-  unsigned short   tableId;
-  unsigned int     nRecords;
-  unsigned char    elementLength;
-  unsigned short   histogramRecordLength;
-  unsigned int     colorTableOffset;
-  unsigned int     histogramTableOffset;
-} NITFColormapRecord;
-
 
 typedef struct {
     NITFFile  *psFile;
@@ -211,12 +200,6 @@ GUInt32   CPL_DLL NITFIHFieldOffset( NITFImage *psImage,
 #define BLKREAD_OK    0
 #define BLKREAD_NULL  1
 #define BLKREAD_FAIL  2
-
-int NITFUncompressARIDPCM( NITFImage *psImage, GByte *pabyInputData,
-                           GByte *pabyOutputImage );
-int NITFUncompressBILEVEL( NITFImage *psImage, 
-                           GByte *pabyInputData, int nInputBytes,
-                           GByte *pabyOutputImage );
 
 /* -------------------------------------------------------------------- */
 /*      These are really intended to be private helper stuff for the    */
@@ -332,21 +315,6 @@ int CPL_DLL NITFReadICHIPB( NITFImage *psImage, NITFICHIPBInfo * );
 
 double CPL_DLL 
         NITF_WGS84_Geocentric_Latitude_To_Geodetic_Latitude( double dfLat );
-
-
-
-
-typedef struct
-{
-    const char* code;
-    const char* abbreviation;
-    const char* scaleResolution;
-    const char* name;
-    const char* rpfDataType;
-} NITFSeries;
-
-/** Return not freeable (maybe NULL if no matching) */
-const NITFSeries CPL_DLL *NITFGetSeriesInfo(const char* pszFilename);
 
 CPL_C_END
 

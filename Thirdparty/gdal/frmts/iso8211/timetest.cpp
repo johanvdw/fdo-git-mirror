@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: timetest.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: timetest.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Example program dumping data in 8211 data to stdout.

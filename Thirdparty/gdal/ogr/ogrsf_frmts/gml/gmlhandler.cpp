@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlhandler.cpp 15853 2008-11-29 19:04:57Z rouault $
+ * $Id: gmlhandler.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLHandler class.
@@ -31,7 +31,6 @@
 #include "gmlreaderp.h"
 #include "cpl_conv.h"
 
-/* Must be a multiple of 4 */
 #define MAX_TOKEN_SIZE  1000
 
 /************************************************************************/
@@ -72,25 +71,7 @@ void GMLHandler::startElement(const XMLCh* const    uri,
     char        szElementName[MAX_TOKEN_SIZE];
     GMLReadState *poState = m_poReader->GetState();
 
-    /* A XMLCh character can expand to 4 bytes in UTF-8 */
-    if (4 * tr_strlen( localname ) >= MAX_TOKEN_SIZE)
-    {
-        static int bWarnOnce = FALSE;
-        XMLCh* tempBuffer = (XMLCh*) CPLMalloc(sizeof(XMLCh) * (MAX_TOKEN_SIZE / 4 + 1));
-        memcpy(tempBuffer, localname, sizeof(XMLCh) * (MAX_TOKEN_SIZE / 4));
-        tempBuffer[MAX_TOKEN_SIZE / 4] = 0;
-        tr_strcpy( szElementName, tempBuffer );
-        CPLFree(tempBuffer);
-        if (!bWarnOnce)
-        {
-            bWarnOnce = TRUE;
-            CPLError(CE_Warning, CPLE_AppDefined, "A too big element name has been trucated");
-        }
-    }
-    else
-        tr_strcpy( szElementName, localname );
-
-    int nLNLenBytes = strlen(szElementName);
+    tr_strcpy( szElementName, localname );
 
 /* -------------------------------------------------------------------- */
 /*      If we are in the midst of collecting a feature attribute        */
@@ -111,22 +92,24 @@ void GMLHandler::startElement(const XMLCh* const    uri,
     if( m_pszGeometry != NULL 
         || IsGeometryElement( szElementName ) )
     {
+        int nLNLen = tr_strlen( localname );
+
         /* should save attributes too! */
 
         if( m_pszGeometry == NULL )
             m_nGeometryDepth = poState->m_nPathLength;
         
-        if( m_nGeomLen + nLNLenBytes + 4 > m_nGeomAlloc )
+        if( m_nGeomLen + nLNLen + 4 > m_nGeomAlloc )
         {
-            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nLNLenBytes + 1000);
+            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nLNLen + 1000);
             m_pszGeometry = (char *) 
                 CPLRealloc( m_pszGeometry, m_nGeomAlloc);
         }
 
         strcpy( m_pszGeometry+m_nGeomLen, "<" );
-        strcpy( m_pszGeometry+m_nGeomLen+1, szElementName );
-        strcat( m_pszGeometry+m_nGeomLen+nLNLenBytes+1, ">" );
-        m_nGeomLen += nLNLenBytes + 2;
+        tr_strcpy( m_pszGeometry+m_nGeomLen+1, localname );
+        strcat( m_pszGeometry+m_nGeomLen+nLNLen+1, ">" );
+        m_nGeomLen += strlen(m_pszGeometry+m_nGeomLen);
     }
     
 /* -------------------------------------------------------------------- */
@@ -165,19 +148,7 @@ void GMLHandler::endElement(const   XMLCh* const    uri,
     char        szElementName[MAX_TOKEN_SIZE];
     GMLReadState *poState = m_poReader->GetState();
 
-    /* A XMLCh character can expand to 4 bytes in UTF-8 */
-    if (4 * tr_strlen( localname ) >= MAX_TOKEN_SIZE)
-    {
-        XMLCh* tempBuffer = (XMLCh*) CPLMalloc(sizeof(XMLCh) * (MAX_TOKEN_SIZE / 4 + 1));
-        memcpy(tempBuffer, localname, sizeof(XMLCh) * (MAX_TOKEN_SIZE / 4));
-        tempBuffer[MAX_TOKEN_SIZE / 4] = 0;
-        tr_strcpy( szElementName, tempBuffer );
-        CPLFree(tempBuffer);
-    }
-    else
-        tr_strcpy( szElementName, localname );
-
-    int nLNLenBytes = strlen(szElementName);
+    tr_strcpy( szElementName, localname );
 
 /* -------------------------------------------------------------------- */
 /*      Is this closing off an attribute value?  We assume so if        */
@@ -200,19 +171,21 @@ void GMLHandler::endElement(const   XMLCh* const    uri,
 /* -------------------------------------------------------------------- */
     if( m_pszGeometry != NULL )
     {
+        int nLNLen = tr_strlen( localname );
+
         /* should save attributes too! */
 
-        if( m_nGeomLen + nLNLenBytes + 4 > m_nGeomAlloc )
+        if( m_nGeomLen + nLNLen + 4 > m_nGeomAlloc )
         {
-            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nLNLenBytes + 1000);
+            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nLNLen + 1000);
             m_pszGeometry = (char *) 
                 CPLRealloc( m_pszGeometry, m_nGeomAlloc);
         }
 
         strcat( m_pszGeometry+m_nGeomLen, "</" );
-        strcpy( m_pszGeometry+m_nGeomLen+2, szElementName );
-        strcat( m_pszGeometry+m_nGeomLen+nLNLenBytes+2, ">" );
-        m_nGeomLen += nLNLenBytes + 3;
+        tr_strcpy( m_pszGeometry+m_nGeomLen+2, localname );
+        strcat( m_pszGeometry+m_nGeomLen+nLNLen+2, ">" );
+        m_nGeomLen += strlen(m_pszGeometry+m_nGeomLen);
 
         if( poState->m_nPathLength == m_nGeometryDepth+1 )
         {
@@ -232,8 +205,8 @@ void GMLHandler::endElement(const   XMLCh* const    uri,
 /*      feature, and we pop the feature read state.                     */
 /* -------------------------------------------------------------------- */
     if( poState->m_poFeature != NULL
-        && strcmp(szElementName,
-                 poState->m_poFeature->GetClass()->GetElementName()) == 0 )
+        && EQUAL(szElementName,
+                 poState->m_poFeature->GetClass()->GetElementName()) )
     {
         m_poReader->PopState();
     }
@@ -244,7 +217,7 @@ void GMLHandler::endElement(const   XMLCh* const    uri,
 /* -------------------------------------------------------------------- */
     else
     {
-        if( strcmp(szElementName,poState->GetLastComponent()) == 0 )
+        if( EQUAL(szElementName,poState->GetLastComponent()) )
             poState->PopPath();
         else
         {
@@ -269,22 +242,11 @@ void GMLHandler::characters(const XMLCh* const chars_in,
 
         while( *chars == ' ' || *chars == 10 || *chars == 13 || *chars == '\t')
             chars++;
-
-        char *pszTranslated = tr_strdup(chars);
         
-        if( m_pszCurField == NULL )
-        {
-            m_pszCurField = pszTranslated;
-            nCurFieldLength = strlen(m_pszCurField);
-        }
-        else
-        {
-            m_pszCurField = (char *) 
-                CPLRealloc( m_pszCurField, 
-                            nCurFieldLength+strlen(pszTranslated)+1 );
-            strcpy( m_pszCurField + nCurFieldLength, pszTranslated );
-            CPLFree( pszTranslated );
-        }
+        m_pszCurField = (char *) 
+            CPLRealloc( m_pszCurField, 
+                        nCurFieldLength+tr_strlen(chars)+1 );
+        tr_strcpy( m_pszCurField + nCurFieldLength, chars );
     }
     else if( m_pszGeometry != NULL )
     {
@@ -292,11 +254,11 @@ void GMLHandler::characters(const XMLCh* const chars_in,
         while( *chars == ' ' || *chars == 10 || *chars == 13 || *chars == '\t')
             chars++;
         
-        int nCharsLen = tr_strlen(chars);
+        int nCharsLen = tr_strlen( chars );
 
-        if( m_nGeomLen + nCharsLen*4 + 4 > m_nGeomAlloc )
+        if( m_nGeomLen + nCharsLen + 4 > m_nGeomAlloc )
         {
-            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nCharsLen*4 + 1000);
+            m_nGeomAlloc = (int) (m_nGeomAlloc * 1.3 + nCharsLen + 1000);
             m_pszGeometry = (char *) 
                 CPLRealloc( m_pszGeometry, m_nGeomAlloc);
         }
@@ -330,11 +292,11 @@ void GMLHandler::fatalError( const SAXParseException &exception)
 int GMLHandler::IsGeometryElement( const char *pszElement )
 
 {
-    return strcmp(pszElement,"Polygon") == 0
-        || strcmp(pszElement,"MultiPolygon") == 0 
-        || strcmp(pszElement,"MultiPoint") == 0 
-        || strcmp(pszElement,"MultiLineString") == 0 
-        || strcmp(pszElement,"GeometryCollection") == 0
-        || strcmp(pszElement,"Point") == 0 
-        || strcmp(pszElement,"LineString") == 0;
+    return EQUAL(pszElement,"Polygon") 
+        || EQUAL(pszElement,"MultiPolygon") 
+        || EQUAL(pszElement,"MultiPoint") 
+        || EQUAL(pszElement,"MultiLineString") 
+        || EQUAL(pszElement,"GeometryCollection") 
+        || EQUAL(pszElement,"Point") 
+        || EQUAL(pszElement,"LineString");
 }

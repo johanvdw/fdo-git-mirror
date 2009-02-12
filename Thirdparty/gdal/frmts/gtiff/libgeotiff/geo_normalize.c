@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: geo_normalize.c 1493 2008-11-28 02:48:56Z warmerdam $
+ * $Id: geo_normalize.c,v 1.45 2005/03/15 16:01:18 fwarmerdam Exp $
  *
  * Project:  libgeotiff
  * Purpose:  Code to normalize PCS and other composite codes in a GeoTIFF file.
@@ -27,33 +27,7 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
  *
- * $Log$
- * Revision 1.53  2008/07/03 18:36:31  fwarmerdam
- * Fix potential buffer overflow in GTIFAngleStringToDD.
- * http://trac.osgeo.org/gdal/ticket/2228
- *
- * Revision 1.52  2008/01/31 19:47:57  fwarmerdam
- * Ignore GCS values less than 1 as a sanity measure
- *
- * Revision 1.51  2007/12/11 17:58:34  fwarmerdam
- * Add EPSG 9822 (Albers Equal Area) support from EPSG
- *
- * Revision 1.50  2007/07/28 13:55:21  fwarmerdam
- * Fix name for GCS_WGS_72 per gdal bug #1715.
- *
- * Revision 1.49  2007/07/20 18:10:41  fwarmerdam
- * Pre-search pcs.override.csv and gcs.override.csv.
- *
- * Revision 1.48  2007/06/06 02:17:04  fwarmerdam
- * added builtin known values for foot and us survey foot
- *
- * Revision 1.47  2007/03/13 18:04:33  fwarmerdam
- * added new zealand map grid support per bug 1519
- *
- * Revision 1.46  2006/04/11 19:25:06  fwarmerdam
- * Be careful about falling back to gdal_datum.csv as it can interfere
- * with incode datum.csv support.
- *
+ * $Log: geo_normalize.c,v $
  * Revision 1.45  2005/03/15 16:01:18  fwarmerdam
  * zero inv flattening interpreted as sphere
  *
@@ -265,30 +239,18 @@ int GTIFGetPCSInfo( int nPCSCode, char **ppszEPSGName,
 {
     char	**papszRecord;
     char	szSearchKey[24];
-    const char	*pszFilename;
-
+    const char	*pszFilename = CSVFilename( "pcs.csv" );
+    
 /* -------------------------------------------------------------------- */
-/*      Search the pcs.override table for this PCS.                     */
+/*      Search the units database for this unit.  If we don't find      */
+/*      it return failure.                                              */
 /* -------------------------------------------------------------------- */
-    pszFilename = CSVFilename( "pcs.override.csv" );
     sprintf( szSearchKey, "%d", nPCSCode );
     papszRecord = CSVScanFileByName( pszFilename, "COORD_REF_SYS_CODE",
                                      szSearchKey, CC_Integer );
 
-/* -------------------------------------------------------------------- */
-/*      If not found, search the EPSG PCS database.                     */
-/* -------------------------------------------------------------------- */
     if( papszRecord == NULL )
-    {
-        pszFilename = CSVFilename( "pcs.csv" );
-        
-        sprintf( szSearchKey, "%d", nPCSCode );
-        papszRecord = CSVScanFileByName( pszFilename, "COORD_REF_SYS_CODE",
-                                         szSearchKey, CC_Integer );
-
-        if( papszRecord == NULL )
-            return FALSE;
-    }
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Get the name, if requested.                                     */
@@ -417,8 +379,7 @@ double GTIFAngleStringToDD( const char * pszAngle, int nUOMAngle )
                 {
                     szSeconds[1] = pszDecimal[4];
                     szSeconds[2] = '.';
-                    strncpy( szSeconds+3, pszDecimal + 5, sizeof(szSeconds) - 3 );
-                    szSeconds[sizeof(szSeconds) - 1] = 0;
+                    strcpy( szSeconds+3, pszDecimal + 5 );
                 }
                 else
                 {
@@ -472,25 +433,15 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
 {
     char	szSearchKey[24];
     int		nDatum, nPM, nUOMAngle;
-    const char *pszFilename;
 
 /* -------------------------------------------------------------------- */
 /*      Search the database for the corresponding datum code.           */
 /* -------------------------------------------------------------------- */
-    pszFilename = CSVFilename("gcs.override.csv");
     sprintf( szSearchKey, "%d", nGCSCode );
-    nDatum = atoi(CSVGetField( pszFilename,
-                               "COORD_REF_SYS_CODE", szSearchKey, 
-                               CC_Integer, "DATUM_CODE" ) );
 
-    if( nDatum < 1 )
-    {
-        pszFilename = CSVFilename("gcs.csv");
-        sprintf( szSearchKey, "%d", nGCSCode );
-        nDatum = atoi(CSVGetField( pszFilename,
-                                   "COORD_REF_SYS_CODE", szSearchKey, 
-                                   CC_Integer, "DATUM_CODE" ) );
-    }
+    nDatum = atoi(CSVGetField( CSVFilename("gcs.csv" ),
+                               "COORD_REF_SYS_CODE", szSearchKey, CC_Integer,
+                               "DATUM_CODE" ) );
 
 /* -------------------------------------------------------------------- */
 /*      Handle some "well known" GCS codes directly if the table        */
@@ -519,7 +470,7 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
         else if( nGCSCode == GCS_WGS_72 )
         {
             nDatum = Datum_WGS72;
-            pszName = "WGS 72";
+            pszName = "WGS 82";
         }
         else
             return FALSE;
@@ -544,9 +495,9 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
 /* -------------------------------------------------------------------- */
     if( pnPM != NULL )
     {
-        nPM = atoi(CSVGetField( pszFilename,
-                                "COORD_REF_SYS_CODE", szSearchKey, CC_Integer,
-                                "PRIME_MERIDIAN_CODE" ) );
+        nPM = atoi(CSVGetField( CSVFilename("gcs.csv" ),
+                            "COORD_REF_SYS_CODE", szSearchKey, CC_Integer,
+                            "PRIME_MERIDIAN_CODE" ) );
 
         if( nPM < 1 )
             return FALSE;
@@ -557,7 +508,7 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
 /* -------------------------------------------------------------------- */
 /*      Get the angular units.                                          */
 /* -------------------------------------------------------------------- */
-    nUOMAngle = atoi(CSVGetField( pszFilename,
+    nUOMAngle = atoi(CSVGetField( CSVFilename("gcs.csv" ),
                                   "COORD_REF_SYS_CODE",szSearchKey, CC_Integer,
                                   "UOM_CODE" ) );
 
@@ -572,7 +523,7 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
 /* -------------------------------------------------------------------- */
     if( ppszName != NULL )
         *ppszName =
-            CPLStrdup(CSVGetField( pszFilename,
+            CPLStrdup(CSVGetField( CSVFilename("gcs.csv" ),
                                    "COORD_REF_SYS_CODE",szSearchKey,CC_Integer,
                                    "COORD_REF_SYS_NAME" ));
     
@@ -788,13 +739,7 @@ int GTIFGetDatumInfo( int nDatumCode, char ** ppszName, short * pnEllipsoid )
 /*      acceptable fallback.  Mostly this is for GDAL.                  */
 /* -------------------------------------------------------------------- */
     if( (fp = VSIFOpen(pszFilename,"r")) == NULL )
-    {
-        if( (fp = VSIFOpen(CSVFilename("gdal_datum.csv"), "r")) != NULL )
-        {
-            pszFilename = CSVFilename( "gdal_datum.csv" );
-            VSIFClose( fp );
-        }        
-    }
+        pszFilename = CSVFilename( "gdal_datum.csv" );
     else
         VSIFClose( fp );
 
@@ -880,8 +825,7 @@ int GTIFGetUOMLengthInfo( int nUOMLengthCode,
     const char *pszFilename;
 
 /* -------------------------------------------------------------------- */
-/*      We short cut meter to save work and avoid failure for missing   */
-/*      in the most common cases.       				*/
+/*      We short cut meter to save work in the most common case.        */
 /* -------------------------------------------------------------------- */
     if( nUOMLengthCode == 9001 )
     {
@@ -889,26 +833,6 @@ int GTIFGetUOMLengthInfo( int nUOMLengthCode,
             *ppszUOMName = CPLStrdup( "metre" );
         if( pdfInMeters != NULL )
             *pdfInMeters = 1.0;
-
-        return TRUE;
-    }
-
-    if( nUOMLengthCode == 9002 )
-    {
-        if( ppszUOMName != NULL )
-            *ppszUOMName = CPLStrdup( "foot" );
-        if( pdfInMeters != NULL )
-            *pdfInMeters = 0.3048;
-
-        return TRUE;
-    }
-
-    if( nUOMLengthCode == 9003 )
-    {
-        if( ppszUOMName != NULL )
-            *ppszUOMName = CPLStrdup( "US survey foot" );
-        if( pdfInMeters != NULL )
-            *pdfInMeters = 12.0 / 39.37;
 
         return TRUE;
     }
@@ -1142,9 +1066,6 @@ static int EPSGProjMethodToCTProjMethod( int nEPSG )
 
       case 9816: /* tunesia mining grid has no counterpart */
         return( KvUserDefined );
-
-      case 9822:
-        return( CT_AlbersEqualArea );
     }
 
     return( KvUserDefined );
@@ -1255,22 +1176,6 @@ static int SetGTParmIds( int nCTProjection,
         panEPSGCodes[1] = EPSGFalseOriginLong;
         panEPSGCodes[2] = EPSGStdParallel1Lat;
         panEPSGCodes[3] = EPSGStdParallel2Lat;
-        panEPSGCodes[5] = EPSGFalseOriginEasting;
-        panEPSGCodes[6] = EPSGFalseOriginNorthing;
-        return TRUE;
-
-      case CT_AlbersEqualArea:
-        panProjParmId[0] = ProjStdParallel1GeoKey;
-        panProjParmId[1] = ProjStdParallel2GeoKey;
-        panProjParmId[2] = ProjNatOriginLatGeoKey;
-        panProjParmId[3] = ProjNatOriginLongGeoKey;
-        panProjParmId[5] = ProjFalseEastingGeoKey;
-        panProjParmId[6] = ProjFalseNorthingGeoKey;
-
-        panEPSGCodes[0] = EPSGStdParallel1Lat;
-        panEPSGCodes[1] = EPSGStdParallel2Lat;
-        panEPSGCodes[2] = EPSGFalseOriginLat;
-        panEPSGCodes[3] = EPSGFalseOriginLong;
         panEPSGCodes[5] = EPSGFalseOriginEasting;
         panEPSGCodes[6] = EPSGFalseOriginNorthing;
         return TRUE;
@@ -1646,10 +1551,10 @@ static void GTIFFetchProjParms( GTIF * psGTIF, GTIFDefn * psDefn )
 /* -------------------------------------------------------------------- */
       case CT_AzimuthalEquidistant:
       case CT_MillerCylindrical:
+      case CT_Equirectangular:
       case CT_Gnomonic:
       case CT_LambertAzimEqualArea:
       case CT_Orthographic:
-      case CT_NewZealandMapGrid:
 /* -------------------------------------------------------------------- */
         if( GTIFKeyGet(psGTIF, ProjNatOriginLongGeoKey, 
                        &dfNatOriginLong, 0, 1 ) == 0
@@ -1673,45 +1578,6 @@ static void GTIFFetchProjParms( GTIF * psGTIF, GTIFDefn * psDefn )
         psDefn->ProjParmId[0] = ProjCenterLatGeoKey;
         psDefn->ProjParm[1] = dfNatOriginLong;
         psDefn->ProjParmId[1] = ProjCenterLongGeoKey;
-        psDefn->ProjParm[5] = dfFalseEasting;
-        psDefn->ProjParmId[5] = ProjFalseEastingGeoKey;
-        psDefn->ProjParm[6] = dfFalseNorthing;
-        psDefn->ProjParmId[6] = ProjFalseNorthingGeoKey;
-
-        psDefn->nParms = 7;
-        break;
-
-/* -------------------------------------------------------------------- */
-      case CT_Equirectangular:
-/* -------------------------------------------------------------------- */
-        if( GTIFKeyGet(psGTIF, ProjNatOriginLongGeoKey, 
-                       &dfNatOriginLong, 0, 1 ) == 0
-            && GTIFKeyGet(psGTIF, ProjFalseOriginLongGeoKey, 
-                          &dfNatOriginLong, 0, 1 ) == 0
-            && GTIFKeyGet(psGTIF, ProjCenterLongGeoKey, 
-                          &dfNatOriginLong, 0, 1 ) == 0 )
-            dfNatOriginLong = 0.0;
-
-        if( GTIFKeyGet(psGTIF, ProjNatOriginLatGeoKey, 
-                       &dfNatOriginLat, 0, 1 ) == 0
-            && GTIFKeyGet(psGTIF, ProjFalseOriginLatGeoKey, 
-                          &dfNatOriginLat, 0, 1 ) == 0
-            && GTIFKeyGet(psGTIF, ProjCenterLatGeoKey, 
-                          &dfNatOriginLat, 0, 1 ) == 0 )
-            dfNatOriginLat = 0.0;
-
-        if( GTIFKeyGet(psGTIF, ProjStdParallel1GeoKey, 
-                       &dfStdParallel1, 0, 1 ) == 0 )
-            dfStdParallel1 = 0.0;
-
-        /* notdef: should transform to decimal degrees at this point */
-
-        psDefn->ProjParm[0] = dfNatOriginLat;
-        psDefn->ProjParmId[0] = ProjCenterLatGeoKey;
-        psDefn->ProjParm[1] = dfNatOriginLong;
-        psDefn->ProjParmId[1] = ProjCenterLongGeoKey;
-        psDefn->ProjParm[2] = dfStdParallel1;
-        psDefn->ProjParmId[2] = ProjStdParallel1GeoKey;
         psDefn->ProjParm[5] = dfFalseEasting;
         psDefn->ProjParmId[5] = ProjFalseEastingGeoKey;
         psDefn->ProjParm[6] = dfFalseNorthing;
@@ -2143,8 +2009,6 @@ int GTIFGetDefn( GTIF * psGTIF, GTIFDefn * psDefn )
 /*      the PCS.                                                        */
 /* -------------------------------------------------------------------- */
     GTIFKeyGet(psGTIF, GeographicTypeGeoKey, &(psDefn->GCS), 0, 1 );
-    if( psDefn->GCS < 1 || psDefn->GCS >= KvUserDefined )
-        psDefn->GCS = KvUserDefined;
 
 /* -------------------------------------------------------------------- */
 /*      Derive the datum, and prime meridian from the GCS.              */

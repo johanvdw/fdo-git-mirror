@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrcsvdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -30,7 +30,7 @@
 #include "ogr_csv.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGRCSVDriver()                            */

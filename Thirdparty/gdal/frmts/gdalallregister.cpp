@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalallregister.cpp 15659 2008-10-31 04:19:53Z ilucena $
+ * $Id: gdalallregister.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllRegister(), primary format registration.
@@ -30,7 +30,7 @@
 #include "gdal_priv.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id: gdalallregister.cpp 15659 2008-10-31 04:19:53Z ilucena $");
+CPL_CVSID("$Id: gdalallregister.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #ifdef notdef
 // we may have a use for this some day
@@ -63,8 +63,6 @@ static char *szConfiguredFormats = "GDAL_FORMATS";
  * <li> PCI .aux Labelled Raw Raster (PAux)
  * <li> HDF4 Hierachal Data Format Release 4
  * <li> HDF5 Hierachal Data Format Release 5
- * <li> GSAG Golden Software ASCII Grid
- * <li> GSBG Golden Software Binary Grid
  * </ul>
  *
  */
@@ -88,7 +86,6 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_nitf
     GDALRegister_NITF();
-    GDALRegister_RPFTOC();
 #endif
 
 #ifdef FRMT_hfa
@@ -103,14 +100,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_CEOS();
 #endif
     
-#ifdef FRMT_jaxapalsar
-    GDALRegister_PALSARJaxa();
-#endif
-    
-#ifdef FRMT_gff
-    GDALRegister_GFF();
-#endif
-
 #ifdef FRMT_elas
     GDALRegister_ELAS();
 #endif
@@ -176,10 +165,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_BMP();
 #endif
 
-#ifdef FRMT_dimap
-    GDALRegister_DIMAP();
-#endif
-
 #ifdef FRMT_airsar
     GDALRegister_AirSAR();
 #endif
@@ -204,10 +189,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_SGI();
 #endif
 
-#ifdef FRMT_srtmhgt
-    GDALRegister_SRTMHGT();
-#endif
-
 #ifdef FRMT_leveller
     GDALRegister_Leveller();
 #endif
@@ -226,24 +207,31 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_HDF4Image();
 #endif
 
-#ifdef FRMT_pds
-    GDALRegister_ISIS3();
+#ifdef FRMT_raw
+    GDALRegister_PNM();
+    GDALRegister_DOQ1();
+    GDALRegister_DOQ2();
+    GDALRegister_ENVI();
+    GDALRegister_EHdr();
+    GDALRegister_PAux();
+    GDALRegister_MFF();
+    GDALRegister_HKV();
+    GDALRegister_FujiBAS();
+    GDALRegister_GSC();
+    GDALRegister_FAST();
+    GDALRegister_BT();
+    GDALRegister_LAN();
+    GDALRegister_CPG();
+    GDALRegister_IDA();
+    GDALRegister_NDF();
+    GDALRegister_DIPEx();
     GDALRegister_ISIS2();
     GDALRegister_PDS();
-#endif
-
-#ifdef FRMT_ers
-    GDALRegister_ERS();
 #endif
 
 #ifdef FRMT_jp2kak
 // JPEG2000 support using Kakadu toolkit
     GDALRegister_JP2KAK();
-#endif
-
-#ifdef FRMT_ecw
-    GDALRegister_ECW();
-    GDALRegister_JP2ECW();
 #endif
 
 #ifdef FRMT_jpeg2000
@@ -253,16 +241,17 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_JPEG2000();
 #endif
 
+#ifdef FRMT_ecw
+    GDALRegister_ECW();
+    GDALRegister_JP2ECW();
+#endif
+
 #ifdef FRMT_l1b
     GDALRegister_L1B();
 #endif
 
 #ifdef FRMT_fit
     GDALRegister_FIT();
-#endif
-
-#ifdef FRMT_grib
-    GDALRegister_GRIB();
 #endif
 
 #ifdef FRMT_mrsid
@@ -277,87 +266,18 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_WCS();
 #endif
 
-#ifdef FRMT_wms
-    GDALRegister_WMS();
-#endif
-
-#ifdef FRMT_sde
-    GDALRegister_SDE();
-#endif
-
 #ifdef FRMT_msgn
     GDALRegister_MSGN();
-#endif
-
-#ifdef FRMT_msg
-    GDALRegister_MSG();
 #endif
 
 #ifdef FRMT_idrisi
     GDALRegister_IDRISI();
 #endif
 
-#ifdef FRMT_ingr
-    GDALRegister_INGR();
-#endif
-
-#ifdef FRMT_gsg
-    GDALRegister_GSAG();
-    GDALRegister_GSBG();
-    GDALRegister_GS7BG();
-#endif
-
-#ifdef FRMT_cosar
-    GDALRegister_COSAR();
-#endif
-
-#ifdef FRMT_tsx
-    GDALRegister_TSX();
-#endif
-
-#ifdef FRMT_coasp
-    GDALRegister_COASP();
-#endif
-
-#ifdef FRMT_tms
-    GDALRegister_TMS();
-#endif
-
-/* -------------------------------------------------------------------- */
-/*      Put raw formats at the end of the list. These drivers support   */
-/*      various ASCII-header labeled formats, so the driver could be    */
-/*      confused if you have files in some of above formats and such    */
-/*      ASCII-header in the same directory.                             */
-/* -------------------------------------------------------------------- */
-
-#ifdef FRMT_raw
-    GDALRegister_PNM();
-    GDALRegister_DOQ1();
-    GDALRegister_DOQ2();
-    GDALRegister_ENVI();
-    GDALRegister_EHdr();
-    GDALRegister_GenBin();
-    GDALRegister_PAux();
-    GDALRegister_MFF();
-    GDALRegister_HKV();
-    GDALRegister_FujiBAS();
-    GDALRegister_GSC();
-    GDALRegister_FAST();
-    GDALRegister_BT();
-    GDALRegister_LAN();
-    GDALRegister_CPG();
-    GDALRegister_IDA();
-    GDALRegister_NDF();
-    GDALRegister_EIR();
-    GDALRegister_DIPEx();
-    GDALRegister_LCP();
-#endif
-
 /* -------------------------------------------------------------------- */
 /*      Our test for the following is weak or expensive so we try       */
 /*      them last.                                                      */
 /* -------------------------------------------------------------------- */
-
 #ifdef FRMT_rik
     GDALRegister_RIK();
 #endif
@@ -377,32 +297,10 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_dods
     GDALRegister_DODS();
 #endif
-
-#ifdef FRMT_wcs
-    GDALRegister_HTTP();
-#endif
-
 #ifdef FRMT_hdf5
     GDALRegister_HDF5();
     GDALRegister_HDF5Image();
 #endif
-
-#ifdef FRMT_adrg
-    GDALRegister_ADRG();
-#endif
-
-#ifdef FRMT_blx
-    GDALRegister_BLX();
-#endif
-
-#ifdef FRMT_pgchip
-    GDALRegister_PGCHIP();
-#endif
-
-#ifdef FRMT_georaster
-    GDALRegister_GEOR();
-#endif
-
 /* -------------------------------------------------------------------- */
 /*      Deregister any drivers explicitly marked as supressed by the    */
 /*      GDAL_SKIP environment variable.                                 */

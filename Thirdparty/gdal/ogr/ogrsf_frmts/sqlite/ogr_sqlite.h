@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_sqlite.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_sqlite.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/SQLite driver.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_SQLITE_H_INCLUDED
-#define _OGR_SQLITE_H_INCLUDED
+#define _OGR_SQLITE_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
@@ -55,9 +55,7 @@ class OGRSQLiteLayer : public OGRLayer
 
     OGRSQLiteDataSource *poDS;
 
-    CPLString           osGeomColumn;
-    CPLString           osGeomFormat;
-
+    char                *pszGeomColumn;
     char                *pszFIDColumn;
 
     int                *panFieldOrdinals;
@@ -66,10 +64,6 @@ class OGRSQLiteLayer : public OGRLayer
                                           sqlite3_stmt *hStmt );
 
     virtual void	ClearStatement() = 0;
-
-   OGRErr               ImportSpatialiteGeometry( const GByte *pabyData, 
-                                                  int nBytes,
-                                                  OGRGeometry **ppoGeometry );
 
   public:
                         OGRSQLiteLayer();
@@ -115,10 +109,7 @@ class OGRSQLiteTableLayer : public OGRSQLiteLayer
     virtual sqlite3_stmt        *GetStatement();
 
     CPLErr              Initialize( const char *pszTableName, 
-                                    const char *pszGeomCol,
-                                    OGRwkbGeometryType eGeomType,
-                                    const char *pszGeomFormat,
-                                    OGRSpatialReference *poSRS );
+                                    const char *pszGeomCol );
 
     virtual void        ResetReading();
     virtual int         GetFeatureCount( int );
@@ -181,8 +172,6 @@ class OGRSQLiteDataSource : public OGRDataSource
     int                 nKnownSRID;
     int                *panSRID;
     OGRSpatialReference **papoSRS;
-
-    int                 bHaveGeometryColumns; 
     
     virtual void        DeleteLayer( const char *pszLayer );
 
@@ -192,10 +181,7 @@ class OGRSQLiteDataSource : public OGRDataSource
 
     int                 Open( const char * );
     int                 OpenTable( const char *pszTableName, 
-                                   const char *pszGeomCol = NULL,
-                                   OGRwkbGeometryType eGeomType = wkbUnknown,
-                                   const char *pszGeomFormat = NULL,
-                                   OGRSpatialReference *poSRS = NULL );
+                                   const char *pszGeomCol );
 
     const char          *GetName() { return pszName; }
     int                 GetLayerCount() { return nLayers; }
@@ -222,8 +208,6 @@ class OGRSQLiteDataSource : public OGRDataSource
     sqlite3            *GetDB() { return hDB; }
 
     char               *LaunderName( const char * );
-    int                 FetchSRSId( OGRSpatialReference * poSRS );
-    OGRSpatialReference*FetchSRS( int nSRID );
 };
 
 /************************************************************************/

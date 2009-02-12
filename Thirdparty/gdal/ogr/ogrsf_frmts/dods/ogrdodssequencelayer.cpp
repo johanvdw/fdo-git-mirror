@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdodssequencelayer.cpp 15172 2008-08-20 17:37:27Z rouault $
+ * $Id: ogrdodssequencelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSSequenceLayer class, which implements the
@@ -32,7 +32,7 @@
 #include "ogr_dods.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdodssequencelayer.cpp 15172 2008-08-20 17:37:27Z rouault $");
+CPL_CVSID("$Id: ogrdodssequencelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                        OGRDODSSequenceLayer()                        */
@@ -992,8 +992,8 @@ int OGRDODSIsFloatInvalid( const float * pfValToCheck )
     else 
         return FALSE;
 #else
-    if( (pabyValToCheck[3] & 0x7f) == 0x7f 
-        && (pabyValToCheck[2] & 0x80) == 0x80 )
+    if( pabyValToCheck[3] & 0x7f == 0x7f 
+        && pabyValToCheck[2] & 0x80 == 0x80 )
         return TRUE;
     else 
         return FALSE;
@@ -1014,8 +1014,8 @@ int OGRDODSIsDoubleInvalid( const double * pdfValToCheck )
     const unsigned char *pabyValToCheck = (unsigned char *) pdfValToCheck;
 
 #if CPL_IS_LSB == 0 
-    if( (pabyValToCheck[0] & 0x7f) == 0x7f 
-        && (pabyValToCheck[1] & 0xf0) == 0xf0 )
+    if( pabyValToCheck[0] & 0x7f == 0x7f 
+        && pabyValToCheck[1] & 0xf0 == 0xf0 )
         return TRUE;
     else 
         return FALSE;

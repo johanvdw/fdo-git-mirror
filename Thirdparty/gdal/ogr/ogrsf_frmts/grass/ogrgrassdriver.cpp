@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrassdriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrgrassdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSDriver class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgrassdriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrgrassdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRGRASSDriver()                           */
@@ -105,8 +105,6 @@ int OGRGRASSDriver::TestCapability( const char * pszCap )
 /************************************************************************/
 void RegisterOGRGRASS()
 {
-    if (! GDAL_CHECK_VERSION("OGR/GRASS driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRGRASSDriver );
 }
 

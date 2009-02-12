@@ -9,12 +9,14 @@ OBJ	=	ntffilereader.o ntfrecord.o ogrntfdatasource.o \
 
 CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(CPPFLAGS)
 
+LIBS	:=	$(GDAL_LIB) $(LIBS) 
+
 default:	$(O_OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-ntfdump$(EXE):	ntfdump.o
-	$(LD) $(LDFLAGS) ntfdump.o $(CONFIG_LIBS) -o ntfdump$(EXE)
+ntfdump:	ntfdump.o $(OBJ)
+	$(CXX) $(LNK_FLAGS) ntfdump.o $(LIBS) -o ntfdump
 
 

@@ -61,8 +61,6 @@ public:
     // Generates the physical mappings for this feature schema
     virtual FdoPhysicalSchemaMappingP GetSchemaMappings( bool bIncludeDefaults ) const;
 	
-    virtual FdoSmPhOwnerP GetPhysicalOwner();
-
     // Copy updates from corresponding FDO feature schema. 
     //
     // Parameters

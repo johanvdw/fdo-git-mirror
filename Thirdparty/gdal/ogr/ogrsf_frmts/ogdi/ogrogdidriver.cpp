@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdidriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrogdidriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGDI Bridge
  * Purpose:  Implements OGROGDIDriver class.
@@ -31,7 +31,7 @@
 #include "ogrogdi.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrogdidriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrogdidriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGROGDIDriver()                           */
@@ -99,8 +99,6 @@ int OGROGDIDriver::TestCapability( const char * pszCap )
 void RegisterOGROGDI()
 
 {
-    if (! GDAL_CHECK_VERSION("OGR/OGDI driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGROGDIDriver );
 }
 

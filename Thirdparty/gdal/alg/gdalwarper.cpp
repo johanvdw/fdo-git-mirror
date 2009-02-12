@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.cpp 15276 2008-09-01 09:04:27Z dron $
+ * $Id: gdalwarper.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of high level convenience APIs for warper.
@@ -30,9 +30,8 @@
 #include "gdalwarper.h"
 #include "cpl_string.h"
 #include "cpl_minixml.h"
-#include "ogr_api.h"
 
-CPL_CVSID("$Id: gdalwarper.cpp 15276 2008-09-01 09:04:27Z dron $");
+CPL_CVSID("$Id: gdalwarper.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */
@@ -83,6 +82,15 @@ GDALReprojectImage( GDALDatasetH hSrcDS, const char *pszSrcWKT,
 
 {
     GDALWarpOptions *psWOptions;
+
+/* -------------------------------------------------------------------- */
+/*      Default a few parameters.                                       */
+/* -------------------------------------------------------------------- */
+    if( pszSrcWKT == NULL )
+        pszSrcWKT = GDALGetProjectionRef( hSrcDS );
+
+    if( pszDstWKT == NULL )
+        pszDstWKT = pszSrcWKT;
 
 /* -------------------------------------------------------------------- */
 /*      Setup a reprojection based transformer.                         */
@@ -232,8 +240,6 @@ CPLErr CPL_STDCALL GDALCreateAndReprojectImage(
     GDALWarpOptions *psOptions )
     
 {
-    VALIDATE_POINTER1( hSrcDS, "GDALCreateAndReprojectImage", CE_Failure );
-
 /* -------------------------------------------------------------------- */
 /*      Default a few parameters.                                       */
 /* -------------------------------------------------------------------- */
@@ -490,8 +496,6 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
     CPLErr eErr;
     GDALRasterBandH hAlphaBand = GDALGetRasterBand( psWO->hSrcDS, 
                                                     psWO->nSrcAlphaBand );
-    if (hAlphaBand == NULL)
-        return CE_Failure;
 
     eErr = GDALRasterIO( hAlphaBand, GF_Read, nXOff, nYOff, nXSize, nYSize, 
                          pafMask, nXSize, nYSize, GDT_Float32, 0, 0 );
@@ -504,8 +508,8 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
 /* -------------------------------------------------------------------- */
     for( int iPixel = nXSize * nYSize - 1; iPixel >= 0; iPixel-- )
     {                                    //  (1/255)
-        pafMask[iPixel] = (float)( pafMask[iPixel] * 0.00392157 );
-        pafMask[iPixel] = MIN( 1.0F, pafMask[iPixel] );
+        pafMask[iPixel] = pafMask[iPixel] * 0.00392157; 
+        pafMask[iPixel] = MIN(1.0,pafMask[iPixel]);
     }
 
     return CE_None;
@@ -549,8 +553,6 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
 
     GDALRasterBandH hAlphaBand = 
         GDALGetRasterBand( psWO->hDstDS, psWO->nDstAlphaBand );
-    if (hAlphaBand == NULL)
-        return CE_Failure;
 
 /* -------------------------------------------------------------------- */
 /*      Read alpha case.						*/
@@ -578,8 +580,8 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
         // rescale.
         for( iPixel = nXSize * nYSize - 1; iPixel >= 0; iPixel-- )
         {
-            pafMask[iPixel] = (float) (pafMask[iPixel] * 0.00392157);
-            pafMask[iPixel] = MIN( 1.0F, pafMask[iPixel] );
+            pafMask[iPixel] = pafMask[iPixel] * 0.00392157;
+            pafMask[iPixel] = MIN(1.0,pafMask[iPixel]);
         }
 
         return CE_None;
@@ -591,24 +593,12 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
     else
     {
         for( iPixel = nXSize * nYSize - 1; iPixel >= 0; iPixel-- )
-            pafMask[iPixel] = (int) ( pafMask[iPixel] * 255.1 );
+            pafMask[iPixel] = (int) (pafMask[iPixel] * 255.1);
         
-        // Write data.
-
-        /* The VRT warper will pass destination sizes that may exceed */
-        /* the size of the raster for the partial blocks at the right */
-        /* and bottom of the band. So let's adjust the size */
-        int nDstXSize = nXSize;
-        if (nXOff + nXSize > GDALGetRasterXSize(hAlphaBand))
-            nDstXSize = GDALGetRasterXSize(hAlphaBand) - nXOff;
-        int nDstYSize = nYSize;
-        if (nYOff + nYSize > GDALGetRasterYSize(hAlphaBand))
-            nDstYSize = GDALGetRasterYSize(hAlphaBand) - nYOff;
-
+        // Read data.
         eErr = GDALRasterIO( hAlphaBand, GF_Write, 
-                             nXOff, nYOff, nDstXSize, nDstYSize, 
-                             pafMask, nDstXSize, nDstYSize, GDT_Float32,
-                             0, sizeof(float) * nXSize );
+                             nXOff, nYOff, nXSize, nYSize, 
+                             pafMask, nXSize, nYSize, GDT_Float32, 0, 0 );
         return eErr;
     }
 }
@@ -699,8 +689,6 @@ GDALWarpOptions * CPL_STDCALL GDALCreateWarpOptions()
 void CPL_STDCALL GDALDestroyWarpOptions( GDALWarpOptions *psOptions )
 
 {
-    VALIDATE_POINTER0( psOptions, "GDALDestroyWarpOptions" );
-
     CSLDestroy( psOptions->papszWarpOptions );
     CPLFree( psOptions->panSrcBands );
     CPLFree( psOptions->panDstBands );
@@ -710,9 +698,6 @@ void CPL_STDCALL GDALDestroyWarpOptions( GDALWarpOptions *psOptions )
     CPLFree( psOptions->padfDstNoDataImag );
     CPLFree( psOptions->papfnSrcPerBandValidityMaskFunc );
     CPLFree( psOptions->papSrcPerBandValidityMaskFuncArg );
-
-    if( psOptions->hCutline != NULL )
-        OGR_G_DestroyGeometry( (OGRGeometryH) psOptions->hCutline );
 
     CPLFree( psOptions );
 }
@@ -751,11 +736,6 @@ GDALCloneWarpOptions( const GDALWarpOptions *psSrcOptions )
     COPY_MEM( papfnSrcPerBandValidityMaskFunc, GDALMaskFunc, 
               psSrcOptions->nBandCount );
 
-    if( psSrcOptions->hCutline != NULL )
-        psDstOptions->hCutline = 
-            OGR_G_Clone( (OGRGeometryH) psSrcOptions->hCutline );
-    psDstOptions->dfCutlineBlendDist = psSrcOptions->dfCutlineBlendDist;
-
     return psDstOptions;
 }
 
@@ -779,7 +759,7 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
 /* -------------------------------------------------------------------- */
     CPLCreateXMLElementAndValue( 
         psTree, "WarpMemoryLimit", 
-        CPLString().Printf("%g", psWO->dfWarpMemoryLimit ) );
+        CPLSPrintf("%g", psWO->dfWarpMemoryLimit ) );
 
 /* -------------------------------------------------------------------- */
 /*      ResampleAlg                                                     */
@@ -794,8 +774,6 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         pszAlgName = "Cubic";
     else if( psWO->eResampleAlg == GRA_CubicSpline )
         pszAlgName = "CubicSpline";
-    else if( psWO->eResampleAlg == GRA_Lanczos )
-        pszAlgName = "Lanczos";
     else
         pszAlgName = "Unknown";
 
@@ -829,8 +807,6 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         CPLCreateXMLNode( 
             CPLCreateXMLNode( psOption, CXT_Attribute, "name" ),
             CXT_Text, pszName );
-
-        CPLFree(pszName);
     }
 
 /* -------------------------------------------------------------------- */
@@ -886,31 +862,31 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         if( psWO->panSrcBands != NULL )
             CPLCreateXMLNode( 
                 CPLCreateXMLNode( psBand, CXT_Attribute, "src" ),
-                CXT_Text, CPLString().Printf( "%d", psWO->panSrcBands[i] ) );
+                CXT_Text, CPLSPrintf( "%d", psWO->panSrcBands[i] ) );
         if( psWO->panDstBands != NULL )
             CPLCreateXMLNode( 
                 CPLCreateXMLNode( psBand, CXT_Attribute, "dst" ),
-                CXT_Text, CPLString().Printf( "%d", psWO->panDstBands[i] ) );
+                CXT_Text, CPLSPrintf( "%d", psWO->panDstBands[i] ) );
         
         if( psWO->padfSrcNoDataReal != NULL )
             CPLCreateXMLElementAndValue( 
                 psBand, "SrcNoDataReal", 
-                CPLString().Printf( "%.16g", psWO->padfSrcNoDataReal[i] ) );
+                CPLSPrintf( "%.16g", psWO->padfSrcNoDataReal[i] ) );
 
         if( psWO->padfSrcNoDataImag != NULL )
             CPLCreateXMLElementAndValue( 
                 psBand, "SrcNoDataImag", 
-                CPLString().Printf( "%.16g", psWO->padfSrcNoDataImag[i] ) );
+                CPLSPrintf( "%.16g", psWO->padfSrcNoDataImag[i] ) );
 
         if( psWO->padfDstNoDataReal != NULL )
             CPLCreateXMLElementAndValue( 
                 psBand, "DstNoDataReal", 
-                CPLString().Printf( "%.16g", psWO->padfDstNoDataReal[i] ) );
+                CPLSPrintf( "%.16g", psWO->padfDstNoDataReal[i] ) );
 
         if( psWO->padfDstNoDataImag != NULL )
             CPLCreateXMLElementAndValue( 
                 psBand, "DstNoDataImag", 
-                CPLString().Printf( "%.16g", psWO->padfDstNoDataImag[i] ) );
+                CPLSPrintf( "%.16g", psWO->padfDstNoDataImag[i] ) );
     }
 
 /* -------------------------------------------------------------------- */
@@ -919,31 +895,12 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
     if( psWO->nSrcAlphaBand > 0 )
         CPLCreateXMLElementAndValue( 
             psTree, "SrcAlphaBand", 
-            CPLString().Printf( "%d", psWO->nSrcAlphaBand ) );
+            CPLSPrintf( "%d", psWO->nSrcAlphaBand ) );
 
     if( psWO->nDstAlphaBand > 0 )
         CPLCreateXMLElementAndValue( 
             psTree, "DstAlphaBand", 
-            CPLString().Printf( "%d", psWO->nDstAlphaBand ) );
-
-/* -------------------------------------------------------------------- */
-/*      Cutline.                                                        */
-/* -------------------------------------------------------------------- */
-    if( psWO->hCutline != NULL )
-    {
-        char *pszWKT = NULL;
-        if( OGR_G_ExportToWkt( (OGRGeometryH) psWO->hCutline, &pszWKT )
-            == OGRERR_NONE )
-        {
-            CPLCreateXMLElementAndValue( psTree, "Cutline", pszWKT );
-            CPLFree( pszWKT );
-        }
-    }
-
-    if( psWO->dfCutlineBlendDist != 0.0 )
-        CPLCreateXMLElementAndValue( 
-            psTree, "CutlineBlendDist", 
-            CPLString().Printf( "%.5g", psWO->dfCutlineBlendDist ) );
+            CPLSPrintf( "%d", psWO->nDstAlphaBand ) );
 
     return psTree;
 }
@@ -993,8 +950,6 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
         psWO->eResampleAlg = GRA_Cubic;
     else if( EQUAL(pszValue,"CubicSpline") )
         psWO->eResampleAlg = GRA_CubicSpline;
-    else if( EQUAL(pszValue,"Lanczos") )
-        psWO->eResampleAlg = GRA_Lanczos;
     else if( EQUAL(pszValue,"Default") )
         /* leave as is */;
     else
@@ -1160,19 +1115,6 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
         atoi( CPLGetXMLValue( psTree, "DstAlphaBand", "0" ) );
 
 /* -------------------------------------------------------------------- */
-/*      Cutline.                                                        */
-/* -------------------------------------------------------------------- */
-    const char *pszWKT = CPLGetXMLValue( psTree, "Cutline", NULL );
-    if( pszWKT )
-    {
-        OGR_G_CreateFromWkt( (char **) &pszWKT, NULL, 
-                             (OGRGeometryH *) (&psWO->hCutline) );
-    }
-
-    psWO->dfCutlineBlendDist =
-        atof( CPLGetXMLValue( psTree, "CutlineBlendDist", "0" ) );
-
-/* -------------------------------------------------------------------- */
 /*      Transformation.                                                 */
 /* -------------------------------------------------------------------- */
     CPLXMLNode *psTransformer = CPLGetXMLNode( psTree, "Transformer" );
@@ -1189,11 +1131,6 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
 /* -------------------------------------------------------------------- */
     if( CPLGetLastErrorNo() != CE_None )
     {
-        if ( psWO->pTransformerArg )
-        {
-            GDALDestroyTransformer( psWO->pTransformerArg );
-            psWO->pTransformerArg = NULL;
-        }
         GDALDestroyWarpOptions( psWO );
         return NULL;
     }

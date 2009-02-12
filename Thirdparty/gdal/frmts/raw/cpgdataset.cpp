@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpgdataset.cpp 13044 2007-11-26 06:37:42Z pvachon $
+ * $Id: cpgdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Polarimetric Workstation
  * Purpose:  Convair PolGASP data (.img/.hdr format). 
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpgdataset.cpp 13044 2007-11-26 06:37:42Z pvachon $");
+CPL_CVSID("$Id: cpgdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_CPG(void);
@@ -76,8 +76,8 @@ class CPGDataset : public RawDataset
   CPLErr LoadStokesLine( int iLine, int bNativeOrder );
 
   public:
-		CPGDataset();
-	        ~CPGDataset();
+    		CPGDataset();
+    	        ~CPGDataset();
     
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
@@ -594,7 +594,7 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( char *pszWorkname )
 /* -------------------------------------------------------------------- */
 /*      Open the four bands.                                            */
 /* -------------------------------------------------------------------- */
-    static const char *apszPolarizations[4] = { "hh", "hv", "vv", "vh" };
+    char *apszPolarizations[4] = { "hh", "hv", "vv", "vh" };
 
     nNameLen = strlen(pszWorkname);
 
@@ -647,11 +647,6 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( char *pszWorkname )
             poBand->SetMetadataItem( "POLARIMETRIC_INTERP", 
                                  apszPolarizations[iBand] );
         }
-    }
-
-    /* Set an appropriate matrix representation metadata item for the set */
-    if ( poDS->GetRasterCount() == 4 ) {
-        poDS->SetMetadataItem( "MATRIX_REPRESENTATION", "SCATTERING" );
     }
 
 /* ------------------------------------------------------------------------- */
@@ -757,10 +752,10 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( char *pszWorkname )
             poDS->pasGCPList[ngcp].dfGCPLine = dfgcpLine;
 
             poDS->pasGCPList[ngcp].pszId = CPLStrdup( szID );
-            poDS->pasGCPList[ngcp].pszInfo = (char *)"";
+            poDS->pasGCPList[ngcp].pszInfo = "";
 
         }
-        poDS->pszGCPProjection = CPLStrdup("LOCAL_CS[\"Ground range view / unreferenced meters\",UNIT[\"Meter\",1.0]]"); 
+        poDS->pszGCPProjection = (char *) CPLStrdup("LOCAL_CS[\"Ground range view / unreferenced meters\",UNIT[\"Meter\",1.0]]"); 
 
     }
 
@@ -980,15 +975,6 @@ GDALDataset *CPGDataset::InitializeType3Dataset( char *pszWorkname )
                                            !CPL_IS_LSB );
         poDS->SetBand( iBand+1, poBand );
     }
-
-/* -------------------------------------------------------------------- */
-/*      Set appropriate MATRIX_REPRESENTATION.                          */
-/* -------------------------------------------------------------------- */
-    if ( poDS->GetRasterCount() == 6 ) {
-        poDS->SetMetadataItem( "MATRIX_REPRESENTATION", 
-            "COVARIANCE" );
-    }
-
 
 /* ------------------------------------------------------------------------- */
 /*  Add georeferencing, if enough information found.                         */
@@ -1328,25 +1314,25 @@ CPLErr SIRC_QSLCRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
 CPG_STOKESRasterBand::CPG_STOKESRasterBand( GDALDataset *poDS, int nBand, 
                                             GDALDataType eType,
-                                            int bNativeOrder  )
+                                             int bNativeOrder  )
 
 {
-    static const char *apszPolarizations[16] = { "Covariance_11",
-                                                 "Covariance_12",
-                                                 "Covariance_13",
-                                                 "Covariance_14",
-                                                 "Covariance_21",
-                                                 "Covariance_22",
-                                                 "Covariance_23",
-                                                 "Covariance_24",
-                                                 "Covariance_31",
-                                                 "Covariance_32",
-                                                 "Covariance_33",
-                                                 "Covariance_34",
-                                                 "Covariance_41",
-                                                 "Covariance_42",
-                                                 "Covariance_43",
-                                                 "Covariance_44" };
+    char *apszPolarizations[16] = { "Covariance_11",
+                                    "Covariance_12",
+                                    "Covariance_13",
+                                    "Covariance_14",
+                                    "Covariance_21",
+                                    "Covariance_22",
+                                    "Covariance_23",
+                                    "Covariance_24",
+                                    "Covariance_31",
+                                    "Covariance_32",
+                                    "Covariance_33",
+                                    "Covariance_34",
+                                    "Covariance_41",
+                                    "Covariance_42",
+                                    "Covariance_43",
+                                    "Covariance_44" };
 
     this->poDS = poDS;
     this->nBand = nBand;

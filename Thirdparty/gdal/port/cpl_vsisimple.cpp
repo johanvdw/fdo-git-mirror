@@ -1,7 +1,7 @@
 /******************************************************************************
- * $Id: cpl_vsisimple.cpp 13594 2008-01-25 13:53:00Z dron $
+ * $Id: cpl_vsisimple.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
- * Project:  Common Portability Library 
+ * Project:  Common Portability Library
  * Purpose:  Simple implementation of POSIX VSI functions.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
@@ -25,13 +25,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ****************************************************************************
- *
- * NB: Note that in wrappers we are always saving the error state (errno
- * variable) to avoid side effects during debug prints or other possible
- * standard function calls (error states will be overwritten after such
- * a call).
- *
  ****************************************************************************/
 
 #include "cpl_config.h"
@@ -39,7 +32,7 @@
 #include "cpl_vsi.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: cpl_vsisimple.cpp 13594 2008-01-25 13:53:00Z dron $");
+CPL_CVSID("$Id: cpl_vsisimple.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /* for stat() */
 
@@ -72,12 +65,12 @@ CPL_CVSID("$Id: cpl_vsisimple.cpp 13594 2008-01-25 13:53:00Z dron $");
 FILE *VSIFOpen( const char * pszFilename, const char * pszAccess )
 
 {
-    FILE    *fp = fopen( (char *) pszFilename, (char *) pszAccess );
-    int     nError = errno;
+    FILE * fp;
+
+    fp = fopen( (char *) pszFilename, (char *) pszAccess );
 
     VSIDebug3( "VSIFOpen(%s,%s) = %p", pszFilename, pszAccess, fp );
 
-    errno = nError;
     return( fp );
 }
 
@@ -100,31 +93,26 @@ int VSIFClose( FILE * fp )
 int VSIFSeek( FILE * fp, long nOffset, int nWhence )
 
 {
-    int     nResult = fseek( fp, nOffset, nWhence );
-    int     nError = errno;
-
 #ifdef VSI_DEBUG
     if( nWhence == SEEK_SET )
     {
-        VSIDebug3( "VSIFSeek(%p,%d,SEEK_SET) = %d", fp, nOffset, nResult );
+        VSIDebug2( "VSIFSeek(%p,%d,SEEK_SET)", fp, nOffset );
     }
     else if( nWhence == SEEK_END )
     {
-        VSIDebug3( "VSIFSeek(%p,%d,SEEK_END) = %d", fp, nOffset, nResult );
+        VSIDebug2( "VSIFSeek(%p,%d,SEEK_END)", fp, nOffset );
     }
     else if( nWhence == SEEK_CUR )
     {
-        VSIDebug3( "VSIFSeek(%p,%d,SEEK_CUR) = %d", fp, nOffset, nResult );
+        VSIDebug2( "VSIFSeek(%p,%d,SEEK_CUR)", fp, nOffset );
     }
     else
     {
-        VSIDebug4( "VSIFSeek(%p,%d,%d-Unknown) = %d",
-                   fp, nOffset, nWhence, nResult );
+        VSIDebug3( "VSIFSeek(%p,%d,%d-Unknown)", fp, nOffset, nWhence );
     }
 #endif 
 
-    errno = nError;
-    return nResult;
+    return( fseek( fp, nOffset, nWhence ) );
 }
 
 /************************************************************************/
@@ -134,13 +122,9 @@ int VSIFSeek( FILE * fp, long nOffset, int nWhence )
 long VSIFTell( FILE * fp )
 
 {
-    long    nOffset = ftell(fp);
-    int     nError = errno;
+    VSIDebug2( "VSIFTell(%p) = %ld", fp, ftell(fp) );
 
-    VSIDebug2( "VSIFTell(%p) = %ld", fp, nOffset );
-
-    errno = nError;
-    return nOffset;
+    return( ftell( fp ) );
 }
 
 /************************************************************************/
@@ -161,13 +145,11 @@ void VSIRewind( FILE * fp )
 size_t VSIFRead( void * pBuffer, size_t nSize, size_t nCount, FILE * fp )
 
 {
-    size_t  nResult = fread( pBuffer, nSize, nCount, fp );
-    int     nError = errno;
+    size_t nResult = fread( pBuffer, nSize, nCount, fp );
 
-    VSIDebug4( "VSIFRead(%p,%ld,%ld) = %ld", 
-               fp, (long)nSize, (long)nCount, (long)nResult );
+    VSIDebug3( "VSIFRead(%p,%ld) = %ld", 
+               fp, (long) nSize * nCount, (long) nResult * nSize );
 
-    errno = nError;
     return nResult;
 }
 
@@ -178,13 +160,11 @@ size_t VSIFRead( void * pBuffer, size_t nSize, size_t nCount, FILE * fp )
 size_t VSIFWrite( const void *pBuffer, size_t nSize, size_t nCount, FILE * fp )
 
 {
-    size_t  nResult = fwrite( pBuffer, nSize, nCount, fp );
-    int     nError = errno;
+    size_t nResult = fwrite( pBuffer, nSize, nCount, fp );
 
-    VSIDebug4( "VSIFWrite(%p,%ld,%ld) = %ld", 
-               fp, (long)nSize, (long)nCount, (long)nResult );
+    VSIDebug3( "VSIFWrite(%p,%ld) = %ld", 
+               fp, (long) nSize * nCount, (long) nResult );
 
-    errno = nError;
     return nResult;
 }
 
@@ -330,158 +310,6 @@ char *VSIStrdup( const char * pszString )
 {
     return( strdup( pszString ) );
 }
-
-/************************************************************************/
-/*                          VSICheckMul2()                              */
-/************************************************************************/
-
-static size_t VSICheckMul2( size_t mul1, size_t mul2, int *pbOverflowFlag)
-{
-    size_t res = mul1 * mul2;
-    if (mul1 != 0)
-    {
-        if (res / mul1 == mul2)
-        {
-            if (pbOverflowFlag)
-                *pbOverflowFlag = FALSE;
-            return res;
-        }
-        else
-        {
-            if (pbOverflowFlag)
-                *pbOverflowFlag = TRUE;
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Multiplication overflow : %lu * %lu",
-                     (unsigned long)mul1, (unsigned long)mul2);
-        }
-    }
-    else
-    {
-        if (pbOverflowFlag)
-             *pbOverflowFlag = FALSE;
-    }
-    return 0;
-}
-
-/************************************************************************/
-/*                          VSICheckMul3()                              */
-/************************************************************************/
-
-static size_t VSICheckMul3( size_t mul1, size_t mul2, size_t mul3, int *pbOverflowFlag)
-{
-    if (mul1 != 0)
-    {
-        size_t res = mul1 * mul2;
-        if (res / mul1 == mul2)
-        {
-            size_t res2 = res * mul3;
-            if (mul3 != 0)
-            {
-                if (res2 / mul3 == res)
-                {
-                    if (pbOverflowFlag)
-                        *pbOverflowFlag = FALSE;
-                    return res2;
-                }
-                else
-                {
-                    if (pbOverflowFlag)
-                        *pbOverflowFlag = TRUE;
-                    CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Multiplication overflow : %lu * %lu * %lu",
-                     (unsigned long)mul1, (unsigned long)mul2, (unsigned long)mul3);
-                }
-            }
-            else
-            {
-                if (pbOverflowFlag)
-                    *pbOverflowFlag = FALSE;
-            }
-        }
-        else
-        {
-            if (pbOverflowFlag)
-                *pbOverflowFlag = TRUE;
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Multiplication overflow : %lu * %lu * %lu",
-                     (unsigned long)mul1, (unsigned long)mul2, (unsigned long)mul3);
-        }
-    }
-    else
-    {
-        if (pbOverflowFlag)
-             *pbOverflowFlag = FALSE;
-    }
-    return 0;
-}
-
-
-
-/**
- VSIMalloc2 allocates (nSize1 * nSize2) bytes.
- In case of overflow of the multiplication, or if memory allocation fails, a
- NULL pointer is returned and a CE_Failure error is raised with CPLError().
- If nSize1 == 0 || nSize2 == 0, a NULL pointer will also be returned.
- CPLFree() or VSIFree() can be used to free memory allocated by this function.
-*/
-void CPL_DLL *VSIMalloc2( size_t nSize1, size_t nSize2 )
-{
-    int bOverflowFlag = FALSE;
-    size_t nSizeToAllocate;
-    void* pReturn;
-
-    nSizeToAllocate = VSICheckMul2( nSize1, nSize2, &bOverflowFlag );
-    if (bOverflowFlag)
-        return NULL;
-
-    if (nSizeToAllocate == 0)
-        return NULL;
-
-    pReturn = VSIMalloc(nSizeToAllocate);
-
-    if( pReturn == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc2(): Out of memory allocating %lu bytes.\n",
-                  (unsigned long)nSizeToAllocate );
-    }
-
-    return pReturn;
-}
-
-/**
- VSIMalloc3 allocates (nSize1 * nSize2 * nSize3) bytes.
- In case of overflow of the multiplication, or if memory allocation fails, a
- NULL pointer is returned and a CE_Failure error is raised with CPLError().
- If nSize1 == 0 || nSize2 == 0 || nSize3 == 0, a NULL pointer will also be returned.
- CPLFree() or VSIFree() can be used to free memory allocated by this function.
-*/
-void CPL_DLL *VSIMalloc3( size_t nSize1, size_t nSize2, size_t nSize3 )
-{
-    int bOverflowFlag = FALSE;
-
-    size_t nSizeToAllocate;
-    void* pReturn;
-
-    nSizeToAllocate = VSICheckMul3( nSize1, nSize2, nSize3, &bOverflowFlag );
-    if (bOverflowFlag)
-        return NULL;
-
-    if (nSizeToAllocate == 0)
-        return NULL;
-
-    pReturn = VSIMalloc(nSizeToAllocate);
-
-    if( pReturn == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc3(): Out of memory allocating %lu bytes.\n",
-                  (unsigned long)nSizeToAllocate );
-    }
-
-    return pReturn;
-}
-
 
 /************************************************************************/
 /*                              VSIStat()                               */

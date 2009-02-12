@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srsnode.cpp 12006 2007-08-30 14:10:05Z warmerdam $
+ * $Id: ogr_srsnode.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGR_SRSNode class.
@@ -30,7 +30,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srsnode.cpp 12006 2007-08-30 14:10:05Z warmerdam $");
+CPL_CVSID("$Id: ogr_srsnode.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            OGR_SRSNode()                             */
@@ -834,17 +834,17 @@ void OGR_SRSNode::StripNodes( const char * pszName )
  * wrong.  
  */
 
-static const char * const apszPROJCSRule[] = 
+static char *apszPROJCSRule[] = 
 { "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "AUTHORITY", 
   NULL };
 
-static const char * const apszDATUMRule[] = 
+static char *apszDATUMRule[] = 
 { "DATUM", "SPHEROID", "TOWGS84", "AUTHORITY", NULL };
 
-static const char * const apszGEOGCSRule[] = 
+static char *apszGEOGCSRule[] = 
 { "GEOGCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
 
-static const char * const *apszOrderingRules[] = {
+static char **apszOrderingRules[] = {
     apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, NULL };
 
 OGRErr OGR_SRSNode::FixupOrdering()
@@ -864,7 +864,7 @@ OGRErr OGR_SRSNode::FixupOrdering()
 /* -------------------------------------------------------------------- */
 /*      Is this a node for which an ordering rule exists?               */
 /* -------------------------------------------------------------------- */
-    const char * const * papszRule = NULL;
+    char **papszRule = NULL;
 
     for( i = 0; apszOrderingRules[i] != NULL; i++ )
     {
@@ -887,8 +887,7 @@ OGRErr OGR_SRSNode::FixupOrdering()
 
     for( i = 1; i < GetChildCount(); i++ )
     {
-        panChildKey[i] = CSLFindString( (char**) papszRule, 
-                                        GetChild(i)->GetValue() );
+        panChildKey[i] = CSLFindString( papszRule, GetChild(i)->GetValue() );
         if( panChildKey[i] == -1 )
         {
             CPLDebug( "OGRSpatialReference", 

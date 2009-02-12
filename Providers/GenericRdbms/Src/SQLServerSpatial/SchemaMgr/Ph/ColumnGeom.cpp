@@ -42,7 +42,7 @@ FdoSmPhSqsColumnGeom::FdoSmPhSqsColumnGeom(
     FdoSmPhRdColumnReader* reader
 ) :
     FdoSmPhSqsColumn (reader),
-    FdoSmPhColumn    ( columnName, L"geometry", elementState, parentObject, bNullable, rootColumnName, (FdoDataValue*) NULL, reader),
+    FdoSmPhColumn    ( columnName, L"geometry", elementState, parentObject, bNullable, rootColumnName, L"", reader),
     FdoSmPhColumnGeom( AssociatedSCInfo, false, false ),
     mSRID(-1)
 {

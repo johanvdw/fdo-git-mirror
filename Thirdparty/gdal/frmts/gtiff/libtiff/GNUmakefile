@@ -22,7 +22,6 @@ OBJ	= \
 	tif_luv.o \
 	tif_lzw.o \
 	tif_next.o \
-	tif_ojpeg.o \
 	tif_open.o \
 	tif_packbits.o \
 	tif_pixarlog.o \
@@ -41,14 +40,11 @@ OBJ	= \
 
 O_OBJ	=	$(foreach file,$(OBJ),../../o/$(file))
 
-ALL_C_FLAGS =	$(CFLAGS) $(CPPFLAGS)
-
-ifneq ($(LIBZ_SETTING),no)
-ALL_C_FLAGS 	:=	$(ALL_C_FLAGS) -DPIXARLOG_SUPPORT -DZIP_SUPPORT -I../../zlib
-endif
+ALL_C_FLAGS =	$(CFLAGS) $(CPPFLAGS) \
+		-DZIP_SUPPORT -DPIXARLOG_SUPPORT -I../../zlib
 
 ifneq ($(JPEG_SETTING),no)
-ALL_C_FLAGS 	:=	$(ALL_C_FLAGS) -DJPEG_SUPPORT -DOJPEG_SUPPORT
+ALL_C_FLAGS 	:=	$(ALL_C_FLAGS) -DJPEG_SUPPORT
 endif
 
 ifeq ($(JPEG_SETTING),internal)

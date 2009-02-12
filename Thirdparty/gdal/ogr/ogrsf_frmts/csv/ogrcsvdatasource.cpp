@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdatasource.cpp 15684 2008-11-03 20:37:19Z rouault $
+ * $Id: ogrcsvdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrcsvdatasource.cpp 15684 2008-11-03 20:37:19Z rouault $");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRCSVDataSource()                          */
@@ -114,7 +114,6 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
 /*      Is this a single CSV file?                                      */
 /* -------------------------------------------------------------------- */
     if( VSI_ISREG(sStatBuf.st_mode)
-        && strlen(pszFilename) > 4
         && EQUAL(pszFilename+strlen(pszFilename)-4,".csv") )
         return OpenTable( pszFilename );
 
@@ -254,7 +253,7 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Attempt to create layer %s, but file %s already exists.",
-                  pszLayerName, pszFilename );
+                  pszFilename );
         return NULL;
     }
 
@@ -315,41 +314,6 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
     }
     
     papoLayers[nLayers-1]->SetCRLF( bUseCRLF );
-
-/* -------------------------------------------------------------------- */
-/*      Should we write the geometry ?                                  */
-/* -------------------------------------------------------------------- */
-    const char *pszGeometry = CSLFetchNameValue( papszOptions, "GEOMETRY");
-    if (pszGeometry != NULL)
-    {
-        if (EQUAL(pszGeometry, "AS_WKT"))
-        {
-            papoLayers[nLayers-1]->SetWriteGeometry(OGR_CSV_GEOM_AS_WKT);
-        }
-        else if (EQUAL(pszGeometry, "AS_XYZ") ||
-                 EQUAL(pszGeometry, "AS_XY") ||
-                 EQUAL(pszGeometry, "AS_YX"))
-        {
-            if (eGType == wkbUnknown || wkbFlatten(eGType) == wkbPoint)
-            {
-                papoLayers[nLayers-1]->SetWriteGeometry(EQUAL(pszGeometry, "AS_XYZ") ? OGR_CSV_GEOM_AS_XYZ :
-                                                        EQUAL(pszGeometry, "AS_XY") ?  OGR_CSV_GEOM_AS_XY :
-                                                                                       OGR_CSV_GEOM_AS_YX);
-            }
-            else
-            {
-                CPLError( CE_Warning, CPLE_AppDefined, 
-                          "Geometry type %s is not compatible with GEOMETRY=AS_XYZ.",
-                          OGRGeometryTypeToName(eGType) );
-            }
-        }
-        else
-        {
-            CPLError( CE_Warning, CPLE_AppDefined, 
-                      "Unsupported value %s for creation option GEOMETRY",
-                       pszGeometry );
-        }
-    }
 
     return papoLayers[nLayers-1];
 }

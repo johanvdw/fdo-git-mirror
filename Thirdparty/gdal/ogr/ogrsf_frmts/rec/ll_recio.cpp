@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ll_recio.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ll_recio.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements low level REC reading API.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ll_recio.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ll_recio.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static int nNextRecLine = 0;
 

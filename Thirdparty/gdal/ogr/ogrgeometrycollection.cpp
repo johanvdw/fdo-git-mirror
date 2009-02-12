@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometrycollection.cpp 14881 2008-07-10 20:30:19Z rouault $
+ * $Id: ogrgeometrycollection.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRGeometryCollection class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeometrycollection.cpp 14881 2008-07-10 20:30:19Z rouault $");
+CPL_CVSID("$Id: ogrgeometrycollection.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                       OGRGeometryCollection()                        */
@@ -45,6 +45,7 @@ OGRGeometryCollection::OGRGeometryCollection()
 {
     nGeomCount = 0;
     papoGeoms = NULL;
+    nCoordinateDimension = 2;
 }
 
 /************************************************************************/
@@ -55,6 +56,7 @@ OGRGeometryCollection::~OGRGeometryCollection()
 
 {
     empty();
+    nCoordinateDimension = 2;
 }
 
 /************************************************************************/
@@ -75,7 +77,6 @@ void OGRGeometryCollection::empty()
 
     nGeomCount = 0;
     papoGeoms = NULL;
-    nCoordDimension = 2;
 }
 
 
@@ -132,7 +133,7 @@ void OGRGeometryCollection::flattenTo2D()
     for( int i = 0; i < nGeomCount; i++ )
         papoGeoms[i]->flattenTo2D();
 
-    nCoordDimension = 2;
+    nCoordinateDimension = 2;
 }
 
 /************************************************************************/
@@ -276,7 +277,7 @@ OGRErr OGRGeometryCollection::addGeometryDirectly( OGRGeometry * poNewGeom )
     nGeomCount++;
 
     if( poNewGeom->getCoordinateDimension() == 3 )
-        nCoordDimension = 3;
+        nCoordinateDimension = 3;
 
     return OGRERR_NONE;
 }
@@ -398,9 +399,16 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
 #endif    
 
 /* -------------------------------------------------------------------- */
-/*      Clear existing Geoms.                                           */
+/*      Do we already have some existing geometry objects?              */
 /* -------------------------------------------------------------------- */
-    empty();
+    if( nGeomCount != 0 )
+    {
+        for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
+            delete papoGeoms[iGeom];
+
+        OGRFree( papoGeoms );
+        papoGeoms = NULL;
+    }
     
 /* -------------------------------------------------------------------- */
 /*      Get the geometry count.                                         */
@@ -415,6 +423,8 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
     nDataOffset = 9;
     if( nSize != -1 )
         nSize -= nDataOffset;
+
+    nCoordinateDimension = 0; // unknown
 
 /* -------------------------------------------------------------------- */
 /*      Get the Geoms.                                                  */
@@ -432,9 +442,6 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
             nGeomCount = iGeom;
             return eErr;
         }
-
-        if (papoGeoms[iGeom]->getCoordinateDimension() == 3)
-            nCoordDimension = 3;
 
         if( nSize != -1 )
             nSize -= papoGeoms[iGeom]->WkbSize();
@@ -515,11 +522,19 @@ OGRErr OGRGeometryCollection::importFromWkt( char ** ppszInput )
 
     char        szToken[OGR_WKT_TOKEN_MAX];
     const char  *pszInput = *ppszInput;
+    int         iGeom;
 
 /* -------------------------------------------------------------------- */
 /*      Clear existing Geoms.                                           */
 /* -------------------------------------------------------------------- */
-    empty();
+    if( nGeomCount > 0 )
+    {
+        for( iGeom = 0; iGeom < nGeomCount; iGeom++ )
+            delete papoGeoms[iGeom];
+        
+        nGeomCount = 0;
+        CPLFree( papoGeoms );
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read and verify the type keyword, and ensure it matches the     */
@@ -785,80 +800,3 @@ void OGRGeometryCollection::setCoordinateDimension( int nNewDimension )
     OGRGeometry::setCoordinateDimension( nNewDimension );
 }
 
-
-/************************************************************************/
-/*                              get_Area()                              */
-/************************************************************************/
-
-/**
- * Compute area of geometry collection.
- *
- * The area is computed as the sum of the areas of all members
- * in this collection.
- *
- * @note No warning will be issued if a member of the collection does not
- *       support the get_Area method.
- *
- * @return computed area.
- */
-
-double OGRGeometryCollection::get_Area() const
-{
-    double dfArea = 0.0;
-    for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
-    {
-        OGRGeometry* geom = papoGeoms[iGeom];
-        switch( wkbFlatten(geom->getGeometryType()) )
-        {
-            case wkbPolygon:
-                dfArea += ((OGRPolygon *) geom)->get_Area();
-                break;
-
-            case wkbMultiPolygon:
-                dfArea += ((OGRMultiPolygon *) geom)->get_Area();
-                break;
-
-            case wkbLinearRing:
-            case wkbLineString:
-                /* This test below is required to filter out wkbLineString geometries
-                * not being of type of wkbLinearRing.
-                */
-                if( EQUAL( ((OGRGeometry*) geom)->getGeometryName(), "LINEARRING" ) )
-                {
-                    dfArea += ((OGRLinearRing *) geom)->get_Area();
-                }
-                break;
-
-            case wkbGeometryCollection:
-                dfArea +=((OGRGeometryCollection *) geom)->get_Area();
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    return dfArea;
-}
-
-/************************************************************************/
-/*                               IsEmpty()                              */
-/************************************************************************/
-
-OGRBoolean OGRGeometryCollection::IsEmpty(  ) const
-{
-    for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
-        if (papoGeoms[iGeom]->IsEmpty() == FALSE)
-            return FALSE;
-    return TRUE;
-}
-
-/************************************************************************/
-/*              OGRGeometryCollection::segmentize()                     */
-/************************************************************************/
-
-void OGRGeometryCollection::segmentize( double dfMaxLength )
-{
-    for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
-        papoGeoms[iGeom]->segmentize(dfMaxLength);
-}

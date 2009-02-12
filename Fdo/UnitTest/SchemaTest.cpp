@@ -3441,7 +3441,6 @@ FdoFeatureSchema*  SchemaTest::createElectricSchema( FdoFeatureSchema* pAcadSche
 	pTransPhase->SetDataType( FdoDataType_String );
 	pTransPhase->SetLength(1);
 	pTransPhase->SetNullable(false);
-    pTransPhase->SetDefaultValue(L"A");
 	FdoPropertiesP(pTransClass->GetProperties())->Add( pTransPhase );
 
     FdoPtr<FdoPropertyValueConstraintList> constraint = FdoPropertyValueConstraintList::Create();
@@ -3454,13 +3453,11 @@ FdoFeatureSchema*  SchemaTest::createElectricSchema( FdoFeatureSchema* pAcadSche
 	FdoDataPropertyP pTransDate = FdoDataPropertyDefinition::Create( L"InstallDate", L"" );
 	pTransDate->SetDataType( FdoDataType_DateTime );
 	pTransDate->SetNullable(true);
-    pTransDate->SetDefaultValue( FdoPtr<FdoDateTimeValue>(FdoDateTimeValue::Create(FdoDateTime(2008,10,16,13,57,15)))->ToString() );
 	FdoPropertiesP(pTransClass->GetProperties())->Add( pTransDate );
 
 	FdoDataPropertyP pTransPartNum = FdoDataPropertyDefinition::Create( L"PartNum", L"" );
 	pTransPartNum->SetDataType( FdoDataType_Int16 );
 	pTransPartNum->SetNullable(true);
-    pTransPartNum->SetDefaultValue(L"5");
 	FdoPropertiesP(pTransClass->GetProperties())->Add( pTransPartNum );
 
 	FdoDataPropertyP pTransVolume = FdoDataPropertyDefinition::Create( L"Volume", L"" );

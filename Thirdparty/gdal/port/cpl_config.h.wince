@@ -1,4 +1,4 @@
-/* $Id: cpl_config.h.wince 14805 2008-07-04 18:55:42Z mloskot $/
+/* $Id: cpl_config.h.wince 11516 2007-05-14 18:36:20Z mloskot $/
 
 /*
  * cpl_config.h with definitions for Windows CE platform.
@@ -18,6 +18,12 @@
 #define HAVE_VPRINTF
 #define HAVE_VSNPRINTF
 #define vsnprintf _vsnprintf
+
+/* Define if you have the `copysign' function. */
+#define HAVE_COPYSIGN
+#define copysign _copysign
+#define copysignf _copysign
+#define copysignl _copysign
 
 /* Windows CE does not support getcwd function. */
 #undef HAVE_GETCWD
@@ -154,8 +160,3 @@
 
 /* #define CPL_DISABLE_DLL */
 /* #define CPL_DISABLE_STDCALL */
-
-/* Enable VSIStat64 for Windows CE (temporarily) */
-/* TODO: To be removed as specified in Ticket #2452 */
-#define VSI_STAT64 stat
-

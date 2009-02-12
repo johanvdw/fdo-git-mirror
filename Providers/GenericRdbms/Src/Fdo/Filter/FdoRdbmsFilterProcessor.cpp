@@ -40,10 +40,7 @@ FdoRdbmsFilterProcessor::FdoRdbmsFilterProcessor():
  mFirstTxtIndex( 0 ),
  mNextTxtIndex( 0 ),
  mNextTabAliasId ( 0 ),
- mUseTableAliases( true ),
- mUseNesting( true ),
- mUseGrouping( false ),
- mAddNegationBracket( false )
+ mUseTableAliases( true )
 {
 
 }
@@ -56,10 +53,7 @@ FdoRdbmsFilterProcessor::FdoRdbmsFilterProcessor(FdoRdbmsConnection *connection)
  mFirstTxtIndex( 0 ),
  mNextTxtIndex( 0 ),
  mNextTabAliasId ( 0 ),
- mUseTableAliases( true ),
- mUseNesting( true ),
- mUseGrouping( false ),
- mAddNegationBracket( false )
+ mUseTableAliases( true )
 {
 
 }
@@ -92,9 +86,6 @@ void FdoRdbmsFilterProcessor::ResetBuffer( SqlCommandType cmdType )
         mSecondarySpatialFilters->Clear();
 
    	mFilterLogicalOps.clear();
-
-    if (mBoundGeometryValues != NULL)
-        mBoundGeometryValues->Clear();
 }
 
 //
@@ -352,11 +343,6 @@ const wchar_t * FdoRdbmsFilterProcessor::PropertyNameToColumnName( const wchar_t
     }
 }
 
-bool FdoRdbmsFilterProcessor::CanSelectDistinctObjectProperties()
-{
-    return false;
-}
-
 void FdoRdbmsFilterProcessor::ProcessBinaryExpression(FdoBinaryExpression& expr)
 {
     FdoPtr<FdoExpression>lftExpr = expr.GetLeftExpression();
@@ -438,7 +424,7 @@ void FdoRdbmsFilterProcessor::ProcessComputedIdentifier(FdoComputedIdentifier& e
     AppendString( CLOSE_PARENTH );
 }
 
-void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOuterJoin, bool inSelectList )
+void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOuterJoin )
 {
     int     scopeLen;
     const FdoSmLpPropertyDefinition *propertyDefinition = NULL;
@@ -472,11 +458,8 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
                     // This is required to avoid returning multiple copies of the same feature when the filter contains a condition using
                     // one or more properties of the collection.
 
-                    if ( CanSelectDistinctObjectProperties() ) 
-                    {
-                        if( objProp->GetObjectType() == FdoObjectType_OrderedCollection || objProp->GetObjectType() == FdoObjectType_Collection )
-                            mRequiresDistinct = true;
-                    }
+//                    if( objProp->GetObjectType() == FdoObjectType_OrderedCollection || objProp->GetObjectType() == FdoObjectType_Collection )
+//                        mRequiresDistinct = true;
 
                     FdoStringP pkTable = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
                     FdoStringP fkTable = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(objProp);
@@ -557,7 +540,13 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
             {
                 const FdoSmLpDataPropertyDefinition* dataProp =
                             static_cast<const FdoSmLpDataPropertyDefinition*>(propertyDefinition);
-                AppendDataProperty( currentClass, dataProp, useOuterJoin, inSelectList ); 
+                FdoStringP tableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
+                const FdoSmPhColumn *column = dataProp->RefColumn();
+                if (NULL == column)
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+                AppendString(  GetTableAlias( tableName ) );
+                AppendString( L"." );
+                AppendString( (FdoString*)(column->GetDbName()) );
             }
             break;
 
@@ -565,7 +554,27 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
             {
                 const FdoSmLpObjectPropertyDefinition* objProp =
                             static_cast<const FdoSmLpObjectPropertyDefinition*>(propertyDefinition);
-                AppendObjectProperty( currentClass, objProp, useOuterJoin, inSelectList ); 
+                const FdoSmLpClassDefinition* pTargetClass = objProp->RefTargetClass();
+                if ( !pTargetClass )
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+
+                const FdoSmLpDbObject* pTargetTable = pTargetClass->RefDbObject();
+                if ( !pTargetTable )
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+
+                const FdoSmPhColumnCollection* pkCols = pTargetTable->RefTargetColumns();
+
+                if( !pkCols || pkCols->GetCount() == 0 )
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+
+                if( pkCols->GetCount() != 1 )
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_20, "Case not handled yet"));
+
+                FdoStringP sqlTableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
+                AppendString( GetTableAlias( sqlTableName ) );
+                AppendString( L"." );
+                AppendString( pkCols->RefItem(0)->GetName() );
+
             }
             break;
 
@@ -573,16 +582,51 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
             {
                 const FdoSmLpGeometricPropertyDefinition* geomProp =
                             static_cast<const FdoSmLpGeometricPropertyDefinition*>(propertyDefinition);
-                AppendGeometricProperty( currentClass, geomProp, useOuterJoin, inSelectList ); 
+                FdoSmOvGeometricColumnType columnType = geomProp->GetGeometricColumnType();
+                FdoSmOvGeometricContentType contentType = geomProp->GetGeometricContentType();
+                if (FdoSmOvGeometricColumnType_Double == columnType &&
+                    FdoSmOvGeometricContentType_Ordinates == contentType)
+                {
+                    FdoStringP sqlTableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
+                    FdoString * tableAlias = GetTableAlias( sqlTableName );
+                    const FdoSmPhColumn *columnX = geomProp->RefColumnX();
+                    const FdoSmPhColumn *columnY = geomProp->RefColumnY();
+                    const FdoSmPhColumn *columnZ = geomProp->RefColumnZ();
+                    if (NULL == columnX || NULL == columnY)
+                        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+                    AppendString( tableAlias );
+                    AppendString( L"." );
+                    AppendString( (FdoString*)(columnX->GetDbName()) );
+                    AppendString( L"," );
+                    AppendString( tableAlias );
+                    AppendString( L"." );
+                    AppendString( (FdoString*)(columnY->GetDbName()) );
+                    if (NULL != columnZ)
+                    {
+                        AppendString( L"," );
+                        AppendString( tableAlias );
+                        AppendString( L"." );
+                        AppendString( (FdoString*)(columnZ->GetDbName()) );
+                    }
+                }
+                else // Single-column storage
+                {
+                    const FdoSmPhColumn *column = geomProp->RefColumn();
+                    if (NULL == column)
+                        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
+                    FdoStringP sqlTableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
+                    FdoString * tableAlias = GetTableAlias( sqlTableName );
+                    AppendString( tableAlias );
+                    AppendString( L"." );
+                    
+                    FdoStringP  colName = GetGeometryString( (FdoString*)(column->GetDbName()) );
+                    AppendString( (FdoString*)colName );
+                }
             }
             break;
 
         case FdoPropertyType_AssociationProperty:
-            {
-                const FdoSmLpAssociationPropertyDefinition* assocProp =
-                            static_cast<const FdoSmLpAssociationPropertyDefinition*>(propertyDefinition);
-                AppendAssociationProperty( currentClass, assocProp, useOuterJoin, inSelectList ); 
-            }
+            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_20, "Case not handled yet"));
 
         default:
             throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
@@ -637,13 +681,13 @@ void FdoRdbmsFilterProcessor::ProcessDecimalValue(FdoDecimalValue& expr)
 void FdoRdbmsFilterProcessor::ProcessInt16Value(FdoInt16Value& expr)
 {
     char    tmpValue[124];
-    AppendString( FdoCommonOSUtil::itoa( (int)expr.GetInt16(),tmpValue) );
+    AppendString( ut_itoa( (int)expr.GetInt16(),tmpValue) );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInt32Value(FdoInt32Value& expr)
 {
     char    tmpValue[124];
-    AppendString( FdoCommonOSUtil::itoa( (int)expr.GetInt32(),tmpValue) );
+    AppendString( ut_itoa( (int)expr.GetInt32(),tmpValue) );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInt64Value(FdoInt64Value& expr)
@@ -693,8 +737,6 @@ void FdoRdbmsFilterProcessor::ProcessGeometryValue(FdoGeometryValue& expr)
 ///////////////////////////////////////////////////////////////
 void FdoRdbmsFilterProcessor::ProcessBinaryLogicalOperator(FdoBinaryLogicalOperator& filter)
 {
-    bool useGrouping = false;
-
     FdoPtr<FdoFilter>leftOperand = filter.GetLeftOperand();
     FdoPtr<FdoFilter>rightOperand = filter.GetRightOperand();
     if( leftOperand == NULL  )
@@ -706,23 +748,12 @@ void FdoRdbmsFilterProcessor::ProcessBinaryLogicalOperator(FdoBinaryLogicalOpera
     const FdoSmLpClassDefinition *classDefinition = mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName);
     const FdoSmLpDataPropertyDefinitionCollection *properties = classDefinition->RefIdentityProperties();
 
-    if (mUseNesting)
-        AppendString(OPEN_PARENTH);
+    AppendString(OPEN_PARENTH);
     if( filter.GetOperation() == FdoBinaryLogicalOperations_And )
     {
-        useGrouping  = mUseGrouping;
-        mUseGrouping = false;
-        if (useGrouping)
-            AppendString(OPEN_PARENTH);
         HandleFilter( leftOperand );
-        if (useGrouping)
-            AppendString(CLOSE_PARENTH);
         AppendString( LOGICAL_AND );
-        if (useGrouping)
-            AppendString(OPEN_PARENTH);
         HandleFilter( rightOperand );
-        if (useGrouping)
-            AppendString(CLOSE_PARENTH);
     }
     else
     {
@@ -730,14 +761,9 @@ void FdoRdbmsFilterProcessor::ProcessBinaryLogicalOperator(FdoBinaryLogicalOpera
         HandleFilter( leftOperand );
         AppendString( LOGICAL_OR );
         HandleFilter( rightOperand );
-		FdoSpatialCondition* leftSpCond = dynamic_cast<FdoSpatialCondition*>(leftOperand.p);
-        FdoSpatialCondition* rightSpCond = dynamic_cast<FdoSpatialCondition*>(rightOperand.p);
-        if ((leftSpCond || rightSpCond) && !(leftSpCond && rightSpCond))
-            throw FdoCommandException::Create( NlsMsgGet(FDORDBMS_532, "OR not supported in a query when mixing property with spatial filters" ) );
     }
 
-    if (mUseNesting)
-        AppendString(CLOSE_PARENTH);
+    AppendString(CLOSE_PARENTH);
 
   	// Save 
 	mFilterLogicalOps.push_back( filter.GetOperation() );
@@ -839,20 +865,11 @@ void FdoRdbmsFilterProcessor::ProcessUnaryLogicalOperator(FdoUnaryLogicalOperato
     else
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_251, "FdoUnaryLogicalOperator supports only the 'Not' operation"));
 
-    if (mAddNegationBracket)
-        AppendString(OPEN_PARENTH);
     HandleFilter( unaryOp );
-    if (mAddNegationBracket)
-        AppendString(CLOSE_PARENTH);
     AppendString(CLOSE_PARENTH);
 
-	// Disallow NOT with the spatial filter
-    FdoSpatialCondition* spCond = dynamic_cast<FdoSpatialCondition*>(unaryOp.p);
-    if (spCond)
-        throw FdoCommandException::Create( NlsMsgGet(FDORDBMS_533, "NOT operator not supported with spatial filters" ) );
-
 	// Save 
-	mFilterLogicalOps.push_back( -1 /* FdoUnaryLogicalOperations_Not */ );
+	mFilterLogicalOps.push_back( filter.GetOperation() );
 }
 
 
@@ -867,10 +884,6 @@ bool FdoRdbmsFilterProcessor::CanOptimizeRelationQuery( const FdoSmLpClassDefini
         if( assocProp->GetReadOnly() || wcscmp(assocProp->GetReverseMultiplicity(), L"m" ) == 0 || assocProp->RefAssociatedClass()->GetClassType() == FdoClassType_FeatureClass )
             return false;
 
-        // Class references itself. Multiple aliases per table not yet supported
-        // so can't optimize this association.
-        if( assocProp->RefAssociatedClass() == pClass )
-            return false;
         //
         // If one or more association to the same class exist, then it's not possible to optimize this query since more than one row need to
         // be returned for the associated class; One row for each association.
@@ -940,25 +953,19 @@ void FdoRdbmsFilterProcessor::FollowRelation( FdoStringP    &relationColumns, co
                 }
             }
         }
-// Cascading through the relations can cause infinite recursion when there
-// are circular associations. A select statement that handles multiple
-// levels of associations is going to be very complex anyways so, rather
-// than figure out if there are circular associations, don't follow the 
-// next level of assocations.
-#if 0
         // Visit the next level of association
         const FdoSmLpPropertyDefinitionCollection* properties = assocProp->RefAssociatedClass()->RefProperties();
         for(int i=0; i<properties->GetCount(); i++ )
         {
             if( properties->RefItem(i)->GetPropertyType() == FdoPropertyType_AssociationProperty )
             {
-                if( CanOptimizeRelationQuery( assocProp->RefAssociatedClass(), properties->RefItem(i) ) )
-                    FollowRelation( relationColumns, properties->RefItem(i), selectedProperties);
+                if( ! CanOptimizeRelationQuery( assocProp->RefAssociatedClass(), properties->RefItem(i) ) )
+                    return;
+                FollowRelation( relationColumns, properties->RefItem(i), selectedProperties);
             }
         }
-#endif
     }
-    if ( propertyDefinition->GetPropertyType() == FdoPropertyType_ObjectProperty )
+    else if ( propertyDefinition->GetPropertyType() == FdoPropertyType_ObjectProperty )
     {
         const FdoSmLpObjectPropertyDefinition* objProp = (const FdoSmLpObjectPropertyDefinition*) propertyDefinition;
         if( objProp->GetObjectType() != FdoObjectType_Value )
@@ -978,94 +985,12 @@ void FdoRdbmsFilterProcessor::AppendOrderBy( FdoRdbmsFilterUtilConstrainDef *fil
         if( i != 0 )
             AppendString( L", " );
         FdoPtr<FdoIdentifier>ident = filterConstraint->orderByProperties->GetItem( i );
-        ProcessIdentifier( *ident, true, false );
+        ProcessIdentifier( *ident, true );
         if( filterConstraint->orderingOption == FdoOrderingOption_Descending )
             AppendString( L" DESC " );
         else
             AppendString( L" ASC " );
     }
-}
-
-void FdoRdbmsFilterProcessor::AppendDataProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpDataPropertyDefinition* dataProp, bool useOuterJoin, bool inSelectList )
-{               
-    FdoStringP tableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
-    AppendString(  GetTableAlias( tableName ) );
-    AppendString( L"." );
-    AppendString( (FdoString*)(mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetColumnSqlName(dataProp)) );
-}
-
-void FdoRdbmsFilterProcessor::AppendObjectProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpObjectPropertyDefinition* objProp, bool useOuterJoin, bool inSelectList )
-{
-    AppendObjectProperty( currentClass, objProp, useOuterJoin, inSelectList ); 
-    const FdoSmLpClassDefinition* pTargetClass = objProp->RefTargetClass();
-    if ( !pTargetClass )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
-
-    const FdoSmLpDbObject* pTargetTable = pTargetClass->RefDbObject();
-    if ( !pTargetTable )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
-
-    const FdoSmPhColumnCollection* pkCols = pTargetTable->RefTargetColumns();
-
-    if( !pkCols || pkCols->GetCount() == 0 )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
-
-    if( pkCols->GetCount() != 1 )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_20, "Case not handled yet"));
-
-    FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
-    AppendString( GetTableAlias( sqlTableName ) );
-    AppendString( L"." );
-    AppendString( pkCols->RefItem(0)->GetName() );
-}
-
-void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpGeometricPropertyDefinition* geomProp, bool useOuterJoin, bool inSelectList )
-{
-    FdoSmOvGeometricColumnType columnType = geomProp->GetGeometricColumnType();
-    FdoSmOvGeometricContentType contentType = geomProp->GetGeometricContentType();
-    if (FdoSmOvGeometricColumnType_Double == columnType &&
-        FdoSmOvGeometricContentType_Ordinates == contentType)
-    {
-        FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
-        FdoString * tableAlias = GetTableAlias( sqlTableName );
-        const FdoSmPhColumn *columnX = geomProp->RefColumnX();
-        const FdoSmPhColumn *columnY = geomProp->RefColumnY();
-        const FdoSmPhColumn *columnZ = geomProp->RefColumnZ();
-        if (NULL == columnX || NULL == columnY)
-            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
-        AppendString( tableAlias );
-        AppendString( L"." );
-        AppendString( (FdoString*)(columnX->GetDbName()) );
-        AppendString( L"," );
-        AppendString( tableAlias );
-        AppendString( L"." );
-        AppendString( (FdoString*)(columnY->GetDbName()) );
-        if (NULL != columnZ)
-        {
-            AppendString( L"," );
-            AppendString( tableAlias );
-            AppendString( L"." );
-            AppendString( (FdoString*)(columnZ->GetDbName()) );
-        }
-    }
-    else // Single-column storage
-    {
-        const FdoSmPhColumn *column = geomProp->RefColumn();
-        if (NULL == column)
-            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
-        FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
-        FdoString * tableAlias = GetTableAlias( sqlTableName );
-        AppendString( tableAlias );
-        AppendString( L"." );
-        
-        FdoStringP  colName = GetGeometryString( (FdoString*)(column->GetDbName()), inSelectList );
-        AppendString( (FdoString*)colName );
-    }
-}
-
-void FdoRdbmsFilterProcessor::AppendAssociationProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpAssociationPropertyDefinition* assocProp, bool useOuterJoin, bool inSelectList )
-{
-    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_20, "Case not handled yet"));
 }
 
 // Add the group by clause if it's required
@@ -1080,217 +1005,7 @@ void FdoRdbmsFilterProcessor::AppendGroupBy( FdoRdbmsFilterUtilConstrainDef *fil
         if( i != 0 )
             AppendString( L", " );
         FdoPtr<FdoIdentifier>ident = filterConstraint->groupByProperties->GetItem( i );
-        ProcessIdentifier( *ident, true, false );
-    }
-}
-
-// Analyzes the filter and set flags that control the generation of the
-// corresponding SQL statement.
-void FdoRdbmsFilterProcessor::AnalyzeFilter (FdoFilter *filter)
-{
-
-    // The following defines the filter analyzer. The filter analyzer is used
-    // to scan the filter for its content and set flags that control the
-    // process of converting the filter into the corresponding SQL statement.
-    // For example, it checks whether or not nesting of filter elememts is
-    // required. 
-
-    class FilterAnalyzer : public FdoRdbmsBaseFilterProcessor
-    {
-
-    public:
-
-        //  containsBinaryLogicalOperatorAnd:
-        //      The flag is set to TRUE if the filter contains the binary
-        //      logical operator AND.
-        bool containsBinaryLogicalOperatorAnd;
-
-        //  containsBinaryLogicalOperatorOr:
-        //      The flag is set to TRUE if the filter contains the binary
-        //      logical operator OR.
-		bool containsBinaryLogicalOperatorOr;
-
-        //  containsUnaryLogicalOperatorNot:
-        //      The flag is set to TRUE if the filter contains the unary
-        //      logical operator NOT.
-        bool containsUnaryLogicalOperatorNot;
-
-        //  firstBinaryLogicalOperatorFound:
-        //      A flag to identify the first node of a binary logical operator
-        bool firstBinaryLogicalOperatorFound;
-
-        //  isSpatialObjectFilter:
-        //      A flag to indicate whether or not the filter represents a
-        //      spatial-object filter. A spatial object filter is given if
-        //      the left and right operand of a binary logical operator AND
-        //      consists of a single binary logical operator only.
-        bool isSpatialObjectFilter;
-
-        // Constructor.
-        FilterAnalyzer() 
-        { 
-            containsBinaryLogicalOperatorAnd = false;
-			containsBinaryLogicalOperatorOr  = false;
-            containsUnaryLogicalOperatorNot  = false;
-            isSpatialObjectFilter            = false;
-            firstBinaryLogicalOperatorFound  = false;
-        }  
-
-        // Processes a binary logical operator node. Depending on the used
-        // operator, it sets the corresponding flag and then continues
-        // analyzing the tree.
-        virtual void ProcessBinaryLogicalOperator(
-                                            FdoBinaryLogicalOperator& filter)
-        {
-            bool isTopBinaryLogicalOperator   = false,
-                 hasBinaryLogicalOperatorAnd  = false,
-                 hasBinaryLogicalOperatorOr   = false,
-                 isSingleLeftOperandOperator  = false,
-                 isSingleRightOperandOperator = false,
-                 isBinaryLogicalOperatorAnd   = false,
-                 isBinaryLogicalOperatorOr    = false;
-
-            FdoBinaryLogicalOperations leftOperandOperator  = FdoBinaryLogicalOperations_And,
-                                       rightOperandOperator = FdoBinaryLogicalOperations_And,
-                                       binaryLogicalOperator;
-
-            binaryLogicalOperator = filter.GetOperation();
-
-            // If this is the top level binary logical operator, remember it
-            // as this means that specific checks need to be done at the end
-            // of the routine.
-            if (!firstBinaryLogicalOperatorFound)
-            {
-                isTopBinaryLogicalOperator      = true;
-                firstBinaryLogicalOperatorFound = true;
-            }
-
-            // If this is the top level binary logical operator, remember the
-            // operator type in a local variable first. Otherwise, use the
-            // global variables.
-            if (isTopBinaryLogicalOperator)
-            {
-                if (binaryLogicalOperator == FdoBinaryLogicalOperations_And)
-                    isBinaryLogicalOperatorAnd = true;
-                if (binaryLogicalOperator == FdoBinaryLogicalOperations_Or)
-                    isBinaryLogicalOperatorOr = true;
-            }
-            else
-            {
-                if (binaryLogicalOperator == FdoBinaryLogicalOperations_And)
-                    containsBinaryLogicalOperatorAnd = true;
-                if (binaryLogicalOperator == FdoBinaryLogicalOperations_Or)
-                    containsBinaryLogicalOperatorOr = true;
-            }
-
-            // Parse the left operand of the binary logical operation.
-            if (filter.GetLeftOperand() != NULL)
-                filter.GetLeftOperand()->Process(this);
-
-            // If this is the top level binary logical operator node, check
-            // if there was a single binary logical operator used in the left
-            // operand and if this is the case, remember the operator.
-            if (isTopBinaryLogicalOperator)
-            {
-                isSingleLeftOperandOperator = (((containsBinaryLogicalOperatorAnd ) &&
-                                                (!containsBinaryLogicalOperatorOr ) &&
-                                                (!containsUnaryLogicalOperatorNot )    ) ||
-                                               ((containsBinaryLogicalOperatorOr  ) &&
-                                                (!containsBinaryLogicalOperatorAnd) &&
-                                                (!containsUnaryLogicalOperatorNot )    )    );
-                if (isSingleLeftOperandOperator)
-                    if (containsBinaryLogicalOperatorAnd)
-                        leftOperandOperator = FdoBinaryLogicalOperations_And;
-                    else
-                        leftOperandOperator = FdoBinaryLogicalOperations_Or;
-
-                // Remember the settings of the flags and reset them to the
-                // inital value for the processing of the right operand of
-                // the node.
-                hasBinaryLogicalOperatorAnd      = containsBinaryLogicalOperatorAnd;
-                hasBinaryLogicalOperatorOr       = containsBinaryLogicalOperatorOr;
-                containsBinaryLogicalOperatorAnd = false;
-                containsBinaryLogicalOperatorOr  = false;
-            }
-
-            // Process the right tree of the node.
-            if (filter.GetRightOperand() != NULL)
-                filter.GetRightOperand()->Process(this);
-
-            // If this is the top level binary logical operator node, check
-            // if there was a single binary logical operator used in the right
-            // operand and if this is the case, remember the operator.
-            if (isTopBinaryLogicalOperator)
-            {
-                isSingleRightOperandOperator = (((containsBinaryLogicalOperatorAnd ) &&
-                                                 (!containsBinaryLogicalOperatorOr ) &&
-                                                 (!containsUnaryLogicalOperatorNot )    ) ||
-                                                ((containsBinaryLogicalOperatorOr  ) &&
-                                                 (!containsBinaryLogicalOperatorAnd) &&
-                                                 (!containsUnaryLogicalOperatorNot )    )    );
-                if (isSingleRightOperandOperator)
-                    if (containsBinaryLogicalOperatorAnd)
-                        rightOperandOperator = FdoBinaryLogicalOperations_And;
-                    else
-                        rightOperandOperator = FdoBinaryLogicalOperations_Or;
-
-                // Determine if this is a spatial-object filter.
-                if ((isSingleLeftOperandOperator) && (isSingleRightOperandOperator))
-                    isSpatialObjectFilter =
-                        ((((leftOperandOperator  == FdoBinaryLogicalOperations_And) &&
-                           (rightOperandOperator == FdoBinaryLogicalOperations_Or )    ) ||
-                          ((leftOperandOperator  == FdoBinaryLogicalOperations_Or) &&
-                           (rightOperandOperator == FdoBinaryLogicalOperations_And)    )    ) &&
-                         (isBinaryLogicalOperatorAnd                                        )    );
-
-                // Reset the public flags.
-                containsBinaryLogicalOperatorOr  =
-                                        containsBinaryLogicalOperatorOr  || 
-                                        hasBinaryLogicalOperatorOr ||
-                                        isBinaryLogicalOperatorOr;
-                containsBinaryLogicalOperatorAnd =
-                                        containsBinaryLogicalOperatorAnd ||
-                                        hasBinaryLogicalOperatorAnd ||
-                                        isBinaryLogicalOperatorAnd;
-            }
-        }
-
-        virtual void ProcessUnaryLogicalOperator(
-                                            FdoUnaryLogicalOperator& filter)
-        {
-            containsUnaryLogicalOperatorNot = true;
-            if (filter.GetOperand() != NULL)
-                filter.GetOperand()->Process(this);
-        }
-    };
-
-    // Initialize the member variables that are set by this routine. The default
-    // value should reflect the current behavior.
-    mUseNesting         = true;
-    mUseGrouping        = false;
-    mAddNegationBracket = false;
-
-    // Analyze the filter.
-    FilterAnalyzer filterAnalyzer;
-    filter->Process(&filterAnalyzer);
-
-    // Check the result of the analyzing process and set the corresponding
-    // member variables that control the generation of the SQL statement
-    // from the given filter.
-    if ((filterAnalyzer.containsBinaryLogicalOperatorAnd) ||
-        (filterAnalyzer.containsBinaryLogicalOperatorOr)     )
-    {
-        if (filterAnalyzer.isSpatialObjectFilter)
-        {
-            mUseNesting  = false;
-            mUseGrouping = true;
-        }
-        else
-            mUseNesting = filterAnalyzer.containsBinaryLogicalOperatorAnd &&
-                          filterAnalyzer.containsBinaryLogicalOperatorOr;
-        mAddNegationBracket =
-                        !mUseNesting &&
-                        filterAnalyzer.containsUnaryLogicalOperatorNot;
+        ProcessIdentifier( *ident, true );
     }
 }
 
@@ -1371,7 +1086,7 @@ void FdoRdbmsFilterProcessor::PrependTables()
     }
 }
 
-void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* property, bool scanForTableOnly, bool inSelectList )
+void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* property, bool scanForTableOnly )
 {
     // If it's a computed identifier, then we dump the translated content in the from clause.
     // There may be alot of weird and wonderfull stuff in that expression that does not make sense. We'll leave it
@@ -1393,7 +1108,7 @@ void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* property, bool sca
     }
     else
     {
-        ProcessIdentifier( *property, false, inSelectList );
+        ProcessIdentifier( *property );
     }
     wchar_t* compIdentPseudoCol = &mSqlFilterText[mFirstTxtIndex];
     wchar_t* tmp = mSqlFilterText;
@@ -1610,17 +1325,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                                                      FdoInt16                       callerId )
 
 {
-    // Before generating the SQL statement for the provided filter, it is
-    // required to analyze the filter first. This basically checks the content
-    // of the filter and sets flags which will later control the generation
-    // of the SQL statement out of the filter. For example, if the filter
-    // contains a list of elements that are combined by binary logical 
-    // operators, it is not required to nest those elements in the generated
-    // SQL statement unless different operators are used. 
-    if (filter != NULL)
-        AnalyzeFilter(filter);
-
-    // Process the request.
     int j;
     bool ltQueryQualAdded = false;
     DbiConnection  *mDbiConnection = mFdoConnection->GetDbiConnection();
@@ -1704,8 +1408,9 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
         {
             if( properties->RefItem(i)->GetPropertyType() == FdoPropertyType_AssociationProperty )
             {
-                if( CanOptimizeRelationQuery( mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName), properties->RefItem(i)) )
-                    FollowRelation( relationColumns, properties->RefItem(i), selectedProperties);
+                if( ! CanOptimizeRelationQuery( mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName), properties->RefItem(i)) )
+                    break;
+                FollowRelation( relationColumns, properties->RefItem(i), selectedProperties);
             }
         }
 
@@ -1935,7 +1640,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                 {
                     PrependString( L"," );
                 }
-                PrependProperty( property, false, true );
+                PrependProperty( property );
 
                 first = false;
                 for (j=0; j<identProperties->GetCount(); j++)
@@ -2091,7 +1796,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                 {
                     PrependString(L",");
                 }
-                PrependProperty( property, false, true );
+                PrependProperty( property );
 
                 first = false;
             }
@@ -2213,7 +1918,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
 				if ( geomPropertyDef->RefColumn() )
 				{
 					const FdoSmPhColumn* column = geomPropertyDef->RefColumn();
-					all->Add(GetGeometryString(column->GetDbName(), true));
+					all->Add(GetGeometryString(column->GetDbName()));
 				}
 			}
 		}
@@ -2240,7 +1945,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
     return &mSqlFilterText[mFirstTxtIndex];
 }
 
-FdoStringP FdoRdbmsFilterProcessor::GetGeometryString( FdoString* columnName, bool inSelectList )
+FdoStringP FdoRdbmsFilterProcessor::GetGeometryString( FdoString* columnName )
 { 
     return columnName; 
 }
@@ -2252,6 +1957,7 @@ FdoStringP FdoRdbmsFilterProcessor::GetGeometryTableString( FdoString* tableName
 
 void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString* tableAlias )
 { 
+
     DbiConnection  *mDbiConnection = mFdoConnection->GetDbiConnection();
     FdoSchemaManagerP sm = mDbiConnection->GetSchemaManager();
     FdoSmPhMgrP phMgr = sm->GetPhysicalSchema();
@@ -2282,7 +1988,7 @@ void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString
 
                 if( bGeometry ) 
                 {
-	                FdoStringP  colName = GetGeometryString( (FdoString*)(column->GetDbName()), true );
+	                FdoStringP  colName = GetGeometryString( (FdoString*)(column->GetDbName()) );
                     PrependString( (FdoString*)colName );
                 }
                 else
@@ -2314,25 +2020,3 @@ void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString
     }
 }
 
-FdoRdbmsFilterProcessor::BoundGeometry::BoundGeometry(
-    FdoIGeometry* geometry,
-    FdoInt64 srid
-)
-{
-    mGeometry = FDO_SAFE_ADDREF(geometry);
-    mSrid = srid;
-}
-
-FdoIGeometry* FdoRdbmsFilterProcessor::BoundGeometry::GetGeometry()
-{
-    return FDO_SAFE_ADDREF(mGeometry.p);
-}
-
-FdoInt64 FdoRdbmsFilterProcessor::BoundGeometry::GetSrid()
-{
-    return mSrid;
-}
-
-FdoRdbmsFilterProcessor::BoundGeometry::~BoundGeometry(void)
-{
-}

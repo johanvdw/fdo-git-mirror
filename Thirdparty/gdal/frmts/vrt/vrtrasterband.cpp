@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrasterband.cpp 15300 2008-09-04 20:20:49Z rouault $
+ * $Id: vrtrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRasterBand
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtrasterband.cpp 15300 2008-09-04 20:20:49Z rouault $");
+CPL_CVSID("$Id: vrtrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -348,11 +348,12 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
         {
             if( psEntry->eType != CXT_Element 
                 || !EQUAL(psEntry->pszValue,"Category") 
-                || (psEntry->psChild != NULL && psEntry->psChild->eType != CXT_Text) )
+                || psEntry->psChild == NULL 
+                || psEntry->psChild->eType != CXT_Text )
                 continue;
             
             papszCategoryNames = CSLAddString( papszCategoryNames, 
-                                (psEntry->psChild) ? psEntry->psChild->pszValue : "");
+                                               psEntry->psChild->pszValue );
         }
     }
 

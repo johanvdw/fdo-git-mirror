@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gt_overview.cpp 15787 2008-11-22 00:42:05Z warmerdam $
+ * $Id: gt_overview.cpp 12109 2007-09-10 23:10:02Z warmerdam $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Code to build overviews of external databases as a TIFF file. 
@@ -34,161 +34,9 @@
 #include "tiffio.h"
 #include "xtiffio.h"
 #include "geotiff.h"
-#include "gt_overview.h"
+#include "tif_ovrcache.h"
 
-CPL_CVSID("$Id: gt_overview.cpp 15787 2008-11-22 00:42:05Z warmerdam $");
-
-#define TIFFTAG_GDAL_METADATA  42112
-
-CPL_C_START
-void    GTiffOneTimeInit();
-CPL_C_END
-
-/************************************************************************/
-/*                         GTIFFWriteDirectory()                        */
-/*                                                                      */
-/*      Create a new directory, without any image data for an overview  */
-/*      or a mask                                                       */
-/*      Returns offset of newly created directory, but the              */
-/*      current directory is reset to be the one in used when this      */
-/*      function is called.                                             */
-/************************************************************************/
-
-toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize,
-                           int nBitsPerPixel, int nPlanarConfig, int nSamples, 
-                           int nBlockXSize, int nBlockYSize,
-                           int bTiled, int nCompressFlag, int nPhotometric,
-                           int nSampleFormat, 
-                           unsigned short *panRed,
-                           unsigned short *panGreen,
-                           unsigned short *panBlue,
-                           int nExtraSamples,
-                           unsigned short *panExtraSampleValues,
-                           const char *pszMetadata )
-
-{
-    toff_t	nBaseDirOffset;
-    toff_t	nOffset;
-
-    nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
-
-#if defined(TIFFLIB_VERSION) && TIFFLIB_VERSION >= 20051201 /* 3.8.0 */
-    TIFFFreeDirectory( hTIFF );
-#endif
-
-    TIFFCreateDirectory( hTIFF );
-    
-/* -------------------------------------------------------------------- */
-/*      Setup TIFF fields.                                              */
-/* -------------------------------------------------------------------- */
-    TIFFSetField( hTIFF, TIFFTAG_IMAGEWIDTH, nXSize );
-    TIFFSetField( hTIFF, TIFFTAG_IMAGELENGTH, nYSize );
-    if( nSamples == 1 )
-        TIFFSetField( hTIFF, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG );
-    else
-        TIFFSetField( hTIFF, TIFFTAG_PLANARCONFIG, nPlanarConfig );
-
-    TIFFSetField( hTIFF, TIFFTAG_BITSPERSAMPLE, nBitsPerPixel );
-    TIFFSetField( hTIFF, TIFFTAG_SAMPLESPERPIXEL, nSamples );
-    TIFFSetField( hTIFF, TIFFTAG_COMPRESSION, nCompressFlag );
-    TIFFSetField( hTIFF, TIFFTAG_PHOTOMETRIC, nPhotometric );
-    TIFFSetField( hTIFF, TIFFTAG_SAMPLEFORMAT, nSampleFormat );
-
-    if( bTiled )
-    {
-        TIFFSetField( hTIFF, TIFFTAG_TILEWIDTH, nBlockXSize );
-        TIFFSetField( hTIFF, TIFFTAG_TILELENGTH, nBlockYSize );
-    }
-    else
-        TIFFSetField( hTIFF, TIFFTAG_ROWSPERSTRIP, nBlockYSize );
-
-    TIFFSetField( hTIFF, TIFFTAG_SUBFILETYPE, nSubfileType );
-
-    if (panExtraSampleValues != NULL)
-    {
-        TIFFSetField(hTIFF, TIFFTAG_EXTRASAMPLES, nExtraSamples, panExtraSampleValues );
-    }
-    
-/* -------------------------------------------------------------------- */
-/*	Write color table if one is present.				*/
-/* -------------------------------------------------------------------- */
-    if( panRed != NULL )
-    {
-        TIFFSetField( hTIFF, TIFFTAG_COLORMAP, panRed, panGreen, panBlue );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Write metadata if we have some.                                 */
-/* -------------------------------------------------------------------- */
-    if( pszMetadata && strlen(pszMetadata) > 0 )
-        TIFFSetField( hTIFF, TIFFTAG_GDAL_METADATA, pszMetadata );
-
-/* -------------------------------------------------------------------- */
-/*      Write directory, and return byte offset.                        */
-/* -------------------------------------------------------------------- */
-    if( TIFFWriteCheck( hTIFF, bTiled, "GTIFFWriteDirectory" ) == 0 )
-    {
-        TIFFSetSubDirectory( hTIFF, nBaseDirOffset );
-        return 0;
-    }
-
-    TIFFWriteDirectory( hTIFF );
-    TIFFSetDirectory( hTIFF, (tdir_t) (TIFFNumberOfDirectories(hTIFF)-1) );
-
-    nOffset = TIFFCurrentDirOffset( hTIFF );
-
-    TIFFSetSubDirectory( hTIFF, nBaseDirOffset );
-
-    return nOffset;
-}
-
-/************************************************************************/
-/*                     GTIFFBuildOverviewMetadata()                     */
-/************************************************************************/
-
-void GTIFFBuildOverviewMetadata( const char *pszResampling,
-                                 GDALDataset *poBaseDS, 
-                                 CPLString &osMetadata )
-
-{
-    osMetadata = "<GDALMetadata>";
-
-    if( pszResampling && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
-        osMetadata += "<Item name=\"RESAMPLING\" sample=\"0\">AVERAGE_BIT2GRAYSCALE</Item>";
-
-    if( poBaseDS->GetMetadataItem( "INTERNAL_MASK_FLAGS_1" ) )
-    {
-        int iBand;
-
-        for( iBand = 0; iBand < 200; iBand++ )
-        {
-            CPLString osItem;
-            CPLString osName;
-
-            osName.Printf( "INTERNAL_MASK_FLAGS_%d", iBand+1 );
-            if( poBaseDS->GetMetadataItem( osName ) )
-            {
-                osItem.Printf( "<Item name=\"%s\">%s</Item>", 
-                               osName.c_str(), 
-                               poBaseDS->GetMetadataItem( osName ) );
-                osMetadata += osItem;
-            }
-        }
-    }
-
-    const char* pszNoDataValues = poBaseDS->GetMetadataItem("NODATA_VALUES");
-    if (pszNoDataValues)
-    {
-        CPLString osItem;
-        osItem.Printf( "<Item name=\"NODATA_VALUES\">%s</Item>", pszNoDataValues );
-        osMetadata += osItem;
-    }
-
-    if( !EQUAL(osMetadata,"<GDALMetadata>") )
-        osMetadata += "</GDALMetadata>";
-    else
-        osMetadata = "";
-}
+CPL_CVSID("$Id: gt_overview.cpp 12109 2007-09-10 23:10:02Z warmerdam $");
 
 /************************************************************************/
 /*                        GTIFFBuildOverviews()                         */
@@ -209,8 +57,6 @@ GTIFFBuildOverviews( const char * pszFilename,
 
     if( nBands == 0 || nOverviews == 0 )
         return CE_None;
-
-    GTiffOneTimeInit();
 
 /* -------------------------------------------------------------------- */
 /*      Verify that the list of bands is suitable for emitting in       */
@@ -314,7 +160,7 @@ GTIFFBuildOverviews( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     const char *pszCompress = CPLGetConfigOption( "COMPRESS_OVERVIEW", NULL );
 
-    if( pszCompress != NULL && pszCompress[0] != '\0' )
+    if( pszCompress )
     {
         if( EQUAL( pszCompress, "JPEG" ) )
             nCompression = COMPRESSION_JPEG;
@@ -338,73 +184,18 @@ GTIFFBuildOverviews( const char * pszFilename,
     else
         nPlanarConfig = PLANARCONFIG_SEPARATE;
 
-    const char* pszInterleave = CPLGetConfigOption( "INTERLEAVE_OVERVIEW", NULL );
-    if (pszInterleave != NULL && pszInterleave[0] != '\0')
-    {
-        if( EQUAL( pszInterleave, "PIXEL" ) )
-            nPlanarConfig = PLANARCONFIG_CONTIG;
-        else if( EQUAL( pszInterleave, "BAND" ) )
-            nPlanarConfig = PLANARCONFIG_SEPARATE;
-        else
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "INTERLEAVE_OVERVIEW=%s unsupported, value must be PIXEL or BAND. ignoring",
-                      pszInterleave );
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Figure out the photometric interpretation to use.               */
 /* -------------------------------------------------------------------- */
     if( nBands == 3 )
         nPhotometric = PHOTOMETRIC_RGB;
-    else if( papoBandList[0]->GetColorTable() != NULL 
-             && !EQUALN(pszResampling,"AVERAGE_BIT2",12) )
+    else if( papoBandList[0]->GetColorTable() != NULL )
     {
         nPhotometric = PHOTOMETRIC_PALETTE;
         /* should set the colormap up at this point too! */
     }
     else
         nPhotometric = PHOTOMETRIC_MINISBLACK;
-
-    const char* pszPhotometric = CPLGetConfigOption( "PHOTOMETRIC_OVERVIEW", NULL );
-    if (pszPhotometric != NULL && pszPhotometric[0] != '\0')
-    {
-        if( EQUAL( pszPhotometric, "MINISBLACK" ) )
-            nPhotometric = PHOTOMETRIC_MINISBLACK;
-        else if( EQUAL( pszPhotometric, "MINISWHITE" ) )
-            nPhotometric = PHOTOMETRIC_MINISWHITE;
-        else if( EQUAL( pszPhotometric, "RGB" ))
-        {
-            nPhotometric = PHOTOMETRIC_RGB;
-        }
-        else if( EQUAL( pszPhotometric, "CMYK" ))
-        {
-            nPhotometric = PHOTOMETRIC_SEPARATED;
-        }
-        else if( EQUAL( pszPhotometric, "YCBCR" ))
-        {
-            nPhotometric = PHOTOMETRIC_YCBCR;
-        }
-        else if( EQUAL( pszPhotometric, "CIELAB" ))
-        {
-            nPhotometric = PHOTOMETRIC_CIELAB;
-        }
-        else if( EQUAL( pszPhotometric, "ICCLAB" ))
-        {
-            nPhotometric = PHOTOMETRIC_ICCLAB;
-        }
-        else if( EQUAL( pszPhotometric, "ITULAB" ))
-        {
-            nPhotometric = PHOTOMETRIC_ITULAB;
-        }
-        else
-        {
-            CPLError( CE_Warning, CPLE_IllegalArg, 
-                      "PHOTOMETRIC_OVERVIEW=%s value not recognised, ignoring.\n",
-                      pszPhotometric );
-        }
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Create the file, if it does not already exist.                  */
@@ -451,41 +242,24 @@ GTIFFBuildOverviews( const char * pszFilename,
     if( nPhotometric == PHOTOMETRIC_PALETTE )
     {
         GDALColorTable *poCT = papoBandList[0]->GetColorTable();
-        int nColorCount;
+        int nColorCount = MIN(65536,poCT->GetColorEntryCount());
 
-        if( nBitsPerPixel <= 8 )
-            nColorCount = 256;
-        else
-            nColorCount = 65536;
-
-        panRed   = (unsigned short *) 
-            CPLCalloc(nColorCount,sizeof(unsigned short));
-        panGreen = (unsigned short *) 
-            CPLCalloc(nColorCount,sizeof(unsigned short));
-        panBlue  = (unsigned short *) 
-            CPLCalloc(nColorCount,sizeof(unsigned short));
+        panRed   = (unsigned short *) CPLCalloc(nColorCount,sizeof(unsigned short));
+        panGreen = (unsigned short *) CPLCalloc(nColorCount,sizeof(unsigned short));
+        panBlue  = (unsigned short *) CPLCalloc(nColorCount,sizeof(unsigned short));
 
         for( int iColor = 0; iColor < nColorCount; iColor++ )
         {
             GDALColorEntry  sRGB;
 
-            if( poCT->GetColorEntryAsRGB( iColor, &sRGB ) )
-            {
-                panRed[iColor] = (unsigned short) (257 * sRGB.c1);
-                panGreen[iColor] = (unsigned short) (257 * sRGB.c2);
-                panBlue[iColor] = (unsigned short) (257 * sRGB.c3);
-            }
+            poCT->GetColorEntryAsRGB( iColor, &sRGB );
+
+            panRed[iColor] = (unsigned short) (256 * sRGB.c1);
+            panGreen[iColor] = (unsigned short) (256 * sRGB.c2);
+            panBlue[iColor] = (unsigned short) (256 * sRGB.c3);
         }
     }
-
-/* -------------------------------------------------------------------- */
-/*      Do we need some metadata for the overviews?                     */
-/* -------------------------------------------------------------------- */
-    CPLString osMetadata;
-    GDALDataset *poBaseDS = papoBandList[0]->GetDataset();
-
-    GTIFFBuildOverviewMetadata( pszResampling, poBaseDS, osMetadata );
-
+        
 /* -------------------------------------------------------------------- */
 /*      Loop, creating overviews.                                       */
 /* -------------------------------------------------------------------- */
@@ -500,14 +274,12 @@ GTIFFBuildOverviews( const char * pszFilename,
             / panOverviewList[iOverview];
 
         nDirOffset = 
-            GTIFFWriteDirectory(hOTIFF, FILETYPE_REDUCEDIMAGE,
-                                nOXSize, nOYSize, nBitsPerPixel, 
+            TIFF_WriteOverview( hOTIFF, nOXSize, nOYSize, nBitsPerPixel, 
                                 nPlanarConfig, nBands,
                                 128, 128, TRUE, nCompression,
                                 nPhotometric, nSampleFormat, 
-                                panRed, panGreen, panBlue,
-                                0, NULL, /* FIXME ? how can we fetch extrasamples from here */
-                                osMetadata );
+                                panRed, panGreen, panBlue, 
+                                FALSE );
     }
 
     if (panRed)
@@ -533,91 +305,47 @@ GTIFFBuildOverviews( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Loop writing overview data.                                     */
 /* -------------------------------------------------------------------- */
+    GDALRasterBand   **papoOverviews;
 
-    if (nCompression != COMPRESSION_NONE &&
-        nPlanarConfig == PLANARCONFIG_CONTIG &&
-        GDALDataTypeIsComplex(papoBandList[0]->GetRasterDataType()) == FALSE &&
-        papoBandList[0]->GetColorTable() == NULL &&
-        (EQUALN(pszResampling, "NEAR", 4) || EQUAL(pszResampling, "AVERAGE") || EQUAL(pszResampling, "GAUSS")))
+    papoOverviews = (GDALRasterBand **) CPLCalloc(sizeof(void*),128);
+
+    for( iBand = 0; iBand < nBands; iBand++ )
     {
-        /* In the case of pixel interleaved compressed overviews, we want to generate */
-        /* the overviews for all the bands block by block, and not band after band, */
-        /* in order to write the block once and not loose space in the TIFF file */
+        GDALRasterBand    *hSrcBand = papoBandList[iBand];
+        GDALRasterBand    *hDstBand;
+        int               nDstOverviews;
+        CPLErr            eErr;
 
-        GDALRasterBand ***papapoOverviewBands;
+        hDstBand = hODS->GetRasterBand( iBand+1 );
+        
+        papoOverviews[0] = hDstBand;
+        nDstOverviews = hDstBand->GetOverviewCount() + 1;
+        CPLAssert( nDstOverviews < 128 );
+        nDstOverviews = MIN(128,nDstOverviews);
 
-        papapoOverviewBands = (GDALRasterBand ***) CPLCalloc(sizeof(void*),nBands);
-        for( iBand = 0; iBand < nBands; iBand++ )
+        for( int i = 0; i < nDstOverviews-1; i++ )
         {
-            GDALRasterBand    *hDstBand = hODS->GetRasterBand( iBand+1 );
-            papapoOverviewBands[iBand] = (GDALRasterBand **) CPLCalloc(sizeof(void*),nOverviews);
-            papapoOverviewBands[iBand][0] = hDstBand;
-            for( int i = 0; i < nOverviews-1; i++ )
-            {
-                papapoOverviewBands[iBand][i+1] = hDstBand->GetOverview(i);
-            }
+            papoOverviews[i+1] = hDstBand->GetOverview(i);
         }
 
-        GDALRegenerateOverviewsMultiBand(nBands, papoBandList,
-                                         nOverviews, papapoOverviewBands,
-                                         pszResampling, pfnProgress, pProgressData );
+        void         *pScaledProgressData;
 
-        for( iBand = 0; iBand < nBands; iBand++ )
+        pScaledProgressData = 
+            GDALCreateScaledProgress( iBand / (double) nBands, 
+                                      (iBand+1) / (double) nBands,
+                                      pfnProgress, pProgressData );
+
+        eErr = 
+            GDALRegenerateOverviews( hSrcBand, nDstOverviews, papoOverviews, 
+                                     pszResampling,pfnProgress,pProgressData);
+
+        GDALDestroyScaledProgress( pScaledProgressData );
+
+        if( eErr != CE_None )
         {
-            CPLFree(papapoOverviewBands[iBand]);
+            delete hODS;
+            return eErr;
         }
-        CPLFree(papapoOverviewBands);
-    }
-    else
-    {
-        GDALRasterBand   **papoOverviews;
-
-        papoOverviews = (GDALRasterBand **) CPLCalloc(sizeof(void*),128);
-
-        for( iBand = 0; iBand < nBands; iBand++ )
-        {
-            GDALRasterBand    *hSrcBand = papoBandList[iBand];
-            GDALRasterBand    *hDstBand;
-            int               nDstOverviews;
-            CPLErr            eErr;
-
-            hDstBand = hODS->GetRasterBand( iBand+1 );
-
-            papoOverviews[0] = hDstBand;
-            nDstOverviews = hDstBand->GetOverviewCount() + 1;
-            CPLAssert( nDstOverviews < 128 );
-            nDstOverviews = MIN(128,nDstOverviews);
-
-            for( int i = 0; i < nDstOverviews-1; i++ )
-            {
-                papoOverviews[i+1] = hDstBand->GetOverview(i);
-            }
-
-            void         *pScaledProgressData;
-
-            pScaledProgressData = 
-                GDALCreateScaledProgress( iBand / (double) nBands, 
-                                        (iBand+1) / (double) nBands,
-                                        pfnProgress, pProgressData );
-
-            eErr = 
-                GDALRegenerateOverviews( (GDALRasterBandH) hSrcBand, 
-                                        nDstOverviews, 
-                                        (GDALRasterBandH *) papoOverviews, 
-                                        pszResampling,
-                                        GDALScaledProgress, 
-                                        pScaledProgressData);
-
-            GDALDestroyScaledProgress( pScaledProgressData );
-
-            if( eErr != CE_None )
-            {
-                delete hODS;
-                return eErr;
-            }
-        }
-
-        CPLFree( papoOverviews );
     }
 
 /* -------------------------------------------------------------------- */

@@ -1,8 +1,6 @@
 
 OBJ	=	aigdataset.obj aigopen.obj gridlib.obj aigccitt.obj
 
-EXTRAFLAGS = 	-I../../ogr/ogrsf_frmts/avc
-
 GDAL_ROOT	=	..\..
 
 !INCLUDE $(GDAL_ROOT)\nmake.opt

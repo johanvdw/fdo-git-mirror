@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarpsimple.c 15436 2008-09-24 19:26:31Z rouault $
+ * $Id: gdalwarpsimple.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Commandline program for doing a variety of image warps, including
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdalwarpsimple.c 15436 2008-09-24 19:26:31Z rouault $");
+CPL_CVSID("$Id: gdalwarpsimple.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static GDALDatasetH 
 GDALWarpCreateOutput( GDALDatasetH hSrcDS, const char *pszFilename, 
@@ -201,15 +201,6 @@ int main( int argc, char ** argv )
     
     if( hSrcDS == NULL )
         exit( 2 );
-
-/* -------------------------------------------------------------------- */
-/*      Check that there's at least one raster band                     */
-/* -------------------------------------------------------------------- */
-    if ( GDALGetRasterCount(hSrcDS) == 0 )
-    {
-        fprintf(stderr, "Input file %s has no raster bands.\n", pszSrcFilename );
-        exit( 2 );
-    }
 
     if( pszSourceSRS == NULL )
     {

@@ -7,8 +7,7 @@ top_builddir	=	$(GDAL_ROOT)
 HAVE_LIBTOOL	=	@HAVE_LIBTOOL@
 LIBTOOL	=	@LIBTOOL@
 ifeq ($(HAVE_LIBTOOL),yes)
-LIBTOOL_COMPILE_CC =	$(LIBTOOL) --mode=compile --tag=CC
-LIBTOOL_COMPILE_CXX =	$(LIBTOOL) --mode=compile --tag=CXX
+LIBTOOL_COMPILE	=	$(LIBTOOL) --mode=compile
 LIBTOOL_LINK	=	$(LIBTOOL) --mode=link
 LIBTOOL_INSTALL	=	$(LIBTOOL) --mode=install
 LIBTOOL_FINISH	=	$(LIBTOOL) --mode=finish --silent
@@ -17,8 +16,8 @@ else
 LIBTOOL_FINISH	=	@BINTRUE@
 endif
 
-CC	=	$(LIBTOOL_COMPILE_CC) @CC@
-CXX	=	$(LIBTOOL_COMPILE_CXX) @CXX@
+CC	=	$(LIBTOOL_COMPILE) @CC@
+CXX	=	$(LIBTOOL_COMPILE) @CXX@
 LD	=	$(LIBTOOL_LINK)	@CXX@
 RM	=	$(LIBTOOL_CLEAN) /bin/rm -f *.lo
 INSTALL = 	$(LIBTOOL_INSTALL) $(GDAL_ROOT)/install-sh -c
@@ -26,10 +25,17 @@ INSTALL_LIB 	=	$(LIBTOOL_INSTALL) $(GDAL_ROOT)/install-sh -c
 INSTALL_DATA	= 	$(GDAL_ROOT)/install-sh -c -m 0644
 INSTALL_DIR	= 	$(GDAL_ROOT)/install-sh -d
 
-# SDE_LIB needs to be first because it embeds zlib.  We need to use its symbols instead of -lz's
+#Flags to build optimized relese version
+CXX_OPTFLAGS =	@CXXFLAGS@
+C_OPTFLAGS =	@CFLAGS@
+# Flags to build debug version
+CXX_DBGFLAGS =	-g -DDEBUG 
+C_DBGFLAGS =	-g -DDEBUG 
+# Flags to build profiling version
+CXX_PROFFLAGS =	-g3 -pg -DDEBUG 
+C_PROFFLAGS =	-g3 -pg -DDEBUG 
 
-LIBS	=	$(SDE_LIB) @LIBS@ $(KAK_LIBS) $(DWG_LIBS) $(CURL_LIB) \
-		$(MRSID_LIBS) $(INGRES_LIB)
+LIBS	=	@LIBS@ $(KAK_LIBS) $(DWG_LIBS) $(SDE_LIB) $(CURL_LIB) $(IDB_LIB)
 
 PYTHON_INCLUDES = @PYTHON_INCLUDES@
 PYTHON_LIBS = @PYTHON_LIBS@
@@ -38,8 +44,6 @@ PYTHON = @PYTHON@
 PYTHON_DEV = @PYTHON_DEV@
 PY_LD_SHARED = @PY_LD_SHARED@
 PY_SO_EXT = @PY_SO_EXT@
-PY_HAVE_SETUPTOOLS=@PY_HAVE_SETUPTOOLS@
-HAVE_OGPYTHON=@HAVE_OGPYTHON@
 
 # Next Generation SWIG bindings
 BINDINGS	=	@BINDINGS@
@@ -61,10 +65,30 @@ INST_PYMOD      =       @pymoddir@
 INST_DOCS	=	@exec_prefix@/doc
 INST_MAN	=	@mandir@
 
+#
+#	Whether we use debug flags, or optimization is determined by
+#	the CFG environment variable.  Set to debug for debug builds.
+#	This is similar to the OGDI builds. 
+#
+ifneq (,$(findstring debug,$(CFG)))
+C_ODFLAGS 	= $(C_DBGFLAGS)
+CXX_ODFLAGS 	= $(CXX_DBGFLAGS)
+endif
+
+ifneq (,$(findstring gprof,$(CFG)))
+C_ODFLAGS =	$(CXX_PROFFLAGS)
+CXX_ODFLAGS =	$(C_PROFFLAGS)
+LNK_FLAGS =	-pg
+endif
+
+ifeq ($(CFG),)
+C_ODFLAGS =	$(C_OPTFLAGS)
+CXX_ODFLAGS =	$(CXX_OPTFLAGS)
+endif
+
 CPPFLAGS	= @CPPFLAGS@ -I$(GDAL_ROOT)/port @EXTRA_INCLUDES@
-CFLAGS		= @CFLAGS@ @C_WFLAGS@ $(USER_DEFS)
-CXXFLAGS	= @CXXFLAGS@ @CXX_WFLAGS@ $(USER_DEFS)
-LDFLAGS     = @LDFLAGS@
+CFLAGS		= @C_WFLAGS@ @C_PIC@ $(C_ODFLAGS) $(USER_DEFS)
+CXXFLAGS	= @CXX_WFLAGS@ @CXX_PIC@ $(CXX_ODFLAGS) $(USER_DEFS)
 
 RANLIB		=	@RANLIB@
 SO_EXT		=	@SO_EXT@
@@ -83,9 +107,9 @@ GDAL_INCLUDE	=	-I$(GDAL_ROOT)/port -I$(GDAL_ROOT)/gcore \
 
 # libtool targets and help variables
 LIBGDAL	:=		libgdal.la
-LIBGDAL_CURRENT	:=	14
-LIBGDAL_REVISION	:=	0
-LIBGDAL_AGE	:=	13
+LIBGDAL_CURRENT	:=	12
+LIBGDAL_REVISION	:=	4
+LIBGDAL_AGE	:=	11
 
 # native build targets and variables
 GDAL_VER	=	@GDAL_VER@
@@ -107,14 +131,6 @@ MACOSX_FRAMEWORK = @MACOSX_FRAMEWORK@
 #
 HAVE_OGR_PG     = @HAVE_PG@
 PG_INC	=	@PG_INC@
-
-#
-# INGRES
-#
-II_SYSTEM = @II_SYSTEM@
-HAVE_INGRES = @HAVE_INGRES@
-INGRES_LIB = @INGRES_LIB@
-INGRES_INC = @INGRES_INC@
 
 #
 # MySQL support.
@@ -167,6 +183,7 @@ endif
 # JPEG-2000 Support via JasPer library.
 #
 HAVE_JASPER     = @HAVE_JASPER@
+JASPER_INCLUDE  = -I../libjasper/include
 JASPER_FLAGS	= @JASPER_FLAGS@
 
 #
@@ -174,24 +191,12 @@ JASPER_FLAGS	= @JASPER_FLAGS@
 #
 MRSID_FLAGS	= @MRSID_FLAGS@
 MRSID_INCLUDE	= @MRSID_INCLUDE@
-MRSID_LIBS	= @MRSID_LIBS@
 
 #
 # Xerces C++ XML Parser for GML.
 #
 HAVE_XERCES	= @HAVE_XERCES@
 XERCES_INCLUDE	= @XERCES_INCLUDE@
-
-# 
-# Enable NAS format
-#
-HAVE_NAS	= @HAVE_NAS@
-
-#
-# Expat XML Parser for KML and GPX
-#
-HAVE_EXPAT = @HAVE_EXPAT@
-EXPAT_INCLUDE = @EXPAT_INCLUDE@
 
 #
 # Oracle Spatial Support
@@ -252,14 +257,17 @@ HAVE_DWGDIRECT = no
 endif
 
 #
+# "Panorama" GIS support.
+#
+HAVE_PANORAMA   = @HAVE_PANORAMA@
+PANORAMA_INC	= @PANORAMA_INC@
+
+#
 # Informix DataBlade support
 #
 HAVE_IDB	= @HAVE_IDB@
 IDB_INC		= @IDB_INC@
 IDB_LIB		= @IDB_LIB@
-ifeq ($(HAVE_IDB),yes)
-LIBS	   	+= $(IDB_LIB)
-endif
 
 #
 # FMEObjects
@@ -280,16 +288,14 @@ OGDI_INCLUDE	=	@OGDI_INCLUDE@
 PNG_SETTING     =	@PNG_SETTING@
 JPEG_SETTING	=	@JPEG_SETTING@
 TIFF_SETTING	=	@TIFF_SETTING@
-TIFF_OPTS	=	@TIFF_OPTS@
 GEOTIFF_SETTING	=	@GEOTIFF_SETTING@
-GEOTIFF_INCLUDE =	@GEOTIFF_INCLUDE@
-GIF_SETTING	=	@GIF_SETTING@
-FITS_SETTING    =       @FITS_SETTING@
+GIF_SETTING	    =	@GIF_SETTING@
+FITS_SETTING    =   @FITS_SETTING@
 OGDI_SETTING	=	@HAVE_OGDI@
-ODBC_SETTING    =       @ODBC_SETTING@
+ODBC_SETTING    =   @ODBC_SETTING@
 # PGeo driver is built-in when ODBC is available
-PGEO_SETTING    =       @ODBC_SETTING@
-NETCDF_SETTING  =       @NETCDF_SETTING@
+PGEO_SETTING    =   @ODBC_SETTING@
+NETCDF_SETTING  =   @NETCDF_SETTING@
 LIBZ_SETTING	=	@LIBZ_SETTING@
 
 #
@@ -301,13 +307,11 @@ PROJ_FLAGS = -DPROJ_STATIC
 endif
 PROJ_INCLUDE	=	@PROJ_INCLUDE@
 
-PAM_SETTING     =       @PAM_SETTING@
+GDAL_LIBS	=	$(GDAL_LIB)
 
 ifeq ($(OGR_ENABLED),yes)
 GDAL_LIBS	:= $(GDAL_LIB) $(OCI_LIB) $(GDAL_LIBS)
 CPPFLAGS	:= -DOGR_ENABLED $(CPPFLAGS)
-else
-GDAL_LIBS	=	$(GDAL_LIB)
 endif
 
 #
@@ -317,14 +321,9 @@ endif
 #
 GDAL_FORMATS = 	gxf gtiff hfa aigrid aaigrid ceos ceos2 iso8211 xpm \
 		sdts raw dted mem jdem envisat elas fit vrt usgsdem l1b \
-		nitf bmp pcidsk airsar rs2 ilwis rmf leveller sgi srtmhgt \
-		idrisi gsg ingr ers jaxapalsar dimap gff cosar pds adrg \
-		coasp tsx terragen blx msgn \
+		nitf bmp pcidsk airsar rs2 ilwis rmf rik leveller sgi \
+		idrisi \
 		@OPT_GDAL_FORMATS@
-
-ifneq ($(LIBZ_SETTING),no)
-GDAL_FORMATS := $(GDAL_FORMATS) rik
-endif
 
 #
 # CONFIG_LIBS is what local program should link against, and CONFIG_LIBS_INS
@@ -333,26 +332,15 @@ endif
 #
 
 ifeq ($(HAVE_LIBTOOL), yes)
-
 CONFIG_LIBS	=	$(GDAL_ROOT)/$(LIBGDAL)
-ifeq ($(MACOSX_FRAMEWORK),yes)
-CONFIG_LIBS_INS	=	-L$(INST_LIB)/unix/lib -lgdal
-else
 CONFIG_LIBS_INS	=	-L$(INST_LIB) -lgdal
-endif # MACOSX_FRAMEWORK
-
 EXE_DEP_LIBS	=	$(GDAL_ROOT)/$(LIBGDAL)
 SO_EXT		=	la
-
-else # HAVE_LIBTOOL
+else
 
 ifeq ($(HAVE_LD_SHARED),yes)
 CONFIG_LIBS	=	$(GDAL_SLIB_LINK) $(LIBS)
-ifeq ($(MACOSX_FRAMEWORK),yes)
-CONFIG_LIBS_INS	=	-L$(INST_LIB)/unix/lib -lgdal
-else
 CONFIG_LIBS_INS	=	-L$(INST_LIB) -lgdal
-endif
 EXE_DEP_LIBS	=	$(GDAL_SLIB)
 else
 CONFIG_LIBS	=	$(GDAL_LIBS) $(LIBS)

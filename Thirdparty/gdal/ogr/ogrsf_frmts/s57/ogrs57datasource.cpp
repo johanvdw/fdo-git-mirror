@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57datasource.cpp 15418 2008-09-23 07:13:36Z dron $
+ * $Id: ogrs57datasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57DataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrs57datasource.cpp 15418 2008-09-23 07:13:36Z dron $");
+CPL_CVSID("$Id: ogrs57datasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRS57DataSource()                          */
@@ -58,23 +58,13 @@ OGRS57DataSource::OGRS57DataSource()
 /* -------------------------------------------------------------------- */
 /*      Allow initialization of options from the environment.           */
 /* -------------------------------------------------------------------- */
-    const char *pszOptString = CPLGetConfigOption( "OGR_S57_OPTIONS", NULL );
     papszOptions = NULL;
 
-    if ( pszOptString )
+    if( CPLGetConfigOption("OGR_S57_OPTIONS",NULL) != NULL )
     {
-        char    **papszCurOption;
-
         papszOptions = 
-            CSLTokenizeStringComplex( pszOptString, ",", FALSE, FALSE );
-
-        if ( papszOptions && *papszOptions )
-        {
-            CPLDebug( "S57", "The following S57 options are being set:" );
-            papszCurOption = papszOptions;
-            while( *papszCurOption )
-                CPLDebug( "S57", "    %s", *papszCurOption++ );
-        }
+            CSLTokenizeStringComplex( CPLGetConfigOption("OGR_S57_OPTIONS",""),
+                                      ",", FALSE, FALSE );
     }
 }
 
@@ -238,8 +228,6 @@ int OGRS57DataSource::Open( const char * pszFilename, int bTestOpen )
         return FALSE;
     }
 
-    int bSuccess = TRUE;
-
     nModules = 1;
     papoModules = (S57Reader **) CPLMalloc(sizeof(void*));
     papoModules[0] = poModule;
@@ -312,16 +300,14 @@ int OGRS57DataSource::Open( const char * pszFilename, int bTestOpen )
         int             iClass, bGeneric = FALSE;
 
         for( iModule = 0; iModule < nModules; iModule++ )
+        {
             papoModules[iModule]->SetClassBased( OGRS57Driver::GetS57Registrar() );
+        }
         
         panClassCount = (int *) CPLCalloc(sizeof(int),MAX_CLASSES);
 
         for( iModule = 0; iModule < nModules; iModule++ )
-        {
-            bSuccess &= 
-                papoModules[iModule]->CollectClassList(panClassCount,
-                                                       MAX_CLASSES);
-        }
+            papoModules[iModule]->CollectClassList(panClassCount,MAX_CLASSES);
 
         for( iClass = 0; iClass < MAX_CLASSES; iClass++ )
         {
@@ -367,7 +353,7 @@ int OGRS57DataSource::Open( const char * pszFilename, int bTestOpen )
         }
     }
     
-    return bSuccess;
+    return TRUE;
 }
 
 /************************************************************************/

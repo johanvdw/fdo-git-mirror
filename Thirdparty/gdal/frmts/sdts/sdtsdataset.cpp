@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsdataset.cpp 14526 2008-05-25 20:12:40Z rouault $
+ * $Id: sdtsdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: sdtsdataset.cpp 14526 2008-05-25 20:12:40Z rouault $");
+CPL_CVSID("$Id: sdtsdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /**
  \file sdtsdataset.cpp
@@ -229,43 +229,6 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->pszProjection = NULL;
     if( oSRS.exportToWkt( &poDS->pszProjection ) != OGRERR_NONE )
         poDS->pszProjection = CPLStrdup("");
-
-
-/* -------------------------------------------------------------------- */
-/*      Get metadata from the IDEN file.                                */
-/* -------------------------------------------------------------------- */
-    const char* pszIDENFilePath = poTransfer->GetCATD()->GetModuleFilePath("IDEN");
-    if (pszIDENFilePath)
-    {
-        DDFModule   oIDENFile;
-        if( oIDENFile.Open( pszIDENFilePath ) )
-        {
-            DDFRecord* poRecord;
-
-            while( (poRecord = oIDENFile.ReadRecord()) != NULL )
-            {
-
-                if( poRecord->GetStringSubfield( "IDEN", 0, "MODN", 0 ) == NULL )
-                    continue;
-
-                static const char* fields[][2] = { { "TITL", "TITLE" },
-                                                   { "DAID", "DATASET_ID" },
-                                                   { "DAST", "DATA_STRUCTURE" },
-                                                   { "MPDT", "MAP_DATE" },
-                                                   { "DCDT", "DATASET_CREATION_DATE" } };
-
-                for (i = 0; i < (int)sizeof(fields) / (int)sizeof(fields[0]) ; i++)
-                {
-                    const char* pszFieldValue =
-                            poRecord->GetStringSubfield( "IDEN", 0, fields[i][0], 0 );
-                    if ( pszFieldValue )
-                        poDS->SetMetadataItem(fields[i][1], pszFieldValue);
-                }
-
-                break;
-            }
-        }
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */

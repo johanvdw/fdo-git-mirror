@@ -4,17 +4,9 @@ PYGDAL_DLL	=	_gdal.dll
 
 GDAL_ROOT	=	..
 
-SCRIPTSDIR  =   ..\swig\python\scripts
-PY_COMMANDS	=	$(SCRIPTSDIR)\epsg_tr.py \
-                $(SCRIPTSDIR)\gdalchksum.py \
-                $(SCRIPTSDIR)\gdal2xyz.py \
-                $(SCRIPTSDIR)\gcps2wld.py \
-			    $(SCRIPTSDIR)\gdalimport.py \
-			    $(SCRIPTSDIR)\gdal_merge.py \
-			    $(SCRIPTSDIR)\pct2rgb.py \
-			    $(SCRIPTSDIR)\rgb2pct.py \
-			    $(SCRIPTSDIR)\gcps2vec.py \
-			    $(SCRIPTSDIR)\mkgraticule.py
+PY_COMMANDS	=	epsg_tr.py gdalchksum.py gdal2xyz.py gcps2wld.py \
+			gdalimport.py gdal_merge.py pct2rgb.py rgb2pct.py \
+			gcps2vec.py
 PY_MODULES	=	gdal.py ogr.py osr.py gdalconst.py gdalnumeric.py
 
 !INCLUDE ..\nmake.opt
@@ -25,20 +17,14 @@ NUMPY_DEF = -DHAVE_NUMPY
 NUMPY_DEF =
 !ENDIF
 
-!IF $(MSVC_VER) == 1400
-PYOPTFLAGS = /nologo /MD /EHsc /Ox /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DNDEBUG
-!ELSE
-PYOPTFLAGS = /nologo /MD /EHsc /Ox /DNDEBU
-!ENDIF
+EXTRAFLAGS =	-I$(PYDIR)/include $(NUMPY_DEF)
 
-EXTRAFLAGS = -I$(PYDIR)/include $(NUMPY_DEF) $(MSVC_VLD_FLAGS)
-CFLAGS = $(PYOPTFLAGS) $(INC) $(EXTRAFLAGS) $(MSVC_VLD_FLAGS)
 
 default:	$(PYGDAL_DLL)
 
 $(PYGDAL_DLL):	$(OBJ)
 	link /dll /def:_gdal.def $(OBJ) ../gdal_i.lib /LIBPATH:$(PYDIR)/libs \
-		/out:$(PYGDAL_DLL) $(MSVC_VLD_LIB)
+		/out:$(PYGDAL_DLL)
 	
 clean:
 	-del *.obj *.dll *.lib

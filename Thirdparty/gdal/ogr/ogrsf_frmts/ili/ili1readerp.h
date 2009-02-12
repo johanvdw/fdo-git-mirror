@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1readerp.h 15268 2008-08-31 19:03:09Z pka $
+ * $Id: ili1readerp.h 11557 2007-05-18 18:11:25Z pka $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -14,16 +14,16 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
@@ -43,11 +43,17 @@ class OGRILI1Layer;
 /************************************************************************/
 
 class ILI1Reader : public IILI1Reader
-{
+{    
 private:
     FILE         *fpItf;
     int          nLayers;
     OGRILI1Layer **papoLayers;
+    int          nAreaLayers;
+    OGRILI1Layer **papoAreaLayers;
+    OGRILI1Layer **papoAreaLineLayers;
+    int          nSurfaceLayers;
+    OGRILI1Layer **papoSurfaceLayers;
+    OGRILI1Layer **papoSurfacePolyLayers;
     OGRILI1Layer *curLayer;
     double       arcIncr;
 
@@ -64,7 +70,12 @@ public:
     char         **ReadParseLine();
 
     void         AddLayer( OGRILI1Layer * poNewLayer );
+    void         AddAreaLayer( OGRILI1Layer * poAreaLayer,  OGRILI1Layer * poLineLayer );
+    void         AddSurfaceLayer( OGRILI1Layer * poDataLayer,  OGRILI1Layer * poPolyLayer );
     int          AddIliGeom(OGRFeature *feature, int iField, long fpos);
+    OGRMultiPolygon* Polygonize( OGRGeometryCollection* poLines );
+    void         PolygonizeAreaLayers();
+    void         JoinSurfaceLayers();
     OGRILI1Layer *GetLayer( int );
     OGRILI1Layer *GetLayerByName( const char* );
     int          GetLayerCount();

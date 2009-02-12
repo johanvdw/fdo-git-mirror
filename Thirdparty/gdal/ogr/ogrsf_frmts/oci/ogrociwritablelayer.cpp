@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrociwritablelayer.cpp 12355 2007-10-09 04:48:19Z ilucena $
+ * $Id: ogrociwritablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIWritableLayer class.  This provides
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociwritablelayer.cpp 12355 2007-10-09 04:48:19Z ilucena $");
+CPL_CVSID("$Id: ogrociwritablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                        OGROCIWritableLayer()                         */
@@ -250,7 +250,7 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
     OGRFieldDefn        oField( poFieldIn );
 
 /* -------------------------------------------------------------------- */
-/*      Do we want to "launder" the column names into Oracle            */
+/*      Do we want to "launder" the column names into Postgres          */
 /*      friendly format?                                                */
 /* -------------------------------------------------------------------- */
     if( bLaunderColumnNames )
@@ -263,7 +263,7 @@ OGRErr OGROCIWritableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK 
     }
     
 /* -------------------------------------------------------------------- */
-/*      Work out the Oracle type.                                       */
+/*      Work out the PostgreSQL type.                                   */
 /* -------------------------------------------------------------------- */
     if( oField.GetType() == OFTInteger )
     {

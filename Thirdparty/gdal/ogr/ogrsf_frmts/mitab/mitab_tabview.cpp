@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_tabview.cpp,v 1.19 2008/03/05 20:35:39 dmorissette Exp $
+ * $Id: mitab_tabview.cpp,v 1.13 2004/06/30 20:29:04 dmorissette Exp $
  *
  * Name:     mitab_tabfile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -32,27 +32,6 @@
  **********************************************************************
  *
  * $Log: mitab_tabview.cpp,v $
- * Revision 1.19  2008/03/05 20:35:39  dmorissette
- * Replace MITAB 1.x SetFeature() with a CreateFeature() for V2.x (bug 1859)
- *
- * Revision 1.18  2008/01/29 20:46:32  dmorissette
- * Added support for v9 Time and DateTime fields (byg 1754)
- *
- * Revision 1.17  2007/06/21 14:00:23  dmorissette
- * Added missing cast in isspace() calls to avoid failed assertion on Windows
- * (MITAB bug 1737, GDAL ticket 1678))
- *
- * Revision 1.16  2007/06/12 13:52:38  dmorissette
- * Added IMapInfoFile::SetCharset() method (bug 1734)
- *
- * Revision 1.15  2007/06/12 12:50:40  dmorissette
- * Use Quick Spatial Index by default until bug 1732 is fixed (broken files
- * produced by current coord block splitting technique).
- *
- * Revision 1.14  2007/03/21 21:15:56  dmorissette
- * Added SetQuickSpatialIndexMode() which generates a non-optimal spatial
- * index but results in faster write time (bug 1669)
- *
  * Revision 1.13  2004/06/30 20:29:04  dmorissette
  * Fixed refs to old address danmo@videotron.ca
  *
@@ -117,6 +96,7 @@ TABView::TABView()
     m_eAccessMode = TABRead;
     m_papszTABFile = NULL;
     m_pszVersion = NULL;
+    m_pszCharset = NULL;
 
     m_numTABFiles = 0;
     m_papszTABFnames = NULL;
@@ -532,7 +512,6 @@ int TABView::ParseTABFile(const char *pszDatasetPath,
         }
         else if (EQUAL(papszTok[0], "!charset"))
         {
-            CPLFree(m_pszCharset);
             m_pszCharset = CPLStrdup(papszTok[1]);
         }
         else if (EQUAL(papszTok[0], "open") &&
@@ -786,45 +765,6 @@ int TABView::Close()
 }
 
 /**********************************************************************
- *                   TABView::SetQuickSpatialIndexMode()
- *
- * Select "quick spatial index mode". 
- *
- * The default behavior of MITAB is to generate an optimized spatial index,
- * but this results in slower write speed. 
- *
- * Applications that want faster write speed and do not care
- * about the performance of spatial queries on the resulting file can
- * use SetQuickSpatialIndexMode() to require the creation of a non-optimal
- * spatial index (actually emulating the type of spatial index produced
- * by MITAB before version 1.6.0). In this mode writing files can be 
- * about 5 times faster, but spatial queries can be up to 30 times slower.
- *
- * Returns 0 on success, -1 on error.
- **********************************************************************/
-int TABView::SetQuickSpatialIndexMode(GBool bQuickSpatialIndexMode/*=TRUE*/)
-{
-    if (m_eAccessMode != TABWrite || m_numTABFiles == 0)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-                 "SetQuickSpatialIndexMode() failed: file not opened for write access.");
-        return -1;
-    }
-
-    for (int iFile=0; iFile < m_numTABFiles; iFile++)
-    {
-        if ( m_papoTABFiles[iFile]->SetQuickSpatialIndexMode(bQuickSpatialIndexMode) != 0)
-        {
-            // An error has already been reported, just return.
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-
-/**********************************************************************
  *                   TABView::GetNextFeatureId()
  *
  * Returns feature id that follows nPrevId, or -1 if it is the
@@ -879,29 +819,39 @@ TABFeature *TABView::GetFeatureRef(int nFeatureId)
 
 
 /**********************************************************************
- *                   TABView::CreateFeature()
+ *                   TABView::SetFeature()
  *
- * Write a new feature to this dataset. The passed in feature is updated 
- * with the new feature id.
+ * Write a feature to this dataset.  
  *
- * Returns OGRERR_NONE on success, or an appropriate OGRERR_ code if an
+ * For now only sequential writes are supported (i.e. with nFeatureId=-1)
+ * but eventually we should be able to do random access by specifying
+ * a value through nFeatureId.
+ *
+ * Returns the new featureId (> 0) on success, or -1 if an
  * error happened in which case, CPLError() will have been called to
  * report the reason of the failure.
  **********************************************************************/
-OGRErr TABView::CreateFeature(TABFeature *poFeature)
+int TABView::SetFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
 {
     if (m_eAccessMode != TABWrite)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
-                 "CreateFeature() can be used only with Write access.");
-        return OGRERR_UNSUPPORTED_OPERATION;
+                 "SetFeature() can be used only with Write access.");
+        return -1;
+    }
+
+    if (nFeatureId != -1)
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "SetFeature(): random access not implemented yet.");
+        return -1;
     }
 
     if (m_poRelation == NULL)
     {
         CPLError(CE_Failure, CPLE_IllegalArg,
-                 "CreateFeature() failed: file is not opened!");
-        return OGRERR_FAILURE;
+                 "SetFeature() failed: file is not opened!");
+        return -1;
     }
 
     /*-----------------------------------------------------------------
@@ -911,17 +861,11 @@ OGRErr TABView::CreateFeature(TABFeature *poFeature)
     if (!m_bRelFieldsCreated)
     {
         if (m_poRelation->CreateRelFields() != 0)
-            return OGRERR_FAILURE;
+            return -1;
         m_bRelFieldsCreated = TRUE;
     }
 
-    int nFeatureId = m_poRelation->WriteFeature(poFeature);
-    if (nFeatureId < 0)
-        return OGRERR_FAILURE;
-
-    poFeature->SetFID(nFeatureId);
-
-    return OGRERR_NONE;
+    return m_poRelation->SetFeature(poFeature, nFeatureId);
 }
 
 
@@ -1694,17 +1638,9 @@ GByte *TABRelation::BuildFieldKey(TABFeature *poFeature, int nFieldNo,
                              poFeature->GetFieldAsDouble(nFieldNo));
         break;
 
-      // __TODO__ DateTime fields are 8 bytes long, not supported yet by
-      // the indexing code (see bug #1844).
-      case TABFDateTime:
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "TABRelation on field of type DateTime not supported yet.");
-        break;
-
       case TABFInteger:
       case TABFSmallInt:
       case TABFDate:
-      case TABFTime:
       case TABFLogical:
       default:
         pKey = m_poRelINDFileRef->BuildKey(nIndexNo,
@@ -1948,7 +1884,7 @@ GBool TABRelation::IsFieldUnique(int nFieldId)
 }
 
 /**********************************************************************
- *                   TABRelation::WriteFeature()
+ *                   TABRelation::SetFeature()
  *
  * Write a feature to this dataset.  
  *
@@ -1960,16 +1896,9 @@ GBool TABRelation::IsFieldUnique(int nFieldId)
  * error happened in which case, CPLError() will have been called to
  * report the reason of the failure.
  **********************************************************************/
-int TABRelation::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
+int TABRelation::SetFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
 {
     TABFeature *poMainFeature=NULL;
-
-    if (nFeatureId != -1)
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "WriteFeature(): random access not implemented yet.");
-        return -1;
-    }
 
     CPLAssert(m_poMainTable && m_poRelTable);
 
@@ -2043,7 +1972,7 @@ int TABRelation::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
 
             poRelFeature->SetField(m_nRelFieldNo, nRecordNo);
 
-            if (m_poRelTable->CreateFeature(poRelFeature) == OGRERR_NONE)
+            if (m_poRelTable->SetFeature(poRelFeature, -1) < 0)
                 return -1;
 
             delete poRelFeature;
@@ -2054,12 +1983,10 @@ int TABRelation::WriteFeature(TABFeature *poFeature, int nFeatureId /*=-1*/)
     /*-----------------------------------------------------------------
      * Write poMainFeature to the main table
      *----------------------------------------------------------------*/
+
     poMainFeature->SetField(m_nMainFieldNo, nRecordNo);
 
-    if (m_poMainTable->CreateFeature(poMainFeature) != OGRERR_NONE)
-        nFeatureId = poMainFeature->GetFID();
-    else
-        nFeatureId = -1;
+    nFeatureId = m_poMainTable->SetFeature(poMainFeature, nFeatureId);
 
     delete poMainFeature;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdts_al.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: sdts_al.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.

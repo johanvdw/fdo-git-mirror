@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tif_overview.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: tif_overview.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIFF Overview Builder
  * Purpose:  Library function for building overviews in a TIFF file.

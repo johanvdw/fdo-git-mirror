@@ -44,43 +44,25 @@ FdoAssociationInsertTest::~FdoAssociationInsertTest(void)
 {
 }
 
-void FdoAssociationInsertTest::masterTestNoObj( FdoAssociationInsertType type, const wchar_t* name1, const wchar_t* name2, int id, bool assocIsFeat, bool ownerIsFeat, int circularType  )
+void FdoAssociationInsertTest::masterTestNoObj( FdoAssociationInsertType type, const wchar_t* name1, const wchar_t* name2, int id, bool assocIsFeat, bool ownerIsFeat  )
 {
     try
     {
 		
         // Setup the schema
         if( assocIsFeat && ownerIsFeat )
-        {
-            if ( circularType > 0 ) 
-                mSchemaUtil->TestCreate_NoIdentAssocFeatClassCirc (circularType);
-            else
-                mSchemaUtil->TestCreate_NoIdentAssocFeatClass ();
-        }
+             mSchemaUtil->TestCreate_NoIdentAssocFeatClass ();
         else if( !ownerIsFeat )
         {
-            if ( circularType > 0 ) 
-                mSchemaUtil->TestCreate_WithIdentNoFeatClassCirc (circularType);
-            else
-                mSchemaUtil->TestCreate_WithIdentNoFeatClass();
+            mSchemaUtil->TestCreate_WithIdentNoFeatClass();
         }
         else
         {
             
             if( type == Insert_NoIdentity )
-            {
-                if ( circularType > 0 ) 
-                    mSchemaUtil->TestCreate_NoIdentCirc (circularType);
-                else
-                    mSchemaUtil->TestCreate_NoIdent();
-            }
+                mSchemaUtil->TestCreate_NoIdent();
             else
-            {
-                if ( circularType > 0 ) 
-                    mSchemaUtil->TestCreate_WithIdentCirc (circularType);
-                else
-                    mSchemaUtil->TestCreate_WithIdent();
-            }
+                mSchemaUtil->TestCreate_WithIdent();
         }
         // Get a connection object
         FdoPtr<FdoIConnection> connection = UnitTestUtil::GetConnection(DB_SUFFIX);
@@ -138,14 +120,11 @@ void FdoAssociationInsertTest::masterTestNoObj( FdoAssociationInsertType type, c
 	        propertyValue->SetValue(dataValue);
 
             // Initialize the second association
-            if ( circularType == 0 ) 
-            {
-                if( assocIsFeat )
-                    propertyValue = AddNewProperty( propertyValues, L"Association Prop2.FeatId");
-                else
-	                propertyValue = AddNewProperty( propertyValues, L"Association Prop2.Id");
-	            propertyValue->SetValue(dataValue);
-            }
+            if( assocIsFeat )
+                propertyValue = AddNewProperty( propertyValues, L"Association Prop2.FeatId");
+            else
+	            propertyValue = AddNewProperty( propertyValues, L"Association Prop2.Id");
+	        propertyValue->SetValue(dataValue);
         }
         
         if( type == Insert_WithIdentityParent || 
@@ -210,19 +189,9 @@ void FdoAssociationInsertTest::insert_NoIdent(  )
     masterTestNoObj( Insert_NoIdentity, L"Firstname", L"Lastname", 10 );
 }
 
-void FdoAssociationInsertTest::insert_NoIdentCirc( int circularType )
-{
-    masterTestNoObj( Insert_NoIdentity, L"Firstname", L"Lastname", 10, false, true, circularType );
-}
-
 void FdoAssociationInsertTest::insert_NoIdentAssocFeatClass () 
 { 
     masterTestNoObj( Insert_NoIdentity, L"Firstname", L"Lastname", 10, true );
-}
-
-void FdoAssociationInsertTest::insert_NoIdentAssocFeatClassCirc ( int circularType) 
-{ 
-    masterTestNoObj( Insert_NoIdentity, L"Firstname", L"Lastname", 10, true, true, circularType );
 }
 
 void FdoAssociationInsertTest::insert_WithIdent()
@@ -230,19 +199,9 @@ void FdoAssociationInsertTest::insert_WithIdent()
     masterTestNoObj( Insert_WithIdentityBothSet, L"Firstname", L"Lastname", 10 );
 }
 
-void FdoAssociationInsertTest::insert_WithIdentCirc( int circularType)
-{
-    masterTestNoObj( Insert_WithIdentityBothSet, L"Firstname", L"Lastname", 10, false, true, circularType );
-}
-
 void FdoAssociationInsertTest::insert_WithIdentNoFeatClass()
 {
     masterTestNoObj( Insert_WithIdentityBothSet, L"Firstname", L"Lastname", 10, false, false );
-}
-
-void FdoAssociationInsertTest::insert_WithIdentNoFeatClassCirc( int circularType )
-{
-    masterTestNoObj( Insert_WithIdentityBothSet, L"Firstname", L"Lastname", 10, false, false, circularType );
 }
 
 // this test depend on insert_WithIdent which creates the valid schema:

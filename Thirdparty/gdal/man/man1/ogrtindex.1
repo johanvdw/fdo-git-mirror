@@ -1,17 +1,15 @@
-.TH "ogrtindex" 1 "4 Dec 2008" "GDAL" \" -*- nroff -*-
+.TH "ogrtindex" 1 "28 Jun 2006" "GDAL" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
-ogrtindex \- ogrtindex 
+ogrtindex \- ogrtindex
 creates a tileindex
 .SH "SYNOPSIS"
 .PP
 .PP
 .PP
 .nf
-
 ogrtindex [-lnum n]... [-lname name]... [-f output_format]
-          [-write_absolute_path] [-skip_different_projection]
                  output_dataset src_dataset...
 .fi
 .PP
@@ -27,10 +25,6 @@ Add the layer named 'name' from each source file in the tile index.
 Select an output format name. The default is to create a shapefile. 
 .IP "\fB\fB-tileindex\fP \fIfield_name\fP:\fP" 1c
 The name to use for the dataset name. Defaults to LOCATION. 
-.IP "\fB\fB-write_absolute_path\fP:\fP" 1c
-Filenames are written with absolute paths 
-.IP "\fB\fB-skip_different_projection\fP:\fP" 1c
-Only layers with same projection ref as layers already inserted in the tileindex will be inserted. 
 .PP
 .PP
 If no -lnum or -lname arguments are given it is assumed that all layers in source datasets should be added to the tile index as independent records.
@@ -43,7 +37,6 @@ It is a flaw of the current ogrtindex program that no attempt is made to copy th
 This example would create a shapefile (tindex.shp) containing a tile index of the BL2000_LINK layers in all the NTF files in the wrk directory: 
 .PP
 .nf
-
 % ogrtindex tindex.shp wrk/*.NTF
 
 .fi

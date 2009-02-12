@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h 15291 2008-09-02 14:06:14Z dron $
+ * $Id: gdalwarper.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -49,7 +49,6 @@ typedef enum {
   /*! Bilinear (2x2 kernel) */                         GRA_Bilinear=1,
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
-  /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4
 } GDALResampleAlg;
 
 typedef int 
@@ -76,12 +75,6 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
                         int nXOff, int nYOff, int nXSize, int nYSize,
                         GByte ** /*ppImageData */,
                         int bMaskIsFloat, void *pValidityMask );
-
-CPLErr CPL_DLL 
-GDALWarpCutlineMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
-                       int nXOff, int nYOff, int nXSize, int nYSize,
-                       GByte ** /* ppImageData */,
-                       int bMaskIsFloat, void *pValidityMask );
 
 /************************************************************************/
 /*                           GDALWarpOptions                            */
@@ -169,9 +162,6 @@ typedef struct {
     CPLErr              (*pfnPostWarpChunkProcessor)( void *pKern, void *pArg);
     void               *pPostWarpProcessorArg;
 
-    void               *hCutline;           /* OGRPolygonH in src pixels */
-    double              dfCutlineBlendDist; /* distance in src pixels */
-
 } GDALWarpOptions;
 
 GDALWarpOptions CPL_DLL * CPL_STDCALL GDALCreateWarpOptions(void);
@@ -241,6 +231,9 @@ CPL_C_END
 class CPL_DLL GDALWarpKernel
 {
 public:
+                       GDALWarpKernel();
+    virtual           ~GDALWarpKernel();
+
     char              **papszWarpOptions;
 
     GDALResampleAlg	eResample;
@@ -260,15 +253,6 @@ public:
     GByte             **papabyDstImage;
     GUInt32            *panDstValid;
     float              *pafDstDensity;
-
-    double              dfXScale;   // Resampling scale, i.e.
-    double              dfYScale;   // nDstSize/nSrcSize.
-    double              dfXFilter;  // Size of filter kernel.
-    double              dfYFilter;
-    int                 nXRadius;   // Size of window to filter.
-    int                 nYRadius;
-    int                 nFiltInitX; // Filtering offset
-    int                 nFiltInitY;
     
     int                 nSrcXOff;
     int                 nSrcYOff;
@@ -284,9 +268,6 @@ public:
 
     double              dfProgressBase;
     double              dfProgressScale;
-
-                       GDALWarpKernel();
-    virtual           ~GDALWarpKernel();
 
     CPLErr              Validate();
     CPLErr              PerformWarp();

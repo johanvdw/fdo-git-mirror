@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2driver.cpp 13906 2008-03-01 13:08:28Z rouault $
+ * $Id: ogrili2driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -30,7 +30,7 @@
 #include "ogr_ili2.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrili2driver.cpp 13906 2008-03-01 13:08:28Z rouault $");
+CPL_CVSID("$Id: ogrili2driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRILI2Driver()                           */
@@ -108,8 +108,7 @@ int OGRILI2Driver::TestCapability( const char * pszCap ) {
 /*                           RegisterOGRILI2()                           */
 /************************************************************************/
 
-void RegisterOGRILI2()
-{
+void RegisterOGRILI2() {
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRILI2Driver );
 }
 

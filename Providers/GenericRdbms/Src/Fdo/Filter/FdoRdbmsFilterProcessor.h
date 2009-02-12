@@ -122,68 +122,20 @@ class FdoRdbmsFilterProcessor:
     public FdoRdbmsBaseFilterProcessor
 {
    friend class DbiConnection;
-
-public:
-    class BoundGeometry : public FdoIDisposable
-    {
-    public:
-        BoundGeometry(
-            FdoIGeometry* geometry,
-            FdoInt64 srid
-        );
-
-        // Returns the name of this schema's owning user.
-	    FdoIGeometry* GetGeometry();
-
-        // Returns true if this is a system schema.
-        FdoInt64 GetSrid();
-
-    protected:
-        /// unused constructor needed only to build on Linux
-        BoundGeometry()
-        {
-        }
-
-	    virtual ~BoundGeometry(void);
-
-        virtual void Dispose()  { delete this; }
-
     private:
-        FdoPtr<FdoIGeometry> mGeometry;
-        FdoInt64 mSrid;
-    };
-
-    class BoundGeometryCollection : public FdoCollection<BoundGeometry, FdoException>
-    {
-    public:
-	    BoundGeometryCollection()
-	    {}
-	    ~BoundGeometryCollection(void) {}
-
-    protected:
-        virtual void Dispose()  { delete this; }
-    };
-
-private:
 
     wchar_t*            mSqlFilterText;  // Buffer used to encode the filter SQL conversion
     size_t              mSqlTextSize;    // The size of the SQL buffer
     size_t              mFirstTxtIndex;  // The index of the start of the sql string
     size_t              mNextTxtIndex;   // The index of the next empty string
-	short				mNextTabAliasId;
-	bool				mUseTableAliases;
-    bool                mUseNesting;
-    bool                mUseGrouping;
-    bool                mAddNegationBracket;
-
-    // List of geometry values that are bound in spatial filters.
-    FdoPtr<BoundGeometryCollection>       mBoundGeometryValues;
-
-protected:
     bool                mRequiresDistinct; // Used in case a distinct clause is needed for the sql select string
     bool                mProcessingOrOperator;
+	short				mNextTabAliasId;
+	bool				mUseTableAliases;
+protected:
     SqlCommandType      mCurrentCmdType; // Used to build the right sql command(select, delete, update)
     wchar_t*            mCurrentClassName; // Used to fetch the class properties
+
 
     typedef struct _filter_tabs_  {
         wchar_t   pk_TableName[GDBI_TABLE_NAME_SIZE];
@@ -195,7 +147,6 @@ protected:
         bool   useOuterJoin;
         bool   duplicatefkTable; // used to avoid adding the same table of the select multiple time as: select tab1.*,tab1.* ...
     } FilterTableRelationDef;
-
 
     vector<FilterTableRelationDef>  mCurrentTableRelationArray;
 
@@ -215,39 +166,18 @@ public:
 
 private:
 
-    void ProcessIdentifier(FdoIdentifier& expr, bool useOuterJoin, bool inSelectList );
-
-    // Analyzes the filter and set flags that control the generation of the
-    // corresponding SQL statement.
-    // void AnalyzeFilter (FdoFilter *filter);
-
-    // Checks an identifier collection for the existance of aggregate functions.
-    bool ContainsAggregateFunctions( FdoIdentifierCollection *identifiers );
-
-
-protected:
-
-    // Analyzes the filter and set flags that control the generation of the
-    // corresponding SQL statement.
-    void AnalyzeFilter (FdoFilter *filter);
+    void ProcessIdentifier(FdoIdentifier& expr, bool useOuterJoin );
 
     // This method is used to follow a value type object property or an m:1 association
     // and add the necessary column spec and table mappings for joining them later.
     void FollowRelation( FdoStringP    &relationColumns, const FdoSmLpPropertyDefinition* propertyDefinition, FdoIdentifierCollection *selectedProperties );
 
-    const FdoSmLpDataPropertyDefinitionCollection* GetIdentityProperties(const wchar_t *className, const FdoSmLpClassDefinition **identClass );
+    // Checks an identifier collection for the existance of aggregate functions.
+    bool ContainsAggregateFunctions( FdoIdentifierCollection *identifiers );
 
-    void PrependProperty( FdoIdentifier* property, bool scanForTableOnly=false, bool inSelectList=false );
+    void PrependProperty( FdoIdentifier* property, bool scanForTableOnly=false );
 
     void PrependTables();
-
-    virtual void AppendDataProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpDataPropertyDefinition* dataProp, bool useOuterJoin, bool inSelectList );
-    
-    virtual void AppendObjectProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpObjectPropertyDefinition* objProp, bool useOuterJoin, bool inSelectList );
-
-    virtual void AppendGeometricProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpGeometricPropertyDefinition* geomProp, bool useOuterJoin, bool inSelectList );
-
-    virtual void AppendAssociationProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpAssociationPropertyDefinition* assocProp, bool useOuterJoin, bool inSelectList );
 
     // Add the order by clause if it's required
     void AppendOrderBy( FdoRdbmsFilterUtilConstrainDef *filterConstrain );
@@ -255,14 +185,14 @@ protected:
     // Add the group by clause if it's required
     void AppendGroupBy( FdoRdbmsFilterUtilConstrainDef *filterConstrain );
 
-    virtual void ResetBuffer( SqlCommandType cmdType );
+    const FdoSmLpDataPropertyDefinitionCollection* GetIdentityProperties(const wchar_t *className, const FdoSmLpClassDefinition **identClass );
+
+
+protected:
+
+    void ResetBuffer( SqlCommandType cmdType );
 
     void ReallocBuffer( size_t  extraSize , bool atEnd );
-
-    const wchar_t* GetBuffer()
-    {
-        return &mSqlFilterText[mFirstTxtIndex];
-    }
 
     void AppendString(const char *str);
 
@@ -284,11 +214,6 @@ protected:
 
     const wchar_t * PropertyNameToColumnName( const wchar_t *propName );
 
-    // Determines whether we can add a "select distinct" to SQL for select with
-    // filter on object properties. Must return false due to 2 problems in GenericRdbms
-    //    - FilterToSql mixes up aliases when "group by" included
-    //    - SqlServer can't do "select distinct" of any image columns are in the select list.
-    virtual bool CanSelectDistinctObjectProperties();
 
 //public:
 
@@ -306,7 +231,7 @@ protected:
 
     virtual void ProcessIdentifier(FdoIdentifier& expr)
     {
-        return ProcessIdentifier( expr, false, false );
+        return ProcessIdentifier( expr, false );
     }
 
     virtual void ProcessParameter(FdoParameter& expr);
@@ -355,7 +280,7 @@ protected:
     virtual bool IsAggregateFunctionName(FdoString* wFunctionName) const = 0;
     virtual bool IsNotNativeSupportedFunction(FdoString* wFunctionName) const = 0;
     virtual bool HasNativeSupportedFunctionArguments(FdoFunction& expr) const = 0;
-    virtual FdoStringP GetGeometryString( FdoString* columnName, bool inSelectList );
+    virtual FdoStringP GetGeometryString( FdoString* columnName );
     virtual FdoStringP GetGeometryTableString( FdoString* tableName );
 
 public:
@@ -388,15 +313,6 @@ public:
     FdoRdbmsSecondarySpatialFilterCollection * GetGeometricConditions() { return FDO_SAFE_ADDREF(mSecondarySpatialFilters.p); }
 	
     vector<int> * GetFilterLogicalOps() { return &mFilterLogicalOps; }
-
-    BoundGeometryCollection * GetBoundGeometryValues() { 
-        if (mBoundGeometryValues == NULL)
-            mBoundGeometryValues = new BoundGeometryCollection();
-
-        return FDO_SAFE_ADDREF(mBoundGeometryValues.p); 
-    }
-
-
 };
 
 #endif //_FDORDBMSFILTERPROCESSOR_

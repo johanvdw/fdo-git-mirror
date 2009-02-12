@@ -1,33 +1,23 @@
 /******************************************************************************
- * $Id: gdal_csharp_extend.i 14910 2008-07-14 21:35:18Z tamas $
+ * $Id: gdal_csharp_extend.i 10370 2006-11-23 22:51:35Z tamas $
  *
- * Name:     gdal_csharp_extend.i
- * Project:  GDAL CSharp Interface
- * Purpose:  C# specific GDAL extensions
- * Author:   Tamas Szekeres, szekerest@gmail.com
+ * Name:     gdal_csharp_extensions.i
+ * Project:  GDAL SWIG Interface
+ * Purpose:  C# specific GDAL extensions 
+ * Author:   Tamas Szekeres (szekerest@gmail.com)
  *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
  
+ * $Log$
+ * Revision 1.3  2006/11/23 22:50:53  tamas
+ * C# ExportToWkb support
+ *
+ * Revision 1.2  2006/11/05 22:13:27  tamas
+ * Adding the C# specific ReadRaster/WriteRaster
+ *
+ * Revision 1.1  2006/11/04 22:10:49  tamas
+ * gdal csharp specific extensions
+ *
+ */
  
 /******************************************************************************
  * GDAL raster R/W support                                                    *
@@ -50,41 +40,3 @@
     }
     %clear void *buffer;
 }
-
-%extend GDALDatasetShadow 
-{
-	%apply (void *buffer_ptr) {void *buffer};
-	%apply (int argin[ANY]) {int *bandMap};
-	CPLErr ReadRaster(int xOff, int yOff, int xSize, int ySize, void* buffer,
-                          int buf_xSize, int buf_ySize, GDALDataType buf_type, 
-                          int bandCount, int* bandMap, int pixelSpace, int lineSpace, int bandSpace) {
-       return GDALDatasetRasterIO( self, GF_Read, xOff, yOff, xSize, ySize, 
-		        buffer, buf_xSize, buf_ySize, buf_type, bandCount, 
-		        bandMap, pixelSpace, lineSpace, bandSpace);
-    }
-    CPLErr WriteRaster(int xOff, int yOff, int xSize, int ySize, void* buffer,
-                          int buf_xSize, int buf_ySize, GDALDataType buf_type, 
-                          int bandCount, int* bandMap, int pixelSpace, int lineSpace, int bandSpace) {
-       return GDALDatasetRasterIO( self, GF_Write, xOff, yOff, xSize, ySize, 
-		        buffer, buf_xSize, buf_ySize, buf_type, bandCount, 
-		        bandMap, pixelSpace, lineSpace, bandSpace);
-    }
-    %clear void *buffer;
-    %clear int* bandMap;
-    
-    %apply (void *buffer_ptr) {const GDAL_GCP* __GetGCPs};
-    const GDAL_GCP* __GetGCPs( ) {
-      return GDALGetGCPs( self );
-    }
-    %clear const GDAL_GCP* __GetGCPs;
-    
-    CPLErr __SetGCPs( int nGCPs, GDAL_GCP const *pGCPs, const char *pszGCPProjection ) {
-        return GDALSetGCPs( self, nGCPs, pGCPs, pszGCPProjection );
-    }
-    IMPLEMENT_ARRAY_MARSHALER(GDAL_GCP)
-}
-
-IMPLEMENT_ARRAY_MARSHALER_STATIC(GDAL_GCP)
-
-
-

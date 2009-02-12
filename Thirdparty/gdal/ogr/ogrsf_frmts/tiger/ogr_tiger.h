@@ -1,6 +1,6 @@
 /*-*-C++-*-*/
 /******************************************************************************
- * $Id: ogr_tiger.h 14288 2008-04-13 15:56:22Z rouault $
+ * $Id: ogr_tiger.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Main declarations for Tiger translator.
@@ -77,7 +77,7 @@ typedef enum {
 } TigerVersion;
 
 TigerVersion TigerClassifyVersion( int );
-const char * TigerVersionString( TigerVersion );
+char * TigerVersionString( TigerVersion );
 
 /*****************************************************************************/
 /* The TigerFieldInfo and TigerRecordInfo structures hold information about  */
@@ -90,7 +90,7 @@ const char * TigerVersionString( TigerVersion );
 /*****************************************************************************/
 
 typedef struct TigerFieldInfo {
-  const char    *pszFieldName;  // name of the field
+  char         *pszFieldName;   // name of the field
   char          cFmt;           // format of the field ('L' or 'R')
   char          cType;          // type of the field ('A' or 'N')
   OGRFieldType  OGRtype;        // OFTType of the field (OFTInteger, OFTString, ...?)
@@ -325,7 +325,7 @@ class TigerPoint : public TigerFileBase
 
  public:
   virtual int         SetModule( const char *,
-                                 const char *pszFileCode );
+                                 char *pszFileCode );
 
   virtual OGRFeature *GetFeature( int              nRecordId,
                                   TigerRecordInfo *psRTInfo,
@@ -336,7 +336,7 @@ class TigerPoint : public TigerFileBase
   virtual OGRErr CreateFeature( OGRFeature      *poFeature,
                                 TigerRecordInfo *psRTInfo,
                                 int nIndex,
-                                const char *pszFileCode );
+                                char *pszFileCode );
 
 };
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbclayer.cpp 15766 2008-11-19 19:52:48Z warmerdam $
+ * $Id: ogrodbclayer.cpp 12373 2007-10-11 22:29:35Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCLayer class, code shared between 
@@ -32,7 +32,7 @@
 #include "ogr_odbc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrodbclayer.cpp 15766 2008-11-19 19:52:48Z warmerdam $");
+CPL_CVSID("$Id: ogrodbclayer.cpp 12373 2007-10-11 22:29:35Z rouault $");
 
 /************************************************************************/
 /*                            OGRODBCLayer()                            */
@@ -119,7 +119,7 @@ CPLErr OGRODBCLayer::BuildFeatureDefn( const char *pszLayerName,
         if( pszGeomColumn != NULL 
             && EQUAL(poStmt->GetColName(iCol),pszGeomColumn) )
             continue;
-
+       
         switch( CPLODBCStatement::GetTypeMapping(poStmt->GetColType(iCol)) )
         {
             case SQL_C_SSHORT:
@@ -142,18 +142,6 @@ CPLErr OGRODBCLayer::BuildFeatureDefn( const char *pszLayerName,
             case SQL_C_DOUBLE:
                 oField.SetType( OFTReal );
                 oField.SetWidth( 0 );
-                break;
-
-            case SQL_C_DATE:
-                oField.SetType( OFTDate );
-                break;
-
-            case SQL_C_TIME:
-                oField.SetType( OFTTime );
-                break;
-
-            case SQL_C_TIMESTAMP:
-                oField.SetType( OFTDateTime );
                 break;
 
             default:

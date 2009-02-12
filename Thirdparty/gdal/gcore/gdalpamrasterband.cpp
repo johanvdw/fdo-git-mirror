@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpamrasterband.cpp 15320 2008-09-06 17:08:20Z warmerdam $
+ * $Id: gdalpamrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamRasterBand, a raster band base class
@@ -33,7 +33,7 @@
 #include "gdal_rat.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalpamrasterband.cpp 15320 2008-09-06 17:08:20Z warmerdam $");
+CPL_CVSID("$Id: gdalpamrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                         GDALPamRasterBand()                          */
@@ -85,25 +85,8 @@ CPLXMLNode *GDALPamRasterBand::SerializeToXML( const char *pszVRTPath )
         CPLSetXMLValue( psTree, "Description", GetDescription() );
 
     if( psPam->bNoDataValueSet )
-    {
         CPLSetXMLValue( psTree, "NoDataValue", 
                         oFmt.Printf( "%.14E", psPam->dfNoDataValue ) );
-
-        /* hex encode real floating point values */
-        if( psPam->dfNoDataValue != floor(psPam->dfNoDataValue) 
-            || psPam->dfNoDataValue != atof(oFmt) )
-        {
-            double dfNoDataLittleEndian;
-
-            dfNoDataLittleEndian = psPam->dfNoDataValue;
-            CPL_LSBPTR64( &dfNoDataLittleEndian );
-
-            char *pszHexEncoding = 
-                CPLBinaryToHex( 8, (GByte *) &dfNoDataLittleEndian );
-            CPLSetXMLValue( psTree, "NoDataValue.#le_hex_equiv",pszHexEncoding);
-            CPLFree( pszHexEncoding );
-        }
-    }
 
     if( psPam->pszUnitType != NULL )
         CPLSetXMLValue( psTree, "UnitType", psPam->pszUnitType );
@@ -200,12 +183,7 @@ CPLXMLNode *GDALPamRasterBand::SerializeToXML( const char *pszVRTPath )
 
     psMD = oMDMD.Serialize();
     if( psMD != NULL )
-    {
-        if( psMD->psChild == NULL )
-            CPLDestroyXMLNode( psMD );
-        else
-            CPLAddXMLChild( psTree, psMD );
-    }
+        CPLAddXMLChild( psTree, psMD );
 
 /* -------------------------------------------------------------------- */
 /*      We don't want to return anything if we had no metadata to       */
@@ -232,7 +210,7 @@ void GDALPamRasterBand::PamInitialize()
 
     GDALPamDataset *poParentDS = (GDALPamDataset *) GetDataset();
 
-    if( poParentDS == NULL || !(poParentDS->GetMOFlags() & GMO_PAM_CLASS) )
+    if( poParentDS == NULL || !(poParentDS->GetMOFlags() | GMO_PAM_CLASS) )
         return;
 
     poParentDS->PamInitialize();
@@ -274,12 +252,6 @@ void GDALPamRasterBand::PamClear()
             psPam->poDefaultRAT = NULL;
         }
 
-        if (psPam->psSavedHistograms != NULL)
-        {
-            CPLDestroyXMLNode (psPam->psSavedHistograms );
-            psPam->psSavedHistograms = NULL;
-        }
-
         CPLFree( psPam );
         psPam = NULL;
     }
@@ -306,30 +278,8 @@ CPLErr GDALPamRasterBand::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
     
     if( CPLGetXMLValue( psTree, "NoDataValue", NULL ) != NULL )
     {
-        const char *pszLEHex = 
-            CPLGetXMLValue( psTree, "NoDataValue.le_hex_equiv", NULL );
-        if( pszLEHex != NULL )
-        {
-            int nBytes;
-            GByte *pabyBin = CPLHexToBinary( pszLEHex, &nBytes );
-            if( nBytes == 8 )
-            {
-                CPL_LSBPTR64( pabyBin );
-                
-                GDALPamRasterBand::SetNoDataValue( *((double *) pabyBin) );
-            }
-            else
-            {
-                GDALPamRasterBand::SetNoDataValue( 
-                    atof(CPLGetXMLValue( psTree, "NoDataValue", "0" )) );
-            }
-            CPLFree( pabyBin );
-        }
-        else
-        {
-            GDALPamRasterBand::SetNoDataValue( 
-                atof(CPLGetXMLValue( psTree, "NoDataValue", "0" )) );
-        }
+        GDALPamRasterBand::SetNoDataValue( 
+            atof(CPLGetXMLValue( psTree, "NoDataValue", "0" )) );
     }
 
     GDALPamRasterBand::SetOffset( 
@@ -368,14 +318,14 @@ CPLErr GDALPamRasterBand::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
         for( psEntry = CPLGetXMLNode( psTree, "CategoryNames" )->psChild;
              psEntry != NULL; psEntry = psEntry->psNext )
         {
-            /* Don't skeep <Category> tag with empty content */
             if( psEntry->eType != CXT_Element 
                 || !EQUAL(psEntry->pszValue,"Category") 
-                || (psEntry->psChild != NULL && psEntry->psChild->eType != CXT_Text) )
+                || psEntry->psChild == NULL 
+                || psEntry->psChild->eType != CXT_Text )
                 continue;
             
             papszCategoryNames = CSLAddString( papszCategoryNames, 
-                                 (psEntry->psChild) ? psEntry->psChild->pszValue : "" );
+                                               psEntry->psChild->pszValue );
         }
         
         GDALPamRasterBand::SetCategoryNames( papszCategoryNames );
@@ -561,7 +511,7 @@ CPLErr GDALPamRasterBand::CloneInfo( GDALRasterBand *poSrcBand,
     {
         if( poSrcBand->GetColorTable() != NULL )
         {
-            if( !bOnlyIfMissing || GetColorTable() == NULL )
+            if( !bOnlyIfMissing || GetColorTable() != NULL )
             {
                 GDALPamRasterBand::SetColorTable( 
                     poSrcBand->GetColorTable() );
@@ -961,13 +911,8 @@ PamFindMatchingHistogram( CPLXMLNode *psSavedHistograms,
 
         if( atof(CPLGetXMLValue( psXMLHist, "HistMin", "0")) != dfMin 
             || atof(CPLGetXMLValue( psXMLHist, "HistMax", "0")) != dfMax
-            || atoi(CPLGetXMLValue( psXMLHist, 
-                                    "BucketCount","0")) != nBuckets
-            || !atoi(CPLGetXMLValue( psXMLHist, 
-                                     "IncludeOutOfRange","0")) != !bIncludeOutOfRange 
-            || (!bApproxOK && atoi(CPLGetXMLValue( psXMLHist, 
-                                                   "Approximate","0"))) )
-
+            || atoi(CPLGetXMLValue( psXMLHist, "BucketCount","0")) 
+            != nBuckets)
             continue;
 
         return psXMLHist;

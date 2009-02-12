@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocidatasource.cpp 15008 2008-07-23 19:27:15Z mloskot $
+ * $Id: ogrocidatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocidatasource.cpp 15008 2008-07-23 19:27:15Z mloskot $");
+CPL_CVSID("$Id: ogrocidatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static int anEPSGOracleMapping[] = 
 {
@@ -104,16 +104,14 @@ int OGROCIDataSource::Open( const char * pszNewName, int bUpdate,
     CPLAssert( nLayers == 0 && poSession == NULL );
 
 /* -------------------------------------------------------------------- */
-/*      Verify Oracle prefix.                                           */
+/*      Verify postgresql prefix.                                       */
 /* -------------------------------------------------------------------- */
     if( !EQUALN(pszNewName,"OCI:",3) )
     {
         if( !bTestOpen )
-        {
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "%s does not conform to Oracle OCI driver naming convention,"
-                      " OCI:*\n", pszNewName );
-        }
+                      " OCI:*\n" );
         return FALSE;
     }
 
@@ -213,8 +211,6 @@ int OGROCIDataSource::Open( const char * pszNewName, int bUpdate,
     {
         OpenTable( papszTableList[i], -1, bUpdate, FALSE );
     }
-
-    CSLDestroy( papszTableList );
 
     return TRUE;
 }
@@ -665,9 +661,7 @@ OGRSpatialReference *OGROCIDataSource::FetchSRS( int nId )
     OGROCIStatement oStatement( GetSession() );
     char            szSelect[200], **papszResult;
 
-    sprintf( szSelect, 
-             "SELECT WKTEXT, AUTH_SRID, AUTH_NAME FROM MDSYS.CS_SRS "
-             "WHERE SRID = %d AND WKTEXT IS NOT NULL", nId );
+    sprintf( szSelect, "SELECT WKTEXT, AUTH_SRID, AUTH_NAME FROM MDSYS.CS_SRS WHERE SRID = %d", nId );
 
     if( oStatement.Execute( szSelect ) != CE_None )
         return NULL;

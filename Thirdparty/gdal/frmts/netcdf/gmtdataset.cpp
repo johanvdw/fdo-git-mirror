@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmtdataset.cpp 12890 2007-11-20 16:17:41Z warmerdam $
+ * $Id: gmtdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library for GMT Grids.
@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "netcdf.h"
 
-CPL_CVSID("$Id: gmtdataset.cpp 12890 2007-11-20 16:17:41Z warmerdam $");
+CPL_CVSID("$Id: gmtdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -459,7 +459,7 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
     double default_scale = 1.0;
     double default_offset = 0.0;
-    int default_node_offset = 1; // pixel is area
+    int default_node_offset = 0;
 
     nc_put_att_text (cdfid, x_range_id, "units", 7, "meters");
     nc_put_att_text (cdfid, y_range_id, "units", 7, "meters");
@@ -563,9 +563,6 @@ void GDALRegister_GMT()
 
 {
     GDALDriver	*poDriver;
-    
-    if (! GDAL_CHECK_VERSION("GMT driver"))
-        return;
 
     if( GDALGetDriverByName( "GMT" ) == NULL )
     {

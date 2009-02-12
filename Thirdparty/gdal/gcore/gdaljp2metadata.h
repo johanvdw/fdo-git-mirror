@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.h 11873 2007-08-11 17:37:43Z mloskot $
+ * $Id: gdaljp2metadata.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  JP2 Box Reader (and GMLJP2 Interpreter)
@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef GDAL_JP2READER_H_INCLUDED
-#define GDAL_JP2READER_H_INCLUDED
+#ifndef _JP2READER_H_INCLUDED 
+#define _JP2READER_H_INCLUDED 
 
 #include "cpl_conv.h"
 #include "cpl_vsi.h"
@@ -143,4 +143,8 @@ public:
     GDALJP2Box *CreateGMLJP2( int nXSize, int nYSize );
 };
 
-#endif /* ndef GDAL_JP2READER_H_INCLUDED */
+
+
+#endif /* ndef _JP2READER_H_INCLUDED */
+
+

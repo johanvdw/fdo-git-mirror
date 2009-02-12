@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocisession.cpp 14363 2008-04-27 15:16:13Z tamas $
+ * $Id: ogrocisession.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCISession, which encapsulates much of the
@@ -31,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 14363 2008-04-27 15:16:13Z tamas $");
+CPL_CVSID("$Id: ogrocisession.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static OCIEnv *ghOracleEnvironment = NULL;
 
@@ -69,10 +69,6 @@ OGROCISession::OGROCISession()
     hDescribe = NULL;
     hGeometryTDO = NULL;
     hOrdinatesTDO = NULL;
-    hElemInfoTDO = NULL;
-    pszUserid = NULL;
-    pszPassword = NULL;
-    pszDatabase = NULL;
 }
 
 /************************************************************************/
@@ -87,10 +83,6 @@ OGROCISession::~OGROCISession()
 
     if( hSvcCtx != NULL )
         OCILogoff( hSvcCtx, hError );
-
-    CPLFree( pszUserid );
-    CPLFree( pszPassword );
-    CPLFree( pszDatabase );
 }
 
 /************************************************************************/
@@ -117,8 +109,7 @@ int OGROCISession::EstablishSession( const char *pszUserid,
         {
             CPLDebug("OCI", 
                      "OCIEnvCreate() failed with status %d.\n"
-                     "Presumably Oracle is not properly installed, skipping.",
-                     (int)nStatus);
+                     "Presumably Oracle is not properly installed, skipping.");
                       
             return FALSE;
         }
@@ -158,48 +149,30 @@ int OGROCISession::EstablishSession( const char *pszUserid,
 /* -------------------------------------------------------------------- */
 /*      Try to get the MDSYS.SDO_GEOMETRY type object.                  */
 /* -------------------------------------------------------------------- */
-    /* If we have no MDSYS.SDO_GEOMETRY then we consider we are
-        working along with the VRT driver and access non spatial tables.
-        See #2202 for more details (Tamas Szekeres)*/
-    if (OCIDescribeAny(hSvcCtx, hError, 
-                       (text *) SDO_GEOMETRY, (ub4) strlen(SDO_GEOMETRY), 
-                       OCI_OTYPE_NAME, (ub1)1, (ub1)OCI_PTYPE_TYPE, 
-                       hDescribe ) != OCI_ERROR)
-    {
-        hGeometryTDO = PinTDO( SDO_GEOMETRY );
-        if( hGeometryTDO == NULL )
-            return FALSE;
+    hGeometryTDO = PinTDO( SDO_GEOMETRY );
+    if( hGeometryTDO == NULL )
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Try to get the MDSYS.SDO_ORDINATE_ARRAY type object.            */
 /* -------------------------------------------------------------------- */
-        hOrdinatesTDO = PinTDO( "MDSYS.SDO_ORDINATE_ARRAY" );
-        if( hOrdinatesTDO == NULL )
-            return FALSE;
+    hOrdinatesTDO = PinTDO( "MDSYS.SDO_ORDINATE_ARRAY" );
+    if( hOrdinatesTDO == NULL )
+        return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Try to get the MDSYS.SDO_ELEM_INFO_ARRAY type object.           */
 /* -------------------------------------------------------------------- */
-        hElemInfoTDO = PinTDO( "MDSYS.SDO_ELEM_INFO_ARRAY" );
-        if( hElemInfoTDO == NULL )
-            return FALSE;
-    }
+    hElemInfoTDO = PinTDO( "MDSYS.SDO_ELEM_INFO_ARRAY" );
+    if( hElemInfoTDO == NULL )
+        return FALSE;
+
 /* -------------------------------------------------------------------- */
 /*      Record information about the session.                           */
 /* -------------------------------------------------------------------- */
     this->pszUserid = CPLStrdup(pszUserid);
     this->pszPassword = CPLStrdup(pszPassword);
     this->pszDatabase = CPLStrdup(pszDatabase);
-
-/* -------------------------------------------------------------------- */
-/*      Setting upt the OGR compatible time formating rules.            */
-/* -------------------------------------------------------------------- */
-    OGROCIStatement     oSetNLSTimeFormat( this );
-    if( oSetNLSTimeFormat.Execute( "ALTER SESSION SET NLS_DATE_FORMAT='YYYY/MM/DD' \
-        NLS_TIME_FORMAT='HH24:MI:SS' NLS_TIME_TZ_FORMAT='HH24:MI:SS TZHTZM' \
-        NLS_TIMESTAMP_FORMAT='YYYY/MM/DD HH24:MI:SS' \
-        NLS_TIMESTAMP_TZ_FORMAT='YYYY/MM/DD HH24:MI:SS TZHTZM'" ) != CE_None )
-        return OGRERR_FAILURE;
 
     return TRUE;
 }
@@ -366,16 +339,9 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
         }
         break;
 
-        case SQLT_DAT:
         case SQLT_DATE:
-            poOGRDefn->SetType( OFTDate );
-            break;
-        case SQLT_TIMESTAMP:
-        case SQLT_TIMESTAMP_TZ:
-        case SQLT_TIMESTAMP_LTZ:
-        case SQLT_TIME:
-        case SQLT_TIME_TZ:
-            poOGRDefn->SetType( OFTDateTime );
+            poOGRDefn->SetType( OFTString );
+            poOGRDefn->SetWidth( 24 );
             break;
 
         case SQLT_RID:

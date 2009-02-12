@@ -65,8 +65,7 @@ ArcSDEConnection::ArcSDEConnection (void) :
 	mGeomBuffer_pointsZ_cursize(0),
     mGeomBuffer_pointsM(NULL),
 	mGeomBuffer_pointsM_cursize(0),
-    mGeomFactory(NULL),
-	m_uuidGeneratorCreated(false)
+    mGeomFactory(NULL)
 {
     mGeomFactory = FdoFgfGeometryFactory::GetInstance();
 }
@@ -103,9 +102,6 @@ ArcSDEConnection::~ArcSDEConnection (void)
         free(mGeomBuffer_pointsZ);
     if (mGeomBuffer_pointsM != NULL)
         free(mGeomBuffer_pointsM);
-	if (m_uuidGeneratorCreated)
-		SE_uuidgenerator_free(m_uuidGenerator);
-
 }
 
 // <summary>Dispose this object.</summary>
@@ -303,10 +299,7 @@ FdoConnectionState ArcSDEConnection::Open ()
     for (FdoInt32 i=0; i<propCount; i++)
         if (dictionary->IsPropertyRequired(propNames[i]) && (NULL==parser.GetPropertyValue(propNames[i])))
         {
-            if (0 != wcscmp (propNames[i], CONNECTIONPROPERTY_SERVER) && // server is optional at ArcSDE level
-                0 != wcscmp (propNames[i], CONNECTIONPROPERTY_USERNAME) && // username is optional
-                0 != wcscmp (propNames[i], CONNECTIONPROPERTY_PASSWORD)) // password is optional
-
+            if (0 != wcscmp (propNames[i], CONNECTIONPROPERTY_SERVER)) // server is optional at ArcSDE level
                 throw FdoException::Create(NlsMsgGet1(ARCSDE_CONNECTION_MISSING_REQUIRED_PROPERTY, "The connection property '%1$ls' is required but wasn't set.", propNames[i]));
         }
 
@@ -320,10 +313,7 @@ FdoConnectionState ArcSDEConnection::Open ()
         m_mbDatabaseName[0] = '\0';
     else
         sde_strcpy(sde_pus2wc(m_mbDatabaseName), sde_pcus2wc(datastore));
-    if (username == NULL || sde_strlen(sde_pcus2wc(username)) == 0)
-        m_mbUserName[0] = '\0';
-    else
-        sde_strcpy(sde_pus2wc(m_mbUserName), sde_pcus2wc(username));
+    sde_strcpy(sde_pus2wc(m_mbUserName), sde_pcus2wc(username));
 
     // Attempt to establish initial ArcSDE connection;
     // This is done in a separate method since we need to use __try/__except to catch the delay-loader's
@@ -1591,16 +1581,4 @@ FdoStringP ArcSDEConnection::AdjustSystemColumnName(FdoString *name)
         return nameCorrected.Lower();
     else
         return nameCorrected.Upper();
-}
-
-
-void ArcSDEConnection::GetUuidGenerator(SE_UUIDGENERATOR &uuidGenerator)
-{
-	if (m_uuidGeneratorCreated == false)
-	{
-		LONG result = SE_uuidgenerator_create(&m_uuidGenerator);
-		handle_sde_err<FdoException> (GetConnection(), result, __FILE__, __LINE__, ARCSDE_UUIDGENERATOR_CREATE_FAILURE, "Failed to create uuid generator");
-		m_uuidGeneratorCreated = true;
-	}
-	uuidGenerator = m_uuidGenerator;
 }

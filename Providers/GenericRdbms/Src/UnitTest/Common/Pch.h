@@ -73,6 +73,4 @@
 #include <Rdbms/Override/RdbmsOv.h>
 #include <TestCommon.h>
 
-#include "UnitTestUtil.h"
-
 #endif //_GENERICRDBMSUNITTESTCOMMONPCH_H_

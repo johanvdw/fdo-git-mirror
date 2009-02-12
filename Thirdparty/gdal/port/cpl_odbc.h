@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: cpl_odbc.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.

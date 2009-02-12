@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57dump.cpp 15650 2008-10-30 14:08:37Z warmerdam $
+ * $Id: s57dump.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing S57 driver data.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57dump.cpp 15650 2008-10-30 14:08:37Z warmerdam $");
+CPL_CVSID("$Id: s57dump.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                                main()                                */
@@ -41,6 +41,7 @@ int main( int nArgc, char ** papszArgv )
 
 {
     char        **papszOptions = NULL;
+    int         bUpdate = TRUE;
     int         bReturnPrimitives = FALSE;
     char       *pszDataPath = NULL;
     
@@ -62,8 +63,7 @@ int main( int nArgc, char ** papszArgv )
         else if( EQUAL(papszArgv[iArg],"-data") )
             pszDataPath = papszArgv[++iArg];
         else if( EQUAL(papszArgv[iArg],"-no-update") )
-            papszOptions =
-                CSLSetNameValue( papszOptions, S57O_UPDATES, "OFF" );
+            bUpdate = FALSE;
         else if( EQUAL(papszArgv[iArg],"-pen") )
             papszOptions =
                 CSLSetNameValue( papszOptions, S57O_PRESERVE_EMPTY_NUMBERS,
@@ -189,6 +189,9 @@ int main( int nArgc, char ** papszArgv )
         int             nFeatures = 0;
         DDFModule       oUpdate;
 
+        if( bUpdate )
+            oReader.FindAndApplyUpdates(papszFiles[iFile]);
+    
         while( (poFeature = oReader.ReadNextFeature()) != NULL )
         {
             poFeature->DumpReadable( stdout );

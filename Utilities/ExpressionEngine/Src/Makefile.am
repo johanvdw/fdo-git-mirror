@@ -44,15 +44,9 @@ libExpressionEngine_la_SOURCES = \
   Functions/Date/FdoFunctionAddMonths.cpp \
   Functions/Date/FdoFunctionCurrentDate.cpp \
   Functions/Date/FdoFunctionExtract.cpp \
-  Functions/Date/FdoFunctionExtractToDouble.cpp \
-  Functions/Date/FdoFunctionExtractToInt.cpp \
   Functions/Date/FdoFunctionMonthsBetween.cpp \
   Functions/Geometry/FdoFunctionArea2D.cpp \
   Functions/Geometry/FdoFunctionLength2D.cpp \
-  Functions/Geometry/FdoFunctionX.cpp \
-  Functions/Geometry/FdoFunctionY.cpp \
-  Functions/Geometry/FdoFunctionZ.cpp \
-  Functions/Geometry/FdoFunctionM.cpp \
   Functions/Geometry/Util.cpp \
   Functions/Math/FdoFunctionAbs.cpp \
   Functions/Math/FdoFunctionAcos.cpp \

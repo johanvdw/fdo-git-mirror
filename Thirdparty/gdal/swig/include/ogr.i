@@ -1,113 +1,295 @@
 /******************************************************************************
- * $Id: ogr.i 14906 2008-07-13 20:04:17Z tamas $
+ * $Id: ogr.i 11688 2007-06-21 14:12:57Z warmerdam $
  *
- * Project:  OGR Core SWIG Interface declarations.
- * Purpose:  OGR declarations.
+ * Name:     ogr.i
+ * Project:  GDAL Python Interface
+ * Purpose:  OGR Core SWIG Interface declarations.
  * Author:   Howard Butler, hobu@iastate.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Howard Butler
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.64  2006/11/29 03:31:48  hobu
+ * we need a newline to close of the #ifdef for SWIGCSHARP at the end of the file
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.63  2006/11/23 22:51:35  tamas
+ * C# ExportToWkb support
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.62  2006/11/19 17:45:05  ajolma
+ * In all cases where GetFieldIndex is used, added check for non-null name, and check for the return value. This prevents countless segfaults and quiet fails at least in Perl.
+ *
+ * Revision 1.61  2006/11/18 09:25:53  ajolma
+ * make it possible to switch to CPAN namespace with symbol PERL_CPAN_NAMESPACE
+ *
+ * Revision 1.60  2006/11/18 09:05:01  ajolma
+ * Versions of SetField and UnsetField, which use field name fail now with a sensible error message (previously the error was caught with CPLAssert later)
+ *
+ * Revision 1.59  2006/11/11 19:33:47  tamas
+ * Controlling the owner of the objects returned by the static/non static members for the csharp binding
+ *
+ * Revision 1.58  2006/11/07 13:48:07  hobu
+ * remove unused rcode in Centroid
+ *
+ * Revision 1.57  2006/09/09 17:52:28  tamas
+ * Added OGREnvelope for the C# bindings
+ *
+ * Revision 1.56  2006/06/27 12:47:28  ajolma
+ * Error reporting in CreateGeometry, added SetCoordinateDimension
+ *
+ * Revision 1.55  2006/04/11 12:48:52  ajolma
+ * swig 1.3.29 _does_ have DISOWN for Perl
+ *
+ * Revision 1.54  2006/04/06 20:45:47  ajolma
+ *
+ * swig/Perl does not use *DISOWN, so I added another solution
+ *
+ * Revision 1.53  2006/04/02 18:34:33  fwarmerdam
+ * Added OFTTime and OFTDateTime.
+ *
+ * Revision 1.52  2006/02/15 04:19:51  fwarmerdam
+ * Added OFTDate.
+ *
+ * Revision 1.51  2006/02/02 21:09:24  collinsb
+ * Corrected wrong Java typemap filename
+ *
+ * Revision 1.50  2006/02/02 20:52:40  collinsb
+ * Added SWIG JAVA bindings
+ *
+ * Revision 1.49  2005/10/17 14:38:16  hobu
+ * Implemented a poor excuse for a GetDriver method on OGRDataSourceShadow
+ *
+ * Revision 1.48  2005/10/11 14:47:36  kruland
+ * Removed all the manual throws and changed to return OGRErr where appropriate.
+ * There are 4 methods which have had serious alterations:
+ * Layer.GetExtent() was changed to OGRErr GetExtent( double argout[4], int = 1);
+ * Geometry.ExportToWkt() was changed to OGRErr ExportToWkt( char **argout );
+ * CreateGeometryFromWkb() and CreateGeometryFromWkt will return a NULL
+ * geometry object is the construction fails.  This will need to be handled
+ * differently in a subsequent revision.
+ *
+ * Revision 1.47  2005/10/11 14:10:57  kruland
+ * Feature.SetGeomerty() should not throw but should return the OGRErr.
+ *
+ * Revision 1.46  2005/10/03 20:09:58  cfis
+ * Changed various methods to return bool instead of int.  These changes make the methods more natural to work with in scripting languages.
+ *
+ * Revision 1.45  2005/09/26 05:02:13  cfis
+ * Added comments pointing out where parent objects are giving out references to child objects.
+ *
+ * Revision 1.44  2005/09/21 15:33:02  kruland
+ * - Added DISOWN to ReleaseResultSet
+ * - Added %newobject to GetSpatialFilter and GetOpenDS
+ * - Added kwargs feature to Open and OpenShared - they must have been
+ *   dropped during a previous commit.
+ *
+ * Revision 1.43  2005/09/21 02:21:56  fwarmerdam
+ * added comment blocks
+ *
+ * Revision 1.42  2005/09/19 02:53:23  cfis
+ * The two versions of the method OGRFeatureShadow::GetFieldDefnRef were both marked with the %newobject feature.
+ *
+ * However, this is wrong.  Neither return a newobject so this has been removed.
+ *
+ * Revision 1.41  2005/09/14 21:28:35  kruland
+ * OGRFeatureDefn::GetFieldDefn() returns an internal pointer, not a newobject.
+ *
+ * Revision 1.40  2005/09/13 16:10:00  kruland
+ * Import ogr_perl.i for SWIGPERL.
+ * Moved GetFieldTypeName from Geometry to FieldDefn.
+ *
+ * Revision 1.39  2005/09/07 01:12:49  kruland
+ * Have ogr.i include osr.i in order to have access to types defined in the osr
+ * module.
+ * Removed the typedef for OGRErr.  The %include osr.i caused it to be double
+ * defined and caused warnings from swig.
+ * Fixed the %constant declarations for strings.
+ *
+ * Revision 1.38  2005/09/06 01:49:07  kruland
+ * Declare %feature("compactdefaultargs") so all bindings use it.
+ * Import gdal_typemaps.i if no other language specific file used.
+ * Added Geometry::GetFieldTypeName() binding.
+ * Moved Open, OpenShared, GetDriver, and GetDriverByName from python
+ * language file.
+ *
+ * Revision 1.37  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ * Revision 1.36  2005/08/25 21:02:30  cfis
+ * Added check for SWIGRuby when defining open,openshared,GetDriverByName and GetDriver methods.
+ *
+ * Also moved all the renames into a preprocessor macro block because they interfere with the Ruby specific %rename directives.
+ *
+ * Revision 1.35  2005/08/22 19:00:50  kruland
+ * Attempt to make ogr library behave well using normal script memory
+ * management.
+ * - Implemented public destructor for DataSource, Feature, FeatureDefn, FieldDefn,
+ *   Geometry
+ * - Stubbed Reference() and Dereference() for all classes as "pass"
+ *   in python for backward compatibility
+ * - Implemented Destroy() and Release() for all classes in python
+ *   as calls to destructor along with disowning the C ptr so the destructor
+ *   is not called again.  These methods are only for backward compatibility in
+ *   python bindings.
+ * - Added %newobject to Layer.GetFeature() and Layer.GetNextFeature()
+ * - Use DISOWN typemap on Feature.SetGeometryDirectly() and
+ *   Geometry.AddGeometryDirectly() because they assume ownership of the
+ *   argument.
+ * - Removed %newobject from Geometry.GetGeometryRef(), GetOpenDS() because they
+ *   return internal references.
+ *
+ * Revision 1.34  2005/08/10 16:49:43  hobu
+ * syntactic sugar to support the __iter__ protocol on Layer
+ * for Python.  This allows us to (slowly) do for feature in layer and
+ * have it call GetNextFeature for us until we are done.
+ *
+ * Revision 1.33  2005/08/10 15:44:57  hobu
+ * Added some convenience properties for FieldDefn:
+ * width, type, precision, name, justify as shortcuts for the
+ * setters/getters
+ *
+ * Revision 1.32  2005/08/09 17:40:09  kruland
+ * Added support for ruby.
+ *
+ * Revision 1.31  2005/08/09 14:38:27  kruland
+ * Fixed the FeatureDefn constructor -- their decls don't have a return value.
+ *
+ * Revision 1.30  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.29  2005/08/05 20:32:11  kruland
+ * Pass bytecount into OGR_G_CreateFromWkb.
+ *
+ * Revision 1.28  2005/08/05 15:49:27  kruland
+ * Added __str__ to Geometry class python bindings.
+ *
+ * Revision 1.27  2005/06/22 18:42:33  kruland
+ * Don't apply a typemap for returning OGRErr.
+ *
+ * Revision 1.26  2005/03/14 21:33:33  hobu
+ * rename method names that are common to both gdal and ogr
+ * for the C# only
+ *
+ * Revision 1.25  2005/03/10 17:13:57  hobu
+ * #ifdefs for csharp
+ *
+ * Revision 1.24  2005/02/24 17:20:47  hobu
+ * move constants to %constants so they are available to
+ * all languages
+ *
+ * Revision 1.23  2005/02/24 16:15:53  hobu
+ * ifdef'd the %pythoncode, conditionally rename some methods
+ * if they conflict with existing "object" methods in C#.
+ *
+ * Revision 1.22  2005/02/22 18:44:34  hobu
+ * and the one in the Datasource constructor
+ *
+ * Revision 1.21  2005/02/22 18:43:31  hobu
+ * yank out debug refcount increments
+ *
+ * Revision 1.20  2005/02/22 18:24:34  hobu
+ * apply the double_4 typemap for Layer.GetExtent
+ *
+ * Revision 1.19  2005/02/22 15:33:37  kruland
+ * Removed duplicate defns of SetField that I introduced in previous revision.
+ * Added %appy to SetField which will call str() on second arg.
+ *
+ * Revision 1.18  2005/02/22 02:04:33  kruland
+ * Corrected decl of FieldDefn constructor.
+ * Implemented first cut at Feature.SetField() -- needs to accept any for value.
+ * Added constructor for FeatureDefn.
+ * Make Geometry.GetEnvelope return a 4-tuple.
+ * Implemented Geometry.Centroid()
+ *
+ * Revision 1.17  2005/02/21 23:09:33  hobu
+ * Added all of the Geometry and FieldDefn classes/methods
+ *
+ * Revision 1.16  2005/02/21 21:27:31  kruland
+ * Added AddPoint, AddGeometryDirectly, Destroy to Geometry.
+ * Mucked with some more newobject directives.
+ *
+ * Revision 1.15  2005/02/21 20:48:11  kruland
+ * Intermediate commit.  Changed internal typenames so they no longer use
+ * those defined in gdal/ogr library.  Removed newobject from Dataset function
+ * which return layers since they are owned by the dataset.  Moved the
+ * Geometry factory methods so they are visible to the Geometry object
+ * constructor.
+ *
+ * Revision 1.14  2005/02/21 18:56:54  kruland
+ * Fix usage of the Geometry class.  The factory methods were confused by
+ * returning voids instead of void*s.
+ * Renamed the internal type to OGRGeometryShadow to prevent confusion.
+ * Properly implemented Geometry.ExportToWkb() using the buffer typemaps.
+ *
+ * Revision 1.13  2005/02/21 18:00:44  hobu
+ * Started in on Geometry
+ *
+ * Revision 1.12  2005/02/21 16:53:30  kruland
+ * Changed name of SpatialReference shadow type.
+ *
+ * Revision 1.11  2005/02/21 16:52:39  hobu
+ * GetFieldAs* methods that take in string or int input for Feature
+ *
+ * Revision 1.10  2005/02/18 23:47:11  hobu
+ * Feature and FeatureDefn
+ * except for the field handling methods on Feature
+ *
+ * Revision 1.9  2005/02/18 22:03:51  hobu
+ * Finished up Layer
+ *
+ * Revision 1.8  2005/02/18 20:41:19  hobu
+ * it compiles and it doesn't blow up.  IMO this is a
+ * good stopping point :)
+ *
+ * Revision 1.7  2005/02/18 18:42:07  kruland
+ * Added %feature("autodoc");
+ *
+ * Revision 1.6  2005/02/18 18:28:16  kruland
+ * Rename OGRSpatialReferenceH type to SpatialReference to make the ogr and
+ * osr modules compatible.
+ *
+ * Revision 1.5  2005/02/18 18:01:34  hobu
+ * Started working on the geometry constructors with a lot
+ * of help from Kevin
+ *
+ * Revision 1.4  2005/02/17 00:01:37  hobu
+ * quick start on the datasource/driver stuff
+ *
+ * Revision 1.3  2005/02/16 21:55:02  hobu
+ * started the OGRDriver class stuff.
+ * CopyDataSource, CreateDataSource, and
+ * DS Open
+ *
+ * Revision 1.2  2005/02/16 20:02:57  hobu
+ * added constants
+ *
+ * Revision 1.1  2005/02/16 19:47:03  hobu
+ * skeleton OGR interface
+ *
+ *
+ *
+ * nmake /f makefile.vc swig_python
+ *D:\cvs\gdal\gdalautotest>d:\Python\debug\Python-2.4\PCbuild\python_d.exe run_all.py ogr
+*/
 
 %include "exception.i"
 
 #ifdef PERL_CPAN_NAMESPACE
 %module "Geo::OGR"
-#elif defined(SWIGCSHARP)
-%module Ogr
 #else
 %module ogr
-#endif
-
-#ifdef SWIGCSHARP
-%include swig_csharp_extensions.i
 #endif
 
 %feature("compactdefaultargs");
 %feature("autodoc");
 
-/************************************************************************/
-/*                         Enumerated types                             */
-/************************************************************************/
-
-#ifndef SWIGCSHARP
 typedef int OGRwkbByteOrder;
 typedef int OGRwkbGeometryType;
 typedef int OGRFieldType;
 typedef int OGRJustification;
-#else
-%rename (wkbByteOrder) OGRwkbByteOrder;
-typedef enum 
-{
-    wkbXDR = 0,         /* MSB/Sun/Motoroloa: Most Significant Byte First   */
-    wkbNDR = 1          /* LSB/Intel/Vax: Least Significant Byte First      */
-} OGRwkbByteOrder;
-
-%rename (wkbGeometryType) OGRwkbGeometryType;
-typedef enum 
-{
-    wkbUnknown = 0,             /* non-standard */
-    wkbPoint = 1,               /* rest are standard WKB type codes */
-    wkbLineString = 2,
-    wkbPolygon = 3,
-    wkbMultiPoint = 4,
-    wkbMultiLineString = 5,
-    wkbMultiPolygon = 6,
-    wkbGeometryCollection = 7,
-    wkbNone = 100,              /* non-standard, for pure attribute records */
-    wkbLinearRing = 101,        /* non-standard, just for createGeometry() */
-    wkbPoint25D = -2147483647,   /* 2.5D extensions as per 99-402 */
-    wkbLineString25D = -2147483646,
-    wkbPolygon25D = -2147483645,
-    wkbMultiPoint25D = -2147483644,
-    wkbMultiLineString25D = -2147483643,
-    wkbMultiPolygon25D = -2147483642,
-    wkbGeometryCollection25D = -2147483641
-} OGRwkbGeometryType;
-
-%rename (FieldType) OGRFieldType;
-typedef enum 
-{
-  /** Simple 32bit integer */                   OFTInteger = 0,
-  /** List of 32bit integers */                 OFTIntegerList = 1,
-  /** Double Precision floating point */        OFTReal = 2,
-  /** List of doubles */                        OFTRealList = 3,
-  /** String of ASCII chars */                  OFTString = 4,
-  /** Array of strings */                       OFTStringList = 5,
-  /** Double byte string (unsupported) */       OFTWideString = 6,
-  /** List of wide strings (unsupported) */     OFTWideStringList = 7,
-  /** Raw Binary data */                        OFTBinary = 8,
-  /** Date */                                   OFTDate = 9,
-  /** Time */                                   OFTTime = 10,
-  /** Date and Time */                          OFTDateTime = 11
-} OGRFieldType;
-
-%rename (Justification) OGRJustification;
-typedef enum 
-{
-    OJUndefined = 0,
-    OJLeft = 1,
-    OJRight = 2
-} OGRJustification;
-#endif
 
 %{
 #include <iostream>
@@ -115,22 +297,10 @@ using namespace std;
 
 #include "ogr_api.h"
 #include "ogr_core.h"
+#include "ogr_srs_api.h"
 #include "cpl_port.h"
 #include "cpl_string.h"
-#include "ogr_srs_api.h"
 
-#ifdef DEBUG 
-typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
-typedef struct OGRDriverHS OGRDriverShadow;
-typedef struct OGRDataSourceHS OGRDataSourceShadow;
-typedef struct OGRLayerHS OGRLayerShadow;
-typedef struct OGRFeatureHS OGRFeatureShadow;
-typedef struct OGRFeatureDefnHS OGRFeatureDefnShadow;
-typedef struct OGRGeometryHS OGRGeometryShadow;
-typedef struct OGRCoordinateTransformationHS OSRCoordinateTransformationShadow;
-typedef struct OGRCoordinateTransformationHS OGRCoordinateTransformationShadow;
-typedef struct OGRFieldDefnHS OGRFieldDefnShadow;
-#else
 typedef void OSRSpatialReferenceShadow;
 typedef void OGRDriverShadow;
 typedef void OGRDataSourceShadow;
@@ -140,11 +310,8 @@ typedef void OGRFeatureDefnShadow;
 typedef void OGRGeometryShadow;
 typedef void OSRCoordinateTransformationShadow;
 typedef void OGRFieldDefnShadow;
-#endif
-
 %}
 
-#ifndef SWIGCSHARP
 %constant wkb25Bit = wkb25DBit;
 %constant wkbUnknown = 0;
 
@@ -201,41 +368,6 @@ typedef void OGRFieldDefnShadow;
 
 %constant char *ODrCCreateDataSource   = "CreateDataSource";
 %constant char *ODrCDeleteDataSource   = "DeleteDataSource";
-#else
-typedef int OGRErr;
-
-#define OGRERR_NONE                0
-#define OGRERR_NOT_ENOUGH_DATA     1    /* not enough data to deserialize */
-#define OGRERR_NOT_ENOUGH_MEMORY   2
-#define OGRERR_UNSUPPORTED_GEOMETRY_TYPE 3
-#define OGRERR_UNSUPPORTED_OPERATION 4
-#define OGRERR_CORRUPT_DATA        5
-#define OGRERR_FAILURE             6
-#define OGRERR_UNSUPPORTED_SRS     7
-
-#define wkb25DBit 0x80000000
-#define ogrZMarker 0x21125711
-
-#define OGRNullFID            -1
-#define OGRUnsetMarker        -21121
-
-#define OLCRandomRead          "RandomRead"
-#define OLCSequentialWrite     "SequentialWrite"
-#define OLCRandomWrite         "RandomWrite"
-#define OLCFastSpatialFilter   "FastSpatialFilter"
-#define OLCFastFeatureCount    "FastFeatureCount"
-#define OLCFastGetExtent       "FastGetExtent"
-#define OLCCreateField         "CreateField"
-#define OLCTransactions        "Transactions"
-#define OLCDeleteFeature       "DeleteFeature"
-#define OLCFastSetNextByIndex  "FastSetNextByIndex"
-
-#define ODsCCreateLayer        "CreateLayer"
-#define ODsCDeleteLayer        "DeleteLayer"
-
-#define ODrCCreateDataSource   "CreateDataSource"
-#define ODrCDeleteDataSource   "DeleteDataSource"
-#endif
 
 #if defined(SWIGPYTHON)
 %include ogr_python.i
@@ -277,7 +409,6 @@ typedef struct
 } OGREnvelope;
 #endif
 
-#ifndef GDAL_BINDINGS
 /************************************************************************/
 /*                              OGRDriver                               */
 /************************************************************************/
@@ -324,7 +455,7 @@ public:
   }
 
   bool TestCapability (const char *cap) {
-    return (OGR_Dr_TestCapability(self, cap) > 0);
+    return OGR_Dr_TestCapability(self, cap);
   }
   
   const char * GetName() {
@@ -334,7 +465,6 @@ public:
 
 } /* %extend */
 }; /* class OGRDriverShadow */
-#endif /* GDAL_BINDINGS */
 
 
 /************************************************************************/
@@ -371,9 +501,17 @@ public:
   }
   
   OGRDriverShadow * GetDriver() {
-    return (OGRDriverShadow *) OGR_DS_GetDriver( self );
+    OGRDriverShadow* driver;
+    OGRDataSourceShadow* ds;
+    ds = (OGRDataSourceShadow*)OGROpen((const char *) OGR_DS_GetName(self),0,&driver);
+    if( ds != NULL )
+    {
+        OGRReleaseDataSource(ds);
+        return driver;
+    }
+    else
+        return NULL;
   }
-
   const char * GetName() {
     return OGR_DS_GetName(self);
   }
@@ -385,14 +523,14 @@ public:
   /* Note that datasources own their layers */
   %feature( "kwargs" ) CreateLayer;
   OGRLayerShadow *CreateLayer(const char* name, 
-              OSRSpatialReferenceShadow* srs=NULL,
+              OSRSpatialReferenceShadow* reference=NULL,
               OGRwkbGeometryType geom_type=wkbUnknown,
               char** options=0) {
     OGRLayerShadow* layer = (OGRLayerShadow*) OGR_DS_CreateLayer( self,
-								  name,
-								  srs,
-								  geom_type,
-								  options);
+                                                        name,
+                                                        reference,
+                                                        geom_type,
+                                                        options);
     return layer;
   }
 
@@ -419,17 +557,17 @@ public:
   }
 
   bool TestCapability(const char * cap) {
-    return (OGR_DS_TestCapability(self, cap) > 0);
+    return OGR_DS_TestCapability(self, cap);
   }
 
-
+  %newobject ExecuteSQL;
   %feature( "kwargs" ) ExecuteSQL;
   OGRLayerShadow *ExecuteSQL(const char* statement,
-                        OGRGeometryShadow* spatialFilter=NULL,
+                        OGRGeometryShadow* geom=NULL,
                         const char* dialect="") {
     OGRLayerShadow* layer = (OGRLayerShadow*) OGR_DS_ExecuteSQL((OGRDataSourceShadow*)self,
                                                       statement,
-                                                      spatialFilter,
+                                                      geom,
                                                       dialect);
     return layer;
   }
@@ -484,15 +622,7 @@ public:
   const char * GetName() {
     return OGR_FD_GetName(OGR_L_GetLayerDefn(self));
   }
- 
-  const char * GetGeometryColumn() {
-    return OGR_L_GetGeometryColumn(self);
-  }
   
-  const char * GetFIDColumn() {
-    return OGR_L_GetFIDColumn(self);
-  }
-
 %newobject GetFeature;
   OGRFeatureShadow *GetFeature(long fid) {
     return (OGRFeatureShadow*) OGR_L_GetFeature(self, fid);
@@ -546,7 +676,7 @@ public:
 #endif
 
   bool TestCapability(const char* cap) {
-    return (OGR_L_TestCapability(self, cap) > 0);
+    return OGR_L_TestCapability(self, cap);
   }
   
   %feature( "kwargs" ) CreateField;
@@ -574,7 +704,7 @@ public:
     return (OSRSpatialReferenceShadow*) ref;
   }
   
-  GIntBig GetFeaturesRead() {
+  GIntBig GetFeatureRead() {
     return OGR_L_GetFeaturesRead(self);
   }
 
@@ -599,7 +729,7 @@ public:
 
   %feature("kwargs") OGRFeatureShadow;
   OGRFeatureShadow( OGRFeatureDefnShadow *feature_def = 0 ) {
-      return (OGRFeatureShadow*) OGR_F_Create( feature_def );
+    return (OGRFeatureShadow*) OGR_F_Create( feature_def );
   }
 
   OGRFeatureDefnShadow *GetDefnRef() {
@@ -628,7 +758,7 @@ public:
   }
   
   bool Equal(OGRFeatureShadow *feature) {
-    return (OGR_F_Equal(self, feature) > 0);
+    return OGR_F_Equal(self, feature);
   }
   
   int GetFieldCount() {
@@ -641,12 +771,16 @@ public:
   }
 
   OGRFieldDefnShadow *GetFieldDefnRef(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  return (OGRFieldDefnShadow *) OGR_F_GetFieldDefnRef(self, i);
-      return NULL;
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldDefnRef");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            return (OGRFieldDefnShadow *) OGR_F_GetFieldDefnRef(self, i);
+    }
+    return NULL;
   }
   /* ------------------------------------------- */
 
@@ -656,16 +790,18 @@ public:
     return (const char *) OGR_F_GetFieldAsString(self, id);
   }
 
-#ifndef SWIGPERL
   const char* GetFieldAsString(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  return (const char *) OGR_F_GetFieldAsString(self, i);
-      return NULL;
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldAsString");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            return (const char *) OGR_F_GetFieldAsString(self, i);
+    }
+    return NULL;
   }
-#endif
   /* ------------------------------------------- */
 
   /* ---- GetFieldAsInteger -------------------- */
@@ -674,16 +810,18 @@ public:
     return OGR_F_GetFieldAsInteger(self, id);
   }
 
-#ifndef SWIGPERL
   int GetFieldAsInteger(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  return OGR_F_GetFieldAsInteger(self, i);
-      return 0;
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldAsInteger");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            return OGR_F_GetFieldAsInteger(self, i);
+    }
+    return 0;
   }
-#endif
   /* ------------------------------------------- */  
 
   /* ---- GetFieldAsDouble --------------------- */
@@ -692,57 +830,47 @@ public:
     return OGR_F_GetFieldAsDouble(self, id);
   }
 
-#ifndef SWIGPERL
   double GetFieldAsDouble(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  return OGR_F_GetFieldAsDouble(self, i);
-      return 0;
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldAsDouble");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            return OGR_F_GetFieldAsDouble(self, i);
+    }
+    return 0;
   }
-#endif
   /* ------------------------------------------- */  
 
-  %apply (int *OUTPUT) {(int *)};
-  void GetFieldAsDateTime(int id, int *pnYear, int *pnMonth, int *pnDay,
-			  int *pnHour, int *pnMinute, int *pnSecond,
-			  int *pnTZFlag) {
-      OGR_F_GetFieldAsDateTime(self, id, pnYear, pnMonth, pnDay,
-			       pnHour, pnMinute, pnSecond,
-			       pnTZFlag);
-  }
-  %clear (int *);
 
-  void GetFieldAsIntegerList(int id, int *nLen, const int **pList) {
-      *pList = OGR_F_GetFieldAsIntegerList(self, id, nLen);
-  }
-
-  void GetFieldAsDoubleList(int id, int *nLen, const double **pList) {
-      *pList = OGR_F_GetFieldAsDoubleList(self, id, nLen);
-  }
-
-  void GetFieldAsStringList(int id, char ***pList) {
-      *pList = OGR_F_GetFieldAsStringList(self, id);
-  }
   
   /* ---- IsFieldSet --------------------------- */
   bool IsFieldSet(int id) {
-    return (OGR_F_IsFieldSet(self, id) > 0);
+    return OGR_F_IsFieldSet(self, id);
   }
 
   bool IsFieldSet(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  return (OGR_F_IsFieldSet(self, i) > 0);
-      return false;
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in IsFieldSet");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            return OGR_F_IsFieldSet(self, i);
+    }
+    return (bool)0;
   }
   /* ------------------------------------------- */  
       
   int GetFieldIndex(const char* name) {
-      return OGR_F_GetFieldIndex(self, name);
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldIndex");
+    else
+        return OGR_F_GetFieldIndex(self, name);
+    return 0;
   }
 
   int GetFID() {
@@ -761,15 +889,18 @@ public:
     OGR_F_UnsetField(self, id);
   }
 
-#ifndef SWIGPERL
+
   void UnsetField(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  OGR_F_UnsetField(self, i);
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in UnsetField");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            OGR_F_UnsetField(self, i);
+    }
   }
-#endif
 
   /* ---- SetField ----------------------------- */
   
@@ -778,78 +909,18 @@ public:
     OGR_F_SetFieldString(self, id, value);
   }
 
-#ifndef SWIGPERL
   void SetField(const char* name, const char* value) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  OGR_F_SetFieldString(self, i, value);
+    if (name == NULL)
+        CPLError(CE_Failure, 1, "Undefined field name in SetField");
+    else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1)
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+        else
+            OGR_F_SetFieldString(self, i, value);
+    }
   }
-#endif
   %clear (const char* value );
-  
-  void SetField(int id, int value) {
-    OGR_F_SetFieldInteger(self, id, value);
-  }
-  
-#ifndef SWIGPERL
-  void SetField(const char* name, int value) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  OGR_F_SetFieldInteger(self, i, value);
-  }
-#endif
-  
-  void SetField(int id, double value) {
-    OGR_F_SetFieldDouble(self, id, value);
-  }
-  
-#ifndef SWIGPERL
-  void SetField(const char* name, double value) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  OGR_F_SetFieldDouble(self, i, value);
-  }
-#endif
-  
-  void SetField( int id, int year, int month, int day,
-                             int hour, int minute, int second, 
-                             int tzflag ) {
-    OGR_F_SetFieldDateTime(self, id, year, month, day,
-                             hour, minute, second, 
-                             tzflag);
-  }
-
-#ifndef SWIGPERL  
-  void SetField(const char* name, int year, int month, int day,
-                             int hour, int minute, int second, 
-                             int tzflag ) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1)
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-      else
-	  OGR_F_SetFieldDateTime(self, i, year, month, day,
-				 hour, minute, second, 
-				 tzflag);
-  }
-#endif
-
-  void SetFieldIntegerList(int id, int nList, int *pList) {
-      OGR_F_SetFieldIntegerList(self, id, nList, pList);
-  }
-
-  void SetFieldDoubleList(int id, int nList, double *pList) {
-      OGR_F_SetFieldDoubleList(self, id, nList, pList);
-  }
-
-  void SetFieldStringList(int id, char **pList) {
-      OGR_F_SetFieldStringList(self, id, pList);
-  }
 
   /* ------------------------------------------- */  
   
@@ -872,14 +943,19 @@ public:
   }
   
   OGRFieldType GetFieldType(const char* name) {
-      int i = OGR_F_GetFieldIndex(self, name);
-      if (i == -1) {
-	  CPLError(CE_Failure, 1, "No such field: '%s'", name);
-	  return (OGRFieldType)0;
-      } else
-	  return (OGRFieldType) OGR_Fld_GetType( 
-	      OGR_F_GetFieldDefnRef( self,  i )
-	      );
+    if (name == NULL) {
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldType");
+	return (OGRFieldType)0;
+    } else {
+        int i = OGR_F_GetFieldIndex(self, name);
+        if (i == -1) {
+            CPLError(CE_Failure, 1, "No such field: '%s'", name);
+            return (OGRFieldType)0;
+        } else
+            return (OGRFieldType) OGR_Fld_GetType( 
+                            OGR_F_GetFieldDefnRef( self,  i )
+                                          );
+    }
   }
   /* ------------------------------------------- */  
   
@@ -899,15 +975,12 @@ public:
 %extend {
   
   ~OGRFeatureDefnShadow() {
-    /*OGR_FD_Destroy(self);*/
-    OGR_FD_Release( OGRFeatureDefnH(self) );
+    OGR_FD_Destroy(self);
   }
 
   %feature("kwargs") OGRFeatureDefnShadow;
-  OGRFeatureDefnShadow(const char* name_null_ok=NULL) {
-    OGRFeatureDefnH h = OGR_FD_Create(name_null_ok);
-    OGR_FD_Reference(h);
-    return (OGRFeatureDefnShadow* )h;
+  OGRFeatureDefnShadow(const char* name=NULL) {
+    return (OGRFeatureDefnShadow* )OGR_FD_Create(name);
   }
   
   const char* GetName(){
@@ -924,7 +997,11 @@ public:
   }
 
   int GetFieldIndex(const char* name) {
-      return OGR_FD_GetFieldIndex(self, name);
+    if (name == NULL) {
+        CPLError(CE_Failure, 1, "Undefined field name in GetFieldIndex");
+	return 0;
+    } else
+	return OGR_FD_GetFieldIndex(self, name);
   }
   
   void AddFieldDefn(OGRFieldDefnShadow* defn) {
@@ -964,9 +1041,9 @@ public:
   }
 
   %feature("kwargs") OGRFieldDefnShadow;
-  OGRFieldDefnShadow( const char* name_null_ok="unnamed", 
+  OGRFieldDefnShadow( const char* name="unnamed", 
                       OGRFieldType field_type=OFTString) {
-    return (OGRFieldDefnShadow*) OGR_Fld_Create(name_null_ok, field_type);
+    return (OGRFieldDefnShadow*) OGR_Fld_Create(name, field_type);
   }
 
   const char * GetName() {
@@ -1026,19 +1103,16 @@ public:
 /* -------------------------------------------------------------------- */
 /*      Geometry factory methods.                                       */
 /* -------------------------------------------------------------------- */
-
-#ifndef SWIGJAVA
+#if defined(SWIGCSHARP)
+%static_owner
+#endif
 %feature( "kwargs" ) CreateGeometryFromWkb;
 %newobject CreateGeometryFromWkb;
-#ifndef SWIGCSHARP
 %apply (int nLen, char *pBuf ) { (int len, char *bin_string)};
-#else
-%apply (void *buffer_ptr) {char *bin_string};
-#endif
 %inline %{
   OGRGeometryShadow* CreateGeometryFromWkb( int len, char *bin_string, 
                                             OSRSpatialReferenceShadow *reference=NULL ) {
-    OGRGeometryShadow *geom;
+    void *geom;
     OGRErr err = OGR_G_CreateFromWkb( (unsigned char *) bin_string,
                                       reference,
                                       &geom,
@@ -1051,29 +1125,7 @@ public:
   }
  
 %}
-#endif
-#ifndef SWIGCSHARP
 %clear (int len, char *bin_string);
-#else
-%clear (char *bin_string);
-#endif
-
-#ifdef SWIGJAVA
-%newobject CreateGeometryFromWkb;
-%feature("kwargs") CreateGeometryFromWkb;
-%inline {
-OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf, 
-                                            OSRSpatialReferenceShadow *reference=NULL ) {
-    OGRGeometryShadow *geom;
-    OGRErr err = OGR_G_CreateFromWkb((unsigned char*) pBuf, reference, &geom, nLen);
-    if (err != 0 ) {
-       CPLError(CE_Failure, err, "%s", OGRErrMessages(err));
-       return NULL;
-    }
-    return (OGRGeometryShadow*) geom;
-  }
-}
-#endif
 
 %feature( "kwargs" ) CreateGeometryFromWkt;
 %apply (char **ignorechange) { (char **) };
@@ -1081,7 +1133,7 @@ OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf,
 %inline %{
   OGRGeometryShadow* CreateGeometryFromWkt( char **val, 
                                       OSRSpatialReferenceShadow *reference=NULL ) {
-    OGRGeometryShadow *geom;
+    void *geom;
     OGRErr err = OGR_G_CreateFromWkt(val,
                                       reference,
                                       &geom);
@@ -1103,39 +1155,9 @@ OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf,
   }
  
 %}
-
-%newobject CreateGeometryFromJson;
-%inline %{
-  OGRGeometryShadow *CreateGeometryFromJson( const char * input_string ) {
-    OGRGeometryShadow* geom = (OGRGeometryShadow*)OGR_G_CreateGeometryFromJson(input_string);
-    return geom;
-  }
- 
-%}
-
-%newobject BuildPolygonFromEdges;
-%feature( "kwargs" ) BuildPolygonFromEdges;
-%inline %{
-  OGRGeometryShadow* BuildPolygonFromEdges( OGRGeometryShadow*  hLineCollection,  
-                                            int bBestEffort = 0, 
-                                            int bAutoClose = 0, 
-                                            double dfTolerance=0) {
-  
-  OGRGeometryH hPolygon = NULL;
-  
-  OGRErr eErr;
-
-  hPolygon = OGRBuildPolygonFromEdges( hLineCollection, bBestEffort, 
-                                       bAutoClose, dfTolerance, &eErr );
-
-  if (eErr != OGRERR_NONE ) {
-    CPLError(CE_Failure, eErr, "%s", OGRErrMessages(eErr));
-    return NULL;
-  }
-
-  return hPolygon;
-  }
-%}
+#if defined(SWIGCSHARP)
+%object_owner
+#endif
 
 /************************************************************************/
 /*                             OGRGeometry                              */
@@ -1150,15 +1172,9 @@ public:
   ~OGRGeometryShadow() {
     OGR_G_DestroyGeometry( self );
   }
-  
-#ifndef SWIGJAVA
-#ifdef SWIGCSHARP
-%apply (void *buffer_ptr) {char *wkb_buf};
-#else
-%apply (int nLen, char *pBuf) {(int wkb, char *wkb_buf)};
-#endif
+
   %feature("kwargs") OGRGeometryShadow;
-  OGRGeometryShadow( OGRwkbGeometryType type = wkbUnknown, char *wkt = 0, int wkb = 0, char *wkb_buf = 0, char *gml = 0 ) {
+  OGRGeometryShadow( OGRwkbGeometryType type = wkbUnknown, char *wkt = 0, int wkb= 0, char *wkb_buf = 0, char *gml = 0 ) {
     if (type != wkbUnknown ) {
       return (OGRGeometryShadow*) OGR_G_CreateGeometry( type );
     }
@@ -1173,20 +1189,13 @@ public:
     }
     // throw?
     else return 0;
-  }  
-#ifdef SWIGCSHARP
-%clear (char *wkb_buf);
-#else
-%clear (int wkb, char *wkb_buf);
-#endif
-#endif
+  }
 
   OGRErr ExportToWkt( char** argout ) {
     return OGR_G_ExportToWkt(self, argout);
   }
 
 #ifndef SWIGCSHARP
-#ifndef SWIGJAVA
   %feature("kwargs") ExportToWkb;
   OGRErr ExportToWkb( int *nLen, char **pBuf, OGRwkbByteOrder byte_order=wkbXDR ) {
     *nLen = OGR_G_WkbSize( self );
@@ -1194,35 +1203,22 @@ public:
     return OGR_G_ExportToWkb(self, byte_order, (unsigned char*) *pBuf );
   }
 #endif
-#endif
 
   const char * ExportToGML() {
     return (const char *) OGR_G_ExportToGML(self);
-  }
-  
-  const char * ExportToKML(const char* altitude_mode=NULL) {
-    return (const char *) OGR_G_ExportToKML(self, altitude_mode);
-  }
-
-  const char * ExportToJson() {
-    return (const char *) OGR_G_ExportToJson(self);
   }
 
   %feature("kwargs") AddPoint;
   void AddPoint(double x, double y, double z = 0) {
     OGR_G_AddPoint( self, x, y, z );
   }
-  
-  void AddPoint_2D(double x, double y) {
-    OGR_G_AddPoint_2D( self, x, y );
-  }
 
 /* The geometry now owns an inner geometry */
-%apply SWIGTYPE *DISOWN {OGRGeometryShadow* other_disown};
-  OGRErr AddGeometryDirectly( OGRGeometryShadow* other_disown ) {
-    return OGR_G_AddGeometryDirectly( self, other_disown );
+%apply SWIGTYPE *DISOWN {OGRGeometryShadow* other};
+  OGRErr AddGeometryDirectly( OGRGeometryShadow* other ) {
+    return OGR_G_AddGeometryDirectly( self, other );
   }
-%clear OGRGeometryShadow* other_disown;
+%clear OGRGeometryShadow* other;
 
   OGRErr AddGeometry( OGRGeometryShadow* other ) {
     return OGR_G_AddGeometry( self, other );
@@ -1263,15 +1259,7 @@ public:
   double GetZ(int point=0) {
     return OGR_G_GetZ(self, point);
   } 
-
-  void GetPoint(int iPoint = 0, double argout[3] = NULL) {
-    OGR_G_GetPoint( self, iPoint, argout+0, argout+1, argout+2 );
-  }
-
-  void GetPoint_2D(int iPoint = 0, double argout[2] = NULL) {
-    OGR_G_GetPoint( self, iPoint, argout+0, argout+1, NULL );
-  }
-
+  
   int GetGeometryCount() {
     return OGR_G_GetGeometryCount(self);
   }
@@ -1279,11 +1267,6 @@ public:
   %feature("kwargs") SetPoint;    
   void SetPoint(int point, double x, double y, double z=0) {
     OGR_G_SetPoint(self, point, x, y, z);
-  }
-
-  %feature("kwargs") SetPoint_2D;
-  void SetPoint_2D(int point, double x, double y) {
-    OGR_G_SetPoint_2D(self, point, x, y);
   }
   
   /* Geometries own their internal geometries */
@@ -1334,53 +1317,37 @@ public:
   void Empty () {
     OGR_G_Empty(self);
   }
-
-  bool IsEmpty () {
-    return (OGR_G_IsEmpty(self) > 0);
-  }  
-  
-  bool IsValid () {
-    return (OGR_G_IsValid(self) > 0);
-  }  
-  
-  bool IsSimple () {
-    return (OGR_G_IsSimple(self) > 0);
-  }  
-  
-  bool IsRing () {
-    return (OGR_G_IsRing(self) > 0);
-  }  
   
   bool Intersect (OGRGeometryShadow* other) {
-    return (OGR_G_Intersect(self, other) > 0);
+    return OGR_G_Intersect(self, other);
   }
 
   bool Equal (OGRGeometryShadow* other) {
-    return (OGR_G_Equal(self, other) > 0);
+    return OGR_G_Equal(self, other);
   }
   
   bool Disjoint(OGRGeometryShadow* other) {
-    return (OGR_G_Disjoint(self, other) > 0);
+    return OGR_G_Disjoint(self, other);
   }
 
   bool Touches (OGRGeometryShadow* other) {
-    return (OGR_G_Touches(self, other) > 0);
+    return OGR_G_Touches(self, other);
   }
 
   bool Crosses (OGRGeometryShadow* other) {
-    return (OGR_G_Crosses(self, other) > 0);
+    return OGR_G_Crosses(self, other);
   }
 
   bool Within (OGRGeometryShadow* other) {
-    return (OGR_G_Within(self, other) > 0);
+    return OGR_G_Within(self, other);
   }
 
   bool Contains (OGRGeometryShadow* other) {
-    return (OGR_G_Contains(self, other) > 0);
+    return OGR_G_Contains(self, other);
   }
   
   bool Overlaps (OGRGeometryShadow* other) {
-    return (OGR_G_Overlaps(self, other) > 0);
+    return OGR_G_Overlaps(self, other);
   }
 
   OGRErr TransformTo(OSRSpatialReferenceShadow* reference) {
@@ -1421,14 +1388,12 @@ public:
   }
 #endif  
 
-#ifndef SWIGJAVA
   %newobject Centroid;
   OGRGeometryShadow* Centroid() {
     OGRGeometryShadow *pt = new_OGRGeometryShadow( wkbPoint );
     OGR_G_Centroid( self, pt );
     return pt;
   }
-#endif
   
   int WkbSize() {
     return OGR_G_WkbSize(self);
@@ -1448,8 +1413,8 @@ public:
 
 } /* %extend */
 
-}; /* class OGRGeometryShadow */
 
+}; /* class OGRGeometryShadow */
 
 /************************************************************************/
 /*                        Other misc functions.                         */
@@ -1473,15 +1438,17 @@ char const *OGRDataSourceShadow_name_get( OGRDataSourceShadow *h ) {
 }
 %}
 
-#ifndef GDAL_BINDINGS
 int OGRGetDriverCount();
-#endif
 
 int OGRGetOpenDSCount();
 
 OGRErr OGRSetGenerate_DB2_V72_BYTE_ORDER(int bGenerate_DB2_V72_BYTE_ORDER);
 
 void OGRRegisterAll();
+
+#if defined(SWIGCSHARP)
+%static_owner
+#endif
 
 %inline %{
   OGRDataSourceShadow* GetOpenDS(int ds_number) {
@@ -1498,9 +1465,6 @@ void OGRRegisterAll();
     OGRDataSourceShadow* ds = (OGRDataSourceShadow*)OGROpen(filename,update,NULL);
     if( CPLGetLastErrorType() == CE_Failure && ds != NULL )
     {
-        CPLDebug( "SWIG", 
-		  "OGROpen() succeeded, but an error is posted, so we destroy"
-		  " the datasource and fail at swig level." );
         OGRReleaseDataSource(ds);
         ds = NULL;
     }
@@ -1525,7 +1489,6 @@ void OGRRegisterAll();
   }
 %}
 
-#ifndef GDAL_BINDINGS
 %inline %{
 OGRDriverShadow* GetDriverByName( char const *name ) {
   return (OGRDriverShadow*) OGRGetDriverByName( name );
@@ -1535,7 +1498,11 @@ OGRDriverShadow* GetDriver(int driver_number) {
   return (OGRDriverShadow*) OGRGetDriver(driver_number);
 }
 %}
+
+#if defined(SWIGCSHARP)
+%object_owner
 #endif
+
 
 //************************************************************************
 //
@@ -1545,9 +1512,4 @@ OGRDriverShadow* GetDriver(int driver_number) {
 
 #ifdef SWIGCSHARP
 %include "ogr_csharp_extend.i"
-#endif
-
-
-#ifdef SWIGJAVA
-%include "ogr_java_extend.i"
 #endif

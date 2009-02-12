@@ -821,16 +821,6 @@ SymbolicName=SCHEMA_149_CONSTRAINTDATAVIOLATION
 Language=English
 Cannot modify constraint for property '%1$ls'; existing data value '%2$ls' violates new constraint
 .
-MessageId=1150
-SymbolicName=SCHEMA_150_DEFAULTVALUEVIOLATION
-Language=English
-Data Property %1$ls default value '%2$ls' is not a valid %3$ls
-.
-MessageId=1151
-SymbolicName=SCHEMA_151_DEFAULTDATEVIOLATION
-Language=English
-Data Property %1$ls default value '%2$ls' is not an FDO datetime; must be "TIMESTAMP 'YYYY-MM-DD HH24:MI:SS'", "DATE 'YYYY-MM-DD'" or "TIME 'HH24:MM:SS'"
-.
 
 MessageId=2001
 SymbolicName=EXPRESSION_1_BLOBVALUENULL
@@ -932,26 +922,7 @@ SymbolicName=EXPRESSION_20_STRINGNOTVALUEEXPRESSION
 Language=English
 String does not represent a valid value expression.
 .
-MessageId=2021
-SymbolicName=EXPRESSION_21_VALUETRUNCATED
-Language=English
-Cannot convert value %1$s to %2$ls; it is outside the range [%3$s, %4$s]
-.
-MessageId=2022
-SymbolicName=EXPRESSION_22_INCOMPATIBLEDATATYPES
-Language=English
-Cannot convert value %1$s from %2$ls to %3$ls; incompatible data types
-.
-MessageId=2023
-SymbolicName=EXPRESSION_23_VALUESHIFTED
-Language=English
-Cannot convert value %1$s to %2$ls without loss of precision
-.
-MessageId=2024
-SymbolicName=EXPRESSION_24_BOOLEANTRUNCATED
-Language=English
-Cannot convert value %1$s to boolean; it must be 0 or 1
-.
+
 
 MessageId=3001
 SymbolicName=FILTER_1_INCOMPLETEBINARYOPERATOR
@@ -3065,29 +3036,4 @@ MessageId=9183
 SymbolicName=FDO_183_INVALID_FUNCTION_ARG
 Language=English
 One or more arguments for function '%1$ls' did not match the expected argument types.
-.
-MessageId=9184
-SymbolicName=FDO_184_UNINITIALIZED_AGGREGATE
-Language=English
-Aggregate function referenced by expression engine before being processed. If using function in Select command; use the SelectAggregates command instead.
-.
-MessageId=9185
-SymbolicName=FUNCTION_X
-Language=English
-Determines the X ordinate of a given point geometry
-.
-MessageId=9186
-SymbolicName=FUNCTION_Y
-Language=English
-Determines the Y ordinate of a given point geometry
-.
-MessageId=9187
-SymbolicName=FUNCTION_Z
-Language=English
-Determines the Z ordinate of a given point geometry
-.
-MessageId=9188
-SymbolicName=FUNCTION_M
-Language=English
-Determines the M ordinate of a given point geometry
 .

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vb6_support.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: vb6_support.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL VB6 Bindings
  * Purpose:  Support functions for GDAL VB6 bindings.
@@ -34,7 +34,7 @@
 // This is just for the USES_CONVERSION & OLESTR stuff.
 #include <atlbase.h>
 
-CPL_CVSID("$Id: vb6_support.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: vb6_support.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 // External entry points (from VB)
 extern "C" {

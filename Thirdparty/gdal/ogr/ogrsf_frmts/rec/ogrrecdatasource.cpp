@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrrecdatasource.cpp 13025 2007-11-25 18:03:46Z rouault $
+ * $Id: ogrrecdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Epiinfo .REC Translator
  * Purpose:  Implements OGRRECDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrrecdatasource.cpp 13025 2007-11-25 18:03:46Z rouault $");
+CPL_CVSID("$Id: ogrrecdatasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRRECDataSource()                          */
@@ -93,8 +93,7 @@ int OGRRECDataSource::Open( const char * pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Verify that the extension is REC.                               */
 /* -------------------------------------------------------------------- */
-    if( !(strlen(pszFilename) > 4 &&
-          EQUAL(pszFilename+strlen(pszFilename)-4,".rec") ) )
+    if( !EQUAL(pszFilename+strlen(pszFilename)-4,".rec") )
         return FALSE;
     
 /* -------------------------------------------------------------------- */

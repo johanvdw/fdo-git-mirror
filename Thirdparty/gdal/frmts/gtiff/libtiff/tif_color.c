@@ -1,4 +1,4 @@
-/* $Id: tif_color.c 11957 2007-08-24 21:46:34Z warmerdam $ */
+/* $Id: tif_color.c 10344 2006-11-20 02:14:02Z fwarmerdam $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -219,7 +219,7 @@ TIFFYCbCrToRGBInit(TIFFYCbCrToRGB* ycbcr, float *luma, float *refBlackWhite)
 #define LumaBlue    luma[2]
 
     clamptab = (TIFFRGBValue*)(
-	(uint8*) ycbcr+TIFFroundup_32(sizeof (TIFFYCbCrToRGB), sizeof (long)));  
+	(tidata_t) ycbcr+TIFFroundup(sizeof (TIFFYCbCrToRGB), sizeof (long)));
     _TIFFmemset(clamptab, 0, 256);		/* v < 0 => 0 */
     ycbcr->clamptab = (clamptab += 256);
     for (i = 0; i < 256; i++)

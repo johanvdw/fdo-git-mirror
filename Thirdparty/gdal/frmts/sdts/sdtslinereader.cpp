@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtslinereader.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: sdtslinereader.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSLineReader and SDTSRawLine classes.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtslinereader.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: sdtslinereader.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */

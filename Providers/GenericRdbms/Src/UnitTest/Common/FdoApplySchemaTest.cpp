@@ -297,10 +297,6 @@ void FdoApplySchemaTest::TestSchema ()
 		    UnitTestUtil::CheckOutput( SchemaTestErrFile(8,true), SchemaTestErrFile(8,false) );
         if ( SchemaTestErrFile(9,true).GetLength() > 0 )
 		    UnitTestUtil::CheckOutput( SchemaTestErrFile(9,true), SchemaTestErrFile(9,false) );
-        if ( SchemaTestErrFile(10,true).GetLength() > 0 )
-		    UnitTestUtil::CheckOutput( SchemaTestErrFile(10,true), SchemaTestErrFile(10,false) );
-        if ( SchemaTestErrFile(11,true).GetLength() > 0 )
-		    UnitTestUtil::CheckOutput( SchemaTestErrFile(11,true), SchemaTestErrFile(11,false) );
 #endif
 
     }
@@ -507,15 +503,8 @@ void FdoApplySchemaTest::TestOverrides ()
 		}
 
 #ifdef RDBI_DEF_ORA
-		// For the test it is necessary to execute the following grant:
-        //  grant select on "<db_prefix>_APPLY_OVERRIDE"."FNESTED_DA" to <db_prefix>_apply_foreign
-        // For this to work, it is necessary to connect to the data store "<db_prefix>_APPLY_OVERRIDE"
-        // directly and execute the statement. Afterwards the connection must be revoked to the 
-        // current FDO user again.
-        FdoPtr<FdoIConnection> directConnection = GetDirectConnection(connection);
-        directConnection->Open();
-		UnitTestUtil::GrantDatastore( directConnection, mgr, L"select", UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX) );
-        directConnection->Close();
+		// grant access to foreign datastore.
+		UnitTestUtil::GrantDatastore( connection, mgr, L"select", UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX) );
 #endif
 
         owner = ph->GetOwner();
@@ -545,16 +534,13 @@ void FdoApplySchemaTest::TestOverrides ()
 #endif
 
 #ifdef RDBI_DEF_ORA
-        directConnection = GetDirectConnection(connection);
-        directConnection->Open();
-
         UnitTestUtil::Sql2Db( 
             FdoStringP::Format( 
                         L"grant select on %ls.storage to %ls",
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
                     ),
-                    directConnection
+                    connection
                 );
 
         UnitTestUtil::Sql2Db( 
@@ -563,9 +549,8 @@ void FdoApplySchemaTest::TestOverrides ()
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
                     ),
-                    directConnection
+                    connection
                 );
-        directConnection->Close();
 #endif
 
         table = owner->CreateTable( ph->GetDcDbObjectName(L"Storage_Floor") );
@@ -575,18 +560,14 @@ void FdoApplySchemaTest::TestOverrides ()
         table->Commit();
 
 #ifdef RDBI_DEF_ORA
-        directConnection = GetDirectConnection(connection);
-        directConnection->Open();
-
         UnitTestUtil::Sql2Db( 
             FdoStringP::Format( 
                         L"grant select on %ls.storage_floor to %ls",
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
             ),
-            directConnection
+            connection
         );
-        directConnection->Close();
 #endif
 
         table = owner->CreateTable( ph->GetDcDbObjectName(L"NOFEATID") );
@@ -603,18 +584,14 @@ void FdoApplySchemaTest::TestOverrides ()
         table->Commit();
 
 #ifdef RDBI_DEF_ORA
-        directConnection = GetDirectConnection(connection);
-        directConnection->Open();
-
         UnitTestUtil::Sql2Db( 
             FdoStringP::Format( 
                         L"grant select, insert, update, delete on %ls.nofeatid to %ls",
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
                         (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
             ),
-            directConnection
+            connection
         );
-        directConnection->Close();
 #endif
 
         // Grab schemas and overrides to apply to foreign datastore
@@ -2231,8 +2208,9 @@ void FdoApplySchemaTest::CreateSystemSchema( FdoIConnection* connection )
 	   with this name.
      */
 
-    datastoreName = UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX );
-    datastoreName = datastoreName.Lower();
+    datastoreName = UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX ).Upper();
+    if ( mIsLowerDatastoreName ) 
+        datastoreName = datastoreName.Lower();
 
 	FdoPtr<FdoIApplySchema>  pCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
 	FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( datastoreName, L"System schema" );
@@ -2247,29 +2225,12 @@ void FdoApplySchemaTest::CreateSystemSchema( FdoIConnection* connection )
 	}
 	catch ( FdoSchemaException* e )
 	{
-		UnitTestUtil::PrintException(e, SchemaTestErrFile(10,false), true);
+		UnitTestUtil::PrintException(e, SchemaTestErrFile(100,false), true);
 		FDO_SAFE_RELEASE(e);
 	}
 
 	if ( succeeded ) 
-		CPPUNIT_FAIL( "System schema create (lower name) was supposed to fail" );
-
-    pSchema->SetName( datastoreName.Upper() );
-    succeeded = false;
-
-    try {
-		pCmd->Execute();
-		succeeded = true;
-	}
-	catch ( FdoSchemaException* e )
-	{
-		UnitTestUtil::PrintException(e, SchemaTestErrFile(11,false), true);
-		FDO_SAFE_RELEASE(e);
-	}
-
-	if ( succeeded ) 
-		CPPUNIT_FAIL( "System schema create (upper name) was supposed to fail" );
-
+		CPPUNIT_FAIL( "System schema create was supposed to fail" );
 }
 
 void FdoApplySchemaTest::DeletePhSystemSchemas( StaticConnection* staticConn )
@@ -3001,9 +2962,10 @@ void FdoApplySchemaTest::CreateLandSchema( FdoFeatureSchemaCollection* pSchemas,
 	pClass = FdoFeatureClass::Create( L"Township", L"" );
 	pClass->SetIsAbstract(false);
 
-	pProp = FdoDataPropertyDefinition::Create( L"FeatId", L"" );
+	pProp = FdoDataPropertyDefinition::Create( L"FeatureId", L"" );
 	pProp->SetDataType( FdoDataType_Int64 );
 	pProp->SetNullable(false);
+    pProp->SetIsAutoGenerated(true);
 	FdoPropertiesP(pClass->GetProperties())->Add( pProp );
 	FdoDataPropertiesP(pClass->GetIdentityProperties())->Add( pProp );
 
@@ -3427,51 +3389,7 @@ void FdoApplySchemaTest::CreateErrorSchema( FdoIConnection* connection )
 	
     FdoPropertiesP(pDescTooLong->GetProperties())->Add( pProp );
 
-	FdoPtr<FdoFeatureClass> pBadDefaults = FdoFeatureClass::Create( L"BadDefaults", L"" );
-
-    pProp = FdoDataPropertyDefinition::Create( L"int32", L"" );
-	pProp->SetDataType( FdoDataType_Int32 );
-	pProp->SetNullable(false);
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-	FdoDataPropertiesP(pBadDefaults->GetIdentityProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"int64a", L"" );
-	pProp->SetDataType( FdoDataType_Int64 );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"ABC");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"datetime1", L"" );
-	pProp->SetDataType( FdoDataType_DateTime );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"15-OCT-2001");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"datetime2", L"" );
-	pProp->SetDataType( FdoDataType_DateTime );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"string");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"datetime3", L"" );
-	pProp->SetDataType( FdoDataType_DateTime );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"TIMESTAMP '12345'");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"datetime4", L"" );
-	pProp->SetDataType( FdoDataType_DateTime );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"TIMESTAMP '2001-05-12 00'");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"datetime5", L"" );
-	pProp->SetDataType( FdoDataType_DateTime );
-	pProp->SetNullable(false);
-    pProp->SetDefaultValue(L"TIME '11:00:15'");
-	FdoPropertiesP(pBadDefaults->GetProperties())->Add( pProp );
-
-    FdoClassesP(pGhostSchema->GetClasses())->Add( pEntity );
+	FdoClassesP(pGhostSchema->GetClasses())->Add( pEntity );
 	FdoClassesP(pGhostSchema->GetClasses())->Add( pGhostClass);
 	FdoClassesP(pSchema->GetClasses())->Add( pFeatClass);
 	FdoClassesP(pSchema->GetClasses())->Add( pAbstract );
@@ -3488,7 +3406,7 @@ void FdoApplySchemaTest::CreateErrorSchema( FdoIConnection* connection )
 	FdoClassesP(pSchema->GetClasses())->Add( pSubFeatNoId );
 	FdoClassesP(pSchema->GetClasses())->Add( pNameTooLong );
 	FdoClassesP(pSchema->GetClasses())->Add( pDescTooLong );
-	FdoClassesP(pSchema->GetClasses())->Add( pBadDefaults );
+
 
 	pCmd->SetFeatureSchema( pSchema );
 
@@ -5008,9 +4926,10 @@ void FdoApplySchemaTest::CheckBaseProperties( FdoIConnection* connection )
 
     FdoFeatureClassP pParcelClass = (FdoFeatureClass*) pClasses->GetItem( L"Parcel" );
     pBaseProps = pParcelClass->GetBaseProperties();
-    CPPUNIT_ASSERT( pBaseProps->GetCount() == 2 );
+    CPPUNIT_ASSERT( pBaseProps->GetCount() == 3 );
     CPPUNIT_ASSERT( UnitTestUtil::ContainsRdOnlyProp(pBaseProps,L"ClassId") );
     CPPUNIT_ASSERT( UnitTestUtil::ContainsRdOnlyProp(pBaseProps,L"RevisionNumber") );
+    CPPUNIT_ASSERT( UnitTestUtil::ContainsRdOnlyProp(pBaseProps,L"FeatId") );
 
     FdoFeatureClassP pBldgClass = (FdoFeatureClass*) pClasses->GetItem( L"Build'g" );
     pBaseProps = pBldgClass->GetBaseProperties();
@@ -5027,7 +4946,7 @@ void FdoApplySchemaTest::CheckBaseProperties( FdoIConnection* connection )
     CPPUNIT_ASSERT( pBaseProps->GetCount() == 2 );
     pFeatClass->SetBaseClass(pParcelClass);
     pBaseProps = pFeatClass->GetBaseProperties();
-    CPPUNIT_ASSERT( pBaseProps->GetCount() == 7 );
+    CPPUNIT_ASSERT( pBaseProps->GetCount() == 8 );
     pFeatClass->SetBaseClass(pBldgClass);
     pBaseProps = pFeatClass->GetBaseProperties();
     CPPUNIT_ASSERT( pBaseProps->GetCount() == 7 );
@@ -5046,10 +4965,10 @@ void FdoApplySchemaTest::CheckBaseProperties( FdoIConnection* connection )
     CPPUNIT_ASSERT( pBaseProps->GetCount() == 1 );
     pFeatClass->SetBaseClass(pParcelClass);
     pBaseProps = pFeatClass->GetBaseProperties();
-    CPPUNIT_ASSERT( pBaseProps->GetCount() == 7 );
+    CPPUNIT_ASSERT( pBaseProps->GetCount() == 8 );
     pFeatClass->SetBaseClass(NULL);
     pBaseProps = pFeatClass->GetBaseProperties();
-    CPPUNIT_ASSERT( pBaseProps->GetCount() == 2 );
+    CPPUNIT_ASSERT( pBaseProps->GetCount() == 3 );
     pFeatClass->SetBaseClass(pNewClass);
     pBaseProps = pFeatClass->GetBaseProperties();
     CPPUNIT_ASSERT( pBaseProps->GetCount() == 1 );
@@ -5057,7 +4976,7 @@ void FdoApplySchemaTest::CheckBaseProperties( FdoIConnection* connection )
     FdoDataPropertiesP(pNewClass->GetIdentityProperties())->Clear();
     pNewClass->SetBaseClass(pParcelClass);
     pBaseProps = pFeatClass->GetBaseProperties();
-    CPPUNIT_ASSERT( pBaseProps->GetCount() == 8 );
+    CPPUNIT_ASSERT( pBaseProps->GetCount() == 9 );
     pNewClass->SetBaseClass(pBldgClass);
     pBaseProps = pFeatClass->GetBaseProperties();
     CPPUNIT_ASSERT( pBaseProps->GetCount() == 8 );
@@ -7126,30 +7045,4 @@ FdoStringP FdoApplySchemaTest::GetValueColumnName()
 {
 	return L"Value1";
 }
-
-FdoPtr<FdoIConnection> FdoApplySchemaTest::GetDirectConnection (FdoIConnection *currentConnection)
-{
-    FdoPtr<FdoIConnection> directConnection;
-
-    FdoStringP dataStoreUser = UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX);
-    dataStoreUser = dataStoreUser.Replace(L"_foreign", L"_override");
-    FdoPtr<FdoIConnectionInfo> connectionInfo = currentConnection->GetConnectionInfo();
-    FdoPtr<FdoIConnectionPropertyDictionary> connectionInfoProperties = connectionInfo->GetConnectionProperties();
-    FdoStringP serviceProperty = connectionInfoProperties->GetProperty(L"service");
-    FdoStringP providerName = connectionInfo->GetProviderName();
-    FdoStringP connectionString = FdoStringP::Format(
-                                        L"service=%ls;username=%ls;password=%ls;datastore=%ls",
-                                        (FdoString *)serviceProperty,
-                                        (FdoString *)dataStoreUser,
-                                        L"test",
-                                        (FdoString *)dataStoreUser);
-
-    FdoPtr<IConnectionManager> manager = FdoFeatureAccessManager::GetConnectionManager();
-    directConnection = manager->CreateConnection(providerName);
-    directConnection->SetConnectionString(connectionString);
-
-    return directConnection;
-}
-
-
 

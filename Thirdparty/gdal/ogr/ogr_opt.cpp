@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_opt.cpp 15827 2008-11-27 22:30:18Z warmerdam $
+ * $Id: ogr_opt.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features
  * Purpose:  Functions for getting list of projection types, and their parms.
@@ -30,9 +30,9 @@
 #include "ogr_srs_api.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_opt.cpp 15827 2008-11-27 22:30:18Z warmerdam $");
+CPL_CVSID("$Id: ogr_opt.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
-static const char *papszParameterDefinitions[] = {
+static char *papszParameterDefinitions[] = {
     SRS_PP_CENTRAL_MERIDIAN,    "Central Meridian",     "Long",  "0.0",
     SRS_PP_SCALE_FACTOR,        "Scale Factor",         "Ratio", "1.0",
     SRS_PP_STANDARD_PARALLEL_1, "Standard Parallel 1",  "Lat",   "0.0",
@@ -55,7 +55,7 @@ static const char *papszParameterDefinitions[] = {
     NULL
 };
 
-static const char *papszProjectionDefinitions[] = {
+static char *papszProjectionDefinitions[] = {
 
     "*", 
     SRS_PT_TRANSVERSE_MERCATOR,
@@ -146,7 +146,6 @@ static const char *papszProjectionDefinitions[] = {
     "Equirectangular",
     SRS_PP_LATITUDE_OF_ORIGIN, 
     SRS_PP_CENTRAL_MERIDIAN, 
-    SRS_PP_STANDARD_PARALLEL_1, 
     SRS_PP_FALSE_EASTING, 
     SRS_PP_FALSE_NORTHING,
 
@@ -336,58 +335,6 @@ static const char *papszProjectionDefinitions[] = {
     SRS_PP_FALSE_EASTING, 
     SRS_PP_FALSE_NORTHING,
 
-    "*",
-    SRS_PT_IMW_POLYCONIC,
-    "International Map of the World Polyconic",
-    SRS_PP_LATITUDE_OF_1ST_POINT,
-    SRS_PP_LATITUDE_OF_2ND_POINT,
-    SRS_PP_CENTRAL_MERIDIAN, 
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_I,
-    "Wagner I (Kavraisky VI)",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_II,
-    "Wagner II",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_III,
-    "Wagner III",
-    SRS_PP_LATITUDE_OF_ORIGIN,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_IV,
-    "Wagner IV",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_V,
-    "Wagner V",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_VI,
-    "Wagner VI",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
-    "*",
-    SRS_PT_WAGNER_VII,
-    "Wagner VII",
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-
     NULL
 };
 
@@ -455,7 +402,7 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
             i++;
 
             if( ppszUserName != NULL )
-                *ppszUserName = (char *)papszProjectionDefinitions[i];
+                *ppszUserName = papszProjectionDefinitions[i];
 
             i++;
             while( papszProjectionDefinitions[i] != NULL 
@@ -517,9 +464,9 @@ int OPTGetParameterInfo( const char * pszProjectionMethod,
         if( EQUAL(papszParameterDefinitions[i],pszParameterName) )
         {
             if( ppszUserName != NULL )
-                *ppszUserName = (char *)papszParameterDefinitions[i+1];
+                *ppszUserName = papszParameterDefinitions[i+1];
             if( ppszType != NULL )
-                *ppszType = (char *)papszParameterDefinitions[i+2];
+                *ppszType = papszParameterDefinitions[i+2];
             if( pdfDefaultValue != NULL )
                 *pdfDefaultValue = atof(papszParameterDefinitions[i+3]);
 

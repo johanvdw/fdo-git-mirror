@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: jpeg2000dataset.cpp 15734 2008-11-14 00:42:22Z warmerdam $
+ * $Id: jpeg2000dataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  JPEG-2000
  * Purpose:  Partial implementation of the ISO/IEC 15444-1 standard
- * Author:   Andrey Kiselev, dron@ak4719.spb.edu
+ * Author:   Andrey Kiselev, dron@remotesensing.org
  *
  ******************************************************************************
- * Copyright (c) 2002, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2002, Andrey Kiselev <dron@remotesensing.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,14 +33,14 @@
 
 #include <jasper/jasper.h>
 
-CPL_CVSID("$Id: jpeg2000dataset.cpp 15734 2008-11-14 00:42:22Z warmerdam $");
+CPL_CVSID("$Id: jpeg2000dataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_JPEG2000(void);
 CPL_C_END
 
 // XXX: Part of code below extracted from the JasPer internal headers and
-// must be in sync with JasPer version (this one works with JasPer 1.900.1)
+// must be in sync with JasPer version (this one works with JasPer 1.900.0)
 #define JP2_FTYP_MAXCOMPATCODES 32
 #define JP2_BOX_IHDR    0x69686472      /* Image Header */
 #define JP2_BOX_BPCC    0x62706363      /* Bits Per Component */
@@ -251,11 +251,11 @@ JPEG2000RasterBand::JPEG2000RasterBand( JPEG2000Dataset *poDS, int nBand,
             this->eDataType = GDT_UInt32;
         break;
     }
-    // FIXME: Figure out optimal block size!
-    // Should the block size be fixed or determined dynamically?
-    nBlockXSize = 256;
-    nBlockYSize = 256;
+
+    nBlockXSize = poDS->GetRasterXSize();
+    nBlockYSize = poDS->GetRasterYSize();
     psMatrix = jas_matrix_create(nBlockYSize, nBlockXSize);
+    
 }
 
 /************************************************************************/
@@ -264,8 +264,7 @@ JPEG2000RasterBand::JPEG2000RasterBand( JPEG2000Dataset *poDS, int nBand,
 
 JPEG2000RasterBand::~JPEG2000RasterBand()
 {
-    if ( psMatrix )
-        jas_matrix_destroy( psMatrix );    
+    jas_matrix_destroy( psMatrix );
 }
 
 /************************************************************************/
@@ -289,12 +288,9 @@ CPLErr JPEG2000RasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             return CE_Failure;
         }
     }
-
-    // Now we can calculate the pixel offset of the top left by multiplying
-    // block offset with the block size.
-    jas_image_readcmpt( poGDS->psImage, nBand - 1,
-                        nBlockXOff * nBlockXSize, nBlockYOff * nBlockYSize,
-                        nBlockXSize, nBlockYSize, psMatrix );
+    
+    jas_image_readcmpt( poGDS->psImage, nBand - 1, nBlockXOff, nBlockYOff,
+        nBlockXSize, nBlockYSize, psMatrix );
 
     for( i = 0; i < jas_matrix_numrows(psMatrix); i++ )
         for( j = 0; j < jas_matrix_numcols(psMatrix); j++ )
@@ -404,6 +400,7 @@ GDALColorInterp JPEG2000RasterBand::GetColorInterpretation()
 /************************************************************************/
 
 JPEG2000Dataset::JPEG2000Dataset()
+
 {
     fp = NULL;
     psStream = NULL;
@@ -517,14 +514,13 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( poOpenInfo->fp == NULL )
         return NULL;
-
+   
     jas_init();
     if( !(sS = jas_stream_fopen( poOpenInfo->pszFilename, "rb" )) )
     {
         jas_image_clearfmts();
         return NULL;
     }
-
     iFormat = jas_image_getfmt( sS );
     if ( !(pszFormatName = jas_image_fmttostr( iFormat )) )
     {
@@ -560,8 +556,8 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     if ( EQUALN( pszFormatName, "jp2", 3 ) )
     {
-        // XXX: Hack to read JP2 boxes from input file. JasPer hasn't public
-        // API call for such things, so we will use internal JasPer functions.
+// XXX: Hack to read JP2 boxes from input file. JasPer hasn't public API
+// call for such things, so we use internal JasPer functions.
         jp2_box_t *box;
         box = 0;
         while ( ( box = jp2_box_get(poDS->psStream) ) )
@@ -575,8 +571,8 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
                 CPLDebug( "JPEG2000",
                           "IHDR box found. Dump: "
                           "width=%d, height=%d, numcmpts=%d, bpp=%d",
-                          (int)box->data.ihdr.width, (int)box->data.ihdr.height,
-                          (int)box->data.ihdr.numcmpts, (box->data.ihdr.bpc & 0x7F) + 1 );
+                          box->data.ihdr.width, box->data.ihdr.height,
+                          box->data.ihdr.numcmpts, (box->data.ihdr.bpc & 0x7F) + 1 );
                 if ( box->data.ihdr.bpc )
                 {
                     paiDepth = (int *)CPLMalloc(poDS->nBands * sizeof(int));
@@ -615,7 +611,7 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
                 CPLDebug( "JPEG2000",
                           "PCLR box found. Dump: number of LUT entries=%d, "
                           "number of resulting channels=%d",
-                          (int)box->data.pclr.numlutents, box->data.pclr.numchans );
+                          box->data.pclr.numlutents, box->data.pclr.numchans );
                 poDS->nBands = box->data.pclr.numchans;
                 if ( paiDepth )
                     CPLFree( paiDepth );
@@ -676,7 +672,6 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
     for( iBand = 1; iBand <= poDS->nBands; iBand++ )
@@ -732,16 +727,6 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int  nXSize = poSrcDS->GetRasterXSize();
     int  nYSize = poSrcDS->GetRasterYSize();
 
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
-                  "JPEG2000 driver ignores color table. "
-                  "The source raster band will be considered as grey level.\n"
-                  "Consider using color table expansion (-expand option in gdal_translate)\n");
-        if (bStrict)
-            return NULL;
-    }
-    
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
 
@@ -889,8 +874,8 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     
     pszFormatName = CSLFetchNameValue( papszOptions, "FORMAT" );
     if ( !pszFormatName ||
-         (!EQUALN( pszFormatName, "jp2", 3 ) &&
-          !EQUALN( pszFormatName, "jpc", 3 ) ) )
+         !EQUALN( pszFormatName, "jp2", 3 ) ||
+         !EQUALN( pszFormatName, "jpc", 3 ) )
         pszFormatName = "jp2";
     
     pszOptionBuf[0] = '\0';
@@ -1089,9 +1074,6 @@ void GDALRegister_JPEG2000()
 
 {
     GDALDriver  *poDriver;
-    
-    if (! GDAL_CHECK_VERSION("JPEG2000 driver"))
-        return;
 
     if( GDALGetDriverByName( "JPEG2000" ) == NULL )
     {

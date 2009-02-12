@@ -34,7 +34,7 @@
 #define	SQLiteDB_KEYEMPTY			(-3)	/* Key/data deleted or not created yet. */
 
 #define SQLiteDB_PAGESIZE			40960   /* Page size maximum (65K)  */
-#define SQLiteDB_MAXCACHESIZE		10000 // maximium number of feature in the write cache
+#define SQLiteDB_MAXCACHESIZE		500 // maximium number of feature in the write cache
 
 typedef	unsigned int	SQLiteRecNumbDef;	/* Record number type. */
 
@@ -52,7 +52,6 @@ private:
     SQLiteBTree*    m_pBtree;
     bool            mSartedTransaction;
     sqlite3         *mpDB;
-    long            mMaxCacheSize;
 
 public:
 
@@ -126,17 +125,6 @@ public:
     void remove_table( SQLiteTable *tab );
 
 	bool transaction_started() { return mSartedTransaction; }
-
-    /*
-    ** Get/Set maximum cache size (# of features)
-    *
-    * Increasing cache size can speed up the insertion of many features
-    * into some files but performance difference depends on the number of and 
-    * composition of the features inserted.
-    */
-    long GetMaxCacheSize();
-
-    void SetMaxCacheSize( long maxCacheSize /*if <0 then maximum is reset to the default*/);
 };
 
 #endif

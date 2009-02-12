@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_api.cpp 12428 2007-10-15 05:12:37Z hobu $
+ * $Id: ogr_api.cpp 12043 2007-09-03 17:58:51Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API Functions that don't correspond one-to-one with C++ 
@@ -375,11 +375,9 @@ void OGR_G_AddPoint_2D( OGRGeometryH hGeom,
 /*                       OGR_G_GetGeometryCount()                       */
 /************************************************************************/
 /**
- * Fetch the number of elements in a geometry or number of geometries in
- * container.
+ * Fetch the number of elements in a geometry.
  *
- * @param hGeom single geometry or geometry container from which to get
- * the number of elements.
+ * @param hGeom geometry from which to get the number of elements.
  * @return the number of elements.
  */
 
@@ -636,8 +634,6 @@ OGRErr OGR_G_RemoveGeometry( OGRGeometryH hGeom, int iGeom, int bDelete )
 double OGR_G_GetArea( OGRGeometryH hGeom )
 
 {
-    VALIDATE_POINTER1( hGeom, "OGR_G_GetArea", 0 );
-
     double fArea = 0.0;
 
     switch( wkbFlatten(((OGRGeometry *) hGeom)->getGeometryType()) )
@@ -659,10 +655,6 @@ double OGR_G_GetArea( OGRGeometryH hGeom )
         {
             fArea = ((OGRLinearRing *) hGeom)->get_Area();
         }
-        break;
-
-      case wkbGeometryCollection:
-        fArea = ((OGRGeometryCollection *) hGeom)->get_Area();
         break;
 
       default:

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: xpmdataset.cpp 15202 2008-08-23 21:42:12Z rouault $
+ * $Id: xpmdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  XPM Driver
  * Purpose:  Implement GDAL XPM Support
@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"						      
 
 
-CPL_CVSID("$Id: xpmdataset.cpp 15202 2008-08-23 21:42:12Z rouault $");
+CPL_CVSID("$Id: xpmdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static unsigned char *ParseXPM( const char *pszInput,
                                 int *pnXSize, int *pnYSize, 
@@ -99,9 +99,6 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
                   " files." );
         return NULL;
     }
-
-    if (poOpenInfo->fp == NULL)
-        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Read the whole file into a memory strings.                      */
@@ -586,7 +583,7 @@ ParseXPM( const char *pszInput, int *pnXSize, int *pnYSize,
 /* -------------------------------------------------------------------- */
     GByte *pabyImage;
 
-    pabyImage = (GByte *) VSIMalloc2(*pnXSize, *pnYSize);
+    pabyImage = (GByte *) VSIMalloc(*pnXSize * *pnYSize);
     if( pabyImage == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory, 

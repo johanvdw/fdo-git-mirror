@@ -1,93 +1,64 @@
 /******************************************************************************
- * $Id: ColorTable.i 11505 2007-05-13 17:25:26Z tamas $
+ * $Id: ColorTable.i 9017 2006-01-17 04:37:17Z cfis $
  *
  * Name:     ColorTable.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.4  2006/01/17 04:37:17  cfis
+ * Added rename section for Ruby.
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.3  2005/08/04 19:16:35  kruland
+ * Clone() returns a newobject.  And changed some whitespace.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.2  2005/02/22 23:33:07  kruland
+ * Implement GetCount, and GetColorTableEntry correctly.
+ *
+ * Revision 1.1  2005/02/15 21:37:43  kruland
+ * Interface definition for ColorTable object.  Cut&Paste from gdal_priv.h.
+ *
+ *
+*/
 
 //************************************************************************
 //
 // Define the extensions for ColorTable (nee GDALColorTable)
 //
 //************************************************************************
-%rename (ColorTable) GDALColorTableShadow;
+%rename (ColorTable) GDALColorTable;
 
-class GDALColorTableShadow : public GDALMajorObjectShadow {
-private:
-  GDALColorTableShadow();
+typedef int GDALPaletteInterp;
 
+class GDALColorTable
+{
 public:
+    GDALColorTable( GDALPaletteInterp = GPI_RGB );
+    ~GDALColorTable();
 
-%extend {
+%newobject Clone();
+    GDALColorTable *Clone() const;
 
-    %feature("kwargs") GDALColorTableShadow;
-    GDALColorTableShadow(GDALPaletteInterp palette = GPI_RGB ) {
-        return (GDALColorTableShadow*) GDALCreateColorTable(palette);
-    }
+    GDALPaletteInterp GetPaletteInterpretation() const;
 
-    ~GDALColorTableShadow() {
-        GDALDestroyColorTable(self);
-    }
-  
-    %newobject Clone();
-    GDALColorTableShadow* Clone() {
-        return (GDALColorTableShadow*) GDALCloneColorTable (self);
-    }
-  
-    GDALPaletteInterp GetPaletteInterpretation() {
-        return GDALGetPaletteInterpretation(self);
-    }
+#ifdef SWIGRUBY
+%rename (get_count) GetColorEntryCount;
+#else
+%rename (GetCount) GetColorEntryCount;
+#endif
 
-#ifdef SWIGRUBY 
-%rename (get_count) GetColorEntryCount; 
-#else 
-%rename (GetCount) GetColorEntryCount; 
-#endif  
-  
-    int GetColorEntryCount() {
-        return GDALGetColorEntryCount(self);
-    }
-    
-    GDALColorEntry* GetColorEntry (int entry) {
-        return (GDALColorEntry*) GDALGetColorEntry(self, entry);
-    }
-    
-    int GetColorEntryAsRGB(int entry, GDALColorEntry* centry) {
-        return GDALGetColorEntryAsRGB(self, entry, centry);
-    }
+    int           GetColorEntryCount() const;
 
-    void SetColorEntry( int entry, const GDALColorEntry* centry) {
-        GDALSetColorEntry(self, entry, centry);
-    }
-    
-    void CreateColorRamp(   int nStartIndex, const GDALColorEntry* startcolor,
-                            int nEndIndex, const GDALColorEntry* endcolor) {
-        GDALCreateColorRamp(self, nStartIndex, startcolor, nEndIndex, endcolor);
-    }
+    GDALColorEntry* GetColorEntry(int);
+    int           GetColorEntryAsRGB( int, GDALColorEntry * ) const;
+    void          SetColorEntry( int, const GDALColorEntry * );
 
-}
-
+/* NEEDED 
+ *
+ * __str__;
+ * serialize();
+ */
 };

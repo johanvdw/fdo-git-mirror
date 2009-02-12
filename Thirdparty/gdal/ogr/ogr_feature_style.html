@@ -10,19 +10,12 @@
 OGR - Feature Style Specification</H1></CENTER>
 
 <CENTER>
-  <H2>DRAFT V0.012 - 2008/07/21</H2>
+  <H2>DRAFT V0.010 - 2006/09/23</H2>
 </CENTER>
 
 <HR WIDTH=50%>
 <H2>REVISION HISTORY</H2>
 <UL>
-<LI><B>Version 0.013 - 2008-07-29 - Daniel Morissette</B><BR>
-    Added 'o:' for font point symbol outline color (ticket #2509)
-<LI><B>Version 0.012 - 2008-07-21 - Daniel Morissette</B><BR>
-    Added 'o:' for text outline color and updated 'b:' to be specifically
-    a filled label background box (ticket #2480)
-<LI><B>Version 0.011 - 2008-02-28 - Tamas Szekeres</B><BR>
-    Note about OGR SQL to transfer the style between the data sources
 <LI><B>Version 0.010 - 2006-09-23- Andrey Kiselev</B><BR>
     Added label styles 'w', 'st', 'h', 'm:h', 'm:a', 'p:{10,11,12}'
 <LI><B>Version 0.009 - 2005-03-11- Frank Warmerdam</B><BR>
@@ -146,7 +139,7 @@ possible loss.
 <H2>
 1.4 Feature attributes can be used by style definitions</H2>
 In some cases, it might be useful for a style definition to refer to an
-attribute field on the feature for a given tool parameter's value instead
+attribute field on the feature for a given tool parmeter's value instead
 of having a hardcoded value inside the style itself.
 <P>Example of this are text angle, text string, etc... these values change
 for every single text label, but we can share the rest of the label style
@@ -159,7 +152,7 @@ can be either a constant value, or a lookup to an attribute field.
 Several parameter values can be expressed in different measurement units
 depending on the file format you are dealing with. For instance, some systems
 express line width, or text height in points, other in pixels, and others
-use ground units. In order to accommodate all that, all parameters can be
+use ground units. In order to accomodate all that, all parameters can be
 specified in one of the following units systems:
 <UL>
 <LI>
@@ -180,7 +173,7 @@ specified in one of the following units systems:
 <LI>
 <B>in</B>: Inches</LI>
 </UL>
-Some tools will have to be provided at the OGR client level to simplify
+Some tools will have to be provided at the OGR client level to symplify
 the conversion of any value from one units system to another. This would
 imply that the OGR client has to specify a map scale so that conversions
 from ground units to paper/pixel units can be performed.
@@ -240,7 +233,7 @@ from the layer it is in.</LI>
 
 <LI>
 "@&lt;style_name>" is a reference to a predefined style in the layer or
-the dataset's style table. The layer's table is looked up first, and if
+the dataset's style table. The layer's table is lookued up first, and if
 style_name is not found there then the dataset's table will be looked up.</LI>
 
 <LI>
@@ -651,14 +644,6 @@ to the symbol.</TD>
 </TR>
 
 <TR>
-<TD ALIGN=CENTER>o</TD>
-
-<TD>
-      <P><B>Symbol Outline Color</B>, expressed in hexadecimal (#RRGGBB[AA]), no outline if not set.
-      </TD>
-</TR>
-
-<TR>
 <TD ALIGN=CENTER>s</TD>
 
 <TD><B>Size or Scaling Factor</B> - Numeric value with or without units.
@@ -685,9 +670,9 @@ a polyline.</TD>
 at each vertex, but setting "ds" triggers the placement of symbols at an
 equal distance along the line. "ds" has no effect for a feature with a
 point geometry.
-<BR>"dp" can be used together with "ds" to specify the perpendicular distance
+<BR>"dp" can be used together with "ds" to specifiy the perpendicular distance
 between the symbols' center and the line along which they're placed.
-<BR>Finally, "di" can be used to specify an initial offset from the beginning
+<BR>Finally, "di" can be used to specifiy an initial offset from the beginning
 of the line.
 <BR>Example:
 <BR>SYMBOL(id:123, s:5, di:5px, ds:50px)</TD>
@@ -769,17 +754,13 @@ attribute field's value.
 
   <TR>
     <TD ALIGN=CENTER>b</TD>
-    <TD><B>Text Background Color</B> - Color of the filled box to draw behind the label, expressed in hexadecimal (#RRGGBB[AA]), no box drawn if not set.</TD>
-  </TR>
-
-  <TR>
-    <TD ALIGN=CENTER>o</TD>
-    <TD><B>Text Outline Color</B> - Color of the text outline (halo in MapInfo terminology), expressed in hexadecimal (#RRGGBB[AA]), no outline if not set.</TD>
+    <TD><B>Text Background Color</B> - For text styles that use a second color
+such as halo and box.</TD>
   </TR>
 
   <TR>
     <TD ALIGN=CENTER>h</TD>
-    <TD><B>Shadow Color</B> - Color of the text shadow, expressed in hexadecimal (#RRGGBB[AA]), no shadow if not set.</TD>
+    <TD><B>Shadow Color</B> - Color of the text shadow.</TD>
   </TR>
 
   <TR>
@@ -787,7 +768,7 @@ attribute field's value.
     <TD><B>Stretch</B> - The stretch factor changes the width of all 
 	    characters in the font by factor percent. For example, setting
 	    factor to 150 results in all characters in the font being 1.5
-	    times (i.e. 150%) wider. The default stretch factor is 100.</TD>
+	    times (ie. 150%) wider. The default stretch factor is 100.</TD>
   </TR>
 
   <TR>
@@ -807,7 +788,7 @@ vertex of a polyline.
 can be combined with this LABEL tool to draw the polyline as a leader to
 the label.
 <BR>
-	"m:s" - Stretch text string along polyline, with an equal spacing between
+	"m:s" - Strech text string along polyline, with an equal spacing between
 each character.
 <BR>
 	"m:m" - Place text as a single label at the middle of a polyline (based
@@ -833,7 +814,7 @@ a start of a segment.
         <TR>
 	  <TD><B>Anchor Position</B> - A value from 1 to 12 defining the
 		  label's position relative to the point to which it is
-		  attached. There are four vertical alignment modes:
+		  attached. There are four vertical alignmend modes:
 		  <i>baseline</i>, <i>center</i>, <i>top</i> and <i>bottom</i>;
 		  and three horizontal modes: <i>left</i>, <i>center</i> and
 		  <i>right</i>. See the scheme: </TD>
@@ -908,19 +889,11 @@ This would apply to formats like ArcView Shapes.
 <P>Then the list of style definitions follow.
 <P>&nbsp;
 <H2>2.8 Suggestions, possible extensions</H2>
-<P><B>2.8.1 Global list of ids for pen, brush, and symbol ids</B></P>
-<P>There have been discussions about defining a global list of pen, brush, and symbol ids together with a table containing the definition of each code.  This would work similarly to the EPSG projection codes, where the table is updated when new codes are added.  This would have had some advantages, mainly to provide a common set of codes to replace the vendor-dependent pen, brush and symbol ids.  However on the other hand, this mechanism would be redundant with the current approach which is to use a   feature style definition language.</P>
+<P><B>2.8.1 Gloal list of ids for pen, brush, and symbol ids</B></P>
+<P>There have been discussions about defining a global list of pen, brush, and symbol ids together with a table containing the definition of each code.  This would work similarily to the EPSG projection codes, where the table is updated when new codes are added.  This would have had some advantages, mainly to provide a common set of codes to replace the vendor-dependent pen, brush and symbol ids.  However on the other hand, this mechanism would be redundent with the current approach which is to use a   feature style definition language.</P>
 <P><B>2.8.2 Use of custom brushes in pen definitions</B></P>
 <P>In some cases one might want a pen's pattern to be a brush.  To achieve this, a PEN() definition would have to contain a BRUSH() definition (e.g. PEN(c:&quot;#FF00FFFF&quot;,BRUSH(id:&quot;ogr-brush-4&quot;)) or PEN(c:&quot;#FF00FFFF&quot;,pen-brush,id:&quot;ogr-brush-4&quot;) or ???) but this is currently impossible with the current specs.
 <P>Since there is no current need for custom brush patterns in pen (no file formats that we know of support that), we won't include it now but may do it later.  In the meantime, one can use the &quot;gp&quot; (geometric pattern) pen parameter to allow specifying one of the OGR brushes as a pen brush pattern.
-<P>&nbsp;
-<P>
-<H2>2.9 Using OGR SQL to transfer the style between the data sources</H2>
-<P>We can use the <B>OGR_STYLE</B> special field to extract the feature level style, and ogr2ogr can be used to transfer the style string between the data sources according to the following example:</P>
-<PRE>  ogr2ogr -f "ESRI Shapefile" -sql "select *, OGR_STYLE from rivers" rivers.shp rivers.tab</PRE>
-<P>Without specifying the length of the style field the output driver may truncate the length to a default value. Therefore it may be necessary to specify the target length manually, like:</P>
-<PRE>  ogr2ogr -f "ESRI Shapefile" -sql "select *, CAST(OGR_STYLE AS character(255)) from rivers" rivers.shp rivers.tab</PRE>
-<P>OGR is aware of using the OGR_STYLE field if exists and OGRFeature::GetStyleString will return the value of this field if no style string have been specified programmatically.</P>
 <P>&nbsp;
 <P>
 <HR WIDTH=50%>
@@ -1032,7 +1005,7 @@ The OGRStyle class knows how to parse a style string,</LI>
               
     } OGRSTLabelParam;
 
-    //Every time a pszStyleString given in parameter is NULL, 
+    //Everytime a pszStyleString gived in parameter is NULL, 
       the StyleString defined in the Mgr will be use.
 
 class OGRStyleMgr
@@ -1041,7 +1014,7 @@ class OGRStyleMgr
  
     GBool SetFeatureStyleString(OGRFeature *,const char *pszStyleString=NULL,
 				GBool bNoMatching = FALSE);
-    /*it will set in the given feature the pszStyleString with 
+    /*it will set in the gived feature the pszStyleString with 
 	    the style or will set the style name found in 
             dataset StyleTable (if bNoMatching == FALSE)*/
 	      
@@ -1083,7 +1056,7 @@ class OGRStyleTool
 class OGRStylePen : public OGRStyleTool
 {
    /**********************************************************************/
-    /* Explicit fct for all parameters defined in the Drawing tools  Pen */
+    /* Explicite fct for all parameters defined in the Drawing tools  Pen */
     /**********************************************************************/
      
     const char *Color(GBool &bDefault)
@@ -1119,7 +1092,7 @@ class OGRStylePen : public OGRStyleTool
 class OGRStyleBrush : public OGRStyleTool
 {
 
-    /*a Explicit fct for all parameters defined in the Drawing tools Brush */
+    /*a Explicite fct for all parameters defined in the Drawing tools Brush */
 
     const char *ForeColor(GBool &bDefault)
     void SetForeColor(const char *pszColor)
@@ -1144,7 +1117,7 @@ class OGRStyleBrush : public OGRStyleTool
 class OGRStyleSymbol : public OGRStyleTool
 {
     /*****************************************************************/
-    /* Explicit fct for all parameters defined in the Drawing tools */
+    /* Explicite fct for all parameters defined in the Drawing tools */
     /*****************************************************************/
     
     const char *Id(GBool &bDefault)
@@ -1176,7 +1149,7 @@ class OGRStyleLabel : public OGRStyleTool
 {
 
     /*****************************************************************/
-    /* Explicit fct for all parameters defined in the Drawing tools */
+    /* Explicite fct for all parameters defined in the Drawing tools */
     /*****************************************************************/
     
     const char *FontName(GBool &bDefault)

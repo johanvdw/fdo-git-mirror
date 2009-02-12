@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtwarped.cpp 15025 2008-07-24 19:26:51Z rouault $
+ * $Id: vrtwarped.cpp 11229 2007-04-09 03:39:05Z warmerdam $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "gdalwarper.h"
 
-CPL_CVSID("$Id: vrtwarped.cpp 15025 2008-07-24 19:26:51Z rouault $");
+CPL_CVSID("$Id: vrtwarped.cpp 11229 2007-04-09 03:39:05Z warmerdam $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -91,8 +91,6 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
     GDALWarpOptions *psWO;
     int i;
 
-    VALIDATE_POINTER1( hSrcDS, "GDALAutoCreateWarpedVRT", NULL );
-
 /* -------------------------------------------------------------------- */
 /*      Populate the warp options.                                      */
 /* -------------------------------------------------------------------- */
@@ -125,12 +123,6 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
         GDALCreateGenImgProjTransformer( psWO->hSrcDS, pszSrcWKT, 
                                          NULL, pszDstWKT,
                                          TRUE, 1.0, 0 );
-
-    if( psWO->pTransformerArg == NULL )
-    {
-        GDALDestroyWarpOptions( psWO );
-        return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Figure out the desired output bounds and resolution.            */
@@ -218,8 +210,6 @@ GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
                      GDALWarpOptions *psOptions )
     
 {
-    VALIDATE_POINTER1( hSrcDS, "GDALCreateWarpedVRT", NULL );
-
 /* -------------------------------------------------------------------- */
 /*      Create the VRTDataset and populate it with bands.               */
 /* -------------------------------------------------------------------- */
@@ -564,8 +554,6 @@ CPLErr CPL_STDCALL
 GDALInitializeWarpedVRT( GDALDatasetH hDS, GDALWarpOptions *psWO )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALInitializeWarpedVRT", CE_Failure );
-
     return ((VRTWarpedDataset *) hDS)->Initialize( psWO );
 }
 
@@ -648,14 +636,6 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
     poWarper = new GDALWarpOperation();
 
     eErr = poWarper->Initialize( psWO );
-    if( eErr != CE_None)
-    {
-/* -------------------------------------------------------------------- */
-/*      We are responsible for cleaning up the transformer outselves.   */
-/* -------------------------------------------------------------------- */
-        if( psWO->pTransformerArg != NULL )
-            GDALDestroyTransformer( psWO->pTransformerArg );
-    }
 
     GDALDestroyWarpOptions( psWO );
     if( eErr != CE_None )
@@ -819,7 +799,6 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
     int   nDstBufferSize;
     int   nWordSize = (GDALGetDataTypeSize(psWO->eWorkingDataType) / 8);
 
-    // FIXME? : risk of overflow in multiplication if nBlockXSize or nBlockYSize are very large
     nDstBufferSize = nBlockXSize * nBlockYSize * psWO->nBandCount * nWordSize;
 
     pabyDstBuffer = (GByte *) VSIMalloc(nDstBufferSize);
@@ -956,35 +935,6 @@ CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     }
 
     poBlock->DropLock();
-
-    return eErr;
-}
-
-/************************************************************************/
-/*                            IWriteBlock()                             */
-/************************************************************************/
-
-CPLErr VRTWarpedRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
-                                     void * pImage )
-
-{
-    CPLErr eErr;
-    VRTWarpedDataset *poWDS = (VRTWarpedDataset *) poDS;
-
-    /* This is a bit tricky. In the case we are warping a VRTWarpedDataset */
-    /* with a destination alpha band, IWriteBlock can be called on that alpha */
-    /* band by GDALWarpDstAlphaMasker */
-    /* We don't need to do anything since the data will be kept in the block */
-    /* cache by VRTWarpedRasterBand::IReadBlock */
-    if (poWDS->poWarper->GetOptions()->nDstAlphaBand == nBand)
-    {
-        eErr = CE_None;
-    }
-    else
-    {
-        /* Otherwise, call the superclass method, that will fail of course */
-        eErr = VRTRasterBand::IWriteBlock(nBlockXOff, nBlockYOff, pImage);
-    }
 
     return eErr;
 }

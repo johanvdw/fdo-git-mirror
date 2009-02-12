@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrass.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogrgrass.h 11554 2007-05-18 17:09:03Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/GRASS driver.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGRGRASS_H_INCLUDED
-#define _OGRGRASS_H_INCLUDED
+#define _OGRGRASS_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 
@@ -154,8 +154,6 @@ class OGRGRASSDataSource : public OGRDataSource
 
     struct Map_info 	map;
     int                 nLayers;
-    
-    int                 bOpened;
 
     static bool SplitPath ( char *, char **, char **, char **, char ** );
 };

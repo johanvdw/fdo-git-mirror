@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geometry.h 15517 2008-10-11 18:34:03Z rouault $
+ * $Id: ogr_geometry.h 12517 2007-10-23 15:07:35Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating simple features that is not specific
@@ -84,10 +84,8 @@ class CPL_DLL OGRGeometry
     // standard IGeometry
     virtual int getDimension() const = 0;
     virtual int getCoordinateDimension() const;
-    virtual OGRBoolean  IsEmpty() const = 0; 
-    virtual OGRBoolean  IsValid() const;
-    virtual OGRBoolean  IsSimple() const;
-    virtual OGRBoolean  IsRing() const;
+    virtual OGRBoolean  IsEmpty() const { return 0; } 
+    virtual OGRBoolean  IsSimple() const { return 1; }
     virtual void        empty() = 0;
     virtual OGRGeometry *clone() const = 0;
     virtual void getEnvelope( OGREnvelope * psEnvelope ) const = 0;
@@ -102,11 +100,9 @@ class CPL_DLL OGRGeometry
     // non-standard
     virtual OGRwkbGeometryType getGeometryType() const = 0;
     virtual const char *getGeometryName() const = 0;
-    virtual void   dumpReadable( FILE *, const char * = NULL, char** papszOptions = NULL ) const;
+    virtual void   dumpReadable( FILE *, const char * = NULL ) const;
     virtual void   flattenTo2D() = 0;
     virtual char * exportToGML() const;
-	virtual char * exportToKML() const;
-    virtual char * exportToJson() const;
     virtual GEOSGeom exportToGEOS() const;
     virtual void closeRings();
 
@@ -117,8 +113,6 @@ class CPL_DLL OGRGeometry
 
     virtual OGRErr  transform( OGRCoordinateTransformation *poCT ) = 0;
     OGRErr  transformTo( OGRSpatialReference *poSR );
-    
-    virtual void segmentize(double dfMaxLength);
 
     // ISpatialRelation
     virtual OGRBoolean  Intersects( OGRGeometry * ) const;
@@ -182,7 +176,6 @@ class CPL_DLL OGRPoint : public OGRGeometry
     virtual OGRGeometry *clone() const;
     virtual void empty();
     virtual void getEnvelope( OGREnvelope * psEnvelope ) const;
-    virtual OGRBoolean  IsEmpty() const;
 
     // IPoint
     double      getX() const { return x; } 
@@ -191,8 +184,8 @@ class CPL_DLL OGRPoint : public OGRGeometry
 
     // Non standard
     virtual void setCoordinateDimension( int nDimension ); 
-    void        setX( double xIn ) { x = xIn; if (nCoordDimension == 0) nCoordDimension = 2; }
-    void        setY( double yIn ) { y = yIn; if (nCoordDimension == 0) nCoordDimension = 2; }
+    void        setX( double xIn ) { x = xIn; }
+    void        setY( double yIn ) { y = yIn; }
     void        setZ( double zIn ) { z = zIn; nCoordDimension=3; }
 
     // ISpatialRelation
@@ -203,6 +196,7 @@ class CPL_DLL OGRPoint : public OGRGeometry
     virtual OGRwkbGeometryType getGeometryType() const;
     virtual OGRErr  transform( OGRCoordinateTransformation *poCT );
     virtual void flattenTo2D();
+
 };
 
 /************************************************************************/
@@ -261,7 +255,6 @@ class CPL_DLL OGRLineString : public OGRCurve
     virtual OGRGeometry *clone() const;
     virtual void empty();
     virtual void getEnvelope( OGREnvelope * psEnvelope ) const;
-    virtual OGRBoolean  IsEmpty() const;
 
     // ICurve methods
     virtual double get_Length() const;
@@ -302,11 +295,13 @@ class CPL_DLL OGRLineString : public OGRCurve
     virtual const char *getGeometryName() const;
     virtual OGRErr  transform( OGRCoordinateTransformation *poCT );
     virtual void flattenTo2D();
-    virtual void segmentize(double dfMaxLength);
+
 };
 
 /************************************************************************/
 /*                            OGRLinearRing                             */
+/*                                                                      */
+/*      This is an alias for OGRLineString for now.                     */
 /************************************************************************/
 
 /**
@@ -314,17 +309,7 @@ class CPL_DLL OGRLineString : public OGRCurve
  *
  * This class is functionally equivelent to an OGRLineString, but has a
  * separate identity to maintain alignment with the OpenGIS simple feature
- * data model.  It exists to serve as a component of an OGRPolygon.  
- *
- * The OGRLinearRing has no corresponding free standing well known binary
- * representation, so importFromWkb() and exportToWkb() will not actually
- * work.  There is a non-standard GDAL WKT representation though.
- *
- * Because OGRLinearRing is not a "proper" free standing simple features 
- * object, it cannot be directly used on a feature via SetGeometry(), and
- * cannot genearally be used with GEOS for operations like Intersects(). 
- * Instead the polygon should be used, or the OGRLinearRing should be
- * converted to an OGRLineString for such operations. 
+ * data model.  It exists to serve as a component of an OGRPolygon.
  */
 
 class CPL_DLL OGRLinearRing : public OGRLineString
@@ -351,8 +336,7 @@ class CPL_DLL OGRLinearRing : public OGRLineString
     virtual void reverseWindingOrder();
     virtual void closeRings();
     virtual double get_Area() const;
-    OGRBoolean isPointInRing(const OGRPoint* pt, int bTestEnvelope = TRUE) const;
-    OGRBoolean isPointOnRingBoundary(const OGRPoint* pt, int bTestEnvelope = TRUE) const;
+    OGRBoolean isPointInRing(const OGRPoint* pt) const;
     
     // IWks Interface - Note this isnt really a first class object
     // for the purposes of WKB form.  These methods always fail since this
@@ -407,9 +391,7 @@ class CPL_DLL OGRPolygon : public OGRSurface
     virtual void empty();
     virtual OGRErr  transform( OGRCoordinateTransformation *poCT );
     virtual void flattenTo2D();
-    virtual OGRBoolean  IsEmpty() const;
-    virtual void segmentize(double dfMaxLength);
-
+    
     // ISurface Interface
     virtual double      get_Area() const;
     virtual int         Centroid( OGRPoint * poPoint ) const;
@@ -462,6 +444,8 @@ class CPL_DLL OGRGeometryCollection : public OGRGeometry
     int         nGeomCount;
     OGRGeometry **papoGeoms;
 
+    int         nCoordinateDimension;
+    
   public:
                 OGRGeometryCollection();
     virtual     ~OGRGeometryCollection();
@@ -473,17 +457,13 @@ class CPL_DLL OGRGeometryCollection : public OGRGeometry
     virtual void empty();
     virtual OGRErr  transform( OGRCoordinateTransformation *poCT );
     virtual void flattenTo2D();
-    virtual OGRBoolean  IsEmpty() const;
-    virtual void segmentize(double dfMaxLength);
-
+    
     // IWks Interface
     virtual int WkbSize() const;
     virtual OGRErr importFromWkb( unsigned char *, int = -1 );
     virtual OGRErr exportToWkb( OGRwkbByteOrder, unsigned char * ) const;
     virtual OGRErr importFromWkt( char ** );
     virtual OGRErr exportToWkt( char ** ppszDstText ) const;
-
-    virtual double get_Area() const;
 
     // IGeometry methods
     virtual int getDimension() const;
@@ -531,7 +511,7 @@ class CPL_DLL OGRMultiPolygon : public OGRGeometryCollection
     // Non standard
     virtual OGRErr addGeometryDirectly( OGRGeometry * );
 
-    virtual double  get_Area() const;
+    double  get_Area() const;
 };
 
 /************************************************************************/
@@ -600,8 +580,6 @@ class CPL_DLL OGRGeometryFactory
                                  OGRGeometry **, int = -1 );
     static OGRErr createFromWkt( char **, OGRSpatialReference *,
                                  OGRGeometry ** );
-    static OGRErr createFromFgf( unsigned char *, OGRSpatialReference *,
-                                 OGRGeometry **, int = -1, int * = NULL );
     static OGRGeometry *createFromGML( const char * );
     static OGRGeometry *createFromGEOS( GEOSGeom );
 
@@ -612,11 +590,6 @@ class CPL_DLL OGRGeometryFactory
     static OGRGeometry * forceToMultiPolygon( OGRGeometry * );
     static OGRGeometry * forceToMultiPoint( OGRGeometry * );
     static OGRGeometry * forceToMultiLineString( OGRGeometry * );
-
-    static OGRGeometry * organizePolygons( OGRGeometry **papoPolygons,
-                                           int nPolygonCount,
-                                           int *pbResultValidGeometry,
-                                           const char **papszOptions = NULL);
 
     static void *getGEOSGeometryFactory();
 

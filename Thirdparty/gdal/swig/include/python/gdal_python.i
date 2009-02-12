@@ -1,9 +1,31 @@
 /*
- * $Id: gdal_python.i 14814 2008-07-05 02:53:39Z warmerdam $
+ * $Id: gdal_python.i 11533 2007-05-16 02:58:39Z hobu $
  *
  * python specific code for gdal bindings.
  */
 
+/*
+ * $Log$
+ * Revision 1.5  2006/12/02 05:16:12  hobu
+ * Dataset.WriteRaster Dataset.ReadRaster
+ *
+ * Revision 1.4  2005/09/30 20:19:19  kruland
+ * Moved cpl_exceptions.i code into gdal_python so the other languages can
+ * have a common mechanism.
+ *
+ * Revision 1.3  2005/09/13 03:05:05  kruland
+ * Exception generation code was moved to the cpl_exceptions.i file.
+ *
+ * Revision 1.2  2005/09/02 21:42:42  kruland
+ * The compactdefaultargs feature should be turned on for all bindings not just
+ * python.
+ *
+ * Revision 1.1  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ */
 
 %feature("autodoc");
 
@@ -18,9 +40,7 @@
   from gdalconst import *
   import gdalconst
 
-
   import sys
-  have_warned = 0
   byteorders = {"little": "<",
                 "big": ">"}
   array_modes = { gdalconst.GDT_Int16:    ("%si2" % byteorders[sys.byteorder]),
@@ -33,55 +53,51 @@
                   gdalconst.GDT_CFloat64: ("%sf8" % byteorders[sys.byteorder]),
                   gdalconst.GDT_Byte:     ("%st8" % byteorders[sys.byteorder]),
   }
-
-  
-  def deprecation_warn( module ):
-    global have_warned
-
-    if have_warned == 1:
-        return
-
-    have_warned = 1
-
-    from warnings import warn
-    warn('%s.py was placed in a namespace, it is now available as osgeo.%s' % (module,module),
-         DeprecationWarning)
-
-  def RGBFile2PCTFile( src_filename, dst_filename ):
-    src_ds = Open(src_filename)
-    if src_ds is None or src_ds == 'NULL':
-        return 1
-
-    ct = ColorTable()
-    err = ComputeMedianCutPCT( src_ds.GetRasterBand(1),
-                               src_ds.GetRasterBand(2),
-                               src_ds.GetRasterBand(3),
-                               256, ct )
-    if err <> 0:
-        return err
-
-    gtiff_driver = GetDriverByName('GTiff')
-    if gtiff_driver is None:
-        return 1
-
-    dst_ds = gtiff_driver.Create( dst_filename,
-                                  src_ds.RasterXSize, src_ds.RasterYSize )
-    dst_ds.GetRasterBand(1).SetRasterColorTable( ct )
-
-    err = DitherRGB2PCT( src_ds.GetRasterBand(1),
-                         src_ds.GetRasterBand(2),
-                         src_ds.GetRasterBand(3),
-                         dst_ds.GetRasterBand(1),
-                         ct )
-    dst_ds = None
-    src_ds = None
-
-    return 0
 %}
 
+/*
+ * This was the cpl_exceptions.i code.  But since python is the only one
+ * different (should support old method as well as new one)
+ * it was moved into this file.
+ */
+%{
+int bUseExceptions=0;
 
+void VeryQuiteErrorHandler(CPLErr eclass, int code, const char *msg ) {
+  /* If the error class is CE_Fatal, we want to have a message issued
+     because the CPL support code does an abort() before any exception
+     can be generated */
+  if (eclass == CE_Fatal ) {
+    CPLDefaultErrorHandler(eclass, code, msg );
+  }
+}
+%}
 
-%include "python_exceptions.i"
+%inline %{
+void UseExceptions() {
+  bUseExceptions = 1;
+  CPLSetErrorHandler( (CPLErrorHandler) VeryQuiteErrorHandler );
+}
+
+void DontUseExceptions() {
+  bUseExceptions = 0;
+  CPLSetErrorHandler( CPLDefaultErrorHandler );
+}
+%}
+
+%include exception.i
+
+%exception {
+
+    $action
+    if ( bUseExceptions ) {
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+      }
+    }
+}
+
 
 %extend GDAL_GCP {
 %pythoncode {
@@ -172,20 +188,6 @@
         return _gdal.Dataset_ReadRaster(self, xoff, yoff, xsize, ysize,
                                            buf_xsize, buf_ysize, buf_type,
                                            band_list)
-
-    def GetSubDatasets(self):
-        sd_list = []
-        
-        sd = self.GetMetadata('SUBDATASETS')
-        if sd is None:
-            return sd_list
-
-        i = 1
-        while sd.has_key('SUBDATASET_'+str(i)+'_NAME'):
-            sd_list.append( ( sd['SUBDATASET_'+str(i)+'_NAME'],
-                              sd['SUBDATASET_'+str(i)+'_DESC'] ) )
-            i = i + 1
-        return sd_list
 }
 }
 
@@ -198,70 +200,4 @@
 }
 }
 
-/* ==================================================================== */
-/*	Support function for progress callbacks to python.              */
-/* ==================================================================== */
-
-%{
-
-typedef struct {
-    PyObject *psPyCallback;
-    PyObject *psPyCallbackData;
-    int nLastReported;
-} PyProgressData;
-
-/************************************************************************/
-/*                          PyProgressProxy()                           */
-/************************************************************************/
-
-int CPL_STDCALL
-PyProgressProxy( double dfComplete, const char *pszMessage, void *pData )
-
-{
-    PyProgressData *psInfo = (PyProgressData *) pData;
-    PyObject *psArgs, *psResult;
-    int      bContinue = TRUE;
-
-    if( psInfo->nLastReported == (int) (100.0 * dfComplete) )
-        return TRUE;
-
-    if( psInfo->psPyCallback == NULL || psInfo->psPyCallback == Py_None )
-        return TRUE;
-
-    psInfo->nLastReported = (int) (100.0 * dfComplete);
-    
-    if( pszMessage == NULL )
-        pszMessage = "";
-
-    if( psInfo->psPyCallbackData == NULL )
-        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, Py_None );
-    else
-        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, 
-	                       psInfo->psPyCallbackData );
-
-    psResult = PyEval_CallObject( psInfo->psPyCallback, psArgs);
-    Py_XDECREF(psArgs);
-
-    if( psResult == NULL )
-    {
-        return TRUE;
-    }
-
-    if( psResult == Py_None )
-    {
-	Py_XDECREF(Py_None);
-        return TRUE;
-    }
-
-    if( !PyArg_Parse( psResult, "i", &bContinue ) )
-    {
-        PyErr_SetString(PyExc_ValueError, "bad progress return value");
-	return FALSE;
-    }
-
-    Py_XDECREF(psResult);
-
-    return bContinue;    
-}
-%}
 %import typemaps_python.i

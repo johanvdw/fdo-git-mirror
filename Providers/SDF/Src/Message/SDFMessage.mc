@@ -496,8 +496,3 @@ SymbolicName=SDFPROVIDER_98_SPATIAL_OP_NOTSUPPORTED
 Language=English
 Spatial operation not supported
 .
-MessageId=99
-SymbolicName=SDFPROVIDER_99_PROP_NAME_MAXCACHESIZE
-Language=English
-MaxCacheSize
-.

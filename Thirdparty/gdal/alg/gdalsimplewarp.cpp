@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalsimplewarp.cpp 15436 2008-09-24 19:26:31Z rouault $
+ * $Id: gdalsimplewarp.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Simple (source in memory) warp algorithm.
@@ -31,7 +31,7 @@
 #include "gdal_alg.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalsimplewarp.cpp 15436 2008-09-24 19:26:31Z rouault $");
+CPL_CVSID("$Id: gdalsimplewarp.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static void 
 GDALSimpleWarpRemapping( int nBandCount, GByte **papabySrcData, 
@@ -83,9 +83,6 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
                      char **papszWarpOptions )
     
 {
-    VALIDATE_POINTER1( hSrcDS, "GDALSimpleImageWarp", 0 );
-    VALIDATE_POINTER1( hDstDS, "GDALSimpleImageWarp", 0 );
-
     int		iBand, bCancelled = FALSE;
 
 /* -------------------------------------------------------------------- */
@@ -96,13 +93,6 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         int nResult;
 
         nBandCount = GDALGetRasterCount( hSrcDS ); 
-        if (nBandCount == 0)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "No raster band in source dataset");
-            return FALSE;
-        }
-
         panBandList = (int *) CPLCalloc(sizeof(int),nBandCount);
 
         for( iBand = 0; iBand < nBandCount; iBand++ )
@@ -132,7 +122,7 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     int   nSrcYSize = GDALGetRasterYSize(hSrcDS);
     GByte **papabySrcData;
 
-    papabySrcData = (GByte **) CPLCalloc(nBandCount,sizeof(GByte*));
+    papabySrcData = (GByte **) CPLCalloc(nBandCount,sizeof(int));
     for( iBand = 0; iBand < nBandCount; iBand++ )
     {
         papabySrcData[iBand] = (GByte *) VSIMalloc(nSrcXSize*nSrcYSize);
@@ -156,7 +146,7 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     int nDstYSize = GDALGetRasterYSize( hDstDS );
     GByte **papabyDstLine;
 
-    papabyDstLine = (GByte **) CPLCalloc(nBandCount,sizeof(GByte*));
+    papabyDstLine = (GByte **) CPLCalloc(nBandCount,sizeof(int));
     
     for( iBand = 0; iBand < nBandCount; iBand++ )
         papabyDstLine[iBand] = (GByte *) CPLMalloc( nDstXSize );
@@ -295,7 +285,6 @@ GDALSimpleImageWarp( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         CPLFree( papabySrcData[iBand] );
     }
 
-    CPLFree( panBandInit );
     CPLFree( papabyDstLine );
     CPLFree( papabySrcData );
     CPLFree( padfX );

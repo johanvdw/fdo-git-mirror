@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_test.c 12247 2007-09-27 18:18:06Z rouault $
+ * $Id: dted_test.c 9482 2006-04-04 01:00:27Z fwarmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  Test mainline for DTED writer.
@@ -55,8 +55,6 @@ int main( int argc, char ** argv )
     GDALRasterBandH hSrcBand;
     double       adfGeoTransform[6];
     int          bEnableTrim = FALSE;
-    GInt16       noDataValue = 0;
-    int          bHasNoData;
 
 /* -------------------------------------------------------------------- */
 /*      Identify arguments.                                             */
@@ -93,8 +91,6 @@ int main( int argc, char ** argv )
 
     hSrcBand = GDALGetRasterBand( hSrcDS, 1 );
 
-    noDataValue = (GInt16)GDALGetRasterNoDataValue(hSrcBand, &bHasNoData);
-
     nXSize = GDALGetRasterXSize( hSrcDS );
     nYSize = GDALGetRasterYSize( hSrcDS );
 
@@ -117,16 +113,7 @@ int main( int argc, char ** argv )
     {
         GDALRasterIO( hSrcBand, GF_Read, 0, iY, nXSize, 1, 
                       panData, nXSize, 1, GDT_Int16, 0, 0 );
-
-        if (bHasNoData)
-        {
-            for( iX = 0; iX < nXSize; iX++ )
-            {
-                if (panData[iX] == noDataValue)
-                    panData[iX] = DTED_NODATA_VALUE;
-            }
-        }
-
+                      
         for( iX = 0; iX < nXSize; iX++ )
         {
             DTEDWritePt( pStream, 

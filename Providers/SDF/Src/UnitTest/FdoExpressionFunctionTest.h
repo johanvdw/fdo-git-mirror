@@ -45,7 +45,7 @@ static const wchar_t* DATASTORE_EXTENSION = L"..\\..\\TestData\\ExpressionEngine
 static const wchar_t* DATASTORE_EXTENSION = L"../../TestData/ExpressionEngineFunctionTest.SDX";
 #endif
 
-static const wchar_t* XYZM_POINT_CLASS = L"xyzm_point";
+
 
 class FdoExpressionFunctionTest : public CppUnit::TestCase
 {
@@ -79,13 +79,7 @@ class FdoExpressionFunctionTest : public CppUnit::TestCase
     // CPPUNIT_TEST(TestAddMonthsFunction);
     // CPPUNIT_TEST(TestCurrentDateFunction);
     // CPPUNIT_TEST(TestExtractFunction);
-    // CPPUNIT_TEST(TestExtractFunctionToDouble);
-    // CPPUNIT_TEST(TestExtractFunctionToInt);
     // CPPUNIT_TEST(TestMonthsBetweenFunction);
-    // =========================================
-    // ====  GEOMTRY FUNCTION UNIT TESTS    ====
-    // =========================================
-	// CPPUNIT_TEST(TestXYZMFunction);
     // =========================================
     // ====    MATH FUNCTION UNIT TESTS     ====
     // =========================================
@@ -134,7 +128,7 @@ class FdoExpressionFunctionTest : public CppUnit::TestCase
     // =========================================
     // CPPUNIT_TEST(NumberToStringComparison);
     // CPPUNIT_TEST(RoundNumberToStringComparison);
-	// =========================================
+    // =========================================
     // ====       RUN ALL UNIT TESTS        ====
     // =========================================
     CPPUNIT_TEST(RunAllExpFctTests);
@@ -179,13 +173,6 @@ protected:
     void AddTestSchema (FdoIConnection *current_connection,
                         FdoString      *schema_name);
 
-    // AddXYZMFeature:
-    //      The function adds a new object for the specified class. The values
-    //      being added are predefined based on the predefined schema.
-
-    void AddXYZMFeature (FdoIConnection *current_connection,
-                         FdoString      *class_name);
-
     //  CloseConnection:
     //      The function closes all open connections to the data store used in
     //      the executed unit tests.
@@ -222,12 +209,6 @@ protected:
     FdoGeometricPropertyDefinition *CreateGeometricProperty (
                                                     FdoString *property_name);
 
-    // InsertTestFeatures:
-    //      The function inserts the test features for the filter optinmizer
-    //      test cases.
-
-    void InsertTestFeatures (FdoIConnection *connection);
-
     //  SetupUnitTestEnvironment:
     //      The function controls the establishing of the test environment in
     //      the FDO data store the provided connection identifies.
@@ -244,7 +225,6 @@ protected:
     //      the test setup is done only once.
 
     void RunAllExpFctTests ();
-
 
     // ========================= AGGREGATE FUNCTIONS =========================
 
@@ -368,32 +348,11 @@ protected:
 
     void TestExtractFunction ();
 
-    //  TestExtractToDoubleFunction:
-    //      The function executes the test for the expression engine function
-    //      EXTRACTTODOUBLE when used as a select-parameter.
-
-    void TestExtractToDoubleFunction ();
-
-    //  TestExtractToIntFunction:
-    //      The function executes the test for the expression engine function
-    //      EXTRACTTOINT when used as a select-parameter.
-
-    void TestExtractToIntFunction ();
-
     //  TestMonthsBetweenFunction:
     //      The function executes the test for the expression engine function
     //      MONTHSBETWEEN when used as a select-parameter.
 
     void TestMonthsBetweenFunction ();
-
-
-    // ========================= GEOMETRY FUNCTIONS ==========================
-
-    // TestXYZMFunction:
-    //      The function executes the test for the expression engine functions
-    //      X, Y, Z and M.
-
-    void TestXYZMFunction ();
 
 
     // =========================== MATH FUNCTIONS ============================
@@ -629,6 +588,7 @@ protected:
 
     void RoundNumberToStringComparison ();
 
+
     //-------------------------------------------------------------------------
     //                       Special Unit Test Functions
     //-------------------------------------------------------------------------
@@ -638,11 +598,6 @@ protected:
     //      to verify that the returned data is accurate for each row.
 
     void ModuloOperation ();
-
-    //  RunOptimizerTest:
-    //      The function tests the expression optimizer for filters.
-
-    void RunOptimizerTest();
 
     //  SoundexFilter:
     //      The function executes a specific test identified by QA that
@@ -662,6 +617,10 @@ protected:
     //      no data is returned although at least one row qualifies.
 
     void ToDateOperation ();
+
+    //  RunOptimizerTest:
+    //      The function tests the expression optimizer for filters
+    void RunOptimizerTest();
 
     //-------------------------------------------------------------------------
     //                       General Supporting Functions
@@ -779,24 +738,6 @@ protected:
                             FdoInt32          expected_id_value,
                             FdoString         *expected_cmp_id_value);
 
-    //  CheckXYZMValue:
-    //      The function checks whether or not the provided reader contains
-    //      the expected data and throws an exception if this is not the 
-    //      case.
-
-    void CheckXYZMValue (FdoIFeatureReader *data_reader,
-                         FdoDouble         expected_id_value,
-                         FdoString         *property_name,
-                         FdoDouble         exp_values[5]);
-
-    // EvaluateResults:
-    //      The function evaluates the result from the filter optimizer test.
-
-    bool EvaluateResults (FdoSpatialCondition *bigGeomCond,
-                          FdoSpatialCondition *smallGeomCond,
-                          FdoIFeatureReader   *dataProv,
-                          FdoIFeatureReader   *result);
-
     //  ExecuteSelAggrCommand:
     //      The function executes a select-aggregate command using the pro-
     //      vided data and returns the generated reader back to the calling
@@ -839,15 +780,11 @@ protected:
                          FdoString *property_name,
                          FdoFilter *filter);
 
-    //  GetStringValue:
-    //      The function retrieves the value for a string property identified
-    //      by the provided filter and returns it back to the calling pro-
-    //      cedure.
-
-    virtual FdoStringP GetStringValue (FdoString *class_name,
-                                       FdoString *property_name,
-                                       FdoFilter *filter);
-
+    // optimizer util functions
+    // inser test geometries
+    void InsertTestFeatures(FdoIConnection* conn);
+    // evaluate results from optimizer with direct evaluation
+    bool EvaluateResults(FdoSpatialCondition* bigGeomCond, FdoSpatialCondition* smallGeomCond, FdoIFeatureReader* dataProv, FdoIFeatureReader* result);
 
     //-------------------------------------------------------------------------
     //                                Variables

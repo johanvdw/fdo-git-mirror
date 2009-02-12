@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpoint.cpp 13909 2008-03-01 19:00:03Z rouault $
+ * $Id: ogrpoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The Point geometry class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrpoint.cpp 13909 2008-03-01 19:00:03Z rouault $");
+CPL_CVSID("$Id: ogrpoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                              OGRPoint()                              */
@@ -44,7 +44,9 @@ CPL_CVSID("$Id: ogrpoint.cpp 13909 2008-03-01 19:00:03Z rouault $");
 OGRPoint::OGRPoint()
 
 {
-    empty();
+    x = 0;
+    y = 0;
+    z = 0;
 }
 
 /************************************************************************/
@@ -110,7 +112,6 @@ void OGRPoint::empty()
 
 {
     x = y = z = 0.0;
-    nCoordDimension = 0;
 }
 
 /************************************************************************/
@@ -154,8 +155,7 @@ void OGRPoint::flattenTo2D()
 
 {
     z = 0;
-    if (nCoordDimension > 2)
-        nCoordDimension = 2;
+    nCoordDimension = 2;
 }
 
 /************************************************************************/
@@ -407,14 +407,9 @@ OGRErr OGRPoint::exportToWkt( char ** ppszDstText ) const
     char        szTextEquiv[140];
     char        szCoordinate[80];
 
-    if (nCoordDimension == 0)
-        *ppszDstText = CPLStrdup( "POINT EMPTY" );
-    else
-    {
-        OGRMakeWktCoordinate(szCoordinate, x, y, z, nCoordDimension );
-        sprintf( szTextEquiv, "POINT (%s)", szCoordinate );
-        *ppszDstText = CPLStrdup( szTextEquiv );
-    }
+    OGRMakeWktCoordinate(szCoordinate, x, y, z, nCoordDimension );
+    sprintf( szTextEquiv, "POINT (%s)", szCoordinate );
+    *ppszDstText = CPLStrdup( szTextEquiv );
     
     return OGRERR_NONE;
 }
@@ -481,8 +476,8 @@ void OGRPoint::getEnvelope( OGREnvelope * psEnvelope ) const
 /**
  * \fn void OGRPoint::setZ( double zIn );
  *
- * Assign point Z coordinate.  Calling this method will force the geometry
- * coordinate dimension to 3D (wkbPoint|wkbZ).
+ * Assign point Z coordinate.  Setting a zero zIn value will make the point
+ * 2D, and setting a non-zero value will make the point 3D (wkbPoint|wkbZ).
  *
  * There is no corresponding SFCOM method.  
  */ 
@@ -530,13 +525,4 @@ OGRErr OGRPoint::transform( OGRCoordinateTransformation *poCT )
     else
         return OGRERR_FAILURE;
 #endif
-}
-
-/************************************************************************/
-/*                               IsEmpty()                              */
-/************************************************************************/
-
-OGRBoolean OGRPoint::IsEmpty(  ) const
-{
-    return nCoordDimension == 0;
 }

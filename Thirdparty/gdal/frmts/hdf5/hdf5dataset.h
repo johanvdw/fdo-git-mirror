@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: hdf5dataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.

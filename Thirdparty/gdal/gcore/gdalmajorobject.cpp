@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmajorobject.cpp 11880 2007-08-13 15:02:33Z mloskot $
+ * $Id: gdalmajorobject.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for objects with metadata, etc.
@@ -30,7 +30,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalmajorobject.cpp 11880 2007-08-13 15:02:33Z mloskot $");
+CPL_CVSID("$Id: gdalmajorobject.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          GDALMajorObject()                           */
@@ -88,8 +88,6 @@ const char *GDALMajorObject::GetDescription() const
 const char * CPL_STDCALL GDALGetDescription( GDALMajorObjectH hObject )
 
 {
-    VALIDATE_POINTER1( hObject, "GDALGetDescription", NULL );
-
     return ((GDALMajorObject *) hObject)->GetDescription();
 }
 
@@ -127,8 +125,6 @@ void GDALMajorObject::SetDescription( const char * pszNewDesc )
 void CPL_STDCALL GDALSetDescription( GDALMajorObjectH hObject, const char *pszNewDesc )
 
 {
-    VALIDATE_POINTER0( hObject, "GDALSetDescription" );
-
     ((GDALMajorObject *) hObject)->SetDescription( pszNewDesc );
 }
 
@@ -172,8 +168,6 @@ char ** CPL_STDCALL
 GDALGetMetadata( GDALMajorObjectH hObject, const char * pszDomain )
 
 {
-    VALIDATE_POINTER1( hObject, "GDALGetMetadata", NULL );
-
     return ((GDALMajorObject *) hObject)->GetMetadata(pszDomain);
 }
 
@@ -216,8 +210,6 @@ GDALSetMetadata( GDALMajorObjectH hObject, char **papszMD,
                  const char *pszDomain )
 
 {
-    VALIDATE_POINTER1( hObject, "GDALSetMetadata", CE_Failure );
-
     return ((GDALMajorObject *) hObject)->SetMetadata( papszMD, pszDomain );
 }
 
@@ -258,8 +250,6 @@ const char * CPL_STDCALL GDALGetMetadataItem( GDALMajorObjectH hObject,
                                  const char *pszDomain )
 
 {
-    VALIDATE_POINTER1( hObject, "GDALGetMetadataItem", NULL );
-
     return ((GDALMajorObject *) hObject)->GetMetadataItem( pszName, pszDomain);
 }
 
@@ -302,8 +292,6 @@ GDALSetMetadataItem( GDALMajorObjectH hObject,
                      const char *pszDomain )
 
 {
-    VALIDATE_POINTER1( hObject, "GDALSetMetadataItem", CE_Failure );
-
     return ((GDALMajorObject *) hObject)->SetMetadataItem( pszName, pszValue,
                                                            pszDomain );
 }

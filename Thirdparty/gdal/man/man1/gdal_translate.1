@@ -1,19 +1,18 @@
-.TH "gdal_translate" 1 "4 Dec 2008" "GDAL" \" -*- nroff -*-
+.TH "gdal_translate" 1 "28 Jun 2006" "GDAL" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
-gdal_translate \- gdal_translate 
+gdal_translate \- gdal_translate
 converts raster data between different formats
 .SH "SYNOPSIS"
 .PP
 .PP
+.PP
 .nf
-
 gdal_translate [--help-general]
        [-ot {Byte/Int16/UInt16/UInt32/Int32/Float32/Float64/
-             CInt16/CInt32/CFloat32/CFloat64}] [-strict]
-       [-of format] [-b band] [-expand {rgb|rgba}]
-       [-outsize xsize[%] ysize[%]]
+             CInt16/CInt32/CFloat32/CFloat64}] [-not_strict]
+       [-of format] [-b band] [-outsize xsize[%] ysize[%]]
        [-scale [src_min src_max [dst_min dst_max]]]
        [-srcwin xoff yoff xsize ysize] [-projwin ulx uly lrx lry]
        [-a_srs srs_def] [-a_ullr ulx uly lrx lry] [-a_nodata value]
@@ -29,14 +28,12 @@ The gdal_translate utility can be used to convert raster data between different 
 .PP
 .IP "\fB\fB-ot\fP: \fItype\fP\fP" 1c
 For the output bands to be of the indicated data type. 
-.IP "\fB\fB-strict\fP:\fP" 1c
-Do'nt be forgiving of mismatches and lost data when translating to the output format. 
+.IP "\fB\fB-not_strict\fP:\fP" 1c
+Be forgiving of mismatches and lost data when translating to the output format. 
 .IP "\fB\fB-of\fP \fIformat\fP:\fP" 1c
 Select the output format. The default is GeoTIFF (GTiff). Use the short format name. 
 .IP "\fB\fB-b\fP \fIband\fP:\fP" 1c
 Select an input band \fIband\fP for output. Bands are numbered from 1 Multiple \fB-b\fP switches may be used to select a set of input bands to write to the output file, or to reorder bands. 
-.IP "\fB\fB-expand\fP \fIrgb|rgba\fP:\fP" 1c
-(From GDAL 1.6.0) To expose a dataset with 1 band with a color table as a dataset with 3 (RGB) or 4 (RGBA) bands. Usefull for output drivers such as JPEG, JPEG2000, MrSID, ECW that don't support color indexed datasets. 
 .IP "\fB\fB-outsize\fP \fIxsize[%] ysize[%]\fP:\fP" 1c
 Set the size of the output file. Outsize is in pixels and lines unless '' is attached in which case it is as a fraction of the input image size. 
 .IP "\fB\fB-scale\fP \fI[src_min src_max [dst_min dst_max]]\fP:\fP" 1c
@@ -62,15 +59,15 @@ Suppress progress monitor and other non-error output.
 .IP "\fB\fB-sds\fP:\fP" 1c
 Copy all subdatasets of this file to individual output files. Use with formats like HDF or OGDI that have subdatasets. 
 .IP "\fB\fIsrc_dataset\fP:\fP" 1c
-The source dataset name. It can be either file name, URL of data source or subdataset name for multi-dataset files. 
+The source file name. 
 .IP "\fB\fIdst_dataset\fP:\fP" 1c
 The destination file name. 
 .PP
 .SH "EXAMPLE"
 .PP
 .PP
+.PP
 .nf
-
 gdal_translate -of GTiff -co "TILED=YES" utm.tif utm_tiled.tif
 .fi
 .PP

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mffdataset.cpp 14720 2008-06-17 21:22:28Z rouault $
+ * $Id: mffdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: mffdataset.cpp 14720 2008-06-17 21:22:28Z rouault $");
+CPL_CVSID("$Id: mffdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_MFF(void);
@@ -291,8 +291,8 @@ MFFDataset::~MFFDataset()
     if( nGCPCount > 0 )
     {
         GDALDeinitGCPs( nGCPCount, pasGCPList );
+        CPLFree( pasGCPList );
     }
-    CPLFree( pasGCPList );
     CPLFree( pszProjection );
     CPLFree( pszGCPProjection );
 
@@ -740,8 +740,6 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS = new MFFDataset();
 
     poDS->papszHdrLines = papszHdrLines;
-
-    poDS->eAccess = poOpenInfo->eAccess;
     
 /* -------------------------------------------------------------------- */
 /*      Set some dataset wide information.                              */
@@ -864,27 +862,13 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
             else if( EQUAL(pszRefinedType,"U*4") )
                 eDataType = GDT_UInt32;
             else if( EQUAL(pszRefinedType,"J*1") )
-            {
-                CPLError( CE_Warning, CPLE_OpenFailed, 
-                        "Unable to open band %d because type J*1 is not handled ... skipping.\n", 
-                         nRawBand + 1 );
-                nSkipped++;
-                VSIFCloseL(fpRaw);
                 continue; /* we don't support 1 byte complex */
-            }
             else if( EQUAL(pszRefinedType,"J*2") )
                 eDataType = GDT_CInt16;
             else if( EQUAL(pszRefinedType,"K*4") )
                 eDataType = GDT_CInt32;
             else
-            {
-                CPLError( CE_Warning, CPLE_OpenFailed, 
-                        "Unable to open band %d because type %s is not handled ... skipping.\n", 
-                         nRawBand + 1, pszRefinedType );
-                nSkipped++;
-                VSIFCloseL(fpRaw);
                 continue;
-            }
         }
         else if( EQUALN(pszExtension,"b",1) )
         {
@@ -907,14 +891,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
             eDataType = GDT_CFloat32;
         }
         else
-        {
-            CPLError( CE_Warning, CPLE_OpenFailed, 
-                    "Unable to open band %d because extension %s is not handled ... skipping.\n", 
-                      nRawBand + 1, pszExtension );
-            nSkipped++;
-            VSIFCloseL(fpRaw);
             continue;
-        }
 
         nBand = poDS->GetRasterCount() + 1;
 
@@ -932,7 +909,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
             poBand = 
                 new RawRasterBand( poDS, nBand, fpRaw, 0, nPixelOffset,
                                    nPixelOffset * poDS->GetRasterXSize(),
-                                   eDataType, bNative, TRUE, TRUE );
+                                   eDataType, bNative, TRUE );
         }
 
         poDS->SetBand( nBand, poBand );

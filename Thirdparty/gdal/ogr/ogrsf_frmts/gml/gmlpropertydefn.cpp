@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlpropertydefn.cpp 14253 2008-04-11 03:00:50Z warmerdam $
+ * $Id: gmlpropertydefn.cpp 12511 2007-10-23 13:03:06Z mloskot $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLPropertyDefn
@@ -29,7 +29,6 @@
 
 #include "gmlreader.h"
 #include "cpl_conv.h"
-#include "cpl_string.h"
 
 /************************************************************************/
 /*                           GMLPropertyDefn                            */
@@ -80,12 +79,9 @@ void GMLPropertyDefn::SetSrcElement( const char *pszSrcElement )
 /*      make the field type more specific, or more general.             */
 /************************************************************************/
 
-void GMLPropertyDefn::AnalysePropertyValue( const char *pszValue,
-                                            const char *pszOldValue )
+void GMLPropertyDefn::AnalysePropertyValue( const char *pszValue )
 
 {
-    (void) pszOldValue; // not used yet. 
-
 /* -------------------------------------------------------------------- */
 /*      If it is a zero length string, just return.  We can't deduce    */
 /*      much from this.                                                 */
@@ -97,12 +93,24 @@ void GMLPropertyDefn::AnalysePropertyValue( const char *pszValue,
 /*      Does the string consist entirely of numeric values?             */
 /* -------------------------------------------------------------------- */
     int bIsReal = FALSE;
+    
 
-    CPLValueType valueType = CPLGetValueType(pszValue);
-    if (valueType == CPL_VALUE_STRING)
-        m_eType = GMLPT_String;
-    else
-        bIsReal = (valueType == CPL_VALUE_REAL);
+    for(; *pszValue != '\0'; pszValue++ )
+    {
+        if( isdigit( *pszValue) || *pszValue == '-' || *pszValue == '+' 
+            || isspace( *pszValue ) )
+            /* do nothing */;
+        else if( *pszValue == '.' || *pszValue == 'D' || *pszValue == 'd'
+                 || *pszValue == 'E' || *pszValue == 'e' )
+            bIsReal = TRUE;
+        else 
+        {
+            m_eType = GMLPT_String;
+
+            /* Skip forward to calculate property width. */
+            break;
+        }
+    }
 
     if( m_eType == GMLPT_String )
     {

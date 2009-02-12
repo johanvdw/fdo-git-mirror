@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rikdataset.cpp 14052 2008-03-21 12:09:12Z dron $
+ * $Id: rikdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  RIK Reader
  * Purpose:  All code for RIK Reader
@@ -31,7 +31,7 @@
 #include <zlib.h>
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: rikdataset.cpp 14052 2008-03-21 12:09:12Z dron $");
+CPL_CVSID("$Id: rikdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_RIK(void);
@@ -698,7 +698,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
     RIKHeader header;
     double metersPerPixel;
 
-    const char *headerType = "RIK3";
+    char *headerType = "RIK3";
 
     if( rik3header )
     {
@@ -892,7 +892,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
             header.iOptions != 0x0D )  // ZLIB
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
-                      "File %s. Unknown map options.\n",
+                      "Unknown map options.\n",
                       poOpenInfo->pszFilename );
             return NULL;
         }
@@ -925,7 +925,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
     if( !offsets )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "File %s. Unable to allocate offset table.\n",
+                  "Unable to allocate offset table.\n",
                   poOpenInfo->pszFilename );
         return NULL;
     }
@@ -968,7 +968,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
     if( VSIFEof( poOpenInfo->fp ) )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "File %s. Read past end of file.\n",
+                  "Read past end of file.\n",
                   poOpenInfo->pszFilename );
         return NULL;
     }
@@ -1000,7 +1000,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
                 if( !y )
                 {
                     CPLError( CE_Failure, CPLE_OpenFailed,
-                              "File %s too short.\n",
+                              "File too short.\n",
                               poOpenInfo->pszFilename );
                     return NULL;
                 }
@@ -1013,7 +1013,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
                 if( !y )
                 {
                     CPLError( CE_Failure, CPLE_OpenFailed,
-                              "File %s. Corrupt offset table.\n",
+                              "Corrupt offset table.\n",
                               poOpenInfo->pszFilename );
                     return NULL;
                 }
@@ -1033,7 +1033,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
               lastoffset );
 #endif
 
-    const char *compression = "RLE";
+    char *compression = "RLE";
 
     if( header.iOptions == 0x00 ||
         header.iOptions == 0x40 )

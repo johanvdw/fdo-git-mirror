@@ -168,7 +168,7 @@ void FdoSmPhRdGrdQueryReader::Execute()
 
     // Execute only if select statement was generated. Select statement generation
     // is skipped when the from tables do not exist.
-    if ( ((const wchar_t*)mStatement)[0] != '\0' )  {
+    if ( mStatement.GetLength() > 0 ) {
         if ( mQuery == NULL ) {
             // Create a collection to hold field values for all rows.
             mFetches = new FdoSmPhRdGrdRowArrayCollection();
@@ -183,9 +183,14 @@ void FdoSmPhRdGrdQueryReader::Execute()
                     FdoSmPhFieldP pField = pFields->GetItem(j);
                     col++;
                     if ( GetManager()->IsRdbUnicode() ) 
-                        mQuery->Bind( col, pField->GetBindSize(), (FdoString*) pField->GetBindString(), pField->GetNullInd()->GetDbIndicator() );
+                        mQuery->Bind( col, pField->GetBindSize(), (FdoString*) pField->GetBindString(), pField->GetNullInd() );
                     else
-                        mQuery->Bind( col, pField->GetBindSize(), (char*) pField->GetBindString(), pField->GetNullInd()->GetDbIndicator() );
+                        mQuery->Bind( col, pField->GetBindSize(), (char*) pField->GetBindString(), pField->GetNullInd() );
+                    GDBI_NI_TYPE  *null_ind = pField->GetNullInd();
+                    if ( *null_ind )
+                        commands->set_null( null_ind, 0, 0);
+                    else
+                        commands->set_nnull( null_ind, 0, 0);
                 }
             }
 
@@ -288,5 +293,4 @@ void FdoSmPhRdGrdQueryReader::EndSelect()
 	if ( mResults )
 		mResults->End();
 }
-
 

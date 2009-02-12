@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: msgdataset.cpp 15064 2008-07-28 19:10:23Z mloskot $
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.
@@ -143,6 +142,8 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Read the prologue.                                              */
 /* -------------------------------------------------------------------- */
+
+    XRITHeaderParser xhp;
     Prologue pp;
 
     std::string sPrologueFileName = command.sPrologueFileName(iCurrentSatellite, 1);
@@ -172,8 +173,8 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )
     if (fPrologueExists)
     {
       std::ifstream p_file(sPrologueFileName.c_str(), std::ios::in|std::ios::binary);
-      XRITHeaderParser xhp (p_file);
-      if (xhp.isValid() && xhp.isPrologue())
+      xhp.read_xrithdr(p_file);
+      if (xhp.xrit_hdr().file_type == 128)
         pp.read(p_file);
       p_file.close();
     }
@@ -305,7 +306,7 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )
 const double MSGRasterBand::rRTOA[12] = {20.76, 23.24, 19.85, -1, -1, -1, -1, -1, -1, -1, -1, 25.11};
 
 MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
-: fScanNorth(false)
+: cScanDir('s')
 , iLowerShift(0)
 , iSplitLine(0)
 , iLowerWestColumnPlanned(0)
@@ -361,13 +362,13 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
 
       if (i_file.good())
       {
-        XRITHeaderParser xhp (i_file);
+        XRITHeaderParser xhp;
 
-        if (xhp.isValid())
+        if (xhp.read_xrithdr(i_file))
         {
           // Data type is either 8 or 16 bits .. we tell this to GDAL here
           eDataType = GDT_Byte; // default .. always works
-          if (xhp.nrBitsPerPixel() > 8)
+          if (xhp.xrit_hdr().nb > 8)
           {
             if (poDS->command.cDataConversion == 'N')
               eDataType = GDT_UInt16; // normal case: MSG 10 bits data
@@ -378,11 +379,11 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
           }
 
           // make IReadBlock be called once per file
-          nBlockYSize = xhp.nrRows();
+          nBlockYSize = xhp.xrit_hdr().nl;
 
           // remember the scan direction
 
-          fScanNorth = xhp.isScannedNorth();
+          cScanDir = xhp.xrit_hdr().scan_dir;
         }
       }
 
@@ -394,7 +395,7 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
       MSGRasterBand* pFirstRasterBand = (MSGRasterBand*)poDS->GetRasterBand(1);
       eDataType = pFirstRasterBand->eDataType;
       nBlockYSize = pFirstRasterBand->nBlockYSize;
-      fScanNorth = pFirstRasterBand->fScanNorth;
+      cScanDir = pFirstRasterBand->cScanDir;
     }
     else // also first band is missing .. do something for fail-safety
     {
@@ -407,7 +408,7 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
         eDataType = GDT_Float32; // Radiometric calibration
 
       // nBlockYSize : default
-      // fScanNorth : default
+      // cScanDir : default
 
     }
 /* -------------------------------------------------------------------- */
@@ -416,12 +417,14 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDS, int nBand )
 
     if (iChannel == 12)
     {
+      XRITHeaderParser xhp;
+      Prologue pp;
+
       if (fPrologueExists)
       {
         std::ifstream p_file(sPrologueFileName.c_str(), std::ios::in|std::ios::binary);
-        XRITHeaderParser xhp(p_file);
-        Prologue pp;
-        if (xhp.isValid() && xhp.isPrologue())
+        xhp.read_xrithdr(p_file);
+        if (xhp.xrit_hdr().file_type == 128)
           pp.read(p_file);
         p_file.close();
 
@@ -472,7 +475,7 @@ CPLErr MSGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     int strip_number;
     int iChannel = poGDS->command.iChannel(1 + ((nBand - 1) % poGDS->command.iNrChannels()));
 
-    if (fScanNorth)
+    if (cScanDir == 'n')
       strip_number = nBlockYOff + 1;
     else
       strip_number = poGDS->command.iNrStrips(iChannel) - nBlockYOff;
@@ -488,23 +491,23 @@ CPLErr MSGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
       if (i_file.good())
       {
-        XRITHeaderParser xhp (i_file);
+        XRITHeaderParser xhp;
 
-        if (xhp.isValid())
+        if (xhp.read_xrithdr(i_file))
         {
           std::vector <short> QualityInfo;
-          unsigned short chunck_height = xhp.nrRows();
-          unsigned short chunck_bpp = xhp.nrBitsPerPixel();
-          unsigned short chunck_width = xhp.nrColumns();
+          unsigned short chunck_height = xhp.xrit_hdr().nl;
+          unsigned short chunck_bpp = xhp.xrit_hdr().nb;
+          unsigned short chunck_width = xhp.xrit_hdr().nc;
           unsigned __int8 NR = (unsigned __int8)chunck_bpp;
-          unsigned int nb_ibytes = xhp.dataSize();
+          unsigned int nb_ibytes = xhp.xrit_hdr().data_len;
           int iShift = 0;
           bool fSplitStrip = false; // in the split strip the "shift" only happens before the split "row"
           int iSplitRow = 0;
           if (iChannel == 12)
           {
-            iSplitRow = iSplitLine % xhp.nrRows();
-            int iSplitBlock = iSplitLine / xhp.nrRows();
+            iSplitRow = iSplitLine % xhp.xrit_hdr().nl;
+            int iSplitBlock = iSplitLine / xhp.xrit_hdr().nl;
             fSplitStrip = (nBlockYOff == iSplitBlock); // in the split strip the "shift" only happens before the split "row"
 
             // When iLowerShift > 0, the lower HRV image is shifted to the right
@@ -550,7 +553,7 @@ CPLErr MSGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
           // cases:
           // combination of the following:
-          // - scan direction can be north or south
+          // - scandir == 'n' or 's'
           // - eDataType can be GDT_Byte, GDT_UInt16 or GDT_Float32
           // - nBlockXSize == chunck_width or nBlockXSize > chunck_width
           // - when nBlockXSize > chunck_width, fSplitStrip can be true or false
@@ -561,7 +564,7 @@ CPLErr MSGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
           int nBlockSize = nBlockXSize * nBlockYSize;
           int y = chunck_width * chunck_height;
           int iStep = -1;
-          if (fScanNorth) // image is the other way around
+          if (xhp.xrit_hdr().scan_dir=='n') // image is the other way around
           {
             y = -1; // See how y is used below: += happens first, the result is used in the []
             iStep = 1;
@@ -613,7 +616,7 @@ CPLErr MSGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
               }
             }
           }
-          else if (eDataType == GDT_UInt16) // this is our "normal case" if scan direction is South: 10 bit MSG data became 2 bytes per pixel
+          else if (eDataType == GDT_UInt16) // this is our "normal case" if scan_dir is 's' 10 bit MSG data became 2 bytes per pixel
           {
             if (nBlockXSize == chunck_width) // optimized version
             {
@@ -739,4 +742,3 @@ void GDALRegister_MSG()
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }
 }
-

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: dted_ptstream.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  DTED Point Stream Writer.
@@ -29,7 +29,7 @@
 
 #include "dted_api.h"
 
-CPL_CVSID("$Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: dted_ptstream.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 typedef struct {
     char     *pszFilename;

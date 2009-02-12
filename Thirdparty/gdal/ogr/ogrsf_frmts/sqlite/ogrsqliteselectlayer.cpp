@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqliteselectlayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrsqliteselectlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteSelectLayer class, layer access to the results
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_sqlite.h"
 
-CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrsqliteselectlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 /************************************************************************/
 /*                        OGRSQLiteSelectLayer()                        */
 /************************************************************************/

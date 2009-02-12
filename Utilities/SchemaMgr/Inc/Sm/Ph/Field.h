@@ -17,7 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <Sm/Ph/Column.h>
-#include <Sm/Ph/NullIndicator.h>
+
+#define _NI_TYPE    long // Keep it in sync with GDBI_NI_TYPE
 
 class FdoSmPhRow;
 
@@ -113,12 +114,9 @@ public:
     }
 
     /// Get the null indicator for this field's bind variable
-    FdoSmPhNullIndicatorP GetNullInd()
+    _NI_TYPE* GetNullInd()
     {
-        if ( !mNullInd ) 
-            mNullInd = GetManager()->CreateNullIndicator();
-
-        return mNullInd;
+        return &mNullInd;
     }
 
 protected:
@@ -144,7 +142,7 @@ private:
 
     /// members for binding to a statement.
     bool mbCanBind;
-    FdoSmPhNullIndicatorP mNullInd;            // is value null
+    _NI_TYPE mNullInd;            // is value null
     char* mpBindString;        // the bind address.
     int   mpBindSize;
 

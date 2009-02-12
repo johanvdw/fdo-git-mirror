@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rpc.cpp 14158 2008-03-31 03:44:13Z warmerdam $
+ * $Id: gdal_rpc.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Image Warper
  * Purpose:  Implements a rational polynomail (RPC) based transformer. 
@@ -30,116 +30,8 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 #include "ogr_spatialref.h"
-#include "cpl_minixml.h"
 
-CPL_CVSID("$Id: gdal_rpc.cpp 14158 2008-03-31 03:44:13Z warmerdam $");
-
-CPL_C_START
-CPLXMLNode *GDALSerializeRPCTransformer( void *pTransformArg );
-void *GDALDeserializeRPCTransformer( CPLXMLNode *psTree );
-CPL_C_END
-
-/************************************************************************/
-/*                            RPCInfoToMD()                             */
-/*                                                                      */
-/*      Turn an RPCInfo structure back into it's metadata format.       */
-/************************************************************************/
-
-static char ** RPCInfoToMD( GDALRPCInfo *psRPCInfo )
-
-{
-    char **papszMD = NULL;
-    CPLString osField, osMultiField;
-    int i;
-
-    osField.Printf( "%.15g", psRPCInfo->dfLINE_OFF );
-    papszMD = CSLSetNameValue( papszMD, "LINE_OFF", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfSAMP_OFF );
-    papszMD = CSLSetNameValue( papszMD, "SAMP_OFF", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfLAT_OFF );
-    papszMD = CSLSetNameValue( papszMD, "LAT_OFF", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfLONG_OFF );
-    papszMD = CSLSetNameValue( papszMD, "LONG_OFF", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfHEIGHT_OFF );
-    papszMD = CSLSetNameValue( papszMD, "HEIGHT_OFF", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfLINE_SCALE );
-    papszMD = CSLSetNameValue( papszMD, "LINE_SCALE", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfSAMP_SCALE );
-    papszMD = CSLSetNameValue( papszMD, "SAMP_SCALE", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfLAT_SCALE );
-    papszMD = CSLSetNameValue( papszMD, "LAT_SCALE", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfLONG_SCALE );
-    papszMD = CSLSetNameValue( papszMD, "LONG_SCALE", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfHEIGHT_SCALE );
-    papszMD = CSLSetNameValue( papszMD, "HEIGHT_SCALE", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfMIN_LONG );
-    papszMD = CSLSetNameValue( papszMD, "MIN_LONG", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfMIN_LAT );
-    papszMD = CSLSetNameValue( papszMD, "MIN_LAT", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfMAX_LONG );
-    papszMD = CSLSetNameValue( papszMD, "MAX_LONG", osField );
-
-    osField.Printf( "%.15g", psRPCInfo->dfMAX_LAT );
-    papszMD = CSLSetNameValue( papszMD, "MAX_LAT", osField );
-
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", psRPCInfo->adfLINE_NUM_COEFF[i] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    papszMD = CSLSetNameValue( papszMD, "LINE_NUM_COEFF", osMultiField );
-
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", psRPCInfo->adfLINE_DEN_COEFF[i] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    papszMD = CSLSetNameValue( papszMD, "LINE_DEN_COEFF", osMultiField );
-
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", psRPCInfo->adfSAMP_NUM_COEFF[i] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    papszMD = CSLSetNameValue( papszMD, "SAMP_NUM_COEFF", osMultiField );
-
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", psRPCInfo->adfSAMP_DEN_COEFF[i] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    papszMD = CSLSetNameValue( papszMD, "SAMP_DEN_COEFF", osMultiField );
-
-    return papszMD;
-}
+CPL_CVSID("$Id: gdal_rpc.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          RPCComputeTerms()                           */
@@ -234,105 +126,14 @@ typedef struct {
 
     double      dfPixErrThreshold;
 
-    double      dfHeightOffset;
-
 } GDALRPCTransformInfo;
 
 /************************************************************************/
 /*                      GDALCreateRPCTransformer()                      */
 /************************************************************************/
 
-/**
- * Create an RPC based transformer. 
- *
- * The geometric sensor model describing the physical relationship between 
- * image coordinates and ground coordinate is known as a Rigorous Projection 
- * Model. A Rigorous Projection Model expresses the mapping of the image space 
- * coordinates of rows and columns (r,c) onto the object space reference 
- * surface geodetic coordinates (long, lat, height).
- * 
- * RPC supports a generic description of the Rigorous Projection Models. The 
- * approximation used by GDAL (RPC00) is a set of rational polynomials exp 
- * ressing the normalized row and column values, (rn , cn), as a function of
- *  normalized geodetic latitude, longitude, and height, (P, L, H), given a 
- * set of normalized polynomial coefficients (LINE_NUM_COEF_n, LINE_DEN_COEF_n,
- *  SAMP_NUM_COEF_n, SAMP_DEN_COEF_n). Normalized values, rather than actual 
- * values are used in order to minimize introduction of errors during the 
- * calculations. The transformation between row and column values (r,c), and 
- * normalized row and column values (rn, cn), and between the geodetic 
- * latitude, longitude, and height and normalized geodetic latitude, 
- * longitude, and height (P, L, H), is defined by a set of normalizing 
- * translations (offsets) and scales that ensure all values are contained i 
- * the range -1 to +1.
- *
- * This function creates a GDALTransformFunc compatible transformer 
- * for going between image pixel/line and long/lat/height coordinates 
- * using RPCs.  The RPCs are provided in a GDALRPCInfo structure which is
- * normally read from metadata using GDALExtractRPCInfo().  
- *
- * GDAL RPC Metadata has the following entries (also described in GDAL RFC 22
- * and the GeoTIFF RPC document http://geotiff.maptools.org/rpc_prop.html.  
- *
- * <ul>
- * <li>ERR_BIAS: Error - Bias. The RMS bias error in meters per horizontal axis of all points in the image (-1.0 if unknown)
- * <li>ERR_RAND: Error - Random. RMS random error in meters per horizontal axis of each point in the image (-1.0 if unknown)
- * <li>LINE_OFF: Line Offset
- * <li>SAMP_OFF: Sample Offset
- * <li>LAT_OFF: Geodetic Latitude Offset
- * <li>LONG_OFF: Geodetic Longitude Offset
- * <li>HEIGHT_OFF: Geodetic Height Offset
- * <li>LINE_SCALE: Line Scale
- * <li>SAMP_SCALE: Sample Scale
- * <li>LAT_SCALE: Geodetic Latitude Scale
- * <li>LONG_SCALE: Geodetic Longitude Scale
- * <li>HEIGHT_SCALE: Geodetic Height Scale
- * <li>LINE_NUM_COEFF (1-20): Line Numerator Coefficients. Twenty coefficients for the polynomial in the Numerator of the rn equation. (space separated)
- * <li>LINE_DEN_COEFF (1-20): Line Denominator Coefficients. Twenty coefficients for the polynomial in the Denominator of the rn equation. (space separated)
- * <li>SAMP_NUM_COEFF (1-20): Sample Numerator Coefficients. Twenty coefficients for the polynomial in the Numerator of the cn equation. (space separated)
- * <li>SAMP_DEN_COEFF (1-20): Sample Denominator Coefficients. Twenty coefficients for the polynomial in the Denominator of the cn equation. (space separated)
- * </ul>
- *
- * The transformer normally maps from pixel/line/height to long/lat/height space
- * as a forward transformation though in RPC terms that would be considered
- * an inverse transformation (and is solved by iterative approximation using
- * long/lat/height to pixel/line transformations).  The default direction can
- * be reversed by passing bReversed=TRUE.  
- * 
- * The iterative solution of pixel/line
- * to lat/long/height is currently run for up to 10 iterations or until 
- * the apparent error is less than dfPixErrThreshold pixels.  Passing zero
- * will not avoid all error, but will cause the operation to run for the maximum
- * number of iterations. 
- *
- * Additional options to the transformer can be supplied in papszOptions.
- * Currently only one option is supported, though in the future more may
- * be added, notably an option to extract elevation offsets from a DEM file.
- *
- * Options:
- * 
- * <ul>
- * <li> RPC_HEIGHT: a fixed height offset to be applied to all points passed
- * in.  In this situation the Z passed into the transformation function is
- * assumed to be height above ground, and the RPC_HEIGHT is assumed to be
- * an average height above sea level for ground in the target scene. 
- * </ul>
- *
- * @param psRPCInfo Definition of the RPC parameters.
- *
- * @param bReversed If true "forward" transformation will be lat/long to pixel/line instead of the normal pixel/line to lat/long.
- *
- * @param dfPixErrThreshold the error (measured in pixels) allowed in the 
- * iterative solution of pixel/line to lat/long computations (the other way
- * is always exact given the equations). 
- *
- * @param papszOptions Other transformer options (ie. RPC_HEIGHT=<z>). 
- *
- * @return transformer callback data (deallocate with GDALDestroyTransformer()).
- */
-
 void *GDALCreateRPCTransformer( GDALRPCInfo *psRPCInfo, int bReversed, 
-                                double dfPixErrThreshold,
-                                char **papszOptions )
+                                double dfPixErrThreshold )
 
 {
     GDALRPCTransformInfo *psTransform;
@@ -346,49 +147,24 @@ void *GDALCreateRPCTransformer( GDALRPCInfo *psRPCInfo, int bReversed,
     memcpy( &(psTransform->sRPC), psRPCInfo, sizeof(GDALRPCInfo) );
     psTransform->bReversed = bReversed;
     psTransform->dfPixErrThreshold = dfPixErrThreshold;
-    psTransform->dfHeightOffset = 0.0;
 
     strcpy( psTransform->sTI.szSignature, "GTI" );
     psTransform->sTI.pszClassName = "GDALRPCTransformer";
     psTransform->sTI.pfnTransform = GDALRPCTransform;
     psTransform->sTI.pfnCleanup = GDALDestroyRPCTransformer;
-    psTransform->sTI.pfnSerialize = GDALSerializeRPCTransformer;
+    psTransform->sTI.pfnSerialize = NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Do we have a "average height" that we want to consider all      */
-/*      elevations to be relative to?                                   */
-/* -------------------------------------------------------------------- */
-    const char *pszHeight = CSLFetchNameValue( papszOptions, "RPC_HEIGHT" );
-    if( pszHeight != NULL )
-        psTransform->dfHeightOffset = CPLAtof(pszHeight);
-        
 /* -------------------------------------------------------------------- */
 /*      Establish a reference point for calcualating an affine          */
 /*      geotransform approximate transformation.                        */
 /* -------------------------------------------------------------------- */
-    double adfGTFromLL[6], dfRefPixel = -1.0, dfRefLine = -1.0;
-    double dfRefLong, dfRefLat;
+    double adfGTFromLL[6], dfRefPixel, dfRefLine;
 
-    if( psRPCInfo->dfMIN_LONG != -180 || psRPCInfo->dfMAX_LONG != 180 )
-    {
-        dfRefLong = (psRPCInfo->dfMIN_LONG + psRPCInfo->dfMAX_LONG) * 0.5;
-        dfRefLat  = (psRPCInfo->dfMIN_LAT  + psRPCInfo->dfMAX_LAT ) * 0.5;
+    double dfRefLong = (psRPCInfo->dfMIN_LONG + psRPCInfo->dfMAX_LONG) * 0.5;
+    double dfRefLat  = (psRPCInfo->dfMIN_LAT  + psRPCInfo->dfMAX_LAT ) * 0.5;
 
-        RPCTransformPoint( psRPCInfo, dfRefLong, dfRefLat, 0.0, 
-                           &dfRefPixel, &dfRefLine );
-    }
-
-    // Try with scale and offset if we don't can't use bounds or
-    // the results seem daft. 
-    if( dfRefPixel < 0.0 || dfRefLine < 0.0
-        || dfRefPixel > 100000 || dfRefLine > 100000 )
-    {
-        dfRefLong = psRPCInfo->dfLONG_OFF;
-        dfRefLat  = psRPCInfo->dfLAT_OFF;
-
-        RPCTransformPoint( psRPCInfo, dfRefLong, dfRefLat, 0.0, 
-                           &dfRefPixel, &dfRefLine );
-    }
+    RPCTransformPoint( psRPCInfo, dfRefLong, dfRefLat, 0.0, 
+                       &dfRefPixel, &dfRefLine );
 
 /* -------------------------------------------------------------------- */
 /*      Transform nearby locations to establish affine direction        */
@@ -427,75 +203,6 @@ void GDALDestroyRPCTransformer( void *pTransformAlg )
 }
 
 /************************************************************************/
-/*                      RPCInverseTransformPoint()                      */
-/************************************************************************/
-
-static void 
-RPCInverseTransformPoint( GDALRPCTransformInfo *psTransform,
-                          double dfPixel, double dfLine, double dfHeight, 
-                          double *pdfLong, double *pdfLat )
-
-{
-    double dfResultX, dfResultY;
-    int    iIter;
-    GDALRPCInfo *psRPC = &(psTransform->sRPC);
-
-/* -------------------------------------------------------------------- */
-/*      Compute an initial approximation based on linear                */
-/*      interpolation from our reference point.                         */
-/* -------------------------------------------------------------------- */
-    dfResultX = psTransform->adfPLToLatLongGeoTransform[0]
-        + psTransform->adfPLToLatLongGeoTransform[1] * dfPixel
-        + psTransform->adfPLToLatLongGeoTransform[2] * dfLine;
-
-    dfResultY = psTransform->adfPLToLatLongGeoTransform[3]
-        + psTransform->adfPLToLatLongGeoTransform[4] * dfPixel
-        + psTransform->adfPLToLatLongGeoTransform[5] * dfLine;
-
-/* -------------------------------------------------------------------- */
-/*      Now iterate, trying to find a closer LL location that will      */
-/*      back transform to the indicated pixel and line.                 */
-/* -------------------------------------------------------------------- */
-    double dfPixelDeltaX, dfPixelDeltaY;
-
-    for( iIter = 0; iIter < 10; iIter++ )
-    {
-        double dfBackPixel, dfBackLine;
-
-        RPCTransformPoint( psRPC, dfResultX, dfResultY, dfHeight, 
-                           &dfBackPixel, &dfBackLine );
-
-        dfPixelDeltaX = dfBackPixel - dfPixel;
-        dfPixelDeltaY = dfBackLine - dfLine;
-
-        dfResultX = dfResultX 
-            - dfPixelDeltaX * psTransform->adfPLToLatLongGeoTransform[1]
-            - dfPixelDeltaY * psTransform->adfPLToLatLongGeoTransform[2];
-        dfResultY = dfResultY 
-            - dfPixelDeltaX * psTransform->adfPLToLatLongGeoTransform[4]
-            - dfPixelDeltaY * psTransform->adfPLToLatLongGeoTransform[5];
-
-        if( ABS(dfPixelDeltaX) < psTransform->dfPixErrThreshold
-            && ABS(dfPixelDeltaY) < psTransform->dfPixErrThreshold )
-        {
-            iIter = -1;
-            //CPLDebug( "RPC", "Converged!" );
-            break;
-        }
-
-    }
-
-    if( iIter != -1 )
-        CPLDebug( "RPC", "Iterations %d: Got: %g,%g  Offset=%g,%g", 
-                  iIter, 
-                  dfResultX, dfResultY,
-                  dfPixelDeltaX, dfPixelDeltaY );
-    
-    *pdfLong = dfResultX;
-    *pdfLat = dfResultY;
-}
-
-/************************************************************************/
 /*                          GDALRPCTransform()                          */
 /************************************************************************/
 
@@ -505,8 +212,6 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
                       int *panSuccess )
 
 {
-    VALIDATE_POINTER1( pTransformArg, "GDALRPCTransform", 0 );
-
     GDALRPCTransformInfo *psTransform = (GDALRPCTransformInfo *) pTransformArg;
     GDALRPCInfo *psRPC = &(psTransform->sRPC);
     int i;
@@ -522,8 +227,7 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
     {
         for( i = 0; i < nPointCount; i++ )
         {
-            RPCTransformPoint( psRPC, padfX[i], padfY[i], 
-                               padfZ[i] + psTransform->dfHeightOffset, 
+            RPCTransformPoint( psRPC, padfX[i], padfY[i], padfZ[i], 
                                padfX + i, padfY + i );
             panSuccess[i] = TRUE;
         }
@@ -532,17 +236,22 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Compute the inverse (pixel/line/height to lat/long).  This      */
-/*      function uses an iterative method from an initial linear        */
-/*      approximation.                                                  */
+/*      The more complicated issue is how to reverse this.  For now     */
+/*      we use a dead simple linear approximation.  In the case of      */
+/*      image warping, this direction is only used to pick bound for    */
+/*      the newly created output file anyways.                          */
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nPointCount; i++ )
     {
         double dfResultX, dfResultY;
 
-        RPCInverseTransformPoint( psTransform, padfX[i], padfY[i], 
-                                  padfZ[i] + psTransform->dfHeightOffset,
-                                  &dfResultX, &dfResultY );
+        dfResultX = psTransform->adfPLToLatLongGeoTransform[0]
+            + psTransform->adfPLToLatLongGeoTransform[1] * padfX[i]
+            + psTransform->adfPLToLatLongGeoTransform[2] * padfY[i];
+
+        dfResultY = psTransform->adfPLToLatLongGeoTransform[3]
+            + psTransform->adfPLToLatLongGeoTransform[4] * padfX[i]
+            + psTransform->adfPLToLatLongGeoTransform[5] * padfY[i];
 
         padfX[i] = dfResultX;
         padfY[i] = dfResultY;
@@ -551,141 +260,4 @@ int GDALRPCTransform( void *pTransformArg, int bDstToSrc,
     }
 
     return TRUE;
-}
-
-/************************************************************************/
-/*                    GDALSerializeRPCTransformer()                     */
-/************************************************************************/
-
-CPLXMLNode *GDALSerializeRPCTransformer( void *pTransformArg )
-
-{
-    VALIDATE_POINTER1( pTransformArg, "GDALSerializeRPCTransformer", NULL );
-
-    CPLXMLNode *psTree;
-    GDALRPCTransformInfo *psInfo = 
-        (GDALRPCTransformInfo *)(pTransformArg);
-
-    psTree = CPLCreateXMLNode( NULL, CXT_Element, "RPCTransformer" );
-
-/* -------------------------------------------------------------------- */
-/*      Serialize bReversed.                                            */
-/* -------------------------------------------------------------------- */
-    CPLCreateXMLElementAndValue( 
-        psTree, "Reversed", 
-        CPLString().Printf( "%d", psInfo->bReversed ) );
-                                 
-/* -------------------------------------------------------------------- */
-/*      Serialize Height Offset.                                        */
-/* -------------------------------------------------------------------- */
-    CPLCreateXMLElementAndValue( 
-        psTree, "HeightOffset", 
-        CPLString().Printf( "%.15g", psInfo->dfHeightOffset ) );
-                                 
-/* -------------------------------------------------------------------- */
-/*      Serialize pixel error threshold.                                */
-/* -------------------------------------------------------------------- */
-    CPLCreateXMLElementAndValue( 
-        psTree, "PixErrThreshold", 
-        CPLString().Printf( "%.15g", psInfo->dfPixErrThreshold ) );
-                                 
-/* -------------------------------------------------------------------- */
-/*      RPC metadata.                                                   */
-/* -------------------------------------------------------------------- */
-    char **papszMD = RPCInfoToMD( &(psInfo->sRPC) );
-    CPLXMLNode *psMD= CPLCreateXMLNode( psTree, CXT_Element, 
-                                        "Metadata" );
-
-    for( int i = 0; papszMD != NULL && papszMD[i] != NULL; i++ )
-    {
-        const char *pszRawValue;
-        char *pszKey;
-        CPLXMLNode *psMDI;
-                
-        pszRawValue = CPLParseNameValue( papszMD[i], &pszKey );
-                
-        psMDI = CPLCreateXMLNode( psMD, CXT_Element, "MDI" );
-        CPLSetXMLValue( psMDI, "#key", pszKey );
-        CPLCreateXMLNode( psMDI, CXT_Text, pszRawValue );
-                
-        CPLFree( pszKey );
-    }
-
-    CSLDestroy( papszMD );
-
-    return psTree;
-}
-
-/************************************************************************/
-/*                   GDALDeserializeRPCTransformer()                    */
-/************************************************************************/
-
-void *GDALDeserializeRPCTransformer( CPLXMLNode *psTree )
-
-{
-    void *pResult;
-    char **papszOptions = NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Collect metadata.                                               */
-/* -------------------------------------------------------------------- */
-    char **papszMD = NULL;
-    CPLXMLNode *psMDI, *psMetadata;
-    GDALRPCInfo sRPC;
-
-    psMetadata = CPLGetXMLNode( psTree, "Metadata" );
-
-    if( psMetadata->eType != CXT_Element
-        || !EQUAL(psMetadata->pszValue,"Metadata") )
-        return NULL;
-    
-    for( psMDI = psMetadata->psChild; psMDI != NULL; 
-         psMDI = psMDI->psNext )
-    {
-        if( !EQUAL(psMDI->pszValue,"MDI") 
-            || psMDI->eType != CXT_Element 
-            || psMDI->psChild == NULL 
-            || psMDI->psChild->psNext == NULL 
-            || psMDI->psChild->eType != CXT_Attribute
-            || psMDI->psChild->psChild == NULL )
-            continue;
-        
-        papszMD = 
-            CSLSetNameValue( papszMD, 
-                             psMDI->psChild->psChild->pszValue, 
-                             psMDI->psChild->psNext->pszValue );
-    }
-
-    if( !GDALExtractRPCInfo( papszMD, &sRPC ) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Failed to reconstitute RPC transformer." );
-        return NULL;
-    }
-
-    CSLDestroy( papszMD );
-
-/* -------------------------------------------------------------------- */
-/*      Get other flags.                                                */
-/* -------------------------------------------------------------------- */
-    double dfPixErrThreshold;
-    int bReversed;
-
-    bReversed = atoi(CPLGetXMLValue(psTree,"Reversed","0"));
-
-    dfPixErrThreshold = 
-        CPLAtof(CPLGetXMLValue(psTree,"PixErrThreshold","0.25"));
-
-    papszOptions = CSLSetNameValue( papszOptions, "RPC_HEIGHT",
-                                    CPLGetXMLValue(psTree,"HeightOffset","0"));
-
-/* -------------------------------------------------------------------- */
-/*      Generate transformation.                                        */
-/* -------------------------------------------------------------------- */
-    pResult = GDALCreateRPCTransformer( &sRPC, bReversed, dfPixErrThreshold,
-                                        papszOptions );
-    
-    CSLDestroy( papszOptions );
-
-    return pResult;
 }

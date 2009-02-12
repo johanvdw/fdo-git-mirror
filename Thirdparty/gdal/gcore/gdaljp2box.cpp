@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2box.cpp 11331 2007-04-21 20:33:23Z warmerdam $
+ * $Id: gdaljp2box.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Box Implementation - Low level JP2 box reader.
@@ -30,7 +30,7 @@
 #include "gdaljp2metadata.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 11331 2007-04-21 20:33:23Z warmerdam $");
+CPL_CVSID("$Id: gdaljp2box.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                             GDALJP2Box()                             */
@@ -207,8 +207,7 @@ GByte *GDALJP2Box::ReadBoxData()
 {
     char *pszData = (char *) CPLMalloc(GetDataLength() + 1);
 
-    if( (GIntBig) VSIFReadL( pszData, 1, GetDataLength(), fpVSIL ) 
-        != GetDataLength() )
+    if( VSIFReadL( pszData, 1, GetDataLength(), fpVSIL ) != GetDataLength() )
     {
         CPLFree( pszData );
         return NULL;

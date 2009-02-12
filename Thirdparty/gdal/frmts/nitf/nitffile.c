@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitffile.c 15339 2008-09-08 07:41:21Z warmerdam $
+ * $Id: nitffile.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module responsible for opening NITF file, populating NITFFile
@@ -33,15 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: nitffile.c 15339 2008-09-08 07:41:21Z warmerdam $");
-
-static int NITFWriteBLOCKA( char *pachUDIDL, char *pachTRE, 
-                            int *pnOffset, int nBytesAvailable,
-                            char **papszOptions );
-static int NITFWriteTREsFromOptions(
-    char *pachUDIDL, char *pachTRE,
-    int *pnOffset, int nBytesAvailable,
-    char **papszOptions );
+CPL_CVSID("$Id: nitffile.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static int 
 NITFCollectSegmentInfo( NITFFile *psFile, int nOffset, char *pszType,
@@ -60,7 +52,7 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
     NITFFile    *psFile;
     int         nHeaderLen, nOffset, nNextData, nHeaderLenOffset;
     char        szTemp[128], achFSDWNG[6];
-    GIntBig     currentPos;
+    GIntBig     nFileLength;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
@@ -88,7 +80,6 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "The file %s is not an NITF file.", 
                   pszFilename );
-        VSIFCloseL(fp);
         return NULL;
     }
 
@@ -101,7 +92,6 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "Unable to read FSDWNG field from NITF file.  File is either corrupt\n"
                   "or empty." );
-        VSIFCloseL(fp);
         return NULL;
     }
 
@@ -119,21 +109,19 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "Unable to read header length from NITF file.  File is either corrupt\n"
                   "or empty." );
-        VSIFCloseL(fp);
         return NULL;
     }
 
     szTemp[6] = '\0';
     nHeaderLen = atoi(szTemp);
 
-    VSIFSeekL( fp, nHeaderLen, SEEK_SET );
-    currentPos = VSIFTellL( fp ) ;
-    if( nHeaderLen < nHeaderLenOffset || nHeaderLen > currentPos )
+    VSIFSeekL( fp, 0, SEEK_END );
+    nFileLength = VSIFTellL( fp ) ;
+    if( nHeaderLen < nHeaderLenOffset || nHeaderLen > nFileLength )
     {
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "NITF Header Length (%d) seems to be corrupt.",
                   nHeaderLen );
-        VSIFCloseL(fp);
         return NULL;
     }
 
@@ -164,8 +152,7 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
                          start, length,                        \
                          "NITF_" #name );
        
-    if( EQUAL(psFile->szVersion,"NITF02.10") 
-        || EQUAL(psFile->szVersion,"NSIF01.00") )
+    if( EQUAL(psFile->szVersion,"NITF02.10") )
     {
         char szWork[100];
 
@@ -252,49 +239,18 @@ NITFFile *NITFOpen( const char *pszFilename, int bUpdatable )
     nOffset = NITFCollectSegmentInfo( psFile, nOffset, "RE", 4, 7, &nNextData);
 
 /* -------------------------------------------------------------------- */
-/*      Is there User Define Header Data? (TREs)                        */
+/*      Is there a TRE to suck up?                                      */
 /* -------------------------------------------------------------------- */
     psFile->nTREBytes = 
         atoi(NITFGetField( szTemp, pachHeader, nOffset, 5 ));
     nOffset += 5;
 
-    if( psFile->nTREBytes > 0 )
-    {
-        nOffset += 3; /* UDHOFL */
-        psFile->nTREBytes -= 3;
-    }
+    nOffset += 3; /* UDHOFL */
 
     if( psFile->nTREBytes != 0 )
     {
-        psFile->pachTRE = (char *) CPLMalloc(psFile->nTREBytes);
-        memcpy( psFile->pachTRE, pachHeader + nOffset, 
-                psFile->nTREBytes );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Is there Extended Header Data?  (More TREs)                     */
-/* -------------------------------------------------------------------- */
-    if( nHeaderLen > nOffset + 8 )
-    {
-        int nXHDL = 
-            atoi(NITFGetField( szTemp, pachHeader, nOffset, 5 ));
-
-        nOffset += 5; /* XHDL */
-
-        if( nXHDL != 0 )
-        {
-            nOffset += 3; /* XHDLOFL */
-            nXHDL -= 3;
-        }
-
-        if( nXHDL != 0 )
-        {
-            psFile->pachTRE = (char *) 
-                CPLRealloc( psFile->pachTRE, 
-                            psFile->nTREBytes + nXHDL );
-            memcpy( psFile->pachTRE, pachHeader + nOffset, nXHDL );
-            psFile->nTREBytes += nXHDL;
-        }
+        psFile->pachTRE = pachHeader + nOffset;
+        psFile->nTREBytes -= 3;
     }
 
     return psFile;
@@ -329,7 +285,6 @@ void NITFClose( NITFFile *psFile )
         VSIFCloseL( psFile->fp );
     CPLFree( psFile->pachHeader );
     CSLDestroy( psFile->papszMetadata );
-    CPLFree( psFile->pachTRE );
     CPLFree( psFile );
 }
 
@@ -348,17 +303,13 @@ int NITFCreate( const char *pszFilename,
     FILE	*fp;
     char        *pachIMHDR;
     char        achHeader[5000];
-    int         nHeaderUsed = 0;
     int         nOffset = 0, iBand, nIHSize, nNPPBH, nNPPBV;
     GIntBig     nImageSize;
     int         nNBPR, nNBPC;
     const char *pszIREP;
     const char *pszIC = CSLFetchNameValue(papszOptions,"IC");
     const char *pszCLevel;
-    const char *pszOpt;
-    int nHL, nNUMT = 0;
-    int nUDIDLOffset;
-    const char *pszVersion;
+
 
     if( pszIC == NULL )
         pszIC = "NC";
@@ -383,10 +334,6 @@ int NITFCreate( const char *pszFilename,
     if( pszIREP == NULL )
         pszIREP = "MONO";
 
-    pszOpt = CSLFetchNameValue( papszOptions, "NUMT" );
-    if( pszOpt != NULL )
-        nNUMT = atoi(pszOpt);
-    
 /* -------------------------------------------------------------------- */
 /*      Compute raw image size, blocking factors and so forth.          */
 /* -------------------------------------------------------------------- */
@@ -420,23 +367,6 @@ int NITFCreate( const char *pszFilename,
         * nNPPBH * nNPPBV * nBands;
 
 /* -------------------------------------------------------------------- */
-/*      Work out the version we are producing.  For now we really       */
-/*      only support creating NITF02.10 or the nato analog              */
-/*      NSIF01.00.                                                      */
-/* -------------------------------------------------------------------- */
-    pszVersion = CSLFetchNameValue( papszOptions, "FHDR" );
-    if( pszVersion == NULL )
-        pszVersion = "NITF02.10";
-    else if( !EQUAL(pszVersion,"NITF02.10") 
-             && !EQUAL(pszVersion,"NSIF01.00") )
-    {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-                  "FHDR=%s not supported, switching to NITF02.10.",
-                  pszVersion );
-        pszVersion = "NITF02.10";
-    }
-        
-/* -------------------------------------------------------------------- */
 /*      Compute CLEVEL ("complexity" level).                            */
 /*      See: http://164.214.2.51/ntb/baseline/docs/2500b/2500b_not2.pdf */
 /*            page 96u                                                  */
@@ -460,7 +390,7 @@ int NITFCreate( const char *pszFilename,
         pszParmValue = text;						\
     strncpy(location,pszParmValue,MIN(width,strlen(pszParmValue))); }   
 
-    PLACE (achHeader+  0, FDHR_FVER,    pszVersion                      );
+    PLACE (achHeader+  0, FDHR_FVER,    "NITF02.10"                     );
     OVR( 2,achHeader+  9, CLEVEL,       pszCLevel                       );
     PLACE (achHeader+ 11, STYPE        ,"BF01"                          );
     OVR(10,achHeader+ 15, OSTAID       ,"GDAL"                          );
@@ -489,36 +419,22 @@ int NITFCreate( const char *pszFilename,
     OVR(24,achHeader+300, ONAME        ,""                              );
     OVR(18,achHeader+324, OPHONE       ,""                              );
     PLACE (achHeader+342, FL           ,"????????????"                  );
-    PLACE (achHeader+354, HL           ,"??????"                        );
+    PLACE (achHeader+354, HL           ,"000404"                        );
     PLACE (achHeader+360, NUMI         ,"001"                           );
     PLACE (achHeader+363, LISH1        ,"??????"                        );
     PLACE (achHeader+369, LI1          ,CPLSPrintf("%010ud",(GUInt32) nImageSize)  );
     PLACE (achHeader+379, NUMS         ,"000"                           );
     PLACE (achHeader+382, NUMX         ,"000"                           );
-    PLACE (achHeader+385, NUMT         ,CPLSPrintf("%03d",nNUMT)        );
-
-    PLACE (achHeader+388, LTSHnLTn     ,""                              );
-
-    nHL = 388 + (4+5) * nNUMT;
-
-    PLACE (achHeader+nHL, NUMDES       ,"000"                           );
-    nHL += 3;
-    PLACE (achHeader+nHL, NUMRES       ,"000"                           );
-    nHL += 3;
-    PLACE (achHeader+nHL, UDHDL        ,"00000"                         );
-    nHL += 5;
-    PLACE (achHeader+nHL, XHDL         ,"00000"                         );
-    nHL += 5;
-
-    // update header length
-    PLACE (achHeader+354, HL           ,CPLSPrintf("%06d",nHL)          );
+    PLACE (achHeader+385, NUMT         ,"000"                           );
+    PLACE (achHeader+388, NUMDES       ,"000"                           );
+    PLACE (achHeader+391, NUMRES       ,"000"                           );
+    PLACE (achHeader+394, UDHDL        ,"00000"                         );
+    PLACE (achHeader+399, XHDL         ,"00000"                         );
     
-    nHeaderUsed = nHL;
-
 /* -------------------------------------------------------------------- */
 /*      Prepare the image header.                                       */
 /* -------------------------------------------------------------------- */
-    pachIMHDR = achHeader + nHeaderUsed;
+    pachIMHDR = achHeader + 404;
 
     PLACE (pachIMHDR+  0, IM           , "IM"                           );
     OVR(10,pachIMHDR+  2, IID1         , "Missing"                      );
@@ -590,15 +506,6 @@ int NITFCreate( const char *pszFilename,
             else if( iBand == 2 )
                 pszIREPBAND = "B";
         }
-        else if( EQUALN(pszIREP,"YCbCr",5) )
-        {
-            if( iBand == 0 )
-                pszIREPBAND = "Y";
-            else if( iBand == 1 )
-                pszIREPBAND = "Cb";
-            else if( iBand == 2 )
-                pszIREPBAND = "Cr";
-        }
 
         PLACE(pachIMHDR+nOffset+ 0, IREPBANDn, pszIREPBAND                 );
 //      PLACE(pachIMHDR+nOffset+ 2, ISUBCATn, ""                           );
@@ -647,47 +554,22 @@ int NITFCreate( const char *pszFilename,
     PLACE(pachIMHDR+nOffset+ 40, UDIDL , "00000"                        );
     PLACE(pachIMHDR+nOffset+ 45, IXSHDL, "00000"                        );
 
-    nUDIDLOffset = nOffset + 40;
-    nOffset += 50;
+    nOffset += 53;
 
-/* -------------------------------------------------------------------- */
-/*      Add BLOCKA TRE if requested.                                    */
-/* -------------------------------------------------------------------- */
-    if( CSLFetchNameValue(papszOptions,"BLOCKA_BLOCK_COUNT") != NULL )
-    {
-        NITFWriteBLOCKA( pachIMHDR + nUDIDLOffset, 
-                         pachIMHDR + nOffset, 
-                         &nOffset, 
-                         sizeof(achHeader) - (pachIMHDR+nOffset-achHeader),
-                         papszOptions );
-    }
-
-    if( CSLFetchNameValue(papszOptions,"TRE") != NULL )
-    {
-        NITFWriteTREsFromOptions( 
-            pachIMHDR + nUDIDLOffset, 
-            pachIMHDR + nOffset, 
-            &nOffset, 
-            sizeof(achHeader) - (pachIMHDR+nOffset-achHeader),
-            papszOptions );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Update the image header length in the file header.              */
-/* -------------------------------------------------------------------- */
     nIHSize = nOffset;
 
+/* -------------------------------------------------------------------- */
+/*      Update the image header length in the file header and the       */
+/*      total file size.                                                */
+/* -------------------------------------------------------------------- */
     PLACE(achHeader+ 363, LISH1, CPLSPrintf("%06d",nIHSize)      );
-
-    nHeaderUsed += nIHSize;
-
-/* -------------------------------------------------------------------- */
-/*      Update total file length, and write header info to file.        */
-/* -------------------------------------------------------------------- */
     PLACE(achHeader+ 342, FL,
-          CPLSPrintf( "%012d", (int) (nHeaderUsed + nImageSize) ) );
+          CPLSPrintf( "%012d", 404 + nIHSize + nImageSize ) );
 
-    VSIFWriteL( achHeader, 1, nIHSize+nHL, fp );
+/* -------------------------------------------------------------------- */
+/*      Write header info to file.                                      */
+/* -------------------------------------------------------------------- */
+    VSIFWriteL( achHeader, 1, nIHSize+404, fp );
 
 /* -------------------------------------------------------------------- */
 /*      Grow file to full required size by writing one byte at the end. */
@@ -695,7 +577,7 @@ int NITFCreate( const char *pszFilename,
     {
         const char *pszIC = CSLFetchNameValue(papszOptions,"IC");
     
-        if( pszIC != NULL && (EQUAL(pszIC,"C8") || EQUAL(pszIC,"C3")) )
+        if( pszIC != NULL && EQUAL(pszIC,"C8") )
             /* don't extend file */;
         else
         {
@@ -710,188 +592,6 @@ int NITFCreate( const char *pszFilename,
     return TRUE;
 }
 
-/************************************************************************/
-/*                            NITFWriteTRE()                            */
-/************************************************************************/
-
-static int NITFWriteTRE( char *pachUDIDL, 
-                         char *pachTREInHeader, 
-                         int  *pnOffset, int nBytesAvailable,
-                         char *pszTREName, char *pabyTREData, int nTREDataSize )
-
-{
-    char szTemp[200];
-    int  nOldOffset;
-
-/* -------------------------------------------------------------------- */
-/*      Try to allocate space in the header for for this BLOCKA         */
-/*      TRE.                                                            */
-/* -------------------------------------------------------------------- */
-    if( nBytesAvailable < nTREDataSize+14 )
-    {
-        CPLError( CE_Warning, CPLE_AppDefined,
-                  "%s TRE not written due to lack of header space.",
-                  pszTREName );
-        return FALSE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Update IXSHDL.                                                  */
-/* -------------------------------------------------------------------- */
-    nOldOffset = atoi(NITFGetField( szTemp, pachUDIDL, 5, 5 ));
-
-    if( nOldOffset == 0 )
-    {
-        nOldOffset = 3;
-        PLACE(pachUDIDL+10, IXSOFL, "000" );
-        *pnOffset += 3;
-    }
-    sprintf( szTemp, "%05d", nOldOffset + 11 + nTREDataSize );
-    PLACE( pachUDIDL + 5, IXSHDL, szTemp );
-
-/* -------------------------------------------------------------------- */
-/*      Create TRE prefix.                                              */
-/* -------------------------------------------------------------------- */
-    sprintf( pachTREInHeader + nOldOffset, "%-6s%05d", 
-             pszTREName, nTREDataSize );
-    memcpy( pachTREInHeader + nOldOffset + 11, 
-            pabyTREData, nTREDataSize );
-
-/* -------------------------------------------------------------------- */
-/*      Increment values.                                               */
-/* -------------------------------------------------------------------- */
-    *pnOffset += nTREDataSize + 11;
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                   NITFWriteTREsFromOptions()                         */
-/************************************************************************/
-
-static int NITFWriteTREsFromOptions(
-    char *pachUDIDL, char *pachTRE,
-    int *pnOffset, int nBytesAvailable,
-    char **papszOptions )    
-
-{
-    int bIgnoreBLOCKA = 
-        CSLFetchNameValue(papszOptions,"BLOCKA_BLOCK_COUNT") != NULL;
-    int iOption;
-
-    if( papszOptions == NULL )
-        return TRUE;
-
-    for( iOption = 0; papszOptions[iOption] != NULL; iOption++ )
-    {
-        const char *pszEscapedContents;
-        char *pszUnescapedContents;
-        char *pszTREName;
-        int  nContentLength;
-
-        if( !EQUALN(papszOptions[iOption],"TRE=",4) )
-            continue;
-
-        if( EQUALN(papszOptions[iOption]+4,"BLOCKA=",7)
-            && bIgnoreBLOCKA )
-            continue;
-
-        pszEscapedContents = CPLParseNameValue( papszOptions[iOption]+4, 
-                                                &pszTREName );
-        if (pszEscapedContents == NULL)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Could not parse creation options %s", papszOptions[iOption]+4);
-            return FALSE;
-        }
-
-        pszUnescapedContents = 
-            CPLUnescapeString( pszEscapedContents, &nContentLength,
-                               CPLES_BackslashQuotable );
-
-        if( !NITFWriteTRE( pachUDIDL, pachTRE,
-                           pnOffset, nBytesAvailable, 
-                           pszTREName, pszUnescapedContents, 
-                           nContentLength ) )
-            return FALSE;
-        
-        CPLFree( pszTREName );
-        CPLFree( pszUnescapedContents );
-        nBytesAvailable -= (nContentLength + 14);
-    }
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                          NITFWriteBLOCKA()                           */
-/************************************************************************/
-
-static int NITFWriteBLOCKA( char *pachUDIDL, char *pachTRE,
-                            int *pnOffset, int nBytesAvailable,
-                            char **papszOptions )
-
-{
-    static const char *apszFields[] = { 
-        "BLOCK_INSTANCE", "0", "2",
-        "N_GRAY",         "2", "5",
-        "L_LINES",        "7", "5",
-        "LAYOVER_ANGLE",  "12", "3",
-        "SHADOW_ANGLE",   "15", "3",
-        "BLANKS",         "18", "16",
-        "FRLC_LOC",       "34", "21",
-        "LRLC_LOC",       "55", "21",
-        "LRFC_LOC",       "76", "21",
-        "FRFC_LOC",       "97", "21",
-        NULL,             NULL, NULL };
-    int nBlockCount = 
-        atoi(CSLFetchNameValue( papszOptions, "BLOCKA_BLOCK_COUNT" ));
-    int iBlock;
-
-/* ==================================================================== */
-/*      Loop over all the blocks we have metadata for.                  */
-/* ==================================================================== */
-    for( iBlock = 1; iBlock <= nBlockCount; iBlock++ )
-    {
-        char szBLOCKA[200];
-        int iField;
-
-/* -------------------------------------------------------------------- */
-/*      Write all fields.                                               */
-/* -------------------------------------------------------------------- */
-        for( iField = 0; apszFields[iField*3] != NULL; iField++ )
-        {
-            char szFullFieldName[64];
-            int  iStart = atoi(apszFields[iField*3+1]);
-            int  iSize = atoi(apszFields[iField*3+2]);
-            const char *pszValue;
-
-            sprintf( szFullFieldName, "BLOCKA_%s_%02d", 
-                     apszFields[iField*3 + 0], iBlock );
-
-            pszValue = CSLFetchNameValue( papszOptions, szFullFieldName );
-            if( pszValue == NULL )
-                pszValue = "";
-
-            memset( szBLOCKA + iStart, ' ', iSize );
-            memcpy( szBLOCKA + iStart + MAX(0,iSize-strlen(pszValue)), 
-                    pszValue, MIN(iSize,strlen(pszValue)) );
-        }
-
-        // required field - semantics unknown. 
-        memcpy( szBLOCKA + 118, "010.0", 5);
-
-        if( !NITFWriteTRE( pachUDIDL, pachTRE, 
-                           pnOffset, nBytesAvailable, 
-                           "BLOCKA", szBLOCKA, 123 ) )
-            return FALSE;
-
-        nBytesAvailable -= (123 + 14);
-    }
-    
-    return TRUE;
-}
-                      
 /************************************************************************/
 /*                       NITFCollectSegmentInfo()                       */
 /*                                                                      */
@@ -1110,124 +810,5 @@ double NITF_WGS84_Geocentric_Latitude_To_Geodetic_Latitude( double dfLat )
     dfLat = dfLat * 180.0 / dfPI;
 
     return dfLat;
-}
-
-
-/************************************************************************/
-/*                        NITFGetSeriesInfo()                           */
-/************************************************************************/
-
-static const NITFSeries nitfSeries[] =
-{
-    { "GN", "GNC", "1:5M", "Global Navigation Chart", "CADRG"},
-    { "JN", "JNC", "1:2M", "Jet Navigation Chart", "CADRG"},
-    { "OH", "VHRC", "1:1M", "VFR Helicopter Route Chart", "CADRG"},
-    { "ON", "ONC", "1:1M", "Operational Navigation Chart", "CADRG"},
-    { "OW", "WAC", "1:1M", "High Flying Chart - Host Nation", "CADRG"},
-    { "TP", "TPC", "1:500K", "Tactical Pilotage Chart", "CADRG"},
-    { "LF", "LFC-FR (Day)", "1:500K", "Low Flying Chart (Day) - Host Nation", "CADRG"},
-    { "L1", "LFC-1", "1:500K", "Low Flying Chart (TED #1)", "CADRG"},
-    { "L2", "LFC-2", "1:500K", "Low Flying Chart (TED #2)", "CADRG"},
-    { "L3", "LFC-3", "1:500K", "Low Flying Chart (TED #3)", "CADRG"},
-    { "L4", "LFC-4", "1:500K", "Low Flying Chart (TED #4)", "CADRG"},
-    { "L5", "LFC-5", "1:500K", "Low Flying Chart (TED #5)", "CADRG"},
-    { "LN", "LN (Night)", "1:500K", "Low Flying Chart (Night) - Host Nation", "CADRG"},
-    { "JG", "JOG", "1:250K", "Joint Operation Graphic", "CADRG"},
-    { "JA", "JOG-A", "1:250K", "Joint Operation Graphic - Air", "CADRG"},
-    { "JR", "JOG-R", "1:250K", "Joint Operation Graphic - Radar", "CADRG"},
-    { "JO", "OPG", "1:250K", "Operational Planning Graphic", "CADRG"},
-    { "VT", "VTAC", "1:250K", "VFR Terminal Area Chart", "CADRG"},
-    { "F1", "TFC-1", "1:250K", "Transit Flying Chart (TED #1)", "CADRG"},
-    { "F2", "TFC-2", "1:250K", "Transit Flying Chart (TED #2)", "CADRG"},
-    { "F3", "TFC-3", "1:250K", "Transit Flying Chart (TED #3)", "CADRG"},
-    { "F4", "TFC-4", "1:250K", "Transit Flying Chart (TED #4)", "CADRG"},
-    { "F5", "TFC-5", "1:250K", "Transit Flying Chart (TED #5)", "CADRG"},
-    { "AT", "ATC", "1:200K", "Series 200 Air Target Chart", "CADRG"},
-    { "VH", "HRC", "1:125K", "Helicopter Route Chart", "CADRG"},
-    { "TN", "TFC (Night)", "1:250K", "Transit Flying Charget (Night) - Host Nation", "CADRG"},
-    { "TR", "TLM 200", "1:200K", "Topographic Line Map 1:200,000 scale", "CADRG"},
-    { "TC", "TLM 100", "1:100K", "Topographic Line Map 1:100,000 scale", "CADRG"},
-    { "RV", "Riverine", "1:50K", "Riverine Map 1:50,000 scale", "CADRG"},
-    { "TL", "TLM 50", "1:50K", "Topographic Line Map 1:50,000 scale", "CADRG"},
-    { "UL", "TLM 50 - Other", "1:50K", "Topographic Line Map (other 1:50,000 scale)", "CADRG"},
-    { "TT", "TLM 25", "1:25K", "Topographic Line Map 1:25,000 scale", "CADRG"},
-    { "TQ", "TLM 24", "1:24K", "Topographic Line Map 1:24,000 scale", "CADRG"},
-    { "HA", "HA", "Various", "Harbor and Approach Charts", "CADRG"},
-    { "CO", "CO", "Various", "Coastal Charts", "CADRG"},
-    { "OA", "OPAREA", "Various", "Naval Range Operation Area Chart", "CADRG"},
-    { "CG", "CG", "Various", "City Graphics", "CADRG"},
-    { "C1", "CG", "1:10000", "City Graphics", "CADRG"},
-    { "C2", "CG", "1:10560", "City Graphics", "CADRG"},
-    { "C3", "CG", "1:11000", "City Graphics", "CADRG"},
-    { "C4", "CG", "1:11800", "City Graphics", "CADRG"},
-    { "C5", "CG", "1:12000", "City Graphics", "CADRG"},
-    { "C6", "CG", "1:12500", "City Graphics", "CADRG"},
-    { "C7", "CG", "1:12800", "City Graphics", "CADRG"},
-    { "C8", "CG", "1:14000", "City Graphics", "CADRG"},
-    { "C9", "CG", "1:14700", "City Graphics", "CADRG"},
-    { "CA", "CG", "1:15000", "City Graphics", "CADRG"},
-    { "CB", "CG", "1:15500", "City Graphics", "CADRG"},
-    { "CC", "CG", "1:16000", "City Graphics", "CADRG"},
-    { "CD", "CG", "1:16666", "City Graphics", "CADRG"},
-    { "CE", "CG", "1:17000", "City Graphics", "CADRG"},
-    { "CF", "CG", "1:17500", "City Graphics", "CADRG"},
-    { "CH", "CG", "1:18000", "City Graphics", "CADRG"},
-    { "CJ", "CG", "1:20000", "City Graphics", "CADRG"},
-    { "CK", "CG", "1:21000", "City Graphics", "CADRG"},
-    { "CL", "CG", "1:21120", "City Graphics", "CADRG"},
-    { "CN", "CG", "1:22000", "City Graphics", "CADRG"},
-    { "CP", "CG", "1:23000", "City Graphics", "CADRG"},
-    { "CQ", "CG", "1:25000", "City Graphics", "CADRG"},
-    { "CR", "CG", "1:26000", "City Graphics", "CADRG"},
-    { "CS", "CG", "1:35000", "City Graphics", "CADRG"},
-    { "CT", "CG", "1:36000", "City Graphics", "CADRG"},
-    { "CM", "CM", "Various", "Combat Charts", "CADRG"},
-    { "A1", "CM", "1:10K", "Combat Charts (1:10K)", "CADRG"},
-    { "A2", "CM", "1:25K", "Combat Charts (1:25K)", "CADRG"},
-    { "A3", "CM", "1:50K", "Combat Charts (1:50K)", "CADRG"},
-    { "A4", "CM", "1:100K", "Combat Charts (1:100K)", "CADRG"},
-    { "MI", "MIM", "1:50K", "Military Installation Maps", "CADRG"},
-    { "M1", "MIM", "Various", "Military Installation Maps (TED #1)", "CADRG"},
-    { "M2", "MIM", "Various", "Military Installation Maps (TED #2)", "CADRG"},
-    { "VN", "VNC", "1:500K", "Visual Navigation Charts", "CADRG"},
-    { "MM", "", "Various", "(Miscellaneous Maps & Charts)", "CADRG"},
-    
-    { "I1", "", "10m", "Imagery, 10 meter resolution", "CIB"},
-    { "I2", "", "5m", "Imagery, 5 meter resolution", "CIB"},
-    { "I3", "", "2m", "Imagery, 2 meter resolution", "CIB"},
-    { "I4", "", "1m", "Imagery, 1 meter resolution", "CIB"},
-    { "I5", "", ".5m", "Imagery, .5 (half) meter resolution", "CIB"},
-    { "IV", "", "Various > 10m", "Imagery, greater than 10 meter resolution", "CIB"},
-    
-    { "D1", "", "100m", "Elevation Data from DTED level 1", "CDTED"},
-    { "D2", "", "30m", "Elevation Data from DTED level 2", "CDTED"},
-};
-
-/* See 24111CN1.pdf paragraph 5.1.4 */
-const NITFSeries* NITFGetSeriesInfo(const char* pszFilename)
-{
-    int i;
-    char seriesCode[3] = {0,0,0};
-    if (pszFilename == NULL) return NULL;
-    for (i=strlen(pszFilename)-1;i>=0;i--)
-    {
-        if (pszFilename[i] == '.')
-        {
-            if (i < strlen(pszFilename) - 3)
-            {
-                seriesCode[0] = pszFilename[i+1];
-                seriesCode[1] = pszFilename[i+2];
-                for(i=0;i<sizeof(nitfSeries) / sizeof(nitfSeries[0]); i++)
-                {
-                    if (EQUAL(seriesCode, nitfSeries[i].code))
-                    {
-                        return &nitfSeries[i];
-                    }
-                }
-                return NULL;
-            }
-        }
-    }
-    return NULL;
 }
 

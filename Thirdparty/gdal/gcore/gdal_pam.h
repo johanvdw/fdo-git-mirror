@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pam.h 12184 2007-09-17 21:07:00Z warmerdam $
+ * $Id: gdal_pam.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Declaration for Peristable Auxilary Metadata classes.
@@ -50,7 +50,6 @@ class GDALPamRasterBand;
 #define GCIF_COLORINTERP        0x020000
 #define GCIF_BAND_METADATA      0x040000
 #define GCIF_RAT                0x080000
-#define GCIF_MASK               0x100000
 
 #define GCIF_ONLY_IF_MISSING    0x10000000
 #define GCIF_PROCESS_BANDS      0x20000000
@@ -61,7 +60,7 @@ class GDALPamRasterBand;
                                  GCIF_MINMAX | GCIF_SCALEOFFSET |          \
                                  GCIF_UNITTYPE | GCIF_COLORTABLE |         \
                                  GCIF_COLORINTERP | GCIF_BAND_METADATA |   \
-                                 GCIF_RAT | GCIF_MASK |                    \
+                                 GCIF_RAT |                                \
                                  GCIF_ONLY_IF_MISSING | GCIF_PROCESS_BANDS )
 
 /* GDAL PAM Flags */
@@ -69,7 +68,6 @@ class GDALPamRasterBand;
 #define GPF_TRIED_READ_FAILED   0x02  // no need to keep trying to read .pam.
 #define GPF_DISABLED            0x04  // do not try any PAM stuff. 
 #define GPF_AUXMODE             0x08  // store info in .aux (HFA) file.
-#define GPF_NOSAVE              0x10  // do not try to save pam info.
 
 /* ==================================================================== */
 /*      GDALDatasetPamInfo                                              */
@@ -79,10 +77,8 @@ class GDALPamRasterBand;
 /*      the GDALPamDataset.  It is an effort to reduce ABI churn for    */
 /*      driver plugins.                                                 */
 /* ==================================================================== */
-class GDALDatasetPamInfo
-{
-public:
-    char        *pszPamFilename;
+typedef struct {
+    char       *pszPamFilename;
 
     char	*pszProjection;
 
@@ -93,9 +89,7 @@ public:
     GDAL_GCP   *pasGCPList;
     char       *pszGCPProjection;
 
-    CPLString   osPhysicalFilename;
-    CPLString   osSubdatasetName;
-};
+} GDALDatasetPamInfo;
 
 /* ******************************************************************** */
 /*                           GDALPamDataset                             */
@@ -125,9 +119,6 @@ class CPL_DLL GDALPamDataset : public GDALDataset
     void   PamInitialize();
     void   PamClear();
 
-    void   SetPhysicalFilename( const char * );
-    void   SetSubdatasetName( const char *);
-
   public:
     virtual     ~GDALPamDataset();
 
@@ -151,20 +142,16 @@ class CPL_DLL GDALPamDataset : public GDALDataset
                                          const char * pszValue,
                                          const char * pszDomain = "" );
 
-    virtual char      **GetFileList(void);
-
     virtual CPLErr CloneInfo( GDALDataset *poSrcDS, int nCloneInfoFlags );
 
 
     // "semi private" methods.
     void   MarkPamDirty() { nPamFlags |= GPF_DIRTY; }
     GDALDatasetPamInfo *GetPamInfo() { return psPam; }
-    int    GetPamFlags() { return nPamFlags; }
-    void   SetPamFlags(int nValue ) { nPamFlags = nValue; }
 };
 
 /* ==================================================================== */
-/*      GDALRasterBandPamInfo                                           */
+/*      GDALDatasetPamInfo                                              */
 /*                                                                      */
 /*      We make these things a seperate structure of information        */
 /*      primarily so we can modify it without altering the size of      */
@@ -284,11 +271,5 @@ CPLXMLNode CPL_DLL *
 PamHistogramToXMLTree( double dfMin, double dfMax,
                        int nBuckets, int * panHistogram,
                        int bIncludeOutOfRange, int bApprox );
-
-// For managing the proxy file database.
-const char CPL_DLL * PamGetProxy( const char * );
-const char CPL_DLL * PamAllocateProxy( const char * );
-const char CPL_DLL * PamDeallocateProxy( const char * );
-void CPL_DLL PamCleanProxyDB( void );
 
 #endif /* ndef GDAL_PAM_H_INCLUDED */

@@ -1,8 +1,10 @@
+// reflectancecalculator.cpp: implementation of the ReflectanceCalculator class.
+//
+//////////////////////////////////////////////////////////////////////
+
 /******************************************************************************
- * $Id: reflectancecalculator.cpp 15066 2008-07-28 20:21:59Z mloskot $
  *
- * Purpose:  Implementation of ReflectanceCalculator class. Calculate
- *           reflectance values from radiance, for visual bands.
+ * Purpose:  Calculate reflectance values from radiance, for visual bands.
  * Author:   Bas Retsios, retsios@itc.nl
  *
  ******************************************************************************
@@ -28,9 +30,8 @@
  ******************************************************************************/
 
 #include "reflectancecalculator.h"
-#include <cmath>
-#include <cstdlib>
-using namespace std;
+
+#include <math.h>
 
 #define M_PI        3.14159265358979323846
 

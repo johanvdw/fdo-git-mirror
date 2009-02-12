@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_win32ce_api.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: cpl_win32ce_api.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Name:     cpl_win32ce_api.cpp
  * Project:  CPL - Common Portability Library
@@ -32,7 +32,7 @@
 
 #ifdef WIN32CE
 
-CPL_CVSID("$Id: cpl_win32ce_api.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: cpl_win32ce_api.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 /* Assume UNICODE and _UNICODE are defined here and TCHAR is wide-char. */

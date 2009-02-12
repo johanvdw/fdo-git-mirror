@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_list.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: cpl_list.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Name:     cpl_list.h
  * Project:  CPL - Common Portability Library

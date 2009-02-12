@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsiref.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: sdtsiref.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTS_IREF class for reading IREF module.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsiref.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: sdtsiref.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                             SDTS_IREF()                              */

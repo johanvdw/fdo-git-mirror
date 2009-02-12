@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00gen.c,v 1.18 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_e00gen.c,v 1.17 2006/06/14 15:01:33 daniel Exp $
  *
  * Name:     avc_e00gen.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -30,10 +30,6 @@
  **********************************************************************
  *
  * $Log: avc_e00gen.c,v $
- * Revision 1.18  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.17  2006/06/14 15:01:33  daniel
  * Remove any embeded '\0' from data line in AVCE00GenTableRec()
  *
@@ -937,7 +933,7 @@ const char *AVCE00GenTxt(AVCE00GenInfo *psInfo, AVCTxt *psTxt, GBool bCont)
         numLines = (psTxt->numChars-1)/80 + 1;
         iLine = numLines - (psInfo->numItems - psInfo->iCurItem);
 
-        if ((int)strlen((char*)psTxt->pszText) > (iLine*80))
+        if ((int)strlen(psTxt->pszText) > (iLine*80))
             sprintf(psInfo->pszBuf, "%-.80s", psTxt->pszText + (iLine*80) );
         else 
             psInfo->pszBuf[0] = '\0';
@@ -1074,7 +1070,7 @@ const char *AVCE00GenTx6(AVCE00GenInfo *psInfo, AVCTxt *psTxt, GBool bCont)
         numLines = (psTxt->numChars-1)/80 + 1;
         iLine = numLines - (psInfo->numItems - psInfo->iCurItem);
 
-        if ((int)strlen((char*)psTxt->pszText) > (iLine*80))
+        if ((int)strlen(psTxt->pszText) > (iLine*80))
             sprintf(psInfo->pszBuf, "%-.80s", psTxt->pszText + (iLine*80) );
         else 
             psInfo->pszBuf[0] = '\0';
@@ -1330,7 +1326,7 @@ const char *AVCE00GenTableRec(AVCE00GenInfo *psInfo, int numFields,
                  */
                 nLen = AVCPrintRealValue(pszBuf2, AVC_DOUBLE_PREC,
                                          AVCFileTABLE,
-                                         atof((char*)pasFields[i].pszStr));
+                                         atof(pasFields[i].pszStr));
                 pszBuf2 += nLen;
             }
 #endif
@@ -1343,7 +1339,7 @@ const char *AVCE00GenTableRec(AVCE00GenInfo *psInfo, int numFields,
                 pszBuf2[0] = '\0';
                 nLen = AVCPrintRealValue(pszBuf2, AVC_SINGLE_PREC, 
                                        AVCFileTABLE,
-                                         atof((char*)pasFields[i].pszStr));
+                                       atof(pasFields[i].pszStr));
                 pszBuf2 += nLen;
             }
             else if (nType == AVC_FT_BININT && nSize == 4)

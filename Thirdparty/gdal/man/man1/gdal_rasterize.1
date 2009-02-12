@@ -1,15 +1,15 @@
-.TH "gdal_rasterize" 1 "4 Dec 2008" "GDAL" \" -*- nroff -*-
+.TH "gdal_rasterize" 1 "28 Jun 2006" "GDAL" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
-gdal_rasterize \- gdal_rasterize 
+gdal_rasterize \- gdal_rasterize
 burns vector polygons into a raster
 .SH "SYNOPSIS"
 .PP
 .PP
+.PP
 .nf
-
-Usage: gdal_rasterize [-b band] [-i]
+Usage: gdal_rasterize [-b band]
        [-burn value] | [-a attribute_name] | [-3d]
        [-l layername]* [-where expression] [-sql select_statement]
        <src_datasource> <dst_filename>
@@ -21,9 +21,6 @@ This program burns vector polygons into the raster band(s) of a raster image. Ve
 .PP
 .IP "\fB\fB-b\fP \fIband\fP: \fP" 1c
 The band(s) to burn values into. Multiple -b arguments may be used to burn into a list of bands. The default is to burn into band 1.
-.PP
-.IP "\fB\fB-i\fP: \fP" 1c
-Invert rasterization. Burn the fixed burn value, or the burn value associated with the first feature into all parts of the image \fInot\fP inside a polygon.
 .PP
 .IP "\fB\fB-burn\fP \fIvalue\fP: \fP" 1c
 A fixed value to burn into a band for all objects. A list of -burn options can be supplied, one per band being written to.
@@ -52,11 +49,11 @@ The GDAL supported output file. Must support update mode access. Currently gdal_
 .PP
 .SH "EXAMPLE"
 .PP
+.PP
 The following would burn all polygons from mask.shp into the RGB TIFF file work.tif with the color red (RGB = 255,0,0).
 .PP
 .PP
 .nf
-
 gdal_rasterize -b 1 -b 2 -b 3 -burn 255 -burn 0 -burn 0 -l mask mask.shp work.tif
 .fi
 .PP
@@ -65,7 +62,6 @@ The following would burn all 'class A' buildings into the output elevation file,
 .PP
 .PP
 .nf
-
 gdal_rasterize -a ROOF_H -where 'class="A"' -l footprints footprints.shp city_dem.tif
 .fi
 .PP

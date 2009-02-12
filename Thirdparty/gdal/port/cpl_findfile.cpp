@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_findfile.cpp 11188 2007-04-03 17:49:14Z warmerdam $
+ * $Id: cpl_findfile.cpp 11189 2007-04-03 17:50:32Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Generic data file location finder, with application hooking.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_findfile.cpp 11188 2007-04-03 17:49:14Z warmerdam $");
+CPL_CVSID("$Id: cpl_findfile.cpp 11189 2007-04-03 17:50:32Z warmerdam $");
 
 static CPL_THREADLOCAL int bFinderInitialized = FALSE;
 static CPL_THREADLOCAL int nFileFinders = 0;

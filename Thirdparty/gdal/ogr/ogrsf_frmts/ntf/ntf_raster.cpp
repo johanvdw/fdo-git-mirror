@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntf_raster.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ntf_raster.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  NTF Translator
  * Purpose:  Handle UK Ordnance Survey Raster DTM products.  Includes some
@@ -31,7 +31,7 @@
 
 #include "ntf.h"
 
-CPL_CVSID("$Id: ntf_raster.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ntf_raster.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */

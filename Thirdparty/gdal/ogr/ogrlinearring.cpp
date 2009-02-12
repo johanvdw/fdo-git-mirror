@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinearring.cpp 15517 2008-10-11 18:34:03Z rouault $
+ * $Id: ogrlinearring.cpp 12517 2007-10-23 15:07:35Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLinearRing geometry class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrlinearring.cpp 15517 2008-10-11 18:34:03Z rouault $");
+CPL_CVSID("$Id: ogrlinearring.cpp 12517 2007-10-23 15:07:35Z mloskot $");
 
 /************************************************************************/
 /*                           OGRLinearRing()                            */
@@ -438,13 +438,16 @@ double OGRLinearRing::get_Area() const
 /*                              isPointInRing()                         */
 /************************************************************************/
 
-OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint, int bTestEnvelope) const
+OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint) const
 {
     if ( NULL == poPoint )
     {
         CPLDebug( "OGR", "OGRLinearRing::isPointInRing(const  OGRPoint* poPoint) - passed point is NULL!" );
         return 0;
     }
+
+    CPLDebug( "OGR", "OGRLinearRing::isPointInRing(): passed point: (%.8f,%.8f)",
+              poPoint->getX(), poPoint->getY() );
 
     const int iNumPoints = getNumPoints();
 
@@ -456,15 +459,13 @@ OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint, int bTestEnvelo
     const double dfTestY = poPoint->getY();
 
     // Fast test if point is inside extent of the ring
-    if (bTestEnvelope)
+    OGREnvelope extent;
+    getEnvelope(&extent);
+    if ( !( dfTestX >= extent.MinX && dfTestX <= extent.MaxX
+         && dfTestY >= extent.MinY && dfTestY <= extent.MaxY ) )
     {
-        OGREnvelope extent;
-        getEnvelope(&extent);
-        if ( !( dfTestX >= extent.MinX && dfTestX <= extent.MaxX
-            && dfTestY >= extent.MinY && dfTestY <= extent.MaxY ) )
-        {
-            return 0;
-        }
+        CPLDebug( "OGR", "OGRLinearRing::isPointInRing(): passed point is out of extent of ring" );
+        return 0;
     }
 
 	// For every point p in ring,
@@ -496,63 +497,4 @@ OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint, int bTestEnvelo
     // If iNumCrossings number is even, given point is outside the ring,
     // when the crossings number is odd, the point is inside the ring.
     return ( ( iNumCrossings % 2 ) == 1 ? 1 : 0 );
-}
-
-/************************************************************************/
-/*                       isPointOnRingBoundary()                        */
-/************************************************************************/
-
-OGRBoolean OGRLinearRing::isPointOnRingBoundary(const OGRPoint* poPoint, int bTestEnvelope) const
-{
-    if ( NULL == poPoint )
-    {
-        CPLDebug( "OGR", "OGRLinearRing::isPointOnRingBoundary(const  OGRPoint* poPoint) - passed point is NULL!" );
-        return 0;
-    }
-
-    const int iNumPoints = getNumPoints();
-
-    // Simple validation
-    if ( iNumPoints < 4 )
-        return 0;
-
-    const double dfTestX = poPoint->getX();
-    const double dfTestY = poPoint->getY();
-
-    // Fast test if point is inside extent of the ring
-    OGREnvelope extent;
-    getEnvelope(&extent);
-    if ( !( dfTestX >= extent.MinX && dfTestX <= extent.MaxX
-         && dfTestY >= extent.MinY && dfTestY <= extent.MaxY ) )
-    {
-        return 0;
-    }
-
-    for ( int iPoint = 1; iPoint < iNumPoints; iPoint++ ) 
-    {
-        const int iPointPrev = iPoint - 1;
-
-        const double x1 = getX(iPoint) - dfTestX;
-        const double y1 = getY(iPoint) - dfTestY;
-
-        const double x2 = getX(iPointPrev) - dfTestX;
-        const double y2 = getY(iPointPrev) - dfTestY;
-
-        /* If iPoint and iPointPrev are the same, go on */
-        if (x1 == x2 && y1 == y2)
-        {
-            continue;
-        }
-
-        /* If the point is on the segment, return immediatly */
-        /* FIXME? If the test point is not exactly identical to one of */
-        /* the vertices of the ring, but somewhere on a segment, there's */
-        /* little chance that we get 0. So that should be tested against some epsilon */
-        if ( x1 * y2 - x2 * y1 == 0 )
-        {
-            return 1;
-        }
-    }
-
-    return 0;
 }

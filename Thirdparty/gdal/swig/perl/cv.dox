@@ -15,7 +15,7 @@ polygon will have four vertices. The SRS is explicitly set to WGS84.
 use Geo::GDAL;
 
 # information that we need:
-$dsname = ".";          # name of the datasource (in this case a directory)
+$dsname = "./";          # name of the datasource (in this case a directory)
 $lname = "boxes";        # name of the layer
 @data;                   # array which contains the data as hashref items,
                          # each item comprises items 'points' and 'key'
@@ -24,34 +24,38 @@ $lname = "boxes";        # name of the layer
                          # 'key' is an integer which is stored as each
                          # feature's attribute data
 
-@data = ({key => 'rect1', points => [[0,0],[1,0],[1,1],[0,1]]},
-	 {key => 'rect2', points => [[5,5],[7,5],[7,6],[5,6]]});
-
-$datasource = Geo::OGR::Driver('ESRI Shapefile')->Create($dsname) or die;
+$datasource = Geo::OGR::Open($dsname, 1) or die;
 
 $osr = new Geo::OSR::SpatialReference;
 $osr->SetWellKnownGeogCS('WGS84');
 
-$layer = $datasource->CreateLayer({ Name => $lname, SRS => $osr, GeometryType => 'Polygon'});
-$layer->Schema( Fields => 
-		[{ Name => 'key', Type => 'Integer' }] );
+$layer = $datasource->CreateLayer($lname, $osr, $ogr::wkbPolygon);
+$column = new Geo::OSR::FieldDefn('key', $ogr::OFTInteger);
+$layer->CreateField($column);
+
+$schema = $layer->GetLayerDefn();
 
 # make sure the cells share the points
 
 for $item (@data) {
 
-    @ring = ($item->{points}[0], 
-	     $item->{points}[1], 
-	     $item->{points}[2], 
-	     $item->{points}[3],
-	     $item->{points}[0]);
+    $f = new Geo::OGR::Feature($schema);
+    $g = new Geo::OGR::Geometry($ogr::wkbPolygon);
+    $r = new Geo::OGR::Geometry($ogr::wkbLinearRing);
 
-    $layer->InsertFeature({ 
-	key => $item->{key},
-	Geometry => { Points => [ \@ring ] }
-    });
+    $r->AddPoint(@{$item->{points}[0]});
+    $r->AddPoint(@{$item->{points}[1]});
+    $r->AddPoint(@{$item->{points}[2]});
+    $r->AddPoint(@{$item->{points}[3]});
 
+    $g->AddGeometry($r);
+    $g->CloseRings;
+    $f->SetGeometry($g);
+    $f->SetField(0, $item->{key});
+    $layer->CreateFeature($f);
 }
+
+$layer->SyncToDisk;
 \endcode
 
 */

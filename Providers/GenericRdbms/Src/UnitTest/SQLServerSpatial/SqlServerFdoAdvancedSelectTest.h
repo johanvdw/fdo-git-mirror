@@ -24,13 +24,9 @@
 class SqlServerFdoAdvancedSelectTest : public FdoAdvancedSelectTest
 {
     CPPUNIT_TEST_SUB_SUITE (SqlServerFdoAdvancedSelectTest, FdoAdvancedSelectTest);
-    CPPUNIT_TEST( isValidTest );
     CPPUNIT_TEST_SUITE_END ();
 
     void  set_provider();
-
-protected:
-    void isValidTest();
 };
 
 #endif // SQLSERVER_ADVANCEDSELECTTEST_H

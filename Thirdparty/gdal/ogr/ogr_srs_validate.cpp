@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_validate.cpp 15827 2008-11-27 22:30:18Z warmerdam $
+ * $Id: ogr_srs_validate.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of the OGRSpatialReference::Validate() method and
@@ -31,12 +31,12 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srs_validate.cpp 15827 2008-11-27 22:30:18Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_validate.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /* why would fipszone and zone be paramers when they relate to a composite
    projection which renders done into a non-zoned projection? */
 
-static const char *papszParameters[] =
+static char *papszParameters[] =
 {
     SRS_PP_CENTRAL_MERIDIAN,
     SRS_PP_SCALE_FACTOR,
@@ -75,7 +75,7 @@ static const char *papszParameters[] =
 // underscores instead of spaces.  Should we use the EPSG names were available?
 // Plate-Caree has an accent in the spec!
 
-static const char *papszProjectionSupported[] =
+static char *papszProjectionSupported[] =
 {
     SRS_PT_CASSINI_SOLDNER,
     SRS_PT_BONNE,
@@ -109,19 +109,10 @@ static const char *papszProjectionSupported[] =
     SRS_PT_VANDERGRINTEN,
     SRS_PT_GEOSTATIONARY_SATELLITE,
     SRS_PT_TWO_POINT_EQUIDISTANT,
-    SRS_PT_IMW_POLYCONIC,
-    SRS_PT_WAGNER_I,
-    SRS_PT_WAGNER_II,
-    SRS_PT_WAGNER_III,
-    SRS_PT_WAGNER_IV,
-    SRS_PT_WAGNER_V,
-    SRS_PT_WAGNER_VI,
-    SRS_PT_WAGNER_VII,
-    SRS_PT_GAUSSSCHREIBERTMERCATOR,
     NULL
 };
 
-static const char *papszProjectionUnsupported[] =
+static char *papszProjectionUnsupported[] =
 {
     SRS_PT_NEW_ZEALAND_MAP_GRID,
     SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED,
@@ -132,7 +123,7 @@ static const char *papszProjectionUnsupported[] =
 /*
 ** List of supported projections with the PARAMETERS[] acceptable for each.
 */
-static const char *papszProjWithParms[] = {
+static char *papszProjWithParms[] = {
 
     SRS_PT_TRANSVERSE_MERCATOR,
     SRS_PP_LATITUDE_OF_ORIGIN,
@@ -218,7 +209,6 @@ static const char *papszProjWithParms[] = {
     SRS_PT_EQUIRECTANGULAR,
     SRS_PP_LATITUDE_OF_ORIGIN,
     SRS_PP_CENTRAL_MERIDIAN,
-    SRS_PP_STANDARD_PARALLEL_1,
     SRS_PP_FALSE_EASTING,
     SRS_PP_FALSE_NORTHING,
     NULL,
@@ -301,14 +291,6 @@ static const char *papszProjWithParms[] = {
     SRS_PP_LATITUDE_OF_ORIGIN,
     SRS_PP_CENTRAL_MERIDIAN,
     SRS_PP_SCALE_FACTOR,
-    SRS_PP_FALSE_EASTING,
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_MERCATOR_2SP,
-    SRS_PP_STANDARD_PARALLEL_1,
-    SRS_PP_LATITUDE_OF_ORIGIN,
-    SRS_PP_CENTRAL_MERIDIAN,
     SRS_PP_FALSE_EASTING,
     SRS_PP_FALSE_NORTHING,
     NULL,
@@ -413,64 +395,11 @@ static const char *papszProjWithParms[] = {
     SRS_PP_LONGITUDE_OF_2ND_POINT,
     SRS_PP_FALSE_EASTING,
     SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_IMW_POLYCONIC,
-    SRS_PP_LATITUDE_OF_1ST_POINT,
-    SRS_PP_LATITUDE_OF_2ND_POINT,
-    SRS_PP_CENTRAL_MERIDIAN, 
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_I,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_II,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_III,
-    SRS_PP_LATITUDE_OF_ORIGIN,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_IV,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_V,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_VI,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_WAGNER_VII,
-    SRS_PP_FALSE_EASTING, 
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_GAUSSSCHREIBERTMERCATOR,
-    SRS_PP_LATITUDE_OF_ORIGIN,
-    SRS_PP_CENTRAL_MERIDIAN,
-    SRS_PP_SCALE_FACTOR,
-    SRS_PP_FALSE_EASTING,
-    SRS_PP_FALSE_NORTHING,
-    NULL,
 
     NULL
 };
 
-static const char *papszAliasGroupList[] = {
+static char *papszAliasGroupList[] = {
     SRS_PP_LATITUDE_OF_ORIGIN,
     SRS_PP_LATITUDE_OF_CENTER,
     NULL,
@@ -550,7 +479,7 @@ OGRErr OGRSpatialReference::Validate()
                               poNode->GetChildCount() );
                     return OGRERR_CORRUPT_DATA;
                 }
-                else if( CPLAtof(poNode->GetChild(1)->GetValue()) == 0.0 )
+                else if( atof(poNode->GetChild(1)->GetValue()) == 0.0 )
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
                               "UNIT does not appear to have meaningful"
@@ -570,7 +499,7 @@ OGRErr OGRSpatialReference::Validate()
                     
                     return OGRERR_CORRUPT_DATA;
                 }
-                else if( CSLFindString( (char **)papszParameters,
+                else if( CSLFindString( papszParameters,
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
@@ -591,9 +520,9 @@ OGRErr OGRSpatialReference::Validate()
                     
                     return OGRERR_CORRUPT_DATA;
                 }
-                else if( CSLFindString( (char **)papszProjectionSupported,
+                else if( CSLFindString( papszProjectionSupported,
                                         poNode->GetChild(0)->GetValue()) == -1
-                      && CSLFindString( (char **)papszProjectionUnsupported,
+                      && CSLFindString( papszProjectionUnsupported,
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
@@ -602,7 +531,7 @@ OGRErr OGRSpatialReference::Validate()
                     
                     return OGRERR_UNSUPPORTED_SRS;
                 }
-                else if( CSLFindString( (char **)papszProjectionSupported,
+                else if( CSLFindString( papszProjectionSupported,
                                         poNode->GetChild(0)->GetValue()) == -1)
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
@@ -621,11 +550,6 @@ OGRErr OGRSpatialReference::Validate()
                               poNode->GetChildCount() );
                     return OGRERR_CORRUPT_DATA;
                 }
-            }
-            else if( EQUAL(poNode->GetValue(),"EXTENSION") )
-            {
-                // We do not try to control the sub-organization of 
-                // EXTENSION nodes.
             }
             else
             {
@@ -679,7 +603,7 @@ OGRErr OGRSpatialReference::Validate()
                               poNode->GetChildCount() );
                     return OGRERR_CORRUPT_DATA;
                 }
-                else if( CPLAtof(poNode->GetChild(1)->GetValue()) == 0.0 )
+                else if( atof(poNode->GetChild(1)->GetValue()) == 0.0 )
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
                               "UNIT does not appear to have meaningful"
@@ -741,7 +665,8 @@ OGRErr OGRSpatialReference::Validate()
         if( poDATUM->GetChildCount() == 0 )
         {
             CPLDebug( "OGRSpatialReference::Validate",
-                      "DATUM has no children." );
+                      "DATUM has no children.",
+                      poDATUM->GetChildCount() );
             
             return OGRERR_CORRUPT_DATA;
         }
@@ -766,7 +691,7 @@ OGRErr OGRSpatialReference::Validate()
                     
                     return OGRERR_CORRUPT_DATA;
                 }
-                else if( CPLAtof(poSPHEROID->GetChild(1)->GetValue()) == 0.0 )
+                else if( atof(poSPHEROID->GetChild(1)->GetValue()) == 0.0 )
                 {
                     CPLDebug( "OGRSpatialReference::Validate",
                               "SPHEROID semi-major axis is zero (%s)!\n",
@@ -840,8 +765,6 @@ OGRErr OGRSpatialReference::Validate()
 OGRErr OSRValidate( OGRSpatialReferenceH hSRS )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRValidate", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->Validate();
 }
 

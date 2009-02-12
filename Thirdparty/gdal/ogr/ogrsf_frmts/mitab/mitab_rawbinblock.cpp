@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_rawbinblock.cpp,v 1.11 2007/06/11 14:40:03 dmorissette Exp $
+ * $Id: mitab_rawbinblock.cpp,v 1.8 2005/10/06 19:15:31 dmorissette Exp $
  *
  * Name:     mitab_rawbinblock.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -31,17 +31,9 @@
  **********************************************************************
  *
  * $Log: mitab_rawbinblock.cpp,v $
- * Revision 1.11  2007/06/11 14:40:03  dmorissette
- * Fixed another issue related to attempting to read past EOF while writing
- * collections (bug 1657)
- *
  * Revision 1.10  2007/02/22 18:35:53  dmorissette
  * Fixed problem writing collections where MITAB was sometimes trying to
  * read past EOF in write mode (bug 1657).
- *
- * Revision 1.9  2006/11/28 18:49:08  dmorissette
- * Completed changes to split TABMAPObjectBlocks properly and produce an
- * optimal spatial index (bug 1585)
  *
  * Revision 1.8  2005/10/06 19:15:31  dmorissette
  * Collections: added support for reading/writing pen/brush/symbol ids and
@@ -156,8 +148,8 @@ int     TABRawBinBlock::ReadFromFile(FILE *fpSrc, int nOffset,
     /*----------------------------------------------------------------
      * Init block with the data we just read
      *---------------------------------------------------------------*/
-    return InitBlockFromData(pabyBuf, nSize, m_nSizeUsed, 
-                             FALSE, fpSrc, nOffset);
+
+    return InitBlockFromData(pabyBuf, nSize, FALSE, fpSrc, nOffset);
 }
 
 
@@ -256,44 +248,6 @@ int     TABRawBinBlock::CommitToFile()
     return 0;
 }
 
-/**********************************************************************
- *                   TABRawBinBlock::CommitAsDeleted()
- *
- * Commit current block to file using block type 4 (garbage block)
- *
- * Returns 0 if succesful or -1 if an error happened, in which case 
- * CPLError() will have been called.
- **********************************************************************/
-int     TABRawBinBlock::CommitAsDeleted(GInt32 nNextBlockPtr)
-{
-    int nStatus = 0;
-
-    CPLErrorReset();
-
-    if ( m_pabyBuf == NULL )
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed, 
-                 "CommitAsDeleted(): Block has not been initialized yet!");
-        return -1;
-    }
-
-    /*-----------------------------------------------------------------
-     * Create deleted block header
-     *----------------------------------------------------------------*/
-    GotoByteInBlock(0x000);
-    WriteInt32(nNextBlockPtr);
-
-    if( CPLGetLastErrorType() == CE_Failure )
-        nStatus = CPLGetLastErrorNo();
-
-    /*-----------------------------------------------------------------
-     * OK, call the base class to write the block to disk.
-     *----------------------------------------------------------------*/
-    if (nStatus == 0)
-        nStatus = TABRawBinBlock::CommitToFile();
-
-    return nStatus;
-}
 
 /**********************************************************************
  *                   TABRawBinBlock::InitBlockFromData()
@@ -304,8 +258,8 @@ int     TABRawBinBlock::CommitAsDeleted(GInt32 nNextBlockPtr)
  * complete the initialization of the block after the data is read from the
  * file.  Derived classes should implement their own version of 
  * InitBlockFromData() if they need specific initialization... in this
- * case the derived InitBlockFromData() should call 
- * TABRawBinBlock::InitBlockFromData() before doing anything else.
+ * case the derived InitBlockFromData() should call TABRawBinBlock::InitBlockFromData()
+ * before doing anything else.
  *
  * By default, the buffer will be copied, but if bMakeCopy = FALSE then
  * it won't be copied, and the object will keep a reference to the
@@ -314,11 +268,10 @@ int     TABRawBinBlock::CommitAsDeleted(GInt32 nNextBlockPtr)
  * Returns 0 if succesful or -1 if an error happened, in which case 
  * CPLError() will have been called.
  **********************************************************************/
-int     TABRawBinBlock::InitBlockFromData(GByte *pabyBuf, 
-                                          int nBlockSize, int nSizeUsed, 
-                                          GBool bMakeCopy /* = TRUE */,
-                                          FILE *fpSrc /* = NULL */, 
-                                          int nOffset /* = 0 */)
+int     TABRawBinBlock::InitBlockFromData(GByte *pabyBuf, int nSize, 
+                                      GBool bMakeCopy /* = TRUE */,
+                                      FILE *fpSrc /* = NULL */, 
+                                      int nOffset /* = 0 */)
 {
     m_fp = fpSrc;
     m_nFileOffset = nOffset;
@@ -333,15 +286,13 @@ int     TABRawBinBlock::InitBlockFromData(GByte *pabyBuf,
         if (m_pabyBuf != NULL)
             CPLFree(m_pabyBuf);
         m_pabyBuf = pabyBuf;
-        m_nBlockSize = nBlockSize;
-        m_nSizeUsed = nSizeUsed;
+        m_nSizeUsed = m_nBlockSize = nSize;
     }
-    else if (m_pabyBuf == NULL || nBlockSize != m_nBlockSize)
+    else if (m_pabyBuf == NULL || nSize != m_nBlockSize)
     {
-        m_pabyBuf = (GByte*)CPLRealloc(m_pabyBuf, nBlockSize*sizeof(GByte));
-        m_nBlockSize = nBlockSize;
-        m_nSizeUsed = nSizeUsed;
-        memcpy(m_pabyBuf, pabyBuf, m_nSizeUsed);
+        m_pabyBuf = (GByte*)CPLRealloc(m_pabyBuf, nSize*sizeof(GByte));
+        m_nSizeUsed = m_nBlockSize = nSize;
+        memcpy(m_pabyBuf, pabyBuf, m_nBlockSize);
     }
 
     /*----------------------------------------------------------------
@@ -373,7 +324,7 @@ int     TABRawBinBlock::InitBlockFromData(GByte *pabyBuf,
  * CPLError() will have been called.
  **********************************************************************/
 int     TABRawBinBlock::InitNewBlock(FILE *fpSrc, int nBlockSize, 
-                                     int nFileOffset /* = 0*/)
+                                  int nFileOffset /* = 0*/)
 {
     m_fp = fpSrc;
     m_nBlockSize = nBlockSize;
@@ -548,12 +499,6 @@ int     TABRawBinBlock::GotoByteInFile(int nOffset,
              * In this case it's okay to place the m_nCurPos at byte 512
              * which is past the end of the block.
              */
-
-            /* Make sure we request the block that ends with requested
-             * address and not the following block that doesn't exist
-             * yet on disk */
-            nNewBlockPtr -= m_nBlockSize;
-
             if ( (nOffset < m_nFileOffset || 
                   nOffset > m_nFileOffset+m_nBlockSize) &&
                  (CommitToFile() != 0 ||
@@ -1096,8 +1041,7 @@ TABRawBinBlock *TABCreateMAPBlockFromFile(FILE *fpSrc, int nOffset,
     /*----------------------------------------------------------------
      * Init new object with the data we just read
      *---------------------------------------------------------------*/
-    if (poBlock->InitBlockFromData(pabyBuf, nSize, nSize, 
-                                   FALSE, fpSrc, nOffset) != 0)
+    if (poBlock->InitBlockFromData(pabyBuf, nSize, FALSE, fpSrc, nOffset) != 0)
     {
         // Some error happened... and CPLError() has been called
         delete poBlock;
@@ -1107,123 +1051,4 @@ TABRawBinBlock *TABCreateMAPBlockFromFile(FILE *fpSrc, int nOffset,
     return poBlock;
 }
 
-/*=====================================================================
- *                      class TABBinBlockManager
- *====================================================================*/
-
-
-/**********************************************************************
- *                   TABBinBlockManager::TABBinBlockManager()
- *
- * Constructor.
- **********************************************************************/
-TABBinBlockManager::TABBinBlockManager(int nBlockSize /*=512*/)
-{
-
-    m_nBlockSize=nBlockSize;
-    m_nLastAllocatedBlock = -1;
-    m_psGarbageBlocks = NULL;
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::~TABBinBlockManager()
- *
- * Destructor.
- **********************************************************************/
-TABBinBlockManager::~TABBinBlockManager()
-{
-    Reset();
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::AllocNewBlock()
- *
- * Returns and reserves the address of the next available block, either a 
- * brand new block at end of file, or recycle a garbage block if one is 
- * available.
- **********************************************************************/
-GInt32  TABBinBlockManager::AllocNewBlock()
-{
-    // Try to reuse garbage blocks first
-    if (GetFirstGarbageBlock() > 0)
-        return PopGarbageBlock();
-
-    // ... or alloc a new block at EOF
-    if (m_nLastAllocatedBlock==-1)
-        m_nLastAllocatedBlock = 0;
-    else
-        m_nLastAllocatedBlock+=m_nBlockSize;
-
-    return m_nLastAllocatedBlock;
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::Reset()
- *
- **********************************************************************/
-void TABBinBlockManager::Reset()
-{
-    m_nLastAllocatedBlock = -1;
-
-    // Flush list of garbage blocks
-    while (m_psGarbageBlocks != NULL)
-    {
-        TABBlockRef *psNext = m_psGarbageBlocks->psNext;
-        CPLFree(m_psGarbageBlocks);
-        m_psGarbageBlocks = psNext;
-    }
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::PushGarbageBlock()
- *
- * Insert a garbage block at the head of the list of garbage blocks.
- **********************************************************************/
-void TABBinBlockManager::PushGarbageBlock(GInt32 nBlockPtr)
-{
-    TABBlockRef *psNewBlockRef = (TABBlockRef *)CPLMalloc(sizeof(TABBlockRef));
-
-    if (psNewBlockRef)
-    {
-        psNewBlockRef->nBlockPtr = nBlockPtr;
-        psNewBlockRef->psNext = m_psGarbageBlocks;
-        m_psGarbageBlocks = psNewBlockRef;
-    }
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::GetFirstGarbageBlock()
- *
- * Return address of the block at the head of the list of garbage blocks
- * or 0 if the list is empty.
- **********************************************************************/
-GInt32 TABBinBlockManager::GetFirstGarbageBlock()
-{
-    if (m_psGarbageBlocks)
-        return m_psGarbageBlocks->nBlockPtr;
-
-    return 0;
-}
-
-/**********************************************************************
- *                   TABBinBlockManager::PopGarbageBlock()
- *
- * Return address of the block at the head of the list of garbage blocks
- * and remove that block from the list.
- * Retuns 0 if the list is empty.
- **********************************************************************/
-GInt32 TABBinBlockManager::PopGarbageBlock()
-{
-    GInt32 nBlockPtr = 0;
-
-    if (m_psGarbageBlocks)
-    {
-        nBlockPtr = m_psGarbageBlocks->nBlockPtr;
-        TABBlockRef *psNext = m_psGarbageBlocks->psNext;
-        CPLFree(m_psGarbageBlocks);
-        m_psGarbageBlocks = psNext;
-    }
-
-    return nBlockPtr;
-}
 

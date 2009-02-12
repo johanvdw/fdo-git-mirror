@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterdataset.cpp 15452 2008-10-03 10:59:52Z kdejong $
+ * $Id: pcrasterdataset.cpp 12512 2007-10-23 13:55:47Z mloskot $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver
@@ -28,18 +28,33 @@
  ****************************************************************************/
 
 #include "gdal_pam.h"
-#include "cpl_string.h"
 
-CPL_CVSID("$Id: pcrasterdataset.cpp 15452 2008-10-03 10:59:52Z kdejong $");
+CPL_CVSID("$Id: pcrasterdataset.cpp 12512 2007-10-23 13:55:47Z mloskot $");
 
 #ifndef INCLUDED_PCRASTERDATASET
 #include "pcrasterdataset.h"
 #define INCLUDED_PCRASTERDATASET
 #endif
 
+// Library headers.
+#ifndef INCLUDED_CASSERT
+#include <cassert>
+#define INCLUDED_CASSERT
+#endif
+
+#ifndef INCLUDED_CSTDLIB
+#include <cstdlib>
+#define INCLUDED_CSTDLIB
+#endif
+
 #ifndef INCLUDED_IOSTREAM
 #include <iostream>
 #define INCLUDED_IOSTREAM
+#endif
+
+#ifndef INCLUDED_CPL_STRING
+#include "cpl_string.h"
+#define INCLUDED_CPL_STRING
 #endif
 
 // PCRaster library headers.
@@ -75,16 +90,16 @@ CPL_CVSID("$Id: pcrasterdataset.cpp 15452 2008-10-03 10:59:52Z kdejong $");
 
   Returns 0 if the file could not be opened.
 */
-GDALDataset* PCRasterDataset::open(
-         GDALOpenInfo* info)
+GDALDataset* PCRasterDataset::open(GDALOpenInfo* info)
 {
   PCRasterDataset* dataset = 0;
 
   if(info->fp && info->nHeaderBytes >= static_cast<int>(CSF_SIZE_SIG) &&
          strncmp((char*)info->pabyHeader, CSF_SIG, CSF_SIZE_SIG) == 0) {
-    MOPEN_PERM mode = info->eAccess == GA_Update
-         ? M_READ_WRITE
-         : M_READ;
+    MOPEN_PERM mode = M_READ;
+    if(info->eAccess == GA_Update) {
+      mode = M_READ_WRITE;
+    }
 
     MAP* map = mapOpen(info->pszFilename, mode);
 
@@ -94,14 +109,12 @@ GDALDataset* PCRasterDataset::open(
   }
 
 /* -------------------------------------------------------------------- */
-/*      Initialize any PAM information and overviews.                   */
+/*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
   if( dataset )
   {
       dataset->SetDescription( info->pszFilename );
       dataset->TryLoadXML();
-
-      dataset->oOvManager.Initialize( dataset, info->pszFilename );
   }
 
   return dataset;
@@ -119,16 +132,12 @@ GDALDataset* PCRasterDataset::open(
   scale to use. Otherwise a value scale is determined using
   GDALType2ValueScale(GDALDataType).
 
-  This function always writes rasters using CR_UINT1, CR_INT4 or CR_REAL4
+  This function alwasy writes raster using CR_UINT1, CR_INT4 or CR_REAL4
   cell representations.
 */
-GDALDataset* PCRasterDataset::createCopy(
-         char const* filename,
-         GDALDataset* source,
-         int strict,
-         char** options,
-         GDALProgressFunc progress,
-         void* progressData)
+GDALDataset* PCRasterDataset::createCopy(char const* filename,
+         GDALDataset* source, int strict, char** options,
+         GDALProgressFunc progress, void* progressData)
 {
   // Checks.
   int nrBands = source->GetRasterCount();
@@ -140,12 +149,11 @@ GDALDataset* PCRasterDataset::createCopy(
 
   GDALRasterBand* raster = source->GetRasterBand(1);
 
-  // Create PCRaster raster. Determine properties of raster to create.
+  // Create PCRaster raster.
   size_t nrRows = raster->GetYSize();
   size_t nrCols = raster->GetXSize();
   std::string string;
 
-  // The in-file type of the cells.
   CSF_CR fileCellRepresentation = GDALType2CellRepresentation(
          raster->GetRasterDataType(), false);
 
@@ -155,15 +163,16 @@ GDALDataset* PCRasterDataset::createCopy(
     return 0;
   }
 
-  // The value scale of the values.
   CSF_VS valueScale = VS_UNDEFINED;
   if(source->GetMetadataItem("PCRASTER_VALUESCALE")) {
     string = source->GetMetadataItem("PCRASTER_VALUESCALE");
   }
-
-  valueScale = !string.empty()
-         ? string2ValueScale(string)
-         : GDALType2ValueScale(raster->GetRasterDataType());
+  if(!string.empty()) {
+    valueScale = string2ValueScale(string);
+  }
+  else {
+    valueScale = GDALType2ValueScale(raster->GetRasterDataType());
+  }
 
   if(valueScale == VS_UNDEFINED) {
     CPLError(CE_Failure, CPLE_NotSupported,
@@ -186,7 +195,7 @@ GDALDataset* PCRasterDataset::createCopy(
     }
   }
 
-  // The in-memory type of the cells.
+  // Determine in app cell representation.
   CSF_CR appCellRepresentation = CR_UNDEFINED;
   appCellRepresentation = GDALType2CellRepresentation(
          raster->GetRasterDataType(), true);
@@ -203,7 +212,7 @@ GDALDataset* PCRasterDataset::createCopy(
 
   // Create a raster with the in file cell representation.
   MAP* map = Rcreate(filename, nrRows, nrCols, fileCellRepresentation,
-         valueScale, projection, west, north, angle, cellSize);
+                 valueScale, projection, west, north, angle, cellSize);
 
   if(!map) {
     CPLError(CE_Failure, CPLE_OpenFailed,
@@ -221,15 +230,6 @@ GDALDataset* PCRasterDataset::createCopy(
 
   int hasMissingValue;
   double missingValue = raster->GetNoDataValue(&hasMissingValue);
-
-  // This is needed to get my (KDJ) unit tests running.
-  // I am still uncertain why this is needed. If the input raster has float32
-  // values and the output int32, than the missing value in the dataset object
-  // is not updated like the values are.
-  if(missingValue == ::missingValue(CR_REAL4) &&
-         fileCellRepresentation == CR_INT4) {
-    missingValue = ::missingValue(fileCellRepresentation);
-  }
 
   // TODO conversie van INT2 naar INT4 ondersteunen. zie ruseas.c regel 503.
   // conversie op r 159.
@@ -249,17 +249,8 @@ GDALDataset* PCRasterDataset::createCopy(
          "PCRaster driver: Error reading from source raster");
     }
 
-    // Upon reading values are converted to the
-    // right data type. This includes the missing value. If the source
-    // value cannot be represented in the target data type it is set to a
-    // missing value.
-
     if(hasMissingValue) {
       alterToStdMV(buffer, nrCols, appCellRepresentation, missingValue);
-    }
-
-    if(valueScale == VS_BOOLEAN) {
-      castValuesToBooleanRange(buffer, nrCols, appCellRepresentation);
     }
 
     // Write row in target.
@@ -303,8 +294,7 @@ GDALDataset* PCRasterDataset::createCopy(
 /*!
   \param     map PCRaster map handle. It is ours to close.
 */
-PCRasterDataset::PCRasterDataset(
-         MAP* map)
+PCRasterDataset::PCRasterDataset(MAP* map)
 
   : GDALPamDataset(),
     d_map(map), d_west(0.0), d_north(0.0), d_cellSize(0.0)

@@ -4,18 +4,19 @@ include ../../GDALmake.opt
 AIGOBJ  =	gridlib.o aigopen.o aigccitt.o
 OBJ	=	aigdataset.o $(AIGOBJ)
 
-CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) -I../../ogr/ogrsf_frmts/avc
+CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
 default:	$(OBJ)
 
 clean:
-	rm -f *.o aitest$(EXE) $(OBJ) $(O_OBJ)
+	rm -f *.o aitest $(OBJ) $(O_OBJ)
 
-aitest$(EXE):	aitest.o
-	$(LD) $(LDFLAGS) aitest.o $(CONFIG_LIBS) -o aitest$(EXE)
+aitest:	aitest.o $(AIGOBJ)
+	$(CXX) aitest.o $(AIGOBJ) ../../port/*.o $(CONFIG_LIBS) -o aitest
 
-aigrid2tif$(EXE):	aigrid2tif.o
-	$(LD) $(LDFLAGS) aigrid2tif.o $(CONFIG_LIBS) -o aigrid2tif$(EXE)
+aigrid2tif:	aigrid2tif.o $(AIGOBJ)
+	$(CXX) aigrid2tif.o $(AIGOBJ) ../../port/*.o $(LIBS) -ltiff \
+		-o aigrid2tif
 
 install-obj:	$(O_OBJ)
 

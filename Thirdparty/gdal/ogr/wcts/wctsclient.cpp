@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wctsclient.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: wctsclient.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Web Coordinate Transformation Service
  * Purpose:  cgi-bin client form processor.  Turns client form request into
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: wctsclient.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: wctsclient.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                   WCTSClientEmitServiceException()                   */

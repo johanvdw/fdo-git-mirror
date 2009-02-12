@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddffielddefn.cpp 12706 2007-11-10 22:11:39Z rouault $
+ * $Id: ddffielddefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFFieldDefn class.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: ddffielddefn.cpp 12706 2007-11-10 22:11:39Z rouault $");
+CPL_CVSID("$Id: ddffielddefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define CPLE_DiscardedFormat   1301
 
@@ -263,7 +263,6 @@ int DDFFieldDefn::Initialize( DDFModule * poModuleIn,
 /* -------------------------------------------------------------------- */
     switch( pachFieldArea[0] )
     {
-      case ' ': /* for ADRG, DIGEST USRP, DIGEST ASRP files */
       case '0':
         _data_struct_code = dsc_elementary;
         break;
@@ -290,7 +289,6 @@ int DDFFieldDefn::Initialize( DDFModule * poModuleIn,
 
     switch( pachFieldArea[1] )
     {
-      case ' ': /* for ADRG, DIGEST USRP, DIGEST ASRP files */
       case '0':
         _data_type_code = dtc_char_string;
         break;

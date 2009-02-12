@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalexif.h 12766 2007-11-14 10:18:16Z dron $
+ * $Id: gdalexif.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -35,8 +35,8 @@
 
 
 static struct gpsname {
-    GUInt16     tag;
-    const char* name;
+    GUInt16 tag;
+    char*   name;
 } gpstags [] = {
     { 0x00, "EXIF_GPSVersionID" },
     { 0x01, "EXIF_GPSLatitudeRef" },
@@ -73,8 +73,8 @@ static struct gpsname {
 }; 
 
 static struct tagname {
-  GUInt16       tag;
-  const char*   name;
+  GUInt16 tag;
+  char*  name;
 } tagnames [] = {
 
 //    { 0x100,	"EXIF_Image_Width"},
@@ -180,8 +180,8 @@ static struct tagname {
 
 
 static struct intr_tag {
-  GInt16        tag;
-  const char*   name;
+  GInt16 tag;
+  char*  name;
 } intr_tags [] = {
 
     { 0x1,	"EXIF_Interoperability_Index"},
@@ -193,7 +193,7 @@ static struct intr_tag {
 };
 
 
-static const int datawidth[] = {
+static int datawidth[] = {
     0,	/* nothing */
     1,	/* TIFF_BYTE */
     1,	/* TIFF_ASCII */

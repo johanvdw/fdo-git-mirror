@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_conv.cpp 15264 2008-08-30 21:37:43Z mloskot $
+ * $Id: cpl_conv.cpp 12407 2007-10-13 17:33:44Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions.
@@ -26,18 +26,17 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-#ifdef MSVC_USE_VLD
-#include <vld.h>
-#endif
+
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: cpl_conv.cpp 15264 2008-08-30 21:37:43Z mloskot $");
+CPL_CVSID("$Id: cpl_conv.cpp 12407 2007-10-13 17:33:44Z rouault $");
 
 #if defined(WIN32CE)
 #  include "cpl_wince.h"
+#  include <wce_errno.h>
 #endif
 
 static void *hConfigMutex = NULL;
@@ -81,8 +80,8 @@ void *CPLCalloc( size_t nCount, size_t nSize )
     if( pReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLCalloc(): Out of memory allocating %ld bytes.\n",
-                  (long) (nSize * nCount) );
+                  "CPLCalloc(): Out of memory allocating %d bytes.\n",
+                  nSize * nCount );
     }
 
     return pReturn;
@@ -120,8 +119,8 @@ void *CPLMalloc( size_t nSize )
     if( nSize < 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "CPLMalloc(%ld): Silly size requested.\n",
-                  (long) nSize );
+                  "CPLMalloc(%d): Silly size requested.\n",
+                  nSize );
         return NULL;
     }
     
@@ -129,8 +128,8 @@ void *CPLMalloc( size_t nSize )
     if( pReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLMalloc(): Out of memory allocating %ld bytes.\n",
-                  (long) nSize );
+                  "CPLMalloc(): Out of memory allocating %d bytes.\n",
+                  nSize );
     }
 
     return pReturn;
@@ -174,8 +173,8 @@ void * CPLRealloc( void * pData, size_t nNewSize )
     if( nNewSize < 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "CPLRealloc(%ld): Silly size requested.\n",
-                  (long) nNewSize );
+                  "CPLRealloc(%d): Silly size requested.\n",
+                  nNewSize );
         return NULL;
     }
     
@@ -187,8 +186,8 @@ void * CPLRealloc( void * pData, size_t nNewSize )
     if( pReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLRealloc(): Out of memory allocating %ld bytes.\n",
-                  (long)nNewSize );
+                  "CPLRealloc(): Out of memory allocating %d bytes.\n",
+                  nNewSize );
     }
 
     return pReturn;
@@ -229,8 +228,8 @@ char *CPLStrdup( const char * pszString )
     if( pszReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
-                  "CPLStrdup(): Out of memory allocating %ld bytes.\n",
-                  (long) strlen(pszString) );
+                  "CPLStrdup(): Out of memory allocating %d bytes.\n",
+                  strlen(pszString) );
         
     }
     
@@ -279,14 +278,14 @@ char *CPLStrlwr( char *pszString )
  * Reads in at most one less than nBufferSize characters from the fp
  * stream and stores them into the buffer pointed to by pszBuffer.
  * Reading stops after an EOF or a newline. If a newline is read, it
- * is _not_ stored into the buffer. A '\\0' is stored after the last
+ * is _not_ stored into the buffer. A '\0' is stored after the last
  * character in the buffer. All three types of newline terminators
- * recognized by the CPLFGets(): single '\\r' and '\\n' and '\\r\\n'
+ * recognized by the CPLFGets(): single '\r' and '\n' and '\r\n'
  * combination.
  *
  * @param pszBuffer pointer to the targeting character buffer.
  * @param nBufferSize maximum size of the string to read (not including
- * termonating '\\0').
+ * termonating '\0').
  * @param fp file pointer to read from.
  * @return pointer to the pszBuffer containing a string read
  * from the file or NULL if the error or end of file was encountered.
@@ -902,11 +901,8 @@ void *CPLScanPointer( const char *pszString, int nMaxLength )
 /************************************************************************/
 
 /**
- * Extract double from string.
- *
- * Scan up to a maximum number of characters from a string and convert the
- * result to a double. This function uses CPLAtof() to convert string to
- * double value, so it uses a comma as a decimal delimiter.
+ * Scan up to a maximum number of characters from a string and convert
+ * the result to a double.
  *
  * @param pszString String containing characters to be scanned. It may be
  * terminated with a null character.
@@ -915,10 +911,18 @@ void *CPLScanPointer( const char *pszString, int nMaxLength )
  * of the number. Less characters will be considered if a null character
  * is encountered.
  * 
+ * @param pszLocale Pointer to a character string containing locale name
+ * ("C", "POSIX", "us_US", "ru_RU.KOI8-R" etc.). If NULL, we will not
+ * manipulate with locale settings and current process locale will be used for
+ * printing. Wee need this setting because in different locales decimal
+ * delimiter represented with the different characters. With the pszLocale
+ * option we can control what exact locale will be used for scanning a numeric
+ * value from the string (in most cases it should be C/POSIX).
+ *
  * @return Double value, converted from its ASCII form.
  */
 
-double CPLScanDouble( const char *pszString, int nMaxLength )
+double CPLScanDouble( const char *pszString, int nMaxLength, char *pszLocale )
 {
     int     i;
     double  dfValue;
@@ -938,9 +942,27 @@ double CPLScanDouble( const char *pszString, int nMaxLength )
             pszValue[i] = 'E';
 
 /* -------------------------------------------------------------------- */
-/*      The conversion itself.                                          */
+/*      Use atof() to fetch out the result                              */
 /* -------------------------------------------------------------------- */
-    dfValue = CPLAtof( pszValue );
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
+    char        *pszCurLocale = NULL;
+
+    if ( pszLocale || EQUAL( pszLocale, "" ) )
+    {
+        // Save the current locale
+        pszCurLocale = setlocale(LC_ALL, NULL );
+        // Set locale to the specified value
+        setlocale(LC_ALL, pszLocale );
+    }
+#endif
+
+    dfValue = atof( pszValue );
+
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
+    // Restore stored locale back
+    if ( pszCurLocale )
+        setlocale(LC_ALL, pszCurLocale );
+#endif
 
     CPLFree( pszValue );
     return dfValue;
@@ -952,12 +974,12 @@ double CPLScanDouble( const char *pszString, int nMaxLength )
 
 /**
  * Copy the string pointed to by pszSrc, NOT including the terminating
- * `\\0' character, to the array pointed to by pszDest.
+ * `\0' character, to the array pointed to by pszDest.
  *
  * @param pszDest Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string.
  *
- * @param pszSrc Pointer to the source buffer.
+ * @param pszDest Pointer to the source buffer.
  * 
  * @param nMaxLen Maximum length of the resulting string. If string length
  * is greater than nMaxLen, it will be truncated.
@@ -994,14 +1016,14 @@ int CPLPrintString( char *pszDest, const char *pszSrc, int nMaxLen )
 
 /**
  * Copy the string pointed to by pszSrc, NOT including the terminating
- * `\\0' character, to the array pointed to by pszDest. Remainder of the
+ * `\0' character, to the array pointed to by pszDest. Remainder of the
  * destination string will be filled with space characters. This is only
  * difference from the PrintString().
  *
  * @param pszDest Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string.
  *
- * @param pszSrc Pointer to the source buffer.
+ * @param pszDest Pointer to the source buffer.
  * 
  * @param nMaxLen Maximum length of the resulting string. If string length
  * is greater than nMaxLen, it will be truncated.
@@ -1042,7 +1064,7 @@ int CPLPrintStringFill( char *pszDest, const char *pszSrc, int nMaxLen )
  * Print GInt32 value into specified string buffer. This string will not
  * be NULL-terminated.
  *
- * @param pszBuffer Pointer to the destination string buffer. Should be
+ * @param Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string. Note, that the string will
  * not be NULL-terminated, so user should do this himself, if needed.
  *
@@ -1081,7 +1103,7 @@ int CPLPrintInt32( char *pszBuffer, GInt32 iValue, int nMaxLen )
  * Print GUIntBig value into specified string buffer. This string will not
  * be NULL-terminated.
  *
- * @param pszBuffer Pointer to the destination string buffer. Should be
+ * @param Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string. Note, that the string will
  * not be NULL-terminated, so user should do this himself, if needed.
  *
@@ -1123,7 +1145,7 @@ int CPLPrintUIntBig( char *pszBuffer, GUIntBig iValue, int nMaxLen )
  * Print pointer value into specified string buffer. This string will not
  * be NULL-terminated.
  *
- * @param pszBuffer Pointer to the destination string buffer. Should be
+ * @param Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string. Note, that the string will
  * not be NULL-terminated, so user should do this himself, if needed.
  *
@@ -1166,11 +1188,11 @@ int CPLPrintPointer( char *pszBuffer, void *pValue, int nMaxLen )
  * flag 'E' (or 'e') will be replaced with 'D', as in Fortran. Resulting
  * string will not to be NULL-terminated.
  *
- * @param pszBuffer Pointer to the destination string buffer. Should be
+ * @param Pointer to the destination string buffer. Should be
  * large enough to hold the resulting string. Note, that the string will
  * not be NULL-terminated, so user should do this himself, if needed.
  *
- * @param pszFormat Format specifier (for example, "%16.9E").
+ * @param Format specifier (for example, "%16.9E").
  *
  * @param dfValue Numerical value to print.
  * 
@@ -1185,7 +1207,7 @@ int CPLPrintPointer( char *pszBuffer, void *pValue, int nMaxLen )
  */
 
 int CPLPrintDouble( char *pszBuffer, const char *pszFormat,
-                    double dfValue, const char *pszLocale )
+                    double dfValue, char *pszLocale )
 {
 
 #define DOUBLE_BUFFER_SIZE 64
@@ -1273,7 +1295,7 @@ int CPLPrintDouble( char *pszBuffer, const char *pszFormat,
 #ifndef WIN32CE /* XXX - mloskot - strftime is not available yet. */
 
 int CPLPrintTime( char *pszBuffer, int nMaxLen, const char *pszFormat,
-                  const struct tm *poBrokenTime, const char *pszLocale )
+                  const struct tm *poBrokenTime, char *pszLocale )
 {
     char    *pszTemp = (char *)CPLMalloc( (nMaxLen + 1) * sizeof(char) );
     int     nChars;
@@ -1325,7 +1347,7 @@ void CPLVerifyConfiguration()
     if( sizeof(GInt32) != 4 )
         CPLError( CE_Fatal, CPLE_AppDefined, 
                   "sizeof(GInt32) == %d ... yow!\n", 
-                  (int) sizeof(GInt32) );
+                  sizeof(GInt32) );
 
 /* -------------------------------------------------------------------- */
 /*      Verify byte order                                               */
@@ -1529,14 +1551,11 @@ const char *CPLDecToDMS( double dfAngle, const char * pszAxis,
                          int nPrecision )
 
 {
-    VALIDATE_POINTER1( pszAxis, "CPLDecToDMS", "" );
-
     int         nDegrees, nMinutes;
     double      dfSeconds, dfABSAngle, dfEpsilon;
     char        szFormat[30];
+    static CPL_THREADLOCAL char szBuffer[50];
     const char  *pszHemisphere;
-    static CPL_THREADLOCAL char szBuffer[50] = { 0 };
-    
     
     dfEpsilon = (0.5/3600.0) * pow(0.1,nPrecision);
 
@@ -1912,10 +1931,6 @@ void CPLDumpSharedList( FILE *fp )
 /*                           CPLUnlinkTree()                            */
 /************************************************************************/
 
-/**
- * @return 0 on successful completion, -1 if function fails.
- */
-
 int CPLUnlinkTree( const char *pszPath )
 
 {
@@ -1930,7 +1945,7 @@ int CPLUnlinkTree( const char *pszPath )
                   "It seems no file system object called '%s' exists.",
                   pszPath );
 
-        return -1;
+        return errno;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1940,10 +1955,10 @@ int CPLUnlinkTree( const char *pszPath )
     {
         if( VSIUnlink( pszPath ) != 0 )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, "Failed to unlink %s.", 
-                      pszPath );
-
-            return -1;
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Failed to unlink %s.\n%s", 
+                      pszPath, VSIStrerror( errno ) );
+            return errno;
         }
         else
             return 0;
@@ -1982,10 +1997,10 @@ int CPLUnlinkTree( const char *pszPath )
 
         if( VSIRmdir( pszPath ) != 0 )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, "Failed to unlink %s.", 
-                      pszPath );
-
-            return -1;
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Failed to unlink %s.\n%s", 
+                      pszPath, VSIStrerror( errno ) );
+            return errno;
         }
         else
             return 0;
@@ -2014,7 +2029,6 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
     GByte *pabyBuffer;
     size_t nBufferSize;
     size_t nBytesRead;
-    int nRet = 0;
 
 /* -------------------------------------------------------------------- */
 /*      Open old and new file.                                          */
@@ -2025,10 +2039,7 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 
     fpNew = VSIFOpenL( pszNewPath, "wb" );
     if( fpNew == NULL )
-    {
-        VSIFCloseL( fpOld );
         return -1;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Prepare buffer.                                                 */
@@ -2042,12 +2053,11 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
     do { 
         nBytesRead = VSIFReadL( pabyBuffer, 1, nBufferSize, fpOld );
         if( nBytesRead < 0 )
-            nRet = -1;
+            return -1;
 
-        if( nRet == 0
-            && VSIFWriteL( pabyBuffer, 1, nBytesRead, fpNew ) < nBytesRead )
-            nRet = -1;
-    } while( nRet == 0 && nBytesRead == nBufferSize );
+        if( VSIFWriteL( pabyBuffer, 1, nBytesRead, fpNew ) < nBytesRead )
+            return -1;
+    } while( nBytesRead == nBufferSize );
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
@@ -2057,26 +2067,9 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 
     CPLFree( pabyBuffer );
 
-    return nRet;
+    return 0;
 }
 
-/************************************************************************/
-/*                            CPLMoveFile()                             */
-/************************************************************************/
-
-int CPLMoveFile( const char *pszNewPath, const char *pszOldPath )
-
-{
-    if( VSIRename( pszNewPath, pszOldPath ) == 0 )
-        return 0;
-
-    int nRet = CPLCopyFile( pszNewPath, pszOldPath );
-
-    if( nRet == 0 )
-        VSIUnlink( pszOldPath );
-    
-    return nRet;
-}
 
 /************************************************************************/
 /* ==================================================================== */
@@ -2112,62 +2105,3 @@ CPLLocaleC::~CPLLocaleC()
     }
 }
 
-/************************************************************************/
-/*                          CPLCheckForFile()                           */
-/************************************************************************/
-
-/**
- * Check for file existance.
- *
- * The function checks if a named file exists in the filesystem, hopefully
- * in an efficient fashion if a sibling file list is available.   It exists
- * primarily to do faster file checking for functions like GDAL open methods
- * that get a list of files from the target directory. 
- *
- * If the sibling file list exists (is not NULL) it is assumed to be a list
- * of files in the same directory as the target file, and it will be checked
- * (case insensitively) for a match.  If a match is found, pszFilename is
- * updated with the correct case and TRUE is returned. 
- *
- * If papszSiblingFiles is NULL, a VSIStatL() is used to test for the files
- * existance, and no case insensitive testing is done. 
- *
- * @param pszFilename name of file to check for - filename case updated in some cases.
- * @param papszSiblingFiles a list of files in the same directory as 
- * pszFilename if available, or NULL. This list should have no path components.
- *
- * @return TRUE if a match is found, or FALSE if not.
- */
-
-int CPLCheckForFile( char *pszFilename, char **papszSiblingFiles )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Fallback case if we don't have a sibling file list.             */
-/* -------------------------------------------------------------------- */
-    if( papszSiblingFiles == NULL )
-    {
-        VSIStatBufL sStatBuf;
-
-        return VSIStatL( pszFilename, &sStatBuf ) == 0;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      We have sibling files, compare the non-path filename portion    */
-/*      of pszFilename too all entries.                                 */
-/* -------------------------------------------------------------------- */
-    CPLString osFileOnly = CPLGetFilename( pszFilename );
-    int i;
-
-    for( i = 0; papszSiblingFiles[i] != NULL; i++ )
-    {
-        if( EQUAL(papszSiblingFiles[i],osFileOnly) )
-        {
-            strcpy( pszFilename + strlen(pszFilename) - strlen(osFileOnly), 
-                    papszSiblingFiles[i] );
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}

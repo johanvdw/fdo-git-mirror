@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pauxdataset.cpp 14613 2008-06-01 20:37:26Z rouault $
+ * $Id: pauxdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  PCI .aux Driver
  * Purpose:  Implementation of PAuxDataset
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: pauxdataset.cpp 14613 2008-06-01 20:37:26Z rouault $");
+CPL_CVSID("$Id: pauxdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_PAux(void);
@@ -544,13 +544,6 @@ CPLErr PAuxDataset::GetGeoTransform( double * padfGeoTransform )
     }
     else
     {
-        padfGeoTransform[0] = 0.0;
-        padfGeoTransform[1] = 1.0;
-        padfGeoTransform[2] = 0.0;
-        padfGeoTransform[3] = 0.0;
-        padfGeoTransform[4] = 0.0;
-        padfGeoTransform[5] = 1.0;
-
         return CE_Failure;
     }
 }
@@ -609,9 +602,9 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
     int		i;
-    CPLString   osAuxFilename;
+    char	*pszAuxFilename;
     char	**papszTokens;
-    CPLString   osTarget;
+    char	*pszTarget;
     
     if( poOpenInfo->nHeaderBytes < 1 )
         return NULL;
@@ -621,7 +614,7 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      file it references.                                             */
 /* -------------------------------------------------------------------- */
 
-    osTarget = poOpenInfo->pszFilename;
+    pszTarget = CPLStrdup( poOpenInfo->pszFilename );
 
     if( EQUAL(CPLGetExtension( poOpenInfo->pszFilename ),"aux")
         && EQUALN((const char *) poOpenInfo->pabyHeader,"AuxilaryTarget: ",16))
@@ -639,38 +632,36 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         szAuxTarget[i] = '\0';
 
+        CPLFree( pszTarget );
+
         pszPath = CPLStrdup(CPLGetPath(poOpenInfo->pszFilename));
-        osTarget = CPLFormFilename(pszPath, szAuxTarget, NULL);
-        CPLFree(pszPath);
+        pszTarget = CPLStrdup(CPLFormFilename(pszPath, szAuxTarget, NULL));
     }
 
 /* -------------------------------------------------------------------- */
 /*      Now we need to tear apart the filename to form a .aux           */
 /*      filename.                                                       */
 /* -------------------------------------------------------------------- */
-    osAuxFilename = CPLResetExtension(osTarget,"aux");
+    pszAuxFilename = CPLStrdup(CPLResetExtension(pszTarget,"aux"));
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a .aux file?                                         */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->papszSiblingFiles != NULL
-        && CSLFindString( poOpenInfo->papszSiblingFiles, 
-                          CPLGetFilename(osAuxFilename) ) == -1 )
-    {
-        return NULL;
-    }
-    
     FILE	*fp;
 
-    fp = VSIFOpenL( osAuxFilename, "r" );
+    fp = VSIFOpen( pszAuxFilename, "r" );
     if( fp == NULL )
     {
-        osAuxFilename = CPLResetExtension(osTarget,"AUX");
-        fp = VSIFOpenL( osAuxFilename, "r" );
+        strcpy( pszAuxFilename + strlen(pszAuxFilename)-4, ".aux" );
+        fp = VSIFOpen( pszAuxFilename, "r" );
     }
 
     if( fp == NULL )
+    {
+        CPLFree( pszTarget );
+        CPLFree( pszAuxFilename );
         return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Is this file a PCI .aux file?  Check the first line for the	*/
@@ -681,14 +672,14 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     const char *	pszLine;
 
-    pszLine = CPLReadLineL( fp );
+    pszLine = CPLReadLine( fp );
 
-    VSIFCloseL( fp );
+    VSIFClose( fp );
 
-    if( pszLine == NULL 
-        || (!EQUALN(pszLine,"AuxilaryTarget",14) 
-            && !EQUALN(pszLine,"AuxiliaryTarget",15)) ) 
+    if( pszLine == NULL || !EQUALN(pszLine,"AuxilaryTarget",14) )
     {
+        CPLFree( pszAuxFilename );
+        CPLFree( pszTarget );
         return NULL;
     }
     
@@ -703,8 +694,8 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Load the .aux file into a string list suitable to be            */
 /*      searched with CSLFetchNameValue().                              */
 /* -------------------------------------------------------------------- */
-    poDS->papszAuxLines = CSLLoad( osAuxFilename );
-    poDS->pszAuxFilename = CPLStrdup(osAuxFilename);
+    poDS->papszAuxLines = CSLLoad( pszAuxFilename );
+    poDS->pszAuxFilename = pszAuxFilename;
     
 /* -------------------------------------------------------------------- */
 /*      Find the RawDefinition line to establish overall parameters.    */
@@ -742,13 +733,13 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->eAccess == GA_Update )
     {
-        poDS->fpImage = VSIFOpenL( osTarget, "rb+" );
+        poDS->fpImage = VSIFOpenL( pszTarget, "rb+" );
 
         if( poDS->fpImage == NULL )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
                       "File %s is missing or read-only, check permissions.",
-                      osTarget.c_str() );
+                      pszTarget );
             
             delete poDS;
             return NULL;
@@ -756,13 +747,13 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else
     {
-        poDS->fpImage = VSIFOpenL( osTarget, "rb" );
+        poDS->fpImage = VSIFOpenL( pszTarget, "rb" );
 
         if( poDS->fpImage == NULL )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
                       "File %s is missing or unreadable.",
-                      osTarget.c_str() );
+                      pszTarget );
             
             delete poDS;
             return NULL;
@@ -832,15 +823,18 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
 /* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, osTarget );
+    poDS->oOvManager.Initialize( poDS, pszTarget );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
-    poDS->SetDescription( osTarget );
+    poDS->SetDescription( pszTarget );
     poDS->TryLoadXML();
 
     poDS->ScanForGCPs();
+
+    CPLFree( pszTarget );
+
     poDS->bAuxUpdated = FALSE;
 
     return( poDS );
@@ -877,7 +871,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     FILE	*fp;
 
-    fp = VSIFOpenL( pszFilename, "w" );
+    fp = VSIFOpen( pszFilename, "w" );
 
     if( fp == NULL )
     {
@@ -891,8 +885,8 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /*      Just write out a couple of bytes to establish the binary        */
 /*      file, and then close it.                                        */
 /* -------------------------------------------------------------------- */
-    VSIFWriteL( (void *) "\0\0", 2, 1, fp );
-    VSIFCloseL( fp );
+    VSIFWrite( (void *) "\0\0", 2, 1, fp );
+    VSIFClose( fp );
 
 /* -------------------------------------------------------------------- */
 /*      Create the aux filename.                                        */
@@ -914,7 +908,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpenL( pszAuxFilename, "wt" );
+    fp = VSIFOpen( pszAuxFilename, "wt" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
@@ -935,12 +929,12 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
            && pszFilename[iStart-1] != '\\' )
         iStart--;
 
-    VSIFPrintfL( fp, "AuxilaryTarget: %s\n", pszFilename + iStart );
+    VSIFPrintf( fp, "AuxilaryTarget: %s\n", pszFilename + iStart );
 
 /* -------------------------------------------------------------------- */
 /*      Write out the raw definition for the dataset as a whole.        */
 /* -------------------------------------------------------------------- */
-    VSIFPrintfL( fp, "RawDefinition: %d %d %d\n",
+    VSIFPrintf( fp, "RawDefinition: %d %d %d\n",
                 nXSize, nYSize, nBands );
 
 /* -------------------------------------------------------------------- */
@@ -971,7 +965,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
         nChars = CPLPrintUIntBig( szImgOffset, nImgOffset, 63 );
         szImgOffset[nChars] = '\0';
 
-        VSIFPrintfL( fp, "ChanDefinition-%d: %s %s %d %d %s\n", iBand+1,
+        VSIFPrintf( fp, "ChanDefinition-%d: %s %s %d %d %s\n", iBand+1,
                     pszTypeName, strpbrk(szImgOffset, "-.0123456789"),
                     nPixelOffset, nLineOffset,
 #ifdef CPL_LSB
@@ -987,7 +981,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
-    VSIFCloseL( fp );
+    VSIFClose( fp );
 
     return (GDALDataset *) GDALOpen( pszFilename, GA_Update );
 }
@@ -1002,7 +996,7 @@ CPLErr PAuxDelete( const char * pszBasename )
     FILE	*fp;
     const char *pszLine;
 
-    fp = VSIFOpenL( CPLResetExtension( pszBasename, "aux" ), "r" );
+    fp = VSIFOpen( CPLResetExtension( pszBasename, "aux" ), "r" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
@@ -1011,8 +1005,8 @@ CPLErr PAuxDelete( const char * pszBasename )
         return CE_Failure;
     }
 
-    pszLine = CPLReadLineL( fp );
-    VSIFCloseL( fp );
+    pszLine = CPLReadLine( fp );
+    VSIFClose( fp );
     
     if( pszLine == NULL || !EQUALN(pszLine,"AuxilaryTarget",14) )
     {

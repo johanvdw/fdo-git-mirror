@@ -77,7 +77,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
     const FdoSmLpDbObject* table = classDefinition->RefDbObject();
     FdoStringP tableName = table->RefDbObject()->GetDbQName();
 	FdoStringP updateString;
-    const FdoSmLpDataPropertyDefinition *pDef = FdoSmLpDataPropertyDefinition::Cast(classDefinition->RefSystemProperty(L"RevisionNumber"));
+    const FdoSmLpDataPropertyDefinition *pDef = FdoSmLpDataPropertyDefinition::Cast(classDefinition->RefProperties()->RefItem(L"RevisionNumber"));
     if ( (pDef != NULL) && (pDef->RefColumn() == NULL) )
         pDef = NULL;
 
@@ -110,8 +110,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
     values = new FdoRdbmsPvcBindDef[count];
     for (i=0; i<count; i++)
     {
-        mConnection->GetGdbiCommands()->alcnullind(1, &(values[i].null_ind));
-        mConnection->GetGdbiCommands()->set_null(values[i].null_ind, 0,0);
+        mConnection->GetGdbiCommands()->set_null(&values[i].null_ind, 0,0);
         values[i].value.strvalue = NULL;
         values[i].reader = NULL;
         values[i].type = FdoDataType_String;
@@ -413,11 +412,6 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
     if( ! updateProperties )
     {
         delete [] duplicate;
-        for ( int i = 0; i < count; i++ ) 
-        {
-            if ( values[i].null_ind )
-                free(values[i].null_ind);
-        }
         delete [] values;
         return numberOfRows;
     }
@@ -515,6 +509,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
             FdoStringP bindValue;
             values[bindIndex-1].type = dataType;
             values[bindIndex-1].pos = bindIndex;
+            values[bindIndex-1].null_ind = false;
             wcsncpy(values[bindIndex-1].propertyName, (const wchar_t *)name, GDBI_SCHEMA_ELEMENT_NAME_SIZE );
 
             if (isNull == false)
@@ -526,7 +521,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                         break;
 
                     case FdoDataType_Byte:
-                        bindValue += mConnection->GetUtility()->Utf8ToUnicode( FdoCommonOSUtil::itoa( (dynamic_cast<FdoByteValue*>(dataValue))->GetByte(), buffer ) );
+                        bindValue += mConnection->GetUtility()->Utf8ToUnicode( ut_itoa( (dynamic_cast<FdoByteValue*>(dataValue))->GetByte(), buffer ) );
                         break;
 
                     case FdoDataType_DateTime:
@@ -544,11 +539,11 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                         break;
 
                     case FdoDataType_Int16:
-                        bindValue +=  mConnection->GetUtility()->Utf8ToUnicode( FdoCommonOSUtil::itoa( (dynamic_cast<FdoInt16Value*>(dataValue))->GetInt16(), buffer ) );
+                        bindValue +=  mConnection->GetUtility()->Utf8ToUnicode( ut_itoa( (dynamic_cast<FdoInt16Value*>(dataValue))->GetInt16(), buffer ) );
                         break;
 
                     case FdoDataType_Int32:
-                        bindValue +=  mConnection->GetUtility()->Utf8ToUnicode( FdoCommonOSUtil::itoa( (dynamic_cast<FdoInt32Value*>(dataValue))->GetInt32(),buffer ) );
+                        bindValue +=  mConnection->GetUtility()->Utf8ToUnicode( ut_itoa( (dynamic_cast<FdoInt32Value*>(dataValue))->GetInt32(),buffer ) );
                         break;
 
                     case FdoDataType_Int64:
@@ -575,7 +570,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 								values[index].value.strvalue = (wchar_t *)wvalue;
 								values[index].valueNeedsFree = false;
 								int size = (int) (wcslen(wvalue) + 1)*sizeof(wchar_t);
-								statement->Bind( bindIndex++, size, (wchar_t *)values[index].value.strvalue, values[index].null_ind );
+								statement->Bind( bindIndex++, size, (wchar_t *)values[index].value.strvalue, &values[index].null_ind );
 							}
 							else
 							{
@@ -584,10 +579,10 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 								strncpy((char*)values[index].value.strvalue, mConnection->GetUtility()->UnicodeToUtf8(wvalue), size);
 								((char*)values[index].value.strvalue)[size]='\0';
 								values[index].valueNeedsFree = true;
-								statement->Bind( bindIndex++, size, (char *)values[index].value.strvalue, values[index].null_ind );
+								statement->Bind( bindIndex++, size, (char *)values[index].value.strvalue, &values[index].null_ind );
 
 							}
-							mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);						
+							mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);						
 						}
                         break;
 
@@ -644,8 +639,8 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										sprintf((char*)values[index].value.strvalue, "%.16g", x);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
-                                        mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
-										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, values[index].null_ind );
+                                        mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
+										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, &values[index].null_ind );
 									}
 									if (NULL != columnY )
 									{
@@ -656,8 +651,8 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										sprintf((char*)values[index].value.strvalue, "%.16g", y);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
-                                        mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
-										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, values[index].null_ind );
+                                        mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
+										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, &values[index].null_ind );
 									}
 									if (NULL != columnZ )
 									{
@@ -668,8 +663,8 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										sprintf((char*)values[index].value.strvalue, "%.16g", z);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
-                                        mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
-										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, values[index].null_ind );
+                                        mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
+										statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, &values[index].null_ind );
 									}
 								}
 								break;
@@ -678,6 +673,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                             FdoIGeometry        *geom = NULL;
                             if ( ba )
                             {
+                                mConnection->GetSchemaUtil()->SetActiveSpatialContext( classDefinition, name );
                                 geom = mFdoConnection->TransformGeometry( 
                                     FdoPtr<FdoIGeometry>(gf->CreateGeometryFromFgf(ba)), 
                                     geomPropDef, 
@@ -689,13 +685,13 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                                 mConnection->GetSchemaUtil()->CheckGeomPropShapeType( classDefinition, name, geom );
                                 mConnection->GetSchemaUtil()->CheckGeomPropValidity( classDefinition, name, geom );
 
-                                mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);								
+                                mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);								
                             }
                             FdoIGeometry *old_geom = (FdoIGeometry*) values[index].value.strvalue;
                             FDO_SAFE_RELEASE( old_geom );
                             values[index].value.strvalue = (char*) geom;
 
-                            statement->Bind(bindIndex++, (FdoIGeometry*)&values[index].value.strvalue, values[index].null_ind );
+                            statement->Bind(bindIndex++, (FdoIGeometry*)&values[index].value.strvalue, &values[index].null_ind );
 
 							if( geom != NULL )
 							{
@@ -728,7 +724,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										    values[index].valueNeedsFree = true;
 										    wcsncpy((wchar_t*)values[index].value.strvalue, wcharValue, values[index].len);
 										    ((wchar_t*)values[index].value.strvalue)[values[index].len-1] = '\0';
-										    statement->Bind(bindIndex++, values[index].len, (const wchar_t*)values[index].value.strvalue, values[index].null_ind );
+										    statement->Bind(bindIndex++, values[index].len, (const wchar_t*)values[index].value.strvalue, &values[index].null_ind );
 									    }
 									    else
 									    {
@@ -739,12 +735,12 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										    const char* charVal = mConnection->GetUtility()->UnicodeToUtf8( wcharValue );
 										    strncpy((char*)values[index].value.strvalue, charVal, values[index].len);
 										    ((char*)values[index].value.strvalue)[values[index].len-1] = '\0';
-										    statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, values[index].null_ind );
+										    statement->Bind(bindIndex++, values[index].len, (const char*)values[index].value.strvalue, &values[index].null_ind );
 									    }
                                         if (wcharValue[0] == L'\0')
-								            mConnection->GetGdbiCommands()->set_null( values[index].null_ind, 0, 0 );
+								            mConnection->GetGdbiCommands()->set_null( &values[index].null_ind, 0, 0 );
                                         else
-    									    mConnection->GetGdbiCommands()->set_nnull( values[index].null_ind, 0, 0 );
+    									    mConnection->GetGdbiCommands()->set_nnull( &values[index].null_ind, 0, 0 );
 								    }
 								}
 							}
@@ -754,7 +750,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                     case FdoDataType_BLOB:
                         {
                             int index = bindIndex-1;
-                            mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
+                            mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
 
                             if ( streamReader != NULL )
                             {
@@ -770,7 +766,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                                 values[index].value.strvalue = (char*) byteArr->GetData();
 
                                 statement->Bind(bindIndex++, RDBI_BLOB, byteArr->GetCount(),
-                                                       (char *)values[index].value.strvalue, values[index].null_ind );
+                                                       (char *)values[index].value.strvalue, &values[index].null_ind );
                             }
                             break;
                         }
@@ -795,7 +791,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                 values[index].value.strvalue = new char[2];
                 val = " ";
                 strcpy((char*)values[index].value.strvalue, val);
-                mConnection->GetGdbiCommands()->set_null(values[index].null_ind, 0,0);
+                mConnection->GetGdbiCommands()->set_null(&values[index].null_ind, 0,0);
                 size = 2;
             }
             else
@@ -805,7 +801,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                     values[index].valueNeedsFree = true;
                     values[index].value.strvalue = new char[strlen(val) + 1];
                     strcpy( (char*)values[index].value.strvalue, val );
-                    mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
+                    mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
                     size = (int) strlen(val) + 1;
                 }
                 else
@@ -814,11 +810,11 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                     values[index].value.strvalue = new char[2];
                     val = "";
                     strcpy((char*)values[index].value.strvalue, val);
-                    mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
+                    mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
                     size = 2;
                 }
             }
-            statement->Bind( bindIndex++, size, (char *)values[index].value.strvalue, values[index].null_ind );
+            statement->Bind( bindIndex++, size, (char *)values[index].value.strvalue, &values[index].null_ind );
         }
 
         delete [] duplicate;
@@ -905,15 +901,16 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
             }
 
             values[index].pos = bindIndex;
-            mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
+            values[index].null_ind = false;
+            mConnection->GetGdbiCommands()->set_nnull(&values[index].null_ind, 0,0);
 
             const wchar_t * name = propertyDefinition->GetName();
             wcsncpy(values[index].propertyName, (const wchar_t *)name, GDBI_SCHEMA_ELEMENT_NAME_SIZE );
 
             if ( mConnection->GetGdbiCommands()->SupportsUnicode() )
-                statement->Bind(bindIndex++, (int)wcslen((wchar_t*)values[index].value.strvalue)+1, (wchar_t *)values[index].value.strvalue, values[index].null_ind);
+                statement->Bind(bindIndex++, (int)wcslen((wchar_t*)values[index].value.strvalue)+1, (wchar_t *)values[index].value.strvalue, &values[index].null_ind);
             else
-                statement->Bind(bindIndex++, (int)strlen((char*)values[index].value.strvalue)+1, (char *)values[index].value.strvalue, values[index].null_ind);
+                statement->Bind(bindIndex++, (int)strlen((char*)values[index].value.strvalue)+1, (char *)values[index].value.strvalue, &values[index].null_ind);
         }
 
 		AdditionalBinds( statement, values, bindIndex );
@@ -926,9 +923,6 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
         // Clean up
         for( i = 0; i < count; i++ )
         {
-            if ( values[i].null_ind )
-                free(values[i].null_ind);
-
             if ( values[i].valueNeedsFree && 
 				values[i].value.strvalue && 
 				((values[i].type != FdoRdbmsDataType_Geometry) && 

@@ -1,31 +1,20 @@
-/**********************************************************************
- * $Id: iom_utilities.cpp 15858 2008-11-30 09:59:17Z rouault $
+/* This file is part of the iom project.
+ * For more information, please see <http://www.interlis.ch>.
  *
- * Project:  iom - The INTERLIS Object Model
- * Purpose:  For more information, please see <http://iom.sourceforge.net>
- * Author:   Claude Eisenhut
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- **********************************************************************
- * Copyright (c) 2007, Claude Eisenhut
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
- * DEALINGS IN THE SOFTWARE.
- ****************************************************************************/
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 /** @file
  * implementation of utility functions
@@ -33,7 +22,6 @@
  * @{
  */
 
-#include <cstdio>
 #include <iostream>
 #include <string>
 #include <string.h>
@@ -165,44 +153,37 @@ extern "C" void iom_init()
 
 }
 
-/* Compatibility stuff due to change of Xerces-C API signature (#2616) */
-#if XERCES_VERSION_MAJOR >= 3
-#define LEN_SIZE_TYPE XMLSize_t
-#else
-#define LEN_SIZE_TYPE unsigned int
-#endif
-
 /** transcode a xerces unicode string to an utf8 encoded one.
 */
 char *iom_toUTF8(const XMLCh *src)
 {
-	LEN_SIZE_TYPE srcLen=XMLString::stringLen(src);
-	LEN_SIZE_TYPE destLen=srcLen+10;
-	XMLByte *dest;
-	dest=dbgnew XMLByte[destLen+1];
-	LEN_SIZE_TYPE eaten;
-	LEN_SIZE_TYPE endDest;
-	endDest=utf8_transcoder->transcodeTo(src,srcLen,dest,destLen,eaten,XMLTranscoder::UnRep_RepChar);
+	unsigned int srcLen=XMLString::stringLen(src);
+	int destLen=srcLen+10;
+	char *dest;
+	dest=dbgnew char[destLen+1];
+	unsigned int eaten;
+	unsigned int endDest;
+	endDest=utf8_transcoder->transcodeTo(src,srcLen,(unsigned char *)dest,destLen,eaten,XMLTranscoder::UnRep_RepChar);
 	while(eaten<srcLen){
 		delete[] dest;
 		destLen=destLen+srcLen-eaten+10;
-		dest=dbgnew XMLByte[destLen+1];
-		endDest=utf8_transcoder->transcodeTo(src,srcLen,dest,destLen,eaten,XMLTranscoder::UnRep_RepChar);
+		dest=dbgnew char[destLen+1];
+		endDest=utf8_transcoder->transcodeTo(src,srcLen,(unsigned char *)dest,destLen,eaten,XMLTranscoder::UnRep_RepChar);
 	}
 	dest[endDest]=0;
-	return (char*)dest; /* should be a unsigned char* == XMLByte* instead */
+	return dest;
 }
 
 /** transcode an utf8 encoded string to a xerces unicode one.
 */
 XMLCh *iom_fromUTF8(const char *src)
 {
-	LEN_SIZE_TYPE srcLen=XMLString::stringLen(src);
-	LEN_SIZE_TYPE destLen=srcLen;
+	int srcLen=XMLString::stringLen(src);
+	int destLen=srcLen;
 	XMLCh *dest=dbgnew XMLCh[destLen+1];
 	unsigned char *charSizes=dbgnew unsigned char[destLen];
-	LEN_SIZE_TYPE eaten;
-	LEN_SIZE_TYPE endDest=utf8_transcoder->transcodeFrom((const XMLByte *)src,srcLen,dest,destLen,eaten,charSizes);
+	unsigned int eaten;
+	unsigned int endDest=utf8_transcoder->transcodeFrom((unsigned char *)src,srcLen,dest,destLen,eaten,charSizes);
 	dest[endDest]=0;
 	delete[] charSizes;
 	return dest;

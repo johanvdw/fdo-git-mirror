@@ -1,37 +1,98 @@
 /******************************************************************************
- * $Id: typemaps_csharp.i 14938 2008-07-16 11:19:27Z tamas $
+ * $Id: typemaps_csharp.i 10274 2006-11-11 19:41:21Z tamas $
  *
  * Name:     typemaps_csharp.i
- * Project:  GDAL CSharp Interface
- * Purpose:  Typemaps for C# bindings.
- * Author:   Tamas Szekeres, szekerest@gmail.com
+ * Project:  GDAL SWIG Interface
+ * Purpose:  Typemaps for C# bindings
+ * Author:   Howard Butler, Tamas Szekeres
  *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.17  2006/11/11 19:41:21  tamas
+ * Removed obsolete items
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.16  2006/11/08 22:43:24  tamas
+ * Preliminary fix for SWIG potential problems
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
- 
+ * Revision 1.15  2006/11/04 22:12:41  tamas
+ * Added preliminary Raster R/W support
+ *
+ * Revision 1.14  2006/11/01 00:32:14  tamas
+ * Typemaps for 'out double' and 'out int'
+ *
+ * Revision 1.13  2006/11/01 00:04:47  tamas
+ * More typemaps for 'out string'
+ *
+ * Revision 1.12  2006/10/31 23:23:08  tamas
+ * Typemaps for GIntBig
+ *
+ * Revision 1.11  2006/10/28 20:40:55  tamas
+ * Added typemaps for char **options
+ *
+ * Revision 1.10  2006/09/09 21:06:32  tamas
+ * Added preliminary SWIGTYPE *DISOWN support.
+ *
+ * Revision 1.9  2006/09/09 17:54:37  tamas
+ * Typemaps for double arrays
+ *
+ * Revision 1.8  2006/09/08 16:31:42  tamas
+ * Typemap for char **argout
+ *
+ * Revision 1.7  2006/09/07 10:25:45  tamas
+ * Corrected default typemaps to eliminate warnings at the interface creation
+ *
+ * Revision 1.6  2005/08/19 13:42:39  kruland
+ * Fix problem in a double[ANY] typemap which prevented compilation of wrapper.
+ *
+ * Revision 1.5  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.4  2005/08/05 18:49:26  hobu
+ * Add some more dummy typemaps to get us closer to where
+ * Kevin is with python
+ *
+ * Revision 1.3  2005/06/22 18:41:30  kruland
+ * Renamed type for OGRErr typemap to use OGRErr instead of the made up
+ * THROW_OGR_ERROR.
+ *
+ * Revision 1.2  2005/03/10 17:12:55  hobu
+ * dummy typemaps for csharp.  Nothing here yet, but the names
+ * are there
+ *
+ * Revision 1.1  2005/02/24 17:42:03  kruland
+ * C# typemap file started.  Code taken from gdal_typemaps.i
+ *
+ *
+*/
 
 %include "typemaps.i"
 
 /* CSHARP TYPEMAPS */
+
+%include swig_csharp_extensions.i
+
+%typemap(in,numinputs=0) (int *nLen, char **pBuf ) ( int nLen, char *pBuf )
+{
+  /* %typemap(in,numinputs=0) (int *nLen, char **pBuf ) */
+  $1 = &nLen;
+  $2 = &pBuf;
+}
+
+%typemap(argout) (int *nLen, char **pBuf )
+{
+  /* %typemap(argout) (int *nLen, char **pBuf ) */
+
+}
+%typemap(freearg) (int *nLen, char **pBuf )
+{
+  /* %typemap(freearg) (int *nLen, char **pBuf ) */
+  if( $1 ) {
+    free( *$2 );
+  }
+}
 
 %fragment("OGRErrMessages","header") %{
 static char const *
@@ -57,6 +118,28 @@ OGRErrMessages( int rc ) {
 }
 %}
 
+%typemap(in,numinputs=1) (int nLen, char *pBuf )
+{
+  /* %typemap(in,numinputs=1) (int nLen, char *pBuf ) */
+  /*TODO*/
+	$2 = $null;
+    $1 = $null;
+}
+
+
+%typemap(in) (tostring argin) (string str)
+{
+  /* %typemap(in) (tostring argin) */
+  $1 = ($1_ltype)$input;
+}
+
+%typemap(in) (char **ignorechange) ( char *val )
+{
+  /* %typemap(in) (char **ignorechange) */
+	/*TODO*/
+	$1 = $null;
+}
+
 %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr
 {
   /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
@@ -68,38 +151,83 @@ OGRErrMessages( int rc ) {
 
 }
 
-%typemap(in) (tostring argin) (string str)
-{
-  /* %typemap(in) (tostring argin) */
-  $1 = ($1_ltype)$input;
-}
 
 /* GDAL Typemaps */
 
-%typemap(out) IF_FALSE_RETURN_NONE %{ $result = $1; %}
-%typemap(ctype) IF_FALSE_RETURN_NONE "int"
-%typemap(imtype) IF_FALSE_RETURN_NONE "int"
-%typemap(cstype) IF_FALSE_RETURN_NONE "int"
-%typemap(csout, excode=SWIGEXCODE) IF_FALSE_RETURN_NONE {
-    int res = $imcall;$excode
-    return res;
+%typemap(out) IF_ERR_RETURN_NONE
+{
+  /* %typemap(out) IF_ERR_RETURN_NONE */
+
+}
+%typemap(ret) IF_ERR_RETURN_NONE
+{
+ /* %typemap(ret) IF_ERR_RETURN_NONE */
+
+}
+%typemap(out) IF_FALSE_RETURN_NONE
+{
+  /* %typemap(out) IF_FALSE_RETURN_NONE */
+
+}
+%typemap(ret) IF_FALSE_RETURN_NONE
+{
+ /* %typemap(ret) IF_FALSE_RETURN_NONE */
+
 }
 
-%typemap(out) IF_ERROR_RETURN_NONE %{ $result = $1; %}
-
-%define OPTIONAL_POD(CTYPE, CSTYPE)
-%typemap(imtype) (CTYPE *optional_##CTYPE) "IntPtr"
-%typemap(cstype) (CTYPE *optional_##CTYPE) "ref CSTYPE"
-%typemap(csin) (CTYPE *optional_##CTYPE) "(IntPtr)$csinput"
- 
-%typemap(in) (CTYPE *optional_##CTYPE)
+%typemap(in,numargs=1) (int nList, int* pList)
 {
-  /* %typemap(in) (type *optional_##CTYPE) */
-  $1 = ($1_type)$input;
+  /* %typemap(in,numargs=1) (int nList, int* pList)*/
+  /* check if is List */
+
+}
+%typemap(freearg) (int nList, int* pList)
+{
+  /* %typemap(freearg) (int nList, int* pList) */
+  if ($2) {
+    free((void*) $2);
+  }
+}
+
+
+/*
+ * Typemap char ** -> dict
+ */
+%typemap(out) char **dict
+{
+  /* %typemap(out) char ** -> to hash */
+  /*TODO*/
+	$result = $null;
+}
+
+/*
+ * Typemap char **<- dict
+ */
+%typemap(in) char **dict
+{
+  /* %typemap(in) char **dict */
+
+}
+%typemap(freearg) char **dict
+{
+  /* %typemap(freearg) char **dict */
+  CSLDestroy( $1 );
+}
+
+%define OPTIONAL_POD(type,argstring)
+%typemap(in) (type *optional_##type) ( type val )
+{
+  /* %typemap(in) (type *optional_##type) */
+
+}
+%typemap(typecheck,precedence=0) (type *optional_##type)
+{
+  /* %typemap(typecheck,precedence=0) (type *optionalInt) */
+
 }
 %enddef
 
-OPTIONAL_POD(int, int);
+OPTIONAL_POD(int,i);
 
 /*
  * Typemap for GIntBig (int64)
@@ -142,51 +270,20 @@ OPTIONAL_POD(int, int);
  * Typemap for char** options
  */
 
-%typemap(imtype, out="IntPtr") char **options, char **dict, char **CSL "IntPtr[]"
-%typemap(cstype) char **options, char **dict, char **CSL %{string[]%}
-%typemap(in) char **options, char **dict, char **CSL %{ $1 = ($1_ltype)$input; %}
-%typemap(out) char **options, char **dict, char **CSL %{ $result = $1; %}
-%typemap(csin) char **options, char **dict, char **CSL "($csinput != null)? new $modulePINVOKE.StringListMarshal($csinput)._ar : null"
-%typemap(csout, excode=SWIGEXCODE) char**options, char **dict {
-        /* %typemap(csout) char**options */
-        IntPtr cPtr = $imcall;
-        IntPtr objPtr;
-        int count = 0;
-        if (cPtr != IntPtr.Zero) {
-            while (Marshal.ReadIntPtr(cPtr, count*IntPtr.Size) != IntPtr.Zero)
-                ++count;
-        }
-        string[] ret = new string[count];
-        if (count > 0) {       
-	        for(int cx = 0; cx < count; cx++) {
-                objPtr = System.Runtime.InteropServices.Marshal.ReadIntPtr(cPtr, cx * System.Runtime.InteropServices.Marshal.SizeOf(typeof(IntPtr)));
-                ret[cx]= (objPtr == IntPtr.Zero) ? null : System.Runtime.InteropServices.Marshal.PtrToStringAnsi(objPtr);
-            }
-        }
-        $excode
-        return ret;
+%typemap(imtype, out="IntPtr") char **options "IntPtr[]"
+%typemap(cstype) char **options %{string[]%}
+%typemap(in) char **options %{ $1 = ($1_ltype)$input; %}
+%typemap(out) char **options %{ $result = $1; %}
+%typemap(csin) char **options "new $modulePINVOKE.StringListMarshal($csinput)._ar"
+%typemap(csout, excode=SWIGEXCODE) char**options {
+    $excode
+    throw new System.NotSupportedException("Returning string arrays is not implemented yet.");
 }
  
-%typemap(csout, excode=SWIGEXCODE) char** CSL {
-        /* %typemap(csout) char** CSL */
-        IntPtr cPtr = $imcall;
-        IntPtr objPtr;
-        int count = 0;
-        if (cPtr != IntPtr.Zero) {
-            while (Marshal.ReadIntPtr(cPtr, count*IntPtr.Size) != IntPtr.Zero)
-                ++count;
-        }
-        string[] ret = new string[count];
-        if (count > 0) {       
-	        for(int cx = 0; cx < count; cx++) {
-                objPtr = System.Runtime.InteropServices.Marshal.ReadIntPtr(cPtr, cx * System.Runtime.InteropServices.Marshal.SizeOf(typeof(IntPtr)));
-                ret[cx]= (objPtr == IntPtr.Zero) ? null : System.Runtime.InteropServices.Marshal.PtrToStringAnsi(objPtr);
-            }
-        }
-        if (cPtr != IntPtr.Zero)
-            $modulePINVOKE.StringListDestroy(cPtr);
-        $excode
-        return ret;
+%typemap(freearg) char **options
+{
+  /* %typemap(freearg) char **options */
+  //CSLDestroy( $1 );
 }
 
 /*
@@ -210,27 +307,9 @@ OPTIONAL_POD(int, int);
 		free(*$1);
   *$1 = temp_string;
 }
-
-/*
- * Typemap for char **ignorechange. 
- */
- 
-%typemap(imtype) (char **ignorechange) "ref string"
-%typemap(cstype) (char **ignorechange) "ref string"
-%typemap(csin) (char** ignorechange) "ref $csinput"
-  
-%typemap(in, noblock="1") (char **ignorechange)
+%typemap(freearg) (char **argout), (char **username), (char **usrname), (char **type)
 {
-  /* %typemap(in) (char **ignorechange) */
-    $*1_type savearg = *(($1_type)$input); 
-	$1 = ($1_ltype)$input;
-}
-%typemap(argout, noblock="1") (char **ignorechange)
-{
-  /* %typemap(argout) (char **ignorechange) */
-  if ((*$1 - savearg) > 0)
-     memmove(savearg, *$1, strlen(*$1)+1);
-  *$1 = savearg;
+  /* %typemap(freearg) (char **argout) */
 }
 
 /*
@@ -262,8 +341,6 @@ OPTIONAL_POD(int, int);
 
 }
 
-%apply double argout[ANY] {double *inout}
-
 /*
  * Typemap for double argin[ANY]. 
  */
@@ -275,20 +352,6 @@ OPTIONAL_POD(int, int);
 %typemap(in) (double argin[ANY])
 {
   /* %typemap(in) (double argin[ANY]) */
-  $1 = ($1_ltype)$input;
-}
-
-/*
- * Typemap for int argin[ANY]. 
- */
-
-%typemap(imtype) (int argin[ANY])  "int[]"
-%typemap(cstype) (int argin[ANY]) "int[]"
-%typemap(csin) (int argin[ANY])  "$csinput"
-
-%typemap(in) (int argin[ANY])
-{
-  /* %typemap(in) (int argin[ANY]) */
   $1 = ($1_ltype)$input;
 }
 
@@ -306,23 +369,10 @@ OPTIONAL_POD(int, int);
   $1 = ($1_ltype)$input;
 }
 
-%apply (double inout[ANY]) {double *pList};
-
-/*
- * Typemap for int inout[ANY]. 
- */
-
-%typemap(imtype) (int inout[ANY])  "int[]"
-%typemap(cstype) (int inout[ANY]) "int[]"
-%typemap(csin) (int inout[ANY])  "$csinput"
-
-%typemap(in) (int inout[ANY])
+%typemap(argout) (double inout[ANY])
 {
-  /* %typemap(in) (int inout[ANY]) */
-  $1 = ($1_ltype)$input;
+  /* %typemap(argout) (double inout[ANY]) */
 }
-
-%apply (int inout[ANY]) {int *pList};
 
 /*
  * Typemap for double *defaultval. 
@@ -366,41 +416,6 @@ OPTIONAL_POD(int, int);
   $1 = ($1_ltype)$input;
 }
 
-%apply (int *hasval) {int *nLen};
-%apply (int *hasval) {int *pnBytes};
-
-/*
- * Typemap for int **array_argout. 
- */
-
-%typemap(imtype) (int **array_argout)  "out int[]"
-%typemap(cstype) (int **array_argout) "out int[]"
-%typemap(csin) (int **array_argout)  "out $csinput"
-
-%typemap(in) (int **array_argout)
-{
-  /* %typemap(in) (int **array_argout) */
-  $1 = ($1_ltype)$input;
-}
-
-%apply (int **array_argout) {int **pList};
-
-/*
- * Typemap for double **array_argout. 
- */
-
-%typemap(imtype) (double **array_argout)  "out double[]"
-%typemap(cstype) (double **array_argout) "out double[]"
-%typemap(csin) (double **array_argout)  "out $csinput"
-
-%typemap(in) (double **array_argout)
-{
-  /* %typemap(in) (double **array_argout) */
-  $1 = ($1_ltype)$input;
-}
-
-%apply (double **array_argout) {double **pList};
-
 /******************************************************************************
  * GDAL raster R/W support                                                    *
  *****************************************************************************/
@@ -415,11 +430,3 @@ OPTIONAL_POD(int, int);
       return ret;
 }
 
-%apply (void *buffer_ptr) {GByte*};
-
-%csmethodmodifiers StringListDestroy "internal";
-%inline %{
-    void StringListDestroy(void *buffer_ptr) {
-       CSLDestroy((char**)buffer_ptr);
-    }
-%}

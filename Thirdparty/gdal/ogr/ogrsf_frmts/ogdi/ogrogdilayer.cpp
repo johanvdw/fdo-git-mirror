@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdilayer.cpp 14048 2008-03-20 18:47:21Z rouault $
+ * $Id: ogrogdilayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGDI Bridge
  * Purpose:  Implements OGROGDILayer class.
@@ -56,7 +56,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrogdilayer.cpp 14048 2008-03-20 18:47:21Z rouault $");
+CPL_CVSID("$Id: ogrogdilayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGROGDILayer()                            */
@@ -161,7 +161,7 @@ void OGROGDILayer::ResetReading()
     if( ECSERROR( psResult ) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Access to layer '%s' Failed: %s\n",
+                  "Access to layer '%s' Failed: \n",
                   m_pszOGDILayerName, psResult->message );
         return;
     }

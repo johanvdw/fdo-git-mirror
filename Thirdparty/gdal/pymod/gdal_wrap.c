@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 /***********************************************************************
- * $Header:$
+ * $Header$
  * swig_lib/python/python.cfg
  *
  * This file contains coded needed to add variable linking to the
@@ -32,19 +32,12 @@
  * Also contains supporting code for building python under Windows
  * and things like that.
  *
- * $Log:$
  ************************************************************************/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef _DEBUG
-#undef _DEBUG
 #include "Python.h"
-#define _DEBUG
-#else
-#include "Python.h"
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -235,7 +228,7 @@ SWIG_addvarlink(PyObject *p, char *name,
 
 
 /*****************************************************************************
- * $Header:$
+ * $Header$
  *
  * swigptr.swg
  *
@@ -569,7 +562,7 @@ char *SWIG_GetPtr(char *_c, void **ptr, char *_t)
 #include "ogr_api.h"
 #include "gdalwarper.h"
 
-CPL_CVSID("$Id: gdal_wrap.c 12592 2007-10-30 20:22:28Z mloskot $");
+CPL_CVSID("$Id: gdal_wrap.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /*
 ** this seems to be required for SWIG 1.3 because of my hacky SWIG_GetPtr_2 
@@ -2393,16 +2386,11 @@ py_OSRExportToProj4(PyObject *self, PyObject *args) {
     }
 	
     err = OSRExportToProj4( _arg0, &wkt );
-    if( wkt != NULL )
-    {
-        ret = Py_BuildValue( "s", wkt );
-        OGRFree( wkt );
-    }
-    else
-    {
-        ret = Py_BuildValue( "s", "");
-    }
+    if( wkt == NULL )
+	wkt = "";
 
+    ret = Py_BuildValue( "s", wkt );
+    OGRFree( wkt );
     return ret;
 }
 

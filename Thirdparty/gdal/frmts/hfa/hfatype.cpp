@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatype.cpp 12324 2007-10-04 19:47:32Z warmerdam $
+ * $Id: hfatype.cpp 11718 2007-07-02 20:59:04Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAType class, for managing one type
@@ -30,7 +30,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfatype.cpp 12324 2007-10-04 19:47:32Z warmerdam $");
+CPL_CVSID("$Id: hfatype.cpp 11718 2007-07-02 20:59:04Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -323,8 +323,7 @@ HFAType::GetInstCount( const char * pszFieldPath,
 /* -------------------------------------------------------------------- */
 /*      Extract this field value, and return.                           */
 /* -------------------------------------------------------------------- */
-    return( papoFields[iField]->GetInstCount( pabyData + nByteOffset,
-                                              nDataSize - nByteOffset ) );
+    return( papoFields[iField]->GetInstCount( pabyData + nByteOffset ) );
 }
 
 /************************************************************************/
@@ -358,14 +357,9 @@ HFAType::ExtractInstValue( const char * pszFieldPath,
 /*      Parse end of field name, possible index value and               */
 /*      establish where the remaining fields (if any) would start.      */
 /* -------------------------------------------------------------------- */
-    const char *pszFirstArray = strchr(pszFieldPath,'[');
-    const char *pszFirstDot = strchr(pszFieldPath,'.');
-
-    if( pszFirstArray != NULL
-        && (pszFirstDot == NULL
-            || pszFirstDot > pszFirstArray) )
+    if( strchr(pszFieldPath,'[') != NULL )
     {
-        const char	*pszEnd = pszFirstArray;
+        const char	*pszEnd = strchr(pszFieldPath,'[');
         
         nArrayIndex = atoi(pszEnd+1);
         nNameLen = pszEnd - pszFieldPath;
@@ -375,9 +369,9 @@ HFAType::ExtractInstValue( const char * pszFieldPath,
             pszRemainder++;
     }
 
-    else if( pszFirstDot != NULL )
+    else if( strchr(pszFieldPath,'.') != NULL )
     {
-        const char	*pszEnd = pszFirstDot;
+        const char	*pszEnd = strchr(pszFieldPath,'.');
         
         nNameLen = pszEnd - pszFieldPath;
 

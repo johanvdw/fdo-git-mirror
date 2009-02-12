@@ -1,5 +1,60 @@
 /*
- * Perl typemaps for GDAL SWIG bindings
+ * $Id: typemaps_perl.i 10490 2006-12-11 20:42:24Z ajolma $
+ */
+
+/*
+ * $Log$
+ * Revision 1.16  2006/12/11 20:42:24  ajolma
+ * typemap(out) char **free for GetParameterList
+ *
+ * Revision 1.15  2006/12/11 20:32:28  ajolma
+ * typemaps for GIntBig and char **CSL
+ *
+ * Revision 1.13  2006/06/07 16:06:49  ajolma
+ * prefer CPLGetLastErrorMsg() in OGRErr
+ *
+ * Revision 1.12  2006/04/11 12:47:55  ajolma
+ * removed now deprecated "perl5," from typemaps
+ *
+ * Revision 1.11  2005/10/11 14:11:42  kruland
+ * Fix memory bug in typemap(out) char **options.  The returned array of strings
+ * is owned by the dataset.
+ *
+ * Revision 1.10  2005/10/11 01:49:07  kruland
+ * Back out previous change.  It introduced a memory leak.
+ *
+ * Revision 1.9  2005/10/03 20:28:51  kruland
+ * Fixed bug in  %typemap(out) char **dict.
+ *
+ * Revision 1.8  2005/09/30 18:52:28  kruland
+ * Fixed typo.
+ *
+ * Revision 1.7  2005/09/29 14:00:19  kruland
+ * Fixed: %typemap(perl5,argout) (int *nGCPs, GDAL_GCP const **pGCPs )
+ * Fixed: %typemap(perl5,in,numinputs=1) (int nGCPs, GDAL_GCP const *pGCPs )
+ *
+ * Revision 1.6  2005/09/27 14:32:01  kruland
+ * Fixed the in,numinputs=1 int nLen, char *pBuf typemap used by
+ * ReadRaster & WriteRaster (thanks Ari).
+ *
+ * Revision 1.5  2005/09/16 20:42:49  kruland
+ * Magical adjustments to some list length calls.
+ *
+ * Revision 1.4  2005/09/14 15:01:33  kruland
+ * Removed accidental debug message.
+ *
+ * Revision 1.3  2005/09/13 03:02:43  kruland
+ * Added OGRErr out typemap which uses ogr_error_map.i.
+ *
+ * Revision 1.2  2005/09/13 02:10:52  kruland
+ * Added Colormap typemaps.
+ *
+ * Revision 1.1  2005/09/06 01:40:26  kruland
+ * Perl typemaps.
+ *
+ */
+
+/*
  * Copyright Ari Jolma 2005.  Based on typemaps_python.i
  * You may distribute this file under the same terms as GDAL itself.
  */
@@ -10,15 +65,13 @@
  */
 %include "typemaps.i"
 
-%apply (long *OUTPUT) { long *argout };
 %apply (double *OUTPUT) { double *argout };
-%apply (double *OUTPUT) { double *defaultval };
 
 /*
  * double *val, int*hasval, is a special contrived typemap used for
  * the RasterBand GetNoDataValue, GetMinimum, GetMaximum, GetOffset, GetScale methods.
- * the variable hasval is tested.  If it is false (is, the value
- * is not set in the raster band) then undef is returned.  If is is != 0, then
+ * In the python bindings, the variable hasval is tested.  If it is 0 (is, the value
+ * is not set in the raster band) then Py_None is returned.  If is is != 0, then
  * the value is coerced into a long and returned.
  */
 %typemap(in,numinputs=0) (double *val, int *hasval) ( double tmpval, int tmphasval ) {
@@ -33,7 +86,6 @@
     sv_setnv($result, *$1);
   argvi++;
 }
-
 %typemap(out) GIntBig
 {
   /* %typemap(out) GIntBig */
@@ -43,19 +95,17 @@
 }
 %typemap(out) (char **CSL)
 {
-    /* %typemap(out) char **CSL */
-    AV *av = (AV*)sv_2mortal((SV*)newAV());
-    if ($1) {
-	int i;
-	for (i = 0; $1[i]; i++) {
-	    SV *s = newSVpv($1[i], 0);
-	    if (!av_store(av, i, s))
-		SvREFCNT_dec(s);
-	}
-	CSLDestroy($1);
+  /* %typemap(out) char **CSL */
+  AV *av = (AV*)sv_2mortal((SV*)newAV());
+  if ($1) {
+    int i;
+    for (i = 0; $1[i]; i++) {
+      av_store(av, i, newSVpv($1[0], 0));
     }
-    $result = newRV_noinc((SV*)av);
-    argvi++;
+    CSLDestroy($1);
+  }
+  $result = newRV_noinc((SV*)av);
+  argvi++;
 }
 %typemap(out) (char **free)
 {
@@ -89,7 +139,7 @@
 }
 %typemap(out) IF_ERROR_RETURN_NONE
 {
-  /* %typemap(out) IF_ERROR_RETURN_NONE (do not return the error code) */
+  /* %typemap(out) IF_ERROR_RETURN_NONE */
 }
 
 /*
@@ -130,18 +180,6 @@
  *
  */
 
-%fragment("CreateArrayFromIntArray","header") %{
-static SV *
-CreateArrayFromIntArray( int *first, unsigned int size ) {
-  AV *av = (AV*)sv_2mortal((SV*)newAV());
-  for( unsigned int i=0; i<size; i++ ) {
-    av_store(av,i,newSViv(*first));
-    ++first;
-  }
-  return newRV_noinc((SV*)av);
-}
-%}
-
 %fragment("CreateArrayFromDoubleArray","header") %{
 static SV *
 CreateArrayFromDoubleArray( double *first, unsigned int size ) {
@@ -153,80 +191,6 @@ CreateArrayFromDoubleArray( double *first, unsigned int size ) {
   return newRV_noinc((SV*)av);
 }
 %}
-
-%fragment("CreateArrayFromStringArray","header") %{
-static SV *
-CreateArrayFromStringArray( char **first ) {
-  AV *av = (AV*)sv_2mortal((SV*)newAV());
-  for( unsigned int i = 0; *first != NULL; i++ ) {
-    av_store(av,i,newSVpv(*first, strlen(*first)));
-    ++first;
-  }
-  return newRV_noinc((SV*)av);
-}
-%}
-
-%typemap(in,numinputs=0) (int *nLen, const int **pList) (int nLen, int *pList)
-{
-  /* %typemap(in,numinputs=0) (int *nLen, const int **pList) */
-  $1 = &nLen;
-  $2 = &pList;
-}
-%typemap(argout,fragment="CreateArrayFromIntArray") (int *nLen, const int **pList)
-{
-  /* %typemap(argout) (int *nLen, const int **pList) */
-  $result = CreateArrayFromIntArray( *($2), *($1) );
-  argvi++;
-}
-
-%typemap(in,numinputs=1) (int len, int *output)
-{
-  /* %typemap(in,numinputs=1) (int len, int *output) */
-  $1 = SvIV($input);
-}
-%typemap(check) (int len, int *output)
-{
-  /* %typemap(check) (int len, int *output) */
-  if ($1 < 1) $1 = 1; /* stop idiocy */
-  $2 = (int *)CPLMalloc( $1 * sizeof(int) );
-    
-}
-%typemap(argout,fragment="CreateArrayFromIntArray") (int len, int *output)
-{
-  /* %typemap(argout) (int len, int *output) */
-  $result = CreateArrayFromIntArray( $2, $1 );
-  argvi++;
-}
-%typemap(freearg) (int len, int *output)
-{
-  /* %typemap(freearg) (int len, int *output) */
-  CPLFree($2);
-}
-
-%typemap(in,numinputs=0) (int *nLen, const double **pList) (int nLen, double *pList)
-{
-  /* %typemap(in,numinputs=0) (int *nLen, const double **pList) */
-  $1 = &nLen;
-  $2 = &pList;
-}
-%typemap(argout,fragment="CreateArrayFromDoubleArray") (int *nLen, const double **pList)
-{
-  /* %typemap(argout) (int *nLen, const double **pList) */
-  $result = CreateArrayFromDoubleArray( *($2), *($1) );
-  argvi++;
-}
-
-%typemap(in,numinputs=0) (char ***pList) (char **pList)
-{
-  /* %typemap(in,numinputs=0) (char ***pList) */
-  $1 = &pList;
-}
-%typemap(argout,fragment="CreateArrayFromStringArray") (char ***pList)
-{
-  /* %typemap(argout) (char ***pList) */
-  $result = CreateArrayFromStringArray( *($1) );
-  argvi++;
-}
 
 %typemap(in,numinputs=0) ( double argout[ANY]) (double argout[$dim0])
 {
@@ -258,15 +222,22 @@ CreateArrayFromStringArray( char **first ) {
 }
 %typemap(in) (double argin[ANY]) (double argin[$dim0])
 {
-    /* %typemap(in) (double argin[ANY]) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    $1 = argin;
-    AV *av = (AV*)(SvRV($input));
-    for (unsigned int i=0; i<$dim0; i++) {
-	SV **sv = av_fetch(av, i, 0);
-	$1[i] =  SvNV(*sv);
-    }
+  /* %typemap(in) (double argin[ANY]) */
+  if (! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV))) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  $1 = argin;
+  AV *av = (AV*)(SvRV($input));
+  int seq_size = av_len(av)+1;
+  if ( seq_size != $dim0 ) {
+    croak("argument array must have length %d",$dim0);
+    SWIG_fail;
+  }
+  for (unsigned int i=0; i<$dim0; i++) {
+    SV **sv = av_fetch(av, i, 0);
+    $1[i] =  SvNV(*sv);
+  }
 }
 
 /*
@@ -274,68 +245,37 @@ CreateArrayFromStringArray( char **first ) {
  */
 %typemap(in,numinputs=1) (int nList, int* pList)
 {
-    /* %typemap(in,numinputs=1) (int nList, int* pList) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    $1 = av_len(av)+1;
-    $2 = (int*) malloc($1*sizeof(int));
-    for( int i = 0; i<$1; i++ ) {
-	SV **sv = av_fetch(av, i, 0);
-	$2[i] =  SvIV(*sv);
-    }
+  /* %typemap(in,numinputs=1) (int nList, int* pList) */
+  if (! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV))) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  AV *av = (AV*)(SvRV($input));
+  $1 = av_len(av)-1;
+  $2 = (int*) malloc($1*sizeof(int));
+  for( int i = 0; i<$1; i++ ) {
+    SV **sv = av_fetch(av, i, 0);
+    $2[i] =  SvIV(*sv);
+  }
 }
 %typemap(freearg) (int nList, int* pList)
 {
-    /* %typemap(freearg) (int nList, int* pList) */
-    if ($2)
-	free((void*) $2);
+  /* %typemap(freearg) (int nList, int* pList) */
+  if ($2) {
+    free((void*) $2);
+  }
 }
-
-%typemap(in,numinputs=1) (int nList, double* pList)
-{
-    /* %typemap(in,numinputs=1) (int nList, double* pList) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    $1 = av_len(av)+1;
-    $2 = (double*) malloc($1*sizeof(double));
-    for( int i = 0; i<$1; i++ ) {
-	SV **sv = av_fetch(av, i, 0);
-	$2[i] =  SvNV(*sv);
-    }
+%fragment("CreateArrayFromIntegerArray","header") %{
+static SV *
+CreateArrayFromIntegerArray( double *first, unsigned int size ) {
+  AV *av = (AV*)sv_2mortal((SV*)newAV());
+  for( unsigned int i=0; i<size; i++ ) {
+    av_store(av,i,newSViv(*first));
+    ++first;
+  }
+  return newRV_noinc((SV*)av);
 }
-%typemap(freearg) (int nList, double* pList)
-{
-    /* %typemap(freearg) (int nList, double* pList) */
-    if ($2)
-	free((void*) $2);
-}
-
-%typemap(in) (char **pList)
-{
-    /* %typemap(in) (char **pList) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    for (int i = 0; i < av_len(av)+1; i++) {
-	char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
-	$1 = CSLAddString( $1, pszItem );
-    }
-}
-%typemap(freearg) (char **pList)
-{
-    /* %typemap(freearg) (char **pList) */
-    if ($1)
-	CSLDestroy( $1 );
-}
-
-%typemap(in,numinputs=1) (int defined, double value)
-{
-    /* %typemap(in,numinputs=1) (int defined, double value) */
-    $1 = SvOK($input);
-    $2 = SvNV($input);
-}
+%}
 
 /*
  * Typemap for buffers with length <-> AV
@@ -365,17 +305,14 @@ CreateArrayFromStringArray( char **first ) {
 }
 %typemap(in,numinputs=1) (int nLen, char *pBuf )
 {
-    /* %typemap(in,numinputs=1) (int nLen, char *pBuf ) */
-    if (SvOK($input)) {
-	if (!SvPOK($input))
-	    SWIG_croak("expected binary data as input");
-	STRLEN len = SvCUR($input);
-	$2 = SvPV_nolen($input);
-	$1 = len;
-    } else {
-	$2 = NULL;
-	$1 = 0;
-    }
+  /* %typemap(in,numinputs=1) (int nLen, char *pBuf ) */
+  if (!SvPOK($input)) {
+    croak("buf argument has to be binary data");
+    SWIG_fail;
+  }
+  STRLEN len = SvCUR($input);
+  $2 = SvPV_nolen($input);
+  $1 = len;
 }
 
 /*
@@ -408,28 +345,32 @@ CreateArrayFromStringArray( char **first ) {
 }
 %typemap(in,numinputs=1) (int nGCPs, GDAL_GCP const *pGCPs ) ( GDAL_GCP *tmpGCPList )
 {
-    /* %typemap(in,numinputs=1) (int nGCPs, GDAL_GCP const *pGCPs ) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    $1 = av_len(av)+1;
-    tmpGCPList = (GDAL_GCP*) malloc($1*sizeof(GDAL_GCP));
-    $2 = tmpGCPList;
-    for( int i = 0; i<$1; i++ ) {
-	SV **sv = av_fetch(av, i, 0);
-	GDAL_GCP *item = 0;
-	SWIG_ConvertPtr( *sv, (void**)&item, SWIGTYPE_p_GDAL_GCP, 0 );
-	if (!item )
-	    SWIG_fail;
-	memcpy( (void*) tmpGCPList, (void*) item, sizeof( GDAL_GCP ) );
-	++tmpGCPList;
+  /* %typemap(in,numinputs=1) (int nGCPs, GDAL_GCP const *pGCPs ) */
+  if (! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV))) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  AV *av = (AV*)(SvRV($input));
+  $1 = av_len(av)+1;
+  tmpGCPList = (GDAL_GCP*) malloc($1*sizeof(GDAL_GCP));
+  $2 = tmpGCPList;
+  for( int i = 0; i<$1; i++ ) {
+    SV **sv = av_fetch(av, i, 0);
+    GDAL_GCP *item = 0;
+    SWIG_ConvertPtr( *sv, (void**)&item, SWIGTYPE_p_GDAL_GCP, 0 );
+    if ( ! item ) {
+      SWIG_fail;
     }
+    memcpy( (void*) tmpGCPList, (void*) item, sizeof( GDAL_GCP ) );
+    ++tmpGCPList;
+  }
 }
 %typemap(freearg) (int nGCPs, GDAL_GCP const *pGCPs )
 {
-    /* %typemap(freearg) (int nGCPs, GDAL_GCP const *pGCPs ) */
-    if ($2)
-	free($2);
+  /* %typemap(freearg) (int nGCPs, GDAL_GCP const *pGCPs ) */
+  if ($2) {
+    free( (void*) $2 );
+  }
 }
 
 /*
@@ -438,17 +379,17 @@ CreateArrayFromStringArray( char **first ) {
  */
 %typemap(out) GDALColorEntry*
 {
-    /* %typemap(out) GDALColorEntry* */
-    if (!result)
-	SWIG_croak("GetColorEntry failed");
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) result->c1);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) result->c2);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) result->c3);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) result->c4);
+  /* %typemap(out) GDALColorEntry* */
+  if (result == NULL)
+    croak("GetColorEntry failed at index %i",result);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) result->c1);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) result->c2);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) result->c3);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) result->c4);
 }
 %typemap(in,numinputs=0) GDALColorEntry*(GDALColorEntry e)
 {
@@ -457,18 +398,18 @@ CreateArrayFromStringArray( char **first ) {
 }
 %typemap(argout) GDALColorEntry*
 {
-    /* %typemap(argout) GDALColorEntry* */
-    if (!result)
-	SWIG_croak("GetColorEntryAsRGB failed");
-    argvi--;
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) e3.c1);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) e3.c2);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) e3.c3);
-    $result = sv_newmortal();
-    sv_setiv(ST(argvi++), (IV) e3.c4);
+  /* %typemap(argout) GDALColorEntry* */
+  if (result == FALSE)
+    croak("GetColorEntryAsRGB failed at index %i",result);
+  argvi--;
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) e3.c1);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) e3.c2);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) e3.c3);
+  $result = sv_newmortal();
+  sv_setiv(ST(argvi++), (IV) e3.c4);
 }
 %typemap(argout) const GDALColorEntry*
 {
@@ -476,19 +417,26 @@ CreateArrayFromStringArray( char **first ) {
 }
 %typemap(in,numinputs=1) const GDALColorEntry*(GDALColorEntry e)
 {
-    /* %typemap(in,numinputs=1) const GDALColorEntry*(GDALColorEntry e) */
-    $1 = &e3;
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    SV **sv = av_fetch(av, 0, 0);
-    $1->c1 =  SvIV(*sv);
-    sv = av_fetch(av, 1, 0);
-    $1->c2 =  SvIV(*sv);
-    sv = av_fetch(av, 2, 0);
-    $1->c3 =  SvIV(*sv);
-    sv = av_fetch(av, 3, 0);
-    $1->c4 =  SvIV(*sv);
+  /* %typemap(in,numinputs=1) const GDALColorEntry*(GDALColorEntry e) */
+  $1 = &e3;
+  if (! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV))) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  AV *av = (AV*)(SvRV($input));
+  int seq_size = av_len(av);
+  if ( seq_size != 3 ) {
+    croak("color entry argument array must have length 4 (it is %i)",seq_size+1);
+    SWIG_fail;
+  }
+  SV **sv = av_fetch(av, 0, 0);
+  $1->c1 =  SvIV(*sv);
+  sv = av_fetch(av, 1, 0);
+  $1->c2 =  SvIV(*sv);
+  sv = av_fetch(av, 2, 0);
+  $1->c3 =  SvIV(*sv);
+  sv = av_fetch(av, 3, 0);
+  $1->c4 =  SvIV(*sv);
 }
 
 /*
@@ -543,51 +491,34 @@ CreateArrayFromStringArray( char **first ) {
  */
 %typemap(in) char **options
 {
-    /* %typemap(in) char **options */
-    if (SvOK($input)) {
-        if (SvROK($input)) {
-	    if (SvTYPE(SvRV($input))==SVt_PVAV) {
-		AV *av = (AV*)(SvRV($input));
-		for (int i = 0; i < av_len(av)+1; i++) {
-		    char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
-		    $1 = CSLAddString( $1, pszItem );
-		}
-	    } else if (SvTYPE(SvRV($input))==SVt_PVHV) {
-		HV *hv = (HV*)SvRV($input);
-		SV *sv;
-		char *key;
-		I32 klen;
-		$1 = NULL;
-		hv_iterinit(hv);
-		while(sv = hv_iternextsv(hv,&key,&klen)) {
-                    $1 = CSLAddNameValue( $1, key, SvPV_nolen(sv) );
-		}
-	    } else
-		SWIG_croak("'options' is not a reference to an array or hash");
-	} else
-	    SWIG_croak("'options' is not a reference");   
-    }
+  /* %typemap(in) char **options */
+  if ( ! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)) ) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  AV *av = (AV*)(SvRV($input));
+  for (int i = 0; i < av_len(av)-1; i++) {
+    char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
+    $1 = CSLAddString( $1, pszItem );
+  }
 }
 %typemap(freearg) char **options
 {
   /* %typemap(freearg) char **options */
-  if ($1) CSLDestroy( $1 );
+  CSLDestroy( $1 );
 }
 %typemap(out) char **options
 {
-    /* %typemap(out) char **options -> ( string ) */
-    AV* av = (AV*)sv_2mortal((SV*)newAV());
-    char **stringarray = $1;
-    if ( stringarray != NULL ) {
-	int n = CSLCount( stringarray );
-	for ( int i = 0; i < n; i++ ) {
-	    SV *s = newSVpv(stringarray[i], strlen(*stringarray));
-	    if (!av_store(av, i, s))
-		SvREFCNT_dec(s);
-	}
+  /* %typemap(out) char ** -> ( string ) */
+  AV* av = (AV*)sv_2mortal((SV*)newAV());
+  char **stringarray = $1;
+  if ( stringarray != NULL ) {
+    for ( int i = 0; i < CSLCount( stringarray ); ++i, ++stringarray ) {
+      av_store(av, i, newSVpv(*stringarray, strlen(*stringarray)));
     }
-    $result = newRV_noinc((SV*)av);
-    argvi++;
+  }
+  $result = newRV_noinc((SV*)av);
+  argvi++;
 }
 
 /*
@@ -604,12 +535,12 @@ CreateArrayFromStringArray( char **first ) {
 /*
  * Typemap for char **argout.
  */
-%typemap(in,numinputs=0) (char **argout) (char *argout=0), (char **username) (char *argout=0), (char **usrname) (char *argout=0), (char **type) (char *argout=0)
+%typemap(in,numinputs=0) (char **argout) ( char *argout=0 )
 {
   /* %typemap(in,numinputs=0) (char **argout) */
   $1 = &argout;
 }
-%typemap(argout) (char **argout), (char **username), (char **usrname), (char **type)
+%typemap(argout) (char **argout)
 {
   /* %typemap(argout) (char **argout) */
   $result = sv_newmortal();
@@ -661,29 +592,30 @@ CreateArrayFromStringArray( char **first ) {
 
 /*
  * Typemap for CPLErr.
- * The assumption is that all errors have been reported through CPLError
- * and are thus caught by call to CPLGetLastErrorType() in %exception
+ * This typemap will use the wrapper C-variable
+ * int UseExceptions to determine proper behavour for
+ * CPLErr return codes.
+ * If UseExceptions ==0, then return the rc.
+ * If UseExceptions ==1, then if rc >= CE_Failure, raise an exception.
  */
 %typemap(out) CPLErr
 {
   /* %typemap(out) CPLErr */
+  $result = sv_2mortal(newSViv($1));
+  argvi++;
 }
 
 /*
  * Typemap for OGRErr.
- * _Some_ errors in OGR are not reported through CPLError and the return
- * value of the function must be examined and the message obtained from
- * OGRErrMessages, which is a function within these wrappers.
  */
 %import "ogr_error_map.i"
 %typemap(out,fragment="OGRErrMessages") OGRErr
 {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 ) {
-	const char *err = CPLGetLastErrorMsg();
-	if (err and *err) SWIG_croak(err); /* this is usually better */
-	SWIG_croak( OGRErrMessages(result) );
-    }
+  /* %typemap(out) OGRErr */
+  if ( result != 0 ) {
+    if (CPLGetLastErrorMsg()) croak( CPLGetLastErrorMsg() ); /* this is usually better */
+    croak( OGRErrMessages(result) );
+  }
 }
 
 /*
@@ -695,35 +627,28 @@ CreateArrayFromStringArray( char **first ) {
 /*                          AVToXMLTree()                               */
 /************************************************************************/
 static CPLXMLNode *AVToXMLTree( AV *av )
+
 {
     int      nChildCount = 0, iChild, nType;
     CPLXMLNode *psThisNode;
+    CPLXMLNode *psChild;
     char       *pszText = NULL;
-    
-    nChildCount = av_len(av) - 1; /* there are two non-childs in the array */
-    if (nChildCount < 0)
-        /* the input XML is empty */
+
+    nChildCount = av_len(av) - 1;
+    if( nChildCount < 0 )
+    {
+        croak("Error in input XMLTree.");
 	return NULL;
+    }
 
     nType = SvIV(*(av_fetch(av,0,0)));
     pszText = SvPV_nolen(*(av_fetch(av,1,0)));
     psThisNode = CPLCreateXMLNode( NULL, (CPLXMLNodeType) nType, pszText );
-    
+
     for( iChild = 0; iChild < nChildCount; iChild++ )
     {
-	SV **s = av_fetch(av, iChild+2, 0);
-	CPLXMLNode *psChild;
-	if (!(SvROK(*s) && (SvTYPE(SvRV(*s))==SVt_PVAV)))
-	    /* expected a reference to an array */
-	    psChild = NULL;
-	else
-	    psChild = AVToXMLTree((AV*)SvRV(*s));
-	if (psChild)
-	    CPLAddXMLChild( psThisNode, psChild );
-	else {
-	    CPLDestroyXMLNode(psThisNode);
-	    return NULL;
-	}
+        psChild = AVToXMLTree( (AV *)(*(av_fetch(av,iChild+2,0))) );
+        CPLAddXMLChild( psThisNode, psChild );
     }
 
     return psThisNode;
@@ -732,17 +657,19 @@ static CPLXMLNode *AVToXMLTree( AV *av )
 
 %typemap(in,fragment="AVToXMLTree") (CPLXMLNode* xmlnode )
 {
-    /* %typemap(in) (CPLXMLNode* xmlnode ) */
-    if (!(SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    $1 = AVToXMLTree( av );
-    if ( !$1 ) SWIG_croak("Conversion Perl array to XMLTree failed");
+  /* %typemap(in) (CPLXMLNode* xmlnode ) */
+  if ( ! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)) ) {
+    croak("argument is not an array ref");
+    SWIG_fail;
+  }
+  AV *av = (AV*)(SvRV($input));
+  $1 = AVToXMLTree( av );
+  if ( !$1 ) SWIG_fail;
 }
 %typemap(freearg) (CPLXMLNode *xmlnode)
 {
-    /* %typemap(freearg) (CPLXMLNode *xmlnode) */
-    if ( $1 ) CPLDestroyXMLNode( $1 );
+  /* %typemap(freearg) (CPLXMLNode *xmlnode) */
+  if ( $1 ) CPLDestroyXMLNode( $1 );
 }
 
 %fragment("XMLTreeToAV","header") %{
@@ -769,9 +696,7 @@ static AV *XMLTreeToAV( CPLXMLNode *psTree )
          psChild != NULL; 
          psChild = psChild->psNext, iChild++ )
     {
-	SV *s = newRV_inc((SV*)XMLTreeToAV(psChild));
-	if (!av_store(av, iChild, s))
-	    SvREFCNT_dec(s);
+        av_store(av, iChild, newRV_noinc((SV*)(XMLTreeToAV( psChild ))) );
     }
 
     return av;
@@ -788,122 +713,4 @@ static AV *XMLTreeToAV( CPLXMLNode *psTree )
 {
   /* %typemap(ret) (CPLXMLNode*) */
   if ( $1 ) CPLDestroyXMLNode( $1 );
-}
-
-/* non NULL input pointer checks */
-
-%define CHECK_NOT_UNDEF(type, param, msg)
-%typemap(check) (type *param)
-{
-    /* %typemap(check) (type *param) */
-    if (!$1)
-	SWIG_croak("The msg must not be undefined");
-}
-%enddef
-
-CHECK_NOT_UNDEF(char, method, method)
-CHECK_NOT_UNDEF(const char, name, name)
-CHECK_NOT_UNDEF(const char, request, request)
-CHECK_NOT_UNDEF(const char, cap, capability)
-CHECK_NOT_UNDEF(const char, statement, statement)
-CHECK_NOT_UNDEF(const char, pszNewDesc, description)
-CHECK_NOT_UNDEF(OSRCoordinateTransformationShadow, , coordinate transformation)
-CHECK_NOT_UNDEF(OGRGeometryShadow, other, other geometry)
-CHECK_NOT_UNDEF(OGRGeometryShadow, other_disown, other geometry)
-CHECK_NOT_UNDEF(OGRGeometryShadow, geom, geometry)
-CHECK_NOT_UNDEF(OGRFieldDefnShadow, defn, field definition)
-CHECK_NOT_UNDEF(OGRFieldDefnShadow, field_defn, field definition)
-CHECK_NOT_UNDEF(OGRFeatureShadow, feature, feature)
-
-%typemap(in, numinputs=1) (int nCount, double *x, double *y, double *z)
-{
-    /* %typemap(in) (int nCount, double *x, double *y, double *z) */
-    /* $input is a ref to a list of refs to point lists */
-    if (! (SvROK($input) && (SvTYPE(SvRV($input))==SVt_PVAV)))
-	SWIG_croak("expected a reference to an array");
-    AV *av = (AV*)(SvRV($input));
-    $1 = av_len(av)+1;
-    $2 = (double*) malloc($1*sizeof(double));
-    $3 = (double*) malloc($1*sizeof(double));
-    $4 = (double*) malloc($1*sizeof(double));
-    if (!$2 or !$3 or !$4)
-	SWIG_croak("out of memory");
-    for (int i = 0; i < $1; i++) {
-	SV **sv = av_fetch(av, i, 0); /* ref to one point list */
-	if (!(SvROK(*sv) && (SvTYPE(SvRV(*sv))==SVt_PVAV)))
-	    SWIG_croak("expected a reference to a list of coordinates");
-	AV *ac = (AV*)(SvRV(*sv));
-	int n = av_len(ac)+1;
-	SV **c = av_fetch(ac, 0, 0);
-	$2[i] = SvNV(*c);
-	c = av_fetch(ac, 1, 0);
-	$3[i] = SvNV(*c);
-	if (n < 3) {
-	    $4[i] = 0;
-	} else {
-	    c = av_fetch(ac, 2, 0);
-	    $4[i] = SvNV(*c);
-	}
-    }
-}
-
-%typemap(argout) (int nCount, double *x, double *y, double *z)
-{
-    /* %typemap(argout) (int nCount, double *x, double *y, double *z) */
-    AV *av = (AV*)(SvRV($input));
-    for (int i = 0; i < $1; i++) {
-	SV **sv = av_fetch(av, i, 0);
-	AV *ac = (AV*)(SvRV(*sv));
-	int n = av_len(ac)+1;
-	SV *c = newSVnv($2[i]);
-	if (!av_store(ac, 0, c))
-	    SvREFCNT_dec(c);
-	c = newSVnv($3[i]);
-	if (!av_store(ac, 1, c))
-	    SvREFCNT_dec(c);
-	c = newSVnv($4[i]);
-	if (!av_store(ac, 2, c))
-	    SvREFCNT_dec(c);
-    }
-}
-
-%typemap(freearg) (int nCount, double *x, double *y, double *z)
-{
-    /* %typemap(freearg) (int nCount, double *x, double *y, double *z) */
-    if ($2) free($2);
-    if ($3) free($3);
-    if ($4) free($4);
-}
-
-%typemap(arginit, noblock=1) ( void* callback_data = NULL)
-{
-    SavedEnv saved_env;
-    saved_env.fct = NULL;
-    saved_env.data = NULL;
-}
-
-%typemap(in) (GDALProgressFunc callback = NULL)
-{
-    /* %typemap(in) (GDALProgressFunc callback = NULL) */
-    if (SvOK($input)) {
-        if (SvROK($input)) {
-	    if (SvTYPE(SvRV($input)) != SVt_PVCV) {
-	       SWIG_croak("the callback arg must be a reference to a subroutine\n");
-	    } else {
-	       saved_env.fct = (SV *)$input;
-	       $1 = &callback_d_cp_vp;
-           }
-        } else {
-            SWIG_croak("the callback arg must be a reference to a subroutine\n");
-	}
-    }
-}
-
-%typemap(in) (void* callback_data = NULL)
-{
-    /* %typemap(in) (void* callback_data=NULL) */
-    if (SvOK($input))
-	saved_env.data = (SV *)$input;
-    if (saved_env.fct)
-	$1 = (void *)(&saved_env); /* the Perl layer must make sure that this parameter is always given */
 }

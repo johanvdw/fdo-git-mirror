@@ -1,12 +1,4 @@
 
-/* We define this here in general so that a VC++ build will publically
-   declare STDCALL interfaces even if an application is built against it
-   using MinGW */
-
-#ifndef CPL_DISABLE_STDCALL
-#  define CPL_STDCALL __stdcall
-#endif
-
 /* Define if you don't have vprintf but do have _doprnt.  */
 #undef HAVE_DOPRNT
 
@@ -14,10 +6,14 @@
 #define HAVE_VPRINTF 1
 #define HAVE_VSNPRINTF 1
 #define HAVE_SNPRINTF 1
-#if (_MSC_VER < 1500)
-#  define vsnprintf _vsnprintf
-#endif
+#define vsnprintf _vsnprintf
 #define snprintf _snprintf
+
+/* Define to 1 if you have the `copysign' function. */
+#define HAVE_COPYSIGN
+#define copysign _copysign
+#define copysignf _copysign
+#define copysignl _copysign
 
 #define HAVE_GETCWD 1
 #define getcwd _getcwd
@@ -70,16 +66,6 @@
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
 
-/* The size of a `unsigned long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG 4
-
-/* The size of `void*', as computed by sizeof. */
-#ifdef _WIN64
-# define SIZEOF_VOIDP 8
-#else
-# define SIZEOF_VOIDP 4
-#endif
-
 /* Set the native cpu bit order */
 #define HOST_FILLORDER FILLORDER_LSB2MSB
 
@@ -99,14 +85,6 @@
 #endif
 
 #define lfind _lfind
-
-#if (_MSC_VER < 1500)
-#  define VSI_STAT64 _stat
-#  define VSI_STAT64_T _stat
-#else
-#  define VSI_STAT64 _stat64
-#  define VSI_STAT64_T __stat64
-#endif
 
 #pragma warning(disable: 4786)
 

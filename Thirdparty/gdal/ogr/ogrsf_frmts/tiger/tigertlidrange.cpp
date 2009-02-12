@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigertlidrange.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: tigertlidrange.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerTLIDRange, providing access to .RTR files.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigertlidrange.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: tigertlidrange.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define FILE_CODE "R"
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfacompress.cpp 15120 2008-08-07 20:15:19Z rouault $
+ * $Id: hfacompress.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Name:     hfadataset.cpp
  * Project:  Erdas Imagine Driver
@@ -30,7 +30,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfacompress.cpp 15120 2008-08-07 20:15:19Z rouault $");
+CPL_CVSID("$Id: hfacompress.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, int nDataType )
 {
@@ -38,14 +38,14 @@ HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, int nDataType )
   m_nDataType   = nDataType;
   m_nDataTypeNumBits    = HFAGetDataTypeBits( m_nDataType );
   m_nBlockSize  = nBlockSize;
-  m_nBlockCount = (nBlockSize * 8) / m_nDataTypeNumBits;
+  m_nBlockCount = nBlockSize / ( m_nDataTypeNumBits / 8 );
 
   /* Allocate some memory for the count and values - probably too big */
   /* About right for worst case scenario tho */
-  m_pCounts     = (GByte*)CPLMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
+  m_pCounts     = (GByte*)CPLMalloc( m_nBlockSize + sizeof(GUInt32) );
   m_nSizeCounts = 0;
   
-  m_pValues     = (GByte*)CPLMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
+  m_pValues     = (GByte*)CPLMalloc( m_nBlockSize + sizeof(GUInt32) );
   m_nSizeValues = 0;
   
   m_nMin        = 0;
@@ -78,46 +78,21 @@ GByte _FindNumBits( GUInt32 range )
 }
 
 /* Gets the value from the uncompressed block as a GUInt32 no matter the data type */
-GUInt32 HFACompress::valueAsUInt32( GUInt32 iPixel )
+GUInt32 HFACompress::valueAsUInt32( GUInt32 index )
 {
-  GUInt32 val = 0;
+GUInt32 val = 0;
 
   if( m_nDataTypeNumBits == 8 )
   {
-    val = ((GByte*)m_pData)[iPixel];
+    val = ((GByte*)m_pData)[index];
   }
   else if( m_nDataTypeNumBits == 16 )
   {
-    val = ((GUInt16*)m_pData)[iPixel];
+    val = ((GUInt16*)m_pData)[index];
   }
   else if( m_nDataTypeNumBits == 32 )
   {
-    val = ((GUInt32*)m_pData)[iPixel]; 
-  }
-  else if( m_nDataTypeNumBits == 4 )
-  {
-      if( iPixel % 2 == 0 )
-          val = ((GByte*)m_pData)[iPixel/2] & 0x0f;  
-      else
-          val = (((GByte*)m_pData)[iPixel/2] & 0xf0) >> 4;
-  }
-  else if( m_nDataTypeNumBits == 2 )
-  {
-      if( iPixel % 2 == 0 )
-          val = ((GByte*)m_pData)[iPixel/4] & 0x03;  
-      else if( iPixel % 2 == 1 )
-          val = (((GByte*)m_pData)[iPixel/4] & 0x0c) >> 2;  
-      else if( iPixel % 2 == 2 )
-          val = (((GByte*)m_pData)[iPixel/4] & 0x30) >> 4;  
-      else 
-          val = (((GByte*)m_pData)[iPixel/4] & 0xc0) >> 6;  
-  }
-  else if( m_nDataTypeNumBits == 1 )
-  {
-      if( ((GByte*)m_pData)[iPixel >> 3] & (0x1 << (iPixel & 0x07)) )
-          val = 1;
-      else
-          val = 0;
+    val = ((GUInt32*)m_pData)[index]; 
   }
   else
   {
@@ -296,7 +271,6 @@ bool HFACompress::QueryDataTypeSupported( int nHFADataType )
 {
   int nBits = HFAGetDataTypeBits( nHFADataType );
   
-  return ( nBits == 8 ) || ( nBits == 16 ) || ( nBits == 32 ) || (nBits == 4)
-      || (nBits == 2) || (nBits == 1);
+  return ( nBits == 8 ) || ( nBits == 16 ) || ( nBits == 32 );
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hkvdataset.cpp 14675 2008-06-10 03:13:23Z warmerdam $
+ * $Id: hkvdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: hkvdataset.cpp 14675 2008-06-10 03:13:23Z warmerdam $");
+CPL_CVSID("$Id: hkvdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_HKV(void);
@@ -1339,8 +1339,6 @@ GDALDataset *HKVDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->pszPath = CPLStrdup( poOpenInfo->pszFilename );
     poDS->papszAttrib = papszAttrib;
-
-    poDS->eAccess = poOpenInfo->eAccess;
     
 /* -------------------------------------------------------------------- */
 /*      Set some dataset wide information.                              */
@@ -1507,7 +1505,7 @@ GDALDataset *HKVDataset::Open( GDALOpenInfo * poOpenInfo )
         nOffset += GDALGetDataTypeSize( eType ) / 8;
 
         if( bNoDataSet )
-            poBand->SetNoDataValue( dfNoDataValue );
+            poBand->StoreNoDataValue( dfNoDataValue );
     }
 
     poDS->eRasterType = eType;
@@ -1522,7 +1520,7 @@ GDALDataset *HKVDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Handle overviews.                                               */
 /* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, pszOvrFilename, NULL, TRUE );
+    poDS->oOvManager.Initialize( poDS, pszOvrFilename, TRUE );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */

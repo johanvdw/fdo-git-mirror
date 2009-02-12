@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtdriver.cpp 11546 2007-05-16 18:02:38Z dmorissette $
+ * $Id: ogrvrtdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_vrt.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrvrtdriver.cpp 11546 2007-05-16 18:02:38Z dmorissette $");
+CPL_CVSID("$Id: ogrvrtdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRVRTDriver()                            */
@@ -64,15 +64,10 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
 
 /* -------------------------------------------------------------------- */
 /*      Are we being passed the XML definition directly?                */
-/*      Skip any leading spaces/blanks.                                 */
 /* -------------------------------------------------------------------- */
-    const char *pszTestXML = pszFilename;
-    while( *pszTestXML != '\0' && isspace( *pszTestXML ) )
-        pszTestXML++;
-
-    if( EQUALN(pszTestXML,"<OGRVRTDataSource>",18) )
+    if( EQUALN(pszFilename,"<OGRVRTDataSource>",18) )
     {
-        pszXML = CPLStrdup(pszTestXML);
+        pszXML = CPLStrdup(pszFilename);
     }
 
 /* -------------------------------------------------------------------- */

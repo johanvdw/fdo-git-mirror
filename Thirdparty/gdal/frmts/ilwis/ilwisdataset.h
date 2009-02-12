@@ -36,6 +36,7 @@
 #include "ogr_spatialref.h"
 //#include "Windows.h"
 #include <string>
+#include <algorithm>
 #include <map>
 
 #ifdef WIN32
@@ -73,6 +74,11 @@ public:
     ValueRange(double min, double max, double step);	
     ValueRange(string str);
     string ToString();
+    double get_Minimum() { return _rLo; }
+    double get_Maximum() { return _rHi; }
+    double get_StepSize() { return _rStep; }
+
+public:
     ilwisStoreType get_NeededStoreType() { return st; }
     double get_rLo() { return _rLo; }
     double get_rHi() { return _rHi; }
@@ -81,7 +87,6 @@ public:
     int get_iDec() { return _iDec; }	
     double rValue(int raw);
     int iRaw(double value);
-
 private:
     void init(double rRaw0);
     void init();
@@ -100,8 +105,8 @@ private:
 
 struct ILWISInfo
 {
-    ILWISInfo() : bUseValueRange(false), vr(0, 0) {}
-    bool bUseValueRange;
+    ILWISInfo() : vr(0, 0){}
+    bool bValue;
     ValueRange vr;
     ilwisStoreType stStoreType;
     string stDomain;
@@ -132,9 +137,6 @@ public:
 
 private:
     void FillWithNoData(void * pImage);
-    void SetValue(void *pImage, int i, double rV);
-    double GetValue(void *pImage, int i);
-    void ReadValueDomainProperties(string pszFileName);
 };
 
 /************************************************************************/
@@ -190,7 +192,7 @@ using std::map;
 class CompareAsNum
 {
 public:
-    bool operator() (const string&, const string&) const;
+	bool operator() (const string&, const string&) const;
 };
 
 typedef map<string, string>          SectionEntries;
@@ -199,22 +201,24 @@ typedef map<string, SectionEntries*> Sections;
 class IniFile  
 {
 public:
-    IniFile(const string& filename);
-    virtual ~IniFile();
+	IniFile();
+	virtual ~IniFile();
 
-    void SetKeyValue(const string& section, const string& key, const string& value);
-    string GetKeyValue(const string& section, const string& key);
+	void Open(const string& filename);
+	void Close();
 
-    void RemoveKeyValue(const string& section, const string& key);
-    void RemoveSection(const string& section);
+	void SetKeyValue(const string& section, const string& key, const string& value);
+	string GetKeyValue(const string& section, const string& key);
+
+	void RemoveKeyValue(const string& section, const string& key);
+	void RemoveSection(const string& section);
 
 private:
-    string filename;
-    Sections sections;
-    bool bChanged;
+	string filename;
+	Sections sections;
 
-    void Load();
-    void Store();
+	void Load();
+	void Flush();
 };
 
 

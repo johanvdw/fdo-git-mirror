@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmediancut.cpp 13346 2007-12-15 12:53:04Z rouault $
+ * $Id: gdalmediancut.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Use median cut algorithm to generate an near-optimal PCT for a 
@@ -39,7 +39,7 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id: gdalmediancut.cpp 13346 2007-12-15 12:53:04Z rouault $");
+CPL_CVSID("$Id: gdalmediancut.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define	MAX_CMAP_SIZE	256
 
@@ -48,6 +48,9 @@ CPL_CVSID("$Id: gdalmediancut.cpp 13346 2007-12-15 12:53:04Z rouault $");
 
 #define	GMC_B_DEPTH		5		/* # bits/pixel to use */
 #define	GMC_B_LEN		(1L<<GMC_B_DEPTH)
+
+#define	C_DEPTH		2
+#define	C_LEN		(1L<<C_DEPTH)	/* # cells/color to use */
 
 #define	COLOR_SHIFT	(COLOR_DEPTH-GMC_B_DEPTH)
 
@@ -59,10 +62,14 @@ typedef	struct colorbox {
 	int	total;
 } Colorbox;
 
-static	void splitbox(Colorbox* ptr, int	(*histogram)[GMC_B_LEN][GMC_B_LEN],
-                      Colorbox **pfreeboxes, Colorbox **pusedboxes);
-static	void shrinkbox(Colorbox* box, int	(*histogram)[GMC_B_LEN][GMC_B_LEN]);
-static	Colorbox* largest_box(Colorbox *usedboxes);
+static int	num_colors;
+static int	(*histogram)[GMC_B_LEN][GMC_B_LEN];
+static Colorbox *freeboxes;
+static Colorbox *usedboxes;
+
+static	void splitbox(Colorbox*);
+static	void shrinkbox(Colorbox*);
+static	Colorbox* largest_box(void);
 
 /************************************************************************/
 /*                      GDALComputeMedianCutPCT()                       */
@@ -115,12 +122,7 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
                          void * pProgressArg )
 
 {
-    VALIDATE_POINTER1( hRed, "GDALComputeMedianCutPCT", CE_Failure );
-    VALIDATE_POINTER1( hGreen, "GDALComputeMedianCutPCT", CE_Failure );
-    VALIDATE_POINTER1( hBlue, "GDALComputeMedianCutPCT", CE_Failure );
-
     int		nXSize, nYSize;
-    CPLErr err = CE_None;
 
 /* -------------------------------------------------------------------- */
 /*      Validate parameters.                                            */
@@ -148,46 +150,29 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
         return CE_Failure;
     }
 
-    if ( nColors <= 0 )
-    {
-        CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALComputeMedianCutPCT() : nColors must be strictly greater than 1." );
-
-        return CE_Failure;
-    }
-
-    if ( nColors > 256 )
-    {
-        CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALComputeMedianCutPCT() : nColors must be lesser than or equal to 256." );
-
-        return CE_Failure;
-    }
-
     if( pfnProgress == NULL )
         pfnProgress = GDALDummyProgress;
+
+    histogram = (int (*)[GMC_B_LEN][GMC_B_LEN]) 
+        CPLCalloc(GMC_B_LEN * GMC_B_LEN * GMC_B_LEN,sizeof(int));
 
 /* ==================================================================== */
 /*      STEP 1: crate empty boxes.                                      */
 /* ==================================================================== */
     int	     i;
     Colorbox *box_list, *ptr;
-    int	(*histogram)[GMC_B_LEN][GMC_B_LEN];
-    Colorbox *freeboxes;
-    Colorbox *usedboxes;
 
-    histogram = (int (*)[GMC_B_LEN][GMC_B_LEN]) 
-        CPLCalloc(GMC_B_LEN * GMC_B_LEN * GMC_B_LEN,sizeof(int));
+    num_colors = nColors;
     usedboxes = NULL;
-    box_list = freeboxes = (Colorbox *)CPLMalloc(nColors*sizeof (Colorbox));
+    box_list = freeboxes = (Colorbox *)CPLMalloc(num_colors*sizeof (Colorbox));
     freeboxes[0].next = &freeboxes[1];
     freeboxes[0].prev = NULL;
-    for (i = 1; i < nColors-1; ++i) {
+    for (i = 1; i < num_colors-1; ++i) {
         freeboxes[i].next = &freeboxes[i+1];
         freeboxes[i].prev = &freeboxes[i-1];
     }
-    freeboxes[nColors-1].next = NULL;
-    freeboxes[nColors-1].prev = &freeboxes[nColors-2];
+    freeboxes[num_colors-1].next = NULL;
+    freeboxes[num_colors-1].prev = &freeboxes[num_colors-2];
 
 /* ==================================================================== */
 /*      Build histogram.                                                */
@@ -211,31 +196,26 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
     ptr->rmax = ptr->gmax = ptr->bmax = -1;
     ptr->total = nXSize * nYSize;
 
+    memset( histogram, 0, sizeof(int) * GMC_B_LEN * GMC_B_LEN * GMC_B_LEN );
+
 /* -------------------------------------------------------------------- */
 /*      Collect histogram.                                              */
 /* -------------------------------------------------------------------- */
-    pabyRedLine = (GByte *) VSIMalloc(nXSize);
-    pabyGreenLine = (GByte *) VSIMalloc(nXSize);
-    pabyBlueLine = (GByte *) VSIMalloc(nXSize);
-    
-    if (pabyRedLine == NULL ||
-        pabyGreenLine == NULL ||
-        pabyBlueLine == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALComputeMedianCutPCT" );
-        err = CE_Failure;
-        goto end_and_cleanup;
-    }
+    pabyRedLine = (GByte *) CPLMalloc(nXSize);
+    pabyGreenLine = (GByte *) CPLMalloc(nXSize);
+    pabyBlueLine = (GByte *) CPLMalloc(nXSize);
 
     for( iLine = 0; iLine < nYSize; iLine++ )
     {
         if( !pfnProgress( iLine / (double) nYSize, 
                           "Generating Histogram", pProgressArg ) )
         {
+            CPLFree( pabyRedLine );
+            CPLFree( pabyGreenLine );
+            CPLFree( pabyBlueLine );
+
             CPLError( CE_Failure, CPLE_UserInterrupt, "User Terminated" );
-            err = CE_Failure;
-            goto end_and_cleanup;
+            return CE_Failure;
         }
 
         GDALRasterIO( hRed, GF_Read, 0, iLine, nXSize, 1, 
@@ -264,11 +244,14 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
         }
     }
 
+    CPLFree( pabyRedLine );
+    CPLFree( pabyGreenLine );
+    CPLFree( pabyBlueLine );
+
     if( !pfnProgress( 1.0, "Generating Histogram", pProgressArg ) )
     {
         CPLError( CE_Failure, CPLE_UserInterrupt, "User Terminated" );
-        err = CE_Failure;
-        goto end_and_cleanup;
+        return CE_Failure;
     }
 
 /* ==================================================================== */
@@ -276,9 +259,9 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
 /*      boxes remain or until all colors assigned.                      */
 /* ==================================================================== */
     while (freeboxes != NULL) {
-        ptr = largest_box(usedboxes);
+        ptr = largest_box();
         if (ptr != NULL)
-            splitbox(ptr, histogram, &freeboxes, &usedboxes);
+            splitbox(ptr);
         else
             freeboxes = NULL;
     }
@@ -296,19 +279,14 @@ GDALComputeMedianCutPCT( GDALRasterBandH hRed,
         sEntry.c4 = 255;
         GDALSetColorEntry( hColorTable, i, &sEntry );
     }
-
-end_and_cleanup:
-    CPLFree( pabyRedLine );
-    CPLFree( pabyGreenLine );
-    CPLFree( pabyBlueLine );
-
+    
     /* We're done with the boxes now */
     CPLFree(box_list);
     freeboxes = usedboxes = NULL;
 
     CPLFree( histogram );
     
-    return err;
+    return CE_None;
 }
 
 /************************************************************************/
@@ -316,10 +294,10 @@ end_and_cleanup:
 /************************************************************************/
 
 static Colorbox *
-largest_box(Colorbox *usedboxes)
+largest_box(void)
 {
-    Colorbox *p, *b;
-    int size;
+    register Colorbox *p, *b;
+    register int size;
 
     b = NULL;
     size = -1;
@@ -334,16 +312,15 @@ largest_box(Colorbox *usedboxes)
 /*                              splitbox()                              */
 /************************************************************************/
 static void
-splitbox(Colorbox* ptr, int	(*histogram)[GMC_B_LEN][GMC_B_LEN],
-         Colorbox **pfreeboxes, Colorbox **pusedboxes)
+splitbox(Colorbox* ptr)
 {
     int		hist2[GMC_B_LEN];
     int		first=0, last=0;
-    Colorbox	*new_cb;
-    int	*iptr, *histp;
-    int	i, j;
-    int	ir,ig,ib;
-    int sum, sum1, sum2;
+    register Colorbox	*new_cb;
+    register int	*iptr, *histp;
+    register int	i, j;
+    register int	ir,ig,ib;
+    register int sum, sum1, sum2;
     enum { RED, GREEN, BLUE } axis;
 
     /*
@@ -415,14 +392,14 @@ splitbox(Colorbox* ptr, int	(*histogram)[GMC_B_LEN][GMC_B_LEN],
         i++;
 
     /* Create new box, re-allocate points */
-    new_cb = *pfreeboxes;
-    *pfreeboxes = new_cb->next;
-    if (*pfreeboxes)
-        (*pfreeboxes)->prev = NULL;
-    if (*pusedboxes)
-        (*pusedboxes)->prev = new_cb;
-    new_cb->next = *pusedboxes;
-    *pusedboxes = new_cb;
+    new_cb = freeboxes;
+    freeboxes = new_cb->next;
+    if (freeboxes)
+        freeboxes->prev = NULL;
+    if (usedboxes)
+        usedboxes->prev = new_cb;
+    new_cb->next = usedboxes;
+    usedboxes = new_cb;
 
     histp = &hist2[first];
     for (sum1 = 0, j = first; j < i; j++)
@@ -452,17 +429,17 @@ splitbox(Colorbox* ptr, int	(*histogram)[GMC_B_LEN][GMC_B_LEN],
         ptr->bmin = i;
         break;
     }
-    shrinkbox(new_cb, histogram);
-    shrinkbox(ptr, histogram);
+    shrinkbox(new_cb);
+    shrinkbox(ptr);
 }
 
 /************************************************************************/
 /*                             shrinkbox()                              */
 /************************************************************************/
 static void
-shrinkbox(Colorbox* box, int	(*histogram)[GMC_B_LEN][GMC_B_LEN])
+shrinkbox(Colorbox* box)
 {
-    int *histp, ir, ig, ib;
+    register int *histp, ir, ig, ib;
 
     if (box->rmax > box->rmin) {
         for (ir = box->rmin; ir <= box->rmax; ++ir)

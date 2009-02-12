@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2handler.cpp 13354 2007-12-17 14:52:10Z pka $
+ * $Id: ili2handler.cpp 12088 2007-09-06 02:33:05Z mloskot $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Implementation of ILI2Handler class.
@@ -34,7 +34,7 @@
 #include "ili2readerp.h"
 #include <xercesc/sax2/Attributes.hpp>
 
-CPL_CVSID("$Id: ili2handler.cpp 13354 2007-12-17 14:52:10Z pka $");
+CPL_CVSID("$Id: ili2handler.cpp 12088 2007-09-06 02:33:05Z mloskot $");
 
 // 
 // constants
@@ -53,12 +53,12 @@ ILI2Handler::ILI2Handler( ILI2Reader *poReader ) {
   if (!ili2DomTreeInitialized) {
     XMLCh *tmpCh = XMLString::transcode("CORE");
     DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tmpCh);
-    XMLString::release(&tmpCh);
+    delete [] tmpCh;
     
     // the root element
     tmpCh = XMLString::transcode("ROOT");
     dom_doc = impl->createDocument(0,tmpCh,0);
-    XMLString::release(&tmpCh);
+    delete [] tmpCh;
   
     // the first element is root
     dom_elem = dom_doc->getDocumentElement();
@@ -99,8 +99,7 @@ void ILI2Handler::startElement(
     ) {
   
   // start to add the layers, features with the DATASECTION  
-  char *tmpC = NULL;
-  if ((level >= 0) || (cmpStr(ILI2_DATASECTION, tmpC = XMLString::transcode(qname)) == 0)) {
+  if ((level >= 0) || (cmpStr(ILI2_DATASECTION, XMLString::transcode(qname)) == 0)) {
     level++;
     
     if (level >= 2) { 
@@ -116,7 +115,6 @@ void ILI2Handler::startElement(
       dom_elem = elem;
     }
   }
-  XMLString::release(&tmpC);
 }
 
 void ILI2Handler::endElement(
@@ -150,13 +148,11 @@ void ILI2Handler::characters( const XMLCh *const chars,
   
   // add the text element
   if (level >= 3) {
-    char *tmpC = XMLString::transcode(chars);
+    std::string tmpCh = XMLString::transcode(chars);
     
     // only add the text if it is not empty
-    if (trim(tmpC) != "") 
+    if (trim(tmpCh) != "") 
       dom_elem->appendChild(dom_doc->createTextNode(chars));
-    
-    XMLString::release(&tmpC);
   }
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrociloaderlayer.cpp 14858 2008-07-08 16:31:55Z mloskot $
+ * $Id: ogrociloaderlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILoaderLayer class.  This implements
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociloaderlayer.cpp 14858 2008-07-08 16:31:55Z mloskot $");
+CPL_CVSID("$Id: ogrociloaderlayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                         OGROCILoaderLayer()                          */
@@ -256,7 +256,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureStreamMode( OGRFeature *poFeature )
 /* -------------------------------------------------------------------- */
 /*      Write the FID.                                                  */
 /* -------------------------------------------------------------------- */
-    VSIFPrintf( fpLoader, " %ld|", poFeature->GetFID() );
+    VSIFPrintf( fpLoader, " %d|", poFeature->GetFID() );
 
 /* -------------------------------------------------------------------- */
 /*      Set the geometry                                                */

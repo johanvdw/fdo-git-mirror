@@ -15,8 +15,8 @@ default:	$(OBJ)
 clean:
 	rm -f *.o $(O_OBJ)
 
-bsb2raw$(EXE):	bsb2raw.o
-	$(LD) $(LDFLAGS) bsb2raw.o $(CONFIG_LIBS) -o bsb2raw$(EXE)
+bsb2raw:	bsb2raw.o bsb_read.o
+	$(CXX) bsb2raw.o bsb_read.o $(GDAL_LIB) $(LIBS) -o bsb2raw
 
 
 install-obj:	$(O_OBJ)

@@ -1,36 +1,6 @@
-/******************************************************************************
- * $Id: GDALWrite.cs 14912 2008-07-14 21:36:55Z tamas $
- *
- * Name:     GDALWrite.cs
- * Project:  GDAL CSharp Interface
- * Purpose:   sample app to write a GDAL raster.
- * Author:   Tamas Szekeres, szekerest@gmail.com
- *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
 using System;
 
-using OSGeo.GDAL;
+using GDAL;
 
 
 /**
@@ -61,7 +31,7 @@ class GDALWrite {
         if (args.Length != 1) usage();
 
         // Using early initialization of System.Console
-        Console.WriteLine("Writing sample: " + args[0]);
+        Console.WriteLine("");
 
         int bXSize, bYSize;
         int w, h;
@@ -72,17 +42,17 @@ class GDALWrite {
         bXSize = w;
         bYSize = 1;
 
-        //try 
+        try 
         {
             /* -------------------------------------------------------------------- */
             /*      Register driver(s).                                             */
             /* -------------------------------------------------------------------- */
-            Gdal.AllRegister();
+            gdal.AllRegister();
             
             /* -------------------------------------------------------------------- */
             /*      Get driver                                                      */
             /* -------------------------------------------------------------------- */	
-            Driver drv = Gdal.GetDriverByName("GTiff");
+            Driver drv = gdal.GetDriverByName("GTiff");
 
             if (drv == null) 
             {
@@ -96,24 +66,13 @@ class GDALWrite {
             /*      Open dataset.                                                   */
             /* -------------------------------------------------------------------- */
             string[] options = new string [] {"BLOCKXSIZE=" + bXSize, "BLOCKYSIZE=" + bYSize};
-            Dataset ds = drv.Create(args[0], w, h, 1, DataType.GDT_Byte, options);
+            Dataset ds = drv.Create(args[0], w, h, 1, gdalconst.GDT_Byte, options);
 		
             if (ds == null) 
             {
                 Console.WriteLine("Can't open " + args[0]);
                 System.Environment.Exit(-1);
             }
-
-            /* -------------------------------------------------------------------- */
-            /*      Setting corner GCPs.                                            */
-            /* -------------------------------------------------------------------- */
-            GCP[] GCPs = new GCP[] { 
-                new GCP(44.5, 27.5, 0, 0, 0, "info0", "id0"),
-                new GCP(45.5, 27.5, 0, 100, 0, "info1", "id1"),
-                new GCP(44.5, 26.5, 0, 0, 100, "info2", "id2"),
-                new GCP(45.5, 26.5, 0, 100, 100, "info3", "id3")
-            };
-            ds.SetGCPs(GCPs, "");
 
             Band ba = ds.GetRasterBand(1);
 
@@ -128,9 +87,9 @@ class GDALWrite {
             ds.FlushCache();
 
         }
-        /*catch (Exception e) 
+        catch (Exception e) 
         {
             Console.WriteLine("Application error: " + e.Message);
-        }*/
+        }
     }
 }

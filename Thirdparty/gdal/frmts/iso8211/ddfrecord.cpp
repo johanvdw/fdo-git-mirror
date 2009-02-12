@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfrecord.cpp 15632 2008-10-28 17:33:19Z warmerdam $
+ * $Id: ddfrecord.cpp 11592 2007-06-04 18:57:26Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFRecord class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfrecord.cpp 15632 2008-10-28 17:33:19Z warmerdam $");
+CPL_CVSID("$Id: ddfrecord.cpp 11592 2007-06-04 18:57:26Z warmerdam $");
 
 static const size_t nLeaderSize = 24;
 
@@ -339,8 +339,7 @@ int DDFRecord::ReadHeader()
 /*      If we don't find a field terminator at the end of the record    */
 /*      we will read extra bytes till we get to it.                     */
 /* -------------------------------------------------------------------- */
-        while( pachData[nDataSize-1] != DDF_FIELD_TERMINATOR 
-               && (nDataSize == 0 || pachData[nDataSize-2] != DDF_FIELD_TERMINATOR) )
+        while( pachData[nDataSize-1] != DDF_FIELD_TERMINATOR )
         {
             nDataSize++;
             pachData = (char *) CPLRealloc(pachData,nDataSize);

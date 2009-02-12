@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshapedriver.cpp 15755 2008-11-17 23:13:50Z rouault $
+ * $Id: ogrshapedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeDriver class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrshapedriver.cpp 15755 2008-11-17 23:13:50Z rouault $");
+CPL_CVSID("$Id: ogrshapedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRShapeDriver()                           */
@@ -64,9 +64,6 @@ OGRDataSource *OGRShapeDriver::Open( const char * pszFilename,
 
     poDS = new OGRShapeDataSource();
 
-    /* If no layer was found, return NULL otherwise how will we allow any other driver */
-    /* that is directory oriented to work? I just don't see how we can know the */
-    /* directory is for shapefiles if there aren't any in it (#2686) */
     if( !poDS->Open( pszFilename, bUpdate, TRUE )
         || poDS->GetLayerCount() == 0 )
     {

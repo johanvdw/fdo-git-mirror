@@ -5,10 +5,7 @@ OBJ	=	gdalopeninfo.obj gdaldrivermanager.obj gdaldriver.obj \
 		gdalcolortable.obj overview.obj gdaldefaultoverviews.obj \
 		gdalmajorobject.obj gdalpamdataset.obj gdalpamrasterband.obj \
 		gdaljp2metadata.obj gdaljp2box.obj gdalgmlcoverage.obj \
-		gdalmultidomainmetadata.obj gdalpamproxydb.obj \
-		gdalallvalidmaskband.obj gdalnodatamaskband.obj \
-		gdal_rpcimdio.obj gdalproxydataset.obj gdalproxypool.obj \
-		gdalnodatavaluesmaskband.obj
+		gdalmultidomainmetadata.obj
 		
 
 RES	=	Version.res
@@ -16,8 +13,6 @@ RES	=	Version.res
 GDAL_ROOT	=	..
 
 !INCLUDE ..\nmake.opt
-
-EXTRAFLAGS =	$(PAM_SETTING)
 
 default:	$(OBJ) $(RES)
 

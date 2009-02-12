@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntfstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ntfstroke.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  NTF Translator
  * Purpose:  NTF Arc to polyline stroking code.  This code is really generic,
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ntfstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ntfstroke.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #ifndef PI
 #define PI  3.14159265358979323846

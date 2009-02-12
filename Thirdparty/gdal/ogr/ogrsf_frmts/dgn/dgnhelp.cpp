@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnhelp.cpp 15591 2008-10-24 19:43:56Z warmerdam $
+ * $Id: dgnhelp.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Application visible helper functions for parsing DGN information.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnhelp.cpp 15591 2008-10-24 19:43:56Z warmerdam $");
+CPL_CVSID("$Id: dgnhelp.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static unsigned char abyDefaultPCT[256][3] = 
 {
@@ -1043,17 +1043,6 @@ void DGNDumpElement( DGNHandle hDGN, DGNElemCore *psElement, FILE *fp )
             if( nMSLink != 0 || nEntityNum != 0 )
                 fprintf( fp, ", EntityNum=%d, MSLink=%d", 
                          nEntityNum, nMSLink );
-
-            int nBytes = psElement->attr_data + psElement->attr_bytes - pabyData;
-            if( nBytes < nLinkSize )
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                        "Corrupt linkage, element id:%d, link:%d",
-                        psElement->element_id, iLink);
-                fprintf(fp, " (Corrupt, declared size: %d, assuming size: %d)", 
-                    nLinkSize, nBytes);
-                nLinkSize = nBytes;
-            }
             fprintf( fp, "\n  0x" );
 
             for( i = 0; i < nLinkSize; i++ )

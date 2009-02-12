@@ -19,6 +19,10 @@ MITAB Library - ToDo, Open Questions:
      - What is the proper behavior when no record in RelTable for a feature
        from MainTable?  For now we leave fields unset
 
+ - TABMAPObjBlocks could be split during write when they're full in order to
+   optimize spatial index.  Files are still usable even without this kind 
+   of optimization.
+
  - "Table Type DBF" are supported for reading, but no charset conversion
    is done... however, when the same datasets are exported to MIF by MapInfo
    it apparently converts the DBF file's charset (e.g. CodePage863) to 
@@ -35,5 +39,5 @@ MITAB Library - ToDo, Open Questions:
 
 
 ------------
-$Id: TODO.TXT 11171 2007-04-02 19:04:13Z dmorissette $
+$Id: TODO.TXT 9904 2006-07-10 18:01:32Z fwarmerdam $
 ------------

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeaturedefn.cpp 14442 2008-05-10 22:09:37Z warmerdam $
+ * $Id: ogrfeaturedefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFeatureDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfeaturedefn.cpp 14442 2008-05-10 22:09:37Z warmerdam $");
+CPL_CVSID("$Id: ogrfeaturedefn.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRFeatureDefn()                           */
@@ -140,9 +140,7 @@ void OGR_FD_Destroy( OGRFeatureDefnH hDefn )
 void OGRFeatureDefn::Release()
 
 {
-    CPLAssert( NULL != this );
-
-    if( Dereference() <= 0 )
+    if( this && Dereference() == 0 )
         delete this;
 }
 
@@ -306,7 +304,7 @@ OGRFieldDefn *OGRFeatureDefn::GetFieldDefn( int iField )
 OGRFieldDefnH OGR_FD_GetFieldDefn( OGRFeatureDefnH hDefn, int iField )
 
 {
-    return (OGRFieldDefnH) ((OGRFeatureDefn *) hDefn)->GetFieldDefn( iField );
+    return ((OGRFeatureDefn *) hDefn)->GetFieldDefn( iField );
 }
 
 /************************************************************************/
@@ -392,7 +390,7 @@ void OGR_FD_AddFieldDefn( OGRFeatureDefnH hDefn, OGRFieldDefnH hNewField )
  * @return the base type for all geometry related to this definition.
  */
 
-OGRwkbGeometryType OGR_FD_GetGeomType( OGRFeatureDefnH hDefn )
+OGRwkbGeometryType OGR_FD_GetGeomType( OGRFieldDefnH hDefn )
 
 {
     return ((OGRFeatureDefn *) hDefn)->GetGeomType();

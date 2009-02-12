@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gensql.cpp 15844 2008-11-28 22:22:37Z rouault $
+ * $Id: ogr_gensql.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGenSQLResultsLayer.
@@ -31,7 +31,7 @@
 #include "ogr_gensql.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_gensql.cpp 15844 2008-11-28 22:22:37Z rouault $");
+CPL_CVSID("$Id: ogr_gensql.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                       OGRGenSQLResultsLayer()                        */
@@ -129,11 +129,7 @@ OGRGenSQLResultsLayer::OGRGenSQLResultsLayer( OGRDataSource *poSrcDS,
             && psColDef->field_index < poLayerDefn->GetFieldCount() )
             poSrcFDefn = poLayerDefn->GetFieldDefn(psColDef->field_index);
 
-        if( psColDef->field_alias != NULL )
-        {
-            oFDefn.SetName(psColDef->field_alias);
-        }
-        else if( psColDef->col_func_name != NULL )
+        if( psColDef->col_func_name != NULL )
         {
             oFDefn.SetName( CPLSPrintf( "%s_%s",psColDef->col_func_name,
                                         psColDef->field_name) );
@@ -161,42 +157,6 @@ OGRGenSQLResultsLayer::OGRGenSQLResultsLayer( OGRDataSource *poSrcDS,
                 oFDefn.SetType( OFTString );
                 break;
             }
-        }
-
-        /* setting up the target_type */
-        switch (psColDef->target_type)
-        {
-            case SWQ_OTHER:
-              break;
-            case SWQ_INTEGER:
-            case SWQ_BOOLEAN:
-              oFDefn.SetType( OFTInteger );
-              break;
-            case SWQ_FLOAT:
-              oFDefn.SetType( OFTReal );
-              break;
-            case SWQ_STRING:
-              oFDefn.SetType( OFTString );
-              break;
-            case SWQ_TIMESTAMP:
-              oFDefn.SetType( OFTDateTime );
-              break;
-            case SWQ_DATE:
-              oFDefn.SetType( OFTDate );
-              break;
-            case SWQ_TIME:
-              oFDefn.SetType( OFTTime );
-              break;
-        }
-
-        if (psColDef->field_length > 0)
-        {
-            oFDefn.SetWidth( psColDef->field_length );
-        }
-
-        if (psColDef->field_precision >= 0)
-        {
-            oFDefn.SetPrecision( psColDef->field_precision );
         }
 
         poDefn->AddFieldDefn( &oFDefn );
@@ -587,29 +547,8 @@ OGRFeature *OGRGenSQLResultsLayer::TranslateFeature( OGRFeature *poSrcFeat )
             }
         }
         else if( psColDef->table_index == 0 )
-        {
-            switch (psColDef->target_type)
-            {
-              case SWQ_INTEGER:
-                poDstFeat->SetField( iField, poSrcFeat->GetFieldAsInteger(psColDef->field_index) );
-                break;
-
-              case SWQ_FLOAT:
-                poDstFeat->SetField( iField, poSrcFeat->GetFieldAsDouble(psColDef->field_index) );
-                break;
-              
-              case SWQ_STRING:
-              case SWQ_TIMESTAMP:
-              case SWQ_DATE:
-              case SWQ_TIME:
-                poDstFeat->SetField( iField, poSrcFeat->GetFieldAsString(psColDef->field_index) );
-                break;
-
-              default:
-                poDstFeat->SetField( iField,
+            poDstFeat->SetField( iField,
                          poSrcFeat->GetRawFieldRef( psColDef->field_index ) );
-            }
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -912,10 +851,7 @@ void OGRGenSQLResultsLayer::CreateOrderByIndex()
             psSrcField = poSrcFeat->GetRawFieldRef( psKeyDef->field_index );
 
             if( poFDefn->GetType() == OFTInteger 
-                || poFDefn->GetType() == OFTReal
-                || poFDefn->GetType() == OFTDate
-                || poFDefn->GetType() == OFTTime
-                || poFDefn->GetType() == OFTDateTime)
+                || poFDefn->GetType() == OFTReal )
                 memcpy( psDstField, psSrcField, sizeof(OGRField) );
             else if( poFDefn->GetType() == OFTString )
             {
@@ -1049,49 +985,6 @@ void OGRGenSQLResultsLayer::SortIndexSection( OGRField *pasIndexFields,
     CPLFree( panMerged );
 }
 
-
-/************************************************************************/
-/*                    OGRGenSQLCompareDate()                            */
-/************************************************************************/
-
-static int OGRGenSQLCompareDate(   OGRField *psFirstTuple,
-                                   OGRField *psSecondTuple )
-{
-    /* FIXME? : We ignore TZFlag */
-
-    if (psFirstTuple->Date.Year < psSecondTuple->Date.Year)
-        return -1;
-    else if (psFirstTuple->Date.Year > psSecondTuple->Date.Year)
-        return 1;
-
-    if (psFirstTuple->Date.Month < psSecondTuple->Date.Month)
-        return -1;
-    else if (psFirstTuple->Date.Month > psSecondTuple->Date.Month)
-        return 1;
-
-    if (psFirstTuple->Date.Day < psSecondTuple->Date.Day)
-        return -1;
-    else if (psFirstTuple->Date.Day > psSecondTuple->Date.Day)
-        return 1;
-
-    if (psFirstTuple->Date.Hour < psSecondTuple->Date.Hour)
-        return -1;
-    else if (psFirstTuple->Date.Hour > psSecondTuple->Date.Hour)
-        return 1;
-
-    if (psFirstTuple->Date.Minute < psSecondTuple->Date.Minute)
-        return -1;
-    else if (psFirstTuple->Date.Minute > psSecondTuple->Date.Minute)
-        return 1;
-
-    if (psFirstTuple->Date.Second < psSecondTuple->Date.Second)
-        return -1;
-    else if (psFirstTuple->Date.Second > psSecondTuple->Date.Second)
-        return 1;
-
-    return 0;
-}
-
 /************************************************************************/
 /*                              Compare()                               */
 /************************************************************************/
@@ -1156,13 +1049,6 @@ int OGRGenSQLResultsLayer::Compare( OGRField *pasFirstTuple,
                 nResult = -1;
             else if( pasFirstTuple[iKey].Real > pasSecondTuple[iKey].Real )
                 nResult = 1;
-        }
-        else if( poFDefn->GetType() == OFTDate ||
-                 poFDefn->GetType() == OFTTime ||
-                 poFDefn->GetType() == OFTDateTime)
-        {
-            nResult = OGRGenSQLCompareDate(&pasFirstTuple[iKey],
-                                           &pasSecondTuple[iKey]);
         }
 
         if( psKeyDef->ascending_flag )

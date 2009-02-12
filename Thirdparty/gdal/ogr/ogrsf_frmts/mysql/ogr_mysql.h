@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mysql.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_mysql.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for MySQL OGR Driver Classes.
@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_MYSQL_H_INCLUDED
-#define _OGR_MYSQL_H_INCLUDED
+#define _OGR_MYSQL_H_INLLUDED
 
 #include <my_global.h>
 #include <mysql.h>
@@ -88,6 +88,8 @@ class OGRMySQLLayer : public OGRLayer
 
     virtual OGRSpatialReference *GetSpatialRef();
 
+    virtual int         TestCapability( const char * );
+
     virtual const char *GetFIDColumn();
     virtual const char *GetGeometryColumn();
 
@@ -144,7 +146,6 @@ class OGRMySQLTableLayer : public OGRMySQLLayer
                                 { bPreservePrecision = bFlag; }    
 
     virtual int         TestCapability( const char * );
-	virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
 };
 
 /************************************************************************/
@@ -173,8 +174,6 @@ class OGRMySQLResultLayer : public OGRMySQLLayer
 
     virtual void        ResetReading();
     virtual int         GetFeatureCount( int );
-
-    virtual int         TestCapability( const char * );
 };
 
 /************************************************************************/
@@ -264,6 +263,6 @@ class OGRMySQLDriver : public OGRSFDriver
 };
 
 
-#endif /* ndef _OGR_MYSQL_H_INCLUDED */
+#endif /* ndef _OGR_PG_H_INCLUDED */
 
 

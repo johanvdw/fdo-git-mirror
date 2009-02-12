@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shptree.c,v 1.12 2008/11/12 15:39:50 fwarmerdam Exp $
+ * $Id: shptree.c,v 1.10 2005/01/03 22:30:13 fwarmerdam Exp $
  *
  * Project:  Shapelib
  * Purpose:  Implementation of quadtree building and searching functions.
@@ -34,12 +34,6 @@
  ******************************************************************************
  *
  * $Log: shptree.c,v $
- * Revision 1.12  2008/11/12 15:39:50  fwarmerdam
- * improve safety in face of buggy .shp file.
- *
- * Revision 1.11  2007/10/27 03:31:14  fwarmerdam
- * limit default depth of tree to 12 levels (gdal ticket #1594)
- *
  * Revision 1.10  2005/01/03 22:30:13  fwarmerdam
  * added support for saved quadtrees
  *
@@ -78,11 +72,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef USE_CPL
-#include <cpl_error.h>
-#endif
 
-SHP_CVSID("$Id: shptree.c,v 1.12 2008/11/12 15:39:50 fwarmerdam Exp $")
+SHP_CVSID("$Id: shptree.c,v 1.10 2005/01/03 22:30:13 fwarmerdam Exp $")
 
 #ifndef TRUE
 #  define TRUE 1
@@ -131,13 +122,6 @@ static SHPTreeNode *SHPTreeNodeCreate( double * padfBoundsMin,
     SHPTreeNode	*psTreeNode;
 
     psTreeNode = (SHPTreeNode *) malloc(sizeof(SHPTreeNode));
-	if( NULL == psTreeNode )
-	{
-#ifdef USE_CPL
-		CPLError( CE_Fatal, CPLE_OutOfMemory, "Memory allocation failure");
-#endif
-		return NULL;
-	}
 
     psTreeNode->nShapeCount = 0;
     psTreeNode->panShapeIds = NULL;
@@ -173,13 +157,6 @@ SHPCreateTree( SHPHandle hSHP, int nDimension, int nMaxDepth,
 /*      Allocate the tree object                                        */
 /* -------------------------------------------------------------------- */
     psTree = (SHPTree *) malloc(sizeof(SHPTree));
-	if( NULL == psTree )
-	{
-#ifdef USE_CPL
-		CPLError( CE_Fatal, CPLE_OutOfMemory, "Memory allocation failure");
-#endif
-		return NULL;
-	}
 
     psTree->hSHP = hSHP;
     psTree->nMaxDepth = nMaxDepth;
@@ -228,20 +205,13 @@ SHPCreateTree( SHPHandle hSHP, int nDimension, int nMaxDepth,
 /*      Allocate the root node.                                         */
 /* -------------------------------------------------------------------- */
     psTree->psRoot = SHPTreeNodeCreate( padfBoundsMin, padfBoundsMax );
-	if( NULL == psTree->psRoot )
-	{
-		return NULL;
-	}
 
 /* -------------------------------------------------------------------- */
 /*      Assign the bounds to the root node.  If none are passed in,     */
 /*      use the bounds of the provided file otherwise the create        */
 /*      function will have already set the bounds.                      */
 /* -------------------------------------------------------------------- */
-	assert( NULL != psTree );
-	assert( NULL != psTree->psRoot );
-	
-	if( padfBoundsMin == NULL )
+    if( padfBoundsMin == NULL )
     {
         SHPGetInfo( hSHP, NULL, NULL,
                     psTree->psRoot->adfBoundsMin, 
@@ -262,11 +232,8 @@ SHPCreateTree( SHPHandle hSHP, int nDimension, int nMaxDepth,
             SHPObject	*psShape;
             
             psShape = SHPReadObject( hSHP, iShape );
-            if( psShape != NULL )
-            {
-                SHPTreeAddShapeId( psTree, psShape );
-                SHPDestroyObject( psShape );
-            }
+            SHPTreeAddShapeId( psTree, psShape );
+            SHPDestroyObject( psShape );
         }
     }        
 
@@ -282,8 +249,6 @@ static void SHPDestroyTreeNode( SHPTreeNode * psTreeNode )
 {
     int		i;
     
-	assert( NULL != psTreeNode );
-
     for( i = 0; i < psTreeNode->nSubNodes; i++ )
     {
         if( psTreeNode->apsSubNode[i] != NULL )
@@ -942,21 +907,12 @@ static void SHPWriteTreeNode( FILE *fp, SHPTreeNode *node)
     int i,j;
     int offset;
     unsigned char *pabyRec = NULL;
-	assert( NULL != node );
 
     offset = SHPGetSubNodeOffset(node);
   
     pabyRec = (unsigned char *) 
         malloc(sizeof(double) * 4
                + (3 * sizeof(int)) + (node->nShapeCount * sizeof(int)) );
-	if( NULL == pabyRec )
-	{
-#ifdef USE_CPL
-		CPLError( CE_Fatal, CPLE_OutOfMemory, "Memory allocation failure");
-#endif
-		assert( 0 );
-	}
-	assert( NULL != pabyRec );
 
     memcpy( pabyRec, &offset, 4);
 

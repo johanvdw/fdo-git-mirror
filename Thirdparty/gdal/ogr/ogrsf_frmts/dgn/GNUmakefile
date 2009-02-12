@@ -33,13 +33,14 @@ default:	$(O_OBJ)
 
 clean:
 	rm -rf *.o $(DEST_DIR) dgnlib-$(DIST_REV).zip html man $(O_OBJ)
-	rm -f dgndump$(EXE) dgnwritetest$(EXE)
+	rm -f dgndump dgnwritetest
 
-dgndump$(EXE):	dgndump.o
-	$(LD) $(LDFLAGS) dgndump.o $(CONFIG_LIBS) -o dgndump$(EXE)
+dgndump:	dgndump.c $(MIN_OBJ)
+	$(CXX) $(CPPFLAGS) $(CFLAGS) dgndump.c $(MIN_OBJ) $(GDAL_LIB) -ldl -lm -lpthread -o dgndump 
 
-dgnwritetest$(EXE):	dgnwritetest.o
-	$(LD) $(LDFLAGS) dgnwritetest.o $(CONFIG_LIBS) -o dgnwritetest$(EXE)
+dgnwritetest:	dgnwritetest.c $(MIN_OBJ)
+	$(CXX) $(CPPFLAGS) $(CFLAGS) dgnwritetest.c $(MIN_OBJ) $(GDAL_LIB) -ldl \
+	-lm -o dgnwritetest
 
 docs:
 	doxygen

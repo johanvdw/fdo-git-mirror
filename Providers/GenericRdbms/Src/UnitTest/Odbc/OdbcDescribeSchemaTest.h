@@ -32,11 +32,6 @@ public:
 	virtual void describe ();
 	virtual void dropDb(){};
 	virtual void LoadTestData(FdoIConnection* connection);
-
-    virtual void getSchemaNames() {}
-    virtual void getClassNames() {}
-    virtual void describeWithClassNames() {}
-
 protected:
 	OdbcBaseSetup m_OdbcSetup;
 };
@@ -66,8 +61,6 @@ public:
     virtual void  set_provider();
 
 protected:
-    virtual void getClassNames();
-
     static const wchar_t* mDataSqlServer[];
 };
 
@@ -79,11 +72,7 @@ class OdbcTextDescribeSchemaTest : public DescribeSchemaTest
     void  set_provider();
     virtual void describe ();
     
-    virtual void getSchemaNames() {}
-    virtual void getClassNames() {}
-    virtual void describeWithClassNames() {}
-
-    // Some values that can vary by target datastore...
+	// Some values that can vary by target datastore...
     FdoString * GetConnectString() {return L"DataSourceName=MsTest;UserId=;Password=;";}
     FdoString * GetConnectString2() {return L"DataSourceName=Country_Text";}
     FdoString * GetConfigFile() {return L"MsTestConfig.xml";}
@@ -99,9 +88,6 @@ class OdbcAccessDescribeSchemaTest : public DescribeSchemaTest
 
     void  set_provider();
     virtual void describe ();
-    virtual void getSchemaNames();
-    virtual void getClassNames();
-    virtual void describeWithClassNames();
 
     FdoString * GetConfigFile() {return L"MsTestConfig.xml";}
 	FdoString * GetConnectString() {return L"DataSourceName=MsTest;UserId=;Password=;";}

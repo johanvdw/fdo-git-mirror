@@ -1,9 +1,9 @@
 
 include ../../GDALmake.opt
 
-OBJ	=	wcsdataset.o httpdriver.o
+OBJ	=	wcsdataset.o cpl_http.o
 
-CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) 
+CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) -DHAVE_CURL $(CURL_INC)
 
 default:	$(OBJ)
 

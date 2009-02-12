@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrntfdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrntfdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  UK NTF Reader
  * Purpose:  Implements OGRNTFDriver
@@ -30,7 +30,7 @@
 #include "ntf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrntfdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrntfdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */

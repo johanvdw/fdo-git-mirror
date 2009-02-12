@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecwdataset.cpp 15027 2008-07-25 06:53:48Z dron $
+ * $Id: ecwdataset.cpp 12463 2007-10-17 19:13:56Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  ECW (ERMapper Wavelet Compression Format) Driver
@@ -38,14 +38,16 @@
 #include "ogr_api.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: ecwdataset.cpp 15027 2008-07-25 06:53:48Z dron $");
+CPL_CVSID("$Id: ecwdataset.cpp 12463 2007-10-17 19:13:56Z warmerdam $");
 
 #ifdef FRMT_ecw
 
-static const unsigned char jpc_header[] = {0xff,0x4f};
-static const unsigned char jp2_header[] = 
-    {0x00,0x00,0x00,0x0c,0x6a,0x50,0x20,0x20,0x0d,0x0a,0x87,0x0a};
+static unsigned char jpc_header[] = {0xff,0x4f};
+static unsigned char jp2_header[] = 
+{0x00,0x00,0x00,0x0c,0x6a,0x50,0x20,0x20,0x0d,0x0a,0x87,0x0a};
 
+static int    gnTriedCSFile = FALSE;
+static char **gpapszCSLookup = NULL;
 static void *hECWDatasetMutex = NULL;
 static int    bNCSInitialized = FALSE;
 
@@ -107,8 +109,8 @@ class CPL_DLL ECWDataset : public GDALPamDataset
     CPLErr      LoadNextLine();
 
   public:
-		ECWDataset();
-		~ECWDataset();
+    		ECWDataset();
+    		~ECWDataset();
                 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *OpenJPEG2000( GDALOpenInfo * );
@@ -338,17 +340,17 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 /* -------------------------------------------------------------------- */
 /*      Default line and pixel spacing if needed.                       */
 /* -------------------------------------------------------------------- */
-    if ( nPixelSpace == 0 )
-        nPixelSpace = GDALGetDataTypeSize( eBufType ) / 8;
+    if( nLineSpace == 0 )
+        nLineSpace = nBufXSize;
 
-    if ( nLineSpace == 0 )
-        nLineSpace = nPixelSpace * nBufXSize;
+    if( nPixelSpace == 0 )
+        nPixelSpace = 1;
 
 /* -------------------------------------------------------------------- */
 /*      Can we perform direct loads, or must we load into a working     */
 /*      buffer, and transform?                                          */
 /* -------------------------------------------------------------------- */
-    int	    nRawPixelSize = GDALGetDataTypeSize(poGDS->eRasterDataType) / 8;
+    int      	nRawPixelSize = GDALGetDataTypeSize(poGDS->eRasterDataType) / 8;
 
     bDirect = nPixelSpace == 1 && eBufType == GDT_Byte
 	    && nNewXSize == nBufXSize && nNewYSize == nBufYSize;
@@ -371,10 +373,8 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     if( oErr.GetErrorNumber() != NCS_SUCCESS )
     {
         CPLFree( pabyWorkBuffer );
-        char* pszErrorMessage = oErr.GetErrorMessage();
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "%s", pszErrorMessage );
-        NCSFree(pszErrorMessage);
+                  "%s", oErr.GetErrorMessage() );
         
         return CE_Failure;
     }
@@ -384,15 +384,15 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 /*      Supersampling is not supported by the ECW API, so we will do    */
 /*      it ourselves.                                                   */
 /* -------------------------------------------------------------------- */
-    double	dfSrcYInc = (double)nNewYSize / nBufYSize;
-    double	dfSrcXInc = (double)nNewXSize / nBufXSize;
-    int	        iSrcLine, iDstLine;
+    double  	dfSrcYInc = (double)nNewYSize / nBufYSize;
+    double  	dfSrcXInc = (double)nNewXSize / nBufXSize;
+    int      	iSrcLine, iDstLine;
 
     for( iSrcLine = 0, iDstLine = 0; iDstLine < nBufYSize; iDstLine++ )
     {
         NCSEcwReadStatus eRStatus;
-        int	        iDstLineOff = iDstLine * nLineSpace;
-        unsigned char	*pabySrcBuf;
+        int     	iDstLineOff = iDstLine * nLineSpace;
+        unsigned char 	*pabySrcBuf;
 
         if( bDirect )
             pabySrcBuf = ((GByte *)pData) + iDstLineOff;
@@ -423,7 +423,7 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                 }
 		else
 		{
-	            int	iPixel;
+	            int 	iPixel;
 
                     for ( iPixel = 0; iPixel < nBufXSize; iPixel++ )
                     {
@@ -612,10 +612,8 @@ CPLErr ECWDataset::AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
     CPLFree( panAdjustedBandList );
     if( oErr.GetErrorNumber() != NCS_SUCCESS )
     {
-        char* pszErrorMessage = oErr.GetErrorMessage();
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "%s", pszErrorMessage );
-        NCSFree(pszErrorMessage);
+                  "%s", oErr.GetErrorMessage() );
         bWinActive = FALSE;
         return CE_Failure;
     }
@@ -1007,7 +1005,6 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo )
     int              i;
     FILE            *fpVSIL = NULL;
     VSIIOStream *poIOStream = NULL;
-    int              bUsingCustomStream = FALSE;
 
     ECWInitialize();
 
@@ -1089,31 +1086,19 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo )
 		  
           VSIIOStream * poUnderlyingIOStream = 
               ((VSIIOStream *)(poFileView->GetStream()));
-
-          if ( poUnderlyingIOStream )
-              poUnderlyingIOStream->nFileViewCount++;
+          poUnderlyingIOStream->nFileViewCount++;
 
           if ( poIOStream != poUnderlyingIOStream ) 
           {
               delete poIOStream;
-          }
-          else
-          {
-              bUsingCustomStream = TRUE;
-          }
+          } 		
 
           CPLReleaseMutex( hECWDatasetMutex );
 
           if( oErr.GetErrorNumber() != NCS_SUCCESS )
           {
-              if (poFileView)
-                  delete poFileView;
-
-              char* pszErrorMessage = oErr.GetErrorMessage();
-              CPLError( CE_Failure, CPLE_AppDefined, 
-                        "%s", pszErrorMessage );
-              NCSFree(pszErrorMessage);
-
+              CPLError( CE_Failure, CPLE_AppDefined, "%s",
+                        oErr.GetErrorMessage() );			
               return NULL;
           }
     }
@@ -1154,7 +1139,7 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    ECWDataset  *poDS;
+    ECWDataset 	*poDS;
 
     poDS = new ECWDataset();
 
@@ -1162,8 +1147,6 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( fpVSIL != NULL )
         poDS->nPamFlags |= GPF_DISABLED;
-
-    poDS->bUsingCustomStream = bUsingCustomStream;
 
 /* -------------------------------------------------------------------- */
 /*      Fetch general file information.                                 */
@@ -1352,6 +1335,31 @@ CPLErr ECWDataset::GetGeoTransform( double * padfTransform )
 }
 
 /************************************************************************/
+/*                            ECWGetCSList()                            */
+/************************************************************************/
+
+char **ECWGetCSList()
+
+{
+/* -------------------------------------------------------------------- */
+/*      Load the supporting data file with the coordinate system        */
+/*      translations if we don't already have it loaded.  Note,         */
+/*      currently we never unload the file, even if the driver is       */
+/*      destroyed ... but we should.                                    */
+/* -------------------------------------------------------------------- */
+    if( !gnTriedCSFile )
+    {
+        const char *pszFilename = CPLFindFile( "data", "ecw_cs.dat" );
+        
+        gnTriedCSFile = TRUE;
+        if( pszFilename != NULL )
+            gpapszCSLookup = CSLLoad( pszFilename );
+    }
+
+    return gpapszCSLookup;
+}
+
+/************************************************************************/
 /*                            GetMetadata()                             */
 /************************************************************************/
 
@@ -1385,17 +1393,14 @@ void ECWDataset::ECW2WKTProjection()
 
 /* -------------------------------------------------------------------- */
 /*      Capture Geotransform.                                           */
-/*                                                                      */
-/*      We will try to ignore the provided file information if it is    */
-/*      origin (0,0) and pixel size (1,1).  I think sometimes I have    */
-/*      also seen pixel increments of 0 on invalid datasets.            */
 /* -------------------------------------------------------------------- */
+
     if( psFileInfo->fOriginX != 0.0 
         || psFileInfo->fOriginY != 0.0 
-        || (psFileInfo->fCellIncrementX != 0.0 
-            && psFileInfo->fCellIncrementX != 1.0)
-        || (psFileInfo->fCellIncrementY != 0.0 
-            && psFileInfo->fCellIncrementY != 1.0) )
+        && (psFileInfo->fCellIncrementX != 0.0 && 
+            psFileInfo->fCellIncrementX != 1.0)
+        && (psFileInfo->fCellIncrementY != 0.0 && 
+            psFileInfo->fCellIncrementY != 1.0) )
     {
         bGeoTransformValid = TRUE;
         
@@ -1417,20 +1422,63 @@ void ECWDataset::ECW2WKTProjection()
     if( EQUAL(psFileInfo->szProjection,"RAW") )
         return;
 
+    if( ECWGetCSList() == NULL )
+        return;
+
 /* -------------------------------------------------------------------- */
 /*      Set projection if we have it.                                   */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS;
-    CPLString osUnits = "METERS";
+    if( EQUAL(psFileInfo->szProjection,"GEODETIC") )
+    {
+    }
+    else
+    {
+        const char *pszProjWKT;
 
-    if( psFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
-        osUnits = "FEET";
+        pszProjWKT = CSLFetchNameValue( gpapszCSLookup, 
+                                        psFileInfo->szProjection );
 
-    if( oSRS.importFromERM( psFileInfo->szProjection, 
-                            psFileInfo->szDatum, 
-                            osUnits ) != OGRERR_NONE )
-        return;
+        if( pszProjWKT == NULL 
+            || EQUAL(pszProjWKT,"unsupported")
+            || oSRS.importFromWkt( (char **) &pszProjWKT ) != OGRERR_NONE )
+        {
+            oSRS.SetLocalCS( psFileInfo->szProjection );
+        }
 
+        if( psFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
+            oSRS.SetLinearUnits( SRS_UL_US_FOOT, atof(SRS_UL_US_FOOT_CONV));
+        else
+            oSRS.SetLinearUnits( SRS_UL_METER, 1.0 );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Set the geogcs.                                                 */
+/* -------------------------------------------------------------------- */
+    OGRSpatialReference oGeogCS;
+    const char *pszGeogWKT;
+
+    pszGeogWKT = CSLFetchNameValue( gpapszCSLookup, 
+                                    psFileInfo->szDatum );
+
+    if( pszGeogWKT == NULL )
+        oGeogCS.SetWellKnownGeogCS( "WGS84" );
+    else
+    {
+        oGeogCS.importFromWkt( (char **) &pszGeogWKT );
+    }
+
+    if( !oSRS.IsLocal() )
+        oSRS.CopyGeogCSFrom( &oGeogCS );
+
+/* -------------------------------------------------------------------- */
+/*      Capture the resulting composite coordiante system.              */
+/* -------------------------------------------------------------------- */
+    if( pszProjection != NULL )
+    {
+        CPLFree( pszProjection );
+        pszProjection = NULL;
+    }
     oSRS.exportToWkt( &pszProjection );
 }
 
@@ -1469,6 +1517,13 @@ void ECWInitialize()
 void GDALDeregister_ECW( GDALDriver * )
 
 {
+    if( gpapszCSLookup )
+    {
+        CSLDestroy( gpapszCSLookup );
+        gpapszCSLookup = NULL;
+        gnTriedCSFile = FALSE;
+    }
+
     if( bNCSInitialized )
     {
         bNCSInitialized = FALSE;
@@ -1491,9 +1546,6 @@ void GDALRegister_ECW()
 {
 #ifdef FRMT_ecw 
     GDALDriver	*poDriver;
-
-    if (! GDAL_CHECK_VERSION("ECW driver"))
-        return;
 
     if( GDALGetDriverByName( "ECW" ) == NULL )
     {
@@ -1529,20 +1581,6 @@ void GDALRegister_ECW()
 }
 
 /************************************************************************/
-/*                      GDALRegister_ECW_JP2ECW()                       */
-/*                                                                      */
-/*      This function exists so that when built as a plugin, there      */
-/*      is a function that will register both drivers.                  */
-/************************************************************************/
-
-void GDALRegister_ECW_JP2ECW()
-
-{
-    GDALRegister_ECW();
-    GDALRegister_JP2ECW();
-}
-
-/************************************************************************/
 /*                        GDALRegister_JP2ECW()                         */
 /************************************************************************/
 void GDALRegister_JP2ECW()
@@ -1551,8 +1589,6 @@ void GDALRegister_JP2ECW()
 #ifdef FRMT_ecw 
     GDALDriver	*poDriver;
 
-    if (! GDAL_CHECK_VERSION("JP2ECW driver"))
-        return;
 
     if( GDALGetDriverByName( "JP2ECW" ) == NULL )
     {

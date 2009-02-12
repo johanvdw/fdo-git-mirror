@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrregisterall.cpp 14784 2008-06-28 22:25:49Z warmerdam $
+ * $Id: ogrregisterall.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Function to register all known OGR drivers.
@@ -29,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrregisterall.cpp 14784 2008-06-28 22:25:49Z warmerdam $");
+CPL_CVSID("$Id: ogrregisterall.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */
@@ -63,39 +63,27 @@ void OGRRegisterAll()
 #ifdef VRT_ENABLED
     RegisterOGRVRT();
 #endif
+#ifdef AVCBIN_ENABLED
+    RegisterOGRAVCBin();
+#endif
 #ifdef REC_ENABLED
     RegisterOGRREC();
 #endif
 #ifdef MEM_ENABLED
     RegisterOGRMEM();
 #endif
-#ifdef BNA_ENABLED
-    RegisterOGRBNA();
-#endif
 #ifdef CSV_ENABLED
     RegisterOGRCSV();
-#endif
-#ifdef NAS_ENABLED
-    RegisterOGRNAS();
 #endif
 #ifdef GML_ENABLED
     RegisterOGRGML();
 #endif
-#ifdef GPX_ENABLED
-    RegisterOGRGPX();
-#endif
 #ifdef KML_ENABLED
     RegisterOGRKML();
-#endif
-#ifdef GEOJSON_ENABLED
-    RegisterOGRGeoJSON();
 #endif
 #ifdef ILI_ENABLED
     RegisterOGRILI1();
     RegisterOGRILI2();
-#endif
-#ifdef GMT_ENABLED
-    RegisterOGRGMT();
 #endif
 #ifdef SQLITE_ENABLED
     RegisterOGRSQLite();
@@ -121,18 +109,8 @@ void OGRRegisterAll()
 #ifdef OCI_ENABLED
     RegisterOGROCI();
 #endif
-#ifdef INGRES_ENABLED
-    RegisterOGRIngres();
-#endif
 #ifdef SDE_ENABLED
     RegisterOGRSDE();
-#endif
-#ifdef XPLANE_ENABLED
-    RegisterOGRXPlane();
-#endif
-#ifdef AVCBIN_ENABLED
-    RegisterOGRAVCBin();
-    RegisterOGRAVCE00();
 #endif
 #ifdef DWGDIRECT_ENABLED
     RegisterOGRDXFDWG();
@@ -145,9 +123,6 @@ void OGRRegisterAll()
 #endif
 #ifdef IDB_ENABLED
     RegisterOGRIDB();
-#endif
-#ifdef GEOCONCEPT_ENABLED
-    RegisterOGRGeoconcept();
 #endif
 } /* OGRRegisterAll */
 

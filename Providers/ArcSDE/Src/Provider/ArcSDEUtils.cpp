@@ -1461,9 +1461,6 @@ FdoDataType SDEType2FdoType (LONG sdeType)
         case SE_SHAPE_TYPE:           /* Feature structure */
             ret = (FdoDataType)-1;  // NOTE: we use -1 internally to denote a geometry property
             break;
-        case SE_UUID_TYPE:
-            ret = FdoDataType_String;
-			break;
         default:
             ret = (FdoDataType) FDODATATYPE_UNHANDLEDSDETYPE;
             break;
@@ -1749,10 +1746,7 @@ void GetFilterInfo(ArcSDEConnection *connection, FdoFilter* filter, FdoClassDefi
 
         // Get whereClause from filter:
         f2s = new ArcSDEFilterToSql (connection, classDef);
-        f2s->AnalyzeFilter (filter);
-        f2s->SetFilterAnalyzedFlag (true);
         f2s->HandleFilter (filter);
-        f2s->SetFilterAnalyzedFlag (false);
         CHAR* tempWhereClause = NULL;
         sde_wide_to_multibyte (tempWhereClause, f2s->GetSql ());  // volatile, since memory is on stack
         if (0 == sde_stricmp (sde_pcus2wc(tempWhereClause), _TXT(" WHERE ")))

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgmldatasource.cpp 12743 2007-11-13 13:59:37Z dron $
+ * $Id: ogrgmldatasource.cpp 11193 2007-04-03 22:29:41Z mloskot $
  *
  * Project:  OGR
  * Purpose:  Implements OGRGMLDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgmldatasource.cpp 12743 2007-11-13 13:59:37Z dron $");
+CPL_CVSID("$Id: ogrgmldatasource.cpp 11193 2007-04-03 22:29:41Z mloskot $");
 
 /************************************************************************/
 /*                         OGRGMLDataSource()                         */
@@ -129,13 +129,8 @@ int OGRGMLDataSource::Open( const char * pszNewName, int bTestOpen )
 /* -------------------------------------------------------------------- */
     if( bTestOpen )
     {
-        size_t nRead = VSIFRead( szHeader, 1, sizeof(szHeader), fp );
-        if (nRead <= 0)
-        {
-            VSIFClose( fp );
-            return FALSE;
-        }
-        szHeader[MIN(nRead, sizeof(szHeader))-1] = '\0';
+        VSIFRead( szHeader, 1, sizeof(szHeader), fp );
+        szHeader[sizeof(szHeader)-1] = '\0';
 
 /* -------------------------------------------------------------------- */
 /*      Check for a UTF-8 BOM and skip if found                         */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeolayer.cpp 15800 2008-11-23 17:09:25Z rouault $
+ * $Id: ogrpgeolayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoLayer class, code shared between 
@@ -32,7 +32,7 @@
 #include "ogr_pgeo.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrpgeolayer.cpp 15800 2008-11-23 17:09:25Z rouault $");
+CPL_CVSID("$Id: ogrpgeolayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRPGeoLayer()                            */
@@ -135,7 +135,6 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
         switch( poStmt->GetColType(iCol) )
         {
           case SQL_INTEGER:
-          case SQL_SMALLINT:
             oField.SetType( OFTInteger );
             break;
 
@@ -155,18 +154,6 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
           case SQL_DOUBLE:
             oField.SetType( OFTReal );
             oField.SetWidth( 0 );
-            break;
-
-          case SQL_C_DATE:
-            oField.SetType( OFTDate );
-            break;
-
-          case SQL_C_TIME:
-            oField.SetType( OFTTime );
-            break;
-
-          case SQL_C_TIMESTAMP:
-            oField.SetType( OFTDateTime );
             break;
 
           default:
@@ -223,8 +210,6 @@ OGRFeature *OGRPGeoLayer::GetNextFeature()
 OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 
 {
-    OGRErr err = OGRERR_NONE;
-
     if( GetStatement() == NULL )
         return NULL;
 
@@ -282,17 +267,9 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
         OGRGeometry *poGeom = NULL;
 
         if( pabyShape != NULL )
-        {
-            err = createFromShapeBin( pabyShape, &poGeom, nBytes );
-            if( OGRERR_NONE != err )
-            {
-                CPLDebug( "PGeo",
-                          "Translation shape binary to OGR geometry failed (FID=%ld)",
-                           (long)poFeature->GetFID() );
-            }
-        }
+            createFromShapeBin( pabyShape, &poGeom, nBytes );
 
-        if( poGeom != NULL && OGRERR_NONE == err )
+        if( poGeom != NULL )
         {
             poGeom->assignSpatialReference( poSRS );
             poFeature->SetGeometryDirectly( poGeom );
@@ -432,24 +409,9 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
     if( nBytes < 1 )
         return OGRERR_FAILURE;
 
+//    printf( "%s\n", CPLBinaryToHex( nBytes, pabyShape ) );
+
     int nSHPType = pabyShape[0];
-
-
-//    CPLDebug( "PGeo", 
-//              "Shape type read from PGeo data is nSHPType = %d", 
-//              nSHPType );
-
-/* -------------------------------------------------------------------- */
-/*      type 50 appears to just be an alias for normal line             */
-/*      strings. (#1484)                                                */
-/* -------------------------------------------------------------------- */
-    if( nSHPType == 50 )
-        nSHPType = SHPT_ARC;
-/* -------------------------------------------------------------------- */
-/*      type 9 appears to just be an alias for POINTZ (#2692)           */
-/* -------------------------------------------------------------------- */
-    else if ( nSHPType == 9 )
-        nSHPType = SHPT_POINTZ;
 
 /* ==================================================================== */
 /*  Extract vertices for a Polygon or Arc.				*/
@@ -466,13 +428,6 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
 	int    		i, nOffset;
         GInt32         *panPartStart;
 
-        if (nBytes < 44)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Corrupted Shape : nBytes=%d, nSHPType=%d", nBytes, nSHPType);
-            return OGRERR_FAILURE;
-        }
-
 /* -------------------------------------------------------------------- */
 /*      Extract part/point count, and build vertex and part arrays      */
 /*      to proper size.                                                 */
@@ -483,43 +438,7 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
 	CPL_LSBPTR32( &nPoints );
 	CPL_LSBPTR32( &nParts );
 
-        if (nPoints < 0 || nParts < 0 ||
-            nPoints > 50 * 1000 * 1000 || nParts > 10 * 1000 * 1000)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, "Corrupted Shape : nPoints=%d, nParts=%d.",
-                     nPoints, nParts);
-            return OGRERR_FAILURE;
-        }
-
-        /* With the previous checks on nPoints and nParts, */
-        /* we should not overflow here and after */
-        /* since 50 M * (16 + 8 + 8) = 1 600 MB */
-        int nRequiredSize = 44 + 4 * nParts + 16 * nPoints;
-        if ( nSHPType == SHPT_POLYGONZ
-            || nSHPType == SHPT_ARCZ
-            || nSHPType == SHPT_MULTIPATCH )
-        {
-            nRequiredSize += 16 + 8 * nPoints;
-        }
-        if( nSHPType == SHPT_MULTIPATCH )
-        {
-            nRequiredSize += 4 * nParts;
-        }
-        if (nRequiredSize > nBytes)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Corrupted Shape : nPoints=%d, nParts=%d, nBytes=%d, nSHPType=%d",
-                     nPoints, nParts, nBytes, nSHPType);
-            return OGRERR_FAILURE;
-        }
-
-        panPartStart = (GInt32 *) VSICalloc(nParts,sizeof(GInt32));
-        if (panPartStart == NULL)
-        {
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Not enough memory for shape (nPoints=%d, nParts=%d)", nPoints, nParts);
-            return OGRERR_FAILURE;
-        }
+        panPartStart = (GInt32 *) CPLCalloc(nParts,sizeof(GInt32));
 
 /* -------------------------------------------------------------------- */
 /*      Copy out the part array from the record.                        */
@@ -528,25 +447,6 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
 	for( i = 0; i < nParts; i++ )
 	{
             CPL_LSBPTR32( panPartStart + i );
-
-            /* We check that the offset is inside the vertex array */
-            if (panPartStart[i] < 0 ||
-                panPartStart[i] >= nPoints)
-            {
-                CPLError(CE_Failure, CPLE_AppDefined,
-                         "Corrupted Shape : panPartStart[%d] = %d, nPoints = %d",
-                         i, panPartStart[i], nPoints); 
-                CPLFree(panPartStart);
-                return OGRERR_FAILURE;
-            }
-            if (i > 0 && panPartStart[i] <= panPartStart[i-1])
-            {
-                CPLError(CE_Failure, CPLE_AppDefined,
-                         "Corrupted Shape : panPartStart[%d] = %d, panPartStart[%d] = %d",
-                         i, panPartStart[i], i - 1, panPartStart[i - 1]); 
-                CPLFree(panPartStart);
-                return OGRERR_FAILURE;
-            }
 	}
 
 	nOffset = 44 + 4*nParts;
@@ -561,19 +461,9 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
 /* -------------------------------------------------------------------- */
 /*      Copy out the vertices from the record.                          */
 /* -------------------------------------------------------------------- */
-        double *padfX = (double *) VSIMalloc(sizeof(double)*nPoints);
-        double *padfY = (double *) VSIMalloc(sizeof(double)*nPoints);
-        double *padfZ = (double *) VSICalloc(sizeof(double),nPoints);
-        if (padfX == NULL || padfY == NULL || padfZ == NULL)
-        {
-            CPLFree( panPartStart );
-            CPLFree( padfX );
-            CPLFree( padfY );
-            CPLFree( padfZ );
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Not enough memory for shape (nPoints=%d, nParts=%d)", nPoints, nParts);
-            return OGRERR_FAILURE;
-        }
+        double *padfX = (double *) CPLMalloc(sizeof(double)*nPoints);
+        double *padfY = (double *) CPLMalloc(sizeof(double)*nPoints);
+        double *padfZ = (double *) CPLCalloc(sizeof(double),nPoints);
 
 	for( i = 0; i < nPoints; i++ )
 	{
@@ -796,13 +686,6 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
     {
         int	nOffset;
         double  dfX, dfY, dfZ = 0;
-
-        if (nBytes < 4 + 8 + 8 + ((nSHPType == SHPT_POINTZ) ? 8 : 0))
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Corrupted Shape : nBytes=%d, nSHPType=%d", nBytes, nSHPType);
-            return OGRERR_FAILURE;
-        }
         
 	memcpy( &dfX, pabyShape + 4, 8 );
 	memcpy( &dfY, pabyShape + 4 + 8, 8 );
@@ -824,11 +707,6 @@ OGRErr OGRPGeoLayer::createFromShapeBin( GByte *pabyShape,
 
         return OGRERR_NONE;
     }
-
-    char* pszHex = CPLBinaryToHex( nBytes, pabyShape );
-    CPLDebug( "PGEO", "Unsupported geometry type:%d\nnBytes=%d, hex=%s",
-              nSHPType, nBytes, pszHex );
-    CPLFree(pszHex);
 
     return OGRERR_FAILURE;
 }

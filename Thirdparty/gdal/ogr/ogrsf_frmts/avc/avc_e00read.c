@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00read.c,v 1.28 2008/07/30 19:22:18 dmorissette Exp $
+ * $Id: avc_e00read.c,v 1.21 2006/06/27 18:38:43 dmorissette Exp $
  *
  * Name:     avc_e00read.c
  * Project:  Arc/Info vector coverage (AVC)  BIN->E00 conversion library
@@ -32,33 +32,6 @@
  **********************************************************************
  *
  * $Log: avc_e00read.c,v $
- * Revision 1.28  2008/07/30 19:22:18  dmorissette
- * Move detection of EXP header directly in AVCE00ReadOpenE00() and use
- * VSIFGets() instead of CPLReadLine() to avoid problem with huge one line
- * files (GDAL/OGR ticket #1989)
- *
- * Revision 1.27  2008/07/30 18:35:53  dmorissette
- * Avoid scanning the whole E00 input file in AVCE00ReadOpenE00() if the
- * file does not start with an EXP line (GDAL/OGR ticket 1989)
- *
- * Revision 1.26  2008/07/30 16:17:46  dmorissette
- * Detect compressed E00 input files and refuse to open them instead of
- * crashing (bug 1928, GDAL/OGR ticket 2513)
- *
- * Revision 1.25  2008/07/24 20:34:12  dmorissette
- * Fixed VC++ WIN32 build problems in GDAL/OGR environment
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2500)
- *
- * Revision 1.24  2008/07/24 13:49:20  dmorissette
- * Fixed GCC compiler warning (GDAL ticket #2495)
- *
- * Revision 1.23  2006/08/17 19:51:01  dmorissette
- * #include <unistd.h> to solve warning on 64 bit platforms (bug 1461)
- *
- * Revision 1.22  2006/08/17 18:56:42  dmorissette
- * Support for reading standalone info tables (just tables, no coverage
- * data) by pointing AVCE00ReadOpen() to the info directory (bug 1549).
- *
  * Revision 1.21  2006/06/27 18:38:43  dmorissette
  * Cleaned up E00 reading (bug 1497, patch from James F.)
  *
@@ -126,13 +99,11 @@
  *
  **********************************************************************/
 
-#include "avc.h"
-
 #ifdef WIN32
 #  include <direct.h>   /* getcwd() */
-#else
-#  include <unistd.h>   /* getcwd() */
 #endif
+
+#include "avc.h"
 
 #include <ctype.h>      /* toupper() */
 
@@ -323,8 +294,7 @@ AVCE00ReadPtr  AVCE00ReadOpen(const char *pszCoverPath)
      * PC Coverages have their info tables in the same direcotry as 
      * the coverage files.
      *----------------------------------------------------------------*/
-    if (((psInfo->eCoverType == AVCCoverV7 || 
-          psInfo->eCoverType == AVCCoverV7Tables) &&
+    if ((psInfo->eCoverType == AVCCoverV7 &&
          ! AVCFileExists(psInfo->pszInfoPath, "arc.dir") ) ||
          (psInfo->eCoverType == AVCCoverWeird &&
          ! AVCFileExists(psInfo->pszInfoPath, "arcdr9") ) )
@@ -408,7 +378,6 @@ AVCE00ReadE00Ptr AVCE00ReadOpenE00(const char *pszE00FileName)
     VSIStatBuf       sStatBuf;
     FILE             *fp;
     char             *p;
-    char             szHeader[10];
 
     CPLErrorReset();
 
@@ -426,21 +395,8 @@ AVCE00ReadE00Ptr AVCE00ReadOpenE00(const char *pszE00FileName)
         return NULL;
     }
 
-    if (NULL == (fp = VSIFOpen(pszE00FileName, "r")))
+    if (NULL == (fp = fopen(pszE00FileName, "r")))
         return NULL;
-
-    /*-----------------------------------------------------------------
-     * Make sure the file starts with a "EXP  0" or "EXP  1" header
-     *----------------------------------------------------------------*/
-    if (VSIFGets(szHeader, 5, fp) == NULL || !EQUALN("EXP ", szHeader, 4) )
-    {
-        CPLError(CE_Failure, CPLE_OpenFailed, 
-                 "This does not look like a E00 file: does not start with "
-                 "a EXP header." );
-        VSIFClose(fp);
-        return NULL;
-    }
-    VSIRewind(fp);
 
     /*-----------------------------------------------------------------
      * Alloc the AVCE00ReadE00Ptr handle
@@ -565,7 +521,7 @@ void AVCE00ReadCloseE00(AVCE00ReadE00Ptr psRead)
 
     if (psRead->hFile)
     {
-        VSIFClose(psRead->hFile);
+        fclose(psRead->hFile);
         psRead->hFile = 0;
     }
 
@@ -638,8 +594,7 @@ static AVCCoverType _AVCE00ReadFindCoverType(char **papszCoverDir)
 {
     int         i, nLen;
     GBool       bFoundAdfFile=FALSE, bFoundArcFile=FALSE, 
-                bFoundTableFile=FALSE, bFoundDbfFile=FALSE,
-                bFoundArcDirFile=FALSE;
+                bFoundTableFile=FALSE, bFoundDbfFile=FALSE;
 
     /*-----------------------------------------------------------------
      * Scan the list of files, looking for well known filenames.
@@ -671,10 +626,6 @@ static AVCCoverType _AVCE00ReadFindCoverType(char **papszCoverDir)
                  EQUAL(papszCoverDir[i], "tic") )
         {
             bFoundTableFile = TRUE;
-        }
-        else if (EQUAL(papszCoverDir[i], "arc.dir") )
-        {
-            bFoundArcDirFile = TRUE;
         }
 
     }
@@ -713,14 +664,6 @@ static AVCCoverType _AVCE00ReadFindCoverType(char **papszCoverDir)
      *----------------------------------------------------------------*/
     if (bFoundAdfFile)
         return AVCCoverV7;
-
-    /*-----------------------------------------------------------------
-     * Standalone info tables.
-     * We were pointed at the "info" directory. We'll treat this as
-     * a coverage with just info tables.
-     *----------------------------------------------------------------*/
-    if (bFoundArcDirFile)
-        return AVCCoverV7Tables;
 
     return AVCCoverTypeUnknown;
 }
@@ -1005,7 +948,7 @@ static int _AVCE00ReadBuildSqueleton(AVCE00ReadPtr psInfo,
     }
 
     pszEXPPath = CPLStrdup(CPLSPrintf("EXP  0 %s%-.*s.E00", szCWD,
-                                      (int)strlen(psInfo->pszCoverPath)-1,
+                                      strlen(psInfo->pszCoverPath)-1,
                                       psInfo->pszCoverPath));
     pcTmp = pszEXPPath;
     for( ; *pcTmp != '\0'; pcTmp++)
@@ -1260,7 +1203,6 @@ static int _AVCE00ReadBuildSqueleton(AVCE00ReadPtr psInfo,
      *----------------------------------------------------------------*/
     papszTables = papszFiles = NULL;
     if (psInfo->eCoverType == AVCCoverV7 || 
-        psInfo->eCoverType == AVCCoverV7Tables || 
         psInfo->eCoverType == AVCCoverWeird)
     {
         /*-------------------------------------------------------------
@@ -1356,40 +1298,10 @@ static void _AVCE00ReadScanE00(AVCE00ReadE00Ptr psRead)
     const char *pszName = 0;
     void       *obj;
     int        iSect = 0;
-    GBool      bFirstLine = TRUE;
 
     while (CPLGetLastErrorNo() == 0 &&
             (pszLine = CPLReadLine(psRead->hFile) ) != NULL )
     {
-        if (bFirstLine)
-        {
-            /* Look for the first non-empty line, after the EXP header,
-             * trying to detect compressed E00 files. If the file is 
-             * compressed, the first line of data should be 79 or 80 chars
-             * long and contain several '~' characters.
-             */
-            int nLen = strlen(pszLine);
-            if (nLen == 0 || EQUALN("EXP ", pszLine, 4))
-                continue;  /* Skip empty and EXP header lines */
-            else if ( (nLen == 79 || nLen == 80) &&
-                      strchr(pszLine, '~') != NULL )
-            {
-                /* Looks like a compressed file. Just log an error and return.
-                 * The caller should reject the file because it contains 0 
-                 * sections 
-                 */
-                CPLError(CE_Failure, CPLE_OpenFailed, 
-                         "This looks like a compressed E00 file and cannot be "
-                         "processed directly. You may need to uncompress it "
-                         "first using the E00compr library or the e00conv "
-                         "program." );
-                return;  
-            }
-
-            /* All seems fine. Continue with normal processing */
-            bFirstLine = FALSE;
-        }
-
         obj = _AVCE00ReadNextLineE00(psRead, pszLine);
 
         if (obj)

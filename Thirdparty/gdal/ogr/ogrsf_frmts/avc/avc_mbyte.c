@@ -1,4 +1,4 @@
-/* $Id: avc_mbyte.c,v 1.4 2008/07/23 20:51:38 dmorissette Exp $
+/* $Id: avc_mbyte.c,v 1.3 2005/06/03 03:49:59 daniel Exp $
  *
  * Name:     avc_mbyte.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -29,10 +29,6 @@
  **********************************************************************
  *
  * $Log: avc_mbyte.c,v $
- * Revision 1.4  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.3  2005/06/03 03:49:59  daniel
  * Update email address, website url, and copyright dates
  *
@@ -50,13 +46,13 @@
 #  include <mbctype.h>
 #endif
 
-static int _AVCDetectJapaneseEncoding(const GByte *pszLine);
-static const GByte *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
-                                         const GByte *pszLine,
-                                         int nMaxOutputLen);
-static const GByte *_AVCArcDBCS2JapaneseShiftJIS(AVCDBCSInfo *psDBCSInfo, 
-                                                 const GByte *pszLine,
-                                                 int nMaxOutputLen);
+static int _AVCDetectJapaneseEncoding(const unsigned char *pszLine);
+static const char *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
+                                        const unsigned char *pszLine,
+                                        int nMaxOutputLen);
+static const char *_AVCArcDBCS2JapaneseShiftJIS(AVCDBCSInfo *psDBCSInfo, 
+                                                const unsigned char *pszLine,
+                                                int nMaxOutputLen);
 
 /*=====================================================================
  * Functions to handle multibyte char conversions
@@ -129,7 +125,7 @@ int AVCGetDBCSCodePage()
  * Returns TRUE once the encoding is established, or FALSE if more lines
  * of input are required to establish the encoding.
  **********************************************************************/
-GBool AVCE00DetectEncoding(AVCDBCSInfo *psDBCSInfo, const GByte *pszLine)
+GBool AVCE00DetectEncoding(AVCDBCSInfo *psDBCSInfo, const char *pszLine)
 {
     if (psDBCSInfo == NULL || psDBCSInfo->nDBCSCodePage == 0 ||
         psDBCSInfo->nDBCSEncoding != AVC_CODE_UNKNOWN)
@@ -143,7 +139,7 @@ GBool AVCE00DetectEncoding(AVCDBCSInfo *psDBCSInfo, const GByte *pszLine)
     {
       case AVC_DBCS_JAPANESE:
         psDBCSInfo->nDBCSEncoding = 
-                  _AVCDetectJapaneseEncoding(pszLine);
+                  _AVCDetectJapaneseEncoding((const unsigned char *)pszLine);
         break;
       default:
         psDBCSInfo->nDBCSEncoding = AVC_CODE_UNKNOWN;
@@ -168,12 +164,12 @@ GBool AVCE00DetectEncoding(AVCDBCSInfo *psDBCSInfo, const GByte *pszLine)
  * caller.  It can be either the original string buffer or a ref. to an
  * internal buffer.
  **********************************************************************/
-const GByte *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo, 
-                                       const GByte *pszLine,
+const char *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo, 
+                                       const char *pszLine,
                                        int nMaxOutputLen)
 {
-    const GByte *pszOutBuf = NULL;
-    GByte *pszTmp = NULL;
+    const char *pszOutBuf = NULL;
+    unsigned char *pszTmp;
     GBool bAllAscii;
 
     if (psDBCSInfo == NULL || 
@@ -186,7 +182,7 @@ const GByte *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
 
     /* If string is all ASCII then there is nothing to do...
      */
-    pszTmp = (GByte *)pszLine;
+    pszTmp = (unsigned char *)pszLine;
     for(bAllAscii = TRUE ; bAllAscii && pszTmp && *pszTmp; pszTmp++)
     {
         if ( !IS_ASCII(*pszTmp) )
@@ -204,9 +200,9 @@ const GByte *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
     {
         psDBCSInfo->nDBCSBufSize = nMaxOutputLen+2;
         psDBCSInfo->pszDBCSBuf = 
-            (GByte *)CPLRealloc(psDBCSInfo->pszDBCSBuf,
-                                psDBCSInfo->nDBCSBufSize*
-                                sizeof(GByte));
+            (unsigned char *)CPLRealloc(psDBCSInfo->pszDBCSBuf,
+                                        psDBCSInfo->nDBCSBufSize*
+                                        sizeof(unsigned char));
     }
 
     /* Do the conversion according to current code page 
@@ -214,14 +210,13 @@ const GByte *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
     switch (psDBCSInfo->nDBCSCodePage)
     {
       case AVC_DBCS_JAPANESE:
-        pszOutBuf = _AVCJapanese2ArcDBCS(psDBCSInfo,
-                                         pszLine,
-                                         nMaxOutputLen);
+        pszOutBuf = (char*)_AVCJapanese2ArcDBCS(psDBCSInfo,
+                                                (const unsigned char *)pszLine,
+                                                nMaxOutputLen);
         break;
       default:
         /* We should never get here anyways, but just in case return pszLine 
          */
-        CPLAssert( !"SHOULD NEVER GET HERE" );
         pszOutBuf = pszLine;
     }
     
@@ -237,12 +232,12 @@ const GByte *AVCE00Convert2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
  * caller.  It can be either the original string buffer or a ref. to an
  * internal buffer.
  **********************************************************************/
-const GByte *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo, 
-                                      const GByte *pszLine,
-                                      int nMaxOutputLen)
+const char *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo, 
+                                     const char *pszLine,
+                                     int nMaxOutputLen)
 {
-    const GByte *pszOutBuf = NULL;
-    GByte *pszTmp;
+    const char *pszOutBuf = NULL;
+    unsigned char *pszTmp;
     GBool bAllAscii;
 
     if (psDBCSInfo == NULL || 
@@ -255,7 +250,7 @@ const GByte *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo,
 
     /* If string is all ASCII then there is nothing to do...
      */
-    pszTmp = (GByte *)pszLine;
+    pszTmp = (unsigned char *)pszLine;
     for(bAllAscii = TRUE ; bAllAscii && pszTmp && *pszTmp; pszTmp++)
     {
         if ( !IS_ASCII(*pszTmp) )
@@ -273,9 +268,9 @@ const GByte *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo,
     {
         psDBCSInfo->nDBCSBufSize = nMaxOutputLen+2;
         psDBCSInfo->pszDBCSBuf = 
-            (GByte *)CPLRealloc(psDBCSInfo->pszDBCSBuf,
-                                psDBCSInfo->nDBCSBufSize*
-                                sizeof(GByte));
+            (unsigned char *)CPLRealloc(psDBCSInfo->pszDBCSBuf,
+                                        psDBCSInfo->nDBCSBufSize*
+                                        sizeof(unsigned char));
     }
 
     /* Do the conversion according to current code page 
@@ -283,9 +278,9 @@ const GByte *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo,
     switch (psDBCSInfo->nDBCSCodePage)
     {
       case AVC_DBCS_JAPANESE:
-        pszOutBuf = _AVCArcDBCS2JapaneseShiftJIS(psDBCSInfo,
-                                                 pszLine,
-                                                 nMaxOutputLen);
+        pszOutBuf = (char*)_AVCArcDBCS2JapaneseShiftJIS(psDBCSInfo,
+                                                (const unsigned char *)pszLine,
+                                                        nMaxOutputLen);
         break;
       default:
         /* We should never get here anyways, but just in case return pszLine 
@@ -326,7 +321,7 @@ const GByte *AVCE00ConvertFromArcDBCS(AVCDBCSInfo *psDBCSInfo,
 #define IS_JAP_EUC_2(c)       ((c) >= 0xFD && (c) <= 0xFE)
 #define IS_JAP_KANA(c)        ((c) >= 0xA1 && (c) <= 0xDF)
 
-static int _AVCDetectJapaneseEncoding(const GByte *pszLine)
+static int _AVCDetectJapaneseEncoding(const unsigned char *pszLine)
 {
     int nEncoding = AVC_CODE_UNKNOWN;
 
@@ -377,11 +372,11 @@ static int _AVCDetectJapaneseEncoding(const GByte *pszLine)
  * Try to detect type of Japanese encoding if not done yet, and convert
  * string from Japanese to proper coverage DBCS encoding.
  **********************************************************************/
-static const GByte *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo, 
-                                         const GByte *pszLine,
-                                         int nMaxOutputLen)
+static const char *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo, 
+                                        const unsigned char *pszLine,
+                                        int nMaxOutputLen)
 {
-    GByte *pszOut;
+    unsigned char *pszOut;
     int iDst;
 
     pszOut = psDBCSInfo->pszDBCSBuf;
@@ -483,11 +478,11 @@ static const GByte *_AVCJapanese2ArcDBCS(AVCDBCSInfo *psDBCSInfo,
  * which is EUC + all Katakana chars are prefixed with 0x8e.  So this
  * function just does a simple conversion.
  **********************************************************************/
-static const GByte *_AVCArcDBCS2JapaneseShiftJIS(AVCDBCSInfo *psDBCSInfo, 
-                                                 const GByte *pszLine,
-                                                 int nMaxOutputLen)
+static const char *_AVCArcDBCS2JapaneseShiftJIS(AVCDBCSInfo *psDBCSInfo, 
+                                                const unsigned char *pszLine,
+                                                int nMaxOutputLen)
 {
-    GByte *pszOut;
+    unsigned char *pszOut;
     int iDst;
 
     pszOut = psDBCSInfo->pszDBCSBuf;

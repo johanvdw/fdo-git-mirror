@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 12821 2007-11-16 22:44:35Z rouault $
+ * $Id: ceosopen.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -29,7 +29,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 12821 2007-11-16 22:44:35Z rouault $");
+CPL_CVSID("$Id: ceosopen.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            CEOSScanInt()                             */
@@ -63,7 +63,7 @@ static long CEOSScanInt( const char * pszString, int nMaxChars )
 /*      return the record.                                              */
 /************************************************************************/
 
-CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
+CEOSRecord * CEOSReadRecord( FILE * fp )
 
 {
     GByte	abyHeader[12];
@@ -72,10 +72,10 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 /* -------------------------------------------------------------------- */
 /*      Read the standard CEOS header.                                  */
 /* -------------------------------------------------------------------- */
-    if( VSIFEof( psImage->fpImage ) )
+    if( VSIFEof( fp ) )
         return NULL;
 
-    if( VSIFRead( abyHeader, 1, 12, psImage->fpImage ) != 12 )
+    if( VSIFRead( abyHeader, 1, 12, fp ) != 12 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Ran out of data reading CEOS record." );
@@ -86,12 +86,6 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 /*      Extract this information.                                       */
 /* -------------------------------------------------------------------- */
     psRecord = (CEOSRecord *) CPLMalloc(sizeof(CEOSRecord));
-    if( psImage->bLittleEndian )
-    {
-        CPL_SWAP32PTR( abyHeader + 0 );
-        CPL_SWAP32PTR( abyHeader + 8 );
-    }
-
     psRecord->nRecordNum = abyHeader[0] * 256 * 256 * 256
                          + abyHeader[1] * 256 * 256
                          + abyHeader[2] * 256
@@ -138,8 +132,7 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 
     memcpy( psRecord->pachData, abyHeader, 12 );
 
-    if( (int)VSIFRead( psRecord->pachData + 12, 1, psRecord->nLength-12, 
-                       psImage->fpImage )
+    if( (int)VSIFRead( psRecord->pachData + 12, 1, psRecord->nLength-12, fp )
         != psRecord->nLength - 12 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
@@ -187,7 +180,6 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
     CEOSRecord  *psRecord;
     CEOSImage   *psImage;
     int		nSeqNum, i;
-    GByte       abyHeader[16];
 
 /* -------------------------------------------------------------------- */
 /*      Try to open the imagery file.                                   */
@@ -203,27 +195,9 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Create a CEOSImage structure, and initialize it.                */
-/* -------------------------------------------------------------------- */
-    psImage = (CEOSImage *) CPLCalloc(1,sizeof(CEOSImage));
-    psImage->fpImage = fp;
-
-    psImage->nPixels = psImage->nLines = psImage->nBands = 0;
-
-/* -------------------------------------------------------------------- */
-/*      Preread info on the first record, to establish if it is         */
-/*      little endian.                                                  */
-/* -------------------------------------------------------------------- */
-    VSIFRead( abyHeader, 16, 1, fp );
-    VSIFSeek( fp, 0, SEEK_SET );
-    
-    if( abyHeader[0] != 0 || abyHeader[1] != 0 )
-        psImage->bLittleEndian = TRUE;
-    
-/* -------------------------------------------------------------------- */
 /*      Try to read the header record.                                  */
 /* -------------------------------------------------------------------- */
-    psRecord = CEOSReadRecord( psImage );
+    psRecord = CEOSReadRecord( fp );
     if( psRecord == NULL )
         return NULL;
 
@@ -253,6 +227,14 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
     }
     
 /* -------------------------------------------------------------------- */
+/*      Create a CEOSImage structure, and initialize it.                */
+/* -------------------------------------------------------------------- */
+    psImage = (CEOSImage *) CPLMalloc(sizeof(CEOSImage));
+    psImage->fpImage = fp;
+
+    psImage->nPixels = psImage->nLines = psImage->nBands = 0;
+    
+/* -------------------------------------------------------------------- */
 /*      Extract various information.                                    */
 /* -------------------------------------------------------------------- */
     psImage->nImageRecCount = CEOSScanInt( psRecord->pachData+180, 6 );
@@ -278,8 +260,6 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
             psRecord->nLength + i * psImage->nImageRecLength
 	            + 12 + psImage->nPrefixBytes;
     }
-    
-    CEOSDestroyRecord( psRecord );
 
     return psImage;
 }
@@ -350,7 +330,6 @@ CPLErr CEOSReadScanline( CEOSImage * psCEOS, int nBand, int nScanline,
 void CEOSClose( CEOSImage * psCEOS )
 
 {
-    CPLFree( psCEOS->panDataStart );
     VSIFClose( psCEOS->fpImage );
     CPLFree( psCEOS );
 }

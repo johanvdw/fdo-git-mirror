@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aigrid.h 11586 2007-06-01 04:27:41Z warmerdam $
+ * $Id: aigrid.h 11617 2007-06-07 18:05:35Z warmerdam $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file access include file.

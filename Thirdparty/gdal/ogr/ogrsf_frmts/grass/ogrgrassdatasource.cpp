@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrassdatasource.cpp 15235 2008-08-27 19:44:56Z rouault $
+ * $Id: ogrgrassdatasource.cpp 11554 2007-05-18 17:09:03Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgrassdatasource.cpp 15235 2008-08-27 19:44:56Z rouault $");
+CPL_CVSID("$Id: ogrgrassdatasource.cpp 11554 2007-05-18 17:09:03Z mloskot $");
 
 /************************************************************************/
 /*                         Grass2CPLErrorHook()                         */
@@ -58,7 +58,6 @@ OGRGRASSDataSource::OGRGRASSDataSource()
     pszMap = NULL;
     papoLayers = NULL;
     nLayers = 0;
-    bOpened = FALSE;
 }
 
 /************************************************************************/
@@ -75,9 +74,6 @@ OGRGRASSDataSource::~OGRGRASSDataSource()
     if ( pszLocation ) CPLFree( pszLocation );
     if ( pszMapset ) CPLFree( pszMapset );
     if ( pszMap ) CPLFree( pszMap );
-    
-    if (bOpened)
-        Vect_close(&map);
 }
 
 /************************************************************************/
@@ -214,8 +210,6 @@ int OGRGRASSDataSource::Open( const char * pszNewName, int bUpdate,
 	    CPLRealloc( papoLayers,  sizeof(OGRGRASSLayer *) * (nLayers+1) );
 	papoLayers[nLayers++] = poLayer;
     }
-    
-    bOpened = TRUE;
     
     return TRUE;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogdidataset.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogdidataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Name:     ogdidataset.cpp
  * Project:  OGDI Bridge
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogdidataset.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogdidataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_OGDI(void);
@@ -942,9 +942,6 @@ void GDALRegister_OGDI()
 {
     GDALDriver	*poDriver;
 
-    if (! GDAL_CHECK_VERSION("GDAL/OGDI driver"))
-        return;
-    
     if( GDALGetDriverByName( "OGDI" ) == NULL )
     {
         poDriver = new GDALDriver();

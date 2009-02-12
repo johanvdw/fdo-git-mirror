@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshape.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogrshape.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the Shapefile driver to implement
@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #ifndef _OGRSHAPE_H_INCLUDED
-#define _OGRSHAPE_H_INCLUDED
+#define _OGRSHAPE_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 #include "shapefil.h"
@@ -83,8 +83,6 @@ class OGRShapeLayer : public OGRLayer
     OGRErr              CreateSpatialIndex( int nMaxDepth );
     OGRErr              DropSpatialIndex();
     OGRErr              Repack();
-
-    const char         *GetFullName() { return pszFullName; }
 
   public:
                         OGRShapeLayer( const char * pszName,
@@ -153,8 +151,7 @@ class OGRShapeDataSource : public OGRDataSource
                                      OGRGeometry *poSpatialFilter,
                                      const char *pszDialect );
 
-    virtual int          TestCapability( const char * );
-    virtual OGRErr       DeleteLayer( int iLayer );
+    int                 TestCapability( const char * );
 };
 
 /************************************************************************/

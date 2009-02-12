@@ -20,14 +20,14 @@ LIBGDAL-$(HAVE_LD_SHARED)	+=	$(GDAL_SLIB)
 # override if we are using libtool
 LIBGDAL-$(HAVE_LIBTOOL)	:= $(LIBGDAL)
 
-default:	lib-target py-target apps-target swig-target
+default:	lib-target py-target apps-target
 
 lib-target:	check-lib;
 
 force-lib:
 	$(AR) r $(GDAL_LIB) $(GDAL_OBJ)
 	$(RANLIB) $(GDAL_LIB)
-	$(LD_SHARED) $(GDAL_SLIB_SONAME) $(GDAL_OBJ) $(GDAL_LIBS) $(LDFLAGS) $(LIBS) \
+	$(LD_SHARED) $(GDAL_SLIB_SONAME) $(GDAL_OBJ) $(GDAL_LIBS) $(LIBS) \
 		-o $(GDAL_SLIB)
 
 $(GDAL_LIB):	$(GDAL_OBJ) GDALmake.opt
@@ -36,17 +36,14 @@ $(GDAL_LIB):	$(GDAL_OBJ) GDALmake.opt
 	$(RANLIB) $(GDAL_LIB)
 
 $(GDAL_SLIB):	$(GDAL_OBJ) $(GDAL_LIB)
-	$(LD_SHARED) $(GDAL_SLIB_SONAME) $(GDAL_OBJ) $(GDAL_LIBS) $(LDFLAGS) $(LIBS) \
+	$(LD_SHARED) $(GDAL_SLIB_SONAME) $(GDAL_OBJ) $(GDAL_LIBS) $(LIBS) \
 		-o $(GDAL_SLIB)
 
 $(LIBGDAL):	$(GDAL_OBJ:.o=.lo)
-	$(LD) $(LDFLAGS) $(LIBS) -o $@ $(GDAL_OBJ:.o=.lo) \
+	$(LD) $(LIBS) -o $@ $(GDAL_OBJ:.o=.lo) \
 	    -rpath $(INST_LIB) \
 	    -no-undefined \
 	    -version-info $(LIBGDAL_CURRENT):$(LIBGDAL_REVISION):$(LIBGDAL_AGE)
-ifeq ($(MACOSX_FRAMEWORK),yes)
-	install_name_tool -id ${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL .libs/libgdal.dylib
-endif
 
 check-lib:	port-target core-target frmts-target ogr-target
 	$(MAKE) $(LIBGDAL-yes)
@@ -67,26 +64,27 @@ frmts-target:
 ogr-all:
 	(cd ogr; $(MAKE) all)
 
-apps-target:	lib-target
+apps-target:	lib-target ogr-apps
 	(cd apps; $(MAKE))
+
+
+ogr-apps:	lib-target
+	(cd ogr; $(MAKE) apps)
+
 
 #
 #	We only make python a default target if we think python is installed.
 #
-ifeq ($(HAVE_OGPYTHON),no)
+ifeq ($(PYTHON_DEV),no)
 py-target: ;
 else
 py-target:	py-module;
 endif
 
-ifeq ($(BINDINGS),)
-swig-target: ;
-else
-swig-target:    swig-modules;
-endif
-
-swig-modules:
+swig-target:
+ifneq ($(BINDINGS),)
 	(cd swig; $(MAKE) build)
+endif
 
 clean:	lclean
 	(cd port; $(MAKE) clean)
@@ -98,13 +96,10 @@ clean:	lclean
 ifneq ($(BINDINGS),)
 	(cd swig; $(MAKE) clean)
 endif
-
 	(cd pymod; $(MAKE) clean)
-
 
 py-module:	lib-target
 	(cd pymod; $(MAKE))
-
 
 lclean:
 	rm -f *.a *.so config.log config.cache html/*.*
@@ -132,21 +127,15 @@ docs:
 # Generate translated docs. Should go first, because index.html page should
 # be overwritten with the main one later
 	doxygen -w html html/header.html html/footer.html html/stylesheet.css
-	sed -e 's,iso-8859-1,utf-8,g' html/header.html > html/header_ru.html
-	cp html/header.html html/header_br.html
+	sed -e 's,iso-8859-1,koi8-r,g' html/header.html > html/header_ru.html
 	(cat Doxyfile ; echo "HTML_HEADER=html/header_ru.html"; echo "INPUT=doc/ru"; echo "OUTPUT_LANGUAGE=Russian") | doxygen -
-	(cat Doxyfile ; echo "HTML_HEADER=html/header_br.html"; echo "INPUT=doc/br"; echo "OUTPUT_LANGUAGE=Portuguese") | doxygen -
 # Generate HTML docs
 	doxygen Doxyfile
-	cp data/gdalicon.png html
-	cp doc/images/*.* html
-	cp doc/grid/*.png html
-	cp frmts/*.html frmts/*/frmt_*.html html
-	cp frmts/wms/frmt_wms_*.xml html
-
-man:
 # Generate man pages
 	(cat Doxyfile ; echo "ENABLED_SECTIONS=man"; echo "INPUT=doc ogr"; echo "FILE_PATTERNS=*utilities.dox"; echo "GENERATE_HTML=NO"; echo "GENERATE_MAN=YES") | doxygen -
+	cp data/gdalicon.png html
+	cp doc/images/*.* html
+	cp frmts/*.html frmts/*/frmt_*.html html
 
 all:	default ogr-all
 
@@ -154,10 +143,6 @@ install-docs:
 	(cd ogr; $(MAKE) install-docs)
 	$(INSTALL_DIR) $(DESTDIR)$(INST_DOCS)/gdal
 	cp html/*.* $(DESTDIR)$(INST_DOCS)/gdal
-
-install-man:
-	$(INSTALL_DIR) $(DESTDIR)$(INST_MAN)/man1
-	for f in $(wildcard man/man1/*.1) ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_MAN)/man1 ; done
 
 web-update:	docs
 	cp html/*.* $(WEB_DIR)
@@ -180,6 +165,12 @@ ifeq ($(MACOSX_FRAMEWORK),yes)
 	ln -sfh Versions/Current/Programs $(DESTDIR)${OSX_FRAMEWORK_PREFIX}/Programs
 	ln -sfh Versions/Current/Resources $(DESTDIR)${OSX_FRAMEWORK_PREFIX}/Resources
 	ln -sfh Versions/Current/GDAL $(DESTDIR)${OSX_FRAMEWORK_PREFIX}/GDAL
+	mv -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).$(LIBGDAL_REVISION).dylib $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL
+	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).dylib
+	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).dylib
+	rm -f $(DESTDIR)$(INST_LIB)/libgdal.dylib
+	rm -f $(DESTDIR)$(INST_LIB)/libgdal.la
+	install_name_tool -id ${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL
 endif
 	(cd port; $(MAKE) install)
 	(cd gcore; $(MAKE) install)
@@ -187,13 +178,14 @@ endif
 	(cd alg; $(MAKE) install)
 	(cd ogr; $(MAKE) install)
 	(cd apps; $(MAKE) install)
-ifeq ($(HAVE_OGPYTHON),yes)
+	(cd man; $(MAKE) install)
+ifneq ($(PYTHON_DEV),no)
 	(cd pymod; $(MAKE) install)
 endif
 ifneq ($(BINDINGS),)
 	(cd swig; $(MAKE) install)
 endif
-	for f in LICENSE.TXT data/*.* ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_DATA) ; done
+	for f in data/*.* ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_DATA) ; done
 	$(LIBTOOL_FINISH) $(INST_LIB)
 
 
@@ -202,17 +194,6 @@ ifeq ($(HAVE_LIBTOOL),yes)
 install-lib:
 	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)
 	for f in $(LIBGDAL-yes) ; do $(INSTALL_LIB) $$f $(DESTDIR)$(INST_LIB) ; done
-ifeq ($(MACOSX_FRAMEWORK),yes)
-	if [ -f "$(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).$(LIBGDAL_REVISION).dylib" ] ; then mv -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).$(LIBGDAL_REVISION).dylib $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL ; fi
-	if [ -f "$(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).dylib" ] ; then mv -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).dylib $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL ; fi
-	if [ -f "$(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).dylib" ] ; then mv -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).dylib $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL ; fi
-	if [ -f "$(DESTDIR)$(INST_LIB)/libgdal.dylib" ] ; then mv -f $(DESTDIR)$(INST_LIB)/libgdal.dylib $(DESTDIR)${OSX_VERSION_FRAMEWORK_PREFIX}/GDAL ; fi
-	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).$(LIBGDAL_REVISION).dylib
-	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).$(LIBGDAL_AGE).dylib
-	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).dylib
-	rm -f $(DESTDIR)$(INST_LIB)/libgdal.dylib
-	rm -f $(DESTDIR)$(INST_LIB)/libgdal.la
-endif
 
 else
 
@@ -224,23 +205,29 @@ install-lib:
 
 	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)
 ifeq ($(MACOSX_FRAMEWORK),yes)
-	$(INSTALL_LIB) $(GDAL_SLIB) $(DESTDIR)$(INST_LIB)/GDAL
+	$(INSTALL_LIB) $(GDAL_ROOT)/.libs/libgdal.1.$(LIBGDAL_AGE).$(LIBGDAL_REVISION).dylib $(DESTDIR)$(INST_LIB)/GDAL
+	install_name_tool -id ${OSX_FRAMEWORK_PREFIX}/GDAL $(DESTDIR)$(INST_LIB)/GDAL
 else
 	rm -f $(DESTDIR)$(INST_LIB)/$(GDAL_SLIB_B)
 	rm -f $(DESTDIR)$(INST_LIB)/$(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR)
 	rm -f $(DESTDIR)$(INST_LIB)/$(GDAL_SLIB_B).$(GDAL_VER)
 	$(INSTALL_LIB) $(GDAL_SLIB) $(DESTDIR)$(INST_LIB)/$(GDAL_SLIB_B).$(GDAL_VER)
 	(cd $(DESTDIR)$(INST_LIB) ; \
-	 ln -s $(GDAL_SLIB_B).$(GDAL_VER) $(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR))
-	(cd $(DESTDIR)$(INST_LIB) ; \
 	 ln -s $(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR) $(GDAL_SLIB_B))
+	(cd $(DESTDIR)$(INST_LIB) ; \
+	 ln -s $(GDAL_SLIB_B).$(GDAL_VER) $(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR))
 endif
 
 else
 
 install-lib:
 	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)
+ifeq ($(MACOSX_FRAMEWORK),yes)
+	$(INSTALL_LIB) $(GDAL_SLIB) $(DESTDIR)$(INST_LIB)/GDAL
+	install_name_tool -id ${OSX_FRAMEWORK_PREFIX}/GDAL $(DESTDIR)$(INST_LIB)/GDAL
+else
 	$(INSTALL_LIB) $(GDAL_LIB) $(DESTDIR)$(INST_LIB)
+endif
 
 endif # HAVE_LD_SHARED=no 
 

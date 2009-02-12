@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfopen.c 13739 2008-02-09 15:52:59Z rouault $
+ * $Id: gxfopen.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -31,7 +31,7 @@
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxfopen.c 13739 2008-02-09 15:52:59Z rouault $");
+CPL_CVSID("$Id: gxfopen.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */
@@ -207,8 +207,7 @@ GXFHandle GXFOpen( const char * pszFilename )
         }
         else if( EQUALN(szTitle,"#DUMM",5) )
         {
-            memset( psGXF->szDummy, 0, sizeof(psGXF->szDummy));
-            strncpy( psGXF->szDummy, papszList[0], sizeof(psGXF->szDummy) - 1);
+            strcpy( psGXF->szDummy, papszList[0] );
             psGXF->dfSetDummyTo = atof(papszList[0]);
         }
         else if( EQUALN(szTitle,"#XORI",5) )

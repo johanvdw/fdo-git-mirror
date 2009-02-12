@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldrivermanager.cpp 15705 2008-11-11 01:45:26Z warmerdam $
+ * $Id: gdaldrivermanager.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriverManager class.
@@ -32,9 +32,8 @@
 #include "cpl_multiproc.h"
 #include "ogr_srs_api.h"
 #include "cpl_multiproc.h"
-#include "gdal_pam.h"
 
-CPL_CVSID("$Id: gdaldrivermanager.cpp 15705 2008-11-11 01:45:26Z warmerdam $");
+CPL_CVSID("$Id: gdaldrivermanager.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static const char *pszUpdatableINST_DATA = 
 "__INST_DATA_TARGET:                                                                                                                                      ";
@@ -76,9 +75,7 @@ GDALDriverManager * GetGDALDriverManager()
             poDM = new GDALDriverManager();
     }
 
-    CPLAssert( NULL != poDM );
-
-    return const_cast<GDALDriverManager *>( poDM );
+    return( (GDALDriverManager *) poDM );
 }
 
 /************************************************************************/
@@ -149,11 +146,6 @@ GDALDriverManager::~GDALDriverManager()
 /* -------------------------------------------------------------------- */
     VSIFree( papoDrivers );
     VSIFree( pszHome );
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup any Proxy related memory.                               */
-/* -------------------------------------------------------------------- */
-    PamCleanProxyDB();
 
 /* -------------------------------------------------------------------- */
 /*      Blow away all the finder hints paths.  We really shouldn't      */
@@ -336,8 +328,6 @@ int GDALDriverManager::RegisterDriver( GDALDriver * poDriver )
 int CPL_STDCALL GDALRegisterDriver( GDALDriverH hDriver )
 
 {
-    VALIDATE_POINTER1( hDriver, "GDALRegisterDriver", 0 );
-
     return GetGDALDriverManager()->RegisterDriver( (GDALDriver *) hDriver );
 }
 
@@ -390,8 +380,6 @@ void GDALDriverManager::DeregisterDriver( GDALDriver * poDriver )
 void CPL_STDCALL GDALDeregisterDriver( GDALDriverH hDriver )
 
 {
-    VALIDATE_POINTER0( hDriver, "GDALDeregisterDriver" );
-
     GetGDALDriverManager()->DeregisterDriver( (GDALDriver *) hDriver );
 }
 
@@ -437,8 +425,6 @@ GDALDriver * GDALDriverManager::GetDriverByName( const char * pszName )
 GDALDriverH CPL_STDCALL GDALGetDriverByName( const char * pszName )
 
 {
-    VALIDATE_POINTER1( pszName, "GDALGetDriverByName", NULL );
-
     return( GetGDALDriverManager()->GetDriverByName( pszName ) );
 }
 
@@ -517,17 +503,16 @@ void GDALDriverManager::AutoSkipDrivers()
  *
  * This function will automatically load drivers from shared libraries.  It
  * searches the "driver path" for .so (or .dll) files that start with the
- * prefix "gdal_X.so".  It then tries to load them and then tries to call a
- * function within them called GDALRegister_X() where the 'X' is the same as
- * the remainder of the shared library basename ('X' is case sensitive), or
- * failing that to call GDALRegisterMe().
+ * prefix "gdal_X.so".  It then tries to load them and then tries to call
+ * a function within them called GDALRegister_X() where the 'X' is the same 
+ * as the remainder of the shared library basename, or failing that to 
+ * call GDALRegisterMe().  
  *
  * There are a few rules for the driver path.  If the GDAL_DRIVER_PATH
- * environment variable it set, it is taken to be a list of directories to
- * search separated by colons on UNIX, or semi-colons on Windows.  Otherwise
- * the /usr/local/lib/gdalplugins directory, and (if known) the
- * lib/gdalplugins subdirectory of the gdal home directory are searched on
- * UNIX and $(BINDIR)\gdalplugins on Windows.
+ * environment variable it set, it is taken to be a list of directories
+ * to search separated by colons on unix, or semi-colons on Windows.  Otherwise
+ * the /usr/local/lib/gdalplugins directory, and (if known) the lib/gdalplugins
+ * subdirectory of the gdal home directory are searched. 
  */
 
 void GDALDriverManager::AutoLoadDrivers()
@@ -566,7 +551,7 @@ void GDALDriverManager::AutoLoadDrivers()
         {
             char szPluginDir[sizeof(szExecPath)+50];
             strcpy( szPluginDir, CPLGetDirname( szExecPath ) );
-            strcat( szPluginDir, "\\gdalplugins" );
+            strcat( szPluginDir, "\\gdalplugins\\" );
             papszSearchPath = CSLAddString( papszSearchPath, szPluginDir );
         }
         else
@@ -670,5 +655,3 @@ void CPL_STDCALL GDALDestroyDriverManager( void )
     if( poDM != NULL )
         delete poDM;
 }
-
-

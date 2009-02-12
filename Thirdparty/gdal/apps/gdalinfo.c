@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo.c 15032 2008-07-25 22:12:06Z warmerdam $
+ * $Id: gdalinfo.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to list info about a file.
@@ -28,17 +28,15 @@
  ****************************************************************************/
 
 #include "gdal.h"
-#include "gdal_alg.h"
 #include "ogr_srs_api.h"
 #include "cpl_string.h"
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalinfo.c 15032 2008-07-25 22:12:06Z warmerdam $");
+CPL_CVSID("$Id: gdalinfo.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static int 
 GDALInfoReportCorner( GDALDatasetH hDataset, 
-                      OGRCoordinateTransformationH hTransform,
                       const char * corner_name,
                       double x, double y );
 
@@ -49,8 +47,8 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
 void Usage()
 
 {
-    printf( "Usage: gdalinfo [--help-general] [-mm] [-stats] [-hist] [-nogcp] [-nomd]\n"
-            "                [-noct] [-checksum] [-mdd domain]* datasetname\n" );
+    printf( "Usage: gdalinfo [--help-general] [-mm] [-stats] [-nogcp] [-nomd]\n"
+            "                [-mdd domain]* datasetname\n" );
     exit( 1 );
 }
 
@@ -69,22 +67,9 @@ int main( int argc, char ** argv )
     char		**papszMetadata;
     int                 bComputeMinMax = FALSE, bSample = FALSE;
     int                 bShowGCPs = TRUE, bShowMetadata = TRUE ;
-    int                 bStats = FALSE, bApproxStats = TRUE, iMDD;
-    int                 bShowColorTable = TRUE, bComputeChecksum = FALSE;
-    int                 bReportHistograms = FALSE;
+    int                 bStats = FALSE, iMDD;
     const char          *pszFilename = NULL;
-    char              **papszExtraMDDomains = NULL, **papszFileList;
-    const char  *pszProjection = NULL;
-    OGRCoordinateTransformationH hTransform = NULL;
-
-    /* Check that we are running against at least GDAL 1.5 */
-    /* Note to developers : if we use newer API, please change the requirement */
-    if (atoi(GDALVersionInfo("VERSION_NUM")) < 1500)
-    {
-        fprintf(stderr, "At least, GDAL >= 1.5.0 is required for this version of %s, "
-                "which was compiled against GDAL %s\n", argv[0], GDAL_RELEASE_NAME);
-        exit(1);
-    }
+    char              **papszExtraMDDomains = NULL;
 
     GDALAllRegister();
 
@@ -97,36 +82,16 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
     for( i = 1; i < argc; i++ )
     {
-        if( EQUAL(argv[i], "--utility_version") )
-        {
-            printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
-                   argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
-            return 0;
-        }
-        else if( EQUAL(argv[i], "-mm") )
+        if( EQUAL(argv[i], "-mm") )
             bComputeMinMax = TRUE;
-        else if( EQUAL(argv[i], "-hist") )
-            bReportHistograms = TRUE;
         else if( EQUAL(argv[i], "-stats") )
-        {
             bStats = TRUE;
-            bApproxStats = FALSE;
-        }
-        else if( EQUAL(argv[i], "-approx_stats") )
-        {
-            bStats = TRUE;
-            bApproxStats = TRUE;
-        }
         else if( EQUAL(argv[i], "-sample") )
             bSample = TRUE;
-        else if( EQUAL(argv[i], "-checksum") )
-            bComputeChecksum = TRUE;
         else if( EQUAL(argv[i], "-nogcp") )
             bShowGCPs = FALSE;
         else if( EQUAL(argv[i], "-nomd") )
             bShowMetadata = FALSE;
-        else if( EQUAL(argv[i], "-noct") )
-            bShowColorTable = FALSE;
         else if( EQUAL(argv[i], "-mdd") && i < argc-1 )
             papszExtraMDDomains = CSLAddString( papszExtraMDDomains,
                                                 argv[++i] );
@@ -149,8 +114,8 @@ int main( int argc, char ** argv )
     if( hDataset == NULL )
     {
         fprintf( stderr,
-                 "gdalinfo failed - unable to open '%s'.\n",
-                 pszFilename );
+                 "GDALOpen failed - %d\n%s\n",
+                 CPLGetLastErrorNo(), CPLGetLastErrorMsg() );
 
         CSLDestroy( argv );
     
@@ -170,19 +135,6 @@ int main( int argc, char ** argv )
     printf( "Driver: %s/%s\n",
             GDALGetDriverShortName( hDriver ),
             GDALGetDriverLongName( hDriver ) );
-
-    papszFileList = GDALGetFileList( hDataset );
-    if( CSLCount(papszFileList) == 0 )
-    {
-        printf( "Files: none associated\n" );
-    }
-    else
-    {
-        printf( "Files: %s\n", papszFileList[0] );
-        for( i = 1; papszFileList[i] != NULL; i++ )
-            printf( "       %s\n", papszFileList[i] );
-    }
-    CSLDestroy( papszFileList );
 
     printf( "Size is %d, %d\n",
             GDALGetRasterXSize( hDataset ), 
@@ -325,68 +277,22 @@ int main( int argc, char ** argv )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Report RPCs                                                     */
-/* -------------------------------------------------------------------- */
-    papszMetadata = GDALGetMetadata( hDataset, "RPC" );
-    if( CSLCount(papszMetadata) > 0 )
-    {
-        printf( "RPC Metadata:\n" );
-        for( i = 0; papszMetadata[i] != NULL; i++ )
-        {
-            printf( "  %s\n", papszMetadata[i] );
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Setup projected to lat/long transform if appropriate.           */
-/* -------------------------------------------------------------------- */
-    if( GDALGetGeoTransform( hDataset, adfGeoTransform ) == CE_None )
-        pszProjection = GDALGetProjectionRef(hDataset);
-
-    if( pszProjection != NULL && strlen(pszProjection) > 0 )
-    {
-        OGRSpatialReferenceH hProj, hLatLong = NULL;
-
-        hProj = OSRNewSpatialReference( pszProjection );
-        if( hProj != NULL )
-            hLatLong = OSRCloneGeogCS( hProj );
-
-        if( hLatLong != NULL )
-        {
-            CPLPushErrorHandler( CPLQuietErrorHandler );
-            hTransform = OCTNewCoordinateTransformation( hProj, hLatLong );
-            CPLPopErrorHandler();
-            
-            OSRDestroySpatialReference( hLatLong );
-        }
-
-        if( hProj != NULL )
-            OSRDestroySpatialReference( hProj );
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Report corners.                                                 */
 /* -------------------------------------------------------------------- */
     printf( "Corner Coordinates:\n" );
-    GDALInfoReportCorner( hDataset, hTransform, "Upper Left", 
+    GDALInfoReportCorner( hDataset, "Upper Left", 
                           0.0, 0.0 );
-    GDALInfoReportCorner( hDataset, hTransform, "Lower Left", 
+    GDALInfoReportCorner( hDataset, "Lower Left", 
                           0.0, GDALGetRasterYSize(hDataset));
-    GDALInfoReportCorner( hDataset, hTransform, "Upper Right", 
+    GDALInfoReportCorner( hDataset, "Upper Right", 
                           GDALGetRasterXSize(hDataset), 0.0 );
-    GDALInfoReportCorner( hDataset, hTransform, "Lower Right", 
+    GDALInfoReportCorner( hDataset, "Lower Right", 
                           GDALGetRasterXSize(hDataset), 
                           GDALGetRasterYSize(hDataset) );
-    GDALInfoReportCorner( hDataset, hTransform, "Center", 
+    GDALInfoReportCorner( hDataset, "Center", 
                           GDALGetRasterXSize(hDataset)/2.0, 
                           GDALGetRasterYSize(hDataset)/2.0 );
 
-    if( hTransform != NULL )
-    {
-        OCTDestroyCoordinateTransformation( hTransform );
-        hTransform = NULL;
-    }
-    
 /* ==================================================================== */
 /*      Loop over bands.                                                */
 /* ==================================================================== */
@@ -394,7 +300,7 @@ int main( int argc, char ** argv )
     {
         double      dfMin, dfMax, adfCMinMax[2], dfNoData;
         int         bGotMin, bGotMax, bGotNodata, bSuccess;
-        int         nBlockXSize, nBlockYSize, nMaskFlags;
+        int         nBlockXSize, nBlockYSize;
         double      dfMean, dfStdDev;
         GDALColorTableH	hTable;
         CPLErr      eErr;
@@ -442,7 +348,7 @@ int main( int argc, char ** argv )
             printf( "\n" );
         }
 
-        eErr = GDALGetRasterStatistics( hBand, bApproxStats, bStats, 
+        eErr = GDALGetRasterStatistics( hBand, FALSE, bStats, 
                                         &dfMin, &dfMax, &dfMean, &dfStdDev );
         if( eErr == CE_None )
         {
@@ -450,38 +356,10 @@ int main( int argc, char ** argv )
                     dfMin, dfMax, dfMean, dfStdDev );
         }
 
-        if( bReportHistograms )
-        {
-            int nBucketCount, *panHistogram = NULL;
-
-            eErr = GDALGetDefaultHistogram( hBand, &dfMin, &dfMax, 
-                                            &nBucketCount, &panHistogram, 
-                                            TRUE, GDALTermProgress, NULL );
-            if( eErr == CE_None )
-            {
-                int iBucket;
-
-                printf( "  %d buckets from %g to %g:\n  ",
-                        nBucketCount, dfMin, dfMax );
-                for( iBucket = 0; iBucket < nBucketCount; iBucket++ )
-                    printf( "%d ", panHistogram[iBucket] );
-                printf( "\n" );
-                CPLFree( panHistogram );
-            }
-        }
-
-        if ( bComputeChecksum)
-        {
-            printf( "  Checksum=%d\n",
-                    GDALChecksumImage(hBand, 0, 0,
-                                      GDALGetRasterXSize(hDataset),
-                                      GDALGetRasterYSize(hDataset)));
-        }
-
         dfNoData = GDALGetRasterNoDataValue( hBand, &bGotNodata );
         if( bGotNodata )
         {
-            printf( "  NoData Value=%.18g\n", dfNoData );
+            printf( "  NoData Value=%.15g\n", dfNoData );
         }
 
         if( GDALGetOverviewCount(hBand) > 0 )
@@ -494,7 +372,6 @@ int main( int argc, char ** argv )
                  iOverview++ )
             {
                 GDALRasterBandH	hOverview;
-                const char *pszResampling = NULL;
 
                 if( iOverview != 0 )
                     printf( ", " );
@@ -503,81 +380,13 @@ int main( int argc, char ** argv )
                 printf( "%dx%d", 
                         GDALGetRasterBandXSize( hOverview ),
                         GDALGetRasterBandYSize( hOverview ) );
-
-                pszResampling = 
-                    GDALGetMetadataItem( hOverview, "RESAMPLING", "" );
-
-                if( pszResampling != NULL 
-                    && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
-                    printf( "*" );
             }
             printf( "\n" );
-
-            if ( bComputeChecksum)
-            {
-                printf( "  Overviews checksum: " );
-                for( iOverview = 0; 
-                    iOverview < GDALGetOverviewCount(hBand);
-                    iOverview++ )
-                {
-                    GDALRasterBandH	hOverview;
-
-                    if( iOverview != 0 )
-                        printf( ", " );
-
-                    hOverview = GDALGetOverview( hBand, iOverview );
-                    printf( "%d",
-                            GDALChecksumImage(hOverview, 0, 0,
-                                      GDALGetRasterBandXSize(hOverview),
-                                      GDALGetRasterBandYSize(hOverview)));
-                }
-                printf( "\n" );
-            }
         }
 
         if( GDALHasArbitraryOverviews( hBand ) )
         {
             printf( "  Overviews: arbitrary\n" );
-        }
-        
-        nMaskFlags = GDALGetMaskFlags( hBand );
-        if( (nMaskFlags & (GMF_NODATA|GMF_ALL_VALID)) == 0 )
-        {
-            GDALRasterBandH hMaskBand = GDALGetMaskBand(hBand) ;
-
-            printf( "  Mask Flags: " );
-            if( nMaskFlags & GMF_PER_DATASET )
-                printf( "PER_DATASET " );
-            if( nMaskFlags & GMF_ALPHA )
-                printf( "ALPHA " );
-            if( nMaskFlags & GMF_NODATA )
-                printf( "NODATA " );
-            if( nMaskFlags & GMF_ALL_VALID )
-                printf( "ALL_VALID " );
-            printf( "\n" );
-
-            if( hMaskBand != NULL &&
-                GDALGetOverviewCount(hMaskBand) > 0 )
-            {
-                int		iOverview;
-
-                printf( "  Overviews of mask band: " );
-                for( iOverview = 0; 
-                     iOverview < GDALGetOverviewCount(hMaskBand);
-                     iOverview++ )
-                {
-                    GDALRasterBandH	hOverview;
-
-                    if( iOverview != 0 )
-                        printf( ", " );
-
-                    hOverview = GDALGetOverview( hMaskBand, iOverview );
-                    printf( "%dx%d", 
-                            GDALGetRasterBandXSize( hOverview ),
-                            GDALGetRasterBandYSize( hOverview ) );
-                }
-                printf( "\n" );
-            }
         }
 
         if( strlen(GDALGetRasterUnitType(hBand)) > 0 )
@@ -631,24 +440,21 @@ int main( int argc, char ** argv )
                         GDALGetPaletteInterpretation( hTable )), 
                     GDALGetColorEntryCount( hTable ) );
 
-            if (bShowColorTable)
+            for( i = 0; i < GDALGetColorEntryCount( hTable ); i++ )
             {
-                for( i = 0; i < GDALGetColorEntryCount( hTable ); i++ )
-                {
-                    GDALColorEntry	sEntry;
-    
-                    GDALGetColorEntryAsRGB( hTable, i, &sEntry );
-                    printf( "  %3d: %d,%d,%d,%d\n", 
-                            i, 
-                            sEntry.c1,
-                            sEntry.c2,
-                            sEntry.c3,
-                            sEntry.c4 );
-                }
+                GDALColorEntry	sEntry;
+
+                GDALGetColorEntryAsRGB( hTable, i, &sEntry );
+                printf( "  %3d: %d,%d,%d,%d\n", 
+                        i, 
+                        sEntry.c1,
+                        sEntry.c2,
+                        sEntry.c3,
+                        sEntry.c4 );
             }
         }
 
-        if( bShowMetadata && GDALGetDefaultRAT( hBand ) != NULL )
+        if( GDALGetDefaultRAT( hBand ) != NULL )
         {
             GDALRasterAttributeTableH hRAT = GDALGetDefaultRAT( hBand );
             
@@ -677,13 +483,14 @@ int main( int argc, char ** argv )
 
 static int 
 GDALInfoReportCorner( GDALDatasetH hDataset, 
-                      OGRCoordinateTransformationH hTransform,
                       const char * corner_name,
                       double x, double y )
 
 {
     double	dfGeoX, dfGeoY;
+    const char  *pszProjection;
     double	adfGeoTransform[6];
+    OGRCoordinateTransformationH hTransform = NULL;
         
     printf( "%-11s ", corner_name );
     
@@ -692,6 +499,8 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
 /* -------------------------------------------------------------------- */
     if( GDALGetGeoTransform( hDataset, adfGeoTransform ) == CE_None )
     {
+        pszProjection = GDALGetProjectionRef(hDataset);
+
         dfGeoX = adfGeoTransform[0] + adfGeoTransform[1] * x
             + adfGeoTransform[2] * y;
         dfGeoY = adfGeoTransform[3] + adfGeoTransform[4] * x
@@ -718,6 +527,30 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
     }
 
 /* -------------------------------------------------------------------- */
+/*      Setup transformation to lat/long.                               */
+/* -------------------------------------------------------------------- */
+    if( pszProjection != NULL && strlen(pszProjection) > 0 )
+    {
+        OGRSpatialReferenceH hProj, hLatLong = NULL;
+
+        hProj = OSRNewSpatialReference( pszProjection );
+        if( hProj != NULL )
+            hLatLong = OSRCloneGeogCS( hProj );
+
+        if( hLatLong != NULL )
+        {
+            CPLPushErrorHandler( CPLQuietErrorHandler );
+            hTransform = OCTNewCoordinateTransformation( hProj, hLatLong );
+            CPLPopErrorHandler();
+            
+            OSRDestroySpatialReference( hLatLong );
+        }
+
+        if( hProj != NULL )
+            OSRDestroySpatialReference( hProj );
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Transform to latlong and report.                                */
 /* -------------------------------------------------------------------- */
     if( hTransform != NULL 
@@ -728,6 +561,9 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
         printf( "%s)", GDALDecToDMS( dfGeoY, "Lat", 2 ) );
     }
 
+    if( hTransform != NULL )
+        OCTDestroyCoordinateTransformation( hTransform );
+    
     printf( "\n" );
 
     return TRUE;

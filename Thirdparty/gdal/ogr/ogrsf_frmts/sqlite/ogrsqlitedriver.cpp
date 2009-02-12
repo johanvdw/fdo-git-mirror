@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqlitedriver.cpp 14353 2008-04-21 16:40:21Z warmerdam $
+ * $Id: ogrsqlitedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsqlitedriver.cpp 14353 2008-04-21 16:40:21Z warmerdam $");
+CPL_CVSID("$Id: ogrsqlitedriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRSQLiteDriver()                            */
@@ -100,7 +100,7 @@ OGRDataSource *OGRSQLiteDriver::Open( const char * pszFilename,
 /************************************************************************/
 
 OGRDataSource *OGRSQLiteDriver::CreateDataSource( const char * pszName,
-                                                  char **papszOptions )
+                                                  char ** /* papszOptions */ )
 
 {
 /* -------------------------------------------------------------------- */
@@ -118,70 +118,19 @@ OGRDataSource *OGRSQLiteDriver::CreateDataSource( const char * pszName,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Create the database file.                                       */
+/*      Create the datasource.                                          */
 /* -------------------------------------------------------------------- */
-    sqlite3             *hDB;
-    int rc;
+    OGRSQLiteDataSource     *poDS;
 
-    hDB = NULL;
-    rc = sqlite3_open( pszName, &hDB );
-    if( rc != SQLITE_OK )
+    poDS = new OGRSQLiteDataSource();
+
+    if( !poDS->Open( pszName ) )
     {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "sqlite3_open(%s) failed: %s", 
-                  pszName, sqlite3_errmsg( hDB ) );
+        delete poDS;
         return NULL;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Create the geometry_columns metadata table.                     */
-/* -------------------------------------------------------------------- */
-    if( CSLFetchBoolean( papszOptions, "METADATA", TRUE ) )
-    {
-        CPLString osCommand;
-        char *pszErrMsg = NULL;
-
-        osCommand = 
-            "CREATE TABLE geometry_columns ("
-            "     f_table_name VARCHAR, "
-            "     f_geometry_column VARCHAR, "
-            "     geometry_type INTEGER, "
-            "     coord_dimension INTEGER, "
-            "     srid INTEGER,"
-            "     geometry_format VARCHAR )";
-        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
-        if( rc != SQLITE_OK )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Unable to create table geometry_columns: %s",
-                      pszErrMsg );
-            sqlite3_free( pszErrMsg );
-            return NULL;
-        }
-
-        osCommand = 
-            "CREATE TABLE spatial_ref_sys        ("
-            "     srid INTEGER UNIQUE,"
-            "     auth_name TEXT,"
-            "     auth_srid TEXT,"
-            "     srtext TEXT)";
-        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
-        if( rc != SQLITE_OK )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Unable to create table spatial_ref_sys: %s",
-                      pszErrMsg );
-            sqlite3_free( pszErrMsg );
-            return NULL;
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Close the DB file so we can reopen it normally.                 */
-/* -------------------------------------------------------------------- */
-    sqlite3_close( hDB );
-
-    return Open( pszName, TRUE );
+    return poDS;
 }
 
 /************************************************************************/
@@ -204,8 +153,6 @@ int OGRSQLiteDriver::TestCapability( const char * pszCap )
 void RegisterOGRSQLite()
 
 {
-    if (! GDAL_CHECK_VERSION("SQLite driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRSQLiteDriver );
 }
 

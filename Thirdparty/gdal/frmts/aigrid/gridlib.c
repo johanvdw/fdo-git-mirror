@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gridlib.c 13500 2008-01-08 22:17:42Z rouault $
+ * $Id: gridlib.c 11617 2007-06-07 18:05:35Z warmerdam $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -29,7 +29,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: gridlib.c 13500 2008-01-08 22:17:42Z rouault $");
+CPL_CVSID("$Id: gridlib.c 11617 2007-06-07 18:05:35Z warmerdam $");
 
 /************************************************************************/
 /*                    AIGProcessRaw32bitFloatBlock()                    */
@@ -446,10 +446,14 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
             
             if( nMarker + nPixels > nTotPixels )
             {
+#ifdef notdef
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Run too long in AIGProcessBlock, needed %d values, got %d.", 
                           nTotPixels - nPixels, nMarker );
                 return CE_Failure;
+#endif
+                printf( "Too much data, limit data to use\n" );
+                nPixels = nTotPixels - nMarker;
             }
         
             while( nMarker > 0 && nDataSize > 0 )
@@ -830,7 +834,6 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
     VSIFSeekL( fp, 24, SEEK_SET );
     VSIFReadL( &nValue, 1, 4, fp );
 
-    // FIXME? : risk of overflow in multiplication
     nLength = CPL_MSBWORD32(nValue) * 2;
 
 /* -------------------------------------------------------------------- */
@@ -838,14 +841,7 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 /*      into the buffer.                                                */
 /* -------------------------------------------------------------------- */
     psTInfo->nBlocks = (nLength-100) / 8;
-    panIndex = (GUInt32 *) VSIMalloc2(psTInfo->nBlocks, 8);
-    if (panIndex == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "AIGReadBlockIndex: Out of memory. Probably due to corrupted w001001x.adf file");
-        VSIFCloseL( fp );
-        return CE_Failure;
-    }
+    panIndex = (GUInt32 *) CPLMalloc(psTInfo->nBlocks * 8);
     VSIFSeekL( fp, 100, SEEK_SET );
     VSIFReadL( panIndex, 8, psTInfo->nBlocks, fp );
 
@@ -854,18 +850,8 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 /* -------------------------------------------------------------------- */
 /*	Allocate AIGInfo block info arrays.				*/
 /* -------------------------------------------------------------------- */
-    psTInfo->panBlockOffset = (GUInt32 *) VSIMalloc2(4, psTInfo->nBlocks);
-    psTInfo->panBlockSize = (int *) VSIMalloc2(4, psTInfo->nBlocks);
-    if (psTInfo->panBlockOffset == NULL || 
-        psTInfo->panBlockSize == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "AIGReadBlockIndex: Out of memory. Probably due to corrupted w001001x.adf file");
-        CPLFree( psTInfo->panBlockOffset );
-        CPLFree( psTInfo->panBlockSize );
-        CPLFree( panIndex );
-        return CE_Failure;
-    }
+    psTInfo->panBlockOffset = (GUInt32 *) CPLMalloc(4 * psTInfo->nBlocks);
+    psTInfo->panBlockSize = (int *) CPLMalloc(4 * psTInfo->nBlocks);
 
 /* -------------------------------------------------------------------- */
 /*      Populate the block information.                                 */

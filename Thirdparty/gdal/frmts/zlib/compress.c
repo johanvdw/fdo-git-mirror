@@ -1,11 +1,10 @@
 /* compress.c -- compress a memory buffer
- * Copyright (C) 1995-2003 Jean-loup Gailly.
- * For conditions of distribution and use, see copyright notice in zlib.h
+ * Copyright (C) 1995-1998 Jean-loup Gailly.
+ * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* @(#) $Id: compress.c 10656 2007-01-19 01:31:01Z mloskot $ */
+/* @(#) $Id: compress.c 1391 2000-04-27 19:32:51Z warmerda $ */
 
-#define ZLIB_INTERNAL
 #include "zlib.h"
 
 /* ===========================================================================
@@ -66,14 +65,4 @@ int ZEXPORT compress (dest, destLen, source, sourceLen)
     uLong sourceLen;
 {
     return compress2(dest, destLen, source, sourceLen, Z_DEFAULT_COMPRESSION);
-}
-
-/* ===========================================================================
-     If the default memLevel or windowBits for deflateInit() is changed, then
-   this function needs to be updated.
- */
-uLong ZEXPORT compressBound (sourceLen)
-    uLong sourceLen;
-{
-    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + 11;
 }

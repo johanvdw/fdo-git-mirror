@@ -1,26 +1,21 @@
 
 include ../../GDALmake.opt
 
-SUBDIRS-yes	:= \
-	generic avc bna csv dgn geojson gml gmt mem kml \
-	mitab ntf gpx rec s57 sdts shape tiger vrt \
-	geoconcept xplane
-
-SUBDIRS-$(HAVE_DODS)	+= dods
-SUBDIRS-$(HAVE_DWGDIRECT) += dxfdwg
-SUBDIRS-$(HAVE_FME)	+= fme
-SUBDIRS-$(HAVE_GRASS)	+= grass
-SUBDIRS-$(HAVE_IDB)	+= idb
-SUBDIRS-$(HAVE_XERCES)	+= ili
-SUBDIRS-$(HAVE_NAS)	+= nas
-SUBDIRS-$(HAVE_MYSQL)	+= mysql
-SUBDIRS-$(ODBC_SETTING)	+= odbc pgeo
+SUBDIRS-yes	:= generic shape ntf sdts tiger s57 mitab dgn \
+				gml kml avc rec mem vrt csv
 SUBDIRS-$(HAVE_OGDI)	+= ogdi
 SUBDIRS-$(HAVE_OCI)	+= oci
 SUBDIRS-$(HAVE_OGR_PG)	+= pg
+SUBDIRS-$(HAVE_MYSQL)	+= mysql
+SUBDIRS-$(HAVE_FME)	+= fme
+SUBDIRS-$(HAVE_DODS)	+= dods
+SUBDIRS-$(ODBC_SETTING)	+= odbc pgeo
 SUBDIRS-$(HAVE_SQLITE)	+= sqlite
+SUBDIRS-$(HAVE_GRASS)	+= grass
+SUBDIRS-$(HAVE_XERCES)	+= ili
+SUBDIRS-$(HAVE_DWGDIRECT) += dxfdwg
 SUBDIRS-$(HAVE_SDE)     += sde
-SUBDIRS-$(HAVE_INGRES)  += ingres
+SUBDIRS-$(HAVE_IDB)	+= idb
 
 default:	$(foreach d,$(SUBDIRS-yes),$(d)-target)
 

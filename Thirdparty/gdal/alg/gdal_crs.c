@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_crs.c 14223 2008-04-08 13:06:25Z dron $
+ * $Id: gdal_crs.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implemention of the GDALTransformer wrapper around CRS.C functions
@@ -55,7 +55,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdal_crs.c 14223 2008-04-08 13:06:25Z dron $");
+CPL_CVSID("$Id: gdal_crs.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define MAXORDER 3
 
@@ -204,23 +204,23 @@ void *GDALCreateGCPTransformer( int nGCPCount, const GDAL_GCP *pasGCPList,
                                       psInfo->adfToGeoX, psInfo->adfToGeoY,
                                       psInfo->adfFromGeoX, psInfo->adfFromGeoY,
                                       nReqOrder );
+    if (nCRSresult != 1)
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, CRS_error_message[-nCRSresult]);
+        goto CleanupAfterError;
+    }
+    
+    return psInfo;
 
+  CleanupAfterError:
     CPLFree( padfGeoX );
     CPLFree( padfGeoY );
     CPLFree( padfRasterX );
     CPLFree( padfRasterY );
     CPLFree( panStatus );
-
-    if (nCRSresult != 1)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, CRS_error_message[-nCRSresult]);
-        GDALDestroyGCPTransformer( psInfo );
-        return NULL;
-    }
-    else
-    {
-        return psInfo;
-    }
+    
+    CPLFree( psInfo );
+    return NULL;
 }
 
 /************************************************************************/
@@ -241,8 +241,6 @@ void GDALDestroyGCPTransformer( void *pTransformArg )
 
 {
     GCPTransformInfo *psInfo = (GCPTransformInfo *) pTransformArg;
-
-    VALIDATE_POINTER0( pTransformArg, "GDALDestroyGCPTransformer" );
 
     GDALDeinitGCPs( psInfo->nGCPCount, psInfo->pasGCPList );
     CPLFree( psInfo->pasGCPList );
@@ -322,8 +320,6 @@ CPLXMLNode *GDALSerializeGCPTransformer( void *pTransformArg )
 {
     CPLXMLNode *psTree;
     GCPTransformInfo *psInfo = (GCPTransformInfo *) pTransformArg;
-
-    VALIDATE_POINTER1( pTransformArg, "GDALSerializeGCPTransformer", NULL );
 
     psTree = CPLCreateXMLNode( NULL, CXT_Element, "GCPTransformer" );
 
@@ -563,6 +559,7 @@ CRS_georef (
     default:
 
       return(MPARMERR);
+      break;
     }
 
   return(MSUCCESS);

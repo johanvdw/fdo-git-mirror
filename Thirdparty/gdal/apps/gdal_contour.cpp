@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_contour.cpp 14818 2008-07-05 10:15:08Z rouault $
+ * $Id: gdal_contour.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Contour Generator
  * Purpose:  Contour Generator mainline.
@@ -30,11 +30,10 @@
 #include "gdal.h"
 #include "gdal_alg.h"
 #include "cpl_conv.h"
-#include "cpl_string.h"
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 14818 2008-07-05 10:15:08Z rouault $");
+CPL_CVSID("$Id: gdal_contour.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -47,7 +46,6 @@ static void Usage()
         "Usage: gdal_contour [-b <band>] [-a <attribute_name>] [-3d] [-inodata]\n"
         "                    [-snodata n] [-f <formatname>] [-i <interval>]\n"
         "                    [-off <offset>] [-fl <level> <level>...]\n" 
-        "                    [-nln <outlayername>]\n"
         "                    <src_filename> <dst_filename>\n" );
     exit( 1 );
 }
@@ -69,34 +67,20 @@ int main( int argc, char ** argv )
     const char *pszFormat = "ESRI Shapefile";
     double adfFixedLevels[1000];
     int    nFixedLevelCount = 0;
-    const char *pszNewLayerName = "contour";
-
-    /* Check that we are running against at least GDAL 1.4 */
-    /* Note to developers : if we use newer API, please change the requirement */
-    if (atoi(GDALVersionInfo("VERSION_NUM")) < 1400)
-    {
-        fprintf(stderr, "At least, GDAL >= 1.4.0 is required for this version of %s, "
-                "which was compiled against GDAL %s\n", argv[0], GDAL_RELEASE_NAME);
-        exit(1);
-    }
 
     GDALAllRegister();
     OGRRegisterAll();
 
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
+    if( argc < 1 )
+        exit( -argc );
 
 /* -------------------------------------------------------------------- */
 /*      Parse arguments.                                                */
 /* -------------------------------------------------------------------- */
     for( i = 1; i < argc; i++ )
     {
-        if( EQUAL(argv[i], "--utility_version") )
-        {
-            printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
-                   argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
-            return 0;
-        }
-        else if( EQUAL(argv[i],"-a") && i < argc-1 )
+        if( EQUAL(argv[i],"-a") && i < argc-1 )
         {
             pszElevAttrib = argv[++i];
         }
@@ -113,7 +97,7 @@ int main( int argc, char ** argv )
             while( i < argc-1 
                    && nFixedLevelCount 
                              < (int)(sizeof(adfFixedLevels)/sizeof(double))
-                   && (atof(argv[i+1]) != 0 || EQUAL(argv[i+1],"0")) )
+                   && atof(argv[i+1]) != 0 || EQUAL(argv[i+1],"0") )
                 adfFixedLevels[nFixedLevelCount++] = atof(argv[++i]);
         }
         else if( EQUAL(argv[i],"-b") && i < argc-1 )
@@ -132,10 +116,6 @@ int main( int argc, char ** argv )
         {
             bNoDataSet = TRUE;
             dfNoData = atof(argv[++i]);
-        }
-        else if( EQUAL(argv[i],"-nln")  && i < argc-1 )
-        {
-            pszNewLayerName = argv[++i];
         }
         else if( EQUAL(argv[i],"-inodata") )
         {
@@ -208,7 +188,7 @@ int main( int argc, char ** argv )
     if( hDS == NULL )
         exit( 1 );
 
-    hLayer = OGR_DS_CreateLayer( hDS, pszNewLayerName, hSRS, 
+    hLayer = OGR_DS_CreateLayer( hDS, "contour", hSRS, 
                                  b3D ? wkbLineString25D : wkbLineString,
                                  NULL );
     if( hLayer == NULL )
@@ -242,10 +222,6 @@ int main( int argc, char ** argv )
 
     OGR_DS_Destroy( hDS );
     GDALClose( hSrcDS );
-
-    CSLDestroy( argv );
-    GDALDestroyDriverManager();
-    OGRCleanupAll();
 
     return 0;
 }

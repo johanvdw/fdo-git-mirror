@@ -33,14 +33,6 @@
 #include <ShpImpExtendedSelect.h>
 #include <FdoCommonConnStringParser.h>
 
-#include <FdoExpressionEngine.h>
-#include <FdoExpressionEngineFunctionCollection.h>
-#include <Functions/Geometry/FdoFunctionX.h>
-#include <Functions/Geometry/FdoFunctionY.h>
-#include <Functions/Geometry/FdoFunctionZ.h>
-#include <Functions/Geometry/FdoFunctionM.h>
-
-
 #ifdef _WIN32
 
 #include <windows.h>
@@ -121,8 +113,6 @@ ShpConnection::ShpConnection (void) :
     mMutex.Enter();
     mGlobalRefCount++;
     mMutex.Leave();
-
-	InitFunctions();
 }
 
 ShpConnection::~ShpConnection (void)
@@ -553,7 +543,6 @@ FdoICommand* ShpConnection::CreateCommand (FdoInt32 commandType)
         case FdoCommandType_DestroySchema:
             ret = new ShpDestroySchemaCommand (this);
             break;
-		case FdoCommandType_ExtendedSelect:
 		case ShpCommandType_ExtendedSelect:
 			return new ShpExtendedSelect( new ShpImpExtendedSelect( this ) );
 
@@ -1297,29 +1286,4 @@ double ShpConnection::GetToleranceXY( FdoGeometricPropertyDefinition* geomProp )
 			xyTol = SPATIALCONTEXT_DEFAULT_XY_TOLERANCE_LL ;
 	}
 	return xyTol;
-}
-
-void ShpConnection::InitFunctions()
-{
-
-	FdoPtr<FdoExpressionEngineFunctionCollection> customFuncs = FdoExpressionEngineFunctionCollection::Create();
-
-	// Add function X to the list of supported function
-	FdoPtr<FdoExpressionEngineIFunction> funcX = FdoFunctionX::Create();
-	customFuncs->Add( funcX );
-
-	// Add function Y to the list of supported function
-	FdoPtr<FdoExpressionEngineIFunction> funcY = FdoFunctionY::Create();
-	customFuncs->Add( funcY );
-
-	// Add function Z to the list of supported function
-	FdoPtr<FdoExpressionEngineIFunction> funcZ = FdoFunctionZ::Create();
-	customFuncs->Add( funcZ );
-
-	// Add function M to the list of supported function
-	FdoPtr<FdoExpressionEngineIFunction> funcM = FdoFunctionM::Create();
-	customFuncs->Add( funcM );
-
-    FdoExpressionEngine::RegisterFunctions(customFuncs);
-
 }

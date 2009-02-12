@@ -13,8 +13,7 @@ OBJ	=	mitab_rawbinblock.o mitab_mapheaderblock.o \
 		mitab_tabview.o mitab_ogr_datasource.o mitab_geometry.o \
 		mitab_tabseamless.o
 
-CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(CPPFLAGS) -DOGR \
-			-DMITAB_USE_OFTDATETIME
+CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(CPPFLAGS) -DOGR
 
 default:	$(O_OBJ)
 

@@ -1,11 +1,11 @@
-###############################################################################
-#  $Id: ogr.py 11670 2007-06-19 15:44:59Z warmerdam $
+#******************************************************************************
+#  $Id: ogr.py 11100 2007-03-30 20:07:22Z hobu $
 # 
 #  Project:  OpenGIS Simple Features Reference Implementation
 #  Purpose:  OGR Python Shadow Class Implementations
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 # 
-###############################################################################
+#******************************************************************************
 #  Copyright (c) 2002, Frank Warmerdam <warmerdam@pobox.com>
 # 
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,7 +25,10 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-###############################################################################
+#******************************************************************************
+# 
+# $Log$
+
 
 import _gdal
 import gdal
@@ -351,11 +354,7 @@ See the constants at the top of ogr.py"""
 
     def GetDriver( self ):
         """Returns the driver of the datasource"""
-        x = _gdal.OGR_DS_GetDriver( self._o )
-        if x is None or x == 'NULL':
-            return None
-        else:
-            return Driver( x )
+        return Driver( _gdal.OGR_DS_GetDriver( self._o ) )
     
 #############################################################################
 # OGRLayer
@@ -814,17 +813,28 @@ class Geometry:
             self._o = _gdal.OGR_G_CreateGeometry( type )
             self.thisown = 1
         elif wkt:
-            if srs:
-                return CreateGeometryFromWkt(wkt, srs)
+            if srs is None:
+                srs = ''
             else:
-                return CreateGeometryFromWkt(wkt)
+                srs = srs._o
+            _obj = _gdal.OGR_G_CreateFromWkt(wkt, srs)
+            if _obj is not None and _obj != 'NULL':
+                self._o = _obj
+                self.thisown = 1
         elif wkb:
-            if srs:
-                return CreateGeometryFromWkb(wkb, srs)
+            if srs is None:
+                srs = ''
             else:
-                return CreateGeometryFromWkb(wkb)
+                srs = srs._o
+            _obj = _gdal.OGR_G_CreateFromWkb(wkb, srs)
+            if _obj is not None and _obj != 'NULL':
+                self._o = _obj
+                self.thisown = 1
         elif gml:
-            return CreateGeometryFromGML(gml)
+            _obj = _gdal.OGR_G_CreateFromGML(gml)
+            if _obj is not None and _obj != 'NULL':
+                self._o = _obj
+                self.thisown = 1
         else:
             raise OGRError, 'OGRGeometry may not be directly instantiated.'
 

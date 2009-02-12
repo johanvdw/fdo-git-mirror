@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iso8211.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: iso8211.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Main declarations for ISO 8211.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrutils.cpp 14816 2008-07-05 08:54:56Z rouault $
+ * $Id: ogrutils.cpp 11034 2007-03-21 04:38:04Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility functions for OGR classes, including some related to
@@ -37,7 +37,7 @@
 # include "ogrsf_frmts.h"
 #endif /* OGR_ENABLED */
 
-CPL_CVSID("$Id: ogrutils.cpp 14816 2008-07-05 08:54:56Z rouault $");
+CPL_CVSID("$Id: ogrutils.cpp 11034 2007-03-21 04:38:04Z mloskot $");
 
 /************************************************************************/
 /*                         OGRTrimExtraZeros()                          */
@@ -89,50 +89,40 @@ void OGRMakeWktCoordinate( char *pszTarget, double x, double y, double z,
                            int nDimension )
 
 {
-    const size_t bufSize = 400;
-    const size_t maxTargetSize= 75; /* Assumed max length of the target buffer. */
+    char  szX[40], szY[40], szZ[40];
 
-    char szX[bufSize];
-    char szY[bufSize];
-    char szZ[bufSize];
-
-    memset( szX, '\0', bufSize );
-    memset( szY, '\0', bufSize );
-    memset( szZ, '\0', bufSize );
+    szZ[0] = '\0';
 
     if( x == (int) x && y == (int) y && z == (int) z )
     {
-        snprintf( szX, bufSize, "%d", (int) x );
-        snprintf( szY, bufSize, " %d", (int) y );
+        sprintf( szX, "%d", (int) x );
+        sprintf( szY, " %d", (int) y );
     }
     else
     {
-        snprintf( szX, bufSize, "%.15f", x );
+        sprintf( szX, "%.15f", x );
         OGRTrimExtraZeros( szX );
-
-        snprintf( szY, bufSize, " %.15f", y );
+        sprintf( szY, " %.15f", y );
         OGRTrimExtraZeros( szY );
     }
 
     if( nDimension == 3 )
     {
         if( z == (int) z )
-        {
-            snprintf( szZ, bufSize, " %d", (int) z );
-        }
+            sprintf( szZ, " %d", (int) z );
         else
         {
-            snprintf( szZ, bufSize, " %.15f", z );
+            sprintf( szZ, " %.15f", z );
             OGRTrimExtraZeros( szZ );
         }
     }
-
-    if( strlen(szX) + strlen(szY) + strlen(szZ) > maxTargetSize )
+            
+    if( strlen(szX) + strlen(szY) + strlen(szZ) > 75 )
     {
         strcpy( szX, "0" );
-        strcpy( szY, " 0" );
+        strcpy( szY, "0" );
         if( nDimension == 3 )
-            strcpy( szZ, " 0" );
+            strcpy( szZ, "0" );
 
 #ifdef DEBUG
         CPLDebug( "OGR", 
@@ -437,30 +427,11 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
 /* ==================================================================== */
     for( iArg = 1; iArg < nArgc; iArg++ )
     {
-/* -------------------------------------------------------------------- */
-/*      --version                                                       */
-/* -------------------------------------------------------------------- */
-        if( EQUAL(papszArgv[iArg],"--version") )
-        {
-            printf( "%s\n", GDALVersionInfo( "--version" ) );
-            CSLDestroy( papszReturn );
-            return 0;
-        }
-
-/* -------------------------------------------------------------------- */
-/*      --license                                                       */
-/* -------------------------------------------------------------------- */
-        else if( EQUAL(papszArgv[iArg],"--license") )
-        {
-            printf( "%s\n", GDALVersionInfo( "LICENSE" ) );
-            CSLDestroy( papszReturn );
-            return 0;
-        }
 
 /* -------------------------------------------------------------------- */
 /*      --config                                                        */
 /* -------------------------------------------------------------------- */
-        else if( EQUAL(papszArgv[iArg],"--config") )
+        if( EQUAL(papszArgv[iArg],"--config") )
         {
             if( iArg + 2 >= nArgc )
             {
@@ -617,21 +588,11 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
 #endif /* OGR_ENABLED */
 
 /* -------------------------------------------------------------------- */
-/*      --locale                                                        */
-/* -------------------------------------------------------------------- */
-        else if( EQUAL(papszArgv[iArg],"--locale") && iArg < nArgc-1 )
-        {
-            setlocale( LC_ALL, papszArgv[++iArg] );
-        }
-
-/* -------------------------------------------------------------------- */
 /*      --help-general                                                  */
 /* -------------------------------------------------------------------- */
         else if( EQUAL(papszArgv[iArg],"--help-general") )
         {
-            printf( "Generic GDAL/OGR utility command options:\n" );
-            printf( "  --version: report version of GDAL/OGR in use.\n" );
-            printf( "  --license: report GDAL/OGR license info.\n" );
+            printf( "Generic GDAL utility command options:\n" );
 #ifdef OGR_ENABLED
             printf( "  --formats: report all configured format drivers.\n" );
 #endif /* OGR_ENABLED */
@@ -780,7 +741,7 @@ int OGRParseDate( const char *pszInput, OGRField *psField, int nOptions )
         if( psField->Date.Second > 59 )
             return FALSE;
 
-        while( (*pszInput >= '0' && *pszInput <= '9')
+        while( *pszInput >= '0' && *pszInput <= '9' 
                || *pszInput == '.' )
             pszInput++;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdodslayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrdodslayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSLayer class.
@@ -30,7 +30,7 @@
 #include "ogr_dods.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdodslayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrdodslayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRDODSLayer()                            */

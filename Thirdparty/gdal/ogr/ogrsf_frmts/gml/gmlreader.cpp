@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.cpp 15773 2008-11-20 20:17:16Z rouault $
+ * $Id: gmlreader.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader class.
@@ -186,14 +186,10 @@ int GMLReader::SetupParser()
 //    m_poSAXReader->setDoSchema(true);
 //    m_poSAXReader->setValidationSchemaFullChecking(true);
 #else
-        m_poSAXReader->setFeature( XMLUni::fgSAX2CoreValidation, false);
-
-#if XERCES_VERSION_MAJOR >= 3
-        m_poSAXReader->setFeature( XMLUni::fgXercesSchema, false);
-#else
-        m_poSAXReader->setFeature( XMLUni::fgSAX2CoreNameSpaces, false);
-#endif
-
+        m_poSAXReader->setFeature(
+            XMLString::transcode("http://xml.org/sax/features/validation"), false);
+        m_poSAXReader->setFeature(
+            XMLString::transcode("http://xml.org/sax/features/namespaces"), false);
 #endif
     }
     catch (...)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pcidsk.h 11405 2007-05-03 15:41:15Z warmerdam $
+ * $Id: gdal_pcidsk.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  PCIDSK driver declarations.
@@ -90,7 +90,6 @@ class PCIDSKDataset : public RawDataset
                 PCIDSKDataset();
                 ~PCIDSKDataset();
 
-    static int           Identify( GDALOpenInfo * );
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char * pszFilename,
                                  int nXSize, int nYSize, int nBands,

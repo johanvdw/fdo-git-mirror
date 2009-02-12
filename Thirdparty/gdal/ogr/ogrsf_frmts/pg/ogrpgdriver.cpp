@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgdriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrpgdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_pg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgdriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrpgdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRPGDriver()                            */
@@ -117,8 +117,6 @@ int OGRPGDriver::TestCapability( const char * pszCap )
 void RegisterOGRPG()
 
 {
-    if (! GDAL_CHECK_VERSION("PG driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRPGDriver );
 }
 

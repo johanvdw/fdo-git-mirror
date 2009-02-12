@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifdataset.cpp 15186 2008-08-22 21:58:17Z warmerdam $
+ * $Id: gifdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GIF Driver
  * Purpose:  Implement GDAL GIF Support using libungif code.  
@@ -30,7 +30,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gifdataset.cpp 15186 2008-08-22 21:58:17Z warmerdam $");
+CPL_CVSID("$Id: gifdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 #include "gif_lib.h"
@@ -74,7 +74,6 @@ class GIFDataset : public GDALPamDataset
 
     virtual CPLErr GetGeoTransform( double * );
     static GDALDataset *Open( GDALOpenInfo * );
-    static int          Identify( GDALOpenInfo * );
 };
 
 /************************************************************************/
@@ -330,27 +329,18 @@ CPLErr GIFDataset::GetGeoTransform( double * padfTransform )
 /*                                Open()                                */
 /************************************************************************/
 
-int GIFDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-    if( poOpenInfo->nHeaderBytes < 8 )
-        return FALSE;
-
-    if( strncmp((const char *) poOpenInfo->pabyHeader, "GIF87a",5) != 0
-        && strncmp((const char *) poOpenInfo->pabyHeader, "GIF89a",5) != 0 )
-        return FALSE;
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                                Open()                                */
-/************************************************************************/
-
 GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if( !Identify( poOpenInfo ) )
+/* -------------------------------------------------------------------- */
+/*	First we check to see if the file has the expected header	*/
+/*	bytes.								*/    
+/* -------------------------------------------------------------------- */
+    if( poOpenInfo->nHeaderBytes < 8 )
+        return NULL;
+
+    if( !EQUALN((const char *) poOpenInfo->pabyHeader, "GIF87a",5)
+        && !EQUALN((const char *) poOpenInfo->pabyHeader, "GIF89a",5) )
         return NULL;
 
     if( poOpenInfo->eAccess == GA_Update )
@@ -366,7 +356,6 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     GifFileType 	*hGifFile;
     FILE                *fp;
-    int                  nGifErr;
 
     fp = VSIFOpenL( poOpenInfo->pszFilename, "r" );
     if( fp == NULL )
@@ -384,24 +373,12 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
-    nGifErr = DGifSlurp( hGifFile );
-
-    if( nGifErr != GIF_OK )
+    if( DGifSlurp( hGifFile ) != GIF_OK )
     {
-        VSIFCloseL( fp );
-        DGifCloseFile(hGifFile);
-
-        if( nGifErr == D_GIF_ERR_DATA_TOO_BIG )
-            CPLError( CE_Failure, CPLE_OpenFailed, 
-                      "DGifSlurp() failed for %s because it was too large.\n"
-                      "Due to limitations of the GDAL GIF driver we deliberately avoid\n"
-                      "opening large GIF files (larger than 100 megapixels).",
-                      poOpenInfo->pszFilename );
-        else
-            CPLError( CE_Failure, CPLE_OpenFailed, 
-                      "DGifSlurp() failed for %s.\n"
-                      "Perhaps the gif file is corrupt?\n",
-                      poOpenInfo->pszFilename );
+        CPLError( CE_Failure, CPLE_OpenFailed, 
+                  "DGifSlurp() failed for %s.\n"
+                  "Perhaps the gif file is corrupt?\n",
+                  poOpenInfo->pszFilename );
 
         return NULL;
     }
@@ -443,9 +420,9 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Check for world file.                                           */
 /* -------------------------------------------------------------------- */
     poDS->bGeoTransformValid = 
-        GDALReadWorldFile( poOpenInfo->pszFilename, NULL, 
+        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
                            poDS->adfGeoTransform )
-        || GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
+        || GDALReadWorldFile( poOpenInfo->pszFilename, ".gfw", 
                               poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */
@@ -579,32 +556,10 @@ GIFCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      Setup parameters.                                               */
 /* -------------------------------------------------------------------- */
     if (EGifPutScreenDesc(hGifFile, nXSize, nYSize, 
-                          psGifCT->ColorCount, 255, psGifCT) == GIF_ERROR)
-    {
-        FreeMapObject(psGifCT);
-        PrintGifError();
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Error writing gif file." );
-        return NULL;
-    }
-    
-    FreeMapObject(psGifCT);
-    psGifCT = NULL;
-
-    /* Support for transparency */
-    int bNoDataValue;
-    double noDataValue = poBand->GetNoDataValue(&bNoDataValue);
-    if (bNoDataValue && noDataValue >= 0 && noDataValue <= 255)
-    {
-        unsigned char extensionData[4];
-        extensionData[0] = 1; /*  Transparent Color Flag */
-        extensionData[1] = 0;
-        extensionData[2] = 0;
-        extensionData[3] = (unsigned char)noDataValue;
-        EGifPutExtension(hGifFile, 0xf9, 4, extensionData);
-    }
-
-    if (EGifPutImageDesc(hGifFile, 0, 0, nXSize, nYSize, bInterlace, NULL) == GIF_ERROR )
+                          psGifCT->ColorCount, 0,
+			  psGifCT) == GIF_ERROR ||
+	EGifPutImageDesc(hGifFile,
+			 0, 0, nXSize, nYSize, bInterlace, NULL) == GIF_ERROR )
     {
         PrintGifError();
         CPLError( CE_Failure, CPLE_AppDefined, 
@@ -664,23 +619,6 @@ GIFCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "EGifCloseFile() failed.\n" );
-        return NULL;
-    }
-    
-    /* This is a hack to write a GIF89a instead of GIF87a */
-    /* (we have to, since we are using graphical extension block) */
-    /* EGifSpew would write GIF89a when it detects an extension block if we were using it */
-    /* As we don't, we could have used EGifSetGifVersion instead, but the version of libungif */
-    /* in GDAL has a bug : it writes on read-only memory ! */
-    /* (this is a well-known problem. Just google for "EGifSetGifVersion segfault") */
-    /* Most readers don't even care if it is GIF87a or GIF89a, but it is */
-    /* better to write the right version */
-
-    VSIFSeekL(fp, 0, SEEK_SET);
-    if (VSIFWriteL("GIF89a", 1, 6, fp) != 6)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Error writing gif file." );
         return NULL;
     }
     
@@ -766,11 +704,8 @@ void GDALRegister_GIF()
 "   <Option name='WORLDFILE' type='boolean'/>\n"
 "</CreationOptionList>\n" );
 
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-
         poDriver->pfnOpen = GIFDataset::Open;
         poDriver->pfnCreateCopy = GIFCreateCopy;
-        poDriver->pfnIdentify = GIFDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

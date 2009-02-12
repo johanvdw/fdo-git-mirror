@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocitablelayer.cpp 14864 2008-07-08 21:03:31Z mloskot $
+ * $Id: ogrocitablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCITableLayer class.  This class provides
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocitablelayer.cpp 14864 2008-07-08 21:03:31Z mloskot $");
+CPL_CVSID("$Id: ogrocitablelayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static int nDiscarded = 0;
 static int nHits = 0;
@@ -430,7 +430,7 @@ OGRFeature *OGROCITableLayer::GetFeature( long nFeatureId )
     if( poFeature != NULL && poFeature->GetFID() != nFeatureId )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OGROCITableLayer::GetFeature(%ld) ... query returned feature %ld instead!",
+                  "OGROCITableLayer::GetFeature(%d) ... query returned feature %d instead!",
                   nFeatureId, poFeature->GetFID() );
         delete poFeature;
         return NULL;
@@ -587,7 +587,7 @@ OGRErr OGROCITableLayer::SetFeature( OGRFeature *poFeature )
     if( pszFIDName == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OGROCITableLayer::SetFeature(%ld) failed because there is "
+                  "OGROCITableLayer::SetFeature(%d) failed because there is "
                   "no apparent FID column on table %s.",
                   poFeature->GetFID(), 
                   poFeatureDefn->GetName() );
@@ -598,7 +598,7 @@ OGRErr OGROCITableLayer::SetFeature( OGRFeature *poFeature )
     if( poFeature->GetFID() == OGRNullFID )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OGROCITableLayer::SetFeature(%ld) failed because the feature "
+                  "OGROCITableLayer::SetFeature(%d) failed because the feature "
                   "has no FID!", poFeature->GetFID() );
 
         return OGRERR_FAILURE;
@@ -636,7 +636,7 @@ OGRErr OGROCITableLayer::DeleteFeature( long nFID )
     if( pszFIDName == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OGROCITableLayer::DeleteFeature(%ld) failed because there is "
+                  "OGROCITableLayer::DeleteFeature(%d) failed because there is "
                   "no apparent FID column on table %s.",
                   nFID, 
                   poFeatureDefn->GetName() );
@@ -647,7 +647,7 @@ OGRErr OGROCITableLayer::DeleteFeature( long nFID )
     if( nFID == OGRNullFID )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OGROCITableLayer::DeleteFeature(%ld) failed for Null FID", 
+                  "OGROCITableLayer::DeleteFeature(%d) failed for Null FID", 
                   nFID );
 
         return OGRERR_FAILURE;
@@ -1066,106 +1066,6 @@ OGRErr OGROCITableLayer::UnboundCreateFeature( OGRFeature *poFeature )
         return OGRERR_FAILURE;
     else
         return OGRERR_NONE;
-}
-
-
-/************************************************************************/
-/*                           GetExtent()                                */
-/************************************************************************/
-
-OGRErr OGROCITableLayer::GetExtent(OGREnvelope *psExtent, int bForce)
-
-{
-    CPLAssert( NULL != psExtent );
-
-    OGRErr err = OGRERR_FAILURE;
-    
-/* -------------------------------------------------------------------- */
-/*      Split out the owner if available.                               */
-/* -------------------------------------------------------------------- */
-    const char *pszTableName = GetLayerDefn()->GetName();
-    char *pszOwner = NULL;
-
-    if( strstr(pszTableName,".") != NULL )
-    {
-        pszOwner = CPLStrdup(pszTableName);
-        pszTableName = strstr(pszTableName,".") + 1;
-
-        *(strstr(pszOwner,".")) = '\0';
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Build query command.                                        */
-/* -------------------------------------------------------------------- */
-    CPLAssert( NULL != pszGeomName );
-
-    OGROCIStringBuf oCommand;
-    oCommand.Appendf( 1000, "SELECT "
-                      "MIN(SDO_GEOM.SDO_MIN_MBR_ORDINATE(t.%s,m.DIMINFO,1)) AS MINX,"
-                      "MIN(SDO_GEOM.SDO_MIN_MBR_ORDINATE(t.%s,m.DIMINFO,2)) AS MINY,"
-                      "MAX(SDO_GEOM.SDO_MAX_MBR_ORDINATE(t.%s,m.DIMINFO,1)) AS MAXX,"
-                      "MAX(SDO_GEOM.SDO_MAX_MBR_ORDINATE(t.%s,m.DIMINFO,2)) AS MAXY "
-                      "FROM ALL_SDO_GEOM_METADATA m, ",
-                      pszGeomName, pszGeomName, pszGeomName, pszGeomName );
-
-    if( pszOwner != NULL )
-    {
-        oCommand.Appendf( 500, " %s.%s t ",
-                          pszOwner, pszTableName );
-    }
-    else
-    {
-        oCommand.Appendf( 500, " %s t ",
-                          pszTableName );
-    }
-
-    oCommand.Appendf( 500, "WHERE m.TABLE_NAME = '%s' AND m.COLUMN_NAME='%s'",
-                      pszTableName, pszGeomName );
-
-    if( pszOwner != NULL )
-    {
-        oCommand.Appendf( 500, " AND OWNER = '%s'", pszOwner );
-        CPLFree( pszOwner );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Execute query command.                                          */
-/* -------------------------------------------------------------------- */
-    OGROCISession *poSession = poDS->GetSession();
-    CPLAssert( NULL != poSession );
-
-    OGROCIStatement oGetExtent( poSession );
-    
-    if( oGetExtent.Execute( oCommand.GetString() ) == CE_None )
-    {
-        char **papszRow = oGetExtent.SimpleFetchRow();
-
-        if( papszRow != NULL
-            && papszRow[0] != NULL && papszRow[1] != NULL
-            && papszRow[2] != NULL && papszRow[3] != NULL )
-        {
-            psExtent->MinX = CPLAtof(papszRow[0]);
-            psExtent->MinY = CPLAtof(papszRow[1]);
-            psExtent->MaxX = CPLAtof(papszRow[2]);
-            psExtent->MaxY = CPLAtof(papszRow[3]);
-
-            err = OGRERR_NONE;
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Query spatial extent of layer using default,                    */
-/*      but not optimized implementation.                               */
-/* -------------------------------------------------------------------- */
-    if( err != OGRERR_NONE )
-    {
-        err = OGRLayer::GetExtent( psExtent, bForce );
-        CPLDebug( "OCI", 
-                  "Failing to query extent of %s using default GetExtent",
-                  pszTableName );
-    }
-
-    return err;
 }
 
 /************************************************************************/

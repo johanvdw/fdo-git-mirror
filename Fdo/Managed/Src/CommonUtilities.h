@@ -86,20 +86,12 @@ inline System::Byte FdoByteArrayToByteArray(const FdoByte* umBuffer, FdoInt32 le
 /// This new buffer should be released when it isn't used.
 inline FdoByteArray* ByteArrayToFdoByteArray(System::Byte mgBuffer __gc[])
 {
-    if (mgBuffer == NULL || mgBuffer->Length == 0)
-        return NULL;
 	FdoByte* umBuffer = new FdoByte[mgBuffer->Length];
 	for (FdoInt32 i = 0; i < mgBuffer->Length; i++)
 	{
 		umBuffer[i] = mgBuffer[i];
 	}
-
-    FdoByteArray* ba = FdoByteArray::Create(umBuffer, mgBuffer->Length);
-    
-    if (umBuffer) 
-        delete umBuffer;
-	
-    return ba;
+	return FdoByteArray::Create(umBuffer, mgBuffer->Length);
 }
 
 inline System::String* FdoStringArrayToStringArray(const FdoString** umArray, FdoInt32 len) []
@@ -128,10 +120,7 @@ inline FdoString** UnwrapStringArray(System::String* mgArray[])
 
 inline System::DateTime FdoDateTimeToDateTime(FdoDateTime& date)
 {
-    if ( date.hour == -1 ) 
-    	return System::DateTime(date.year, date.month, date.day);
-    else
-        return System::DateTime(date.year, date.month, date.day, date.hour, date.minute, System::Int32(date.seconds));
+	return System::DateTime(date.year, date.month, date.day, date.hour, date.minute, System::Int32(date.seconds));;
 }
 
 inline FdoDateTime SystemDateToFdoDateTime(System::DateTime date)

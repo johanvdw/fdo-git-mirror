@@ -13,10 +13,10 @@ OBJ =	ddfmodule.o ddfutils.o ddffielddefn.o ddfrecord.o ddffield.o \
 
 default:	$(ISOLIB)
 
-all:	$(ISOLIB) 8211dump$(EXE) 8211view$(EXE) mkcatalog$(EXE) docs
+all:	$(ISOLIB) 8211dump 8211view mkcatalog docs
 
 clean:
-	rm -rf *.o 8211dump$(EXE) 8211view$(EXE) $(DISTDIR) $(DISTDIR).tar.gz html/* \
+	rm -rf *.o 8211dump 8211view $(DISTDIR) $(DISTDIR).tar.gz html/* \
 		$(ISOLIB)
 
 dist-clean:	clean
@@ -26,20 +26,25 @@ $(ISOLIB):	$(OBJ)
 	$(AR) r $(ISOLIB) $?
 	$(RANLIB) $(ISOLIB)
 
-8211dump$(EXE):	8211dump.o
-	$(LD) $(LDFLAGS) 8211dump.o $(CONFIG_LIBS) -o 8211dump$(EXE)
+8211dump:	8211dump.o $(ISOLIB)
+	$(CXX) $(CXX_ODFLAGS) 8211dump.o \
+		$(ISOLIB) $(GDAL_LIB) $(LIBS) -o 8211dump
 
-8211view$(EXE):	8211view.o
-	$(LD) $(LDFLAGS) 8211view.o $(CONFIG_LIBS) -o 8211view$(EXE)
+8211view:	8211view.o $(ISOLIB)
+	$(CXX) $(CXX_ODFLAGS) 8211view.o \
+		$(ISOLIB) $(GDAL_LIB) $(LIBS) -o 8211view
 
-timetest$(EXE):	timetest.o
-	$(LD) $(LDFLAGS) timetest.o $(CONFIG_LIBS) -o timetest$(EXE)
+timetest:	timetest.o $(ISOLIB)
+	$(CXX) $(CXX_ODFLAGS) timetest.o \
+		$(ISOLIB) $(GDAL_LIB) $(LIBS) -o timetest
 
-upd_test$(EXE):	upd_test.o
-	$(LD) $(LDFLAGS) upd_test.o $(CONFIG_LIBS) -o upd_test$(EXE)
+upd_test:	upd_test.o $(ISOLIB)
+	$(CXX) $(CXX_ODFLAGS) upd_test.o \
+		$(ISOLIB) $(GDAL_LIB) $(LIBS) -o upd_test
 
-mkcatalog$(EXE):	mkcatalog.o
-	$(LD) $(LDFLAGS) mkcatalog.o $(CONFIG_LIBS) -o mkcatalog$(EXE)
+mkcatalog:	mkcatalog.o $(ISOLIB)
+	$(CXX) $(CXX_ODFLAGS) mkcatalog.o \
+		$(ISOLIB) $(GDAL_LIB) $(LIBS) -o mkcatalog
 
 docs:
 	rm -rf html

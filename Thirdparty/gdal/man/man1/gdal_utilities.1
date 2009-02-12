@@ -1,8 +1,8 @@
-.TH "gdal_utilities" 1 "4 Dec 2008" "GDAL" \" -*- nroff -*-
+.TH "gdal_utilities" 1 "28 Jun 2006" "GDAL" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
-gdal_utilities \- GDAL Utilities 
+gdal_utilities \- GDAL Utilities
 The following utility programs are distributed with GDAL.
 .PP
 .PD 0
@@ -25,29 +25,13 @@ The following utility programs are distributed with GDAL.
 .IP "\(bu" 2
 \fBgdal_merge.py\fP - Build a quick mosaic from a set of images. 
 .IP "\(bu" 2
-\fBgdal2tiles.py\fP - Create a TMS tile structure, KML and simple web viewer. 
-.IP "\(bu" 2
 \fBgdal_rasterize\fP - Rasterize vectors into raster file. 
-.IP "\(bu" 2
-\fBgdaltransform\fP - Transform coordinates. 
-.IP "\(bu" 2
-\fBnearblack\fP - Convert nearly black/white borders to exact value. 
-.IP "\(bu" 2
-\fBgdal_retile.py\fP - Retiles a set of tiles and/or build tiled pyramid levels. 
-.IP "\(bu" 2
-\fBgdal_grid\fP - Create raster from the scattered data. 
-.IP "\(bu" 2
-\fBgdal_proximity\fP - Compute a raster proximity map. 
-.IP "\(bu" 2
-\fBgdal_polygonize\fP - Generate polygons from raster. 
-.IP "\(bu" 2
-\fBgdal_sieve\fP - Raster Sieve filter. 
 .IP "\(bu" 2
 \fBgdal-config\fP - Get options required to build software using GDAL. 
 .PP
 .SH "Creating New Files"
 .PP
-Access an existing file to read it is generally quite simple. Just indicate the name of the file or dataset on the commandline. However, creating a file is more complicated. It may be necessary to indicate the the format to create, various creation options affecting how it will be created and perhaps a coordinate system to be assigned. Many of these options are handled similarly by different GDAL utilities, and are introduced here. 
+Access an existing file to read it is generally quite simple. Just indicate the name of the file or dataset on the commandline. However, creating a file is more complicated. It may be necessary to indicate the the format to create, various creation options affecting how it will be created and perhaps a coordinate system to be assigned. Many of these options are handled similarly by different GDAL utilities, and are introduced here.
 .PP
 .IP "\fB\fB-of\fP \fIformat\fP\fP" 1c
 Select the format to create the new file as. The formats are assigned short names such as GTiff (for GeoTIFF) or HFA (for Erdas Imagine). The list of all format codes can be listed with the \fB--formats\fP switch. Only formats list as '(rw)' (read-write) can be written.
@@ -76,23 +60,17 @@ These utilities allow the coordinate system (SRS = spatial reference system) to 
 .PP
 
 .IP "\(bu" 2
-\fIPROJ.4 Definitions\fP: A PROJ.4 definition string can be used as a coordinate system. For instance '+proj=utm +zone=11 +datum=WGS84'. Take care to keep the proj.4 string together as a single argument to the command (usually by double quoting). 
+\fIPROJ.4 Definitions\fP: A PROJ.4 definition string can be used as a coordinate system. For instance '+proj=utm +zone=11 +datum=WGS84'. Take care to keep the proj.4 string together as a single argument to the command (usually by double quoting).
 .PP
 .PP
 
 .IP "\(bu" 2
-\fIOpenGIS Well Known Text\fP: The Open GIS Consortium has defined a textual format for describing coordinate systems as part of the Simple Features specifications. This format is the internal working format for coordinate systems used in GDAL. The name of a file containing a WKT coordinate system definition may be used a coordinate system argument, or the entire coordinate system itself may be used as a commandline option (though escaping all the quotes in WKT is quite challenging). 
+\fIOpenGIS Well Known Text\fP: The Open GIS Consortium has defined a textual format for describing coordinate systems as part of the Simple Features specifications. This format is the internal working format for coordinate systems used in GDAL. The name of a file containing a WKT coordinate system definition may be used a coordinate system argument, or the entire coordinate system itself may be used as a commandline option (though escaping all the quotes in WKT is quite challenging).
 .PP
 .PP
 
 .IP "\(bu" 2
-\fIESRI Well Known Text\fP: ESRI uses a slight variation on OGC WKT format in their ArcGIS product (ArcGIS .prj files), and these may be used in a similar manner to WKT files, but the filename should be prefixed with \fBESRI::\fP. For example \fB'ESRI::NAD 1927 StatePlane Wyoming West FIPS 4904.prj'\fP. 
-.PP
-.PP
-
-.IP "\(bu" 2
-\fISpatial References from URLs\fP: For example http://spatialreference.org/ref/user/north-pacific-albers-conic-equal-area/. See \fCthis blog entry\fP for more reference. 
-.PP
+\fIESRI Well Known Text\fP: ESRI uses a slight variation on OGC WKT format in their ArcGIS product (ArcGIS .prj files), and these may be used in a similar manner to WKT files, but the filename should be prefixed with \fBESRI::\fP. For example \fB'ESRI::NAD 1927 StatePlane Wyoming West FIPS 4904.prj'\fP.
 .PP
 
 .PP
@@ -105,7 +83,7 @@ All GDAL command line utility programs support the following 'general' options.
 Report the version of GDAL and exit.
 .PP
 .IP "\fB\fB--formats\fP\fP" 1c
-List all raster formats supported by this GDAL build (read-only and read-write) and exit. The format support is indicated as follows: 'ro' is read-only driver; 'rw' is read or write (ie. supports CreateCopy); 'rw+' is read, write and update (ie. supports Create).
+List all raster formats supported by this GDAL build (read-only and read-write) and exit.
 .PP
 .IP "\fB\fB--format\fP \fIformat\fP\fP" 1c
 List detailed information about a single format driver. The \fIformat\fP should be the short name reported in the \fB--formats\fP list, such as GTiff.
@@ -123,5 +101,4 @@ Control what debugging messages are emitted. A value of \fION\fP will enable all
 Gives a brief usage message for the generic GDAL commandline options and exit. 
 .PP
 .PP
-.PP
- 
+

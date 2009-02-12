@@ -1,12 +1,3 @@
-/*****************************************************************************
- * $Id: SWapi.c 15522 2008-10-13 06:17:52Z dron $
- *
- * This module has a number of additions and improvements over the original
- * implementation to be suitable for usage in GDAL HDF driver.
- *
- * Andrey Kiselev <dron@ak4719.spb.edu> is responsible for all the changes.
- ****************************************************************************/
-
 /*
 Copyright (C) 1996 Hughes and Applied Research Corporation
 
@@ -79,21 +70,19 @@ June 05, 2003 Abe Taaheri / Bruce Beaumont
 #include "HdfEosDef.h"
 #include <math.h>
 
-#include "hdf4compat.h"
-
 #define SWIDOFFSET 1048576
 
 
-static int32 SWX1dcomb[512*3];
-static int32 SWXSDcomb[512*5];
-static char  SWXSDname[HDFE_NAMBUFSIZE];
-static char  SWXSDdims[HDFE_DIMBUFSIZE];
+int32 SWX1dcomb[512*3];
+int32 SWXSDcomb[512*5];
+char  SWXSDname[HDFE_NAMBUFSIZE];
+char  SWXSDdims[HDFE_DIMBUFSIZE];
 
 /* This flag was added to allow the Time field to have different Dimensions
 ** than Longitude and Latitude and still be used for subsetting
 ** 23 June,1997  DaW
 */
-static intn  timeflag = 0;
+intn  timeflag = 0;
 
 
 /* Added for routine that converts scanline to Lat/long
@@ -119,7 +108,7 @@ struct swathStructure
     int32 tilerank;
     int32 tiledims[8];
 };
-static struct swathStructure SWXSwath[NSWATH];
+struct swathStructure SWXSwath[NSWATH];
 
 
 
@@ -140,7 +129,7 @@ struct swathRegion
     intn band8flag;
     intn  scanflag;
 };
-static struct swathRegion *SWXRegion[NSWATHREGN];
+struct swathRegion *SWXRegion[NSWATHREGN];
 
 /* define a macro for the string size of the utility strings. The value
    of 80 in previous version of this code was resulting in core dump (Array 
@@ -153,20 +142,29 @@ static struct swathRegion *SWXRegion[NSWATHREGN];
 #define UTLSTR_MAX_SIZE 512
 
 /* Swath Prototypes (internal routines) */
-static intn SWchkswid(int32, char *, int32 *, int32 *, int32 *);
-static int32 SWfinfo(int32, const char *, const char *, int32 *,
-                     int32 [], int32 *, char *);
-static intn SWdefinefield(int32, char *, char *, char *, int32, int32);
-static intn SWwrrdattr(int32, char *, int32, int32, char *, VOIDP);
-static intn SW1dfldsrch(int32, int32, const char *, const char *, int32 *,
-                        int32 *, int32 *);
-static intn SWSDfldsrch(int32, int32, const char *, int32 *, int32 *, 
-                        int32 *, int32 *, int32 [], int32 *);
-static intn SWwrrdfield(int32, const char *, const char *,
-                        int32 [], int32 [], int32 [], VOIDP);
-static int32 SWinqfields(int32, char *, char *, int32 [], int32 []);
-static intn SWscan2longlat(int32, char *, VOIDP, int32 [], int32 [],
-                           int32 *, int32, int32);
+intn SWchkswid(int32, char *, int32 *, int32 *, int32 *);
+int32 SWimapinfo(int32, char *, char *, int32 []);
+int32 SWfinfo(int32, char *, char *, int32 *, int32 [], int32 *, char *);
+intn SWfldinfo(int32, char *, int32 *, int32 [], int32 *, char *);
+intn SWdefimap(int32, char *, char *, int32 []);
+intn SWdefinefield(int32, char *, char *, char *, int32, int32);
+intn SWdefgfld(int32, char *, char *, int32, int32);
+intn SWdefdfld(int32, char *, char *, int32, int32);
+intn SWwrgmeta(int32, char *, char *, int32);
+intn SWwrdmeta(int32, char *, char *, int32);
+intn SWwrrdattr(int32, char *, int32, int32, char *, VOIDP);
+intn SW1dfldsrch(int32, int32, char *, char *, int32 *, int32 *, int32 *);
+intn SWSDfldsrch(int32, int32, char *, int32 *, int32 *, 
+                 int32 *, int32 *, int32 [], int32 *);
+intn SWwrrdfield(int32, char *, char *, int32 [], int32 [], int32 [], VOIDP);
+intn SWwrfld(int32, char *, int32 [], int32 [], int32 [], VOIDP);
+intn SWrdfld(int32, char *, int32 [], int32 [], int32 [], VOIDP);
+intn SWreginfo(int32, int32, char *, int32 *, int32 *, int32 [], int32 *);
+intn SWperinfo(int32, int32, char *, int32 *, int32 *, int32 [], int32 *);
+int32 SWinqfields(int32, char *, char *, int32 [], int32 []);
+int32 SWdefvrtreg(int32, int32, char *, float64 []);
+intn SWscan2longlat(int32, char *, VOIDP, int32 [], int32 [], int32 *,
+                    int32, int32);
 
 
 /*----------------------------------------------------------------------------|
@@ -815,7 +813,7 @@ SWattach(int32 fid, char *swathname)
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
+intn
 SWchkswid(int32 swathID, char *routname,
 	  int32 * fid, int32 * sdInterfaceID, int32 * swVgrpID)
 
@@ -1483,8 +1481,8 @@ SWcompinfo(int32 swathID, char *fieldname, int32 * compcode, intn compparm[])
 |                                                                             |
 |  INPUTS:                                                                    |
 |  swathID        int32               swath structure id                      |
-|  fieldtype      const char          fieldtype (geo or data)                 |
-|  fieldname      const char          name of field                           |
+|  fieldtype      char                fieldtype (geo or data)                 |
+|  fieldname      char                name of field                           |
 |                                                                             |
 |                                                                             |
 |  OUTPUTS:                                                                   |
@@ -1504,9 +1502,9 @@ SWcompinfo(int32 swathID, char *fieldname, int32 * compcode, intn compparm[])
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static int32
-SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
-        int32 *rank, int32 dims[], int32 *numbertype, char *dimlist)
+int32
+SWfinfo(int32 swathID, char *fieldtype, char *fieldname, int32 *rank,
+	int32 dims[], int32 *numbertype, char *dimlist)
 
 {
     intn            i;		/* Loop index */
@@ -1518,7 +1516,7 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
     int32           sdInterfaceID;	/* HDF SDS interface ID */
     int32           idOffset = SWIDOFFSET;	/* Swath ID offset */
     int32           fsize;	/* field size in bytes */
-    int32           ndims = 0;	/* Number of dimensions */
+    int32           ndims;	/* Number of dimensions */
     int32           slen[8];	/* Length of each entry in parsed string */
     int32           dum;	/* Dummy variable */
     int32           vdataID;	/* 1d field vdata ID */
@@ -1589,12 +1587,34 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
 
 	/* Convert to numbertype code */
 	if (statmeta == 0)
-	    *numbertype = EHnumstr(utlstr);
+	{
+	    if (strcmp(utlstr, "DFNT_UCHAR8") == 0)
+		*numbertype = 3;
+	    else if (strcmp(utlstr, "DFNT_CHAR8") == 0)
+		*numbertype = 4;
+	    else if (strcmp(utlstr, "DFNT_FLOAT32") == 0)
+		*numbertype = 5;
+	    else if (strcmp(utlstr, "DFNT_FLOAT64") == 0)
+		*numbertype = 6;
+	    else if (strcmp(utlstr, "DFNT_INT8") == 0)
+		*numbertype = 20;
+	    else if (strcmp(utlstr, "DFNT_UINT8") == 0)
+		*numbertype = 21;
+	    else if (strcmp(utlstr, "DFNT_INT16") == 0)
+		*numbertype = 22;
+	    else if (strcmp(utlstr, "DFNT_UINT16") == 0)
+		*numbertype = 23;
+	    else if (strcmp(utlstr, "DFNT_INT32") == 0)
+		*numbertype = 24;
+	    else if (strcmp(utlstr, "DFNT_UINT32") == 0)
+		*numbertype = 25;
+	}
 	else
 	{
 	    status = -1;
-	    HEpush(DFE_GENAPP, "SWfinfo", __FILE__, __LINE__);
-	    HEreport("\"DataType\" string not found in metadata.\n");
+	    HEpush(DFE_GENAPP, "SWfieldinfo", __FILE__, __LINE__);
+	    HEreport(
+		     "\"DataType\" string not found in metadata.\n");
 	}
 
 
@@ -1615,8 +1635,9 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
 	else
 	{
 	    status = -1;
-	    HEpush(DFE_GENAPP, "SWfinfo", __FILE__, __LINE__);
-	    HEreport("\"DimList\" string not found in metadata.\n");
+	    HEpush(DFE_GENAPP, "SWfieldinfo", __FILE__, __LINE__);
+	    HEreport(
+		     "\"DimList\" string not found in metadata.\n");
 	}
 
 	/* If dimension list is desired by user then initialize length to 0 */
@@ -1668,7 +1689,7 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
 		if (dims[0] == 1)
 		{
 		    /* Get record size and read 1st record */
-		    fsize = VSsizeof(vdataID, (char *)fieldname);
+		    fsize = VSsizeof(vdataID, fieldname);
 		    buf = (uint8 *) calloc(fsize, 1);
 		    if(buf == NULL)
 		    { 
@@ -1738,7 +1759,7 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
 |                                                                             |
 |  INPUTS:                                                                    |
 |  swathID        int32               swath structure id                      |
-|  fieldname      const char          name of field                           |
+|  fieldname      char                name of field                           |
 |                                                                             |
 |                                                                             |
 |  OUTPUTS:                                                                   |
@@ -1757,7 +1778,7 @@ SWfinfo(int32 swathID, const char *fieldtype, const char *fieldname,
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 intn
-SWfieldinfo(int32 swathID, const char *fieldname, int32 * rank, int32 dims[],
+SWfieldinfo(int32 swathID, char *fieldname, int32 * rank, int32 dims[],
 	    int32 * numbertype, char *dimlist)
 
 {
@@ -1796,6 +1817,82 @@ SWfieldinfo(int32 swathID, const char *fieldname, int32 * rank, int32 dims[],
 
 
 
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWfldinfo                                                        |
+|                                                                             |
+|  DESCRIPTION: FORTRAN wrapper arount SWfieldinfo                            |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure id                      |
+|  fieldname      char                name of field                           |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|  rank           int32               rank of field (# of dims)               |
+|  dims           int32               field dimensions                        |
+|  numbertype     int32               field number type                       |
+|  fortdimlist    char                field dimension list (FORTRAN order)    |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|  Jul 96   Joel Gales    Perform swap only if SWfieldinfo succesful          |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWfldinfo(int32 swathID, char *fieldname, int32 * rank, int32 dims[],
+	  int32 * numbertype, char *fortdimlist)
+{
+    intn            j;		/* Loop Index */
+    intn            status;	/* routine return status variable */
+
+    int32           swap;	/* Temporary swap entry for dimension sizes */
+    char           *dimlist;/* Dimension list in C order */
+
+    /* Allocate space for C order dimension list */
+    /* ----------------------------------------- */
+    dimlist = (char *) calloc(UTLSTR_MAX_SIZE, sizeof(char));
+    if(dimlist == NULL)
+    { 
+	HEpush(DFE_NOSPACE,"SWfldinfo", __FILE__, __LINE__);
+	return(-1);
+    }
+
+    /* Get field info */
+    status = SWfieldinfo(swathID, fieldname, rank, dims,
+			 numbertype, dimlist);
+
+    /* If no error then reverse order of dimension sizes */
+    if (status == 0)
+    {
+	for (j = 0; j < *rank / 2; j++)
+	{
+	    swap = dims[*rank - 1 - j];
+	    dims[*rank - 1 - j] = dims[j];
+	    dims[j] = swap;
+	}
+
+	/* Reverse order of dimensions entries in dimension list */
+	EHrevflds(dimlist, fortdimlist);
+    }
+
+    free(dimlist);
+    return (status);
+
+}
 
 
 
@@ -2144,7 +2241,7 @@ SWdefcomp(int32 swathID, int32 compcode, intn compparm[])
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
+intn
 SWdefinefield(int32 swathID, char *fieldtype, char *fieldname, char *dimlist,
 	      int32 numbertype, int32 merge)
 
@@ -3014,6 +3111,262 @@ SWwritedatameta(int32 swathID, char *fieldname, char *dimlist,
 /*----------------------------------------------------------------------------|
 |  BEGIN_PROLOG                                                               |
 |                                                                             |
+|  FUNCTION: SWdefgfld                                                        |
+|                                                                             |
+|  DESCRIPTION: Defines geolocation field within swath structure (FORTRAN)    |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortdimlist    char                Dimension list (comma-separated list)   |
+|                                         FORTRAN dimesion order              |
+|  numbertype     int32               field type                              |
+|  merge          int32               merge code                              |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWdefgfld(int32 swathID, char *fieldname, char *fortdimlist,
+	  int32 numbertype, int32 merge)
+{
+    intn            status = 0;	/* routine return status variable */
+    char           *dimlist;	/* Dimension list (C order) */
+
+    /* Allocate space for C order dimension list */
+    /* ----------------------------------------- */
+    dimlist = (char *) calloc(strlen(fortdimlist) + 1, 1);
+    if(dimlist == NULL)
+    { 
+	HEpush(DFE_NOSPACE,"SWdefgfld", __FILE__, __LINE__);
+	return(-1);
+    }
+
+    /* Reverse entries in dimension list (FORTRAN -> C) */
+    /* ------------------------------------------------ */
+    status = EHrevflds(fortdimlist, dimlist);
+
+    /* Call Define Field routine */
+    /* ------------------------- */
+    status = SWdefinefield(swathID, "Geolocation Fields", fieldname,
+			   dimlist, numbertype, merge);
+
+    free(dimlist);
+    return (status);
+
+}
+
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWdefdfld                                                        |
+|                                                                             |
+|                                                                             |
+|  DESCRIPTION: Defines data field within swath structure (FORTRAN)           |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortdimlist    char                Dimension list (comma-separated list)   |
+|                                         FORTRAN dimesion order              |
+|  numbertype     int32               field type                              |
+|  merge          int32               merge code                              |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWdefdfld(int32 swathID, char *fieldname, char *fortdimlist,
+	  int32 numbertype, int32 merge)
+
+{
+    intn            status = 0;	/* routine return status variable */
+    char           *dimlist;	/* Dimension list (C order) */
+
+    /* Allocate space for C order dimension list */
+    /* ----------------------------------------- */
+    dimlist = (char *) calloc(strlen(fortdimlist) + 1, 1);
+    if(dimlist == NULL)
+    { 
+	HEpush(DFE_NOSPACE,"SWdefdfld", __FILE__, __LINE__);
+	return(-1);
+    }
+
+    /* Reverse entries in dimension list (FORTRAN -> C) */
+    /* ------------------------------------------------ */
+    status = EHrevflds(fortdimlist, dimlist);
+
+    /* Call Define Field routine */
+    /* ------------------------- */
+    status = SWdefinefield(swathID, "Data Fields", fieldname,
+			   dimlist, numbertype, merge);
+
+    free(dimlist);
+    return (status);
+}
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWwrgmeta                                                        |
+|                                                                             |
+|                                                                             |
+|  DESCRIPTION: Defines structural metadata for pre-existing geolocation      |
+|               field within swath structure (FORTRAN)                        |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortdimlist    char                Dimension list (comma-separated list)   |
+|                                         FORTRAN dimesion order              |
+|  numbertype     int32               field type                              |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWwrgmeta(int32 swathID, char *fieldname, char *fortdimlist,
+	  int32 numbertype)
+{
+    intn            status = 0;	/* routine return status variable */
+    char           *dimlist;	/* Dimension list (C order) */
+
+    /* Allocate space for C order dimension list */
+    /* ----------------------------------------- */
+    dimlist = (char *) calloc(strlen(fortdimlist) + 1, 1);
+    if(dimlist == NULL)
+    { 
+	HEpush(DFE_NOSPACE,"SWwrgmeta", __FILE__, __LINE__);
+	return(-1);
+    }
+
+    /* Reverse entries in dimension list (FORTRAN -> C) */
+    /* ------------------------------------------------ */
+    status = EHrevflds(fortdimlist, dimlist);
+
+    /* Call Write Metadata routine */
+    /* --------------------------- */
+    status = SWwritegeometa(swathID, fieldname, dimlist, numbertype);
+
+    free(dimlist);
+    return (status);
+}
+
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWwrdmeta                                                        |
+|                                                                             |
+|  DESCRIPTION: Defines structural metadata for pre-existing data             |
+|               field within swath structure (FORTRAN)                        |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortdimlist    char                Dimension list (comma-separated list)   |
+|                                         FORTRAN dimesion order              |
+|  numbertype     int32               field type                              |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWwrdmeta(int32 swathID, char *fieldname, char *fortdimlist,
+	  int32 numbertype)
+{
+    intn            status = 0;	/* routine return status variable */
+    char           *dimlist;	/* Dimension list (C order) */
+
+    /* Allocate space for C order dimension list */
+    /* ----------------------------------------- */
+    dimlist = (char *) calloc(strlen(fortdimlist) + 1, 1);
+    if(dimlist == NULL)
+    { 
+	HEpush(DFE_NOSPACE,"SWwrdmeta", __FILE__, __LINE__);
+	return(-1);
+    }
+
+    /* Reverse entries in dimension list (FORTRAN -> C) */
+    /* ------------------------------------------------ */
+    status = EHrevflds(fortdimlist, dimlist);
+
+    /* Call Write Metadata routine */
+    /* --------------------------- */
+    status = SWwritedatameta(swathID, fieldname, dimlist, numbertype);
+
+    free(dimlist);
+    return (status);
+}
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
 |  FUNCTION: SWwrrdattr                                                       |
 |                                                                             |
 |  DESCRIPTION:                                                               |
@@ -3044,7 +3397,7 @@ SWwritedatameta(int32 swathID, char *fieldname, char *dimlist,
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
+intn
 SWwrrdattr(int32 swathID, char *attrname, int32 numbertype, int32 count,
 	   char *wrcode, VOIDP datbuf)
 
@@ -3272,6 +3625,7 @@ SWinqattrs(int32 swathID, char *attrnames, int32 * strbufsize)
     int32           dum;	/* dummy variable */
     int32           nattr = 0;	/* Number of attributes */
     int32           idOffset = SWIDOFFSET;	/* Swath ID offset */
+
 
     /* Check Swath id */
     status = SWchkswid(swathID, "SWinqattrs", &fid, &dum, &dum);
@@ -3816,7 +4170,7 @@ SWinqidxmaps(int32 swathID, char *idxmaps, int32 idxsizes[])
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static int32
+int32
 SWinqfields(int32 swathID, char *fieldtype, char *fieldlist, int32 rank[],
 	    int32 numbertype[])
 
@@ -3829,6 +4183,7 @@ SWinqfields(int32 swathID, char *fieldtype, char *fieldlist, int32 rank[],
     int32           idOffset = SWIDOFFSET;	/* Swath ID offset */
     int32           nFld = 0;	/* Number of mappings */
     int32           slen[8];	/* String length array */
+    int32           ntype;	/* Data Type */
 
     char           *metabuf;	/* Pointer to structural metadata (SM) */
     char           *metaptrs[2];/* Pointers to begin and end of SM section */
@@ -3953,7 +4308,29 @@ SWinqfields(int32 swathID, char *fieldtype, char *fieldlist, int32 rank[],
 		    if (numbertype != NULL)
 		    {
 			EHgetmetavalue(metaptrs, "DataType", utlstr);
-			numbertype[nFld] = EHnumstr(utlstr);
+
+			if (strcmp(utlstr, "DFNT_UCHAR8") == 0)
+			    ntype = 3;
+			else if (strcmp(utlstr, "DFNT_CHAR8") == 0)
+			    ntype = 4;
+			else if (strcmp(utlstr, "DFNT_FLOAT32") == 0)
+			    ntype = 5;
+			else if (strcmp(utlstr, "DFNT_FLOAT64") == 0)
+			    ntype = 6;
+			else if (strcmp(utlstr, "DFNT_INT8") == 0)
+			    ntype = 20;
+			else if (strcmp(utlstr, "DFNT_UINT8") == 0)
+			    ntype = 21;
+			else if (strcmp(utlstr, "DFNT_INT16") == 0)
+			    ntype = 22;
+			else if (strcmp(utlstr, "DFNT_UINT16") == 0)
+			    ntype = 23;
+			else if (strcmp(utlstr, "DFNT_INT32") == 0)
+			    ntype = 24;
+			else if (strcmp(utlstr, "DFNT_UINT32") == 0)
+			    ntype = 25;
+
+			numbertype[nFld] = ntype;
 		    }
 		    /*
 		     * Get Rank (if desired) by counting # of dimensions in
@@ -3989,6 +4366,11 @@ SWinqfields(int32 swathID, char *fieldtype, char *fieldlist, int32 rank[],
 
     return (nFld);
 }
+
+
+
+
+
 
 
 
@@ -4130,22 +4512,22 @@ int32
 SWnentries(int32 swathID, int32 entrycode, int32 * strbufsize)
 
 {
-    intn            status;	    /* routine return status variable */
-    intn            i;		    /* Loop index */
+    intn            status;	/* routine return status variable */
+    intn            i;		/* Loop index */
 
-    int32           fid;	    /* HDF-EOS file ID */
-    int32           sdInterfaceID;  /* HDF SDS interface ID */
-    int32           swVgrpID;	    /* Swath root Vgroup ID */
+    int32           fid;	/* HDF-EOS file ID */
+    int32           sdInterfaceID;	/* HDF SDS interface ID */
+    int32           swVgrpID;	/* Swath root Vgroup ID */
     int32           idOffset = SWIDOFFSET;	/* Swath ID offset */
-    int32           nEntries = 0;   /* Number of entries */
-    int32           metaflag;	    /* Old (0), New (1) metadata flag) */
-    int32           nVal;	    /* Number of strings to search for */
+    int32           nEntries = 0;	/* Number of entries */
+    int32           metaflag;	/* Old (0), New (1) metadata flag) */
+    int32           nVal;	/* Number of strings to search for */
 
-    char           *metabuf = NULL; /* Pointer to structural metadata (SM) */
-    char           *metaptrs[2];    /* Pointers to begin and end of SM section */
-    char            swathname[80];  /* Swath Name */
-    char           *utlstr;	    /* Utility string */
-    char            valName[2][32]; /* Strings to search for */
+    char           *metabuf;	/* Pointer to structural metadata (SM) */
+    char           *metaptrs[2];/* Pointers to begin and end of SM section */
+    char            swathname[80];	/* Swath Name */
+    char           *utlstr;	/* Utility string */
+    char            valName[2][32];	/* Strings to search for */
 
     /* Allocate space for utility string */
     /* --------------------------------- */
@@ -4257,50 +4639,47 @@ SWnentries(int32 swathID, int32 entrycode, int32 * strbufsize)
 	 * Check for presence of 'GROUP="' string If found then old metadata,
 	 * search on OBJECT string
 	 */
-        if (metabuf)
-        {
-            metaflag = (strstr(metabuf, "GROUP=\"") == NULL) ? 1 : 0;
-            if (metaflag == 0)
-            {
-                nVal = 1;
-                strcpy(&valName[0][0], "\t\tOBJECT");
-            }
+	metaflag = (strstr(metabuf, "GROUP=\"") == NULL) ? 1 : 0;
+	if (metaflag == 0)
+	{
+	    nVal = 1;
+	    strcpy(&valName[0][0], "\t\tOBJECT");
+	}
 
 
-            /* Begin loop through entries in metadata */
-            /* -------------------------------------- */
-            while (1)
-            {
-                /* Search for first string */
-                strcpy(utlstr, &valName[0][0]);
-                strcat(utlstr, "=");
-                metaptrs[0] = strstr(metaptrs[0], utlstr);
+	/* Begin loop through entries in metadata */
+	/* -------------------------------------- */
+	while (1)
+	{
+	    /* Search for first string */
+	    strcpy(utlstr, &valName[0][0]);
+	    strcat(utlstr, "=");
+	    metaptrs[0] = strstr(metaptrs[0], utlstr);
 
-                /* If found within relevant metadata section ... */
-                if (metaptrs[0] < metaptrs[1] && metaptrs[0] != NULL)
-                {
-                    for (i = 0; i < nVal; i++)
-                    {
-                        /*
-                         * Get all string values Don't count quotes
-                         */
-                        EHgetmetavalue(metaptrs, &valName[i][0], utlstr);
-                        *strbufsize += strlen(utlstr) - 2;
-                    }
-                    /* Increment number of entries */
-                    nEntries++;
+	    /* If found within relevant metadata section ... */
+	    if (metaptrs[0] < metaptrs[1] && metaptrs[0] != NULL)
+	    {
+		for (i = 0; i < nVal; i++)
+		{
+		    /*
+		     * Get all string values Don't count quotes
+		     */
+		    EHgetmetavalue(metaptrs, &valName[i][0], utlstr);
+		    *strbufsize += strlen(utlstr) - 2;
+		}
+		/* Increment number of entries */
+		nEntries++;
 
-                    /* Go to end of OBJECT */
-                    metaptrs[0] = strstr(metaptrs[0], "END_OBJECT");
-                }
-                else
-                    /* No more entries found */
-                {
-                    break;
-                }
-            }
-            free(metabuf);
-        }
+		/* Go to end of OBJECT */
+		metaptrs[0] = strstr(metaptrs[0], "END_OBJECT");
+	    }
+	    else
+		/* No more entries found */
+	    {
+		break;
+	    }
+	}
+	free(metabuf);
 
 
 	/* Count comma separators & slashes (if mappings) */
@@ -4316,7 +4695,9 @@ SWnentries(int32 swathID, int32 entrycode, int32 * strbufsize)
     /* Set nEntries to -1 if error status exists */
     /* ----------------------------------------- */
     if (status == -1)
+    {
 	nEntries = -1;
+    }
 
     free(utlstr);
 
@@ -4384,8 +4765,8 @@ SWinqswath(char *filename, char *swathlist, int32 * strbufsize)
 |  INPUTS:                                                                    |
 |  fid            int32               HDF-EOS file ID                         |
 |  swathID        int32               swath structure ID                      |
-|  fieldname      const char          field name                              |
-|  access         const char          Access code (w/r)                       |
+|  fieldname      char                field name                              |
+|  access         char                Access code (w/r)                       |
 |                                                                             |
 |                                                                             |
 |  OUTPUTS:                                                                   |
@@ -4402,8 +4783,8 @@ SWinqswath(char *filename, char *swathlist, int32 * strbufsize)
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
-SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *access,
+intn
+SW1dfldsrch(int32 fid, int32 swathID, char *fieldname, char *access,
 	    int32 * vgidout, int32 * vdataIDout, int32 * fldtype)
 
 {
@@ -4471,7 +4852,8 @@ SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *access,
 |  INPUTS:                                                                    |
 |  swathID        int32               swath structure ID                      |
 |  sdInterfaceID  int32               SD interface ID                         |
-|  fieldname      const char          field name                              |
+|  fieldname      char                field name                              |
+|  access         char                Access code (w/r)                       |
 |                                                                             |
 |                                                                             |
 |  OUTPUTS:                                                                   |
@@ -4492,10 +4874,10 @@ SW1dfldsrch(int32 fid, int32 swathID, const char *fieldname, const char *access,
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
-SWSDfldsrch(int32 swathID, int32 sdInterfaceID, const char *fieldname,
-            int32 * sdid, int32 * rankSDS, int32 * rankFld, int32 * offset,
-            int32 dims[], int32 * solo)
+intn
+SWSDfldsrch(int32 swathID, int32 sdInterfaceID, char *fieldname, int32 * sdid,
+	    int32 * rankSDS, int32 * rankFld, int32 * offset, int32 dims[],
+	    int32 * solo)
 {
     intn            i;		/* Loop index */
     intn            status = -1;/* routine return status variable */
@@ -4694,8 +5076,8 @@ SWSDfldsrch(int32 swathID, int32 sdInterfaceID, const char *fieldname,
 |                                                                             |
 |  INPUTS:                                                                    |
 |  swathID        int32               swath structure ID                      |
-|  fieldname      const char          fieldname                               |
-|  code           const char          Write/Read code (w/r)                   |
+|  fieldname      char                fieldname                               |
+|  code           char                Write/Read code (w/r)                   |
 |  start          int32               start array                             |
 |  stride         int32               stride array                            |
 |  edge           int32               edge array                              |
@@ -4715,8 +5097,8 @@ SWSDfldsrch(int32 swathID, int32 sdInterfaceID, const char *fieldname,
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
-SWwrrdfield(int32 swathID, const char *fieldname, const char *code,
+intn
+SWwrrdfield(int32 swathID, char *fieldname, char *code,
 	    int32 start[], int32 stride[], int32 edge[], VOIDP datbuf)
 
 {
@@ -4977,7 +5359,7 @@ SWwrrdfield(int32 swathID, const char *fieldname, const char *code,
 		{
 		    /* Get size of field and setup fill buffer */
 		    /* --------------------------------------- */
-		    fldsize = VSsizeof(vdataID, (char *)fieldname);
+		    fldsize = VSsizeof(vdataID, fieldname);
 		    fillbuf = (uint8 *) calloc(fldsize, 1);
 		    if(fillbuf == NULL)
 		    { 
@@ -5092,7 +5474,7 @@ SWwrrdfield(int32 swathID, const char *fieldname, const char *code,
 		    /* Read Section */
 		    /* ------------ */
 		    status = VSsetfields(vdataID, fieldname);
-		    fldsize = VSsizeof(vdataID, (char *)fieldname);
+		    fldsize = VSsizeof(vdataID, fieldname);
 		    buf = (uint8 *) calloc(fldsize, count[0] * incr[0]);
 		    if(buf == NULL)
 		    { 
@@ -5200,7 +5582,7 @@ SWwritefield(int32 swathID, char *fieldname,
 |                                                                             |
 |  INPUTS:                                                                    |
 |  swathID        int32               swath structure ID                      |
-|  fieldname      const char          fieldname                               |
+|  fieldname      char                fieldname                               |
 |  start          int32               start array                             |
 |  stride         int32               stride array                            |
 |  edge           int32               edge array                              |
@@ -5220,7 +5602,7 @@ SWwritefield(int32 swathID, char *fieldname,
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
 intn
-SWreadfield(int32 swathID, const char *fieldname,
+SWreadfield(int32 swathID, char *fieldname,
 	    int32 start[], int32 stride[], int32 edge[], VOIDP buffer)
 
 {
@@ -5232,6 +5614,206 @@ SWreadfield(int32 swathID, const char *fieldname,
 }
 
 
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWwrfld                                                          |
+|                                                                             |
+|  DESCRIPTION: Writes data to field (FORTRAN wrapper around SWwritefield)    |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortstart      int32               start array                             |
+|  fortstride     int32               stride array                            |
+|  fortedge       int32               edge array                              |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|  data           void                data buffer for write                   |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWwrfld(int32 swathID, char *fieldname,
+	int32 fortstart[], int32 fortstride[], int32 fortedge[], VOIDP data)
+
+{
+    intn            i;		/* Loop index */
+    intn            status = 0;	/* routine return status variable */
+
+    int32           rank;	/* Field rank */
+    int32           ntype;	/* Field numbertype */
+    int32           dims[8];	/* Field dimensions */
+    int32          *start;	/* Pointer to start array (C order) */
+    int32          *stride;	/* Pointer to stride array (C order) */
+    int32          *edge;	/* Pointer to edge array (C order) */
+
+
+    status = SWfieldinfo(swathID, fieldname, &rank, dims, &ntype, NULL);
+
+    if (status != -1)
+    {
+	start = (int32 *) malloc(4 * rank);
+	if(start == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"SWwrfld", __FILE__, __LINE__);
+	    return(-1);
+	}
+	stride = (int32 *) malloc(4 * rank);
+	if(stride == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"SWwrfld", __FILE__, __LINE__);
+	    free(start);
+	    return(-1);
+	}
+	edge = (int32 *) malloc(4 * rank);
+	if(edge == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"SWwrfld", __FILE__, __LINE__);
+	    free(start);
+	    free(stride);
+	    return(-1);
+	}
+
+	/* Reverse order of dimensions (FORTRAN -> C) */
+	for (i = 0; i < rank; i++)
+	{
+	    start[i] = fortstart[rank - 1 - i];
+	    stride[i] = fortstride[rank - 1 - i];
+	    edge[i] = fortedge[rank - 1 - i];
+	}
+
+	status = SWwrrdfield(swathID, fieldname, "w", start, stride, edge,
+			     data);
+
+	free(start);
+	free(stride);
+	free(edge);
+    }
+    else
+    {
+	HEpush(DFE_GENAPP, "SWwrfld", __FILE__, __LINE__);
+	HEreport("Fieldname \"%s\" does not exist.\n", fieldname);
+    }
+
+    return (status);
+}
+
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWrdfld                                                          |
+|                                                                             |
+|  DESCRIPTION: Reads data from field (FORTRAN wrapper around SWreadfield)    |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               swath structure ID                      |
+|  fieldname      char                fieldname                               |
+|  fortstart      int32               start array                             |
+|  fortstride     int32               stride array                            |
+|  fortedge       int32               edge array                              |
+|  buffer         void                data buffer for read                    |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|     None                                                                    |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWrdfld(int32 swathID, char *fieldname, int32 fortstart[],
+	int32 fortstride[], int32 fortedge[], VOIDP buffer)
+
+{
+    intn            i;		/* Loop index */
+    intn            status = 0;	/* routine return status variable */
+
+    int32           rank;	/* Field rank */
+    int32           ntype;	/* Field numbertype */
+    int32           dims[8];	/* Field dimensions */
+    int32          *start;	/* Pointer to start array (C order) */
+    int32          *stride;	/* Pointer to stride array (C order) */
+    int32          *edge;	/* Pointer to edge array (C order) */
+
+
+    status = SWfieldinfo(swathID, fieldname, &rank, dims, &ntype, NULL);
+
+    if (status != -1)
+    {
+	start = (int32 *) malloc(4 * rank);
+	if(start == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"GDrdfld", __FILE__, __LINE__);
+	    return(-1);
+	}
+	stride = (int32 *) malloc(4 * rank);
+	if(stride == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"GDrdfld", __FILE__, __LINE__);
+	    free(start);
+	    return(-1);
+	}
+	edge = (int32 *) malloc(4 * rank);
+	if(edge == NULL)
+	{ 
+	    HEpush(DFE_NOSPACE,"GDrdfld", __FILE__, __LINE__);
+	    free(start);
+	    free(stride);
+	    return(-1);
+	}
+
+	/* Reverse order of dimensions (FORTRAN -> C) */
+	for (i = 0; i < rank; i++)
+	{
+	    start[i] = fortstart[rank - 1 - i];
+	    stride[i] = fortstride[rank - 1 - i];
+	    edge[i] = fortedge[rank - 1 - i];
+	}
+
+	status = SWwrrdfield(swathID, fieldname, "r", start, stride, edge,
+			     buffer);
+
+	free(start);
+	free(stride);
+	free(edge);
+    }
+    else
+    {
+	HEpush(DFE_GENAPP, "SWrdfld", __FILE__, __LINE__);
+	HEreport("Fieldname \"%s\" does not exist.\n", fieldname);
+    }
+    return (status);
+}
 
 
 /*----------------------------------------------------------------------------|
@@ -6513,7 +7095,7 @@ SWregionindex(int32 swathID, float64 cornerlon[], float64 cornerlat[],
 |                                                                             |
 |  Return Value    Type     Units     Description                             |
 |  ============   ======  =========   =====================================   |
-|  periodID       int32               (Period ID) or (-1) if failed           |
+|  periodID       int32               Period ID                               |
 |                                                                             |
 |  INPUTS:                                                                    |
 |  swathID        int32               Swath structure ID                      |
@@ -6540,30 +7122,31 @@ SWdeftimeperiod(int32 swathID, float64 starttime, float64 stoptime,
 		int32 mode)
 {
 
-    intn            i;		    /* Loop index */
-    intn            j;		    /* Loop index */
-    intn            k;		    /* Loop index */
-    intn            status;	    /* routine return status variable */
-    intn            statTime;	    /* Status from SWfieldinfo for time */
+    intn            i;		/* Loop index */
+    intn            j;		/* Loop index */
+    intn            k;		/* Loop index */
+    intn            status;	/* routine return status variable */
+    intn            statTime;	/* Status from SWfieldinfo for time */
 
-    uint8           found = 0;	    /* Found flag */
+    uint8           found = 0;	/* Found flag */
 
-    int32           fid;	    /* HDF-EOS file ID */
-    int32           sdInterfaceID;  /* HDF SDS interface ID */
-    int32           swVgrpID;	    /* Swath Vgroup ID */
-    int32           rank;	    /* Rank of geolocation fields */
-    int32           nt;		    /* Number type of geolocation fields */
-    int32           dims[8];	    /* Dimensions of geolocation fields */
-    int32           start[2];	    /* Start array (read) */
+    int32           fid;	/* HDF-EOS file ID */
+    int32           sdInterfaceID;	/* HDF SDS interface ID */
+    int32           swVgrpID;	/* Swath Vgroup ID */
+    int32           rank;	/* Rank of geolocation fields */
+    int32           nt;		/* Number type of geolocation fields */
+    int32           dims[8];	/* Dimensions of geolocation fields */
+    int32           start[2];	/* Start array (read) */
     int32           stride[2] = {1, 1};	/* Stride array (read) */
-    int32           edge[2];	    /* Edge array (read) */
-    int32           periodID = -1;  /* Period ID (return) */
-    int32           dum;	    /* Dummy (loop) variable */
+    int32           edge[2];	/* Edge array (read) */
+    int32           periodID = -1;	/* Period ID (return) */
+    int32           dum;	/* Dummy (loop) variable */
 
-    float64         time64Test;	    /* Time test value */
-    float64        *time64 = NULL;  /* Time data array */
+    float64         time64Test;	/* Time test value */
+    float64        *time64;	/* Time data array */
 
-    char            dimlist[256];   /* Dimension list (geolocation fields) */
+    char            dimlist[256];	/* Dimension list (geolocation
+					 * fields) */
 
     /* Check for valid swath ID */
     /* ------------------------ */
@@ -6651,141 +7234,140 @@ SWdeftimeperiod(int32 swathID, float64 starttime, float64 stoptime,
 
 	    }
 
-            if (time64)
-            {
-                /* For each track (from top) ... */
-                /* ----------------------------- */
-                for (i = 0; i < edge[0]; i++)
-                {
-                    /* For each value from Cross Track ... */
-                    /* ----------------------------------- */
-                    for (j = 0; j < edge[1]; j++)
-                    {
-
-                        /* Get time test value */
-                        /* ------------------- */
-                        time64Test = time64[i * edge[1] + j];
 
 
-                        /* If within time period ... */
-                        /* ------------------------- */
-                        if (time64Test >= starttime &&
-                            time64Test <= stoptime)
-                        {
-                            /* Set found flag */
-                            /* -------------- */
-                            found = 1;
+	    /* For each track (from top) ... */
+	    /* ----------------------------- */
+	    for (i = 0; i < edge[0]; i++)
+	    {
+		/* For each value from Cross Track ... */
+		/* ----------------------------------- */
+		for (j = 0; j < edge[1]; j++)
+		{
+
+		    /* Get time test value */
+		    /* ------------------- */
+		    time64Test = time64[i * edge[1] + j];
 
 
-                            /* For all entries in SWXRegion array ... */
-                            /* -------------------------------------- */
-                            for (k = 0; k < NSWATHREGN; k++)
-                            {
-                                /* If empty region ... */
-                                /* ------------------- */
-                                if (SWXRegion[k] == 0)
-                                {
-                                    /* Allocate space for region entry */
-                                    /* ------------------------------- */
-                                    SWXRegion[k] = (struct swathRegion *)
-                                        calloc(1, sizeof(struct swathRegion));
-                                    if(SWXRegion[k] == NULL)
-                                    { 
-                                        HEpush(DFE_NOSPACE,"SWdeftimeperiod", __FILE__, __LINE__);
-                                        return(-1);
-                                    }
-
-                                    /* Store file and swath ID */
-                                    /* ----------------------- */
-                                    SWXRegion[k]->fid = fid;
-                                    SWXRegion[k]->swathID = swathID;
+		    /* If within time period ... */
+		    /* ------------------------- */
+		    if (time64Test >= starttime &&
+			time64Test <= stoptime)
+		    {
+			/* Set found flag */
+			/* -------------- */
+			found = 1;
 
 
-                                    /* Set number of isolated regions to 1 */
-                                    /* ----------------------------------- */
-                                    SWXRegion[k]->nRegions = 1;
+			/* For all entries in SWXRegion array ... */
+			/* -------------------------------------- */
+			for (k = 0; k < NSWATHREGN; k++)
+			{
+			    /* If empty region ... */
+			    /* ------------------- */
+			    if (SWXRegion[k] == 0)
+			    {
+				/* Allocate space for region entry */
+				/* ------------------------------- */
+				SWXRegion[k] = (struct swathRegion *)
+				    calloc(1, sizeof(struct swathRegion));
+				if(SWXRegion[k] == NULL)
+				{ 
+				    HEpush(DFE_NOSPACE,"SWdeftimeperiod", __FILE__, __LINE__);
+				    return(-1);
+				}
+
+				/* Store file and swath ID */
+				/* ----------------------- */
+				SWXRegion[k]->fid = fid;
+				SWXRegion[k]->swathID = swathID;
 
 
-                                    /* Set start of region to first track found */
-                                    /* ---------------------------------------- */
-                                    SWXRegion[k]->StartRegion[0] = i;
+				/* Set number of isolated regions to 1 */
+				/* ----------------------------------- */
+				SWXRegion[k]->nRegions = 1;
 
 
-                                    /* Set Start & Stop Vertical arrays to -1 */
-                                    /* -------------------------------------- */
-                                    for (dum = 0; dum < 8; dum++)
-                                    {
-                                        SWXRegion[k]->StartVertical[dum] = -1;
-                                        SWXRegion[k]->StopVertical[dum] = -1;
-                                        SWXRegion[k]->StartScan[dum] = -1;
-                                        SWXRegion[k]->StopScan[dum] = -1;
-                                    }
+				/* Set start of region to first track found */
+				/* ---------------------------------------- */
+				SWXRegion[k]->StartRegion[0] = i;
 
 
-                                    /* Set period ID */
-                                    /* ------------- */
-                                    periodID = k;
-
-                                    break;	/* Break from "k" loop */
-                                }
-                            }
-                        }
-                        if (found == 1)
-                        {
-                            break;	/* Break from "j" loop */
-                        }
-                    }
-                    if (found == 1)
-                    {
-                        break;	/* Break from "i" loop */
-                    }
-                }
+				/* Set Start & Stop Vertical arrays to -1 */
+				/* -------------------------------------- */
+				for (dum = 0; dum < 8; dum++)
+				{
+				    SWXRegion[k]->StartVertical[dum] = -1;
+				    SWXRegion[k]->StopVertical[dum] = -1;
+				    SWXRegion[k]->StartScan[dum] = -1;
+				    SWXRegion[k]->StopScan[dum] = -1;
+				}
 
 
+				/* Set period ID */
+				/* ------------- */
+				periodID = k;
 
-                /* Clear found flag */
-                /* ---------------- */
-                found = 0;
+				break;	/* Break from "k" loop */
+			    }
+			}
+		    }
+		    if (found == 1)
+		    {
+			break;	/* Break from "j" loop */
+		    }
+		}
+		if (found == 1)
+		{
+		    break;	/* Break from "i" loop */
+		}
+	    }
 
 
-                /* For each track (from bottom) ... */
-                /* -------------------------------- */
-                for (i = edge[0] - 1; i >= 0; i--)
-                {
-                    /* For each value from Cross Track ... */
-                    /* ----------------------------------- */
-                    for (j = 0; j < edge[1]; j++)
-                    {
 
-                        /* Get time test value */
-                        /* ------------------- */
-                        time64Test = time64[i * edge[1] + j];
+	    /* Clear found flag */
+	    /* ---------------- */
+	    found = 0;
 
 
-                        /* If within time period ... */
-                        /* ------------------------- */
-                        if (time64Test >= starttime &&
-                            time64Test <= stoptime)
-                        {
-                            /* Set found flag */
-                            /* -------------- */
-                            found = 1;
+	    /* For each track (from bottom) ... */
+	    /* -------------------------------- */
+	    for (i = edge[0] - 1; i >= 0; i--)
+	    {
+		/* For each value from Cross Track ... */
+		/* ----------------------------------- */
+		for (j = 0; j < edge[1]; j++)
+		{
 
-                            /* Set start of region to first track found */
-                            /* ---------------------------------------- */
-                            SWXRegion[k]->StopRegion[0] = i;
+		    /* Get time test value */
+		    /* ------------------- */
+		    time64Test = time64[i * edge[1] + j];
 
-                            break;	/* Break from "j" loop */
-                        }
-                    }
-                    if (found == 1)
-                    {
-                        break;	/* Break from "i" loop */
-                    }
-                }
 
-                free(time64);
-            }
+		    /* If within time period ... */
+		    /* ------------------------- */
+		    if (time64Test >= starttime &&
+			time64Test <= stoptime)
+		    {
+			/* Set found flag */
+			/* -------------- */
+			found = 1;
+
+			/* Set start of region to first track found */
+			/* ---------------------------------------- */
+			SWXRegion[k]->StopRegion[0] = i;
+
+			break;	/* Break from "j" loop */
+		    }
+		}
+		if (found == 1)
+		{
+		    break;	/* Break from "i" loop */
+		}
+	    }
+
+	    free(time64);
 	}
     }
 
@@ -7648,7 +8230,7 @@ SWextractregion(int32 swathID, int32 regionID, char *fieldname,
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
-static intn
+intn
 SWscan2longlat(int32 swathID, char *fieldname, VOIDP buffer, int32 start[], 
 int32 edge[], int32 *idxmap, int32 startscanline, int32 stopscanline)
 {
@@ -8186,7 +8768,7 @@ SWregioninfo(int32 swathID, int32 regionID, char *fieldname,
     char            dgeodim[256];/* Data Subsetting field dimension list */
     char            utlbuf[256];/* Utility buffer */
     char           *ptr[64];	/* String pointer array */
-    static const char errMesg[] = "Vertical Dimension Not Found: \"%s\".\n";
+    char           *errMesg = "Vertical Dimension Not Found: \"%s\".\n";
 
 
 
@@ -8757,6 +9339,70 @@ SWregioninfo(int32 swathID, int32 regionID, char *fieldname,
 /*----------------------------------------------------------------------------|
 |  BEGIN_PROLOG                                                               |
 |                                                                             |
+|  FUNCTION: SWreginfo                                                        |
+|                                                                             |
+|  DESCRIPTION: FORTRAN wrapper around SWregioninfo                           |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               Swath structure ID                      |
+|  regionID       int32               Region ID                               |
+|  fieldname      char                Fieldname                               |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|  ntype          int32               field number type                       |
+|  rank           int32               field rank                              |
+|  dims           int32               dimensions of field region              |
+|                                     (FORTRAN order)                         |
+|  size           int32               size in bytes of field region           |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWreginfo(int32 swathID, int32 regionID, char *fieldname,
+	  int32 * ntype, int32 * rank, int32 dims[], int32 * size)
+{
+    intn            j;		/* Loop index */
+    intn            status;	/* routine return status variable */
+
+    int32           swap;	/* Temporary swap variable */
+
+
+    /* Call SWregioninfo */
+    /* ----------------- */
+    status = SWregioninfo(swathID, regionID, fieldname,
+			  ntype, rank, dims, size);
+
+
+    /* Change dimensions to FORTRAN order */
+    /* ---------------------------------- */
+    for (j = 0; j < *rank / 2; j++)
+    {
+	swap = dims[*rank - 1 - j];
+	dims[*rank - 1 - j] = dims[j];
+	dims[j] = swap;
+    }
+    return (status);
+}
+
+
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
 |  FUNCTION: SWperiodinfo                                                     |
 |                                                                             |
 |  DESCRIPTION: Returns size in bytes of region                               |
@@ -8806,6 +9452,75 @@ SWperiodinfo(int32 swathID, int32 periodID, char *fieldname,
 
 
 
+
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
+|  FUNCTION: SWperinfo                                                        |
+|                                                                             |
+|  DESCRIPTION: FORTRAN wrapper around SWperiodinfo                           |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               Swath structure ID                      |
+|  periodID       int32               Period ID                               |
+|  fieldname      char                Fieldname                               |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|  ntype          int32               field number type                       |
+|  rank           int32               field rank                              |
+|  dims           int32               dimensions of field region              |
+|                                     (FORTRAN order)                         |
+|  size           int32               size in bytes of field region           |
+|                                                                             |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Jun 96   Joel Gales    Original Programmer                                 |
+|  Jul 96   Joel Gales    Fix FORTRAN ordering of dims omitted in original    |
+|                         version                                             |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+intn
+SWperinfo(int32 swathID, int32 periodID, char *fieldname,
+	  int32 * ntype, int32 * rank, int32 dims[], int32 * size)
+{
+    intn            j;		/* Loop index */
+    intn            status;	/* routine return status variable */
+
+    int32           swap;	/* Temporary swap variable */
+
+
+    /* Call SWreginfo */
+    /* -------------- */
+    status = SWreginfo(swathID, periodID, fieldname, ntype, rank,
+		       dims, size);
+
+
+    /* Change dimensions to FORTRAN order */
+    /* ---------------------------------- */
+    for (j = 0; j < *rank / 2; j++)
+    {
+	swap = dims[*rank - 1 - j];
+	dims[*rank - 1 - j] = dims[j];
+	dims[j] = swap;
+    }
+
+    return (status);
+}
 
 
 /*----------------------------------------------------------------------------|
@@ -9376,6 +10091,72 @@ SWdefvrtregion(int32 swathID, int32 regionID, char *vertObj, float64 range[])
 /*----------------------------------------------------------------------------|
 |  BEGIN_PROLOG                                                               |
 |                                                                             |
+|  FUNCTION: SWdefvrtreg                                                      |
+|                                                                             |
+|  DESCRIPTION: FORTRAN wrapper arount SWdefvrtregion                         |
+|                                                                             |
+|                                                                             |
+|  Return Value    Type     Units     Description                             |
+|  ============   ======  =========   =====================================   |
+|  regionID       int32               Region ID                               |
+|                                                                             |
+|  INPUTS:                                                                    |
+|  swathID        int32               Swath structure ID                      |
+|  regionID       int32               Region ID                               |
+|  vertObj        char                Vertical object to subset               |
+|  range          float64             Vertical subsetting range               |
+|                                                                             |
+|  OUTPUTS:                                                                   |
+|             None                                                            |
+|                                                                             |
+|  NOTES:                                                                     |
+|                                                                             |
+|                                                                             |
+|   Date     Programmer   Description                                         |
+|  ======   ============  =================================================   |
+|  Oct 96   Joel Gales    Original Programmer                                 |
+|  Feb 97   Joel Gales    Change call SWdefvrtreg to SWdefvrtregion           |
+|                                                                             |
+|  END_PROLOG                                                                 |
+-----------------------------------------------------------------------------*/
+int32
+SWdefvrtreg(int32 swathID, int32 regionID, char *vertObj, float64 fortrange[])
+{
+    float64         range[2];	/* range (C) */
+
+    char            utlbuf[16];	/* Utility buffer */
+
+
+    /* Copy first four character of vertObj to utlbuf */
+    /* ---------------------------------------------- */
+    memcpy(utlbuf, vertObj, 4);
+    utlbuf[4] = 0;
+
+
+    /* If subsetting on dimension elements convert FORTRAN indices to C */
+    /* ---------------------------------------------------------------- */
+    if (strcmp(utlbuf, "DIM:") == 0)
+    {
+	range[0] = fortrange[0] - 1;
+	range[1] = fortrange[1] - 1;
+    }
+    else
+    {
+	range[0] = fortrange[0];
+	range[1] = fortrange[1];
+    }
+
+
+    /* Call SWdefvrtregion */
+    /* ------------------- */
+    regionID = SWdefvrtregion(swathID, regionID, vertObj, range);
+
+    return (regionID);
+}
+
+/*----------------------------------------------------------------------------|
+|  BEGIN_PROLOG                                                               |
+|                                                                             |
 |  FUNCTION: SWdefscanregion                                                  |
 |                                                                             |
 |  DESCRIPTION: Initialize the region structure for Landsat 7 float scene     |
@@ -9590,7 +10371,7 @@ SWdefscanregion(int32 swathID, char *fieldname, float64 range[], int32 mode)
                 if (range[1] > idxmap[scene_cnt*2 - 1])
                 {
                    range[1] = idxmap[scene_cnt*2 - 1];
-                   HEreport("Data length compared to geolocation length\n");
+                   fprintf(stderr,"Data length compared to geolocation length\n");
                 }
              }
              if(band82flag == 1 || band83flag == 1)
@@ -9600,8 +10381,7 @@ SWdefscanregion(int32 swathID, char *fieldname, float64 range[], int32 mode)
              if(tmprange0 >= idxmap[scene_cnt * 2 - 1])
              {
                 HEpush(DFE_GENAPP, "SWdefscanregion", __FILE__, __LINE__);
-                HEreport(
-            "Range values not within bounds of Latitude/Longitude field(s)\n");
+                HEreport("Range values not within bounds of Latitude/Longitude field(s)\n");
                 if (dfieldlist != NULL)
                    free(dfieldlist);
                 free(tfieldname);
@@ -11146,7 +11926,7 @@ SWupdateidxmap(int32 swathID, int32 regionID, int32 indexin[], int32 indexout[],
                               if(indexin[j] == 0 || indexin[j+1] == 0)
                                  i = scene_cnt;
                            }
-                        }	
+                        } 	
                      }
 
                      if(startReg > (indexin[j - 1] + indexoffset - detect_cnt ))
@@ -11183,7 +11963,7 @@ SWupdateidxmap(int32 swathID, int32 regionID, int32 indexin[], int32 indexout[],
                      }
                   }
                }
-            }		/* end of if for floating scene update */
+            } 					/* end of if for floating scene update */
             else
             {
 	       /* If start of region is odd then increment */
@@ -11277,7 +12057,7 @@ SWupdateidxmap(int32 swathID, int32 regionID, int32 indexin[], int32 indexout[],
 |   Date     Programmer   Description                                         |
 |  ======   ============  =================================================   |
 |  Aug 97   Abe Taaheri   Original Programmer                                 |
-|  Sept 97  DaW           Modified return value so errors can be trapped      |
+|  Sept 97  DaW 	  Modified return value so errors can be trapped
 |                                                                             |
 |  END_PROLOG                                                                 |
 -----------------------------------------------------------------------------*/
@@ -11374,54 +12154,6 @@ SWgeomapinfo(int32 swathID, char *geodim)
 
     free(utlstrr);
     free(utlstri);
-
-    return (status);
-}
-
-/*----------------------------------------------------------------------------|
-|  BEGIN_PROLOG                                                               |
-|                                                                             |
-|  FUNCTION: SWsdid                                                           |
-|                                                                             |
-|  DESCRIPTION: Returns SD element ID for swath field                         |
-|                                                                             |
-|                                                                             |
-|  Return Value    Type     Units     Description                             |
-|  ============   ======  =========   =====================================   |
-|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
-|                                                                             |
-|  INPUTS:                                                                    |
-|  swathID        int32               swath structure ID                      |
-|  fieldname      const char          field name                              |
-|                                                                             |
-|                                                                             |
-|  OUTPUTS:                                                                   |
-|  sdid           int32               SD element ID                           |
-|                                                                             |
-|  NOTES:                                                                     |
-|                                                                             |
-|                                                                             |
-|   Date     Programmer   Description                                         |
-|  ======   ============  =================================================   |
-|  Oct 07   Andrey Kiselev  Original Programmer                               |
-|                                                                             |
-|  END_PROLOG                                                                 |
------------------------------------------------------------------------------*/
-intn
-SWsdid(int32 swathID, const char *fieldname, int32 *sdid)
-{
-    intn            status;	        /* routine return status variable */
-    int32           fid;	        /* HDF-EOS file ID */
-    int32           sdInterfaceID;      /* HDF SDS interface ID */
-    int32           dum;	        /* Dummy variable */
-    int32           dims[H4_MAX_VAR_DIMS]; /* Field/SDS dimensions */
-
-    status = SWchkswid(swathID, "SWsdid", &fid, &sdInterfaceID, &dum);
-    if (status != -1)
-    {
-        status = SWSDfldsrch(swathID, sdInterfaceID, fieldname,
-                             sdid, &dum, &dum, &dum, dims, &dum);
-    }
 
     return (status);
 }

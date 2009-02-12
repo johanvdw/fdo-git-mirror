@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fitsdataset.cpp 15409 2008-09-22 19:08:15Z rouault $
+ * $Id: fitsdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  FITS Driver
  * Purpose:  Implement FITS raster read/write support
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <string.h>
 
-CPL_CVSID("$Id: fitsdataset.cpp 15409 2008-09-22 19:08:15Z rouault $");
+CPL_CVSID("$Id: fitsdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 #include <fitsio.h>
@@ -216,7 +216,7 @@ CPLErr FITSRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
 // Simple static function to determine if FITS header keyword should
 // be saved in meta data.
 static const int ignorableHeaderCount = 15;
-static const char* ignorableFITSHeaders[ignorableHeaderCount] = {
+static char* ignorableFITSHeaders[ignorableHeaderCount] = {
   "SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "NAXIS3", "END",
   "XTENSION", "PCOUNT", "GCOUNT", "EXTEND", "CONTINUE",
   "COMMENT", "", "LONGSTRN"
@@ -304,7 +304,6 @@ FITSDataset::~FITSDataset() {
     }
 
     // Close the FITS handle - ignore the error status
-    status = 0;
     fits_close_file(hFITS, &status);
 
   }
@@ -362,7 +361,7 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
   }
   else if (bitpix == LONG_IMG) {
     gdalDataType = GDT_Int32;
-    fitsDataType = TINT;
+    fitsDataType = TLONG;
   }
   else if (bitpix == FLOAT_IMG) {
     gdalDataType = GDT_Float32;
@@ -396,10 +395,6 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
 	     GetDescription());
     return CE_Failure;
   }
-  
-  // Create the bands
-  for (int i = 0; i < nBands; ++i)
-    SetBand(i+1, new FITSRasterBand(this, i+1));
 
   // Read header information from file and use it to set metadata
   // This process understands the CONTINUE standard for long strings.
@@ -452,6 +447,10 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
     }
     ++keyNum;
   } while (!endReached);
+  
+  // Create the bands
+  for (int i = 0; i < nBands; ++i)
+    SetBand(i+1, new FITSRasterBand(this, i+1));
   
   return CE_None;
 }
@@ -535,7 +534,7 @@ GDALDataset *FITSDataset::Create(const char* pszFilename,
   char* extFilename = new char[strlen(pszFilename) + 10];  // 10 for margin!
   sprintf(extFilename, "!%s", pszFilename);
   fits_create_file(&hFITS, extFilename, &status);
-  delete[] extFilename;
+  delete extFilename;
   if (status) {
     CPLError(CE_Failure, CPLE_AppDefined,
 	     "Couldn't create FITS file %s (%d).\n", pszFilename, status);

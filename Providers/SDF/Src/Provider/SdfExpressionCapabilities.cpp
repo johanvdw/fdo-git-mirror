@@ -18,12 +18,6 @@
 #include "stdafx.h"
 #include "SdfExpressionCapabilities.h"
 #include <FdoExpressionEngine.h>
-#include <FdoExpressionEngineImp.h>
-#include <Functions/Geometry/FdoFunctionX.h>
-#include <Functions/Geometry/FdoFunctionY.h>
-#include <Functions/Geometry/FdoFunctionZ.h>
-#include <Functions/Geometry/FdoFunctionM.h>
-
 
 //-------------------------------------------------------
 // Constructor / destructor
@@ -79,31 +73,11 @@ FdoExpressionType* SdfExpressionCapabilities::GetExpressionTypes(FdoInt32& lengt
 // definitions in the array.
 FdoFunctionDefinitionCollection* SdfExpressionCapabilities::GetFunctions()
 {
-	
-	if (NULL == m_supportedFunctions)
-	{
-			m_supportedFunctions = FdoExpressionEngine::GetStandardFunctions();
+    if (NULL == m_supportedFunctions)
+    {
+        m_supportedFunctions = FdoExpressionEngine::GetStandardFunctions();
+    }
 
-			// Add function X to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcX = FdoFunctionX::Create();
-			m_supportedFunctions->Add(FdoPtr<FdoFunctionDefinition>(funcX->GetFunctionDefinition()));
-			
-			// Add function Y to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcY = FdoFunctionY::Create();
-			m_supportedFunctions->Add(FdoPtr<FdoFunctionDefinition>(funcY->GetFunctionDefinition()));
-			
-			// Add function Z to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcZ = FdoFunctionZ::Create();
-			m_supportedFunctions->Add(FdoPtr<FdoFunctionDefinition>(funcZ->GetFunctionDefinition()));
-			
-			// Add function M to the list of supported function
-			FdoPtr<FdoExpressionEngineIFunction> funcM = FdoFunctionM::Create();
-			m_supportedFunctions->Add(FdoPtr<FdoFunctionDefinition>(funcM->GetFunctionDefinition()));
-			
-	}
-
-	return FDO_SAFE_ADDREF(m_supportedFunctions.p);
+    return FDO_SAFE_ADDREF(m_supportedFunctions.p);
 }
-
-
 

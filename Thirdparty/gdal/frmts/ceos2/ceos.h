@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceos.h 12600 2007-11-01 14:09:01Z dron $
+ * $Id: ceos.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  CEOS library prototypes
@@ -274,7 +274,7 @@ void GetCeosRecordStruct(const CeosRecord_t *record, void *struct_ptr);
 
 void PutCeosRecordStruct(CeosRecord_t *record, const void *struct_ptr);
 
-void GetCeosField(CeosRecord_t *, int32, const char *, void *);
+void GetCeosField(CeosRecord_t *record, int32 start_byte, char *format, void *value);
 
 void SetCeosField(CeosRecord_t *record, int32 start_byte, char *format, void *value);
 

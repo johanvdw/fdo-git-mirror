@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfdataset.h 15690 2008-11-06 22:51:54Z dnadeau $
+ * $Id: netcdfdataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -45,10 +45,9 @@
 /* ==================================================================== */
 /************************************************************************/
 #define MAX_STR_LEN            8192
-#define CEA                    "cylindrical_equal_area"
 #define L_C_CONIC              "lambert_conformal_conic"
 #define TM                     "transverse_mercator"
-#define LAEA                   "lambert_azimuthal_equal_area"
+
 #define GRD_MAPPING_NAME       "grid_mapping_name"
 #define GRD_MAPPING            "grid_mapping"
 #define COORDINATES            "coordinates"
@@ -57,11 +56,7 @@
 #define STD_PARALLEL_1         "standard_parallel_1"
 #define STD_PARALLEL_2         "standard_parallel_2"
 #define LONG_CENTRAL_MERIDIAN  "central_meridian"
-#define LON_PROJ_ORIGIN        "longitude_of_projection_origin"
 #define LAT_PROJ_ORIGIN        "latitude_of_projection_origin"
-#define SCALE_FACTOR_ORIGIN    "scale_factor_at_projection_origin"
-#define PROJ_X_ORIGIN          "projection_x_coordinate_origin"
-#define PROJ_Y_ORIGIN          "projection_y_coordinate_origin"
 #define EARTH_SHAPE            "GRIB_earth_shape"
 #define EARTH_SHAPE_CODE       "GRIB_earth_shape_code"
 #define SCALE_FACTOR           "scale_factor_at_central_meridian"
@@ -79,11 +74,11 @@
 
 
 typedef struct {
-    const char *netCDFSRS;
-    const char *SRS; }
+    char *netCDFSRS;
+    char *SRS; }
 oNetcdfSRS;
 
-static const oNetcdfSRS poNetcdfSRS[] = {
+oNetcdfSRS poNetcdfSRS[] = {
     {"albers_conical_equal_area", SRS_PT_ALBERS_CONIC_EQUAL_AREA },
     {"azimuthal_equidistant", SRS_PT_AZIMUTHAL_EQUIDISTANT },
     {"cassini_soldner", SRS_PT_CASSINI_SOLDNER },
@@ -118,16 +113,15 @@ static const oNetcdfSRS poNetcdfSRS[] = {
     {"swiss_oblique_cylindrical", SRS_PT_SWISS_OBLIQUE_CYLINDRICAL},
     {"transverse_mercator", SRS_PT_TRANSVERSE_MERCATOR },
     {"TM_south_oriented", SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED },
-
-    {LONG_CENTRAL_MERIDIAN, SRS_PP_CENTRAL_MERIDIAN },
-    {SCALE_FACTOR, SRS_PP_SCALE_FACTOR },   
-    {STD_PARALLEL_1, SRS_PP_STANDARD_PARALLEL_1 },
-    {STD_PARALLEL_2, SRS_PP_STANDARD_PARALLEL_2 },
+    {"central_meridian", SRS_PP_CENTRAL_MERIDIAN },
+    {"scale_factor_at_projection_origin", SRS_PP_SCALE_FACTOR },   
+    {"standard_parallel_1", SRS_PP_STANDARD_PARALLEL_1 },
+    {"standard_parallel_2", SRS_PP_STANDARD_PARALLEL_2 },
     {"longitude_of_central_meridian", SRS_PP_LONGITUDE_OF_CENTER },
     {"longitude_of_projection_origin", SRS_PP_LONGITUDE_OF_ORIGIN }, 
     {"latitude_of_projection_origin", SRS_PP_LATITUDE_OF_ORIGIN }, 
-    {FALSE_EASTING, SRS_PP_FALSE_EASTING },  
-    {FALSE_NORTHING, SRS_PP_FALSE_NORTHING },       
+    {"false_easting", SRS_PP_FALSE_EASTING },  
+    {"false_northing", SRS_PP_FALSE_NORTHING },       
     {NULL, NULL },
  };
 
@@ -146,9 +140,6 @@ class netCDFDataset : public GDALPamDataset
     int          bGotGeoTransform;
     double       rint( double );
 
-    double       FetchCopyParm( const char *pszGridMappingValue, 
-                                const char *pszParm, double dfDefault );
-
   public:
     int           cdfid;
     char         **papszMetadata;
@@ -164,7 +155,6 @@ class netCDFDataset : public GDALPamDataset
     
     static GDALDataset *Open( GDALOpenInfo * );
 
-    CPLErr      SafeStrcat(char**, char*, size_t*);
     CPLErr      ReadAttributes( int, int );
 
     CPLErr 	GetGeoTransform( double * );    

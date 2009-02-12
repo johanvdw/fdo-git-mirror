@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: mkcatalog.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: mkcatalog.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ISO8211 Library
  * Purpose:  Test ISO8211 writing capability.
@@ -29,7 +29,7 @@
 
 #include "iso8211.h"
 
-CPL_CVSID("$Id: mkcatalog.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: mkcatalog.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 /************************************************************************/

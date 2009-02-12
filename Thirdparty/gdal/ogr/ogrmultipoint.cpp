@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultipoint.cpp 14336 2008-04-20 14:36:09Z rouault $
+ * $Id: ogrmultipoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPoint class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrmultipoint.cpp 14336 2008-04-20 14:36:09Z rouault $");
+CPL_CVSID("$Id: ogrmultipoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRMultiPoint()                            */
@@ -115,10 +115,7 @@ OGRErr OGRMultiPoint::exportToWkt( char ** ppszDstText ) const
     int         nMaxString = getNumGeometries() * 20 + 128;
     int         nRetLen = 0;
 
-/* -------------------------------------------------------------------- */
-/*      Return MULTIPOINT EMPTY if we get no valid points.              */
-/* -------------------------------------------------------------------- */
-    if( IsEmpty() )
+    if( getNumGeometries() == 0 )
     {
         *ppszDstText = CPLStrdup("MULTIPOINT EMPTY");
         return OGRERR_NONE;
@@ -130,20 +127,12 @@ OGRErr OGRMultiPoint::exportToWkt( char ** ppszDstText ) const
 
     sprintf( *ppszDstText, "%s (", getGeometryName() );
 
-    int bMustWriteComma = FALSE;
     for( int i = 0; i < getNumGeometries(); i++ )
     {
         OGRPoint        *poPoint = (OGRPoint *) getGeometryRef( i );
 
-        if (poPoint->IsEmpty())
-        {
-            CPLDebug( "OGR", "OGRMultiPoint::exportToWkt() - skipping POINT EMPTY.");
-            continue;
-        }
-
-        if( bMustWriteComma )
+        if( i > 0 )
             strcat( *ppszDstText + nRetLen, "," );
-        bMustWriteComma = TRUE;
 
         nRetLen += strlen(*ppszDstText + nRetLen);
 

@@ -1,43 +1,30 @@
 /******************************************************************************
- * $Id: cpl.i 14937 2008-07-16 11:18:31Z tamas $
+ * $Id: cpl.i 9018 2006-01-17 04:38:09Z cfis $
  *
  * Name:     cpl.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
 
-#ifdef SWIGCSHARP
-typedef enum
-{
-    CE_None = 0,
-    CE_Log = 1,
-    CE_Warning = 2,
-    CE_Failure = 3,
-    CE_Fatal = 4
-} CPLErr;
-#endif
+ *
+ * $Log$
+ * Revision 1.5  2006/01/17 04:38:09  cfis
+ * Switched #ifdef declarations to have a section for Ruby to be more consistent with other SWIG interface files.
+ *
+ * Revision 1.4  2006/01/16 08:07:04  cfis
+ * Exposed CPLHexToBinary and CPLHexToBinary to scripting languages.
+ *
+ * Revision 1.3  2005/10/02 23:31:27  cfis
+ * Updated the renames to include support for Ruby.
+ *
+ * Revision 1.2  2005/02/16 16:54:48  kruland
+ * Removed the python code from the wrapper for now.  Wrapped a simple version
+ * of PushErrorHandler(char const*) which allows assignment of the CPL defined
+ * error handlers.
+ *
+ *
+*/
 
 %inline %{
   void Debug( const char *msg_class, const char *message ) {
@@ -77,7 +64,6 @@ typedef enum
 %rename (pop_finder_location) CPLPopFinderLocation;
 %rename (finder_clean) CPLFinderClean;
 %rename (find_file) CPLFindFile;
-%rename (read_dir) VSIReadDir;
 %rename (set_config_option) CPLSetConfigOption;
 %rename (get_config_option) CPLGetConfigOption;
 %rename (binary_to_hex) CPLBinaryToHex;
@@ -93,12 +79,10 @@ typedef enum
 %rename (PopFinderLocation) CPLPopFinderLocation;
 %rename (FinderClean) CPLFinderClean;
 %rename (FindFile) CPLFindFile;
-%rename (ReadDir) VSIReadDir;
 %rename (SetConfigOption) CPLSetConfigOption;
 %rename (GetConfigOption) CPLGetConfigOption;
 %rename (CPLBinaryToHex) CPLBinaryToHex;
 %rename (CPLHexToBinary) CPLHexToBinary;
-
 #endif
 
 void CPLPushErrorHandler( CPLErrorHandler );
@@ -106,21 +90,6 @@ void CPLPushErrorHandler( CPLErrorHandler );
 void CPLPopErrorHandler();
 
 void CPLErrorReset();
-
-
-%feature( "kwargs" ) EscapeString;
-
-#ifndef SWIGCSHARP
-%apply (int nLen, char *pBuf ) { (int len, char *bin_string)};
-#endif
-%inline %{
-char* EscapeString(int len, char *bin_string , int scheme=CPLES_SQL) {
-    return CPLEscapeString(bin_string, len, scheme);
-} 
-%}
-#ifndef SWIGCSHARP
-%clear (int len, char *bin_string);
-#endif
 
 int CPLGetLastErrorNo();
 
@@ -135,10 +104,6 @@ void CPLPopFinderLocation();
 void CPLFinderClean();
 
 const char * CPLFindFile( const char *, const char * );
-
-%apply (char **options) {char **};
-char **VSIReadDir( const char * );
-%clear char **;
 
 void CPLSetConfigOption( const char *, const char * );
 

@@ -60,7 +60,6 @@ protected:
 
     void testSpatialContexts();
 
-    void GenDefaultClassList();
     void constraints ();
     void delFdoBr ();
     virtual FdoIoStream* OverrideBend( FdoIoStream* stream1, FdoStringP oldOwnerPrefix, FdoStringP newOwnerPrefix )
@@ -77,11 +76,9 @@ protected:
 
     virtual void AddProviderColumns( FdoSmPhTableP table );
 
-    virtual void CreateMultiGeomTable( FdoSmPhOwnerP owner, FdoStringP tableName, FdoInt32 colCount, FdoInt32 indexMask, FdoInt32 nnullMask );
+    void CreateMultiGeomTable( FdoSmPhOwnerP owner, FdoStringP tableName, FdoInt32 colCount, FdoInt32 indexMask, FdoInt32 nnullMask );
 
-    virtual void CreateMultiGeomView( FdoSmPhOwnerP owner, FdoStringP viewName, FdoSmPhOwnerP tableOwner, FdoStringP tableName, FdoInt32 colCount );
-
-    virtual void VldGenGeom( FdoIConnection* conn, FdoClassDefinitionP classDef )
+    virtual void VldGenGeom( FdoClassDefinitionP classDef )
     {
     }
 
@@ -111,8 +108,6 @@ protected:
     virtual FdoSmPhScInfoP CreateSc( FdoInt64 srid, double minx, double miny, double maxx, double maxy, double xtol, double ztol );
 
     virtual FdoInt64 GetSrid( int index );
-
-    FdoPtr<FdoIConnection> GetDirectConnection (FdoIConnection *currentConnection);
 
     static FdoString* DB_NAME_SUFFIX;
     static FdoString* DB_NAME_COPY_SUFFIX;

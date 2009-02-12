@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_oci.h 15240 2008-08-28 18:14:21Z warmerdam $
+ * $Id: ogr_oci.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Oracle Spatial OGR Driver Declarations. 
@@ -77,18 +77,15 @@ typedef struct
    OCIInd                    sdo_ordinates;
 } SDO_GEOMETRY_ind;
 
-#define ORA_GTYPE_MATCH(a,b)      ( ((a) % 100) == ((b) % 100))
+#define ORA_GTYPE_MATCH(a,b)      ( ((a) % 1000) == ((b) % 1000))
 #define ORA_GTYPE_UNKNOWN         0
 #define ORA_GTYPE_POINT           1
-#define ORA_GTYPE_LINESTRING      2    // or curve
-#define ORA_GTYPE_POLYGON         3    // or surface
+#define ORA_GTYPE_LINESTRING      2
+#define ORA_GTYPE_POLYGON         3
 #define ORA_GTYPE_COLLECTION      4
-#define ORA_GTYPE_MULTIPOINT      5 
-#define ORA_GTYPE_MULTILINESTRING 6    // or multicurve
-#define ORA_GTYPE_MULTIPOLYGON    7    // or multisurface
-#define ORA_GTYPE_SOLID           8
-#define ORA_GTYPE_MULTISOLID      9
-
+#define ORA_GTYPE_MULTIPOINT      5
+#define ORA_GTYPE_MULTILINESTRING 6
+#define ORA_GTYPE_MULTIPOLYGON    7
 
 /************************************************************************/
 /*                            OGROCISession                             */
@@ -234,15 +231,11 @@ class OGROCILayer : public OGRLayer
     int                iFIDColumn;
 
     OGRGeometry        *TranslateGeometry();
-    OGRGeometry        *TranslateGeometryElement( int *piElement,
-                                                  int nGType, int nDimension,
+    OGRGeometry        *TranslateGeometryElement( int nGType, int nDimension,
                                                   int nEType,
                                                   int nInterpretation,
                                                   int nStartOrdinal,
                                                   int nOrdCount);
-    int      LoadElementInfo( int iElement, int nElemCount, int nTotalOrdCount,
-                              int *pnEType, int *pnInterpretation, 
-                              int *pnStartOrdinal, int *pnElemOrdCount );
     int                 GetOrdinalPoint( int iOrdinal, int nDimension,
                                          double *pdfX, double *pdfY,
                                          double *pdfZ );
@@ -447,8 +440,6 @@ class OGROCITableLayer : public OGROCIWritableLayer
     virtual OGRErr      CreateFeature( OGRFeature *poFeature );
     virtual OGRErr      DeleteFeature( long nFID );
     
-    virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
-
     virtual int         TestCapability( const char * );
 
     virtual OGRErr      SyncToDisk();
@@ -544,17 +535,5 @@ class OGROCIDriver : public OGRSFDriver
     
     int                 TestCapability( const char * );
 };
-
-/* -------------------------------------------------------------------- */
-/*      Helper functions.                                               */
-/* -------------------------------------------------------------------- */
-int 
-OGROCIStrokeArcToOGRGeometry_Points( double dfStartX, double dfStartY,
-                                     double dfAlongX, double dfAlongY,
-                                     double dfEndX, double dfEndY,
-                                     double dfMaxAngleStepSizeDegrees,
-                                     int bForceWholeCircle,
-                                     OGRLineString *poLine );
-
 
 #endif /* ndef _OGR_OCI_H_INCLUDED */

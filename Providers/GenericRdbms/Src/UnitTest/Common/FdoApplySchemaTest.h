@@ -190,11 +190,11 @@ protected:
 
     virtual FdoStringP SchemaOvErrFile( int fileNum, bool isMaster );
 
-	virtual bool CompareGeometrySI();
+    virtual bool CompareGeometrySI();
 
-	virtual bool CreateGeometrySICol();
+    virtual bool CreateGeometrySICol();
 
-	virtual FdoStringP GetValueColumnName();
+    virtual FdoStringP GetValueColumnName();
 
     void WriteXmlOverrides(
         FdoIConnection* connection,
@@ -233,10 +233,6 @@ protected:
 
     static FdoString*      LT_NAME;
     static FdoString*      DB_NAME_LT_SUFFIX;
-
-
-private:
-    FdoPtr<FdoIConnection> GetDirectConnection (FdoIConnection *currentConnection);
 
 };
 

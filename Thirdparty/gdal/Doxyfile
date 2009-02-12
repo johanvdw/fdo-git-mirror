@@ -400,9 +400,8 @@ INPUT                  = port \
                          frmts/gdalallregister.cpp \
                          alg \
                          frmts/vrt \
-                         doc \
-			 apps \
-			 swig/python/scripts
+			 rfc \
+                         doc
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -446,7 +445,8 @@ EXCLUDE_PATTERNS       =
 
 EXAMPLE_PATH           = apps \
                          frmts \
-                         frmts/jdem 
+                         frmts/jdem \
+                         NEWS
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldither.cpp 13342 2007-12-14 20:58:31Z rouault $
+ * $Id: gdaldither.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Convert RGB (24bit) to a pseudo-colored approximation using
@@ -50,9 +50,10 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id: gdaldither.cpp 13342 2007-12-14 20:58:31Z rouault $");
+CPL_CVSID("$Id: gdaldither.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #define C_LEVELS	32
+#define C_SHIFT  	3
 
 static void FindNearestColor( int nColors, int *panPCT, GByte *pabyColorMap );
 
@@ -72,8 +73,6 @@ static void FindNearestColor( int nColors, int *panPCT, GByte *pabyColorMap );
  * be clipped to 8bit during reading, so non-eight bit bands are generally
  * inappropriate.  Likewise the hTarget band will be written with 8bit values
  * and must match the width and height of the source bands. 
- *
- * The color table cannot have more than 256 entries.
  *
  * @param hRed Red input band. 
  * @param hGreen Green input band. 
@@ -97,14 +96,7 @@ GDALDitherRGB2PCT( GDALRasterBandH hRed,
                    void * pProgressArg )
 
 {
-    VALIDATE_POINTER1( hRed, "GDALDitherRGB2PCT", CE_Failure );
-    VALIDATE_POINTER1( hGreen, "GDALDitherRGB2PCT", CE_Failure );
-    VALIDATE_POINTER1( hBlue, "GDALDitherRGB2PCT", CE_Failure );
-    VALIDATE_POINTER1( hTarget, "GDALDitherRGB2PCT", CE_Failure );
-    VALIDATE_POINTER1( hColorTable, "GDALDitherRGB2PCT", CE_Failure );
-
     int		nXSize, nYSize;
-    CPLErr err = CE_None;
     
 /* -------------------------------------------------------------------- */
 /*      Validate parameters.                                            */
@@ -142,24 +134,6 @@ GDALDitherRGB2PCT( GDALRasterBandH hRed,
     int		nColors, anPCT[768], iColor;
 
     nColors = GDALGetColorEntryCount( hColorTable );
-    
-    if (nColors == 0 )
-    {
-        CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALDitherRGB2PCT(): "
-                  "Color table must not be empty.\n" );
-
-        return CE_Failure;
-    }
-    else if (nColors > 256)
-    {
-        CPLError( CE_Failure, CPLE_IllegalArg,
-                  "GDALDitherRGB2PCT(): "
-                  "Color table cannot have more than 256 entries.\n" );
-
-        return CE_Failure;
-    }
-    
     for( iColor = 0; iColor < nColors; iColor++ )
     {
         GDALColorEntry	sEntry;
@@ -187,25 +161,13 @@ GDALDitherRGB2PCT( GDALRasterBandH hRed,
     GByte	*pabyRed, *pabyGreen, *pabyBlue, *pabyIndex;
     int		*panError;
 
-    pabyRed = (GByte *) VSIMalloc(nXSize);
-    pabyGreen = (GByte *) VSIMalloc(nXSize);
-    pabyBlue = (GByte *) VSIMalloc(nXSize);
+    pabyRed = (GByte *) CPLMalloc(nXSize);
+    pabyGreen = (GByte *) CPLMalloc(nXSize);
+    pabyBlue = (GByte *) CPLMalloc(nXSize);
 
-    pabyIndex = (GByte *) VSIMalloc(nXSize);
+    pabyIndex = (GByte *) CPLMalloc(nXSize);
 
-    panError = (int *) VSICalloc(sizeof(int),(nXSize+2) * 3);
-    
-    if (pabyRed == NULL ||
-        pabyGreen == NULL ||
-        pabyBlue == NULL ||
-        pabyIndex == NULL ||
-        panError == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALDitherRGB2PCT" );
-        err = CE_Failure;
-        goto end_and_cleanup;
-    }
+    panError = (int *) CPLCalloc(sizeof(int),(nXSize+2) * 3);
 
 /* ==================================================================== */
 /*      Loop over all scanlines of data to process.                     */
@@ -221,9 +183,15 @@ GDALDitherRGB2PCT( GDALRasterBandH hRed,
 /* -------------------------------------------------------------------- */
         if( !pfnProgress( iScanline / (double) nYSize, NULL, pProgressArg ) )
         {
+            CPLFree( pabyRed );
+            CPLFree( pabyGreen );
+            CPLFree( pabyBlue );
+            CPLFree( panError );
+            CPLFree( pabyIndex );
+            CPLFree( pabyColorMap );
+
             CPLError( CE_Failure, CPLE_UserInterrupt, "User Terminated" );
-            err = CE_Failure;
-            goto end_and_cleanup;
+            return CE_Failure;
         }
 
 /* -------------------------------------------------------------------- */
@@ -320,20 +288,20 @@ GDALDitherRGB2PCT( GDALRasterBandH hRed,
                       pabyIndex, nXSize, 1, GDT_Byte, 0, 0 );
     }
 
-    pfnProgress( 1.0, NULL, pProgressArg );
-
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
-end_and_cleanup:
     CPLFree( pabyRed );
     CPLFree( pabyGreen );
     CPLFree( pabyBlue );
     CPLFree( pabyIndex );
     CPLFree( panError );
+
     CPLFree( pabyColorMap );
 
-    return err;
+    pfnProgress( 1.0, NULL, pProgressArg );
+
+    return CE_None;
 }
 
 /************************************************************************/

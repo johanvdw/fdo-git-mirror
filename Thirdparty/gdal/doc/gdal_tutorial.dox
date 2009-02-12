@@ -1,4 +1,4 @@
-/* $Id: gdal_tutorial.dox 14528 2008-05-26 03:07:21Z hobu $ */
+/* $Id: gdal_tutorial.dox 10108 2006-10-17 22:30:22Z mloskot $ */
 
 /*!
 \page gdal_tutorial GDAL API Tutorial
@@ -235,8 +235,8 @@ In Python (note several bindings are missing):
 
 	min = band.GetMinimum()
 	max = band.GetMaximum()
-	if min is None or max is None:
-	    (min,max) = band.ComputeRasterMinMax(1)
+	if min is not None and max is not None:
+	    (min,max) = ComputeRasterMinMax(1)
 	print 'Min=%.3f, Max=%.3f' % (min,max)
 
 	if band.GetOverviewCount() > 0:
@@ -356,8 +356,7 @@ but only a few support the Create() method.
 To determine if a particular format supports Create or CreateCopy 
 it is possible to check the DCAP_CREATE  and DCAP_CREATECOPY metadata on the
 format driver object.  Ensure that GDALAllRegister() has been called before
-calling GetDriverByName().  In this example we fetch a driver, and determine
-whether it supports Create() and/or CreateCopy().
+calling GetDriverByName().  In this example we 
 
 In C++:
 \code
@@ -384,7 +383,7 @@ In C:
 #include "cpl_string.h"
 ...
     const char *pszFormat = "GTiff";
-    GDALDriverH hDriver = GDALGetDriverByName( pszFormat );
+    GDALDriver hDriver = GDALGetDriverByName( pszFormat );
     char **papszMetadata;
 
     if( hDriver == NULL )
@@ -479,7 +478,6 @@ In C++:
                                     papszOptions, GDALTermProgress, NULL );
     if( poDstDS != NULL )
         delete poDstDS;
-    CSLDestroy( papszOptions );
 \endcode
 
 In C:
@@ -494,7 +492,6 @@ In C:
                              papszOptions, GDALTermProgres, NULL );
     if( hDstDS != NULL )
         GDALClose( hDstDS );
-    CSLDestroy( papszOptions );
 \endcode
 
 In Python:
@@ -610,7 +607,7 @@ In Python:
 
 \htmlonly
 <p>
-$Id: gdal_tutorial.dox 14528 2008-05-26 03:07:21Z hobu $
+$Id: gdal_tutorial.dox 10108 2006-10-17 22:30:22Z mloskot $
 </p>
 \endhtmlonly
 

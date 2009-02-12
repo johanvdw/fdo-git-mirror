@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometry.cpp 15346 2008-09-08 18:28:46Z rouault $
+ * $Id: ogrgeometry.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements a few base methods on OGRGeometry.
@@ -31,10 +31,9 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 #include "ogr_geos.h"
-#include "cpl_multiproc.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrgeometry.cpp 15346 2008-09-08 18:28:46Z rouault $");
+CPL_CVSID("$Id: ogrgeometry.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 int OGRGeometry::bGenerate_DB2_V72_BYTE_ORDER = FALSE;
 
@@ -94,7 +93,7 @@ OGRGeometry::~OGRGeometry()
  * @param pszPrefix the prefix to put on each line of output.
  */
 
-void OGRGeometry::dumpReadable( FILE * fp, const char * pszPrefix, char** papszOptions ) const
+void OGRGeometry::dumpReadable( FILE * fp, const char * pszPrefix ) const
 
 {
     char        *pszWkt = NULL;
@@ -105,84 +104,10 @@ void OGRGeometry::dumpReadable( FILE * fp, const char * pszPrefix, char** papszO
     if( fp == NULL )
         fp = stdout;
 
-    const char* pszDisplayGeometry =
-                CSLFetchNameValue(papszOptions, "DISPLAY_GEOMETRY");
-    if (pszDisplayGeometry != NULL && EQUAL(pszDisplayGeometry, "SUMMARY"))
+    if( exportToWkt( &pszWkt ) == OGRERR_NONE )
     {
-        OGRLineString *poLine;
-        OGRPolygon *poPoly;
-        OGRLinearRing *poRing;
-        OGRGeometryCollection *poColl;
-        fprintf( fp, "%s%s : ", pszPrefix, getGeometryName() );
-        switch( getGeometryType() )
-        {
-            case wkbUnknown:
-            case wkbNone:
-                break;
-            case wkbPoint:
-            case wkbPoint25D:
-                break;
-            case wkbLineString:
-            case wkbLineString25D:
-                poLine = (OGRLineString*)this;
-                fprintf( fp, "%d points\n", poLine->getNumPoints() );
-                break;
-            case wkbPolygon:
-            case wkbPolygon25D:
-            {
-                int ir;
-                int nRings;
-                poPoly = (OGRPolygon*)this;
-                poRing = poPoly->getExteriorRing();
-                nRings = poPoly->getNumInteriorRings();
-                fprintf( fp, "%d points", poRing->getNumPoints() );
-                if (nRings)
-                {
-                    fprintf( fp, ", %d inner rings (", nRings);
-                    for( ir = 0; ir < nRings; ir++)
-                    {
-                        if (ir)
-                            fprintf( fp, ", ");
-                        fprintf( fp, "%d points",
-                                 poPoly->getInteriorRing(ir)->getNumPoints() );
-                    }
-                    fprintf( fp, ")");
-                }
-                fprintf( fp, "\n");
-                break;
-            }
-            case wkbMultiPoint:
-            case wkbMultiPoint25D:
-            case wkbMultiLineString:
-            case wkbMultiLineString25D:
-            case wkbMultiPolygon:
-            case wkbMultiPolygon25D:
-            case wkbGeometryCollection:
-            case wkbGeometryCollection25D:
-            {
-                int ig;
-                poColl = (OGRGeometryCollection*)this;
-                fprintf( fp, "%d geometries:\n", poColl->getNumGeometries() );
-                for ( ig = 0; ig < poColl->getNumGeometries(); ig++)
-                {
-                    OGRGeometry * poChild = (OGRGeometry*)poColl->getGeometryRef(ig);
-                    fprintf( fp, "%s", pszPrefix);
-                    poChild->dumpReadable( fp, pszPrefix, papszOptions );
-                }
-                break;
-            }
-            case wkbLinearRing:
-                break;
-        }
-    }
-    else if (pszDisplayGeometry == NULL || CSLTestBoolean(pszDisplayGeometry) ||
-             EQUAL(pszDisplayGeometry, "WKT"))
-    {
-        if( exportToWkt( &pszWkt ) == OGRERR_NONE )
-        {
-            fprintf( fp, "%s%s\n", pszPrefix, pszWkt );
-            CPLFree( pszWkt );
-        }
+        fprintf( fp, "%s%s\n", pszPrefix, pszWkt );
+        CPLFree( pszWkt );
     }
 }
 
@@ -539,54 +464,6 @@ OGRErr OGR_G_Transform( OGRGeometryH hGeom,
  * @return 0 for points, 1 for lines and 2 for surfaces.
  */
 
-
-/************************************************************************/
-/*                  OGRGeometry::segmentize()                           */
-/************************************************************************/
-/**
- *
- * Modify the geometry such it has no segment longer then the given distance.
- * Interpolated points will have Z and M values (if needed) set to 0.
- * Distance computation is performed in 2d only
- *
- * This function is the same as the C function OGR_G_Segmentize()
- *
- * @param hGeom handle on the geometry to segmentize
- * @param dfMaxLength the maximum distance between 2 points after segmentization
- */
-
-void OGRGeometry::segmentize( double dfMaxLength )
-{
-    /* Do nothing */
-}
-
-/************************************************************************/
-/*                         OGR_G_Segmentize()                           */
-/************************************************************************/
-
-/**
- *
- * Modify the geometry such it has no segment longer then the given distance.
- * Interpolated points will have Z and M values (if needed) set to 0.
- * Distance computation is performed in 2d only
- *
- * This function is the same as the CPP method OGRGeometry::segmentize().
- *
- * @param hGeom handle on the geometry to segmentize
- * @param dfMaxLength the maximum distance between 2 points after segmentization
- */
-
-void   CPL_DLL OGR_G_Segmentize(OGRGeometryH hGeom, double dfMaxLength )
-{
-    if (dfMaxLength <= 0)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "dfMaxLength must be strictly positive");
-        return;
-    }
-    ((OGRGeometry *) hGeom)->segmentize( dfMaxLength );
-}
-
 /************************************************************************/
 /*                         OGR_G_GetDimension()                         */
 /************************************************************************/
@@ -686,6 +563,38 @@ void OGR_G_SetCoordinateDimension( OGRGeometryH hGeom, int nNewDimension)
     ((OGRGeometry *) hGeom)->setCoordinateDimension( nNewDimension );
 }
 
+
+/**
+ * \fn OGRBoolean OGRGeometry::IsEmpty() const;
+ *
+ * Returns TRUE (non-zero) if the object has no points.  Normally this
+ * returns FALSE except between when an object is instantiated and points
+ * have been assigned.
+ *
+ * This method relates to the SFCOM IGeometry::IsEmpty() method.
+ *
+ * NOTE: This method is hardcoded to return FALSE at this time.
+ *
+ * @return TRUE if object is empty, otherwise FALSE.
+ */
+
+/**
+ * \fn OGRBoolean OGRGeometry::IsSimple() const;
+ *
+ * Returns TRUE if the geometry is simple.
+ * 
+ * Returns TRUE if the geometry has no anomalous geometric points, such
+ * as self intersection or self tangency. The description of each
+ * instantiable geometric class will include the specific conditions that
+ * cause an instance of that class to be classified as not simple.
+ *
+ * This method relates to the SFCOM IGeometry::IsSimple() method.
+ *
+ * NOTE: This method is hardcoded to return TRUE at this time.
+ *
+ * @return TRUE if object is simple, otherwise FALSE.
+ */
+
 /**
  * \fn int OGRGeometry::Equals( OGRGeometry *poOtherGeom ) const;
  *
@@ -721,32 +630,12 @@ int OGRGeometry::Equal( OGRGeometry *poOtherGeom ) const
 int OGR_G_Equals( OGRGeometryH hGeom, OGRGeometryH hOther )
 
 {
-    if (hGeom == NULL) {
-        CPLError ( CE_Failure, CPLE_ObjectNull, "hGeom was NULL in OGR_G_Equals");
-        return 0;
-    }
-
-    if (hOther == NULL) {
-        CPLError ( CE_Failure, CPLE_ObjectNull, "hOther was NULL in OGR_G_Equals");
-        return 0;
-    }
-    
     return ((OGRGeometry *) hGeom)->Equals( (OGRGeometry *) hOther );
 }
 
 int OGR_G_Equal( OGRGeometryH hGeom, OGRGeometryH hOther )
 
 {
-    if (hGeom == NULL) {
-        CPLError ( CE_Failure, CPLE_ObjectNull, "hGeom was NULL in OGR_G_Equal");
-        return 0;
-    }
-
-    if (hOther == NULL) {
-        CPLError ( CE_Failure, CPLE_ObjectNull, "hOther was NULL in OGR_G_Equal");
-        return 0;
-    }
-
     return ((OGRGeometry *) hGeom)->Equals( (OGRGeometry *) hOther );
 }
 
@@ -1177,202 +1066,6 @@ void OGR_G_Empty( OGRGeometryH hGeom )
     ((OGRGeometry *) hGeom)->empty();
 }
 
-/**
- * \fn OGRBoolean OGRGeometry::IsEmpty() const;
- *
- * Returns TRUE (non-zero) if the object has no points.  Normally this
- * returns FALSE except between when an object is instantiated and points
- * have been assigned.
- *
- * This method relates to the SFCOM IGeometry::IsEmpty() method.
- *
- * @return TRUE if object is empty, otherwise FALSE.
- */
-
-/************************************************************************/
-/*                         OGR_G_IsEmpty()                              */
-/************************************************************************/
-
-/**
- * Test if the geometry is empty
- *
- * This method is the same as the CPP method OGRGeometry::IsEmpty().
- *
- * @return TRUE if the geometry has no points, otherwise FALSE.  
- */
-
-int OGR_G_IsEmpty( OGRGeometryH hGeom )
-
-{
-   return ((OGRGeometry *) hGeom)->IsEmpty();
-}
-
-/************************************************************************/
-/*                              IsValid()                               */
-/************************************************************************/
-
-/**
- * Test if the geometry is valid
- *
- * This method is the same as the C function OGR_G_IsValid().
- *
- * This method is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this method will always return 
- * FALSE. 
- *
- *
- * @return TRUE if the geometry has no points, otherwise FALSE.  
- */
-
-OGRBoolean
-OGRGeometry::IsValid(  ) const
-
-{
-#ifndef HAVE_GEOS
-
-    return FALSE;
-
-#else
-
-    OGRBoolean bResult = FALSE;
-    GEOSGeom hThisGeosGeom = NULL;
-    
-    hThisGeosGeom = exportToGEOS();
-
-    if( hThisGeosGeom != NULL  )
-    {
-        bResult = GEOSisValid( hThisGeosGeom );
-        GEOSGeom_destroy( hThisGeosGeom );
-    }
-
-    return bResult;
-
-#endif /* HAVE_GEOS */
-}
-
-int OGR_G_IsValid( OGRGeometryH hGeom )
-
-{
-   return ((OGRGeometry *) hGeom)->IsValid();
-}
-
-/************************************************************************/
-/*                              IsSimple()                               */
-/************************************************************************/
-
-/**
- * Test if the geometry is simple
- *
- * This method is the same as the C function OGR_G_IsSimple().
- *
- * This method is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this method will always return 
- * FALSE. 
- *
- *
- * @return TRUE if the geometry has no points, otherwise FALSE.  
- */
-
-OGRBoolean
-OGRGeometry::IsSimple(  ) const
-
-{
-#ifndef HAVE_GEOS
-
-    return FALSE;
-
-#else
-
-    OGRBoolean bResult = FALSE;
-    GEOSGeom hThisGeosGeom = NULL;
-    
-    hThisGeosGeom = exportToGEOS();
-
-    if( hThisGeosGeom != NULL  )
-    {
-        bResult = GEOSisSimple( hThisGeosGeom );
-        GEOSGeom_destroy( hThisGeosGeom );
-    }
-
-    return bResult;
-
-#endif /* HAVE_GEOS */
-}
-
-
-/**
- * Returns TRUE if the geometry is simple.
- * 
- * Returns TRUE if the geometry has no anomalous geometric points, such
- * as self intersection or self tangency. The description of each
- * instantiable geometric class will include the specific conditions that
- * cause an instance of that class to be classified as not simple.
- *
- * This method relates to the SFCOM IGeometry::IsSimple() method.
- *
- * NOTE: This method is hardcoded to return TRUE at this time.
- *
- * @return TRUE if object is simple, otherwise FALSE.
- */
-
-int OGR_G_IsSimple( OGRGeometryH hGeom )
-
-{
-   return ((OGRGeometry *) hGeom)->IsSimple();
-}
-
-/************************************************************************/
-/*                              IsRing()                               */
-/************************************************************************/
-
-/**
- * Test if the geometry is a ring
- *
- * This method is the same as the C function OGR_G_IsRing().
- *
- * This method is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this method will always return 
- * FALSE. 
- *
- *
- * @return TRUE if the geometry has no points, otherwise FALSE.  
- */
-
-OGRBoolean
-OGRGeometry::IsRing(  ) const
-
-{
-#ifndef HAVE_GEOS
-
-    return FALSE;
-
-#else
-
-    OGRBoolean bResult = FALSE;
-    GEOSGeom hThisGeosGeom = NULL;
-    
-    hThisGeosGeom = exportToGEOS();
-
-    if( hThisGeosGeom != NULL  )
-    {
-        bResult = GEOSisRing( hThisGeosGeom );
-        GEOSGeom_destroy( hThisGeosGeom );
-    }
-
-    return bResult;
-
-#endif /* HAVE_GEOS */
-}
-
-int OGR_G_IsRing( OGRGeometryH hGeom )
-
-{
-   return ((OGRGeometry *) hGeom)->IsRing();
-}
-
 /************************************************************************/
 /*                       OGRGeometryTypeToName()                        */
 /************************************************************************/
@@ -1443,80 +1136,11 @@ const char *OGRGeometryTypeToName( OGRwkbGeometryType eType )
 
       default:
       {
-          // OGRThreadSafety: This static is judged to be a very low risk 
-          // for thread safety because it is only used in case of error, 
-          // and the worst that can happen is reporting the wrong code
-          // in the generated message.
           static char szWorkName[33];
           sprintf( szWorkName, "Unrecognised: %d", (int) eType );
           return szWorkName;
       }
     }
-}
-
-/************************************************************************/
-/*                       OGRMergeGeometryTypes()                        */
-/************************************************************************/
-
-/**
- * Find common geometry type.
- *
- * Given two geometry types, find the most specific common
- * type.  Normally used repeatedly with the geometries in a
- * layer to try and establish the most specific geometry type
- * that can be reported for the layer.
- *
- * NOTE: wkbUnknown is the "worst case" indicating a mixture of
- * geometry types with nothing in common but the base geometry
- * type.  wkbNone should be used to indicate that no geometries
- * have been encountered yet, and means the first geometry
- * encounted will establish the preliminary type.
- * 
- * @param eMain the first input geometry type.
- * @param eExtra the second input geometry type.
- *
- * @return the merged geometry type.
- */
-
-OGRwkbGeometryType 
-OGRMergeGeometryTypes( OGRwkbGeometryType eMain,
-                       OGRwkbGeometryType eExtra )
-
-{
-    int n25DFlag = 0;
-    OGRwkbGeometryType eFMain = wkbFlatten(eMain);
-    OGRwkbGeometryType eFExtra = wkbFlatten(eExtra);
-        
-    if( eFMain != eMain || eFExtra != eExtra )
-        n25DFlag = wkb25DBit;
-
-    if( eFMain == wkbUnknown || eFExtra == wkbUnknown )
-        return (OGRwkbGeometryType) (((int) wkbUnknown) | n25DFlag);
-
-    if( eFMain == wkbNone )
-        return eExtra;
-
-    if( eFExtra == wkbNone )
-        return eMain;
-
-    if( eFMain == eFExtra )
-        return (OGRwkbGeometryType) (((int) eFMain) | n25DFlag);
-
-    // Both are geometry collections.
-    if( (eFMain == wkbGeometryCollection
-         || eFMain == wkbMultiPoint
-         || eFMain == wkbMultiLineString
-         || eFMain == wkbMultiPolygon)
-        && (eFExtra == wkbGeometryCollection
-            || eFExtra == wkbMultiPoint
-            || eFExtra == wkbMultiLineString
-            || eFMain == wkbMultiPolygon) )
-    {
-        return (OGRwkbGeometryType) (((int) wkbGeometryCollection) | n25DFlag);
-    }
-
-    // Nothing apparently in common.
-    return (OGRwkbGeometryType) (((int) wkbUnknown) | n25DFlag);
 }
 
 /**
@@ -1570,73 +1194,6 @@ char *OGRGeometry::exportToGML() const
 }
 
 /************************************************************************/
-/*                            exportToKML()                             */
-/************************************************************************/
-
-/**
- * \fn char *OGRGeometry::exportToKML() const;
- *
- * Convert a geometry into KML format.
- *
- * The returned string should be freed with CPLFree() when no longer required.
- *
- * This method is the same as the C function OGR_G_ExportToKML().
- *
- * @return A KML fragment or NULL in case of error.
- */
-
-char *OGRGeometry::exportToKML() const
-{
-#ifndef _WIN32_WCE
-#ifdef OGR_ENABLED
-    return OGR_G_ExportToKML( (OGRGeometryH) this, NULL );
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToKML() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToKML() not supported in the WinCE build." );
-    return NULL;
-#endif
-}
-
-/************************************************************************/
-/*                            exportToJson()                             */
-/************************************************************************/
-
-/**
- * \fn char *OGRGeometry::exportToJson() const;
- *
- * Convert a geometry into GeoJSON format.
- *
- * The returned string should be freed with CPLFree() when no longer required.
- *
- * This method is the same as the C function OGR_G_ExportToJson().
- *
- * @return A GeoJSON fragment or NULL in case of error.
- */
-
-char *OGRGeometry::exportToJson() const
-{
-#ifndef _WIN32_WCE
-#ifdef OGR_ENABLED
-    OGRGeometry* poGeometry = const_cast<OGRGeometry*>(this);
-    return OGR_G_ExportToJson( (OGRGeometryH) (poGeometry) );
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToJson() not supported in builds without OGR drivers." );
-    return NULL;
-#endif
-#else
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "OGRGeometry::exportToJson() not supported in the WinCE build." );
-    return NULL;
-#endif
-}
-
-/************************************************************************/
 /*                 OGRSetGenerate_DB2_V72_BYTE_ORDER()                  */
 /*                                                                      */
 /*      This is a special entry point to enable the hack for            */
@@ -1685,10 +1242,7 @@ GEOSGeom OGRGeometry::exportToGEOS() const
 
 #else
 
-    static void *hGEOSInitMutex = NULL;
     static int bGEOSInitialized = FALSE;
-
-    CPLMutexHolderD( &hGEOSInitMutex );
 
     if( !bGEOSInitialized )
     {
@@ -2466,7 +2020,7 @@ int OGR_G_Crosses( OGRGeometryH hThis, OGRGeometryH hOther )
 /**
  * Test for containment.
  *
- * Tests if actual geometry object is within the passed geometry.
+ * Tests if the passed in geometry is within the target geometry.
  *
  * This method is the same as the C function OGR_G_Within().
  *
@@ -2527,7 +2081,7 @@ int OGR_G_Within( OGRGeometryH hThis, OGRGeometryH hOther )
 /**
  * Test for containment.
  *
- * Tests if actual geometry object contains the passed geometry.
+ * Tests if the passed in geometry contains the target geometry.
  *
  * This method is the same as the C function OGR_G_Contains().
  *
@@ -2669,3 +2223,4 @@ void OGR_G_CloseRings( OGRGeometryH hGeom )
 {
     ((OGRGeometry *) hGeom)->closeRings();
 }
+

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdtsdriver.cpp 12396 2007-10-13 10:02:17Z rouault $
+ * $Id: ogrsdtsdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implements OGRSDTSDriver
@@ -30,7 +30,7 @@
 #include "ogr_sdts.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsdtsdriver.cpp 12396 2007-10-13 10:02:17Z rouault $");
+CPL_CVSID("$Id: ogrsdtsdriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGRSDTSDriver()                           */
@@ -94,8 +94,6 @@ OGRDataSource *OGRSDTSDriver::Open( const char * pszFilename, int bUpdate )
 void RegisterOGRSDTS()
 
 {
-    if (! GDAL_CHECK_VERSION("SDTS driver"))
-        return;
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRSDTSDriver );
 }
 

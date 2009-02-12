@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravce00datasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogravce00datasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00DataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravce00datasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogravce00datasource.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                        OGRAVCE00DataSource()                         */

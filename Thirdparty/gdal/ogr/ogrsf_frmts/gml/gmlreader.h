@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 15595 2008-10-24 20:12:38Z rouault $
+ * $Id: gmlreader.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -38,10 +38,7 @@ typedef enum {
     GMLPT_String = 1,
     GMLPT_Integer = 2,
     GMLPT_Real = 3,
-    GMLPT_Complex = 4,
-    GMLPT_StringList = 5,
-    GMLPT_IntegerList = 6, 
-    GMLPT_RealList = 7
+    GMLPT_Complex = 4
 } GMLPropertyType;
 
 /************************************************************************/
@@ -59,17 +56,16 @@ public:
         GMLPropertyDefn( const char *pszName, const char *pszSrcElement=NULL );
        ~GMLPropertyDefn();
 
-    const char *GetName() const { return m_pszName; } 
+    const char *GetName() { return m_pszName; } const
 
-    GMLPropertyType GetType() const { return m_eType; } 
+    GMLPropertyType GetType() { return m_eType; } const
     void        SetType( GMLPropertyType eType ) { m_eType = eType; }
     void        SetWidth( int nWidth) { m_nWidth = nWidth; }
     int         GetWidth() { return m_nWidth; }
     void        SetSrcElement( const char *pszSrcElement );
     const char *GetSrcElement() { return m_pszSrcElement; }
 
-    void        AnalysePropertyValue( const char *pszValue, 
-                                      const char *pszOldValue = NULL );
+    void        AnalysePropertyValue( const char * );
 };
 
 /************************************************************************/
@@ -95,8 +91,6 @@ class CPL_DLL GMLFeatureClass
     double      m_dfYMin;
     double      m_dfYMax;
 
-    int         m_nGeometryType;
-
 public:
             GMLFeatureClass( const char *pszName = "" );
            ~GMLFeatureClass();
@@ -107,7 +101,7 @@ public:
     const char *GetGeometryElement() const { return m_pszGeometryElement; }
     void        SetGeometryElement( const char *pszElementName );
 
-    const char *GetName() const { return m_pszName; } 
+    const char *GetName() { return m_pszName; } const
     int         GetPropertyCount() const { return m_nPropertyCount; }
     GMLPropertyDefn *GetProperty( int iIndex ) const;
     int GetPropertyIndex( const char *pszName ) const;
@@ -129,9 +123,6 @@ public:
                             double dFYMin, double dfYMax );
     int         GetExtents( double *pdfXMin, double *pdfXMax, 
                             double *pdFYMin, double *pdfYMax );
-
-    int         GetGeometryType() const { return m_nGeometryType; }
-    void        SetGeometryType( int nNewType ) { m_nGeometryType = nNewType; }
 
     CPLXMLNode *SerializeToXML();
     int         InitializeFromXML( CPLXMLNode * );

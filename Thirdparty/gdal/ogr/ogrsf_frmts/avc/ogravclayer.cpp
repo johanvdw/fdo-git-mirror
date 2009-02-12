@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravclayer.cpp 15014 2008-07-23 21:05:23Z dmorissette $
+ * $Id: ogravclayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCLayer class.  This is the base class for E00
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravclayer.cpp 15014 2008-07-23 21:05:23Z dmorissette $");
+CPL_CVSID("$Id: ogravclayer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRAVCLayer()                           */
@@ -345,7 +345,7 @@ OGRFeature *OGRAVCLayer::TranslateFeature( void *pAVCFeature )
 /*      Apply attributes.                                               */
 /* -------------------------------------------------------------------- */
           poOGRFeature->SetField( 0, psTXT->nUserId );
-          poOGRFeature->SetField( 1, (const char *)psTXT->pszText );
+          poOGRFeature->SetField( 1, psTXT->pszText );
           poOGRFeature->SetField( 2, psTXT->dHeight );
           poOGRFeature->SetField( 3, psTXT->nLevel );
 
@@ -558,13 +558,12 @@ int OGRAVCLayer::TranslateTableFields( OGRFeature *poFeature,
             if (nType == AVC_FT_CHAR)
             {
                 /* Remove trailing spaces in char fields */
-                int nLen = strlen((const char*)pasFields[iField].pszStr);
+                int nLen = strlen(pasFields[iField].pszStr);
                 while (nLen > 0 && pasFields[iField].pszStr[nLen-1] == ' ')
                     nLen--;
                 pasFields[iField].pszStr[nLen] = '\0';
             }
-            poFeature->SetField( iOutField++, 
-                                 (const char *)pasFields[iField].pszStr );
+            poFeature->SetField( iOutField++, pasFields[iField].pszStr );
         }
         else if (nType == AVC_FT_BININT && psFInfo->nSize == 4)
         {

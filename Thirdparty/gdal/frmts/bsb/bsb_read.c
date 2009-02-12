@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsb_read.c 14967 2008-07-19 11:32:52Z rouault $
+ * $Id: bsb_read.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  BSB Reader
  * Purpose:  Low level BSB Access API Implementation (non-GDAL).
@@ -36,9 +36,9 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: bsb_read.c 14967 2008-07-19 11:32:52Z rouault $");
+CPL_CVSID("$Id: bsb_read.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
-static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, int bNO1 );
+static const char *BSBReadHeaderLine( BSBInfo *psInfo, int bNO1 );
 
 /************************************************************************
 
@@ -168,16 +168,10 @@ BSBInfo *BSBOpen( const char *pszFilename )
 {
     FILE	*fp;
     char	achTestBlock[1000];
-    char        szLine[1000];
+    const char  *pszLine;
     int         i, bNO1 = FALSE;
     BSBInfo     *psInfo;
     int    nSkipped = 0;
-    const char *pszPalette;
-
-/* -------------------------------------------------------------------- */
-/*      Which palette do we want to use?                                */
-/* -------------------------------------------------------------------- */
-    pszPalette = CPLGetConfigOption( "BSB_PALETTE", "RGB" );
 
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
@@ -200,7 +194,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
         VSIFCloseL( fp );
         CPLError( CE_Failure, CPLE_FileIO,
                   "Could not read first %d bytes for header!", 
-                  (int) sizeof(achTestBlock) );
+                  sizeof(achTestBlock) );
         return NULL;
     }
 
@@ -251,20 +245,20 @@ BSBInfo *BSBOpen( const char *pszFilename )
 /* -------------------------------------------------------------------- */
     VSIFSeekL( fp, 0, SEEK_SET );
 
-    while( BSBReadHeaderLine(psInfo, szLine, sizeof(szLine), bNO1) )
+    while( (pszLine = BSBReadHeaderLine(psInfo, bNO1)) != NULL )
     {
         char	**papszTokens = NULL;
         int      nCount = 0;
 
-        if( szLine[0] != '\0' && szLine[1] != '\0' && szLine[2] != '\0' && szLine[3] == '/' )
+        if( pszLine[3] == '/' )
         {
-            psInfo->papszHeader = CSLAddString( psInfo->papszHeader, szLine );
-            papszTokens = CSLTokenizeStringComplex( szLine+4, ",=", 
+            psInfo->papszHeader = CSLAddString( psInfo->papszHeader, pszLine );
+            papszTokens = CSLTokenizeStringComplex( pszLine+4, ",=", 
                                                     FALSE,FALSE);
             nCount = CSLCount(papszTokens);
         }
 
-        if( EQUALN(szLine,"BSB/",4) )
+        if( EQUALN(pszLine,"BSB/",4) )
         {
             int		nRAIndex;
 
@@ -280,7 +274,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
             psInfo->nXSize = atoi(papszTokens[nRAIndex+1]);
             psInfo->nYSize = atoi(papszTokens[nRAIndex+2]);
         }
-        else if( EQUALN(szLine,"NOS/",4) )
+        else if( EQUALN(pszLine,"NOS/",4) )
         {
             int  nRAIndex;
             
@@ -296,23 +290,13 @@ BSBInfo *BSBOpen( const char *pszFilename )
             psInfo->nXSize = atoi(papszTokens[nRAIndex+3]);
             psInfo->nYSize = atoi(papszTokens[nRAIndex+4]);
         }
-        else if( EQUALN(szLine, pszPalette, 3) && szLine[3] == '/'
-                 && nCount >= 4 )
+        else if( EQUALN(pszLine,"RGB/",4) && nCount >= 4 )
         {
             int	iPCT = atoi(papszTokens[0]);
             if( iPCT > psInfo->nPCTSize-1 )
             {
                 psInfo->pabyPCT = (unsigned char *) 
-                    VSIRealloc(psInfo->pabyPCT,(iPCT+1) * 3);
-                if (psInfo->pabyPCT == NULL)
-                {
-                    CSLDestroy( papszTokens );
-                    CPLError( CE_Failure, CPLE_OutOfMemory, 
-                              "BSBOpen : Out of memory. Probably due to corrupted BSB file (iPCT = %d).",
-                              iPCT);
-                    BSBClose( psInfo );
-                    return NULL;
-                }
+                    CPLRealloc(psInfo->pabyPCT,(iPCT+1) * 3);
                 memset( psInfo->pabyPCT + psInfo->nPCTSize*3, 0, 
                         (iPCT+1-psInfo->nPCTSize) * 3);
                 psInfo->nPCTSize = iPCT+1;
@@ -322,7 +306,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
             psInfo->pabyPCT[iPCT*3+1] = (unsigned char)atoi(papszTokens[2]);
             psInfo->pabyPCT[iPCT*3+2] = (unsigned char)atoi(papszTokens[3]);
         }
-        else if( EQUALN(szLine,"VER/",4) && nCount >= 1 )
+        else if( EQUALN(pszLine,"VER/",4) && nCount >= 1 )
         {
             psInfo->nVersion = (int) (100 * atof(papszTokens[0]) + 0.5);
         }
@@ -402,28 +386,13 @@ BSBInfo *BSBOpen( const char *pszFilename )
         && psInfo->nColorSize >= 0x31 && psInfo->nColorSize <= 0x38 )
         psInfo->nColorSize -= 0x30;
 
-    if( ! (psInfo->nColorSize > 0 && psInfo->nColorSize < 9) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "BSBOpen : Bad value for nColorSize (%d). Probably due to corrupted BSB file",
-                  psInfo->nColorSize );
-        BSBClose( psInfo );
-        return NULL;
-    }
+    CPLAssert( psInfo->nColorSize > 0 && psInfo->nColorSize < 9 );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize line offset list.                                    */
 /* -------------------------------------------------------------------- */
     psInfo->panLineOffset = (int *) 
-        VSIMalloc2(sizeof(int), psInfo->nYSize);
-    if (psInfo->panLineOffset == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, 
-                  "BSBOpen : Out of memory. Probably due to corrupted BSB file (nYSize = %d).",
-                  psInfo->nYSize );
-        BSBClose( psInfo );
-        return NULL;
-    }
+        CPLMalloc(sizeof(int) * psInfo->nYSize);
     for( i = 0; i < psInfo->nYSize; i++ )
         psInfo->panLineOffset[i] = -1;
 
@@ -439,22 +408,24 @@ BSBInfo *BSBOpen( const char *pszFilename )
 /*      Read one virtual line of text from the BSB header.  This        */
 /*      will end if a 0x1A (EOF) is encountered, indicating the data    */
 /*      is about to start.  It will also merge multiple physical        */
-/*      lines where appropriate.                                        */
+/*      lines where appropriate.  The buffer is internal, and only      */
+/*      lasts till the next call.                                       */
 /************************************************************************/
 
-static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, int bNO1 )
+static const char *BSBReadHeaderLine( BSBInfo *psInfo, int bNO1 )
 
 {
+    static char	szLine[1000];
     char        chNext;
     int	        nLineLen = 0;
 
-    while( !VSIFEofL(psInfo->fp) && nLineLen < nLineMaxLen-1 )
+    while( !VSIFEofL(psInfo->fp) && nLineLen < sizeof(szLine)-1 )
     {
         chNext = (char) BSBGetc( psInfo, bNO1 );
         if( chNext == 0x1A )
         {
             BSBUngetc( psInfo, chNext );
-            return FALSE;
+            return NULL;
         }
 
         /* each CR/LF (or LF/CR) as if just "CR" */
@@ -480,8 +451,8 @@ static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, i
             if( chTest != ' ' )
             {
                 BSBUngetc( psInfo, chTest );
-                pszLine[nLineLen] = '\0';
-                return TRUE;
+                szLine[nLineLen] = '\0';
+                return szLine;
             }
 
             /* eat pending spaces */
@@ -490,15 +461,15 @@ static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, i
             BSBUngetc( psInfo,chTest );
 
             /* insert comma in data stream */
-            pszLine[nLineLen++] = ',';
+            szLine[nLineLen++] = ',';
         }
         else
         {
-            pszLine[nLineLen++] = chNext;
+            szLine[nLineLen++] = chNext;
         }
     }
 
-    return FALSE;
+    return NULL;
 }
 
 /************************************************************************/
@@ -573,7 +544,7 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Got scanline id %d when looking for %d @ offset %ld.", 
-                  nLineMarker, nScanline+1, (long) VSIFTellL( fp ) );
+                  nLineMarker, nScanline+1, VSIFTellL( fp ) );
         return FALSE;
     }
 
@@ -670,7 +641,7 @@ BSBInfo *BSBCreate( const char *pszFilename, int nCreationFlags, int nVersion,
 /* -------------------------------------------------------------------- */
 /*      Open new KAP file.                                              */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpenL( pszFilename, "wb" );
+    fp = VSIFOpen( pszFilename, "wb" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -682,18 +653,18 @@ BSBInfo *BSBCreate( const char *pszFilename, int nCreationFlags, int nVersion,
 /* -------------------------------------------------------------------- */
 /*      Write out BSB line.                                             */
 /* -------------------------------------------------------------------- */
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "!Copyright unknown\n" );
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "VER/%.1f\n", nVersion / 100.0 );
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "BSB/NA=UNKNOWN,NU=999502,RA=%d,%d,DU=254\n",
                 nXSize, nYSize );
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "KNP/SC=25000,GD=WGS84,PR=Mercator\n" );
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "    PP=31.500000,PI=0.033333,SP=,SK=0.000000,TA=90.000000\n");
-    VSIFPrintfL( fp, 
+    VSIFPrintf( fp, 
                 "     UN=Metres,SD=HHWLT,DX=2.500000,DY=2.500000\n");
 
 
@@ -745,7 +716,7 @@ int BSBWritePCT( BSBInfo *psInfo, int nPCTSize, unsigned char *pabyPCT )
 /* -------------------------------------------------------------------- */
     for( i = 1; i < nPCTSize; i++ )
     {
-        VSIFPrintfL( psInfo->fp, 
+        VSIFPrintf( psInfo->fp, 
                     "RGB/%d,%d,%d,%d\n", 
                     i, pabyPCT[i*3+0], pabyPCT[i*3+1], pabyPCT[i*3+2] );
     }
@@ -775,9 +746,9 @@ int BSBWriteScanline( BSBInfo *psInfo, unsigned char *pabyScanlineBuf )
 /* -------------------------------------------------------------------- */
     if( psInfo->nLastLineWritten == -1 )
     {
-        VSIFPutcL( 0x1A, psInfo->fp );
-        VSIFPutcL( 0x00, psInfo->fp );
-        VSIFPutcL( psInfo->nColorSize, psInfo->fp );
+        VSIFPutc( 0x1A, psInfo->fp );
+        VSIFPutc( 0x00, psInfo->fp );
+        VSIFPutc( psInfo->nColorSize, psInfo->fp );
     }
 
 /* -------------------------------------------------------------------- */
@@ -789,10 +760,10 @@ int BSBWriteScanline( BSBInfo *psInfo, unsigned char *pabyScanlineBuf )
         nValue++;
 
     if( nValue >= 128*128 )
-        VSIFPutcL( 0x80 | ((nValue & (0x7f<<14)) >> 14), psInfo->fp );
+        VSIFPutc( 0x80 | ((nValue & (0x7f<<14)) >> 14), psInfo->fp );
     if( nValue >= 128 )
-        VSIFPutcL( 0x80 | ((nValue & (0x7f<<7)) >> 7), psInfo->fp );
-    VSIFPutcL( nValue & 0x7f, psInfo->fp );
+        VSIFPutc( 0x80 | ((nValue & (0x7f<<7)) >> 7), psInfo->fp );
+    VSIFPutc( nValue & 0x7f, psInfo->fp );
 
 /* -------------------------------------------------------------------- */
 /*      Write out each pixel as a separate byte.  We don't try to       */
@@ -801,11 +772,15 @@ int BSBWriteScanline( BSBInfo *psInfo, unsigned char *pabyScanlineBuf )
 /* -------------------------------------------------------------------- */
     for( iX = 0; iX < psInfo->nXSize; iX++ )
     {
-        VSIFPutcL( pabyScanlineBuf[iX] << (7-psInfo->nColorSize), 
-                    psInfo->fp );
+        if( pabyScanlineBuf[iX] == 0 )
+            VSIFPutc( 1 << (7-psInfo->nColorSize), 
+                      psInfo->fp );
+        else
+            VSIFPutc( pabyScanlineBuf[iX] << (7-psInfo->nColorSize), 
+                      psInfo->fp );
     }
 
-    VSIFPutcL( 0x00, psInfo->fp );
+    VSIFPutc( 0x00, psInfo->fp );
 
     return TRUE;
 }

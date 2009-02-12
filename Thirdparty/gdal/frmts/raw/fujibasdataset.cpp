@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fujibasdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: fujibasdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  eCognition
  * Purpose:  Implementation of FUJI BAS Format
@@ -30,7 +30,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: fujibasdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: fujibasdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_FujiBAS(void);

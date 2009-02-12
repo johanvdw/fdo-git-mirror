@@ -298,12 +298,6 @@ FdoStringP FdoCommonMiscUtil::FdoCommandTypeToString (FdoInt32 command)
         case FdoCommandType_ListDataStores:
             ret = L"FdoCommandType_ListDataStores";
             break;
-        case FdoCommandType_GetSchemaNames:
-            ret = L"FdoCommandType_GetSchemaNames";
-            break;
-        case FdoCommandType_GetClassNames:
-            ret = L"FdoCommandType_GetClassNames";
-            break;
         default:
             {
                 wchar_t buffer[9];
@@ -716,10 +710,7 @@ void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *class
                 {
                     propValue = FdoPropertyValue::Create();
                     propValue->SetName(dataPropertyDef->GetName());
-                    if ( dataPropertyDef->GetDataType() == FdoDataType_String ) 
-                        propValue->SetValue( FdoPtr<FdoStringValue>(FdoStringValue::Create(defaultValue)) );
-                    else
-                        propValue->SetValue(defaultValue);
+                    propValue->SetValue(defaultValue);
                     propValues->Add(propValue);
                 }
             }

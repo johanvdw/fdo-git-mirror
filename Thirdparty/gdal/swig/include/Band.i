@@ -1,32 +1,119 @@
 /******************************************************************************
- * $Id: Band.i 15763 2008-11-19 15:15:03Z warmerdam $
+ * $Id: Band.i 10486 2006-12-10 19:05:19Z ajolma $
  *
  * Name:     Band.i
  * Project:  GDAL Python Interface
  * Purpose:  GDAL Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.27  2006/12/10 19:05:19  ajolma
+ * Make stats in GetStatistics output variables, also a new pattern IF_ERROR_RETURN_NONE to not to return the error code
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.26  2006/11/16 03:19:38  fwarmerdam
+ * added ComputeBandStats() method
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.25  2006/11/07 04:04:45  hobu
+ * improper #ifndef SWIGCSHARP in a previous commit
+ *
+ * Revision 1.24  2006/11/05 22:12:15  tamas
+ * Hiding ReadRaster/WriteRaster from the C# interface
+ *
+ * Revision 1.23  2006/08/16 14:41:01  fwarmerdam
+ * Fix up GetBlockSize().
+ *
+ * Revision 1.22  2006/08/05 00:58:31  fwarmerdam
+ * Added GetBlockSize().
+ *
+ * Revision 1.21  2006/07/13 16:05:53  fwarmerdam
+ * Added GetStatistics() and SetStatistics().
+ *
+ * Revision 1.20  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ * Revision 1.19  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.18  2005/08/04 20:48:32  kruland
+ * Recoded GetNoDataValue(), GetMaximum(), GetMinimum(), GetOffset(), GetScale() to have
+ * access to both the double return value and the has value flag.
+ *
+ * Revision 1.17  2005/08/04 19:16:06  kruland
+ * GetRasterColorTable does not return a newobject.
+ *
+ * Revision 1.16  2005/07/20 16:28:26  kruland
+ * Merge the two definitions of Checksum into one.  Use the pointer trick
+ * to allow the passing of optional xsize,ysize parameters.
+ *
+ * Revision 1.15  2005/07/18 16:13:31  kruland
+ * Added MajorObject.i an interface specification to the MajorObject baseclass.
+ * Used inheritance in Band.i, Driver.i, and Dataset.i to access MajorObject
+ * functionality.
+ * Adjusted Makefile to have PYTHON be a variable, gdal wrapper depend on
+ * MajorObject.i, use rm (instead of libtool's wrapped RM) for removal because
+ * the libtool didn't accept -r.
+ *
+ * Revision 1.14  2005/07/18 15:41:27  kruland
+ * Added Set/Get Description.  Some comment changes.
+ *
+ * Revision 1.13  2005/07/15 19:00:24  kruland
+ * Implement two GetMetadata methods, one which returns a dict and one
+ * which returns a List.  Have python code determine which to use.
+ *
+ * Revision 1.12  2005/07/15 18:33:57  kruland
+ * Added SetMetadata with single string argument.
+ *
+ * Revision 1.11  2005/03/10 17:19:08  hobu
+ * #ifdefs for csharp
+ *
+ * Revision 1.10  2005/02/23 17:44:00  kruland
+ * Added GetMetadata, SetMetadata, SetRasterColorInterpretation.
+ *
+ * Revision 1.9  2005/02/22 23:27:39  kruland
+ * Implement GetRasterColorTable/SetRasterColorTable.
+ *
+ * Revision 1.8  2005/02/20 19:42:53  kruland
+ * Rename the Swig shadow classes so the names do not give the impression that
+ * they are any part of the GDAL/OSR apis.  There were no bugs with the old
+ * names but they were confusing.
+ *
+ * Revision 1.7  2005/02/17 17:27:13  kruland
+ * Changed the handling of fixed size double arrays to make it fit more
+ * naturally with GDAL/OSR usage.  Declare as typedef double * double_17;
+ * If used as return argument use:  function ( ... double_17 argout ... );
+ * If used as value argument use: function (... double_17 argin ... );
+ *
+ * Revision 1.6  2005/02/17 04:12:09  kruland
+ * Reimplement Band::ReadRaster Band::WriteRaster so they use optional int
+ * argument.  This allows keyword arguments in some languages.  Added a
+ * sanity check to WriteRaster to ensure the buffer string is long enough.
+ * Fixed FlushCache by moving it into the class.
+ *
+ * Revision 1.5  2005/02/16 18:41:14  kruland
+ * Implemented more methods.  Commented the ones still missing.
+ *
+ * Revision 1.4  2005/02/15 19:50:39  kruland
+ * Fixed ReadRaster/WriteRasters.  They need to use buffers of char * with
+ * explicit length because they can contain '\0'.
+ *
+ * Revision 1.3  2005/02/15 18:56:52  kruland
+ * Added support for WriteRaster().
+ *
+ * Revision 1.2  2005/02/15 16:56:46  kruland
+ * Remove use of vector<double> in ComputeRasterMinMax.  Use double_2 instead.
+ *
+ * Revision 1.1  2005/02/15 06:23:48  kruland
+ * Extracted Band class (GDALRasterBandShadow) into seperate .i file.  Does not use
+ * C++ API.
+ *
+ *
+*/
 
 /************************************************************************
  *
@@ -41,23 +128,14 @@ CPLErr ReadRaster_internal( GDALRasterBandShadow *obj,
                             GDALDataType buf_type,
                             int *buf_size, char **buf )
 {
-  CPLErr result;
-  *buf_size = (size_t)buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8);
-  *buf = (char*) VSIMalloc3( buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8 );
-  if (*buf)
-  {
-    result =  GDALRasterIO( obj, GF_Read, xoff, yoff, xsize, ysize,
-                                    (void *) *buf, buf_xsize, buf_ysize,
-                                    buf_type, 0, 0 );
-    if ( result != CE_None ) {
-        free( *buf );
-        *buf = 0;
-        *buf_size = 0;
-    }
-  }
-  else
-  {
-    result = CE_Failure;
+
+  *buf_size = buf_xsize * buf_ysize * GDALGetDataTypeSize( buf_type ) / 8;
+  *buf = (char*) malloc( *buf_size );
+  CPLErr result =  GDALRasterIO( obj, GF_Read, xoff, yoff, xsize, ysize,
+                                 (void *) *buf, buf_xsize, buf_ysize,
+                                 buf_type, 0, 0 );
+  if ( result != CE_None ) {
+    free( *buf );
     *buf = 0;
     *buf_size = 0;
   }
@@ -116,18 +194,6 @@ public:
   CPLErr SetNoDataValue( double d) {
     return GDALSetRasterNoDataValue( self, d );
   }
-  
-  %apply (char **options) { (char **) };
-  char** GetRasterCategoryNames( ) {
-    return GDALGetRasterCategoryNames( self );
-  }
-  %clear (char **);
-  
-  %apply (char **options) { (char **names) };
-  CPLErr SetRasterCategoryNames( char **names ) {
-    return GDALSetRasterCategoryNames( self, names );
-  }
-  %clear (char **names);
 
   void GetMinimum( double *val, int *hasval ) {
     *val = GDALGetRasterMinimum( self, hasval );
@@ -146,7 +212,7 @@ public:
   }
 
 %apply (double *OUTPUT){double *min, double *max, double *mean, double *stddev};
-%apply (IF_ERROR_RETURN_NONE) { (CPLErr) }; 
+%apply (IF_ERROR_RETURN_NONE) { (CPLErr) };
   CPLErr GetStatistics( int approx_ok, int force, 
                       double *min, double *max, double *mean, double *stddev ){
     return GDALGetRasterStatistics( self, approx_ok, force, 
@@ -230,111 +296,22 @@ public:
     GDALFlushRasterCache( self );
   }
 
-  // Deprecated name
-  GDALColorTableShadow *GetRasterColorTable() {
-    return (GDALColorTableShadow*) GDALGetRasterColorTable( self );
+  GDALColorTable *GetRasterColorTable() {
+    return (GDALColorTable*) GDALGetRasterColorTable( self );
   }
 
-  // Preferred name 
-  GDALColorTableShadow *GetColorTable() {
-    return (GDALColorTableShadow*) GDALGetRasterColorTable( self );
-  }
-
-  // Deprecated name
-  int SetRasterColorTable( GDALColorTableShadow *arg ) {
+  int SetRasterColorTable( GDALColorTable *arg ) {
     return GDALSetRasterColorTable( self, arg );
   }
- 
-  // Preferred name.
-  int SetColorTable( GDALColorTableShadow *arg ) {
-    return GDALSetRasterColorTable( self, arg );
-  }
- 
-  GDALRasterAttributeTableShadow *GetDefaultRAT() { 
-      return (GDALRasterAttributeTableShadow*) GDALGetDefaultRAT(self);
-  }
-
-  int SetDefaultRAT( GDALRasterAttributeTableShadow *table ) {
-      return GDALSetDefaultRAT(self, table);
-  }
-
-  GDALRasterBandShadow *GetMaskBand() {
-      return (GDALRasterBandShadow *) GDALGetMaskBand( self );
-  }
-
-  int GetMaskFlags() {
-      return GDALGetMaskFlags( self );
-  }
-
-  CPLErr CreateMaskBand( int nFlags ) {
-      return GDALCreateMaskBand( self, nFlags );
-  }
-
-#if defined(SWIGCSHARP)
-%apply (int inout[ANY]) {int *panHistogram};
-#elif defined(SWIGPERL)
-%apply (int len, int *output) {(int buckets, int *panHistogram)};
-%apply (IF_ERROR_RETURN_NONE) { (CPLErr) }; 
-#else
-%feature( "kwargs" ) GetHistogram;
-#endif
-  CPLErr GetHistogram( double min=-0.5,
-                     double max=255.5,
-                     int buckets=256,
-                     int *panHistogram = NULL,
-                     int include_out_of_range = 0,
-                     int approx_ok = 1,
-                     GDALProgressFunc callback = NULL,
-                     void* callback_data=NULL ) {
-    CPLErrorReset(); 
-    CPLErr err = GDALGetRasterHistogram( self, min, max, buckets, panHistogram,
-                                         include_out_of_range, approx_ok,
-                                         callback, callback_data );
-    return err;
-  }
-#if defined(SWIGCSHARP)
-%clear int *panHistogram;
-#elif defined(SWIGPERL)
-%clear (int buckets, int *panHistogram);
-%clear (CPLErr);
-#endif
-
-#if defined(SWIGPERL)
-%apply (double *OUTPUT){double *min_ret, double *max_ret}
-%apply (int *nLen, const int **pList) {(int *buckets_ret, int **ppanHistogram)};
-%apply (IF_ERROR_RETURN_NONE) { (CPLErr) }; 
-#endif
-%feature ("kwargs") GetDefaultHistogram;
-CPLErr GetDefaultHistogram( double *min_ret=NULL, double *max_ret=NULL, int *buckets_ret = NULL, 
-                            int **ppanHistogram = NULL, int force = 1, 
-			    GDALProgressFunc callback = NULL,
-                            void* callback_data=NULL ) {
-    return GDALGetDefaultHistogram( self, min_ret, max_ret, buckets_ret,
-                                    ppanHistogram, force, 
-                                    callback, callback_data );
-}
-#if defined(SWIGPERL)
-%clear (double *min_ret, double *max_ret);
-%clear (int *buckets_ret, int **ppanHistogram);
-%clear (CPLErr);
-#endif
-
-#if defined(SWIGPERL) || defined(SWIGPYTHON)
-%apply (int nList, int* pList) {(int buckets_in, int *panHistogram_in)}
-#endif
-CPLErr SetDefaultHistogram( double min, double max, 
-       			    int buckets_in, int *panHistogram_in ) {
-    return GDALSetDefaultHistogram( self, min, max, 
-    	   			    buckets_in, panHistogram_in );
-}
-#if defined(SWIGPERL) || defined(SWIGPYTHON)
-%clear (int buckets_in, int *panHistogram_in);
-#endif
 
 /* NEEDED */
+/* ReadAsArray */
+/* WriteArray */
+/* GetHistogram */
 /* GetStatistics */
 /* SetStatistics */
 /* ComputeStatistics */
+/* AdviseRead */
 
 } /* %extend */
 

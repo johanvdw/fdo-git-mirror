@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rmflzw.cpp 11865 2007-08-09 11:53:57Z warmerdam $
+ * $Id: rmflzw.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Implementation of the LZW compression algorithm as used in
@@ -123,7 +123,7 @@ int RMFDataset::LZWDecompress( const GByte* pabyIn, GUInt32 nSizeIn,
 {
     GUInt32         nCount = TABSIZE - 256;
     GUInt32         iCode, iOldCode, iInCode;
-    GByte           iFinChar, bLastChar=FALSE;
+    GByte           iFinChar, bLastChar;
     LZWStringTab    *poCodeTab;
     int             bBitsleft;
 

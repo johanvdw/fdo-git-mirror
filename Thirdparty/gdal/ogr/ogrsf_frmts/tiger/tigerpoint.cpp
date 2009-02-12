@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpoint.cpp 12745 2007-11-13 14:18:11Z dron $
+ * $Id: tigerpoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPoint class.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpoint.cpp 12745 2007-11-13 14:18:11Z dron $");
+CPL_CVSID("$Id: tigerpoint.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                             TigerPoint()                             */
@@ -47,7 +47,7 @@ TigerPoint::~TigerPoint()
 /************************************************************************/
 /*                             SetModule()                              */
 /************************************************************************/
-int TigerPoint::SetModule( const char * pszModule, const char *pszFileCode )
+int TigerPoint::SetModule( const char * pszModule, char *pszFileCode )
 {
     if( !OpenFile( pszModule, pszFileCode ) )
         return FALSE;
@@ -123,7 +123,7 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
 OGRErr TigerPoint::CreateFeature( OGRFeature *poFeature, 
                                   TigerRecordInfo *psRTInfo,
                                   int pointIndex,
-                                  const char *pszFileCode)
+                                  char *pszFileCode)
 
 {
     char        szRecord[OGR_TIGER_RECBUF_LEN];

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.c 11332 2007-04-21 20:48:53Z warmerdam $
+ * $Id: EnvisatFile.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -32,7 +32,7 @@
 #  include "cpl_conv.h"
 #  include "EnvisatFile.h"
 
-CPL_CVSID("$Id: EnvisatFile.c 11332 2007-04-21 20:48:53Z warmerdam $");
+CPL_CVSID("$Id: EnvisatFile.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #else
 #  include "APP/app.h"
@@ -1039,7 +1039,7 @@ int EnvisatFile_SetKeyValueAsInt( EnvisatFile *self,
         return FAILURE;
     }
 
-    sprintf( format, "%%+0%dd", (int) strlen(prototype_value) );
+    sprintf( format, "%%+0%dd", strlen(prototype_value) );
     sprintf( string_value, format, value );
 
     return EnvisatFile_SetKeyValueAsString( self, mph_or_sph, key, string_value );

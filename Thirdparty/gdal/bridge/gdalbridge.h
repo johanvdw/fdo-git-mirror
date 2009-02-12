@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalbridge.h 11457 2007-05-10 20:24:14Z tamas $
+ * $Id: gdalbridge.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Bridge 
  * Purpose:  Declarations for GDAL Bridge support.
@@ -257,9 +257,6 @@ GDAL_ENTRY const char *(*pfnGDALGetDriverShortName)(GDALDriverH) GDAL_NULL;
 
 GDAL_ENTRY const char *(*pfnGDALGetDriverLongName)(GDALDriverH) GDAL_NULL;
 #define GDALGetDriverLongName pfnGDALGetDriverLongName
-
-GDAL_ENTRY GDALDriverH (*pfnGDALIdentifyDriver)( const char *, char ** ) GDAL_NULL;
-#define GDALIdentifyDriver pfnGDALIdentifyDriver
 
 /* ==================================================================== */
 /*      GDALMajorObject                                                 */

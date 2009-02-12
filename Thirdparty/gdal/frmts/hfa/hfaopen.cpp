@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaopen.cpp 15774 2008-11-20 20:31:17Z warmerdam $
+ * $Id: hfaopen.cpp 12344 2007-10-06 04:12:37Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Supporting functions for HFA (.img) ... main (C callable) API
@@ -38,12 +38,13 @@
 
 #include "hfa_p.h"
 #include "cpl_conv.h"
+//#include "gdal_alg.h"
 #include <limits.h>
 
-CPL_CVSID("$Id: hfaopen.cpp 15774 2008-11-20 20:31:17Z warmerdam $");
+CPL_CVSID("$Id: hfaopen.cpp 12344 2007-10-06 04:12:37Z warmerdam $");
 
 
-static const char *apszAuxMetadataItems[] = {
+static char *apszAuxMetadataItems[] = {
 
 // node/entry            field_name                  metadata_key       type
 
@@ -61,7 +62,7 @@ static const char *apszAuxMetadataItems[] = {
 };
 
 
-const char ** GetHFAAuxMetaDataList()
+char ** GetHFAAuxMetaDataList()
 {
     return apszAuxMetadataItems;
 }
@@ -300,16 +301,15 @@ HFAInfo_t *HFAGetDependent( HFAInfo_t *psBase, const char *pszFilename )
 /* -------------------------------------------------------------------- */
     char	*pszDependent;
     FILE	*fp;
-    const char* pszMode = psBase->eAccess == HFA_Update ? "r+b" : "rb";
 
     pszDependent = CPLStrdup(
         CPLFormFilename( psBase->pszPath, pszFilename, NULL ) );
 
-    fp = VSIFOpenL( pszDependent, pszMode );
+    fp = VSIFOpenL( pszDependent, "rb" );
     if( fp != NULL )
     {
         VSIFCloseL( fp );
-        psBase->psDependent = HFAOpen( pszDependent, pszMode );
+        psBase->psDependent = HFAOpen( pszDependent, "rb" );
     }
 
     CPLFree( pszDependent );
@@ -357,11 +357,6 @@ CPLErr HFAParseBandInfo( HFAInfo_t *psInfo )
                 CPLRealloc(psInfo->papoBand,
                            sizeof(HFABand *) * (psInfo->nBands+1));
             psInfo->papoBand[psInfo->nBands] = new HFABand( psInfo, poNode );
-            if (psInfo->papoBand[psInfo->nBands]->nWidth == 0)
-            {
-                delete psInfo->papoBand[psInfo->nBands];
-                return CE_Failure;
-            }
             psInfo->nBands++;
         }
 
@@ -395,7 +390,6 @@ void HFAClose( HFAHandle hHFA )
 
     CPLFree( hHFA->pszDictionary );
     CPLFree( hHFA->pszFilename );
-    CPLFree( hHFA->pszIGEFilename );
     CPLFree( hHFA->pszPath );
 
     for( i = 0; i < hHFA->nBands; i++ )
@@ -442,9 +436,9 @@ void HFAClose( HFAHandle hHFA )
 CPLErr HFARemove( const char *pszFilename )
 
 {
-    VSIStatBufL      sStat;
+    VSIStatBuf      sStat;
 
-    if( VSIStatL( pszFilename, &sStat ) == 0 && VSI_ISREG( sStat.st_mode ) )
+    if( VSIStat( pszFilename, &sStat ) == 0 && VSI_ISREG( sStat.st_mode ) )
     {
         if( VSIUnlink( pszFilename ) == 0 )
             return CE_None;
@@ -591,34 +585,13 @@ int HFAGetBandNoData( HFAHandle hHFA, int nBand, double *pdfNoData )
     return poBand->bNoDataSet;
 }
 
-/************************************************************************/ 
-/*                          HFASetBandNoData()                          */ 
-/*                                                                      */ 
-/*      attempts to set a no-data value on the given band               */ 
-/************************************************************************/ 
-
-CPLErr HFASetBandNoData( HFAHandle hHFA, int nBand, double dfValue ) 
-
-{ 
-    if ( nBand < 0 || nBand > hHFA->nBands ) 
-    { 
-        CPLAssert( FALSE ); 
-        return CE_Failure; 
-    } 
-
-    HFABand *poBand = hHFA->papoBand[nBand - 1]; 
-
-    return poBand->SetNoDataValue( dfValue ); 
-}
-
 /************************************************************************/
 /*                         HFAGetOverviewInfo()                         */
 /************************************************************************/
 
 CPLErr HFAGetOverviewInfo( HFAHandle hHFA, int nBand, int iOverview,
                            int * pnXSize, int * pnYSize,
-                           int * pnBlockXSize, int * pnBlockYSize,
-                           int * pnHFADataType )
+                           int * pnBlockXSize, int * pnBlockYSize )
 
 {
     HFABand	*poBand;
@@ -649,9 +622,6 @@ CPLErr HFAGetOverviewInfo( HFAHandle hHFA, int nBand, int iOverview,
 
     if( pnBlockYSize != NULL )
         *pnBlockYSize = poBand->nBlockYSize;
-
-    if( pnHFADataType != NULL )
-        *pnHFADataType = poBand->nDataType;
 
     return( CE_None );
 }
@@ -898,7 +868,7 @@ const Eprj_MapInfo *HFAGetMapInfo( HFAHandle hHFA )
 }
 
 /************************************************************************/
-/*                         HFAInvGeoTransform()                         */
+/*                        HFAInvGeoTransform()                          */
 /************************************************************************/
 
 static int HFAInvGeoTransform( double *gt_in, double *gt_out )
@@ -932,7 +902,7 @@ static int HFAInvGeoTransform( double *gt_in, double *gt_out )
 }
 
 /************************************************************************/
-/*                         HFAGetGeoTransform()                         */
+/*                       int HFAGetGeoTransform()                       */
 /************************************************************************/
 
 int HFAGetGeoTransform( HFAHandle hHFA, double *padfGeoTransform )
@@ -996,11 +966,6 @@ int HFAGetGeoTransform( HFAHandle hHFA, double *padfGeoTransform )
         || poXForm0->GetIntField( "numdimtransform" ) != 2
         || poXForm0->GetIntField( "numdimpolynomial" ) != 2
         || poXForm0->GetIntField( "termcount" ) != 3 )
-        return FALSE;
-
-    // Verify that there aren't any further xform steps.
-    if( hHFA->papoBand[0]->poNode->GetNamedChild( "MapToPixelXForm.XForm1" )
-        != NULL )
         return FALSE;
 
     // we should check that the exponent list is 0 0 1 0 0 1 but
@@ -1156,102 +1121,97 @@ CPLErr HFASetPEString( HFAHandle hHFA, const char *pszPEString )
 
 {
 /* -------------------------------------------------------------------- */
-/*      Loop over bands, setting information on each one.               */
-/* -------------------------------------------------------------------- */
-    int iBand;
-
-    for( iBand = 0; iBand < hHFA->nBands; iBand++ )
-    {
-        HFAEntry *poProX;
-
-/* -------------------------------------------------------------------- */
 /*      Verify we don't already have the node, since update-in-place    */
 /*      is likely to be more complicated.                               */
 /* -------------------------------------------------------------------- */
-        poProX = hHFA->papoBand[iBand]->poNode->GetNamedChild( "ProjectionX" );
-        if( poProX != NULL )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "HFASetPEString() failed because the ProjectionX node\n"
-                      "already exists and can't be reliably updated." );
-            return CE_Failure;
-        }
+    if( hHFA->nBands == 0 )
+        return CE_None;
+
+    HFAEntry *poProX;
+
+    poProX = hHFA->papoBand[0]->poNode->GetNamedChild( "ProjectionX" );
+    if( poProX != NULL )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "HFASetPEString() failed because the ProjectionX node\n"
+                  "already exists and can't be reliably updated." );
+        return CE_Failure;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create the node.                                                */
 /* -------------------------------------------------------------------- */
-        poProX = new HFAEntry( hHFA, "ProjectionX","Eprj_MapProjection842",
-                               hHFA->papoBand[iBand]->poNode );
-        if( poProX == NULL )
-            return CE_Failure;
+    poProX = new HFAEntry( hHFA, "ProjectionX","Eprj_MapProjection842",
+                           hHFA->papoBand[0]->poNode );
+    if( poProX == NULL )
+        return CE_Failure;
 
-        GByte *pabyData = poProX->MakeData( 700 + strlen(pszPEString) );
-        memset( pabyData, 0, 250+strlen(pszPEString) );
+    GByte *pabyData = poProX->MakeData( 700 + strlen(pszPEString) );
+    memset( pabyData, 0, 250+strlen(pszPEString) );
 
-        poProX->SetPosition();
+    poProX->SetPosition();
 
-        poProX->SetStringField( "projection.type.string", "PE_COORDSYS" );
-        poProX->SetStringField( "projection.MIFDictionary.string", 
-                                "{0:pcstring,}Emif_String,{1:x{0:pcstring,}Emif_String,coordSys,}PE_COORDSYS,." );
+    poProX->SetStringField( "projection.type.string", "PE_COORDSYS" );
+    poProX->SetStringField( "projection.MIFDictionary.string", 
+                            "{0:pcstring,}Emif_String,{1:x{0:pcstring,}Emif_String,coordSys,}PE_COORDSYS,." );
 
 /* -------------------------------------------------------------------- */
 /*      Use a gross hack to scan ahead to the actual projection         */
 /*      string. We do it this way because we don't have general         */
 /*      handling for MIFObjects.                                        */
 /* -------------------------------------------------------------------- */
-        pabyData = poProX->GetData();
-        int    nDataSize = poProX->GetDataSize();
-        GUInt32   iOffset = poProX->GetDataPos();
-        GUInt32   nSize;
+    pabyData = poProX->GetData();
+    int    nDataSize = poProX->GetDataSize();
+    GUInt32   iOffset = poProX->GetDataPos();
+    GUInt32   nSize;
 
-        while( nDataSize > 10 
-               && !EQUALN((const char *) pabyData,"PE_COORDSYS,.",13) ) {
-            pabyData++;
-            nDataSize--;
-            iOffset++;
-        }
+    while( nDataSize > 10 
+           && !EQUALN((const char *) pabyData,"PE_COORDSYS,.",13) ) {
+        pabyData++;
+        nDataSize--;
+        iOffset++;
+    }
 
-        CPLAssert( nDataSize > (int) strlen(pszPEString) + 10 );
+    CPLAssert( nDataSize > (int) strlen(pszPEString) + 10 );
 
-        pabyData += 14;
-        iOffset += 14;
+    pabyData += 14;
+    iOffset += 14;
     
 /* -------------------------------------------------------------------- */
 /*      Set the size and offset of the mifobject.                       */
 /* -------------------------------------------------------------------- */
-        iOffset += 8;
+    iOffset += 8;
 
-        nSize = strlen(pszPEString) + 9;
+    nSize = strlen(pszPEString) + 9;
 
-        HFAStandard( 4, &nSize );
-        memcpy( pabyData, &nSize, 4 );
-        pabyData += 4;
+    HFAStandard( 4, &nSize );
+    memcpy( pabyData, &nSize, 4 );
+    pabyData += 4;
     
-        HFAStandard( 4, &iOffset );
-        memcpy( pabyData, &iOffset, 4 );
-        pabyData += 4;
+    HFAStandard( 4, &iOffset );
+    memcpy( pabyData, &iOffset, 4 );
+    pabyData += 4;
 
 /* -------------------------------------------------------------------- */
 /*      Set the size and offset of the string value.                    */
 /* -------------------------------------------------------------------- */
-        nSize = strlen(pszPEString) + 1;
+    nSize = strlen(pszPEString) + 1;
     
-        HFAStandard( 4, &nSize );
-        memcpy( pabyData, &nSize, 4 );
-        pabyData += 4;
+    HFAStandard( 4, &nSize );
+    memcpy( pabyData, &nSize, 4 );
+    pabyData += 4;
 
-        iOffset = 8;
-        HFAStandard( 4, &iOffset );
-        memcpy( pabyData, &iOffset, 4 );
-        pabyData += 4;
+    iOffset = 8;
+    HFAStandard( 4, &iOffset );
+    memcpy( pabyData, &iOffset, 4 );
+    pabyData += 4;
 
 /* -------------------------------------------------------------------- */
 /*      Place the string itself.                                        */
 /* -------------------------------------------------------------------- */
-        memcpy( pabyData, pszPEString, strlen(pszPEString)+1 );
+    memcpy( pabyData, pszPEString, strlen(pszPEString)+1 );
     
-        poProX->SetStringField( "title.string", "PE" );
-    }
+    poProX->SetStringField( "title.string", "PE" );
 
     return CE_None;
 }
@@ -1531,8 +1491,7 @@ CPLErr HFASetDatum( HFAHandle hHFA, const Eprj_Datum *poDatum )
 
 CPLErr HFAGetPCT( HFAHandle hHFA, int nBand, int *pnColors,
                   double **ppadfRed, double **ppadfGreen, 
-		  double **ppadfBlue , double **ppadfAlpha,
-                  double **ppadfBins )
+		  double **ppadfBlue , double **ppadfAlpha)
 
 {
     if( nBand < 1 || nBand > hHFA->nBands )
@@ -1540,7 +1499,7 @@ CPLErr HFAGetPCT( HFAHandle hHFA, int nBand, int *pnColors,
 
     return( hHFA->papoBand[nBand-1]->GetPCT( pnColors, ppadfRed,
                                              ppadfGreen, ppadfBlue,
-					     ppadfAlpha, ppadfBins ) );
+					     ppadfAlpha) );
 }
 
 /************************************************************************/
@@ -1687,7 +1646,6 @@ static const char *aszDefaultDD[] = {
 "1:lSkipFactorX,1:lSkipFactorY,1:*oEdsc_BinFunction,BinFunction,}Eimg_StatisticsParameters830,{1:lnumrows,}Edsc_Table,{1:lnumRows,1:LcolumnDataPtr,1:e4:integer,real,complex,string,dataType,1:lmaxNumChars,}Edsc_Column,{1:lposition,0:pcname,1:e2:EMSC_FALSE,EMSC_TRUE,editable,1:e3:LEFT,CENTER,RIGHT,alignment,0:pcformat,1:e3:DEFAULT,APPLY,AUTO-APPLY,formulamode,0:pcformula,1:dcolumnwidth,0:pcunits,1:e5:NO_COLOR,RED,GREEN,BLUE,COLOR,colorflag,0:pcgreenname,0:pcbluename,}Eded_ColumnAttributes_1,{1:lversion,1:lnumobjects,1:e2:EAOI_UNION,EAOI_INTERSECTION,operation,}Eaoi_AreaOfInterest,",
 "{1:x{0:pcstring,}Emif_String,type,1:x{0:pcstring,}Emif_String,MIFDictionary,0:pCMIFObject,}Emif_MIFObject,",
 "{1:x{1:x{0:pcstring,}Emif_String,type,1:x{0:pcstring,}Emif_String,MIFDictionary,0:pCMIFObject,}Emif_MIFObject,projection,1:x{0:pcstring,}Emif_String,title,}Eprj_MapProjection842,",
-"{0:poEmif_String,titleList,}Exfr_GenericXFormHeader,{1:lorder,1:lnumdimtransform,1:lnumdimpolynomial,1:ltermcount,0:plexponentlist,1:*bpolycoefmtx,1:*bpolycoefvector,}Efga_Polynomial,",
 ".",
 NULL
 };
@@ -1919,12 +1877,6 @@ HFACreateLayer( HFAHandle psInfo, HFAEntry *poParent,
         pszLayerType = "Eimg_Layer_SubSample";
     else
         pszLayerType = "Eimg_Layer";
-    
-    if (nBlockSize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "HFACreateLayer : nBlockXSize < 0");
-        return FALSE;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Work out some details about the tiling scheme.                  */
@@ -2038,8 +1990,11 @@ HFACreateLayer( HFAHandle psInfo, HFAEntry *poParent,
             HFAStandard( 4, &nValue );
             memcpy( pabyData + nOffset + 6, &nValue, 4 );
 
-            /* logValid (false) */
-            nValue16 = 0;
+            /* logValid (true/false) */
+            if( bCreateCompressed )
+                nValue16 = 0;
+            else
+                nValue16 = 1;
             HFAStandard( 2, &nValue16 );
             memcpy( pabyData + nOffset + 10, &nValue16, 2 );
 
@@ -2390,8 +2345,8 @@ char ** HFAGetMetadata( HFAHandle hHFA, int nBand )
 /* -------------------------------------------------------------------- */
 /*      read up to nMaxNumChars bytes from the indicated location.      */
 /*      allocate required space temporarily                             */
-/*      nMaxNumChars should have been set by GDAL orginally so we should*/
-/*      trust it, but who knows...                                      */
+/*      nMaxNumChars should have been set by GDAL orginally so we can   */
+/*      trust it.                                                       */
 /* -------------------------------------------------------------------- */
         int nMaxNumChars = poColumn->GetIntField( "maxNumChars" );
 
@@ -2401,13 +2356,7 @@ char ** HFAGetMetadata( HFAHandle hHFA, int nBand )
         }
         else
         {
-            char *pszMDValue = (char*) VSIMalloc(nMaxNumChars);
-            if (pszMDValue == NULL)
-            {
-                CPLError(CE_Failure, CPLE_OutOfMemory,
-                         "HFAGetMetadata : Out of memory while allocating %d bytes", nMaxNumChars);
-                continue;
-            }
+            char *pszMDValue = (char*) CPLMalloc(nMaxNumChars);
 
             if( VSIFSeekL( hHFA->fp, columnDataPtr, SEEK_SET ) != 0 )
                 continue;
@@ -2560,7 +2509,7 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
     char * pszBinValues = NULL;
     int bCreatedHistogramParameters = FALSE;
     int bCreatedStatistics = FALSE;
-    const char ** pszAuxMetaData = GetHFAAuxMetaDataList();
+    char ** pszAuxMetaData = GetHFAAuxMetaDataList();
     // check each metadata item
     for( int iColumn = 0; papszMD[iColumn] != NULL; iColumn++ )
     {
@@ -2662,19 +2611,12 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
             int nNumBins = poEntry->GetIntField( "BinFunction.numBins" );
             double dMinLimit = poEntry->GetDoubleField( "BinFunction.minLimit" );
             double dMaxLimit = poEntry->GetDoubleField( "BinFunction.maxLimit" );
-            
-            // fill the descriptor table - check it isn't there already
-            poEntry = poNode->GetNamedChild( "Descriptor_Table" );
-            if( poEntry == NULL || !EQUAL(poEntry->GetType(),"Edsc_Table") )
-                poEntry = new HFAEntry( hHFA, "Descriptor_Table", "Edsc_Table", poNode );
-                
+            // fill the descriptor table
+            poEntry = new HFAEntry( hHFA, "Descriptor_Table", "Edsc_Table", poNode );
             poEntry->SetIntField( "numRows", nNumBins );
-
             // bin function
-            HFAEntry * poBinFunc = poEntry->GetNamedChild( "#Bin_Function#" );
-            if( poBinFunc == NULL || !EQUAL(poBinFunc->GetType(),"Edsc_BinFunction") )
-                poBinFunc = new HFAEntry( hHFA, "#Bin_Function#", "Edsc_BinFunction", poEntry );
-
+            HFAEntry * poBinFunc = new HFAEntry( hHFA, "#Bin_Function#", "Edsc_BinFunction",
+                                                 poEntry );
             poBinFunc->MakeData( 30 );
             poBinFunc->SetIntField( "numBins", nNumBins );
             poBinFunc->SetDoubleField( "minLimit", dMinLimit );
@@ -2682,10 +2624,8 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
             poBinFunc->SetStringField( "binFunctionType", "linear" ); // we use always a linear
 
             // we need a child named histogram
-            HFAEntry * poHisto = poEntry->GetNamedChild( "Histogram" );
-            if( poHisto == NULL || !EQUAL(poHisto->GetType(),"Edsc_Column") )
-                poHisto = new HFAEntry( hHFA, "Histogram", "Edsc_Column", poEntry );
-                
+            HFAEntry * poHisto = new HFAEntry( hHFA, "Histogram", "Edsc_Column",
+                                               poEntry );
             poHisto->SetIntField( "numRows", nNumBins );
             // allocate space for the bin values
             GUInt32 nOffset = HFAAllocateSpace( hHFA, nNumBins*4 );
@@ -2760,12 +2700,6 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
 /*      Form .ige filename.                                             */
 /* -------------------------------------------------------------------- */
     char *pszFullFilename;
-    
-    if (nBlockSize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "HFACreateSpillStack : nBlockXSize < 0");
-        return FALSE;
-    }
 
     if( psInfo->pszIGEFilename == NULL )
         psInfo->pszIGEFilename = 
@@ -2850,14 +2784,7 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
 
     *pnValidFlagsOffset = VSIFTellL( fpVSIL );
 
-    pabyBlockMap = (unsigned char *) VSIMalloc( nBlockMapSize );
-    if (pabyBlockMap == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "HFACreateSpillStack : Out of memory");
-        VSIFCloseL( fpVSIL );
-        return FALSE;
-    }
-    
+    pabyBlockMap = (unsigned char *) CPLMalloc( nBlockMapSize );
     memset( pabyBlockMap, 0xff, nBlockMapSize );
     for ( iBand = 0; iBand < nLayers; iBand++ )
     {
@@ -2890,8 +2817,6 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
 
         VSIFWriteL( pabyBlockMap, 1, nBlockMapSize, fpVSIL );
     }
-    CPLFree(pabyBlockMap);
-    pabyBlockMap = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Extend the file to account for all the imagery space.           */
@@ -2920,572 +2845,3 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
     return TRUE;
 }
 
-/************************************************************************/
-/*                       HFAReadAndValidatePoly()                       */
-/************************************************************************/
-
-static int HFAReadAndValidatePoly( HFAEntry *poTarget, 
-                                   const char *pszName,
-                                   Efga_Polynomial *psRetPoly )
-
-{
-    CPLString osFldName;
-
-    memset( psRetPoly, 0, sizeof(Efga_Polynomial) );
-
-    osFldName.Printf( "%sorder", pszName );
-    psRetPoly->order = poTarget->GetIntField(osFldName);
-
-    if( psRetPoly->order < 1 || psRetPoly->order > 2 )
-        return FALSE;
-
-/* -------------------------------------------------------------------- */
-/*      Validate that things are in a "well known" form.                */
-/* -------------------------------------------------------------------- */
-    int numdimtransform, numdimpolynomial, termcount;
-
-    osFldName.Printf( "%snumdimtransform", pszName );
-    numdimtransform = poTarget->GetIntField(osFldName);
-    
-    osFldName.Printf( "%snumdimpolynomial", pszName );
-    numdimpolynomial = poTarget->GetIntField(osFldName);
-
-    osFldName.Printf( "%stermcount", pszName );
-    termcount = poTarget->GetIntField(osFldName);
-
-    if( numdimtransform != 2 || numdimpolynomial != 2 )
-        return FALSE;
-
-    if( (psRetPoly->order == 1 && termcount != 3) 
-        || (psRetPoly->order == 2 && termcount != 6) )
-        return FALSE;
-
-    // we don't check the exponent organization for now.  Hopefully
-    // it is always standard.
-
-/* -------------------------------------------------------------------- */
-/*      Get coefficients.                                               */
-/* -------------------------------------------------------------------- */
-    int i;
-
-    for( i = 0; i < termcount*2 - 2; i++ )
-    {
-        osFldName.Printf( "%spolycoefmtx[%d]", pszName, i );
-        psRetPoly->polycoefmtx[i] = poTarget->GetDoubleField(osFldName);
-    }
-
-    for( i = 0; i < 2; i++ )
-    {
-        osFldName.Printf( "%spolycoefvector[%d]", pszName, i );
-        psRetPoly->polycoefvector[i] = poTarget->GetDoubleField(osFldName);
-    }
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                         HFAReadXFormStack()                          */
-/************************************************************************/
-
-
-int HFAReadXFormStack( HFAHandle hHFA,
-                       Efga_Polynomial **ppasPolyListForward,
-                       Efga_Polynomial **ppasPolyListReverse )
- 
-{
-    if( hHFA->nBands == 0 )
-        return 0;
-
-/* -------------------------------------------------------------------- */
-/*      Get the HFA node.                                               */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poXFormHeader;
-
-    poXFormHeader = hHFA->papoBand[0]->poNode->GetNamedChild( "MapToPixelXForm" );
-    if( poXFormHeader == NULL )
-        return 0;
-
-/* -------------------------------------------------------------------- */
-/*      Loop over children, collecting XForms.                          */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poXForm;
-    int nStepCount = 0;
-    *ppasPolyListForward = NULL;
-    *ppasPolyListReverse = NULL;
-
-    for( poXForm = poXFormHeader->GetChild(); 
-         poXForm != NULL;
-         poXForm = poXForm->GetNext() )
-    {
-        int bSuccess = FALSE;
-        Efga_Polynomial sForward, sReverse;
-
-        if( EQUAL(poXForm->GetType(),"Efga_Polynomial") )
-        {
-            bSuccess = 
-                HFAReadAndValidatePoly( poXForm, "", &sForward );
-
-            if( bSuccess )
-            {
-                double adfGT[6], adfInvGT[6];
-
-                adfGT[0] = sForward.polycoefvector[0];
-                adfGT[1] = sForward.polycoefmtx[0];
-                adfGT[2] = sForward.polycoefmtx[2];
-                adfGT[3] = sForward.polycoefvector[1];
-                adfGT[4] = sForward.polycoefmtx[1];
-                adfGT[5] = sForward.polycoefmtx[3];
-
-                bSuccess = HFAInvGeoTransform( adfGT, adfInvGT );
-
-                memset( &sReverse, 0, sizeof(sReverse) );
-
-                sReverse.order = sForward.order;
-                sReverse.polycoefvector[0] = adfInvGT[0];
-                sReverse.polycoefmtx[0]    = adfInvGT[1];
-                sReverse.polycoefmtx[2]    = adfInvGT[2];
-                sReverse.polycoefvector[1] = adfInvGT[3];
-                sReverse.polycoefmtx[1]    = adfInvGT[4];
-                sReverse.polycoefmtx[3]    = adfInvGT[5];
-            }
-        }
-        else if( EQUAL(poXForm->GetType(),"GM_PolyPair") )
-        {
-            bSuccess = 
-                HFAReadAndValidatePoly( poXForm, "forward.", &sForward );
-            bSuccess = bSuccess && 
-                HFAReadAndValidatePoly( poXForm, "reverse.", &sReverse );
-        }
-
-        if( bSuccess )
-        {
-            nStepCount++;
-            *ppasPolyListForward = (Efga_Polynomial *) 
-                CPLRealloc( *ppasPolyListForward, 
-                            sizeof(Efga_Polynomial) * nStepCount);
-            memcpy( *ppasPolyListForward + nStepCount - 1, 
-                    &sForward, sizeof(sForward) );
-
-            *ppasPolyListReverse = (Efga_Polynomial *) 
-                CPLRealloc( *ppasPolyListReverse, 
-                            sizeof(Efga_Polynomial) * nStepCount);
-            memcpy( *ppasPolyListReverse + nStepCount - 1, 
-                    &sReverse, sizeof(sReverse) );
-        }
-    }
-    
-    return nStepCount;
-}
-
-/************************************************************************/
-/*                       HFAEvaluateXFormStack()                        */
-/************************************************************************/
-
-int HFAEvaluateXFormStack( int nStepCount, int bForward,
-                           Efga_Polynomial *pasPolyList,
-                           double *pdfX, double *pdfY )
-
-{
-    int iStep;
-
-    for( iStep = 0; iStep < nStepCount; iStep++ )
-    {
-        double dfXOut, dfYOut;
-        Efga_Polynomial *psStep;
-
-        if( bForward )
-            psStep = pasPolyList + iStep;
-        else
-            psStep = pasPolyList + nStepCount - iStep - 1;
-
-        if( psStep->order == 1 )
-        {
-            dfXOut = psStep->polycoefvector[0] 
-                + psStep->polycoefmtx[0] * *pdfX
-                + psStep->polycoefmtx[2] * *pdfY;
-
-            dfYOut = psStep->polycoefvector[1] 
-                + psStep->polycoefmtx[1] * *pdfX
-                + psStep->polycoefmtx[3] * *pdfY;
-
-            *pdfX = dfXOut;
-            *pdfY = dfYOut;
-        }
-        else if( psStep->order == 2 )
-        {
-            dfXOut = psStep->polycoefvector[0] 
-                + psStep->polycoefmtx[0] * *pdfX
-                + psStep->polycoefmtx[2] * *pdfY
-                + psStep->polycoefmtx[4] * *pdfX * *pdfX
-                + psStep->polycoefmtx[6] * *pdfX * *pdfY
-                + psStep->polycoefmtx[8] * *pdfY * *pdfY;
-            dfYOut = psStep->polycoefvector[1] 
-                + psStep->polycoefmtx[1] * *pdfX
-                + psStep->polycoefmtx[3] * *pdfY
-                + psStep->polycoefmtx[5] * *pdfX * *pdfX
-                + psStep->polycoefmtx[7] * *pdfX * *pdfY
-                + psStep->polycoefmtx[9] * *pdfY * *pdfY;
-
-            *pdfX = dfXOut;
-            *pdfY = dfYOut;
-        }
-        else
-            return FALSE;
-    }
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                         HFAWriteXFormStack()                         */
-/************************************************************************/
-
-CPLErr HFAWriteXFormStack( HFAHandle hHFA, int nBand, int nXFormCount, 
-                           Efga_Polynomial **ppasPolyListForward,
-                           Efga_Polynomial **ppasPolyListReverse )
-
-{
-    if( nXFormCount == 0 )
-        return CE_None;
-
-    if( ppasPolyListForward[0]->order != 1 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "For now HFAWriteXFormStack() only supports order 1 polynomials" );
-        return CE_Failure;
-    }
-
-    if( nBand < 0 || nBand > hHFA->nBands )
-        return CE_Failure;
-
-/* -------------------------------------------------------------------- */
-/*      If no band number is provided, operate on all bands.            */
-/* -------------------------------------------------------------------- */
-    if( nBand == 0 )
-    {
-        CPLErr eErr = CE_None;
-
-        for( nBand = 1; nBand <= hHFA->nBands; nBand++ )
-        {
-            eErr = HFAWriteXFormStack( hHFA, nBand, nXFormCount, 
-                                       ppasPolyListForward, 
-                                       ppasPolyListReverse );
-            if( eErr != CE_None )
-                return eErr;
-        }
-
-        return eErr;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Fetch our band node.                                            */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poBandNode = hHFA->papoBand[nBand-1]->poNode;
-    HFAEntry *poXFormHeader;
-    
-    poXFormHeader = poBandNode->GetNamedChild( "MapToPixelXForm" );
-    if( poXFormHeader == NULL )
-    {
-        poXFormHeader = new HFAEntry( hHFA, "MapToPixelXForm", 
-                                      "Exfr_GenericXFormHeader", poBandNode );
-        poXFormHeader->MakeData( 23 );
-        poXFormHeader->SetPosition();
-        poXFormHeader->SetStringField( "titleList.string", "Affine" );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Loop over XForms.                                               */
-/* -------------------------------------------------------------------- */
-    for( int iXForm = 0; iXForm < nXFormCount; iXForm++ )
-    {
-        Efga_Polynomial *psForward = *ppasPolyListForward + iXForm;
-        CPLString     osXFormName;
-        osXFormName.Printf( "XForm%d", iXForm );
-
-        HFAEntry *poXForm = poXFormHeader->GetNamedChild( osXFormName );
-        
-        if( poXForm == NULL )
-        {
-            poXForm = new HFAEntry( hHFA, osXFormName, "Efga_Polynomial",
-                                    poXFormHeader );
-            poXForm->MakeData( 136 );
-            poXForm->SetPosition();
-        }
-
-        poXForm->SetIntField( "order", 1 );
-        poXForm->SetIntField( "numdimtransform", 2 );
-        poXForm->SetIntField( "numdimpolynomial", 2 );
-        poXForm->SetIntField( "termcount", 3 );
-        poXForm->SetIntField( "exponentlist[0]", 0 );
-        poXForm->SetIntField( "exponentlist[1]", 0 );
-        poXForm->SetIntField( "exponentlist[2]", 1 );
-        poXForm->SetIntField( "exponentlist[3]", 0 );
-        poXForm->SetIntField( "exponentlist[4]", 0 );
-        poXForm->SetIntField( "exponentlist[5]", 1 );
-
-        poXForm->SetIntField( "polycoefmtx[-3]", EPT_f64 );
-        poXForm->SetIntField( "polycoefmtx[-2]", 2 );
-        poXForm->SetIntField( "polycoefmtx[-1]", 2 );
-        poXForm->SetDoubleField( "polycoefmtx[0]", 
-                                 psForward->polycoefmtx[0] );
-        poXForm->SetDoubleField( "polycoefmtx[1]", 
-                                 psForward->polycoefmtx[1] );
-        poXForm->SetDoubleField( "polycoefmtx[2]", 
-                                 psForward->polycoefmtx[2] );
-        poXForm->SetDoubleField( "polycoefmtx[3]", 
-                                 psForward->polycoefmtx[3] );
-
-        poXForm->SetIntField( "polycoefvector[-3]", EPT_f64 );
-        poXForm->SetIntField( "polycoefvector[-2]", 1 );
-        poXForm->SetIntField( "polycoefvector[-1]", 2 );
-        poXForm->SetDoubleField( "polycoefvector[0]", 
-                                 psForward->polycoefvector[0] );
-        poXForm->SetDoubleField( "polycoefvector[1]", 
-                                 psForward->polycoefvector[1] );
-    }
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                         HFAReadCameraModel()                         */
-/************************************************************************/
-
-char **HFAReadCameraModel( HFAHandle hHFA )
-    
-{
-    if( hHFA->nBands == 0 )
-        return NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Get the camera model node, and confirm it's type.               */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poXForm;
-
-    poXForm = 
-        hHFA->papoBand[0]->poNode->GetNamedChild( "MapToPixelXForm.XForm0" );
-    if( poXForm == NULL )
-        return NULL;
-
-    if( !EQUAL(poXForm->GetType(),"Camera_ModelX") )
-        return NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Convert the values to metadata.                                 */
-/* -------------------------------------------------------------------- */
-    const char *pszValue;
-    int i;
-    char **papszMD = NULL;
-    static const char *apszFields[] = { 
-        "direction", "refType", "demsource", "PhotoDirection", "RotationSystem",
-        "demfilename", "demzunits", 
-        "forSrcAffine[0]", "forSrcAffine[1]", "forSrcAffine[2]", 
-        "forSrcAffine[3]", "forSrcAffine[4]", "forSrcAffine[5]", 
-        "forDstAffine[0]", "forDstAffine[1]", "forDstAffine[2]", 
-        "forDstAffine[3]", "forDstAffine[4]", "forDstAffine[5]", 
-        "invSrcAffine[0]", "invSrcAffine[1]", "invSrcAffine[2]", 
-        "invSrcAffine[3]", "invSrcAffine[4]", "invSrcAffine[5]", 
-        "invDstAffine[0]", "invDstAffine[1]", "invDstAffine[2]", 
-        "invDstAffine[3]", "invDstAffine[4]", "invDstAffine[5]", 
-        "z_mean", "lat0", "lon0", 
-        "coeffs[0]", "coeffs[1]", "coeffs[2]", 
-        "coeffs[3]", "coeffs[4]", "coeffs[5]", 
-        "coeffs[6]", "coeffs[7]", "coeffs[8]", 
-        "LensDistortion[0]", "LensDistortion[1]", "LensDistortion[2]", 
-        NULL };
-
-    for( i = 0; apszFields[i] != NULL; i++ )
-    {
-        pszValue = poXForm->GetStringField( apszFields[i] );
-        if( pszValue == NULL )
-            pszValue = "";
-
-        papszMD = CSLSetNameValue( papszMD, apszFields[i], pszValue );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Create a pseudo-entry for the MIFObject with the                */
-/*      outputProjection.                                               */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poProjInfo = new HFAEntry( poXForm, "outputProjection" );
-
-/* -------------------------------------------------------------------- */
-/*      Fetch the datum.                                                */
-/* -------------------------------------------------------------------- */
-    Eprj_Datum sDatum;
-
-    memset( &sDatum, 0, sizeof(sDatum));
-    
-    sDatum.datumname = 
-        (char *) poProjInfo->GetStringField("earthModel.datum.datumname");
-    sDatum.type = (Eprj_DatumType) poProjInfo->GetIntField(
-        "earthModel.datum.type");
-
-    for( i = 0; i < 7; i++ )
-    {
-        char	szFieldName[60];
-
-        sprintf( szFieldName, "earthModel.datum.params[%d]", i );
-        sDatum.params[i] = poProjInfo->GetDoubleField(szFieldName);
-    }
-
-    sDatum.gridname = (char *) 
-        poProjInfo->GetStringField("earthModel.datum.gridname");
-    
-/* -------------------------------------------------------------------- */
-/*      Fetch the projection parameters.                                */
-/* -------------------------------------------------------------------- */
-    Eprj_ProParameters sPro;
-
-    memset( &sPro, 0, sizeof(sPro) );
-
-    sPro.proType = (Eprj_ProType) poProjInfo->GetIntField("projectionObject.proType");
-    sPro.proNumber = poProjInfo->GetIntField("projectionObject.proNumber");
-    sPro.proExeName = (char *) poProjInfo->GetStringField("projectionObject.proExeName");
-    sPro.proName = (char *) poProjInfo->GetStringField("projectionObject.proName");
-    sPro.proZone = poProjInfo->GetIntField("projectionObject.proZone");
-
-    for( i = 0; i < 15; i++ )
-    {
-        char	szFieldName[30];
-
-        sprintf( szFieldName, "projectionObject.proParams[%d]", i );
-        sPro.proParams[i] = poProjInfo->GetDoubleField(szFieldName);
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Fetch the spheroid.                                             */
-/* -------------------------------------------------------------------- */
-    sPro.proSpheroid.sphereName = (char *)
-        poProjInfo->GetStringField("earthModel.proSpheroid.sphereName");
-    sPro.proSpheroid.a = poProjInfo->GetDoubleField("earthModel.proSpheroid.a");
-    sPro.proSpheroid.b = poProjInfo->GetDoubleField("earthModel.proSpheroid.b");
-    sPro.proSpheroid.eSquared =
-        poProjInfo->GetDoubleField("earthModel.proSpheroid.eSquared");
-    sPro.proSpheroid.radius =
-        poProjInfo->GetDoubleField("earthModel.proSpheroid.radius");
-
-/* -------------------------------------------------------------------- */
-/*      Fetch the projection info.                                      */
-/* -------------------------------------------------------------------- */
-    char *pszProjection;
-
-//    poProjInfo->DumpFieldValues( stdout, "" );
-
-    pszProjection = HFAPCSStructToWKT( &sDatum, &sPro, NULL, NULL );
-
-    if( pszProjection )
-    {
-        papszMD = 
-            CSLSetNameValue( papszMD, "outputProjection", pszProjection );
-        CPLFree( pszProjection );
-    }
-
-    delete poProjInfo;
-
-/* -------------------------------------------------------------------- */
-/*      Fetch the horizontal units.                                     */
-/* -------------------------------------------------------------------- */
-    pszValue = poXForm->GetStringField( "outputHorizontalUnits.string" );
-    if( pszValue == NULL )
-        pszValue = "";
-    
-    papszMD = CSLSetNameValue( papszMD, "outputHorizontalUnits", pszValue );
-    
-/* -------------------------------------------------------------------- */
-/*      Fetch the elevationinfo.                                        */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poElevInfo = new HFAEntry( poXForm, "outputElevationInfo" );
-    //poElevInfo->DumpFieldValues( stdout, "" );
-
-    if( poElevInfo->GetDataSize() != 0 )
-    {
-        static const char *apszEFields[] = { 
-            "verticalDatum.datumname", 
-            "verticalDatum.type",
-            "elevationUnit",
-            "elevationType",
-            NULL };
-
-        for( i = 0; apszEFields[i] != NULL; i++ )
-        {
-            pszValue = poElevInfo->GetStringField( apszEFields[i] );
-            if( pszValue == NULL )
-                pszValue = "";
-            
-            papszMD = CSLSetNameValue( papszMD, apszEFields[i], pszValue );
-        }
-    }
-
-    delete poElevInfo;
-
-    return papszMD;
-}
-
-/************************************************************************/
-/*                         HFASetGeoTransform()                         */
-/*                                                                      */
-/*      Set a MapInformation and XForm block.  Allows for rotated       */
-/*      and shared geotransforms.                                       */
-/************************************************************************/
-
-CPLErr HFASetGeoTransform( HFAHandle hHFA, 
-                           const char *pszProName,
-                           const char *pszUnits,
-                           double *padfGeoTransform )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Write MapInformation.                                           */
-/* -------------------------------------------------------------------- */
-    int nBand;
-
-    for( nBand = 1; nBand <= hHFA->nBands; nBand++ )
-    {
-        HFAEntry *poBandNode = hHFA->papoBand[nBand-1]->poNode;
-        
-        HFAEntry *poMI = poBandNode->GetNamedChild( "MapInformation" );
-        if( poMI == NULL )
-        {
-            poMI = new HFAEntry( hHFA, "MapInformation", 
-                                 "Eimg_MapInformation", poBandNode );
-            poMI->MakeData( 18 + strlen(pszProName) + strlen(pszUnits) );
-            poMI->SetPosition();
-        }
-
-        poMI->SetStringField( "projection.string", pszProName );
-        poMI->SetStringField( "units.string", pszUnits );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Write XForm.                                                    */
-/* -------------------------------------------------------------------- */
-    Efga_Polynomial sForward, sReverse;
-    double          adfAdjTransform[6], adfRevTransform[6];
-
-    // Offset by half pixel.
-
-    memcpy( adfAdjTransform, padfGeoTransform, sizeof(double) * 6 );
-    adfAdjTransform[0] += adfAdjTransform[1] * 0.5;
-    adfAdjTransform[0] += adfAdjTransform[2] * 0.5;
-    adfAdjTransform[3] += adfAdjTransform[4] * 0.5;
-    adfAdjTransform[3] += adfAdjTransform[5] * 0.5;
-
-    // Invert
-    HFAInvGeoTransform( adfAdjTransform, adfRevTransform );
-
-    // Assign to polynomial object.
-
-    sForward.order = 1;
-    sForward.polycoefvector[0] = adfRevTransform[0];
-    sForward.polycoefmtx[0]    = adfRevTransform[1];
-    sForward.polycoefmtx[1]    = adfRevTransform[4];
-    sForward.polycoefvector[1] = adfRevTransform[3];
-    sForward.polycoefmtx[2]    = adfRevTransform[2];
-    sForward.polycoefmtx[3]    = adfRevTransform[5];
-
-    sReverse = sForward;
-    Efga_Polynomial *psForward=&sForward, *psReverse=&sReverse;
-
-    return HFAWriteXFormStack( hHFA, 0, 1, &psForward, &psReverse );
-}

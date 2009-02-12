@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: mrsiddataset.cpp 15761 2008-11-19 00:12:26Z warmerdam $
+ * $Id: mrsiddataset.cpp 10662 2007-01-19 20:53:29Z warmerdam $
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Read/write LizardTech's MrSID file format - Version 4+ SDK.
- * Author:   Andrey Kiselev, dron@ak4719.spb.edu
+ * Author:   Andrey Kiselev, dron@remotesensing.org
  *
  ******************************************************************************
- * Copyright (c) 2003, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2003, Andrey Kiselev <dron@remotesensing.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,7 +37,7 @@
 #include <geo_normalize.h>
 #include <geovalues.h>
 
-CPL_CVSID("$Id: mrsiddataset.cpp 15761 2008-11-19 00:12:26Z warmerdam $");
+CPL_CVSID("$Id: mrsiddataset.cpp 10662 2007-01-19 20:53:29Z warmerdam $");
 
 CPL_C_START
 double GTIFAngleToDD( double dfAngle, int nUOMAngle );
@@ -97,8 +97,6 @@ CPL_C_END
 #  define MRSID_HAVE_GETWKT
 #endif
 
-#include "mrsidstream.h"
-
 LT_USE_NAMESPACE(LizardTech)
 
 /* -------------------------------------------------------------------- */
@@ -123,10 +121,6 @@ class LTIDLLReader : public T
 public:
    LTIDLLReader(const LTFileSpec& fileSpec,
                 bool useWorldFile = false) : T(fileSpec, useWorldFile) {}
-   LTIDLLReader(LTIOStreamInf &oStream,
-                bool useWorldFile = false) : T(oStream, useWorldFile) {}
-   LTIDLLReader(LTIOStreamInf *poStream,
-                LTIOStreamInf *poWorldFile = NULL) : T(poStream, poWorldFile) {}
    virtual ~LTIDLLReader() {};
 };
 
@@ -167,13 +161,7 @@ class MrSIDDataset : public GDALPamDataset
 {
     friend class MrSIDRasterBand;
 
-    LTIVSIStream        oStream;
-
-#if defined(LTI_SDK_MAJOR) && LTI_SDK_MAJOR >= 7
-    LTIImageFilter      *poImageReader;
-#else
     LTIImageReader      *poImageReader;
-#endif
 
 #ifdef MRSID_ESDK
     LTIGeoFileImageWriter *poImageWriter;
@@ -259,7 +247,7 @@ class MrSIDRasterBand : public GDALPamRasterBand
 
     virtual CPLErr          IReadBlock( int, int, void * );
     virtual GDALColorInterp GetColorInterpretation();
-    virtual double          GetNoDataValue( int * );
+    virtual double	    GetNoDataValue( int * );
     virtual int             GetOverviewCount();
     virtual GDALRasterBand  *GetOverview( int );
 
@@ -348,12 +336,12 @@ MrSIDRasterBand::MrSIDRasterBand( MrSIDDataset *poDS, int nBand )
                  CPLAssert( FALSE );
                  break;
          }
-         bNoDataSet = TRUE;
+	 bNoDataSet = TRUE;
      }
      else
 #endif
      {
-        dfNoDataValue = 0.0;
+	dfNoDataValue = 0.0;
         bNoDataSet = FALSE;
      }
 }
@@ -702,14 +690,7 @@ MrSIDDataset::~MrSIDDataset()
     if ( poLTINav )
         delete poLTINav;
     if ( poImageReader && !bIsOverview )
-#if defined(LTI_SDK_MAJOR) && LTI_SDK_MAJOR >= 7
-    {
-        poImageReader->release();
-        poImageReader = NULL;
-    }
-#else
         delete poImageReader;
-#endif
 
     if ( pszProjection )
         CPLFree( pszProjection );
@@ -809,8 +790,8 @@ CPLErr MrSIDDataset::IRasterIO( GDALRWFlag eRWFlag,
 
     int sceneUlXOff = nXOff / nZoomMag;
     int sceneUlYOff = nYOff / nZoomMag;
-    int sceneWidth  = (int)(nXSize * (double) maxWidth / (double)maxWidthAtL0 + 0.99);
-    int sceneHeight = (int)(nYSize * (double) maxHeight / (double)maxHeightAtL0 + 0.99);
+    int sceneWidth  = (int)(nXSize * maxWidth / (double)maxWidthAtL0 + 0.99);
+    int sceneHeight = (int)(nYSize * maxHeight / (double)maxHeightAtL0 + 0.99);
 
     if( (sceneUlXOff + sceneWidth) > (int) maxWidth )
         sceneWidth = maxWidth - sceneUlXOff;
@@ -944,51 +925,50 @@ char *MrSIDDataset::SerializeMetadataRec( const LTIMetadataRecord *poMetadataRec
     const GUInt32  *paiDims = NULL;
     const void     *pData = poMetadataRec->getArrayData( iNumDims, paiDims );
     GUInt32        i, j, k = 0, iLength;
+    const char     *pszTemp = NULL;
     char           *pszMetadata = CPLStrdup( "" );
 
     for ( i = 0; i < iNumDims; i++ )
         for ( j = 0; j < paiDims[i]; j++ )
         {
-            CPLString osTemp;
-
             switch( poMetadataRec->getDataType() )
             {
                 case LTI_METADATA_DATATYPE_UINT8:
                 case LTI_METADATA_DATATYPE_SINT8:
-                    osTemp.Printf( "%d", ((GByte *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%d", ((GByte *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_UINT16:
-                    osTemp.Printf( "%u", ((GUInt16 *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%u", ((GUInt16 *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_SINT16:
-                    osTemp.Printf( "%d", ((GInt16 *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%d", ((GInt16 *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_UINT32:
-                    osTemp.Printf( "%u", ((GUInt32 *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%lu", ((unsigned long *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_SINT32:
-                    osTemp.Printf( "%d", ((GInt32 *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%ld", ((long *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_FLOAT32:
-                    osTemp.Printf( "%f", ((float *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%f", ((float *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_FLOAT64:
-                    osTemp.Printf( "%lf", ((double *)pData)[k++] );
+                    pszTemp = CPLSPrintf( "%lf", ((double *)pData)[k++] );
                     break;
                 case LTI_METADATA_DATATYPE_ASCII:
-                    osTemp = ((const char **)pData)[k++];
+                    pszTemp = ((const char **)pData)[k++];
                     break;
                 default:
-                    osTemp = "";
+                    pszTemp = "";
                     break;
             }
 
-            iLength = strlen(pszMetadata) + strlen(osTemp) + 2;
+            iLength = strlen(pszMetadata) + strlen(pszTemp) + 2;
 
             pszMetadata = (char *)CPLRealloc( pszMetadata, iLength );
             if ( !EQUAL( pszMetadata, "" ) )
                 strncat( pszMetadata, ",", 1 );
-            strncat( pszMetadata, osTemp, iLength );
+            strncat( pszMetadata, pszTemp, iLength );
         }
 
     return pszMetadata;
@@ -1008,7 +988,7 @@ int MrSIDDataset::GetMetadataElement( const char *pszKey, void *pValue,
     poMetadata->get( pszKey, poMetadataRec );
 
     if ( !poMetadataRec->isScalar() )
-        return FALSE;
+	return FALSE;
 
     // XXX: return FALSE if we have more than one element in metadata record
     int iSize;
@@ -1016,8 +996,8 @@ int MrSIDDataset::GetMetadataElement( const char *pszKey, void *pValue,
     {
          case LTI_METADATA_DATATYPE_UINT8:
          case LTI_METADATA_DATATYPE_SINT8:
-             iSize = 1;
-             break;
+	     iSize = 1;
+	     break;
          case LTI_METADATA_DATATYPE_UINT16:
          case LTI_METADATA_DATATYPE_SINT16:
              iSize = 2;
@@ -1030,9 +1010,9 @@ int MrSIDDataset::GetMetadataElement( const char *pszKey, void *pValue,
          case LTI_METADATA_DATATYPE_FLOAT64:
              iSize = 8;
              break;
-         case LTI_METADATA_DATATYPE_ASCII:
-             iSize = iLength;
-             break;
+	 case LTI_METADATA_DATATYPE_ASCII:
+	     iSize = iLength;
+	     break;
          default:
              iSize = 0;
              break;
@@ -1040,8 +1020,8 @@ int MrSIDDataset::GetMetadataElement( const char *pszKey, void *pValue,
 
     if ( poMetadataRec->getDataType() == LTI_METADATA_DATATYPE_ASCII )
     {
-        strncpy( (char *)pValue,
-                 ((const char**)poMetadataRec->getScalarData())[0], iSize );
+	strncpy( (char *)pValue,
+		 ((const char**)poMetadataRec->getScalarData())[0], iSize );
         ((char *)pValue)[iSize - 1] = '\0';
     }
     else
@@ -1064,8 +1044,8 @@ CPLErr MrSIDDataset::OpenZoomLevel( lt_int32 iZoom )
         lt_uint32 iWidth, iHeight;
         dfCurrentMag = LTIUtils::levelToMag( iZoom );
         poImageReader->getDimsAtMag( dfCurrentMag, iWidth, iHeight );
-        nRasterXSize = iWidth;
-        nRasterYSize = iHeight;
+	nRasterXSize = iWidth;
+	nRasterYSize = iHeight;
     }
     else
     {
@@ -1132,12 +1112,12 @@ CPLErr MrSIDDataset::OpenZoomLevel( lt_int32 iZoom )
     {
         const LTIGeoCoord& oGeo = poImageReader->getGeoCoord();
         oGeo.get( adfGeoTransform[0], adfGeoTransform[3],
-                  adfGeoTransform[1], adfGeoTransform[5],
-                  adfGeoTransform[2], adfGeoTransform[4] );
+	          adfGeoTransform[1], adfGeoTransform[5],
+	          adfGeoTransform[2], adfGeoTransform[4] );
         
         adfGeoTransform[0] = adfGeoTransform[0] - adfGeoTransform[1] / 2;
         adfGeoTransform[3] = adfGeoTransform[3] - adfGeoTransform[5] / 2;
-        bHasGeoTransform = TRUE;
+	bHasGeoTransform = TRUE;
     }
     else if( iZoom == 0 )
     {
@@ -1156,9 +1136,9 @@ CPLErr MrSIDDataset::OpenZoomLevel( lt_int32 iZoom )
 #ifdef MRSID_HAVE_GETWKT
     if( !poImageReader->isGeoCoordImplicit() )
     {
-        const LTIGeoCoord& oGeo = poImageReader->getGeoCoord();
-        
-        if( oGeo.getWKT() )
+	const LTIGeoCoord& oGeo = poImageReader->getGeoCoord();
+	
+	if( oGeo.getWKT() )
         {
             CPLFree( pszProjection );
             pszProjection =  CPLStrdup( oGeo.getWKT() );
@@ -1205,7 +1185,7 @@ static GDALDataset *MrSIDOpen( GDALOpenInfo * poOpenInfo )
 /*      This is just a jacket to verify that the file is JPEG2000.      */
 /************************************************************************/
 
-static const unsigned char jpc_header[] = 
+static unsigned char jpc_header[] = 
 {0xff,0x4f};
 
 #ifdef MRSID_J2K
@@ -1267,77 +1247,23 @@ GDALDataset *MrSIDDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    MrSIDDataset    *poDS;
-    LT_STATUS       eStat;
+    MrSIDDataset        *poDS;
+    const LTFileSpec    oFileSpec( poOpenInfo->pszFilename );
 
     poDS = new MrSIDDataset();
-    eStat = poDS->oStream.initialize( poOpenInfo->pszFilename, "rb" );
-    if ( !LT_SUCCESS(eStat) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "MrSIDStream::initialize(): "
-                  "failed to open file \"%s\".\n%s",
-                  poOpenInfo->pszFilename, getLastStatusString( eStat ) );
-        delete poDS;
-        return NULL;
-    }
-
-    poDS->oStream.open();
-
-#if defined(LTI_SDK_MAJOR) && LTI_SDK_MAJOR >= 7
-
 #ifdef MRSID_J2K
     if ( bIsJP2 )
-    {
-        J2KImageReader  *reader = J2KImageReader::create();
-
-        // FIXME: for some weird reason the following initialization from the
-        // stream object does not work with DSDK 7.0.0.2167 (possible bug in
-        // DSDK).
-        //eStat = reader->initialize( poDS->oStream );
-
-        // So we are using the file object to initialize from loosing the
-        // added value of our custom stream implementation.
-        LTFileSpec      filespec( poOpenInfo->pszFilename );
-        eStat = reader->initialize( filespec );
-        poDS->oStream.close();
-
-        poDS->poImageReader = reader;
-    }
+        poDS->poImageReader = new LTIDLLReader<J2KImageReader>( oFileSpec, true );
     else
-#endif /* MRSID_J2K */
-    {
-        MrSIDImageReader    *reader = MrSIDImageReader::create();
-        eStat = reader->initialize( &poDS->oStream, NULL );             
-        poDS->poImageReader = reader;           
-    }
+#endif
+        poDS->poImageReader = new LTIDLLReader<MrSIDImageReader>( oFileSpec, false );
 
-#else /* LTI_SDK_MAJOR < 7 */
-
-#ifdef MRSID_J2K
-    if ( bIsJP2 )
+    if ( !LT_SUCCESS( poDS->poImageReader->initialize() ) )
     {
-        poDS->poImageReader =
-            new LTIDLLReader<J2KImageReader>( poDS->oStream, true );
-        eStat = poDS->poImageReader->initialize();
-    }
-    else
-#endif /* MRSID_J2K */
-    {
-        poDS->poImageReader =
-            new LTIDLLReader<MrSIDImageReader>( &poDS->oStream, NULL );
-        eStat = poDS->poImageReader->initialize();
-    }
-
-#endif /* LTI_SDK_MAJOR >= 7 */
-
-    if ( !LT_SUCCESS(eStat) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "LTIImageReader::initialize(): "
-                  "failed to initialize reader from the stream \"%s\".\n%s",
-                  poOpenInfo->pszFilename, getLastStatusString( eStat ) );
         delete poDS;
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "MrSIDDataset::Open(): Failed to open file %s",
+                  poOpenInfo->pszFilename );
         return NULL;
     }
 
@@ -1353,7 +1279,7 @@ GDALDataset *MrSIDDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         const LTIMetadataRecord *poMetadataRec = NULL;
         if ( LT_SUCCESS(poDS->poMetadata->getDataByIndex(i, poMetadataRec)) )
-        {
+	{
             char    *pszElement = poDS->SerializeMetadataRec( poMetadataRec );
             char    *pszKey = CPLStrdup( poMetadataRec->getTagName() );
             char    *pszTemp = pszKey;
@@ -1371,7 +1297,7 @@ GDALDataset *MrSIDDataset::Open( GDALOpenInfo * poOpenInfo )
 
             CPLFree( pszElement );
             CPLFree( pszKey );
-        }
+	}
     }
 
     poDS->GetGTIFDefn();
@@ -1414,9 +1340,6 @@ GDALDataset *MrSIDDataset::Open( GDALOpenInfo * poOpenInfo )
     CPLDebug( "MrSID",
               "Opened image: width %d, height %d, bands %d",
               poDS->nRasterXSize, poDS->nRasterYSize, poDS->nBands );
-
-    if( poDS->nBands > 1 )
-        poDS->SetMetadataItem( "INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE" );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
@@ -1645,7 +1568,7 @@ static int SetGTParmIds( int nCTProjection,
     }
 }
 
-static const char *papszDatumEquiv[] =
+static char *papszDatumEquiv[] =
 {
     "Militar_Geographische_Institut",
     "Militar_Geographische_Institute",
@@ -1671,8 +1594,8 @@ static const char *papszDatumEquiv[] =
 static void WKTMassageDatum( char ** ppszDatum )
 
 {
-    int         i, j;
-    char        *pszDatum;
+    int		i, j;
+    char	*pszDatum;
 
 /* -------------------------------------------------------------------- */
 /*      First copy string and allocate with our CPLStrdup() to so we    */
@@ -2143,7 +2066,7 @@ void MrSIDDataset::FetchProjParms()
 
 void MrSIDDataset::GetGTIFDefn()
 {
-    double      dfInvFlattening;
+    double	dfInvFlattening;
 
 /* -------------------------------------------------------------------- */
 /*      Initially we default all the information we can.                */
@@ -2178,7 +2101,7 @@ void MrSIDDataset::GetGTIFDefn()
     psDefn->Zone = 0;
 
 /* -------------------------------------------------------------------- */
-/*      Try to get the overall model type.                              */
+/*	Try to get the overall model type.				*/
 /* -------------------------------------------------------------------- */
     GetMetadataElement( "GEOTIFF_NUM::1024::GTModelTypeGeoKey",
                         &(psDefn->Model) );
@@ -2204,8 +2127,8 @@ void MrSIDDataset::GetGTIFDefn()
 /* -------------------------------------------------------------------- */
     if( psDefn->PCS != KvUserDefined && psDefn->ProjCode == KvUserDefined )
     {
-        int     nMapSys, nZone;
-        int     nGCS = psDefn->GCS;
+        int	nMapSys, nZone;
+        int	nGCS = psDefn->GCS;
 
         nMapSys = GTIFPCSToMapSys( psDefn->PCS, &nGCS, &nZone );
         if( nMapSys != KvUserDefined )
@@ -2407,7 +2330,7 @@ void MrSIDDataset::GetGTIFDefn()
 
 char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 {
-    OGRSpatialReference oSRS;
+    OGRSpatialReference	oSRS;
 
     if( psDefn->Model != ModelTypeProjected 
         && psDefn->Model != ModelTypeGeographic )
@@ -2419,17 +2342,17 @@ char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 /* -------------------------------------------------------------------- */
     if( psDefn->Model == ModelTypeProjected )
     {
-        char    *pszPCSName;
-        int     bPCSNameSet = FALSE;
+        char	*pszPCSName = "unnamed";
+        int         bNeedFree = FALSE;
 
         if( psDefn->PCS != KvUserDefined )
         {
 
             if( GTIFGetPCSInfo( psDefn->PCS, &pszPCSName, NULL, NULL, NULL ) )
-                bPCSNameSet = TRUE;
+                bNeedFree = TRUE;
             
-            oSRS.SetNode( "PROJCS", bPCSNameSet ? pszPCSName : "unnamed" );
-            if( bPCSNameSet )
+            oSRS.SetNode( "PROJCS", pszPCSName );
+            if( bNeedFree )
                 GTIFFreeMemory( pszPCSName );
 
             oSRS.SetAuthority( "PROJCS", "EPSG", psDefn->PCS );
@@ -2447,12 +2370,12 @@ char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 /* ==================================================================== */
 /*      Setup the GeogCS                                                */
 /* ==================================================================== */
-    char        *pszGeogName = NULL;
-    char        *pszDatumName = NULL;
-    char        *pszPMName = NULL;
-    char        *pszSpheroidName = NULL;
-    char        *pszAngularUnits = NULL;
-    double      dfInvFlattening, dfSemiMajor;
+    char	*pszGeogName = NULL;
+    char	*pszDatumName = NULL;
+    char	*pszPMName = NULL;
+    char	*pszSpheroidName = NULL;
+    char	*pszAngularUnits = NULL;
+    double	dfInvFlattening, dfSemiMajor;
     char        szGCSName[200];
     
     if( GetMetadataElement( "GEOTIFF_NUM::2049::GeogCitationGeoKey",
@@ -2515,8 +2438,8 @@ char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 /*      angular units of the GEOGCS and the linear units of the         */
 /*      projection.                                                     */
 /* -------------------------------------------------------------------- */
-        double          adfParm[10];
-        int             i;
+        double		adfParm[10];
+        int		i;
 
         for( i = 0; i < MIN(10,psDefn->nParms); i++ )
             adfParm[i] = psDefn->ProjParm[i];
@@ -2665,7 +2588,7 @@ char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 /* -------------------------------------------------------------------- */
 /*      Set projection units.                                           */
 /* -------------------------------------------------------------------- */
-        char    *pszUnitsName = NULL;
+        char	*pszUnitsName = NULL;
         
         GTIFGetUOMLengthInfo( psDefn->UOMLength, &pszUnitsName, NULL );
 
@@ -2683,7 +2606,7 @@ char *MrSIDDataset::GetOGISDefn( GTIFDefn *psDefn )
 /* -------------------------------------------------------------------- */
 /*      Return the WKT serialization of the object.                     */
 /* -------------------------------------------------------------------- */
-    char        *pszWKT;
+    char	*pszWKT;
 
     oSRS.FixupOrdering();
 
@@ -2906,17 +2829,7 @@ MrSIDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 #else
     bool bMeter = true;
 #endif    
-    
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
-                  "MrSID driver ignores color table. "
-                  "The source raster band will be considered as grey level.\n"
-                  "Consider using color table expansion (-expand option in gdal_translate)\n");
-        if (bStrict)
-            return NULL;
-    }
-    
+
     // Output Mrsid Version 2 file.
     if( pszVersion && atoi(pszVersion) == 2 )
     {
@@ -3031,7 +2944,7 @@ MrSIDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         pszValue = CSLFetchNameValue(papszOptions, "FILESIZE");
         if( pszValue != NULL )
             oImageWriter.params().setTargetFilesize( atoi(pszValue) );
-        
+	
         // write the scene
         const LTIScene oScene( 0, 0, nXSize, nYSize, 1.0 );
         eStat = oImageWriter.write( oScene );
@@ -3076,16 +2989,6 @@ JP2CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int nXSize = poSrcDS->GetRasterXSize();
     int nYSize = poSrcDS->GetRasterYSize();
     LT_STATUS  eStat;
-    
-    if (poSrcDS->GetRasterBand(1)->GetColorTable() != NULL)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
-                  "MrSID driver ignores color table. "
-                  "The source raster band will be considered as grey level.\n"
-                  "Consider using color table expansion (-expand option in gdal_translate)\n");
-        if (bStrict)
-            return NULL;
-    }
       
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
@@ -3134,7 +3037,7 @@ JP2CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     const char* pszValue = CSLFetchNameValue(papszOptions, "COMPRESSION");
     if( pszValue != NULL )
         oImageWriter.params().setCompressionRatio( atof(pszValue) );
-        
+	
     pszValue = CSLFetchNameValue(papszOptions, "XMLPROFILE");
     if( pszValue != NULL )
     {
@@ -3182,9 +3085,6 @@ void GDALRegister_MrSID()
 
 {
     GDALDriver  *poDriver;
-    
-    if (! GDAL_CHECK_VERSION("MrSID driver"))
-        return;
 
 /* -------------------------------------------------------------------- */
 /*      MrSID driver.                                                   */

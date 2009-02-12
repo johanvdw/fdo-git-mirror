@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcidsktiledrasterband.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: pcidsktiledrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Implementation of PCIDSKTiledRasterBand
@@ -29,7 +29,7 @@
 
 #include "gdal_pcidsk.h"
 
-CPL_CVSID("$Id: pcidsktiledrasterband.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: pcidsktiledrasterband.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           PCIDSKRasterBand()                         */

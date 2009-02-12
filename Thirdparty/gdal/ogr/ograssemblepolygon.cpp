@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograssemblepolygon.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ograssemblepolygon.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Reader
  * Purpose:  Implements polygon assembly from a bunch of arcs.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ograssemblepolygon.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ograssemblepolygon.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            CheckPoints()                             */

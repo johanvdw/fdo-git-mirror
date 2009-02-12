@@ -2,8 +2,9 @@
 include ../../GDALmake.opt
 
 OBJ	=	geotiff.o gt_wkt_srs.o gt_overview.o \
-		tif_float.o tifvsi.o
+		tif_ovrcache.o tif_overview.o tif_float.o tifvsi.o
 
+TIFF_OPTS	=	
 SUBLIBS 	=
 
 ifeq ($(TIFF_SETTING),internal)
@@ -16,7 +17,7 @@ SUBLIBS	:= lib-geotiff $(SUBLIBS)
 TIFF_OPTS	:=	-Ilibgeotiff $(TIFF_OPTS)
 endif
 
-CPPFLAGS	:=	$(GDAL_INCLUDE) $(GEOTIFF_INCLUDE) $(TIFF_OPTS) $(CPPFLAGS)
+CPPFLAGS	:=	$(GDAL_INCLUDE) $(TIFF_OPTS) $(CPPFLAGS)
 
 default:	$(OBJ) $(SUBLIBS)
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.c 14979 2008-07-19 18:11:24Z rouault $
+ * $Id: dted_api.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -29,12 +29,7 @@
 
 #include "dted_api.h"
 
-#ifndef AVOID_CPL
-CPL_CVSID("$Id: dted_api.c 14979 2008-07-19 18:11:24Z rouault $");
-#endif
-
-static int bWarnedTwoComplement = FALSE;
-
+CPL_CVSID("$Id: dted_api.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                            DTEDGetField()                            */
@@ -45,10 +40,12 @@ static int bWarnedTwoComplement = FALSE;
 /************************************************************************/
 
 static
-char *DTEDGetField( char szResult[81], const char *pachRecord, int nStart, int nSize )
+const char *DTEDGetField( const char *pachRecord, int nStart, int nSize )
 
 {
-    CPLAssert( nSize < 81 );
+    static char szResult[81];
+
+    CPLAssert( nSize < sizeof(szResult) );
     memcpy( szResult, pachRecord + nStart - 1, nSize );
     szResult[nSize] = '\0';
 
@@ -93,8 +90,6 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     int deg = 0;
     int min = 0;
     int sec = 0;
-    int bSwapLatLong = FALSE;
-    char szResult[81];
 
 /* -------------------------------------------------------------------- */
 /*      Open the physical file.                                         */
@@ -104,20 +99,18 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     else
         pszAccess = "r+b";
     
-    fp = VSIFOpenL( pszFilename, pszAccess );
+    fp = VSIFOpen( pszFilename, pszAccess );
 
     if( fp == NULL )
     {
+#ifndef AVOID_CPL
         if( !bTestOpen )
         {
-#ifndef AVOID_CPL
-            CPLError( CE_Failure, CPLE_OpenFailed,
-#else
-            fprintf( stderr, 
-#endif
+            CPLError( CE_Failure, CPLE_AppDefined,
                       "Failed to open file %s.",
                       pszFilename );
         }
+#endif
 
         return NULL;
     }
@@ -128,19 +121,15 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     do
     {
-        if( VSIFReadL( achRecord, 1, DTED_UHL_SIZE, fp ) != DTED_UHL_SIZE )
+        if( VSIFRead( achRecord, 1, DTED_UHL_SIZE, fp ) != DTED_UHL_SIZE )
         {
-            if( !bTestOpen )
-            {
 #ifndef AVOID_CPL
-               CPLError( CE_Failure, CPLE_OpenFailed,
-#else
-               fprintf( stderr, 
-#endif
+            if( !bTestOpen )
+                CPLError( CE_Failure, CPLE_OpenFailed,
                           "Unable to read header, %s is not DTED.",
                           pszFilename );
-            }
-            VSIFCloseL( fp );
+#endif
+            VSIFClose( fp );
             return NULL;
         }
 
@@ -148,17 +137,14 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 
     if( !EQUALN(achRecord,"UHL",3) )
     {
-        if( !bTestOpen )
-        {
 #ifndef AVOID_CPL
+        if( !bTestOpen )
             CPLError( CE_Failure, CPLE_OpenFailed,
-#else
-            fprintf( stderr, 
-#endif
                       "No UHL record.  %s is not a DTED file.",
                       pszFilename );
-        }
-        VSIFCloseL( fp );
+#endif
+        
+        VSIFClose( fp );
         return NULL;
     }
     
@@ -171,20 +157,20 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 
     psDInfo->bUpdate = EQUAL(pszAccess,"r+b");
     
-    psDInfo->nXSize = atoi(DTEDGetField(szResult,achRecord,48,4));
-    psDInfo->nYSize = atoi(DTEDGetField(szResult,achRecord,52,4));
+    psDInfo->nXSize = atoi(DTEDGetField(achRecord,48,4));
+    psDInfo->nYSize = atoi(DTEDGetField(achRecord,52,4));
 
-    psDInfo->nUHLOffset = VSIFTellL( fp ) - DTED_UHL_SIZE;
+    psDInfo->nUHLOffset = VSIFTell( fp ) - DTED_UHL_SIZE;
     psDInfo->pachUHLRecord = (char *) CPLMalloc(DTED_UHL_SIZE);
     memcpy( psDInfo->pachUHLRecord, achRecord, DTED_UHL_SIZE );
 
-    psDInfo->nDSIOffset = VSIFTellL( fp );
+    psDInfo->nDSIOffset = VSIFTell( fp );
     psDInfo->pachDSIRecord = (char *) CPLMalloc(DTED_DSI_SIZE);
-    VSIFReadL( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, fp );
+    VSIFRead( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, fp );
     
-    psDInfo->nACCOffset = VSIFTellL( fp );
+    psDInfo->nACCOffset = VSIFTell( fp );
     psDInfo->pachACCRecord = (char *) CPLMalloc(DTED_ACC_SIZE);
-    VSIFReadL( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, fp );
+    VSIFRead( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, fp );
 
     if( !EQUALN(psDInfo->pachDSIRecord,"DSI",3)
         || !EQUALN(psDInfo->pachACCRecord,"ACC",3) )
@@ -197,11 +183,11 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
                  "DSI or ACC record missing.  DTED access to\n%s failed.",
                  pszFilename );
         
-        VSIFCloseL( fp );
+        VSIFClose( fp );
         return NULL;
     }
 
-    psDInfo->nDataOffset = VSIFTellL( fp );
+    psDInfo->nDataOffset = VSIFTell( fp );
 
 /* -------------------------------------------------------------------- */
 /*      Parse out position information.  Note that we are extracting    */
@@ -209,128 +195,33 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 /*      center of the area.                                             */
 /* -------------------------------------------------------------------- */
     psDInfo->dfPixelSizeX =
-        atoi(DTEDGetField(szResult,achRecord,21,4)) / 36000.0;
+        atoi(DTEDGetField(achRecord,21,4)) / 36000.0;
 
     psDInfo->dfPixelSizeY =
-        atoi(DTEDGetField(szResult,achRecord,25,4)) / 36000.0;
+        atoi(DTEDGetField(achRecord,25,4)) / 36000.0;
 
     /* create a scope so I don't need to declare these up top */
-    deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,5,3)));
-    min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,8,2)));
-    sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,10,2)));
-
-    /* NOTE : The first version of MIL-D-89020 was buggy.
-       The latitude and longitude of the LL cornder of the UHF record was inverted.
-       This was fixed in MIL-D-89020 Amendement 1, but some products may be affected.
-       We detect this situation by looking at N/S in the longitude field and
-       E/W in the latitude one
-    */
+    deg = atoi(stripLeadingZeros(DTEDGetField(achRecord,5,3)));
+    min = atoi(stripLeadingZeros(DTEDGetField(achRecord,8,2)));
+    sec = atoi(stripLeadingZeros(DTEDGetField(achRecord,10,2)));
 
     dfLLOriginX = deg + min / 60.0 + sec / 3600.0;
     if( achRecord[11] == 'W' )
         dfLLOriginX *= -1;
-    else if ( achRecord[11] == 'N' )
-        bSwapLatLong = TRUE;
-    else if ( achRecord[11] == 'S' )
-    {
-        dfLLOriginX *= -1;
-        bSwapLatLong = TRUE;
-    }
 
-    deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,13,3)));
-    min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,16,2)));
-    sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,18,2)));
+    deg = atoi(stripLeadingZeros(DTEDGetField(achRecord,13,3)));
+    min = atoi(stripLeadingZeros(DTEDGetField(achRecord,16,2)));
+    sec = atoi(stripLeadingZeros(DTEDGetField(achRecord,18,2)));
 
     dfLLOriginY = deg + min / 60.0 + sec / 3600.0;
-    if( achRecord[19] == 'S' || (bSwapLatLong && achRecord[19] == 'W'))
+    if( achRecord[19] == 'S' )
         dfLLOriginY *= -1;
-
-    if (bSwapLatLong)
-    {
-        double dfTmp = dfLLOriginX;
-        dfLLOriginX = dfLLOriginY;
-        dfLLOriginY = dfTmp;
-    }
 
     psDInfo->dfULCornerX = dfLLOriginX - 0.5 * psDInfo->dfPixelSizeX;
     psDInfo->dfULCornerY = dfLLOriginY - 0.5 * psDInfo->dfPixelSizeY
         + psDInfo->nYSize * psDInfo->dfPixelSizeY;
 
     return psDInfo;
-}
-
-
-
-/************************************************************************/
-/*                            DTEDReadPoint()                           */
-/*                                                                      */
-/*      Read one single sample. The coordinates are given from the      */
-/*      top-left corner of the file (contrary to the internal           */
-/*      organisation or a DTED file)                                    */
-/************************************************************************/
-
-int DTEDReadPoint( DTEDInfo * psDInfo, int nXOff, int nYOff, GInt16* panVal)
-{
-    int nOffset;
-    GByte pabyData[2];
-
-    if (nYOff < 0 || nXOff < 0 || nYOff >= psDInfo->nYSize || nXOff >= psDInfo->nXSize)
-    {
-#ifndef AVOID_CPL
-        CPLError( CE_Failure, CPLE_AppDefined,
-#else
-        fprintf( stderr, 
-#endif
-                  "Invalid raster coordinates (%d,%d) in DTED file.\n", nXOff, nYOff);
-        return FALSE;
-    }
-
-    nOffset = psDInfo->nDataOffset + nXOff * (12+psDInfo->nYSize*2) + 8 + 2 * (psDInfo->nYSize-1-nYOff);
-    if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
-        || VSIFReadL( pabyData, 2, 1, psDInfo->fp ) != 1)
-    {
-#ifndef AVOID_CPL
-        CPLError( CE_Failure, CPLE_FileIO,
-#else
-        fprintf( stderr, 
-#endif
-                  "Failed to seek to, or read (%d,%d) at offset %d\n"
-                  "in DTED file.\n",
-                  nXOff, nYOff, nOffset );
-        return FALSE;
-    }
-
-    *panVal = ((pabyData[0] & 0x7f) << 8) | pabyData[1];
-
-    if( pabyData[0] & 0x80 )
-    {
-        *panVal *= -1;
-
-        /*
-        ** It seems that some files are improperly generated in twos
-        ** complement form for negatives.  For these, redo the job
-        ** in twos complement.  eg. w_069_s50.dt0
-        */
-        if(( *panVal < -16000 ) && (*panVal != DTED_NODATA_VALUE))
-        {
-            *panVal = (pabyData[0] << 8) | pabyData[1];
-
-            if( !bWarnedTwoComplement )
-            {
-                bWarnedTwoComplement = TRUE;
-#ifndef AVOID_CPL
-                CPLError( CE_Warning, CPLE_AppDefined,
-#else
-                fprintf( stderr,
-#endif
-                            "The DTED driver found values less than -16000, and has adjusted\n"
-                            "them assuming they are improperly two-complemented.  No more warnings\n"
-                            "will be issued in this session about this operation." );
-            }
-        }
-    }
-
-    return TRUE;
 }
 
 /************************************************************************/
@@ -342,12 +233,7 @@ int DTEDReadPoint( DTEDInfo * psDInfo, int nXOff, int nYOff, GInt16* panVal)
 
 int DTEDReadProfile( DTEDInfo * psDInfo, int nColumnOffset,
                      GInt16 * panData )
-{
-    return DTEDReadProfileEx( psDInfo, nColumnOffset, panData, FALSE);
-}
 
-int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
-                       GInt16 * panData, int bVerifyChecksum )
 {
     int         nOffset;
     int         i;
@@ -360,8 +246,8 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
     
     nOffset = psDInfo->nDataOffset + nColumnOffset * (12+psDInfo->nYSize*2);
 
-    if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
-        || VSIFReadL( pabyRecord, (12+psDInfo->nYSize*2), 1, psDInfo->fp ) != 1)
+    if( VSIFSeek( psDInfo->fp, nOffset, SEEK_SET ) != 0
+        || VSIFRead( pabyRecord, (12+psDInfo->nYSize*2), 1, psDInfo->fp ) != 1)
     {
 #ifndef AVOID_CPL
         CPLError( CE_Failure, CPLE_FileIO,
@@ -371,7 +257,6 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
                   "Failed to seek to, or read profile %d at offset %d\n"
                   "in DTED file.\n",
                   nColumnOffset, nOffset );
-        CPLFree( pabyRecord );
         return FALSE;
     }
 
@@ -381,7 +266,7 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < psDInfo->nYSize; i++ )
     {
-        panData[i] = ((pabyRecord[8+i*2] & 0x7f) << 8) | pabyRecord[8+i*2+1];
+        panData[i] = (pabyRecord[8+i*2] & 0x7f) * 256 + pabyRecord[8+i*2+1];
 
         if( pabyRecord[8+i*2] & 0x80 )
         {
@@ -394,71 +279,20 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
             */
             if(( panData[i] < -16000 ) && (panData[i] != DTED_NODATA_VALUE))
             {
-                panData[i] = (pabyRecord[8+i*2] << 8) | pabyRecord[8+i*2+1];
+                static int bWarned = FALSE;
 
-                if( !bWarnedTwoComplement )
+                memcpy( panData + i, pabyRecord + 8+i*2, 2 );
+                panData[i] = CPL_MSBWORD16( panData[i] );
+
+                if( !bWarned )
                 {
-                    bWarnedTwoComplement = TRUE;
-#ifndef AVOID_CPL
+                    bWarned = TRUE;
                     CPLError( CE_Warning, CPLE_AppDefined,
-#else
-                    fprintf( stderr,
-#endif
                               "The DTED driver found values less than -16000, and has adjusted\n"
                               "them assuming they are improperly two-complemented.  No more warnings\n"
                               "will be issued in this session about this operation." );
                 }
             }
-        }
-    }
-
-    if (bVerifyChecksum)
-    {
-        unsigned int nCheckSum = 0;
-        unsigned int fileCheckSum;
-
-        /* -------------------------------------------------------------------- */
-        /*      Verify the checksum.                                            */
-        /* -------------------------------------------------------------------- */
-
-        for( i = 0; i < psDInfo->nYSize*2 + 8; i++ )
-            nCheckSum += pabyRecord[i];
-
-        fileCheckSum = (pabyRecord[8+psDInfo->nYSize*2+0] << 24) |
-                        (pabyRecord[8+psDInfo->nYSize*2+1] << 16) |
-                        (pabyRecord[8+psDInfo->nYSize*2+2] << 8) |
-                        pabyRecord[8+psDInfo->nYSize*2+3];
-
-        if (fileCheckSum > 0xff * (8+psDInfo->nYSize*2))
-        {
-            static int bWarned = FALSE;
-            if (! bWarned)
-            {
-                bWarned = TRUE;
-#ifndef AVOID_CPL
-                CPLError( CE_Warning, CPLE_AppDefined,
-#else
-                fprintf( stderr,
-#endif
-                            "The DTED driver has read from the file a checksum "
-                            "with an impossible value (0x%X) at column %d.\n"
-                            "Check with your file producer.\n"
-                            "No more warnings will be issued in this session about this operation.",
-                            fileCheckSum, nColumnOffset);
-            }
-        }
-        else if (fileCheckSum != nCheckSum)
-        {
-#ifndef AVOID_CPL
-            CPLError( CE_Warning, CPLE_AppDefined,
-#else
-            fprintf( stderr,
-#endif
-                      "The DTED driver has found a computed and read checksum "
-                      "that do not match at column %d.\n",
-                      nColumnOffset);
-            CPLFree( pabyRecord );
-            return FALSE;
         }
     }
 
@@ -519,8 +353,8 @@ int DTEDWriteProfile( DTEDInfo * psDInfo, int nColumnOffset,
 /* -------------------------------------------------------------------- */
     nOffset = psDInfo->nDataOffset + nColumnOffset * (12+psDInfo->nYSize*2);
 
-    if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
-        || VSIFWriteL( pabyRecord,(12+psDInfo->nYSize*2),1,psDInfo->fp ) != 1)
+    if( VSIFSeek( psDInfo->fp, nOffset, SEEK_SET ) != 0
+        || VSIFWrite( pabyRecord,(12+psDInfo->nYSize*2),1,psDInfo->fp ) != 1)
     {
         CPLFree( pabyRecord );
 #ifndef AVOID_CPL
@@ -531,7 +365,6 @@ int DTEDWriteProfile( DTEDInfo * psDInfo, int nColumnOffset,
                   "Failed to seek to, or write profile %d at offset %d\n"
                   "in DTED file.\n",
                   nColumnOffset, nOffset );
-        CPLFree( pabyRecord );
         return FALSE;
     }
 
@@ -600,11 +433,6 @@ static void DTEDGetMetadataLocation( DTEDInfo *psDInfo,
         *ppszLocation = psDInfo->pachDSIRecord + 141;
         *pnLength = 3;
         break;
-
-      case DTEDMD_HORIZDATUM: 
-        *ppszLocation = psDInfo->pachDSIRecord + 144; 
-        *pnLength = 5; 
-        break; 
 
       case DTEDMD_DIGITIZING_SYS:
         *ppszLocation = psDInfo->pachDSIRecord + 149;
@@ -700,19 +528,19 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
 /* -------------------------------------------------------------------- */
     memset( pszFieldSrc, ' ', nFieldLen );
     strncpy( pszFieldSrc, pszNewValue, 
-             MIN(nFieldLen,strlen(pszNewValue)) );
+             MIN(strlen(pszFieldSrc),strlen(pszNewValue)) );
 
 /* -------------------------------------------------------------------- */
 /*      Write all headers back to disk.                                 */
 /* -------------------------------------------------------------------- */
-    VSIFSeekL( psDInfo->fp, psDInfo->nUHLOffset, SEEK_SET );
-    VSIFWriteL( psDInfo->pachUHLRecord, 1, DTED_UHL_SIZE, psDInfo->fp );
+    VSIFSeek( psDInfo->fp, psDInfo->nUHLOffset, SEEK_SET );
+    VSIFWrite( psDInfo->pachUHLRecord, 1, DTED_UHL_SIZE, psDInfo->fp );
 
-    VSIFSeekL( psDInfo->fp, psDInfo->nDSIOffset, SEEK_SET );
-    VSIFWriteL( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, psDInfo->fp );
+    VSIFSeek( psDInfo->fp, psDInfo->nDSIOffset, SEEK_SET );
+    VSIFWrite( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, psDInfo->fp );
 
-    VSIFSeekL( psDInfo->fp, psDInfo->nACCOffset, SEEK_SET );
-    VSIFWriteL( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, psDInfo->fp );
+    VSIFSeek( psDInfo->fp, psDInfo->nACCOffset, SEEK_SET );
+    VSIFWrite( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, psDInfo->fp );
 
     return TRUE;
 }
@@ -724,7 +552,7 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
 void DTEDClose( DTEDInfo * psDInfo )
 
 {
-    VSIFCloseL( psDInfo->fp );
+    VSIFClose( psDInfo->fp );
 
     CPLFree( psDInfo->pachUHLRecord );
     CPLFree( psDInfo->pachDSIRecord );

@@ -22,9 +22,7 @@
 #pragma once
 #endif
 
-#include <Sm/Ph/SpatialContext.h>
-
-class FdoSmPhOwner;
+#include <Sm/Collection.h>
 
 // This physical class encapsulates information on spatial context geometries
 class FdoSmPhSpatialContextGeom : public FdoSmPhSchemaElement
@@ -33,28 +31,26 @@ public:
 
     /// Constructs an instance from the given attributes.
 	FdoSmPhSpatialContextGeom(
-        const FdoSmPhOwner*     pOwner,
-        FdoString*	            tableName,
-        FdoString*	            columnName,
-		bool                    hasElevation,
-        bool                    hasMeasure,
-        bool                    isDerived,
-        FdoSmPhSpatialContextP  spatialContext,
-        FdoSmPhSpatialContextsP spatialContexts
+        FdoSmPhMgrP phMgr,
+        FdoInt64	scId,
+        FdoString*	tableName,
+        FdoString*	columnName,
+		bool        hasElevation,
+        bool        hasMeasure
     ) :
-        FdoSmPhSchemaElement( MakeName(tableName,columnName), L"", (FdoSmPhMgr*) NULL, (const FdoSmPhSchemaElement*) pOwner )
+        FdoSmPhSchemaElement( MakeName(tableName,columnName), L"", phMgr )
 	{
+		mScId = scId;
 		mTableName = tableName;
 		mColumnName = columnName;
 		mHasElevation = hasElevation;	
 		mHasMeasure = hasMeasure;	
-        mIsDerived = isDerived;
-        mpOwner = (FdoSmPhOwner*) pOwner;
-        mSpatialContext = spatialContext;
-        mSpatialContexts = spatialContexts;
 	}
 
 	~FdoSmPhSpatialContextGeom(void) {}
+
+    /// Spatial Context Identifier
+	FdoInt64 GetScId() { return mScId; }
 
     /// Geometry table name
 	FdoStringP GetGeomTableName() { return mTableName; }
@@ -74,33 +70,20 @@ public:
         return FdoStringP::Format( L"\"%ls\".\"%ls\"", tableName, columnName );
     }
 
-    // Gets the associated spatial context
-    FdoSmPhSpatialContextP GetSpatialContext();
-
 protected:
     /// Unused constructor needed only to build on Linux
     FdoSmPhSpatialContextGeom() {}
 
 	virtual void Dispose() { delete this; }
 
-    // Resolves the associated spatial context. Spatial Context passed 
-    // into constructor is a candidate. This function resolves the following:
-    //    - Coalesces spatial contexts with identical attributes
-    //    - if geometric column is derived then set spatial context to the 
-    //      spatial context of the base column.
-    virtual void Finalize();
-
 private:
 
-    FdoStringP		        mTableName;
-    FdoStringP		        mColumnName;
-	bool			        mHasElevation;
-	bool			        mHasMeasure;
+    FdoInt64        mScId;
+    FdoStringP		mTableName;
+    FdoStringP		mColumnName;
+	bool			mHasElevation;
+	bool			mHasMeasure;
 
-    bool                    mIsDerived;
-    FdoSmPhOwner*           mpOwner;
-    FdoSmPhSpatialContextP  mSpatialContext;
-    FdoSmPhSpatialContextsP mSpatialContexts;
 };
 
 typedef FdoPtr<FdoSmPhSpatialContextGeom> FdoSmPhSpatialContextGeomP;

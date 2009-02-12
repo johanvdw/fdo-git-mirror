@@ -56,11 +56,6 @@ public:
     /// the Database schema.
     FdoSmPhMgrP GetPhysicalSchema();
 
-    // Gets the owner where this schema's physical objects reside. This is usually
-    // the default owner. However, some providers map each Logical Schema to a different
-    // owner (e.g. ODBC provider with SQL Server data source ).
-    virtual FdoSmPhOwnerP GetPhysicalOwner();
-
     /// Get the collection that contains this schema.
     const FdoSmLpSchemaCollection* RefSchemas() const;
     FdoPtr<FdoSmLpSchemaCollection> GetSchemas();
@@ -104,7 +99,7 @@ public:
     /// 	className: the class to find. When this is a qualified name
     /// 		( [<schemaname]:[classname] ) then this schema passes it
     /// 		on to the indicated schema. 
-    const FdoSmLpClassDefinition* FindClass( FdoStringP className, bool searchAllSchemas = true ) const;
+    const FdoSmLpClassDefinition* FindClass( FdoStringP className ) const;
 
     /// Given a table, retrieves the list of classes for which this table
     /// is the class table.
@@ -349,14 +344,11 @@ private:
     FdoSmOvTableMappingType         mTableMapping;
 
     bool                            mbSchemaLoaded;
-    mutable bool                    mbSADLoaded;
 
 };
 
 typedef FdoPtr<FdoSmLpSchema> FdoSmLpSchemaP;
 
 #endif
-
-
 
 

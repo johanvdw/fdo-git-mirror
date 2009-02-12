@@ -1,38 +1,6 @@
-/******************************************************************************
- * $Id: createdata.cs 15475 2008-10-07 21:40:20Z tamas $
- *
- * Name:     createdata.cs
- * Project:  GDAL CSharp Interface
- * Purpose:  A sample app to create a spatial data source and a layer.
- * Author:   Tamas Szekeres, szekerest@gmail.com
- *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
-
 using System;
 
-using OSGeo.OGR;
-using OSGeo.OSR;
+using OGR;
 
 
 /**
@@ -68,12 +36,12 @@ class CreateData {
 		/* -------------------------------------------------------------------- */
 		/*      Register format(s).                                             */
 		/* -------------------------------------------------------------------- */
-        Ogr.RegisterAll();
+        ogr.RegisterAll();
 
 		/* -------------------------------------------------------------------- */
 		/*      Get driver                                                      */
 		/* -------------------------------------------------------------------- */	
-        Driver drv = Ogr.GetDriverByName("ESRI Shapefile");
+        Driver drv = ogr.GetDriverByName("ESRI Shapefile");
 
 		if (drv == null) 
 		{
@@ -82,8 +50,7 @@ class CreateData {
 		}
 
         // TODO: drv.name is still unsafe with lazy initialization (Bug 1339)
-        //string DriverName = drv.name;
-        //Console.WriteLine("Using driver " + DriverName);
+        Console.WriteLine("Using driver " + drv.name);
 
 		/* -------------------------------------------------------------------- */
 		/*      Creating the datasource                                         */
@@ -102,7 +69,7 @@ class CreateData {
 
         Layer layer;
 
-        layer = ds.CreateLayer( args[1], null, wkbGeometryType.wkbPoint, new string[] {} );
+        layer = ds.CreateLayer( args[1], null, ogr.wkbPoint, new string[] {} );
         if( layer == null )
         {
             Console.WriteLine("Layer creation failed.");
@@ -113,7 +80,7 @@ class CreateData {
         /*      Adding attribute fields                                         */
         /* -------------------------------------------------------------------- */
 
-        FieldDefn fdefn = new FieldDefn( "Name", FieldType.OFTString );
+        FieldDefn fdefn = new FieldDefn( "Name", ogr.OFTString );
 
         fdefn.SetWidth(32);
 
@@ -123,38 +90,14 @@ class CreateData {
             System.Environment.Exit(-1);
         }
 
-		fdefn = new FieldDefn( "IntField", FieldType.OFTInteger );
-		if( layer.CreateField( fdefn, 1 ) != 0 )
-		{
-			Console.WriteLine("Creating IntField field failed.");
-			System.Environment.Exit(-1);
-		}
-
-		fdefn = new FieldDefn( "DoubleField", FieldType.OFTReal );
-		if( layer.CreateField( fdefn, 1 ) != 0 )
-		{
-			Console.WriteLine("Creating DoubleField field failed.");
-			System.Environment.Exit(-1);
-		}
-
-		fdefn = new FieldDefn( "DateField", FieldType.OFTDate );
-		if( layer.CreateField( fdefn, 1 ) != 0 )
-		{
-			Console.WriteLine("Creating DateField field failed.");
-			System.Environment.Exit(-1);
-		}
-
         /* -------------------------------------------------------------------- */
         /*      Adding features                                                 */
         /* -------------------------------------------------------------------- */
 
         Feature feature = new Feature( layer.GetLayerDefn() );
         feature.SetField( "Name", "value" );
-		feature.SetField( "IntField", (int)123 );
-		feature.SetField( "DoubleField", (double)12.345 );
-		feature.SetField( "DateField", 2007, 3, 15, 18, 24, 30, 0 );
 
-        Geometry geom = Geometry.CreateFromWkt("POINT(47.0 19.2)");
+        Geometry geom = new Geometry(ogr.wkbUnknown, "POINT(47.0 19.2)", 0, null, null);
         
         if( feature.SetGeometry( geom ) != 0 )
         {

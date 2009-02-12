@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: avc_e00parse.c,v 1.19 2008/07/23 20:51:38 dmorissette Exp $
+ * $Id: avc_e00parse.c,v 1.18 2006/06/27 18:06:34 dmorissette Exp $
  *
  * Name:     avc_e00parse.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -30,10 +30,6 @@
  **********************************************************************
  *
  * $Log: avc_e00parse.c,v $
- * Revision 1.19  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.18  2006/06/27 18:06:34  dmorissette
  * Applied patch for EOP processing from James F. (bug 1497)
  *
@@ -1367,9 +1363,9 @@ AVCTxt   *AVCE00ParseNextTxtLine(AVCE00ParseInfo *psInfo, const char *pszLine)
             /*---------------------------------------------------------
              * Realloc the string buffer and array of vertices
              *--------------------------------------------------------*/
-            psTxt->pszText = (GByte *)CPLRealloc(psTxt->pszText,
-                                                 (psTxt->numChars+1)*
-                                                     sizeof(GByte));
+            psTxt->pszText = (char *)CPLRealloc(psTxt->pszText,
+                                                (psTxt->numChars+1)*
+                                                    sizeof(char));
             numVertices = ABS(psTxt->numVerticesLine) + 
                                  ABS(psTxt->numVerticesArrow);
             if (numVertices > 0)
@@ -1484,12 +1480,12 @@ AVCTxt   *AVCE00ParseNextTxtLine(AVCE00ParseInfo *psInfo, const char *pszLine)
 
         if (iLine == numLines-1)
         {
-            strncpy((char*)psTxt->pszText+(iLine*80), pszLine, 
+            strncpy(psTxt->pszText+(iLine*80), pszLine, 
                     MIN( nLen, (psTxt->numChars - (iLine*80)) ) );
         }
         else
         {
-            strncpy((char*)psTxt->pszText+(iLine*80), pszLine, MIN(nLen, 80));
+            strncpy(psTxt->pszText+(iLine*80), pszLine, MIN(nLen, 80));
         }
 
         psInfo->iCurItem++;
@@ -1577,9 +1573,9 @@ AVCTxt   *AVCE00ParseNextTx6Line(AVCE00ParseInfo *psInfo, const char *pszLine)
             /*---------------------------------------------------------
              * Realloc the string buffer and array of vertices
              *--------------------------------------------------------*/
-            psTxt->pszText = (GByte *)CPLRealloc(psTxt->pszText,
-                                                 (psTxt->numChars+1)*
-                                                 sizeof(GByte));
+            psTxt->pszText = (char *)CPLRealloc(psTxt->pszText,
+                                                (psTxt->numChars+1)*
+                                                sizeof(char));
 
             numVertices = ABS(psTxt->numVerticesLine) + 
                                  ABS(psTxt->numVerticesArrow);
@@ -1682,12 +1678,12 @@ AVCTxt   *AVCE00ParseNextTx6Line(AVCE00ParseInfo *psInfo, const char *pszLine)
 
         if (iLine == numLines-1)
         {
-            strncpy((char*)psTxt->pszText+(iLine*80), pszLine, 
+            strncpy(psTxt->pszText+(iLine*80), pszLine, 
                     MIN( nLen, (psTxt->numChars - (iLine*80)) ) );
         }
         else
         {
-            strncpy((char*)psTxt->pszText+(iLine*80), pszLine, MIN(nLen, 80));
+            strncpy(psTxt->pszText+(iLine*80), pszLine, MIN(nLen, 80));
         }
 
         psInfo->iCurItem++;
@@ -1979,7 +1975,7 @@ static AVCField   *_AVCE00ParseTableRecord(AVCE00ParseInfo *psInfo)
         if (nType ==  AVC_FT_DATE || nType == AVC_FT_CHAR ||
             nType == AVC_FT_FIXINT )
         {
-            strncpy((char*)pasFields[i].pszStr, pszBuf, nSize);
+            strncpy(pasFields[i].pszStr, pszBuf, nSize);
             pasFields[i].pszStr[nSize] = '\0';
             pszBuf += nSize;
         }
@@ -2024,7 +2020,7 @@ static AVCField   *_AVCE00ParseTableRecord(AVCE00ParseInfo *psInfo)
              */
             if ((int)strlen(pszTmpStr) > nSize)
                 pszTmpStr = pszTmpStr + strlen(pszTmpStr) - nSize;
-            strncpy((char*)pasFields[i].pszStr, pszTmpStr, nSize);
+            strncpy(pasFields[i].pszStr, pszTmpStr, nSize);
             pasFields[i].pszStr[nSize] = '\0';
         }
         else if (nType == AVC_FT_BININT && nSize == 4)
@@ -2149,8 +2145,8 @@ AVCField   *AVCE00ParseNextTableRecLine(AVCE00ParseInfo *psInfo,
                 psTableDef->pasFieldDef[i].nType1*10 == AVC_FT_FIXNUM )
             {
                 psInfo->cur.pasFields[i].pszStr = 
-                    (GByte*)CPLCalloc(psTableDef->pasFieldDef[i].nSize+1, 
-                                      sizeof(GByte));
+                    (char*)CPLCalloc(psTableDef->pasFieldDef[i].nSize+1, 
+                                     sizeof(char));
             }
         }
 

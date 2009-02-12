@@ -1,18 +1,17 @@
-.TH "gdal_contour" 1 "4 Dec 2008" "GDAL" \" -*- nroff -*-
+.TH "gdal_contour" 1 "28 Jun 2006" "GDAL" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
-gdal_contour \- gdal_contour 
+gdal_contour \- gdal_contour
 builds vector contour lines from a raster elevation model
 .SH "SYNOPSIS"
 .PP
 .PP
+.PP
 .nf
-
 Usage: gdal_contour [-b <band>] [-a <attribute_name>] [-3d] [-inodata]
                     [-snodata n] [-f <formatname>] [-i <interval>]
                     [-off <offset>] [-fl <level> <level>...]
-                    [-nln <outlayername>]
                     <src_filename> <dst_filename> 
 .fi
 .PP
@@ -48,17 +47,15 @@ Offset from zero relative to which to interpret intervals.
 .PP
 .IP "\fB\fB-fl\fP \fIlevel\fP: \fP" 1c
 Name one or more 'fixed levels' to extract. 
-.IP "\fB\fB-nln\fP \fIoutlayername\fP: \fP" 1c
-Provide a name for the output vector layer. Defaults to 'contour'. 
 .PP
 .SH "EXAMPLE"
+.PP
 .PP
 This would create 10meter contours from the DEM data in dem.tif and produce a shapefile in contour.shp/shx/dbf with the contour elevations in the 'elev' attribute.
 .PP
 .PP
 .nf
-
-gdal_contour -a elev dem.tif contour.shp -i 10.0
+gdal_contour -a elev dem.tif contour.shp 10.0
 .fi
 .PP
 .SH "AUTHORS"

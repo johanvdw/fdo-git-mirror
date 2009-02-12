@@ -21,7 +21,6 @@ TYPEACTION=buildinstall
 TYPEBUILD=release
 TYPECONFIGURE=configure
 BUILDDOCS=no
-PREFIXVAL=/usr/local/fdo-3.4.0
 
 ### study parameters ###
 while test $# -gt 0
@@ -47,15 +46,6 @@ do
     else
         echo "$arg Invalid parameter $1"
 	exit 1
-    fi
-    shift
-    ;;
-  -p | --p | --prefix)
-    if test "$1" == ""; then
-        echo "$arg Invalid parameter $1"
-        exit 1
-    else
-        PREFIXVAL="$1"
     fi
     shift
     ;;
@@ -112,19 +102,13 @@ done
 
 if test "$SHOWHELP" == yes; then
    echo "************************************************************************************************************"
-   echo "build_linux.sh [--h]"
-   echo "               [--c BuildType]"
-   echo "               [--a Action]"
-   echo "               [--d BuildDocs]"
-   echo "               [--m ConfigMakefiles]"
-   echo "               [--p Prefix]"
-   echo " "
+   echo "build_linux.sh [--h] [--c BuildType] [--a Action] [--d BuildDocs] [--m ConfigMakefiles]"
+   echo "*"
    echo "Help:            --h[elp]"
    echo "BuildType:       --c[onfig] release(default), debug"
    echo "Action:          --a[ction] buildinstall(default), build, install, uninstall, clean"
    echo "BuildDocs:       --d[ocs] skip(default), build"
    echo "ConfigMakefiles: --m[akefile] configure(default), noconfigure"
-   echo "Prefix:          --p[refix] <fdo install location>"
    echo "************************************************************************************************************"
    exit 0
 fi
@@ -137,9 +121,9 @@ if test "$TYPECONFIGURE" == configure ; then
    autoconf
 
    if test "$TYPEBUILD" == release; then
-      ./configure --prefix="$PREFIXVAL"
+      ./configure
    else
-      ./configure --enable-debug=yes --prefix="$PREFIXVAL"
+      ./configure --enable-debug=yes
    fi
 fi
    
@@ -161,14 +145,9 @@ fi
 
 if test "$BUILDDOCS" == yes ; then
    rm -rf Docs/HTML/MySQL
+   rm -rf Docs/HTML/ODBC
    mkdir -p Docs/HTML/MySQL
-   cp ../../DocResources/geospatial.js Docs/HTML/MySQL
-   cp ../../DocResources/osgeo.css Docs/HTML/MySQL
-   
-   rm -rf Docs/HTML/MySQL_managed
-   mkdir -p Docs/HTML/MySQL_managed
-   cp ../../DocResources/geospatial.js Docs/HTML/MySQL_managed
-   cp ../../DocResources/osgeo.css Docs/HTML/MySQL_managed
+   mkdir -p Docs/HTML/ODBC
 
    echo Creating MySQL Provider HTML documentation
    pushd Docs/doc_src >& /dev/null
@@ -176,68 +155,24 @@ if test "$BUILDDOCS" == yes ; then
    doxygen Doxyfile_MySQL_managed >& /dev/null
    popd >& /dev/null
    
-   rm -rf Docs/HTML/ODBC
-   mkdir -p Docs/HTML/ODBC
-   cp ../../DocResources/geospatial.js Docs/HTML/ODBC
-   cp ../../DocResources/osgeo.css Docs/HTML/ODBC
-
-   rm -rf Docs/HTML/ODBC_managed
-   mkdir -p Docs/HTML/ODBC_managed
-   cp ../../DocResources/geospatial.js Docs/HTML/ODBC_managed
-   cp ../../DocResources/osgeo.css Docs/HTML/ODBC_managed
-
    echo Creating ODBC Provider HTML documentation
    pushd Docs/doc_src >& /dev/null
    doxygen Doxyfile_ODBC >& /dev/null
    doxygen Doxyfile_ODBC_managed >& /dev/null
    popd >& /dev/null
-
-   rm -rf Docs/HTML/SQLServerSpatial
-   mkdir -p Docs/HTML/SQLServerSpatial
-   cp ../../DocResources/geospatial.js Docs/HTML/SQLServerSpatial
-   cp ../../DocResources/osgeo.css Docs/HTML/SQLServerSpatial
-
-   rm -rf Docs/HTML/SQLServerSpatial_managed
-   mkdir -p Docs/HTML/SQLServerSpatial_managed
-   cp ../../DocResources/geospatial.js Docs/HTMLSQLServerSpatial_managed
-   cp ../../DocResources/osgeo.css Docs/HTMLSQLServerSpatial_managed
-
-   echo Creating SQLServerSpatial Provider HTML documentation
-   pushd Docs/doc_src >& /dev/null
-   doxygen Doxyfile_SQLServerSpatial >& /dev/null
-   doxygen Doxyfile_SQLServerSpatial_managed >& /dev/null
-   popd >& /dev/null
 fi
 
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/MySQL"
+   rm -rf "/usr/local/fdo-3.3.0/docs/HTML/Providers/MySQL"
+   rm -rf "/usr/local/fdo-3.3.0/docs/HTML/Providers/ODBC"
+   mkdir -p "/usr/local/fdo-3.3.0/docs/HTML/Providers"
    if test -e "Docs/HTML/MySQL"; then
-      cp --force --recursive "Docs/HTML/MySQL" "$PREFIXVAL/docs/HTML/Providers"
+      cp --force --recursive "Docs/HTML/MySQL" "/usr/local/fdo-3.3.0/docs/HTML/Providers"
+      cp --force --recursive "Docs/HTML/MySQL_managed" "/usr/local/fdo-3.3.0/docs/HTML/Providers"
    fi
-
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/MySQL_managed"
-   if test -e "Docs/HTML/MySQL_managed"; then
-      cp --force --recursive "Docs/HTML/MySQL_managed" "$PREFIXVAL/docs/HTML/Providers"
-   fi
-
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/ODBC"
    if test -e "Docs/HTML/ODBC"; then
-      cp --force --recursive "Docs/HTML/ODBC" "$PREFIXVAL/docs/HTML/Providers"
-   fi
-
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/ODBC_managed"
-   if test -e "Docs/HTML/ODBC"; then
-      cp --force --recursive "Docs/HTML/ODBC_managed" "$PREFIXVAL/docs/HTML/Providers"
-   fi
-
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/SQLServerSpatial"
-   if test -e "Docs/HTML/SQLServerSpatial"; then
-      cp --force --recursive "Docs/HTML/SQLServerSpatial" "$PREFIXVAL/docs/HTML/Providers"
-   fi
-
-   rm -rf "$PREFIXVAL/docs/HTML/Providers/SQLServerSpatial_managed"
-   if test -e "Docs/HTML/SQLServerSpatial_managed"; then
-      cp --force --recursive "Docs/HTML/SQLServerSpatial_managed" "$PREFIXVAL/docs/HTML/Providers"
+      cp --force --recursive "Docs/HTML/ODBC" "/usr/local/fdo-3.3.0/docs/HTML/Providers"
+      cp --force --recursive "Docs/HTML/ODBC_managed" "/usr/local/fdo-3.3.0/docs/HTML/Providers"
    fi
 fi
 

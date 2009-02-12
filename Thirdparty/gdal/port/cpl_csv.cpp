@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.cpp 15264 2008-08-30 21:37:43Z mloskot $
+ * $Id: cpl_csv.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CSV (comma separated value) file access.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: cpl_csv.cpp 15264 2008-08-30 21:37:43Z mloskot $");
+CPL_CVSID("$Id: cpl_csv.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 const char * GDALDefaultCSVFilename( const char *pszBasename );
@@ -55,8 +55,6 @@ typedef struct ctb {
     char        **papszRecFields;
 
     int         iLastLine;
-
-    int         bNonUniqueKey;
 
     /* Cache for whole file */
     int         nLineCount;
@@ -131,7 +129,6 @@ static CSVTable *CSVAccess( const char * pszFilename )
 
     psTable->fp = fp;
     psTable->pszFilename = CPLStrdup( pszFilename );
-    psTable->bNonUniqueKey = FALSE; /* as far as we know now */
     psTable->psNext = *ppsCSVTableList;
     
     *ppsCSVTableList = psTable;
@@ -599,13 +596,6 @@ CSVScanLinesIndexed( CSVTable *psTable, int nKeyValue )
         else
         {
             iResult = iMiddle;
-            // if a key is not unique, select the first instance of it.
-            while( iResult > 0 
-                   && psTable->panLineIndex[iResult-1] == nKeyValue )
-            {
-                psTable->bNonUniqueKey = TRUE; 
-                iResult--;
-            }
             break;
         }
     }
@@ -682,49 +672,6 @@ CSVScanLinesIngested( CSVTable *psTable, int iKeyField, const char * pszValue,
 }
 
 /************************************************************************/
-/*                           CSVGetNextLine()                           */
-/*                                                                      */
-/*      Fetch the next line of a CSV file based on a passed in          */
-/*      filename.  Returns NULL at end of file, or if file is not       */
-/*      really established.                                             */
-/************************************************************************/
-
-char **CSVGetNextLine( const char *pszFilename )
-
-{
-    CSVTable *psTable;
-
-/* -------------------------------------------------------------------- */
-/*      Get access to the table.                                        */
-/* -------------------------------------------------------------------- */
-    CPLAssert( pszFilename != NULL );
-
-    psTable = CSVAccess( pszFilename );
-    if( psTable == NULL )
-        return NULL;
-    
-/* -------------------------------------------------------------------- */
-/*      If we use CSVGetNextLine() we can pretty much assume we have    */
-/*      a non-unique key.                                               */
-/* -------------------------------------------------------------------- */
-    psTable->bNonUniqueKey = TRUE; 
-
-/* -------------------------------------------------------------------- */
-/*      Do we have a next line available?  This only works for          */
-/*      ingested tables I believe.                                      */
-/* -------------------------------------------------------------------- */
-    if( psTable->iLastLine+1 >= psTable->nLineCount )
-        return NULL;
-
-    psTable->iLastLine++;
-    CSLDestroy( psTable->papszRecFields );
-    psTable->papszRecFields = 
-        CSVSplitLine( psTable->papszLines[psTable->iLastLine] );
-
-    return psTable->papszRecFields;
-}
-
-/************************************************************************/
 /*                            CSVScanFile()                             */
 /*                                                                      */
 /*      Scan a whole file using criteria similar to above, but also     */
@@ -757,8 +704,7 @@ char **CSVScanFile( const char * pszFilename, int iKeyField,
 /* -------------------------------------------------------------------- */
     if( iKeyField >= 0
         && iKeyField < CSLCount(psTable->papszRecFields)
-        && CSVCompare(pszValue,psTable->papszRecFields[iKeyField],eCriteria)
-        && !psTable->bNonUniqueKey )
+        && CSVCompare(pszValue,psTable->papszRecFields[iKeyField],eCriteria) )
     {
         return psTable->papszRecFields;
     }
@@ -997,9 +943,7 @@ const char * GDALDefaultCSVFilename( const char *pszBasename )
 /*      eventually be something the application can override.           */
 /************************************************************************/
 
-CPL_C_START
 static const char *(*pfnCSVFilenameHook)(const char *) = NULL;
-CPL_C_END
 
 const char * CSVFilename( const char *pszBasename )
 

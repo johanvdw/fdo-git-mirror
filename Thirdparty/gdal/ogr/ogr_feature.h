@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_feature.h 14773 2008-06-27 20:13:02Z rouault $
+ * $Id: ogr_feature.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Class for representing a whole feature, and layer schemas.
@@ -267,7 +267,7 @@ class CPL_DLL OGRFeature
     long                GetFID() { return nFID; }
     virtual OGRErr      SetFID( long nFID );
 
-    void                DumpReadable( FILE *, char** papszOptions = NULL );
+    void                DumpReadable( FILE * );
 
     OGRErr              SetFrom( OGRFeature *, int = TRUE);
 

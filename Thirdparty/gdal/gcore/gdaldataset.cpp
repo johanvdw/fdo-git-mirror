@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldataset.cpp 15729 2008-11-13 20:33:46Z warmerdam $
+ * $Id: gdaldataset.cpp 11489 2007-05-11 19:27:48Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for raster file formats.  
@@ -29,92 +29,13 @@
 
 #include "gdal_priv.h"
 #include "cpl_string.h"
-#include "cpl_hash_set.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdaldataset.cpp 15729 2008-11-13 20:33:46Z warmerdam $");
+CPL_CVSID("$Id: gdaldataset.cpp 11489 2007-05-11 19:27:48Z warmerdam $");
 
-typedef struct
-{
-    GIntBig      nPID;
-    char        *pszDescription;
-    GDALAccess   eAccess;
-
-    GDALDataset *poDS;
-} SharedDatasetCtxt;
-
-/* Set of datasets opened as shared datasets (with GDALOpenShared) */
-/* The values in the set are of type SharedDatasetCtxt */
-static CPLHashSet* phSharedDatasetSet = NULL; 
-
-/* Set of all datasets created in the constructor of GDALDataset */
-/* The values in the set are the dataset pointer themselves */
-static CPLHashSet* phAllDatasetSet = NULL;
+static volatile int nGDALDatasetCount = 0;
+static GDALDataset ** volatile papoGDALDatasetList = NULL;
 static void *hDLMutex = NULL;
-
-/* Static array of all datasets. Used by GDALGetOpenDatasets */
-/* Not thread-safe. See GDALGetOpenDatasets */
-static GDALDataset** ppDatasets = NULL;
-
-unsigned long GDALSharedDatasetHashFunc(const void* elt)
-{
-    SharedDatasetCtxt* psStruct = (SharedDatasetCtxt*) elt;
-    return CPLHashSetHashStr(psStruct->pszDescription) ^ psStruct->eAccess ^ psStruct->nPID;
-}
-
-int GDALSharedDatasetEqualFunc(const void* elt1, const void* elt2)
-{
-    SharedDatasetCtxt* psStruct1 = (SharedDatasetCtxt*) elt1;
-    SharedDatasetCtxt* psStruct2 = (SharedDatasetCtxt*) elt2;
-    return strcmp(psStruct1->pszDescription, psStruct2->pszDescription) == 0 &&
-           psStruct1->nPID == psStruct2->nPID &&
-           psStruct1->eAccess == psStruct2->eAccess;
-}
-
-void GDALSharedDatasetFreeFunc(void* elt)
-{
-    SharedDatasetCtxt* psStruct = (SharedDatasetCtxt*) elt;
-    CPLFree(psStruct->pszDescription);
-    CPLFree(psStruct);
-}
-
-
-/************************************************************************/
-/* Functions shared between gdalproxypool.cpp and gdaldataset.cpp */
-/************************************************************************/
-
-void** GDALGetphDLMutex();
-void GDALSetResponsiblePIDForCurrentThread(GIntBig responsiblePID);
-GIntBig GDALGetResponsiblePIDForCurrentThread();
-
-/* The open-shared mutex must be used by the ProxyPool too */
-void** GDALGetphDLMutex()
-{
-    return &hDLMutex;
-}
-
-/* The current thread will act in the behalf of the thread of PID responsiblePID */
-void GDALSetResponsiblePIDForCurrentThread(GIntBig responsiblePID)
-{
-    GIntBig* pResponsiblePID = (GIntBig*) CPLGetTLS(CTLS_RESPONSIBLEPID);
-    if (pResponsiblePID == NULL)
-    {
-        pResponsiblePID = (GIntBig*) CPLMalloc(sizeof(GIntBig));
-        CPLSetTLS(CTLS_RESPONSIBLEPID, pResponsiblePID, TRUE);
-    }
-    *pResponsiblePID = responsiblePID;
-}
-
-/* Get the PID of the thread that the current thread will act in the behalf of */
-/* By default : the current thread acts in the behalf of itself */
-GIntBig GDALGetResponsiblePIDForCurrentThread()
-{
-    GIntBig* pResponsiblePID = (GIntBig*) CPLGetTLS(CTLS_RESPONSIBLEPID);
-    if (pResponsiblePID == NULL)
-        return CPLGetPID();
-    return *pResponsiblePID;
-}
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -155,10 +76,11 @@ GDALDataset::GDALDataset()
 /* -------------------------------------------------------------------- */
     {
         CPLMutexHolderD( &hDLMutex );
-
-        if (phAllDatasetSet == NULL)
-            phAllDatasetSet = CPLHashSetNew(NULL, NULL, NULL);
-        CPLHashSetInsert(phAllDatasetSet, this);
+        
+        nGDALDatasetCount++;
+        papoGDALDatasetList = (GDALDataset ** volatile) 
+            CPLRealloc( papoGDALDatasetList, sizeof(void *)*nGDALDatasetCount);
+        papoGDALDatasetList[nGDALDatasetCount-1] = this;
     }
 
 /* -------------------------------------------------------------------- */
@@ -167,7 +89,6 @@ GDALDataset::GDALDataset()
     bForceCachedIO =  CSLTestBoolean( 
         CPLGetConfigOption( "GDAL_FORCE_CACHING", "NO") );
 }
-
 
 /************************************************************************/
 /*                            ~GDALDataset()                            */
@@ -192,16 +113,7 @@ GDALDataset::~GDALDataset()
     // we don't want to report destruction of datasets that 
     // were never really open.
     if( nBands != 0 || !EQUAL(GetDescription(),"") )
-    {
-        if( CPLGetPID() != GDALGetResponsiblePIDForCurrentThread() )
-            CPLDebug( "GDAL", 
-                      "GDALClose(%s, this=%p) (pid=%d, responsiblePID=%d)", GetDescription(), this,
-                      (int)CPLGetPID(), 
-                      (int)GDALGetResponsiblePIDForCurrentThread() );
-        else
-            CPLDebug( "GDAL", 
-                      "GDALClose(%s, this=%p)", GetDescription(), this );
-    }
+        CPLDebug( "GDAL", "GDALClose(%s)", GetDescription() );
 
 /* -------------------------------------------------------------------- */
 /*      Remove dataset from the "open" dataset list.                    */
@@ -209,31 +121,20 @@ GDALDataset::~GDALDataset()
     {
         CPLMutexHolderD( &hDLMutex );
 
-        CPLHashSetRemove(phAllDatasetSet, this);
-
-        if (bShared && phSharedDatasetSet != NULL)
+        for( i = 0; i < nGDALDatasetCount; i++ )
         {
-            SharedDatasetCtxt* psStruct;
-            SharedDatasetCtxt sStruct;
-            sStruct.nPID = GDALGetResponsiblePIDForCurrentThread();
-            sStruct.eAccess = eAccess;
-            sStruct.pszDescription = (char*) GetDescription();
-            psStruct = (SharedDatasetCtxt*) CPLHashSetLookup(phSharedDatasetSet, &sStruct);
-            if (psStruct && psStruct->poDS == this)
+            if( papoGDALDatasetList[i] == this )
             {
-                CPLHashSetRemove(phSharedDatasetSet, psStruct);
+                papoGDALDatasetList[i] = 
+                    papoGDALDatasetList[nGDALDatasetCount-1];
+                nGDALDatasetCount--;
+                if( nGDALDatasetCount == 0 )
+                {
+                    CPLFree( papoGDALDatasetList );
+                    papoGDALDatasetList = NULL;
+                }
+                break;
             }
-        }
-
-        if (CPLHashSetSize(phAllDatasetSet) == 0)
-        {
-            CPLHashSetDestroy(phAllDatasetSet);
-            phAllDatasetSet = NULL;
-            if (phSharedDatasetSet)
-                CPLHashSetDestroy(phSharedDatasetSet);
-            phSharedDatasetSet = NULL;
-            CPLFree(ppDatasets);
-            ppDatasets = NULL;
         }
     }
 
@@ -291,8 +192,6 @@ void GDALDataset::FlushCache()
 void CPL_STDCALL GDALFlushCache( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER0( hDS, "GDALFlushCache" );
-
     ((GDALDataset *) hDS)->FlushCache();
 }
 
@@ -425,8 +324,6 @@ CPLErr CPL_STDCALL GDALAddBand( GDALDatasetH hDataset,
                     GDALDataType eType, char **papszOptions )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALAddBand", CE_Failure );
-
     return ((GDALDataset *) hDataset)->AddBand( eType, papszOptions );
 }
 
@@ -510,8 +407,6 @@ int GDALDataset::GetRasterXSize()
 int CPL_STDCALL GDALGetRasterXSize( GDALDatasetH hDataset )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALGetRasterXSize", 0 );
-
     return ((GDALDataset *) hDataset)->GetRasterXSize();
 }
 
@@ -547,8 +442,6 @@ int GDALDataset::GetRasterYSize()
 int CPL_STDCALL GDALGetRasterYSize( GDALDatasetH hDataset )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALGetRasterYSize", 0 );
-
     return ((GDALDataset *) hDataset)->GetRasterYSize();
 }
 
@@ -572,19 +465,15 @@ int CPL_STDCALL GDALGetRasterYSize( GDALDatasetH hDataset )
 GDALRasterBand * GDALDataset::GetRasterBand( int nBandId )
 
 {
-    if ( papoBands )
+    if( nBandId < 1 || nBandId > nBands )
     {
-        if( nBandId < 1 || nBandId > nBands )
-        {
-            CPLError( CE_Failure, CPLE_IllegalArg,
-                      "GDALDataset::GetRasterBand(%d) - Illegal band #\n",
-                      nBandId );
-            return NULL;
-        }
-        else
-            return( papoBands[nBandId-1] );
+        CPLError( CE_Failure, CPLE_IllegalArg,
+                  "GDALDataset::GetRasterBand(%d) - Illegal band #\n",
+                  nBandId );
+        return NULL;
     }
-    return NULL;
+    else
+        return( papoBands[nBandId-1] );
 }
 
 /************************************************************************/
@@ -598,8 +487,6 @@ GDALRasterBand * GDALDataset::GetRasterBand( int nBandId )
 GDALRasterBandH CPL_STDCALL GDALGetRasterBand( GDALDatasetH hDS, int nBandId )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetRasterBand", NULL );
-
     return( (GDALRasterBandH) ((GDALDataset *) hDS)->GetRasterBand(nBandId) );
 }
 
@@ -618,7 +505,7 @@ GDALRasterBandH CPL_STDCALL GDALGetRasterBand( GDALDatasetH hDS, int nBandId )
 int GDALDataset::GetRasterCount()
 
 {
-    return papoBands ? nBands : 0;
+    return( nBands );
 }
 
 /************************************************************************/
@@ -632,8 +519,6 @@ int GDALDataset::GetRasterCount()
 int CPL_STDCALL GDALGetRasterCount( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetRasterCount", 0 );
-
     return( ((GDALDataset *) hDS)->GetRasterCount() );
 }
 
@@ -676,8 +561,6 @@ const char *GDALDataset::GetProjectionRef()
 const char * CPL_STDCALL GDALGetProjectionRef( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetProjectionRef", NULL );
-
     return( ((GDALDataset *) hDS)->GetProjectionRef() );
 }
 
@@ -720,8 +603,6 @@ CPLErr GDALDataset::SetProjection( const char * )
 CPLErr CPL_STDCALL GDALSetProjection( GDALDatasetH hDS, const char * pszProjection )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALSetProjection", CE_Failure );
-
     return( ((GDALDataset *) hDS)->SetProjection(pszProjection) );
 }
 
@@ -788,8 +669,6 @@ CPLErr GDALDataset::GetGeoTransform( double * padfTransform )
 CPLErr CPL_STDCALL GDALGetGeoTransform( GDALDatasetH hDS, double * padfTransform )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetGeoTransform", CE_Failure );
-
     return( ((GDALDataset *) hDS)->GetGeoTransform(padfTransform) );
 }
 
@@ -834,8 +713,6 @@ CPLErr CPL_STDCALL
 GDALSetGeoTransform( GDALDatasetH hDS, double * padfTransform )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALSetGeoTransform", CE_Failure );
-
     return( ((GDALDataset *) hDS)->SetGeoTransform(padfTransform) );
 }
 
@@ -872,8 +749,6 @@ void * CPL_STDCALL
 GDALGetInternalHandle( GDALDatasetH hDS, const char * pszRequest )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetInternalHandle", NULL );
-
     return( ((GDALDataset *) hDS)->GetInternalHandle(pszRequest) );
 }
 
@@ -907,8 +782,6 @@ GDALDriver * GDALDataset::GetDriver()
 GDALDriverH CPL_STDCALL GDALGetDatasetDriver( GDALDatasetH hDataset )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALGetDatasetDriver", NULL );
-
     return (GDALDriverH) ((GDALDataset *) hDataset)->GetDriver();
 }
 
@@ -943,8 +816,6 @@ int GDALDataset::Reference()
 int CPL_STDCALL GDALReferenceDataset( GDALDatasetH hDataset )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALReferenceDataset", 0 );
-
     return ((GDALDataset *) hDataset)->Reference();
 }
 
@@ -980,8 +851,6 @@ int GDALDataset::Dereference()
 int CPL_STDCALL GDALDereferenceDataset( GDALDatasetH hDataset )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALDereferenceDataset", 0 );
-
     return ((GDALDataset *) hDataset)->Dereference();
 }
 
@@ -1015,22 +884,6 @@ void GDALDataset::MarkAsShared()
     CPLAssert( !bShared );
 
     bShared = TRUE;
-
-    GIntBig nPID = GDALGetResponsiblePIDForCurrentThread();
-    SharedDatasetCtxt* psStruct;
-
-    /* Insert the dataset in the set of shared opened datasets */
-    CPLMutexHolderD( &hDLMutex );
-    if (phSharedDatasetSet == NULL)
-        phSharedDatasetSet = CPLHashSetNew(GDALSharedDatasetHashFunc, GDALSharedDatasetEqualFunc, GDALSharedDatasetFreeFunc);
-
-    psStruct = (SharedDatasetCtxt*)CPLMalloc(sizeof(SharedDatasetCtxt));
-    psStruct->poDS = this;
-    psStruct->nPID = nPID;
-    psStruct->eAccess = eAccess;
-    psStruct->pszDescription = CPLStrdup(GetDescription());
-    CPLAssert(CPLHashSetLookup(phSharedDatasetSet, psStruct) == NULL);
-    CPLHashSetInsert(phSharedDatasetSet, psStruct);
 }
 
 /************************************************************************/
@@ -1062,8 +915,6 @@ int GDALDataset::GetGCPCount()
 int CPL_STDCALL GDALGetGCPCount( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetGCPCount", 0 );
-
     return ((GDALDataset *) hDS)->GetGCPCount();
 }
 
@@ -1098,8 +949,6 @@ const char *GDALDataset::GetGCPProjection()
 const char * CPL_STDCALL GDALGetGCPProjection( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetGCPProjection", NULL );
-
     return ((GDALDataset *) hDS)->GetGCPProjection();
 }
 
@@ -1133,8 +982,6 @@ const GDAL_GCP *GDALDataset::GetGCPs()
 const GDAL_GCP * CPL_STDCALL GDALGetGCPs( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALGetGCPs", NULL );
-
     return ((GDALDataset *) hDS)->GetGCPs();
 }
 
@@ -1197,8 +1044,6 @@ CPLErr CPL_STDCALL GDALSetGCPs( GDALDatasetH hDS, int nGCPCount,
                     const char *pszGCPProjection )
 
 {
-    VALIDATE_POINTER1( hDS, "GDALSetGCPs", CE_Failure );
-
     return ((GDALDataset *) hDS)->SetGCPs( nGCPCount, pasGCPList, 
                                            pszGCPProjection );
 }
@@ -1216,8 +1061,8 @@ CPLErr CPL_STDCALL GDALSetGCPs( GDALDatasetH hDS, int nGCPCount,
  *
  * This method is the same as the C function GDALBuildOverviews().
  *
- * @param pszResampling one of "NEAREST", "GAUSS", "AVERAGE", 
- * "AVERAGE_MAGPHASE" or "NONE" controlling the downsampling method applied.
+ * @param pszResampling one of "NEAREST", "AVERAGE" or "MODE" controlling
+ * the downsampling method applied.
  * @param nOverviews number of overviews to build. 
  * @param panOverviewList the list of overview decimation factors to build. 
  * @param nBand number of bands to build overviews for in panBandList.  Build
@@ -1236,8 +1081,6 @@ CPLErr CPL_STDCALL GDALSetGCPs( GDALDatasetH hDS, int nGCPCount,
  *   poDataset->BuildOverviews( "NEAREST", 3, anOverviewList, 0, NULL, 
  *                              GDALDummyProgress, NULL );
  * </pre>
- *
- * @see GDALRegenerateOverviews()
  */
 
 CPLErr GDALDataset::BuildOverviews( const char *pszResampling, 
@@ -1288,8 +1131,6 @@ CPLErr CPL_STDCALL GDALBuildOverviews( GDALDatasetH hDataset,
                            void * pProgressData )
 
 {
-    VALIDATE_POINTER1( hDataset, "GDALBuildOverviews", CE_Failure );
-
     return ((GDALDataset *) hDataset)->BuildOverviews(
         pszResampling, nOverviews, panOverviewList, nListBands, panBandList, 
         pfnProgress, pProgressData );
@@ -1343,17 +1184,6 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
 {
     int iBandIndex; 
     CPLErr eErr = CE_None;
-
-    const char* pszInterleave;
-    if (nXSize == nBufXSize && nYSize == nBufYSize &&
-        (pszInterleave = GetMetadataItem("INTERLEAVE", "IMAGE_STRUCTURE")) != NULL &&
-        EQUAL(pszInterleave, "PIXEL"))
-    {
-        return BlockBasedRasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize, 
-                                   pData, nBufXSize, nBufYSize,
-                                   eBufType, nBandCount, panBandMap,
-                                   nPixelSpace, nLineSpace, nBandSpace );
-    }
 
     for( iBandIndex = 0; 
          iBandIndex < nBandCount && eErr == CE_None; 
@@ -1588,8 +1418,6 @@ GDALDatasetRasterIO( GDALDatasetH hDS, GDALRWFlag eRWFlag,
                      int nPixelSpace, int nLineSpace, int nBandSpace )
     
 {
-    VALIDATE_POINTER1( hDS, "GDALDatasetRasterIO", CE_Failure );
-
     GDALDataset    *poDS = (GDALDataset *) hDS;
     
     return( poDS->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
@@ -1601,16 +1429,6 @@ GDALDatasetRasterIO( GDALDatasetH hDS, GDALRWFlag eRWFlag,
 /************************************************************************/
 /*                          GetOpenDatasets()                           */
 /************************************************************************/
-
-static int GDALGetOpenDatasetsForeach(void* elt, void* user_data)
-{
-    int* pnIndex = (int*) user_data;
-    ppDatasets[*pnIndex] = (GDALDataset*) elt;
-
-    (*pnIndex) ++;
-
-    return TRUE;
-}
 
 /**
  * Fetch all open GDAL dataset handles.
@@ -1629,21 +1447,8 @@ static int GDALGetOpenDatasetsForeach(void* elt, void* user_data)
 GDALDataset **GDALDataset::GetOpenDatasets( int *pnCount )
 
 {
-    CPLMutexHolderD( &hDLMutex );
-
-    if (phAllDatasetSet != NULL)
-    {
-        int nIndex = 0;
-        *pnCount = CPLHashSetSize(phAllDatasetSet);
-        ppDatasets = (GDALDataset**) CPLRealloc(ppDatasets, (*pnCount) * sizeof(GDALDataset*));
-        CPLHashSetForeach(phAllDatasetSet, GDALGetOpenDatasetsForeach, &nIndex);
-        return ppDatasets;
-    }
-    else
-    {
-        *pnCount = 0;
-        return NULL;
-    }
+    *pnCount = nGDALDatasetCount;
+    return (GDALDataset **) papoGDALDatasetList;
 }
 
 /************************************************************************/
@@ -1657,9 +1462,6 @@ GDALDataset **GDALDataset::GetOpenDatasets( int *pnCount )
 void CPL_STDCALL GDALGetOpenDatasets( GDALDatasetH **ppahDSList, int *pnCount )
 
 {
-    VALIDATE_POINTER0( ppahDSList, "GDALGetOpenDatasets" );
-    VALIDATE_POINTER0( pnCount, "GDALGetOpenDatasets" );
-
     *ppahDSList = (GDALDatasetH *) GDALDataset::GetOpenDatasets( pnCount);
 }
 
@@ -1673,8 +1475,6 @@ void CPL_STDCALL GDALGetOpenDatasets( GDALDatasetH **ppahDSList, int *pnCount )
 
 int CPL_STDCALL GDALGetAccess( GDALDatasetH hDS )
 {
-    VALIDATE_POINTER1( hDS, "GDALGetAccess", 0 );
-
     return ((GDALDataset *) hDS)->GetAccess();
 }
 
@@ -1766,121 +1566,10 @@ GDALDatasetAdviseRead( GDALDatasetH hDS,
                        int nBandCount, int *panBandMap,char **papszOptions )
     
 {
-    VALIDATE_POINTER1( hDS, "GDALDatasetAdviseRead", CE_Failure );
-
     return ((GDALDataset *) hDS)->AdviseRead( nXOff, nYOff, nXSize, nYSize, 
                                               nBufXSize, nBufYSize, eDT, 
                                               nBandCount, panBandMap, 
                                               papszOptions );
-}
-
-/************************************************************************/
-/*                            GetFileList()                             */
-/************************************************************************/
-
-/**
- * Fetch files forming dataset.
- *
- * Returns a list of files believed to be part of this dataset.  If it returns
- * an empty list of files it means there is believed to be no local file
- * system files associated with the dataset (for instance a virtual dataset).
- * The returned file list is owned by the caller and should be deallocated
- * with CSLDestroy().
- * 
- * The returned filenames will normally be relative or absolute paths 
- * depending on the path used to originally open the dataset.
- *
- * This method is the same as the C GDALGetFileList() function.
- *
- * @return NULL or a NULL terminated array of file names. 
- */
-
-char **GDALDataset::GetFileList()
-
-{
-    CPLString osMainFilename = GetDescription();
-    VSIStatBufL  sStat;
-
-/* -------------------------------------------------------------------- */
-/*      Is the main filename even a real filesystem object?             */
-/* -------------------------------------------------------------------- */
-    if( VSIStatL( osMainFilename, &sStat ) != 0 )
-        return NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Form new list.                                                  */
-/* -------------------------------------------------------------------- */
-    char **papszList = CSLAddString( NULL, osMainFilename );
-
-/* -------------------------------------------------------------------- */
-/*      Do we have a known overview file?                               */
-/* -------------------------------------------------------------------- */
-    if( oOvManager.poODS != NULL )
-    {
-        char **papszOvrList = oOvManager.poODS->GetFileList();
-        papszList = CSLInsertStrings( papszList, -1, papszOvrList );
-        CSLDestroy( papszOvrList );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Do we have a known overview file?                               */
-/* -------------------------------------------------------------------- */
-    if( oOvManager.HaveMaskFile() )
-    {
-        char **papszMskList = oOvManager.poMaskDS->GetFileList();
-        papszList = CSLInsertStrings( papszList, -1, papszMskList );
-        CSLDestroy( papszMskList );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      should we try for world file(s)?   Not for now.                 */
-/* -------------------------------------------------------------------- */
-
-    return papszList;
-}
-
-/************************************************************************/
-/*                          GDALGetFileList()                           */
-/************************************************************************/
-
-/**
- * @see GDALDataset::GetFileList()
- */
-
-char ** CPL_STDCALL GDALGetFileList( GDALDatasetH hDS )
-
-{
-    VALIDATE_POINTER1( hDS, "GDALGetFileList", NULL );
-
-    return ((GDALDataset *) hDS)->GetFileList();
-}
-
-/************************************************************************/
-/*                           CreateMaskBand()                           */
-/************************************************************************/
-
-CPLErr GDALDataset::CreateMaskBand( int nFlags )
-
-{
-    if( oOvManager.IsInitialized() )
-        return oOvManager.CreateMaskBand( nFlags, -1 );
-
-    CPLError( CE_Failure, CPLE_NotSupported,
-              "CreateMaskBand() not supported for this dataset." );
-    
-    return( CE_Failure );
-}
-
-/************************************************************************/
-/*                     GDALCreateDatasetMaskBand()                      */
-/************************************************************************/
-
-CPLErr CPL_STDCALL GDALCreateDatasetMaskBand( GDALDatasetH hDS, int nFlags )
-
-{
-    VALIDATE_POINTER1( hDS, "GDALCreateDatasetMaskBand", CE_Failure );
-
-    return ((GDALDataset *) hDS)->CreateMaskBand( nFlags );
 }
 
 /************************************************************************/
@@ -1912,16 +1601,13 @@ GDALDatasetH CPL_STDCALL
 GDALOpen( const char * pszFilename, GDALAccess eAccess )
 
 {
-    VALIDATE_POINTER1( pszFilename, "GDALOpen", NULL );
-        
     int         iDriver;
     GDALDriverManager *poDM = GetGDALDriverManager();
     GDALOpenInfo oOpenInfo( pszFilename, eAccess );
     CPLLocaleC  oLocaleForcer;
 
     CPLErrorReset();
-    CPLAssert( NULL != poDM );
-
+    
     for( iDriver = 0; iDriver < poDM->GetDriverCount(); iDriver++ )
     {
         GDALDriver      *poDriver = poDM->GetDriver( iDriver );
@@ -1930,20 +1616,14 @@ GDALOpen( const char * pszFilename, GDALAccess eAccess )
         poDS = poDriver->pfnOpen( &oOpenInfo );
         if( poDS != NULL )
         {
-            if( strlen(poDS->GetDescription()) == 0 )
-                poDS->SetDescription( pszFilename );
+            poDS->SetDescription( pszFilename );
 
             if( poDS->poDriver == NULL )
                 poDS->poDriver = poDriver;
 
             
-            if( CPLGetPID() != GDALGetResponsiblePIDForCurrentThread() )
-                CPLDebug( "GDAL", "GDALOpen(%s, this=%p) succeeds as %s (pid=%d, responsiblePID=%d).",
-                          pszFilename, poDS, poDriver->GetDescription(),
-                          (int)CPLGetPID(), (int)GDALGetResponsiblePIDForCurrentThread() );
-            else
-                CPLDebug( "GDAL", "GDALOpen(%s, this=%p) succeeds as %s.",
-                          pszFilename, poDS, poDriver->GetDescription() );
+            CPLDebug( "GDAL", "GDALOpen(%s) succeeds as %s.",
+                      pszFilename, poDriver->GetDescription() );
 
             return (GDALDatasetH) poDS;
         }
@@ -1997,34 +1677,24 @@ GDALDatasetH CPL_STDCALL
 GDALOpenShared( const char *pszFilename, GDALAccess eAccess )
 
 {
-    VALIDATE_POINTER1( pszFilename, "GDALOpenShared", NULL );
-
 /* -------------------------------------------------------------------- */
 /*      First scan the existing list to see if it could already         */
 /*      contain the requested dataset.                                  */
 /* -------------------------------------------------------------------- */
     {
         CPLMutexHolderD( &hDLMutex );
-
-        if (phSharedDatasetSet != NULL)
+        int         i;
+    
+        for( i = 0; i < nGDALDatasetCount; i++ )
         {
-            GIntBig nThisPID = GDALGetResponsiblePIDForCurrentThread();
-            SharedDatasetCtxt* psStruct;
-            SharedDatasetCtxt sStruct;
-
-            sStruct.nPID = nThisPID;
-            sStruct.pszDescription = (char*) pszFilename;
-            sStruct.eAccess = eAccess;
-            psStruct = (SharedDatasetCtxt*) CPLHashSetLookup(phSharedDatasetSet, &sStruct);
-            if (psStruct == NULL && eAccess == GA_ReadOnly)
+            if( strcmp(pszFilename,
+                       papoGDALDatasetList[i]->GetDescription()) == 0 
+                && (eAccess == GA_ReadOnly 
+                    || papoGDALDatasetList[i]->GetAccess() == eAccess ) )
+                
             {
-                sStruct.eAccess = GA_Update;
-                psStruct = (SharedDatasetCtxt*) CPLHashSetLookup(phSharedDatasetSet, &sStruct);
-            }
-            if (psStruct)
-            {
-                psStruct->poDS->Reference();
-                return psStruct->poDS;
+                papoGDALDatasetList[i]->Reference();
+                return papoGDALDatasetList[i];
             }
         }
     }
@@ -2059,24 +1729,26 @@ GDALOpenShared( const char *pszFilename, GDALAccess eAccess )
 void CPL_STDCALL GDALClose( GDALDatasetH hDS )
 
 {
-    VALIDATE_POINTER0( hDS, "GDALClose" );
-
     GDALDataset *poDS = (GDALDataset *) hDS;
+    int         i;
     CPLMutexHolderD( &hDLMutex );
     CPLLocaleC  oLocaleForcer;
 
-    if (poDS->GetShared())
-    {
 /* -------------------------------------------------------------------- */
 /*      If this file is in the shared dataset list then dereference     */
 /*      it, and only delete/remote it if the reference count has        */
 /*      dropped to zero.                                                */
 /* -------------------------------------------------------------------- */
-        if( poDS->Dereference() > 0 )
-            return;
+    for( i = 0; i < nGDALDatasetCount; i++ )
+    {
+        if( papoGDALDatasetList[i] == poDS )
+        {
+            if( poDS->Dereference() > 0 )
+                return;
 
-        delete poDS;
-        return;
+            delete poDS;
+            return;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -2088,63 +1760,6 @@ void CPL_STDCALL GDALClose( GDALDatasetH hDS )
 /************************************************************************/
 /*                        GDALDumpOpenDataset()                         */
 /************************************************************************/
-
-static int GDALDumpOpenSharedDatasetsForeach(void* elt, void* user_data)
-{
-    SharedDatasetCtxt* psStruct = (SharedDatasetCtxt*) elt;
-    FILE *fp = (FILE*) user_data;
-    const char *pszDriverName;
-    GDALDataset *poDS = psStruct->poDS;
-
-    if( poDS->GetDriver() == NULL )
-        pszDriverName = "DriverIsNULL";
-    else
-        pszDriverName = poDS->GetDriver()->GetDescription();
-
-    poDS->Reference();
-    VSIFPrintf( fp, "  %d %c %-6s %7d %dx%dx%d %s\n", 
-                poDS->Dereference(), 
-                poDS->GetShared() ? 'S' : 'N',
-                pszDriverName, 
-                (int)psStruct->nPID,
-                poDS->GetRasterXSize(),
-                poDS->GetRasterYSize(),
-                poDS->GetRasterCount(),
-                poDS->GetDescription() );
-
-    return TRUE;
-}
-
-
-static int GDALDumpOpenDatasetsForeach(void* elt, void* user_data)
-{
-    FILE *fp = (FILE*) user_data;
-    const char *pszDriverName;
-    GDALDataset *poDS = (GDALDataset *) elt;
-
-    /* Don't list shared datasets. They have already been listed by */
-    /* GDALDumpOpenSharedDatasetsForeach */
-    if (poDS->GetShared())
-        return TRUE;
-
-    if( poDS->GetDriver() == NULL )
-        pszDriverName = "DriverIsNULL";
-    else
-        pszDriverName = poDS->GetDriver()->GetDescription();
-
-    poDS->Reference();
-    VSIFPrintf( fp, "  %d %c %-6s %7d %dx%dx%d %s\n", 
-                poDS->Dereference(), 
-                poDS->GetShared() ? 'S' : 'N',
-                pszDriverName, 
-                -1,
-                poDS->GetRasterXSize(),
-                poDS->GetRasterYSize(),
-                poDS->GetRasterCount(),
-                poDS->GetDescription() );
-
-    return TRUE;
-}
 
 /**
  * List open datasets.
@@ -2159,23 +1774,32 @@ static int GDALDumpOpenDatasetsForeach(void* elt, void* user_data)
 int CPL_STDCALL GDALDumpOpenDatasets( FILE *fp )
    
 {
-    VALIDATE_POINTER1( fp, "GDALDumpOpenDatasets", 0 );
-
     CPLMutexHolderD( &hDLMutex );
+    int         i;
 
-    if (phAllDatasetSet != NULL)
-    {
+    if( nGDALDatasetCount > 0 )
         VSIFPrintf( fp, "Open GDAL Datasets:\n" );
-        CPLHashSetForeach(phAllDatasetSet, GDALDumpOpenDatasetsForeach, fp);
-        if (phSharedDatasetSet != NULL)
-        {
-            CPLHashSetForeach(phSharedDatasetSet, GDALDumpOpenSharedDatasetsForeach, fp);
-        }
-        return CPLHashSetSize(phAllDatasetSet);
-    }
-    else
+    
+    for( i = 0; i < nGDALDatasetCount; i++ )
     {
-        return 0;
-    }
-}
+        const char *pszDriverName;
+        GDALDataset *poDS = (GDALDataset *) papoGDALDatasetList[i];
+        
+        if( poDS->GetDriver() == NULL )
+            pszDriverName = "DriverIsNULL";
+        else
+            pszDriverName = poDS->GetDriver()->GetDescription();
 
+        poDS->Reference();
+        VSIFPrintf( fp, "  %d %c %-6s %dx%dx%d %s\n", 
+                    poDS->Dereference(), 
+                    poDS->GetShared() ? 'S' : 'N',
+                    pszDriverName, 
+                    poDS->GetRasterXSize(),
+                    poDS->GetRasterYSize(),
+                    poDS->GetRasterCount(),
+                    poDS->GetDescription() );
+    }
+    
+    return nGDALDatasetCount;
+}

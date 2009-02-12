@@ -1,37 +1,6 @@
-/******************************************************************************
- * $Id: ogrinfo.cs 15475 2008-10-07 21:40:20Z tamas $
- *
- * Name:     ogrinfo.cs
- * Project:  GDAL CSharp Interface
- * Purpose:  A sample app to dump information from a spatial data source.
- * Author:   Tamas Szekeres, szekerest@gmail.com
- *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
 using System;
 
-using OSGeo.OGR;
-using OSGeo.OSR;
+using OGR;
 
 
 /**
@@ -67,12 +36,12 @@ class OGRInfo {
 		/* -------------------------------------------------------------------- */
 		/*      Register format(s).                                             */
 		/* -------------------------------------------------------------------- */
-		Ogr.RegisterAll();
+		ogr.RegisterAll();
 
 		/* -------------------------------------------------------------------- */
 		/*      Open data source.                                               */
 		/* -------------------------------------------------------------------- */
-		DataSource ds = Ogr.Open( args[0], 0 );
+		DataSource ds = ogr.Open( args[0], 0 );
 		
 		if (ds == null) {
 			Console.WriteLine("Can't open " + args[0]);
@@ -181,29 +150,18 @@ class OGRInfo {
 			Console.WriteLine( "  Style = " + feat.GetStyleString() );
     
 		Geometry geom = feat.GetGeometryRef();
-		if( geom != null ) 
-		{
+		if( geom != null )
 			Console.WriteLine( "  " + geom.GetGeometryName() + 
 				"(" + geom.GetGeometryType() + ")" );
-			Geometry sub_geom;
-			for (int i = 0; i < geom.GetGeometryCount(); i++)
-			{
-				sub_geom = geom.GetGeometryRef(i);
-				if ( sub_geom != null )
-				{
-					Console.WriteLine( "  subgeom" + i + ": " + sub_geom.GetGeometryName() + 
-						"(" + sub_geom.GetGeometryType() + ")" );
-				}
-			}
-            Envelope env = new Envelope();
-            geom.GetEnvelope(env);
-            Console.WriteLine("   ENVELOPE: " + env.MinX + "," + env.MaxX + "," +
-                env.MinY + "," + env.MaxY);
 
-            string geom_wkt;
-            geom.ExportToWkt(out geom_wkt);
-            Console.WriteLine("  " + geom_wkt);
-		}
+		Envelope env = new Envelope();
+		geom.GetEnvelope(env);
+		Console.WriteLine( "   ENVELOPE: " + env.MinX + "," + env.MaxX + "," +
+			env.MinY + "," + env.MaxY);
+
+		string geom_wkt;
+		geom.ExportToWkt(out geom_wkt);
+		Console.WriteLine( "  " + geom_wkt );
 
 		Console.WriteLine( "" );
 	}

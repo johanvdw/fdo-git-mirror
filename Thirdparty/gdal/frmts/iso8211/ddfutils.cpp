@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfutils.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ddfutils.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Various utility functions.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfutils.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ddfutils.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                             DDFScanInt()                             */

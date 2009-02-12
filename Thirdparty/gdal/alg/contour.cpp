@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: contour.cpp 14494 2008-05-19 17:27:26Z warmerdam $
+ * $Id: contour.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Contour Generation
  * Purpose:  Core algorithm implementation for contour line generation. 
@@ -32,7 +32,7 @@
 #include "gdal_alg.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: contour.cpp 14494 2008-05-19 17:27:26Z warmerdam $");
+CPL_CVSID("$Id: contour.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 // The amount of a contour interval that pixels should be fudged by if they
 // match a contour level exactly.
@@ -181,8 +181,6 @@ GDAL_CT_Create( int nWidth, int nHeight, int bNoDataSet, double dfNoDataValue,
 CPLErr GDAL_CG_FeedLine( GDALContourGeneratorH hCG, double *padfScanline )
 
 {
-    VALIDATE_POINTER1( hCG, "GDAL_CG_FeedLine", CE_Failure );
-
     return ((GDALContourGenerator *) hCG)->FeedLine( padfScanline );
 }
 
@@ -239,14 +237,7 @@ GDALContourGenerator::GDALContourGenerator( int nWidthIn, int nHeightIn,
 GDALContourGenerator::~GDALContourGenerator()
 
 {
-    int i;
-
-    for( i = 0; i < nLevelCount; i++ )
-        delete papoLevels[i];
-    CPLFree( papoLevels );
-
-    CPLFree( padfLastLine );
-    CPLFree( padfThisLine );
+    
 }
 
 /************************************************************************/
@@ -1252,7 +1243,7 @@ CPLErr OGRContourWriter( double dfLevel,
     OGRGeometryH hGeom;
     int iPoint;
 
-    hFeat = OGR_F_Create( OGR_L_GetLayerDefn( (OGRLayerH) poInfo->hLayer ) );
+    hFeat = OGR_F_Create( OGR_L_GetLayerDefn( poInfo->hLayer ) );
 
     if( poInfo->nIDField != -1 )
         OGR_F_SetFieldInteger( hFeat, poInfo->nIDField, poInfo->nNextID++ );
@@ -1276,7 +1267,7 @@ CPLErr OGRContourWriter( double dfLevel,
 
     OGR_F_SetGeometryDirectly( hFeat, hGeom );
 
-    OGR_L_CreateFeature( (OGRLayerH) poInfo->hLayer, hFeat );
+    OGR_L_CreateFeature( poInfo->hLayer, hFeat );
     OGR_F_Destroy( hFeat );
 
     return CE_None;
@@ -1428,8 +1419,6 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
                             GDALProgressFunc pfnProgress, void *pProgressArg )
 
 {
-    VALIDATE_POINTER1( hBand, "GDALContourGenerate", CE_Failure );
-
     OGRContourWriterInfo oCWI;
 
     if( pfnProgress == NULL )
@@ -1478,13 +1467,7 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
     double *padfScanline;
     CPLErr eErr = CE_None;
 
-    padfScanline = (double *) VSIMalloc(sizeof(double) * nXSize);
-    if (padfScanline == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "VSIMalloc(): Out of memory in GDALContourGenerate" );
-        return CE_Failure;
-    }
+    padfScanline = (double *) CPLMalloc(sizeof(double) * nXSize);
 
     for( iLine = 0; iLine < nYSize && eErr == CE_None; iLine++ )
     {

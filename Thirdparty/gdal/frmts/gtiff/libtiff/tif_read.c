@@ -1,4 +1,4 @@
-/* $Id: tif_read.c,v 1.29 2007/11/23 20:49:43 fwarmerdam Exp $ */
+/* $Id: tif_read.c,v 1.15 2006/10/12 15:01:30 dron Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -31,29 +31,27 @@
 #include "tiffiop.h"
 #include <stdio.h>
 
-int TIFFFillStrip(TIFF* tif, uint32 strip);
-int TIFFFillTile(TIFF* tif, uint32 tile);
-static int TIFFStartStrip(TIFF* tif, uint32 strip);
-static int TIFFStartTile(TIFF* tif, uint32 tile);
-static int TIFFCheckRead(TIFF*, int);
+	int TIFFFillStrip(TIFF*, tstrip_t);
+	int TIFFFillTile(TIFF*, ttile_t);
+static	int TIFFStartStrip(TIFF*, tstrip_t);
+static	int TIFFStartTile(TIFF*, ttile_t);
+static	int TIFFCheckRead(TIFF*, int);
 
-#define NOSTRIP ((uint32)(-1))       /* undefined state */
-#define NOTILE ((uint32)(-1))         /* undefined state */
+#define	NOSTRIP	((tstrip_t) -1)			/* undefined state */
+#define	NOTILE	((ttile_t) -1)			/* undefined state */
 
 /*
  * Seek to a random row+sample in a file.
  */
 static int
-TIFFSeek(TIFF* tif, uint32 row, uint16 sample)
+TIFFSeek(TIFF* tif, uint32 row, tsample_t sample)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
-	uint32 strip;
+	tstrip_t strip;
 
 	if (row >= td->td_imagelength) {	/* out of range */
-		TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
-		    "%lu: Row out of range, max %lu",
-		    (unsigned long) row,
-		    (unsigned long) td->td_imagelength);
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "%lu: Row out of range, max %lu",
+		    (unsigned long) row, (unsigned long) td->td_imagelength);
 		return (0);
 	}
 	if (td->td_planarconfig == PLANARCONFIG_SEPARATE) {
@@ -63,10 +61,10 @@ TIFFSeek(TIFF* tif, uint32 row, uint16 sample)
 			    (unsigned long) sample, (unsigned long) td->td_samplesperpixel);
 			return (0);
 		}
-		strip = (uint32)sample*td->td_stripsperimage + row/td->td_rowsperstrip;
+		strip = sample*td->td_stripsperimage + row/td->td_rowsperstrip;
 	} else
 		strip = row / td->td_rowsperstrip;
-	if (strip != tif->tif_curstrip) {	/* different strip, refill */
+	if (strip != tif->tif_curstrip) { 	/* different strip, refill */
 		if (!TIFFFillStrip(tif, strip))
 			return (0);
 	} else if (row < tif->tif_row) {
@@ -93,7 +91,7 @@ TIFFSeek(TIFF* tif, uint32 row, uint16 sample)
 }
 
 int
-TIFFReadScanline(TIFF* tif, void* buf, uint32 row, uint16 sample)
+TIFFReadScanline(TIFF* tif, tdata_t buf, uint32 row, tsample_t sample)
 {
 	int e;
 
@@ -104,14 +102,14 @@ TIFFReadScanline(TIFF* tif, void* buf, uint32 row, uint16 sample)
 		 * Decompress desired row into user buffer.
 		 */
 		e = (*tif->tif_decoderow)
-		    (tif, (uint8*) buf, tif->tif_scanlinesize, sample);  
+		    (tif, (tidata_t) buf, tif->tif_scanlinesize, sample);
 
 		/* we are now poised at the beginning of the next row */
 		tif->tif_row = row + 1;
 
 		if (e)
-			(*tif->tif_postdecode)(tif, (uint8*) buf,
-			    tif->tif_scanlinesize);  
+			(*tif->tif_postdecode)(tif, (tidata_t) buf,
+			    tif->tif_scanlinesize);
 	}
 	return (e > 0 ? 1 : -1);
 }
@@ -120,117 +118,92 @@ TIFFReadScanline(TIFF* tif, void* buf, uint32 row, uint16 sample)
  * Read a strip of data and decompress the specified
  * amount into the user-supplied buffer.
  */
-tmsize_t
-TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
+tsize_t
+TIFFReadEncodedStrip(TIFF* tif, tstrip_t strip, tdata_t buf, tsize_t size)
 {
-	static const char module[] = "TIFFReadEncodedStrip";
 	TIFFDirectory *td = &tif->tif_dir;
-	uint32 rowsperstrip;
-	uint32 stripsperplane;
-	uint32 stripinplane;
-	uint16 plane;
-	uint32 rows;
-	tmsize_t stripsize;
-	if (!TIFFCheckRead(tif,0))
-		return((tmsize_t)(-1));
-	if (strip>=td->td_nstrips)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,
-		    "%lu: Strip out of range, max %lu",(unsigned long)strip,
-		    (unsigned long)td->td_nstrips);
-		return((tmsize_t)(-1));
+	uint32 nrows;
+	tsize_t stripsize;
+        tstrip_t sep_strip, strips_per_sep;
+
+	if (!TIFFCheckRead(tif, 0))
+		return (-1);
+	if (strip >= td->td_nstrips) {
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "%ld: Strip out of range, max %ld",
+		    (long) strip, (long) td->td_nstrips);
+		return (-1);
 	}
 	/*
 	 * Calculate the strip size according to the number of
 	 * rows in the strip (check for truncated last strip on any
 	 * of the separations).
 	 */
-	rowsperstrip=td->td_rowsperstrip;
-	if (rowsperstrip>td->td_imagelength)
-		rowsperstrip=td->td_imagelength;
-	stripsperplane=((td->td_imagelength+rowsperstrip-1)/rowsperstrip);
-	stripinplane=(strip%stripsperplane);
-	plane=(strip/stripsperplane);
-	rows=td->td_imagelength-stripinplane*rowsperstrip;
-	if (rows>rowsperstrip)
-		rows=rowsperstrip;
-	stripsize=TIFFVStripSize(tif,rows);
-	if (stripsize==0)
-		return((tmsize_t)(-1));
-	if ((size!=(tmsize_t)(-1))&&(size<stripsize))
-		stripsize=size;
-	if (!TIFFFillStrip(tif,strip))
-		return((tmsize_t)(-1));
-	if ((*tif->tif_decodestrip)(tif,buf,stripsize,plane)<=0)
-		return((tmsize_t)(-1));
-	(*tif->tif_postdecode)(tif,buf,stripsize);
-	return(stripsize);
+	if( td->td_rowsperstrip >= td->td_imagelength )
+		strips_per_sep = 1;
+	else
+		strips_per_sep = (td->td_imagelength+td->td_rowsperstrip-1)
+		    / td->td_rowsperstrip;
+
+	sep_strip = strip % strips_per_sep;
+
+	if (sep_strip != strips_per_sep-1 ||
+	    (nrows = td->td_imagelength % td->td_rowsperstrip) == 0)
+		nrows = td->td_rowsperstrip;
+
+	stripsize = TIFFVStripSize(tif, nrows);
+	if (size == (tsize_t) -1)
+		size = stripsize;
+	else if (size > stripsize)
+		size = stripsize;
+	if (TIFFFillStrip(tif, strip)
+	    && (*tif->tif_decodestrip)(tif, (tidata_t) buf, size,   
+	    (tsample_t)(strip / td->td_stripsperimage)) > 0 ) {
+		(*tif->tif_postdecode)(tif, (tidata_t) buf, size);
+		return (size);
+	} else
+		return ((tsize_t) -1);
 }
 
-static tmsize_t
-TIFFReadRawStrip1(TIFF* tif, uint32 strip, void* buf, tmsize_t size,
-    const char* module)
+static tsize_t
+TIFFReadRawStrip1(TIFF* tif,
+    tstrip_t strip, tdata_t buf, tsize_t size, const char* module)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
 	assert((tif->tif_flags&TIFF_NOREADRAW)==0);
 	if (!isMapped(tif)) {
-		tmsize_t cc;
+		tsize_t cc;
 
 		if (!SeekOK(tif, td->td_stripoffset[strip])) {
 			TIFFErrorExt(tif->tif_clientdata, module,
-			    "Seek error at scanline %lu, strip %lu",
+			    "%s: Seek error at scanline %lu, strip %lu",
+			    tif->tif_name,
 			    (unsigned long) tif->tif_row, (unsigned long) strip);
-			return ((tmsize_t)(-1));
+			return (-1);
 		}
 		cc = TIFFReadFile(tif, buf, size);
 		if (cc != size) {
-#if defined(__WIN32__) && defined(_MSC_VER)
 			TIFFErrorExt(tif->tif_clientdata, module,
-		"Read error at scanline %lu; got %I64u bytes, expected %I64u",
-				     (unsigned long) tif->tif_row,
-				     (unsigned __int64) cc,
-				     (unsigned __int64) size);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-		"Read error at scanline %lu; got %llu bytes, expected %llu",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long long) cc,
-				     (unsigned long long) size);
-#endif
-			return ((tmsize_t)(-1));
+		"%s: Read error at scanline %lu; got %lu bytes, expected %lu",
+			    tif->tif_name,
+			    (unsigned long) tif->tif_row,
+			    (unsigned long) cc,
+			    (unsigned long) size);
+			return (-1);
 		}
 	} else {
-		tmsize_t ma,mb;
-		tmsize_t n;
-		ma=(tmsize_t)td->td_stripoffset[strip];
-		mb=ma+size;
-		if (((uint64)ma!=td->td_stripoffset[strip])||(ma>tif->tif_size))
-			n=0;
-		else if ((mb<ma)||(mb<size)||(mb>tif->tif_size))
-			n=tif->tif_size-ma;
-		else
-			n=size;
-		if (n!=size) {
-#if defined(__WIN32__) && defined(_MSC_VER)
+		if (td->td_stripoffset[strip] + size > tif->tif_size) {
 			TIFFErrorExt(tif->tif_clientdata, module,
-	"Read error at scanline %lu, strip %lu; got %I64u bytes, expected %I64u",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) strip,
-				     (unsigned __int64) n,
-				     (unsigned __int64) size);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-	"Read error at scanline %lu, strip %lu; got %llu bytes, expected %llu",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) strip,
-				     (unsigned long long) n,
-				     (unsigned long long) size);
-#endif
-			return ((tmsize_t)(-1));
+    "%s: Read error at scanline %lu, strip %lu; got %lu bytes, expected %lu",
+			    tif->tif_name,
+			    (unsigned long) tif->tif_row,
+			    (unsigned long) strip,
+			    (unsigned long) tif->tif_size - td->td_stripoffset[strip],
+			    (unsigned long) size);
+			return (-1);
 		}
-		_TIFFmemcpy(buf, tif->tif_base + ma,
-			    size);
+		_TIFFmemcpy(buf, tif->tif_base + td->td_stripoffset[strip],
+                            size);
 	}
 	return (size);
 }
@@ -238,52 +211,35 @@ TIFFReadRawStrip1(TIFF* tif, uint32 strip, void* buf, tmsize_t size,
 /*
  * Read a strip of data from the file.
  */
-tmsize_t
-TIFFReadRawStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
+tsize_t
+TIFFReadRawStrip(TIFF* tif, tstrip_t strip, tdata_t buf, tsize_t size)
 {
 	static const char module[] = "TIFFReadRawStrip";
 	TIFFDirectory *td = &tif->tif_dir;
-	uint64 bytecount;
-	tmsize_t bytecountm;
+	tsize_t bytecount;
 
 	if (!TIFFCheckRead(tif, 0))
-		return ((tmsize_t)(-1));
+		return ((tsize_t) -1);
 	if (strip >= td->td_nstrips) {
-		TIFFErrorExt(tif->tif_clientdata, module,
-		     "%lu: Strip out of range, max %lu",
-		     (unsigned long) strip,
-		     (unsigned long) td->td_nstrips);
-		return ((tmsize_t)(-1));
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "%lu: Strip out of range, max %lu",
+		    (unsigned long) strip, (unsigned long) td->td_nstrips);
+		return ((tsize_t) -1);
 	}
 	if (tif->tif_flags&TIFF_NOREADRAW)
 	{
-		TIFFErrorExt(tif->tif_clientdata, module,
-		    "Compression scheme does not support access to raw uncompressed data");
-		return ((tmsize_t)(-1));
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "Compression scheme does not support access to raw uncompressed data");
+		return ((tsize_t) -1);
 	}
 	bytecount = td->td_stripbytecount[strip];
 	if (bytecount <= 0) {
-#if defined(__WIN32__) && defined(_MSC_VER)
-		TIFFErrorExt(tif->tif_clientdata, module,
-			     "%I64u: Invalid strip byte count, strip %lu",
-			     (unsigned __int64) bytecount,
-			     (unsigned long) strip);
-#else
-		TIFFErrorExt(tif->tif_clientdata, module,
-			     "%llu: Invalid strip byte count, strip %lu",
-			     (unsigned long long) bytecount,
-			     (unsigned long) strip);
-#endif
-		return ((tmsize_t)(-1));
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
+		    "%lu: Invalid strip byte count, strip %lu",
+		    (unsigned long) bytecount, (unsigned long) strip);
+		return ((tsize_t) -1);
 	}
-	bytecountm = (tmsize_t)bytecount;
-	if ((uint64)bytecountm!=bytecount) {
-		TIFFErrorExt(tif->tif_clientdata, module, "Integer overflow");
-		return ((tmsize_t)(-1));
-	}
-	if (size != (tmsize_t)(-1) && size < bytecountm)
-		bytecountm = size;
-	return (TIFFReadRawStrip1(tif, strip, buf, bytecountm, module));
+	if (size != (tsize_t)-1 && size < bytecount)
+		bytecount = size;
+	return (TIFFReadRawStrip1(tif, strip, buf, bytecount, module));
 }
 
 /*
@@ -291,26 +247,19 @@ TIFFReadRawStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
  * expanded, as necessary, to hold the strip's data.
  */
 int
-TIFFFillStrip(TIFF* tif, uint32 strip)
+TIFFFillStrip(TIFF* tif, tstrip_t strip)
 {
 	static const char module[] = "TIFFFillStrip";
 	TIFFDirectory *td = &tif->tif_dir;
 
 	if ((tif->tif_flags&TIFF_NOREADRAW)==0)
 	{
-		uint64 bytecount = td->td_stripbytecount[strip];
+		tsize_t bytecount = td->td_stripbytecount[strip];
 		if (bytecount <= 0) {
-#if defined(__WIN32__) && defined(_MSC_VER)
 			TIFFErrorExt(tif->tif_clientdata, module,
-				"Invalid strip byte count %I64u, strip %lu",
-				     (unsigned __int64) bytecount,
-				     (unsigned long) strip);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-				"Invalid strip byte count %llu, strip %lu",
-				     (unsigned long long) bytecount,
-				     (unsigned long) strip);
-#endif
+			    "%s: Invalid strip byte count %lu, strip %lu",
+			    tif->tif_name, (unsigned long) bytecount,
+			    (unsigned long) strip);
 			return (0);
 		}
 		if (isMapped(tif) &&
@@ -339,65 +288,50 @@ TIFFFillStrip(TIFF* tif, uint32 strip)
 			 * comparison (which can overflow) we do the following
 			 * two comparisons:
 			 */
-			if (bytecount > (uint64)tif->tif_size ||
-			    td->td_stripoffset[strip] > (uint64)tif->tif_size - bytecount) {
+			if (bytecount > tif->tif_size ||
+			    td->td_stripoffset[strip] > tif->tif_size - bytecount) {
 				/*
 				 * This error message might seem strange, but
 				 * it's what would happen if a read were done
 				 * instead.
 				 */
-#if defined(__WIN32__) && defined(_MSC_VER)
 				TIFFErrorExt(tif->tif_clientdata, module,
 
-					"Read error on strip %lu; "
-					"got %I64u bytes, expected %I64u",
-					(unsigned long) strip,
-					(unsigned __int64) tif->tif_size - td->td_stripoffset[strip],
-					(unsigned __int64) bytecount);
-#else
-				TIFFErrorExt(tif->tif_clientdata, module,
-
-					"Read error on strip %lu; "
-					"got %llu bytes, expected %llu",
-					(unsigned long) strip,
-					(unsigned long long) tif->tif_size - td->td_stripoffset[strip],
-					(unsigned long long) bytecount);
-#endif
+					"%s: Read error on strip %lu; "
+					"got %lu bytes, expected %lu",
+					tif->tif_name, (unsigned long) strip,
+					(unsigned long) tif->tif_size - td->td_stripoffset[strip],
+					(unsigned long) bytecount);
 				tif->tif_curstrip = NOSTRIP;
 				return (0);
 			}
-			tif->tif_rawdatasize = (tmsize_t)bytecount;
-			tif->tif_rawdata = tif->tif_base + (tmsize_t)td->td_stripoffset[strip];
+			tif->tif_rawdatasize = bytecount;
+			tif->tif_rawdata = tif->tif_base + td->td_stripoffset[strip];
 		} else {
 			/*
 			 * Expand raw data buffer, if needed, to hold data
 			 * strip coming from file (perhaps should set upper
 			 * bound on the size of a buffer we'll use?).
 			 */
-			tmsize_t bytecountm;
-			bytecountm=(tmsize_t)bytecount;
-			if ((uint64)bytecountm!=bytecount)
-			{
-				TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-				return(0);
-			}
-			if (bytecountm > tif->tif_rawdatasize) {
+			if (bytecount > tif->tif_rawdatasize) {
 				tif->tif_curstrip = NOSTRIP;
 				if ((tif->tif_flags & TIFF_MYBUFFER) == 0) {
 					TIFFErrorExt(tif->tif_clientdata, module,
-					    "Data buffer too small to hold strip %lu",
-					    (unsigned long) strip);
+					"%s: Data buffer too small to hold strip %lu",
+					    tif->tif_name, (unsigned long) strip);
 					return (0);
 				}
-				if (!TIFFReadBufferSetup(tif, 0, bytecountm))
+				if (!TIFFReadBufferSetup(tif, 0,
+				    TIFFroundup(bytecount, 1024)))
 					return (0);
 			}
-			if (TIFFReadRawStrip1(tif, strip, tif->tif_rawdata,
-				bytecountm, module) != bytecountm)
+			if (TIFFReadRawStrip1(tif, strip,
+					      (unsigned char *)tif->tif_rawdata,
+					      bytecount, module) != bytecount)
 				return (0);
 			if (!isFillOrder(tif, td->td_fillorder) &&
 			    (tif->tif_flags & TIFF_NOBITREV) == 0)
-				TIFFReverseBits(tif->tif_rawdata, bytecountm);
+				TIFFReverseBits(tif->tif_rawdata, bytecount);
 		}
 	}
 	return (TIFFStartStrip(tif, strip));
@@ -412,114 +346,88 @@ TIFFFillStrip(TIFF* tif, uint32 strip)
  * Read and decompress a tile of data.  The
  * tile is selected by the (x,y,z,s) coordinates.
  */
-tmsize_t
-TIFFReadTile(TIFF* tif, void* buf, uint32 x, uint32 y, uint32 z, uint16 s)
+tsize_t
+TIFFReadTile(TIFF* tif,
+    tdata_t buf, uint32 x, uint32 y, uint32 z, tsample_t s)
 {
 	if (!TIFFCheckRead(tif, 1) || !TIFFCheckTile(tif, x, y, z, s))
-		return ((tmsize_t)(-1));
+		return (-1);
 	return (TIFFReadEncodedTile(tif,
-	    TIFFComputeTile(tif, x, y, z, s), buf, (tmsize_t)(-1)));
+	    TIFFComputeTile(tif, x, y, z, s), buf, (tsize_t) -1));
 }
 
 /*
  * Read a tile of data and decompress the specified
  * amount into the user-supplied buffer.
  */
-tmsize_t
-TIFFReadEncodedTile(TIFF* tif, uint32 tile, void* buf, tmsize_t size)
+tsize_t
+TIFFReadEncodedTile(TIFF* tif, ttile_t tile, tdata_t buf, tsize_t size)
 {
-	static const char module[] = "TIFFReadEncodedTile";
 	TIFFDirectory *td = &tif->tif_dir;
-	tmsize_t tilesize = tif->tif_tilesize;
+	tsize_t tilesize = tif->tif_tilesize;
 
 	if (!TIFFCheckRead(tif, 1))
-		return ((tmsize_t)(-1));
+		return (-1);
 	if (tile >= td->td_nstrips) {
-		TIFFErrorExt(tif->tif_clientdata, module,
-		    "%lu: Tile out of range, max %lu",
-		    (unsigned long) tile, (unsigned long) td->td_nstrips);
-		return ((tmsize_t)(-1));
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "%ld: Tile out of range, max %ld",
+		    (long) tile, (unsigned long) td->td_nstrips);
+		return (-1);
 	}
-	if (size == (tmsize_t)(-1))
+	if (size == (tsize_t) -1)
 		size = tilesize;
 	else if (size > tilesize)
 		size = tilesize;
 	if (TIFFFillTile(tif, tile) && (*tif->tif_decodetile)(tif,
-	    (uint8*) buf, size, (uint16)(tile/td->td_stripsperimage))) {
-		(*tif->tif_postdecode)(tif, (uint8*) buf, size);
+	    (tidata_t) buf, size, (tsample_t)(tile/td->td_stripsperimage))) {
+		(*tif->tif_postdecode)(tif, (tidata_t) buf, size);
 		return (size);
 	} else
-		return ((tmsize_t)(-1));
+		return (-1);
 }
 
-static tmsize_t
-TIFFReadRawTile1(TIFF* tif, uint32 tile, void* buf, tmsize_t size, const char* module)
+static tsize_t
+TIFFReadRawTile1(TIFF* tif,
+    ttile_t tile, tdata_t buf, tsize_t size, const char* module)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
 	assert((tif->tif_flags&TIFF_NOREADRAW)==0);
 	if (!isMapped(tif)) {
-		tmsize_t cc;
+		tsize_t cc;
 
 		if (!SeekOK(tif, td->td_stripoffset[tile])) {
 			TIFFErrorExt(tif->tif_clientdata, module,
-			    "Seek error at row %lu, col %lu, tile %lu",
-			    (unsigned long) tif->tif_row,
-			    (unsigned long) tif->tif_col,
-			    (unsigned long) tile);
-			return ((tmsize_t)(-1));
+			    "%s: Seek error at row %ld, col %ld, tile %ld",
+			    tif->tif_name,
+			    (long) tif->tif_row,
+			    (long) tif->tif_col,
+			    (long) tile);
+			return ((tsize_t) -1);
 		}
 		cc = TIFFReadFile(tif, buf, size);
 		if (cc != size) {
-#if defined(__WIN32__) && defined(_MSC_VER)
 			TIFFErrorExt(tif->tif_clientdata, module,
-	"Read error at row %lu, col %lu; got %I64u bytes, expected %I64u",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) tif->tif_col,
-				     (unsigned __int64) cc,
-				     (unsigned __int64) size);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-	"Read error at row %lu, col %lu; got %llu bytes, expected %llu",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) tif->tif_col,
-				     (unsigned long long) cc,
-				     (unsigned long long) size);
-#endif
-			return ((tmsize_t)(-1));
+	    "%s: Read error at row %ld, col %ld; got %lu bytes, expected %lu",
+			    tif->tif_name,
+			    (long) tif->tif_row,
+			    (long) tif->tif_col,
+			    (unsigned long) cc,
+			    (unsigned long) size);
+			return ((tsize_t) -1);
 		}
 	} else {
-		tmsize_t ma,mb;
-		tmsize_t n;
-		ma=(tmsize_t)td->td_stripoffset[tile];
-		mb=ma+size;
-		if (((uint64)ma!=td->td_stripoffset[tile])||(ma>tif->tif_size))
-			n=0;
-		else if ((mb<ma)||(mb<size)||(mb>tif->tif_size))
-			n=tif->tif_size-ma;
-		else
-			n=size;
-		if (n!=size) {
-#if defined(__WIN32__) && defined(_MSC_VER)
+		if (td->td_stripoffset[tile] + size > tif->tif_size) {
 			TIFFErrorExt(tif->tif_clientdata, module,
-"Read error at row %lu, col %lu, tile %lu; got %I64u bytes, expected %I64u",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) tif->tif_col,
-				     (unsigned long) tile,
-				     (unsigned __int64) n,
-				     (unsigned __int64) size);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-"Read error at row %lu, col %lu, tile %lu; got %llu bytes, expected %llu",
-				     (unsigned long) tif->tif_row,
-				     (unsigned long) tif->tif_col,
-				     (unsigned long) tile,
-				     (unsigned long long) n,
-				     (unsigned long long) size);
-#endif
-			return ((tmsize_t)(-1));
+    "%s: Read error at row %ld, col %ld, tile %ld; got %lu bytes, expected %lu",
+			    tif->tif_name,
+			    (long) tif->tif_row,
+			    (long) tif->tif_col,
+			    (long) tile,
+			    (unsigned long) tif->tif_size - td->td_stripoffset[tile],
+			    (unsigned long) size);
+			return ((tsize_t) -1);
 		}
-		_TIFFmemcpy(buf, tif->tif_base + ma, size);
+		_TIFFmemcpy(buf, tif->tif_base + td->td_stripoffset[tile], size);
 	}
 	return (size);
 }
@@ -527,38 +435,29 @@ TIFFReadRawTile1(TIFF* tif, uint32 tile, void* buf, tmsize_t size, const char* m
 /*
  * Read a tile of data from the file.
  */
-tmsize_t
-TIFFReadRawTile(TIFF* tif, uint32 tile, void* buf, tmsize_t size)
+tsize_t
+TIFFReadRawTile(TIFF* tif, ttile_t tile, tdata_t buf, tsize_t size)
 {
 	static const char module[] = "TIFFReadRawTile";
 	TIFFDirectory *td = &tif->tif_dir;
-	uint64 bytecount64;
-	tmsize_t bytecountm;
+	tsize_t bytecount;
 
 	if (!TIFFCheckRead(tif, 1))
-		return ((tmsize_t)(-1));
+		return ((tsize_t) -1);
 	if (tile >= td->td_nstrips) {
-		TIFFErrorExt(tif->tif_clientdata, module,
-		    "%lu: Tile out of range, max %lu",
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "%lu: Tile out of range, max %lu",
 		    (unsigned long) tile, (unsigned long) td->td_nstrips);
-		return ((tmsize_t)(-1));
+		return ((tsize_t) -1);
 	}
 	if (tif->tif_flags&TIFF_NOREADRAW)
 	{
-		TIFFErrorExt(tif->tif_clientdata, module,
-		"Compression scheme does not support access to raw uncompressed data");
-		return ((tmsize_t)(-1));
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "Compression scheme does not support access to raw uncompressed data");
+		return ((tsize_t) -1);
 	}
-	bytecount64 = td->td_stripbytecount[tile];
-	if (size != (tmsize_t)(-1) && (uint64)size < bytecount64)
-		bytecount64 = (uint64)size;
-	bytecountm = (tmsize_t)bytecount64;
-	if ((uint64)bytecountm!=bytecount64)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		return ((tmsize_t)(-1));
-	}
-	return (TIFFReadRawTile1(tif, tile, buf, bytecountm, module));
+	bytecount = td->td_stripbytecount[tile];
+	if (size != (tsize_t) -1 && size < bytecount)
+		bytecount = size;
+	return (TIFFReadRawTile1(tif, tile, buf, bytecount, module));
 }
 
 /*
@@ -566,26 +465,18 @@ TIFFReadRawTile(TIFF* tif, uint32 tile, void* buf, tmsize_t size)
  * expanded, as necessary, to hold the tile's data.
  */
 int
-TIFFFillTile(TIFF* tif, uint32 tile)
+TIFFFillTile(TIFF* tif, ttile_t tile)
 {
 	static const char module[] = "TIFFFillTile";
 	TIFFDirectory *td = &tif->tif_dir;
 
 	if ((tif->tif_flags&TIFF_NOREADRAW)==0)
 	{
-		uint64 bytecount = td->td_stripbytecount[tile];
+		tsize_t bytecount = td->td_stripbytecount[tile];
 		if (bytecount <= 0) {
-#if defined(__WIN32__) && defined(_MSC_VER)
-			TIFFErrorExt(tif->tif_clientdata, module,
-				"%I64u: Invalid tile byte count, tile %lu",
-				     (unsigned __int64) bytecount,
-				     (unsigned long) tile);
-#else
-			TIFFErrorExt(tif->tif_clientdata, module,
-				"%llu: Invalid tile byte count, tile %lu",
-				     (unsigned long long) bytecount,
-				     (unsigned long) tile);
-#endif
+			TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
+			    "%lu: Invalid tile byte count, tile %lu",
+			    (unsigned long) bytecount, (unsigned long) tile);
 			return (0);
 		}
 		if (isMapped(tif) &&
@@ -614,44 +505,38 @@ TIFFFillTile(TIFF* tif, uint32 tile)
 			 * comparison (which can overflow) we do the following
 			 * two comparisons:
 			 */
-			if (bytecount > (uint64)tif->tif_size ||
-			    td->td_stripoffset[tile] > (uint64)tif->tif_size - bytecount) {
+			if (bytecount > tif->tif_size ||
+			    td->td_stripoffset[tile] > tif->tif_size - bytecount) {
 				tif->tif_curtile = NOTILE;
 				return (0);
 			}
-			tif->tif_rawdatasize = (tmsize_t)bytecount;
-			tif->tif_rawdata =
-				tif->tif_base + (tmsize_t)td->td_stripoffset[tile];
+			tif->tif_rawdatasize = bytecount;
+			tif->tif_rawdata = tif->tif_base + td->td_stripoffset[tile];
 		} else {
 			/*
 			 * Expand raw data buffer, if needed, to hold data
 			 * tile coming from file (perhaps should set upper
 			 * bound on the size of a buffer we'll use?).
 			 */
-			tmsize_t bytecountm;
-			bytecountm=(tmsize_t)bytecount;
-			if ((uint64)bytecountm!=bytecount)
-			{
-				TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-				return(0);
-			}
-			if (bytecountm > tif->tif_rawdatasize) {
+			if (bytecount > tif->tif_rawdatasize) {
 				tif->tif_curtile = NOTILE;
 				if ((tif->tif_flags & TIFF_MYBUFFER) == 0) {
 					TIFFErrorExt(tif->tif_clientdata, module,
-					    "Data buffer too small to hold tile %lu",
-					    (unsigned long) tile);
+					"%s: Data buffer too small to hold tile %ld",
+					    tif->tif_name, (long) tile);
 					return (0);
 				}
-				if (!TIFFReadBufferSetup(tif, 0, bytecountm))
+				if (!TIFFReadBufferSetup(tif, 0,
+				    TIFFroundup(bytecount, 1024)))
 					return (0);
 			}
-			if (TIFFReadRawTile1(tif, tile, tif->tif_rawdata,
-			    bytecountm, module) != bytecountm)
+			if (TIFFReadRawTile1(tif, tile,
+			    (unsigned char *)tif->tif_rawdata,
+			    bytecount, module) != bytecount)
 				return (0);
 			if (!isFillOrder(tif, td->td_fillorder) &&
 			    (tif->tif_flags & TIFF_NOBITREV) == 0)
-				TIFFReverseBits(tif->tif_rawdata, bytecountm);
+				TIFFReverseBits(tif->tif_rawdata, bytecount);
 		}
 	}
 	return (TIFFStartTile(tif, tile));
@@ -667,7 +552,7 @@ TIFFFillTile(TIFF* tif, uint32 tile)
  * raw data.
  */
 int
-TIFFReadBufferSetup(TIFF* tif, void* bp, tmsize_t size)
+TIFFReadBufferSetup(TIFF* tif, tdata_t bp, tsize_t size)
 {
 	static const char module[] = "TIFFReadBufferSetup";
 
@@ -679,19 +564,17 @@ TIFFReadBufferSetup(TIFF* tif, void* bp, tmsize_t size)
 	}
 	if (bp) {
 		tif->tif_rawdatasize = size;
-		tif->tif_rawdata = (uint8*) bp;
+		tif->tif_rawdata = (tidata_t) bp;
 		tif->tif_flags &= ~TIFF_MYBUFFER;
 	} else {
-		tif->tif_rawdatasize = (tmsize_t)TIFFroundup_64((uint64)size, 1024);
-		if (tif->tif_rawdatasize==0)
-			tif->tif_rawdatasize=(tmsize_t)(-1);
-		tif->tif_rawdata = (uint8*) _TIFFmalloc(tif->tif_rawdatasize);
+		tif->tif_rawdatasize = TIFFroundup(size, 1024);
+		tif->tif_rawdata = (tidata_t) _TIFFmalloc(tif->tif_rawdatasize);
 		tif->tif_flags |= TIFF_MYBUFFER;
 	}
 	if (tif->tif_rawdata == NULL) {
 		TIFFErrorExt(tif->tif_clientdata, module,
-		    "No space for data buffer at scanline %lu",
-		    (unsigned long) tif->tif_row);
+		    "%s: No space for data buffer at scanline %ld",
+		    tif->tif_name, (long) tif->tif_row);
 		tif->tif_rawdatasize = 0;
 		return (0);
 	}
@@ -703,7 +586,7 @@ TIFFReadBufferSetup(TIFF* tif, void* bp, tmsize_t size)
  * strip has just been read in.
  */
 static int
-TIFFStartStrip(TIFF* tif, uint32 strip)
+TIFFStartStrip(TIFF* tif, tstrip_t strip)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -714,20 +597,18 @@ TIFFStartStrip(TIFF* tif, uint32 strip)
 	}
 	tif->tif_curstrip = strip;
 	tif->tif_row = (strip % td->td_stripsperimage) * td->td_rowsperstrip;
-        tif->tif_flags &= ~TIFF_BUF4WRITE;
-
 	if (tif->tif_flags&TIFF_NOREADRAW)
 	{
 		tif->tif_rawcp = NULL;
-		tif->tif_rawcc = 0;  
+		tif->tif_rawcc = 0;
 	}
 	else
 	{
 		tif->tif_rawcp = tif->tif_rawdata;
-		tif->tif_rawcc = (tmsize_t)td->td_stripbytecount[strip];
+		tif->tif_rawcc = td->td_stripbytecount[strip];
 	}
 	return ((*tif->tif_predecode)(tif,
-			(uint16)(strip / td->td_stripsperimage)));
+			(tsample_t)(strip / td->td_stripsperimage)));
 }
 
 /*
@@ -735,7 +616,7 @@ TIFFStartStrip(TIFF* tif, uint32 strip)
  * tile has just been read in.
  */
 static int
-TIFFStartTile(TIFF* tif, uint32 tile)
+TIFFStartTile(TIFF* tif, ttile_t tile)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -746,12 +627,11 @@ TIFFStartTile(TIFF* tif, uint32 tile)
 	}
 	tif->tif_curtile = tile;
 	tif->tif_row =
-	    (tile % TIFFhowmany_32(td->td_imagewidth, td->td_tilewidth)) *
+	    (tile % TIFFhowmany(td->td_imagewidth, td->td_tilewidth)) *
 		td->td_tilelength;
 	tif->tif_col =
-	    (tile % TIFFhowmany_32(td->td_imagelength, td->td_tilelength)) *
+	    (tile % TIFFhowmany(td->td_imagelength, td->td_tilelength)) *
 		td->td_tilewidth;
-        tif->tif_flags &= ~TIFF_BUF4WRITE;
 	if (tif->tif_flags&TIFF_NOREADRAW)
 	{
 		tif->tif_rawcp = NULL;
@@ -760,10 +640,10 @@ TIFFStartTile(TIFF* tif, uint32 tile)
 	else
 	{
 		tif->tif_rawcp = tif->tif_rawdata;
-		tif->tif_rawcc = (tmsize_t)td->td_stripbytecount[tile];
+		tif->tif_rawcc = td->td_stripbytecount[tile];
 	}
 	return ((*tif->tif_predecode)(tif,
-			(uint16)(tile/td->td_stripsperimage)));
+			(tsample_t)(tile/td->td_stripsperimage)));
 }
 
 static int
@@ -783,13 +663,13 @@ TIFFCheckRead(TIFF* tif, int tiles)
 }
 
 void
-_TIFFNoPostDecode(TIFF* tif, uint8* buf, tmsize_t cc)
+_TIFFNoPostDecode(TIFF* tif, tidata_t buf, tsize_t cc)
 {
     (void) tif; (void) buf; (void) cc;
 }
 
 void
-_TIFFSwab16BitData(TIFF* tif, uint8* buf, tmsize_t cc)
+_TIFFSwab16BitData(TIFF* tif, tidata_t buf, tsize_t cc)
 {
     (void) tif;
     assert((cc & 1) == 0);
@@ -797,7 +677,7 @@ _TIFFSwab16BitData(TIFF* tif, uint8* buf, tmsize_t cc)
 }
 
 void
-_TIFFSwab24BitData(TIFF* tif, uint8* buf, tmsize_t cc)
+_TIFFSwab24BitData(TIFF* tif, tidata_t buf, tsize_t cc)
 {
     (void) tif;
     assert((cc % 3) == 0);
@@ -805,7 +685,7 @@ _TIFFSwab24BitData(TIFF* tif, uint8* buf, tmsize_t cc)
 }
 
 void
-_TIFFSwab32BitData(TIFF* tif, uint8* buf, tmsize_t cc)
+_TIFFSwab32BitData(TIFF* tif, tidata_t buf, tsize_t cc)
 {
     (void) tif;
     assert((cc & 3) == 0);
@@ -813,7 +693,7 @@ _TIFFSwab32BitData(TIFF* tif, uint8* buf, tmsize_t cc)
 }
 
 void
-_TIFFSwab64BitData(TIFF* tif, uint8* buf, tmsize_t cc)
+_TIFFSwab64BitData(TIFF* tif, tidata_t buf, tsize_t cc)
 {
     (void) tif;
     assert((cc & 7) == 0);

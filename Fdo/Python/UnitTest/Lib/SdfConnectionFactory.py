@@ -39,7 +39,7 @@ class SdfConnectionFactory(object):
 			An FdoIConnection object instance
 		"""		
 
-		oProvider = SdfConnectionFactory._getProvider("OSGeo.SDF")
+		oProvider = SdfConnectionFactory._getProvider("OSGeo.SDF.3.3")
 		oManager = FdoFeatureAccessManager.GetConnectionManager()
 		oConnection = oManager.CreateConnection(oProvider.GetName())
 		return oConnection

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: idadataset.cpp 14048 2008-03-20 18:47:21Z rouault $
+ * $Id: idadataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  IDA Raster Driver
  * Purpose:  Implemenents IDA driver/dataset/rasterband.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id: idadataset.cpp 14048 2008-03-20 18:47:21Z rouault $");
+CPL_CVSID("$Id: idadataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_IDA(void);
@@ -1073,7 +1073,7 @@ GDALDataset *IDADataset::Create( const char * pszFilename,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "IO error writing %s.\n%s", 
-                  pszFilename, VSIStrerror( errno ) );
+                  VSIStrerror( errno ) );
         VSIFClose( fp );
         return NULL;
     }
@@ -1088,7 +1088,7 @@ GDALDataset *IDADataset::Create( const char * pszFilename,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "IO error writing %s.\n%s", 
-                  pszFilename, VSIStrerror( errno ) );
+                  VSIStrerror( errno ) );
         VSIFClose( fp );
         return NULL;
     }

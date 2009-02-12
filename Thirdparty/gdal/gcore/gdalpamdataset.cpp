@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpamdataset.cpp 15033 2008-07-25 22:35:50Z warmerdam $
+ * $Id: gdalpamdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamDataset, a dataset base class that 
@@ -32,94 +32,11 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gdalpamdataset.cpp 15033 2008-07-25 22:35:50Z warmerdam $");
+CPL_CVSID("$Id: gdalpamdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           GDALPamDataset()                           */
 /************************************************************************/
-
-/**
- * \class GDALPamDataset "gdal_pam.h"
- * 
- * A subclass of GDALDataset which introduces the ability to save and
- * restore auxilary information (coordinate system, gcps, metadata, 
- * etc) not supported by a file format via an "auxilary metadata" file
- * with the .aux.xml extension.  
- * 
- * <h3>Enabling PAM</h3>
- * 
- * PAM support can be enabled in GDAL by setting the GDAL_PAM_ENABLED
- * configuration option (via CPLSetConfigOption(), or the environment) to 
- * the value of YES.  
- *
- * <h3>PAM Proxy Files</h3>
- * 
- * In order to be able to record auxilary information about files on 
- * read-only media such as CDROMs or in directories where the user does not
- * have write permissions, it is possible to enable the "PAM Proxy Database".
- * When enabled the .aux.xml files are kept in a different directory, writable
- * by the user. 
- *
- * To enable this, set the GDAL_PAM_PROXY_DIR configuration open to be
- * the name of the directory where the proxies should be kept.  
- *
- * <h3>Adding PAM to Drivers</h3>
- *
- * Drivers for physical file formats that wish to support persistent auxilary 
- * metadata in addition to that for the format itself should derive their 
- * dataset class from GDALPamDataset instead of directly from GDALDataset.
- * The raster band classes should also be derived from GDALPamRasterBand.
- *
- * They should also call something like this near the end of the Open() 
- * method:
- * 
- * \code
- *      poDS->SetDescription( poOpenInfo->pszFilename );
- *      poDS->TryLoadXML();
- * \endcode
- *
- * The SetDescription() is necessary so that the dataset will have a valid
- * filename set as the description before TryLoadXML() is called.  TryLoadXML()
- * will look for an .aux.xml file with the same basename as the dataset and
- * in the same directory.  If found the contents will be loaded and kept
- * track of in the GDALPamDataset and GDALPamRasterBand objects.  When a 
- * call like GetProjectionRef() is not implemented by the format specific
- * class, it will fall through to the PAM implementation which will return
- * information if it was in the .aux.xml file. 
- *
- * Drivers should also try to call the GDALPamDataset/GDALPamRasterBand
- * methods as a fallback if their implementation does not find information.
- * This allows using the .aux.xml for variations that can't be stored in
- * the format.  For instance, the GeoTIFF driver GetProjectionRef() looks
- * like this:
- *
- * \code
- *      if( EQUAL(pszProjection,"") )
- *          return GDALPamDataset::GetProjectionRef();
- *      else
- *          return( pszProjection );
- * \endcode
- *
- * So if the geotiff header is missing, the .aux.xml file will be 
- * consulted. 
- *
- * Similarly, if SetProjection() were called with a coordinate system
- * not supported by GeoTIFF, the SetProjection() method should pass it on
- * to the GDALPamDataset::SetProjection() method after issuing a warning
- * that the information can't be represented within the file itself. 
- * 
- * Drivers for subdataset based formats will also need to declare the
- * name of the physical file they are related to, and the name of their 
- * subdataset before calling TryLoadXML(). 
- *
- * \code
- *      poDS->SetDescription( poOpenInfo->pszFilename );
- *      poDS->SetPhysicalFilename( poDS->pszFilename );
- *      poDS->SetSubdatasetName( osSubdatasetName );
- * 
- *      poDS->TryLoadXML();
- * \endcode
- */
 
 GDALPamDataset::GDALPamDataset()
 
@@ -204,12 +121,7 @@ CPLXMLNode *GDALPamDataset::SerializeToXML( const char *pszVRTPath )
 
     psMD = oMDMD.Serialize();
     if( psMD != NULL )
-    {
-        if( psMD->psChild == NULL )
-            CPLDestroyXMLNode( psMD );
-        else
-            CPLAddXMLChild( psDSTree, psMD );
-    }
+        CPLAddXMLChild( psDSTree, psMD );
 
 /* -------------------------------------------------------------------- */
 /*      GCPs                                                            */
@@ -266,8 +178,8 @@ CPLXMLNode *GDALPamDataset::SerializeToXML( const char *pszVRTPath )
         GDALPamRasterBand *poBand = (GDALPamRasterBand *)
             GetRasterBand(iBand+1);
 
-        if( poBand == NULL || !(poBand->GetMOFlags() & GMO_PAM_CLASS) )
-            continue;
+        // we really should be testing if poBand is a really derived
+        // from PamRasterBand or not. 
 
         psBandTree = poBand->SerializeToXML( pszVRTPath );
 
@@ -295,17 +207,10 @@ CPLXMLNode *GDALPamDataset::SerializeToXML( const char *pszVRTPath )
 void GDALPamDataset::PamInitialize()
 
 {
-#ifdef PAM_ENABLED
-    static const char *pszPamDefault = "YES";
-#else
-    static const char *pszPamDefault = "NO";
-#endif
-    
     if( psPam || (nPamFlags & GPF_DISABLED) )
         return;
 
-    if( !CSLTestBoolean( CPLGetConfigOption( "GDAL_PAM_ENABLED", 
-                                             pszPamDefault ) ) )
+    if( !CSLTestBoolean( CPLGetConfigOption( "GDAL_PAM_ENABLED", "NO" ) ) )
     {
         nPamFlags |= GPF_DISABLED;
         return;
@@ -314,13 +219,7 @@ void GDALPamDataset::PamInitialize()
     if( EQUAL( CPLGetConfigOption( "GDAL_PAM_MODE", "PAM" ), "AUX") )
         nPamFlags |= GPF_AUXMODE;
 
-    psPam = new GDALDatasetPamInfo;
-    psPam->pszPamFilename = NULL;
-    psPam->pszProjection = NULL;
-    psPam->bHaveGeoTransform = FALSE;
-    psPam->nGCPCount = 0;
-    psPam->pasGCPList = NULL;
-    psPam->pszGCPProjection = NULL;
+    psPam = (GDALDatasetPamInfo *) CPLCalloc(sizeof(GDALDatasetPamInfo),1);
 
     int iBand;
     
@@ -329,9 +228,9 @@ void GDALPamDataset::PamInitialize()
         GDALPamRasterBand *poBand = (GDALPamRasterBand *)
             GetRasterBand(iBand+1);
         
-        if( poBand == NULL || !(poBand->GetMOFlags() & GMO_PAM_CLASS) )
-            continue;
-
+        // we really should be testing if poBand is a really derived
+        // from PamRasterBand or not. 
+        
         poBand->PamInitialize();
     }
 }
@@ -346,7 +245,9 @@ void GDALPamDataset::PamClear()
     if( psPam )
     {
         CPLFree( psPam->pszPamFilename );
+
         CPLFree( psPam->pszProjection );
+
         CPLFree( psPam->pszGCPProjection );
         if( psPam->nGCPCount > 0 )
         {
@@ -354,7 +255,7 @@ void GDALPamDataset::PamClear()
             CPLFree( psPam->pasGCPList );
         }
 
-        delete psPam;
+        CPLFree( psPam );
         psPam = NULL;
     }
 }
@@ -486,8 +387,11 @@ CPLErr GDALPamDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
         GDALPamRasterBand *poBand = (GDALPamRasterBand *)
             GetRasterBand(nBand);
 
-        if( poBand == NULL || !(poBand->GetMOFlags() & GMO_PAM_CLASS) )
+        if( poBand == NULL )
             continue;
+
+        // we really should be testing if poBand is a really derived
+        // from PamRasterBand or not. 
 
         poBand->XMLInit( psBandTree, pszVRTPath );
     }
@@ -501,32 +405,6 @@ CPLErr GDALPamDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
 }
 
 /************************************************************************/
-/*                        SetPhysicalFilename()                         */
-/************************************************************************/
-
-void GDALPamDataset::SetPhysicalFilename( const char *pszFilename )
-
-{
-    PamInitialize();
-
-    if( psPam )
-        psPam->osPhysicalFilename = pszFilename;
-}
-
-/************************************************************************/
-/*                         SetSubdatasetName()                          */
-/************************************************************************/
-
-void GDALPamDataset::SetSubdatasetName( const char *pszSubdataset )
-
-{
-    PamInitialize();
-
-    if( psPam )
-        psPam->osSubdatasetName = pszSubdataset;
-}
-
-/************************************************************************/
 /*                          BuildPamFilename()                          */
 /************************************************************************/
 
@@ -536,33 +414,15 @@ const char *GDALPamDataset::BuildPamFilename()
     if( psPam == NULL )
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      What is the name of the physical file we are referencing?       */
-/*      We allow an override via the psPam->pszPhysicalFile item.       */
-/* -------------------------------------------------------------------- */
     if( psPam->pszPamFilename != NULL )
         return psPam->pszPamFilename;
-
-    const char *pszPhysicalFile = psPam->osPhysicalFilename;
-
-    if( strlen(pszPhysicalFile) == 0 && GetDescription() != NULL )
-        pszPhysicalFile = GetDescription();
-
-    if( strlen(pszPhysicalFile) == 0 )
+    
+    if( GetDescription() == NULL || strlen(GetDescription()) == 0 )
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Try a proxy lookup, otherwise just add .aux.xml.                */
-/* -------------------------------------------------------------------- */
-    const char *pszProxyPam = PamGetProxy( pszPhysicalFile );
-    if( pszProxyPam != NULL )
-        psPam->pszPamFilename = CPLStrdup(pszProxyPam);
-    else
-    {
-        psPam->pszPamFilename = (char*) CPLMalloc(strlen(pszPhysicalFile)+10);
-        strcpy( psPam->pszPamFilename, pszPhysicalFile );
-        strcat( psPam->pszPamFilename, ".aux.xml" );
-    }
+    psPam->pszPamFilename = (char *) CPLMalloc(strlen(GetDescription()) + 10 );
+    strcpy( psPam->pszPamFilename, GetDescription() );
+    strcat( psPam->pszPamFilename, ".aux.xml" );
 
     return psPam->pszPamFilename;
 }
@@ -574,6 +434,7 @@ const char *GDALPamDataset::BuildPamFilename()
 CPLErr GDALPamDataset::TryLoadXML()
 
 {
+    char *pszVRTPath = NULL;
     CPLXMLNode *psTree = NULL;
 
     PamInitialize();
@@ -606,37 +467,6 @@ CPLErr GDALPamDataset::TryLoadXML()
     }
 
 /* -------------------------------------------------------------------- */
-/*      If we are looking for a subdataset, search for it's subtree     */
-/*      now.                                                            */
-/* -------------------------------------------------------------------- */
-    if( psTree && psPam->osSubdatasetName.size() )
-    {
-        CPLXMLNode *psSubTree;
-        
-        for( psSubTree = psTree->psChild; 
-             psSubTree != NULL;
-             psSubTree = psSubTree->psNext )
-        {
-            if( psSubTree->eType != CXT_Element
-                || !EQUAL(psSubTree->pszValue,"Subdataset") )
-                continue;
-
-            if( !EQUAL(CPLGetXMLValue( psSubTree, "name", "" ),
-                       psPam->osSubdatasetName) )
-                continue;
-
-            psSubTree = CPLGetXMLNode( psSubTree, "PAMDataset" );
-            break;
-        }
-        
-        if( psSubTree != NULL )
-            psSubTree = CPLCloneXMLTree( psSubTree );
-
-        CPLDestroyXMLNode( psTree );
-        psTree = psSubTree;
-    }
-
-/* -------------------------------------------------------------------- */
 /*      If we fail, try .aux.                                           */
 /* -------------------------------------------------------------------- */
     if( psTree == NULL )
@@ -647,8 +477,9 @@ CPLErr GDALPamDataset::TryLoadXML()
 /* -------------------------------------------------------------------- */
     CPLErr eErr;
 
-    CPLString osVRTPath(CPLGetPath(psPam->pszPamFilename));
-    eErr = XMLInit( psTree, osVRTPath );
+    pszVRTPath = CPLStrdup(CPLGetPath(psPam->pszPamFilename));
+    eErr = XMLInit( psTree, pszVRTPath );
+    CPLFree( pszVRTPath );
 
     CPLDestroyXMLNode( psTree );
 
@@ -666,116 +497,29 @@ CPLErr GDALPamDataset::TrySaveXML()
 
 {
     CPLXMLNode *psTree;
+    char *pszVRTPath;
     CPLErr eErr = CE_None;
 
     nPamFlags &= ~GPF_DIRTY;
 
-    if( psPam == NULL || (nPamFlags & GPF_NOSAVE) )
+    if( psPam == NULL )
         return CE_None;
 
-/* -------------------------------------------------------------------- */
-/*      Make sure we know the filename we want to store in.             */
-/* -------------------------------------------------------------------- */
     if( !BuildPamFilename() )
         return CE_None;
 
-/* -------------------------------------------------------------------- */
-/*      Build the XML representation of the auxilary metadata.          */
-/* -------------------------------------------------------------------- */
-    CPLString osVRTPath = CPLGetPath(psPam->pszPamFilename);
+    pszVRTPath = CPLStrdup(CPLGetPath(psPam->pszPamFilename));
+    psTree = SerializeToXML( pszVRTPath );
+    CPLFree( pszVRTPath );
 
-    psTree = SerializeToXML( osVRTPath );
-
-    if( psTree == NULL )
-        return CE_None;
-
-/* -------------------------------------------------------------------- */
-/*      If we are working with a subdataset, we need to integrate       */
-/*      the subdataset tree within the whole existing pam tree,         */
-/*      after removing any old version of the same subdataset.          */
-/* -------------------------------------------------------------------- */
-    if( psPam->osSubdatasetName.size() != 0 )
+    if( psTree != NULL )
     {
-        CPLXMLNode *psOldTree, *psSubTree;
-
-        CPLErrorReset();
-        CPLPushErrorHandler( CPLQuietErrorHandler );
-        psOldTree = CPLParseXMLFile( psPam->pszPamFilename );
-        CPLPopErrorHandler();
-
-        if( psOldTree == NULL )
-            psOldTree = CPLCreateXMLNode( NULL, CXT_Element, "PAMDataset" );
-
-        for( psSubTree = psTree->psChild; 
-             psSubTree != NULL;
-             psSubTree = psSubTree->psNext )
-        {
-            if( psSubTree->eType != CXT_Element
-                || !EQUAL(psSubTree->pszValue,"Subdataset") )
-                continue;
-
-            if( !EQUAL(CPLGetXMLValue( psSubTree, "name", "" ),
-                       psPam->osSubdatasetName) )
-                continue;
-
-            break;
-        }
-
-        if( psSubTree == NULL )
-        {
-            psSubTree = CPLCreateXMLNode( psOldTree, CXT_Element, 
-                                          "Subdataset" );
-            CPLCreateXMLNode( 
-                CPLCreateXMLNode( psSubTree, CXT_Attribute, "name" ),
-                CXT_Text, psPam->osSubdatasetName );
-        }
-        
-        CPLXMLNode *psOldPamDataset = CPLGetXMLNode( psSubTree, "PAMDataset");
-        if( psOldPamDataset != NULL )
-        {
-            CPLRemoveXMLChild( psSubTree, psOldPamDataset );
-            CPLDestroyXMLNode( psOldPamDataset );
-        }
-
-        CPLAddXMLChild( psSubTree, psTree );
-        psTree = psOldTree;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Try saving the auxilary metadata.                               */
-/* -------------------------------------------------------------------- */
-    const char *pszNewPam;
-    int bSaved;
-    
-    CPLPushErrorHandler( CPLQuietErrorHandler );
-    bSaved = CPLSerializeXMLTreeToFile( psTree, psPam->pszPamFilename );
-    CPLPopErrorHandler();
-
-/* -------------------------------------------------------------------- */
-/*      If it fails, check if we have a proxy directory for auxilary    */
-/*      metadata to be stored in, and try to save there.                */
-/* -------------------------------------------------------------------- */
-    if( bSaved )
-        eErr = CE_None;
-    else if( PamGetProxy(GetDescription()) == NULL 
-             && ((pszNewPam = PamAllocateProxy(GetDescription())) != NULL))
-    {
-        CPLErrorReset();
-        CPLFree( psPam->pszPamFilename );
-        psPam->pszPamFilename = CPLStrdup(pszNewPam);
-        eErr = TrySaveXML();
-    }
-    else
-    {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-                  "Unable to save auxilary information in %s.",
-                  psPam->pszPamFilename );
-        eErr = CE_Warning;
+        if( CPLSerializeXMLTreeToFile( psTree, psPam->pszPamFilename ) )
+            eErr = CE_None;
+        else
+            eErr = CE_Failure;
     }
     
-/* -------------------------------------------------------------------- */
-/*      Cleanup                                                         */
-/* -------------------------------------------------------------------- */
     CPLDestroyXMLNode( psTree );
 
     return eErr;
@@ -860,15 +604,6 @@ CPLErr GDALPamDataset::CloneInfo( GDALDataset *poSrcDS, int nCloneFlags )
                 SetMetadata( poSrcDS->GetMetadata() );
             }
         }
-        if( poSrcDS->GetMetadata("RPC") != NULL )
-        {
-            if( !bOnlyIfMissing 
-                || CSLCount(GetMetadata("RPC")) 
-                   != CSLCount(poSrcDS->GetMetadata("RPC")) )
-            {
-                SetMetadata( poSrcDS->GetMetadata("RPC"), "RPC" );
-            }
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -883,7 +618,7 @@ CPLErr GDALPamDataset::CloneInfo( GDALDataset *poSrcDS, int nCloneFlags )
             GDALPamRasterBand *poBand = (GDALPamRasterBand *)
                 GetRasterBand(iBand+1);
 
-            if( poBand == NULL || !(poBand->GetMOFlags() & GMO_PAM_CLASS) )
+            if( !(poBand->GetMOFlags() | GMO_PAM_CLASS) )
                 continue;
 
             if( poSrcDS->GetRasterCount() >= iBand+1 )
@@ -895,51 +630,11 @@ CPLErr GDALPamDataset::CloneInfo( GDALDataset *poSrcDS, int nCloneFlags )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Copy masks.  These are really copied at a lower level using     */
-/*      GDALDefaultOverviews, for formats with no native mask           */
-/*      support but this is a convenient central point to put this      */
-/*      for most drivers.                                               */
-/* -------------------------------------------------------------------- */
-    if( nCloneFlags & GCIF_MASK )
-    {
-        GDALDriver::DefaultCopyMasks( poSrcDS, this, FALSE );
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Restore MO flags.                                               */
 /* -------------------------------------------------------------------- */
     SetMOFlags( nSavedMOFlags );
 
     return CE_None;
-}
-
-/************************************************************************/
-/*                            GetFileList()                             */
-/*                                                                      */
-/*      Add .aux.xml or .aux file into file list as appropriate.        */
-/************************************************************************/
-
-char **GDALPamDataset::GetFileList()
-
-{
-    VSIStatBufL sStatBuf;
-    char **papszFileList = GDALDataset::GetFileList();
-
-    if( psPam && psPam->osPhysicalFilename.size() > 0 
-        && CSLCount( papszFileList ) == 0 )
-    {
-        papszFileList = CSLAddString( papszFileList, 
-                                      psPam->osPhysicalFilename );
-    }
-
-    if( psPam && psPam->pszPamFilename 
-        && (nPamFlags & GPF_DIRTY 
-            || VSIStatL( psPam->pszPamFilename, &sStatBuf ) == 0) )
-    {
-        papszFileList = CSLAddString( papszFileList, psPam->pszPamFilename );
-    }
-
-    return papszFileList;
 }
 
 /************************************************************************/
@@ -1134,22 +829,13 @@ CPLErr GDALPamDataset::TryLoadAux()
         return CE_None;
 
 /* -------------------------------------------------------------------- */
-/*      What is the name of the physical file we are referencing?       */
-/*      We allow an override via the psPam->pszPhysicalFile item.       */
-/* -------------------------------------------------------------------- */
-    const char *pszPhysicalFile = psPam->osPhysicalFilename;
-
-    if( strlen(pszPhysicalFile) == 0 && GetDescription() != NULL )
-        pszPhysicalFile = GetDescription();
-
-    if( strlen(pszPhysicalFile) == 0 )
-        return CE_None;
-
-/* -------------------------------------------------------------------- */
 /*      Try to open .aux file.                                          */
 /* -------------------------------------------------------------------- */
-    GDALDataset *poAuxDS = GDALFindAssociatedAuxFile( pszPhysicalFile, 
-                                                      GA_ReadOnly, this );
+    if( GetDescription() == NULL || strlen(GetDescription()) == 0 )
+        return CE_None;
+
+    GDALDataset *poAuxDS = GDALFindAssociatedAuxFile( GetDescription(), 
+                                                      GA_ReadOnly );
 
     if( poAuxDS == NULL )
         return CE_None;
@@ -1186,15 +872,6 @@ CPLErr GDALPamDataset::TryLoadAux()
         char **papszMerged = 
             CSLMerge( CSLDuplicate(GetMetadata()), papszMD );
         GDALPamDataset::SetMetadata( papszMerged );
-        CSLDestroy( papszMerged );
-    }
-
-    papszMD = poAuxDS->GetMetadata("XFORMS");
-    if( CSLCount(papszMD) > 0 )
-    {
-        char **papszMerged = 
-            CSLMerge( CSLDuplicate(GetMetadata("XFORMS")), papszMD );
-        GDALPamDataset::SetMetadata( papszMerged, "XFORMS" );
         CSLDestroy( papszMerged );
     }
 
@@ -1243,12 +920,6 @@ CPLErr GDALPamDataset::TryLoadAux()
         // RAT 
         if( poAuxBand->GetDefaultRAT() != NULL )
             poBand->SetDefaultRAT( poAuxBand->GetDefaultRAT() );
-
-        // NoData
-        int bSuccess = FALSE;
-        double dfNoDataValue = poAuxBand->GetNoDataValue( &bSuccess );
-        if( bSuccess )
-            poBand->SetNoDataValue( dfNoDataValue );
     }
 
     GDALClose( poAuxDS );

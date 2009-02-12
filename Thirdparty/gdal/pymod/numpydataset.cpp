@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: numpydataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: numpydataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Python Bindings
  * Purpose:  Implementation of NumPy arrays as a GDALDataset.
@@ -31,7 +31,7 @@
 #include "../frmts/mem/memdataset.h"
 #include "gdal_py.h"
 
-CPL_CVSID("$Id: numpydataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: numpydataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*				NUMPYDataset				*/

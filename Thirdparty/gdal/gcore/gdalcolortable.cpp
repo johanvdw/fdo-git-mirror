@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalcolortable.cpp 11879 2007-08-13 14:04:51Z mloskot $
+ * $Id: gdalcolortable.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -29,7 +29,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalcolortable.cpp 11879 2007-08-13 14:04:51Z mloskot $");
+CPL_CVSID("$Id: gdalcolortable.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */
@@ -117,8 +117,6 @@ const GDALColorEntry * CPL_STDCALL
 GDALGetColorEntry( GDALColorTableH hTable, int i )
 
 {
-    VALIDATE_POINTER1( hTable, "GDALGetColorEntry", NULL );
-
     return ((GDALColorTable *) hTable)->GetColorEntry( i );
 }
 
@@ -162,9 +160,6 @@ int CPL_STDCALL GDALGetColorEntryAsRGB( GDALColorTableH hTable, int i,
                             GDALColorEntry *poEntry )
 
 {
-    VALIDATE_POINTER1( hTable, "GDALGetColorEntryAsRGB", 0 );
-    VALIDATE_POINTER1( poEntry, "GDALGetColorEntryAsRGB", 0 );
-
     return ((GDALColorTable *) hTable)->GetColorEntryAsRGB( i, poEntry );
 }
 
@@ -211,8 +206,6 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
                         const GDALColorEntry * poEntry )
 
 {
-    VALIDATE_POINTER0( hTable, "GDALSetColorEntry" );
-
     ((GDALColorTable *) hTable)->SetColorEntry( i, poEntry );
 }
 
@@ -240,8 +233,6 @@ GDALColorTable *GDALColorTable::Clone() const
 GDALColorTableH CPL_STDCALL GDALCloneColorTable( GDALColorTableH hTable )
 
 {
-    VALIDATE_POINTER1( hTable, "GDALCloneColorTable", NULL );
-
     return (GDALColorTableH) ((GDALColorTable *) hTable)->Clone();
 }
 
@@ -270,8 +261,6 @@ int GDALColorTable::GetColorEntryCount() const
 int CPL_STDCALL GDALGetColorEntryCount( GDALColorTableH hTable )
 
 {
-    VALIDATE_POINTER1( hTable, "GDALGetColorEntryCount", 0 );
-
     return ((GDALColorTable *) hTable)->GetColorEntryCount();
 }
 
@@ -303,105 +292,5 @@ GDALPaletteInterp CPL_STDCALL
 GDALGetPaletteInterpretation( GDALColorTableH hTable )
 
 {
-    VALIDATE_POINTER1( hTable, "GDALGetPaletteInterpretation", GPI_Gray );
-
     return ((GDALColorTable *) hTable)->GetPaletteInterpretation();
-}
-
-/**
- * Create color ramp
- *
- * Automatically creates a color ramp from one color entry to
- * another. It can be called several times to create multiples ramps
- * in the same color table.
- *
- * This function is the same as the C function GDALCreateColorRamp().
- *
- * @param nStartIndex index to start the ramp on the color table [0..255]
- * @param psStartColor a color entry value to start the ramp
- * @param nEndIndex index to end the ramp on the color table [0..255]
- * @param psEndColor a color entry value to end the ramp
- * @return total number of entries, -1 to report error
- */
-
-int GDALColorTable::CreateColorRamp(
-            int nStartIndex, const GDALColorEntry *psStartColor,
-            int nEndIndex, const GDALColorEntry *psEndColor )
-{
-    /* validate indexes */
-
-    if( nStartIndex < 0 || nStartIndex > 255 ||
-        nEndIndex < 0 || nEndIndex > 255 ||
-        nStartIndex > nEndIndex )
-    {
-        return -1;
-    }
-
-    /* validate color entries */
-
-    if( psStartColor == NULL || psEndColor == NULL )
-    {
-        return -1;
-    }
-
-    /* calculate number of colors in-between */
-
-    int nColors = nEndIndex - nStartIndex;
-
-    /* set starting color */
-
-    SetColorEntry( nStartIndex, psStartColor );
-
-    if( nColors == 0 )
-    {
-        return GetColorEntryCount(); /* it should not proceed */
-    }
-
-    /* set ending color */
-
-    SetColorEntry( nEndIndex, psEndColor );
-
-    /* calculate the slope of the linear transformation */
-
-    double dfSlope1, dfSlope2, dfSlope3, dfSlope4;
-
-    dfSlope1 = ( psEndColor->c1 - psStartColor->c1 ) / (double) nColors;
-    dfSlope2 = ( psEndColor->c2 - psStartColor->c2 ) / (double) nColors;
-    dfSlope3 = ( psEndColor->c3 - psStartColor->c3 ) / (double) nColors;
-    dfSlope4 = ( psEndColor->c4 - psStartColor->c4 ) / (double) nColors;
-
-    /* loop through the new colors */
-
-    GDALColorEntry sColor = *psStartColor;
-
-    int i;
-
-    for( i = 1; i < nColors; i++ )
-    {
-        sColor.c1 = (short) ( i * dfSlope1 + (double) psStartColor->c1 );
-        sColor.c2 = (short) ( i * dfSlope2 + (double) psStartColor->c2 );
-        sColor.c3 = (short) ( i * dfSlope3 + (double) psStartColor->c3 );
-        sColor.c4 = (short) ( i * dfSlope4 + (double) psStartColor->c4 );
-
-        SetColorEntry( nStartIndex + i, &sColor );
-    }
-
-    /* return the total number of colors */
-
-    return GetColorEntryCount();
-}
-
-/************************************************************************/
-/*                         GDALCreateColorRamp()                        */
-/************************************************************************/
-
-void CPL_STDCALL 
-GDALCreateColorRamp( GDALColorTableH hTable, 
-            int nStartIndex, const GDALColorEntry *psStartColor,
-            int nEndIndex, const GDALColorEntry *psEndColor )
-{
-    VALIDATE_POINTER0( hTable, "GDALCreateColorRamp" );
-
-    ((GDALColorTable *) hTable)->CreateColorRamp( nStartIndex, psStartColor, 
-                                                  nEndIndex, psEndColor );
 }

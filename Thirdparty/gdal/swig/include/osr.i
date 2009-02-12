@@ -1,51 +1,142 @@
 /******************************************************************************
- * $Id: osr.i 15742 2008-11-15 22:56:31Z rouault $
+ * $Id: osr.i 11507 2007-05-13 18:20:29Z tamas $
  *
- * Project:  GDAL SWIG Interfaces.
- * Purpose:  OGRSpatialReference related declarations.
+ * Name:     osr.i
+ * Project:  GDAL Python Interface
+ * Purpose:  OSR Core SWIG Interface declarations.
  * Author:   Kevin Ruland, kruland@ku.edu
  *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
+
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * $Log$
+ * Revision 1.32  2006/12/11 20:46:35  ajolma
+ * apply some typemaps for GetProjectionMethod* methods (only for SWIGPERL now)
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
+ * Revision 1.31  2006/11/18 09:25:53  ajolma
+ * make it possible to switch to CPAN namespace with symbol PERL_CPAN_NAMESPACE
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * Revision 1.30  2006/11/15 21:11:57  fwarmerdam
+ * Added GetUserInputAsWKT().
+ *
+ * Revision 1.29  2006/11/11 19:33:48  tamas
+ * Controlling the owner of the objects returned by the static/non static members for the csharp binding
+ *
+ * Revision 1.28  2006/10/15 20:58:07  fwarmerdam
+ * Added IsLocal() method.
+ *
+ * Revision 1.27  2006/06/27 13:14:49  ajolma
+ * removed throw from OSRCoordinateTransformationShadow
+ *
+ * Revision 1.26  2006/06/27 12:48:44  ajolma
+ * Geo::GDAL namespace had creeped in too early
+ *
+ * Revision 1.25  2006/06/20 07:33:17  ajolma
+ * SetLinearUnits should call OSRSetLinearUnits
+ *
+ * Revision 1.24  2006/02/02 21:09:24  collinsb
+ * Corrected wrong Java typemap filename
+ *
+ * Revision 1.23  2006/02/02 20:52:40  collinsb
+ * Added SWIG JAVA bindings
+ *
+ * Revision 1.22  2006/01/14 01:47:22  cfis
+ * Added private default constructors since SWIG 1.3.28 HEAD was incorrectly generating them.
+ *
+ * Revision 1.21  2005/09/06 01:43:06  kruland
+ * Include gdal_typemaps.i if no other file is specified.
+ *
+ * Revision 1.20  2005/09/02 21:42:42  kruland
+ * The compactdefaultargs feature should be turned on for all bindings not just
+ * python.
+ *
+ * Revision 1.19  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ * Revision 1.18  2005/08/06 20:51:58  kruland
+ * Instead of using double_## defines and SWIG macros, use typemaps with
+ * [ANY] specified and use $dim0 to extract the dimension.  This makes the
+ * code quite a bit more readable.
+ *
+ * Revision 1.17  2005/08/05 19:19:53  hobu
+ * OPTGetParameterInfo uses default as an argument.
+ * C# uses default as a keyword.
+ * C# wins.  Rename the parameter name.
+ *
+ * Revision 1.16  2005/07/20 16:08:49  kruland
+ * Declare the double and char * consts correctly.  And change all the decls
+ * to defer the the #defined values from the headers.
+ *
+ * Revision 1.15  2005/07/20 14:44:13  kruland
+ * Use correct name for OPTGetProjectionMethods().
+ *
+ * Revision 1.14  2005/06/22 18:42:33  kruland
+ * Don't apply a typemap for returning OGRErr.
+ *
+ * Revision 1.13  2005/02/24 20:33:58  kruland
+ * Back to import gdal_typemaps.i to prevent confusion.
+ *
+ * Revision 1.12  2005/02/24 18:39:14  kruland
+ * Using the GetProjectionMethods() custom code from old interface for the
+ * python binding.  Defined access to plain C-api for other bindings.
+ * Added GetWellKnownGeogCSAsWKT() global method.
+ *
+ * Revision 1.11  2005/02/24 17:53:37  kruland
+ * import the generic typemap.i file.
+ *
+ * Revision 1.10  2005/02/24 16:45:17  kruland
+ * Commented missing methods.
+ * Added first cut at a proxy for ProjectionMethods.
+ *
+ * Revision 1.9  2005/02/23 17:44:37  kruland
+ * Change SpatialReference constructor to have keyword argument "wkt".
+ *
+ * Revision 1.8  2005/02/20 19:46:04  kruland
+ * Use the new fixed size typemap for (double **) arguments in ExportToPCI and
+ * ExportToUSGS.
+ *
+ * Revision 1.7  2005/02/20 19:42:53  kruland
+ * Rename the Swig shadow classes so the names do not give the impression that
+ * they are any part of the GDAL/OSR apis.  There were no bugs with the old
+ * names but they were confusing.
+ *
+ * Revision 1.6  2005/02/18 18:42:07  kruland
+ * Added %feature("autodoc");
+ *
+ * Revision 1.5  2005/02/18 18:13:05  kruland
+ * Now using the THROW_OGR_ERROR tyepmap for all methods.  Changed those
+ * which should return OGRErr to return OGRErr since the typemap is friendly
+ * to return arguments.
+ *
+ * Revision 1.4  2005/02/18 16:18:27  kruland
+ * Added %feature("compactdefaultargs") to fix problem with ImportFromPCI,
+ * ImportFromUSGS and the fact that %typemap (char**ignorechange) has no
+ * %typecheck.
+ *
+ * Fixed bug in new_CoordinateTransformation().  It wasn't returning a value.
+ *
+ * Revision 1.3  2005/02/17 21:12:06  kruland
+ * More complete implementation of SpatialReference and CoordinateTransformation.
+ * Satisfies the osr gdalautotests with 1 exception.
+ *
+ * Revision 1.2  2005/02/17 03:39:25  kruland
+ * Use %constant decls for the constants.
+ *
+ * Revision 1.1  2005/02/15 20:50:09  kruland
+ * Minimal SpatialReference Object to make gcore pretty much succeed.
+ *
+ *
+*/
 
 #ifdef PERL_CPAN_NAMESPACE
 %module "Geo::OSR"
-#elif defined(SWIGCSHARP)
-%module Osr
 #else
 %module osr
 #endif
 
-#ifdef SWIGCSHARP
-%include swig_csharp_extensions.i
-#endif
-
 %feature("compactdefaultargs");
 
-#ifdef SWIGCSHARP
-%csconst(1);
-%include "ogr_srs_const.h"
-%csconst(0);
-#else
 %constant char *SRS_PT_ALBERS_CONIC_EQUAL_AREA	= SRS_PT_ALBERS_CONIC_EQUAL_AREA;
 %constant char *SRS_PT_AZIMUTHAL_EQUIDISTANT	= SRS_PT_AZIMUTHAL_EQUIDISTANT;
 %constant char *SRS_PT_CASSINI_SOLDNER		= SRS_PT_CASSINI_SOLDNER;
@@ -55,7 +146,6 @@
 %constant char *SRS_PT_EQUIDISTANT_CONIC	= SRS_PT_EQUIDISTANT_CONIC;
 %constant char *SRS_PT_EQUIRECTANGULAR		= SRS_PT_EQUIRECTANGULAR;
 %constant char *SRS_PT_GALL_STEREOGRAPHIC	= SRS_PT_GALL_STEREOGRAPHIC;
-%constant char *SRS_PT_GAUSSSCHREIBERTMERCATOR  = SRS_PT_GAUSSSCHREIBERTMERCATOR;
 %constant char *SRS_PT_GNOMONIC			= SRS_PT_GNOMONIC;
 %constant char *SRS_PT_GOODE_HOMOLOSINE         = SRS_PT_GOODE_HOMOLOSINE;
 %constant char *SRS_PT_HOTINE_OBLIQUE_MERCATOR	= SRS_PT_HOTINE_OBLIQUE_MERCATOR;
@@ -134,7 +224,6 @@
 
 %constant double SRS_WGS84_SEMIMAJOR             = SRS_WGS84_SEMIMAJOR;
 %constant double SRS_WGS84_INVFLATTENING         = SRS_WGS84_INVFLATTENING;
-#endif
 
 %{
 #include <iostream>
@@ -145,14 +234,8 @@ using namespace std;
 
 #include "ogr_srs_api.h"
 
-#ifdef DEBUG
-typedef struct OGRSpatialReferenceHS OSRSpatialReferenceShadow;
-typedef struct OGRCoordinateTransformationHS OSRCoordinateTransformationShadow;
-typedef struct OGRCoordinateTransformationHS OGRCoordinateTransformationShadow;
-#else
 typedef void OSRSpatialReferenceShadow;
 typedef void OSRCoordinateTransformationShadow;
-#endif
 
 %}
 
@@ -168,8 +251,6 @@ typedef int OGRErr;
 %include osr_csharp.i
 #elif defined(SWIGJAVA)
 %include osr_java.i
-#elif defined(SWIGPERL)
-%include osr_perl.i
 #else
 %include gdal_typemaps.i
 #endif
@@ -213,27 +294,52 @@ OGRErr GetUserInputAsWKT( const char *name, char **argout ) {
 /************************************************************************/
 /*
  * Python has it's own custom interface to GetProjectionMethods().which returns
- * fairly complex structure.
+ * fairly complex strucutre.
  *
  * All other languages will have a more simplistic interface which is
  * exactly the same as the C api.
  * 
  */
-
+#if defined(SWIGCSHARP)
+%static_owner
+#endif 
 #if !defined(SWIGPYTHON)
 %rename (GetProjectionMethods) OPTGetProjectionMethods;
+#if defined(SWIGPERL)
 %apply (char **CSL) {(char **)};
+#endif
 char **OPTGetProjectionMethods();
+#if defined(SWIGPERL)
 %clear (char **);
+#endif
 
 %rename (GetProjectionMethodParameterList) OPTGetParameterList;
-%apply (char **CSL) {(char **)};
+#if defined(SWIGPERL)
+%apply (char **free) {(char **)};
+%apply (char **argout) {(char **username)};
+#endif
 char **OPTGetParameterList( char *method, char **username );
+#if defined(SWIGPERL)
 %clear (char **);
+%clear (char **username);
+#endif
 
 %rename (GetProjectionMethodParamInfo) OPTGetParameterInfo;
+#if defined(SWIGPERL)
+%apply (char **argout) {(char **usrname)};
+%apply (char **argout) {(char **type)};
+%apply (double *OUTPUT){(double *defaultval)};
+#endif
 void OPTGetParameterInfo( char *method, char *param, char **usrname,
                           char **type, double *defaultval );
+#if defined(SWIGPERL)
+%clear (double *defaultval);
+%clear (char **type);
+%clear (char **usrname);
+#endif
+#endif
+#if defined(SWIGCSHARP)
+%object_owner
 #endif
 
 /******************************************************************************
@@ -249,6 +355,36 @@ private:
 public:
 %extend {
 
+// NEEDED
+// Reference
+// Dereference
+// SetAuthority
+// SetGH
+// SetGnomonic
+// SetHOM
+//SetHOM2PNO
+// SetKrovak
+// SetLAEA
+// SetLCC
+// SetLCCB
+// SetLCC1SP
+// SetMC
+// SetMercator
+// SetMollweide
+// SetNZMG
+// SetOS
+// SetOrthographic
+// SetPolyconic
+// SetPS
+// SetRobinson
+// SetSinusoidal
+// SetStereographic
+// SetSOC
+// SetTM
+// SetTMSO
+// SetTMG
+// SetVDG
+
 
   %feature("kwargs") OSRSpatialReferenceShadow;
   OSRSpatialReferenceShadow( char const * wkt = "" ) {
@@ -261,6 +397,9 @@ public:
     }
   }
 
+/* NEEDED */
+// Reference ?  I don't think this are needed in script-land
+// Dereference ?  I don't think this are needed in script-land
 
 %newobject __str__;
   char *__str__() {
@@ -287,12 +426,6 @@ public:
 
   int IsLocal() {
     return OSRIsLocal(self);
-  }
-
-  OGRErr SetAuthority( const char * pszTargetKey,
-                       const char * pszAuthority,
-                       int nCode ) {
-    return OSRSetAuthority( self, pszTargetKey, pszAuthority, nCode );
   }
 
   const char *GetAttrValue( const char *name, int child = 0 ) {
@@ -326,10 +459,6 @@ public:
 
   OGRErr SetLinearUnits( const char*name, double to_meters ) {
     return OSRSetLinearUnits( self, name, to_meters );
-  }
-
-  OGRErr SetLinearUnitsAndUpdateParameters( const char*name, double to_meters) {
-    return OSRSetLinearUnitsAndUpdateParameters( self, name, to_meters );
   }
 
   double GetLinearUnits() {
@@ -394,289 +523,41 @@ public:
     return OSRGetNormProjParm( self, name, default_val, 0 );
   }
 
-%feature( "kwargs" ) SetACEA;
-  OGRErr SetACEA( double stdp1, double stdp2,
- 		double clat, double clong,
-                double fe, double fn ) {
-    return OSRSetACEA( self, stdp1, stdp2, clat, clong, 
-                       fe, fn );
-  }    
-
-%feature( "kwargs" ) SetAE;
-  OGRErr SetAE( double clat, double clong,
-              double fe, double fn ) {
-    return OSRSetAE( self, clat, clong, 
-                     fe, fn );
+  OGRErr SetACEA( double stdp1, double stdp2, double clat, double clong, double fe, double fn ) {
+    return OSRSetACEA( self, stdp1, stdp2, clat, clong, fe, fn );
   }
 
-%feature( "kwargs" ) SetBonne;
-  OGRErr SetBonne( double stdp, double cm, double fe, double fn ) {
-    return OSRSetBonne( self, stdp, cm, fe, fn );
+  OGRErr SetAE( double clat, double clon, double fe, double fn ) {
+    return OSRSetAE( self, clat, clon, fe, fn );
   }
 
-%feature( "kwargs" ) SetCEA;
-  OGRErr SetCEA( double stdp1, double cm,
-               double fe, double fn ) {
-    return OSRSetCEA( self, stdp1, cm, 
-                      fe, fn );
+  OGRErr SetCS( double clat, double clong, double fe, double fn ) {
+    return OSRSetCS( self, clat, clong, fe, fn );
   }
 
-%feature( "kwargs" ) SetCS;
-  OGRErr SetCS( double clat, double clong,
-              double fe, double fn ) {
-    return OSRSetCS( self, clat, clong, 
-                     fe, fn );
+  OGRErr SetBonne( double clat, double clong, double fe, double fn ) {
+    return OSRSetBonne( self, clat, clong, fe, fn );
   }
 
-%feature( "kwargs" ) SetEC;
-  OGRErr SetEC( double stdp1, double stdp2,
-              double clat, double clong,
-              double fe, double fn ) {
-    return OSRSetEC( self, stdp1, stdp2, clat, clong, 
-                     fe, fn );
+  OGRErr SetEC( double stdp1, double stdp2, double clat, double clong, double fe, double fn ) {
+    return OSRSetEC( self, stdp1, stdp2, clat, clong, fe, fn );
   }
 
-%feature( "kwargs" ) SetEckertIV;
-  OGRErr SetEckertIV( double cm,
-                    double fe, double fn ) {
-    return OSRSetEckertIV( self, cm, fe, fn);
+  OGRErr SetEckertIV( double cm, double fe, double fn ) {
+    return OSRSetEckertIV( self, cm, fe, fn );
   }
 
-%feature( "kwargs" ) SetEckertVI;
-  OGRErr SetEckertVI( double cm,
-                    double fe, double fn ) {
-    return OSRSetEckertVI( self, cm, fe, fn);
+  OGRErr SetEckertVI( double cm, double fe, double fn ) {
+    return OSRSetEckertVI( self, cm, fe, fn );
   }
 
-%feature( "kwargs" ) SetEquirectangular;
-  OGRErr SetEquirectangular( double clat, double clong,
-                           double fe, double fn ) {
-    return OSRSetEquirectangular( self, clat, clong, 
-                                  fe, fn );
-  }
-
-%feature( "kwargs" ) SetEquirectangular2;
-  OGRErr SetEquirectangular2( double clat, double clong,
-                              double pseudostdparallellat,
-                              double fe, double fn ) {
-    return OSRSetEquirectangular2( self, clat, clong,
-                                   pseudostdparallellat,
-                                   fe, fn );
-  }
-
-%feature( "kwargs" ) SetGaussSchreiberTMercator;
-  OGRErr SetGaussSchreiberTMercator( double clat, double clong, double sc, double fe, double fn ) {
-    return OSRSetGaussSchreiberTMercator( self, clat, clong, sc, fe, fn );
+  OGRErr SetEquirectangular( double clat, double clong, double fe, double fn ) {
+    return OSRSetEquirectangular( self, clat, clong, fe, fn );
   }
 
 %feature( "kwargs" ) SetGS;
-  OGRErr SetGS( double cm,
-              double fe, double fn ) {
+  OGRErr SetGS( double cm, double fe, double fn ) {
     return OSRSetGS( self, cm, fe, fn );
-  }
-    
-%feature( "kwargs" ) SetGH;
-  OGRErr SetGH( double cm,
-              double fe, double fn ) {
-    return OSRSetGH( self, cm, fe, fn );
-  }
-    
-%feature( "kwargs" ) SetGEOS;
-  OGRErr SetGEOS( double cm, double satelliteheight,
-                double fe, double fn ) {
-    return OSRSetGEOS( self, cm, satelliteheight,
-                       fe, fn );
-  }
-    
-%feature( "kwargs" ) SetGnomonic;
-  OGRErr SetGnomonic( double clat, double clong,
-                    double fe, double fn ) {
-    return OSRSetGnomonic( self, clat, clong, 
-                           fe, fn );
-  }
-
-%feature( "kwargs" ) SetHOM;
-  OGRErr SetHOM( double clat, double clong,
-               double azimuth, double recttoskew,
-               double scale,
-               double fe, double fn ) {
-    return OSRSetHOM( self, clat, clong, azimuth, recttoskew,
-                      scale, fe, fn );
-  }
-
-%feature( "kwargs" ) SetHOM2PNO;
-  OGRErr SetHOM2PNO( double clat,
-                   double dfLat1, double dfLong1,
-                   double dfLat2, double dfLong2,
-                   double scale,
-                   double fe, double fn ) {
-    return OSRSetHOM2PNO( self, clat, dfLat1, dfLong1, dfLat2, dfLong2, 
-                          scale, fe, fn );
-  }
-
-%feature( "kwargs" ) SetKrovak;
-  OGRErr SetKrovak( double clat, double clong,
-                  double azimuth, double pseudostdparallellat,
-                  double scale, 
-                  double fe, double fn ) {
-    return OSRSetKrovak( self, clat, clong, 
-                         azimuth, pseudostdparallellat, 
-                         scale, fe, fn );
-  }
-
-%feature( "kwargs" ) SetLAEA;
-  OGRErr SetLAEA( double clat, double clong,
-                double fe, double fn ) {
-    return OSRSetLAEA( self, clat, clong, 
-                       fe, fn );
-  }
-
-%feature( "kwargs" ) SetLCC;
-  OGRErr SetLCC( double stdp1, double stdp2,
-               double clat, double clong,
-               double fe, double fn ) {
-    return OSRSetLCC( self, stdp1, stdp2, clat, clong, 
-                      fe, fn );
-  }
-
-%feature( "kwargs" ) SetLCC1SP;
-  OGRErr SetLCC1SP( double clat, double clong,
-                  double scale,
-                  double fe, double fn ) {
-    return OSRSetLCC1SP( self, clat, clong, scale, 
-                         fe, fn );
-  }
-
-%feature( "kwargs" ) SetLCCB;
-  OGRErr SetLCCB( double stdp1, double stdp2,
-                double clat, double clong,
-                double fe, double fn ) {
-    return OSRSetLCCB( self, stdp1, stdp2, clat, clong, 
-                       fe, fn );
-  }
-    
-%feature( "kwargs" ) SetMC;
-  OGRErr SetMC( double clat, double clong,
-              double fe, double fn ) {
-    return OSRSetMC( self, clat, clong,    
-                     fe, fn );
-  }
-
-%feature( "kwargs" ) SetMercator;
-  OGRErr SetMercator( double clat, double clong,
-                    double scale, 
-                    double fe, double fn ) {
-    return OSRSetMercator( self, clat, clong, 
-                           scale, fe, fn );
-  }
-
-%feature( "kwargs" ) SetMollweide;
-  OGRErr  SetMollweide( double cm,
-                      double fe, double fn ) {
-    return OSRSetMollweide( self, cm, 
-                            fe, fn );
-  }
-
-%feature( "kwargs" ) SetNZMG;
-  OGRErr SetNZMG( double clat, double clong,
-                double fe, double fn ) {
-    return OSRSetNZMG( self, clat, clong, 
-                       fe, fn );
-  }
-
-%feature( "kwargs" ) SetOS;
-  OGRErr SetOS( double dfOriginLat, double dfCMeridian,
-              double scale,
-              double fe,double fn) {
-    return OSRSetOS( self, dfOriginLat, dfCMeridian, scale, 
-                     fe, fn );
-  }
-    
-%feature( "kwargs" ) SetOrthographic;
-  OGRErr SetOrthographic( double clat, double clong,
-                        double fe,double fn) {
-    return OSRSetOrthographic( self, clat, clong, 
-                               fe, fn );
-  }
-
-%feature( "kwargs" ) SetPolyconic;
-  OGRErr SetPolyconic( double clat, double clong,
-                     double fe, double fn ) {
-    return OSRSetPolyconic( self, clat, clong, 
-                            fe, fn );
-  }
-
-%feature( "kwargs" ) SetPS;
-  OGRErr SetPS( double clat, double clong,
-              double scale,
-              double fe, double fn) {
-    return OSRSetPS( self, clat, clong, scale,
-                     fe, fn );
-  }
-    
-%feature( "kwargs" ) SetRobinson;
-  OGRErr SetRobinson( double clong, 
-                    double fe, double fn ) {
-    return OSRSetRobinson( self, clong, fe, fn );
-  }
-    
-%feature( "kwargs" ) SetSinusoidal;
-  OGRErr SetSinusoidal( double clong, 
-                      double fe, double fn ) {
-    return OSRSetSinusoidal( self, clong, fe, fn );
-  }
-    
-%feature( "kwargs" ) SetStereographic;
-  OGRErr SetStereographic( double clat, double clong,
-                         double scale,
-                         double fe,double fn) {
-    return OSRSetStereographic( self, clat, clong, scale, 
-                                fe, fn );
-  }
-    
-%feature( "kwargs" ) SetSOC;
-  OGRErr SetSOC( double latitudeoforigin, double cm,
-               double fe, double fn ) {
-    return OSRSetSOC( self, latitudeoforigin, cm,
-	              fe, fn );
-  }
-    
-%feature( "kwargs" ) SetTM;
-  OGRErr SetTM( double clat, double clong,
-              double scale,
-              double fe, double fn ) {
-    return OSRSetTM( self, clat, clong, scale, 
-                     fe, fn );
-  }
-
-%feature( "kwargs" ) SetTMVariant;
-  OGRErr SetTMVariant( const char *pszVariantName,
-                     double clat, double clong,
-                     double scale,
-                     double fe, double fn ) {
-    return OSRSetTMVariant( self, pszVariantName, clat, clong,  
-                            scale, fe, fn );
-  }
-
-%feature( "kwargs" ) SetTMG;
-  OGRErr SetTMG( double clat, double clong, 
-               double fe, double fn ) {
-    return OSRSetTMG( self, clat, clong, 
-                      fe, fn );
-  }
-
-%feature( "kwargs" ) SetTMSO;
-  OGRErr SetTMSO( double clat, double clong,
-                double scale,
-                double fe, double fn ) {
-    return OSRSetTMSO( self, clat, clong, scale, 
-                       fe, fn );
-  }
-
-%feature( "kwargs" ) SetVDG;
-  OGRErr SetVDG( double clong,
-               double fe, double fn ) {
-    return OSRSetVDG( self, clong, fe, fn );
   }
 
   OGRErr SetWellKnownGeogCS( const char *name ) {
@@ -699,10 +580,6 @@ public:
 
   OGRErr GetTOWGS84( double argout[7] ) {
     return OSRGetTOWGS84( self, argout, 7 );
-  }
-
-  OGRErr SetLocalCS( const char *pszName ) {
-    return OSRSetLocalCS( self, pszName );
   }
 
   OGRErr SetGeogCS( const char * pszGeogName,
@@ -731,11 +608,8 @@ public:
   OGRErr ImportFromProj4( char *ppszInput ) {
     return OSRImportFromProj4( self, ppszInput );
   }
-  
-  OGRErr ImportFromUrl( char *url ) {
-    return OSRImportFromUrl( self, url );
-  }
-%apply (char **options) { (char **) };
+
+%apply (char **ignorechange) { (char **) };
   OGRErr ImportFromESRI( char **ppszInput ) {
     return OSRImportFromESRI( self, ppszInput );
   }
@@ -853,6 +727,10 @@ public:
 
   OSRCoordinateTransformationShadow( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst ) {
     OSRCoordinateTransformationShadow *obj = (OSRCoordinateTransformationShadow*) OCTNewCoordinateTransformation( src, dst );
+    if (obj == 0 ) {
+      CPLError(CE_Failure, 1, "Failed to create coordinate transformation");
+      return NULL;
+    }
     return obj;
   }
 
@@ -875,16 +753,6 @@ public:
     argout[2] = z;
     OCTTransform( self, 1, &argout[0], &argout[1], &argout[2] );
   }
-  
-#ifdef SWIGCSHARP
-  %apply (double *inout) {(double*)};
-#endif
-  void TransformPoints( int nCount, double *x, double *y, double *z ) {
-    OCTTransform( self, nCount, x, y, z );
-  }
-#ifdef SWIGCSHARP
-  %clear (double*);
-#endif
 
 } /*extend */
 };

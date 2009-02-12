@@ -1,36 +1,6 @@
-/******************************************************************************
- * $Id: WKT2WKB.cs 13437 2007-12-21 21:02:38Z tamas $
- *
- * Name:     WKT2WKB.cs
- * Project:  GDAL CSharp Interface
- * Purpose:  A sample app for demonstrating the usage of ExportToWkb.
- * Author:   Tamas Szekeres, szekerest@gmail.com
- *
- ******************************************************************************
- * Copyright (c) 2007, Tamas Szekeres
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
 using System;
 
-using OSGeo.OGR;
+using OGR;
 
 
 /**
@@ -63,31 +33,16 @@ class WKT2WKB {
 		/* -------------------------------------------------------------------- */
 		/*      Register format(s).                                             */
 		/* -------------------------------------------------------------------- */
-        Ogr.RegisterAll();
+        ogr.RegisterAll();
 
-        Geometry geom = Geometry.CreateFromWkt(args[0]);
+        Geometry geom = new Geometry(ogr.wkbUnknown, args[0], 0, null, null);
         
-		int wkbSize = geom.WkbSize();
+        int wkbSize = geom.WkbSize();
         if (wkbSize > 0) 
         {
             byte[] wkb = new byte[wkbSize];
             geom.ExportToWkb( wkb );
-            Console.WriteLine( "wkt-->wkb: " + BitConverter.ToString(wkb) );
-			
-			// wkb --> wkt (reverse test)
-			Geometry geom2 = Geometry.CreateFromWkb(wkb);
-			string geom_wkt;
-			geom2.ExportToWkt(out geom_wkt);
-			Console.WriteLine( "wkb->wkt: " + geom_wkt );
+            Console.WriteLine( BitConverter.ToString(wkb) );
         }
-
-		// wkt -- gml transformation
-       string gml = geom.ExportToGML();
-       Console.WriteLine( "wkt->gml: " + gml );
-
-       Geometry geom3 = Geometry.CreateFromGML(gml);
-	   string geom_wkt2;
-	   geom3.ExportToWkt(out geom_wkt2);
-	   Console.WriteLine( "gml->wkt: " + geom_wkt2 );
 	}
 }

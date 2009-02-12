@@ -1,5 +1,5 @@
 /***************************************************************************
- * $Id: mgrs.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: mgrs.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  MGRS Converter
  * Purpose:  Geotrans code for MGRS translation (slightly adapted)

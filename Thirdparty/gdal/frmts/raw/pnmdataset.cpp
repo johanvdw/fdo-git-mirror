@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pnmdataset.cpp 13663 2008-02-01 23:24:02Z rouault $
+ * $Id: pnmdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: pnmdataset.cpp 13663 2008-02-01 23:24:02Z rouault $");
+CPL_CVSID("$Id: pnmdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_PNM(void);
@@ -56,7 +56,6 @@ class PNMDataset : public RawDataset
 
     virtual CPLErr GetGeoTransform( double * );
 
-    static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
@@ -109,34 +108,6 @@ CPLErr PNMDataset::GetGeoTransform( double * padfTransform )
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int PNMDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Verify that this is a _raw_ ppm or pgm file.  Note, we don't    */
-/*      support ascii files, or pbm (1bit) files.                       */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 10 || poOpenInfo->fp == NULL )
-        return FALSE;
-
-    if( poOpenInfo->pabyHeader[0] != 'P'  ||
-        (poOpenInfo->pabyHeader[2] != ' '  &&    // XXX: Magick number
-         poOpenInfo->pabyHeader[2] != '\t' &&    // may be followed
-         poOpenInfo->pabyHeader[2] != '\n' &&    // any of the blank
-         poOpenInfo->pabyHeader[2] != '\r') )    // characters
-        return FALSE;
-
-    if( poOpenInfo->pabyHeader[1] != '5'
-        && poOpenInfo->pabyHeader[1] != '6' )
-        return FALSE;
-
-    return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
@@ -147,7 +118,18 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Verify that this is a _raw_ ppm or pgm file.  Note, we don't    */
 /*      support ascii files, or pbm (1bit) files.                       */
 /* -------------------------------------------------------------------- */
-    if( !Identify( poOpenInfo ) )
+    if( poOpenInfo->nHeaderBytes < 10 || poOpenInfo->fp == NULL )
+        return NULL;
+
+    if( poOpenInfo->pabyHeader[0] != 'P'  &&
+        (poOpenInfo->pabyHeader[2] != ' '  ||    // XXX: Magick number
+         poOpenInfo->pabyHeader[2] != '\t' ||    // may be followed
+         poOpenInfo->pabyHeader[2] != '\n' ||    // any of the blank
+         poOpenInfo->pabyHeader[2] != '\r') )    // characters
+        return NULL;
+
+    if( poOpenInfo->pabyHeader[1] != '5'
+        && poOpenInfo->pabyHeader[1] != '6' )
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -155,15 +137,14 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     const char  *pszSrc = (const char *) poOpenInfo->pabyHeader;
     char        szToken[512];
-    int         iIn, iToken = 0, nWidth =-1, nHeight=-1, nMaxValue=-1;
-    unsigned int iOut;
+    int         iIn, iOut, iToken = 0, nWidth =-1, nHeight=-1, nMaxValue=-1;
 
     iIn = 2;
     while( iIn < poOpenInfo->nHeaderBytes && iToken < 3 )
     {
         iOut = 0;
         szToken[0] = '\0';
-        while( iOut < sizeof(szToken) && iIn < poOpenInfo->nHeaderBytes )
+        while( iIn < poOpenInfo->nHeaderBytes )
         {
             if( pszSrc[iIn] == '#' )
             {
@@ -235,8 +216,6 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
-    poDS->eAccess = poOpenInfo->eAccess;
-
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
@@ -259,7 +238,6 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->SetBand(
             1, new RawRasterBand( poDS, 1, poDS->fpImage, iIn, iPixelSize,
                                   nWidth*iPixelSize, eDataType, bMSBFirst, TRUE ));
-        poDS->GetRasterBand(1)->SetColorInterpretation( GCI_GrayIndex );
     }
     else
     {
@@ -274,18 +252,7 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
             3, new RawRasterBand( poDS, 3, poDS->fpImage, iIn+2*iPixelSize,
                                   3*iPixelSize, nWidth*3*iPixelSize,
                                   eDataType, bMSBFirst, TRUE ));
-
-        poDS->GetRasterBand(1)->SetColorInterpretation( GCI_RedBand );
-        poDS->GetRasterBand(2)->SetColorInterpretation( GCI_GreenBand );
-        poDS->GetRasterBand(3)->SetColorInterpretation( GCI_BlueBand );
     }
-
-/* -------------------------------------------------------------------- */
-/*      Check for world file.                                           */
-/* -------------------------------------------------------------------- */
-    poDS->bGeoTransformValid = 
-        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
-                           poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
@@ -298,6 +265,9 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
+    poDS->bGeoTransformValid = 
+        GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
+                           poDS->adfGeoTransform );
     return( poDS );
 }
 
@@ -417,7 +387,6 @@ void GDALRegister_PNM()
 
         poDriver->pfnOpen = PNMDataset::Open;
         poDriver->pfnCreate = PNMDataset::Create;
-        poDriver->pfnIdentify = PNMDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

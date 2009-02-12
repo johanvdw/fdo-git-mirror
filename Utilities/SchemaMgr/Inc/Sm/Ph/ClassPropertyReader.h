@@ -83,7 +83,7 @@ public:
 	bool GetIsSystem();
 	int GetLength();
 	int GetScale();
-	FdoPtr<FdoDataValue> GetDefaultValue();
+	FdoStringP GetDefaultValue();
 	FdoStringP GetTableName();
 	FdoStringP GetRootObjectName();
 // TODO: think about whether this function can be dropped.

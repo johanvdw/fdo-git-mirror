@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ilihelper.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ilihelper.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 1/2 Translator
  * Purpose:  Helper functions for Interlis reader
@@ -31,7 +31,7 @@
 #include "ilihelper.h"
 
 
-CPL_CVSID("$Id: ilihelper.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ilihelper.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 OGRPoint *getARCCenter(OGRPoint *ptStart, OGRPoint *ptArc, OGRPoint *ptEnd) {  

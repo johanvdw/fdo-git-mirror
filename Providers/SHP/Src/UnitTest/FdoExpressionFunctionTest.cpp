@@ -177,12 +177,6 @@ void FdoExpressionFunctionTest::tearDown ()
 
       printf(" >>> Cleaning up \n");
       TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, L"exfct_c1");
-	  TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, XY_POINT_CLASS);
-	  TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, XYZ_POINT_CLASS);
-	  TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, XYZM_POINT_CLASS);
-	  TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, XYM_POINT_CLASS);
-	  TestCommonSchemaUtil::CleanUpClass(m_connection, NULL, XYZM_LINE_CLASS);
-
 
       printf(" >>> Disconnecting \n");
       is_disconnected = true;
@@ -255,8 +249,7 @@ void FdoExpressionFunctionTest::RunAllExpFctTests ()
 
 {
 
-
-	// Testing the aggregate functions.
+    // Testing the aggregate functions.
 
     printf(" >>> ... Testing Aggregate Functions \n");
     printf("\n");
@@ -346,14 +339,6 @@ void FdoExpressionFunctionTest::RunAllExpFctTests ()
     TestTranslateFunction();
     TestTrimFunction();
     TestUpperFunction();
-
-	// Executing the XYZM tests.
-	printf("\n");
-    printf("\n");
-    printf(" >>> ... Testing Z,Y,Z and M Functions \n");
-    printf("\n");
-    TestXYZMFunction();
-
 
 }  //  RunAllExpFctTests ()
 
@@ -7994,13 +7979,7 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
 
     // Declare and initialize all necessary local vatiables.
 
-    size_t                    src_length;
-
-    FdoStringP                exp_value,
-                              src_value,
-                              func_call,
-                              exp_err_msg,
-                              ret_err_msg;
+    FdoStringP                func_call;
 
     FdoPtr<FdoFilter>         filter;
     FdoPtr<FdoIFeatureReader> data_reader;
@@ -8015,43 +7994,8 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
 
     filter = FdoFilter::Parse(L"id = 9");
 
-    // This test suits deals with the processing of strings. To ensure propper
-    // execution at all time, get the string value set for the row used in the
-    // following tests.
-
-    printf("---------------------------------------------------------- \n");
-    printf("Test Case Setup:                                           \n");
-    printf("  The following retrieves the string value used when cross \n");
-    printf("  checking function results. No exceptions are expected.   \n");
-    printf("---------------------------------------------------------- \n");
-    printf("\n");
-
-    try {
-
-      src_value  = GetStringValue(L"exfct_c1", L"str2_val", filter);
-      src_length = src_value.GetLength();
-      printf(" >>> Test setup done \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test setup failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test setup failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
     // Execute the test cases.
 
-    printf("\n");
     printf("---------------------------------------------------------- \n");
     printf("1. Test Case:                                              \n");
     printf("  The test executes a select-command to select the value   \n");
@@ -8065,13 +8009,13 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
 
     try {
 
-      // Execute the test and check the returned data.
+      // Execute the test and check the returned data. It is expected that
+      // this call returns 1 row. The value for the selected computed property
+      // is expected to be "Color is: 2118".
 
       func_call   = L"(Substr(str2_val, 5.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(4, src_length);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
+      data_reader = ExecuteSelectCommand(L"exfct_c1", filter, true, func_call);
+      CheckReaderString(data_reader, 9, L"Color is: 2118");
       printf(" >>> Test succeeded \n");
 
     }  //  try ...
@@ -8104,13 +8048,13 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
 
     try {
 
-      // Execute the test and check the returned data.
+      // Execute the test and check the returned data. It is expected that
+      // this call returns 1 row. The value for the selected computed property
+      // is expected to be "Color".
 
       func_call   = L"(Substr(str2_val, 5.6, 5.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(4, 5);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
+      data_reader = ExecuteSelectCommand(L"exfct_c1", filter, true, func_call);
+      CheckReaderString(data_reader, 9, L"Color");
       printf(" >>> Test succeeded \n");
 
     }  //  try ...
@@ -8136,468 +8080,6 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
     printf("  The test executes a select-command to select the value   \n");
     printf("  of a computed property that is defined by using the      \n");
     printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string to the end by not specifying the optional  \n");
-    printf("  length parameter. No exceptions are expected.            \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -5.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid((src_length - 5), src_length);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("4. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string of a certain length. No exceptions are     \n");
-    printf("  expected.                                                \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -5.6, 2.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid((src_length - 5), 2);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("5. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from position 0 of the source string with no      \n");
-    printf("  specified length. In this case, the expression function  \n");
-    printf("  is expected to increase the start position by 1 (a start \n");
-    printf("  position of 0 is invalid but is treated as an indicator  \n");
-    printf("  that the substring is to be calculated from the beginn-  \n");
-    printf("  ing of the source string) and return the complete source \n");
-    printf("  string as a result. No exceptions are expected.          \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, 0) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(0, src_length);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("6. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from position 0 of the source string with a       \n");
-    printf("  specified length. In this case, the expression function  \n");
-    printf("  is expected to increase the start position by 1 (a start \n");
-    printf("  position of 0 is invalid but is treated as an indicator  \n");
-    printf("  that the substring is to be calculated from the beginn-  \n");
-    printf("  ing of the source string) and return the substring of    \n");
-    printf("  the source string as defined by the provided length. No  \n");
-    printf("  exceptions are expected.                                 \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, 0, 5.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(0, 5);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("7. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a start position that is beyond the size of  \n");
-    printf("  the source string. This should return a NULL string. No  \n");
-    printf("  exceptions are expected.                                 \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, 100) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      CheckReaderString(data_reader, 9, NULL);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("8. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a start position that is calculated from the \n");
-    printf("  source string end and is beyond the beginning of the     \n");
-    printf("  source string. This should return a NULL string. No ex-  \n");
-    printf("  ceptions are expected.                                   \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -100) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      CheckReaderString(data_reader, 9, NULL);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("9. Test Case:                                              \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a valid start position. However, the length  \n");
-    printf("  parameter is set to a negative value. This should return \n");
-    printf("  a NULL string. No exceptions are expected.               \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, 3, -1) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      CheckReaderString(data_reader, 9, NULL);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("10. Test Case:                                             \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string to the end by not specifying the optional  \n");
-    printf("  length parameter. The difference to test 3 is that for   \n");
-    printf("  this test, the input for the calculation of the start    \n");
-    printf("  position for the sub-string is the length of the source  \n");
-    printf("  string. It is expected that it returns the complete      \n");
-    printf("  source string as a result. No exceptions are expected.   \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -1*Length(str2_val)) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(0, src_length);
-      CheckReaderString(data_reader, 9, (FdoString *) exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("11. Test Case:                                             \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string for specified length. The difference to    \n");
-    printf("  test 4 is that for this test, the input for the calcula- \n");
-    printf("  tion of the start position for the sub-string is the     \n");
-    printf("  length of the source string. No exceptions are expected. \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -1*Length(str2_val), 2) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(0, 2);
-      CheckReaderString(data_reader, 9, (FdoString *) exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("12. Test Case:                                             \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string to the end by not specifying the optional  \n");
-    printf("  length parameter. This is an extension of test 10 in     \n");
-    printf("  that it tests a case around the use of the source string \n");
-    printf("  length to calculate the beginning of the sub-string. In  \n");
-    printf("  this test it is expected that the function returns the   \n");
-    printf("  source string with the exception of the first character  \n");
-    printf("  as the result. No exceptions are expected.               \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -1*Length(str2_val)+1) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(1, src_length);
-      CheckReaderString(data_reader, 9, (FdoString *) exp_value);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("13. Test Case:                                             \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
-    printf("  type STRING. In this case, the test requests a sub-      \n");
-    printf("  string from a position calculated from the end of the    \n");
-    printf("  source string to the end by not specifying the optional  \n");
-    printf("  length parameter. This is an extension of test 10 in     \n");
-    printf("  that it tests a case around the use of the source string \n");
-    printf("  length to calculate the beginning of the sub-string. In  \n");
-    printf("  this test, the start point should be beyond the 0 and    \n");
-    printf("  hence the function should return a NULL value as the re- \n");
-    printf("  sult. No exceptions are expected.                        \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check the returned data.
-
-      func_call   = L"(Substr(str2_val, -1*Length(str2_val)-1) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      CheckReaderString(data_reader, 9, NULL);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      printf(" >>> Test failed \n");
-      throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("14. Test Case:                                             \n");
-    printf("  The test executes a select-command to select the value   \n");
-    printf("  of a computed property that is defined by using the      \n");
-    printf("  function SUBSTR on the value of a different property of  \n");
     printf("  type STRING where the function name differs from the ex- \n");
     printf("  pected function name ('SuBsTr' rather than 'Substr'). In \n");
     printf("  this case, the test requests a sub-string from a posi-   \n");
@@ -8608,13 +8090,13 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
 
     try {
 
-      // Execute the test and check the returned data.
+      // Execute the test and check the returned data. It is expected that
+      // this call returns 1 row. The value for the selected computed property
+      // is expected to be "Color is: 2118".
 
       func_call   = L"(SuBsTr(str2_val, 5.6) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      exp_value   = src_value.Mid(4, src_length);
-      CheckReaderString(data_reader, 9, (FdoString *)exp_value);
+      data_reader = ExecuteSelectCommand(L"exfct_c1", filter, true, func_call);
+      CheckReaderString(data_reader, 9, L"Color is: 2118");
       printf(" >>> Test succeeded \n");
 
     }  //  try ...
@@ -8624,62 +8106,6 @@ void FdoExpressionFunctionTest::TestSubstrFunction ()
       printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
       printf(" >>> Test failed \n");
       throw exp;
-
-    }  //  catch (FdoException *ex) ...
-
-    catch ( ... ) {
-
-      printf(" >>> Test failed for an unknown reason \n");
-      throw;
-
-    }  //  catch ( ... ) ...
-
-    printf("\n");
-    printf("---------------------------------------------------------- \n");
-    printf("15. Test Case:                                             \n");
-    printf("  The test executes a select-command on a given class to   \n");
-    printf("  select the value of a computed property that is defined  \n");
-    printf("  by using the function SUBSTR on the value of a property  \n");
-    printf("  of type BOOLEAN. This represents an error case. The test \n");
-    printf("  checks whether or not the expected error message is re-  \n");
-    printf("  turned.                                                  \n");
-    printf("---------------------------------------------------------- \n");
-
-    try {
-
-      // Execute the test and check whether or not the expected error message
-      // is returned.
-
-      func_call   = L"(Substr(bool_val, 2) as cmp_id)";
-      data_reader = ExecuteSelectCommand(
-                                        L"exfct_c1", filter, true, func_call);
-      CheckReaderString(data_reader, 9, NULL);
-      printf(" >>> Test succeeded \n");
-
-    }  //  try ...
-
-    catch (FdoException *exp) {
-
-      exp_err_msg = FdoStringP::Format(
-                       L"%ls '%ls' %ls ",
-                       L"One or more arguments for function",
-                       L"Substr",
-                       L"did not match the expected argument types.");
-      ret_err_msg = exp->GetExceptionMessage();
-
-      if (exp_err_msg.ICompare(ret_err_msg) == 0) {
-
-          printf(" >>> ... Expected error message returned \n");
-          printf(" >>> Test succeeded \n");
-
-      }  //  if (exp_err_msg.ICompare(ret_err_msg) == 0) ...
-      else {
-
-        printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-        printf(" >>> Test failed \n");
-        throw exp;
-
-      }  //  else ...
 
     }  //  catch (FdoException *ex) ...
 
@@ -10196,12 +9622,12 @@ void FdoExpressionFunctionTest::CheckReaderString (
 
     // Declare and initialize all necessary local vatiables.
 
-    bool      is_valid_result = false;
+    bool        is_valid_result = false;
 
-    FdoInt32  data_count      = 0,
-              id_prop_val;
+    FdoInt32    data_count      = 0,
+                id_prop_val;
 
-    FdoString *cmp_id_val;
+    FdoString   *cmp_id_val;
 
     // Navigate through the reader and perform the necessary checks.
 
@@ -10212,15 +9638,8 @@ void FdoExpressionFunctionTest::CheckReaderString (
       data_count++;
 
       id_prop_val     = data_reader->GetInt32(L"id");
-      cmp_id_val  = (data_reader->IsNull(L"cmp_id"))
-                  ? NULL
-                  : data_reader->GetString(L"cmp_id");
-
-      is_valid_result =
-        ((id_prop_val == expected_id_value) &&
-         (((cmp_id_val == NULL) && (expected_cmp_id_value == NULL)) ||
-          ((cmp_id_val != NULL) && (expected_cmp_id_value != NULL) &&
-                         (wcscmp(cmp_id_val, expected_cmp_id_value) == 0))));
+      cmp_id_val      = data_reader->GetString(L"cmp_id");
+      is_valid_result = (wcscmp(cmp_id_val, expected_cmp_id_value) == 0);
       if (!is_valid_result)
           break;
 
@@ -10481,50 +9900,6 @@ FdoDateTime FdoExpressionFunctionTest::GetDate (FdoString *class_name,
 
 }  //  GetDate ()
 
-FdoStringP FdoExpressionFunctionTest::GetStringValue (
-                                                    FdoString *class_name,
-                                                    FdoString *property_name,
-                                                    FdoFilter *filter)
-
-// +---------------------------------------------------------------------------
-// | The function retrieves the value for a string property identified by the
-// | provided filter and returns it back to the calling procedure.
-// +---------------------------------------------------------------------------
-
-{
-
-    // Declare and initialize all necessary local vatiables.
-
-    FdoStringP                      str_data;
-
-    FdoPtr<FdoIdentifier>           id_prop;
-
-    FdoPtr<FdoISelect>              select_cmd;
-    FdoPtr<FdoIFeatureReader>       feature_reader;
-    FdoPtr<FdoIdentifierCollection> id_col;
-
-    // Create the select-command, set the properties and exeute it.
-
-    select_cmd =
-            (FdoISelect*)m_connection->CreateCommand(FdoCommandType_Select);
-
-    select_cmd->SetFeatureClassName(class_name);
-    select_cmd->SetFilter(filter);
-    id_col = select_cmd->GetPropertyNames();
-    id_prop = FdoIdentifier::Create(property_name);
-    id_col->Add(id_prop);
-
-    feature_reader = select_cmd->Execute();
-
-    // Get the necessary information and return it.
-
-    while (feature_reader->ReadNext())
-      str_data = feature_reader->GetString(property_name);
-
-    return str_data;
-
-}  //  GetStringValue ()
-
 
 // ----------------------------------------------------------------------------
 // --                    Test Environment Setup Functions                    --
@@ -10602,8 +9977,7 @@ void FdoExpressionFunctionTest::AddFeature (
       byte_array       = geometry_factory->GetFgf(line_str);
       geometry_value   = FdoGeometryValue::Create(byte_array);
 
-      // property_value = AddNewProperty(property_values, L"RDBMS_GEOM");
-	  property_value = AddNewProperty(property_values, L"Geometry");
+      property_value = AddNewProperty(property_values, L"RDBMS_GEOM");
       property_value->SetValue(geometry_value);
       FDO_SAFE_RELEASE(geometry_value);
       FDO_SAFE_RELEASE(line_str);
@@ -10731,150 +10105,6 @@ void FdoExpressionFunctionTest::AddFeature (
 
 }  //  AddFeature ()
 
-void FdoExpressionFunctionTest::AddXYZMFeature (
-                                        FdoIConnection *current_connection
-                                        )
-
-// +---------------------------------------------------------------------------
-// | The function adds a new object for the specified class. The values being
-// | added are predefined based on the predefined schema.
-// +---------------------------------------------------------------------------
-
-{
-   // Declare and initialize all necessary local variables.
-
-    double                     coordinate_2D_buffer[2];
-	double                     coordinate_3D_buffer[4];
-	double                     coordinate_4D_buffer[5];
-	double                     coordinate_line_buffer[9];
-    FdoIInsert                 *insert_command      = NULL;
-    FdoILineString             *line_str            = NULL;
-	FdoIPoint				   *point               = NULL;
-    FdoGeometryValue           *geometry_value      = NULL;
-	FdoPropertyValue           *property_value      = NULL;
-    FdoFgfGeometryFactory      *geometry_factory    = NULL;
-    FdoPropertyValueCollection *property_values     = NULL;
-    FdoByteArray               *byte_array          = NULL;
-	FdoIFeatureReader          *feature_reader      = NULL;
-
-    try {
-
-      // Create the FdoIInsert command and set the necessary command properties.
-
-      insert_command = 
-            (FdoIInsert *) current_connection->CreateCommand(
-                                                        FdoCommandType_Insert);
-      // Add the geometry information for the new object.
-      coordinate_2D_buffer[0] = 201.0;
-      coordinate_2D_buffer[1] = 202.0;
-	  
-	  coordinate_3D_buffer[0] = 301.0;
-      coordinate_3D_buffer[1] = 302.0;
-      coordinate_3D_buffer[2] = 303.0;
-
-	  coordinate_4D_buffer[0] = 400.0;
-      coordinate_4D_buffer[1] = 401.0;
-      coordinate_4D_buffer[2] = 402.0;
-      coordinate_4D_buffer[3] = 403.0;
-
-	  coordinate_line_buffer[0] = 301.0;
-      coordinate_line_buffer[1] = 302.0;
-      coordinate_line_buffer[2] = 303.0;
-      coordinate_line_buffer[3] = 304.0;
-	  coordinate_line_buffer[4] = 311.0;
-      coordinate_line_buffer[5] = 312.0;
-      coordinate_line_buffer[6] = 313.0;
-      coordinate_line_buffer[7] = 314.0;
-
-      geometry_factory = FdoFgfGeometryFactory::GetInstance();
-	// Add a point XY geometry
-      insert_command->SetFeatureClassName(XY_POINT_CLASS);
-	  property_values = insert_command->GetPropertyValues();
-      point         = geometry_factory->CreatePoint(
-                                    FdoDimensionality_XY,
-                                    coordinate_2D_buffer);
-      byte_array       = geometry_factory->GetFgf(point);
-      geometry_value   = FdoGeometryValue::Create(byte_array);
-      property_value = AddNewProperty(property_values, L"Geometry");
-      property_value->SetValue(geometry_value);
-	  feature_reader = insert_command->Execute();
-
-
-	// Add a point XYZ geometry
-      insert_command->SetFeatureClassName(XYZ_POINT_CLASS);
-	  property_values = insert_command->GetPropertyValues();
-	  point         = geometry_factory->CreatePoint(
-                                    FdoDimensionality_XY | FdoDimensionality_Z,
-                                    coordinate_3D_buffer);
-      byte_array       = geometry_factory->GetFgf(point);
-      geometry_value   = FdoGeometryValue::Create(byte_array);
-      property_value = AddNewProperty(property_values, L"Geometry");
-      property_value->SetValue(geometry_value);
-	  feature_reader = insert_command->Execute();
-
-	  // Add a point XYZM geometry
-      insert_command->SetFeatureClassName(XYZM_POINT_CLASS);
-	  property_values = insert_command->GetPropertyValues();
-      point         = geometry_factory->CreatePoint(
-                                    FdoDimensionality_XY | FdoDimensionality_Z | FdoDimensionality_M,
-                                    coordinate_4D_buffer);
-      byte_array       = geometry_factory->GetFgf(point);
-      geometry_value   = FdoGeometryValue::Create(byte_array);
-      property_value = AddNewProperty(property_values, L"Geometry");
-      property_value->SetValue(geometry_value);
-	  feature_reader = insert_command->Execute();
-
-
-	  // Add a point XYM geometry
-      insert_command->SetFeatureClassName(XYM_POINT_CLASS);
-	  property_values = insert_command->GetPropertyValues();
-      point         = geometry_factory->CreatePoint(
-                                    FdoDimensionality_XY |  FdoDimensionality_M,
-                                    coordinate_3D_buffer);
-      byte_array       = geometry_factory->GetFgf(point);
-      geometry_value   = FdoGeometryValue::Create(byte_array);
-      property_value = AddNewProperty(property_values, L"Geometry");
-      property_value->SetValue(geometry_value);
-	  feature_reader = insert_command->Execute();
-
-  	  // Add a non-point (line) geometry
-      insert_command->SetFeatureClassName(XYZM_LINE_CLASS);
-	  property_values = insert_command->GetPropertyValues();
-      line_str         = geometry_factory->CreateLineString(
-                                    FdoDimensionality_XY|FdoDimensionality_Z|FdoDimensionality_M,
-                                    8, 
-                                    coordinate_line_buffer);
-      byte_array       = geometry_factory->GetFgf(line_str);
-      geometry_value   = FdoGeometryValue::Create(byte_array);
-      property_value = AddNewProperty(property_values, L"Geometry");
-      property_value->SetValue(geometry_value);
-
-	  feature_reader = insert_command->Execute();
-
-	// Clean up
-	  FDO_SAFE_RELEASE(point);
-	  FDO_SAFE_RELEASE(line_str);
-      FDO_SAFE_RELEASE(byte_array);
-	  FDO_SAFE_RELEASE(geometry_value);
-      FDO_SAFE_RELEASE(property_value);
-      FDO_SAFE_RELEASE(feature_reader);
-	  FDO_SAFE_RELEASE(insert_command);
-
-	}  //  try ...
-    catch (FdoException *exp) {
-
-     printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-     throw exp;
-	}
-    catch ( ... ) {
-
-      throw FdoException::Create(L"Failed to add XYZM a feature");
-
-    }  //  catch ...
-
-} // AddXYZMFeature()
-
-
 void FdoExpressionFunctionTest::AddTestSchema (
                                         FdoIConnection *current_connection,
                                         FdoString      *schema_name)
@@ -10928,36 +10158,6 @@ void FdoExpressionFunctionTest::AddTestSchema (
       // Add the test schema to the schema collection.
 
       schemas->Add(schema);
-
-	  // Create class with XY point geometry
-      printf(" >>> ...... adding class xy_point \n");
-	  schema_feature_class = CreateFdoFeatureClass(XY_POINT_CLASS, FdoGeometryType_Point, false, false);
-      classes->Add(schema_feature_class);
-      FDO_SAFE_RELEASE(schema_feature_class);
-
-	  // Create class with XYZ point geometry
-      printf(" >>> ...... adding class xyz_point \n");
-	  schema_feature_class = CreateFdoFeatureClass(XYZ_POINT_CLASS, FdoGeometryType_Point, true, false);
-      classes->Add(schema_feature_class);
-      FDO_SAFE_RELEASE(schema_feature_class);
-
-	  // Create class with XYZM point geometry
-      printf(" >>> ...... adding class xyzm_point \n");
-	  schema_feature_class = CreateFdoFeatureClass(XYZM_POINT_CLASS, FdoGeometryType_Point, true, true);
-      classes->Add(schema_feature_class);
-      FDO_SAFE_RELEASE(schema_feature_class);
-
-	  // Create class with XYM point geometry
-      printf(" >>> ...... adding class xym_point \n");
-	  schema_feature_class = CreateFdoFeatureClass(XYM_POINT_CLASS, FdoGeometryType_Point, false, true);
-      classes->Add(schema_feature_class);
-      FDO_SAFE_RELEASE(schema_feature_class);
-
-	  // Create class with XYZM line geometry
-      printf(" >>> ...... adding class xyzm_line \n");
-      schema_feature_class = CreateFdoFeatureClass(XYZM_LINE_CLASS);
-      classes->Add(schema_feature_class);
-      FDO_SAFE_RELEASE(schema_feature_class);
 
       // Set the active schema and create it.
 
@@ -11067,21 +10267,8 @@ FdoDataPropertyDefinition *FdoExpressionFunctionTest::CreateDataProperty (
 
 }  //  CreateDataProperty ()
 
-
 FdoFeatureClass *FdoExpressionFunctionTest::CreateFdoFeatureClass (
-                                                    FdoString *class_name 
-													)
-{
-	
-	return FdoExpressionFunctionTest::CreateFdoFeatureClass (class_name, -1, true,false);
-
-}
-FdoFeatureClass *FdoExpressionFunctionTest::CreateFdoFeatureClass (
-                                                    FdoString *class_name,
-													FdoInt32 geometry_type,
-													bool has_elevation,
-													bool has_measure
-													)
+                                                    FdoString *class_name)
 
 // +---------------------------------------------------------------------------
 // | The function creates a predefined feature class with the caller identify-
@@ -11168,17 +10355,7 @@ FdoFeatureClass *FdoExpressionFunctionTest::CreateFdoFeatureClass (
 	  data_property_definitions->Add(data_property_definition);
 	  FDO_SAFE_RELEASE(data_property_definition);
 
-      geometric_property_definition = CreateGeometricProperty(L"Geometry");
-	  // Set the geometry type,elevation and measure only if it was passed. 
-	  // To preserve existing default behavior during apply schema, we don't 
-	  // pass it all the time as other test might rely on this.
-	  if (geometry_type != -1 )
-	  {
-	       geometric_property_definition->SetGeometryTypes(geometry_type); 	   	       		
-		   geometric_property_definition->SetHasElevation(has_elevation);
-		   geometric_property_definition->SetHasMeasure(has_measure);
-	  }
-
+      geometric_property_definition = CreateGeometricProperty(L"RDBMS_GEOM");
 	  data_property_definitions->Add(geometric_property_definition);
       the_class->SetGeometryProperty(geometric_property_definition);
 	  FDO_SAFE_RELEASE(geometric_property_definition);
@@ -11263,11 +10440,6 @@ void FdoExpressionFunctionTest::SetupUnitTestEnvironment (
       for (int i = 0; i < 31; i++)
         AddFeature(current_connection, L"exfct_c1", i);
 
-      printf(" >>> ...... for class %s,%s \n", XYZM_POINT_CLASS, XYZM_LINE_CLASS);
-
-	  AddXYZMFeature(current_connection); 	
-
-
    }  //  try ...
 
    catch (FdoException *exp) {
@@ -11285,142 +10457,3 @@ void FdoExpressionFunctionTest::SetupUnitTestEnvironment (
 
 }  //  SetupUnitTestEnvironment ()
 
-void FdoExpressionFunctionTest::TestXYZMFunction()
-{
-	  FdoIExpressionCapabilities *    exp_cap;
-	  FdoFunctionDefinitionCollection * func_col; 
-	  FdoFunctionDefinition *         this_func;
-
-      CloseConnection();
-	  
-	  //FdoExpressionFunctionTest::setUp();
-	  Connect();
-
-      // Check the list of functions
-	  exp_cap = m_connection->GetExpressionCapabilities();
-	  func_col = exp_cap->GetFunctions();
-
-	  //// Check if each function exists
-      this_func = (FdoFunctionDefinition *) func_col->FindItem(L"X");
-	  printf("Function %ls found\n", this_func->GetName());	
-	  
-      this_func = (FdoFunctionDefinition *) func_col->FindItem(L"Y");
-	  printf("Function %ls found\n", this_func->GetName());	
-
-	  this_func = (FdoFunctionDefinition *) func_col->FindItem(L"Z");
-	  printf("Function %ls found\n", this_func->GetName());	
-
-	  this_func = (FdoFunctionDefinition *) func_col->FindItem(L"M");
-	  printf("Function %ls found\n", this_func->GetName());	
-
-
-	  TestXYZMClass(XY_POINT_CLASS);
-	  TestXYZMClass(XYZ_POINT_CLASS);
-	  TestXYZMClass(XYZM_POINT_CLASS);
-	  TestXYZMClass(XYM_POINT_CLASS);
-	  TestXYZMClass(XYZM_LINE_CLASS);
-
-      //CloseConnection();
-	
-}
-void FdoExpressionFunctionTest::TestXYZMClass(
-				   FdoString      *class_name
-				   )
-{
-	  FdoPtr<FdoComputedIdentifier>   x_value;
-	  FdoPtr<FdoComputedIdentifier>   y_value;
-	  FdoPtr<FdoComputedIdentifier>   z_value;
-	  FdoPtr<FdoComputedIdentifier>   m_value;
-	  FdoPtr<FdoISelect>              sel_cmd;
-	  FdoPtr<FdoIdentifierCollection> id_col;
-	  FdoPtr<FdoIFeatureReader>       feat_read;
-	  int							  i;
-
-      // Execute the request that is to be tested with this test case.
-	  sel_cmd = (FdoISelect*) m_connection->CreateCommand(FdoCommandType_Select);
-	  sel_cmd->SetFeatureClassName(class_name);
-
-      id_col = sel_cmd->GetPropertyNames();
-
-	  // Test X() 
-      x_value = (FdoComputedIdentifier*)FdoExpression::Parse(L"(X(Geometry) as x_value)");
-      id_col->Add(x_value);
-	  feat_read = sel_cmd->Execute();
-	  i = 0;
-	  while (feat_read->ReadNext() )
-	  {
-			i++;
-			if ( feat_read->IsNull(L"x_value") ) 
-			{
-				printf("Feature(%d) X=null\n", i );
-			}
-			else 	
-			{
-				FdoDouble x_value_ret = feat_read->GetDouble(L"x_value");
-				printf("Feature(%d) X=%f\n", i, x_value_ret);
-			}
-	  }
-	  printf(" >>> Test succeeded \n");
-	  
-	  // Test Y() 
-      y_value = (FdoComputedIdentifier*)FdoExpression::Parse(L"(Y(Geometry) as y_value)");
-	  id_col->Clear();
-      id_col->Add(y_value);
-	  feat_read = sel_cmd->Execute();
-	  i = 0;
-	  while (feat_read->ReadNext() )
-	  {
-			i++;
-			if ( feat_read->IsNull(L"y_value") ) 
-			{
-				printf("Feature(%d) Y=null\n", i );
-			}
-			else 
-			{
-				FdoDouble x_value_ret = feat_read->GetDouble(L"y_value");
-				printf("Feature(%d) Y=%f\n", i, x_value_ret);
-	        }
-	  }
-	  printf(" >>> Test succeeded \n");
-
-	  // Test Z() 
-      z_value = (FdoComputedIdentifier*)FdoExpression::Parse(L"(Z(Geometry) as z_value)");
-	  id_col->Clear();
-      id_col->Add(z_value);
-	  feat_read = sel_cmd->Execute();
-	  i = 0;
-	  while (feat_read->ReadNext() )
-	  {
-			i++;
-			if ( feat_read->IsNull(L"z_value") ) 
-			{
-				printf("Feature(%d) Z=null\n", i );
-			}
-			else 
-			{
-				FdoDouble x_value_ret = feat_read->GetDouble(L"z_value");
-				printf("Feature(%d) Z=%f\n", i, x_value_ret);
-	        }	  }
-	  printf(" >>> Test succeeded \n");
-
-	  // Test M() 
-      m_value = (FdoComputedIdentifier*)FdoExpression::Parse(L"(M(Geometry) as m_value)");
-	  id_col->Clear();
-      id_col->Add(m_value);
-	  feat_read = sel_cmd->Execute();
-	  i = 0;
-	  while (feat_read->ReadNext() )
-	  {
-		i++;
-			if ( feat_read->IsNull(L"m_value") ) 
-			{
-				printf("Feature(%d) M=null\n", i );
-			}
-			else 
-			{
-				FdoDouble x_value_ret = feat_read->GetDouble(L"m_value");
-				printf("Feature(%d) M=%f\n", i, x_value_ret);
-	        }	  }
-	  printf(" >>> Test succeeded \n");
-
-}

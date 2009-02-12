@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_p.h 15768 2008-11-20 05:17:40Z warmerdam $
+ * $Id: hfa_p.h 11718 2007-07-02 20:59:04Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Private class declarations for the HFA classes used to read
@@ -106,7 +106,7 @@ int HFACreateSpillStack( HFAInfo_t *, int nXSize, int nYSize, int nLayers,
                          GIntBig *pnValidFlagsOffset, 
                          GIntBig *pnDataOffset );
 
-const char ** GetHFAAuxMetaDataList();
+char ** GetHFAAuxMetaDataList();
 
 #define HFA_PRIVATE
 
@@ -136,13 +136,11 @@ class HFABand
 
     int		nPCTColors;
     double	*apadfPCT[4];
-    double      *padfPCTBins;
 
     CPLErr	LoadBlockInfo();
     CPLErr	LoadExternalBlockInfo();
     
     void ReAllocBlock( int iBlock, int nSize );
-    void NullBlock( void * );
 
   public:
     		HFABand( HFAInfo_t *, HFAEntry * );
@@ -176,10 +174,7 @@ class HFABand
     const char * GetBandName();
     void SetBandName(const char *pszName);
 
-    CPLErr  SetNoDataValue( double dfValue );
-
-    CPLErr	GetPCT( int *, double **, double **, double **, double **,
-                        double ** );
+    CPLErr	GetPCT( int *, double **, double **, double **, double ** );
     CPLErr	SetPCT( int, double *, double *, double *, double * );
 
     int         CreateOverview( int nOverviewLevel );
@@ -222,8 +217,6 @@ class HFAEntry
     int 	GetFieldValue( const char *, char, void * );
     CPLErr      SetFieldValue( const char *, char, void * );
 
-    int         bIsMIFObject;
-
 public:
     		HFAEntry( HFAInfo_t * psHFA, GUInt32 nPos,
                           HFAEntry * poParent, HFAEntry *poPrev);
@@ -232,8 +225,6 @@ public:
                           const char *pszNodeName,
                           const char *pszTypeName,
                           HFAEntry *poParent );
-
-                HFAEntry( HFAEntry *poContainer, const char *pszMIFObjectPath );
                           
     virtual     ~HFAEntry();                
 
@@ -293,8 +284,6 @@ class HFAField
 
     char	*pszFieldName;
 
-    char        szNumberString[28]; /* buffer used to return an int as a string */
-
     		HFAField();
                 ~HFAField();
 
@@ -317,7 +306,7 @@ class HFAField
                      const char *pszPrefix = NULL );
     
     int		GetInstBytes( GByte *, int );
-    int		GetInstCount( GByte * pabyData, int nDataSize );
+    int		GetInstCount( GByte * pabyData );
 };
 
 
@@ -371,7 +360,7 @@ class HFADictionary
     int         nTypesMax;
     HFAType	**papoTypes;
     
-                HFADictionary( const char *pszDict );
+    		HFADictionary( const char * );
                 ~HFADictionary();
 
     HFAType	*FindType( const char * );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili1driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrili1driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1Layer class.
@@ -30,7 +30,7 @@
 #include "ogr_ili1.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrili1driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrili1driver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRILI1Driver()                           */

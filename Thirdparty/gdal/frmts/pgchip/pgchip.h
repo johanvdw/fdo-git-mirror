@@ -69,10 +69,12 @@ class PGCHIPDataset : public GDALDataset{
     friend class PGCHIPRasterBand;
 
     PGconn      *hPGConn;
-    char        *pszTableName;
-    char	*pszDSName;
+    char        *pszConnectionString;
+    char	*pszDBName;
+    char        *pszName;
     char	*pszProjection;
-
+    int         bHavePostGIS;
+    
     CHIP        *PGCHIP;
     int         SRID;
     int         nBitDepth;
@@ -95,6 +97,9 @@ class PGCHIPDataset : public GDALDataset{
     static void        printChipInfo(const CHIP& chip);
 
     CPLErr 	GetGeoTransform( double * padfTransform );
+    virtual CPLErr      SetGeoTransform( double * );
+    
+    CPLErr 	SetProjection( const char *);
     const char *GetProjectionRef();
 };
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57featuredefns.cpp 13460 2007-12-30 14:02:04Z warmerdam $
+ * $Id: s57featuredefns.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements methods to create OGRFeatureDefns for various
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57featuredefns.cpp 13460 2007-12-30 14:02:04Z warmerdam $");
+CPL_CVSID("$Id: s57featuredefns.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 
 /************************************************************************/
@@ -354,7 +354,7 @@ OGRFeatureDefn *S57GenerateObjectClassDefn( S57ClassRegistrar *poCR,
             if( nOptionFlags & S57M_SPLIT_MULTIPOINT )
                 poFDefn->SetGeomType( wkbPoint25D );
             else
-                poFDefn->SetGeomType( wkbMultiPoint25D );
+                poFDefn->SetGeomType( wkbMultiPoint );
         }
         else
             poFDefn->SetGeomType( wkbPoint );

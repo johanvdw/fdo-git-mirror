@@ -237,7 +237,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnChar(
     bool bNullable,
     int length,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -249,7 +249,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDate(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -263,7 +263,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDecimal(
     int length,
     int scale,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -275,7 +275,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnSingle(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -287,7 +287,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDouble(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -313,10 +313,20 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnBool(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
+	if (defaultValue.GetLength() > 0)
+	{
+		bool isBool = defaultValue.ToBoolean();
+		if (isBool == true)
+			defaultValue = L"1";
+		else if (isBool == false)
+			defaultValue = L"0";
+		else
+			defaultValue = L"";
+	}
     return new FdoSmPhMySqlColumnBool(columnName, elementState, this, bNullable, rootColumnName, defaultValue, colRdr);
 }
 
@@ -325,7 +335,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnByte(
     FdoSchemaElementState elementState,
     bool bNullable,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -338,7 +348,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnInt16(
     bool bNullable,
     bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -351,7 +361,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnInt32(
     bool bNullable,
     bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -364,7 +374,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnInt64(
     bool bNullable,
 	bool bIsAutoincremented,
     FdoStringP rootColumnName,
-	FdoPtr<FdoDataValue> defaultValue,
+	FdoStringP defaultValue,
     FdoSmPhRdColumnReader* colRdr
 )
 {
@@ -400,7 +410,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDbObject(
         bNullable, 
         (int) GetManager()->DbObjectNameMaxLen(), 
         rootColumnName,
-		(FdoDataValue*) NULL,
+		L"",
         colRdr
     );
 }

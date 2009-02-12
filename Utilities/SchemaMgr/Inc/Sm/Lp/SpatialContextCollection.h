@@ -21,7 +21,6 @@
 #endif
 
 #include <Sm/Lp/SpatialContext.h>
-#include <Sm/Lp/SpatialContextGeom.h>
 #include <Sm/NamedCollection.h>
 
 // Represents a collection of Spatial Contexts in Logical/Physical form.
@@ -49,7 +48,7 @@ public:
 
     // Given database object and column name, returns the association to spatial context.
     // Returns NULL if the column is not geometric or has no associated spatial context.
-    FdoSmLpSpatialContextGeomP FindSpatialContextGeom( FdoStringP dbObjectName, FdoStringP columnName );
+    FdoSmPhSpatialContextGeomP FindSpatialContextGeom( FdoStringP dbObjectName, FdoStringP columnName );
 
     FdoSmLpSpatialContextP CreateSpatialContext(
         FdoString* name,
@@ -87,7 +86,7 @@ public:
     // contexts when metaschema or config file is used).
     void Load( FdoInt64 scId = -1 );
 
-	FdoSmLpSpatialContextGeomsP  GetSpatialContextGeoms();
+	FdoSmPhSpatialContextGeomsP  GetSpatialContextGeoms();
 
 protected:
     /// The following two functions create a generic FdoSmLpSpatialContext)
@@ -123,7 +122,7 @@ private:
     bool        mAreLoaded;
 	FdoSmPhMgrP mPhysicalSchema;
 
-	FdoSmLpSpatialContextGeomsP mSpatialContextGeoms;
+	FdoSmPhSpatialContextGeomsP mSpatialContextGeoms;
 
     // MAP for fast lookup of spatial contexts by id.
     FdoDictionaryP mIdMap;

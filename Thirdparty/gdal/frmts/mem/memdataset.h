@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: memdataset.h 15233 2008-08-27 19:23:03Z rouault $
+ * $Id: memdataset.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Memory Array Translator
  * Purpose:  Declaration of MEMDataset, and MEMRasterBand.
@@ -52,10 +52,6 @@ class CPL_DLL MEMDataset : public GDALDataset
 
     char        *pszProjection;
 
-    int          nGCPCount;
-    GDAL_GCP    *pasGCPs;
-    CPLString    osGCPProjection;
-
   public:
                  MEMDataset();
     virtual      ~MEMDataset();
@@ -65,12 +61,6 @@ class CPL_DLL MEMDataset : public GDALDataset
 
     virtual CPLErr GetGeoTransform( double * );
     virtual CPLErr SetGeoTransform( double * );
-
-    virtual int    GetGCPCount();
-    virtual const char *GetGCPProjection();
-    virtual const GDAL_GCP *GetGCPs();
-    virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                            const char *pszGCPProjection );
 
     virtual CPLErr        AddBand( GDALDataType eType, 
                                    char **papszOptions=NULL );

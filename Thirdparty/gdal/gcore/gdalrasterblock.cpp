@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalrasterblock.cpp 13986 2008-03-12 22:10:20Z rouault $
+ * $Id: gdalrasterblock.cpp 12426 2007-10-15 03:29:04Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRasterBlock class and related global 
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalrasterblock.cpp 13986 2008-03-12 22:10:20Z rouault $");
+CPL_CVSID("$Id: gdalrasterblock.cpp 12426 2007-10-15 03:29:04Z warmerdam $");
 
 static int bCacheMaxInitialized = FALSE;
 static int nCacheMax = 40 * 1024*1024;
@@ -357,15 +357,14 @@ CPLErr GDALRasterBlock::Internalize()
     int         nSizeInBytes;
     int         nCurCacheMax = GDALGetCacheMax();
 
-    //FIXME? : risk of overflow in multiplication
     nSizeInBytes = nXSize * nYSize * (GDALGetDataTypeSize(eType) / 8);
 
     pNewData = VSIMalloc( nSizeInBytes );
     if( pNewData == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory, 
-                  "GDALRasterBlock::Internalize : Out of memory allocating %d bytes.",
-                  nSizeInBytes);
+                  "Out of memory allocating %d byte raster cache block.",
+                  nSizeInBytes );
         return( CE_Failure );
     }
 

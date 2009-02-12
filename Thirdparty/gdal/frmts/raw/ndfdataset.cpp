@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ndfdataset.cpp 15596 2008-10-24 21:17:50Z warmerdam $
+ * $Id: ndfdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  NDF Driver
  * Purpose:  Implementation of NLAPS Data Format read support.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ndfdataset.cpp 15596 2008-10-24 21:17:50Z warmerdam $");
+CPL_CVSID("$Id: ndfdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -44,7 +44,6 @@ class NDFDataset : public RawDataset
     double      adfGeoTransform[6];
 
     char	*pszProjection;
-    char       **papszExtraFiles;
 
     char        **papszHeader;
     const char  *Get( const char *pszKey, const char *pszDefault);
@@ -57,7 +56,6 @@ class NDFDataset : public RawDataset
 
     virtual CPLErr  GetGeoTransform( double * padfTransform );
     virtual const char *GetProjectionRef(void);
-    virtual char **GetFileList(void);
 
     static GDALDataset *Open( GDALOpenInfo * );
 };
@@ -71,7 +69,6 @@ NDFDataset::NDFDataset()
     pszProjection = CPLStrdup("");
 
     papszHeader = NULL;
-    papszExtraFiles = NULL;
 
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
@@ -91,7 +88,6 @@ NDFDataset::~NDFDataset()
     FlushCache();
     CPLFree( pszProjection );
     CSLDestroy( papszHeader );
-    CSLDestroy( papszExtraFiles );
 
     for( int i = 0; i < GetRasterCount(); i++ )
     {
@@ -135,25 +131,6 @@ const char *NDFDataset::Get( const char *pszKey, const char *pszDefault )
         return pszDefault;
     else
         return pszResult;
-}
-
-/************************************************************************/
-/*                            GetFileList()                             */
-/************************************************************************/
-
-char **NDFDataset::GetFileList()
-
-{
-    char **papszFileList = NULL;
-
-    // Main data file, etc. 
-    papszFileList = GDALPamDataset::GetFileList();
-
-    // Header file.
-    papszFileList = CSLInsertStrings( papszFileList, -1,
-                                      papszExtraFiles );
-
-    return papszFileList;
 }
 
 /************************************************************************/
@@ -222,7 +199,6 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Currently NDF driver supports only 8bit BYTE format." );
-        CSLDestroy( papszHeader );
         return NULL;
     }
 
@@ -247,37 +223,29 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
     for( iBand = 0; iBand < nBands; iBand++ )
     {
         char szKey[100];
-        CPLString osFilename;
+        const char *pszFilename;
 
         sprintf( szKey, "BAND%d_FILENAME", iBand+1 );
-        osFilename = poDS->Get(szKey,"");
+        pszFilename = poDS->Get(szKey,NULL);
 
         // NDF1 file do not include the band filenames.
-        if( osFilename.size() == 0 )
+        if( pszFilename == NULL )
         {
             char szBandExtension[15];
             sprintf( szBandExtension, "I%d", iBand+1 );
-            osFilename = CPLResetExtension( poOpenInfo->pszFilename, 
-                                            szBandExtension );
-        }
-        else
-        {      
-            CPLString osBasePath = CPLGetPath(poOpenInfo->pszFilename);
-            osFilename = CPLFormFilename( osBasePath, osFilename, NULL);
+            pszFilename = CPLResetExtension( poOpenInfo->pszFilename, 
+                                             szBandExtension );
         }
 
-        FILE *fpRaw = VSIFOpenL( osFilename, "rb" );
+        FILE *fpRaw = VSIFOpenL( pszFilename, "rb" );
         if( fpRaw == NULL )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "Failed to open band file: %s", 
-                      osFilename.c_str() );
+                      pszFilename );
             delete poDS;
             return NULL;
         }
-        poDS->papszExtraFiles = 
-            CSLAddString( poDS->papszExtraFiles, 
-                          osFilename );
 
         RawRasterBand *poBand = 
             new RawRasterBand( poDS, iBand+1, fpRaw, 0, 1, poDS->nRasterXSize,
@@ -297,45 +265,14 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Fetch and parse USGS projection parameters.                     */
-/* -------------------------------------------------------------------- */
-    double adfUSGSParms[15] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    char **papszParmTokens = 
-        CSLTokenizeStringComplex( poDS->Get( "USGS_PROJECTION_NUMBER", "" ),
-                                  ",", FALSE, TRUE );
-
-    if( CSLCount( papszParmTokens ) >= 15 )
-    {
-        int i;
-        for( i = 0; i < 15; i++ )
-            adfUSGSParms[i] = atof(papszParmTokens[i]);
-    }
-            
-/* -------------------------------------------------------------------- */
 /*      Minimal georef support ... should add full USGS style           */
 /*      support at some point.                                          */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS;
-    int nUSGSProjection = atoi(poDS->Get( "USGS_PROJECTION_NUMBER", "" ));
-    int nZone = atoi(poDS->Get("USGS_MAP_ZONE","0"));
 
-    oSRS.importFromUSGS( nUSGSProjection, nZone, adfUSGSParms, 12 );
-
-    CPLString osDatum = poDS->Get( "HORIZONTAL_DATUM", "" );
-    if( EQUAL(osDatum,"WGS84") || EQUAL(osDatum,"NAD83") 
-        || EQUAL(osDatum,"NAD27") )
+    if( EQUAL(poDS->Get( "USGS_PROJECTION_NUMBER", "" ),"1") )
     {
-        oSRS.SetWellKnownGeogCS( osDatum );
-    }
-    else if( EQUALN(osDatum,"NAD27",5) )
-    {
-        oSRS.SetWellKnownGeogCS( "NAD27" );
-    }
-    else
-    {
-        CPLError( CE_Warning, CPLE_AppDefined,
-                  "Unrecognised datum name in NLAPS/NDF file:%s, assuming WGS84.", 
-                  osDatum.c_str() );
+        oSRS.SetUTM( atoi(poDS->Get("USGS_MAP_ZONE","0")) );
         oSRS.SetWellKnownGeogCS( "WGS84" );
     }
 

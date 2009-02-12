@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravcbindriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogravcbindriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  OGRAVCBinDriver implementation (Arc/Info Binary Coverages)
@@ -29,7 +29,7 @@
 
 #include "ogr_avc.h"
 
-CPL_CVSID("$Id: ogravcbindriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogravcbindriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRAVCBinDriver()                          */

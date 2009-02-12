@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5imagedataset.cpp 14635 2008-06-06 04:35:05Z warmerdam $
+ * $Id: hdf5imagedataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Read subdatasets of HDF5 file.
@@ -26,9 +26,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-
-#define H5_USE_16_API
-
 #include "hdf5.h"
 
 #include "gdal_pam.h"
@@ -37,7 +34,7 @@
 #include "hdf5dataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: hdf5imagedataset.cpp 14635 2008-06-06 04:35:05Z warmerdam $");
+CPL_CVSID("$Id: hdf5imagedataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_HDF5Image(void);
@@ -104,7 +101,6 @@ HDF5ImageDataset::HDF5ImageDataset()
     fp=NULL;
     nGCPCount       = -1;
     pszProjection   = NULL;
-    pszGCPProjection= NULL;
     pasGCPList      = NULL;
     papszName       = NULL;
     pszFilename     = NULL;
@@ -126,9 +122,6 @@ HDF5ImageDataset::~HDF5ImageDataset( )
 
     if( papszName != NULL )
     	CSLDestroy( papszName );
-
-    CPLFree(pszProjection);
-    CPLFree(pszGCPProjection);
 
     if( dims )
 	CPLFree( dims );
@@ -364,7 +357,7 @@ GDALDataset *HDF5ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 	strcat(szFilename, poDS->papszName[2]);
         nDatasetPos = 3;
     }
-
+    printf("szFilenname %s\n",szFilename);
     if( !H5Fis_hdf5(szFilename) ) {
         delete poDS;
         return NULL;
@@ -459,9 +452,6 @@ void GDALRegister_HDF5Image( )
 
 {
     GDALDriver  *poDriver;
-    
-    if (! GDAL_CHECK_VERSION("HDF5Image driver"))
-        return;
 
     if(  GDALGetDriverByName( "HDF5Image" ) == NULL )
 	{
@@ -554,7 +544,6 @@ CPLErr HDF5ImageDataset::CreateProjections()
 		  Longitude );
 	
 	oSRS.SetWellKnownGeogCS( "WGS84" );
-  CPLFree(pszProjection);
 	oSRS.exportToWkt( &pszProjection );
 	oSRS.exportToWkt( &pszGCPProjection );
 	

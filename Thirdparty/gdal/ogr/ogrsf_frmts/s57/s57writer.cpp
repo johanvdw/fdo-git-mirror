@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57writer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: s57writer.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Writer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57writer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: s57writer.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                             S57Writer()                              */

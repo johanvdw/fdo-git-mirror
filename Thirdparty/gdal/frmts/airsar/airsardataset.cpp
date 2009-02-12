@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: airsardataset.cpp 13500 2008-01-08 22:17:42Z rouault $
+ * $Id: airsardataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  AirSAR Reader
  * Purpose:  Implements read support for AirSAR Polarimetric data.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: airsardataset.cpp 13500 2008-01-08 22:17:42Z rouault $");
+CPL_CVSID("$Id: airsardataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_AirSAR(void);
@@ -318,20 +318,9 @@ CPLErr AirSARDataset::LoadLine( int iLine )
 /* -------------------------------------------------------------------- */
     if( pabyCompressedLine == NULL )
     {
-        pabyCompressedLine = (GByte *) VSIMalloc2(nRasterXSize, 10);
+        pabyCompressedLine = (GByte *) CPLMalloc(nRasterXSize * 10);
 
-        padfMatrix = (double *) VSIMalloc2(10* sizeof(double), nRasterXSize);
-        if (pabyCompressedLine == NULL ||
-            padfMatrix == NULL)
-        {
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "AirSARDataset::LoadLine : Out of memory. "
-                     "Probably due to corrupted dataset (nRasterXSize = %d)",
-                     nRasterXSize);
-            CPLFree (pabyCompressedLine);
-            CPLFree (padfMatrix);
-            return CE_Failure;
-        }
+        padfMatrix = (double *) CPLMalloc(sizeof(double) * nRasterXSize*10);
     }
 
     CPLAssert( nRecordLength == nRasterXSize * 10 );
@@ -622,8 +611,6 @@ GDALDataset *AirSARDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetBand( 6, new AirSARRasterBand( poDS, 6 ));
 
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
-
-    poDS->SetMetadataItem( "MATRIX_REPRESENTATION", "SYMMETRIZED_COVARIANCE" );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */

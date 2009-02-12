@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2readerp.h 11354 2007-04-26 00:26:17Z mloskot $
+ * $Id: ili2readerp.h 11557 2007-05-18 18:11:25Z pka $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Private Declarations for Reader code.

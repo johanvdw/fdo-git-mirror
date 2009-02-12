@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsiiostream.h 10957 2007-03-13 18:59:03Z warmerdam $
+ * $Id: vsiiostream.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  ECW Driver: virtualized io stream declaration.
@@ -67,6 +67,10 @@ GDALDataset *
 ECWCreateJPEG2000(const char *pszFilename, int nXSize, int nYSize, int nBands, 
                   GDALDataType eType, char **papszOptions );
 #endif
+
+CPL_C_START
+char **ECWGetCSList(void);
+CPL_C_END
 
 /************************************************************************/
 /* ==================================================================== */

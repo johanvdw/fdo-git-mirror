@@ -31,7 +31,7 @@ ArcSDETests::~ArcSDETests(void)
 FdoIConnection* ArcSDETests::GetConnection ()
 {
     FdoPtr<IConnectionManager> manager = FdoFeatureAccessManager::GetConnectionManager ();
-    return (manager->CreateConnection (L"OSGeo.ArcSDE"));
+    return (manager->CreateConnection (L"OSGeo.ArcSDE.3.3"));
 }
 
 void ArcSDETests::fail (FdoException* ge)
@@ -1320,14 +1320,7 @@ void ArcSDETests::CreateOrUpdateSpatialContext(FdoIConnection *conn, FdoString* 
     set_extent(createSC, dXMin, dYMin, dXMax, dYMax);
     createSC->SetCoordinateSystem(scCoordSys);
     createSC->SetUpdateExisting(bExists);
-    try 
-    {
-        createSC->Execute();
-    }
-    catch (FdoException *ex)
-    {
-        ex->Release();
-    }
+    createSC->Execute();
 }
 
 

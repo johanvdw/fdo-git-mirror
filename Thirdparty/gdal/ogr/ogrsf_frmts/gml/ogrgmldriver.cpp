@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgmldriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: ogrgmldriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  OGRGMLDriver implementation
@@ -30,7 +30,7 @@
 #include "ogr_gml.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgmldriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: ogrgmldriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                          ~OGRGMLDriver()                           */

@@ -37,16 +37,6 @@ public:
     /// Get the fully qualified name for this column.
     FdoStringP GetQName() const;
 
-    /// Get the root column for this column. The root column is the 
-    /// corresponding column in the root DbObject for this column's 
-    /// containing DbObject.
-    /// Functionality is limited:
-    ///   - Does name match to find root column in root DbObject. Therefore
-    ///     returns NULL if root column named differently from this column.
-    ///   - Returns NULL if this column is in a view that is based on 
-    ///     more than one table. 
-    FdoPtr<FdoSmPhColumn> GetRootColumn();
-
     /// Gets the root column name. When this column is in a view
     /// on a foreign table, root column is the corresponding column
     /// in this table.
@@ -68,7 +58,7 @@ public:
     virtual int GetLength() const;
 
 	/// Gets the default column value
-	virtual FdoPtr<FdoDataValue> GetDefaultValue() const;
+	virtual FdoStringP GetDefaultValue() const;
 
     /// The following Min/Max length functions can be overridden to provide RDBMS-specific
     /// settings.
@@ -216,9 +206,6 @@ public:
     /// Mainly for unit testing.
 	virtual void XMLSerialize( FILE* xmlFp, int ref ) const;
 
-    // Converts FDO Property Data Type to Schema Manager column type.
-    static FdoSmPhColType FdoDataType2ColType( FdoDataType fdoType );
-
 protected:
     /// Creates a new Column Definition.
 	//
@@ -241,7 +228,7 @@ protected:
 		FdoSmPhDbObject* parentObject,
 		bool bNullable,
         FdoStringP rootColumnName = L"",
-		FdoPtr<FdoDataValue> defaultValue = (FdoDataValue*) NULL,
+		FdoStringP defaultValue = L"",
         FdoSmPhRdColumnReader* reader = NULL
 	);
 
@@ -281,7 +268,7 @@ private:
 
     int miDimensionality;
 
-	FdoPtr<FdoDataValue> mDefaultValue;
+	FdoStringP mDefaultValue;
 };
 
 typedef FdoPtr<FdoSmPhColumn> FdoSmPhColumnP;

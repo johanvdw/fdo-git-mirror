@@ -389,6 +389,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\port\cpl_dir.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\port\cpl_error.cpp"
 				>
 			</File>
@@ -402,14 +406,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\port\cpl_getexecpath.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\port\cpl_http.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\port\cpl_http.h"
 				>
 			</File>
 			<File
@@ -907,10 +903,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\ogr\ogrsf_frmts\shape\shp_vsi.c"
-						>
-					</File>
-					<File
 						RelativePath="..\..\..\ogr\ogrsf_frmts\shape\shpopen.c"
 						>
 					</File>
@@ -977,10 +969,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gcore\gdalallvalidmaskband.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\gcore\gdalcolortable.cpp"
 				>
 			</File>
@@ -1025,19 +1013,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gcore\gdalnodatamaskband.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\gcore\gdalopeninfo.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\gcore\gdalpamdataset.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\gcore\gdalpamproxydb.cpp"
 				>
 			</File>
 			<File

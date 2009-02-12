@@ -1,9 +1,31 @@
 /*
- * $Id: ogr_python.i 14282 2008-04-13 09:56:34Z rouault $
+ * $Id: ogr_python.i 10425 2006-12-01 05:24:54Z fwarmerdam $
  *
  * python specific code for ogr bindings.
  */
 
+/*
+ * $Log$
+ * Revision 1.5  2006/12/01 05:24:54  fwarmerdam
+ * reimplement Destroy, Release, Reference and Dereference
+ *
+ * Revision 1.4  2006/11/30 21:45:32  fwarmerdam
+ * Improve __getattr__ and GetField() methods on feature.
+ *
+ * Revision 1.3  2005/10/16 20:39:56  hobu
+ * fix a typo
+ *
+ * Revision 1.2  2005/09/06 01:51:42  kruland
+ * Removed GetDriverByName, GetDriver, Open, OpenShared because they are defined
+ * in ogr now.
+ * Removed %feature("compactdefaultargs") because it's defined in ogr.i now.
+ *
+ * Revision 1.1  2005/09/02 16:19:23  kruland
+ * Major reorganization to accomodate multiple language bindings.
+ * Each language binding can define renames and supplemental code without
+ * having to have a lot of conditionals in the main interface definition files.
+ *
+ */
 
 %feature("autodoc");
 
@@ -15,30 +37,10 @@
   
 %}
 
-
-/*%{
-    
-#if PY_MINOR_VERSION >= 4 
-#include "datetime.h" 
-#define USE_PYTHONDATETIME 1
-#endif
-%}
-*/
-
-%include "ogr_layer_docs.i"
-%include "ogr_datasource_docs.i"
-%include "ogr_driver_docs.i"
-%include "ogr_feature_docs.i"
-%include "ogr_featuredef_docs.i"
-%include "ogr_fielddef_docs.i"
-%include "ogr_geometry_docs.i"
-
 %rename (GetDriverCount) OGRGetDriverCount;
 %rename (GetOpenDSCount) OGRGetOpenDSCount;
 %rename (SetGenerate_DB2_V72_BYTE_ORDER) OGRSetGenerate_DB2_V72_BYTE_ORDER;
 %rename (RegisterAll) OGRRegisterAll();
-
-%include "python_exceptions.i"
 
 %extend OGRDataSourceShadow {
   %pythoncode {
@@ -72,7 +74,7 @@ ds[0:4] would return a list of the first four layers."""
         import types
         if isinstance(value, types.SliceType):
             output = []
-            for i in xrange(value.start,value.stop,value.step):
+            for i in xrange(value.start,value.stop,step=value.step):
                 try:
                     output.append(self.GetLayer(i))
                 except OGRError: #we're done because we're off the end
@@ -90,27 +92,13 @@ ds[0:4] would return a list of the first four layers."""
     def GetLayer(self,iLayer=0):
         """Return the layer given an index or a name"""
         import types
-        if isinstance(iLayer, types.StringTypes):
-            return self.GetLayerByName(str(iLayer))
+        if isinstance(iLayer, types.StringType):
+            return self.GetLayerByName(iLayer)
         elif isinstance(iLayer, types.IntType):
             return self.GetLayerByIndex(iLayer)
         else:
             raise TypeError, "Input %s is not of String or Int type" % type(iLayer)
-
-    def DeleteLayer(self, value):
-        """Deletes the layer given an index or layer name"""
-        import types
-        if isinstance(value, types.StringTypes):
-            for i in range(self.GetLayerCount()):
-                name = self.GetLayer(i).GetName()
-                if name == value:
-                    return _ogr.DataSource_DeleteLayer(self, i)
-            raise ValueError, "Layer %s not found to delete" % value
-        elif isinstance(value, types.IntType):
-            return _ogr.DataSource_DeleteLayer(self, value)
-        else:
-            raise TypeError, "Input %s is not of String or Int type" % type(iLayer)
-  }
+}
 }
 
 %extend OGRLayerShadow {
@@ -131,7 +119,6 @@ ds[0:4] would return a list of the first four layers."""
         """Support list and slice -like access to the layer.
 layer[0] would return the first feature on the layer.
 layer[0:4] would return a list of the first four features."""
-        import types
         if isinstance(value, types.SliceType):
             output = []
             if value.stop == sys.maxint:
@@ -141,7 +128,7 @@ layer[0:4] would return a list of the first four features."""
                 stop = len(self) - 1
             else:
                 stop = value.stop
-            for i in xrange(value.start,stop,value.step):
+            for i in xrange(value.start,stop,step=value.step):
                 feature = self.GetFeature(i)
                 if feature:
                     output.append(feature)
@@ -169,15 +156,6 @@ layer[0:4] would return a list of the first four features."""
             raise StopIteration
         else:
             return feature
-
-    def schema(self):
-        output = []
-        defn = self.GetLayerDefn()
-        for n in range(defn.GetFieldCount()):
-            output.append(defn.GetFieldDefn(n))
-        return output
-    schema = property(schema)
-
   }
 
 }
@@ -222,53 +200,9 @@ layer[0:4] would return a list of the first four features."""
             return self.GetFieldAsInteger(fld_index)
         if fld_type == OFTReal:
             return self.GetFieldAsDouble(fld_index)
-        if fld_type == OFTDateTime or fld_type == OFTDate or fld_type == OFTTime:
-            return self.GetFieldAsDate(fld_index)
         # default to returning as a string.  Should we add more types?
         return self.GetFieldAsString(fld_index)
-    
-    def keys(self):
-        names = []
-        for i in range(self.GetFieldCount()):
-            fieldname = self.GetFieldDefnRef(i).GetName()
-            names.append(fieldname)
-        return names
-    
-    def items(self):
-        keys = self.keys()
-        output = {}
-        for key in keys:
-            output[key] = self.GetField(key)
-        return output
-    def geometry(self):
-        return self.GetGeometryRef()
-
-    def ExportToJson(self, as_object = False):
-        """Exports a GeoJSON object which represents the Feature. The
-           as_object parameter determines whether the returned value 
-           should be a Python object instead of a string. Defaults to False."""
-        output = {'type':'Feature',
-                   'geometry': self.GetGeometryRef().ExportToJson(as_object=True),
-                   'properties': {}
-                  } 
         
-        fid = self.GetFID()
-        if fid:
-            output['id'] = fid
-            
-        for key in self.keys():
-            output['properties'][key] = self.GetField(key)
-        
-        if not as_object:
-            try:
-                import simplejson
-            except ImportError, error:
-                raise ImportError("Unable to import simplejson, needed for ExportToJson. (%s)" % error)
-            output = simplejson.dumps(output)
-        
-        return output
-
-
 }
 
 }
@@ -276,24 +210,13 @@ layer[0:4] would return a list of the first four features."""
 %extend OGRGeometryShadow {
 %pythoncode {
   def Destroy(self):
-    self.__swig_destroy__(self) 
     self.__del__()
     self.thisown = 0
 
   def __str__(self):
     return self.ExportToWkt()
-    
-
-  def __reduce__(self):
-    return (self.__class__, (), self.ExportToWkb())
- 	
-  def __setstate__(self, state):
-      result = CreateGeometryFromWkb(state)
-      self.this = result.this
-
 }
 }
-
 
 %extend OGRFieldDefnShadow {
 %pythoncode {
@@ -309,9 +232,8 @@ layer[0:4] would return a list of the first four features."""
 %pythoncode {
   def Destroy(self):
     "Once called, self has effectively been destroyed.  Do not access. For backwards compatiblity only"
-    _ogr.delete_FeatureDefn( self )
+    self.__del__()
     self.thisown = 0
-
 }
 }
 
@@ -319,7 +241,7 @@ layer[0:4] would return a list of the first four features."""
 %pythoncode {
   def Destroy(self):
     "Once called, self has effectively been destroyed.  Do not access. For backwards compatiblity only"
-    _ogr.delete_FieldDefn( self )
+    self.__del__()
     self.thisown = 0
 }
 }

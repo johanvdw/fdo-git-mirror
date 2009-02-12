@@ -1,4 +1,4 @@
-/* $Id: avc_binwr.c,v 1.18 2008/07/23 20:51:38 dmorissette Exp $
+/* $Id: avc_binwr.c,v 1.17 2006/06/14 16:31:28 daniel Exp $
  *
  * Name:     avc_binwr.c
  * Project:  Arc/Info vector coverage (AVC)  E00->BIN conversion library
@@ -29,10 +29,6 @@
  **********************************************************************
  *
  * $Log: avc_binwr.c,v $
- * Revision 1.18  2008/07/23 20:51:38  dmorissette
- * Fixed GCC 4.1.x compile warnings related to use of char vs unsigned char
- * (GDAL/OGR ticket http://trac.osgeo.org/gdal/ticket/2495)
- *
  * Revision 1.17  2006/06/14 16:31:28  daniel
  * Added support for AVCCoverPC2 type (bug 1491)
  *
@@ -1082,7 +1078,7 @@ int _AVCBinWriteTxt(AVCRawBinFile *psFile, AVCTxt *psTxt,
      *----------------------------------------------------------------*/
     /* String uses a multiple of 4 bytes of storage */
     if (psTxt->pszText)
-        nStrLen = ((strlen((char*)psTxt->pszText) + 3)/4)*4;
+        nStrLen = ((strlen(psTxt->pszText) + 3)/4)*4;
     else
         nStrLen = 0;
 
@@ -1197,7 +1193,7 @@ int _AVCBinWritePCCoverageTxt(AVCRawBinFile *psFile, AVCTxt *psTxt,
      * spaces anyways (was probably a bug in the software!).
      */
     if (psTxt->pszText)
-        nStrLen = ((strlen((char*)psTxt->pszText) + 4)/4)*4;
+        nStrLen = ((strlen(psTxt->pszText) + 4)/4)*4;
     else
         nStrLen = 4;
 
@@ -1364,11 +1360,11 @@ int _AVCBinWriteArcDir(AVCRawBinFile *psFile, AVCTableDef *psTableDef)
 {
     /* STRING values MUST be padded with spaces.
      */
-    AVCRawBinWritePaddedString(psFile, 32, (GByte*)psTableDef->szTableName);
+    AVCRawBinWritePaddedString(psFile, 32, psTableDef->szTableName);
     if (CPLGetLastErrorNo() != 0)
         return -1;
 
-    AVCRawBinWritePaddedString(psFile, 8, (GByte*)psTableDef->szInfoFile);
+    AVCRawBinWritePaddedString(psFile, 8, psTableDef->szInfoFile);
 
     AVCRawBinWriteInt16(psFile, psTableDef->numFields);
 
@@ -1376,7 +1372,7 @@ int _AVCBinWriteArcDir(AVCRawBinFile *psFile, AVCTableDef *psTableDef)
     AVCRawBinWriteInt16(psFile, (GInt16)(((psTableDef->nRecSize+1)/2)*2));
 
     /* ??? Unknown values ??? */
-    AVCRawBinWritePaddedString(psFile, 16, (GByte*)"                    ");
+    AVCRawBinWritePaddedString(psFile, 16, "                    ");
     AVCRawBinWriteInt16(psFile, 132);
     AVCRawBinWriteInt16(psFile, 0);
 
@@ -1384,10 +1380,10 @@ int _AVCBinWriteArcDir(AVCRawBinFile *psFile, AVCTableDef *psTableDef)
 
     AVCRawBinWriteZeros(psFile, 10);
 
-    AVCRawBinWritePaddedString(psFile, 2, (GByte*)psTableDef->szExternal);
+    AVCRawBinWritePaddedString(psFile, 2, psTableDef->szExternal);
 
     AVCRawBinWriteZeros(psFile, 238);
-    AVCRawBinWritePaddedString(psFile, 8, (GByte*)"                    ");
+    AVCRawBinWritePaddedString(psFile, 8, "                    ");
     AVCRawBinWriteZeros(psFile, 54);
 
     if (CPLGetLastErrorNo() != 0)
@@ -1415,7 +1411,7 @@ int _AVCBinWriteArcNit(AVCRawBinFile *psFile, AVCFieldInfo *psField)
 {
     /* STRING values MUST be padded with spaces.
      */
-    AVCRawBinWritePaddedString(psFile, 16, (GByte*)psField->szName);
+    AVCRawBinWritePaddedString(psFile, 16, psField->szName);
     if (CPLGetLastErrorNo() != 0)
         return -1;
 
@@ -1433,7 +1429,7 @@ int _AVCBinWriteArcNit(AVCRawBinFile *psFile, AVCFieldInfo *psField)
     AVCRawBinWriteInt16(psFile, psField->v12);
     AVCRawBinWriteInt16(psFile, psField->v13);
 
-    AVCRawBinWritePaddedString(psFile, 16, (GByte*)psField->szAltName);
+    AVCRawBinWritePaddedString(psFile, 16, psField->szAltName);
 
     AVCRawBinWriteZeros(psFile, 56);
 
@@ -2231,7 +2227,7 @@ int _AVCBinWriteDBFTableRec(DBFHandle hDBFFile, int nFields,
              * Values stored as strings
              *--------------------------------------------------------*/
             nStatus = DBFWriteStringAttribute(hDBFFile, *nCurDBFRecord, i, 
-                                              (char *)pasFields[i].pszStr);
+                                              pasFields[i].pszStr);
         }
         else if (nType == AVC_FT_FIXINT || nType == AVC_FT_FIXNUM)
         {

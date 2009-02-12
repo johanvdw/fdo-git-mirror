@@ -118,7 +118,6 @@
 #include "FDO\Commands\Feature\mgIInsertImp.h"
 #include "FDO\Commands\Feature\mgIDeleteImp.h"
 #include "FDO\Commands\Feature\mgISelectAggregatesImp.h"
-#include "FDO\Commands\Feature\mgIExtendedSelectImp.h"
 #include "FDO\Commands\Feature\mgISelectImp.h"
 #include "FDO\Commands\Feature\mgIBaseSelectImp.h"
 #include "FDO\Commands\Locking\mgIAcquireLockImp.h"
@@ -135,8 +134,6 @@
 #include "FDO\Commands\SpatialContext\mgIDestroySpatialContextImp.h"
 #include "FDO\Commands\SpatialContext\mgIGetSpatialContextsImp.h"
 #include "FDO\Commands\Schema\mgIApplySchemaImp.h"
-#include "FDO\Commands\Schema\mgIGetClassNamesImp.h"
-#include "FDO\Commands\Schema\mgIGetSchemaNamesImp.h"
 #include "FDO\Commands\Schema\mgIDescribeSchemaImp.h"
 #include "FDO\Commands\Schema\mgIDescribeSchemaMappingImp.h"
 #include "FDO\Commands\Schema\mgIDestroySchemaImp.h"
@@ -166,7 +163,6 @@
 #include "FDO\Commands\Feature\mgIReaderImp.h"
 #include "FDO\Commands\Feature\mgIDataReaderImp.h"
 #include "FDO\Commands\Feature\mgIFeatureReaderImp.h"
-#include "FDO\Commands\Feature\mgIScrollableFeatureReaderImp.h"
 
 #include "FDO\Commands\Schema\mgPhysicalSchemaMapping.h"
 #include "FDO\Commands\Schema\mgPhysicalPropertyMapping.h"
@@ -1327,18 +1323,6 @@ NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* NAMESPACE_OSGEO_FDO::ObjectFactory::Crea
         {
             return new NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp(ptr, autoDispose);
         }
-        case NAMESPACE_OSGEO_FDO_COMMANDS::CommandType_GetClassNames:
-        {
-            return new NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IGetClassNamesImp(ptr, autoDispose);
-        }
-        case NAMESPACE_OSGEO_FDO_COMMANDS::CommandType_GetSchemaNames:
-        {
-            return new NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IGetSchemaNamesImp(ptr, autoDispose);
-        }
-        case NAMESPACE_OSGEO_FDO_COMMANDS::CommandType_ExtendedSelect:
-        {
-            return new NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IExtendedSelectImp(ptr, autoDispose);
-        }
         default:
         {
             return new NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(ptr, autoDispose);
@@ -1425,23 +1409,6 @@ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReader* NAMESPACE_OSGEO_FDO::Objec
 	if (wrap = CHECK<FdoXmlFeatureReader, NAMESPACE_OSGEO_FDO_XML::XmlFeatureReader>(p, autoDispose)) return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp*>(wrap);
 
     return new NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp(ptr, autoDispose);
-}
-
-NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReader* NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIScrollableFeatureReader(System::IntPtr ptr, System::Boolean autoDispose)
-{
-	if (ptr == IntPtr::Zero)
-		return NULL;
-
-	FdoIDisposable* p = (FdoIDisposable*)ptr.ToPointer();
-
-	NAMESPACE_OSGEO_RUNTIME::Disposable* wrap;
-
-	// Note:
-	// Here we need keep dynamic_cast to decide the real type of "ptr" because there is more than one possibility.
-
-	if (wrap = CHECK<FdoXmlFeatureReader, NAMESPACE_OSGEO_FDO_XML::XmlFeatureReader>(p, autoDispose)) return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp*>(wrap);
-
-    return new NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp(ptr, autoDispose);
 }
 
 NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMappingCollection* NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePhysicalSchemaMappingCollection(System::IntPtr ptr, System::Boolean autoDispose)

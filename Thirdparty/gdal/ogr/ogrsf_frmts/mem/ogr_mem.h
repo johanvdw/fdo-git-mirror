@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mem.h 13027 2007-11-25 19:21:57Z warmerdam $
+ * $Id: ogr_mem.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the OGR Memory driver.
@@ -101,7 +101,6 @@ class OGRMemDataSource : public OGRDataSource
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
                                       char ** = NULL );
-    OGRErr              DeleteLayer( int iLayer );
 
     int                 TestCapability( const char * );
 };

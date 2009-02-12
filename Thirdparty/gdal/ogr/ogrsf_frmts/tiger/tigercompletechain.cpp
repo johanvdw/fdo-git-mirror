@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigercompletechain.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: tigercompletechain.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerCompleteChain, providing access to RT1 and
@@ -31,7 +31,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigercompletechain.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: tigercompletechain.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 static TigerFieldInfo rt1_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite

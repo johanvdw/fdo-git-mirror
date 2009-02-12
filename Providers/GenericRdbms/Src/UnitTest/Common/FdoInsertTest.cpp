@@ -324,10 +324,18 @@ void FdoInsertTest::MainInsertTest (FdoIConnection *conn)
 						{
 							FdoPtr<FdoIFeatureReader> reader4 = insertCommand3->Execute();
 							while( reader4->ReadNext() ) {
+//Remove this ifdef when defect 918057 fixed
+#ifdef RDBI_DEF_SA_ORA
 								if( !reader4->IsNull( L"PIN" ) )	{
 									FdoString* pin = reader4->GetString(L"PIN");
 									DBG(printf("inserted pin=%ls\n", pin));
 								}
+#else
+								if( !reader4->IsNull( L"FeatId" ) )	{
+									FdoInt64 featid = reader4->GetInt64(L"FeatId");
+									DBG(printf("inserted featid=%ld\n", featid));
+								}
+#endif
 							}
 						}
 
@@ -837,15 +845,6 @@ void FdoInsertTest::insertBoundaryCleanup( FdoIConnection* connection )
         FdoPtr<FdoDataValue>(FdoDataValue::Create(L"80%")));
     deleteCmd->SetFilter(filter);
     deleteCmd->Execute();
-}
-
-void FdoInsertTest::CreateConnection( Context& context, FdoBoolean recreateDb )
-{
-	context.connection = UnitTestUtil::CreateConnection(
-		recreateDb,
-		recreateDb,
-        context.mSuffix
-    );
 }
 
 void FdoInsertTest::insertDate (FdoIConnection *connection, FdoDateTime dateTime, FdoString*colorIndex)
@@ -2211,11 +2210,6 @@ FdoGeometricPropertyDefinition *FdoInsertTest::CreateGeometricProperty (FdoStrin
                                                   FdoGeometricType_Solid     );
     geometricPropertyDefinition->SetHasElevation(false);
     return geometricPropertyDefinition;
-}
-
-bool FdoInsertTest::DefaultsTime()
-{
-    return true;
 }
 
 

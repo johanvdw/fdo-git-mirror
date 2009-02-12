@@ -13,13 +13,28 @@ $file = shift @ARGV;
 $dataset = Geo::GDAL::Open($file);
 die "can't open $file as a raster dataset" unless $dataset;
 
-($minx, $dx, undef, $maxy, undef, $dy) = $dataset->GeoTransform();
-($width, $height) = $dataset->Size;
+($minx, $dx, undef, $maxy, undef, $dy) = @{$dataset->GetGeoTransform()};
+$width = $dataset->{RasterXSize};
+$height = $dataset->{RasterYSize};
 $band = $dataset->GetRasterBand(1);
+$type_char = Geo::GDAL::PackCharacter($band->{DataType});
 
-$data = $band->ReadTile;
+for $i (0..$height-1) {
 
-print @$data == $height ? "ok\n" : "not ok\n";
+    $buf = $band->ReadRaster(0, $i, $width, 1);
+    @data = unpack($type_char."[$width]", $buf);
+   
+    $y = $maxY + ($i+0.5) * $dy;
+   
+    for $j (0..$width-1) {
+
+        $x = $minX + ($j+0.5) * $dx;
+
+        do_something($data[$j], $x, $y); # is at $x, $y
+   
+    }
+
+}
 \endcode
 
 */

@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: msgdataset.h 15064 2008-07-28 19:10:23Z mloskot $
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.
@@ -43,9 +42,7 @@ CPL_C_END
 /*                            MSGRasterBand                             */
 /************************************************************************/
 
-class MSGDataset;
 class ReflectanceCalculator;
-
 class MSGRasterBand : public GDALRasterBand
 {
   friend class MSGDataset;
@@ -57,7 +54,7 @@ class MSGRasterBand : public GDALRasterBand
 
   private:
     double rRadiometricCorrection(unsigned int iDN, int iChannel, int iRow, int iCol, MSGDataset* poGDS);
-    bool fScanNorth;
+    char cScanDir;
     int iLowerShift; // nr of pixels that lower HRV image is shifted compared to upper
     int iSplitLine; // line from top where the HRV image splits
     int iLowerWestColumnPlanned;

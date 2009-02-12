@@ -119,7 +119,7 @@ bool FdoSmPhRdClassReader::ReadNext()
             if ( ClassifyObjectType(pObject, mClassifyDefaultTypes) ) {
                 // Check if class can be generated from this table or view.
                 classifiedObjectName = ClassifyObject( pObject );
-                if ( ((const wchar_t*)classifiedObjectName)[0] != '\0' )  {
+                if ( classifiedObjectName.GetLength() > 0 ) {
                     found = true;
 
                     FdoSmPhColumnsP cols = pObject->GetColumns();
@@ -174,7 +174,7 @@ bool FdoSmPhRdClassReader::ReadNext()
                         pField->SetFieldValue( L"1" );
 
                         pField = pFields->GetItem(L"geometryproperty");
-                        if ( ((const wchar_t*)geomPropName)[0] != '\0' )
+                        if ( geomPropName.GetLength() > 0 )
                             pField->SetFieldValue( geomPropName );
                         else
                             pField->SetFieldValue( L"" );
@@ -204,24 +204,37 @@ bool FdoSmPhRdClassReader::ReadNext()
 
 bool FdoSmPhRdClassReader::ClassifyObjectType( FdoSmPhDbObjectP dbObject, FdoBoolean classifyDefaultTypes )
 {
-    return dbObject->ClassifyObjectType(classifyDefaultTypes);
+    FdoSmPhTableP pTable = dbObject->SmartCast<FdoSmPhTable>();
+    FdoSmPhViewP pView = dbObject->SmartCast<FdoSmPhView>();
+
+    return ( pTable || pView );
 }
 
 FdoStringP FdoSmPhRdClassReader::ClassifyObject( FdoSmPhDbObjectP dbObject )
 {
-    FdoStringP classifiedObjectName = dbObject->GetClassifiedObjectName(mSchemaName);
+    FdoStringP classifiedObjectName = dbObject->GetName();
+    bool hasKey = false;
 
-    bool hasKey =false;
-    if ( ((const wchar_t*)classifiedObjectName)[0] != '\0' )
-    {
-        if ( (mSchemaName == L"") || (dbObject->GetBestSchemaName() == mSchemaName) )
-        {
+    if ( classifiedObjectName.GetLength() > 0 ) {
+        if ( (mSchemaName == L"") || (dbObject->GetBestSchemaName() == mSchemaName) ) {
             // Find out if the database object has a key.
             hasKey = (dbObject->GetBestIdentity() != NULL);
         }
-    }
-    SetBoolean( L"", L"hasKey", hasKey );
+        else {
+            // DbObject is for a different feature schema.
+            classifiedObjectName = L"";
+        }
 
+        // Don't reverse-engineer the special spatial context referencer table.
+        if ( classifiedObjectName == GetManager()->GetRealDbObjectName(FdoSmPhMgr::ScInfoNoMetaTable) )
+            classifiedObjectName = L"";
+    }
+
+    SetBoolean( L"", L"hasKey", hasKey  );
+
+    // Classify only if the object is a table or we were asked to 
+    // include any objects.
+    // TODO: change the name of mKeyedOnly to reflect its new purpose.
     return classifiedObjectName;
 }
 

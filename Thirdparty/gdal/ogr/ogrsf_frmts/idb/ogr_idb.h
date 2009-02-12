@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_idb.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_idb.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIDBTableLayer class, access to an existing table
@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_IDB_H_INCLUDED_
-#define _OGR_IDB_H_INCLUDED_
+#define _OGR_IDB_H_INLLUDED_
 
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"

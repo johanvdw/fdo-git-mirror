@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_ogr_datasource.cpp,v 1.12 2007/03/22 20:01:36 dmorissette Exp $
+ * $Id: mitab_ogr_datasource.cpp,v 1.11 2006/01/27 14:27:35 fwarmerdam Exp $
  *
  * Name:     mitab_ogr_datasource.cpp
  * Project:  MapInfo Mid/Mif, Tab ogr support
@@ -31,9 +31,6 @@
  **********************************************************************
  *
  * $Log: mitab_ogr_datasource.cpp,v $
- * Revision 1.12  2007/03/22 20:01:36  dmorissette
- * Added SPATIAL_INDEX_MODE=QUICK creation option (MITAB bug 1669)
- *
  * Revision 1.11  2006/01/27 14:27:35  fwarmerdam
  * fixed ogr bounds setting problems (bug 1198)
  *
@@ -99,7 +96,6 @@ OGRTABDataSource::OGRTABDataSource()
     m_bCreateMIF = FALSE;
     m_bSingleFile = FALSE;
     m_bSingleLayerAlreadyCreated = FALSE;
-    m_bQuickSpatialIndexMode = FALSE;
 }
 
 /************************************************************************/
@@ -129,23 +125,18 @@ int OGRTABDataSource::Create( const char * pszName, char **papszOptions )
 
 {
     VSIStatBuf  sStat;
-    const char *pszOpt;
 
     CPLAssert( m_pszName == NULL );
     
     m_pszName = CPLStrdup( pszName );
     m_papszOptions = CSLDuplicate( papszOptions );
 
-    if( (pszOpt=CSLFetchNameValue(papszOptions,"FORMAT")) != NULL 
-        && EQUAL(pszOpt, "MIF") )
+    if( CSLFetchNameValue(papszOptions,"FORMAT") != NULL 
+        && EQUAL(CSLFetchNameValue(papszOptions,"FORMAT"),"MIF") )
         m_bCreateMIF = TRUE;
     else if( EQUAL(CPLGetExtension(pszName),"mif")
              || EQUAL(CPLGetExtension(pszName),"mid") )
         m_bCreateMIF = TRUE;
-
-    if( (pszOpt=CSLFetchNameValue(papszOptions,"SPATIAL_INDEX_MODE")) != NULL 
-        && EQUAL(pszOpt, "QUICK") )
-        m_bQuickSpatialIndexMode = TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      Create a new empty directory.                                   */
@@ -419,12 +410,6 @@ OGRTABDataSource::CreateLayer( const char * pszLayerName,
             poFile->SetBounds( -1000, -1000, 1000, 1000 );
         else
             poFile->SetBounds( -30000000, -15000000, 30000000, 15000000 );
-    }
-
-    if (m_bQuickSpatialIndexMode && poFile->SetQuickSpatialIndexMode() != 0)
-    {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-                  "Setting Quick Spatial Index Mode failed.");
     }
 
     return poFile;

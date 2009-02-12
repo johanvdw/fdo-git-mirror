@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.h 12285 2007-10-01 04:04:24Z warmerdam $
+ * $Id: ceosopen.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  Public (C callable) interface for CEOS and related formats such
@@ -72,8 +72,6 @@ typedef struct {
     /* private information */
     FILE	*fpImage;
 
-    int         bLittleEndian;
-
     int		nImageRecCount;
     int		nImageRecLength;
 
@@ -89,16 +87,16 @@ typedef struct {
 /*      External Prototypes                                             */
 /* -------------------------------------------------------------------- */
 
-CEOSImage CPL_ODLL *CEOSOpen( const char *, const char * );
-void CPL_ODLL 	    CEOSClose( CEOSImage * );
-CPLErr CPL_ODLL     CEOSReadScanline( CEOSImage *psImage, int nBand,
-                                      int nScanline, void * pData );
+CEOSImage CPL_DLL *CEOSOpen( const char *, const char * );
+void CPL_DLL 	CEOSClose( CEOSImage * );
+CPLErr CPL_DLL 	CEOSReadScanline( CEOSImage *psImage, int nBand,
+                                  int nScanline, void * pData );
 
 /* -------------------------------------------------------------------- */
 /*      Internal prototypes.                                            */
 /* -------------------------------------------------------------------- */
-CEOSRecord CPL_ODLL *CEOSReadRecord( CEOSImage * );
-void CPL_ODLL	     CEOSDestroyRecord( CEOSRecord * );
+CEOSRecord CPL_DLL *CEOSReadRecord( FILE * );
+void CPL_DLL	CEOSDestroyRecord( CEOSRecord * );
 
 CPL_C_END
 

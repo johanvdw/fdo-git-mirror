@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfdataset.cpp 13738 2008-02-09 15:18:03Z rouault $
+ * $Id: gxfdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GXF Reader
  * Purpose:  GDAL binding for GXF reader.
@@ -30,7 +30,7 @@
 #include "gxfopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gxfdataset.cpp 13738 2008-02-09 15:18:03Z rouault $");
+CPL_CVSID("$Id: gxfdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 #ifndef PI
 #  define PI 3.14159265358979323846
@@ -55,7 +55,6 @@ class GXFDataset : public GDALPamDataset
     GXFHandle	hGXF;
 
     char	*pszProjection;
-    double      dfNoDataValue;
 
   public:
                 GXFDataset();
@@ -80,8 +79,7 @@ class GXFRasterBand : public GDALPamRasterBand
   public:
 
     		GXFRasterBand( GXFDataset *, int );
-    double      GetNoDataValue(int* bGotNoDataValue);
-
+    
     virtual CPLErr IReadBlock( int, int, void * );
 };
 
@@ -100,19 +98,6 @@ GXFRasterBand::GXFRasterBand( GXFDataset *poDS, int nBand )
 
     nBlockXSize = poDS->GetRasterXSize();
     nBlockYSize = 1;
-}
-
-/************************************************************************/
-/*                          GetNoDataValue()                          */
-/************************************************************************/
-
-double GXFRasterBand::GetNoDataValue(int* bGotNoDataValue)
-
-{
-    GXFDataset	*poGXF_DS = (GXFDataset *) poDS;
-    if (bGotNoDataValue)
-        *bGotNoDataValue = (fabs(poGXF_DS->dfNoDataValue - -1e12) > .1);
-    return poGXF_DS->dfNoDataValue;
 }
 
 /************************************************************************/
@@ -157,7 +142,6 @@ GXFDataset::GXFDataset()
 {
     pszProjection = NULL;
     hGXF = NULL;
-    dfNoDataValue = 0;
 }
 
 /************************************************************************/
@@ -306,7 +290,7 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Capture some information from the file that is of interest.     */
 /* -------------------------------------------------------------------- */
     GXFGetRawInfo( hGXF, &(poDS->nRasterXSize), &(poDS->nRasterYSize), NULL,
-                   NULL, NULL, &(poDS->dfNoDataValue) );
+                   NULL, NULL, NULL );
     
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */

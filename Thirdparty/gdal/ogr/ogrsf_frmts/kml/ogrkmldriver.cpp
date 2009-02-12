@@ -1,14 +1,12 @@
 /******************************************************************************
- * $Id: ogrkmldriver.cpp 12937 2007-11-22 07:52:23Z mloskot $
+ * $Id: ogrkmldriver.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.
- * Author:   Christopher Condit, condit@sdsc.edu;
- *           Jens Oberender, j.obi@troja.net
+ * Author:   Christopher Condit, condit@sdsc.edu
  *
  ******************************************************************************
  * Copyright (c) 2006, Christopher Condit
- *               2007, Jens Oberender
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +33,6 @@
 /************************************************************************/
 /*                          ~OGRKMLDriver()                           */
 /************************************************************************/
-
 OGRKMLDriver::~OGRKMLDriver()
 {
 }
@@ -43,7 +40,6 @@ OGRKMLDriver::~OGRKMLDriver()
 /************************************************************************/
 /*                              GetName()                               */
 /************************************************************************/
-
 const char *OGRKMLDriver::GetName()
 {
     return "KML";
@@ -52,46 +48,33 @@ const char *OGRKMLDriver::GetName()
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
-
-OGRDataSource *OGRKMLDriver::Open( const char * pszName, int bUpdate )
+OGRDataSource *OGRKMLDriver::Open( const char * pszFilename,
+                                   int bUpdate )
 {
-    CPLAssert( NULL != pszName );
+    CPLAssert( NULL != pszFilename );
+    
+    OGRKMLDataSource    *poDS = NULL;
 
-    OGRKMLDataSource* poDS = NULL;
-
-#ifdef HAVE_EXPAT
     if( bUpdate )
         return NULL;
 
     poDS = new OGRKMLDataSource();
 
-    if( poDS->Open( pszName, TRUE ) )
-    {
-        if( poDS->GetLayerCount() == 0 )
-        {
-            CPLError( CE_Failure, CPLE_OpenFailed, 
-                "No layers in KML file: %s.", pszName );
-
-            delete poDS;
-            poDS = NULL;
-        }
-    }
-    else
+    if( !poDS->Open( pszFilename, TRUE )
+        || poDS->GetLayerCount() == 0 )
     {
         delete poDS;
-        poDS = NULL;
+        return NULL;
     }
-#endif
-
+    
     return poDS;
 }
 
 /************************************************************************/
 /*                          CreateDataSource()                          */
 /************************************************************************/
-
-OGRDataSource *OGRKMLDriver::CreateDataSource( const char* pszName,
-                                               char** papszOptions )
+OGRDataSource *OGRKMLDriver::CreateDataSource( const char * pszName,
+                                               char **papszOptions )
 {
     CPLAssert( NULL != pszName );
     CPLDebug( "KML", "Attempt to create: %s", pszName );
@@ -101,19 +84,18 @@ OGRDataSource *OGRKMLDriver::CreateDataSource( const char* pszName,
     if( !poDS->Create( pszName, papszOptions ) )
     {
         delete poDS;
-        poDS = NULL;
+        return NULL;
     }
-
-    return poDS;
+    else
+        return poDS;
 }
 
 /************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
-
-int OGRKMLDriver::TestCapability( const char* pszCap )
+int OGRKMLDriver::TestCapability( const char * pszCap )
 {
-    if( EQUAL(pszCap, ODrCCreateDataSource) )
+    if( EQUAL(pszCap,ODrCCreateDataSource) )
         return TRUE;
     else
         return FALSE;
@@ -122,10 +104,8 @@ int OGRKMLDriver::TestCapability( const char* pszCap )
 /************************************************************************/
 /*                           RegisterOGRKML()                           */
 /************************************************************************/
-
 void RegisterOGRKML()
 {
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRKMLDriver );
 }
-
 

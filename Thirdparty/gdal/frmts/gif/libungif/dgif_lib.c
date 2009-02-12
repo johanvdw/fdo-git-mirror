@@ -11,17 +11,15 @@
 ******************************************************************************/
 
 
-#if (defined(_MSC_VER) || defined(__MSDOS__)) && !defined(__DJGPP__) && !defined(__GNUC__)
-#  include <io.h>
-#  include <stdlib.h>
-#  include <sys\stat.h>
-#  ifndef _MSC_VER
-#    include <alloc.h>
-#  endif /* _MSC_VER */
+#if defined (__MSDOS__) && !defined(__DJGPP__) && !defined(__GNUC__)
+#include <io.h>
+#include <alloc.h>
+#include <stdlib.h>
+#include <sys\stat.h>
 #else
-#  include <sys/types.h>
-#  include <sys/stat.h>
-#endif /* _MSC_VER || __MSDOS__ */
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif /* __MSDOS__ */
 
 #ifdef unix
 #include <unistd.h>
@@ -940,14 +938,6 @@ int DGifSlurp(GifFileType *GifFile)
 		    return(GIF_ERROR);
 
 		sp = &GifFile->SavedImages[GifFile->ImageCount-1];
-                if( (double) sp->ImageDesc.Width 
-                    * (double) sp->ImageDesc.Height > 100000000.0 )
-                {
-                    /* for GDAL we prefer to not process very large images. */
-                    /* http://trac.osgeo.org/gdal/ticket/2542 */
-                    return D_GIF_ERR_DATA_TOO_BIG;
-                }
-
 		ImageSize = sp->ImageDesc.Width * sp->ImageDesc.Height;
 
 		sp->RasterBits

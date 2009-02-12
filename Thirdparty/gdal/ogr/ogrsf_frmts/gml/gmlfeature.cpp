@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlfeature.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gmlfeature.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeature.

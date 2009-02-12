@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaltindex.c 14822 2008-07-05 11:19:31Z rouault $
+ * $Id: gdaltindex.c 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  MapServer
  * Purpose:  Commandline App to build tile index for raster files.
@@ -29,10 +29,8 @@
 
 #include "ogrsf_frmts/shape/shapefil.h"
 #include "gdal.h"
-#include "cpl_port.h"
-#include "cpl_conv.h"
 
-CPL_CVSID("$Id: gdaltindex.c 14822 2008-07-05 11:19:31Z rouault $");
+CPL_CVSID("$Id: gdaltindex.c 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -43,8 +41,7 @@ static void Usage()
 {
     fprintf(stdout, "%s", 
             "\n"
-            "Usage: gdaltindex [-tileindex field_name] [-write_absolute_path] \n"
-            "                  [-skip_different_projection] index_file [gdal_file]*\n"
+            "Usage: gdaltindex [-tileindex field_name] index_file [gdal_file]*\n"
             "\n"
             "eg.\n"
             "  % gdaltindex doq_index.shp doq/*.tif\n" 
@@ -53,9 +50,7 @@ static void Usage()
             "  o The shapefile (index_file) will be created if it doesn't already exist.\n" 
             "  o The default tile index field is 'location'.\n"
             "  o Raster filenames will be put in the file exactly as they are specified\n"
-            "    on the commandline unless the option -write_absolute_path is used.\n"
-            "  o If -skip_different_projection is specified, only files with same projection ref\n"
-            "    as files already inserted in the tileindex will be inserted.\n"
+            "    on the commandline.\n"
             "  o Simple rectangular polygons are generated in the same\n"
             "    coordinate system as the rasters.\n" );
     exit(1);
@@ -72,23 +67,6 @@ int main(int argc, char *argv[])
     int		i_arg, ti_field;
     SHPHandle   hSHP;
     DBFHandle	hDBF;
-    int write_absolute_path = FALSE;
-    char* current_path = NULL;
-    int i;
-    int nExistingFiles;
-    int skip_different_projection = FALSE;
-    char** existingFilesTab = NULL;
-    int alreadyExistingProjectionRefValid = FALSE;
-    char* alreadyExistingProjectionRef = NULL;
-
-    /* Check that we are running against at least GDAL 1.4 */
-    /* Note to developers : if we use newer API, please change the requirement */
-    if (atoi(GDALVersionInfo("VERSION_NUM")) < 1400)
-    {
-        fprintf(stderr, "At least, GDAL >= 1.4.0 is required for this version of %s, "
-                "which was compiled against GDAL %s\n", argv[0], GDAL_RELEASE_NAME);
-        exit(1);
-    }
 
     GDALAllRegister();
 
@@ -101,23 +79,9 @@ int main(int argc, char *argv[])
 /* -------------------------------------------------------------------- */
     for( i_arg = 1; i_arg < argc; i_arg++ )
     {
-        if( EQUAL(argv[i_arg], "--utility_version") )
-        {
-            printf("%s was compiled against GDAL %s and is running against GDAL %s\n",
-                   argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
-            return 0;
-        }
-        else if( strcmp(argv[i_arg],"-tileindex") == 0 )
+        if( strcmp(argv[i_arg],"-tileindex") == 0 )
         {
             tile_index = argv[++i_arg];
-        }
-        else if ( strcmp(argv[i_arg],"-write_absolute_path") == 0 )
-        {
-            write_absolute_path = TRUE;
-        }
-        else if ( strcmp(argv[i_arg],"-skip_different_projection") == 0 )
-        {
-            skip_different_projection = TRUE;
         }
         else if( argv[i_arg][0] == '-' )
             Usage();
@@ -179,38 +143,6 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    /* Load in memory existing file names in SHP */
-    nExistingFiles = DBFGetRecordCount(hDBF);
-    if (nExistingFiles)
-    {
-        existingFilesTab = (char**)CPLMalloc(nExistingFiles * sizeof(char*));
-        for(i=0;i<nExistingFiles;i++)
-        {
-            existingFilesTab[i] = CPLStrdup(DBFReadStringAttribute( hDBF, i, ti_field ));
-            if (i == 0)
-            {
-                GDALDatasetH hDS = GDALOpen(existingFilesTab[i], GA_ReadOnly );
-                if (hDS)
-                {
-                    alreadyExistingProjectionRefValid = TRUE;
-                    alreadyExistingProjectionRef = CPLStrdup(GDALGetProjectionRef(hDS));
-                    GDALClose(hDS);
-                }
-            }
-        }
-    }
-
-    if (write_absolute_path)
-    {
-        current_path = CPLGetCurrentDir();
-        if (current_path == NULL)
-        {
-            fprintf( stderr, "This system does not support the CPLGetCurrentDir call. "
-                             "The option -write_absolute_path will have no effect\n");
-            write_absolute_path = FALSE;
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      loop over GDAL files, processing.                               */
 /* -------------------------------------------------------------------- */
@@ -221,42 +153,12 @@ int main(int argc, char *argv[])
         double		adfX[5], adfY[5];
         int		nXSize, nYSize, iShape;
         SHPObject	*psOutline;
-        char* fileNameToWrite;
-        const char* projectionRef;
-        VSIStatBuf sStatBuf;
-
-        /* Make sure it is a file before building absolute path name */
-        if (write_absolute_path && CPLIsFilenameRelative( argv[i_arg] ) &&
-            VSIStat( argv[i_arg], &sStatBuf ) == 0)
-        {
-            fileNameToWrite = CPLStrdup(CPLProjectRelativeFilename(current_path, argv[i_arg]));
-        }
-        else
-        {
-            fileNameToWrite = CPLStrdup(argv[i_arg]);
-        }
-
-        /* Checks that file is not already in tileindex */
-        for(i=0;i<nExistingFiles;i++)
-        {
-            if (EQUAL(fileNameToWrite, existingFilesTab[i]))
-            {
-                fprintf(stderr, "File %s is already in tileindex. Skipping it.\n",
-                        fileNameToWrite);
-                break;
-            }
-        }
-        if (i != nExistingFiles)
-        {
-            continue;
-        }
 
         hDS = GDALOpen( argv[i_arg], GA_ReadOnly );
         if( hDS == NULL )
         {
             fprintf( stderr, "Unable to open %s, skipping.\n", 
                      argv[i_arg] );
-            CPLFree(fileNameToWrite);
             continue;
         }
 
@@ -271,36 +173,7 @@ int main(int argc, char *argv[])
                      "`%s', skipping.\n", 
                      argv[i_arg] );
             GDALClose( hDS );
-            CPLFree(fileNameToWrite);
             continue;
-        }
-
-        projectionRef = GDALGetProjectionRef(hDS);
-        if (alreadyExistingProjectionRefValid)
-        {
-            int projectionRefNotNull, alreadyExistingProjectionRefNotNull;
-            projectionRefNotNull = projectionRef && projectionRef[0];
-            alreadyExistingProjectionRefNotNull = alreadyExistingProjectionRef && alreadyExistingProjectionRef[0];
-            if ((projectionRefNotNull &&
-                 alreadyExistingProjectionRefNotNull &&
-                 EQUAL(projectionRef, alreadyExistingProjectionRef) == 0) ||
-                (projectionRefNotNull != alreadyExistingProjectionRefNotNull))
-            {
-                fprintf(stderr, "Warning : %s is not using the same projection system as "
-                                "other files in the tileindex. This may cause problems when "
-                                "using it in MapServer for example.%s\n", argv[i_arg],
-                                (skip_different_projection) ? " Skipping it" : "");
-                if (skip_different_projection)
-                {
-                    CPLFree(fileNameToWrite);
-                    continue;
-                }
-            }
-        }
-        else
-        {
-            alreadyExistingProjectionRefValid = TRUE;
-            alreadyExistingProjectionRef = CPLStrdup(projectionRef);
         }
 
         nXSize = GDALGetRasterXSize( hDS );
@@ -344,30 +217,13 @@ int main(int argc, char *argv[])
         psOutline = SHPCreateSimpleObject( SHPT_POLYGON, 5, adfX, adfY, NULL );
         iShape = SHPWriteObject(hSHP, -1, psOutline );
         SHPDestroyObject( psOutline );
-
-        DBFWriteStringAttribute( hDBF, iShape, ti_field, fileNameToWrite );
         
-        CPLFree(fileNameToWrite);
-
+        DBFWriteStringAttribute( hDBF, iShape, ti_field, argv[i_arg] );
         GDALClose( hDS );
     }
-    
-    CPLFree(current_path);
-    
-    if (nExistingFiles)
-    {
-        for(i=0;i<nExistingFiles;i++)
-        {
-            CPLFree(existingFilesTab[i]);
-        }
-        CPLFree(existingFilesTab);
-    }
-    CPLFree(alreadyExistingProjectionRef);
 
     DBFClose( hDBF );
     SHPClose( hSHP );
-    
-    GDALDestroyDriverManager();
     
     exit( 0 );
 } 

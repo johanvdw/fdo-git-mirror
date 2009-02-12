@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: usgsdem_create.cpp 14522 2008-05-25 13:28:11Z rouault $
+ * $Id: usgsdem_create.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  USGS DEM Driver
  * Purpose:  CreateCopy() implementation.
@@ -36,7 +36,7 @@
 #include "gdalwarper.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: usgsdem_create.cpp 14522 2008-05-25 13:28:11Z rouault $");
+CPL_CVSID("$Id: usgsdem_create.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 typedef struct 
 {
@@ -97,17 +97,7 @@ const char *USGSDEMDecToPackedDMS( double dfDec )
     nSign = ( dfDec < 0.0 )? -1 : 1;
 
     dfDec = ABS( dfDec );
-    /* If the difference between the value and the nearest degree
-       is less than 1e-5 second, then we force to round to the
-       nearest degree, to avoid result strings like '40 59 60.0000' instead of '41'.
-       This is of general interest, but was mainly done to workaround a strange
-       Valgrind bug when running usgsdem_6 where the value of psDInfo->dfULCornerY
-       computed in DTEDOpen() differ between Valgrind and non-Valgrind executions.
-    */
-    if (fabs(dfDec - (int) floor( dfDec + .5)) < 1e-5 / 3600)
-        dfDec = nDegrees = (int) floor( dfDec + .5);
-    else
-        nDegrees = (int) floor( dfDec );
+    nDegrees = (int) floor( dfDec );
     nMinutes = (int) floor( ( dfDec - nDegrees ) * 60.0 );
     dfSeconds = (dfDec - nDegrees) * 3600.0 - nMinutes * 60.0;
 
@@ -855,7 +845,7 @@ USGSDEM_LookupNTSByLoc( double dfULLong, double dfULLat,
     fpNTS = VSIFOpen( pszNTSFilename, "rb" );
     if( fpNTS == NULL )
     {
-        CPLError( CE_Failure, CPLE_FileIO, "Unable to find NTS mapsheet lookup file: %s", 
+        CPLDebug( "Unable to find NTS mapsheet lookup file: %s", 
                   pszNTSFilename );
         return FALSE;
     }
@@ -912,7 +902,7 @@ USGSDEM_LookupNTSByTile( const char *pszTile, char *pszName,
     fpNTS = VSIFOpen( pszNTSFilename, "rb" );
     if( fpNTS == NULL )
     {
-        CPLError( CE_Failure, CPLE_FileIO, "Unable to find NTS mapsheet lookup file: %s", 
+        CPLDebug( "Unable to find NTS mapsheet lookup file: %s", 
                   pszNTSFilename );
         return FALSE;
     }
@@ -981,7 +971,7 @@ static int USGSDEMProductSetup_CDED50K( USGSDEMWriteInfo *psWInfo )
             return FALSE;
 
         if( EQUALN(pszNTS+6,"e",1) )
-            dfULX += (( dfULY < 68.1 ) ? 0.25 : ( dfULY < 80.1 ) ? 0.5 : 1);
+            dfULX += 0.25;
     }
 
     // Try looking up TOPLEFT as a NTS mapsheet name.
@@ -997,7 +987,7 @@ static int USGSDEMProductSetup_CDED50K( USGSDEMWriteInfo *psWInfo )
             return FALSE;
 
         if( EQUAL(pszTOPLEFT+6,"e") )
-            dfULX += (( dfULY < 68.1 ) ? 0.25 : ( dfULY < 80.1 ) ? 0.5 : 1);
+            dfULX += 0.25;
     }
 
     // Assume TOPLEFT is a long/lat corner.
@@ -1038,7 +1028,7 @@ static int USGSDEMProductSetup_CDED50K( USGSDEMWriteInfo *psWInfo )
             return FALSE;
 
         if( EQUALN(psWInfo->pszFilename+7,"e",1) )
-            dfULX += (( dfULY < 68.1 ) ? 0.25 : ( dfULY < 80.1 ) ? 0.5 : 1);
+            dfULX += 0.25;
     }
              
     else if( strlen(psWInfo->pszFilename) == 14 
@@ -1054,7 +1044,7 @@ static int USGSDEMProductSetup_CDED50K( USGSDEMWriteInfo *psWInfo )
             return FALSE;
 
         if( EQUALN(psWInfo->pszFilename+9,"e",1) )
-            dfULX += (( dfULY < 68.1 ) ? 0.25 : ( dfULY < 80.1 ) ? 0.5 : 1);
+            dfULX += 0.25;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1278,7 +1268,7 @@ static int USGSDEMLoadRaster( USGSDEMWriteInfo *psWInfo,
 /*      Allocate output array, and pre-initialize to NODATA value.      */
 /* -------------------------------------------------------------------- */
     psWInfo->panData = 
-        (GInt16 *) VSIMalloc3( 2, psWInfo->nXSize, psWInfo->nYSize );
+        (GInt16 *) VSIMalloc( 2 * psWInfo->nXSize * psWInfo->nYSize );
     if( psWInfo->panData == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory, 
@@ -1422,13 +1412,6 @@ USGSDEMCreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
     sWInfo.utmzone = 0;
     strncpy( sWInfo.horizdatum, "", 1 );
 
-    if ( sWInfo.nXSize <= 1 || sWInfo.nYSize <= 1 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Source dataset dimensions must be at least 2x2." );
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Work out corner coordinates.                                    */
 /* -------------------------------------------------------------------- */
@@ -1467,11 +1450,8 @@ USGSDEMCreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
      }
      else 
      {
-         // XXX: We are using atof() here instead of CPLAtof() because
-         // zResolution value comes from user's input and supposed to be
-         // written according to user's current locale. atof() honors locale
-         // setting, CPLAtof() is not.
-         sWInfo.dfElevStepSize = atof( zResolution );
+         sWInfo.dfElevStepSize = CPLScanDouble(
+                 zResolution, strlen(zResolution), NULL);
          if ( sWInfo.dfElevStepSize <= 0 )
          {
              /* don't allow negative values */
@@ -1488,18 +1468,12 @@ USGSDEMCreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
     if( pszProduct == NULL || EQUAL(pszProduct,"DEFAULT") )
     {
         if ( !USGSDEMProductSetup_DEFAULT( &sWInfo ) )
-        {
-            USGSDEMWriteCleanup( &sWInfo );
             return NULL;
-        }
     }
     else if( EQUAL(pszProduct,"CDED50K") )
     {
         if( !USGSDEMProductSetup_CDED50K( &sWInfo ) )
-        {
-            USGSDEMWriteCleanup( &sWInfo );
             return NULL;
-        }
     }
     else
     {

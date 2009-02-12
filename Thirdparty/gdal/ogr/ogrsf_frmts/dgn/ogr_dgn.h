@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dgn.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_dgn.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR Driver for DGN Reader.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_DGN_H_INCLUDED
-#define _OGR_DGN_H_INCLUDED
+#define _OGR_DGN_H_INLLUDED
 
 #include "dgnlib.h"
 #include "ogrsf_frmts.h"

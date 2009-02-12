@@ -1,8 +1,10 @@
+// prologue.cpp: implementation of the Prologue class.
+//
+//////////////////////////////////////////////////////////////////////
+
 /******************************************************************************
- * $Id: prologue.cpp 15064 2008-07-28 19:10:23Z mloskot $
  *
- * Purpose:  Implementation of Prologue class. Parse the prologue of one
- *           repeat cycle and keep the interesting info.
+ * Purpose:  Parse the prologue of one repeat cycle and keep the interesting info.
  * Author:   Bas Retsios, retsios@itc.nl
  *
  ******************************************************************************

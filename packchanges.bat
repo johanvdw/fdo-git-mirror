@@ -113,11 +113,6 @@ echo $(PostGIS)>> ..\..\FilesChanges.log
 svn status -q >> ..\..\FilesChanges.log
 popd
 
-pushd Providers\SQLite
-echo $(SQLite)>> ..\..\FilesChanges.log
-svn status -q >> ..\..\FilesChanges.log
-popd
-
 echo end>> FilesChanges.log
 
 echo Please wait... Creating zip file!

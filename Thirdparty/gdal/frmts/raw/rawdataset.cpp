@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rawdataset.cpp 15394 2008-09-19 18:20:39Z rouault $
+ * $Id: rawdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Generic Raw Binary Driver
  * Purpose:  Implementation of RawDataset and RawRasterBand classes.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rawdataset.cpp 15394 2008-09-19 18:20:39Z rouault $");
+CPL_CVSID("$Id: rawdataset.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 /************************************************************************/
 /*                           RawRasterBand()                            */
@@ -41,7 +41,7 @@ RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
                               FILE * fpRaw, vsi_l_offset nImgOffset,
                               int nPixelOffset, int nLineOffset,
                               GDALDataType eDataType, int bNativeOrder,
-                              int bIsVSIL, int bOwnsFP )
+                              int bIsVSIL )
 
 {
     Initialize();
@@ -50,7 +50,6 @@ RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
     this->nBand = nBand;
     this->eDataType = eDataType;
     this->bIsVSIL = bIsVSIL;
-    this->bOwnsFP =bOwnsFP;
 
     this->fpRaw = fpRaw;
     this->nImgOffset = nImgOffset;
@@ -76,13 +75,7 @@ RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
 /* -------------------------------------------------------------------- */
     nLoadedScanline = -1;
     nLineSize = nPixelOffset * nBlockXSize;
-    pLineBuffer = (nLineSize <= 0 ) ? NULL : VSIMalloc2( nPixelOffset, nBlockXSize );
-    if (pLineBuffer == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Could not allocate line buffer : nPixelOffset=%d, nBlockXSize=%d",
-                 nPixelOffset, nBlockXSize);
-    }
+    pLineBuffer = CPLMalloc( nLineSize );
 }
 
 /************************************************************************/
@@ -92,7 +85,7 @@ RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
 RawRasterBand::RawRasterBand( FILE * fpRaw, vsi_l_offset nImgOffset,
                               int nPixelOffset, int nLineOffset,
                               GDALDataType eDataType, int bNativeOrder,
-                              int nXSize, int nYSize, int bIsVSIL, int bOwnsFP )
+                              int nXSize, int nYSize, int bIsVSIL )
 
 {
     Initialize();
@@ -101,7 +94,6 @@ RawRasterBand::RawRasterBand( FILE * fpRaw, vsi_l_offset nImgOffset,
     this->nBand = 1;
     this->eDataType = eDataType;
     this->bIsVSIL = bIsVSIL;
-    this->bOwnsFP =bOwnsFP;
 
     this->fpRaw = fpRaw;
     this->nImgOffset = nImgOffset;
@@ -128,13 +120,7 @@ RawRasterBand::RawRasterBand( FILE * fpRaw, vsi_l_offset nImgOffset,
 /* -------------------------------------------------------------------- */
     nLoadedScanline = -1;
     nLineSize = nPixelOffset * nBlockXSize;
-    pLineBuffer = (nLineSize <= 0 ) ? NULL : VSIMalloc2( nPixelOffset, nBlockXSize );
-    if (pLineBuffer == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Could not allocate line buffer : nPixelOffset=%d, nBlockXSize=%d",
-                 nPixelOffset, nBlockXSize);
-    }
+    pLineBuffer = CPLMalloc( nLineSize );
 }
 
 /************************************************************************/
@@ -144,6 +130,9 @@ RawRasterBand::RawRasterBand( FILE * fpRaw, vsi_l_offset nImgOffset,
 void RawRasterBand::Initialize()
 
 {
+    dfNoDataValue = 0.0;
+    bNoDataSet = FALSE;
+
     poCT = NULL;
     eInterp = GCI_Undefined;
 
@@ -160,20 +149,9 @@ void RawRasterBand::Initialize()
 RawRasterBand::~RawRasterBand()
 
 {
-    if( poCT )
-        delete poCT;
-
     CSLDestroy( papszCategoryNames );
 
     FlushCache();
-    
-    if (bOwnsFP)
-    {
-        if ( bIsVSIL )
-            VSIFCloseL( fpRaw );
-        else
-            VSIFClose( fpRaw );
-    }
     
     CPLFree( pLineBuffer );
 }
@@ -216,9 +194,6 @@ CPLErr RawRasterBand::FlushCache()
 CPLErr RawRasterBand::AccessLine( int iLine )
 
 {
-    if (pLineBuffer == NULL)
-        return CE_Failure;
-
     if( nLoadedScanline == iLine )
         return CE_None;
 
@@ -227,19 +202,14 @@ CPLErr RawRasterBand::AccessLine( int iLine )
 /* -------------------------------------------------------------------- */
     if( Seek(nImgOffset + (vsi_l_offset)iLine * nLineOffset, SEEK_SET) == -1 )
     {
-        if (poDS != NULL && poDS->GetAccess() == GA_ReadOnly)
-        {
-            CPLError( CE_Failure, CPLE_FileIO,
-                  "Failed to seek to scanline %d @ %d.\n",
-                  iLine, (int) (nImgOffset + (vsi_l_offset)iLine * nLineOffset) );
-            return CE_Failure;
-        }
-        else
-        {
-            memset( pLineBuffer, 0, nPixelOffset * nBlockXSize );
-            nLoadedScanline = iLine;
-            return CE_None;
-        }
+        // for now I just set to zero under the assumption we might
+        // be trying to read from a file past the data that has
+        // actually been written out.  Eventually we should differentiate
+        // between newly created datasets, and existing datasets. Existing
+        // datasets should generate an error in this case.
+        memset( pLineBuffer, 0, nPixelOffset * nBlockXSize );
+        nLoadedScanline = iLine;
+        return CE_None;
     }
 
 /* -------------------------------------------------------------------- */
@@ -255,18 +225,13 @@ CPLErr RawRasterBand::AccessLine( int iLine )
     nBytesActuallyRead = Read( pLineBuffer, 1, nBytesToRead );
     if( nBytesActuallyRead < nBlockXSize )
     {
-        if (poDS != NULL && poDS->GetAccess() == GA_ReadOnly)
-        {
-            CPLError( CE_Failure, CPLE_FileIO,
-                      "Failed to read scanline %d.\n",
-                      iLine);
-            return CE_Failure;
-        }
-        else
-        {
-            memset( ((GByte *) pLineBuffer) + nBytesActuallyRead, 
-                    0, nBytesToRead - nBytesActuallyRead );
-        }
+        // for now I just set to zero under the assumption we might
+        // be trying to read from a file past the data that has
+        // actually been written out.  Eventually we should differentiate
+        // between newly created datasets, and existing datasets. Existing
+        // datasets should generate an error in this case.
+        memset( ((GByte *) pLineBuffer) + nBytesActuallyRead, 
+                0, nBytesToRead - nBytesActuallyRead );
     }
 
 /* -------------------------------------------------------------------- */
@@ -301,14 +266,11 @@ CPLErr RawRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 
 {
-    CPLErr		eErr;
+    CPLErr		eErr = CE_None;
 
     CPLAssert( nBlockXOff == 0 );
 
-    if (pLineBuffer == NULL)
-        return CE_Failure;
-
-    eErr = AccessLine( nBlockYOff );
+    AccessLine( nBlockYOff );
     
 /* -------------------------------------------------------------------- */
 /*      Copy data from disk buffer to user block buffer.                */
@@ -331,9 +293,6 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     CPLErr		eErr = CE_None;
 
     CPLAssert( nBlockXOff == 0 );
-
-    if (pLineBuffer == NULL)
-        return CE_Failure;
 
 /* -------------------------------------------------------------------- */
 /*      If the data for this band is completely contiguous we don't     */
@@ -405,18 +364,8 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
     if( !bNativeOrder && eDataType != GDT_Byte )
     {
-        if( GDALDataTypeIsComplex( eDataType ) )
-        {
-            int nWordSize;
-
-            nWordSize = GDALGetDataTypeSize(eDataType)/16;
-            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, nPixelOffset );
-            GDALSwapWords( ((GByte *) pLineBuffer)+nWordSize, 
-                           nWordSize, nBlockXSize, nPixelOffset );
-        }
-        else
-            GDALSwapWords( pLineBuffer, GDALGetDataTypeSize(eDataType)/8,
-                           nBlockXSize, nPixelOffset );
+        GDALSwapWords( pLineBuffer, GDALGetDataTypeSize(eDataType)/8,
+                       nBlockXSize, nPixelOffset );
     }
 
     bDirty = TRUE;
@@ -576,11 +525,10 @@ CPLErr RawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                               nXSize * nYSize * nBandDataSize, pData ) != CE_None )
             {
                 CPLError( CE_Failure, CPLE_FileIO,
-                          "Failed to read %d bytes at %lu.",
+                          "Failed to read %d bytes at %d.",
                           nXSize * nYSize * nBandDataSize,
-                          (unsigned long)
-                          (nImgOffset + (vsi_l_offset)nYOff * nLineOffset
-                           + nXOff) );
+                          nImgOffset
+                          + (vsi_l_offset)nYOff * nLineOffset + nXOff );
             }
         }
 
@@ -608,12 +556,12 @@ CPLErr RawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                                   nBytesToRW, pabyData ) != CE_None )
                 {
                     CPLError( CE_Failure, CPLE_FileIO,
-                              "Failed to read %d bytes at %lu.",
+                              "Failed to read %d bytes at %d.",
                               nBytesToRW,
-                              (unsigned long)(nImgOffset
+                              nImgOffset
                               + ((vsi_l_offset)nYOff
                               + (int)(iLine * dfSrcYInc)) * nLineOffset
-                              + nXOff * nPixelOffset) );
+                              + nXOff * nPixelOffset );
                 }
 
 /* -------------------------------------------------------------------- */
@@ -690,9 +638,8 @@ CPLErr RawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                       SEEK_SET) == -1 )
             {
                 CPLError( CE_Failure, CPLE_FileIO,
-                          "Failed to seek to %lu to write data.\n",
-                          (unsigned long)(nImgOffset + (vsi_l_offset)nYOff
-                                          * nLineOffset + nXOff) );
+                          "Failed to seek to %d to write data.\n",
+                          nImgOffset + (vsi_l_offset)nYOff * nLineOffset + nXOff );
         
                 return CE_Failure;
             }
@@ -810,8 +757,7 @@ CPLErr RawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                 if( Seek( nBlockOff, SEEK_SET) == -1 )
                 {
                     CPLError( CE_Failure, CPLE_FileIO,
-                              "Failed to seek to %ld to read.\n",
-                              (long)nBlockOff );
+                              "Failed to seek to %d to read.\n", nBlockOff );
 
                     return CE_Failure;
                 }
@@ -909,7 +855,33 @@ size_t RawRasterBand::Write( void *pBuffer, size_t nSize, size_t nCount )
 void RawRasterBand::StoreNoDataValue( double dfValue )
 
 {
-    SetNoDataValue( dfValue );
+    bNoDataSet = TRUE;
+    dfNoDataValue = dfValue;
+}
+
+/************************************************************************/
+/*                           SetNoDataValue()                           */
+/************************************************************************/
+
+CPLErr RawRasterBand::SetNoDataValue( double dfValue )
+
+{
+    bNoDataSet = TRUE;
+    dfNoDataValue = dfValue;
+    return CE_None;
+}
+
+/************************************************************************/
+/*                           GetNoDataValue()                           */
+/************************************************************************/
+
+double RawRasterBand::GetNoDataValue( int * pbSuccess )
+
+{
+    if( pbSuccess )
+        *pbSuccess = bNoDataSet;
+
+    return dfNoDataValue;
 }
 
 /************************************************************************/

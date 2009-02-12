@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_rec.h 15583 2008-10-23 00:04:33Z warmerdam $
+ * $Id: ogr_rec.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Epi .REC Translator
  * Purpose:  Definition of classes for OGR .REC support.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef _OGR_REC_H_INCLUDED
-#define _OGR_REC_H_INCLUDED
+#define _OGR_REC_H_INLLUDED
 
 #include "ogrsf_frmts.h"
 

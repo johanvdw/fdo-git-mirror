@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_overviews.cpp 12514 2007-10-23 14:44:41Z dron $
+ * $Id: hfa_overviews.cpp 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  Erdas Imagine Driver
  * Purpose:  Entry point for building overviews, used by non-imagine formats.
@@ -31,7 +31,7 @@
 #include "hfa_p.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: hfa_overviews.cpp 12514 2007-10-23 14:44:41Z dron $");
+CPL_CVSID("$Id: hfa_overviews.cpp 10646 2007-01-18 02:38:10Z warmerdam $");
 
 CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename, 
                              GDALDataset *poParentDS,
@@ -80,17 +80,19 @@ CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename,
 /*      base band.                                                      */
 /* -------------------------------------------------------------------- */
         GDALDriver *poHFADriver = (GDALDriver *) GDALGetDriverByName("HFA");
-        const char *apszOptions[3] = { "COMPRESSED=YES", NULL, NULL };
+        char *apszOptions[3] = { "COMPRESSED=YES", 
+                                 NULL, 
+                                 NULL };
         
         CPLString osDepFileOpt = "DEPENDENT_FILE=";
         osDepFileOpt += CPLGetFilename(poParentDS->GetDescription());
-        apszOptions[1] = osDepFileOpt.c_str();
+        apszOptions[1] = (char *) osDepFileOpt.c_str();
 
         *ppoODS = 
             poHFADriver->Create( pszOvrFilename, 
                                  poParentDS->GetRasterXSize(), 
                                  poParentDS->GetRasterYSize(), 
-                                 nBands, eDT, (char **)apszOptions );
+                                 nBands, eDT, apszOptions );
 
         if( *ppoODS == NULL )
             return CE_Failure;

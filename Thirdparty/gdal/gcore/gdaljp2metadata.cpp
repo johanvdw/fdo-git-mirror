@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.cpp 14286 2008-04-13 14:37:05Z warmerdam $
+ * $Id: gdaljp2metadata.cpp 12389 2007-10-13 01:47:54Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Metadata - Read GeoTIFF and/or GML georef info.
@@ -34,7 +34,7 @@
 #include "ogr_geometry.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: gdaljp2metadata.cpp 14286 2008-04-13 14:37:05Z warmerdam $");
+CPL_CVSID("$Id: gdaljp2metadata.cpp 12389 2007-10-13 01:47:54Z warmerdam $");
 
 static const unsigned char msi_uuid2[16] =
 {0xb1,0x4b,0xf8,0xbd,0x08,0x3d,0x4b,0x43,
@@ -99,7 +99,6 @@ GDALJP2Metadata::~GDALJP2Metadata()
 
     CPLFree( pabyGeoTIFFData );
     CPLFree( pabyMSIGData );
-    CSLDestroy( papszGMLMetadata );
 }
 
 /************************************************************************/
@@ -233,8 +232,8 @@ int GDALJP2Metadata::ReadBoxes( FILE *fpVSIL )
             nMSIGSize = oBox.GetDataLength();
             pabyMSIGData = oBox.ReadBoxData();
 
-            if( nMSIGSize < 70 
-                || memcmp( pabyMSIGData, "MSIG/", 5 ) != 0 )
+            if( nMSIGSize < memcmp( pabyMSIGData, "MSIG/", 5 ) != 0 
+                || nMSIGSize < 70 )
             {
                 CPLFree( pabyMSIGData );
                 pabyMSIGData = NULL;
@@ -607,9 +606,9 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
     {
         adfGeoTransform[0] = poOriginGeometry->getX();
         adfGeoTransform[1] = atof(papszOffset1Tokens[0]);
-        adfGeoTransform[2] = atof(papszOffset2Tokens[0]);
+        adfGeoTransform[2] = atof(papszOffset1Tokens[1]);
         adfGeoTransform[3] = poOriginGeometry->getY();
-        adfGeoTransform[4] = atof(papszOffset1Tokens[1]);
+        adfGeoTransform[4] = atof(papszOffset2Tokens[0]);
         adfGeoTransform[5] = atof(papszOffset2Tokens[1]);
 
         // offset from center of pixel.
@@ -646,8 +645,6 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
 /*      If we have gotten a geotransform, then try to interprete the    */
 /*      srsName.                                                        */
 /* -------------------------------------------------------------------- */
-    int bNeedAxisFlip = FALSE;
-
     if( bSuccess && pszSRSName != NULL 
         && (pszProjection == NULL || strlen(pszProjection) == 0) )
     {
@@ -662,17 +659,7 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
                  && strstr(pszSRSName,":def:") != NULL
                  && oSRS.importFromURN(pszSRSName) == OGRERR_NONE )
         {
-            const char *pszCode = strrchr(pszSRSName,':') + 1;
-
             oSRS.exportToWkt( &pszProjection );
-
-            // Per #2131
-            if( atoi(pszCode) >= 4000 && atoi(pszCode) <= 4999 )
-            {
-                CPLDebug( "GMLJP2", "Request axis flip for SRS=%s",
-                          pszSRSName );
-                bNeedAxisFlip = TRUE;
-            }
         }
         else if( !GMLSRSLookup( pszSRSName ) )
         {
@@ -686,40 +673,6 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
         CPLDebug( "GDALJP2Metadata", 
                   "Got projection from GML box: %s", 
                  pszProjection );
-
-    CPLDestroyXMLNode( psXML );
-    psXML = NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Do we need to flip the axes?                                    */
-/* -------------------------------------------------------------------- */
-    if( bNeedAxisFlip
-        && CSLTestBoolean( CPLGetConfigOption( "GDAL_IGNORE_AXIS_ORIENTATION",
-                                               "FALSE" ) ) )
-    {
-        bNeedAxisFlip = FALSE;
-        CPLDebug( "GMLJP2", "Supressed axis flipping based on GDAL_IGNORE_AXIS_ORIENTATION." );
-    }
-
-    if( bNeedAxisFlip )
-    {
-        double dfTemp;
-
-        CPLDebug( "GMLJP2", 
-                  "Flipping axis orientation in GMLJP2 coverage description." );
-
-        dfTemp = adfGeoTransform[0];
-        adfGeoTransform[0] = adfGeoTransform[3];
-        adfGeoTransform[3] = dfTemp;
-
-        dfTemp = adfGeoTransform[1];
-        adfGeoTransform[1] = adfGeoTransform[4];
-        adfGeoTransform[4] = dfTemp;
-
-        dfTemp = adfGeoTransform[2];
-        adfGeoTransform[2] = adfGeoTransform[5];
-        adfGeoTransform[5] = dfTemp;
-    }
 
     return pszProjection != NULL && bSuccess;
 }
@@ -804,54 +757,12 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
 
 {
 /* -------------------------------------------------------------------- */
-/*      This is a backdoor to let us embed a literal gmljp2 chunk       */
-/*      supplied by the user as an external file.  This is mostly       */
-/*      for preparing test files with exotic contents.                  */
-/* -------------------------------------------------------------------- */
-    if( CPLGetConfigOption( "GMLJP2OVERRIDE", NULL ) != NULL )
-    {
-        FILE *fp = VSIFOpenL( CPLGetConfigOption( "GMLJP2OVERRIDE",""), "r" );
-        char *pszGML = NULL;
-
-        if( fp == NULL )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Unable to open GMLJP2OVERRIDE file." );
-            return NULL;
-        }
-        
-        VSIFSeekL( fp, 0, SEEK_END );
-        int nLength = (int) VSIFTellL( fp );
-        pszGML = (char *) CPLCalloc(1,nLength+1);
-        VSIFSeekL( fp, 0, SEEK_SET );
-        VSIFReadL( pszGML, 1, nLength, fp );
-        VSIFCloseL( fp );
-
-        GDALJP2Box *apoGMLBoxes[2];
-
-        apoGMLBoxes[0] = GDALJP2Box::CreateLblBox( "gml.data" );
-        apoGMLBoxes[1] = 
-            GDALJP2Box::CreateLabelledXMLAssoc( "gml.root-instance", 
-                                                pszGML );
-
-        GDALJP2Box *poGMLData = GDALJP2Box::CreateAsocBox( 2, apoGMLBoxes);
-        
-        delete apoGMLBoxes[0];
-        delete apoGMLBoxes[1];
-
-        CPLFree( pszGML );
-        
-        return poGMLData;
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Try do determine a PCS or GCS code we can use.                  */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS;
     char *pszWKTCopy = (char *) pszProjection;
     int nEPSGCode = 0;
     char szSRSName[100];
-    int  bNeedAxisFlip = FALSE;
 
     if( oSRS.importFromWkt( &pszWKTCopy ) != OGRERR_NONE )
         return NULL;
@@ -872,7 +783,6 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
         if( pszAuthName != NULL && EQUAL(pszAuthName,"epsg") )
         {
             nEPSGCode = atoi(oSRS.GetAuthorityCode( "GEOGCS" ));
-            bNeedAxisFlip = TRUE;
         }
     }
 
@@ -881,51 +791,6 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
     else
         strcpy( szSRSName, 
                 "gmljp2://xml/CRSDictionary.gml#ogrcrs1" );
-
-/* -------------------------------------------------------------------- */
-/*      Prepare coverage origin and offset vectors.  Take axis          */
-/*      order into account if needed.                                   */
-/* -------------------------------------------------------------------- */
-    double adfOrigin[2];
-    double adfXVector[2];
-    double adfYVector[2];
-    
-    adfOrigin[0] = adfGeoTransform[0] + adfGeoTransform[1] * 0.5
-        + adfGeoTransform[4] * 0.5;
-    adfOrigin[1] = adfGeoTransform[3] + adfGeoTransform[2] * 0.5
-        + adfGeoTransform[5] * 0.5;
-    adfXVector[0] = adfGeoTransform[1];
-    adfXVector[1] = adfGeoTransform[2];
-        
-    adfYVector[0] = adfGeoTransform[4];
-    adfYVector[1] = adfGeoTransform[5];
-    
-    if( bNeedAxisFlip
-        && CSLTestBoolean( CPLGetConfigOption( "GDAL_IGNORE_AXIS_ORIENTATION",
-                                               "FALSE" ) ) )
-    {
-        bNeedAxisFlip = FALSE;
-        CPLDebug( "GMLJP2", "Supressed axis flipping on write based on GDAL_IGNORE_AXIS_ORIENTATION." );
-    }
-
-    if( bNeedAxisFlip )
-    {
-        double dfTemp;
-        
-        CPLDebug( "GMLJP2", "Flipping GML coverage axis order." );
-        
-        dfTemp = adfOrigin[0];
-        adfOrigin[0] = adfOrigin[1];
-        adfOrigin[1] = dfTemp;
-
-        dfTemp = adfXVector[0];
-        adfXVector[0] = adfXVector[1];
-        adfXVector[1] = dfTemp;
-
-        dfTemp = adfYVector[0];
-        adfYVector[0] = adfYVector[1];
-        adfYVector[1] = dfTemp;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      For now we hardcode for a minimal instance format.              */
@@ -974,9 +839,15 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
 "    </gml:FeatureCollection>\n"
 "  </gml:featureMember>\n"
 "</gml:FeatureCollection>\n",
-             nXSize-1, nYSize-1, szSRSName, adfOrigin[0], adfOrigin[1],
-             szSRSName, adfXVector[0], adfXVector[1], 
-             szSRSName, adfYVector[0], adfYVector[1] );
+             nXSize-1, nYSize-1, szSRSName,
+             adfGeoTransform[0] + adfGeoTransform[1] * 0.5
+                                + adfGeoTransform[4] * 0.5, 
+             adfGeoTransform[3] + adfGeoTransform[2] * 0.5
+                                + adfGeoTransform[5] * 0.5,
+             szSRSName, 
+             adfGeoTransform[1], adfGeoTransform[2],
+             szSRSName,
+             adfGeoTransform[4], adfGeoTransform[5] );
 
 /* -------------------------------------------------------------------- */
 /*      If we need a user defined CRSDictionary entry, prepare it       */

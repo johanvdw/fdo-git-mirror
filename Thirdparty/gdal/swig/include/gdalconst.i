@@ -1,37 +1,5 @@
-/******************************************************************************
- * $Id: gdalconst.i 14989 2008-07-21 19:37:10Z warmerdam $
- *
- * Name:     gdalconst.i
- * Project:  GDAL Python Interface
- * Purpose:  GDAL constant declarations.
- * Author:   Kevin Ruland, kruland@ku.edu
- *
- ******************************************************************************
- * Copyright (c) 2005, Kevin Ruland
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
-
 #ifdef PERL_CPAN_NAMESPACE
 %module "Geo::GDAL::Const"
-#elif defined(SWIGCSHARP)
-%module GdalConst
 #else
 %module gdalconst 
 #endif
@@ -92,7 +60,6 @@
 %constant GRA_Bilinear         = GRA_Bilinear;
 %constant GRA_Cubic            = GRA_Cubic;
 %constant GRA_CubicSpline      = GRA_CubicSpline;
-%constant GRA_Lanczos          = GRA_Lanczos;
 
 // GDALPaletteInterp
 %constant GPI_Gray  = GPI_Gray;
@@ -142,35 +109,3 @@
 %constant CPLES_URL               = CPLES_URL;
 %constant CPLES_SQL               = CPLES_SQL;
 %constant CPLES_CSV               = CPLES_CSV;
-
-// GDALRATFieldType
-%constant GFT_Integer             = GFT_Integer;
-%constant GFT_Real                = GFT_Real;   
-%constant GFT_String              = GFT_String;  
-
-// GDALRATFieldUsage
-%constant GFU_Generic             = GFU_Generic;
-%constant GFU_PixelCount          = GFU_PixelCount;
-%constant GFU_Name                = GFU_Name;
-%constant GFU_Min                 = GFU_Min;
-%constant GFU_Max                 = GFU_Max;
-%constant GFU_MinMax              = GFU_MinMax;
-%constant GFU_Red                 = GFU_Red;
-%constant GFU_Green               = GFU_Green;
-%constant GFU_Blue                = GFU_Blue;
-%constant GFU_Alpha               = GFU_Alpha;
-%constant GFU_RedMin              = GFU_RedMin;
-%constant GFU_GreenMin            = GFU_GreenMin;
-%constant GFU_BlueMin             = GFU_BlueMin;
-%constant GFU_AlphaMin            = GFU_AlphaMin;
-%constant GFU_RedMax              = GFU_RedMax;
-%constant GFU_GreenMax            = GFU_GreenMax;
-%constant GFU_BlueMax             = GFU_BlueMax;
-%constant GFU_AlphaMax            = GFU_AlphaMax;
-%constant GFU_MaxCount            = GFU_MaxCount;
-
-%constant GMF_ALL_VALID           = 0x01;
-%constant GMF_PER_DATASET         = 0x02;
-%constant GMF_ALPHA               = 0x04;
-%constant GMF_NODATA              = 0x08;
-
