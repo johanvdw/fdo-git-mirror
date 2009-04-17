@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// the operation to perform. The Execute method performs the specified
 /// operation on the identified long transaction if the user has access
 /// privileges for the indicated long transaction.
-public interface class IFreezeLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IFreezeLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns the name of the long transaction
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the long transaction to freeze or unfreeze as a string.
     /// 
@@ -52,11 +54,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     ///  Gets the operation to perform (Freeze or Thaw) on the long transaction.
@@ -64,6 +62,8 @@ public:
     /// \return
     /// Returns the operation to perform
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionFreezeOperations get_Operation();
+
     /// \brief
     /// Sets the operation to perform (Freeze or Thaw) on the long transaction.
     /// 
@@ -73,11 +73,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionFreezeOperations Operation
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionFreezeOperations get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionFreezeOperations value);
-    }
+	__property System::Void set_Operation(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionFreezeOperations value);
 
     /// \brief
     /// Executes the command.

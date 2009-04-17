@@ -22,41 +22,43 @@
 
 #include "FDO\Commands\UnitOfMeasure\mgIMeasureUnitReaderImp.h"
 
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
 FdoIMeasureUnitReader* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetImpObj()
 {
-    return static_cast<FdoIMeasureUnitReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIMeasureUnitReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetAbbreviation()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetAbbreviation()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetAbbreviation())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetName()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetDescription()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetDescription()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDescription())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
 NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetBaseUnit()
@@ -65,21 +67,21 @@ NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit NAMESPACE_OSGEO_FDO_COMMAND
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetBaseUnit())
 
-	return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit>(result);;
+		return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit>(result);;
 }
 
 System::Double NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::GetScaleFactor()
 {
-	System::Double result;
+	FdoDouble result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetScaleFactor())
 
-	return result;
+		return result;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->ReadNext())
 

@@ -17,30 +17,14 @@
 //  
 
 #define PROP_NAME_FILENAME L"File"
-#define PROP_NAME_FDOMETADATA L"UseFdoMetadata"
 
 #include "SltCapabilities.h"
-
 
 class SltMetadata;
 class SpatialIndex;
 class SltReader;
 class SltExtendedSelect;
 struct NameOrderingPair;
-class StringBuffer;
-
-
-struct string_less
-{	// functor for operator<
-bool operator()(const char* _Left, const char* _Right) const
-	{	// apply operator< to operands
-	    return strcmp(_Left, _Right) < 0;
-	}
-};
-typedef std::map<char*, sqlite3_stmt*, string_less> QueryCache;
-typedef std::map<char*, SltMetadata*, string_less> MetadataCache;
-typedef std::map<char*, SpatialIndex*, string_less> SpatialIndexCache;
-
 
 class SltConnection : public FdoIConnection, 
                       public FdoIConnectionInfo,
@@ -151,7 +135,7 @@ public:
 //--------------------------------------------------------
 
     FdoFeatureSchemaCollection* 
-                        DescribeSchema          (FdoStringCollection* classNames);
+                        DescribeSchema          ();
     
     FdoISpatialContextReader* 
                         GetSpatialContexts      ();
@@ -185,6 +169,9 @@ public:
 
     void                ApplySchema            (FdoFeatureSchema* schema);
 
+    void                AddGeomCol             (FdoGeometricPropertyDefinition* gpd, 
+                                                const wchar_t*                  fcname);
+
     sqlite3*        GetDbRead() { return m_dbRead; }
     sqlite3*        GetDbWrite() { return m_dbWrite; }
     SpatialIndex*   GetSpatialIndex(const char* table);
@@ -193,24 +180,15 @@ public:
     SltReader*      CheckForSpatialExtents(FdoIdentifierCollection* props, FdoFeatureClass* fc);
     int             GetFeatureCount(const char* table);
     
-    sqlite3_stmt*   GetCachedParsedStatement(const char* sql);
-    void            ReleaseParsedStatement(const char* sql, sqlite3_stmt* stmt);
+    sqlite3_stmt*   GetCachedParsedStatement(const std::string& sql);
+    void            ReleaseParsedStatement(const std::string& sql, sqlite3_stmt* stmt);
     void            ClearQueryCache();
     
-    void UpdateClassesWithInvalidSC();
-
 private :
 
-    void AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_t* fcname);
-    void AddDataCol(FdoDataPropertyDefinition* dpd, const wchar_t* fcname);
-    bool IsClassEqual(FdoClassDefinition* fc1, FdoClassDefinition* fc2);
-    bool IsPropertyEqual(FdoPropertyDefinition* prop1, FdoPropertyDefinition* prop2);
-
     int FindSpatialContext(const wchar_t* name);
-    int GetDefaultSpatialContext();
 
-    void CollectBaseClassProperties(FdoClassCollection* myclasses, FdoClassDefinition* fc, FdoClassDefinition* mainfc, StringBuffer& sb, int mode);
-    void AddPropertyConstraintDefaultValue(FdoDataPropertyDefinition* prop, StringBuffer& sb);
+    void CollectBaseClassProperties(FdoClassCollection* myclasses, FdoClassDefinition* fc, std::string& sql, int mode);
 
     sqlite3*                                m_dbRead;
     sqlite3*                                m_dbWrite;
@@ -220,12 +198,9 @@ private :
     FdoConnectionState                      m_connState;
     FdoFeatureSchemaCollection*             m_pSchema;
 
-    MetadataCache                           m_mNameToMetadata;
-    SpatialIndexCache                       m_mNameToSpatialIndex;
-    QueryCache                              m_mCachedQueries;
+    std::map<std::string, SltMetadata*>     m_mNameToMetadata;
+    std::map<std::string, SpatialIndex*>    m_mNameToSpatialIndex;
+    std::map<std::string, sqlite3_stmt*>    m_mCachedQueries;
 
-    SltCapabilities*                        m_caps;
-
-    bool                                    m_bUseFdoMetadata;
-    bool                                    m_bHasFdoMetadata;
+    SltCapabilities*                         m_caps;
 };

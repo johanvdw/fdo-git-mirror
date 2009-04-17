@@ -355,11 +355,6 @@ FdoSchemaMappingsP FdoSmPhMgr::GetConfigMappings()
     return mConfigMappings;
 }
 
-bool FdoSmPhMgr::ConfigIncludeNativeSCs()
-{
-    return false;
-}
-
 FdoStringP FdoSmPhMgr::GetDbObjectClassification( FdoStringP dbObjectName )
 {
     FdoStringP              className;

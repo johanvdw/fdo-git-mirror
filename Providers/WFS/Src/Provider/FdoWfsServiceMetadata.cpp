@@ -252,16 +252,13 @@ void FdoWfsServiceMetadata::_getTotalExtent (FdoOwsGeographicBoundingBox* desBox
 FdoWfsFeatureType* FdoWfsServiceMetadata::GetFeatureType(FdoIdentifier* className)
 {
     FdoPtr<FdoWfsFeatureTypeCollection> featTypes = m_featureTypeList->GetFeatureTypes();
-    FdoStringP featureClassName = className->GetName();
-    if (featureClassName.Contains(FdoWfsGlobals::Dot))
-        featureClassName = featureClassName.Replace(FdoWfsGlobals::Dot, L".");
-    FdoPtr<FdoWfsFeatureType> featureType = featTypes->FindItem (featureClassName);
+    FdoPtr<FdoWfsFeatureType> featureType = featTypes->FindItem (className->GetName());
     if (featureType == NULL)
     {
         featureType = featTypes->FindItem (className->GetText());
         if (featureType == NULL)
         {
-            std::wstring lhs = (FdoString*)featureClassName;
+            std::wstring lhs = className->GetName();
 	        for (int i = 0; i < featTypes->GetCount(); i++)
             {
 		        FdoPtr<FdoWfsFeatureType> fType = featTypes->GetItem(i);
@@ -275,7 +272,7 @@ FdoWfsFeatureType* FdoWfsServiceMetadata::GetFeatureType(FdoIdentifier* classNam
                         foundit = true;
                 }
                 else {
-                    if (rhs == lhs)
+                    if (rhs == className->GetName())
                         foundit = true;
                 }
                 if (foundit)

@@ -239,10 +239,7 @@ bool FdoExpressionEngineImp::GetBooleanResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Boolean != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -265,10 +262,7 @@ double FdoExpressionEngineImp::GetDoubleResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Double != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -290,10 +284,7 @@ float FdoExpressionEngineImp::GetSingleResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Single != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -315,10 +306,7 @@ double FdoExpressionEngineImp::GetDecimalResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Decimal != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -340,10 +328,7 @@ FdoByte FdoExpressionEngineImp::GetByteResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Byte != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -365,10 +350,7 @@ FdoInt16 FdoExpressionEngineImp::GetInt16Result (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Int16 != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -390,10 +372,7 @@ FdoInt32 FdoExpressionEngineImp::GetInt32Result (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Int32 != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -415,10 +394,7 @@ FdoInt64 FdoExpressionEngineImp::GetInt64Result (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_Int64 != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -440,10 +416,7 @@ const wchar_t* FdoExpressionEngineImp::GetStringResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_String != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -465,10 +438,7 @@ FdoDateTime FdoExpressionEngineImp::GetDateTimeResult (bool &bIsNull)
     m_retvals.pop_back ();
 
     if (FdoDataType_DateTime != dv->GetDataType ())
-    {
-        RelinquishDataValue (dv);
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
-    }
 
     bIsNull = dv->IsNull();
     if (!bIsNull)
@@ -1188,8 +1158,6 @@ void FdoExpressionEngineImp::ProcessComparisonCondition (FdoComparisonCondition&
             m_retvals.push_back (ObtainBooleanValue (false, Like (argLeft, argRight)));
             break;    
         default:
-            RelinquishDataValue (argRight);
-            RelinquishDataValue (argLeft);
             throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_83_UNSUPPORTED_COMPARISON_OPERATION)));
     }
 
@@ -1248,13 +1216,8 @@ void FdoExpressionEngineImp::ProcessNullCondition (FdoNullCondition& filter)
 
 void FdoExpressionEngineImp::ProcessSpatialCondition (FdoSpatialCondition& filter)
 {
-    FdoPtr<FdoIdentifier> idName = filter.GetPropertyName ();
-    if( m_reader->IsNull(idName->GetName ()))
-    {
-        m_retvals.push_back (ObtainBooleanValue (false, false));
-        return;
-    }
-    FdoPtr<FdoByteArray> fgf = m_reader->GetGeometry (idName->GetName ());
+    FdoPtr<FdoByteArray> fgf = m_reader->GetGeometry (
+        FdoPtr<FdoIdentifier>(filter.GetPropertyName ())->GetName ());
 
     //no geometry? trivially false.
     if (fgf->GetCount () == 0)
@@ -1281,7 +1244,7 @@ void FdoExpressionEngineImp::ProcessSpatialCondition (FdoSpatialCondition& filte
 void FdoExpressionEngineImp::ProcessDistanceCondition (FdoDistanceCondition& filter)
 {
     //TODO:
-    printf ("distance condition on %ls\n", FdoPtr<FdoIdentifier>(filter.GetPropertyName ())->GetName());
+    printf ("distance condition on %ls\n", filter.GetPropertyName ());
     throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_85_DISTANCE_SPATIAL_CONDITION_NOT_SUPPORTED)));
 }
 
@@ -1315,8 +1278,6 @@ void FdoExpressionEngineImp::ProcessBinaryExpression (FdoBinaryExpression& expr)
             m_retvals.push_back (Divide (argLeft, argRight));
             break;
         default: 
-            RelinquishDataValue (argLeft);
-            RelinquishDataValue (argRight);
             throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_86_UNSUPPORTED_BINARY_OPERATION)));
     }
 
@@ -1339,7 +1300,6 @@ void FdoExpressionEngineImp::ProcessUnaryExpression (FdoUnaryExpression& expr)
             m_retvals.push_back (Negate (argRight));
             break;
         default:
-            RelinquishDataValue (argRight);
             throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_87_UNSUPPORTED_UNARY_OPERATION)));
     }
 
@@ -1466,15 +1426,9 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
             for (int i=0; i<args->GetCount(); i++)
             {
 				FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
-                
 				m_retvals.pop_back ();
 				functionParameters->Insert(0, dv);
-
-                // The geometries are not pooled so release them here.
-                if (dv->GetLiteralValueType() == FdoLiteralValueType_Geometry)
-                    FDO_SAFE_RELEASE(dv);
 			}
-
 			FdoExpressionEngineIAggregateFunction *func = m_AggregateFunctions.at(m_CurrentIndex);
 			func->Process(functionParameters);
 			for (int i=0; i<functionParameters->GetCount(); i++)
@@ -1732,24 +1686,10 @@ void FdoExpressionEngineImp::ProcessIdentifier (FdoString* name)
                 m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : m_reader->GetString (name))); 
                 break;
             case FdoDataType_BLOB : 
-                if (!bIsNull)
-                {
-                    FdoPtr<FdoLOBValue> blob = m_reader->GetLOB (name);
-                    FdoPtr<FdoByteArray> blobBytes = blob->GetData ();
-                    m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes)); 
-                }
-                else
-                    m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL)); 
+                m_retvals.push_back (ObtainBLOBValue (bIsNull, bIsNull ? NULL : m_reader->GetLOB (name)->GetData ())); 
                 break;
             case FdoDataType_CLOB : 
-                if (!bIsNull)
-                {
-                    FdoPtr<FdoLOBValue> clob = m_reader->GetLOB (name);
-                    FdoPtr<FdoByteArray> clobBytes = clob->GetData ();
-                    m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes)); 
-                }
-                else
-                    m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL)); 
+                m_retvals.push_back (ObtainCLOBValue (bIsNull, bIsNull ? NULL : m_reader->GetLOB (name)->GetData ())); 
                 break;
             default:
                 throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_71_DATA_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoDataTypeToString(definition->m_dataType)));
@@ -1758,13 +1698,8 @@ void FdoExpressionEngineImp::ProcessIdentifier (FdoString* name)
         else if (definition->m_propertyType == FdoPropertyType_GeometricProperty)
         {
             bool bIsNull = (m_reader->IsNull(name));
-            if(!bIsNull)
-            {
-                FdoPtr<FdoByteArray> geomBytes = m_reader->GetGeometry(name);
-                m_retvals.push_back (ObtainGeometryValue (bIsNull, geomBytes )); 
-            }
-            else
-                m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
+            FdoPtr<FdoByteArray> geomBytes = m_reader->GetGeometry(name);
+            m_retvals.push_back (ObtainGeometryValue (bIsNull, bIsNull ? NULL : geomBytes.p )); 
         }
         else
             throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_70_PROPERTY_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoPropertyTypeToString(definition->m_propertyType)));
@@ -1843,38 +1778,18 @@ void FdoExpressionEngineImp::ProcessStringValue (FdoStringValue& expr)
 
 void FdoExpressionEngineImp::ProcessBLOBValue (FdoBLOBValue& expr)
 {
-    bool isNull = expr.IsNull();
-    if(!isNull)
-    {
-        FdoPtr<FdoByteArray> blobBytes = expr.GetData ();
-        m_retvals.push_back (ObtainBLOBValue (isNull, blobBytes));
-    }
-    else
-        m_retvals.push_back (ObtainBLOBValue (isNull, NULL));
+    m_retvals.push_back (ObtainBLOBValue (expr.IsNull(), expr.IsNull() ? NULL : expr.GetData ()));
 }
 
 void FdoExpressionEngineImp::ProcessCLOBValue (FdoCLOBValue& expr)
 {
-    bool isNull = expr.IsNull();
-    if(!isNull)
-    {
-        FdoPtr<FdoByteArray> clobBytes = expr.GetData ();
-        m_retvals.push_back (ObtainCLOBValue (isNull, clobBytes));
-    }
-    else
-        m_retvals.push_back (ObtainCLOBValue (isNull, NULL));
+    m_retvals.push_back (ObtainCLOBValue (expr.IsNull(), expr.IsNull() ? NULL : expr.GetData ()));
 }
 
 void FdoExpressionEngineImp::ProcessGeometryValue (FdoGeometryValue& expr)
 {
-    bool isNull = expr.IsNull();
-    if(!isNull)
-    {
-        FdoPtr<FdoByteArray> geomBytes = expr.GetGeometry();
-        m_retvals.push_back (ObtainGeometryValue (isNull, geomBytes ));
-    }
-    else
-        m_retvals.push_back (ObtainGeometryValue (isNull, NULL));
+    FdoPtr<FdoByteArray> geomBytes = expr.GetGeometry();
+    m_retvals.push_back (ObtainGeometryValue (expr.IsNull(), expr.IsNull() ? NULL : geomBytes.p ));
 }
 
 
@@ -4242,22 +4157,10 @@ void FdoExpressionEngineImp::PushLiteralValue(FdoLiteralValue *literalValue )
                     m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : (static_cast<FdoStringValue *>(data))->GetString()));
                     break;
                 case FdoDataType_BLOB : 
-                    if (!bIsNull)
-                    {
-                        FdoPtr<FdoByteArray> blobBytes = (static_cast<FdoBLOBValue *>(data))->GetData();
-                        m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes));
-                    }
-                    else
-                        m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL));
+                    m_retvals.push_back (ObtainBLOBValue (bIsNull, bIsNull ? NULL : (static_cast<FdoBLOBValue *>(data))->GetData()));
                     break;
                 case FdoDataType_CLOB : 
-                    if (!bIsNull)
-                    {
-                        FdoPtr<FdoByteArray> clobBytes = (static_cast<FdoCLOBValue *>(data))->GetData();
-                        m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes));
-                    }
-                    else
-                        m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL));
+                    m_retvals.push_back (ObtainCLOBValue (bIsNull, bIsNull ? NULL : (static_cast<FdoCLOBValue *>(data))->GetData()));
                     break;
                 default:
                     throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_71_DATA_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoDataTypeToString(data->GetDataType())));
@@ -4269,13 +4172,7 @@ void FdoExpressionEngineImp::PushLiteralValue(FdoLiteralValue *literalValue )
         {
             FdoGeometryValue *geometry = static_cast<FdoGeometryValue *> (literalValue);
             bool bIsNull = geometry->IsNull();
-            if (!bIsNull)
-            {
-                FdoPtr<FdoByteArray> geom = geometry->GetGeometry();
-                m_retvals.push_back (ObtainGeometryValue (bIsNull, geom)); 
-            }
-            else
-                m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
+            m_retvals.push_back (ObtainGeometryValue (bIsNull, bIsNull ? NULL : geometry->GetGeometry())); 
             break;
         }
 
@@ -4321,7 +4218,7 @@ void FdoExpressionEngineImp::GetExpressionType(FdoClassDefinition* originalClass
 
 FdoFunctionDefinitionCollection *FdoExpressionEngineImp::DeepCopyFunctionDefinitions(FdoExpressionEngineFunctionCollection *functions)
 {
-    FdoPtr<FdoFunctionDefinitionCollection> newFunctions = FdoFunctionDefinitionCollection::Create();
+    FdoFunctionDefinitionCollection *newFunctions = FdoFunctionDefinitionCollection::Create();
     for (int i=0; i<functions->GetCount(); i++)
     {
         FdoPtr<FdoExpressionEngineIFunction> function = functions->GetItem(i);
@@ -4329,7 +4226,7 @@ FdoFunctionDefinitionCollection *FdoExpressionEngineImp::DeepCopyFunctionDefinit
         FdoPtr<FdoFunctionDefinition> copyFunction = FdoExpressionEngineImp::DeepCopyFunctionDefinition(functionDefinition);
         newFunctions->Add(copyFunction);
     }
-    return FDO_SAFE_ADDREF(newFunctions.p);
+    return newFunctions;
 }
 
 FdoFunctionDefinition *FdoExpressionEngineImp::DeepCopyFunctionDefinition(FdoFunctionDefinition *functionDefinition)

@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
 /// \brief
 /// The IConnectionInfo interface exposes information about the feature provider
 /// and provides access to the IConnectionPropertyDictionary interface.
-private ref class IConnectionInfoImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionInfo
+private __gc class IConnectionInfoImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionInfo
 {
 public:
     /// \brief
@@ -37,10 +37,7 @@ public:
     /// \return
     /// Returns the provider name
     /// 
-    virtual property System::String^ ProviderName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderName();
 
     /// \brief
     /// Gets the display name of the feature provider.
@@ -48,10 +45,7 @@ public:
     /// \return
     /// Returns the provider's display name
     /// 
-    virtual property System::String^ ProviderDisplayName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderDisplayName();
 
     /// \brief
     /// Gets the description of the feature provider.
@@ -59,10 +53,7 @@ public:
     /// \return
     /// Returns the provider description
     /// 
-    virtual property System::String^ ProviderDescription
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderDescription();
 
     /// \brief
     /// Gets the version of the feature provider.
@@ -70,10 +61,7 @@ public:
     /// \return
     /// Returns provider version
     /// 
-    virtual property System::String^ ProviderVersion
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderVersion();
 
     /// \brief
     /// Gets the version of the Feature Data Objects specification to which this provider conforms.
@@ -81,10 +69,7 @@ public:
     /// \return
     /// Returns FDO version supported.
     /// 
-    virtual property System::String^ FeatureDataObjectsVersion
-    {
-        System::String^ get();
-    }
+	__property System::String* get_FeatureDataObjectsVersion();
 
     /// \brief
     /// Gets the IConnectionPropertyDictionary interface that can be used to dynamically query and set the properties required to establish a connection.
@@ -92,10 +77,7 @@ public:
     /// \return
     /// Returns the property dictionary
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary^ ConnectionProperties
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary* get_ConnectionProperties();
 
     /// \brief
     /// Returns the provider type. A provider can be a file-based, database-based or
@@ -107,31 +89,28 @@ public:
     /// \return
     /// Returns the provider data store type.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType ProviderDatastoreType
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType get();
-    }
+    __property NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType get_ProviderDatastoreType();
 
     /// \brief
     /// File-based providers depend on a various files. This function returns a list
-    /// of fully qualified dependend file names. The return parameter will be nullptr if
+    /// of fully qualified dependend file names. The return parameter will be NULL if
     /// the provider is not a file-based provider.
     /// 
     /// \return
     /// Returns the list of fully-qualified dependend file names if the provider is a
-    /// file-based provider, nullptr otherwise.
+    /// file-based provider, NULL otherwise.
     /// 
-    virtual property NAMESPACE_OSGEO_COMMON::StringCollection^ DependentFileNames
-    {
-        NAMESPACE_OSGEO_COMMON::StringCollection^ get();
-    }
+    __property NAMESPACE_OSGEO_COMMON::StringCollection* get_DependentFileNames();
 
-internal:
+public private:
 	IConnectionInfoImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoIConnectionInfo* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS

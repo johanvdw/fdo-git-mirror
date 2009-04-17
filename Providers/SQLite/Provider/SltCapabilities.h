@@ -18,13 +18,6 @@
 
 #ifndef SLCAPABILITIES_H
 #define SLCAPABILITIES_H
-#define  FDO_FUNCTION_VARIANCE  L"Variance"  // Returns the measure of the dispersion around their mean value.
-
-#include <FdoExpressionEngine.h>
-#include <Functions/Geometry/FdoFunctionX.h>
-#include <Functions/Geometry/FdoFunctionY.h>
-#include <Functions/Geometry/FdoFunctionZ.h>
-#include <Functions/Geometry/FdoFunctionM.h>
 
 class SltCapabilities  : public FdoIConnectionCapabilities,
                          public FdoISchemaCapabilities,
@@ -48,9 +41,9 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
     virtual bool SupportsLongTransactions()                         { return false; }
     virtual bool SupportsSQL()                                      { return true;  }
     virtual bool SupportsConfiguration()                            { return false; }
-    virtual bool SupportsMultipleSpatialContexts()                  { return true; }
+    virtual bool SupportsMultipleSpatialContexts()                  { return false; }
     virtual bool SupportsCSysWKTFromCSysName()                      { return false; }
-    virtual bool SupportsWrite()                                    { return true; }
+    virtual bool SupportsWrite()                                    { return false; }
     virtual bool SupportsMultiUserWrite()                           { return false; }
     virtual FdoSpatialContextExtentType* GetSpatialContextTypes(FdoInt32& length)
     {
@@ -79,14 +72,14 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
     virtual bool SupportsAutoIdGeneration()                         { return true;  }
     virtual bool SupportsDataStoreScopeUniqueIdGeneration()         { return false; }
     virtual bool SupportsSchemaModification()                       { return true;  }
-    virtual bool SupportsInclusiveValueRangeConstraints()           { return true; }
-    virtual bool SupportsExclusiveValueRangeConstraints()           { return true; }
-    virtual bool SupportsValueConstraintsList()                     { return true; }
+    virtual bool SupportsInclusiveValueRangeConstraints()           { return false; }
+    virtual bool SupportsExclusiveValueRangeConstraints()           { return false; }
+    virtual bool SupportsValueConstraintsList()                     { return false; }
     virtual bool SupportsNullValueConstraints()                     { return true;  }
     virtual bool SupportsUniqueValueConstraints()                   { return true;  }
     virtual bool SupportsCompositeUniqueValueConstraints()          { return false; }
     virtual bool SupportsCompositeId()                              { return false; }
-    virtual bool SupportsDefaultValue()                             { return true; }
+    virtual bool SupportsDefaultValue()                             { return false; }
 
 
     virtual FdoInt64 GetMaximumDataValueLength(FdoDataType dataType){ return -1; }
@@ -234,7 +227,7 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
     virtual bool SupportsSelectExpressions()                        { return true;  }
     virtual bool SupportsSelectFunctions()                          { return true;  }
     virtual bool SupportsSelectDistinct()                           { return true;  }
-    virtual bool SupportsSelectOrdering()                           { return true; }
+    virtual bool SupportsSelectOrdering()                           { return false; }
     virtual bool SupportsSelectGrouping()                           { return false; }
 
 
@@ -318,12 +311,11 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
     {
         FdoFunctionDefinitionCollection* ret = FdoFunctionDefinitionCollection::Create ();
     
-        // Add well-known functions we support to the list:
-        FdoPtr<FdoFunctionDefinitionCollection> wellKnownFunctions = FdoExpressionEngine::GetStandardFunctions();
+    // Add well-known functions we support to the list:
+        FdoPtr<FdoFunctionDefinitionCollection> 
+            wellKnownFunctions = GetWellKnownFunctions();
         FdoPtr<FdoFunctionDefinition> wellKnownFunction;
 
-        // we will remove all this after we will support all Standard functions
-        // TODO process all extra parameters e.g. 'ALL'/'DISTINCT'
         wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_COUNT);
         ret->Add(wellKnownFunction);
         wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_MIN);
@@ -334,120 +326,17 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
         ret->Add(wellKnownFunction);
         wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SUM);
         ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SPATIALEXTENTS);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_MEDIAN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_STDDEV);
-        ret->Add(wellKnownFunction);
-
-        // Is safe to copy the signatures since we don't alter them and functions get the same parameters
-        // this will save us memory allocation and time...
-        FdoPtr<FdoSignatureDefinitionCollection> signatures = FdoSignatureDefinitionCollection::Create();
-        FdoPtr<FdoReadOnlySignatureDefinitionCollection> rdSignatures = wellKnownFunction->GetSignatures();
-        if (rdSignatures != NULL && rdSignatures->GetCount())
-        {
-            for (int idx = 0; idx < rdSignatures->GetCount(); idx++)
-            {
-                FdoPtr<FdoSignatureDefinition> item = rdSignatures->GetItem(idx);
-                signatures->Add(item);
-            }
-        }
-        // TODO localize this
-        FdoString *desc = L"Represents a measure of the dispersion around their mean value.";
-        wellKnownFunction = FdoFunctionDefinition::Create(FDO_FUNCTION_VARIANCE, desc, true, signatures, FdoFunctionCategoryType_Aggregate);
-        ret->Add(wellKnownFunction);
-
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ABS);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ACOS);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ASIN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ATAN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ATAN2);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_COS);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_EXP);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_LN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_LOG);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_MOD);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_POWER);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_REMAINDER);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SIN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SQRT);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TAN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_CEIL);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_FLOOR);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_ROUND);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SIGN);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TRUNC);
-        ret->Add(wellKnownFunction);
-        
         wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_CONCAT);
         ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_LOWER);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_UPPER);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SUBSTR);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_LENGTH);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TRIM);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_LTRIM);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_RTRIM);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SOUNDEX);
+        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_SPATIALEXTENTS);
         ret->Add(wellKnownFunction);
 
-        // Add function X to the list of supported function
-        FdoPtr<FdoExpressionEngineIFunction> funcX = FdoFunctionX::Create();
-        ret->Add(FdoPtr<FdoFunctionDefinition>(funcX->GetFunctionDefinition()));
-
-        // Add function Y to the list of supported function
-        FdoPtr<FdoExpressionEngineIFunction> funcY = FdoFunctionY::Create();
-        ret->Add(FdoPtr<FdoFunctionDefinition>(funcY->GetFunctionDefinition()));
-
-        // Add function Z to the list of supported function
-        FdoPtr<FdoExpressionEngineIFunction> funcZ = FdoFunctionZ::Create();
-        ret->Add(FdoPtr<FdoFunctionDefinition>(funcZ->GetFunctionDefinition()));
-
-        // Add function M to the list of supported function
-        FdoPtr<FdoExpressionEngineIFunction> funcM = FdoFunctionM::Create();
-        ret->Add(FdoPtr<FdoFunctionDefinition>(funcM->GetFunctionDefinition()));
-
-        // TODO process extra parameter
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TODATE);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TODOUBLE);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TOFLOAT);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TOINT32);
-        ret->Add(wellKnownFunction);
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TOINT64);
-        ret->Add(wellKnownFunction);
-        // TODO process extra parameter
-        wellKnownFunction = wellKnownFunctions->GetItem(                    FDO_FUNCTION_TOSTRING);
-        ret->Add(wellKnownFunction);
+        //TODO: we also support the following, which we need to add to
+        //the list we return here
+        //abs, sin, cos, tan, asin, acos, atan, atan2, exp, ln, log10
+        //modulo, round, floor, ceil, sign, trunc
+        //stdev, variance, median
+        //all spatial op functions + GeomFromText
 
         return ret;
     }

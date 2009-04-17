@@ -30,7 +30,7 @@ class SltMetadata
 {
 public:
 
-    SltMetadata(SltConnection* connection, const char* name, bool bUseFdoMetadata);
+    SltMetadata(SltConnection* connection, const char* name);
     ~SltMetadata();
 
     FdoClassDefinition*     ToClass(); 
@@ -39,26 +39,9 @@ public:
 
     GeomFormat              GetGeomFormat() { return (GeomFormat)m_geomFormat; }
 
-    static FdoDataValue* GenerateConstraintValue(FdoDataType type, FdoString* value);
-
 private:
-    class SQLiteExpression
-    {
-    public:
-        unsigned char op;
-        std::wstring name;
-        std::vector<std::wstring> values;
-    public:
-        SQLiteExpression(unsigned char pOp)
-        {
-            op = pOp;
-        }
-    };
-    bool ExtractConstraints(Expr* node, std::vector<SQLiteExpression>& result);
-    void GenerateConstraint(FdoDataPropertyDefinition* prop, SQLiteExpression& operation);
 
     void FindSpatialContextName(int srid, std::wstring& ret);
-
 
     SltConnection*      m_connection;
     FdoClassDefinition* m_fc;
@@ -66,6 +49,5 @@ private:
     Table*              m_mdtable;
     int                 m_iGeom;
     int                 m_geomFormat;
-    bool                m_bUseFdoMetadata;
 };
 

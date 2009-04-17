@@ -26,67 +26,122 @@
 #include "FDO\mgObjectFactory.h"
 #include "FDO\Schema\mgSchemaElement.h"
 
+
+
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
 FdoIDisposableCollection* NAMESPACE_OSGEO_FDO::IDisposableCollection::GetImpObj()
 {
-	return static_cast<FdoIDisposableCollection*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoIDisposableCollection*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO::IDisposableCollection::GetDisposableObject()
+NAMESPACE_OSGEO_FDO::IDisposableCollection::IDisposableCollection() : Disposable(System::IntPtr::Zero, false)
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	EXCEPTION_HANDLER(Attach(FdoIDisposableCollection::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO::IDisposableCollection::IDisposableCollection() : NAMESPACE_OSGEO_COMMON::CollectionBase(System::IntPtr::Zero, false)
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::ICollection::CopyTo(System::Array* array, System::Int32 index) 
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoIDisposableCollection::Create()), true))
-}
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::CopyTo(array<NAMESPACE_OSGEO_RUNTIME::Disposable^>^ pArray, System::Int32 index)
-{
-	if (nullptr == pArray)
-		throw gcnew System::ArgumentNullException();
 	if (index < 0)
-		throw gcnew System::ArgumentOutOfRangeException();
-	if (pArray->Rank != 1 || index >= pArray->Length || this->Count + index > pArray->Length)
-		throw gcnew System::ArgumentException();
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
 
-	for (System::Int32 i = 0; i < this->Count; i++)
-        pArray[index+i] = this->Item[i];
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array->set_Item(index + i, get_Item(i));
+	}
 }
 
-System::Object^ NAMESPACE_OSGEO_FDO::IDisposableCollection::IndexInternal::get(System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::CopyTo(NAMESPACE_OSGEO_RUNTIME::Disposable* array[], System::Int32 index)
 {
-	return this->Item[index];
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
+	if (index < 0)
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
+
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array[index+i] = __try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(get_Item(i));
+	}
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::IndexInternal::set(System::Int32 index, System::Object^ value)
+System::Object* NAMESPACE_OSGEO_FDO::IDisposableCollection::ICollection::get_SyncRoot()
 {
-	this->Item[index] = dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value);
+	return NULL;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::Add(System::Object^ value)
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::ICollection::get_IsSynchronized()
 {
-	return Add(dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value));
+	return false;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::Contains(System::Object^ value)
-{
-	return Contains(dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::get_IsFixedSize() 
+{ 
+	return false;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::IndexOf(System::Object^ value)
-{
-	return IndexOf(dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::get_IsReadOnly() 
+{ 
+	return false;
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Insert(System::Int32 index, System::Object^ value)
+System::Object* NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::get_Item(System::Int32 index)
 {
-	Insert(index, dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value));
+	return get_RealTypeItem( index );
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Remove(System::Object^ value)
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::set_Item(System::Int32 index, System::Object* value)
 {
-	return Remove(dynamic_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(value));
+	set_RealTypeItem(index,  __try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value) );
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::Add(System::Object* value)
+{
+	return Add(__try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value));
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::Contains(System::Object* value)
+{
+	return Contains(__try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value));
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::IndexOf(System::Object* value)
+{
+	return IndexOf(__try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::Insert(System::Int32 index, System::Object* value)
+{
+	Insert(index,__try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::IList::Remove(System::Object* value)
+{
+	return Remove(__try_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(value));
 }
 
 System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::RemoveAt(System::Int32 index)
@@ -94,48 +149,53 @@ System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::RemoveAt(System::Int32 
 	EXCEPTION_HANDLER(GetImpObj()->RemoveAt(index))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::Count::get(System::Void)
+System::Collections::IEnumerator* NAMESPACE_OSGEO_FDO::IDisposableCollection::GetEnumerator()
 {
-	System::Int32 length;
+	return new Enumerator(this);
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::get_Count(System::Void)
+{
+	FdoInt32 length;
 
 	EXCEPTION_HANDLER(length = GetImpObj()->GetCount())
 
 	return length;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::Add(NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::Add(NAMESPACE_OSGEO_RUNTIME::Disposable* value)
 {
-	System::Int32 index;
+	FdoInt32 index;
 
-	EXCEPTION_HANDLER(index = GetImpObj()->Add(static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	EXCEPTION_HANDLER(index = GetImpObj()->Add(static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
 
 	return index;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::IndexOf(NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Int32 NAMESPACE_OSGEO_FDO::IDisposableCollection::IndexOf(NAMESPACE_OSGEO_RUNTIME::Disposable* value)
 {
-	System::Int32 index;
+	FdoInt32 index;
 
-	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf(static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf(static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
 
 	return index;
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Insert(System::Int32 index, NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Insert(System::Int32 index, NAMESPACE_OSGEO_RUNTIME::Disposable* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Insert(index, static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	EXCEPTION_HANDLER(GetImpObj()->Insert(index, static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Remove(NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Remove(NAMESPACE_OSGEO_RUNTIME::Disposable* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Remove(static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	EXCEPTION_HANDLER(GetImpObj()->Remove(static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::Contains(NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::Contains(NAMESPACE_OSGEO_RUNTIME::Disposable* value)
 {
-	System::Boolean exist;
+	FdoBoolean exist;
 
-	EXCEPTION_HANDLER(exist = !!GetImpObj()->Contains(value == nullptr ? nullptr : static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	EXCEPTION_HANDLER(exist = !!GetImpObj()->Contains(value == NULL ? NULL : static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
 
 	return exist;
 }
@@ -145,16 +205,54 @@ System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Clear()
 	EXCEPTION_HANDLER(GetImpObj()->Clear())
 }
 
-NAMESPACE_OSGEO_RUNTIME::Disposable^ NAMESPACE_OSGEO_FDO::IDisposableCollection::Item::get(System::Int32 index)
+/*
+Implementation for IDisposableCollection::Enumerator
+*/ 
+System::Object* NAMESPACE_OSGEO_FDO::IDisposableCollection::Enumerator::get_Current()
 {
-	FdoIDisposable* result;
+	if (m_nIdx < 0 || m_nIdx >= m_pCol->Count)
+	{
+		throw new InvalidOperationException();
+	}
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetItem(index))
+	FdoIDisposable* upElement;
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDisposableCollection(IntPtr(result), true);
+	EXCEPTION_HANDLER(upElement = m_pCol->GetImpObj()->GetItem(m_nIdx))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDisposableCollection(upElement, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Item::set(System::Int32 index, NAMESPACE_OSGEO_RUNTIME::Disposable^ value)
+System::Boolean NAMESPACE_OSGEO_FDO::IDisposableCollection::Enumerator::MoveNext()
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, static_cast<FdoIDisposable*>(value->GetDisposableObject().ToPointer())))
+	++m_nIdx;
+	return m_nIdx < m_pCol->Count;
+}
+
+System::Void NAMESPACE_OSGEO_FDO::IDisposableCollection::Enumerator::Reset()
+{
+	m_nIdx = -1;
+}
+
+NAMESPACE_OSGEO_RUNTIME::Disposable* NAMESPACE_OSGEO_FDO::IDisposableCollection::get_RealTypeItem(System::Int32 index)
+{
+	FdoIDisposable* upElement;
+
+	EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(index))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDisposableCollection(upElement, true);
+}
+
+System::Void  NAMESPACE_OSGEO_FDO::IDisposableCollection::set_RealTypeItem(System::Int32 index, NAMESPACE_OSGEO_RUNTIME::Disposable* value)
+{
+	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, static_cast<FdoDisposable*>((value->get_UnmanagedObject()).ToPointer())))
+}
+
+NAMESPACE_OSGEO_RUNTIME::Disposable* NAMESPACE_OSGEO_FDO::IDisposableCollection::get_Item(System::Int32 index)
+{
+	return get_RealTypeItem(index);
+}
+
+System::Void  NAMESPACE_OSGEO_FDO::IDisposableCollection::set_Item(System::Int32 index, NAMESPACE_OSGEO_RUNTIME::Disposable* value)
+{
+	set_RealTypeItem(index, value);
 }

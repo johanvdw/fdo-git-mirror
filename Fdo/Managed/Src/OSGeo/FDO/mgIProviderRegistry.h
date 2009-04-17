@@ -19,7 +19,7 @@
 #pragma once
 
 BEGIN_NAMESPACE_OSGEO_FDO_CLIENTSERVICES
-ref class ProviderCollection;
+public __gc class ProviderCollection;
 END_NAMESPACE_OSGEO_FDO_CLIENTSERVICES
 
 BEGIN_NAMESPACE_OSGEO_FDO
@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_FDO
 ///
 /// \note
 /// This is not the Windows registry.
-public interface class IProviderRegistry : public System::IDisposable
+public __gc __interface IProviderRegistry : public System::IDisposable
 {
 public:
     /// \brief
@@ -41,7 +41,7 @@ public:
     /// \return
     /// Returns an an instance of ProviderCollection. Throws an instance of Exception if an error occurs.
     /// 
-	NAMESPACE_OSGEO_FDO_CLIENTSERVICES::ProviderCollection^ GetProviders();
+	NAMESPACE_OSGEO_FDO_CLIENTSERVICES::ProviderCollection* GetProviders();
 
     /// \brief
     /// Registers a provider given the necessary information to register the provider. 
@@ -68,12 +68,12 @@ public:
     /// \return
     /// Returns nothing. Throws an instance of Exception if an error occurs.
     /// 
-	System::Void RegisterProvider(System::String^ name, 
-		System::String^ displayName, 
-		System::String^ description, 
-		System::String^ version, 
-		System::String^ fdoVersion, 
-		System::String^ libraryPath,
+	System::Void RegisterProvider(String * name, 
+		String * displayName, 
+		String * description, 
+		String * version, 
+		String * fdoVersion, 
+		String * libraryPath,
 		System::Boolean isManaged);
 
     /// \brief
@@ -86,7 +86,7 @@ public:
     /// \return
     /// Returns nothing. Throws an instance of Exception if an error occurs.
     /// 
-	System::Void UnregisterProvider(System::String^ name);
+	System::Void UnregisterProvider(String * name);
 
 };
 

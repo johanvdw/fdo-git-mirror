@@ -24,14 +24,14 @@
 class FdoIGetMeasureUnits;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE
-interface class IMeasureUnitReader;
+public __gc __interface IMeasureUnitReader;
 
 /// \ingroup (OSGeoFDOCommandsUnitOfMeasure)
 /// \brief
 /// The IGetMeasureUnitsImp class is a concrete implementation of IGetMeasureUnits.
 /// The IGetMeasureUnits interface defines the GetMeasureUnits command, which
 /// enumerates the existing measurement units.
-private ref class IGetMeasureUnitsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IGetMeasureUnitsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                          public NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IGetMeasureUnits
 {
 public:
@@ -41,7 +41,7 @@ public:
     /// \return
     /// Returns the measure unit reader
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReader* Execute();
 
 public:
     /// \brief
@@ -60,8 +60,6 @@ public:
 	}
 
 	inline FdoIGetMeasureUnits* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE

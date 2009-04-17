@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Converter"
+	Name="SQLiteConverter"
 	ProjectGUID="{C9E1C61D-91DE-4D26-9C77-F7C24EF26B1E}"
 	RootNamespace="SDXConverter"
 	Keyword="Win32Proj"
@@ -21,8 +21,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Converter\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			>
@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\Fdo\Unmanaged\Inc;..\..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -66,7 +66,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoSpatial.lib ProvidersCommon.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\Lib\win32\debug;..\Provider\Debug;..\..\..\..\Utilities\Common\lib\win32\debug"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\Lib\win32\debug;..\Provider\Debug;..\..\..\Utilities\Common\lib\win32\debug"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -97,8 +97,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Converter\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			>
@@ -121,7 +121,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\Fdo\Unmanaged\Inc;..\..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -143,7 +143,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoSpatial.lib ProvidersCommon.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\Lib\win64\debug;..\Provider\Debug;..\..\..\..\Utilities\Common\lib\win64\debug"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\Lib\win64\debug;..\Provider\Debug;..\..\..\Utilities\Common\lib\win64\debug"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -174,8 +174,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Converter\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -202,7 +202,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..\..\..\Fdo\Unmanaged\Inc;..\..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -224,7 +224,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoSpatial.lib ProvidersCommon.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\lib\win32\release;..\Provider\Release;..\..\..\..\Utilities\Common\lib\win32\release"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\lib\win32\release;..\Provider\Release;..\..\..\Utilities\Common\lib\win32\release"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -257,8 +257,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Converter\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -286,7 +286,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..\..\..\Fdo\Unmanaged\Inc;..\..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;..\..\..\Utilities\Common\Inc;..\Provider;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -308,7 +308,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoSpatial.lib ProvidersCommon.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\lib\win64\release;..\Provider\Release;..\..\..\..\Utilities\Common\lib\win64\release"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\lib\win64\release;..\Provider\Release;..\..\..\Utilities\Common\lib\win64\release"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"

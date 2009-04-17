@@ -24,24 +24,19 @@
 
 FdoIDestroySchema* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::GetImpObj()
 {
-    return static_cast<FdoIDestroySchema*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIDestroySchema*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::SchemaName::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::get_SchemaName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSchemaName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::SchemaName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDestroySchemaImp::set_SchemaName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSchemaName(StringToUni(value)))
 }

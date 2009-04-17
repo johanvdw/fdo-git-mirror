@@ -23,59 +23,61 @@
 
 FdoProvider* NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::GetImpObj()
 {
-	return static_cast<FdoProvider*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoProvider*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::Name::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_Name()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetName());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::DisplayName::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_DisplayName()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetDisplayName());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::Description::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_Description()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetDescription());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::Version::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_Version()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetVersion());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::FeatureDataObjectsVersion::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_FeatureDataObjectsVersion()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetFeatureDataObjectsVersion());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::LibraryPath::get()
+System::String *NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_LibraryPath()
 {
 	FdoString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetLibraryPath());
-	return CHECK_STRING(ret);
+	return ret;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::IsManaged::get()
+System::Boolean NAMESPACE_OSGEO_FDO_CLIENTSERVICES::Provider::get_IsManaged()
 {
-	System::Boolean ret;
+	FdoBoolean ret;
 	EXCEPTION_HANDLER(ret = !!GetImpObj()->GetIsManaged())
 	return ret;
 }

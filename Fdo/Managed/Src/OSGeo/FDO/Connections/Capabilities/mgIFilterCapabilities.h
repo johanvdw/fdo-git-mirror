@@ -23,9 +23,9 @@
 #include "FDO\Filter\mgDistanceOperations.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_FILTER
-enum class ConditionType;
-enum class SpatialOperations;
-enum class DistanceOperations;
+public __value enum ConditionType;
+public __value enum SpatialOperations;
+public __value enum DistanceOperations;
 END_NAMESPACE_OSGEO_FDO_FILTER
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 /// \interface OSGeo::FDO::Connections::Capabilities::IFilterCapabilities
 /// \brief
 /// The IFilterCapabilities interface declares the feature provider's level of support for Filter classes.
-public interface class IFilterCapabilities : public System::IDisposable
+public __gc __interface IFilterCapabilities : public System::IDisposable
 {
 public:
     /// \brief
@@ -43,10 +43,7 @@ public:
     /// \return
     /// Returns the list of condition types
     /// 
-    property array<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>^ ConditionTypes
-    {
-        array<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_FILTER::ConditionType get_ConditionTypes() [];
 
     /// \brief
     /// Returns an array of SpatialOperation objects the feature provider supports.
@@ -54,10 +51,7 @@ public:
     /// \return
     /// Returns the list of spartial operations
     /// 
-    property array<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>^ SpatialOperations
-    {
-        array<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations get_SpatialOperations() [];
 
     /// \brief
     /// Returns an array of DistanceOperation objects the feature provider supports.
@@ -65,10 +59,7 @@ public:
     /// \return
     /// Returns the list of distance operations
     /// 
-    property array<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>^ DistanceOperations
-    {
-        array<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations get_DistanceOperations() [];
 
     /// \brief
     /// Determines if the feature provider supports geodesic distance measurement. Returns false if the feature provider supports only linear distance measurement.

@@ -19,11 +19,6 @@
 #include "SltCommandTemplates.h"
 #include "SltReader.h"
 #include "SltConversionUtils.h"
-#include "StringUtil.h"
-
-//When performing bulk inserts or updates, we commit the transaction 
-//once every so many features
-const int BULK_OP_SIZE = 10000;
 
 ///Now featuring lasagna comments!
 
@@ -38,7 +33,7 @@ class SltDescribeSchema : public SltCommand<FdoIDescribeSchema>
 {
     public:
         SltDescribeSchema(SltConnection* connection) 
-            : SltCommand<FdoIDescribeSchema>(connection), m_classNames(NULL) 
+            : SltCommand<FdoIDescribeSchema>(connection) 
                                                                 { }
 
     protected:
@@ -51,21 +46,13 @@ class SltDescribeSchema : public SltCommand<FdoIDescribeSchema>
     public:
         virtual FdoString*              GetSchemaName()                             { return L"Default"; }
         virtual void                    SetSchemaName(FdoString* value)             { }
-        virtual FdoStringCollection*    GetClassNames()                             { return FDO_SAFE_ADDREF(m_classNames); }
-        virtual void                    SetClassNames(FdoStringCollection* value)   
-        { 
-            FDO_SAFE_RELEASE(m_classNames); 
-            m_classNames = FDO_SAFE_ADDREF(value); 
-        }
+        virtual FdoStringCollection*    GetClassNames()                             { return NULL; }
+        virtual void                    SetClassNames(FdoStringCollection* value)   { }
 
         virtual FdoFeatureSchemaCollection* Execute()   
         { 
-            return m_connection->DescribeSchema(m_classNames); 
+            return m_connection->DescribeSchema(); 
         }
-
-    private:
-
-        FdoStringCollection* m_classNames;
 };
 
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -282,19 +269,14 @@ class SltUpdate : public SltFeatureCommand<FdoIUpdate>
 {
     public:
         SltUpdate(SltConnection* connection) 
-            : SltFeatureCommand<FdoIUpdate>(connection),
-              m_updateCount(0)
+            : SltFeatureCommand<FdoIUpdate>(connection)
         {
             m_properties = FdoPropertyValueCollection::Create();
-            m_db = m_connection->GetDbWrite();
         }
 
     protected:
         virtual ~SltUpdate()
         {
-            char* err = NULL;
-            int rc = sqlite3_exec(m_db, "COMMIT;", NULL, NULL, &err);
-
             FDO_SAFE_RELEASE(m_properties);
         }
 
@@ -306,25 +288,6 @@ class SltUpdate : public SltFeatureCommand<FdoIUpdate>
         virtual FdoPropertyValueCollection* GetPropertyValues() { return FDO_SAFE_ADDREF(m_properties); }
         virtual FdoInt32 Execute()
         {
-            char* err = NULL;
-
-            //Commit a bulk update if we reached the limit
-            if (m_updateCount == BULK_OP_SIZE)
-            {
-                int rc = sqlite3_exec(m_db, "COMMIT;", NULL, NULL, &err);
-                m_updateCount = 0;
-            }
-
-            //Begin a bulk update transaction
-            if (m_updateCount == 0)
-            {
-                int rc2 = sqlite3_exec(m_db, "BEGIN;", NULL, NULL, &err);
-                if (rc2 != SQLITE_OK)
-                    throw FdoCommandException::Create(L"SQLite begin transaction failed!");
-            }
-
-            m_updateCount++;
-
             return m_connection->Update(m_className, 
                                         m_filter, 
                                         m_properties);
@@ -333,8 +296,6 @@ class SltUpdate : public SltFeatureCommand<FdoIUpdate>
 
     private:
         FdoPropertyValueCollection* m_properties;
-        sqlite3*                    m_db;
-        int                         m_updateCount;
 };
 
 
@@ -443,7 +404,7 @@ class SltInsert : public SltCommand<FdoIInsert>
             }
             else
             {
-                size_t count = (size_t)m_properties->GetCount();
+                int count = m_properties->GetCount();
 
                 //detect changes to the property value collection that may have been
                 //done between calls to Execute(). Not recommended to do that, but it happens...
@@ -453,7 +414,7 @@ class SltInsert : public SltCommand<FdoIInsert>
                     return Execute();
                 }
 
-                for (size_t i=0; i<count; i++)
+                for (int i=0; i<count; i++)
                 {
                     FdoPtr<FdoPropertyValue> pv = m_properties->GetItem(i);
                     FdoPtr<FdoIdentifier> id = pv->GetName();
@@ -486,7 +447,7 @@ class SltInsert : public SltCommand<FdoIInsert>
                 throw FdoCommandException::Create(L"SQLite insert failed!");
             }
 
-            if (++m_execCount == BULK_OP_SIZE)
+            if (++m_execCount == 10000)
             {
                 char* err = NULL;
                
@@ -547,29 +508,30 @@ class SltInsert : public SltCommand<FdoIInsert>
 
         void PrepareSQL()
         {
-            StringBuffer sb;
-            sb.Append("INSERT INTO ");
-            sb.AppendDQuoted(m_fcname.c_str());
-            sb.Append(" (");
+            std::string sql;
+            sql.reserve(256);
+            sql += "INSERT INTO \"";
+            sql += m_fcname;
+            sql += "\" (";
 
             for (int i=0; i<m_properties->GetCount(); i++)
             {
                 if (i)
-                    sb.Append(",");
+                    sql += ",";
                 
                 FdoPtr<FdoPropertyValue> pv = m_properties->GetItem(i);
                 FdoPtr<FdoIdentifier> id = pv->GetName();
 
                 m_propNames.push_back(id->GetName()); //build up a list of the property names (see Execute() for why this is needed)
-                sb.AppendDQuoted(id->GetName());
+                sql += "\"" + W2A_SLOW(id->GetName()) + "\"";
             }
 
             //set up parametrized insert values
-            sb.Append(") VALUES(");
+            sql += ") VALUES(";
             for (int i=0; i<m_properties->GetCount(); i++)
-                (i) ? sb.Append(",?") : sb.Append("?");
+                (i) ? sql += ",?" : sql += "?";
 
-            sb.Append(");");
+            sql += ");";
 
             //begin the insert transaction
             char* err = NULL;
@@ -577,7 +539,7 @@ class SltInsert : public SltCommand<FdoIInsert>
 
             //parse the SQL statement
             const char* tail = NULL;
-            int rc = sqlite3_prepare_v2(m_db, sb.Data(), -1, &m_pCompiledSQL, &tail);
+            int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &m_pCompiledSQL, &tail);
 
             if (rc != SQLITE_OK)
                 throw FdoCommandException::Create(L"Failed to parse insert sql.");
@@ -717,39 +679,29 @@ public:
     virtual void            SetUpdateExisting(const bool value)     { m_updateExisting = value; }
     virtual void            Execute()
     {
-        StringBuffer sb;
-        sb.Append("INSERT INTO spatial_ref_sys (sr_name,auth_name,srtext) VALUES(");
+        std::string tmp;
 
-        if (m_scName.empty())
-            sb.Append("NULL");
-        else
-            sb.AppendSQuoted(m_scName.c_str());
+        std::string sc_sql = "INSERT INTO spatial_ref_sys (sr_name,auth_name,srtext) VALUES(";
 
-        sb.Append(",");
+        tmp = W2A_SLOW(m_scName.c_str());
+        sc_sql += tmp.empty() ? "NULL": "'" + tmp + "'";
+        sc_sql += ",";
 
-        if (m_coordSysName.empty())
-            sb.Append("NULL");
-        else
-            sb.AppendSQuoted(m_coordSysName.c_str());
+        tmp = W2A_SLOW(m_coordSysName.c_str());
+        sc_sql += tmp.empty() ? "NULL": "'" + tmp + "'";
+        sc_sql += ",";
 
-        sb.Append(",");
-
-        if (m_coordSysWkt.empty())
-            sb.Append("NULL");
-        else
-            sb.AppendSQuoted(m_coordSysWkt.c_str());
-
-        sb.Append(");");
+        tmp = W2A_SLOW(m_coordSysWkt.c_str());
+        sc_sql += tmp.empty() ? "NULL" : "'" + tmp + "'";
+        sc_sql += ");";
 
         char* zerr = NULL;
-        int rc = sqlite3_exec(m_connection->GetDbWrite(), sb.Data(), NULL, NULL, &zerr);
+        int rc = sqlite3_exec(m_connection->GetDbWrite(), sc_sql.c_str(), NULL, NULL, &zerr);
 
         if (rc)
         {
             FdoCommandException::Create(L"Failed to create spatial context.");
         }
-
-        m_connection->UpdateClassesWithInvalidSC();
     }
 
     //-------------------------------------------------------

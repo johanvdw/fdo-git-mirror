@@ -32,42 +32,37 @@
 
 FdoISQLCommand* NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::GetImpObj()
 {
-    return static_cast<FdoISQLCommand*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoISQLCommand*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::SQLStatement::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::get_SQLStatement()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSQLStatement())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::SQLStatement::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::set_SQLStatement(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSQLStatement(StringToUni(value)))
 }
 
 System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::ExecuteNonQuery()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ExecuteNonQuery())
 
 	return result;
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader^ NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::ExecuteReader()
+NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader* NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommandImp::ExecuteReader()
 {
 	FdoISQLDataReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ExecuteReader())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateISQLDataReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateISQLDataReader(result, true);
 }

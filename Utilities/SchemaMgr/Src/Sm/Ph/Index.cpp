@@ -25,12 +25,12 @@
 
 FdoSmPhIndex::FdoSmPhIndex(
         FdoStringP name, 
-        FdoSmPhDbObject* pParent,
+        const FdoSmPhTable* pTable,
         bool isUnique,
 		FdoSchemaElementState elementState
 ) : 
-    FdoSmPhDbObject( name, (const FdoSmPhOwner*) pParent->GetParent(), elementState ),
-    mpDbObject(pParent),
+    FdoSmPhDbObject( name, (const FdoSmPhOwner*) pTable->GetParent(), elementState ),
+    mpTable(pTable),
 	mIsUnique(isUnique)
 {
 }
@@ -107,10 +107,10 @@ bool FdoSmPhIndex::CheckCommitDependencies( bool fromParent, bool isBeforeParent
 
     // Get the table's element state
     FdoSchemaElementState tableElementState = FdoSchemaElementState_Detached;
-    FdoSmPhDbObjectP pDbObject = GetDbObject();
+    const FdoSmPhTable* pTable = RefTable();
 
-    if ( pDbObject ) 
-        tableElementState = pDbObject->GetElementState();
+    if ( pTable ) 
+        tableElementState = pTable->GetElementState();
 
     if ( fromParent && (tableElementState == FdoSchemaElementState_Added) )
         // Table is new. Commit must wait until table is added.
@@ -131,7 +131,7 @@ void FdoSmPhIndex::XMLSerialize( FILE* xmlFp, int ref ) const
 	fprintf( xmlFp, "<dbmsIndex name=\"%s\" unique=\"%ls\" table=\"%s\">\n",
 			(const char*) FdoStringP(GetName()), 
             mIsUnique ? L"true" : L"false",
-            mpDbObject ? (const char*) FdoStringP(mpDbObject->GetName()) : ""
+            mpTable ? (const char*) FdoStringP(mpTable->GetName()) : ""
 	);
 
     FdoSmPhDbObject::XMLSerialize(xmlFp, ref);
@@ -147,7 +147,7 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhIndex::CreateColumnReader()
 
 void FdoSmPhIndex::Discard()
 {
-    GetDbObject()->DiscardIndex( this );
+    ((FdoSmPhTable*) RefTable())->DiscardIndex( this );
 }
 
 void FdoSmPhIndex::AddColumnNoexistError( FdoString* pColName )
@@ -156,7 +156,7 @@ void FdoSmPhIndex::AddColumnNoexistError( FdoString* pColName )
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
                 FDO_NLSID(FDOSM_335), 
-				(FdoString*) mpDbObject->GetQName(),
+				(FdoString*) mpTable->GetQName(),
                 pColName,
                 GetName() 
             )

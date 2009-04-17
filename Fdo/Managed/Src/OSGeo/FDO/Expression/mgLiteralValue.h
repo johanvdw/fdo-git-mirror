@@ -29,7 +29,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 /// \brief
 /// LiteralValue is an abstract base class that derives from ValueExpression to
 /// form the root for all literal value types.
-public ref class LiteralValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::ValueExpression
+public __gc class LiteralValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::ValueExpression
 {
 public:
     /// \brief
@@ -50,15 +50,10 @@ public:
     /// \return
     /// Returns an LiteralValueType
     /// 
-    property NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValueType LiteralValueType
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValueType get();
-    }
+    __property NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValueType get_LiteralValueType ();
 
-internal:
+public private:
 	inline FdoLiteralValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 

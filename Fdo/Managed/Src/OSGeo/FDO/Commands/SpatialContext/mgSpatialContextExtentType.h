@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT
 /// \brief
 /// The SpatialContextExtentType enumeration defines how the extent of
 /// a context should be handled by the provider.
-public enum class SpatialContextExtentType
+public __value enum SpatialContextExtentType
 {
     /// The spatial extent of the context is static and must be specified
     /// when the context is created. 

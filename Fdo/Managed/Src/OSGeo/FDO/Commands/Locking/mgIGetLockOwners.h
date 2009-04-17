@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockOwnersReader;
+public __gc __interface ILockOwnersReader;
 
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \interface OSGeo::FDO::Commands::Locking::IGetLockOwners
@@ -29,7 +29,7 @@ interface class ILockOwnersReader;
 /// The IGetLockOwners interface defines the GetLockOwners command, which gets a
 /// list of all lock owners. A connected user has the status of being a lock owner as
 /// does a user who has released all of his locks.
-public interface class IGetLockOwners : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetLockOwners : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -38,7 +38,7 @@ public:
     /// \return
     /// Returns the lock owners reader.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReader* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING

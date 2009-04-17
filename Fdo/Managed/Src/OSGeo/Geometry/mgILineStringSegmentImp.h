@@ -23,8 +23,8 @@
 
 class FdoILineStringSegment;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IDirectPosition;
-ref class DirectPositionCollection;
+public __gc __interface IDirectPosition;
+public __gc class DirectPositionCollection;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -36,8 +36,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// plus linear interpolation between consecutive points.
 /// This is a helper type for Geometries in the Geometry package.
 /// Note: It does not derive from IGeometry.
-private ref class ILineStringSegmentImp : 
-    public NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment
+private __gc class ILineStringSegmentImp 
+: public NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment
 {
 public:
     /// \brief
@@ -52,10 +52,8 @@ public:
     /// 
 	ILineStringSegmentImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoILineStringSegment* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoILineStringSegment *GetImpObj();
 
 public:
     /// \brief
@@ -64,10 +62,7 @@ public:
     /// \return
     /// Returns the number of positions
     /// 
-    property System::Int32 Count
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_Count();
 
     /// \brief
     /// Gets the position at the specified (zero-based) index.
@@ -75,10 +70,7 @@ public:
     /// \return
     /// Returns the position
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_Item(System::Int32 index);
 
     /// \brief
     /// Gets a collection of all of the positions in this object.
@@ -86,10 +78,7 @@ public:
     /// \return
     /// Returns the positions
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ Positions
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection *get_Positions();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

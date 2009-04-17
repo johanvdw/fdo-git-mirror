@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 /// \brief
 /// The UnaryOperations enumeration lists the unary expression operations available.
 [System::FlagsAttribute]
-public enum class UnaryOperations
+public __value enum UnaryOperations
 {
     /// Negate the expression
 	UnaryOperations_Negate = FdoUnaryOperations_Negate

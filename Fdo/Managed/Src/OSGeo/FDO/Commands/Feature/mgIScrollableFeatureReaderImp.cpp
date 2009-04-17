@@ -32,17 +32,12 @@
 
 FdoIScrollableFeatureReader* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::GetImpObj()
 {
-    return static_cast<FdoIScrollableFeatureReader*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+    return static_cast<FdoIScrollableFeatureReader*>(__super::UnmanagedObject.ToPointer());
 }
 
 System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::Count()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Count())
 
@@ -51,7 +46,7 @@ System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp:
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadFirst()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadFirst())
 
@@ -60,7 +55,7 @@ System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderIm
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadLast()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadLast())
 
@@ -69,16 +64,16 @@ System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderIm
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadPrevious()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadPrevious())
 
 	return result;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadAt(NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection^ key)
+System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadAt(NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection* key)
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadAt(static_cast<FdoPropertyValueCollection*>(key->UnmanagedObject.ToPointer())));
 
@@ -87,16 +82,16 @@ System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderIm
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::ReadAtIndex(System::UInt32 recordindex)
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadAtIndex(recordindex));
 
 	return result;
 }
 
-System::UInt32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::IndexOf(NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection^ key)
+System::UInt32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReaderImp::IndexOf(NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection* key)
 {
-	System::UInt32 result;
+	unsigned int result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->IndexOf(static_cast<FdoPropertyValueCollection*>(key->UnmanagedObject.ToPointer())));
 

@@ -23,7 +23,7 @@
 
 class FdoIMultiCurveString;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ICurveString;
+public __gc __interface ICurveString;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -33,8 +33,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The IMultiCurveStringImp class is a multi-CurveString collection Geometry type.
 /// The curves contained here do not have to
 /// be contiguous, nor spatially interact in any other way.
-private ref class IMultiCurveStringImp : 
-    public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiCurveString
+private __gc class IMultiCurveStringImp : 
+	public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiCurveString
 {
 public:
     /// \brief
@@ -49,10 +49,8 @@ public:
     /// 
 	IMultiCurveStringImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIMultiCurveString* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIMultiCurveString *GetImpObj();
 
 public:
     /// \brief
@@ -64,10 +62,7 @@ public:
     /// \return
     /// Returns a CurveString
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::ICurveString^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::ICurveString^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::ICurveString *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

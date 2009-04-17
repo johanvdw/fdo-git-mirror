@@ -102,7 +102,6 @@ FdoIFeatureReader* FdoWfsSelectCommand::Execute ()
 	// that is recognized by WFS servers.
 	FdoString* schemaFeatureName = NULL;
 	FdoString* featureTypeName = NULL;
-    FdoStringP featureTypeNameCheck;
 	FdoString* targetNamespace = L"";
 	FdoPtr<FdoFeatureSchemaCollection> schemas = mConnection->GetSchemas();
 	FdoPtr<FdoPhysicalSchemaMappingCollection> mappings = schemas->GetXmlSchemaMappings();
@@ -120,7 +119,7 @@ FdoIFeatureReader* FdoWfsSelectCommand::Execute ()
 				    // iterate to find out the element whose FDO class name matches the given name
 				    FdoInt32 count = elementMappings->GetCount();
 				    for (int i = 0; i < count; i++) {
-					    FdoPtr<FdoXmlElementMapping> elementMapping = elementMappings->GetItem(i);                        
+					    FdoPtr<FdoXmlElementMapping> elementMapping = elementMappings->GetItem(i);
 					    if (wcscmp(elementMapping->GetClassName(), mClassName->GetName()) == 0) {
 						    // we found it
                             elementClass = elementMapping->GetClassMapping();
@@ -133,15 +132,7 @@ FdoIFeatureReader* FdoWfsSelectCommand::Execute ()
 			    }
 		    }
             if (featureTypeName != NULL)
-            {                
-                featureTypeNameCheck = featureTypeName;
-                if (featureTypeNameCheck.Contains(FdoWfsGlobals::Dot)) 
-                {
-                    featureTypeNameCheck = featureTypeNameCheck.Replace(FdoWfsGlobals::Dot, L".");                     
-                    featureTypeName = featureTypeNameCheck;
-                }
                 break;
-            }
         }
 	}
 

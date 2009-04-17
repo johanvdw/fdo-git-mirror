@@ -108,13 +108,11 @@ if "%TYPEACTIONSLITE%"=="clean" SET MSACTIONSLITE=Clean
 if "%TYPEACTIONSLITE%"=="install" goto install_files_SQLite
 
 echo %MSACTIONSLITE% %TYPEBUILDSLITE% SQLite provider dlls
-SET FDOACTIVEBUILD=%cd%\Src\SQLiteProvider
+SET FDOACTIVEBUILD=%cd%\SQLiteProvider
 cscript //Nologo //job:prepare preparebuilds.wsf
-pushd Src
 msbuild SQLiteProvider_temp.sln /t:%MSACTIONSLITE% /p:Configuration=%TYPEBUILDSLITE% /p:Platform=%TYPEPLATFORMSLITE% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist SQLiteProvider_temp.sln del /Q /F SQLiteProvider_temp.sln
-popd
 if "%FDOERROR%"=="1" goto error
 if "%TYPEACTIONSLITE%"=="clean" goto end
 if "%TYPEACTIONSLITE%"=="build" goto end

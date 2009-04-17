@@ -24,12 +24,12 @@ class FdoIConnectionCapabilities;
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 
-enum class ThreadCapability;
+public __value enum ThreadCapability;
 
 /// \ingroup (OSGeoFDOConnectionsCapabilities)
 /// \brief
 /// The IConnectionCapabilities interface declares the feature provider's capabilities.
-private ref class IConnectionCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+private __gc class IConnectionCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                                 public NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilities
 {
 public:
@@ -39,10 +39,7 @@ public:
     /// \return
     /// Returns the connection thread capability.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability ThreadCapability
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability get_ThreadCapability();
 
     /// \brief
     /// Gets the spatial context extent types supported by the feature provider.
@@ -50,10 +47,7 @@ public:
     /// \return
     /// Returns the list of spatial context extent types.
     /// 
-    virtual property array<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>^ SpatialContextTypes
-    {
-        array<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType get_SpatialContextTypes() [];
 
     /// \brief
     /// Determines if the feature provider supports persistent locking.
@@ -61,7 +55,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports persistent locking.
     /// 
-	virtual System::Boolean SupportsLocking();
+	System::Boolean SupportsLocking();
 
     /// \brief
     /// Gets an array of the LockType values supported by the feature provider.
@@ -69,10 +63,7 @@ public:
     /// \return
     /// Returns the list of lock types
     /// 
-    virtual property array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ LockTypes
-    {
-        array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType get_LockTypes() [];
 
     /// \brief
     /// Determines if the feature provider supports connection timeout.
@@ -80,7 +71,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports connection timeout.
     /// 
-	virtual System::Boolean SupportsTimeout();
+	System::Boolean SupportsTimeout();
 
     /// \brief
     /// Determines if the feature provider supports transactions.
@@ -88,7 +79,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports transactions.
     /// 
-	virtual System::Boolean SupportsTransactions();
+	System::Boolean SupportsTransactions();
 
     /// \brief
     /// Determines true if the feature provider supports long transactions.
@@ -96,7 +87,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports long transactions.
     /// 
-	virtual System::Boolean SupportsLongTransactions();
+	System::Boolean SupportsLongTransactions();
 
     /// \brief
     /// Determines if the feature provider supports SQL commands.
@@ -104,7 +95,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports SQL commands.
     /// 
-	virtual System::Boolean SupportsSQL();
+	System::Boolean SupportsSQL();
 
     /// \brief
     /// Determines if the feature provider supports XML configuration.
@@ -112,7 +103,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports the setting of a configuration.
     /// 
-	virtual System::Boolean SupportsConfiguration();
+	System::Boolean SupportsConfiguration();
 
     /// \brief
     /// Determines if the provider supports multiple spatial contexts.
@@ -120,7 +111,7 @@ public:
     /// \return
     /// Returns true if the provider supports multiple spatial contexts.
     /// 
-	virtual System::Boolean SupportsMultipleSpatialContexts();
+	System::Boolean SupportsMultipleSpatialContexts();
 
     /// \brief
     /// Determines if the provider supports specifying the coordinate system by name or ID without specifying the WKT
@@ -130,7 +121,7 @@ public:
     /// Returns true if the provider supports specifying the coordinate system by name or ID without specifying the WKT
     /// when creating a new spatial context.
     /// 
-    virtual System::Boolean SupportsCSysWKTFromCSysName();
+    System::Boolean SupportsCSysWKTFromCSysName();
 
     /// \brief
     /// Determines if the provider can support the flush function. Flush is used to write any outstanding data
@@ -139,14 +130,17 @@ public:
     /// \return
     /// Returns true if the provider or datastore can support the flush function.
     ///
-    virtual System::Boolean SupportsFlush();
+    System::Boolean SupportsFlush();
 
-internal:
+public private:
 	IConnectionCapabilitiesImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoIConnectionCapabilities* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES

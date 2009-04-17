@@ -1184,9 +1184,8 @@ void FdoRdbmsFilterProcessor::AnalyzeFilter (FdoFilter *filter)
             }
 
             // Parse the left operand of the binary logical operation.
-            FdoPtr<FdoFilter> leftOperand = filter.GetLeftOperand();
-            if (leftOperand != NULL)
-                leftOperand->Process(this);
+            if (filter.GetLeftOperand() != NULL)
+                filter.GetLeftOperand()->Process(this);
 
             // If this is the top level binary logical operator node, check
             // if there was a single binary logical operator used in the left
@@ -1215,9 +1214,8 @@ void FdoRdbmsFilterProcessor::AnalyzeFilter (FdoFilter *filter)
             }
 
             // Process the right tree of the node.
-            FdoPtr<FdoFilter> rightOperand = filter.GetRightOperand();
-            if (rightOperand != NULL)
-                rightOperand->Process(this);
+            if (filter.GetRightOperand() != NULL)
+                filter.GetRightOperand()->Process(this);
 
             // If this is the top level binary logical operator node, check
             // if there was a single binary logical operator used in the right
@@ -1261,9 +1259,8 @@ void FdoRdbmsFilterProcessor::AnalyzeFilter (FdoFilter *filter)
                                             FdoUnaryLogicalOperator& filter)
         {
             containsUnaryLogicalOperatorNot = true;
-            FdoPtr<FdoFilter> operand = filter.GetOperand();
-            if (operand != NULL)
-                operand->Process(this);
+            if (filter.GetOperand() != NULL)
+                filter.GetOperand()->Process(this);
         }
     };
 
@@ -2218,19 +2215,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
 					const FdoSmPhColumn* column = geomPropertyDef->RefColumn();
 					all->Add(GetGeometryString(column->GetDbName(), true));
 				}
-                else
-                {
-                    if ( geomPropertyDef->GetGeometricColumnType() == FdoSmOvGeometricColumnType_Double &&
-                         geomPropertyDef->GetGeometricContentType() == FdoSmOvGeometricContentType_Ordinates )  
-                    {
-                        if ( geomPropertyDef->RefColumnX() )
-					        all->Add( geomPropertyDef->GetColumnNameX() );
-                        if ( geomPropertyDef->RefColumnY() )
-					        all->Add( geomPropertyDef->GetColumnNameY() );
-                        if ( geomPropertyDef->RefColumnZ() )
-					        all->Add( geomPropertyDef->GetColumnNameZ() );
-                    }
-                }
 			}
 		}
     }

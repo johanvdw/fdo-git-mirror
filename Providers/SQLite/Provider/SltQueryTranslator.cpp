@@ -116,7 +116,6 @@ SltQueryTranslator::SltQueryTranslator(FdoClassDefinition* fc)
 m_canUseFastStepping(true)
 {
     m_fc = FDO_SAFE_ADDREF(fc);
-    m_evalStack.reserve(4);
 }
 
 SltQueryTranslator::~SltQueryTranslator()
@@ -187,6 +186,9 @@ void SltQueryTranslator::ProcessSpatialCondition(FdoSpatialCondition& filter)
 
     //map the spatial op to the corresponding SQLite extension function name
     const char* sfunc = g_spatial_op_map[op];
+    size_t len = strlen(sfunc) + 1;
+    wchar_t* wfunc = (wchar_t*)alloca(sizeof(wchar_t)*len);
+    mbstowcs(wfunc, sfunc, len);
 
     TCtx ret;
 
@@ -234,9 +236,6 @@ void SltQueryTranslator::ProcessSpatialCondition(FdoSpatialCondition& filter)
 
     //construct the SQLite function we want to use for this
     //spatial op
-    size_t len = strlen(sfunc) + 1;
-    wchar_t* wfunc = (wchar_t*)alloca(sizeof(wchar_t)*len);
-    mbstowcs(wfunc, sfunc, len);
     FdoPtr<FdoIdentifier> pname = filter.GetPropertyName();
     ret.expr = std::wstring(wfunc) + L"(" + pname->GetName() + L"," + expr.expr + L")";
 

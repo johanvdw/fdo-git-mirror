@@ -32,9 +32,9 @@
 //disable STL bounds checking
 #define _SECURE_SCL 0
 
+#include <cstring>
 #include <string>
 #include <wchar.h>
-#include <sstream>
 
 //FDO headers
 #include "Fdo.h"
@@ -77,7 +77,6 @@ extern "C"
   #define __forceinline __inline__
   #define __fastcall 
   #define _wcsdup wcsdup
-  #define _strdup strdup
   #define _snprintf snprintf
   #define _wcsicmp wcscasecmp
   #define _access(x,y) access(x,y)
@@ -87,6 +86,5 @@ extern "C"
 #include "slt.h"
 
 #pragma warning (disable: 4100)
-#pragma warning (disable: 4189)
 
 #endif

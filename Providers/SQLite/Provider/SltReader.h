@@ -19,9 +19,7 @@
 #ifndef SLT_READER_H
 #define SLT_READER_H
 
-//Include our custom string map/list data structures
 #include "PropertyNameIndex.h"
-#include "StringUtil.h"
 
 class SltConnection;
 class SpatialIterator;
@@ -183,7 +181,7 @@ protected:
         unsigned char*  m_wkbBuffer; //geometry conversion buffer
         int             m_wkbBufferLen;
 
-        StringBuffer  m_sql;  //the SQL query corresponding to this reader
+        std::string   m_sql;  //the SQL query corresponding to this reader
         sqlite3_stmt* m_pStmt; //the SQL statement corresponding to this reader
         int m_closeOpcode; //we need this to cleanly exit the SQL engine after messing with its bytecodes
         bool m_closeDB; //indicates the statement is based on a memory backed temporary database that we should close when done
@@ -198,8 +196,8 @@ protected:
         //things we need for reissuing the sql query while incrementally
         //building a list of properties that the caller accesses, in case
         //they requested all properties in the select command
-        StringList m_reissueProps;
-        StringBuffer m_fromwhere;
+        std::vector<std::string> m_reissueProps;
+        std::string m_fromwhere;
 
         //stuff related to spatial filters
         SpatialIterator*    m_si;

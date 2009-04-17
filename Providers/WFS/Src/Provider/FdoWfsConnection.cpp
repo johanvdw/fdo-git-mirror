@@ -596,16 +596,13 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
             for (int j  = classes->GetCount() - 1; j >= 0; j--)
             {
                 FdoPtr<FdoClassDefinition> classDef = classes->GetItem(j);
-                FdoStringP className = classDef->GetName();
-                if (className.Contains(FdoWfsGlobals::Dot))
-                    className = className.Replace(FdoWfsGlobals::Dot, L".");
                 // Prepare for implementation of #4
-                FdoPtr<FdoWfsFeatureType> pFeat = pFeatColl->FindItem(className);
+                FdoPtr<FdoWfsFeatureType> pFeat = pFeatColl->FindItem(classDef->GetName());
                 if (pFeat == NULL)
                 {
                     FdoStringP NameFeat = schema->GetName();
                     NameFeat += L":";
-                    NameFeat += className;
+                    NameFeat += classDef->GetName();
                     pFeat = pFeatColl->FindItem(NameFeat);
                 }
                 if (pFeat != NULL)
@@ -640,15 +637,15 @@ void FdoWfsConnection::_setClassDescription (FdoClassDefinition* clsdef)
     FdoPtr<FdoWfsFeatureType> featType = featTypes->FindItem (clsName);
     if (featType != NULL)
     {
-        FdoStringP title = featType->GetTitle ();
-        if(title.GetLength () != 0)
+        FdoStringP abstraction = featType->GetAbstract ();
+        if (abstraction.GetLength () != 0)
         {
-            clsdef->SetDescription (title);
+            clsdef->SetDescription (abstraction);
         }
         else
         {
-            FdoStringP abstraction = featType->GetAbstract ();
-            clsdef->SetDescription (abstraction);
+            FdoStringP title = featType->GetTitle ();
+            clsdef->SetDescription (title);
         }
     }
 }

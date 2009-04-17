@@ -54,18 +54,15 @@ public:
     SltFdoPtr(const SltFdoPtr<U>& lp) throw()
     {
         p = lp.p;
-        if (p) p->AddRef();
+        if (p)
+            p->AddRef();
     }
 
-    SltFdoPtr(const SltFdoPtr<T>& lp) throw()
-    {
-        p = lp.p;
-        if (p) p->AddRef();
-    }
 
     ~SltFdoPtr() throw()
     {
-        if (p) p->Release();
+        if (p)
+            p->Release();
     }
 
          operator T*()     const throw()     { return  p; }

@@ -20,7 +20,7 @@
 #pragma once
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IEnvelope;
+public __gc __interface IEnvelope;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \brief
 /// The IRingAbstract class is a ring Geometry helper type (abstract). IRingAbstract is the most general ring type.
 /// It is similar to CurveAbstract, but is always closed.
-public interface class IRingAbstract : public System::IDisposable
+public __gc __interface IRingAbstract : public System::IDisposable
 {
 public:
     /// \brief
@@ -39,10 +39,7 @@ public:
     /// \return
     /// Returns the envelope
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ Envelope
-    {
-        NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IEnvelope *get_Envelope();
 	
     /// \brief
     /// Gets the dimensionality of ordinates in this object.
@@ -54,10 +51,7 @@ public:
     /// \return
     /// Returns the ordinate dimensionality
     /// 
-    property System::Int32 Dimensionality
-    {
-        System::Int32 get();
-    }
+	__property System::Int32 get_Dimensionality();
 };
 END_NAMESPACE_OSGEO_GEOMETRY
 

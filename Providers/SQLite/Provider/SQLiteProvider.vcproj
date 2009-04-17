@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Provider"
+	Name="SQLiteProvider"
 	ProjectGUID="{8F5CFBEE-539A-4054-8A76-1BF85DD1A716}"
 	RootNamespace="SDFX"
 	Keyword="Win32Proj"
@@ -21,8 +21,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Provider\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			>
@@ -44,14 +44,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;&quot;..\sqlite-3.6.2&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;&quot;..\sqlite-3.6.2&quot;;..\..\..\Utilities\Common\Inc;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				BufferSecurityCheck="false"
-				EnableEnhancedInstructionSet="2"
-				FloatingPointModel="2"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -67,10 +64,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib ExpressionEngine.lib"
+				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib"
 				OutputFile="$(OutDir)\SQLiteProvider.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\Lib\win32\debug;..\..\..\..\Utilities\Common\lib\win32\debug;..\..\..\..\Utilities\ExpressionEngine\lib\win32\debug"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\Lib\win32\debug;..\..\..\Utilities\Common\lib\win32\debug"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -97,13 +94,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="..\..\..\Thirdparty\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Provider\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			>
@@ -126,7 +123,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;&quot;..\sqlite-3.6.2&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;&quot;..\sqlite-3.6.2&quot;;..\..\..\Utilities\Common\Inc;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -146,10 +143,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib ExpressionEngine.lib"
+				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib"
 				OutputFile="$(OutDir)\SQLiteProvider.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\Lib\x64\debug;..\..\..\..\Utilities\Common\lib\x64\debug;..\..\..\..\Utilities\ExpressionEngine\lib\x64\debug"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\Lib\win32\debug;..\..\..\Utilities\Common\lib\win32\debug"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -176,13 +173,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="..\..\..\Thirdparty\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Provider\$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -209,94 +206,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;&quot;..\sqlite-3.6.2&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableEnhancedInstructionSet="2"
-				FloatingPointModel="2"
-				UsePrecompiledHeader="2"
-				WarningLevel="4"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib ExpressionEngine.lib"
-				OutputFile="$(OutDir)\SQLiteProvider.dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\lib\win32\release;..\..\..\..\Utilities\Common\lib\win32\release;..\..\..\..\Utilities\ExpressionEngine\lib\win32\release"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			OutputDirectory="..\..\Bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="..\..\Obj\Provider\$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;&quot;..\sqlite-3.6.2&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;&quot;..\sqlite-3.6.2&quot;;..\..\..\Utilities\Common\Inc;..\SpatialIndex"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -317,10 +227,97 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib ExpressionEngine.lib"
+				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib"
 				OutputFile="$(OutDir)\SQLiteProvider.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\Fdo\Unmanaged\lib\x64\release;..\..\..\..\Utilities\Common\lib\x64\release;..\..\..\..\Utilities\ExpressionEngine\lib\x64\release"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\lib\win32\release;..\..\..\Utilities\Common\lib\win32\release"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="..\..\..\Thirdparty\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="..\..\..\Fdo\Unmanaged\Inc;&quot;..\sqlite-3.6.2&quot;;..\..\..\Utilities\Common\Inc;..\SpatialIndex"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableEnhancedInstructionSet="0"
+				FloatingPointModel="2"
+				UsePrecompiledHeader="2"
+				WarningLevel="4"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="Fdo.lib FdoCommon.lib FdoGeometry.lib FdoSpatial.lib ProvidersCommon.lib"
+				OutputFile="$(OutDir)\SQLiteProvider.dll"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\Fdo\Unmanaged\lib\win32\release;..\..\..\Utilities\Common\lib\win32\release"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -349,7 +346,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="..\..\..\Thirdparty\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 	</Configurations>
@@ -482,10 +479,6 @@
 		</File>
 		<File
 			RelativePath=".\stdafx.h"
-			>
-		</File>
-		<File
-			RelativePath=".\StringUtil.h"
 			>
 		</File>
 	</Files>

@@ -24,17 +24,16 @@ class FdoMySQLOvObjectPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-ref class OvPropertyMappingDefinition;
-interface class IOvPropertyMappingDefinition;
+public __gc class OvPropertyMappingDefinition;
+public __gc __interface IOvPropertyMappingDefinition;
 
 ///<summary>Concrete class defining physical schema overrides for an object property definition.</summary>
-public ref class OvObjectPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
+public __gc class OvObjectPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
 {
-internal:
-	OvObjectPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvObjectPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvObjectPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Constructs a default of an OvObjectPropertyDefinition</summary>
@@ -44,17 +43,16 @@ public:
     ///<summary>Constructs an instance of an OvObjectPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns OvObjectPropertyDefinition</returns>
-	OvObjectPropertyDefinition(System::String^ name);
+	OvObjectPropertyDefinition(System::String* name);
 
     ///<summary>Gets the mapping definition</summary>
     /// <returns>Returns the mapping definition</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition* get_MappingDefinition();
+
     ///<summary>Sets the mapping definition</summary>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition^ MappingDefinition
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition^ propertyMappingDefinition);
-    }
+	__property System::Void set_MappingDefinition(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition* propertyMappingDefinition);
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

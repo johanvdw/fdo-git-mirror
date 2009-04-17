@@ -24,8 +24,8 @@
 class FdoILinearRing;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IDirectPosition;
-ref class DirectPositionCollection;
+public __gc __interface IDirectPosition;
+public __gc class DirectPositionCollection;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -35,8 +35,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The ILinearRingImp class is a linear ring helper type.
 /// The shape of ILinearRingImp is the set of positions defined by the contained collection, 
 /// plus linear interpolation between consecutive points.
-public ref class ILinearRingImp : 
-    public NAMESPACE_OSGEO_GEOMETRY::IRingAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::ILinearRing
+public __gc class ILinearRingImp : 
+	public NAMESPACE_OSGEO_GEOMETRY::IRingAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::ILinearRing
 {
 public:
     /// \brief
@@ -51,10 +51,8 @@ public:
     /// 
 	ILinearRingImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoILinearRing* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoILinearRing *GetImpObj();
 
 public:
     /// \brief
@@ -63,10 +61,7 @@ public:
     /// \return
     /// Returns the number of positions
     /// 
-    property System::Int32 Count
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_Count();
 	
     /// \brief
     /// Gets the position at the specified (zero-based) index.
@@ -77,10 +72,7 @@ public:
     /// \return
     /// Returns the position
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_Item(System::Int32 index);
 	
     /// \brief
     /// Gets the position at the specified (zero-based) index, by values of its member data.
@@ -104,13 +96,13 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void GetItemByMembers(
+	System::Void GetItemByMembers(
 		System::Int32 index, 
-		System::Double% coordinateX, 
-		System::Double% coordinateY,
-		System::Double% coordinateZ,
-		System::Double% coordinateM,
-		System::Int32% dimensionality);
+		System::Double &coordinateX, 
+		System::Double &coordinateY,
+		System::Double &coordinateZ,
+		System::Double &coordinateM,
+		System::Int32 &dimensionality);
 		
     /// \brief
     /// Gets a collection of all of the positions in this object.
@@ -118,10 +110,7 @@ public:
     /// \return
     /// Returns the positions
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ Positions
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection *get_Positions();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

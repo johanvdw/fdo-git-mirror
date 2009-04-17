@@ -22,7 +22,6 @@
 #include <Sm/SchemaManager.h>
 #include "../SchemaMgr/Ph/Mgr.h"
 class StaticConnection;
-class FdoSmPhGrdOwner;
 
 class SchemaMgrTests : public CppUnit::TestCase
 {
@@ -60,9 +59,6 @@ protected:
     void testGeometricProperties();
 
     void testSpatialContexts();
-
-    virtual int GenKeysCreateSpecific( FdoSmPhGrdOwner* grdOwner );
-    virtual void GenKeysVldSpecific( FdoClassCollection* classes );
 
     void GenDefaultClassList();
     void constraints ();

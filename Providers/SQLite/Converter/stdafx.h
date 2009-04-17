@@ -16,28 +16,19 @@
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
 
-#ifndef STDAFX_H
-#define STDAFX_H
-
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-// Windows Header Files:
 #include <windows.h>
+#else
+#include <dlfcn.h>
 #endif
 
-#include <float.h>
+#include <cstring>
 #include <time.h>
-#include <malloc.h>
-
-//disable STL bounds checking
-#define _SECURE_SCL 0
-
+#include <float.h>
+#include <stdio.h>
+#include <vector>
 #include <string>
-#include <wchar.h>
+#include <algorithm>
 
-//FDO headers
+
 #include "Fdo.h"
-
-#include "si_api.h"
-
-#endif

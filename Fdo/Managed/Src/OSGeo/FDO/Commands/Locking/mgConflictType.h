@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
 /// \brief
 /// The ConflictType enumeration defines conflict types required to
 /// identify the lock type of a conflict reported with the lock conflict reader.
-public enum class ConflictType
+public __value enum ConflictType
 {
     /// Identifies a reported conflict
     /// in the lock conflict reader as a lock conflict. A conflict represents a

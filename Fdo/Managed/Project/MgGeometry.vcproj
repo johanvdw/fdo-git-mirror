@@ -26,7 +26,7 @@
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
-			ManagedExtensions="1"
+			ManagedExtensions="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -81,7 +81,6 @@
 				ProgramDatabaseFile="$(TargetDir)\OSGeo.FDO.Geometry.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -113,7 +112,7 @@
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
-			ManagedExtensions="1"
+			ManagedExtensions="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -202,7 +201,7 @@
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
-			ManagedExtensions="1"
+			ManagedExtensions="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -253,7 +252,6 @@
 				ProgramDatabaseFile="$(TargetDir)\OSGeo.FDO.Geometry.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -285,7 +283,7 @@
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
-			ManagedExtensions="1"
+			ManagedExtensions="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"

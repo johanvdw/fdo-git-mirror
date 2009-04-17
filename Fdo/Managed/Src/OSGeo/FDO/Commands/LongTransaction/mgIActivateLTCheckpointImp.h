@@ -36,7 +36,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// it is not already the active long transaction. The user requires the access
 /// privilege on the long transaction for which the attempt is made to activate a
 /// checkpoint.
-private ref class IActivateLongTransactionCheckpointImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IActivateLongTransactionCheckpointImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                            public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpoint
 {
 public:
@@ -48,6 +48,8 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property System::String* get_CheckpointName();
+
     /// \brief
     /// Sets the name of the checkpoint to be activated for the named long
     /// transaction. If the property's value is empty the system will
@@ -59,11 +61,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ CheckpointName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_CheckpointName(System::String* value);
 
     /// \brief
     /// Executes the ActivateLongTransactionCheckpoint command.
@@ -71,17 +69,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Execute();
+	System::Void Execute();
 
-internal:
+public private:
 	IActivateLongTransactionCheckpointImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIActivateLongTransactionCheckpoint* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
