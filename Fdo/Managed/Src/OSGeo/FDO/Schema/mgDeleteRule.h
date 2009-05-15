@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// The DeleteRule enumeration specifies the action to take when a delete
 /// operation is executed on the class instance at the other end of the
 /// relation.
-public enum class DeleteRule
+public __value enum DeleteRule
 {
     /// Cascade the delete operation to class instances at this end of the relation.
 	DeleteRule_Cascade = FdoDeleteRule_Cascade,

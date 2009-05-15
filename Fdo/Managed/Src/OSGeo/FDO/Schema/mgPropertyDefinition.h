@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// PropertyDefinition is an abstract class that derives from SchemaElement.
 /// PropertyDefinition is the base class of DataPropertyDefinition, 
 /// GeometricPropertyDefinition, and ObjectPropertyDefinition.
-public ref class PropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::SchemaElement
+public __gc class PropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::SchemaElement
 {
 public:
     /// \brief
@@ -39,10 +39,7 @@ public:
     /// \return
     /// Returns the property type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType PropertyType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get_PropertyType();
 
     /// \brief
     /// Gets the fully qualified name of this property
@@ -50,10 +47,7 @@ public:
     /// \return
     /// Returns {schema_name}:{class_name}.{property_name}
     /// 
-    property System::String^ QualifiedName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_QualifiedName();
 
     /// \brief
     /// Returns a Boolean value that indicates if this is a system generated property.
@@ -64,6 +58,8 @@ public:
     /// \remarks
     /// System properties are not written out to the XML schema file, which remains provider-portable.
     ///
+	__property System::Boolean get_IsSystem();
+
     /// \brief
     /// Sets whether this is a system property.
     /// This function must only be called by an FDO Provider. Typically, it would be 
@@ -72,11 +68,7 @@ public:
     /// \param value 
     /// Input true if this is a system property.
     /// 
-    property System::Boolean IsSystem
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_IsSystem(System::Boolean value);
 
     /// \brief
     /// Constructs a PropertyDefinition object based on an unmanaged instance of the object
@@ -93,10 +85,8 @@ public:
 		
 	}
 
-internal:
+public private:
 	inline FdoPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

@@ -23,12 +23,12 @@
 class FdoXmlCopyHandler;
 
 BEGIN_NAMESPACE_OSGEO_COMMON
-ref class DictionaryElementCollection;
+public __gc class DictionaryElementCollection;
 END_NAMESPACE_OSGEO_COMMON
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlWriter;
-ref class XmlAttributeCollection;
+public __gc class XmlWriter;
+public __gc class XmlAttributeCollection;
 
 /// \ingroup (OSGeoFDOCommonXml)
 /// \brief
@@ -37,7 +37,7 @@ ref class XmlAttributeCollection;
 /// on the document to copy from. An XML Writer to the document to copy to is 
 /// passed to one of the Create methods below. The elements to copy will be inserted
 /// at the XML writer's current position.
-public ref class XmlCopyHandler sealed : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
+public __gc __sealed class XmlCopyHandler : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
 {
 public:
     /// \brief
@@ -51,7 +51,7 @@ public:
     /// \return
     /// Returns XmlCopyHandler
     /// 
-	XmlCopyHandler( NAMESPACE_OSGEO_COMMON_XML:: XmlWriter^ writer );
+	XmlCopyHandler( NAMESPACE_OSGEO_COMMON_XML:: XmlWriter* writer );
 
     /// \brief
     /// Constructs a Copy Handler. When attached (as the SAX Handler) to 
@@ -79,7 +79,7 @@ public:
     /// \return
     /// Returns XmlCopyHandler
     /// 
-	NAMESPACE_OSGEO_COMMON_XML::XmlCopyHandler(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ writer, String^ resourceLocation, String^ name,  String^ qualifiedName,  XmlAttributeCollection^ attributes, DictionaryElementCollection^ namespaces);
+	NAMESPACE_OSGEO_COMMON_XML::XmlCopyHandler(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* writer, String* resourceLocation, String* name,  String* qualifiedName,  XmlAttributeCollection* attributes, DictionaryElementCollection* namespaces);
 		
     /// \brief
     /// Constructs a CopyHandler based on an unmanaged instance of the object
@@ -94,10 +94,8 @@ public:
 	XmlCopyHandler(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoXmlCopyHandler* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

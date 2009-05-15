@@ -25,13 +25,12 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 ///<summary>Concrete class defining the physical schema overrides for the Single type object
 ///property mapping. Under the Single mapping type, the object property is kept in the same
 ///table as its containing class.</summary>
-public ref class OvPropertyMappingSingle : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingSingle, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition
+public __gc class OvPropertyMappingSingle : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingSingle, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition
 {
-internal:
-	OvPropertyMappingSingle(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvPropertyMappingSingle* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvPropertyMappingSingle(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Constructs a default of an OvPropertyMappingSingle</summary>

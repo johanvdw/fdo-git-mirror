@@ -25,7 +25,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_RASTER
 /// \ingroup (OSGeoFDORaster)
 /// \brief
 /// The RasterDataType enumeration specifies the type of data stored in the Raster Image.
-public enum class RasterDataType
+public __value enum RasterDataType
 {
     /// Data is organized in an unknown or provider specific manner.
     RasterDataType_Unknown = FdoRasterDataType_Unknown,

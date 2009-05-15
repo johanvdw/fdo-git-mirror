@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class FeatureSchemaCollection;
+public __gc class FeatureSchemaCollection;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 /// retrieves the list of available class names from the connection.  The class names
 /// are qualified by the name of the feature schema that it belongs to.
 /// The Execute operation returns a StringCollection object.
-public interface class IGetClassNames : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetClassNames : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns the schema name
     /// 
+	__property System::String* get_SchemaName();
+
     /// \brief
     /// Sets the name of the schema for the enumeration. This function is optional; if not
     /// specified execution of the command will enumerate the classes in all schemas.
@@ -53,11 +55,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ SchemaName
-    {
-        System::String^ get();
-        System::Void set(String^ value);
-    }
+	__property System::Void set_SchemaName(System::String* value);
 
     /// \brief
     /// Executes the GetClassNames command and returns a 
@@ -67,7 +65,7 @@ public:
     /// \return
     /// Returns the string collection of the feature classes for the specified schema.
     /// 
-    NAMESPACE_OSGEO_COMMON::StringCollection^ Execute();
+    NAMESPACE_OSGEO_COMMON::StringCollection* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA

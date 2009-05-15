@@ -26,12 +26,7 @@
 
 FdoIDestroySpatialIndex* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::GetImpObj()
 {
-	return static_cast<FdoIDestroySpatialIndex*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIDestroySpatialIndex*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::IDestroySpatialIndexImp(IntPtr unmanaged, Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
@@ -39,32 +34,32 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::IDestroySpatialInd
 
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::get_Name()
 {
-	FdoString* unobj;
+	const wchar_t* unobj;
 
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetName())
 
-	return CHECK_STRING(unobj);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::Name::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::set_Name(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetName(StringToUni(value)))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::GeometricProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::set_GeometricProperty(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition *value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetGeometricProperty(static_cast<FdoGeometricPropertyDefinition*>(value->UnmanagedObject.ToPointer())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::GeometricProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::get_GeometricProperty()
 {
-	FdoGeometricPropertyDefinition* result;
+	FdoGeometricPropertyDefinition* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetGeometricProperty())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetGeometricProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(IntPtr(result), true);
+		return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(unobj, true);
 }
 
 System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IDestroySpatialIndexImp::Execute()

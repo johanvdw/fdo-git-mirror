@@ -33,71 +33,38 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::CLOBValue(IntPtr unmanaged, Boolean a
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::CLOBValue() : LOBValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoCLOBValue::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoCLOBValue::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::CLOBValue(array<System::Byte>^ value) : LOBValue(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::CLOBValue(System::Byte value []) : LOBValue(IntPtr::Zero, false)
 {
-    FdoByteArray* arr = nullptr;
-    try
-    {
-        arr = ByteArrayToFdoByteArray(value);
-	    EXCEPTION_HANDLER(Attach(IntPtr(FdoCLOBValue::Create(arr)), true))
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
+	EXCEPTION_HANDLER(Attach(FdoCLOBValue::Create(ByteArrayToFdoByteArray(value)), true))
 }
 
 FdoCLOBValue* NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::GetImpObj()
 {
-	return static_cast<FdoCLOBValue*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoCLOBValue*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::get_DataType()
 {
 	FdoDataType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unobj);
 }
 
-array<System::Byte>^ NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::Data::get()
+System::Byte NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::get_Data() []
 {
-    FdoByteArray* arr = nullptr;
-    array<System::Byte>^ result;
-    try
-    {
-	    EXCEPTION_HANDLER(arr = GetImpObj()->GetData())
-	    result = FdoByteArrayToByteArray(arr->GetData(), arr->GetCount());
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
-	return result;
+	FdoByteArray* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetData())
+	System::Byte mgBuffer __gc[] = FdoByteArrayToByteArray(unobj->GetData(), unobj->GetCount());
+	unobj->Release();
+	return mgBuffer;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::Data::set(array<System::Byte>^ value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::set_Data(System::Byte value [])
 {
-    FdoByteArray* arr = nullptr;
-    try
-    {
-        arr = ByteArrayToFdoByteArray(value);
-    	EXCEPTION_HANDLER(GetImpObj()->SetData(arr))
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
+	EXCEPTION_HANDLER(GetImpObj()->SetData(ByteArrayToFdoByteArray(value)))
 }
 
 System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::SetNull()
@@ -105,14 +72,14 @@ System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::SetNull()
 	EXCEPTION_HANDLER(GetImpObj()->SetNull())
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::CLOBValue::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }

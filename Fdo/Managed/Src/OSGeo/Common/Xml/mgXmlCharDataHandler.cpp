@@ -24,7 +24,7 @@
 
 NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::XmlCharDataHandler() : XmlSaxHandler(System::IntPtr::Zero, false)
 {
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlCharDataHandler::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlCharDataHandler::Create(), true))
 }
 
 NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::XmlCharDataHandler(IntPtr unmanaged, Boolean autoDelete) : XmlSaxHandler(unmanaged, autoDelete)
@@ -34,17 +34,12 @@ NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::XmlCharDataHandler(IntPtr unmana
 
 FdoXmlCharDataHandler* NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::GetImpObj()
 {
-	return static_cast<FdoXmlCharDataHandler*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoXmlCharDataHandler*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-String^ NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::RetString::get()
+String* NAMESPACE_OSGEO_COMMON_XML::XmlCharDataHandler::get_RetString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->GetString())
-    return gcnew String(unstr);
+	return unstr;
 }

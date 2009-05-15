@@ -170,6 +170,7 @@ void FdoRfpGeoBandRasterRot::PixelToWorld(double x, double y, double *x_out, dou
 }
 
 bool FdoRfpGeoBandRasterRot::loadImageInfo()
+
 {
     if( m_haveGeotransform && m_width != -1 && m_height != -1 )
         return true;
@@ -210,7 +211,5 @@ bool FdoRfpGeoBandRasterRot::loadImageInfo()
 
     datasetCache->UnlockDataset( hDS );
     hDS = NULL;
-
-	return true;
 }
 

@@ -23,8 +23,8 @@
 class FdoNetworkFeatureClass;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class DataPropertyDefinition;
-ref class AssociationPropertyDefinition;
+public __gc class DataPropertyDefinition;
+public __gc class AssociationPropertyDefinition;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -33,7 +33,7 @@ ref class AssociationPropertyDefinition;
 /// <p><b>Note:</b> <span class="red_text">This Help topic is provided for informational use only. There is
 /// no interface or support provided. Autodesk reserves the right to change
 /// the software related to the content herein.</span>
-public ref class NetworkFeatureClass : public NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass
+public __gc class NetworkFeatureClass : public NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass
 {
 public:
     /// \brief
@@ -42,6 +42,8 @@ public:
     /// \return
     /// Returns a property definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* get_CostProperty();
+
     /// \brief
     /// Sets a reference to the cost property.
     /// 
@@ -51,11 +53,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ CostProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ value);
-    }
+	__property System::Void set_CostProperty(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* value);
 
     /// \brief
     /// Gets a reference to the network property.
@@ -63,6 +61,8 @@ public:
     /// \return
     /// Returns an association property definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* get_NetworkProperty();
+
     /// \brief
     /// Sets a reference to the network property.
     /// 
@@ -72,11 +72,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ NetworkProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value);
-    }
+	__property System::Void set_NetworkProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value);
 
     /// \brief
     /// Gets a reference to the referenced feature property.
@@ -84,6 +80,8 @@ public:
     /// \return
     /// Returns an association property definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* get_ReferencedFeatureProperty();
+
     /// \brief
     /// Sets a reference to the referenced feature property.
     /// 
@@ -93,11 +91,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ ReferencedFeatureProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value);
-    }
+	__property System::Void set_ReferencedFeatureProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value);
 
     /// \brief
     /// Gets a reference to the parent network feature property.
@@ -105,6 +99,8 @@ public:
     /// \return
     /// Returns an association property definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* get_ParentNetworkFeatureProperty();
+
     /// \brief
     /// Sets a reference to the parent network feature property.
     /// 
@@ -114,11 +110,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ ParentNetworkFeatureProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value);
-    }
+	__property System::Void set_ParentNetworkFeatureProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value);
 
     /// \brief
     /// Constructs a NetworkFeatureClass object based on an unmanaged instance of the object
@@ -135,10 +127,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoNetworkFeatureClass* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

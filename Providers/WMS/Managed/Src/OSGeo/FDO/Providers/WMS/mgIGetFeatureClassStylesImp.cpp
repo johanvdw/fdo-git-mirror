@@ -22,7 +22,7 @@
 #include "mgIGetFeatureClassStyles.h"
 #include "mgIGetFeatureClassStylesImp.h"
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::GetFeatureClassStylesCommand(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand^ command, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(command, autoDelete)
+NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::GetFeatureClassStylesCommand(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* command, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(command, autoDelete)
 {
 }
 
@@ -32,31 +32,26 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::GetFeatureClass
 
 FdoWmsIGetFeatureClassStyles* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::GetImpObj()
 {
-    return static_cast<FdoWmsIGetFeatureClassStyles*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoWmsIGetFeatureClassStyles*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::FeatureClassName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::set_FeatureClassName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetFeatureClassName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::FeatureClassName::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::get_FeatureClassName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetFeatureClassName())
 
-    return CHECK_STRING(result);
+    return result;
 }
 
-NAMESPACE_OSGEO_COMMON::StringCollection^ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::Execute()
+NAMESPACE_OSGEO_COMMON::StringCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetFeatureClassStylesCommand::Execute()
 {
     FdoStringCollection* result;
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute());
-    return (gcnew NAMESPACE_OSGEO_COMMON::StringCollection(IntPtr(result), true));
+    return (new NAMESPACE_OSGEO_COMMON::StringCollection(result, true));
 }

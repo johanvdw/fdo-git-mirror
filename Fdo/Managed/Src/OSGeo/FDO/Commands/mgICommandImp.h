@@ -23,12 +23,12 @@
 class FdoFdoICommand;
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
-interface class IConnection;
-interface class ITransaction;
+public __gc __interface IConnection;
+public __gc __interface ITransaction;
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
-ref class ParameterValueCollection;
+public __gc class ParameterValueCollection;
 
 /// \ingroup (OSGeoFDOCommands)
 /// \brief
@@ -38,7 +38,7 @@ ref class ParameterValueCollection;
 /// Commands can also be optionally associated with a transaction if the
 /// connection supports transactions. The parameter values collection allows
 /// values to be specified for commands that support expressions and/or filters.
-public ref class ICommandImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+public __gc class ICommandImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                 public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
@@ -48,10 +48,7 @@ public:
     /// \return
     /// Returns the connection object
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ Connection
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* get_Connection();
 
     /// \brief
     /// Gets the transaction in which the command executes.
@@ -59,6 +56,8 @@ public:
     /// \return
     /// Returns the transaction object
     /// 
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction* get_Transaction();
+
     /// \brief
     /// Sets the transaction in which the command executes.
     /// 
@@ -68,11 +67,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ Transaction
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ value);
-    }
+	__property System::Void set_Transaction(NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction* value);
 
     /// \brief
     /// Gets the number of milliseconds to wait before terminating the attempt
@@ -82,6 +77,8 @@ public:
     /// \return
     /// Returns the time (in milliseconds)
     /// 
+	__property System::Int32 get_CommandTimeOut();
+
     /// \brief
     /// Sets the number of milliseconds to wait before terminating the attempt
     /// to execute a command and generating an error. If the provider does not
@@ -94,11 +91,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::Int32 CommandTimeOut
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 value);
-    }
+	__property System::Void set_CommandTimeOut(System::Int32 value);
 
     /// \brief
     /// Returns an ParameterValueCollection. If the command requires parameters, the 
@@ -108,10 +101,7 @@ public:
     /// \return
     /// Returns the list of parameters and their respective values
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_COMMANDS::ParameterValueCollection^ ParameterValues
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS::ParameterValueCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS::ParameterValueCollection* get_ParameterValues();
 
     /// \brief
     /// Validates and optimizes the command for execution. Calling this method is
@@ -121,7 +111,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Prepare();
+	System::Void Prepare();
 
     /// \brief
     /// Attempts to cancel command execution. Cancel may be called on a separate
@@ -134,20 +124,19 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Cancel();
+	System::Void Cancel();
 
 /// \cond DOXYGEN-IGNORE
 protected:
-	ICommandImp(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand^ command, System::Boolean autoDelete);
+	ICommandImp(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* command, System::Boolean autoDelete);
+	System::Void ReleaseUnmanagedObject();
 /// \endcond
 
 public protected:
 	ICommandImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoICommand* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS

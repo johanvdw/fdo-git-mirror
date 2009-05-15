@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_XML
 /// \brief
 /// XmlNameCollectionHandler is a class for serializing and 
 /// deserializing fdo:NameCollectionType elements.
-public ref class XmlNameCollectionHandler : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
+public __gc class XmlNameCollectionHandler : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
 {
 public:
     /// \brief
@@ -39,10 +39,10 @@ public:
     /// 
     /// \param names 
     /// Input the collection of names. Any names deserialized
-    /// will be added to this collection. If nullptr then an internal empty
+    /// will be added to this collection. If NULL then an internal empty
     /// name collection is created.
     /// 
-	XmlNameCollectionHandler(NAMESPACE_OSGEO_COMMON::StringCollection^ names);
+	XmlNameCollectionHandler(NAMESPACE_OSGEO_COMMON::StringCollection* names);
 
     /// \brief
     /// Gets the collection of names
@@ -50,17 +50,20 @@ public:
     /// \return
     /// Returns the element content.
     /// 
-	NAMESPACE_OSGEO_COMMON::StringCollection^ GetNames();
+	NAMESPACE_OSGEO_COMMON::StringCollection* GetNames();
 
-internal:
+public private:
 	XmlNameCollectionHandler(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(unmanaged, autoDelete)
 	{
 		
 	}
 
 	inline FdoXmlNameCollectionHandler* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_XML

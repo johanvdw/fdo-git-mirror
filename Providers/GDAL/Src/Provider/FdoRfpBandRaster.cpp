@@ -23,8 +23,9 @@
  *
  */
 
-#include "FDORFP.h"
 #include <math.h>
+
+#include "FDORFP.h"
 #include "FdoRfpBandRaster.h"
 #include "FdoRfpRasterCapabilities.h"
 #include "FdoRfpGeoRaster.h"
@@ -604,6 +605,7 @@ FdoIStreamReader* FdoRfpBandRaster::GetStreamReader()
     // image, then we could directly use StreamReaderByTile which will return the orignal
     // image data tile by tile
     int winXOff, winYOff, winXSize, winYSize;
+    int tileXSize, tileYSize;
 
     _computePixelWindow( image, winXOff, winYOff, winXSize, winYSize );
 

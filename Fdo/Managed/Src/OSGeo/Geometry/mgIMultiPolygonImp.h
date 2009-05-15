@@ -22,7 +22,7 @@
 
 class FdoIMultiPolygon;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IPolygon;
+public __gc __interface IPolygon;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \ingroup (OSGeoFDOGeometry)
 /// \brief
 /// The IMultiPolygonImp class is a multi-polygon aggregate Geometry type.
-private ref class IMultiPolygonImp : 
+private __gc class IMultiPolygonImp : 
 	public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiPolygon
 {
 public:
@@ -46,10 +46,8 @@ public:
     /// 
 	IMultiPolygonImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 	
-internal:
-	FdoIMultiPolygon* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIMultiPolygon *GetImpObj();
 
 public:
 
@@ -62,10 +60,7 @@ public:
     /// \return
     /// Returns a polygon
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IPolygon^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IPolygon^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IPolygon* get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY
