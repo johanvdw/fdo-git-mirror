@@ -25,35 +25,30 @@
 #include "FDO\mgObjectFactory.h"
 #include "FDO\Xml\mgXmlFlags.h"
 
-NAMESPACE_OSGEO_FDO_XML::XmlContext::XmlContext(NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags, NAMESPACE_OSGEO_COMMON_XML::XmlReader^ xmlReader) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlContext::XmlContext(NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags, NAMESPACE_OSGEO_COMMON_XML::XmlReader* xmlReader) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlContext::Create(flags->GetImpObj(), static_cast<FdoXmlReader*>(xmlReader->UnmanagedObject.ToPointer()))), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlContext::Create(flags->GetImpObj(), static_cast<FdoXmlReader*>(xmlReader->UnmanagedObject.ToPointer())), true))
 }
 
 FdoXmlContext* NAMESPACE_OSGEO_FDO_XML::XmlContext::GetImpObj()
 {
-    return static_cast<FdoXmlContext*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoXmlContext*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_XML::XmlContext::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlContext::DecodeName (System::String^ name)
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlContext::DecodeName (System::String* name)
 {
 	FdoStringP result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->DecodeName(FdoStringP(StringToUni(name))))
 
-	return CHECK_STRING((FdoString*)result);
+	return (FdoString*) result;
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFlags^ NAMESPACE_OSGEO_FDO_XML::XmlContext::GetFlags()
+NAMESPACE_OSGEO_FDO_XML::XmlFlags* NAMESPACE_OSGEO_FDO_XML::XmlContext::GetFlags()
 {
 	FdoXmlFlags* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetFlags())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlFlags(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlFlags(result, true);
 }

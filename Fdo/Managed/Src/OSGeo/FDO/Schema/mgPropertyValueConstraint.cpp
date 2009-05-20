@@ -36,15 +36,17 @@ NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::PropertyValueConstraint(Int
 
 FdoPropertyValueConstraint* NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::GetImpObj()
 {
-    return static_cast<FdoPropertyValueConstraint*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoPropertyValueConstraint*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintType NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::ConstraintType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintType NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraint::get_ConstraintType()
 {
 	FdoPropertyValueConstraintType result;
 

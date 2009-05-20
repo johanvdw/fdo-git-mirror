@@ -22,32 +22,34 @@
 
 #include "FDO\Commands\Locking\mgILockOwnersReaderImp.h"
 
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
 FdoILockOwnersReader* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::GetImpObj()
 {
-    return static_cast<FdoILockOwnersReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoILockOwnersReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::GetLockOwner()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::GetLockOwner()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetLockOwner())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->ReadNext())
 
-	return result;
+		return result;
 }
 
 System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReaderImp::Close()

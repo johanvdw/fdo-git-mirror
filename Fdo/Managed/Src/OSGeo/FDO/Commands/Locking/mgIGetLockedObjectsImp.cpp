@@ -30,30 +30,25 @@ FdoIGetLockedObjects* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp
     return static_cast<FdoIGetLockedObjects*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::LockOwner::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::get_LockOwner()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetLockOwner())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::LockOwner::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::set_LockOwner(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetLockOwner(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockedObjectReader^ NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockedObjectReader* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockedObjectsImp::Execute()
 {
 	FdoILockedObjectReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockedObjectReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockedObjectReader(result, true);
 }

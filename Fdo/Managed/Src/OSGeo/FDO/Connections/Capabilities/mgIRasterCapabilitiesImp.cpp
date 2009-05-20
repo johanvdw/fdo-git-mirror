@@ -30,38 +30,40 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::IRasterCap
 
 FdoIRasterCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::GetImpObj()
 {
-    return static_cast<FdoIRasterCapabilities*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIRasterCapabilities*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::SupportsRaster ()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsRaster())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::SupportsStitching ()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsStitching())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::SupportsSubsampling ()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsSubsampling())
 	return rv;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::SupportsDataModel (NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ model)
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilitiesImp::SupportsDataModel (NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel* model)
 {
-	System::Boolean rv;
-	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsDataModel(model == nullptr ? nullptr : model->GetImpObj()))
+	FdoBoolean rv;
+	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsDataModel(model == NULL ? NULL : model->GetImpObj()))
 	return rv;
 }

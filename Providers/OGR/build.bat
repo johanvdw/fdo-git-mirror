@@ -17,12 +17,12 @@ rem License along with this library; if not, write to the Free Software
 rem Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 rem 
 
-SET TYPEACTION=build
-SET MSACTION=Build
-SET TYPEBUILD=release
-SET FDOPATH=%cd%
-SET FDOINSPATH=%cd%\Fdo
-SET FDOBINPATH=%cd%\Fdo\Bin
+SET TYPEACTIONOGR=build
+SET MSACTIONOGR=Build
+SET TYPEBUILDOGR=release
+SET FDOPATHOGR=%cd%
+SET FDOINSPATHOGR=%cd%\Fdo
+SET FDOBINPATHOGR=%cd%\Fdo\Bin
 SET FDOERROR=0
 
 :study_params
@@ -43,7 +43,7 @@ if "%1"=="-action"  goto get_action
 goto next_param
 
 :get_action
-SET TYPEACTION=%2
+SET TYPEACTIONOGR=%2
 if "%2"=="install" goto next_param
 if "%2"=="build" goto next_param
 if "%2"=="buildinstall" goto next_param
@@ -51,16 +51,16 @@ if "%2"=="clean" goto next_param
 goto next_param
 
 :get_conf
-SET TYPEBUILD=%2
+SET TYPEBUILDOGR=%2
 if "%2"=="release" goto next_param
 if "%2"=="debug" goto next_param
 goto custom_error
 
 :get_path
 if (%2)==() goto next_param
-SET FDOPATH=%~2
-SET FDOINSPATH=%~2\Fdo
-SET FDOBINPATH=%~2\Fdo\Bin
+SET FDOPATHOGR=%~2
+SET FDOINSPATHOGR=%~2\Fdo
+SET FDOBINPATHOGR=%~2\Fdo\Bin
 
 :next_param
 shift
@@ -68,33 +68,32 @@ shift
 goto study_params
 
 :start_build
-if "%TYPEACTION%"=="build" goto start_exbuild
-if "%TYPEACTION%"=="clean" goto start_exbuild
-if not exist "%FDOINSPATH%" mkdir "%FDOINSPATH%"
-if not exist "%FDOBINPATH%" mkdir "%FDOBINPATH%"
+if "%TYPEACTIONOGR%"=="build" goto start_exbuild
+if "%TYPEACTIONOGR%"=="clean" goto start_exbuild
+if not exist "%FDOINSPATHOGR%" mkdir "%FDOINSPATHOGR%"
+if not exist "%FDOBINPATHOGR%" mkdir "%FDOBINPATHOGR%"
 
 :start_exbuild
-if "%TYPEACTION%"=="clean" SET MSACTION=Clean
-if "%TYPEACTION%"=="install" goto install_files_ogr
+if "%TYPEACTIONOGR%"=="clean" SET MSACTIONOGR=Clean
+if "%TYPEACTIONOGR%"=="install" goto install_files_ogr
 
-echo %MSACTION% %TYPEBUILD% OGR Provider Dlls
-msbuild OGRProvider.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform="Win32" /nologo /consoleloggerparameters:NoSummary
+echo %MSACTIONOGR% %TYPEBUILDOGR% OGR Provider Dlls
+msbuild OGRProvider.sln /t:%MSACTIONOGR% /p:Configuration=%TYPEBUILDOGR% /p:Platform="Win32" /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-if "%TYPEACTION%"=="clean" goto end
-if "%TYPEACTION%"=="build" goto end
+if "%TYPEACTIONOGR%"=="clean" goto end
+if "%TYPEACTIONOGR%"=="build" goto end
 
 :install_files_ogr
-echo Copy %TYPEBUILD% OGR Provider Output Files
-copy /y "%TYPEBUILD%\OGRProvider.dll" "%FDOBINPATH%"
-copy /y "%TYPEBUILD%\OGRProvider.pdb" "%FDOBINPATH%"
+echo Copy %TYPEBUILDOGR% OGR Provider Output Files
+copy /y "%TYPEBUILDOGR%\OGRProvider.dll" "%FDOBINPATHOGR%"
 
 :end
-echo End OGR %MSACTION%
+echo End OGR %MSACTIONOGR%
 exit /B 0
 
 :error
-echo There was a build error executing action: %MSACTION%
+echo There was a build error executing action: %MSACTIONOGR%
 exit /B 1
 
 :custom_error

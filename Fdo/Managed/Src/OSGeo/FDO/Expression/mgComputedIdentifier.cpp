@@ -33,44 +33,39 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ComputedIdentifier(IntPtr un
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ComputedIdentifier() : Identifier(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoComputedIdentifier::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoComputedIdentifier::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ComputedIdentifier(System::String^ name, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ expression) : Identifier(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ComputedIdentifier(System::String* name, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* expression) : Identifier(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoComputedIdentifier::Create(StringToUni(name), expression->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(FdoComputedIdentifier::Create(StringToUni(name), expression->GetImpObj()), true))
 }
 
 FdoComputedIdentifier* NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::GetImpObj()
 {
-	return static_cast<FdoComputedIdentifier*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoComputedIdentifier*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::GetDisposableObject()
+NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::get_Expression()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	FdoExpression* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetExpression())
+	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression*>(ObjectFactory::CreateExpression(unobj, true));
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::Expression::get()
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::set_Expression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value)
 {
-	FdoExpression* result;
-    EXCEPTION_HANDLER(result = NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::GetImpObj()->GetExpression())
-	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^>(ObjectFactory::CreateExpression(IntPtr(result), true));
+	EXCEPTION_HANDLER(GetImpObj()->SetExpression((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::Expression::set(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::GetImpObj()->SetExpression((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
-{
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::ComputedIdentifier::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }

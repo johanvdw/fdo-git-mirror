@@ -24,6 +24,7 @@
 
 #include "DbObject.h"
 #include "../../../SchemaMgr/Ph/Table.h"
+#include "Index.h"
 #include "Fkey.h"
 
 // MySql Provider implementation of a Table.
@@ -56,6 +57,7 @@ public:
     // Implementations for creating constraint and
     // index readers.
     virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( FdoString* type ) const;
+    virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const;
 
 	/// Get SQL clause for dropping a constraint
 	virtual FdoStringP GetDropConstraintSql(FdoStringP constraintName);
@@ -66,6 +68,20 @@ private:
     virtual bool Add();
     virtual bool Modify();
     virtual bool Delete();
+
+    // Index creator implementation
+    virtual FdoSmPhIndexP NewIndex(
+        FdoStringP name,
+        bool isUnique,
+        FdoSchemaElementState elementState = FdoSchemaElementState_Added
+    );
+
+    // Spatial Index creator implementation
+    virtual FdoSmPhIndexP NewSpatialIndex(
+        FdoStringP name,
+        bool isUnique,
+        FdoSchemaElementState elementState = FdoSchemaElementState_Added
+    );
 
     // Foreign Key creator implementation
     virtual FdoSmPhFkeyP NewFkey(

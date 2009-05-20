@@ -29,10 +29,12 @@ NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp::IFilterProcessorImp(IntPtr unma
 
 FdoIFilterProcessor* NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp::GetImpObj()
 {
-	return static_cast<FdoIFilterProcessor*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoIFilterProcessor*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }

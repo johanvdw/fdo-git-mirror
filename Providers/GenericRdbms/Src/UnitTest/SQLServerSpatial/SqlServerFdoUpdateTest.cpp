@@ -363,7 +363,7 @@ void SqlServerFdoUpdateTest::UpdateSingleIdFeatureClass()
 
 }
 
-void SqlServerFdoUpdateTest::UpdateSpecific()
+void SqlServerFdoUpdateTest::UpdateGeogColumn()
 {
 	FdoPtr<FdoIConnection> connection;
     StaticConnection* conn = UnitTestUtil::NewStaticConnection();
@@ -401,7 +401,7 @@ void SqlServerFdoUpdateTest::UpdateSpecific()
         owner->SetPassword( L"test" );
         owner->Commit();
 
-        CreateSpecificTable( owner, table_id_geom );
+        CreateGeogTable( owner, table_id_geom );
         owner->Commit();
 
         connection = UnitTestUtil::CreateConnection(
@@ -410,11 +410,11 @@ void SqlServerFdoUpdateTest::UpdateSpecific()
             NoMetaSuffix()
         );
 
-        CreateSpecificData( connection, phMgr, table_id_geom );
+        CreateGeogData( connection, phMgr, table_id_geom );
 
         // Select and verify all data (post-update state).
-        SelectSpecificAll( connection, phMgr, table_id_geom );
-	    SelectSpecificSpatial( connection, phMgr, table_id_geom );
+        SelectGeogAll( connection, phMgr, table_id_geom );
+	    SelectGeogSpatial( connection, phMgr, table_id_geom );
 	    SelectGeogSpatialError( connection, phMgr, table_id_geom );
 
         connection->Close ();
@@ -459,20 +459,18 @@ void SqlServerFdoUpdateTest::UpdateSpecific()
     }
 }
 
-void SqlServerFdoUpdateTest::CreateSpecificTable( FdoSmPhOwnerP owner, FdoStringP tableName )
+void SqlServerFdoUpdateTest::CreateGeogTable( FdoSmPhOwnerP owner, FdoStringP tableName )
 {
     FdoSmPhMgrP phMgr = owner->GetManager();
     FdoSmPhTableP table = owner->CreateTable( phMgr->GetDcDbObjectName(tableName) );
     
     FdoSmPhColumnP column = table->CreateColumnChar( phMgr->GetDcColumnName(L"key1"), false, 10 );
     table->AddPkeyCol( column->GetName() );
-
-    column = table->CreateColumnUnknown( L"guid", L"uniqueidentifier", true, 0, 0 );
     column = table->CreateColumnGeom( phMgr->GetDcColumnName(L"geometry"), NULL, true, false );
     column->SetTypeName( "geography" );
 }
 
-void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
+void SqlServerFdoUpdateTest::CreateGeogData( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
 {
     FdoPtr<FdoITransaction> featureTransaction = connection->BeginTransaction();
     FdoPtr<FdoIInsert> insertCommand;
@@ -496,10 +494,6 @@ void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connecti
     propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"key1"));
     propertyValue->SetValue(dataValue);
     
-    dataValue = FdoDataValue::Create(L"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}");
-    propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"guid"));
-    propertyValue->SetValue(dataValue);
-    
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
 
     propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"geometry") );
@@ -515,10 +509,6 @@ void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connecti
     propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"key1") );
     propertyValue->SetValue(dataValue);
     
-    dataValue = FdoDataValue::Create(L"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}");
-    propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"guid"));
-    propertyValue->SetValue(dataValue);
-    
     propertyValue = AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"geometry") );
     geom = CreateGeogGeom(2);
     byteArray = gf->GetFgf(geom);
@@ -531,10 +521,6 @@ void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connecti
     propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"key1") );
     propertyValue->SetValue(dataValue);
     
-    dataValue = FdoDataValue::Create(L"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC943}");
-    propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"guid"));
-    propertyValue->SetValue(dataValue);
-    
     propertyValue = AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"geometry") );
     geom = CreateGeogGeom(3);
     byteArray = gf->GetFgf(geom);
@@ -545,11 +531,6 @@ void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connecti
 
     dataValue = FdoDataValue::Create(L"KEY1_4");
     propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"key1") );
-    propertyValue->SetValue(dataValue);
-    
-    dataValue = FdoStringValue::Create();
-    dataValue->SetNull();
-    propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"guid"));
     propertyValue->SetValue(dataValue);
     
     propertyValue = AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"geometry") );
@@ -599,12 +580,8 @@ void SqlServerFdoUpdateTest::CreateSpecificData( FdoPtr<FdoIConnection> connecti
     UpdateCommand->SetFeatureClassName(qClassName);
     UpdateCommand->SetFilter( filter );
     propertyValues = UpdateCommand->GetPropertyValues();
-
-    dataValue = FdoDataValue::Create(L"{9BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}");
-    propertyValue = FdoUpdateTest::AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"guid"));
-    propertyValue->SetValue(dataValue);
-    
     propertyValue = AddNewProperty( propertyValues, phMgr->GetDcColumnName(L"geometry") );
+
     geom = CreateGeogGeom(101);
     byteArray = gf->GetFgf(geom);
     geometryValue = FdoGeometryValue::Create(byteArray); 
@@ -733,7 +710,7 @@ FdoIGeometry* SqlServerFdoUpdateTest::CreateGeogGeom( int idx )
 
     return ret;
 }
-void SqlServerFdoUpdateTest::SelectSpecificAll( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
+void SqlServerFdoUpdateTest::SelectGeogAll( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
 {
     FdoPtr<FdoISelect> selectCommand = (FdoISelect *) connection->CreateCommand(FdoCommandType_Select);
 
@@ -749,7 +726,7 @@ void SqlServerFdoUpdateTest::SelectSpecificAll( FdoPtr<FdoIConnection> connectio
 
     {
         rowCount++;
-        VldSpecificRow( phMgr, rdr, props );
+        VldGeogRow( phMgr, rdr, props );
     }
 
     CPPUNIT_ASSERT( rowCount == 5 );
@@ -757,7 +734,7 @@ void SqlServerFdoUpdateTest::SelectSpecificAll( FdoPtr<FdoIConnection> connectio
     rdr->Close();
 }
 
-void SqlServerFdoUpdateTest::SelectSpecificSpatial( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
+void SqlServerFdoUpdateTest::SelectGeogSpatial( FdoPtr<FdoIConnection> connection, FdoSmPhMgrP phMgr, FdoStringP tableName )
 {
     FdoPtr<FdoISelect> selectCommand = (FdoISelect *) connection->CreateCommand(FdoCommandType_Select);
 
@@ -768,9 +745,9 @@ void SqlServerFdoUpdateTest::SelectSpecificSpatial( FdoPtr<FdoIConnection> conne
 
     double ordsXYExt[10];
     ordsXYExt[0] = -97; ordsXYExt[1] = 53; 
-    ordsXYExt[2] = -97; ordsXYExt[3] = 57; 
+    ordsXYExt[2] = -93; ordsXYExt[3] = 53; 
     ordsXYExt[4] = -93; ordsXYExt[5] = 57; 
-    ordsXYExt[6] = -93; ordsXYExt[7] = 53; 
+    ordsXYExt[6] = -97; ordsXYExt[7] = 57; 
     ordsXYExt[8] = -97; ordsXYExt[9] = 53; 
 
     FdoPtr<FdoILinearRing> extRing = gf->CreateLinearRing(FdoDimensionality_XY, 10, ordsXYExt);
@@ -796,7 +773,7 @@ void SqlServerFdoUpdateTest::SelectSpecificSpatial( FdoPtr<FdoIConnection> conne
     {
         rowCount++;
         CPPUNIT_ASSERT( wcscmp( FixStringVal(rdr->GetString(phMgr->GetDcColumnName(L"key1"))), L"KEY1_5" ) == 0 );
-        VldSpecificRow( phMgr, rdr, props );
+        VldGeogRow( phMgr, rdr, props );
     }
 
     CPPUNIT_ASSERT( rowCount == 1 );
@@ -954,7 +931,7 @@ void SqlServerFdoUpdateTest::SelectGeogSpatialError( FdoPtr<FdoIConnection> conn
 
 }
 
-void SqlServerFdoUpdateTest::VldSpecificRow( 
+void SqlServerFdoUpdateTest::VldGeogRow( 
     FdoSmPhMgrP phMgr, 
     FdoPtr<FdoIFeatureReader> rdr, 
     FdoPtr<FdoIdentifierCollection> props,
@@ -1003,21 +980,6 @@ void SqlServerFdoUpdateTest::VldGeogGeom(
     }
     else {
         CPPUNIT_ASSERT( wcscmp(geom->GetText(), expectedGeom->GetText()) == 0 );
-    }
-
-    CPPUNIT_ASSERT( rdr->IsNull(L"guid") == ((idx != 101) && (idx > 3)) );
-
-    switch ( idx ) 
-    {
-    case 101:
-        CPPUNIT_ASSERT( wcscmp(rdr->GetString(L"guid"),L"9BC9CEB8-8B4A-11D0-8D11-00A0C91BC941") == 0 );
-        break;
-    case 2:
-        CPPUNIT_ASSERT( wcscmp(rdr->GetString(L"guid"),L"8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942") == 0 );
-        break;
-    case 3:
-        CPPUNIT_ASSERT( wcscmp(rdr->GetString(L"guid"),L"8BC9CEB8-8B4A-11D0-8D11-00A0C91BC943") == 0 );
-        break;
     }
 }
 

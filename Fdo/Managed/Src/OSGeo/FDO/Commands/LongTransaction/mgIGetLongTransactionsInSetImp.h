@@ -24,7 +24,7 @@
 class FdoIGetLongTransactionsInSet;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionSetReader;
+public __gc __interface ILongTransactionSetReader;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \brief
@@ -32,7 +32,7 @@ interface class ILongTransactionSetReader;
 /// The IGetLongTransactionsInSet interface defines the GetLongTransactionsInSet
 /// command, which allows the user to enumerate the list of versions
 /// participating in the long transaction selection set.
-private ref class IGetLongTransactionsInSetImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IGetLongTransactionsInSetImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                   public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsInSet
 {
 public:
@@ -43,17 +43,15 @@ public:
     /// \return
     /// Returns the long transaction reader
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReader* Execute();
 
-internal:
+public private:
 	IGetLongTransactionsInSetImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIGetLongTransactionsInSet* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

@@ -641,7 +641,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, x, columnX); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", x);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -653,7 +653,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, y, columnY); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", y);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -665,7 +665,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, z, columnZ); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", z);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -766,7 +766,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                             {
                                 // Avoid copying the value by using directly the address of data
                                 FdoBLOBValue * blob = static_cast<FdoBLOBValue*>(dataValue);
-                                FdoPtr<FdoByteArray> byteArr = blob->GetData();
+                                FdoByteArray * byteArr = blob->GetData();
                                 values[index].value.strvalue = (char*) byteArr->GetData();
 
                                 statement->Bind(bindIndex++, RDBI_BLOB, byteArr->GetCount(),

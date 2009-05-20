@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// transaction where feature manipulation commands operate on it. If the 
 /// active long transaction is the root long transaction, then no long
 /// transaction will be deactivated.
-private ref class IDeactivateLongTransactionImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IDeactivateLongTransactionImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                    public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IDeactivateLongTransaction
 {
 public:
@@ -44,17 +44,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Execute();
+	System::Void Execute();
 
-internal:
+public private:
 	IDeactivateLongTransactionImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIDeactivateLongTransaction* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

@@ -31,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE
 /// The IDestroyMeasureUnit interface defines the DestroyMeasureUnit command,
 /// which deletes a measurement unit. Input to the command is simply the
 /// abbreviation of the measure unit to be destroyed.
-private ref class IDestroyMeasureUnitImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IDestroyMeasureUnitImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                             public NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IDestroyMeasureUnit
 {
 public:
@@ -41,6 +41,8 @@ public:
     /// \return
     /// Returns the abbreviation of the measure unit to be deleted.
     /// 
+	__property System::String* get_Abbreviation();
+
     /// \brief
     /// Sets the abbreviation of the measure unit to destroy as a string
     /// 
@@ -50,11 +52,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ Abbreviation
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Abbreviation(System::String* value);
 
     /// \brief
     /// Executes the DestroyMeasureUnit command.
@@ -62,17 +60,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Execute();
+	System::Void Execute();
 
-internal:
+public private:
 	IDestroyMeasureUnitImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIDestroyMeasureUnit* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE

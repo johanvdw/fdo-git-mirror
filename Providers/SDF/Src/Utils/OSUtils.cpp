@@ -200,15 +200,7 @@ int OS_ismbcalpha(const unsigned char *string, long stringLength, const unsigned
 void OS_getsystime(struct tm *systime)
 {
 #ifdef _WIN32
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-    systime->tm_sec = st.wSecond; 
-    systime->tm_min = st.wMinute; 
-    systime->tm_hour = st.wHour; 
-    systime->tm_mday = st.wDay; 
-    systime->tm_mon = st.wMonth - 1; 
-    systime->tm_year = st.wYear - 1900; 
-    systime->tm_wday = st.wDayOfWeek; 
+    _getsystime (systime);
 #else
      time_t current;
      time (&current);

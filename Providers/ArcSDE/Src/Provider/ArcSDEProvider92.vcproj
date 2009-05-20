@@ -103,7 +103,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -196,7 +196,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -285,7 +285,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -377,7 +377,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -467,7 +467,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -560,7 +560,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 	</Configurations>
@@ -763,7 +763,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -772,7 +771,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -781,7 +779,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -790,7 +787,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -799,7 +795,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -808,7 +803,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ExceptionHandling="2"
-						DisableSpecificWarnings="4652"
 					/>
 				</FileConfiguration>
 			</File>

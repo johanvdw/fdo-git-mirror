@@ -22,12 +22,12 @@
 class FdoWmsOvLayerDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE
-ref class OvStyleDefinition;
+public __gc class OvStyleDefinition;
 
 /// <summary> 
 /// The FdoWmsOvLayerDefinition class defines a WMS style that will be used to stylize a WMS layer.
 /// </summary>
-public ref class OvLayerDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
+public __gc class OvLayerDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
 {
 public:
 	/// <summary>Constructs a new empty layer definition.</summary>
@@ -39,24 +39,20 @@ public:
     /// <remarks>If the server advertises several styles for a layer, and the style 
     /// definition is either set to the default style or not specified at all, the 
     /// choice of which style to use as default is at the discretion of the server.</remarks>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvStyleDefinition* get_Style();
+
     /// <summary>Sets the WMS style that will be used to render a WMS 
     /// layer in a composit WMS image.</summary>
     /// <returns>Returns nothing.</returns> 
     /// <remarks>If the server advertises several styles for a layer, and the style 
     /// definition is either set to the default style or not specified at all, the 
     /// choice of which style to use as default is at the discretion of the server.</remarks>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvStyleDefinition^ Style
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvStyleDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvStyleDefinition^ value);
-    }
+	__property System::Void set_Style(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvStyleDefinition* style);
 
-internal:
+public private:
 	OvLayerDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoWmsOvLayerDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE

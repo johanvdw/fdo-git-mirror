@@ -21,9 +21,9 @@
 #include "Common\mgDictionaryElement.h"
 #include "Common\mgException.h"
 
-NAMESPACE_OSGEO_COMMON::DictionaryElement::DictionaryElement(System::String^ name, System::String^ value) : Disposable(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_COMMON::DictionaryElement::DictionaryElement(System::String* name, System::String* value) : Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDictionaryElement::Create(StringToUni(name), StringToUni(value))), true))
+	EXCEPTION_HANDLER(Attach(FdoDictionaryElement::Create(StringToUni(name), StringToUni(value)), true))
 }
 
 NAMESPACE_OSGEO_COMMON::DictionaryElement::DictionaryElement(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
@@ -33,42 +33,44 @@ NAMESPACE_OSGEO_COMMON::DictionaryElement::DictionaryElement(System::IntPtr unma
 
 FdoDictionaryElement* NAMESPACE_OSGEO_COMMON::DictionaryElement::GetImpObj()
 {
-	return static_cast<FdoDictionaryElement*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoDictionaryElement*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_COMMON::DictionaryElement::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_COMMON::DictionaryElement::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_COMMON::DictionaryElement::Name::get()
+System::String* NAMESPACE_OSGEO_COMMON::DictionaryElement::get_Name()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Boolean NAMESPACE_OSGEO_COMMON::DictionaryElement::CanSetName::get()
+System::Boolean NAMESPACE_OSGEO_COMMON::DictionaryElement::get_CanSetName()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->CanSetName())
 
 	return result;
 }
 
-System::String^ NAMESPACE_OSGEO_COMMON::DictionaryElement::Value::get()
+System::String* NAMESPACE_OSGEO_COMMON::DictionaryElement::get_Value()
 {
 	FdoString* result;
 	
 	EXCEPTION_HANDLER(result = GetImpObj()->GetValue())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_COMMON::DictionaryElement::Value::set(String^ value)
+System::Void NAMESPACE_OSGEO_COMMON::DictionaryElement::set_Value(String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetValue(StringToUni(value)))
 }

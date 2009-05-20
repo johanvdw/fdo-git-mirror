@@ -84,8 +84,6 @@ ExInfoDb::~ExInfoDb()
     }
 }
 
-#pragma warning(push)
-#pragma warning(disable: 4018)  // '<' : signed/unsigned mismatch
 
 void ExInfoDb::ReadExtendedInfo(FdoFeatureSchema* schema)
 {
@@ -163,7 +161,6 @@ void ExInfoDb::ReadExtendedInfo(FdoFeatureSchema* schema)
 	CloseCursor();
 }
 
-#pragma warning(pop) // '<' : signed/unsigned mismatch
 
 void ExInfoDb::CloseCursor()
 {

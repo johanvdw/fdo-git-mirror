@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_FILTER
 /// \brief
 /// The ConditionType enumeration defines the filter condition types available. 
 /// This enumeration is used in the capabilities.
-public enum class ConditionType
+public __value enum ConditionType
 {
     /// Tests if one expression is equal, not equal, greater than, less than, 
     /// greater than or equal to, or less than or equal to another expression.

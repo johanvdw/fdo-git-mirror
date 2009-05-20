@@ -24,13 +24,13 @@
 class FdoPhysicalClassMapping;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlSaxContext;
-ref class XmlAttributeCollection;
-ref class XmlWriter;
+public __gc class XmlSaxContext;
+public __gc class XmlAttributeCollection;
+public __gc class XmlWriter;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
@@ -39,7 +39,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 /// \brief
 /// PhysicalClassMapping is an abstract class that acts as a base class for all 
 /// Physical Schema Mapping class overrides.
-public ref class PhysicalClassMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
+public __gc class PhysicalClassMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
 {
 public:
     /// \brief
@@ -57,7 +57,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes) override;
+	System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes);
 
     /// \brief
     /// Writes this class to XML. Called when
@@ -77,16 +77,15 @@ public:
     /// Returns nothing
     /// 
     /// Write this element to XML.
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags) override;
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
 /// \cond DOXYGEN-IGNORE
 public protected:
 	PhysicalClassMapping(System::IntPtr unmanaged, System::Boolean autoDelete);
-	
-    inline FdoPhysicalClassMapping* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
+
+public private:
+	inline FdoPhysicalClassMapping* GetImpObj();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
