@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SQL
-interface class ISQLDataReader;
+public __gc __interface ISQLDataReader;
 
 /// \ingroup (OSGeoFDOCommandsSQL)
 /// \interface OSGeo::FDO::Commands::SQL::ISQLCommand
@@ -30,7 +30,7 @@ interface class ISQLDataReader;
 /// execution of a SQL statement against an underlying RDBMS. Two execute
 /// methods are provided to distinguish between statements that return table data
 /// versus those that execute non query type operations.
-public interface class ISQLCommand : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface ISQLCommand : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -39,6 +39,8 @@ public:
     /// \return
     /// Returns the SQL statement.
     /// 
+	__property System::String* get_SQLStatement();
+
     /// \brief
     /// Sets the SQL statement to be executed as a string.
     /// 
@@ -48,11 +50,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ SQLStatement
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_SQLStatement(System::String* value);
 
     /// \brief
     /// Executes the SQL statement against the connection object and returns
@@ -70,7 +68,7 @@ public:
     /// \return
     /// Returns the data reader.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader^ ExecuteReader();
+	NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader* ExecuteReader();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SQL

@@ -22,16 +22,14 @@ class FdoRdbmsOvDataPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
-ref class OvColumn;
+public __gc class OvColumn;
 
 ///<summary>Abstract class defining physical schema overrides for a data property
 ///definition.</summary>
-public ref class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition
+public __gc class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition
 {
-internal:
+public private:
 	inline FdoRdbmsOvDataPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public protected:
 	OvDataPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
@@ -39,10 +37,7 @@ public protected:
 public:
     ///<summary>Gets the column override</summary>
     /// <returns>Returns OvColumn</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvColumn^ Column
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvColumn^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvColumn* get_Column();
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

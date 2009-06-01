@@ -29,7 +29,7 @@
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::ClassDefinition() : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoShpOvClassDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoShpOvClassDefinition::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::ClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping(unmanaged, autoDelete)
@@ -39,42 +39,37 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::ClassDefinition(Sys
 
 FdoShpOvClassDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::GetImpObj()
 {
-	return static_cast<FdoShpOvClassDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoShpOvClassDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::ShapeFile::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::get_ShapeFile()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetShapeFile())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::ShapeFile::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::set_ShapeFile(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetShapeFile(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::Properties::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::get_Properties()
 {
 	FdoShpOvPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetProperties())
 
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreatePropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreatePropertyDefinitionCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::FindByColumnName(System::String^ value)
+NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ClassDefinition::FindByColumnName(System::String* value)
 {
 	FdoShpOvPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->FindByColumnName(StringToUni(value)))
 
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreatePropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreatePropertyDefinition(result, true);
 }

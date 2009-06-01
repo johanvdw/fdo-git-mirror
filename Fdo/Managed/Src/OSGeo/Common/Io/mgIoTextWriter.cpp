@@ -23,14 +23,14 @@
 #include "Common\Io\mgIoStream.h"
 #include "Common\Io\mgIoTextWriter.h"
 
-NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(System::String^ fileName) : Disposable(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(System::String* fileName) : Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoIoTextWriter::Create(StringToUni(fileName))), true))
+	EXCEPTION_HANDLER(Attach(FdoIoTextWriter::Create(StringToUni(fileName)), true))
 }
 
-NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream) : Disposable(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream *stream) : Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoIoTextWriter::Create(stream->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(FdoIoTextWriter::Create(stream->GetImpObj()), true))
 }
 
 NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
@@ -40,29 +40,31 @@ NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::IoTextWriter(System::IntPtr unmanaged, 
 
 FdoIoTextWriter* NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::GetImpObj()
 {
-	return static_cast<FdoIoTextWriter*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoIoTextWriter*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_COMMON_IO::IoStream^ NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::Stream::get()
+NAMESPACE_OSGEO_COMMON_IO::IoStream* NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::get_Stream()
 {
 	FdoIoStream* stream;
 
 	EXCEPTION_HANDLER(stream = GetImpObj()->GetStream())
 
-	return ObjectFactory::CreateIoStream(IntPtr(stream), true);
+	return ObjectFactory::CreateIoStream(stream, true);
 }
 
-System::Void NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::Write(System::String^ data)
+System::Void NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::Write(System::String *data)
 {
 	EXCEPTION_HANDLER(GetImpObj()->Write(StringToUni(data)))
 }
 
-System::Void NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::WriteLine(System::String^ data)
+System::Void NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::WriteLine(System::String *data)
 {
 	EXCEPTION_HANDLER(GetImpObj()->WriteLine(StringToUni(data)))
+}
+
+System::Void NAMESPACE_OSGEO_COMMON_IO::IoTextWriter::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }

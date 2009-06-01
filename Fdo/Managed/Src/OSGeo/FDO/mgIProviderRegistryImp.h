@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_FDO
 ///
 /// \note
 /// This is not the Windows registry.
-private ref class IProviderRegistryImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO::IProviderRegistry
+private __gc class IProviderRegistryImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO::IProviderRegistry
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns an an instance of ProviderCollection. Throws an instance of Exception if an error occurs.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_CLIENTSERVICES::ProviderCollection^ GetProviders();
+	NAMESPACE_OSGEO_FDO_CLIENTSERVICES::ProviderCollection* GetProviders();
 	
     /// \brief
     /// Registers a provider given the necessary information to register the provider. 
@@ -69,12 +69,12 @@ public:
     /// \return
     /// Returns nothing. Throws an instance of Exception if an error occurs.
     /// 
-	virtual System::Void RegisterProvider(System::String^ name, 
-                                          System::String^ displayName, 
-                                          System::String^ description, 
-                                          System::String^ version, 
-                                          System::String^ fdoVersion, 
-                                          System::String^ libraryPath,
+	System::Void RegisterProvider(String * name, 
+                                          String * displayName, 
+                                          String * description, 
+                                          String * version, 
+                                          String * fdoVersion, 
+                                          String * libraryPath,
 										  System::Boolean isManaged);
 
     /// \brief
@@ -87,14 +87,17 @@ public:
     /// \return
     /// Returns nothing. Throws an instance of Exception if an error occurs.
     /// 
-	virtual System::Void UnregisterProvider(System::String^ name);
+	System::Void UnregisterProvider(String * name);
 
-internal:
+public private:
 	IProviderRegistryImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	::IProviderRegistry *GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO

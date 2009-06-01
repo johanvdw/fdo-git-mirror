@@ -25,16 +25,15 @@ class FdoMySQLOvDataPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-ref class OvColumn;
+public __gc class OvColumn;
 
 ///<summary>Concrete class defining physical schema overrides for a data property definition.</summary>
-public ref class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvDataPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
+public __gc class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvDataPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
 {
-internal:
-	OvDataPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvDataPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvDataPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Constructs a default of an OvDataPropertyDefinition</summary>
@@ -44,17 +43,16 @@ public:
     ///<summary>Constructs an instance of an OvDataPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns OvDataPropertyDefinition</returns>
-	OvDataPropertyDefinition(System::String^ name);
+	OvDataPropertyDefinition(System::String* name);
 
     ///<summary>Gets the MySQL column</summary>
     /// <returns>Returns the MySQL column</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvColumn* get_Column();
+
     ///<summary>Sets the MySQL column</summary>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvColumn^ Column
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvColumn^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvColumn^ column);
-    }
+	__property System::Void set_Column(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvColumn *column);
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

@@ -61,7 +61,7 @@ SdfRTree::SdfRTree(SQLiteDataBase* env, const char* filename, FdoString* databas
 
             //check whether the file is read only before going to rebuid the r-tree.
             if (bReadOnly)
-                throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_109_REBUILD_RTREE_ERROR )));
+                throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_10_ERROR_ACCESSING_SDFDB )));
                 //Note: use the error msg SDFPROVIDER_10_ERROR_ACCESSING_SDFDB in update due to resouce modify restriction
                 
         }

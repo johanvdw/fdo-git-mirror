@@ -34,12 +34,7 @@
 
 FdoIGetSpatialIndexes* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::GetImpObj()
 {
-	return static_cast<FdoIGetSpatialIndexes*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIGetSpatialIndexes*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::IGetSpatialIndexesImp(IntPtr unmanaged, Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
@@ -47,26 +42,26 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::IGetSpatialIndexesIm
 
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::ActiveOnly::get()
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::get_ActiveOnly()
 {
-	System::Boolean ret;
+	bool ret;
 
 	EXCEPTION_HANDLER(ret = !!GetImpObj()->GetActiveOnly())
 
 	return ret;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::ActiveOnly::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::set_ActiveOnly(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetActiveOnly(value))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ISpatialIndexReader^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::Execute()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ISpatialIndexReader* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::IGetSpatialIndexesImp::Execute()
 {
-	FdoISpatialIndexReader* result;
+	FdoISpatialIndexReader * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->Execute())
 
-	return ObjectFactory::CreateISpatialIndexReader(IntPtr(result), true);
+	return ObjectFactory::CreateISpatialIndexReader(unobj, true);
 }
 

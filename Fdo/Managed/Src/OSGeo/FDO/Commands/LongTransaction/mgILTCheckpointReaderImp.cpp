@@ -23,30 +23,32 @@
 
 FdoILongTransactionCheckpointReader* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetImpObj()
 {
-    return static_cast<FdoILongTransactionCheckpointReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoILongTransactionCheckpointReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetCheckpointName()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetCheckpointName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCheckpointName())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetCheckpointDescription()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetCheckpointDescription()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCheckpointDescription())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
 System::DateTime NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::GetCreationDate()
@@ -60,7 +62,7 @@ System::DateTime NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionC
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::IsActive()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->IsActive())
 
@@ -69,7 +71,7 @@ System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCh
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->ReadNext())
 

@@ -21,14 +21,14 @@
 
 FdoSmPhSqsIndex::FdoSmPhSqsIndex(
         FdoStringP name,
-        FdoSmPhDbObject* pParent,
+        const FdoSmPhTable* pTable,
         bool isUnique,
         FdoSchemaElementState elementState,
         FdoSmPhRdDbObjectReader* reader
 ) :
-    FdoSmPhGrdIndex( name, pParent, isUnique, elementState ),
-    FdoSmPhSqsDbObject( name, (const FdoSmPhOwner*) pParent->GetParent() , reader),
-    FdoSmPhDbObject( name, (const FdoSmPhOwner*) pParent->GetParent(), elementState )
+    FdoSmPhGrdIndex( name, pTable, isUnique, elementState ),
+    FdoSmPhSqsDbObject( name, (const FdoSmPhOwner*) pTable->GetParent() , reader),
+    FdoSmPhDbObject( name, (const FdoSmPhOwner*) pTable->GetParent(), elementState )
 {
     //TODO; //TODO: handle index-specific stuff from pDbObjectReader ?
 }
@@ -56,13 +56,13 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhSqsIndex::CreateColumnReader()
 
 bool FdoSmPhSqsIndex::Add()
 {
-    FdoSmPhDbObjectP dbObject = GetDbObject();
+    const FdoSmPhTable* table = RefTable();
 
     FdoStringP sqlStmt = FdoStringP::Format(
         L"create %lsindex %ls on %ls ( %ls )",
         GetIsUnique() ? L"unique " : L"",
         (FdoString*) GetDbName(),
-        (FdoString*) dbObject->GetDbQName(),
+        (FdoString*) table->GetDbQName(),
         (FdoString*) GetKeyColsSql(GetColumns())->ToString( L", " )
     );
 
@@ -76,12 +76,12 @@ bool FdoSmPhSqsIndex::Add()
 
 bool FdoSmPhSqsIndex::Delete()
 {
-    FdoSmPhDbObjectP dbObject = GetDbObject();
+    const FdoSmPhTable* table = RefTable();
 
     // Index name must be qualified by table name.
     FdoStringP sqlStmt = FdoStringP::Format(
         L"drop index %ls.%ls",
-        (FdoString*) ((FdoSmPhDbObject*)dbObject)->GetDbName(),
+        (FdoString*) ((FdoSmPhTable*)table)->GetDbName(),
         (FdoString*) GetDbName()
     );
 

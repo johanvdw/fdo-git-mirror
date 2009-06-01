@@ -27,33 +27,28 @@
 
 FdoIGetLongTransactions* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::GetImpObj()
 {
-    return static_cast<FdoIGetLongTransactions*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIGetLongTransactions*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::get_Name()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::Name::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::set_Name(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetName(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionsImp::Execute()
 {
 	FdoILongTransactionReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILongTransactionReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILongTransactionReader(result, true);
 }

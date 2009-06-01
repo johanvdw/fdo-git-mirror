@@ -24,7 +24,7 @@
 class FdoIGetLongTransactionCheckpoints;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionCheckpointReader;
+public __gc __interface ILongTransactionCheckpointReader;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \brief
@@ -34,7 +34,7 @@ interface class ILongTransactionCheckpointReader;
 /// GetLongTransactionCheckpoints command, which allows the user to enumerate
 /// the checkpoints for a given long transaction. To execute the operation, the
 /// user must have access privilege to the long transaction.
-private ref class IGetLongTransactionCheckpointsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionCheckpoints
+private __gc class IGetLongTransactionCheckpointsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionCheckpoints
 {
 public:
     /// \brief
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property System::String* get_LongTransactionName();
+
     /// \brief
     /// Sets the name of the long transaction for which to get the checkpoints.
     /// 
@@ -52,11 +54,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ LongTransactionName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_LongTransactionName(System::String* value);
 
     /// \brief
     /// Executes the get long transaction checkpoints command, returning a
@@ -65,17 +63,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReader* Execute();
 
-internal:
+public private:
 	IGetLongTransactionCheckpointsImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIGetLongTransactionCheckpoints* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

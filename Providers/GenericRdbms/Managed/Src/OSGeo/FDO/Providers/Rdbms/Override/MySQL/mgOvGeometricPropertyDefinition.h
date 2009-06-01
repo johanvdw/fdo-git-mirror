@@ -24,16 +24,15 @@ class FdoMySQLOvGeometricPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-ref class OvGeometricColumn;
+public __gc class OvGeometricColumn;
 
 ///<summary>Concrete class defining physical schema overrides for a geometric property definition.</summary>
-public ref class OvGeometricPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
+public __gc class OvGeometricPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
 {
-internal:
-	OvGeometricPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvGeometricPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvGeometricPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Constructs a default of an OvGeometricPropertyDefinition</summary>
@@ -43,17 +42,16 @@ public:
     ///<summary>Constructs an instance of an OvGeometricPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns OvGeometricPropertyDefinition</returns>
-	OvGeometricPropertyDefinition(System::String^ name);
+	OvGeometricPropertyDefinition(System::String* name);
 
     ///<summary>Gets the column</summary>
     /// <returns>Returns the column</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvGeometricColumn* get_Column();
+
     ///<summary>Sets the column</summary>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvGeometricColumn^ Column
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvGeometricColumn^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvGeometricColumn^ geometricColumn);
-    }
+	__property System::Void set_Column(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvGeometricColumn* geometricColumn);
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

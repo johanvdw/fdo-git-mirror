@@ -32,56 +32,51 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::DecimalValue(IntPtr unmanaged, Boo
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::DecimalValue() : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDecimalValue::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoDecimalValue::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::DecimalValue(System::Double value) : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDecimalValue::Create(value)), true))
+	EXCEPTION_HANDLER(Attach(FdoDecimalValue::Create(value), true))
 }
 
 FdoDecimalValue* NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::GetImpObj()
 {
-	return static_cast<FdoDecimalValue*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoDecimalValue*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::operator System::Double( NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue^ value )
+System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue* value )
 {
 	return (value->GetImpObj())->operator FdoDouble();
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::get_DataType()
 {
 	FdoDataType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unobj);
 }
 
-System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::Decimal::get()
+System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::get_Decimal()
 {
-	System::Double unobj;
+	double unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDecimal())
 	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::Decimal::set(System::Double value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::set_Decimal(System::Double value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDecimal(value))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::DecimalValue::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }

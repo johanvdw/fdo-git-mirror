@@ -32,61 +32,63 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentDefini
 
 FdoArgumentDefinition* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::GetImpObj()
 {
-    return static_cast<FdoArgumentDefinition*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoArgumentDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentDefinition(System::String^ name, System::String^ description, NAMESPACE_OSGEO_FDO_SCHEMA::DataType dataType)  : Disposable(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentDefinition(System::String* name, System::String* description, NAMESPACE_OSGEO_FDO_SCHEMA::DataType dataType)  : Disposable(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoArgumentDefinition::Create(StringToUni(name), StringToUni(description), static_cast<FdoDataType>(dataType))), true))
+	EXCEPTION_HANDLER(Attach(FdoArgumentDefinition::Create(StringToUni(name), StringToUni(description), static_cast<FdoDataType>(dataType)), true))
 }
 
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentDefinition(System::String^ name, System::String^ description, NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType propertyType, NAMESPACE_OSGEO_FDO_SCHEMA::DataType dataType)  : Disposable(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentDefinition(System::String* name, System::String* description, NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType propertyType, NAMESPACE_OSGEO_FDO_SCHEMA::DataType dataType)  : Disposable(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoArgumentDefinition::Create(StringToUni(name), StringToUni(description), static_cast<FdoPropertyType>(propertyType), static_cast<FdoDataType>(dataType))), true))
+	EXCEPTION_HANDLER(Attach(FdoArgumentDefinition::Create(StringToUni(name), StringToUni(description), static_cast<FdoPropertyType>(propertyType), static_cast<FdoDataType>(dataType)), true))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::get_Name()
 {
-	FdoString* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
-	return CHECK_STRING(result);
+	FdoString* unstr;
+	EXCEPTION_HANDLER(unstr = GetImpObj()->GetName())
+	return unstr;
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::PropertyType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::get_PropertyType()
 {
 	FdoPropertyType unType;
 	EXCEPTION_HANDLER(unType = GetImpObj()->GetPropertyType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType>(unType);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::get_DataType()
 {
 	FdoDataType unType;
 	EXCEPTION_HANDLER(unType = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unType);
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::Description::get()
+System::String* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::get_Description()
 {
-	FdoString* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetDescription())
-	return CHECK_STRING(result);
+	FdoString* unstr;
+	EXCEPTION_HANDLER(unstr = GetImpObj()->GetDescription())
+	return unstr;
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentValueList::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::get_ArgumentValueList ()
 {
-    FdoPropertyValueConstraintList* result;
+    FdoPropertyValueConstraintList *result;
 	EXCEPTION_HANDLER(result = GetImpObj()->GetArgumentValueList());
-    return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList^> (NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePropertyValueConstraint(IntPtr(result), true));
+    return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList *> (NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePropertyValueConstraint(result, true));
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::ArgumentValueList::set(NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList ^argumentValueList)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinition::set_ArgumentValueList (NAMESPACE_OSGEO_FDO_SCHEMA::PropertyValueConstraintList *argumentValueList)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetArgumentValueList(argumentValueList == nullptr ? nullptr : argumentValueList->GetImpObj()));
+	EXCEPTION_HANDLER(GetImpObj()->SetArgumentValueList(argumentValueList == NULL ? NULL : argumentValueList->GetImpObj()));
 }

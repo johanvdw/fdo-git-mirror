@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// attributes that provide a generic extensibility mechanism for objects
 /// in the feature schema. This mechanism can be used to dynamically extend 
 /// schema elements in either an application- or provider-specific manner.
-public ref class SchemaAttributeDictionary : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
+public __gc class SchemaAttributeDictionary : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
 {
 public:
     /// \brief
@@ -37,10 +37,7 @@ public:
     /// \return
     /// Returns the number of attributes in the dictionary
     /// 
-    property System::Int32 Count
-    {
-        System::Int32 get();
-    }
+	__property System::Int32 get_Count();
 
     /// \brief
     /// Gets an array containing all of the attribute names in the dictionary.
@@ -48,10 +45,7 @@ public:
     /// \return
     /// Returns an array containing all of the attribute names in the dictionary
     /// 
-    property array<System::String^>^ AttributeNames
-    {
-        array<System::String^>^ get();
-    }
+	__property System::String* get_AttributeNames() [];
 
     /// \brief
     /// Gets the value of the specified attribute.
@@ -62,7 +56,7 @@ public:
     /// \return
     /// Returns the value of the specified attribute
     /// 
-	System::String^ GetAttributeValue(System::String^ name);
+	System::String* GetAttributeValue(System::String* name);
 
     /// \brief
     /// Sets the value of the specified attribute.
@@ -75,7 +69,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void SetAttributeValue(System::String^ name, System::String^ value);
+	System::Void SetAttributeValue(System::String* name, System::String* value);
 
     /// \brief
     /// Returns true if the dictionary contains the specified attribute.
@@ -86,7 +80,7 @@ public:
     /// \return
     /// Returns true if the dictionary contains the specified attribute
     /// 
-	System::Boolean ContainsAttribute(System::String^ name);
+	System::Boolean ContainsAttribute(System::String* name);
 
     /// \brief
     /// Adds the specified attribute with the specified value to the dictionary.
@@ -99,7 +93,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void Add(System::String^ name, System::String^ value);
+	System::Void Add(System::String* name, System::String* value);
 
     /// \brief
     /// Removes the specified attribute and its value from the dictionary.
@@ -110,7 +104,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void Remove(System::String^ name);
+	System::Void Remove(System::String* name);
 
     /// \brief
     /// Clears all attributes and values from the dictionary.
@@ -135,10 +129,13 @@ public:
 		
 	}
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	inline FdoSchemaAttributeDictionary* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

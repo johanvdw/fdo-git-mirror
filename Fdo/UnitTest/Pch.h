@@ -44,42 +44,6 @@
                                  (#condition),             \
                                  CPPUNIT_SOURCELINE() )
 
-/*
-// GB: Reverted the following change...
-// Revision: 4707
-// Author: helio
-// Date: 9:47:57 AM, Friday, May 22, 2009
-#ifdef CPPUNIT_API // Newer API
-
-// This works with the next macro to wrap each unit test so that any 
-// uncaught FdoExceptions are caught and reported.
-#define FDO_CPPUNIT_DEFINE( testMethod )\
-    void UNITTEST_##testMethod()\
-    {\
-        try\
-        {\
-            TestFixtureType::testMethod();\
-        }\
-        catch (FdoException* exception)\
-        {\
-            PrintException(exception);\
-            exception->Release();\
-            CPPUNIT_ASSERT_MESSAGE("Unhandled FdoException in " #testMethod, false);\
-        }\
-    }\
-
-// This is a modification of CPPUNIT_TEST
-#undef  CPPUNIT_TEST
-#define CPPUNIT_TEST( testMethod )\
-    CPPUNIT_TEST_SUITE_ADD_TEST(\
-        ( new CPPUNIT_NS::TestCaller<TestFixtureType>( \
-              context.getTestNameFor( #testMethod ),\
-              &TestFixtureType::UNITTEST_##testMethod,\
-              context.makeFixture() ) ) )
-
-#else //CPPUNIT_API
-*/
-
 // This works with the next macro to wrap each unit test so that any 
 // uncaught FdoExceptions are caught and reported.
 #define FDO_CPPUNIT_DEFINE( testMethod )\
@@ -104,14 +68,6 @@
         &__ThisTestFixtureType::UNITTEST_##testMethod,\
         (__ThisTestFixtureType*)factory->makeFixture() ) 
 
-
-/*
-// GB: Reverted the following change...
-// Revision: 4707
-// Author: helio
-// Date: 9:47:57 AM, Friday, May 22, 2009
-#endif // CPPUNIT_API
-*/
 
 // This should work on other compilers/platforms. It works 
 // because IDisposable is always the base class and its first data
