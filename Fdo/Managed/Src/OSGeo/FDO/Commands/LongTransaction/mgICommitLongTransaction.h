@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgIFeatureCommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionConflictDirectiveEnumerator;
+public __gc __interface ILongTransactionConflictDirectiveEnumerator;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \interface OSGeo::FDO::Commands::LongTransaction::ICommitLongTransaction
@@ -41,7 +41,7 @@ interface class ILongTransactionConflictDirectiveEnumerator;
 /// In addition, a full commit can be performed on a leaf long transaction
 /// only. A long transaction is a leaf long transaction if it does not
 /// have descendent versions.
-public interface class ICommitLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
+public __gc __interface ICommitLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
 {
 public:
     /// \brief
@@ -50,6 +50,8 @@ public:
     /// \return
     /// Returns the name of the long transaction
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the long transaction to commit as a string.
     /// 
@@ -59,11 +61,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// Executes the commit long transaction command and returns an
     /// ILongTransactionConflictDirectiveEnumerator.
@@ -71,7 +69,7 @@ public:
     /// no conflicts were detected and the command was executed successfully.
     /// Otherwise conflicts were detected and the user must specify how to
     /// resolve them using the enumerator and call Execute again.
-	ILongTransactionConflictDirectiveEnumerator^ Execute();
+	ILongTransactionConflictDirectiveEnumerator* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

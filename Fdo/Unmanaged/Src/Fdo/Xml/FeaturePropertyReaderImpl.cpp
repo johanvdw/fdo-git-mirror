@@ -205,8 +205,8 @@ FdoXmlSaxHandler* FdoXmlFeaturePropertyReaderImpl::XmlStartElement(
 	FdoXmlFeatureHandler* curFeatureHandler = m_featureHandlerStack.back();
 	FdoXmlSaxHandler* nextSaxHandler = NULL;
 	FdoXmlFeatureHandler* nextFeatureHandler = NULL;
-	
-    GmlBaseType baseType = getGmlBaseType(validName, uri);
+
+	GmlBaseType baseType = getGmlBaseType(validName, uri);
 
 	switch(baseType){
 		//feature collection
@@ -232,7 +232,7 @@ FdoXmlSaxHandler* FdoXmlFeaturePropertyReaderImpl::XmlStartElement(
 		case GmlBaseType_Feature:
             {
 
-                // find out current complex type's class definition               
+                // find out current complex type's class definition
                 FdoPtr<FdoXmlLpClassDefinition> classDef = getClassDef(validName, uri);
                 if (classDef != NULL)
                     m_lpClassStack.push_back(classDef.p);
@@ -287,7 +287,7 @@ FdoXmlSaxHandler* FdoXmlFeaturePropertyReaderImpl::XmlStartElement(
 		//generic complex type
 		case GmlBaseType_GenericComplexType:
             {
-                // find out current complex type's class definition                
+                // find out current complex type's class definition
                 FdoPtr<FdoXmlLpClassDefinition> classDef = getClassDef(validName, uri);
                 if (classDef != NULL)
                     m_lpClassStack.push_back(classDef.p);

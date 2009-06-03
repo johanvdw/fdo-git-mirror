@@ -34,7 +34,7 @@ public:
 
 	virtual ~FdoSmPhColumnSingle(void) {}
 
-    virtual FdoSmPhColType GetType() const
+    virtual FdoSmPhColType GetType()
     {
         return FdoSmPhColType_Single;
     }

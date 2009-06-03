@@ -24,7 +24,7 @@
 class FdoICurvePolygon;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IRing;
+public __gc __interface IRing;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The ICurvePolygonImp class is a concrete geometric CurvePolygon geometry type.  
 /// This type is defined by one exterior boundary and zero or more interior boundaries.
 /// Each of the boundaries must be a closed, simple Ring.
-private ref class ICurvePolygonImp :
+private __gc class ICurvePolygonImp :
 	public NAMESPACE_OSGEO_GEOMETRY::ICurvePolygon, public NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp
 {
 public:
@@ -50,10 +50,8 @@ public:
     /// 
 	ICurvePolygonImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	FdoICurvePolygon *GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public:
     /// \brief
@@ -62,10 +60,7 @@ public:
     /// \return
     /// Returns the exterior ring
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IRing^ ExteriorRing
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IRing^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IRing *get_ExteriorRing();
 	
     /// \brief
     /// Gets the number of interior rings.
@@ -73,10 +68,7 @@ public:
     /// \return
     /// Returns the number of interior rings
     /// 
-    property System::Int32 InteriorRingCount
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_InteriorRingCount();
 	
     /// \brief
     /// Gets the interior ring at the specified (zero-based) index.
@@ -87,10 +79,7 @@ public:
     /// \return
     /// Returns the interior ring
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IRing^ InteriorRing[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IRing^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IRing *get_InteriorRing(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

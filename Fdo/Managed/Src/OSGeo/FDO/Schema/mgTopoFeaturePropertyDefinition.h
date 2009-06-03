@@ -43,15 +43,15 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// The relationships are populated only from the TopoGeometry role, so
 /// TopoFeature properties need never be subject to an insertion or update
 /// operation. 
-public ref class TopoFeaturePropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
+public __gc class TopoFeaturePropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
 {
 public:
     /// \brief
     /// Constructs an instance of an TopoFeaturePropertyDefinition using the
     /// specified arguments.
     /// 
-	TopoFeaturePropertyDefinition(System::String^ name, System::String^ description);
-	TopoFeaturePropertyDefinition(System::String^ name, System::String^ description, System::Boolean system);
+	TopoFeaturePropertyDefinition(System::String* name, System::String* description);
+	TopoFeaturePropertyDefinition(System::String* name, System::String* description, System::Boolean system);
 
     /// \brief
     /// Constructs a TopoFeaturePropertyDefinition object based on an unmanaged instance of the object
@@ -68,10 +68,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoTopoFeaturePropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

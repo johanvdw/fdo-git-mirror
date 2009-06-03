@@ -23,7 +23,7 @@
 class FdoILongTransactionReader;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionReader;
+public __gc __interface ILongTransactionReader;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \brief
@@ -34,7 +34,7 @@ interface class ILongTransactionReader;
 /// command. The initial position of the ILongTransactionReader is prior
 /// to the first item. Thus, you must call ReadNext to begin accessing any
 /// data.
-private ref class ILongTransactionReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+private __gc class ILongTransactionReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                                public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader
 {
 public:
@@ -45,7 +45,7 @@ public:
     /// \return
     /// Returns the name of the long transaction.
     /// 
-	virtual System::String^ GetName();
+	System::String* GetName();
 
     /// \brief
     /// Retrieves the description of the long transaction currently
@@ -54,7 +54,7 @@ public:
     /// \return
     /// Returns the description of the long transaction.
     /// 
-	virtual System::String^ GetDescription();
+	System::String* GetDescription();
 
     /// \brief
     /// Provides access to the direct descendent long transactions 
@@ -67,7 +67,7 @@ public:
     /// Returns a long transaction reader with the direct descendents
     /// for the long transaction currently being read.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader^ GetChildren();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader* GetChildren();
 
     /// \brief
     /// Provides access to the direct ascendant long transactions for
@@ -80,7 +80,7 @@ public:
     /// Returns a long transaction reader with the direct ascendants 
     /// for the long transaction currently being read.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader^ GetParents();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionReader* GetParents();
 
     /// \brief
     /// Retrieves the owner of the long transaction currently being
@@ -89,7 +89,7 @@ public:
     /// \return
     /// Returns the owner name.
     /// 
-	virtual System::String^ GetOwner();
+	System::String* GetOwner();
 
     /// \brief
     /// Retrieves the creation date of the long transaction currently
@@ -98,7 +98,7 @@ public:
     /// \return
     /// Returns the date when the long transaction was created.
     /// 
-	virtual System::DateTime GetCreationDate();
+	System::DateTime GetCreationDate();
 
     /// \brief
     /// Returns true if the long transaction currently being read is
@@ -107,7 +107,7 @@ public:
     /// \return
     /// Returns true if the long transaction is active.
     /// 
-	virtual System::Boolean IsActive();
+	System::Boolean IsActive();
 
     /// \brief
     /// Returns true if the long transaction currently being read is
@@ -116,7 +116,7 @@ public:
     /// \return
     /// Returns true if the long transaction is frozen.
     /// 
-	virtual System::Boolean IsFrozen();
+	System::Boolean IsFrozen();
 
     /// \brief
     /// Advances the reader to the next item. The default position of
@@ -126,7 +126,7 @@ public:
     /// \return
     /// Returns true if there is a next item.
     /// 
-	virtual System::Boolean ReadNext();
+	System::Boolean ReadNext();
 
     /// \brief
     /// Closes the ILongTransactionReader object, freeing any
@@ -135,17 +135,20 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Close();
+	System::Void Close();
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	__sealed System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	ILongTransactionReaderImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoILongTransactionReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

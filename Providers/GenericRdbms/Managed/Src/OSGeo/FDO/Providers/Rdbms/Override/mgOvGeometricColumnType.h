@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 /// </param>
 /// <param name="OvGeometricColumnType_Double"> FDO "Double" (only for use with OvGeometryContentType_Ordinates)
 /// </param>
-public enum class OvGeometricColumnType
+public __value enum OvGeometricColumnType
 {
     OvGeometricColumnType_Default = FdoSmOvGeometricColumnType_Default,
     OvGeometricColumnType_BuiltIn = FdoSmOvGeometricColumnType_BuiltIn,

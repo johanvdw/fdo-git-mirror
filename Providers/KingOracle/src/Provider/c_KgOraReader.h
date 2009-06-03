@@ -685,20 +685,13 @@ template <class FDO_READER> bool c_KgOraReader<FDO_READER>::ReadNext()
     }
     catch(c_Oci_Exception* ea)
     {
-      FdoStringP gstr;
-      gstr = ea->what();
-      
-      printf("\n----------------------c_KgOraReader::ReadNext: occi::SQLException  %s",(const char*)gstr);
-      
-      
       delete ea;
-      throw FdoCommandException::Create(gstr);
-      
+      printf("\n----------------------c_KgOraReader::ReadNext: occi::SQLException Exception ---------------------- ");
+      return false;
     }
     catch(...)
     {
-      printf("\n----------------------c_KgOraReader::ReadNext: Unknown Exception ---------------------- ");
-      throw FdoCommandException::Create(L"c_KgOraReader::ReadNext: Unknown Exception");
+      printf("\n----------------------c_KgOraReader::ReadNext: Uknown Exception ---------------------- ");
       return false;
     }
     

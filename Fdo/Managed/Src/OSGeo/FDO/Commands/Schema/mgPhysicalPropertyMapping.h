@@ -24,13 +24,13 @@
 class FdoPhysicalPropertyMapping;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlSaxContext;
-ref class XmlAttributeCollection;
-ref class XmlWriter;
+public __gc class XmlSaxContext;
+public __gc class XmlAttributeCollection;
+public __gc class XmlWriter;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
@@ -39,7 +39,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 /// \brief
 /// PhysicalPropertyMapping is an abstract class that acts as a base class for all 
 /// Physical Schema Mapping property overrides.
-public ref class PhysicalPropertyMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping, public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IPhysicalPropertyMapping
+public __gc class PhysicalPropertyMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping, public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IPhysicalPropertyMapping
 {
 public:
     /// \brief
@@ -56,7 +56,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes) override;
+	System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes);
 
     /// \brief
     /// Writes this Physical Property Mapping to XML. Called when
@@ -74,16 +74,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags) override;
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
 /// \cond DOXYGEN-IGNORE
 public protected:
 	PhysicalPropertyMapping(System::IntPtr unmanaged, System::Boolean autoDelete);
-    
-    inline FdoPhysicalPropertyMapping* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
+
+public private:
+	inline FdoPhysicalPropertyMapping* GetImpObj();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA

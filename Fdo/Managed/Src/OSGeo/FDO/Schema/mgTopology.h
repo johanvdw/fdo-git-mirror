@@ -31,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// This Help topic is provided for informational use only. There is
 /// no interface or support provided. OSGeo reserves the right to change
 /// the software related to the content herein.
-public ref class Topology : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
+public __gc class Topology : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
 {
 public:
     /// \brief
@@ -49,10 +49,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoTopology* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

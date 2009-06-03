@@ -21,14 +21,14 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockedObjectReader;
+public __gc __interface ILockedObjectReader;
 
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \interface OSGeo::FDO::Commands::Locking::IGetLockedObjects
 /// \brief
 /// The IGetLockedObjects interface defines the GetLockedObjects command, which
 /// gets a list of all objects that are currently locked by a particular user.
-public interface class IGetLockedObjects : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetLockedObjects : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -37,6 +37,8 @@ public:
     /// \return
     /// Returns the name of the user
     /// 
+	__property System::String* get_LockOwner();
+
     /// \brief
     /// Sets the name of the user whose locked objects you want to list.
     /// 
@@ -46,11 +48,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ LockOwner
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_LockOwner(System::String* value);
 
     /// \brief
     /// Executes the GetLockedObjects command, returning an ILockedObjectReader.
@@ -59,7 +57,7 @@ public:
     /// Returns a list of all of the objects currently locked by a particular user. 
     /// The list might be empty if the user does not have anything locked.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockedObjectReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockedObjectReader* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING

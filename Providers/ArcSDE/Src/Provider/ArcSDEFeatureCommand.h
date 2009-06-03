@@ -25,7 +25,7 @@
 #include "Fdo.h"
 
 #ifdef SDE_UNICODE
-typedef std::map <std::wstring, long > PropsSdeTypeMap;
+typedef std::map <std::wstring, short > PropsSdeTypeMap;
 #endif
 
 template <class FDO_COMMAND> class ArcSDEFeatureCommand : public ArcSDECommand<FDO_COMMAND>

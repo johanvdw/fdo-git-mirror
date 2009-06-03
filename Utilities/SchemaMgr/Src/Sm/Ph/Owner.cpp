@@ -1200,9 +1200,9 @@ void FdoSmPhOwner::CacheCandIndexes( FdoStringP objectName )
         for  ( ix = 0; ix < candIndexes->GetCount(); ix++ ) {
             FdoDictionaryElementP elem = candIndexes->GetItem( ix );
             if ( wcslen(elem->GetValue()) == 0 ) {
-                FdoSmPhDbObjectP dbObject = this->FindDbObject( elem->GetName() );
-                if (dbObject )
-                    dbObject->CacheIndexes( indexReader );
+                FdoSmPhTableP table = this->FindDbObject( elem->GetName() ).p->SmartCast<FdoSmPhTable>();
+                if (table )
+                    table->CacheIndexes( indexReader );
             }
         }
     }
@@ -1222,13 +1222,13 @@ bool FdoSmPhOwner::CacheObjectIndexes( FdoSmPhRdIndexReaderP indexReader )
 {
     // Get current dbObject name
     FdoStringP objectName = indexReader->GetString( L"", L"table_name" );
-    FdoSmPhDbObjectP dbObject = mDbObjects->FindItem( objectName );
+    FdoSmPhTableP table = mDbObjects->FindItem( objectName )->SmartCast<FdoSmPhTable>(true);
  
-    if (dbObject )
+    if (table )
         // dbObject is cached so load its indexes from the reader.
-        dbObject->CacheIndexes( indexReader );
+        table->CacheIndexes( indexReader );
 
-    return ( dbObject != NULL );
+    return ( table != NULL );
 }
 
 void FdoSmPhOwner::LoadBaseObjectCands()
@@ -1322,8 +1322,8 @@ void FdoSmPhOwner::LoadIndexRootTableCands()
                 
                 // Loading indexes into this owner so skip any base objects in 
                 // other owners.
-                if ( rootObject && (GetQName() == rootObject->GetParent()->GetQName()) ) {
-                    if ( dbObject->GetQName() != rootObject->GetQName() ) {
+                if ( GetQName() == rootObject->GetParent()->GetQName() ) {
+                    if ( rootObject && (dbObject->GetQName() != rootObject->GetQName()) ) {
                         // Object has no primary key but has a root object. We might 
                         // use root object's indexes to generate object's identity.
                         FdoSmPhTableP table = rootObject->SmartCast<FdoSmPhTable>();

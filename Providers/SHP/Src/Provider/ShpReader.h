@@ -625,12 +625,7 @@ public:
                 ret = false;
             // if it's the singleton geometry property, it's null if the shape is NullShape:
             else if (0 == wcscmp (propertyName, mLogicalGeometryPropertyName))
-            {
-                if(!mShape)                
-                    ret = true;
-                else
-                    ret = (eNullShape == mShape->GetShapeType ());
-            }
+                ret = (eNullShape == mShape->GetShapeType ());
             // if it's anything else, need to explicitly check:
             else
             {

@@ -24,14 +24,14 @@
 class FdoIListDataStores;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE
-interface class IDataStoreReader;
+public __gc __interface IDataStoreReader;
 
 /// \brief
 /// \ingroup (OSGeoFDOCommandsDataStore)
 /// The IListDataStoresImp class is a concrete implementation of interface IListDataStores.
 /// The IListDataStores interface defines the list datastores command,
 /// which provides a way to get a list of datastores at a particular server. 
-private ref class IListDataStoresImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IListDataStoresImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                         public NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStores
 {
 public:
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns the flag
     /// 
+	__property System::Boolean get_IncludeNonFdoEnabledDatastores();
+
     /// \brief
     /// Sets the flag to indicate whether to include or not include
     /// Non-FDO enabled datastores in the returned list. These are also
@@ -51,11 +53,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::Boolean IncludeNonFdoEnabledDatastores
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean include);
-    }
+	__property System::Void set_IncludeNonFdoEnabledDatastores(System::Boolean include);
 
     /// \brief
     /// Executes the IListDataStores command.
@@ -63,14 +61,12 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader* Execute();
 
-internal:
+public private:
 	IListDataStoresImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoIListDataStores* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE

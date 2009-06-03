@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class FeatureSchemaCollection;
+public __gc class FeatureSchemaCollection;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 /// command can describe a single schema or all schemas available from
 /// the connection. The Execute operation returns an FeatureSchemaCollection
 /// object.
-public interface class IDescribeSchema : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IDescribeSchema : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -44,6 +44,8 @@ public:
     /// \return
     /// Returns the schema name
     /// 
+	__property System::String* get_SchemaName();
+
     /// \brief
     /// Sets the name of the schema to describe. This function is optional; if not
     /// specified execution of the command will describe all schemas.
@@ -54,11 +56,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ SchemaName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_SchemaName(System::String* value);
 
     /// \brief
     /// Gets the names of the classes to retrieve. This is optional,
@@ -72,6 +70,8 @@ public:
     /// \return
     /// Returns the schema name
     /// 
+    __property NAMESPACE_OSGEO_COMMON::StringCollection* get_ClassNames();
+
     /// \brief
     /// Sets the name of the classes to retrieve. This is optional, if not
     /// specified execution of the command will describe all classes.
@@ -87,11 +87,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_COMMON::StringCollection^ ClassNames
-    {
-        NAMESPACE_OSGEO_COMMON::StringCollection^ get();
-        System::Void set(NAMESPACE_OSGEO_COMMON::StringCollection^ value);
-    }
+    __property System::Void set_ClassNames(NAMESPACE_OSGEO_COMMON::StringCollection* value);
 
     /// \brief
     /// Executes the DescribeSchema command and returns a 
@@ -108,7 +104,7 @@ public:
     /// calling FeatureSchema::AcceptChanges() for each feature schema
     /// in the returned collection.
     /// 
-	NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection^ Execute();
+	NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA

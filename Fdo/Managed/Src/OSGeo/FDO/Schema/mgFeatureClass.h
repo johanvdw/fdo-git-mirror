@@ -24,7 +24,7 @@
 class FdoFeatureClass;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class GeometricPropertyDefinition;
+public __gc class GeometricPropertyDefinition;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -34,7 +34,7 @@ ref class GeometricPropertyDefinition;
 /// property can be used to get the geometric boundary of the spatial feature.
 /// The value of this property will be null if the feature is not a spatial
 /// feature.
-public ref class FeatureClass : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
+public __gc class FeatureClass : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
 {
 public:
     /// \brief
@@ -50,7 +50,7 @@ public:
     /// \param description 
     /// Input description
     /// 
-	FeatureClass(System::String^ name, System::String^ description);
+	FeatureClass(System::String* name, System::String* description);
 
     /// \brief
     /// Gets the concrete class type.
@@ -58,10 +58,7 @@ public:
     /// \return
     /// Returns class type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType ClassType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get_ClassType();
 
     /// \brief
     /// Gets the geometric property that defines the geometry for this spatial 
@@ -70,6 +67,8 @@ public:
     /// \return
     /// Returns the geometric property
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* get_GeometryProperty();
+
     /// \brief
     /// Sets the geometric property that defines the geometry for this spatial 
     /// feature class. The specified GeometricPropertyDefinition must be a member 
@@ -82,11 +81,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ GeometryProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ value);
-    }
+	__property System::Void set_GeometryProperty(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* value);
 
     /// \brief
     /// Constructs a FeatureClass object based on an unmanaged instance of the object
@@ -103,10 +98,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoFeatureClass* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

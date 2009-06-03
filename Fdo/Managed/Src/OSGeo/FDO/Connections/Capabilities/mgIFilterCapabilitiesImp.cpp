@@ -29,63 +29,65 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::IFilterCap
 
 FdoIFilterCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::GetImpObj()
 {
-    return static_cast<FdoIFilterCapabilities*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIFilterCapabilities*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-array<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::ConditionTypes::get()
+NAMESPACE_OSGEO_FDO_FILTER::ConditionType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::get_ConditionTypes() []
 {
 	FdoConditionType* unobj;
 	FdoInt32 unlength;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetConditionTypes(unlength))
-	
-    array<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>^ result = gcnew array<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>(unlength);
+	NAMESPACE_OSGEO_FDO_FILTER::ConditionType rv [] = new NAMESPACE_OSGEO_FDO_FILTER::ConditionType[unlength];
 	for(FdoInt32 i = 0; i < unlength; i++)
-		result[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>(*(unobj + i));
-	
-    return result;
+	{
+		rv[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::ConditionType>(*(unobj + i));
+	}
+	return rv;
 }
 
-array<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::SpatialOperations::get()
+NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::get_SpatialOperations() []
 {
 	FdoSpatialOperations* unobj;
 	FdoInt32 unlength;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetSpatialOperations(unlength))
-
-	array<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>^ result = gcnew array<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>(unlength);
+	NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations rv [] = new NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations[unlength];
 	for(FdoInt32 i = 0; i < unlength; i++)
-		result[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>(*(unobj + i));
-	
-    return result;
+	{
+		rv[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations>(*(unobj + i));
+	}
+	return rv;
 }
 
-array<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>^NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::DistanceOperations::get()
+NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::get_DistanceOperations() []
 {
 	FdoDistanceOperations* unobj;
 	FdoInt32 unlength;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDistanceOperations(unlength))
-
-    array<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>^ result = gcnew array<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>(unlength);
+	NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations rv [] = new NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations[unlength];
 	for(FdoInt32 i = 0; i < unlength; i++)
-		result[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>(*(unobj + i));
-	
-    return result;
+	{
+		rv[i] = static_cast<NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations>(*(unobj + i));
+	}
+	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::SupportsNonLiteralGeometricOperations()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsNonLiteralGeometricOperations())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilitiesImp::SupportsGeodesicDistance()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsGeodesicDistance())
 	return rv;
 }

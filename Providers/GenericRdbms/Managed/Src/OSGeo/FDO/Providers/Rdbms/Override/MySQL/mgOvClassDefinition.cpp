@@ -35,12 +35,7 @@
 
 FdoMySQLOvClassDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::GetImpObj()
 {
-	return static_cast<FdoMySQLOvClassDefinition*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoMySQLOvClassDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition(unmanaged, autoDelete)
@@ -49,61 +44,61 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::OvClassDe
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::OvClassDefinition() : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoMySQLOvClassDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoMySQLOvClassDefinition::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::OvClassDefinition(System::String^ name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::OvClassDefinition(System::String* name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoMySQLOvClassDefinition::Create(StringToUni(name))), true))
+	EXCEPTION_HANDLER(Attach(FdoMySQLOvClassDefinition::Create(StringToUni(name)), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::Properties::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::get_Properties()
 {
-	FdoMySQLOvPropertyDefinitionCollection * result;
+	FdoMySQLOvPropertyDefinitionCollection * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetProperties())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetProperties())
 
-	return ObjectFactory::CreateOvPropertyDefinitionCollection(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyDefinitionCollection(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvTable^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::Table::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvTable* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::get_Table()
 {
-	FdoMySQLOvTable * result;
+	FdoMySQLOvTable * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetTable())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetTable())
 
-	return ObjectFactory::CreateOvTable(IntPtr(result), true);
+	return ObjectFactory::CreateOvTable(unobj, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::Table::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvTable^ table)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::set_Table(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvTable* table)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetTable(table->GetImpObj()))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::AutoIncrementPropertyName::set(System::String^ autoIncrementPropertyName)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::set_AutoIncrementPropertyName(System::String* autoIncrementPropertyName)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetAutoIncrementPropertyName(StringToUni(autoIncrementPropertyName)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::AutoIncrementPropertyName::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::get_AutoIncrementPropertyName()
 {
-	FdoString * result;
+	FdoString * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetAutoIncrementPropertyName())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetAutoIncrementPropertyName())
 
-	return CHECK_STRING(result);
+	return unobj;
 }
 
-System::Int64 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::AutoIncrementSeed::get()
+System::Int64 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::get_AutoIncrementSeed()
 {
-	System::Int64 unobj;
+	FdoInt64 unobj;
 
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetAutoIncrementSeed())
 
 	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::AutoIncrementSeed::set(System::Int64 autoIncrementSeed)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition::set_AutoIncrementSeed(System::Int64 autoIncrementSeed)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetAutoIncrementSeed(autoIncrementSeed))
 }

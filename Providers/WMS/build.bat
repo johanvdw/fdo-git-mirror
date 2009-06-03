@@ -17,19 +17,17 @@ rem License along with this library; if not, write to the Free Software
 rem Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 rem 
 
-SET TYPEACTION=build
-SET MSACTION=Build
-SET TYPEBUILD=release
-SET TYPEBUILDPATH=rel
-SET TYPEPLATFORM=Win32
-SET INTERMEDIATEDIR=Win32
-SET FDOORGPATH=%cd%
-SET FDOINSPATH=%cd%\Fdo
-SET FDOBINPATH=%cd%\Fdo\Bin
-SET FDOINCPATH=%cd%\Fdo\Inc
-SET FDOLIBPATH=%cd%\Fdo\Lib
-SET FDODOCPATH=%cd%\Fdo\Docs
-SET DOCENABLE=skip
+SET TYPEACTIONWMS=build
+SET MSACTIONWMS=Build
+SET TYPEBUILDWMS=release
+SET TYPEBUILDWMSPATH=rel
+SET FDOORGPATHWMS=%cd%
+SET FDOINSPATHWMS=%cd%\Fdo
+SET FDOBINPATHWMS=%cd%\Fdo\Bin
+SET FDOINCPATHWMS=%cd%\Fdo\Inc
+SET FDOLIBPATHWMS=%cd%\Fdo\Lib
+SET FDODOCPATHWMS=%cd%\Fdo\Docs
+SET DOCENABLEWMS=skip
 SET FDOERROR=0
 
 :study_params
@@ -44,9 +42,6 @@ if "%1"=="-outpath" goto get_path
 if "%1"=="-c"       goto get_conf
 if "%1"=="-config"  goto get_conf
 
-if "%1"=="-p"           goto get_platform
-if "%1"=="-platform"    goto get_platform
-
 if "%1"=="-a"       goto get_action
 if "%1"=="-action"  goto get_action
 
@@ -56,40 +51,34 @@ if "%1"=="-docs"    goto get_docs
 goto custom_error
 
 :get_docs
-SET DOCENABLE=%2
+SET DOCENABLEWMS=%2
 if "%2"=="build" goto next_param
 if "%2"=="skip" goto next_param
 goto custom_error
 
 :get_conf 
-SET TYPEBUILD=%2
+SET TYPEBUILDWMS=%2
 if "%2"=="release" goto next_param
-if "%2"=="debug" SET TYPEBUILDPATH=dbg
+if "%2"=="debug" SET TYPEBUILDWMSPATH=dbg
 if "%2"=="debug" goto next_param
 goto custom_error
 
 :get_action
-SET TYPEACTION=%2
+SET TYPEACTIONWMS=%2
 if "%2"=="install" goto next_param
 if "%2"=="build" goto next_param
 if "%2"=="buildinstall" goto next_param
 if "%2"=="clean" goto next_param
 goto custom_error 
 
-:get_platform
-SET TYPEPLATFORM=%2
-if "%2"=="Win32" goto next_param
-if "%2"=="x64" goto next_param
-goto custom_error
-
 :get_path
 if (%2)==() goto custom_error
-SET FDOORGPATH=%~2
-SET FDOINSPATH=%~2\Fdo
-SET FDOBINPATH=%~2\Fdo\Bin
-SET FDOINCPATH=%~2\Fdo\Inc
-SET FDOLIBPATH=%~2\Fdo\Lib
-SET FDODOCPATH=%~2\Fdo\Docs
+SET FDOORGPATHWMS=%~2
+SET FDOINSPATHWMS=%~2\Fdo
+SET FDOBINPATHWMS=%~2\Fdo\Bin
+SET FDOINCPATHWMS=%~2\Fdo\Inc
+SET FDOLIBPATHWMS=%~2\Fdo\Lib
+SET FDODOCPATHWMS=%~2\Fdo\Docs
 
 :next_param
 shift
@@ -100,62 +89,51 @@ goto study_params
 SET FDOACTENVSTUDY="FDO"
 if ("%FDO%")==("") goto env_error
 if not exist "%FDO%" goto env_path_error
-
 SET FDOACTENVSTUDY="FDOTHIRDPARTY"
 if ("%FDOTHIRDPARTY%")==("") goto env_error
 if not exist "%FDOTHIRDPARTY%" goto env_path_error
-
 SET FDOACTENVSTUDY="FDOUTILITIES"
 if ("%FDOUTILITIES%")==("") goto env_error
 if not exist "%FDOUTILITIES%" goto env_path_error
 
-if "%TYPEBUILD%"=="Win32" SET INTERMEDIATEDIR="Win32"
-if "%TYPEBUILD%"=="x64" SET INTERMEDIATEDIR="Win64"
-
-if "%TYPEACTION%"=="build" goto start_exbuild
-if "%TYPEACTION%"=="clean" goto start_exbuild
-
-if not exist "%FDOINSPATH%" mkdir "%FDOINSPATH%"
-if not exist "%FDOBINPATH%" mkdir "%FDOBINPATH%"
-if not exist "%FDOINCPATH%" mkdir "%FDOINCPATH%"
-if not exist "%FDOLIBPATH%" mkdir "%FDOLIBPATH%"
-if not exist "%FDODOCPATH%" mkdir "%FDODOCPATH%"
+if "%TYPEACTIONWMS%"=="build" goto start_exbuild
+if "%TYPEACTIONWMS%"=="clean" goto start_exbuild
+if not exist "%FDOINSPATHWMS%" mkdir "%FDOINSPATHWMS%"
+if not exist "%FDOBINPATHWMS%" mkdir "%FDOBINPATHWMS%"
+if not exist "%FDOINCPATHWMS%" mkdir "%FDOINCPATHWMS%"
+if not exist "%FDOLIBPATHWMS%" mkdir "%FDOLIBPATHWMS%"
+if not exist "%FDODOCPATHWMS%" mkdir "%FDODOCPATHWMS%"
 
 :start_exbuild
-if "%TYPEACTION%"=="clean" SET MSACTION=Clean
-if "%TYPEACTION%"=="install" goto install_files_wms
+if "%TYPEACTIONWMS%"=="clean" SET MSACTIONWMS=Clean
+if "%TYPEACTIONWMS%"=="install" goto install_files_wms
 
-echo %MSACTION% %TYPEBUILD% WMS provider dlls
+echo %MSACTIONWMS% %TYPEBUILDWMS% WMS provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\WMSOS
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild WMSOS_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
+msbuild WMSOS_temp.sln /t:%MSACTIONWMS% /p:Configuration=%TYPEBUILDWMS% /p:Platform="Win32" /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist WMSOS_temp.sln del /Q /F WMSOS_temp.sln
 popd
 if "%FDOERROR%"=="1" goto error
-if "%TYPEACTION%"=="clean" goto end
-if "%TYPEACTION%"=="build" goto generate_docs
+if "%TYPEACTIONWMS%"=="clean" goto end
+if "%TYPEACTIONWMS%"=="build" goto generate_docs
 
 :install_files_wms
-echo copy %TYPEBUILD% WMS provider output files
-copy /y "%FDOUTILITIES%\OWS\Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\OWS.dll" "%FDOBINPATH%"
-copy /y "%FDOUTILITIES%\OWS\Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\OWS.pdb" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsMessage.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsMessage.pdb" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsOverrides.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsOverrides.pdb" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsProvider.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsProvider.pdb" "%FDOBINPATH%"
-copy /y "Managed\Bin\%TYPEBUILD%\OSGeo.FDO.Providers.WMS.Overrides.dll" "%FDOBINPATH%"
-copy /y "Managed\Bin\%TYPEBUILD%\OSGeo.FDO.Providers.WMS.Overrides.pdb" "%FDOBINPATH%"
-copy /y "Lib\%INTERMEDIATEDIR%\%TYPEBUILD%\WMSOverrides.lib" "%FDOLIBPATH%"
+echo copy %TYPEBUILDWMS% WMS provider output files
+copy /y "%FDOUTILITIES%\OWS\Bin\Win32\%TYPEBUILDWMS%\OWS.dll" "%FDOBINPATHWMS%"
+copy /y "Bin\Win32\%TYPEBUILDWMS%\WmsMessage.dll" "%FDOBINPATHWMS%"
+copy /y "Bin\Win32\%TYPEBUILDWMS%\WmsOverrides.dll" "%FDOBINPATHWMS%"
+copy /y "Bin\Win32\%TYPEBUILDWMS%\WmsProvider.dll" "%FDOBINPATHWMS%"
+copy /y "Managed\Bin\%TYPEBUILDWMS%\OSGeo.FDO.Providers.WMS.Overrides.dll" "%FDOBINPATHWMS%"
+copy /y "Lib\Win32\%TYPEBUILDWMS%\WMSOverrides.lib" "%FDOLIBPATHWMS%"
 
 echo copy header files
-xcopy /S /C /Q /R /Y Inc\WMS\*.h "%FDOINCPATH%\WMS\"
+xcopy /S /C /Q /R /Y Inc\WMS\*.h "%FDOINCPATHWMS%\WMS\"
 
 :generate_docs
-if "%DOCENABLE%"=="skip" goto install_docs
+if "%DOCENABLEWMS%"=="skip" goto install_docs
 echo Creating WMS provider html and chm documentation
 if exist "Docs\HTML\WMS" rmdir /S /Q "Docs\HTML\WMS"
 if not exist "Docs\HTML\WMS" mkdir "Docs\HTML\WMS"
@@ -172,16 +150,16 @@ doxygen Doxyfile_WMS
 popd
 
 :install_docs
-if "%TYPEACTION%"=="build" goto end
-if exist "%FDODOCPATH%\HTML\Providers\WMS" rmdir /S /Q "%FDODOCPATH%\HTML\Providers\WMS"
-if exist Docs\HTML\WMS xcopy/CQEYI Docs\HTML\WMS\* "%FDODOCPATH%\HTML\Providers\WMS"
-if exist "Docs\WMS_Provider_API.chm" copy /y "Docs\WMS_Provider_API.chm" "%FDODOCPATH%"
-if exist "%FDODOCPATH%\HTML\Providers\WMS_managed" rmdir /S /Q "%FDODOCPATH%\HTML\Providers\WMS_managed"
-if exist Docs\HTML\WMS_managed xcopy/CQEYI Docs\HTML\WMS_managed\* "%FDODOCPATH%\HTML\Providers\WMS_managed"
-if exist "Docs\WMS_Provider_API_managed.chm" copy /y "Docs\WMS_Provider_API_managed.chm" "%FDODOCPATH%"
+if "%TYPEACTIONWMS%"=="build" goto end
+if exist "%FDODOCPATHWMS%\HTML\Providers\WMS" rmdir /S /Q "%FDODOCPATHWMS%\HTML\Providers\WMS"
+if exist Docs\HTML\WMS xcopy/CQEYI Docs\HTML\WMS\* "%FDODOCPATHWMS%\HTML\Providers\WMS"
+if exist "Docs\WMS_Provider_API.chm" copy /y "Docs\WMS_Provider_API.chm" "%FDODOCPATHWMS%"
+if exist "%FDODOCPATHWMS%\HTML\Providers\WMS_managed" rmdir /S /Q "%FDODOCPATHWMS%\HTML\Providers\WMS_managed"
+if exist Docs\HTML\WMS_managed xcopy/CQEYI Docs\HTML\WMS_managed\* "%FDODOCPATHWMS%\HTML\Providers\WMS_managed"
+if exist "Docs\WMS_Provider_API_managed.chm" copy /y "Docs\WMS_Provider_API_managed.chm" "%FDODOCPATHWMS%"
 
 :end
-echo End WMS %MSACTION%
+echo End WMS %MSACTIONWMS%
 exit /B 0
 
 :env_error
@@ -200,7 +178,7 @@ SET FDOERROR=1
 exit /B 1
 
 :error
-echo There was a build error executing action: %MSACTION%
+echo There was a build error executing action: %MSACTIONWMS%
 exit /B 1
 
 :custom_error
@@ -208,17 +186,11 @@ echo The command is not recognized.
 echo Please use the format:
 :help_show
 echo **************************************************************************
-echo build.bat [-h] 
-echo           [-o=OutFolder] 
-echo           [-c=BuildType]
-echo           [-a=Action] 
-echo           [-p=PlatformType]
-echo           [-d=BuildDocs]
+echo build.bat [-h] [-o=OutFolder] [-c=BuildType] [-a=Action] [-d=BuildDocs]
 echo *
 echo Help:           -h[elp]
 echo OutFolder:      -o[utpath]=destination folder for binaries
 echo BuildType:      -c[onfig]=release(default), debug
-echo PlatformType:   -p[latform]=Win32(default), x64
 echo Action:         -a[ction]=build(default), buildinstall, install, clean
 echo BuildDocs:      -d[ocs]=skip(default), build
 echo **************************************************************************

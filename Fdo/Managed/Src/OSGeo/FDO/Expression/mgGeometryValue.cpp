@@ -30,71 +30,42 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GeometryValue(IntPtr unmanaged, B
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GeometryValue() : LiteralValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoGeometryValue::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoGeometryValue::Create(), true))
 }
 
 FdoGeometryValue* NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GetImpObj()
 {
-	return static_cast<FdoGeometryValue*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoGeometryValue*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GeometryValue(array<System::Byte>^ geometry) : LiteralValue(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::GeometryValue(System::Byte geometry []) : LiteralValue(IntPtr::Zero, false)
 {	
-    FdoByteArray* arr = nullptr;
-    try
-    {
-        arr = ByteArrayToFdoByteArray(geometry);
-	    EXCEPTION_HANDLER(Attach(IntPtr(FdoGeometryValue::Create(arr)), true))
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
+	FdoByteArray* umBuffer = ByteArrayToFdoByteArray(geometry);
+
+	EXCEPTION_HANDLER(Attach(FdoGeometryValue::Create(umBuffer), true))
+
+	umBuffer->Release();
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::IsNull()
 {
-	System::Boolean unobj;
+	FdoBoolean unobj;
 	EXCEPTION_HANDLER(unobj = !!GetImpObj()->IsNull())
 	return unobj;
 }
 
-array<System::Byte>^ NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::Geometry::get()
+System::Byte NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::get_Geometry() []
 {
-    FdoByteArray* arr = nullptr;
-    array<System::Byte>^ result;
-    try
-    {
-	    EXCEPTION_HANDLER(arr = GetImpObj()->GetGeometry())
-	    result = FdoByteArrayToByteArray(arr->GetData(), arr->GetCount());
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
-	return result;
+	FdoByteArray* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetGeometry())
+	System::Byte mgBuffer __gc[] = FdoByteArrayToByteArray(unobj->GetData(), unobj->GetCount());
+	unobj->Release();
+	return mgBuffer;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::Geometry::set(array<System::Byte>^ value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::set_Geometry(System::Byte value [])
 {
-    FdoByteArray* arr = nullptr;
-    try
-    {
-        arr = ByteArrayToFdoByteArray(value);
-    	EXCEPTION_HANDLER(GetImpObj()->SetGeometry(arr))
-    }
-    finally
-    {
-        if (arr != nullptr)
-            arr->Release();
-    }
+	EXCEPTION_HANDLER(GetImpObj()->SetGeometry(ByteArrayToFdoByteArray(value)))
 }
 
 System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::SetNull()
@@ -102,19 +73,19 @@ System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::SetNull()
 	EXCEPTION_HANDLER(GetImpObj()->SetNullValue())
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValueType NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::LiteralValueType::get()
+NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValueType NAMESPACE_OSGEO_FDO_EXPRESSION::GeometryValue::get_LiteralValueType()
 {
 	FdoLiteralValueType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetLiteralValueType())

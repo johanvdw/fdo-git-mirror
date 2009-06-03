@@ -23,18 +23,16 @@ class FdoMySQLOvAssociationPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-ref class OvPropertyDefinitionCollection;
+public __gc class OvPropertyDefinitionCollection;
 
 ///<summary>Concrete class defining physical schema overrides for an association property
 ///definition.</summary>
-public ref class OvAssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition
+public __gc class OvAssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition
 {
-internal:
+public private:
+	FdoMySQLOvAssociationPropertyDefinition* GetImpObj();
+	
 	OvAssociationPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
-
-    FdoMySQLOvAssociationPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public:
     ///<summary>Constructs a default of an OvAssociationPropertyDefinition</summary>
@@ -44,14 +42,12 @@ public:
     ///<summary>Constructs an instance of an OvAssociationPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns OvAssociationPropertyDefinition</returns>
-	OvAssociationPropertyDefinition(System::String^ name);
+	OvAssociationPropertyDefinition(System::String* name);
 
     ///<summary>Gets a collection of property definitions</summary>
     /// <returns>Returns a collection of property definitions</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection^ IdentityProperties
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection* get_IdentityProperties();
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_RASTER
 /// of raster data retrieved and stored. Using this class and the image
 /// extents in width and length, the binary format of the image data returned
 /// by and accepted by the IStreamReader class can be interpreted.
-public ref class RasterDataModel: public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class RasterDataModel: public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -49,17 +49,15 @@ public:
     /// \return
     /// Returns the type of data available with this data model.
     /// 
+	__property NAMESPACE_OSGEO_FDO_RASTER::RasterDataModelType get_DataModelType ();
+
     /// \brief
     /// Sets the type of data for this datamodel.
     /// 
     /// \param type 
     /// The type of data for this data model.
     /// 
-    property NAMESPACE_OSGEO_FDO_RASTER::RasterDataModelType DataModelType
-    {
-        NAMESPACE_OSGEO_FDO_RASTER::RasterDataModelType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_RASTER::RasterDataModelType type);
-    }
+	__property System ::Void set_DataModelType (NAMESPACE_OSGEO_FDO_RASTER::RasterDataModelType type);
 
     /// \brief
     /// Get the number of bits per pixel.
@@ -70,6 +68,8 @@ public:
     /// channels. For example, RGB data has three channels, so if this
     /// method returns twelve, each channel is four bits.
     /// 
+	__property System ::Int32 get_BitsPerPixel ();
+
     /// \brief
     /// Set the number of bits per pixel.
     /// 
@@ -79,11 +79,7 @@ public:
     /// be supported. Others values (i.e. indivisible by the number of channels)
     /// are likely to raise a Exception.
     /// 
-    property System::Int32 BitsPerPixel
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 bitsPerPixel);
-    }
+	__property System ::Void set_BitsPerPixel (System::Int32 bitsPerPixel);
 
     /// \brief
     /// Get the data interleave organization.
@@ -91,17 +87,15 @@ public:
     /// \return
     /// Returns the way data is interleaved.
     /// 
+	__property NAMESPACE_OSGEO_FDO_RASTER::RasterDataOrganization get_Organization();
+
     /// \brief
     /// Set the data interleave organization.
     /// 
     /// \param organization 
     /// Specifies the way data is to be interleaved.
     /// 
-    property NAMESPACE_OSGEO_FDO_RASTER::RasterDataOrganization Organization
-    {
-        NAMESPACE_OSGEO_FDO_RASTER::RasterDataOrganization get();
-        System::Void set(NAMESPACE_OSGEO_FDO_RASTER::RasterDataOrganization organization);
-    }
+	__property System::Void set_Organization (NAMESPACE_OSGEO_FDO_RASTER::RasterDataOrganization organization);
 
     /// \brief
     /// Get the tile size in the horizontal direction (number of columns).
@@ -109,23 +103,24 @@ public:
     /// \return
     /// The number of columns in a tile.
     /// 
+	__property System::Int32 get_TileSizeX ();
+
     /// \brief
     /// Set the tile size in the horizontal direction (number of columns).
     /// 
     /// \param sizex 
     /// The number of columns in a tile.
     /// 
-    property System::Int32 TileSizeX
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 sizex);
-    }
+	__property System::Void set_TileSizeX (System::Int32 sizex);
+
     /// \brief
     /// Get the tile size in the vertical direction (number of rows).
     /// 
     /// \return
     /// The number of rows in a tile.
     /// 
+	__property System::Int32 get_TileSizeY ();
+
     /// \brief
     /// Set the tile size in the vertical direction (number of rows).
     /// Values of 64, 128, 256, 512, 1024 and the image extents in width and
@@ -136,11 +131,7 @@ public:
     /// \param sizey 
     /// The number of rows in a tile.
     /// 
-    property System::Int32 TileSizeY
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 sizey);
-    }
+	__property System::Void set_TileSizeY (System::Int32 sizey);
 
     /// \brief
     /// Gets the data type.
@@ -148,17 +139,16 @@ public:
     /// \return
     /// Returns the data type of the raster.
     /// 
+	__property NAMESPACE_OSGEO_FDO_RASTER::RasterDataType get_DataType();
+
     /// \brief
     /// Sets the data type.
     /// 
     /// \param dataType 
     /// Specifies the data type the raster data is to be returned in.
     /// 
-    property NAMESPACE_OSGEO_FDO_RASTER::RasterDataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_RASTER::RasterDataType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_RASTER::RasterDataType dataType);
-    }
+	__property System::Void set_DataType (NAMESPACE_OSGEO_FDO_RASTER::RasterDataType dataType);
+
     /// \brief
     /// Constructs a RasterDataModel object based on an unmanaged instance of the object
     /// 
@@ -171,10 +161,13 @@ public:
     /// 
 	RasterDataModel(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	inline FdoRasterDataModel* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_RASTER

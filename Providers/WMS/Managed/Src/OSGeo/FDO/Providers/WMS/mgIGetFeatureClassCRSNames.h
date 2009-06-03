@@ -24,7 +24,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS
 /// This command gets the list of CRS names supported by specified FeatureClass
 /// returned from the WMS service.
 ///</summary>
-public interface class IGetFeatureClassCRSNames : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetFeatureClassCRSNames : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// <summary>
@@ -38,24 +38,22 @@ public:
     /// <returns>
     /// Returns nothing.
     /// </returns> 
+    __property System::Void set_FeatureClassName(System::String* name);
+
     /// <summary>
     /// Gets the name of FeatureClass to get the supportted CRS names.
     /// </summary>
     /// <returns>
     /// Returns the name of the FeatureClass name.</returns> 
-    property String^ FeatureClassName
-    {
-        String^ get();
-        System::Void set(String^ value);
-    }
+    __property System::String* get_FeatureClassName();
 
     /// <summary>
-    /// Executes the command. An exception is thrown if the feature class is nullptr.
+    /// Executes the command. An exception is thrown if the feature class is NULL.
     /// </summary>
     /// <returns>
     /// Returns a list of CRS names supportted by specifc feature class.
     /// </returns>
-    NAMESPACE_OSGEO_COMMON::StringCollection^ Execute();
+    NAMESPACE_OSGEO_COMMON::StringCollection* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS
