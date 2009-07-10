@@ -25,8 +25,8 @@
 class FdoObjectPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class ClassDefinition;
-ref class DataPropertyDefinition;
+public __gc class ClassDefinition;
+public __gc class DataPropertyDefinition;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -34,7 +34,7 @@ ref class DataPropertyDefinition;
 /// containment of an object or a collection of objects within another class.
 /// The class of the contained object must already be defined in the feature
 /// schema and cannot be abstract.
-public ref class ObjectPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
+public __gc class ObjectPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
 {
 public:
     /// \brief
@@ -51,7 +51,7 @@ public:
     /// \param description 
     /// Input description
     /// 
-	ObjectPropertyDefinition(System::String^ name, System::String^ description);
+	ObjectPropertyDefinition(System::String* name, System::String* description);
 
     /// \brief
     /// Constructs an instance of an ObjectPropertyDefinition using the specified
@@ -65,7 +65,7 @@ public:
     /// Input true if this is a system generated property, otherwise false.
     /// <p><b>Note:</b> A client would never set system to true, only a provider.
     /// 
-	ObjectPropertyDefinition(System::String^ name, System::String^ description, System::Boolean system);
+	ObjectPropertyDefinition(System::String* name, System::String* description, System::Boolean system);
 
     /// \brief
     /// Gets a reference to the ClassDefinition that defines the type of this
@@ -74,6 +74,8 @@ public:
     /// \return
     /// Returns class definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* get_Class();
+
     /// \brief
     /// Sets a reference to the ClassDefinition that defines the type of this
     /// property.
@@ -81,11 +83,7 @@ public:
     /// \param value 
     /// Input class definition
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ Class
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ value);
-    }
+	__property System::Void set_Class(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* value);
 
     /// \brief
     /// Gets a reference to an DataPropertyDefinition to use for uniquely identifying
@@ -97,6 +95,8 @@ public:
     /// \return
     /// Returns the Indentity data property definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* get_IdentityProperty();
+
     /// \brief
     /// Sets a reference to an DataPropertyDefinition to use for uniquely identifying
     /// instances of the contained class within a single parent object instance.
@@ -107,11 +107,7 @@ public:
     /// \param value 
     /// Input data property definition
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ IdentityProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ value);
-    }
+	__property System::Void set_IdentityProperty(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* value);
 
     /// \brief
     /// Gets the type of this object property (value, collection, or ordered 
@@ -120,6 +116,8 @@ public:
     /// \return
     /// Returns the type of this object property
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ObjectType get_ObjectType();
+
     /// \brief
     /// Sets the type of this object property (value, collection, or ordered 
     /// collection).
@@ -127,11 +125,7 @@ public:
     /// \param value 
     /// Input the type of this object property
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ObjectType ObjectType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ObjectType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::ObjectType value);
-    }
+	__property System::Void set_ObjectType(NAMESPACE_OSGEO_FDO_SCHEMA::ObjectType value);
 
     /// \brief
     /// Gets the order type of this object property (ascending or descending). 
@@ -141,6 +135,8 @@ public:
     /// \return
     /// Returns the order type
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::OrderType get_OrderType();
+
     /// \brief
     /// Sets the order type of this object property (ascending or descending). 
     /// This property is only applicable if the property type is set to 
@@ -149,11 +145,7 @@ public:
     /// \param value 
     /// Input the order type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::OrderType OrderType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::OrderType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::OrderType value);
-    }
+	__property System::Void set_OrderType(NAMESPACE_OSGEO_FDO_SCHEMA::OrderType value);
 
     /// \brief
     /// Constructs a ObjectPropertyDefinition object based on an unmanaged instance of the object
@@ -170,10 +162,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoObjectPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

@@ -32,7 +32,6 @@
 #include <malloc.h>
 #include <math.h>
 #include <limits.h>
-#include <stdio.h>
 
 #include <FdoExpressionEngineIAggregateFunction.h>
 #include <Util/FdoExpressionEngineUtilDataReader.h>

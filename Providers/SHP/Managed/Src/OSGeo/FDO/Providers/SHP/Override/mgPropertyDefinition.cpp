@@ -28,7 +28,7 @@
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::PropertyDefinition() : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalPropertyMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoShpOvPropertyDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoShpOvPropertyDefinition::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::PropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalPropertyMapping(unmanaged, autoDelete)
@@ -38,24 +38,19 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::PropertyDefiniti
 
 FdoShpOvPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::GetImpObj()
 {
-	return static_cast<FdoShpOvPropertyDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoShpOvPropertyDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::Column::set(NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ColumnDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::set_Column(NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ColumnDefinition* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetColumn(value->GetImpObj()))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ColumnDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::Column::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ColumnDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::PropertyDefinition::get_Column()
 {
 	FdoShpOvColumnDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetColumn())
 
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreateColumnDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE::ObjectFactory::CreateColumnDefinition(result, true);
 }

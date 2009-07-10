@@ -21,55 +21,88 @@
 class FdoMySQLOvPropertyDefinitionCollection;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
-ref class OvPropertyDefinitionCollection;
+public __gc class OvPropertyDefinitionCollection;
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-interface class IOvPropertyDefinition;
-ref class OvPropertyDefinition;
+public __gc __interface IOvPropertyDefinition;
+public __gc class OvPropertyDefinition;
 
 /// <summary>
 ///     OvPropertyDefinitionCollection is a collection of name-value pairs.
 /// </summary>
-[System::Reflection::DefaultMemberAttribute("Item")]
-public ref class OvPropertyDefinitionCollection sealed : public NAMESPACE_OSGEO_COMMON::CollectionBase
+[System::Reflection::DefaultMemberAttribute("RealTypeItem")]
+public __sealed __gc class OvPropertyDefinitionCollection : public NAMESPACE_OSGEO_RUNTIME::Disposable, public System::Collections::IList
 {
-/// \cond DOXYGEN-IGNORE
-internal:
+private:
+	/// <summary>
+	///		nested class defined to provide Enumerator.
+	/// </summary>
+	__gc class Enumerator : public System::Collections::IEnumerator
+	{
+	private:
+		OvPropertyDefinitionCollection* m_pCol;
+		System::Int32 m_nIdx;
+
+	public:
+		Enumerator(OvPropertyDefinitionCollection* elements) : m_pCol(elements), m_nIdx(-1) 
+		{
+
+		}
+
+		__property System::Object* get_Current();
+
+		System::Boolean MoveNext();
+
+		System::Void Reset();
+	};
+
+public private:
 	OvPropertyDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoMySQLOvPropertyDefinitionCollection* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 private:
-    virtual property System::Object^ IndexInternal[System::Int32]
-    {
-        System::Object^ get(System::Int32 index) sealed = IList::default::get;
-        void set(System::Int32 index, System::Object^ value) sealed = IList::default::set;
-    }
+	// System::Collections::ICollection interfaces
+	System::Void System::Collections::ICollection::CopyTo(System::Array* array,System::Int32 index);
 
-    // System::Collections::IList interface methods
-    virtual System::Int32 Add(System::Object^ value) sealed = IList::Add;
-    virtual System::Boolean Contains(System::Object^ value) sealed = IList::Contains;
-    virtual System::Int32 IndexOf(System::Object^ value) sealed = IList::IndexOf;
-    virtual System::Void Insert(System::Int32 index, System::Object^ value) sealed = IList::Insert;
-    virtual System::Void Remove(System::Object^ value) sealed = IList::Remove;
+	__property System::Object* System::Collections::ICollection::get_SyncRoot();
 
-/// \endcond
+	__property System::Boolean System::Collections::ICollection::get_IsSynchronized();
+
+	//System::Collections::IList interfaces
+	__property System::Boolean System::Collections::IList::get_IsFixedSize();
+
+	__property System::Boolean System::Collections::IList::get_IsReadOnly();
+
+	System::Int32 System::Collections::IList::Add(Object* value);
+
+	System::Boolean System::Collections::IList::Contains(Object* value);
+
+	System::Int32 System::Collections::IList::IndexOf(Object* value);
+
+	System::Void System::Collections::IList::Insert(System::Int32 index, Object* value);
+
+	System::Void System::Collections::IList::Remove(Object* value);
+
+	__property Object* System::Collections::IList::get_Item(System::Int32 index);
+
+	__property System::Void  System::Collections::IList::set_Item(System::Int32 index, Object* value);
 
 public:
 	OvPropertyDefinitionCollection();
-	OvPropertyDefinitionCollection(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection^ baseCollection);
+	OvPropertyDefinitionCollection(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection* baseCollection);
 
 	/// <summary>
 	///    Gets the count of items in collection.
 	/// </summary>
-    property System::Int32 Count
-    {
-        virtual System::Int32 get() override;
-    }
+	__property System::Int32 get_Count(System::Void);
+
+	/// <summary>
+	///    Gets an enumerator that can iterate through a collection.
+	/// </summary>
+	__sealed System::Collections::IEnumerator* GetEnumerator(System::Void);
 
 	/// <summary>
 	///     Removes the index-th OvPropertyDefinition from this collection.
@@ -77,12 +110,12 @@ public:
 	/// <param name="index">
 	///		Input index of the element to remove.
 	/// </param>
-    virtual System::Void RemoveAt(System::Int32 index) override;
+	System::Void RemoveAt(System::Int32 index);
 
 	/// <summary>
 	///     Removes all elements from the collection.
 	/// </summary>
-    virtual System::Void  Clear() override;
+	System::Void  Clear();
 
 	/// <summary>
 	///     Adds a OvPropertyDefinition object into the collection.
@@ -93,7 +126,7 @@ public:
 	/// <returns>
 	///		Returns the position into which the new element was inserted.
 	/// </returns>
-	System::Int32 Add(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
+	System::Int32 Add(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
 
 	/// <summary>
 	///     Determines the index of a specific OvPropertyDefinition object.
@@ -104,7 +137,7 @@ public:
 	/// <returns>
 	///		The index of value if found in the collection; otherwise, -1.
 	/// </returns>
-	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
+	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
 
 	/// <summary>
 	///     Inserts a OvPropertyDefinition object into the collection at the specified position.
@@ -115,7 +148,7 @@ public:
 	/// <param name="value">
 	///		Input the OvPropertyDefinition object to insert.
 	/// </param>
-	System::Void Insert(System::Int32 index, NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
+	System::Void Insert(System::Int32 index, NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
 
 	/// <summary>
 	///     Removes the first occurrence of a specific OvPropertyDefinition object.
@@ -123,7 +156,7 @@ public:
 	/// <param name="value">
 	///		Input the OvPropertyDefinition object to remove from the collection.
 	/// </param>
-	System::Void Remove(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
+	System::Void Remove(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
 
 	/// <summary>
 	///     Determines whether the collection contains a specific OvPropertyDefinition object.
@@ -134,7 +167,7 @@ public:
 	/// <returns>
 	///		Returns true if the value is found in the collection; otherwise, false.
 	/// </returns>
-	System::Boolean Contains(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
+	System::Boolean Contains(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
 
 	/// <summary>
 	///     Copies the elements of the collection to an array.
@@ -145,7 +178,7 @@ public:
 	/// <param name="startAt">
 	///		Input an integer that represents the index in array at which copying begins. 
 	/// </param>
-    System::Void CopyTo(array<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^>^ pArray, System::Int32 index);
+	System::Void CopyTo(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* array[],System::Int32 size);
 
 	//this is a hedious workaround for a bug in VS2002. 
 	/// <summary>
@@ -154,15 +187,17 @@ public:
 	/// <param name="index">
 	///		Input index of the OvPropertyDefinition to retrieve or set (System::Int32). 
 	/// </param>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ Item[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ get(System::String^ index);
-    }
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ Item[System::Int32]
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ get(System::Int32 index);
-        System::Void set(System::Int32 index, NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition^ value);
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* get_RealTypeItem(System::Int32 index);
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* get_RealTypeItem(System::String* index);
+
+	__property System::Void  set_RealTypeItem(System::Int32 index, NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
+
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* get_Item(System::Int32 index);
+
+	__property System::Void  set_Item(System::Int32 index, NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition* value);
+
+protected:
+	System::Void ReleaseUnmanagedObject();
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

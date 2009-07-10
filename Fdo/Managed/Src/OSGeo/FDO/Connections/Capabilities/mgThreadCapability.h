@@ -25,7 +25,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 /// \ingroup (OSGeoFDOConnectionsCapabilities)
 /// \brief
 /// The ThreadCapability enumeration defines the threading capabilities of a feature provider.
-public enum class ThreadCapability
+public __value enum ThreadCapability
 {
     /// The feature provider is not thread safe.
 	ThreadCapability_SingleThreaded = FdoThreadCapability_SingleThreaded,

@@ -575,7 +575,7 @@ bool FdoCommonFile::SetFileSize64 (FdoInt64 fileSize) const
     return (ret);
 }
 
-FdoException* FdoCommonFile::LastErrorToException (const wchar_t* context, const wchar_t* fileName)
+FdoException* FdoCommonFile::LastErrorToException (wchar_t* context)
 {
     FdoException* ret;
 
@@ -592,8 +592,8 @@ FdoException* FdoCommonFile::LastErrorToException (const wchar_t* context, const
         ret = FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID(FDO_95_FILE_IO_ERROR), FileName (), context, message));
         LocalFree (message);
     }
-    else // Error occured reading file '%1$ls'.
-        ret = FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID(FDO_185_READ_FILE_ERROR), (!fileName) ? FileName() : fileName));
+    else
+        ret = NULL;
 
 #else // _WIN32
 
@@ -607,8 +607,8 @@ FdoException* FdoCommonFile::LastErrorToException (const wchar_t* context, const
         // File '%1$s' I/O error in context '%2$s': %3$s
         ret = FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID(FDO_95_FILE_IO_ERROR), FileName (), context, message));
     }
-    else // Error occured reading file '%1$ls'.
-        ret = FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID(FDO_185_READ_FILE_ERROR), (!fileName) ? FileName() : fileName));
+    else
+        ret = NULL;
 #endif // _WIN32
 
     return (ret);

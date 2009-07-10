@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 /// \brief
 /// The IExpressionCapbilities interface declares the feature provider's level
 /// of support for Expression classes.
-private ref class IExpressionCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+private __gc class IExpressionCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                                 public NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IExpressionCapabilities
 {
 public:
@@ -38,10 +38,7 @@ public:
     /// \return
     /// Returns the list of expression types
     /// 
-    virtual property array<NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType>^ ExpressionTypes
-    {
-        array<NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType get_ExpressionTypes() [];
 
     /// \brief
     /// Returns a collection of FunctionDefinition objects the feature provider supports within expressions.
@@ -49,17 +46,17 @@ public:
     /// \return
     /// Returns the collection of function definitions
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection^ Functions
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection* get_Functions();
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	IExpressionCapabilitiesImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoIExpressionCapabilities* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES

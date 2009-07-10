@@ -76,7 +76,6 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="..\..\Lib\Win32\Debug\GRFPOverrides.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -100,7 +99,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning GRFPOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\GRFPOverrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\GRFPOverrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -167,7 +166,6 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="..\..\Lib\Win32\Release\GRFPOverrides.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -191,7 +189,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning GRFPOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\GRFPOverrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\GRFPOverrides.dll"
 			/>
 		</Configuration>
 	</Configurations>

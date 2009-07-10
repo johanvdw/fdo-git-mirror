@@ -31,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON_XML
 /// of this class can be constructed and pushed onto the XmlReader's SAX handler 
 /// stack. When the end of the element is reached, the object will contain all of
 /// the element's content.
-public ref class XmlCharDataHandler sealed : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
+public __gc __sealed class XmlCharDataHandler : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler
 {
 public:
     /// \brief
@@ -46,10 +46,7 @@ public:
     /// \return
     /// Returns the element content.
     /// 
-    property System::String^ RetString
-    {
-        System::String^ get();
-    }
+	__property System::String* get_RetString();
 	
     /// \brief
     /// Constructs a DataHandler based on an unmanaged instance of the object
@@ -64,10 +61,8 @@ public:
 	XmlCharDataHandler(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoXmlCharDataHandler* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 END_NAMESPACE_OSGEO_COMMON_XML

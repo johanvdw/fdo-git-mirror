@@ -37,7 +37,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT
 /// non-rectangular area is passed in and the provider supports only a
 /// rectangular extent, the provider will compute the minimum box that
 /// encloses the given geometry and use that for the extent value.
-public interface class ICreateSpatialContext : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface ICreateSpatialContext : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -46,6 +46,8 @@ public:
     /// \return
     /// Returns the name of the spatial context
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the context to create as a string.
     /// 
@@ -55,11 +57,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Gets the description of the context to create as a string.
@@ -67,6 +65,8 @@ public:
     /// \return
     /// Returns the description of the spatial context
     /// 
+	__property System::String* get_Description();
+
     /// \brief
     /// Sets the description of the context to create as a string.
     /// 
@@ -76,11 +76,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Description
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Description(System::String* value);
 
     /// \brief
     /// Gets the coordinate system of the context to create as a string
@@ -89,6 +85,8 @@ public:
     /// \return
     /// Returns the coordinate system
     /// 
+	__property System::String* get_CoordinateSystem();
+
     /// \brief
     /// Sets the coordinate system of the context to create as a string in
     /// OpenGIS SRS WKT format.
@@ -99,11 +97,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ CoordinateSystem
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_CoordinateSystem(System::String* value);
 
     /// \brief
     /// Gets the coordinate system definition in OGC SRS WKT format for the 
@@ -113,6 +107,8 @@ public:
     /// \return
     /// Returns the coordinate system description in WKT of of the spatial context.
     /// 
+    __property System::String* get_CoordinateSystemWkt();
+
     /// \brief
     /// Sets the coordinate system definition in OGC SRS WKT 
     /// format for the spatial context currently being created.
@@ -123,11 +119,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ CoordinateSystemWkt
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+    __property System::Void set_CoordinateSystemWkt(System::String* value);
 
     /// \brief
     /// Gets the desired extent type of the context to create, either static or dynamic.
@@ -135,6 +127,8 @@ public:
     /// \return
     /// Returns the extent type
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType get_ExtentType();
+
     /// \brief
     /// Sets the desired extent type of the context to create, either static or dynamic.
     /// 
@@ -144,11 +138,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType ExtentType
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType value);
-    }
+	__property System::Void set_ExtentType(NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType value);
 
     /// \brief
     /// Gets the extent of the context to create as a byte array in FGF format.
@@ -157,6 +147,8 @@ public:
     /// \return
     /// Returns the extent of the spatial context
     /// 
+	__property System::Byte get_Extent() [];
+
     /// \brief
     /// Sets the extent of the context to create as a byte array in FGF format.
     /// If the extent type is dynamic this is optional and any value specified is ignored.
@@ -167,6 +159,8 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property System::Void set_Extent(System::Byte buffer[]);
+
     /// \brief
     /// Gets the tolerance value to use for X/Y ordinates. Tolerances are used
     /// in some geometric tests, mostly for equality between coordinates.  This
@@ -177,11 +171,7 @@ public:
     /// \return
     /// Returns the tolerance
     /// 
-    property array<System::Byte>^ Extent
-    {
-        array<System::Byte>^ get();
-        System::Void set(array<System::Byte>^ value);
-    }
+	__property System::Double get_XYTolerance();
 
     /// \brief
     /// Sets the tolerance value to use for X/Y ordinates. Tolerances are used
@@ -196,11 +186,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Double XYTolerance
-    {
-        System::Double get();
-        System::Void set(System::Double value);
-    }
+	__property System::Void set_XYTolerance(System::Double value);
 
     /// \brief
     /// Gets the tolerance value to use for Z ordinates. Tolerances are used in
@@ -212,6 +198,7 @@ public:
     /// \return
     /// Returns the tolerance
     /// 
+	__property System::Double get_ZTolerance();
     /// \brief
     /// Sets the tolerance value to use for Z ordinates. Tolerances are used in
     /// some geometric tests, mostly for equality between coordinates.  This
@@ -225,11 +212,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Double ZTolerance
-    {
-        System::Double get();
-        System::Void set(System::Double value);
-    }
+	__property System::Void set_ZTolerance(System::Double value);
 
     /// \brief
     /// Gets a Boolean flag that indicates how the CreateSpatialContext command
@@ -242,6 +225,8 @@ public:
     /// \return
     /// Returns true if command should update existing contexts
     /// 
+	__property System::Boolean get_UpdateExisting();
+
     /// \brief
     /// Sets a Boolean flag that indicates how the CreateSpatialContext command
     /// should behave if the spatial context already exists. If update existing
@@ -256,11 +241,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Boolean UpdateExisting
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_UpdateExisting(System::Boolean value);
 
     /// \brief
     /// Executes the CreateSpatialContext command. An exception is thrown if

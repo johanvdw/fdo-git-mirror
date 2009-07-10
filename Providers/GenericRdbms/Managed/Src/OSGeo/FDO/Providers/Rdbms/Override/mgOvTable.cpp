@@ -26,12 +26,7 @@
 
 FdoRdbmsOvTable* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::GetImpObj()
 {
-	return static_cast<FdoRdbmsOvTable*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoRdbmsOvTable*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::OvTable(IntPtr unmanaged, Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping(unmanaged, autoDelete)
@@ -39,21 +34,21 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::OvTable(IntPtr unmanaged,
 
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::PKeyName::get()
+System::String * NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::get_PKeyName()
 {
-	FdoString* unobj;
+	FdoString * unobj;
 
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetPKeyName())
 
-	return CHECK_STRING(unobj);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::PKeyName::set(System::String^ keyName)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::set_PKeyName(System::String *keyName)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetPKeyName(StringToUni(keyName)))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::Parent::set(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable::set_Parent(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetParent(static_cast<FdoPhysicalElementMapping*>(value->UnmanagedObject.ToPointer())))
 }

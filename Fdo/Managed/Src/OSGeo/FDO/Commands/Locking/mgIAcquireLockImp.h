@@ -26,7 +26,7 @@
 class FdoIAcquireLock;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockConflictReader;
+public __gc __interface ILockConflictReader;
 
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \brief
@@ -52,7 +52,7 @@ interface class ILockConflictReader;
 /// specified in the filter that are already locked by someone else.
 /// The command returns an empty ILockConflictReader list if all of the
 /// feature instances specified in the filter were successfully locked.
-private ref class IAcquireLockImp : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp, 
+private __gc class IAcquireLockImp : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp, 
                                      public NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IAcquireLock
 {
 public:
@@ -62,6 +62,8 @@ public:
     /// \return
     /// Returns the lock type.
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType get_LockType();
+
     /// \brief
     /// Sets the LockType value.
     /// 
@@ -71,11 +73,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType LockType
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType value);
-    }
+	__property System::Void set_LockType(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType value);
 
     /// \brief
     /// Gets the LockStrategy value.
@@ -83,6 +81,8 @@ public:
     /// \return
     /// Returns the strategy value (all or partial).
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy get_LockStrategy();
+
     /// \brief
     /// Sets the LockStrategy value (all or partial).
     /// 
@@ -92,11 +92,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy LockStrategy
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy value);
-    }
+	__property System::Void set_LockStrategy(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy value);
 
     /// \brief
     /// Executes the AcquireLock command, returning an ILockConflictReader.
@@ -110,17 +106,15 @@ public:
     /// one of the feature instances specified in the filter is already locked
     /// by someone else.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader* Execute();
 
-internal:
+public private:
 	IAcquireLockImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIAcquireLock* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING

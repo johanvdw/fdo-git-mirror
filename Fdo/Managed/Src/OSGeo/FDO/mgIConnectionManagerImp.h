@@ -21,7 +21,7 @@
 #include "FDO\mgIConnectionManager.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
-interface class IConnection;
+public __gc __interface IConnection;
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS
 
 BEGIN_NAMESPACE_OSGEO_FDO
@@ -40,9 +40,9 @@ BEGIN_NAMESPACE_OSGEO_FDO
 /// windows libraries supporting FDO providers will be expected to support the following well-known 
 /// entry point function, which will create and return an unitialized connection object:
 ///
-///        IConnection^ CreateConnection();
+///        IConnection * CreateConnection();
 ///
-private ref class IConnectionManagerImp : 
+private __gc class IConnectionManagerImp : 
     public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO::IConnectionManager
 {
 public:
@@ -56,7 +56,7 @@ public:
     /// \return
     /// Returns an instance of an IConnection object. Throws an instance of Exception if an error occurs.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ CreateConnection(System::String^ providerName);
+	NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* CreateConnection(String* providerName);
 
     /// \brief
     /// Frees a connection library reference given the provider name.
@@ -68,14 +68,15 @@ public:
     /// \return
     /// Returns nothing. Throws an instance of Exception if an error occurs.
     /// 
-	virtual System::Void FreeLibrary(System::String^ providerName);
+	System::Void FreeLibrary(String* providerName);
 
-internal:
+public private:
 	IConnectionManagerImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	::IConnectionManager* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+protected:
+	System::Void ReleaseUnmanagedObject();
 };
 
 END_NAMESPACE_OSGEO_FDO

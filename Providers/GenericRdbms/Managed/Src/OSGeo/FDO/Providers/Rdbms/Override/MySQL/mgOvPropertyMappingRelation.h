@@ -17,43 +17,31 @@
 */
 
 #pragma once
-#pragma warning (disable:4490)
 
 class FdoMySQLOvPropertyMappingRelation;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
-ref class OvClassDefinition;
+public __gc class OvClassDefinition;
 
 ///<summary>Abstract class defining the physical schema overrides for relation type object property
 ///table mappings.</summary>
-public ref class OvPropertyMappingRelation : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingRelation, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingRelation
+public __gc class OvPropertyMappingRelation : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingRelation, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingRelation
 {
-private:
-    virtual property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ InternalClass2
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ get()  sealed = NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyMappingRelation::InternalClass::get
-        {
-            return __super::InternalClass;
-        }
-    }
-
-internal:
-	OvPropertyMappingRelation(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvPropertyMappingRelation* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvPropertyMappingRelation(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Gets the internal class</summary>
     /// <returns>Returns the internal class</returns>
+   __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition* get_InternalClass();
+
     ///<summary>Sets the internal class</summary>
     /// <returns>Returns nothing</returns>
-    virtual property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition^ InternalClass
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition^ get() new sealed = NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingRelation::InternalClass::get;
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition^ classDefinition) new sealed = NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingRelation::InternalClass::set;
-    }
+    __property System::Void set_InternalClass(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassDefinition* classDefinition);
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

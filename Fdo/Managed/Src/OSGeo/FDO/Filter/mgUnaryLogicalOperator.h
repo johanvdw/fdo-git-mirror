@@ -24,14 +24,14 @@
 class FdoUnaryLogicalOperator;
 
 BEGIN_NAMESPACE_OSGEO_FDO_FILTER
-ref class Filter;
-interface class IFilterProcessor;
+public __gc class Filter;
+public __gc __interface IFilterProcessor;
 
 /// \ingroup (OSGeoFDOFilter)
 /// \brief
 /// The UnaryLogicalOperator class derives from LogicalOperator and allows a
 /// logical "Not" to be performed against a filter.
-public ref class UnaryLogicalOperator : public NAMESPACE_OSGEO_FDO_FILTER::LogicalOperator
+public __gc class UnaryLogicalOperator : public NAMESPACE_OSGEO_FDO_FILTER::LogicalOperator
 {
 public:
     /// \brief
@@ -53,7 +53,7 @@ public:
     /// \return
     /// Returns UnaryLogicalOperator
     /// 
-	UnaryLogicalOperator(NAMESPACE_OSGEO_FDO_FILTER::Filter^ operand, NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations operation);
+	UnaryLogicalOperator(NAMESPACE_OSGEO_FDO_FILTER::Filter* operand, NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations operation);
 
     /// \brief
     /// Gets the unary operation to be performed on the operand.
@@ -61,6 +61,8 @@ public:
     /// \return
     /// Returns the unary operation
     /// 
+	__property NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations get_Operation();
+
     /// \brief
     /// Sets the unary operation to be performed on the operand.
     /// 
@@ -70,11 +72,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations Operation
-    {
-        NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations get();
-        System::Void set(NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations value);
-    }
+	__property System::Void set_Operation(NAMESPACE_OSGEO_FDO_FILTER::UnaryLogicalOperations value);
 
     /// \brief
     /// Gets Filter operand to apply the operator to.
@@ -82,6 +80,8 @@ public:
     /// \return
     /// Returns filter
     /// 
+	__property NAMESPACE_OSGEO_FDO_FILTER::Filter* get_Operand();
+
     /// \brief
     /// Sets Filter operand to apply the operator to.
     /// 
@@ -91,11 +91,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_FILTER::Filter^ Operand
-    {
-        NAMESPACE_OSGEO_FDO_FILTER::Filter^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_FILTER::Filter^ value);
-    }
+	__property System::Void set_Operand(NAMESPACE_OSGEO_FDO_FILTER::Filter* value);
 
     /// \brief
     /// Overrides Filter.Process to pass UnaryLogicalOperator to the
@@ -107,7 +103,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor^ processor);
+	System::Void Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor* processor);
 
     /// \brief
     /// Constructs a UnaryLogicalOperator object based on an unmanaged instance of the object
@@ -121,10 +117,8 @@ public:
     /// 
 	UnaryLogicalOperator(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoUnaryLogicalOperator* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_FILTER

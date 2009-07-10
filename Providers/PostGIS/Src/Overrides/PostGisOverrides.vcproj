@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Bin\Win32\Debug"
-			IntermediateDirectory="..\..\Obj\Overrides\Win32\Debug"
+			IntermediateDirectory="..\..\Obj\Win32\Debug\Overrides"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\PostGis.vsprops"
 			CharacterSet="1"
@@ -96,13 +96,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostGISOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; &quot;$(OutDir)\PostGISOverrides.dll&quot;"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostGISOverrides.dll"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Bin\Win32\Release"
-			IntermediateDirectory="..\..\Obj\Overrides\Win32\Release"
+			IntermediateDirectory="..\..\Obj\Win32\Release\Overrides"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\PostGis.vsprops"
 			CharacterSet="1"

@@ -70,7 +70,6 @@
 				OutputFile="$(OutDir)/UnitTest.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\Lib\Win32\Debug;&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Debug&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;"
-				IgnoreDefaultLibraryNames="libcd.lib;libcmtd.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
 				SubSystem="1"
@@ -156,7 +155,6 @@
 				OutputFile="$(OutDir)/UnitTest.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\Lib\Win32\Release;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;"
-				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="false"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -612,8 +610,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Debug\Xalan-C_1_7_0D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Debug\XalanMessages_1_7_0D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Debug\xerces-c_2_5_0D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOGDAL)\bin\win32\debug\gdal16.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Debug\Xalan-C_1_7_0D.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Debug\XalanMessages_1_7_0D.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Debug\xerces-c_2_5_0D.dll;$(FDOGDAL)\bin\win32\debug\gdal16.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOGDAL)\bin\win32\debug\gdal16.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll;$(FDOGDAL)\bin\win32\debug\gdal16.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>

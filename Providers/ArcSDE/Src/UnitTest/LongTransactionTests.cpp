@@ -1641,6 +1641,5 @@ void LongTransactionTests::read_protected_version()
     catch (FdoException* ge)
     {
         // ignore error here
-        ge->Release();
     }
 }

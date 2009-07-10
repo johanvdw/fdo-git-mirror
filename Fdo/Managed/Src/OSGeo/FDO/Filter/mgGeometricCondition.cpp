@@ -32,22 +32,17 @@ NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::GeometricCondition(System::IntPt
 
 FdoGeometricCondition* NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::GetImpObj()
 {
-	return static_cast<FdoGeometricCondition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoGeometricCondition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::GetDisposableObject()
+NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::get_PropertyName()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	FdoIdentifier* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetPropertyName())
+	return static_cast<Identifier*>(ObjectFactory::CreateExpression(unobj, true));
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::PropertyName::get()
+System::Void NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::set_PropertyName(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* value)
 {
-	FdoIdentifier* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetPropertyName())
-	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^>(ObjectFactory::CreateExpression(IntPtr(result), true));
-}
-
-System::Void NAMESPACE_OSGEO_FDO_FILTER::GeometricCondition::PropertyName::set(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ value)
-{
-	EXCEPTION_HANDLER(GetImpObj()->SetPropertyName((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetPropertyName((value == NULL ? NULL : value->GetImpObj())))
 }

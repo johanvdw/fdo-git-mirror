@@ -36,7 +36,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
 /// IDataReader is returned from the SQLCommands ExecuteReader method.
 /// The initial position of the IDataReader interface is prior to the first item.
 /// Thus, you must call ReadNext to begin accessing any data.
-private ref class IDataReaderImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IReaderImp, public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReader
+private __gc class IDataReaderImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IReaderImp, public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReader
 {
 public:
     /// \brief
@@ -45,7 +45,7 @@ public:
     /// \return
     /// Returns the number of propertys.
     /// 
-	virtual System::Int32 GetPropertyCount();
+	System::Int32 GetPropertyCount();
 
     /// \brief
     /// Gets the name of the property at the given ordinal position.
@@ -56,7 +56,7 @@ public:
     /// \return
     /// Returns the property name
     /// 
-	virtual System::String^ GetPropertyName(System::Int32 index);
+	System::String* GetPropertyName(System::Int32 index);
 
     /// \brief
     /// Gets the data type of the property with the specified name.
@@ -67,7 +67,7 @@ public:
     /// \return
     /// Returns the data type of the property corresponding to the property name.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_SCHEMA::DataType GetDataType(System::String^ name);
+	NAMESPACE_OSGEO_FDO_SCHEMA::DataType GetDataType(System::String* name);
 
     /// \brief
     /// Gets the property type of a given property. This is used
@@ -80,17 +80,15 @@ public:
     /// \return
     /// Returns the property type corresponding to the property name.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType GetPropertyType(System::String^ name);
+	NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType GetPropertyType(System::String* name);
 
-internal:
+public private:
 	IDataReaderImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IReaderImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIDataReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

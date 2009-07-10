@@ -27,7 +27,7 @@
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::OvClassDefinition() : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoWmsOvClassDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoWmsOvClassDefinition::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping(unmanaged, autoDelete)
@@ -37,24 +37,19 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::OvClassDefinition
 
 FdoWmsOvClassDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::GetImpObj()
 {
-	return static_cast<FdoWmsOvClassDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoWmsOvClassDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::RasterDefinition::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::get_RasterDefinition()
 {
 	FdoWmsOvRasterDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetRasterDefinition())
 
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::ObjectFactory::CreateOvRasterDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::ObjectFactory::CreateOvRasterDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::RasterDefinition::set(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvClassDefinition::set_RasterDefinition(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetRasterDefinition(value->GetImpObj()))
 }

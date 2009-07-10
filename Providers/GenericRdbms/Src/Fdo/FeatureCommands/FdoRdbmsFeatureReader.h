@@ -201,8 +201,6 @@ private:
     FdoByteArray* GetGeometry(const wchar_t* propertyName, bool checkIsNullOnly, GdbiQueryResult *query);
 
     FdoClassDefinition* FilterClassDefinition( FdoClassDefinition* classDef, bool isBaseClass = false );
-    int GetColumnIndex(const char *propName, bool avoidCalculations = true);
-    void ProcessCalculations(std::vector<int>& idxs);
 
 public:
 
@@ -264,7 +262,6 @@ public:
       FdoFeatureSchemaCollection     *mSchemaCollection; // Used to cach the schema definition
       bool              mCurrentRevisionNumberValid;
       FdoIdentifierCollection *mProperties; // list of properties to be returned
-      FdoIdentifierCollection *mComputedProperties; // list of computed properties to be returned
       int               mLevel; //
       FdoClassDefinition *mFdoClassDefinition;
 
@@ -275,8 +272,8 @@ public:
       int               mUnskippedColCount;
       GdbiColumnDesc    *mColList;
 
-      FdoStringP        mClassIdPropName;
-      FdoStringP        mRevNumPropName;
+      FdoStringP        mClassIdColName;
+      FdoStringP        mRevNumColName;
 
       StringMap         mStringMap;
 

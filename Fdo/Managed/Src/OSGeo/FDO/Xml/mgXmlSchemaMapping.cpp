@@ -28,51 +28,46 @@
 
 FdoXmlSchemaMapping* NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetImpObj()
 {
-    return static_cast<FdoXmlSchemaMapping*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoXmlSchemaMapping*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetProvider()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetProvider()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetProvider())
 
-    return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::TargetNamespace::set(System::String^ package)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::set_TargetNamespace(System::String* package)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetTargetNamespace(StringToUni(package)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::TargetNamespace::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::get_TargetNamespace()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetTargetNamespace())
 
-    return CHECK_STRING(result);
+	return result;
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection^ NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetElementMappings()
+NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection* NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetElementMappings()
 {
 	FdoXmlElementMappingCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetElementMappings())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlElementMappingCollection(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlElementMappingCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlClassMappingCollection^ NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetClassMappings()
+NAMESPACE_OSGEO_FDO_XML::XmlClassMappingCollection* NAMESPACE_OSGEO_FDO_XML::XmlSchemaMapping::GetClassMappings()
 {
 	FdoXmlClassMappingCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetClassMappings())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlClassMappingCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlClassMappingCollection(result, true);
 }

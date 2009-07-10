@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 /// Expression hierarchy. For example, an RDBMS feature provider implements a
 /// processor class to convert an Expression hierarchy to the SQL equivalent
 /// syntax.
-private ref class IExpressionProcessorImp  : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor
+private __gc class IExpressionProcessorImp  : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor
 {
 public:
     /// \brief
@@ -48,10 +48,13 @@ public:
     /// 
 	IExpressionProcessorImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	inline FdoIExpressionProcessor* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
