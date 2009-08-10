@@ -105,7 +105,6 @@ protected:
     void ProcessConcatFunction(FdoFunction& expr);
     void ProcessSpatialExtentsFunction(FdoFunction& expr);
     void ProcessIsValidFunction(FdoFunction& expr);
-    void ProcessZMFunction(FdoFunction& expr);
 
     FdoString *MapFdoFunction2SqlServerFunction (FdoString *f_name);
     virtual void ProcessFunctionName(FdoFunction& expr);

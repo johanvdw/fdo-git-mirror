@@ -17,17 +17,16 @@ rem License along with this library; if not, write to the Free Software
 rem Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 rem 
 
-SET TYPEACTION=build
-SET MSACTION=Build
-SET TYPEBUILD=release
-SET TYPEPLATFORM=Win32
-SET INTERMEDIATEDIR=Win32
-SET FDOORGPATH=%cd%
-SET FDOINSPATH=%cd%\Fdo
-SET FDOBINPATH=%cd%\Fdo\Bin
-SET FDOINCPATH=%cd%\Fdo\Inc
-SET FDOLIBPATH=%cd%\Fdo\Lib
-SET FDODOCPATH=%cd%\Fdo\Docs
+SET TYPEACTIONSDF=build
+SET MSACTIONSDF=Build
+SET TYPEBUILDSDF=release
+SET TYPEPLATFORMSDF=Win32
+SET FDOORGPATHSDF=%cd%
+SET FDOINSPATHSDF=%cd%\Fdo
+SET FDOBINPATHSDF=%cd%\Fdo\Bin
+SET FDOINCPATHSDF=%cd%\Fdo\Inc
+SET FDOLIBPATHSDF=%cd%\Fdo\Lib
+SET FDODOCPATHSDF=%cd%\Fdo\Docs
 SET DOCENABLESDF=skip
 SET FDOERROR=0
 
@@ -43,7 +42,7 @@ if "%1"=="-outpath" goto get_path
 if "%1"=="-c"       goto get_conf
 if "%1"=="-config"  goto get_conf
 
-if "%1"=="-p"           goto get_platform
+if "%1"=="-p"       	goto get_platform
 if "%1"=="-platform"    goto get_platform
 
 if "%1"=="-a"       goto get_action
@@ -61,13 +60,13 @@ if "%2"=="skip" goto next_param
 goto custom_error
 
 :get_conf 
-SET TYPEBUILD=%2
+SET TYPEBUILDSDF=%2
 if "%2"=="release" goto next_param
 if "%2"=="debug" goto next_param
 goto custom_error
 
 :get_action
-SET TYPEACTION=%2
+SET TYPEACTIONSDF=%2
 if "%2"=="install" goto next_param
 if "%2"=="build" goto next_param
 if "%2"=="buildinstall" goto next_param
@@ -75,19 +74,19 @@ if "%2"=="clean" goto next_param
 goto custom_error 
 
 :get_platform
-SET TYPEPLATFORM=%2
+SET TYPEPLATFORMSDF=%2
 if "%2"=="Win32" goto next_param
 if "%2"=="x64" goto next_param
 goto custom_error
 
 :get_path
 if (%2)==() goto custom_error
-SET FDOORGPATH=%~2
-SET FDOINSPATH=%~2\Fdo
-SET FDOBINPATH=%~2\Fdo\Bin
-SET FDOINCPATH=%~2\Fdo\Inc
-SET FDOLIBPATH=%~2\Fdo\Lib
-SET FDODOCPATH=%~2\Fdo\Docs
+SET FDOORGPATHSDF=%~2
+SET FDOINSPATHSDF=%~2\Fdo
+SET FDOBINPATHSDF=%~2\Fdo\Bin
+SET FDOINCPATHSDF=%~2\Fdo\Inc
+SET FDOLIBPATHSDF=%~2\Fdo\Lib
+SET FDODOCPATHSDF=%~2\Fdo\Docs
 
 :next_param
 shift
@@ -98,55 +97,49 @@ goto study_params
 SET FDOACTENVSTUDY="FDO"
 if ("%FDO%")==("") goto env_error
 if not exist "%FDO%" goto env_path_error
-
 SET FDOACTENVSTUDY="FDOTHIRDPARTY"
 if ("%FDOTHIRDPARTY%")==("") goto env_error
 if not exist "%FDOTHIRDPARTY%" goto env_path_error
-
 SET FDOACTENVSTUDY="FDOUTILITIES"
 if ("%FDOUTILITIES%")==("") goto env_error
 if not exist "%FDOUTILITIES%" goto env_path_error
 
-if "%TYPEBUILD%"=="Win32" SET INTERMEDIATEDIR="Win32"
-if "%TYPEBUILD%"=="x64" SET INTERMEDIATEDIR="Win64"
-
-if "%TYPEACTION%"=="build" goto start_exbuild
-if "%TYPEACTION%"=="clean" goto start_exbuild
-
-if not exist "%FDOINSPATH%" mkdir "%FDOINSPATH%"
-if not exist "%FDOBINPATH%" mkdir "%FDOBINPATH%"
-if not exist "%FDOINCPATH%" mkdir "%FDOINCPATH%"
-if not exist "%FDOLIBPATH%" mkdir "%FDOLIBPATH%"
-if not exist "%FDODOCPATH%" mkdir "%FDODOCPATH%"
+if "%TYPEACTIONSDF%"=="build" goto start_exbuild
+if "%TYPEACTIONSDF%"=="clean" goto start_exbuild
+if not exist "%FDOINSPATHSDF%" mkdir "%FDOINSPATHSDF%"
+if not exist "%FDOBINPATHSDF%" mkdir "%FDOBINPATHSDF%"
+if not exist "%FDOINCPATHSDF%" mkdir "%FDOINCPATHSDF%"
+if not exist "%FDOLIBPATHSDF%" mkdir "%FDOLIBPATHSDF%"
+if not exist "%FDODOCPATHSDF%" mkdir "%FDODOCPATHSDF%"
 
 :start_exbuild
-if "%TYPEACTION%"=="clean" SET MSACTION=Clean
-if "%TYPEACTION%"=="install" goto install_files_sdf
+if "%TYPEACTIONSDF%"=="clean" SET MSACTIONSDF=Clean
+if "%TYPEACTIONSDF%"=="install" goto install_files_sdf
 
-echo %MSACTION% %TYPEBUILD% SDF provider dlls
+echo %MSACTIONSDF% %TYPEBUILDSDF% SDF provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\SDFOS
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild SDFOS_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
+msbuild SDFOS_temp.sln /t:%MSACTIONSDF% /p:Configuration=%TYPEBUILDSDF% /p:Platform=%TYPEPLATFORMSDF% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist SDFOS_temp.sln del /Q /F SDFOS_temp.sln
 popd
 if "%FDOERROR%"=="1" goto error
-if "%TYPEACTION%"=="clean" goto end
-if "%TYPEACTION%"=="build" goto generate_docs
+if "%TYPEACTIONSDF%"=="clean" goto end
+if "%TYPEACTIONSDF%"=="build" goto generate_docs
 
 :install_files_sdf
-echo copy %TYPEBUILD% SDF provider output files
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFMessage.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFProvider.dll" "%FDOBINPATH%"
-copy /y "%FDOUTILITIES%\ExpressionEngine\bin\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.dll" "%FDOBINPATH%"
-copy /y "%FDOUTILITIES%\ExpressionEngine\lib\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.lib" "%FDOLIBPATH%"
+echo copy %TYPEBUILDSDF% SDF provider output files
+copy /y "Bin\Win32\%TYPEBUILDSDF%\SDFMessage.dll" "%FDOBINPATHSDF%"
+copy /y "Bin\Win32\%TYPEBUILDSDF%\SDFProvider.dll" "%FDOBINPATHSDF%"
+copy /y "%FDOUTILITIES%\ExpressionEngine\bin\win32\%TYPEBUILDSDF%\ExpressionEngine.dll" "%FDOBINPATHSDF%"
+copy /y "%FDOUTILITIES%\ExpressionEngine\lib\win32\%TYPEBUILDSDF%\ExpressionEngine.lib" "%FDOLIBPATHSDF%"
 
 echo copy header files
-xcopy /S /C /Q /R /Y Inc\SDF\*.h "%FDOINCPATH%\SDF\"
-xcopy /C /Q /R /Y /I "%FDOUTILITIES%\ExpressionEngine\Inc\*.h" "%FDOINCPATH%\ExpressionEngine"
-del /Q/F "%FDOINCPATH%\ExpressionEngine\FdoExpressionEngineImp.h"
-xcopy /C /Q /R /Y /I "%FDOUTILITIES%\ExpressionEngine\Inc\Util\*.h" "%FDOINCPATH%\ExpressionEngine\Util"
+xcopy /S /C /Q /R /Y Inc\SDF\*.h "%FDOINCPATHSDF%\SDF\"
+xcopy /C /Q /R /Y /I "%FDOUTILITIES%\ExpressionEngine\Inc\*.h" "%FDOINCPATHSDF%\ExpressionEngine"
+del /Q/F "%FDOINCPATHSDF%\ExpressionEngine\FdoExpressionEngineImp.h"
+xcopy /C /Q /R /Y /I "%FDOUTILITIES%\ExpressionEngine\Inc\Util\*.h" "%FDOINCPATHSDF%\ExpressionEngine\Util"
 
 :generate_docs
 if "%DOCENABLESDF%"=="skip" goto install_docs
@@ -161,13 +154,13 @@ doxygen Doxyfile_SDF
 popd
 
 :install_docs
-if "%TYPEACTION%"=="build" goto end
-if exist "%FDODOCPATH%\HTML\Providers\SDF" rmdir /S /Q "%FDODOCPATH%\HTML\Providers\SDF"
-if exist Docs\HTML\SDF xcopy/CQEYI Docs\HTML\SDF\* "%FDODOCPATH%\HTML\Providers\SDF"
-if exist "Docs\SDF_Provider_API.chm" copy /y "Docs\SDF_Provider_API.chm" "%FDODOCPATH%"
+if "%TYPEACTIONSDF%"=="build" goto end
+if exist "%FDODOCPATHSDF%\HTML\Providers\SDF" rmdir /S /Q "%FDODOCPATHSDF%\HTML\Providers\SDF"
+if exist Docs\HTML\SDF xcopy/CQEYI Docs\HTML\SDF\* "%FDODOCPATHSDF%\HTML\Providers\SDF"
+if exist "Docs\SDF_Provider_API.chm" copy /y "Docs\SDF_Provider_API.chm" "%FDODOCPATHSDF%"
 
 :end
-echo End SDF %MSACTION%
+echo End SDF %MSACTIONSDF%
 exit /B 0
 
 :env_error
@@ -186,7 +179,7 @@ SET FDOERROR=1
 exit /B 1
 
 :error
-echo There was a build error executing action: %MSACTION%
+echo There was a build error executing action: %MSACTIONSDF%
 exit /B 1
 
 :custom_error

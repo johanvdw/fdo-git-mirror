@@ -31,21 +31,11 @@ FdoFilterException* FdoFilterException::Create(FdoString* message)
 	return new FdoFilterException(message);
 }
 
-FdoFilterException* FdoFilterException::Create(FdoString* message, FdoInt64 nativeErrorCode)
-{
-    return new FdoFilterException(message, NULL, nativeErrorCode);
-}
-
 // Constructs an instance of a FilterException using the specified
 // arguments.
 FdoFilterException* FdoFilterException::Create(FdoString* message, FdoException* cause)
 {
 	return new FdoFilterException(message, cause);
-}
-
-FdoFilterException* FdoFilterException::Create(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode)
-{
-    return new FdoFilterException(message, cause, nativeErrorCode);
 }
 
 // Constructs a default instance of a FilterException.
@@ -68,10 +58,6 @@ FdoFilterException::FdoFilterException(FdoString* message, FdoException* cause) 
 {
 }
 
-FdoFilterException::FdoFilterException(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode) :
-  FdoException(message, cause, nativeErrorCode)
-{
-}
 
 FdoFilterException::~FdoFilterException()
 {

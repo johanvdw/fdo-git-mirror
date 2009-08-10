@@ -25,7 +25,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \brief
 /// The LockStrategy enumeration defines how lock acquisition should proceed.
-public enum class LockStrategy
+public __value enum LockStrategy
 {
     /// Declares that either all of the locks must be acquired or none should be acquired.
 	LockStrategy_All = FdoLockStrategy_All,

@@ -42,7 +42,6 @@ private:
     int           nDatasetCount;
     int           nDatasetAlloc;
 
-protected:
                   FdoRfpDatasetCache();
     virtual      ~FdoRfpDatasetCache();
 

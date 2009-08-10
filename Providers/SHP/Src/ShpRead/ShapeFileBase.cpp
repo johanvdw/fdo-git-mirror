@@ -139,7 +139,13 @@ void ShapeFileBase::GetFileHeaderDetails ()
 
     // Read the File Header details
     if (!ReadFile (&shpHeader, SHPHeaderSize))
-        throw FdoCommonFile::LastErrorToException (L"ShapeFileBase::GetFileHeaderDetails");
+	{
+		FdoException*  ex = FdoCommonFile::LastErrorToException (L"ShapeFileBase::GetFileHeaderDetails");
+		if ( ex )
+			throw ex;
+		else
+			throw FdoException::Create (NlsMsgGet(SHP_READ_FILE_ERROR, "Error occured reading file '%1$ls'.", FileName() ));
+	}
 
     // We need to swap the BigEndian values
     m_nFileCode = shpHeader.nFileCode = SWAPLONG(shpHeader.nFileCode);
@@ -336,9 +342,9 @@ void ShapeFileBase::CheckBoundingBox(double dMinValue, double dMaxValue, eMinMax
     }
 }
 
-const wchar_t* ShapeFileBase::ShapeTypeToString (eShapeTypes type)
+wchar_t* ShapeFileBase::ShapeTypeToString (eShapeTypes type)
 {
-    const wchar_t* ret;
+    wchar_t* ret;
 
     switch (type)
     {

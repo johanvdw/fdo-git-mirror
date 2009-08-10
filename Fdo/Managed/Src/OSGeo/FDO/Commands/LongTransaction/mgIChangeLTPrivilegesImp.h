@@ -35,7 +35,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// transaction privileges for the named user. The ability to change the 
 /// privileges might be restricted by the datastore security if the long 
 /// transaction doesn’t belong to the user executing the command.
-private ref class IChangeLongTransactionPrivilegesImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IChangeLongTransactionPrivilegesImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                          public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionPrivileges
 {
 public:
@@ -46,6 +46,8 @@ public:
     /// \return
     /// Returns the name of the long transaction
     /// 
+	__property System::String* get_LongTransactionName();
+
     /// \brief
     /// Sets the name of the long transaction for which privileges should be
     /// changed.
@@ -56,11 +58,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ LongTransactionName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_LongTransactionName(System::String* value);
 
     /// \brief
     /// Gets the name of the user for which to grant or revoke privileges.
@@ -68,6 +66,8 @@ public:
     /// \return
     /// Returns the user name
     /// 
+	__property System::String* get_UserName();
+
     /// \brief
     /// Sets the name of the user for which to grant or revoke privileges.
     /// 
@@ -77,11 +77,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ UserName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_UserName(System::String* value);
 
     /// \brief
     /// Gets the privilege flags to grant or revoke.The returned value may be
@@ -91,6 +87,8 @@ public:
     /// \return
     /// Returns the privileges as a bit masked value based on LongTransactionPrivileges enumeration
     /// 
+	__property System::Int32 get_Privileges();
+
     /// \brief
     /// Sets the privilege flags to grant or revoke. The privileges value may be
     /// any combination of the values from the LongTransactionPrivileges
@@ -102,11 +100,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::Int32 Privileges
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 value);
-    }
+	__property System::Void set_Privileges(System::Int32 value);
 
     /// \brief
     /// Gets the operation to perform, grant, or revoke.
@@ -114,6 +108,8 @@ public:
     /// \return
     /// Returns the operation to perform
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionPrivilegeOperations get_Operation();
+
     /// \brief
     /// Sets the operation to perform, grant, or revoke.
     /// 
@@ -123,11 +119,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionPrivilegeOperations Operation
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionPrivilegeOperations get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionPrivilegeOperations value);
-    }
+	__property System::Void set_Operation(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionPrivilegeOperations value);
 
     /// \brief
     /// Executes the ChangeLongTransactionPrivilege command.
@@ -135,17 +127,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Execute();
+	System::Void Execute();
 
-internal:
+public private:
 	IChangeLongTransactionPrivilegesImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIChangeLongTransactionPrivileges* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

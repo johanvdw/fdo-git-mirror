@@ -24,25 +24,20 @@
 
 NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::NetworkLayerClass() : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoNetworkLayerClass::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoNetworkLayerClass::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::NetworkLayerClass(System::String^ name, System::String^ description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::NetworkLayerClass(System::String* name, System::String* description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoNetworkLayerClass::Create(StringToUni(name), StringToUni(description))), true))
+	EXCEPTION_HANDLER(Attach(FdoNetworkLayerClass::Create(StringToUni(name), StringToUni(description)), true))
 }
 
 FdoNetworkLayerClass* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::GetImpObj()
 {
-	return static_cast<FdoNetworkLayerClass*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoNetworkLayerClass*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::ClassType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass::get_ClassType()
 {
 	FdoClassType result;
 

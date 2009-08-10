@@ -369,8 +369,8 @@ SdfIScrollableFeatureReader* SdfImpExtendedSelect::ExecuteFastScrollable( )
 	pkey = &key;
 	pdata = &data;
 	
-	SQLiteRecNumbDef i = 0;
-	while( found && i < maxsize )
+	int i = 0;
+	while( found && i <maxsize )
 	{
         REC_NO recno = *((REC_NO*)pdata->get_data());
         indexTable[i] = recno;

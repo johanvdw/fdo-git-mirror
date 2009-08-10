@@ -29,7 +29,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
 /// \brief
 /// The IExtendedSelectImp class is a concrete implementation of 
 /// interface IExtendedSelect.
-private ref class IExtendedSelectImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::ISelectImp, public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IExtendedSelect
+private __gc class IExtendedSelectImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::ISelectImp, public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IExtendedSelect
 {
 public:
 	/// \brief
@@ -45,7 +45,7 @@ public:
     /// \param option
 	/// Is the ordering option and should be set to one of FdoOrderingOption_Ascending or FdoOrderingOption_Descending.
     /// FdoOrderingOption_Ascending is the default value.
-	virtual void SetOrderingOption( System::String^ propertyName, NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption  option );
+	void SetOrderingOption( System::String* propertyName, NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption  option );
 
     /// \brief
 	/// Gets the ordering option for a given property.
@@ -56,13 +56,13 @@ public:
 	///
     /// \return
 	/// Returns the ordering option.
-    virtual NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption GetOrderingOption( System::String^ propertyName );
+    NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption GetOrderingOption( System::String* propertyName );
 
 	/// \brief
 	/// Clears the internal list of property/ordering option list and re-sets the ordering option for all 
 	/// the ordering properties to the default FdoOrderingOption_Ascending or to the ordering option specified by the 
 	/// FdoIBaseSelect interface.
-	virtual void ClearOrderingOptions( );
+	void ClearOrderingOptions( );
 
 	/// \brief
 	/// Executes the select command and returns an IScrollableFeatureReader.
@@ -72,17 +72,15 @@ public:
 	/// the ordering collection. This method performs and allocates an integer value for each row.
     /// \return
 	/// Returns a FdoIScrollableFeatureReader object
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReader^ ExecuteScrollable();
+	NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IScrollableFeatureReader* ExecuteScrollable();
 
-internal:
+public private:
 	IExtendedSelectImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::ISelectImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIExtendedSelect* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON
 /// \ingroup (OSGeoFDOCommon)
 /// \brief
 ///     StringElement is an element in a StringCollection.
-public ref class StringElement sealed : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __sealed __gc class StringElement : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -36,7 +36,7 @@ public:
     /// \param value 
     ///     The string value of the element.
     /// 
-	StringElement(System::String^ value);
+	StringElement(System::String* value);
 
     /// \brief
     ///     Constructs a string elemnet based on an unmanaged instance of the object
@@ -60,16 +60,14 @@ public:
     ///     Input Indicates if the constructed element should be automatically deleted 
     ///     once it no longer referenced.
     /// 
-    property System::String^ String
-    {
-        System::String^ get();
-    }
+    __property System::String* get_String ();
 
 /// \cond DOXYGEN-IGNORE
-internal:
+protected:
+	System::Void ReleaseUnmanagedObject();
+
+public private:
 	inline FdoStringElement* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionSetReader;
+public __gc __interface ILongTransactionSetReader;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \interface OSGeo::FDO::Commands::LongTransaction::IGetLongTransactionsInSet
@@ -29,7 +29,7 @@ interface class ILongTransactionSetReader;
 /// The IGetLongTransactionsInSet interface defines the GetLongTransactionsInSet
 /// command, which allows the user to enumerate the list of versions
 /// participating in the long transaction selection set.
-public interface class IGetLongTransactionsInSet : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetLongTransactionsInSet : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -39,7 +39,7 @@ public:
     /// \return
     /// Returns the long transaction reader
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReader* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

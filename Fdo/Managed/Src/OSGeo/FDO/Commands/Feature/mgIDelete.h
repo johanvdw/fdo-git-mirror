@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgIFeatureCommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockConflictReader;
+public __gc __interface ILockConflictReader;
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
@@ -39,7 +39,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
 /// to simply by the class name. Instances at a nested scope (i.e. instances
 /// within a object collection property) are referred to by the containing class
 /// name, followed by a '.', followed by the object collection property name.
-public interface class IDelete : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
+public __gc __interface IDelete : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
 {
 public:
     /// \brief
@@ -62,10 +62,7 @@ public:
     /// \return
     /// Returns a lock conflict reader.
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ LockConflicts
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader* get_LockConflicts();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

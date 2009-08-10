@@ -24,7 +24,7 @@
 class FdoXmlSpatialContextReader;
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlSpatialContextFlags;
+public __gc class XmlSpatialContextFlags;
 
 /// \ingroup (OSGeoFDOXml)
 /// \brief
@@ -33,7 +33,7 @@ ref class XmlSpatialContextFlags;
 /// rather than through events. XmlSpatialContextReader implements 
 /// ISpatialContextReader to provide the functions for retrieving the 
 /// spatial contexts that were read.
-public ref class XmlSpatialContextReader : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler, public NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReader
+public __gc class XmlSpatialContextReader : public NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler, public NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReader
 {
 public:
     /// \brief
@@ -43,7 +43,7 @@ public:
     /// Input XML document reader. Specifies the XML
     /// document that the Spatial Contexts will be read from.
     /// 
-	XmlSpatialContextReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ reader);
+	XmlSpatialContextReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader* reader);
 
     /// \brief
     /// creates a Spatial Context Reader.
@@ -53,10 +53,10 @@ public:
     /// document that the Spatial Contexts will be read from.
     /// \param flags 
     /// Input options for controlling the 
-    /// deserializing of the Spatial Contexts. If nullptr then the 
+    /// deserializing of the Spatial Contexts. If NULL then the 
     /// default flags are used.
     /// 
-	XmlSpatialContextReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ reader, NAMESPACE_OSGEO_FDO_XML::XmlSpatialContextFlags^ flags);
+	XmlSpatialContextReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader* reader, NAMESPACE_OSGEO_FDO_XML::XmlSpatialContextFlags* flags);
 
     /// \brief
     /// Gets the Xml document reader that was passed to this object.
@@ -64,7 +64,7 @@ public:
     /// \return
     /// Returns the XML document reader.
     /// 
-	NAMESPACE_OSGEO_COMMON_XML::XmlReader^ GetXmlReader();
+	NAMESPACE_OSGEO_COMMON_XML::XmlReader* GetXmlReader();
 
     /// ISpatialContextReader implementation
 
@@ -74,7 +74,7 @@ public:
     /// \return
     /// Returns the name of the spatial context.
     /// 
-	virtual System::String^ GetName();
+	System::String* GetName();
 
     /// \brief
     /// Gets the description of the spatial context currently being read.
@@ -82,7 +82,7 @@ public:
     /// \return
     /// Returns the description of the spatial context.
     /// 
-	virtual System::String^ GetDescription();
+	System::String* GetDescription();
 
     /// \brief
     /// Gets the name of the coordinate system of the spatial context currently
@@ -92,7 +92,7 @@ public:
     /// \return
     /// Returns the coordinate system name of the spatial context.
     /// 
-	virtual System::String^ GetCoordinateSystem();
+	System::String* GetCoordinateSystem();
 
     /// \brief
     /// Gets the coordinate system in OpenGIS SRS WKT format of the spatial context currently
@@ -102,7 +102,7 @@ public:
     /// \return
     /// Returns the coordinate system description in WKT of of the spatial context.
     /// 
-	virtual System::String^ GetCoordinateSystemWkt();
+	System::String* GetCoordinateSystemWkt();
 
     /// \brief
     /// Gets the extent type of the spatial context currently being read.
@@ -110,7 +110,7 @@ public:
     /// \return
     /// Returns the extent type.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType GetExtentType();
+	NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType GetExtentType();
 
     /// \brief
     /// Gets the extent of the spatial context currently being read as a byte
@@ -119,7 +119,7 @@ public:
     /// \return
     /// Returns the extent as a byte array in FGF format.
     /// 
-	virtual array<System::Byte>^ GetExtent();
+	System::Byte GetExtent() [];
 
     /// \brief
     /// Gets the tolerance value for XY ordinates of the spatial context
@@ -132,7 +132,7 @@ public:
     /// \return
     /// Returns the tolerance
     /// 
-	virtual System::Double GetXYTolerance();
+	System::Double GetXYTolerance();
 
     /// \brief
     /// Gets the tolerance value for Z ordinates of the spatial context
@@ -145,7 +145,7 @@ public:
     /// \return
     /// Returns the tolerance
     /// 
-	virtual System::Double GetZTolerance();
+	System::Double GetZTolerance();
 
     /// \brief
     /// Returns true if the spatial context currently being read is the active
@@ -154,7 +154,7 @@ public:
     /// \return
     /// Returns true if the current spatial context is the active one.
     /// 
-	virtual System::Boolean IsActive();
+	System::Boolean IsActive();
 
     /// \brief
     /// Advances the reader to the next item. The default position of the reader
@@ -164,17 +164,20 @@ public:
     /// \return
     /// Returns true if there is a next item.
     /// 
-	virtual System::Boolean ReadNext();
+	System::Boolean ReadNext();
 
-internal:
+public private:
 	XmlSpatialContextReader(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(unmanaged, autoDelete)
 	{
 		
 	}
 
 	inline FdoXmlSpatialContextReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_XML

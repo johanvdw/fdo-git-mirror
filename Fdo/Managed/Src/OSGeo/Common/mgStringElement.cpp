@@ -21,9 +21,9 @@
 #include "Common\mgStringElement.h"
 #include "Common\mgException.h"
 
-NAMESPACE_OSGEO_COMMON::StringElement::StringElement(System::String^ value) : Disposable(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_COMMON::StringElement::StringElement(System::String* value) : Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoStringElement::Create(FdoStringP(StringToUni(value), true))), true))
+	EXCEPTION_HANDLER(Attach(FdoStringElement::Create(FdoStringP(StringToUni(value), true)), true))
 }
 
 NAMESPACE_OSGEO_COMMON::StringElement::StringElement(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
@@ -33,17 +33,19 @@ NAMESPACE_OSGEO_COMMON::StringElement::StringElement(System::IntPtr unmanaged, S
 
 FdoStringElement* NAMESPACE_OSGEO_COMMON::StringElement::GetImpObj()
 {
-	return static_cast<FdoStringElement*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoStringElement*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_COMMON::StringElement::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_COMMON::StringElement::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_COMMON::StringElement::String::get()
+System::String* NAMESPACE_OSGEO_COMMON::StringElement::get_String()
 {
 	FdoString *str = NULL;
 	EXCEPTION_HANDLER(str = GetImpObj()->GetString())
-    return CHECK_STRING(str);
+	return str;
 }

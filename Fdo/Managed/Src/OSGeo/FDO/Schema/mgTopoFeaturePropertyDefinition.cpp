@@ -22,22 +22,17 @@
 
 #include "FDO\Schema\mgTopoFeaturePropertyDefinition.h"
 
-NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::TopoFeaturePropertyDefinition(System::String^ name, System::String^ description) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::TopoFeaturePropertyDefinition(System::String* name, System::String* description) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoTopoFeaturePropertyDefinition::Create(StringToUni(name), StringToUni(description))), true))
+	EXCEPTION_HANDLER(Attach(FdoTopoFeaturePropertyDefinition::Create(StringToUni(name), StringToUni(description)), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::TopoFeaturePropertyDefinition(System::String^ name, System::String^ description, System::Boolean system) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::TopoFeaturePropertyDefinition(System::String* name, System::String* description, System::Boolean system) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoTopoFeaturePropertyDefinition::Create(StringToUni(name), StringToUni(description), system)), true))
+	EXCEPTION_HANDLER(Attach(FdoTopoFeaturePropertyDefinition::Create(StringToUni(name), StringToUni(description), system), true))
 }
 
 FdoTopoFeaturePropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::GetImpObj()
 {
-	return static_cast<FdoTopoFeaturePropertyDefinition*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::TopoFeaturePropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoTopoFeaturePropertyDefinition*>(__super::UnmanagedObject.ToPointer());
 }

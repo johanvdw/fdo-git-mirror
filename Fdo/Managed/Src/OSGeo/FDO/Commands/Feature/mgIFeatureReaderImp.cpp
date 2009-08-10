@@ -31,33 +31,28 @@
 
 FdoIFeatureReader* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetImpObj()
 {
-    return static_cast<FdoIFeatureReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIFeatureReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetClassDefinition()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetClassDefinition()
 {
 	FdoClassDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetClassDefinition())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(result, true);
 }
 
 System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetDepth()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDepth())
 
 	return result;
 }
 
-array<System::Byte>^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetGeometry(System::String^ propertyName)
+System::Byte NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetGeometry(System::String* propertyName) []
 {
 	const FdoByte* result;
 	FdoInt32 count = 0;
@@ -67,11 +62,11 @@ array<System::Byte>^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::Ge
 	return FdoByteArrayToByteArray(result, count);
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReader^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetFeatureObject(System::String^ propertyName)
+NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReader* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReaderImp::GetFeatureObject(System::String* propertyName)
 {
 	FdoIFeatureReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetFeatureObject(StringToUni(propertyName)))
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIFeatureReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIFeatureReader(result, true);
 }
