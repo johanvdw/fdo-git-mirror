@@ -25,8 +25,8 @@
 class FdoIRing;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ICurveSegmentAbstract;
-ref class CurveSegmentCollection;
+public __gc __interface ICurveSegmentAbstract;
+public __gc class CurveSegmentCollection;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -35,7 +35,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \brief
 /// The IRingImp class is ring Geometry helper type.  This is the most general non-abstract ring type.  
 /// FdoIRing is defined by an ordered collection of contiguous curve segments.
-private ref class IRingImp :
+private __gc class IRingImp :
 	public NAMESPACE_OSGEO_GEOMETRY::IRingAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IRing
 {
 public:
@@ -51,10 +51,8 @@ public:
     /// 
 	IRingImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIRing* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIRing *GetImpObj();
 
 public:
     /// \brief
@@ -63,10 +61,7 @@ public:
     /// \return
     /// Returns the number of curve segments
     /// 
-    property System::Int32 Count
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_Count();
 
     /// \brief
     /// Gets the curve segment at the given zero-based index.
@@ -77,10 +72,7 @@ public:
     /// \return
     /// Returns the requested curve segment
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstract^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstract^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstract *get_Item(System::Int32 index);
 	
     /// \brief
     /// Gets all the curve segments.
@@ -88,10 +80,7 @@ public:
     /// \return
     /// Returns a collection of all the curve segments
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection^ CurveSegments
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection *get_CurveSegments();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

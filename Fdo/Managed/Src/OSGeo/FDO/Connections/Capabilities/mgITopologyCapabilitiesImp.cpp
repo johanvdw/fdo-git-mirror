@@ -27,45 +27,47 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::ITopolog
 
 FdoITopologyCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::GetImpObj()
 {
-    return static_cast<FdoITopologyCapabilities*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoITopologyCapabilities*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::SupportsTopology()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsTopology())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::SupportsTopologicalHierarchy()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsTopologicalHierarchy())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::BreaksCurveCrossingsAutomatically()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->BreaksCurveCrossingsAutomatically())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::ActivatesTopologyByArea()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->ActivatesTopologyByArea())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilitiesImp::ConstrainsFeatureMovements()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->ConstrainsFeatureMovements())
 	return rv;
 }

@@ -61,7 +61,6 @@ public:
 	virtual void TestDescribeLTUpdatedConstraints(void);
 
 protected:
-    virtual FdoString* GetDefaultSchemaName(void);
 
     class Context 
     {

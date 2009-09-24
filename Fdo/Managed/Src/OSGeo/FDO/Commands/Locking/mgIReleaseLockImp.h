@@ -24,7 +24,7 @@
 class FdoIReleaseLock;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockConflictReader;
+public __gc __interface ILockConflictReader;
 
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \brief
@@ -37,7 +37,7 @@ interface class ILockConflictReader;
 /// produced by a query builder). The ability to successfully execute the command 
 /// might be restricted by the datastore security if the lock doesn’t belong to the 
 /// user executing the command.
-private ref class IReleaseLockImp : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp, public NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IReleaseLock
+private __gc class IReleaseLockImp : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp, public NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IReleaseLock
 {
 public:
     /// \brief
@@ -46,6 +46,8 @@ public:
     /// \return
     /// Returns name of the lock owner. If the name was not set, it returns the name of the caller.
     /// 
+	__property System::String* get_LockOwner();
+
     /// \brief
     /// Sets the name of the user who owns the lock to release.
     /// 
@@ -55,11 +57,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ LockOwner
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_LockOwner(System::String* value);
 
     /// \brief
     /// Executes the release lock command, returning an ILockConflictReader.
@@ -67,17 +65,15 @@ public:
     /// \return
     /// Returns a list of feature instances whose lock is owned by someone else.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader* Execute();
 
-internal:
+public private:
 	IReleaseLockImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIReleaseLock* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING

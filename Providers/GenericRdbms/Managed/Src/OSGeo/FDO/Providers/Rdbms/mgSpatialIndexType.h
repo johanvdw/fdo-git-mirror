@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS
 /// which defines exclusive and exhaustive cover tiles for every stored geometry</param>
 /// <param name="RdbmsSpatialIndexType_RTree">An R-tree index approximates each geometry by a single rectangle that minimally
 /// encloses the geometry (called the minimum bounding rectangle, or MBR).</param>
-public enum class RdbmsSpatialIndexType
+public __value enum RdbmsSpatialIndexType
 {
     // The spatial indexing schema is QuadTree
     RdbmsSpatialIndexType_QuadTree = SpatialIndexType_QuadTree,

@@ -226,50 +226,6 @@ void SqlServerSchemaMgrTests::testSpatialContextsGeog()
     }
 }
 
-int SqlServerSchemaMgrTests::GenKeysCreateSpecific( FdoSmPhGrdOwner* grdOwner )
-{
-    FdoStringP createJoinSql = 
-        L"create view dbo.view_join_ix1 ( id, int16_col1, string_col5 ) "
-        L"with schemabinding "
-        L"as select a.id, a.int16_col1, b.string_col5 from dbo.table_ix1 a, dbo.table_ix2 b";
-
-
-    grdOwner->ActivateAndExecute( L"set ansi_nulls on" );
-    grdOwner->ActivateAndExecute( L"set quoted_identifier on" );
-    grdOwner->ActivateAndExecute( (FdoString*) createJoinSql );
-    grdOwner->ActivateAndExecute( L"create unique clustered index view_join_ix1_ix on dbo.view_join_ix1 (string_col5)" );
-
-    createJoinSql = 
-        L"create view dbo.view_join_ix2 ( id, int16_col1, string_col5 ) "
-        L"with schemabinding "
-        L"as select a.id, a.int16_col1, b.string_col5 from dbo.table_ix1 a, dbo.table_ix2 b";
-
-
-    grdOwner->ActivateAndExecute( (FdoString*) createJoinSql );
-    grdOwner->ActivateAndExecute( L"create unique clustered index view_join_ix2_ix on dbo.view_join_ix2 (id, int16_col1)" );
-
-    return 2;
-}
-
-void SqlServerSchemaMgrTests::GenKeysVldSpecific( FdoClassCollection* classes )
-{
-    FdoClassDefinitionP featClass = classes->GetItem( L"view_join_ix1" );
-    FdoDataPropertiesP idProps = featClass->GetIdentityProperties();
-    CPPUNIT_ASSERT( idProps->GetCount() == 1 );
-    FdoDataPropertyP prop = idProps->GetItem(0);
-    CPPUNIT_ASSERT( wcscmp(prop->GetName(), L"string_col5") == 0 );
-
-    featClass = classes->GetItem( L"view_join_ix2" );
-    idProps = featClass->GetIdentityProperties();
-    CPPUNIT_ASSERT( idProps->GetCount() == 2 );
-    prop = idProps->GetItem(0);
-    CPPUNIT_ASSERT( wcscmp(prop->GetName(), L"id") == 0 );
-    prop = idProps->GetItem(1);
-    CPPUNIT_ASSERT( wcscmp(prop->GetName(), L"int16_col1") == 0 );
-}
-
-
-
 void SqlServerSchemaMgrTests::CreateMultiGeomTable( FdoSmPhOwnerP owner, FdoStringP tableName, FdoInt32 colCount, FdoInt32 indexMask, FdoInt32 nnullMask )
 {
     SchemaMgrTests::CreateMultiGeomTable( owner, tableName, colCount, indexMask, nnullMask );
@@ -363,7 +319,7 @@ FdoIoStream* SqlServerSchemaMgrTests::OverrideBend( FdoIoStream* stream1, FdoStr
 {
     FdoIoMemoryStream* stream2 = FdoIoMemoryStream::Create();
     UnitTestUtil::OverrideBend( stream1, stream2, 
-        "OSGeo.SQLServerSpatial.3.5", 
+        "OSGeo.SQLServerSpatial.3.4", 
         "http://www.autodesk.com/isd/fdo/SQLServerSpatialProvider",
         oldOwnerPrefix,newOwnerPrefix);
 

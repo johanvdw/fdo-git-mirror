@@ -19,12 +19,12 @@
 #pragma once
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS
-interface class ISpatialIndexReader;
+public __gc __interface ISpatialIndexReader;
 
-public ref class ObjectFactory sealed
+public __gc __sealed class ObjectFactory
 {
 public:
-	static NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ISpatialIndexReader^ CreateISpatialIndexReader(System::IntPtr ptr, System::Boolean autoDispose);
+	static NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ISpatialIndexReader* CreateISpatialIndexReader(System::IntPtr ptr, System::Boolean autoDispose);
 
 private:
 	ObjectFactory(){}

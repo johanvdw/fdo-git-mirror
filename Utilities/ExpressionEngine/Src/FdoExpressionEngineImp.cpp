@@ -32,7 +32,6 @@
 #include <malloc.h>
 #include <math.h>
 #include <limits.h>
-#include <stdio.h>
 
 #include <FdoExpressionEngineIAggregateFunction.h>
 #include <Util/FdoExpressionEngineUtilDataReader.h>
@@ -3774,11 +3773,8 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
                             break;
                     }
 			    }
-
-                if( (retOpt == FdoOptimizeResultType_Invalid ) || 
-                    (FdoSpatialUtility::Evaluate (m_geomRight, FdoSpatialOperations_Disjoint, m_geomLeft ) &&
-                    !((rightOp == FdoSpatialOperations_Crosses || rightOp == FdoSpatialOperations_Intersects || rightOp == FdoSpatialOperations_Overlaps || rightOp == FdoSpatialOperations_EnvelopeIntersects)
-                    && (leftOp == FdoSpatialOperations_Crosses || leftOp == FdoSpatialOperations_Intersects || leftOp == FdoSpatialOperations_Overlaps || leftOp == FdoSpatialOperations_EnvelopeIntersects))))
+				
+                if( (retOpt == FdoOptimizeResultType_Invalid ) || FdoSpatialUtility::Evaluate (m_geomRight, FdoSpatialOperations_Disjoint, m_geomLeft ))
 				{
 					// If the condition do not overlap, then replace it with a filter that returns 0 features.
 #ifdef _WIN32
@@ -4374,8 +4370,7 @@ FdoFunctionDefinition *FdoExpressionEngineImp::DeepCopyFunctionDefinition(FdoFun
         newSignatures->Add(newSignature);
 
     }
-    FdoFunctionDefinition *newFunction = FdoFunctionDefinition::Create(functionDefinition->GetName(),functionDefinition->GetDescription(), functionDefinition->IsAggregate(), newSignatures, functionDefinition->GetFunctionCategoryType(),
-        functionDefinition->SupportsVariableArgumentsList());
+    FdoFunctionDefinition *newFunction = FdoFunctionDefinition::Create(functionDefinition->GetName(),functionDefinition->GetDescription(), functionDefinition->IsAggregate(), newSignatures, functionDefinition->GetFunctionCategoryType());
 
     return newFunction;
 }

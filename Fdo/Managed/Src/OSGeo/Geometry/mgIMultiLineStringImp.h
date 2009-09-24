@@ -22,7 +22,7 @@
 
 class FdoIMultiLineString;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ILineString;
+public __gc __interface ILineString;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The IMultiLineStringImp class is a multi-LineString collection geometry type.
 /// The curves contained here do not have to
 /// be contiguous, nor spatially interact in any other way.
-private ref class IMultiLineStringImp : 
+private __gc class IMultiLineStringImp : 
 	public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiLineString
 {
 public:
@@ -48,10 +48,8 @@ public:
     /// 
 	IMultiLineStringImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIMultiLineString* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIMultiLineString *GetImpObj();
 
 public:
     /// \brief
@@ -63,10 +61,7 @@ public:
     /// \return
     /// Returns a CurveString
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::ILineString^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::ILineString^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::ILineString *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

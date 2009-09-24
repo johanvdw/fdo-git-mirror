@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE
 /// \brief
 /// The BaseUnit enumeration defines the well known base unit used to
 /// establish a measure unit.
-public enum class BaseUnit
+public __value enum BaseUnit
 {
     /// Represents an unspecified base unit, it can be used to create an
     /// unknown or unspecified unit of measure.

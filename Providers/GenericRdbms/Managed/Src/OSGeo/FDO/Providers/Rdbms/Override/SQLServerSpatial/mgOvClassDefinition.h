@@ -20,12 +20,12 @@
 class FdoSqlServerOvClassDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL
-ref class OvPropertyDefinitionCollection;
-ref class OvTable;
-ref class OvGeometricColumn;
+public __gc class OvPropertyDefinitionCollection;
+public __gc class OvTable;
+public __gc class OvGeometricColumn;
 
 ///<summary>Concrete class defining physical schema overrides for a class definition.</summary>
-public ref class OvClassDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition
+public __gc class OvClassDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition
 {
 public:
     ///<summary>Constructs a default of an NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition</summary>
@@ -33,26 +33,21 @@ public:
 
     ///<summary>Constructs an instance of an NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
-	OvClassDefinition(System::String^ name);
+	OvClassDefinition(System::String* name);
 
     ///<summary>Gets a collection of SqlServer property overrides</summary>
     /// <returns>Returns the collection of SqlServer property overrides</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection^ Properties
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection^ get();
-    }
+    __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection* get_Properties();
 
     ///<summary>Gets the SqlServer table override for this class override</summary>
     /// <returns>Returns NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable</returns>
+    __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable* get_Table();
+
     ///<summary>Sets the SqlServer table override for this class override</summary>
     /// <param name="name">Input SqlServer table override</param>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable^ Table
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable^ table);
-    }
-
+    __property System::Void set_Table(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvTable* table);
+   
     ///<summary>Specifies which FDO property corresponds to the single SqlServer IDENTITY column.
     /// This property corresponds to the singleton IDENTITY column of the SQL Server table.
     /// This is not to be confused with the usual FDO identity properties, which instead 
@@ -61,14 +56,12 @@ public:
     /// <param name="name">Input SqlServer identity property name override.
     /// An empty string means there is no identity column for this class.</param>
     /// <returns>Returns nothing</returns>
+    __property System::Void set_IdentityPropertyName(System::String* identityPropertyName);
+
     ///<summary>Gets which FDO property corresponds to the single SqlServer IDENTITY column</summary>
     /// <returns>Returns the FDO property corresponding to the single SqlServer IDENTITY column,
     /// or an empty string if there is no such property</returns>
-    property System::String^ IdentityPropertyName
-    {
-        System::String^ get();
-        System::Void set(System::String^ identityPropertyName);
-    }
+    __property System::String* get_IdentityPropertyName();
 
     ///<summary>Retrieves the identity column's type, whether it is a non-globally-unique
     /// identity column or a globally-unique identity column.</summary>
@@ -87,46 +80,38 @@ public:
     /// foreign database.  This override is also ignored if IdentityPropertyName is not specified.
     /// </remarks>
     /// <returns>Returns the type of the single IDENTITY column, if it exists</returns>
+    __property System::Boolean get_IdentityIsGloballyUnique();
+
     ///<summary>Set the type of the single IDENTITY column, if it exists</summary>
     /// <returns>Returns nothing</returns>
-    property System::Boolean IdentityIsGloballyUnique
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean isGloballyUnique);
-    }
+    __property System::Void set_IdentityIsGloballyUnique(System::Boolean isGloballyUnique);
 
     ///<summary>Sets the first value to use for the identity column, if there is one.</summary>
     /// <remarks>This override defaults to 1.  This override is ignored on ApplySchema if
     /// this column belongs to an existing table in a foreign database.  This override is also
     /// ignored if IdentityPropertyName is not specified.</remarks>
     /// <returns>Returns the first value to use for the identity column</returns>
+    __property System::Int32 get_IdentitySeed();
+
     ///<summary>Gets the first value to use for the identity column, if there is one.</summary>
     /// <returns>Returns nothing</returns>
-    property System::Int32 IdentitySeed
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 identitySeed);
-    }
+    __property System::Void set_IdentitySeed(System::Int32 identitySeed);
 
     ///<summary>Gets the increment value to use for the identity column, if there is one.</summary>
     /// <remarks>This override defaults to 1.  This override is ignored on ApplySchema if this
     /// column belongs to an existing table in a foreign database.  This override is also ignored
     /// if IdentityPropertyName is not specified.</remarks>
     /// <returns>Returns the increment value to use for the identity column</returns>
+    __property System::Int32 get_IdentityIncrement();
+
     ///<summary>Sets the increment value to use for the identity column, if there is one.</summary>
     /// <returns>Returns nothing</returns>
-    property System::Int32 IdentityIncrement
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 identityIncrement);
-    }
+    __property System::Void set_IdentityIncrement(System::Int32 identityIncrement);
 
-internal:
+public private:
 	OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoSqlServerOvClassDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL

@@ -227,7 +227,7 @@ void ArcSDEFeatureReader::PrepareStream ()
                     ApplyFilterInfoToStream (mConnection, mStream, table, whereClause, 1, id_column, numSpatialFilters, pSpatialFilters);
 
                     // set up a temporary log file
-                    mConnection->MakeLog (&mLog, table);
+                    ArcSDELockUtility::MakeLog (&mLog, mConnection->GetConnection (), table);
 
                     // accumulate the query in the log file
                     result = SE_stream_set_logfile (mStream, mLog, FALSE);

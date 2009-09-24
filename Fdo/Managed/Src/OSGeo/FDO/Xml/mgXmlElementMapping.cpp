@@ -26,88 +26,82 @@
 #include "FDO\mgObjectFactory.h"
 #include "FDO\Xml\mgXmlClassMapping.h"
 
-NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::XmlElementMapping(System::String^ name) : 
-    NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::XmlElementMapping(System::String* name) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlElementMapping::Create(StringToUni(name))), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlElementMapping::Create(StringToUni(name)), true))
 }
 
 FdoXmlElementMapping* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GetImpObj()
 {
-    return static_cast<FdoXmlElementMapping*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoXmlElementMapping*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::set_ClassMapping(NAMESPACE_OSGEO_FDO_XML::XmlClassMapping* value)
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	EXCEPTION_HANDLER(GetImpObj()->SetClassMapping((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::ClassMapping::set(NAMESPACE_OSGEO_FDO_XML::XmlClassMapping^ value)
-{
-	EXCEPTION_HANDLER(GetImpObj()->SetClassMapping((value == nullptr ? nullptr : value->GetImpObj())))
-}
-
-NAMESPACE_OSGEO_FDO_XML::XmlClassMapping^ NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::ClassMapping::get()
+NAMESPACE_OSGEO_FDO_XML::XmlClassMapping* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::get_ClassMapping()
 {
 	FdoXmlClassMapping* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetClassMapping())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlClassMapping(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateXmlClassMapping(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::ClassName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::set_ClassName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetClassName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::ClassName::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::get_ClassName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetClassName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::SchemaName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::set_SchemaName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSchemaName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::SchemaName::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::get_SchemaName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSchemaName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GmlUri::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::set_GmlUri(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetGmlUri(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GmlUri::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::get_GmlUri()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetGmlUri())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GmlLocalName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::set_GmlLocalName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetGmlUri(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::GmlLocalName::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlElementMapping::get_GmlLocalName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetGmlLocalName())
 
-	return CHECK_STRING(result);
+	return result;
 }

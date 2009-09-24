@@ -865,21 +865,8 @@ FdoIStreamReader* OgrFeatureReader::GetLOBStreamReader(FdoString* propertyName )
 
 bool OgrFeatureReader::IsNull(FdoString* propertyName)
 {
-    W2A(propertyName);
-    
-    //check if we are asked for ID property
-    const char* id = m_poLayer->GetFIDColumn();
-    if ((*id == 0 && strcmp("FID", mbpropertyName) == 0)
-         || strcmp(id, mbpropertyName) == 0)
-        return false;
-
-    //check if it is the geom property
-    const char* geom = m_poLayer->GetGeometryColumn();
-    if ((*geom == 0 && strcmp("GEOMETRY", mbpropertyName) == 0)
-         || strcmp(geom, mbpropertyName) == 0)
-        return m_poFeature->GetGeometryRef()==NULL;
-    
-    return !m_poFeature->IsFieldSet(m_poFeature->GetFieldIndex(mbpropertyName));
+    //TODO: how do you check this in OGR
+    return false;
 }
 
 FdoIFeatureReader* OgrFeatureReader::GetFeatureObject(FdoString* propertyName)

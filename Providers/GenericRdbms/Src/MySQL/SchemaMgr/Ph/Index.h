@@ -36,7 +36,7 @@ public:
 
     FdoSmPhMySqlIndex(
         FdoStringP name,
-        FdoSmPhDbObject* pParent,
+        const FdoSmPhTable* pParent,
         bool isUnique,
         FdoSchemaElementState elementState = FdoSchemaElementState_Added,
         FdoSmPhRdDbObjectReader* reader = NULL

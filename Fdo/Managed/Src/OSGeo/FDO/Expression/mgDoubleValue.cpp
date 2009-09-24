@@ -32,56 +32,51 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::DoubleValue(IntPtr unmanaged, Boole
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::DoubleValue() : DataValue(IntPtr::Zero, false)
 {
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoDoubleValue::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoDoubleValue::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::DoubleValue(System::Double value) : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDoubleValue::Create(value)), true))
+	EXCEPTION_HANDLER(Attach(FdoDoubleValue::Create(value), true))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::operator System::Double( NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue^ value )
+System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue* value )
 {
 	return (value->GetImpObj())->operator FdoDouble();
 }
 
 FdoDoubleValue* NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::GetImpObj()
 {
-	return static_cast<FdoDoubleValue*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoDoubleValue*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::get_DataType()
 {
 	FdoDataType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unobj);
 }
 
-System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::Double::get()
+System::Double NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::get_Double()
 {
 	double unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDouble())
 	return unobj;
 }
 
- System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::Double::set(System::Double value)
+ System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::set_Double(System::Double value)
  {
 	 EXCEPTION_HANDLER(GetImpObj()->SetDouble(value))
  }
 
- System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+ System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
  {
-	 EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	 EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
  }
 
- System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::ToString()
+ System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue::ToString()
  {
 	 FdoString* unstr;
 	 EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
  }

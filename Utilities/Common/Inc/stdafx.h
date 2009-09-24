@@ -21,14 +21,11 @@
 //
 
 #ifdef _WIN32
-
 #pragma once
-
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 #include <float.h>
 #include <crtdbg.h>
-
 #endif
 
 #include <cstring>
@@ -75,5 +72,22 @@ using namespace std;
 #define fdofdo_cat "FDOMessage.dll"
 #endif
 
-FdoString* NlsMsgGetFdo(int msg_num, char* default_msg, ...);
-FdoString* NlsMsgGetFdo(int msg_num, char* default_msg, char* file, int line, ...);
+inline FdoString* NlsMsgGetFdo(int msg_num, char* default_msg, ...)
+{
+    va_list varargs;
+    va_start(varargs, default_msg);
+    FdoString* ret = FdoException::NLSGetMessage (msg_num, default_msg, fdofdo_cat, varargs);
+    va_end(varargs);
+
+    return ret;
+}
+
+inline FdoString* NlsMsgGetFdo(int msg_num, char* default_msg, char* file, int line, ...)
+{
+    va_list varargs;
+    va_start(varargs, line);
+    FdoString* ret = FdoException::NLSGetMessage (msg_num, default_msg, file, line, fdofdo_cat, varargs);
+    va_end(varargs);
+
+    return ret;
+}

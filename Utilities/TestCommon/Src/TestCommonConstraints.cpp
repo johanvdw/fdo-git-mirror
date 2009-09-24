@@ -428,7 +428,7 @@ void TestCommonConstraints::TestBaseReferences ()
 
             FdoFeatureSchemasP pSchemas = FdoFeatureSchemaCollection::Create(NULL);
 
-            FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( GetDefaultSchemaName(), L"AutoCAD schema" );
+            FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( SCHEMA_NAME, L"AutoCAD schema" );
             pSchemas->Add( pSchema );
 
             FdoPtr<FdoFeatureClass> pCData = FdoFeatureClass::Create( CLASS_NAME_BASE, L"Constraints" );
@@ -515,7 +515,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME_BASE,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection,CLASS_NAME_BASE),
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -526,7 +526,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME_BASE,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME_BASE),
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -537,7 +537,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 2000,
@@ -549,7 +549,7 @@ void TestCommonConstraints::TestBaseReferences ()
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 2000,
@@ -566,7 +566,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME_BASE,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME_BASE),
                 PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -577,7 +577,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME_BASE,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME_BASE),
                 PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -588,7 +588,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -602,7 +602,7 @@ void TestCommonConstraints::TestBaseReferences ()
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
@@ -623,7 +623,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 3000,
@@ -637,7 +637,7 @@ void TestCommonConstraints::TestBaseReferences ()
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 4000,
@@ -648,9 +648,9 @@ void TestCommonConstraints::TestBaseReferences ()
             
             FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-            pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+            pDescCmd->SetSchemaName( SCHEMA_NAME );
             FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-            FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+            FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
             FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
             FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME );
             FdoPtr<FdoClassDefinition> pClassBase2 = pClass2->GetBaseClass();
@@ -688,23 +688,20 @@ void TestCommonConstraints::TestBaseReferences ()
             CPPUNIT_ASSERT_MESSAGE("Wrong number of unique keys", count == 3 );
             CPPUNIT_ASSERT_MESSAGE("Unique keys properties not found", found_unique1 && found_unique2 && found_unique3);
 
-            if (schemaCap->SupportsInheritence())
-            {
-                // None of the unique constraints on derived class should find their way to the base
-                // class.
-                pUniqueCs = pClassBase2->GetUniqueConstraints();
-                CPPUNIT_ASSERT_MESSAGE("Base class has unique keys", pUniqueCs->GetCount() == 0 );
+            // None of the unique constraints on derived class should find their way to the base
+            // class.
+            pUniqueCs = pClassBase2->GetUniqueConstraints();
+            CPPUNIT_ASSERT_MESSAGE("Base class has unique keys", pUniqueCs->GetCount() == 0 );
 
-                // Sub class should have on 1 constraint (one with subset of properties). Duplicate
-                // constraint should disappear
-                pUniqueCs = pClassSub2->GetUniqueConstraints();
-                CPPUNIT_ASSERT_MESSAGE("Sub class does not have 1 unique key", pUniqueCs->GetCount() == 1 );
-                FdoPtr<FdoUniqueConstraint>  pUniqueC = pUniqueCs->GetItem(0);
-                FdoDataPropertiesP             pProps = pUniqueC->GetProperties();
-                CPPUNIT_ASSERT_MESSAGE("Sub class unique key does not have 1 property ", pProps->GetCount() == 1 );
-                pProp = pProps->GetItem(0);
-                CPPUNIT_ASSERT( wcscmp(pProp->GetName(), PROP_UNIQUE2_2) == 0);
-            }
+            // Sub class should have on 1 constraint (one with subset of properties). Duplicate
+            // constraint should disappear
+            pUniqueCs = pClassSub2->GetUniqueConstraints();
+            CPPUNIT_ASSERT_MESSAGE("Sub class does not have 1 unique key", pUniqueCs->GetCount() == 1 );
+            FdoPtr<FdoUniqueConstraint>  pUniqueC = pUniqueCs->GetItem(0);
+            FdoDataPropertiesP             pProps = pUniqueC->GetProperties();
+            CPPUNIT_ASSERT_MESSAGE("Sub class unique key does not have 1 property ", pProps->GetCount() == 1 );
+            pProp = pProps->GetItem(0);
+            CPPUNIT_ASSERT( wcscmp(pProp->GetName(), PROP_UNIQUE2_2) == 0);
         }
     }
     catch ( FdoException* e ) 
@@ -732,7 +729,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
 
     FdoFeatureSchemasP pSchemas = FdoFeatureSchemaCollection::Create(NULL);
 
-    FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( GetDefaultSchemaName(), L"AutoCAD schema" );
+    FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( SCHEMA_NAME, L"AutoCAD schema" );
     pSchemas->Add( pSchema );
 
     FdoPtr<FdoFeatureClass> pCData = FdoFeatureClass::Create( CLASS_NAME_BASE, L"Constraints" );
@@ -1125,7 +1122,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1142,7 +1139,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
@@ -1163,7 +1160,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1180,7 +1177,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
@@ -1208,7 +1205,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[1],
@@ -1231,7 +1228,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[0] - 1,
@@ -1255,7 +1252,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1278,7 +1275,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1300,7 +1297,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, 99999999,
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1316,7 +1313,7 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
 
         TestCommonMiscUtil::DeleteObjects( 
             context.connection,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID,
             FdoDataType_Int32,
@@ -1658,9 +1655,9 @@ void TestCommonConstraints::DescribeConstraintsSchema( Context& context, FdoStri
 
     FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-    pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+    pDescCmd->SetSchemaName( SCHEMA_NAME );
     FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-    FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+    FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
     FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
     FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( className );
     FdoPtr<FdoClassDefinition> pClassBase2 = pClass2->GetBaseClass();
@@ -1907,9 +1904,9 @@ void TestCommonConstraints::UpdateUniqueConstraints( Context& context )
 
         FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-        pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+        pDescCmd->SetSchemaName( SCHEMA_NAME );
         FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
         FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
        
@@ -1967,7 +1964,7 @@ void TestCommonConstraints::UpdateUniqueConstraints( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -1999,7 +1996,7 @@ void TestCommonConstraints::UpdateUniqueConstraints( Context& context )
         // Remove the offending row
         TestCommonMiscUtil::DeleteObjects( 
             context.connection,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_UNIQUE2_2,
             FdoDataType_Int32,
@@ -2012,7 +2009,7 @@ void TestCommonConstraints::UpdateUniqueConstraints( Context& context )
 
         // Do a new describe schema
         pSchemas2 = pDescCmd->Execute();
-        pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         pClasses2 = pSchema2->GetClasses();
         pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
           pUniqueCs = pClass2->GetUniqueConstraints();
@@ -2026,7 +2023,7 @@ void TestCommonConstraints::UpdateUniqueConstraints( Context& context )
 	    pApplyCmd->Execute();
 
 	    pSchemas2 = pDescCmd->Execute();
-	    pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+	    pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         pClasses2 = pSchema2->GetClasses();
 	    pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
 	    pUniqueCs = pClass2->GetUniqueConstraints();
@@ -2070,9 +2067,9 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
 
     FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-    pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+    pDescCmd->SetSchemaName( SCHEMA_NAME );
     FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-    FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+    FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
     FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
     FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
    
@@ -2108,7 +2105,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_INT32_R , FdoDataType_Int32,  value,
@@ -2166,7 +2163,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_INT32_R , FdoDataType_Int32,  value,
@@ -2187,7 +2184,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                     TestCommonMiscUtil::InsertObject(
                         context.connection,
                         insertCmd,
-                        GetDefaultSchemaName(),
+                        SCHEMA_NAME,
                         CLASS_NAME,
                         PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                         PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2217,7 +2214,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2249,7 +2246,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 TestCommonMiscUtil::InsertObject(
                     context.connection,
                     insertCmd,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                     PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2302,7 +2299,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 // Now try to delete. It should succeed.
                 TestCommonMiscUtil::DeleteObjects( 
                     context.connection,
-                    GetDefaultSchemaName(),
+                    SCHEMA_NAME,
                     CLASS_NAME,
                     PROP_STRING_L,
                     FdoDataType_String,
@@ -2321,7 +2318,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                     TestCommonMiscUtil::InsertObject(
                         context.connection,
                         insertCmd,
-                        GetDefaultSchemaName(),
+                        SCHEMA_NAME,
                         CLASS_NAME,
                         PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                         PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2335,7 +2332,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                     TestCommonMiscUtil::InsertObject(
                         context.connection,
                         insertCmd,
-                        GetDefaultSchemaName(),
+                        SCHEMA_NAME,
                         CLASS_NAME,
                         PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                         PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2359,9 +2356,9 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
     {
         FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-        pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+        pDescCmd->SetSchemaName( SCHEMA_NAME );
         FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
         FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
        
@@ -2372,7 +2369,7 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -2500,7 +2497,7 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
         }
 
         pSchemas2 = pDescCmd->Execute();
-        pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         pClasses2 = pSchema2->GetClasses();
         pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
         pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -2686,7 +2683,7 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
             }
 
             pSchemas2 = pDescCmd->Execute();
-            pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+            pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
             pClasses2 = pSchema2->GetClasses();
             pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
             pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -3025,7 +3022,7 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
 
 
         pSchemas2 = pDescCmd->Execute();
-        pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         pClasses2 = pSchema2->GetClasses();
         pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
         pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -3172,7 +3169,7 @@ void TestCommonConstraints::RestrictCheckConstraints( Context& context )
 
             TestCommonMiscUtil::DeleteObjects( 
                 context.connection,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME_BASE,
                 NULL
             );
@@ -3189,9 +3186,9 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
     {
         FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-        pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+        pDescCmd->SetSchemaName( SCHEMA_NAME );
         FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
         FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
        
@@ -3207,7 +3204,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 15,
@@ -3222,7 +3219,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -3237,7 +3234,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 15,
@@ -3252,7 +3249,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 15,
@@ -3267,7 +3264,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 15,
@@ -3283,7 +3280,7 @@ void TestCommonConstraints::CheckConstraintsData( Context& context )
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
-                GetDefaultSchemaName(),
+                SCHEMA_NAME,
                 CLASS_NAME,
                 PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
                 PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 15,
@@ -3413,9 +3410,9 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
     {
         FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) context.connection->CreateCommand(FdoCommandType_DescribeSchema);
 
-        pDescCmd->SetSchemaName( GetDefaultSchemaName() );
+        pDescCmd->SetSchemaName( SCHEMA_NAME );
         FdoPtr<FdoFeatureSchemaCollection> pSchemas2 = pDescCmd->Execute();
-        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+        FdoPtr<FdoFeatureSchema> pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
         FdoPtr<FdoClassCollection> pClasses2 = pSchema2->GetClasses();
         FdoPtr<FdoClassDefinition> pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
        
@@ -3423,11 +3420,11 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
         pApplyCmd->SetFeatureSchema(pSchema2);
 
         FdoPtr<FdoIInsert> insertCmd;
-        FdoDateTime dateTime = FdoDateTime( 2005, 12, 30, 23, 59, (float)58.99999 );
+        FdoDateTime dateTime = FdoDateTime( 2005, 12, 30, 23, 59, 58.99999 );
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -3537,7 +3534,7 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
             }
 
             pSchemas2 = pDescCmd->Execute();
-            pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+            pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
             pClasses2 = pSchema2->GetClasses();
             pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
             pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -3598,7 +3595,7 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
             }
 
             pSchemas2 = pDescCmd->Execute();
-            pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+            pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
             pClasses2 = pSchema2->GetClasses();
             pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
             pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -3607,7 +3604,7 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
 
         TestCommonMiscUtil::DeleteObjects( 
             context.connection,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME_BASE,
             NULL
         );
@@ -3640,7 +3637,7 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
         TestCommonMiscUtil::InsertObject(
             context.connection,
             insertCmd,
-            GetDefaultSchemaName(),
+            SCHEMA_NAME,
             CLASS_NAME,
             PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
             PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
@@ -3732,7 +3729,7 @@ void TestCommonConstraints::DateTimeConstraints( Context& context )
             }
 
             pSchemas2 = pDescCmd->Execute();
-            pSchema2 = pSchemas2->GetItem( GetDefaultSchemaName() );
+            pSchema2 = pSchemas2->GetItem( SCHEMA_NAME );
             pClasses2 = pSchema2->GetClasses();
             pClass2 = pClasses2->GetItem( CLASS_NAME_BASE );
             pApplyCmd->SetFeatureSchema( pSchema2 );
@@ -3867,7 +3864,3 @@ TestCommonConstraints::Context::~Context()
     }
 }
 
-FdoString* TestCommonConstraints::GetDefaultSchemaName(void)
-{
-    return SCHEMA_NAME;
-}

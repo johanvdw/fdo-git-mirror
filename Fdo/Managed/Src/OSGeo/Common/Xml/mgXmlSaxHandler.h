@@ -25,8 +25,8 @@ class VirtualSaxHandler;
 class FdoXmlSaxHandler;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlAttributeCollection;
-ref class XmlSaxContext;
+public __gc class XmlAttributeCollection;
+public __gc class XmlSaxContext;
 
 /// \ingroup (OSGeoFDOCommonXml)
 /// \brief
@@ -34,9 +34,10 @@ ref class XmlSaxContext;
 /// It is not an interface in the strict sense, since each function has a 
 /// default implementation that does nothing. Implementors can override these
 /// callbacks to customize the handling of XML fragments parsed by XmlReader.
-public ref class XmlSaxHandler : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler
+public __gc class XmlSaxHandler : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler
 {
 public:
+	XmlSaxHandler();
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
     /// starts reading an XML document. Does nothing.
@@ -48,7 +49,7 @@ public:
     /// Returns the SAX Handler for the document's root element. If NULL then 
     /// this SAX handler will handle the root element
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ XmlStartDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context);
+	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* XmlStartDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -57,7 +58,7 @@ public:
     /// \param context 
     /// Input caller specified contextual information
     /// 
-	virtual System::Void XmlEndDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context);
+	virtual System::Void XmlEndDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -78,7 +79,7 @@ public:
     /// Returns the SAX Handler for the element's sub-elements. If NULL then 
     /// this SAX handler will handle the sub-elements
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ XmlStartElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ resourceLocation, System::String^ name, System::String^ qualifiedName, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes);
+	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* XmlStartElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* resourceLocation, System::String* name, System::String* qualifiedName, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -98,7 +99,7 @@ public:
     /// cause the parse to continue. Return value is ignored if the current parse
     /// is not an incremental parse ( see XmlReader::Parse())
     /// 
-	virtual System::Boolean XmlEndElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ resourceLocation, System::String^ name, System::String^ qualifiedName);
+	virtual System::Boolean XmlEndElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* resourceLocation, System::String* name, System::String* qualifiedName);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -112,7 +113,7 @@ public:
     /// \param characters 
     /// Input the next chunk of simple content
     /// 
-	virtual System::Void XmlCharacters(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ characters);
+	virtual System::Void XmlCharacters(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* characters);
 	
     /// \brief
     /// Constructs a SaxHandler based on an unmanaged instance of the object
@@ -127,10 +128,11 @@ public:
     XmlSaxHandler(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoXmlSaxHandler* GetImpObj();	
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+protected:
+	System::Void ReleaseUnmanagedObject();
 /// \endcond
 };
 END_NAMESPACE_OSGEO_COMMON_XML

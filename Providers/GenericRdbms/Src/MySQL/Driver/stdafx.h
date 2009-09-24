@@ -23,8 +23,6 @@
 #pragma once
 #endif
 
-#include <cstring>
-
 #ifdef _WIN32
 #pragma pack(push, 16) /* large alignment */
 #include <config-win.h>
@@ -39,7 +37,7 @@
 #include <windows.h>
 #endif
 
-
+#include <cstring>
 #include <Inc/rdbi.h>
 #include <stdio.h>
 #include <string.h>
