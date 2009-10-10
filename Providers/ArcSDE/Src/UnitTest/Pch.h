@@ -65,12 +65,7 @@
             #pragma comment(lib, "pe.lib")
             #pragma comment(lib, "sde.lib")
         #else
-            #if _SDEVER_ARCUNITTEST == 93
-                #pragma comment(lib, "pe.lib")
-                #pragma comment(lib, "sde.lib")
-            #else
-                #pragma message("Please define the environment variable %SDEVER_ARCUNITTEST% having 91, 92 or 93 as value")
-            #endif
+            #pragma message("Please define the environment variable %SDEVER_ARCUNITTEST% having 91 or 92 as value")
         #endif
     #endif
 #endif

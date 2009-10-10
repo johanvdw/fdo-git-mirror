@@ -128,11 +128,6 @@ FdoString* c_KgOraSQLDataReader::GetColumnName(FdoInt32 Index)
   */
 }
 
-FdoInt32 c_KgOraSQLDataReader::GetColumnIndex(FdoString* columnName)
-{
-    return ColumnNameToColumnIndex(columnName);
-}
-
 /// \brief
 /// Gets the data type of the column with the specified name.
 /// 

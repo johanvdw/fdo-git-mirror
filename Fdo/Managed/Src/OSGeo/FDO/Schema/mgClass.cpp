@@ -24,25 +24,20 @@
 
 NAMESPACE_OSGEO_FDO_SCHEMA::Class::Class() : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoClass::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoClass::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::Class::Class(System::String^ name, System::String^ description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::Class::Class(System::String* name, System::String* description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoClass::Create(StringToUni(name), StringToUni(description))), true))
+	EXCEPTION_HANDLER(Attach(FdoClass::Create(StringToUni(name), StringToUni(description)), true))
 }
 
 FdoClass* NAMESPACE_OSGEO_FDO_SCHEMA::Class::GetImpObj()
 {
-	return static_cast<FdoClass*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoClass*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::Class::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::Class::ClassType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::Class::get_ClassType()
 {
 	FdoClassType result;
 

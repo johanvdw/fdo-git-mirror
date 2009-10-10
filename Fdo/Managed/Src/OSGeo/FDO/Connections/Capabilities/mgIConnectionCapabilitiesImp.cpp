@@ -30,105 +30,108 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::IConne
 
 FdoIConnectionCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::GetImpObj()
 {
-    return static_cast<FdoIConnectionCapabilities*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIConnectionCapabilities*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::ThreadCapability::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::get_ThreadCapability()
 {
 	FdoThreadCapability unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetThreadCapability())
 	return static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ThreadCapability>(unobj);
 }
 
-array<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SpatialContextTypes::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::get_SpatialContextTypes() []
 {
 	FdoSpatialContextExtentType* unobj;
 	FdoInt32 unlength;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetSpatialContextTypes(unlength))
-
-    array<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>^ result = gcnew array<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>(unlength);
+	NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType rv [] = new NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType[unlength];
 	for(FdoInt32 i = 0; i < unlength; i++)
-		result[i] = static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>(*(unobj + i));
-
-    return result;
+	{
+		rv[i] = static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>(*(unobj + i));
+	}
+	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsLocking()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsLocking())
 	return rv;
 }
 
-array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::LockTypes::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::get_LockTypes() []
 {
 	FdoLockType* unobj;
 	FdoInt32 unlength;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetLockTypes(unlength))
-    array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ result = gcnew array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>(unlength);
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType rv [] = new NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType[unlength];
 	for(FdoInt32 i = 0; i < unlength; i++)
-		result[i] = static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>(*(unobj + i));
-
-    return result;
+	{
+		rv[i] = static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>(*(unobj + i));
+	}
+	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsTimeout()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsTimeout())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsTransactions()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsTransactions())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsLongTransactions()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsLongTransactions())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsSQL()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsSQL())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsConfiguration()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsConfiguration())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsMultipleSpatialContexts()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsMultipleSpatialContexts())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsCSysWKTFromCSysName()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsCSysWKTFromCSysName())
 	return rv;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilitiesImp::SupportsFlush()
 {
-	System::Boolean rv;
+	FdoBoolean rv;
 	EXCEPTION_HANDLER(rv = !!GetImpObj()->SupportsFlush())
 	return rv;
 }

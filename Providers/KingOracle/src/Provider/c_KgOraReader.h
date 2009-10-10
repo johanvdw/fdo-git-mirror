@@ -20,7 +20,6 @@
 #include "c_LogAPI.h"
 #include "c_SdoGeomToAGF2.h"
 #include <time.h>
-#include <assert.h>
 
 
 #define D_USE_MAP_FOR_COLUMN_SEARCH
@@ -148,10 +147,7 @@ template <class FDO_READER> class c_KgOraReader : public FDO_READER
     //-------------------------------------------------------   
         virtual int PropNameToColumnNumber(FdoString* propertyName); 
         virtual int PropNameToColumnNumber_IsNull(FdoString* propertyName); 
-
-        virtual FdoString* GetPropertyName(FdoInt32 index);
-        virtual FdoInt32 GetPropertyIndex(FdoString* propertyName);
-
+        
         virtual bool GetBoolean(FdoString* propertyName);
         virtual FdoByte GetByte(FdoString* propertyName);
         virtual FdoDateTime GetDateTime(FdoString* propertyName);
@@ -164,10 +160,14 @@ template <class FDO_READER> class c_KgOraReader : public FDO_READER
         virtual FdoLOBValue* GetLOB(FdoString* propertyName);
         virtual FdoIStreamReader* GetLOBStreamReader(FdoString* propertyName );
         virtual bool IsNull(FdoString* propertyName);
+        
+        
+        
         virtual FdoIRaster* GetRaster(FdoString* propertyName);
-
         virtual bool ReadNext();
         virtual void Close();
+    
+   
 
     /// \brief
     /// Gets the geometry value of the specified property as a byte array in 
@@ -323,23 +323,6 @@ template <class FDO_READER> int c_KgOraReader<FDO_READER>::PropNameToColumnNumbe
   return oraind;
   */
 };
-
-template <class FDO_READER> FdoString* c_KgOraReader<FDO_READER>::GetPropertyName(FdoInt32 index)
-{
-    assert(m_OciStatement != NULL);
-    if (m_OciStatement != NULL)
-    {
-        return m_OciStatement->GetColumnName(index+1);
-    }
-
-    assert(false);
-    return L"";
-}
-
-template <class FDO_READER> FdoInt32 c_KgOraReader<FDO_READER>::GetPropertyIndex(FdoString* propertyName)
-{
-    return m_PropNameToIndex.GetIndex(propertyName);
-}
 
 template <class FDO_READER> bool c_KgOraReader<FDO_READER>::IsNull(FdoString* propertyName)
 {
@@ -702,20 +685,13 @@ template <class FDO_READER> bool c_KgOraReader<FDO_READER>::ReadNext()
     }
     catch(c_Oci_Exception* ea)
     {
-      FdoStringP gstr;
-      gstr = ea->what();
-      
-      printf("\n----------------------c_KgOraReader::ReadNext: occi::SQLException  %s",(const char*)gstr);
-      
-      
       delete ea;
-      throw FdoCommandException::Create(gstr);
-      
+      printf("\n----------------------c_KgOraReader::ReadNext: occi::SQLException Exception ---------------------- ");
+      return false;
     }
     catch(...)
     {
-      printf("\n----------------------c_KgOraReader::ReadNext: Unknown Exception ---------------------- ");
-      throw FdoCommandException::Create(L"c_KgOraReader::ReadNext: Unknown Exception");
+      printf("\n----------------------c_KgOraReader::ReadNext: Uknown Exception ---------------------- ");
       return false;
     }
     

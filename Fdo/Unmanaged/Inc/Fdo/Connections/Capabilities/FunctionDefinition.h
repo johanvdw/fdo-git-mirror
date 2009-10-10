@@ -44,8 +44,7 @@ protected:
                            FdoString                       *description,
                            FdoDataType                     returnType,
                            FdoArgumentDefinitionCollection *arguments,
-                           FdoFunctionCategoryType         functionCategoryType,
-                           bool                            supportsVariableArgumentsList);
+                           FdoFunctionCategoryType         functionCategoryType);
 
     /// Constructs an instance of an FdoFunctionDefinition using the specified arguments.
     FdoFunctionDefinition (FdoString                       *name,
@@ -53,16 +52,14 @@ protected:
                            FdoPropertyType                 returnPropertyType,
                            FdoDataType                     returnType,
                            FdoArgumentDefinitionCollection *arguments,
-                           FdoFunctionCategoryType         functionCategoryType,
-                           bool                            supportsVariableArgumentsList);
+                           FdoFunctionCategoryType         functionCategoryType);
 
     /// Constructs an instance of an FdoFunctionDefinition using the specified arguments.
     FdoFunctionDefinition (FdoString                        *name,
                            FdoString                        *description,
                            bool                             isAggregate,
                            FdoSignatureDefinitionCollection *signatures,
-                           FdoFunctionCategoryType          functionCategoryType,
-                           bool                             supportsVariableArgumentsList);
+                           FdoFunctionCategoryType          functionCategoryType);
 
     /// Constructs an instance of an FdoFunctionDefinition using default values.
     FdoFunctionDefinition();
@@ -90,8 +87,6 @@ public:
     /// Input the category the function belongs to. If not specified the function is
     /// categorized as unspecified. Valid values for this parameter are defined in the
     /// enumeration FdoFunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FdoFunctionDefinition
@@ -100,8 +95,7 @@ public:
                                                   FdoString                       *description,
                                                   FdoDataType                     returnType,
                                                   FdoArgumentDefinitionCollection *arguments,
-                                                  FdoFunctionCategoryType         functionCategoryType = FdoFunctionCategoryType_Unspecified,
-                                                  bool                            supportsVariableArgumentsList = false);
+                                                  FdoFunctionCategoryType         functionCategoryType = FdoFunctionCategoryType_Unspecified);
 
     /// \brief
     /// Constructs an instance of an FdoFunctionDefinition using the specified arguments.
@@ -120,8 +114,6 @@ public:
     /// Input the category the function belongs to. If not specified the function is
     /// categorized as unspecified. Valid values for this parameter are defined in the
     /// enumeration FdoFunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FdoFunctionDefinition
@@ -131,8 +123,7 @@ public:
                                                   FdoPropertyType                 returnPropertyType,
                                                   FdoDataType                     returnType,
                                                   FdoArgumentDefinitionCollection *arguments,
-                                                  FdoFunctionCategoryType         functionCategoryType = FdoFunctionCategoryType_Unspecified,
-                                                  bool                            supportsVariableArgumentsList = false);
+                                                  FdoFunctionCategoryType         functionCategoryType = FdoFunctionCategoryType_Unspecified);
 
     /// \brief
     /// Constructs an instance of an FdoFunctionDefinition using the specified arguments.
@@ -149,8 +140,6 @@ public:
     /// Input the category the function belongs to. If not specified the function is
     /// categorized as unspecified. Valid values for this parameter are defined in the
     /// enumeration FdoFunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FdoFunctionDefinition
@@ -159,8 +148,7 @@ public:
                                                   FdoString                        *description,
                                                   bool                             isAggregate,
                                                   FdoSignatureDefinitionCollection *signatures,
-                                                  FdoFunctionCategoryType          functionCategoryType = FdoFunctionCategoryType_Unspecified,
-                                                  bool                             supportsVariableArgumentsList = false);
+                                                  FdoFunctionCategoryType          functionCategoryType = FdoFunctionCategoryType_Unspecified);
 
     /// \brief
     /// Gets the name of the function.
@@ -240,18 +228,8 @@ public:
         return m_functionCategoryType;
     }
 
-	/// \brief
-    /// Indicates that this object allows its list of arguments to be variable so the 
-    /// last argument may be repeated. 
-    /// 
-    /// \return
-    /// Returns true if the function allows a variable list of arguments and false otherwise.
-    /// 
-    FDO_API bool SupportsVariableArgumentsList();
-
 protected:
     bool                                     m_isAggregate;
-    bool                                     m_supportsVariableArgumentsList;
     wchar_t                                  *m_name;
     wchar_t                                  *m_description;
     FdoReadOnlySignatureDefinitionCollection *m_signatures;

@@ -23,14 +23,9 @@
 #include "mgIPoint.h"
 #include "mgObjectFactory.h"
 
-FdoIMultiPoint* NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::GetImpObj()
+FdoIMultiPoint * NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::GetImpObj()
 {
-	return static_cast<FdoIMultiPoint*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIMultiPoint *>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::IMultiPointImp(System::IntPtr unmanaged, System::Boolean autoDelete)
@@ -38,9 +33,9 @@ NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::IMultiPointImp(System::IntPtr unmanage
 {
 }
 
-NAMESPACE_OSGEO_GEOMETRY::IPoint^ NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::default::get(System::Int32 index)
+NAMESPACE_OSGEO_GEOMETRY::IPoint *NAMESPACE_OSGEO_GEOMETRY::IMultiPointImp::get_Item(System::Int32 index)
 {
-	FdoIPoint* ret;
+	FdoIPoint *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetItem(index))
-	return NAMESPACE_OSGEO_GEOMETRY::ObjectFactory::CreateIPoint(IntPtr(ret), true);
+	return NAMESPACE_OSGEO_GEOMETRY::ObjectFactory::CreateIPoint(ret, true);
 }

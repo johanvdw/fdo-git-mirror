@@ -18,12 +18,10 @@
 
 #pragma once
 
-#include "FDO\Commands\mgParameterDirection.h"
-
 class FdoParameterValue;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
-ref class LiteralValue;
+public __gc class LiteralValue;
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
@@ -33,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
 /// The ParameterValue class specifies a value for a particular parameter.
 /// Instances of this class are used to specify a value to bind to a parameter
 /// when a command is executed.
-public ref class ParameterValue sealed : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __sealed __gc class ParameterValue : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -47,7 +45,7 @@ public:
     /// \param name 
     /// Input the name of the parameter value
     /// 
-	ParameterValue(System::String^ name);
+	ParameterValue(System::String* name);
 
     /// \brief
     /// Constructs an instance of an ParameterValue using the specified arguments.
@@ -57,7 +55,7 @@ public:
     /// \param value 
     /// Input the literal parameter value
     /// 
-	ParameterValue(System::String^ name, NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue^ value);
+	ParameterValue(System::String* name, NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue* value);
 
     /// \brief
     /// Gets the parameter name the value should bind to as a string.
@@ -65,6 +63,8 @@ public:
     /// \return
     /// Returns the parameter name
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the parameter name the value should bind to as a string.
     /// 
@@ -74,11 +74,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Gets the value to bind to the parameter as an LiteralValue.
@@ -86,6 +82,8 @@ public:
     /// \return
     /// Returns literal value
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue* get_Value();
+
     /// \brief
     /// Sets the value to bind to the parameter as an LiteralValue.
     /// 
@@ -95,32 +93,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue^ Value
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue^ value);
-    }
-
-    /// \brief
-    /// Gets the function direction of the the command parameter.
-    /// 
-    /// \return
-    /// Returns the direction enumeration value
-    ///
-    /// \brief
-    /// Sets the function direction of the parameter value.
-    /// 
-    /// \param value 
-    /// Input the direction enumeration value
-    /// 
-    /// \return
-    /// Returns nothing
-    /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS::ParameterDirection Direction
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS::ParameterDirection get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS::ParameterDirection value);
-    }
+	__property System::Void set_Value(NAMESPACE_OSGEO_FDO_EXPRESSION::LiteralValue* value);
 
     /// \brief
     /// Sets the value to bind to the parameter as a string.
@@ -131,20 +104,20 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ value
-    {
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Value(System::String* value);
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	ParameterValue(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoParameterValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS

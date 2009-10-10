@@ -21,12 +21,12 @@
 #ifdef _WIN32
 #pragma once
 #endif // _WIN32
-#include "FdoDefaultFeatureReader.h"
+
 
 class ShpFeatureReader :
-    public ShpReader<FdoDefaultFeatureReader>
+    public ShpReader<FdoIFeatureReader>
 {
-    typedef ShpReader<FdoDefaultFeatureReader> superclass;
+    typedef ShpReader<FdoIFeatureReader> superclass;
 
 protected:
     ShpFeatureReader (); // to satisfy _NoAddRefReleaseOnFdoPtr 

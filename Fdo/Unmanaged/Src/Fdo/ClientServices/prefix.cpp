@@ -380,8 +380,7 @@ br_strndup (char *str, size_t size)
 char *
 br_extract_dir (const char *path)
 {
-	const char *end;
-	char *result;
+	char *end, *result;
 
 	br_return_val_if_fail (path != NULL, NULL);
 
@@ -415,8 +414,7 @@ br_extract_dir (const char *path)
 char *
 br_extract_prefix (const char *path)
 {
-	const char *end;
-	char *tmp, *result;
+	char *end, *tmp, *result;
 
 	br_return_val_if_fail (path != NULL, NULL);
 

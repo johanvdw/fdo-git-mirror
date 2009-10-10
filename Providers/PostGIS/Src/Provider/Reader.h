@@ -105,9 +105,6 @@ public:
     /// Get name of property at given ordinal position.
     virtual FdoString* GetPropertyName(FdoInt32 index);
 
-    /// Get index of property with the specified name.
-    virtual FdoInt32 GetPropertyIndex(FdoString* propertyName);
-
     /// Get data type of property with the specified name.
     virtual FdoDataType GetDataType(FdoString* propertyName);
 
@@ -327,12 +324,6 @@ template <typename T>
 FdoString* Reader<T>::GetPropertyName(FdoInt32 index)
 {
     return mSQLReader->GetColumnName(index);
-}
-
-template <typename T>
-FdoInt32 Reader<T>::GetPropertyIndex(FdoString* propertyName)
-{
-    return mSQLReader->GetColumnIndex(propertyName);
 }
 
 template <typename T>

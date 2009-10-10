@@ -20,14 +20,12 @@
 #include <Sm/Ph/DbObject.h>
 #include <Sm/Ph/Mgr.h>
 #include <Sm/Ph/Owner.h>
-#include <Sm/Ph/IndexCollection.h>
 #include <Sm/Ph/DependencyCollection.h>
 #include <Sm/Ph/Rd/QueryReader.h>
 #include <Sm/Ph/Rd/ColumnReader.h>
 #include <Sm/Ph/Rd/BaseObjectReader.h>
 #include <Sm/Ph/Rd/PkeyReader.h>
 #include <Sm/Ph/Rd/FkeyReader.h>
-#include <Sm/Ph/Rd/IndexReader.h>
 #include <Sm/Ph/DependencyReader.h>
 #include <Sm/Ph/TableComponentReader.h>
 #include <Sm/Error.h>
@@ -77,18 +75,6 @@ FdoSmPhColumnsP FdoSmPhDbObject::GetPkeyColumns()
     LoadPkeys();
 
 	return mPkeyColumns;
-}
-
-const FdoSmPhIndexCollection* FdoSmPhDbObject::RefIndexes() const
-{
-    return (FdoSmPhIndexCollection*) ((FdoSmPhDbObject*) this)->GetIndexes();
-}
-
-FdoSmPhIndexesP FdoSmPhDbObject::GetIndexes()
-{
-    LoadIndexes();
-
-	return mIndexes;
 }
 
 const FdoSmPhFkeyCollection* FdoSmPhDbObject::RefFkeysUp() const
@@ -155,59 +141,6 @@ FdoSmPhColumnsP FdoSmPhDbObject::GetBestIdentity( FdoSmPhDbObjectP dbObject )
     if ( bestIdentity ) {
         if ( dbObject && !dbObject->HasColumns(bestIdentity) ) 
             bestIdentity = NULL;
-    }
-
-    if ( bestIdentity == NULL ) {
-
-        // No primary key, use best unique index.
-
-        int idx = 0;
-        long ixSize = (FdoSmPhIndex::mMaxWeight * 2);
-        long bestIxSize = (FdoSmPhIndex::mMaxWeight * 2);
-        FdoSmPhIndexP bestIndex;
-
-        FdoSmPhIndexesP indexes = GetIndexes();
-
-        for ( idx = 0; idx < indexes->GetCount(); idx++ ) {
-            FdoSmPhIndexP index = indexes->GetItem(idx);
-            FdoSmPhColumnsP idxCols = index->GetColumns();
-
-            // Weed out non-unique indexes or indexes with no columns
-            if ( index->GetIsUnique() && (index->RefColumns()->GetCount() > 0) ) {
-                // Calculate index compactness score.
-                ixSize = index->GetWeight();
-
-                // Weed out indexes whose columns are too big.
-                // If a database object was specified, skip indexes whose columns
-                // are not all present on the database object.
-                if ( (ixSize < FdoSmPhIndex::mMaxWeight) && ((!dbObject) || dbObject->HasColumns(idxCols)) ) {
-                    if ( bestIndex ) {
-                        // Index already chosen, see if this one is better.
-                        if (idxCols->GetCount() < bestIndex->RefColumns()->GetCount() ) {
-                            // This one has few columns, take it instead.
-                            bestIndex = index;
-                            bestIxSize = ixSize;
-                        }
-                        else if ( idxCols->GetCount() == bestIndex->RefColumns()->GetCount() ) {
-                            // same number of columns, take this index only if it has a better
-                            // compactness score.
-                            if ( ixSize < bestIxSize ) {
-                                bestIndex = index;
-                                bestIxSize = ixSize;
-                            }
-                        }
-                    }
-                    else {
-                        // No index chosen yet, chose this one initially.
-                        bestIndex = index;
-                        bestIxSize = ixSize;
-                    }
-                }
-            }
-        }
-
-        if ( bestIndex )
-            bestIdentity = bestIndex->GetColumns();
     }
 
     return bestIdentity;
@@ -431,12 +364,6 @@ FdoBoolean FdoSmPhDbObject::HasColumns( FdoSmPhColumnsP columns )
     }
 
     return hasColumns;
-}
-
-void FdoSmPhDbObject::DiscardIndex( FdoSmPhIndex* index )
-{
-    FdoSmPhIndexesP indexes = GetIndexes();
-    indexes->Remove( index );
 }
 
 FdoStringsP FdoSmPhDbObject::GetRefColsSql()
@@ -853,11 +780,6 @@ void FdoSmPhDbObject::Commit( bool fromParent, bool isBeforeParent )
     FdoSmPhDbElement::Commit( fromParent, isBeforeParent );
 }
 
-void FdoSmPhDbObject::ExecuteDDL( FdoStringP sqlStmt, FdoSmPhDbObject* refTable, bool isDDL )
-{
-    GetManager()->ExecuteSQL( sqlStmt, isDDL );
-}
-
 /*
 void FdoSmPhDbObject::CheckNewColumn(
     FdoStringP columnName, 
@@ -1016,18 +938,6 @@ void FdoSmPhDbObject::ForceDelete()
     }
 }
 
-void FdoSmPhDbObject::LoadFkeyRefCands()
-{
-    int idx;
-
-    if ( mFkeysUp ) {
-        for ( idx = 0; idx < mFkeysUp->GetCount(); idx++ ) {
-            FdoSmPhFkeyP fkey = mFkeysUp->GetItem(idx);
-            fkey->LoadRefCand();
-        }
-    }
-}
-
 FdoSchemaExceptionP FdoSmPhDbObject::Errors2Exception(FdoSchemaException* pFirstException ) const
 {
 
@@ -1040,12 +950,6 @@ FdoSchemaExceptionP FdoSmPhDbObject::Errors2Exception(FdoSchemaException* pFirst
 	// Add errors for the database object's columns.
 	for ( i = 0; i < pColumns->GetCount(); i++ )
 		pException = pColumns->RefItem(i)->Errors2Exception(pException);
-
-    if ( mIndexes ) {
-        // Add errors for the indexes.
-	    for ( i = 0; i < mIndexes->GetCount(); i++ )
-		    pException = mIndexes->RefItem(i)->Errors2Exception(pException);
-    }
 
     if ( mFkeysUp ) {
 
@@ -1125,14 +1029,6 @@ FdoPtr<FdoSmPhTableComponentReader> FdoSmPhDbObject::NewTablePkeyReader( FdoSmPh
     );
 }
 
-FdoPtr<FdoSmPhTableIndexReader> FdoSmPhDbObject::NewTableIndexReader( FdoSmPhRdIndexReaderP rdr )
-{
-    return new FdoSmPhTableIndexReader(
-        GetName(),
-        rdr
-    );
-}
-
 FdoPtr<FdoSmPhTableComponentReader> FdoSmPhDbObject::NewTableFkeyReader( FdoSmPhRdFkeyReaderP rdr )
 {
     return new FdoSmPhTableComponentReader(
@@ -1155,17 +1051,6 @@ FdoStringsP FdoSmPhDbObject::_getRefColsSql( FdoSmPhColumnCollection* columns )
     return colClauses;
 }
 
-FdoSmPhBaseObjectsP FdoSmPhDbObject::Get_BaseObjects()
-{
-    return mBaseObjects;
-}
-
-void FdoSmPhDbObject::DiscardBaseObjects()
-{
-    mBaseObjects = NULL;
-}
-
-
 void FdoSmPhDbObject::SetLtMode( FdoLtLockModeType mode )
 {
     mLtMode = mode;
@@ -1178,10 +1063,7 @@ void FdoSmPhDbObject::SetLockingMode( FdoLtLockModeType mode )
 
 void FdoSmPhDbObject::SetRootObject( FdoSmPhDbObjectP rootObject )
 {
-    if ( mBaseObjects ) 
-        mBaseObjects->Clear();
-    else 
-        mBaseObjects = new FdoSmPhBaseObjectCollection( this );
+    mBaseObjects->Clear();
 
     if ( rootObject ) {
         FdoSmPhBaseObjectP baseObject = NewBaseObject( rootObject );
@@ -1298,94 +1180,6 @@ void FdoSmPhDbObject::LoadPkeys( FdoSmPhReaderP pkeyRdr, bool isSkipAdd )
 	        mPkeyColumns->Add(pkeyColumn);
 	    }
     }
-}
-
-bool FdoSmPhDbObject::LoadIndexes(void)
-{
-    bool ret = false; 
-
-    // Do nothing if already loaded
-
-    // If not loaded, try bulk fetch of indexes for this table plus some other
-    // candidates.
-    if ( !IndexesLoaded() && (GetElementState() != FdoSchemaElementState_Added) ) {
-        FdoSmPhOwner* pOwner = (FdoSmPhOwner*) GetParent();
-        pOwner->CacheCandIndexes( GetName() );
-    }
-
-	if ( !IndexesLoaded() ) {
-        // Not loaded by bulk fetch, just load indexes for this table.
-        mIndexes = new FdoSmPhIndexCollection();
-
-        // Skip load if table is new
-        if ( GetElementState() != FdoSchemaElementState_Added ) {
-            FdoPtr<FdoSmPhRdIndexReader> indexRdr = CreateIndexReader();
-
-            ret = LoadIndexes( NewTableIndexReader(indexRdr), false );
-        }
-    }
-
-    if ( !mIndexes ) 
-        mIndexes = new FdoSmPhIndexCollection();
-
-    return ret;
-}
-
-bool FdoSmPhDbObject::LoadIndexes( FdoSmPhTableIndexReaderP indexRdr, bool isSkipAdd )
-{
-    FdoStringP            nextIndex;
-    FdoSmPhIndexP         index;
-    bool                  ret = false;
-
-    // Read each index and column
-    while ( indexRdr->ReadNext() ) {
-        ret = true;
-        nextIndex = indexRdr->GetString(L"",L"index_name");
-
-        if ( !index || (nextIndex != index->GetName()) ) {
-            // hit the next index. Create an object for it
-            index = CreateIndex( indexRdr ); 
-                        
-            if ( index && ! isSkipAdd )
-                mIndexes->Add(index);
-        }
-
-        FdoStringP columnName = indexRdr->GetString(L"",L"column_name");
-        FdoSmPhColumnP column = GetColumns()->FindItem(columnName);
-
-        if ( column ) {
-            // Add the column to the current index.
-            index->AddColumn( column );
-        }
-        else {
-            // Index column must be in this table.
-            if ( GetElementState() != FdoSchemaElementState_Deleted )
-		        AddIndexColumnError( columnName );
-        }
-    }
-
-    return ret;
-}
-
-bool FdoSmPhDbObject::CacheIndexes( FdoSmPhRdIndexReaderP rdr )
-{
-    bool ret = false;
-
-    // Do nothing if indexes already loaded
-	if ( !mIndexes ) {
-        mIndexes = new FdoSmPhIndexCollection();
-
-        ret = LoadIndexes( NewTableIndexReader(rdr), false );
-    }
-    else
-        ret = LoadIndexes( NewTableIndexReader(rdr), true );
-
-    return ret;
-}
-
-bool FdoSmPhDbObject::IndexesLoaded()
-{
-    return (mIndexes != NULL);
 }
 
 void FdoSmPhDbObject::LoadFkeys(void)
@@ -1608,33 +1402,6 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
     }
 }
 
-FdoSmPhIndexP FdoSmPhDbObject::CreateIndex(
-    FdoPtr<FdoSmPhTableIndexReader> rdr
-)
-{
-    FdoSmPhIndexP index;
-
-    switch ( rdr->GetIndexType() ) {
-    case FdoSmPhIndexType_Scalar:
-        index = NewIndex(
-            rdr->GetString(L"",L"index_name"), 
-            (rdr->GetString(L"",L"uniqueness") == L"UNIQUE") ? true : false,
-            FdoSchemaElementState_Unchanged
-        );
-        break;
-
-    case FdoSmPhIndexType_Spatial:
-        index = NewSpatialIndex(
-            rdr->GetString(L"",L"index_name"), 
-            (rdr->GetString(L"",L"uniqueness") == L"UNIQUE") ? true : false,
-            FdoSchemaElementState_Unchanged
-        );
-        break;
-    }
-
-    return index;
-}
-
 FdoSmPhBaseObjectP FdoSmPhDbObject::NewBaseObject(
     FdoPtr<FdoSmPhTableComponentReader> baseObjRdr
 )
@@ -1713,19 +1480,6 @@ void FdoSmPhDbObject::AddPkeyColumnError(FdoStringP columnName)
         FdoSchemaException::Create(
             FdoSmError::NLSGetMessage(
                 FDO_NLSID(FDOSM_217), 
-				(FdoString*) columnName, 
-				(FdoString*) GetQName()
-            )
-        )
-	);
-}
-
-void FdoSmPhDbObject::AddIndexColumnError(FdoStringP columnName)
-{
-	GetErrors()->Add( FdoSmErrorType_Other, 
-        FdoSchemaException::Create(
-            FdoSmError::NLSGetMessage(
-                FDO_NLSID(FDOSM_3), 
 				(FdoString*) columnName, 
 				(FdoString*) GetQName()
             )

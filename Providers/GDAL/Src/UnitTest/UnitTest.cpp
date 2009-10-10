@@ -26,9 +26,7 @@
 #include "RfpNoConfigTest.h"
 #include "RfpTestExample1.h"
 #include "RfpOverridesSerializeTest.h"
-#ifndef CPPUNIT_MODERN_API
-	#include "RfpTestLogOutputter.h"
-#endif
+#include "RfpTestLogOutputter.h"
 #include "RfpTestGetRaster.h"
 #include "RfpTestThorough.h"
 #include "RfpTestMosaic.h"
@@ -178,7 +176,7 @@ void UnitTestMainProc()
     LPSTR cmd_line = GetCommandLine ();
     char *tmp = (char*)_alloca (strlen (cmd_line) + 1);
     strcpy (tmp, cmd_line);
-    _strupr (tmp);
+    strupr (tmp);
     bool wait = (NULL == strstr (tmp, "-NOWAIT"));
 
 	runner.run("", wait); 

@@ -35,7 +35,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The box may be initially empty, meaning that no dimensions have an
 /// assigned value. Each individual extent may be unassigned, in which case using its
 /// accessor will return numeric_limits::quiet_NaN().
-public ref class IEnvelopeImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IEnvelope
+public __gc class IEnvelopeImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IEnvelope
 {
 public:
     /// \brief
@@ -50,6 +50,11 @@ public:
     /// 
 	IEnvelopeImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
 public:
     /// \brief
     /// Gets the minimum X coordinate value.
@@ -63,10 +68,7 @@ public:
     /// \return
     /// Returns the miniumum X ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MinX
-    {
-        System::Double get();
-    }
+	__property System::Double get_MinX();
 
     /// \brief
     /// Gets the minimum Y coordinate value.
@@ -80,10 +82,7 @@ public:
     /// \return
     /// Returns the miniumum Y ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MinY
-    {
-        System::Double get();
-    }
+	__property System::Double get_MinY();
 
     /// \brief
     /// Gets the minimum Z coordinate value.
@@ -97,10 +96,7 @@ public:
     /// \return
     /// Returns the miniumum Z ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MinZ
-    {
-        System::Double get();
-    }
+	__property System::Double get_MinZ();
 
     /// \brief
     /// Gets the maximum X coordinate value.
@@ -114,10 +110,7 @@ public:
     /// \return
     /// Returns the maxiumum X ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MaxX
-    {
-        System::Double get();
-    }
+	__property System::Double get_MaxX();
 
     /// \brief
     /// Gets the maximum Y coordinate value.
@@ -131,10 +124,7 @@ public:
     /// \return
     /// Returns the maxiumum Y ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MaxY
-    {
-        System::Double get();
-    }
+	__property System::Double get_MaxY();
 
     /// \brief
     /// Gets the maximum Z coordinate value.
@@ -148,10 +138,7 @@ public:
     /// \return
     /// Returns the maxiumum Z ordinate; numeric_limits::quiet_NaN() by default
     /// 
-    virtual property System::Double MaxZ
-    {
-        System::Double get();
-    }
+	__property System::Double get_MaxZ();
 
     /// \brief
     /// Indicates whether the envelope's extents are set.
@@ -159,15 +146,10 @@ public:
     /// \return
     /// Returns 'true' if none of the X, Y and Z extents have been set; 'false' otherwise
     /// 
-    virtual property System::Boolean IsEmpty
-    {
-        System::Boolean get();
-    }
+	__property System::Boolean get_IsEmpty();
 
-internal:
-	FdoIEnvelope* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIEnvelope *GetImpObj();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

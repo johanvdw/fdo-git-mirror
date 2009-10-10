@@ -26,7 +26,6 @@
 #include <Sm/Lp/PropertyMappingConcrete.h>
 #include <Sm/Lp/ObjectPropertyClass.h>
 #include "../Filter/FdoRdbmsFilterProcessor.h"
-#include "FdoDefaultFeatureReader.h"
 
 class FdoRdbmsConnection;
 class ISchemaHandler;
@@ -135,7 +134,7 @@ private:
 
 };
 
-class FdoRdbmsFeatureReader: public FdoDefaultFeatureReader
+class FdoRdbmsFeatureReader: public FdoIFeatureReader
 {
   friend class FdoRdbmsSelectCommand;
   friend class FdoRdbmsDataReader;
@@ -189,14 +188,8 @@ protected:
 public:
     // This is an internal method to support the DataReader
     virtual FdoInt32 GetPropertyCount();
-
-    // Renamed it to GetPropertyNameForDataReader() in order to have least impact at this time.
-    // as the default implementation for access by index needs GetPropertyName() which is previously
-    // not defined for FdoIFeatureReader.
-    // TODO: try to merge it with GetPropertyName()derived from FdoDefaultFeatureReader
     // This is an internal method to support the DataReader
-    virtual FdoString* GetPropertyNameForDataReader(FdoInt32 index);
-
+    virtual FdoString* GetPropertyName(FdoInt32 index);
     // This is an internal method to support the DataReader
     virtual FdoDataType GetDataType(FdoString* propertyName);
     // This is an internal method to support the DataReader
@@ -208,8 +201,6 @@ private:
     FdoByteArray* GetGeometry(const wchar_t* propertyName, bool checkIsNullOnly, GdbiQueryResult *query);
 
     FdoClassDefinition* FilterClassDefinition( FdoClassDefinition* classDef, bool isBaseClass = false );
-    int GetColumnIndex(const char *propName, bool avoidCalculations = true);
-    void ProcessCalculations(std::vector<int>& idxs);
 
 public:
 
@@ -271,7 +262,6 @@ public:
       FdoFeatureSchemaCollection     *mSchemaCollection; // Used to cach the schema definition
       bool              mCurrentRevisionNumberValid;
       FdoIdentifierCollection *mProperties; // list of properties to be returned
-      FdoIdentifierCollection *mComputedProperties; // list of computed properties to be returned
       int               mLevel; //
       FdoClassDefinition *mFdoClassDefinition;
 
@@ -282,8 +272,8 @@ public:
       int               mUnskippedColCount;
       GdbiColumnDesc    *mColList;
 
-      FdoStringP        mClassIdPropName;
-      FdoStringP        mRevNumPropName;
+      FdoStringP        mClassIdColName;
+      FdoStringP        mRevNumColName;
 
       StringMap         mStringMap;
 

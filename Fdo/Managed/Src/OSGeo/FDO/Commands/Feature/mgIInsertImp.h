@@ -24,16 +24,16 @@
 class FdoIInsert;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
-ref class Identifier;
+public __gc class Identifier;
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
-ref class PropertyValueCollection;
-ref class BatchParameterValueCollection;
+public __gc class PropertyValueCollection;
+public __gc class BatchParameterValueCollection;
 END_NAMESPACE_OSGEO_FDO_COMMANDS
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
-interface class IFeatureReader;
+public __gc __interface IFeatureReader;
 
 /// \ingroup (OSGeoFDOCommandsFeature)
 /// \brief
@@ -48,7 +48,7 @@ interface class IFeatureReader;
 /// by the class name. Instances at a nested scope (i.e. instances within a
 /// object collection property) are referred to by the containing class name,
 /// followed by a '.', followed by the object collection property name.
-private ref class IInsertImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IInsertImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                 public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IInsert
 {
 public:
@@ -58,6 +58,8 @@ public:
     /// \return
     /// Returns the class name.
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* get_FeatureClassName();
+
     /// \brief
     /// Sets the name of the class to be operated upon as an Identifier.
     /// 
@@ -67,11 +69,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ FeatureClassName
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ value);
-    }
+	__property System::Void set_FeatureClassName(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* value);
 
     /// \brief
     /// Sets the name of the class to be operated upon as an Identifier.
@@ -82,7 +80,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetFeatureClassName(System::String^ value);
+	System::Void SetFeatureClassName(System::String* value);
 
     /// \brief
     /// Gets the PropertyValueCollection that specifies the names and values
@@ -91,10 +89,7 @@ public:
     /// \return
     /// Returns the list of properties and their values.
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection^ PropertyValues
-    {
-        virtual NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS::PropertyValueCollection* get_PropertyValues();
 
     /// \brief
     /// Gets the BatchParameterValueCollection that can be used for optimized
@@ -108,10 +103,7 @@ public:
     /// \return
     /// Returns BatchParameterValueCollection
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS::BatchParameterValueCollection^ BatchParameterValues
-    {
-        virtual NAMESPACE_OSGEO_FDO_COMMANDS::BatchParameterValueCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS::BatchParameterValueCollection* get_BatchParameterValues();
 
     /// \brief
     /// Executes the insert command and returns a reference to an
@@ -126,17 +118,15 @@ public:
     /// \return
     /// Returns an IFeatureReader
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IFeatureReader* Execute();
 
-internal:
+public private:
 	IInsertImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIInsert* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

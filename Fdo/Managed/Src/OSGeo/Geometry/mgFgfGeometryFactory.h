@@ -22,36 +22,36 @@
 
 class FdoFgfGeometryFactory;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-ref class CurvePolygonCollection;
-ref class CurveSegmentCollection;
-ref class CurveStringCollection;
-ref class DirectPositionCollection;
-ref class GeometryCollection;
+public __gc class CurvePolygonCollection;
+public __gc class CurveSegmentCollection;
+public __gc class CurveStringCollection;
+public __gc class DirectPositionCollection;
+public __gc class GeometryCollection;
 
-interface class ICircularArcSegment;
-interface class ICurvePolygon;
-interface class ICurveString;
-interface class IDirectPosition;
-interface class IEnvelope;
-interface class IGeometry;
-interface class ILineString;
-interface class ILineStringSegment;
-interface class ILinearRing;
-interface class IMultiCurvePolygon;
-interface class IMultiCurveString;
-interface class IMultiGeometry;
-interface class IMultiLineString;
-interface class IMultiPoint;
-interface class IMultiPolygon;
-interface class IPoint;
-interface class IPolygon;
-interface class IRing;
+public __gc __interface ICircularArcSegment;
+public __gc __interface ICurvePolygon;
+public __gc __interface ICurveString;
+public __gc __interface IDirectPosition;
+public __gc __interface IEnvelope;
+public __gc __interface IGeometry;
+public __gc __interface ILineString;
+public __gc __interface ILineStringSegment;
+public __gc __interface ILinearRing;
+public __gc __interface IMultiCurvePolygon;
+public __gc __interface IMultiCurveString;
+public __gc __interface IMultiGeometry;
+public __gc __interface IMultiLineString;
+public __gc __interface IMultiPoint;
+public __gc __interface IMultiPolygon;
+public __gc __interface IPoint;
+public __gc __interface IPolygon;
+public __gc __interface IRing;
 
-ref class LineStringCollection;
-ref class LinearRingCollection;
-ref class PointCollection;
-ref class PolygonCollection;
-ref class RingCollection;
+public __gc class LineStringCollection;
+public __gc class LinearRingCollection;
+public __gc class PointCollection;
+public __gc class PolygonCollection;
+public __gc class RingCollection;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -60,7 +60,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \brief
 /// The FgfGeometryFactory class is an FGF-based Geometry factory, a concrete class that
 /// implements all the members from GeometryFactoryAbstract
-public ref class FgfGeometryFactory : public GeometryFactoryAbstract
+public __gc class FgfGeometryFactory : public GeometryFactoryAbstract
 {
 public:
     /// \brief
@@ -76,10 +76,8 @@ public:
 	FgfGeometryFactory(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
-	FdoFgfGeometryFactory* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoFgfGeometryFactory *GetImpObj();
 /// \endcond
 
 public:
@@ -97,7 +95,7 @@ public:
     /// \return
     /// Returns an instance of IGeometry
     /// 
-	NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometryFromFgf(array<System::Byte>^ bytes);
+	NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometryFromFgf(System::Byte bytes[]);
 
     /// \brief
     /// Creates a Geometry from FGF data.
@@ -112,7 +110,7 @@ public:
     /// \return
     /// Returns an instance of IGeometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometryFromFgf(array<System::Byte>^ bytes, Int32 count);
+    NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometryFromFgf(System::Byte bytes[], Int32 count);
 
     /// \brief
     /// Gets FGF data from a Geometry.
@@ -123,7 +121,7 @@ public:
     /// \return
     /// Returns FGF data representing the Geometry
     /// 
-    array<System::Byte>^ GetFgf(NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry);
+    System::Byte GetFgf(NAMESPACE_OSGEO_GEOMETRY::IGeometry * geometry)[];
 
     /// \brief
     /// Creates an FGF-based Geometry from OpenGIS WKB data.
@@ -134,7 +132,7 @@ public:
     /// \return
     /// Returns a Geometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometryFromWkb(array<System::Byte>^ bytes);
+    NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometryFromWkb(System::Byte bytes[]);
 
     /// \brief
     /// Gets OpenGIS WKB data from a Geometry.
@@ -145,7 +143,7 @@ public:
     /// \return
     /// Returns WKB data representing the Geometry
     /// 
-    array<System::Byte>^ GetWkb(NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry);
+    System::Byte GetWkb(NAMESPACE_OSGEO_GEOMETRY::IGeometry * geometry)[];
 
     /// Methods from GeometryFactoryAbstract
 
@@ -158,8 +156,8 @@ public:
     /// \return
     /// Returns a LineString
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILineString^ CreateLineString(
-		NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ positions);
+    NAMESPACE_OSGEO_GEOMETRY::ILineString* CreateLineString(
+		NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection * positions);
 
     /// \brief
     /// Creates a LineString object by copying from an array of ordinates.
@@ -174,10 +172,10 @@ public:
     /// \return
     /// Returns a LineString
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILineString^ CreateLineString(
+    NAMESPACE_OSGEO_GEOMETRY::ILineString* CreateLineString(
 		System::Int32 dimensionType,
 		System::Int32 ordinateNumber,
-		array<System::Double>^ ordinates);
+		System::Double ordinates[]);
 
     /// \brief
     /// Creates a Geometry object by copying from another Geometry.
@@ -195,8 +193,8 @@ public:
     /// \return
     /// Returns an instance of IGeometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometry(
-        NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry);
+    NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometry(
+        NAMESPACE_OSGEO_GEOMETRY::IGeometry * geometry);
 
     /// \brief
     /// Creates a Geometry object by converting from a text string.
@@ -207,7 +205,7 @@ public:
     /// \return
     /// Returns an instance of IGeometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometry(System::String^ text);
+    NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometry(System::String* text);
 
     /// \brief
     /// Creates a Geometry object by converting from an envelope.
@@ -222,8 +220,8 @@ public:
     /// \return
     /// Returns a geometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IGeometry^ CreateGeometry(
-        NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ envelope);
+    NAMESPACE_OSGEO_GEOMETRY::IGeometry * CreateGeometry(
+        NAMESPACE_OSGEO_GEOMETRY::IEnvelope * envelope);
 
     /// Point
 
@@ -236,8 +234,8 @@ public:
     /// \return
     /// Returns a point
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IPoint^ CreatePoint(
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ position);
+    NAMESPACE_OSGEO_GEOMETRY::IPoint* CreatePoint(
+        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition* position);
 
     /// \brief
     /// Creates an point object by copying from an array of ordinates.
@@ -250,9 +248,9 @@ public:
     /// \return
     /// Returns a point
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IPoint^ CreatePoint(
+    NAMESPACE_OSGEO_GEOMETRY::IPoint* CreatePoint(
 		System::Int32 dimensionality,
-		array<System::Double>^ ordinates);
+		System::Double ordinates[]);
 
     /// LinearRing
 
@@ -268,8 +266,8 @@ public:
     /// \return
     /// Returns a LinearRing
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ CreateLinearRing(
-        NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ positions);
+    NAMESPACE_OSGEO_GEOMETRY::ILinearRing* CreateLinearRing(
+        NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection* positions);
 
     /// \brief
     /// Creates a LinearRing object by copying from an array of ordinates.
@@ -287,10 +285,10 @@ public:
     /// \return
     /// Returns a LinearRing
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ CreateLinearRing(
+    NAMESPACE_OSGEO_GEOMETRY::ILinearRing* CreateLinearRing(
 		System::Int32 dimensionality,
 		System::Int32 ordinateNumber,
-		array<System::Double>^ ordinates);
+		System::Double ordinates[]);
 
     /// LineStringSegment
 
@@ -303,8 +301,8 @@ public:
     /// \return
     /// Returns a LineStringSegment
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment^ CreateLineStringSegment(
-        NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection^ positions);
+    NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment* CreateLineStringSegment(
+        NAMESPACE_OSGEO_GEOMETRY::DirectPositionCollection* positions);
 
     /// \brief
     /// Creates a LineStringSegment object by copying from an array of ordinates.
@@ -319,10 +317,10 @@ public:
     /// \return
     /// Returns a LineStringSegment
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment^ CreateLineStringSegment(
+    NAMESPACE_OSGEO_GEOMETRY::ILineStringSegment* CreateLineStringSegment(
 		System::Int32 dimType,
 		System::Int32 ordinateNumber, 
-		array<System::Double>^ ordinates);
+		System::Double ordinates[]);
 
     /// Polygon
 
@@ -337,9 +335,9 @@ public:
     /// \return
     /// Returns a polygon
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IPolygon^ CreatePolygon(
-        NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ exteriorRing, 
-        NAMESPACE_OSGEO_GEOMETRY::LinearRingCollection^ interiorRings);
+    NAMESPACE_OSGEO_GEOMETRY::IPolygon* CreatePolygon(
+        NAMESPACE_OSGEO_GEOMETRY::ILinearRing* exteriorRing, 
+        NAMESPACE_OSGEO_GEOMETRY::LinearRingCollection* interiorRings);
 
     /// MultiPoint
 
@@ -352,8 +350,8 @@ public:
     /// \return
     /// Returns a MultiPoint
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiPoint^ CreateMultiPoint(
-        NAMESPACE_OSGEO_GEOMETRY::PointCollection^ points);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiPoint* CreateMultiPoint(
+        NAMESPACE_OSGEO_GEOMETRY::PointCollection* points);
 
     /// \brief
     /// Creates a MultiPoint object by copying from an array of ordinates.
@@ -368,10 +366,10 @@ public:
     /// \return
     /// Returns a MultiPoint
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiPoint^ CreateMultiPoint(
+    NAMESPACE_OSGEO_GEOMETRY::IMultiPoint* CreateMultiPoint(
 		System::Int32 dimensionality,
 		System::Int32 ordinateNumber, 
-		array<System::Double>^ ordinates);
+		System::Double ordinates[]);
 
     /// MultiLineString
 
@@ -384,8 +382,8 @@ public:
     /// \return
     /// Returns a MultiLineString
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiLineString^ CreateMultiLineString(
-        NAMESPACE_OSGEO_GEOMETRY::LineStringCollection^ lineStrings);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiLineString* CreateMultiLineString(
+        NAMESPACE_OSGEO_GEOMETRY::LineStringCollection* lineStrings);
 
     //MultiPolygon
 
@@ -398,8 +396,8 @@ public:
     /// \return
     /// Returns a MultiPolygon
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiPolygon^ CreateMultiPolygon(
-        NAMESPACE_OSGEO_GEOMETRY::PolygonCollection^ polygons);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiPolygon* CreateMultiPolygon(
+        NAMESPACE_OSGEO_GEOMETRY::PolygonCollection* polygons);
 
     /// CircularArcSegment
 
@@ -416,10 +414,10 @@ public:
     /// \return
     /// Returns a CircularArcSegment
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ICircularArcSegment^ CreateCircularArcSegment(
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ startPosition,
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ midPosition,
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ endPosition);
+    NAMESPACE_OSGEO_GEOMETRY::ICircularArcSegment* CreateCircularArcSegment(
+        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition* startPosition,
+        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition* midPosition,
+        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition* endPosition);
 
     /// CurveString
 
@@ -432,8 +430,8 @@ public:
     /// \return
     /// Returns a CurveString
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ICurveString^ CreateCurveString(
-        NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection^ curveSegments);
+    NAMESPACE_OSGEO_GEOMETRY::ICurveString* CreateCurveString(
+        NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection* curveSegments);
 
     /// MultiCurveString
 
@@ -446,8 +444,8 @@ public:
     /// \return
     /// Returns a MultiCurveString
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiCurveString^ CreateMultiCurveString(
-        NAMESPACE_OSGEO_GEOMETRY::CurveStringCollection^ curveStrings);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiCurveString* CreateMultiCurveString(
+        NAMESPACE_OSGEO_GEOMETRY::CurveStringCollection* curveStrings);
 
     /// Ring
 
@@ -460,8 +458,8 @@ public:
     /// \return
     /// Returns a Ring
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IRing^ CreateRing(
-        NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection^ curveSegments);
+    NAMESPACE_OSGEO_GEOMETRY::IRing* CreateRing(
+        NAMESPACE_OSGEO_GEOMETRY::CurveSegmentCollection* curveSegments);
 
     /// CurvePolygon
 
@@ -476,9 +474,9 @@ public:
     /// \return
     /// Returns a CurvePolygon
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::ICurvePolygon^ CreateCurvePolygon(
-        NAMESPACE_OSGEO_GEOMETRY::IRing^ exteriorRing,
-        NAMESPACE_OSGEO_GEOMETRY::RingCollection^ interiorRings);
+    NAMESPACE_OSGEO_GEOMETRY::ICurvePolygon* CreateCurvePolygon(
+        NAMESPACE_OSGEO_GEOMETRY::IRing* exteriorRing,
+        NAMESPACE_OSGEO_GEOMETRY::RingCollection* interiorRings);
 
     /// MultiCurvePolygon
 
@@ -491,8 +489,8 @@ public:
     /// \return
     /// Returns a MultiCurvePolygon
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiCurvePolygon^ CreateMultiCurvePolygon(
-        NAMESPACE_OSGEO_GEOMETRY::CurvePolygonCollection^ curvePolygons);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiCurvePolygon* CreateMultiCurvePolygon(
+        NAMESPACE_OSGEO_GEOMETRY::CurvePolygonCollection* curvePolygons);
 
     /// MultiGeometry
 
@@ -505,8 +503,8 @@ public:
     /// \return
     /// Returns a MultiGeometry
     /// 
-    NAMESPACE_OSGEO_GEOMETRY::IMultiGeometry^ CreateMultiGeometry(
-        NAMESPACE_OSGEO_GEOMETRY::GeometryCollection^ geometries);
+    NAMESPACE_OSGEO_GEOMETRY::IMultiGeometry* CreateMultiGeometry(
+        NAMESPACE_OSGEO_GEOMETRY::GeometryCollection* geometries);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

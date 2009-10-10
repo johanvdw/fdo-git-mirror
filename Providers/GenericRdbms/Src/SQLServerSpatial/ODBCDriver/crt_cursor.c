@@ -58,7 +58,9 @@ odbcdr_cursor_def *odbcdr_crt_cursor(
 	if( c == (odbcdr_cursor_def *)NULL ) goto the_exit;
 
 	// Initialize all struct elements
+#ifdef _DEBUG
 	c->sqlstring		    = (char *)NULL;
+#endif
 	c->hStmt                = (odbcdr_cursor_handle_def) NULL;
 	c->next				    = (odbcdr_cursor_def *)NULL;
 	c->cumul_rows_fetched   = 0;

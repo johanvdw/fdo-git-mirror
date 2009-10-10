@@ -95,18 +95,6 @@ FdoIFeatureReader* ArcSDEFeatureReader::GetFeatureObject (FdoString* propertyNam
     throw FdoCommandException::Create(NlsMsgGet(ARCSDE_OBJECT_PROPERTIES_NOT_SUPPORTED, "Object properties are not supported."));
 }
 
-/// <summary>
-/// Gets a reference to an FdoIFeatureReader to read the data contained in
-/// the object or object collection property defined at the specified index 
-/// position. If the property is not an object property, an exception is thrown.
-/// </summary>
-/// <param name="index">Input the index of the property.</param>
-/// <returns>Returns the nested feature reader</returns>
-FdoIFeatureReader* ArcSDEFeatureReader::GetFeatureObject(FdoInt32 index)
-{
-    throw FdoCommandException::Create(NlsMsgGet(ARCSDE_OBJECT_PROPERTIES_NOT_SUPPORTED, "Object properties are not supported."));
-}
-
 /// <summary>Advances the reader to the next item and returns true if there is
 /// another object to read or false if reading is complete. The default
 /// position of the reader is prior to the first item. Thus you must
@@ -239,7 +227,7 @@ void ArcSDEFeatureReader::PrepareStream ()
                     ApplyFilterInfoToStream (mConnection, mStream, table, whereClause, 1, id_column, numSpatialFilters, pSpatialFilters);
 
                     // set up a temporary log file
-                    mConnection->MakeLog (&mLog, table);
+                    ArcSDELockUtility::MakeLog (&mLog, mConnection->GetConnection (), table);
 
                     // accumulate the query in the log file
                     result = SE_stream_set_logfile (mStream, mLog, FALSE);

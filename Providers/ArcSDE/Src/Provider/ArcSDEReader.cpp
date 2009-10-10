@@ -20,7 +20,6 @@
 #include "stdafx.h"
 #include "ArcSDEReader.h"
 #include "ArcSDEUtils.h"
-#include <assert.h>
 
 
 ArcSDEReader::ArcSDEReader (ArcSDEConnection *connection, FdoClassDefinition* fdoClassDef, FdoIdentifierCollection* propertiesToSelect) :
@@ -80,9 +79,6 @@ ArcSDEReader::~ArcSDEReader (void)
 
 void ArcSDEReader::validate ()
 {
-    if (mRowNotValidated)
-        return;
-
     if (mConnection == NULL)
         throw FdoException::Create (NlsMsgGet (ARCSDE_CONNECTION_INVALID, "Connection is invalid."));
     if (!mReady)
@@ -133,31 +129,6 @@ ArcSDEReader::ColumnDefinition* ArcSDEReader::getColumnDef (FdoInt32 index)
     return columnDef;
 }
 
-/// <summary>Gets the name of the property at the given ordinal position.</summary>
-/// <param name="index">Input the position of the property.</param> 
-/// <returns>Returns the property name</returns> 
-FdoString* ArcSDEReader::GetPropertyName(FdoInt32 index)
-{
-    return getColumnDef((int)index)->mPropertyName;
-}
-
-/// <summary>
-/// Gets the index of the property with the specified name.
-/// </summary>
-/// <param name="propertyName">Input the property name.</param>
-/// <returns>Returns the property index</returns>
-FdoInt32 ArcSDEReader::GetPropertyIndex(FdoString* propertyName)
-{
-    ColumnDefinition* columnDef = getColumnDef(propertyName);
-    assert(columnDef != NULL);
-    if (columnDef != NULL)
-    {
-        return columnDef->mColumnNumber;
-    }
-
-    assert(false);
-    throw FdoCommandException::Create(NlsMsgGet1(ARCSDE_COLUMN_NOT_IN_RESULT, "The property '%1$ls' is not in the query result.", propertyName));
-}
 
 /// <summary>Gets the Boolean value of the specified property. No conversion is
 /// performed, thus the property must be FdoDataType_Boolean or an 
@@ -165,11 +136,6 @@ FdoInt32 ArcSDEReader::GetPropertyIndex(FdoString* propertyName)
 /// <param name="identifier">Input the property or column name.</param> 
 /// <returns>Returns the Boolean value.</returns> 
 bool ArcSDEReader::GetBoolean (FdoString* identifier)
-{
-    throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_BOOLEAN, "The Boolean data type is not supported by ArcSDE."));
-}
-
-bool ArcSDEReader::GetBoolean (FdoInt32 index)
 {
     throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_BOOLEAN, "The Boolean data type is not supported by ArcSDE."));
 }
@@ -184,11 +150,6 @@ FdoByte ArcSDEReader::GetByte (FdoString* identifier)
     throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_BYTE, "The Byte data type is not supported by ArcSDE."));
 }
 
-FdoByte ArcSDEReader::GetByte (FdoInt32 index)
-{
-    throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_BYTE, "The Byte data type is not supported by ArcSDE."));
-}
-
 /// <summary> Gets the date and time value of the specified property. No conversion is 
 /// performed, thus the property must be FdoDataType_DateTime or an 
 /// exception is thrown.</summary>
@@ -196,27 +157,19 @@ FdoByte ArcSDEReader::GetByte (FdoInt32 index)
 /// <returns>Returns the date and time value.</returns> 
 FdoDateTime ArcSDEReader::GetDateTime (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetDateTimeHelper(columnDef);
-}
 
-FdoDateTime ArcSDEReader::GetDateTime(FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef(index);
-    return GetDateTimeHelper(columnDef);
-}
-
-FdoDateTime ArcSDEReader::GetDateTimeHelper (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     struct tm timedate;
     FdoDateTime ret;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_DateTime)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoDateTime", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoDateTime", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -238,26 +191,18 @@ FdoDateTime ArcSDEReader::GetDateTimeHelper (ColumnDefinition* columnDef)
 /// <returns>Returns the double floating point value</returns> 
 double ArcSDEReader::GetDouble (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetDouble(columnDef);
-}
 
-double ArcSDEReader::GetDouble (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef(index);
-    return GetDouble(columnDef);
-}
-
-double ArcSDEReader::GetDouble (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     double ret = 0.0;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_Double)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoDouble", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoDouble", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     if (mSelectingAggregates)
         ret = GetAggregateValueDouble(columnDef->mStreamStats, GetAggregateFunctionName(columnDef->mIdentifier));
@@ -276,26 +221,18 @@ double ArcSDEReader::GetDouble (ColumnDefinition* columnDef)
 /// <returns>Returns the FdoInt16 value.</returns> 
 FdoInt16 ArcSDEReader::GetInt16 (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetInt16Helper(columnDef);
-}
 
-FdoInt16 ArcSDEReader::GetInt16 (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetInt16Helper(columnDef);
-}
-
-FdoInt16 ArcSDEReader::GetInt16Helper (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     FdoInt16 ret = 0;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_Int16)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt16", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt16", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -314,26 +251,18 @@ FdoInt16 ArcSDEReader::GetInt16Helper (ColumnDefinition* columnDef)
 /// <returns>Returns the FdoInt32 value</returns> 
 FdoInt32 ArcSDEReader::GetInt32 (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetInt32Helper(columnDef);
-}
 
-FdoInt32 ArcSDEReader::GetInt32 (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetInt32Helper(columnDef);
-}
-
-FdoInt32 ArcSDEReader::GetInt32Helper (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     FdoInt32 ret = 0L;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_Int32)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt32", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt32", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -352,26 +281,18 @@ FdoInt32 ArcSDEReader::GetInt32Helper (ColumnDefinition* columnDef)
 /// <returns>Returns the FdoInt64 value.</returns> 
 FdoInt64 ArcSDEReader::GetInt64 (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetInt64Helper(columnDef);
-}
 
-FdoInt64 ArcSDEReader::GetInt64 (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetInt64Helper(columnDef);
-}
-
-FdoInt64 ArcSDEReader::GetInt64Helper (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     FdoInt32 ret = 0L;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_Int64)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt64", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoInt64", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     // Int64 is currently only supported for aggregate functions of type int64:
     if (mSelectingAggregates)
@@ -387,26 +308,18 @@ FdoInt64 ArcSDEReader::GetInt64Helper (ColumnDefinition* columnDef)
 /// <returns>Returns the single value</returns> 
 float ArcSDEReader::GetSingle (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetSingleHelper(columnDef);
-}
 
-float ArcSDEReader::GetSingle (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetSingleHelper(columnDef);
-}
-
-float ArcSDEReader::GetSingleHelper (ColumnDefinition* columnDef)
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     float ret = 0.0f;
 
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_Single)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoSingle", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoSingle", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -425,47 +338,40 @@ float ArcSDEReader::GetSingleHelper (ColumnDefinition* columnDef)
 /// <returns>Returns the string value</returns> 
 FdoString* ArcSDEReader::GetString (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetStringHelper(columnDef);
-}
 
-FdoString* ArcSDEReader::GetString (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetStringHelper(columnDef);
-}
+    ColumnDefinition* columnDef = NULL;
 
-FdoString* ArcSDEReader::GetStringHelper (ColumnDefinition* columnDef)
-{
+    columnDef = getColumnDef (identifier);
     if (columnDef->mPropertyType != FdoDataType_String)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoString", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoString", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
-    CHAR *mbValue = NULL;
-    if (mSelectingAggregates)
-        ; // do nothing; an exception will have be thrown by now since the type doesn't match
-    else if (mDistinct)
-        mbValue = columnDef->mStreamStats->distinct->values[mStreamStatsIndex].uval.str_val;
-    else
-        mbValue = columnDef->mBindVariable._string;
+        CHAR *mbValue = NULL;
+        if (mSelectingAggregates)
+            ; // do nothing; an exception will have be thrown by now since the type doesn't match
+        else if (mDistinct)
+            mbValue = columnDef->mStreamStats->distinct->values[mStreamStatsIndex].uval.str_val;
+        else
+            mbValue = columnDef->mBindVariable._string;
 
     if (NULL == columnDef->mValuePointer)
-    {
+        {
         columnDef->mValuePointerSize = columnDef->mDataLength + 1;
-        columnDef->mValuePointer = new wchar_t[columnDef->mValuePointerSize];
-    }
+            columnDef->mValuePointer = new wchar_t[columnDef->mValuePointerSize];
+        }
 
 #ifdef SDE_UNICODE
-    wcscpy((wchar_t*)columnDef->mValuePointer, sde_pcus2wc(mbValue));
+	wcscpy((wchar_t*)columnDef->mValuePointer, sde_pcus2wc(mbValue));
 #else
-    multibyte_to_wide_noalloc((wchar_t*)columnDef->mValuePointer, mbValue);
+	multibyte_to_wide_noalloc((wchar_t*)columnDef->mValuePointer, mbValue);
 #endif
 
     return (wchar_t*)(columnDef->mValuePointer);
 }
+
 
 /// <summary>Gets a LOBValue reference. The LOB is fully read in and data available.
 /// Because no conversion is performed, the property must be FdoDataType_BLOB or
@@ -474,24 +380,18 @@ FdoString* ArcSDEReader::GetStringHelper (ColumnDefinition* columnDef)
 /// <returns>Returns the reference to LOBValue</returns> 
 FdoLOBValue* ArcSDEReader::GetLOB(FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetLOBHelper(columnDef);
-}
 
-FdoLOBValue* ArcSDEReader::GetLOB(FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetLOBHelper(columnDef);
-}
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
 
-FdoLOBValue* ArcSDEReader::GetLOBHelper(ColumnDefinition* columnDef)
-{
-    if (columnDef->mPropertyType != FdoDataType_BLOB)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoBLOB", columnDef->mPropertyName));
+    // Get appropriate ColumnDefinition:
+    columnDef = getColumnDef (identifier);
+    if ((columnDef->mPropertyType != FdoDataType_BLOB) && (columnDef->mPropertyType != FdoDataType_CLOB))
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoBLOB", identifier));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -502,8 +402,20 @@ FdoLOBValue* ArcSDEReader::GetLOBHelper(ColumnDefinition* columnDef)
     FdoPtr<FdoByteArray> byteArray = FdoByteArray::Create ((FdoByte*) columnDef->mBindVariable._blob.blob_buffer,
         columnDef->mBindVariable._blob.blob_length);
 
-    // Return the LOB value:
-    return (FdoLOBValue*)FdoLOBValue::Create(byteArray, FdoDataType_BLOB);
+#if !SDE_UNICODE
+	if (columnDef->mColumnType == SE_CLOB_TYPE)
+	{
+		//Convert to UNICODE
+		FdoPtr<FdoByteArray> unicodeByteArray = FdoByteArray::Create(2 * (strlen((char*)byteArray.p) + 1));
+		multibyte_to_wide_noalloc((wchar_t*)unicodeByteArray.p, (char*)byteArray.p);
+		return (FdoLOBValue*)FdoLOBValue::Create(unicodeByteArray, FdoDataType_BLOB);
+	}
+	else
+#endif
+	{
+		// Return the LOB value:
+		return (FdoLOBValue*)FdoLOBValue::Create(byteArray, FdoDataType_BLOB);
+	}
 }
 
 /// <summary>Gets a reference of the specified LOB property as a FdoBLOBStreamReader or
@@ -515,26 +427,23 @@ FdoLOBValue* ArcSDEReader::GetLOBHelper(ColumnDefinition* columnDef)
 /// <returns>Returns a reference to a LOB stream reader</returns> 
 FdoIStreamReader* ArcSDEReader::GetLOBStreamReader(FdoString* identifier )
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return GetLOBStreamReaderHelper(columnDef);
-}
 
-FdoIStreamReader* ArcSDEReader::GetLOBStreamReader(FdoInt32 index )
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetLOBStreamReaderHelper(columnDef);
-}
-
-FdoIStreamReader* ArcSDEReader::GetLOBStreamReaderHelper(ColumnDefinition* columnDef )
-{
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
     SE_BLOB_INFO *blobInfo = new SE_BLOB_INFO;
 
-    if (columnDef->mPropertyType != FdoDataType_BLOB)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoBLOB", columnDef->mPropertyName));
+    // Get appropriate ColumnDefinition:
+    columnDef = getColumnDef (identifier);
+    if ((columnDef->mPropertyType != FdoDataType_BLOB) && (columnDef->mPropertyType != FdoDataType_CLOB))
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoBLOB", identifier));
+#if !SDE_UNICODE
+	if (columnDef->mColumnType == SE_CLOB_TYPE)
+		throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Cannot get LOB stream on property '%2$ls'.  Underlying DBMS is multibyte, stream requires unicode.  Use GetLOB instead.", L"FdoBLOB", identifier));
+#endif
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", identifier));
 
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
@@ -552,25 +461,19 @@ FdoIStreamReader* ArcSDEReader::GetLOBStreamReaderHelper(ColumnDefinition* colum
     return new ArcSDEBLOBStreamReader(blobInfoClone);
 }
 
+
 /// <summary>Returns true if the value of the specified property is null.</summary>
 /// <param name="identifier">Input the property or column name.</param> 
 /// <returns>Returns true if the value is null.</returns> 
 bool ArcSDEReader::IsNull (FdoString* identifier)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (identifier);
-    return IsNullHelper(columnDef);
-}
 
-bool ArcSDEReader::IsNull (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return IsNullHelper(columnDef);
-}
+    // Get appropriate ColumnDefinition:
+    ColumnDefinition* columnDef = NULL;
+    columnDef = getColumnDef (identifier);
 
-bool ArcSDEReader::IsNullHelper (ColumnDefinition* columnDef)
-{
     if (mSelectingAggregates)
         return false;
     else if (mDistinct)
@@ -594,6 +497,7 @@ bool ArcSDEReader::IsNullHelper (ColumnDefinition* columnDef)
     }
 }
 
+
 /// <summary>Gets the geometry value of the specified property as a byte array in 
 /// FGF format. Because no conversion is performed, the property must be
 /// of Geometric type; otherwise, an exception is thrown.</summary>
@@ -601,29 +505,24 @@ bool ArcSDEReader::IsNullHelper (ColumnDefinition* columnDef)
 /// <returns>Returns the byte array in FGF format.</returns> 
 FdoByteArray* ArcSDEReader::GetGeometry (FdoString* propertyName)
 {
+    if (mRowNotValidated)
     validate ();
-    ColumnDefinition* columnDef = getColumnDef (propertyName);
-    return GetGeometryHelper(columnDef);
-}
 
-FdoByteArray* ArcSDEReader::GetGeometry (FdoInt32 index)
-{
-    validate ();
-    ColumnDefinition* columnDef = getColumnDef (index);
-    return GetGeometryHelper(columnDef);
-}
+    ColumnDefinition* columnDef = NULL;
+    LONG result = 0L;
+    LONG size = 0L;
+    FdoByteArray* ret = NULL;
 
-FdoByteArray* ArcSDEReader::GetGeometryHelper (ColumnDefinition* columnDef)
-{
     //if (mSelectingAggregates)
     //    ; // do nothing; an exception will have be thrown by now since the type doesn't match
     if (mDistinct)
         throw FdoCommandException::Create(NlsMsgGet(ARCSDE_SELECT_DISTINCT_INVALID_TYPE, "Select with 'distinct' option failed; ArcSDE doesn't support 'distinct' option with column types other than Int16, Int32, Single, Double, DateTime, and String."));
 
+    columnDef = getColumnDef (propertyName);
     if (columnDef->mPropertyType != (FdoDataType)-1)
-        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"Geometry", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"Geometry", propertyName));
     if (SE_IS_NULL_VALUE == columnDef->mBindIsNull)
-        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", columnDef->mPropertyName));
+        throw FdoException::Create (NlsMsgGet1(ARCSDE_NULL_VALUE, "The value of property '%1$ls' is null.", propertyName));
 
     if (NULL == columnDef->mValuePointer)
     {
@@ -634,6 +533,8 @@ FdoByteArray* ArcSDEReader::GetGeometryHelper (ColumnDefinition* columnDef)
     // return FdoByteArray:
     return FDO_SAFE_ADDREF((FdoByteArray*)columnDef->mValuePointer);
 }
+
+
 
 /// <summary>Gets the geometry value of the specified property as a byte array in 
 /// FGF format. Because no conversion is performed, the property must be
@@ -654,24 +555,11 @@ const FdoByte * ArcSDEReader::GetGeometry(FdoString* propertyName, FdoInt32 * co
     return fdoByteArray->GetData();
 }
 
-const FdoByte * ArcSDEReader::GetGeometry(FdoInt32 index, FdoInt32 * count)
-{
-    FdoByteArray* fdoByteArray = GetGeometry(index);
-    fdoByteArray->Release();
-    *count = fdoByteArray->GetCount();
-    return fdoByteArray->GetData();
-}
-
 /// <summary>Gets the raster object of the specified property.
 /// Because no conversion is performed, the property must be
 /// of Raster type; otherwise, an exception is thrown.</summary>
 /// <param name="propertyName">Input the property name.</param> 
 /// <returns>Returns the raster object.</returns> 
-FdoIRaster* ArcSDEReader::GetRaster(FdoInt32 index)
-{
-    throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_RASTER, "Raster properties are not supported."));
-}
-
 FdoIRaster* ArcSDEReader::GetRaster(FdoString* propertyName)
 {
     throw FdoException::Create (NlsMsgGet(ARCSDE_UNSUPPORTED_DATATYPE_RASTER, "Raster properties are not supported."));
@@ -732,6 +620,12 @@ bool ArcSDEReader::ReadNext ()
                     columnDef->mBindVariableInitialized = true;
                     result = SE_stream_bind_output_column(mStream, columnDef->mColumnNumber, (void*)(columnDef->mBindVariable._string), &columnDef->mBindIsNull);
                 }
+				else if (columnDef->mColumnType == SE_NCLOB_TYPE)
+                {
+                    columnDef->mBindVariable._blob.blob_length = 0;
+                    columnDef->mBindVariable._blob.blob_buffer = NULL;
+                    result = SE_stream_bind_output_column(mStream, columnDef->mColumnNumber, (void*)&(columnDef->mBindVariable._blob), &columnDef->mBindIsNull);
+                }
 				else
 #endif
                 if (columnDef->mColumnType == SE_STRING_TYPE)
@@ -739,6 +633,12 @@ bool ArcSDEReader::ReadNext ()
                     columnDef->mBindVariable._string = (new CHAR[columnDef->mDataLength + 1]);
                     columnDef->mBindVariableInitialized = true;
                     result = SE_stream_bind_output_column(mStream, columnDef->mColumnNumber, (void*)(columnDef->mBindVariable._string), &columnDef->mBindIsNull);
+                }
+				else if (columnDef->mColumnType == SE_CLOB_TYPE)
+                {
+                    columnDef->mBindVariable._blob.blob_length = 0;
+                    columnDef->mBindVariable._blob.blob_buffer = NULL;
+                    result = SE_stream_bind_output_column(mStream, columnDef->mColumnNumber, (void*)&(columnDef->mBindVariable._blob), &columnDef->mBindIsNull);
                 }
                 else if (columnDef->mColumnType == SE_UUID_TYPE)
                 {

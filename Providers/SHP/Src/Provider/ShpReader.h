@@ -174,12 +174,10 @@ public:
                 if (type == column_type)
 				{
 					// Get the code page from LDID. If not valid try the .CPG file.
-					FdoStringP  codePage = L"";
-					if(mFileSet->GetCpgFile())
-						codePage = mFileSet->GetCpgFile()->GetCodePage();
+					FdoStringP  codePage = mFileSet->GetDbfFile()->GetCodePage();
 
-					if (codePage == L"")
-						codePage = mFileSet->GetDbfFile()->GetCodePage();
+					if (codePage == L"" && mFileSet->GetCpgFile())
+						codePage = mFileSet->GetCpgFile()->GetCodePage();
 
 					mData->GetData (data, i, type, (WCHAR*)(FdoString *)codePage);
 				}
@@ -627,12 +625,7 @@ public:
                 ret = false;
             // if it's the singleton geometry property, it's null if the shape is NullShape:
             else if (0 == wcscmp (propertyName, mLogicalGeometryPropertyName))
-            {
-                if(!mShape)                
-                    ret = true;
-                else
-                    ret = (eNullShape == mShape->GetShapeType ());
-            }
+                ret = (eNullShape == mShape->GetShapeType ());
             // if it's anything else, need to explicitly check:
             else
             {

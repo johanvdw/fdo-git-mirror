@@ -22,30 +22,28 @@
 class FdoRdbmsOvClassDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
-ref class PhysicalElementMapping;
+public __gc class PhysicalElementMapping;
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlWriter;
+public __gc class XmlWriter;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
-ref class OvReadOnlyPropertyDefinitionCollection;
-ref class OvTable;
-ref class OvGeometricColumn;
+public __gc class OvReadOnlyPropertyDefinitionCollection;
+public __gc class OvTable;
+public __gc class OvGeometricColumn;
 
 ///<summary>Abstract class defining physical schema overrides for a class definition.</summary>
-public ref class OvClassDefinition: public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
+public __gc class OvClassDefinition: public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
 {
-internal:
+public private:
 	FdoRdbmsOvClassDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 	
 public protected:
 	OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
@@ -54,36 +52,25 @@ public:
     ///<summary>Gets the collection of property overrides for this class
     ///override.</summary>
     /// <returns>Returns OvReadOnlyPropertyDefinitionCollection</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvReadOnlyPropertyDefinitionCollection^ Properties
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvReadOnlyPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvReadOnlyPropertyDefinitionCollection* get_Properties();
 
     ///<summary>Gets the table overrides for this class override</summary>
     /// <returns>Returns OvTable</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable^ Table
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable* get_Table();
 
     ///<summary>Gets the table mapping</summary>
     ///<returns>Returns OvTableMappingType</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTableMappingType get_TableMapping();
+
     ///<summary>Sets the table mapping</summary>
     /// <param name="mappingType">Input the mapping type</param>
     ///<returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTableMappingType TableMapping
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTableMappingType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTableMappingType mappingType);
-    }
+	__property System::Void set_TableMapping(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTableMappingType mappingType);
 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping^ Parent
-    {
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping^ value);
-    }
+	__property System::Void set_Parent(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping* value);
      
     // Serialize the XML attributes of this class:
-	System::Void WriteXmlAttributes(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXmlAttributes(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

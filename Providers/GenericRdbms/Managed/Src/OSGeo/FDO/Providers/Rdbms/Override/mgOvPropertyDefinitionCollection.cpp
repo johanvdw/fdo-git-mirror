@@ -27,65 +27,119 @@
 
 FdoRdbmsOvPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::GetImpObj()
 {
-    return static_cast<FdoRdbmsOvPropertyDefinitionCollection*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoRdbmsOvPropertyDefinitionCollection*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::OvPropertyDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON::CollectionBase(unmanaged, autoDelete)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::OvPropertyDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
 {
 
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::CopyTo(array<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>^ pArray, System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::ICollection::CopyTo(System::Array* array, System::Int32 index) 
 {
-	if (nullptr == pArray)
-		throw gcnew System::ArgumentNullException();
+	if (NULL == array) 
+	{
+		throw new System::ArgumentNullException();
+	}
+
 	if (index < 0)
-		throw gcnew System::ArgumentOutOfRangeException();
-	if (pArray->Rank != 1 || index >= pArray->Length || this->Count + index > pArray->Length)
-		throw gcnew System::ArgumentException();
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
 
-	for (System::Int32 i = 0; i < this->Count; i++)
-        pArray[index+i] = this->Item[i];
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
+
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array->set_Item(index + i, get_Item(i));
+	}
 }
 
-System::Object^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IndexInternal::get(System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::CopyTo(OvPropertyDefinition* array[], System::Int32 index)
 {
-	return this->Item[index];
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
+	if (index < 0)
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
+
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array[index+i] = __try_cast<OvPropertyDefinition*>(get_Item(i));
+	}
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IndexInternal::set(System::Int32 index, System::Object^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::ReleaseUnmanagedObject()
 {
-	this->Item[index] = dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value);
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Add(System::Object^ value)
+System::Object* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::ICollection::get_SyncRoot()
 {
-	return Add(dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value));
+	return NULL;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Contains(System::Object^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::ICollection::get_IsSynchronized()
 {
-	return Contains(dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value));
+	return false;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IndexOf(System::Object^ value)
-{
-	return IndexOf(dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::get_IsFixedSize() 
+{ 
+	return false;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Insert(System::Int32 index, System::Object^ value)
-{
-	Insert(index, dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::get_IsReadOnly() 
+{ 
+	return false;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Remove(System::Object^ value)
+System::Object* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::get_Item(System::Int32 index)
 {
-	return Remove(dynamic_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^>(value));
+	return get_RealTypeItem( index );
+}
+
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::set_Item(System::Int32 index, System::Object* value)
+{
+	set_RealTypeItem(index,  __try_cast<OvPropertyDefinition*>(value) );
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::Add(System::Object* value)
+{
+	return Add(__try_cast<OvPropertyDefinition*>(value));
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::Contains(System::Object* value)
+{
+	return Contains(__try_cast<OvPropertyDefinition*>(value));
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::IndexOf(System::Object* value)
+{
+	return IndexOf(__try_cast<OvPropertyDefinition*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::Insert(System::Int32 index, System::Object* value)
+{
+	Insert(index,__try_cast<OvPropertyDefinition*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IList::Remove(System::Object* value)
+{
+	return Remove(__try_cast<OvPropertyDefinition*>(value));
 }
 
 System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::RemoveAt(System::Int32 index)
@@ -93,48 +147,53 @@ System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionC
 	EXCEPTION_HANDLER(GetImpObj()->RemoveAt(index))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Count::get(System::Void)
+System::Collections::IEnumerator* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::GetEnumerator()
 {
-	System::Int32 length;
+	return new Enumerator(this);
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::get_Count(System::Void)
+{
+	FdoInt32 length;
 
 	EXCEPTION_HANDLER(length = GetImpObj()->GetCount())
 
-	return length;
+		return length;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Add(OvPropertyDefinition^ value)
+System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Add(OvPropertyDefinition* value)
 {
-	System::Int32 index;
+	FdoInt32 index;
 
-	EXCEPTION_HANDLER(index = GetImpObj()->Add((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(index = GetImpObj()->Add((value == NULL ? NULL : value->GetImpObj())))
 
-	return index;
+		return index;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IndexOf(OvPropertyDefinition^ value)
+System::Int32 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::IndexOf(OvPropertyDefinition* value)
 {
-	System::Int32 index;
+	FdoInt32 index;
 
-	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == NULL ? NULL : value->GetImpObj())))
 
-	return index;
+		return index;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Insert(System::Int32 index, OvPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Insert(System::Int32 index, OvPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Insert(index, (value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->Insert(index, (value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Remove(OvPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Remove(OvPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Remove((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->Remove((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Contains(OvPropertyDefinition^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Contains(OvPropertyDefinition* value)
 {
-	System::Boolean exist;
+	FdoBoolean exist;
 
-	EXCEPTION_HANDLER(exist = (!!GetImpObj()->Contains((value == nullptr ? nullptr : value->GetImpObj()))))
+	EXCEPTION_HANDLER(exist = (!!GetImpObj()->Contains((value == NULL ? NULL : value->GetImpObj()))))
 
 	return exist;
 }
@@ -144,25 +203,63 @@ System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionC
 	EXCEPTION_HANDLER(GetImpObj()->Clear())
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Item::get(System::Int32 index)
+/*
+Implementation for OvPropertyDefinitionCollection::Enumerator
+*/ 
+System::Object* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Enumerator::get_Current()
 {
-	FdoRdbmsOvPropertyDefinition* result;
+	if (m_nIdx < 0 || m_nIdx >= m_pCol->Count)
+	{
+		throw new InvalidOperationException();
+	}
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetItem(index))
+	FdoRdbmsOvPropertyDefinition* upElement;
 
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::ObjectFactory::CreateOvPropertyDefinition(IntPtr(result), true);
+	EXCEPTION_HANDLER(upElement = m_pCol->GetImpObj()->GetItem(m_nIdx))
+
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::ObjectFactory::CreateOvPropertyDefinition(upElement, true);
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Item::get(System::String^ index)
+System::Boolean NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Enumerator::MoveNext()
 {
-	FdoRdbmsOvPropertyDefinition* result;
-
-	EXCEPTION_HANDLER(result = GetImpObj()->GetItem(StringToUni(index)))
-
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::ObjectFactory::CreateOvPropertyDefinition(IntPtr(result), true);
+	++m_nIdx;
+	return m_nIdx < m_pCol->Count;
 }
 
-System::Void  NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Item::set(System::Int32 index, OvPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::Enumerator::Reset()
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, (value == nullptr ? nullptr : value->GetImpObj())))
+	m_nIdx = -1;
+}
+
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::get_RealTypeItem(System::Int32 index)
+{
+	FdoRdbmsOvPropertyDefinition* upElement;
+
+	EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(index))
+
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::ObjectFactory::CreateOvPropertyDefinition(upElement, true);
+}
+
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::get_RealTypeItem(System::String* index)
+{
+	FdoRdbmsOvPropertyDefinition* upElement;
+
+	EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(StringToUni(index)))
+
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::ObjectFactory::CreateOvPropertyDefinition(upElement, true);
+}
+
+System::Void  NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::set_RealTypeItem(System::Int32 index, OvPropertyDefinition* value)
+{
+	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, (value == NULL ? NULL : value->GetImpObj())))
+}
+
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::get_Item(System::Int32 index)
+{
+	return get_RealTypeItem(index);
+}
+
+System::Void  NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinitionCollection::set_Item(System::Int32 index, OvPropertyDefinition* value)
+{
+	set_RealTypeItem(index, value);
 }

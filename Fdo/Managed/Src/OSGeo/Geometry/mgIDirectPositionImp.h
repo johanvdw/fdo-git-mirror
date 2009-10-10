@@ -32,8 +32,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The actual object may have several implementations, depending on the dimension and other factors.
 /// This is a lightweight helper type for Geometries in the Geometry package.
 /// Note: It does not derive from IGeometry.
-private ref class IDirectPositionImp :
-    public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IDirectPosition
+private __gc class IDirectPositionImp 
+	: public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IDirectPosition
 {
 public:
     /// \brief
@@ -48,6 +48,11 @@ public:
     /// 
 	IDirectPositionImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
 public:
 
     /// \brief
@@ -56,10 +61,7 @@ public:
     /// \return
     /// Returns the X ordinate; default is numeric_limits::quiet_NaN()
     /// 
-    virtual property System::Double X
-    {
-        System::Double get();
-    }
+	__property System::Double get_X();
 
     /// \brief
     /// Gets the Y ordinate.
@@ -67,10 +69,7 @@ public:
     /// \return
     /// Returns the Y ordinate; default is numeric_limits::quiet_NaN()
     /// 
-    virtual property System::Double Y
-    {
-        System::Double get();
-    }
+    __property System::Double get_Y();
 
     /// \brief
     /// Gets the Z ordinate.
@@ -78,10 +77,7 @@ public:
     /// \return
     /// Returns the Z ordinate; default is numeric_limits::quiet_NaN()
     /// 
-    virtual property System::Double Z
-    {
-        System::Double get();
-    }
+    __property System::Double get_Z();
 
     /// \brief
     /// Gets the M ordinate.
@@ -89,10 +85,7 @@ public:
     /// \return
     /// Returns the M ordinate; default is numeric_limits::quiet_NaN()
     /// 
-    virtual property System::Double M
-    {
-        System::Double get();
-    }
+    __property System::Double get_M();
 
     /// \brief
     /// Gets the dimensionality of ordinates in this position.
@@ -104,15 +97,10 @@ public:
     /// \return
     /// Returns the ordinate dimensionality
     /// 
-    virtual property System::Int32 Dimensionality
-    {
-        System::Int32 get();
-    }
+    __property System::Int32 get_Dimensionality();
 
-internal:
-	FdoIDirectPosition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIDirectPosition *GetImpObj();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

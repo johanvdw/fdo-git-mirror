@@ -23,7 +23,7 @@
 class FdoIDataStoreReader;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE
-interface class IDataStorePropertyDictionary;
+public __gc __interface IDataStorePropertyDictionary;
 
 /// \ingroup (OSGeoFDOCommandsDataStore)
 /// \brief
@@ -33,7 +33,7 @@ interface class IDataStorePropertyDictionary;
 /// from the IListDataStores command. Because the initial position of the
 /// IDataStoreReader is prior to the first item, you must call
 /// ReadNext to begin accessing any data.
-private ref class IDataStoreReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader
+private __gc class IDataStoreReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns the description of the datastore.
     /// 
-	virtual System::String^ GetName();
+	System::String* GetName();
 
     /// \brief
     /// Gets the description of the datastore currently being read.
@@ -50,7 +50,7 @@ public:
     /// \return
     /// Returns the description of the datastore.
     /// 
-	virtual System::String^ GetDescription();
+	System::String* GetDescription();
 
     /// \brief
     /// Gets the flag that indicates whether the datastore is FDO enabled.
@@ -59,7 +59,7 @@ public:
     /// \return
     /// Returns the flag
     /// 
-	virtual System::Boolean GetIsFdoEnabled();
+	System::Boolean GetIsFdoEnabled();
 
     /// \brief
     /// Gets the IDataStorePropertyDictionary interface that 
@@ -69,7 +69,7 @@ public:
     /// \return
     /// Returns the property dictionary
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary^ GetDataStoreProperties();
+	NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary* GetDataStoreProperties();
 
     /// \brief
     /// Advances the reader to the next item and returns true if there is
@@ -80,7 +80,7 @@ public:
     /// \return
     /// Returns true if there is a next item.
     /// 
-	virtual System::Boolean ReadNext();
+	System::Boolean ReadNext();
 
     /// \brief
     /// Closes the IDataStoreReader object, freeing any resources it may be holding.
@@ -88,14 +88,17 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Close();
+	System::Void Close();
 
-internal:
+public private:
 	IDataStoreReaderImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoIDataStoreReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE

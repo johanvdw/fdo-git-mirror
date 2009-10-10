@@ -1276,10 +1276,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
           {
             c_SDO_DIM_ELEMENT dimelem = ora_dimlist.GetDimElement(ind);
             
-            std::wstring dimname;
-            if( !dimelem.IsNullDimName() )
-              dimname = dimelem.GetDimName(); 
-                          
+            std::wstring dimname = dimelem.GetDimName();
             double tol = dimelem.GetTolerance();
             double lb = (double)dimelem.GetLB();
             double ub = (double)dimelem.GetUB();
