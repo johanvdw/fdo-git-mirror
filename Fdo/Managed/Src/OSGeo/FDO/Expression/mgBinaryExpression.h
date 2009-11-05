@@ -24,15 +24,15 @@
 class FdoBinaryExpression;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
-ref class Express;
-interface class IExpressionProcessor;
+public __gc class Express;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The BinaryExpression class derives from Expression and represents string
 /// concatenation and the simple arithmetic operations add, subtract, multiply,
 /// and divide.
-public ref class BinaryExpression : public NAMESPACE_OSGEO_FDO_EXPRESSION::Expression
+public __gc class BinaryExpression : public NAMESPACE_OSGEO_FDO_EXPRESSION::Expression
 {
 public:
     /// \brief
@@ -56,7 +56,7 @@ public:
     /// \return
     /// Returns BinaryExpression
     /// 
-	BinaryExpression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ leftExpression, NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ rightExpression);
+	BinaryExpression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* leftExpression, NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* rightExpression);
 
     /// \brief
     /// Gets the binary operation to be evaluated by this expression.
@@ -64,6 +64,8 @@ public:
     /// \return
     /// Returns the binary operation
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations get_Operation();
+
     /// \brief
     /// Sets the binary operation to be evaluated by this expression.
     /// 
@@ -73,11 +75,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations Operation
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations value);
-    }
+	__property System::Void set_Operation(NAMESPACE_OSGEO_FDO_EXPRESSION::BinaryOperations value);
 
     /// \brief
     /// Gets the expression on the left side of the binary expression.
@@ -85,6 +83,8 @@ public:
     /// \return
     /// Returns the left hand side expression
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* get_LeftExpression();
+
     /// \brief
     /// Sets the expression on the left side of the binary expression.
     /// 
@@ -94,11 +94,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	property NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ LeftExpression
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value);
-    }
+	__property System::Void set_LeftExpression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value);
 
     /// \brief
     /// Gets the expression on the right side of the binary expression.
@@ -106,6 +102,8 @@ public:
     /// \return
     /// Returns the right hand side expression
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* get_RightExpression();
+
     /// \brief
     /// Sets the expression on the right side of the binary expression.
     /// 
@@ -115,11 +113,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	property NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ RightExpression
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value);
-    }
+	__property System::Void set_RightExpression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value);
 
     /// \brief
     /// Overrides Expression.Process to pass the BinaryOperation to the appropriate expression processor operation.
@@ -130,7 +124,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -138,7 +132,7 @@ public:
     /// \return
     /// Returns the well defined text representation of this expression
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a BinaryExpression object based on an unmanaged instance of the object
@@ -152,10 +146,8 @@ public:
     /// 
 	BinaryExpression(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoBinaryExpression* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 

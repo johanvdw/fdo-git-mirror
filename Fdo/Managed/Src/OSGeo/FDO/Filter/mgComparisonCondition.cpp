@@ -35,61 +35,56 @@ NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::ComparisonCondition(IntPtr unma
 
 NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::ComparisonCondition() : SearchCondition(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoComparisonCondition::Create()), true)) 
+	EXCEPTION_HANDLER(Attach(FdoComparisonCondition::Create(), true)) 
 }
 
-NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::ComparisonCondition( NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ leftExpression, NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ rightExpression) : SearchCondition(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::ComparisonCondition( NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* leftExpression, NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* rightExpression) : SearchCondition(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoComparisonCondition::Create(leftExpression->GetImpObj(), static_cast<FdoComparisonOperations>(operation), rightExpression->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(FdoComparisonCondition::Create(leftExpression->GetImpObj(), static_cast<FdoComparisonOperations>(operation), rightExpression->GetImpObj()), true))
 }
 
 FdoComparisonCondition* NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::GetImpObj()
 {
-	return static_cast<FdoComparisonCondition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoComparisonCondition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::Operation::get()
+NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::get_Operation()
 {
 	FdoComparisonOperations unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetOperation())
 	return static_cast<ComparisonOperations>(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::Operation::set(NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations operation)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::set_Operation(NAMESPACE_OSGEO_FDO_FILTER::ComparisonOperations operation)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetOperation(static_cast<FdoComparisonOperations>(operation)))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::LeftExpression::get()
+NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::get_LeftExpression()
 {
-	FdoExpression* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetLeftExpression())
-	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^>(ObjectFactory::CreateExpression(IntPtr(result), true));
+	FdoExpression* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetLeftExpression())
+	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression*>(ObjectFactory::CreateExpression(unobj, true));
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::LeftExpression::set(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::set_LeftExpression(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetLeftExpression((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetLeftExpression((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::RightExpression::get()
+NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::get_RightExpression()
 {
-	FdoExpression* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetRightExpression())
-	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^>(ObjectFactory::CreateExpression(IntPtr(result), true));
+	FdoExpression* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetRightExpression())
+	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression*>(ObjectFactory::CreateExpression(unobj, true));
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::RightExpression::set( NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::set_RightExpression( NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetRightExpression((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetRightExpression((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::ComparisonCondition::Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp*>(processor))->GetImpObj()))
 }

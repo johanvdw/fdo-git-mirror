@@ -32,56 +32,51 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DateTimeValue(IntPtr unmanaged, B
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DateTimeValue() : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDateTimeValue::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoDateTimeValue::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DateTimeValue(System::DateTime value) : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDateTimeValue::Create(SystemDateToFdoDateTime(value))), true))
+	EXCEPTION_HANDLER(Attach(FdoDateTimeValue::Create(SystemDateToFdoDateTime(value)), true))
 }
 
 FdoDateTimeValue* NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::GetImpObj()
 {
-	return static_cast<FdoDateTimeValue*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoDateTimeValue*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::operator System::DateTime( NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue^ value )
+System::DateTime NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue* value )
 {
 	return FdoDateTimeToDateTime((value->GetImpObj())->operator FdoDateTime());
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::get_DataType()
 {
 	FdoDataType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unobj);
 }
 
-System::DateTime NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DateTime::get()
+System::DateTime NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::get_DateTime()
 {
 	FdoDateTime unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDateTime())
 	return FdoDateTimeToDateTime(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::DateTime::set(System::DateTime value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::set_DateTime(System::DateTime value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDateTime(SystemDateToFdoDateTime(value)))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::DateTimeValue::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }

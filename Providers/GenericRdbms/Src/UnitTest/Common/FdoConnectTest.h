@@ -27,7 +27,6 @@ class FdoConnectTest : public CppUnit::TestCase
 	CPPUNIT_TEST ( connectWithInvalidString );
     CPPUNIT_TEST( query );
     CPPUNIT_TEST( connectWithExtraneousSpaces );
-    CPPUNIT_TEST( connectFailAndSucceed );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -43,7 +42,6 @@ protected:
 	virtual void connectPropDictionaryTest(){};
 	virtual void connectWithInvalidString();
     virtual void connectWithExtraneousSpaces();
-    virtual void connectFailAndSucceed();
 
     FdoPtr<FdoIConnection> mConnection;
     void ReadAcDbPolyline( int connNumber, FdoIFeatureReader *myReader );

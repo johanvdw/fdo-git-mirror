@@ -101,7 +101,7 @@ FdoString* FdoUnaryLogicalOperator::ToStringInternal( FdoIdentifierCollection *p
         throw pExcept;
     }
 
-    const wchar_t*    szOp;
+    wchar_t*    szOp;
     switch (GetOperation())
     {
     default:

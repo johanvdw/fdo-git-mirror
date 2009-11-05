@@ -35,7 +35,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE
 /// false, and the specified measure unit already exists, command execution will
 /// fail. If it is true, the command will either create a new measure unit or update an
 /// existing one.
-public interface class ICreateMeasureUnit : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface ICreateMeasureUnit : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -46,6 +46,8 @@ public:
     /// \return
     /// Returns the abbreviation for the measure unit
     /// 
+	__property System::String* get_Abbreviation();
+
     /// \brief
     /// Sets the abbreviation of the measure unit to create or update as a
     /// string. Abbreviations must be unique because they define the identity of a
@@ -57,11 +59,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Abbreviation
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Abbreviation(System::String* value);
 
     /// \brief
     /// Gets the name of the measure unit to create or update as a string.
@@ -69,6 +67,8 @@ public:
     /// \return
     /// Returns the name for the measure unit
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the measure unit to create or update as a string.
     /// 
@@ -78,11 +78,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Gets the description of the measure unit to create or update as a string.
@@ -90,6 +86,8 @@ public:
     /// \return
     /// Returns the description for the measure unit
     /// 
+	__property System::String* get_Description();
+
     /// \brief
     /// Sets the description of the measure unit to create or update as a string.
     /// 
@@ -99,11 +97,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Description
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Description(System::String* value);
 
     /// \brief
     /// Gets the base units that define the measure unit to create or update
@@ -112,6 +106,8 @@ public:
     /// \return
     /// Returns the base units
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit get_BaseUnit();
+
     /// \brief
     /// Sets the base units that define the measure unit to create or update
     /// as an BaseUnit value.
@@ -122,11 +118,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit BaseUnit
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit value);
-    }
+	__property System::Void set_BaseUnit(NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::BaseUnit value);
 
     /// \brief
     /// Gets the scale factor to be applied to the base unit in order to get
@@ -135,6 +127,8 @@ public:
     /// \return
     /// Returns the scale factor
     /// 
+	__property System::Double get_ScaleFactor();
+
     /// \brief
     /// Sets the scale factor to be applied to the base unit in order to get
     /// one of the units being defined.
@@ -145,11 +139,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Double ScaleFactor
-    {
-        System::Double get();
-        System::Void set(System::Double value);
-    }
+	__property System::Void set_ScaleFactor(System::Double value);
 
     /// \brief
     /// Gets a Boolean flag that indicates how the CreateMeasureUnit command
@@ -162,6 +152,8 @@ public:
     /// \return
     /// Returns true if the existing measure unit can be updated
     /// 
+	__property System::Boolean get_UpdateExisting();
+
     /// \brief
     /// Sets a Boolean flag that indicates how the CreateMeasureUnit command
     /// should behave if the measure unit already exists. If update existing
@@ -175,11 +167,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Boolean UpdateExisting
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_UpdateExisting(System::Boolean value);
 
     /// \brief
     /// Executes the CreateMeasureUnit command. If the measure unit already

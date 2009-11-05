@@ -37,15 +37,11 @@
 #include <Sm/Ph/ColumnInt64.h>
 #include <Sm/Ph/ColumnUnknown.h>
 
-class FdoSmPhIndex;
-class FdoSmPhIndexCollection;
 class FdoSmPhReader;
 class FdoSmPhTableColumnReader;
-class FdoSmPhRdIndexReader;
 class FdoSmPhRdBaseObjectReader;
 class FdoSmPhRdPkeyReader;
 class FdoSmPhRdFkeyReader;
-class FdoSmPhTableIndexReader;
 class FdoSmPhTableComponentReader;
 class FdoSmPhTableDependencyReader;
 
@@ -68,19 +64,15 @@ class FdoSmPhDbObject : public FdoSmPhDbElement
 public:
     /// Returns all the columns in this database object.
     const FdoSmPhColumnCollection* RefColumns() const;
-    virtual FdoSmPhColumnsP GetColumns();
+    FdoSmPhColumnsP GetColumns();
 
     /// Returns all the primary key columns in this database object.
     const FdoSmPhColumnCollection* RefPkeyColumns() const;
-    virtual FdoSmPhColumnsP GetPkeyColumns();
-
-    /// Returns all the indexes in this database object.
-    const FdoSmPhIndexCollection* RefIndexes() const;
-    virtual FdoPtr<FdoSmPhIndexCollection> GetIndexes();
+    FdoSmPhColumnsP GetPkeyColumns();
 
     /// Returns all foreign keys for which this database object is the foreign "table"
     const FdoSmPhFkeyCollection* RefFkeysUp() const;
-    virtual FdoSmPhFkeysP GetFkeysUp();
+    FdoSmPhFkeysP GetFkeysUp();
 
     /// Returns all the attribute dependencies (from F_AttributeDependencies)
     /// where this database object is the primary key "table".	
@@ -193,10 +185,6 @@ public:
     // Returns true if this database object has all of the given columns. The columns
     // must match by both name and definition.
     FdoBoolean HasColumns( FdoSmPhColumnsP columns );
-
-    /// Removes the given index from the cache without
-    /// deleting it from the datastore.
-    void DiscardIndex( FdoSmPhIndex* index );
 
     /// The following create various types of columns. See the constructor
     /// declarations of these column types for parameter descriptions.
@@ -334,21 +322,6 @@ public:
     /// Ensures that root object is commit before this object.
     virtual void Commit( bool fromParent = false, bool isBeforeParent = false );
 
-    // Executes a DDL statement that affects this database object (e.g. add/delete an index
-    // or foreign key).
-    // The default implementation simply executes the statement. However, providers
-    // that need to do special things can override this function.
-    // For example, the Oracle provider must execute these statements within a 
-    // DDL transaction when this is an OWM-enabled table.
-    virtual void ExecuteDDL( 
-        FdoStringP sqlStmt, // the DDL statement
-        FdoSmPhDbObject* refTable = NULL, // referenced table for foreign key.
-                                          // must be specified if the statement operates
-                                          // on a foreign key.
-        bool isDDL = true                 // true if the statement must be executed
-                                          // as a DDL statement. 
-    );
-
     /// Get list of columns as references into a string collection
     virtual FdoStringsP GetRefColsSql();
 
@@ -368,12 +341,6 @@ public:
     // Load this object's columns from the given reader
     virtual void CacheColumns( FdoPtr<FdoSmPhRdColumnReader> rdr );
 
-    // Load this database object's indexes from the given reader
-    virtual bool CacheIndexes( FdoPtr<FdoSmPhRdIndexReader> rdr );
-
-    // Returns true if this database object's indexes have been cached.
-    virtual bool IndexesLoaded();
-
     // Load this object's columns from the given reader
     virtual void CacheBaseObjects( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
 
@@ -392,11 +359,6 @@ public:
 
     /// Drops this database object whether or not it has data.
     void ForceDelete();
-
-    // Checks each foreign key for this DbObject and adds the referenced (primary) DbObject
-    // to the cache candidates list for its owner. This allows more efficient fetch of 
-    // these referenced DbObjects when they are not yet cached.
-    virtual void LoadFkeyRefCands();
 
     /// Gather all errors for this element and child elements into a chain of exceptions.
     /// Adds each error as an exception, to the given exception chain and returns
@@ -440,13 +402,6 @@ protected:
 
 	virtual ~FdoSmPhDbObject(void);
 
-    // Retrieve current base object list without going to the RDBMS if not already cached.
-    // Returns null pointer if not cached.
-    FdoSmPhBaseObjectsP Get_BaseObjects();
-
-    // Remove all cached base objects.
-    void DiscardBaseObjects();
-
     // Utility function for generating SQL clauses for referencing given columns.
     FdoStringsP _getRefColsSql( FdoSmPhColumnCollection* columns );
 
@@ -471,10 +426,6 @@ protected:
     void LoadPkeys();
     void LoadPkeys( FdoPtr<FdoSmPhReader> pkeyRdr, bool isSkipAdd = false );
 
-    /// Load Indexes if not yet loaded
-    bool LoadIndexes();
-    bool LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
-	
     /// Load Foreign Keys if not yet loaded
     void LoadFkeys();
     void LoadFkeys( FdoPtr<FdoSmPhReader> fkeyRdr, bool isSkipAdd );
@@ -485,11 +436,6 @@ protected:
     /// Create a column from a column reader and add it to this database object
     virtual FdoSmPhColumnP NewColumn(
         FdoPtr<FdoSmPhRdColumnReader> colRdr
-    );
-
-    /// Add an index from an index reader
-    FdoPtr<FdoSmPhIndex> CreateIndex(
-        FdoPtr<FdoSmPhTableIndexReader> rdr
     );
 
     /// Create a base object reference from a base object reader
@@ -658,22 +604,6 @@ protected:
     virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader() const;
     virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader() const;
     virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader() const;
-    virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const = 0;
-
-    /// Index object creator
-    virtual FdoPtr<FdoSmPhIndex> NewIndex(
-        FdoStringP name, 
-        bool isUnique,
-		FdoSchemaElementState elementState = FdoSchemaElementState_Added
-    ) = 0;
-
-    /// Spatial Index object creator
-    virtual FdoPtr<FdoSmPhIndex> NewSpatialIndex(
-        FdoStringP name, 
-        bool isUnique,
-		FdoSchemaElementState elementState = FdoSchemaElementState_Added
-    ) = 0;
-
 
     /// Autogenerate a unique primary key name for this database object.
 	virtual FdoStringP GenPkeyName();
@@ -687,8 +617,6 @@ protected:
 
     virtual void AddPkeyColumnError(FdoStringP columnName);
 
-    virtual void AddIndexColumnError(FdoStringP columnName);
-
     FdoSmPhColumnsP mPkeyColumns;
 
 private:
@@ -700,9 +628,6 @@ private:
     
     // Create new primary key group reader
     virtual FdoPtr<FdoSmPhTableComponentReader> NewTablePkeyReader( FdoPtr<FdoSmPhRdPkeyReader> rdr );
-
-    // Create new index group reader
-    virtual FdoPtr<FdoSmPhTableIndexReader> NewTableIndexReader( FdoPtr<FdoSmPhRdIndexReader> rdr );
 
     // Check for loop when walking up root objects. 
     // Level is incremented each time this function is called. 
@@ -726,9 +651,6 @@ private:
 
     // Foreign key list.
     FdoSmPhFkeysP mFkeysUp;
-
-    // index list
-    FdoPtr<FdoSmPhIndexCollection> mIndexes;
 
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesDown;
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesUp;

@@ -23,12 +23,7 @@
 
 FdoSpatialGridTransform* NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::GetImpObj()
 {
-	return static_cast<FdoSpatialGridTransform*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoSpatialGridTransform*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::SpatialGridTransform(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
@@ -36,24 +31,31 @@ NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::SpatialGridTransform(System::IntP
 
 }
 
-NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::SpatialGridTransform(NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ extents, System::Double tolerance)
+Void NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::ReleaseUnmanagedObject()
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoSpatialGridTransform::Create((extents == nullptr ? nullptr : static_cast<FdoIEnvelope*>(static_cast<NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp^>(extents)->UnmanagedObject.ToPointer())), tolerance)), true))
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
+NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::SpatialGridTransform(NAMESPACE_OSGEO_GEOMETRY::IEnvelope* extents, System::Double tolerance)
+{
+	EXCEPTION_HANDLER(Attach(FdoSpatialGridTransform::Create((extents ==NULL ? NULL : static_cast<FdoIEnvelope *>(static_cast<NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp*>(extents)->UnmanagedObject.ToPointer())), tolerance), true))
 	
 }
 
-System::Void NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::TransformToGrid(System::Double coordinateX, System::Double coordinateY, System::Int64% gridX, System::Int64% gridY)
+System::Void NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::TransformToGrid(System::Double coordinateX, System::Double coordinateY, System::Int64* gridX, System::Int64* gridY)
 {
-    pin_ptr<FdoInt64> upXGrid = &gridX;
-    pin_ptr<FdoInt64> upYGrid = &gridY;
+    FdoInt64 __pin * upXGrid = gridX;
+    FdoInt64 __pin * upYGrid = gridY;
 
 	EXCEPTION_HANDLER(GetImpObj()->TransformToGrid(coordinateX, coordinateY, upXGrid, upYGrid))
 }
 
-System::Void NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::TransformFromGrid(System::Int64 gridX, System::Int64 gridY, System::Double% coordinateX, System::Double% coordinateY)
+System::Void NAMESPACE_OSGEO_SPATIAL::SpatialGridTransform::TransformFromGrid(System::Int64 gridX, System::Int64 gridY, System::Double* coordinateX, System::Double* coordinateY)
 {
-    pin_ptr<FdoDouble> upX = &coordinateX;
-    pin_ptr<FdoDouble> upY = &coordinateY;
+    FdoDouble __pin * upX = coordinateX;
+    FdoDouble __pin * upY = coordinateY;
 
 	EXCEPTION_HANDLER(GetImpObj()->TransformFromGrid(gridX, gridY, upX, upY))
 }

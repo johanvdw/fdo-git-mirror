@@ -30,25 +30,20 @@
 
 NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::FeatureClass() : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoFeatureClass::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoFeatureClass::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::FeatureClass(System::String^ name, System::String^ description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::FeatureClass(System::String* name, System::String* description) : NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoFeatureClass::Create(StringToUni(name), StringToUni(description))), true))
+	EXCEPTION_HANDLER(Attach(FdoFeatureClass::Create(StringToUni(name), StringToUni(description)), true))
 }
 
 FdoFeatureClass* NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::GetImpObj()
 {
-	return static_cast<FdoFeatureClass*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoFeatureClass*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::ClassType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::get_ClassType()
 {
 	FdoClassType result;
 
@@ -57,17 +52,17 @@ NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::ClassType>(result);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::GeometryProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::get_GeometryProperty()
 {
 	FdoGeometricPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetGeometryProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::GeometryProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::FeatureClass::set_GeometryProperty(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetGeometryProperty((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetGeometryProperty((value == NULL ? NULL : value->GetImpObj())))
 }
 

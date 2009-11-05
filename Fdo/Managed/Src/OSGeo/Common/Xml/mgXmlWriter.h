@@ -23,8 +23,8 @@
 class FdoXmlWriter;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_IO
-ref class IoStream;
-ref class IoTextWriter;
+public __gc class IoStream;
+public __gc class IoTextWriter;
 END_NAMESPACE_OSGEO_COMMON_IO
 
 using namespace NAMESPACE_OSGEO_COMMON_IO;
@@ -37,7 +37,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON_XML
 /// Note: The XML document is not completely written until this object
 /// is destroyed by releasing all references to it. Therefore, this object
 /// must be destroyed before reading back the document being written.
-public ref class XmlWriter : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class XmlWriter : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -59,7 +59,7 @@ public:
     /// spaces is the element's nesting level within the document X 3. The root
     /// element has nesting level 0.
     /// 
-	enum class LineFormat 
+	__value enum LineFormat 
 	{
 		LineFormat_None = FdoXmlWriter::LineFormat_None,
 		LineFormat_Break = FdoXmlWriter::LineFormat_Break,
@@ -91,7 +91,7 @@ public:
     /// written, if the attribute would have caused the current line to exceed
     /// this length.
     /// 
-	XmlWriter(System::String^ fileName, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
+	XmlWriter(System::String* fileName, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
 
     /// \brief
     /// Constructs an XML writer on a file
@@ -113,7 +113,7 @@ public:
     /// and each element start is prepended with a repetition of this string.
     /// The string is repeated according to the element's nesting level.
     /// 
-    XmlWriter(System::String^ fileName, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
+    XmlWriter(System::String* fileName, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
 
     /// \brief
     /// Constructs an XML writer on a file
@@ -127,7 +127,7 @@ public:
     /// The caller is responsible for ensuring that only one root element is written 
     /// (the XML standard disallows multiple root elements).
     /// 
-	XmlWriter(System::String^ fileName, System::Boolean defaultRoot);
+	XmlWriter(System::String* fileName, System::Boolean defaultRoot);
 
     /// \brief
     /// Constructs an XML writer on a file
@@ -135,7 +135,7 @@ public:
     /// \param fileName 
     /// Input name of the file to write.
     /// 
-    XmlWriter(System::String^ fileName);
+    XmlWriter(System::String* fileName);
 
     /// \brief
     /// Constructs an XML writer on a stream
@@ -162,7 +162,7 @@ public:
     /// written, if the attribute would have caused the current line to exceed
     /// this length.
     /// 
-	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
+	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
 
     /// \brief
     /// Constructs an XML writer on a stream
@@ -177,7 +177,7 @@ public:
     /// (the XML standard disallows multiple root elements).
     /// \param lineFormat 
     /// 
-    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
+    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
 
     /// \brief
     /// Constructs an XML writer on a stream
@@ -191,7 +191,7 @@ public:
     /// The caller is responsible for ensuring that only one root element is written 
     /// (the XML standard disallows multiple root elements).
     /// 
-    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, System::Boolean defaultRoot);
+    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, System::Boolean defaultRoot);
 
     /// \brief
     /// Constructs an XML writer on a stream
@@ -199,7 +199,7 @@ public:
     /// \param stream 
     /// Input the stream to write.
     /// 
-	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     /// Constructs an XML writer on a text writer
@@ -226,7 +226,7 @@ public:
     /// written, if the attribute would have caused the current line to exceed
     /// this length.
     /// 
-	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ writer, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
+	XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* writer, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat, System::UInt32 lineLength);
 
     /// \brief
     /// Constructs an XML writer on a text writer
@@ -248,7 +248,7 @@ public:
     /// and each element start is prepended with a repetition of this string.
     /// The string is repeated according to the element's nesting level.
     /// 
-    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ writer, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
+    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* writer, System::Boolean defaultRoot, NAMESPACE_OSGEO_COMMON_XML::XmlWriter::LineFormat lineFormat);
 
     /// \brief
     /// Constructs an XML writer on a text writer
@@ -262,7 +262,7 @@ public:
     /// The caller is responsible for ensuring that only one root element is written 
     /// (the XML standard disallows multiple root elements).
     /// 
-    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ writer, System::Boolean defaultRoot);
+    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* writer, System::Boolean defaultRoot);
 
     /// \brief
     /// Constructs an XML writer on a text writer
@@ -270,7 +270,7 @@ public:
     /// \param writer 
     /// Input the text writer.
     /// 
-    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ writer);
+    XmlWriter(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* writer);
 
     /// \brief
     /// Gets the underlying text writer. If a text writer was passed to this object
@@ -281,10 +281,7 @@ public:
     /// \return
     /// Returns the underlying text writer
     /// 
-    property NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ TextWriter
-    {
-        NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ get();
-    }
+	__property NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* get_TextWriter();
 
     /// \brief
     /// Gets the underlying stream. If a text writer was passed to this object
@@ -296,10 +293,7 @@ public:
     /// \return
     /// Returns the underlying stream
     /// 
-    property NAMESPACE_OSGEO_COMMON_IO::IoStream^ Stream
-    {
-        NAMESPACE_OSGEO_COMMON_IO::IoStream^ get();
-    }
+	__property NAMESPACE_OSGEO_COMMON_IO::IoStream* get_Stream();
 
     /// \brief
     /// Gets the current default root state.
@@ -307,6 +301,7 @@ public:
     /// \return
     /// Returns true if the default root element will be written, false otherwise.
     /// 
+	__property System::Boolean get_DefaultRoot();
 
     /// \brief
     /// Sets whether to write the default root element.
@@ -317,11 +312,7 @@ public:
     /// true: use the default root element ("DataStore") as the root element.
     /// false: caller is responsible for writing the root element.
     /// 
-    property System::Boolean DefaultRoot
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean defaultRoot);
-    }
+	__property System::Void  set_DefaultRoot(System::Boolean defaultRoot );
 
     /// \brief
     /// Closes this XML Writer by writing end tags for all
@@ -337,7 +328,7 @@ public:
     /// Input the element name. Must be a valid
     /// XML 1.0 element name.
     /// 
-	System::Void WriteStartElement(System::String^ elementName );
+	System::Void WriteStartElement(System::String* elementName );
 
     /// \brief
     /// Writes the end tag for the current element to the document.
@@ -356,7 +347,7 @@ public:
     /// \param attributeValue 
     /// Input the element value.
     /// 
-	System::Void WriteAttribute( System::String^ attributeName, System::String^ attributeValue );
+	System::Void WriteAttribute( System::String* attributeName, System::String* attributeValue );
 
     /// \brief
     /// Writes simple (character) content for the current element. This function
@@ -367,7 +358,7 @@ public:
     /// \param characters 
     /// Input characters to append to the element content.
     /// 
-	System::Void WriteCharacters( System::String^ characters );
+	System::Void WriteCharacters( System::String* characters );
 
     /// \brief
     /// Writes arbitrary bytes to the XML Writer. Caller is responsible
@@ -380,7 +371,7 @@ public:
     /// \param count 
     /// Input the number of bytes to write
     /// 
-	System::Void WriteBytes( array<System::Byte>^ bytes,  System::UInt32 count );
+	System::Void WriteBytes( System::Byte bytes [],  System::UInt32 count );
 
     /// \brief
     /// utility function that converts FDO element names to valid XML
@@ -393,7 +384,7 @@ public:
     /// \return
     /// Returns the encoded name.
     /// 
-    System::String^ EncodeName(System::String^ name);
+    System::String* EncodeName(System::String* name);
 
     /// \brief
     /// Checks if a string is a valid XML 1.0 element or attribute name.
@@ -404,7 +395,7 @@ public:
     /// \return
     /// Returns true if the string is a valid name, false otherwise.
     /// 
-    System::Boolean IsValidName(System::String^ name);
+    System::Boolean IsValidName(System::String* name);
 
     /// \brief
     /// Given an element's or attribute's globally unique name ( uri and local name ),
@@ -436,16 +427,17 @@ public:
     /// \return
     /// Returns the fully qualified name corresponding to the uri.
     /// 
-	System::String^ UriToQName( System::String^ location, System::String^ localName, System::Boolean isElement);
-	System::String^ UriToQName( System::String^ location, System::String^ localName);
+	System::String* UriToQName( System::String* location, System::String* localName, System::Boolean isElement);
+	System::String* UriToQName( System::String* location, System::String* localName);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+protected:
+	System::Void ReleaseUnmanagedObject();
+
+public private:
     XmlWriter(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoXmlWriter* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 END_NAMESPACE_OSGEO_COMMON_XML

@@ -33,11 +33,6 @@ FdoClientServiceException* FdoClientServiceException::Create(const wchar_t* mess
 	return new FdoClientServiceException(message);
 }
 
-FdoClientServiceException* FdoClientServiceException::Create(const wchar_t* message, FdoInt64 nativeErrorCode)
-{
-    return new FdoClientServiceException(message, nativeErrorCode);
-}
-
 FdoClientServiceException::FdoClientServiceException() :
     FdoException ()
 {
@@ -45,11 +40,6 @@ FdoClientServiceException::FdoClientServiceException() :
 
 FdoClientServiceException::FdoClientServiceException(const wchar_t* message) :
     FdoException (message)
-{
-}
-
-FdoClientServiceException::FdoClientServiceException(const wchar_t* message, FdoInt64 nativeErrorCode) :
-FdoException (message, NULL, nativeErrorCode)
 {
 }
 

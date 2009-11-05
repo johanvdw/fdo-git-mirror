@@ -23,24 +23,19 @@
  
 FdoIActivateLongTransactionCheckpoint* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::GetImpObj()
 {
-    return static_cast<FdoIActivateLongTransactionCheckpoint*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIActivateLongTransactionCheckpoint*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::CheckpointName::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::get_CheckpointName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCheckpointName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::CheckpointName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionCheckpointImp::set_CheckpointName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCheckpointName(StringToUni(value)))
 }

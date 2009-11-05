@@ -531,20 +531,7 @@ void ShpFileSet::GetObjectAt (RowData** row, eShapeTypes& type, Shape** shape, i
 		if (length < 0 )
 			*shape = NullShape::NewNullShape (nRecordNumber);
 		else
-        {
-            try
-            {
-                *shape = GetShapeFile ()->GetObjectAt (offset, type);
-            }
-            catch (FdoException* ex)
-            {
-                throw ex;
-            }
-            catch (...)
-            {
-                *shape = NullShape::NewNullShape (nRecordNumber);
-            }
-        }
+			*shape = GetShapeFile ()->GetObjectAt (offset, type);
     }
 }
 
@@ -665,25 +652,20 @@ void ShpFileSet::MakeSpace (int nRecordNumber, ULONG offset, int length, int new
             buffer = new char[size];
             shp->SetFilePointer64 ((FdoInt64)offset);
             plus = 0;
-            bool eof = false;
-            while (!eof)
+            while (shp->ReadFile (buffer + plus, size, &read) && (size == read))
             {
-                shp->ReadFile (buffer + plus, size, &read);
                 shp->SetFilePointer64 ((FdoInt64)(offset + excess));
-                eof = ( read < size );
-                if (!eof)
-                {
-                    shp->WriteFile (buffer, BUFFER_SIZE);
-                    memmove (buffer, buffer + BUFFER_SIZE, excess);
-                    offset += BUFFER_SIZE;
-                    size = BUFFER_SIZE;
-                    plus = excess;
-                    shp->SetFilePointer64 ((FdoInt64)(offset + excess));
-                }
-                else // write the leftover
-                {
-                    shp->WriteFile (buffer, plus + read);
-                }
+                shp->WriteFile (buffer, BUFFER_SIZE);
+                memmove (buffer, buffer + BUFFER_SIZE, excess);
+                offset += BUFFER_SIZE;
+                size = BUFFER_SIZE;
+                plus = excess;
+                shp->SetFilePointer64 ((FdoInt64)(offset + excess));
+            }
+            if (0 != read)
+            {
+                shp->SetFilePointer64 ((FdoInt64)(offset + excess));
+                shp->WriteFile (buffer, plus + read);
             }
             delete [] buffer;
         }

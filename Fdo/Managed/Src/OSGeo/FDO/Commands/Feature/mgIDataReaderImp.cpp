@@ -28,12 +28,7 @@
 
 FdoIDataReader* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetImpObj()
 {
-    return static_cast<FdoIDataReader*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+    return static_cast<FdoIDataReader*>(__super::UnmanagedObject.ToPointer());
 }
 
 System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyCount()
@@ -45,7 +40,16 @@ System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyC
 	return result;
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetDataType(System::String^ name)
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyName(System::Int32 index)
+{
+	FdoString* result;
+
+	EXCEPTION_HANDLER(result = GetImpObj()->GetPropertyName(index))
+
+	return result;
+}
+
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetDataType(System::String* name)
 {
 	FdoDataType result;
 
@@ -54,7 +58,7 @@ NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IData
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(result);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyType(System::String^ name)
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyType(System::String* name)
 {
 	FdoPropertyType result;
 
@@ -62,22 +66,3 @@ NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::I
 
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType>(result);
 }
-
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetDataType(System::Int32 index)
-{
-    FdoDataType result;
-
-    EXCEPTION_HANDLER(result = GetImpObj()->GetDataType(index))
-
-    return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(result);
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReaderImp::GetPropertyType(System::Int32 index)
-{
-    FdoPropertyType result;
-
-    EXCEPTION_HANDLER(result = GetImpObj()->GetPropertyType(index))
-
-    return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType>(result);
-}
-

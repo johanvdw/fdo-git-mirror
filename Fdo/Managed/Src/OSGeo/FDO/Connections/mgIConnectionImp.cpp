@@ -46,113 +46,115 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::IConnectionImp(IntPtr unmanaged
 
 FdoIConnection* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::GetImpObj()
 {
-    return static_cast<FdoIConnection*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIConnection*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IConnectionCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ConnectionCapabilities()
 {
-	FdoIConnectionCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetConnectionCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnectionCapabilities(IntPtr(result), true);
+	FdoIConnectionCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetConnectionCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnectionCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ISchemaCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::SchemaCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ISchemaCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_SchemaCapabilities()
 {
-	FdoISchemaCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetSchemaCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateISchemaCapabilities(IntPtr(result), true);
+	FdoISchemaCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetSchemaCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateISchemaCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ICommandCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::CommandCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ICommandCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_CommandCapabilities()
 {
-	FdoICommandCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetCommandCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateICommandCapabilities(IntPtr(result), true);
+	FdoICommandCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetCommandCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateICommandCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::FilterCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IFilterCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_FilterCapabilities()
 {
-	FdoIFilterCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetFilterCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIFilterCapabilities(IntPtr(result), true);
+	FdoIFilterCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetFilterCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIFilterCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IExpressionCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ExpressionCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IExpressionCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ExpressionCapabilities()
 {
-	FdoIExpressionCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetExpressionCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIExpressionCapabilities(IntPtr(result), true);
+	FdoIExpressionCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetExpressionCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIExpressionCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::RasterCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IRasterCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_RasterCapabilities()
 {
-	FdoIRasterCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetRasterCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIRasterCapabilities(IntPtr(result), true);
+	FdoIRasterCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetRasterCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIRasterCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::TopologyCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ITopologyCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_TopologyCapabilities()
 {
-	FdoITopologyCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetTopologyCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITopologyCapabilities(IntPtr(result), true);
+	FdoITopologyCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetTopologyCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITopologyCapabilities(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IGeometryCapabilities^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::GeometryCapabilities::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::IGeometryCapabilities* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_GeometryCapabilities()
 {
-	FdoIGeometryCapabilities * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetGeometryCapabilities())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIGeometryCapabilities(IntPtr(result), true);
+	FdoIGeometryCapabilities * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetGeometryCapabilities())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIGeometryCapabilities(unobj, true);
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionString::get()
+System::String* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ConnectionString()
 {
-	FdoString* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetConnectionString())
-	return CHECK_STRING(result);
+	FdoString* unstr;
+	EXCEPTION_HANDLER(unstr = GetImpObj()->GetConnectionString())
+	return unstr;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionString::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::set_ConnectionString( System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetConnectionString(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionInfo^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionInfo::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionInfo* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ConnectionInfo()
 {
-	FdoIConnectionInfo * result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetConnectionInfo())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnectionInfo(IntPtr(result), true);
+	FdoIConnectionInfo * unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetConnectionInfo())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnectionInfo(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionState::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ConnectionState()
 {
-	FdoConnectionState result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetConnectionState())
-	return static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState>(result);
+	FdoConnectionState unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetConnectionState())
+	return static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState>(unobj);
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionTimeout::get()
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::get_ConnectionTimeout()
 {
 	System::Int32 obj;
 	EXCEPTION_HANDLER(obj = GetImpObj()->GetConnectionTimeout())
 	return obj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::ConnectionTimeout::set(System::Int32 value)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::set_ConnectionTimeout(System::Int32 value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetConnectionTimeout(value))
 }
 
 NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::Open()
 {
-	FdoConnectionState result;
-	EXCEPTION_HANDLER(result = GetImpObj()->Open())
-	return static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState>(result);
+	FdoConnectionState unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->Open())
+	return static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ConnectionState>(unobj);
 }
 
 System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::Close()
@@ -160,28 +162,28 @@ System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::Close()
 	EXCEPTION_HANDLER(GetImpObj()->Close())
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::BeginTransaction()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::BeginTransaction()
 {
-	FdoITransaction* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->BeginTransaction())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITransaction(IntPtr(result), true);
+	FdoITransaction* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->BeginTransaction())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITransaction(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS::ICommand^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::CreateCommand(NAMESPACE_OSGEO_FDO_COMMANDS::CommandType commandType)
+NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::CreateCommand(NAMESPACE_OSGEO_FDO_COMMANDS::CommandType commandType)
 {
-	FdoICommand* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->CreateCommand(static_cast<FdoInt32>(commandType)))
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateICommand(IntPtr(result), true, commandType);
+	FdoICommand* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->CreateCommand(static_cast<FdoInt32>(commandType)))
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateICommand(unobj, true, commandType);
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::CreateSchemaMapping()
+NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::CreateSchemaMapping()
 {
-	FdoPhysicalSchemaMapping* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->CreateSchemaMapping())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePhysicalSchemaMapping(IntPtr(result), true);
+	FdoPhysicalSchemaMapping* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->CreateSchemaMapping())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePhysicalSchemaMapping(unobj, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::Configuration::set( NAMESPACE_OSGEO_COMMON_IO::IoStream^ configStream)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionImp::set_Configuration( NAMESPACE_OSGEO_COMMON_IO::IoStream* configStream)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetConfiguration(static_cast<FdoIoStream*>(configStream->UnmanagedObject.ToPointer())))
 }

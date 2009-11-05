@@ -22,9 +22,9 @@
 #include "Common\Io\mgIoStream.h"
 #include "Common\Io\mgIoByteStreamReader.h"
 
-NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::IoByteStreamReader(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream) : IStreamReaderImp(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::IoByteStreamReader(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream) : IStreamReaderImp(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoIoByteStreamReader::Create(stream->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(FdoIoByteStreamReader::Create(stream->GetImpObj()), true))
 }
 
 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::IoByteStreamReader(System::IntPtr unmanaged, System::Boolean autoDelete) : IStreamReaderImp(unmanaged, autoDelete)
@@ -34,12 +34,7 @@ NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::IoByteStreamReader(System::IntPtr
 
 FdoIoByteStreamReader* NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::GetImpObj()
 {
-	return static_cast<FdoIoByteStreamReader*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIoByteStreamReader*>(__super::UnmanagedObject.ToPointer());
 }
 
 System::Void NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::Skip(System::Int32 offest)
@@ -52,9 +47,9 @@ System::Void NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::Reset()
 	EXCEPTION_HANDLER(GetImpObj()->Reset())
 }
 
-System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<System::Byte>^ buffer)
+System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(Byte buffer[])
 {
-	pin_ptr<FdoByte> upByte = &buffer[0];
+	FdoByte __pin* upByte = &buffer[0];
 	FdoInt32 rCount;
 
 	EXCEPTION_HANDLER(rCount = GetImpObj()->ReadNext(upByte))
@@ -62,9 +57,9 @@ System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<Syst
 	return rCount;	
 }
 
-System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<System::Byte>^ buffer, System::Int32 offest)
+System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(Byte buffer[], System::Int32 offest)
 {
-	pin_ptr<FdoByte> upByte = &buffer[0];
+	FdoByte __pin* upByte = &buffer[0];
 	FdoInt32 rCount;
 
 	EXCEPTION_HANDLER(rCount = GetImpObj()->ReadNext(upByte, offest))
@@ -72,9 +67,9 @@ System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<Syst
 	return rCount;	
 }
 
-System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<System::Byte>^ buffer, System::Int32 offest, System::Int32 count)
+System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(Byte buffer[], System::Int32 offest, System::Int32 count)
 {
-	pin_ptr<FdoByte> upByte = &buffer[0];
+	FdoByte __pin* upByte = &buffer[0];
 	FdoInt32 rCount;
 
 	EXCEPTION_HANDLER(rCount = GetImpObj()->ReadNext(upByte, offest, count))
@@ -82,7 +77,7 @@ System::Int32 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::ReadNext(array<Syst
 	return rCount;
 }
 
-System::Int64 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::Length::get()
+System::Int64 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::get_Length()
 {
 	FdoInt64 length;
 
@@ -91,7 +86,7 @@ System::Int64 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::Length::get()
 	return length;
 }
 
-System::Int64 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::Index::get()
+System::Int64 NAMESPACE_OSGEO_COMMON_IO::IoByteStreamReader::get_Index()
 {
 	FdoInt64 index;
 

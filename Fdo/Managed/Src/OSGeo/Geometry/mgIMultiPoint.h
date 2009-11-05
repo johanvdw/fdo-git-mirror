@@ -21,7 +21,7 @@
 #include "mgIGeometricAggregateAbstract.h"
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IPoint;
+public __gc __interface IPoint;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \interface OSGeo::FDO::Geometry::IMultiPoint
 /// \brief
 /// The IMultiPoint class is a multi-point aggregate Geometry type.
-public interface class IMultiPoint : public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstract
+public __gc __interface IMultiPoint : public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstract
 {
 public:
     /// \brief
@@ -42,10 +42,7 @@ public:
     /// \return
     /// Returns a point
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IPoint^ default[System::Int32]
-    {
-        NAMESPACE_OSGEO_GEOMETRY::IPoint^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IPoint *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

@@ -25,7 +25,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
 /// The PropertyType enumeration lists the possible types that a Property can be.
-public enum class PropertyType
+public __value enum PropertyType
 {
     /// Represents a Data Property type.
 	PropertyType_DataProperty = FdoPropertyType_DataProperty,

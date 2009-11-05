@@ -23,18 +23,18 @@
 class FdoLOBValue;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The LOBValue class derives from DataValue and represents a literal
 /// BLOB value.
-public ref class LOBValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
+public __gc class LOBValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
 {
 public:
     /// \brief
@@ -46,7 +46,7 @@ public:
     /// \return
     /// Returns a byte array
     /// 
-	static operator array<System::Byte>^(NAMESPACE_OSGEO_FDO_EXPRESSION::LOBValue^ value);
+	static System::Byte op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::LOBValue* value ) [];
 
     /// \brief
     /// Gets the data type of the LOBValue.
@@ -54,10 +54,7 @@ public:
     /// \return
     /// Returns an DataType
     /// 
-	property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the LOB data.
@@ -65,6 +62,8 @@ public:
     /// \return
     /// Returns a byte array
     /// 
+	__property System::Byte get_Data() [];
+
     /// \brief
     /// Sets the LOB data.
     /// 
@@ -74,11 +73,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property array<System::Byte>^ Data
-    {
-        array<System::Byte>^ get();
-        System::Void set(array<System::Byte>^ value);
-    }
+	__property System::Void set_Data(System::Byte value []);
 
     /// \brief
     /// Sets the LOBValue to a null value.
@@ -86,7 +81,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetNull() override;
+	System::Void SetNull();
 
     /// \brief
     /// Overrides Expression.Process to pass the LOBValue to the appropriate
@@ -98,7 +93,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -106,7 +101,7 @@ public:
     /// \return
     /// Returns a text string
     /// 
-	virtual System::String^ ToString() override; 
+	System::String* ToString(); 
 
     /// \brief
     /// Constructs a LOBValue object based on an unmanaged instance of the object
@@ -120,10 +115,8 @@ public:
     /// 
 	LOBValue(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoLOBValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 

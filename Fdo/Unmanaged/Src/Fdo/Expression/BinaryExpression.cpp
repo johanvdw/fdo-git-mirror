@@ -161,7 +161,7 @@ FdoString* FdoBinaryExpression::ToStringInternal( FdoIdentifierCollection *pIdCo
         }
     }
 
-    const wchar_t*    szOp;
+    wchar_t*    szOp;
     switch (GetOperation())
     {
     default:

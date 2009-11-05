@@ -372,14 +372,6 @@ void LongTransactionTests::get ()
     bool found;
     struct tm systime;
 
-    // On Linux, this test crashes in SE_version_free_locks. The crash can be
-    // reproduced in a program that calls the ArcSDE API directly (no 
-    // provider involvement). For now, disable this test for Linux until 
-    // a workaround can be found.
-
-#ifndef _WIN32
-    CPPUNIT_FAIL( "LongTransactionTest::get() disable on Linux" );
-#endif
 
     if (CreateSchemaOnly())  return;
 
@@ -1649,6 +1641,5 @@ void LongTransactionTests::read_protected_version()
     catch (FdoException* ge)
     {
         // ignore error here
-        ge->Release();
     }
 }

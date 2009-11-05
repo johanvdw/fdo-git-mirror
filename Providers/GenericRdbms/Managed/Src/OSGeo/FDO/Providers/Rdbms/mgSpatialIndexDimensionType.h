@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS
 /// <param name="RdbmsSpatialIndexDimension_2D">The number of dimensions used by the spatial index is 2.</param>
 /// <param name="RdbmsSpatialIndexDimension_3D">The number of dimensions used by the spatial index is 3.</param>
 
-public enum class RdbmsSpatialIndexDimensionType
+public __value enum RdbmsSpatialIndexDimensionType
 {
     // The number of dimensions used by the spatial index is defaulted
     RdbmsSpatialIndexDimension_Default = SpatialIndexDimension_Default,
