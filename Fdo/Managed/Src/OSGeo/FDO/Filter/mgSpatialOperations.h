@@ -26,7 +26,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_FILTER
 /// \brief
 /// The SpatialOperations enumeration lists the spatial conditions available.
 [System::FlagsAttribute]
-public enum class SpatialOperations
+public __value enum SpatialOperations
 {
     /// Test to see if the geometric property value spatially contains the
     /// literal geometric value.

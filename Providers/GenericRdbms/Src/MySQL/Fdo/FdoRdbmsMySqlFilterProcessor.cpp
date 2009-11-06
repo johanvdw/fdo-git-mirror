@@ -123,8 +123,6 @@ static wchar_t* mySqlUnsupportedFdoFunctions[] = {
     L"TRANSLATE",
 	L"LENGTH2D",
     L"AREA2D",
-    L"M",
-    L"Z",
     NULL
 };
 

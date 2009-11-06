@@ -21,7 +21,7 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE
-interface class IDataStorePropertyDictionary;
+public __gc __interface IDataStorePropertyDictionary;
 
 /// \ingroup (OSGeoFDOCommandsDataStore)
 /// \interface OSGeo::FDO::Commands::DataStore::ICreateDataStore
@@ -29,7 +29,7 @@ interface class IDataStorePropertyDictionary;
 /// The ICreateDataStore interface defines the create datastore command,
 /// which can be used to create new provider specific datastores. The input is provided
 /// through a dictionary of name value pairs that is provider dependant. 
-public interface class ICreateDataStore : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface ICreateDataStore : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -40,10 +40,7 @@ public:
     /// \return
     /// Returns the DataStore property dictionary
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary^ DataStoreProperties
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary^ get();
-    }
+    __property NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary* get_DataStoreProperties();
 
     /// \brief
     /// Executes the ICreateDataStore command.

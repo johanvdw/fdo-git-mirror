@@ -32,121 +32,180 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::SignatureDefi
 
 FdoSignatureDefinition* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::GetImpObj()
 {
-    return static_cast<FdoSignatureDefinition*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoSignatureDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::SignatureDefinition(
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnDataType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection^ arguments) : Disposable(IntPtr::Zero, false)
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments) : Disposable(IntPtr::Zero, false)
 {
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoSignatureDefinition::Create(static_cast<FdoDataType>(returnDataType), 
-                                                            arguments->GetImpObj())), true));
+    EXCEPTION_HANDLER(Attach(FdoSignatureDefinition::Create(static_cast<FdoDataType>(returnDataType), 
+                                                            arguments->GetImpObj()), true));
 }
 
 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::SignatureDefinition(
                         NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType returnPropertyType,
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnDataType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection^ arguments) : Disposable(IntPtr::Zero, false)
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments) : Disposable(IntPtr::Zero, false)
 {
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoSignatureDefinition::Create(static_cast<FdoPropertyType>(returnPropertyType), 
+    EXCEPTION_HANDLER(Attach(FdoSignatureDefinition::Create(static_cast<FdoPropertyType>(returnPropertyType), 
                                                             static_cast<FdoDataType>(returnDataType), 
-                                                            arguments->GetImpObj())), true));
+                                                            arguments->GetImpObj()), true));
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::ReturnPropertyType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::get_ReturnPropertyType()
 {
 	FdoPropertyType unType;
 	EXCEPTION_HANDLER(unType = GetImpObj()->GetReturnPropertyType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType>(unType);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::ReturnType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::get_ReturnType()
 {
 	FdoDataType unType;
 	EXCEPTION_HANDLER(unType = GetImpObj()->GetReturnType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unType);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlyArgumentDefinitionCollection^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::Arguments::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlyArgumentDefinitionCollection *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition::get_Arguments()
 {
-	FdoReadOnlyArgumentDefinitionCollection *result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetArguments())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyArgumentDefinitionCollection(IntPtr(result), true);
+	FdoReadOnlyArgumentDefinitionCollection *unObj;
+	EXCEPTION_HANDLER(unObj = GetImpObj()->GetArguments())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyArgumentDefinitionCollection(unObj, true);
 }
 
 // -----------------------------------------------------------------------------------------------------
 
 FdoSignatureDefinitionCollection *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::GetImpObj()
 {
-    return static_cast<FdoSignatureDefinitionCollection*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoSignatureDefinitionCollection*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::GetDisposableObject()
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::SignatureDefinitionCollection() : Disposable(System::IntPtr::Zero, false)
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	EXCEPTION_HANDLER(Attach(FdoSignatureDefinitionCollection::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::SignatureDefinitionCollection() : NAMESPACE_OSGEO_COMMON::CollectionBase(System::IntPtr::Zero, false)
-{
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoSignatureDefinitionCollection::Create()), true))
-}
-
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::SignatureDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON::CollectionBase(unmanaged, autoDelete)
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::SignatureDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
 {
 
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::CopyTo(array<SignatureDefinition^>^ pArray, System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::ICollection::CopyTo(System::Array *array,
+                                                                                                              System::Int32 index) 
 {
-	if (nullptr == pArray)
-		throw gcnew System::ArgumentNullException();
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
 	if (index < 0)
-		throw gcnew System::ArgumentOutOfRangeException();
-	if (pArray->Rank != 1 || index >= pArray->Length || this->Count + index > pArray->Length)
-		throw gcnew System::ArgumentException();
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
 
-	for (System::Int32 i = 0; i < this->Count; i++)
-        pArray[index+i] = this->Item[i];
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array->set_Item(index + i, get_Item(i));
+	}
 }
 
-System::Object^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IndexInternal::get(System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::CopyTo(SignatureDefinition *array[],
+                                                                                                 System::Int32 index)
 {
-	return this->Item[index];
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
+	if (index < 0)
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
+
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array[index+i] = __try_cast<SignatureDefinition*>(get_Item(i));
+	}
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IndexInternal::set(System::Int32 index, System::Object^ value)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::ReleaseUnmanagedObject()
 {
-	this->Item[index] = dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value);
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Add(System::Object^ value)
+System::Object* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::ICollection::get_SyncRoot()
 {
-	return Add(dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value));
+	return NULL;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Contains(System::Object^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::ICollection::get_IsSynchronized()
 {
-	return Contains(dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value));
+	return false;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IndexOf(System::Object^ value)
-{
-	return IndexOf(dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::get_IsFixedSize() 
+{ 
+	return false;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Insert(System::Int32 index, System::Object^ value)
-{
-	Insert(index, dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value));
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::get_IsReadOnly() 
+{ 
+	return false;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Remove(System::Object^ value)
+System::Object *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::get_Item(System::Int32 index)
 {
-	return Remove(dynamic_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>(value));
+	return get_RealTypeItem(index);
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::set_Item(System::Int32 index,
+                                                                                                          System::Object *value)
+{
+	set_RealTypeItem(index,  __try_cast<SignatureDefinition*>(value) );
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::Add(System::Object *value)
+{
+	return Add(__try_cast<SignatureDefinition*>(value));
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::Contains(System::Object *value)
+{
+	return Contains(__try_cast<SignatureDefinition*>(value));
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::IndexOf(System::Object *value)
+{
+	return IndexOf(__try_cast<SignatureDefinition*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::Insert(System::Int32 index,
+                                                                                                        System::Object *value)
+{
+	Insert(index,__try_cast<SignatureDefinition*>(value));
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IList::Remove(System::Object *value)
+{
+	return Remove(__try_cast<SignatureDefinition*>(value));
 }
 
 System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::RemoveAt(System::Int32 index)
@@ -154,49 +213,54 @@ System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCo
 	EXCEPTION_HANDLER(GetImpObj()->RemoveAt(index))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Count::get(System::Void)
+System::Collections::IEnumerator *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::GetEnumerator()
 {
-	System::Int32 length;
+	return new Enumerator(this);
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::get_Count(System::Void)
+{
+	FdoInt32 length;
 
 	EXCEPTION_HANDLER(length = GetImpObj()->GetCount())
 
     return length;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Add(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Add(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
 {
-    System::Int32 index;
+    FdoInt32 index;
 
-    EXCEPTION_HANDLER(index = GetImpObj()->Add((value == nullptr ? nullptr : value->GetImpObj())))
+    EXCEPTION_HANDLER(index = GetImpObj()->Add((value == NULL ? NULL : value->GetImpObj())))
 
     return index;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IndexOf(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::IndexOf(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition* value)
 {
-    System::Int32 index;
+    FdoInt32 index;
 
-    EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == nullptr ? nullptr : value->GetImpObj())))
+    EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == NULL ? NULL : value->GetImpObj())))
 
     return index;
 }
 
 System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Insert(System::Int32 index,
-                                                                                                 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+                                                                                                 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
 {
-    EXCEPTION_HANDLER(GetImpObj()->Insert(index, (value == nullptr ? nullptr : value->GetImpObj())))
+    EXCEPTION_HANDLER(GetImpObj()->Insert(index, (value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Remove(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Remove(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
 {
-    EXCEPTION_HANDLER(GetImpObj()->Remove((value == nullptr ? nullptr : value->GetImpObj())))
+    EXCEPTION_HANDLER(GetImpObj()->Remove((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Contains(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Contains(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
 {
-	System::Boolean exist;
+	FdoBoolean exist;
 
-	EXCEPTION_HANDLER(exist = !!GetImpObj()->Contains(value == nullptr ? nullptr : value->GetImpObj()))
+	EXCEPTION_HANDLER(exist = !!GetImpObj()->Contains(value == NULL ? NULL : value->GetImpObj()))
 
 	return exist;
 }
@@ -206,85 +270,214 @@ System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCo
 	EXCEPTION_HANDLER(GetImpObj()->Clear())
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Item::get(System::Int32 index)
+/*
+Implementation for SignatureDefinitionCollection::Enumerator
+*/ 
+System::Object *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Enumerator::get_Current()
 {
-	FdoSignatureDefinition *result;
+	if (m_nIdx < 0 || m_nIdx >= m_pCol->Count)
+	{
+		throw new InvalidOperationException();
+	}
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetItem(index))
+	FdoSignatureDefinition *upElement;
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(IntPtr(result), true);
+	EXCEPTION_HANDLER(upElement = m_pCol->GetImpObj()->GetItem(m_nIdx))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(upElement, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Item::set(System::Int32 index, NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Enumerator::MoveNext()
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, (value == nullptr ? nullptr : value->GetImpObj())))
+	++m_nIdx;
+	return m_nIdx < m_pCol->Count;
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::Enumerator::Reset()
+{
+	m_nIdx = -1;
+}
+
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::get_RealTypeItem(System::Int32 index)
+{
+	FdoSignatureDefinition *upElement;
+
+	EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(index))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(upElement, true);
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::set_RealTypeItem(System::Int32 index,
+                                                                                                           NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
+{
+	EXCEPTION_HANDLER(GetImpObj()->SetItem(index, (value == NULL ? NULL : value->GetImpObj())))
+}
+
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::get_Item(System::Int32 index)
+{
+	return get_RealTypeItem(index);
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection::set_Item(System::Int32 index,
+                                                                                                   NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *value)
+{
+	set_RealTypeItem(index, value);
 }
 
 // -----------------------------------------------------------------------------------------------------
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ReadOnlySignatureDefinitionCollection() : NAMESPACE_OSGEO_COMMON::CollectionReadOnlyBase(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ReadOnlySignatureDefinitionCollection() : Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoSignatureDefinitionCollection::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoSignatureDefinitionCollection::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ReadOnlySignatureDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON::CollectionReadOnlyBase(unmanaged, autoDelete)
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ReadOnlySignatureDefinitionCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : Disposable(unmanaged, autoDelete)
 {
 
 }
 
 FdoReadOnlySignatureDefinitionCollection *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::GetImpObj()
 {
-    return static_cast<FdoReadOnlySignatureDefinitionCollection*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoReadOnlySignatureDefinitionCollection*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::CopyTo(array<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^>^ pArray, System::Int32 index)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ICollection::CopyTo(System::Array *array,
+                                                                                                                      System::Int32 index) 
 {
-	if (nullptr == pArray)
-		throw gcnew System::ArgumentNullException();
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
 	if (index < 0)
-		throw gcnew System::ArgumentOutOfRangeException();
-	if (pArray->Rank != 1 || index >= pArray->Length || this->Count + index > pArray->Length)
-		throw gcnew System::ArgumentException();
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
 
-	for (System::Int32 i = 0; i < this->Count; i++)
-        pArray[index+i] = this->Item[i];
+	for (System::Int32 i=0; i<this->Count; i++)
+	{
+		array->set_Item(index + i, get_RealTypeItem(i));
+	}
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Count::get(System::Void)
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::CopyTo(
+                                                            NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition *array[],
+                                                            System::Int32 index)
 {
-	System::Int32 length;
+	if (NULL == array)
+	{
+		throw new System::ArgumentNullException();
+	}
+
+	if (index < 0)
+	{
+		throw new System::ArgumentOutOfRangeException();
+	}
+	if (array->Rank != 1 || index >= array->Length || get_Count() + index > array->Length)
+	{
+		throw new System::ArgumentException();
+	}
+
+	for (System::Int32 i=0;i<this->Count;i++)
+	{
+		array[index+i] = __try_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition*>(get_RealTypeItem(i));
+	}
+}
+
+System::Object* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ICollection::get_SyncRoot()
+{
+	return NULL;
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::ICollection::get_IsSynchronized()
+{
+	return false;
+}
+
+
+System::Collections::IEnumerator *NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::GetEnumerator()
+{
+	return new Enumerator(this);
+}
+
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::get_Count(System::Void)
+{
+	FdoInt32 length;
 
 	EXCEPTION_HANDLER(length = GetImpObj()->GetCount())
 
 	return length;
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::IndexOf(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Int32 NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::IndexOf(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition* value)
 {
-	System::Int32 index;
+	FdoInt32 index;
 
-	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(index = GetImpObj()->IndexOf((value == NULL ? NULL : value->GetImpObj())))
 
 	return index;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Contains(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ value)
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Contains(NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition* value)
 {
-	System::Boolean exist;
+	FdoBoolean exist;
 
-	EXCEPTION_HANDLER(exist = (!!GetImpObj()->Contains(value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(exist = (!!GetImpObj()->Contains(value == NULL ? NULL : value->GetImpObj())))
 
 	return exist;
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Item::get(System::String^ name)
+/*
+Implementation for SignatureDefinitionCollection::Enumerator
+*/ 
+System::Object* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Enumerator::get_Current()
 {
-    return nullptr;
+	if (m_nIdx < 0 || m_nIdx >= m_pCol->Count)
+	{
+		throw new InvalidOperationException();
+	}
+
+	FdoSignatureDefinition* upElement;
+
+	EXCEPTION_HANDLER(upElement = m_pCol->GetImpObj()->GetItem(m_nIdx))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(upElement, true);
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Enumerator::MoveNext()
+{
+	++m_nIdx;
+	return m_nIdx < m_pCol->Count;
+}
+
+System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Enumerator::Reset()
+{
+	m_nIdx = -1;
+}
+
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::get_RealTypeItem(System::Int32 index)
+{
+	FdoSignatureDefinition* upElement;
+
+	EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(index))
+
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(upElement, true);
+}
+
+NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition* NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::get_RealTypeItem(System::String* name)
+{
+    return NULL;
 	//FdoSignatureDefinition* upElement;
 
 	//EXCEPTION_HANDLER(upElement = GetImpObj()->GetItem(StringToUni(name)))
@@ -292,16 +485,3 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ NAMESPACE_OSG
 	//return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(upElement, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinition^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::Item::get(System::Int32 index)
-{
-	FdoSignatureDefinition* result;
-
-	EXCEPTION_HANDLER(result = GetImpObj()->GetItem(index))
-
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateSignatureDefinition(IntPtr(result), true);
-}
-
-System::Object^ NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection::IndexInternal::get(System::Int32 index)
-{
-	return this->Item[index];
-}

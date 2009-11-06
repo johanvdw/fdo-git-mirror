@@ -24,7 +24,7 @@
 class FdoICurveAbstract;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IDirectPosition;
+public __gc __interface IDirectPosition;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -32,8 +32,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \ingroup (OSGeoFDOGeometry)
 /// \brief
 /// The ICurveAbstractImp class is a curve Geometry type (concrete). ICurveAbstractImp is the most general curve type.  
-private ref class ICurveAbstractImp :
-    public NAMESPACE_OSGEO_GEOMETRY::ICurveAbstract, public NAMESPACE_OSGEO_GEOMETRY::IGeometryImp
+private __gc class ICurveAbstractImp :
+public NAMESPACE_OSGEO_GEOMETRY::ICurveAbstract, public NAMESPACE_OSGEO_GEOMETRY::IGeometryImp
 {
 public:
     /// \brief
@@ -48,10 +48,8 @@ public:
     /// 
 	ICurveAbstractImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	FdoICurveAbstract *GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 	
 public:
     /// \brief
@@ -65,10 +63,7 @@ public:
     /// \return
     /// Returns the starting position
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ StartPosition
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_StartPosition();
 	
     /// \brief
     /// Gets the ending position of this Curve.
@@ -81,10 +76,7 @@ public:
     /// \return
     /// Returns the ending position
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ EndPosition
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_EndPosition();
 	
     /// \brief
     /// Gets the closure state for the curve.
@@ -104,10 +96,7 @@ public:
     /// \return
     /// Returns 'true' if the curve is closed, and false otherwise
     /// 
-    property System::Boolean IsClosed
-    {
-        virtual System::Boolean get();
-    }
+	__property System::Boolean get_IsClosed();
 };
 END_NAMESPACE_OSGEO_GEOMETRY
 

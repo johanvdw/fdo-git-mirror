@@ -38,15 +38,10 @@
 
 FdoClassDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::GetImpObj()
 {
-	return static_cast<FdoClassDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoClassDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::ClassType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_ClassType()
 {
 	FdoClassType result;
 
@@ -55,117 +50,117 @@ NAMESPACE_OSGEO_FDO_SCHEMA::ClassType NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinitio
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::ClassType>(result);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::BaseClass::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_BaseClass()
 {
 	FdoClassDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetBaseClass())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::BaseClass::set(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::set_BaseClass(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetBaseClass((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetBaseClass((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::IsAbstract::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_IsAbstract()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetIsAbstract())
 
 	return result;	
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::IsAbstract::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::set_IsAbstract(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIsAbstract(value))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::SetBaseProperties(NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinitionCollection^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::SetBaseProperties(NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinitionCollection* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetBaseProperties((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetBaseProperties((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ReadOnlyPropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::GetBaseProperties()
+NAMESPACE_OSGEO_FDO_SCHEMA::ReadOnlyPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::GetBaseProperties()
 {
 	FdoReadOnlyPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetBaseProperties())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyPropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyPropertyDefinitionCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::IdentityProperties::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_IdentityProperties()
 {
 	FdoDataPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetIdentityProperties())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinitionCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ReadOnlyDataPropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::BaseIdentityProperties::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ReadOnlyDataPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_BaseIdentityProperties()
 {
 	FdoReadOnlyDataPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetBaseIdentityProperties())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyDataPropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateReadOnlyDataPropertyDefinitionCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::Properties::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_Properties()
 {
 	FdoPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetProperties())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePropertyDefinitionCollection(result, true);
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::QualifiedName::get()
+System::String* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_QualifiedName()
 {
 	FdoStringP result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetQualifiedName())
 
-	return CHECK_STRING((FdoString*)result);
+	return (FdoString*)result;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::IsComputed::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_IsComputed()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetIsComputed())
 
 	return result;	
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::IsComputed::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::set_IsComputed(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIsComputed(value))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::Capabilities::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_Capabilities()
 {
 	FdoClassCapabilities* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCapabilities())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassCapabilities(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassCapabilities(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::Capabilities::set(NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::set_Capabilities(NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetCapabilities((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetCapabilities((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraintCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::UniqueConstraints::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraintCollection* NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition::get_UniqueConstraints()
 {
 	FdoUniqueConstraintCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetUniqueConstraints())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateUniqueConstraintCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateUniqueConstraintCollection(result, true);
 }

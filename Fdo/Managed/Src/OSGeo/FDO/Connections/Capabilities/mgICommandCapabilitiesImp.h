@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 /// \brief
 /// The ICommandCapabilities interface declares the feature provider's level
 /// of support for Commands.
-public ref class ICommandCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+public __gc class ICommandCapabilitiesImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                             public NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ICommandCapabilities
 {
 public:
@@ -38,10 +38,7 @@ public:
     /// \return
     /// Returns the list of commands
     /// 
-    virtual property array<System::Int32>^ Commands
-    {
-        array<System::Int32>^ get();
-    }
+	__property System::Int32 get_Commands() [];
 
     /// \brief
     /// Determines if commands support parameterization.
@@ -49,7 +46,7 @@ public:
     /// \return
     /// Returns true if commands support parameterization
     /// 
-	virtual System::Boolean SupportsParameters();
+	System::Boolean SupportsParameters();
 
     /// \brief
     /// Determines if the feature provider supports command execution timeout.
@@ -57,7 +54,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports timeout.
     /// 
-	virtual System::Boolean SupportsTimeout();
+	System::Boolean SupportsTimeout();
 
     /// \brief
     /// Determines if the feature provider can use expressions for properties with Select and SelectAggregate commands.
@@ -65,7 +62,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports select expressions.
     /// 
-	virtual System::Boolean SupportsSelectExpressions();
+	System::Boolean SupportsSelectExpressions();
 
     /// \brief
     /// Determines if simple functions can be used in Select and SelectAggregates command. 
@@ -75,7 +72,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports select simple functions.
     /// 
-	virtual System::Boolean SupportsSelectFunctions();
+	System::Boolean SupportsSelectFunctions();
 
     /// \brief
     /// Determines if Distinct can be used with SelectAggregates. This can be true only 
@@ -84,7 +81,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports select distinct.
     /// 
-	virtual System::Boolean SupportsSelectDistinct();
+	System::Boolean SupportsSelectDistinct();
 
     /// \brief
     /// Determines  if ordering is available in the Select and SelectAggregates command.
@@ -92,7 +89,7 @@ public:
     /// \return
     /// Returns true if the feature provider supports select ordering.
     /// 
-	virtual System::Boolean SupportsSelectOrdering();
+	System::Boolean SupportsSelectOrdering();
 
     /// \brief
     /// Determines if a grouping criteria is available in the SelectAggregates command. 
@@ -103,14 +100,17 @@ public:
     /// 
     /// Note: Aggregate functions can be supported without also supporting grouping criteria 
     /// (but not vice versa).
-	virtual System::Boolean SupportsSelectGrouping();
+	System::Boolean SupportsSelectGrouping();
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	ICommandCapabilitiesImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoICommandCapabilities* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES

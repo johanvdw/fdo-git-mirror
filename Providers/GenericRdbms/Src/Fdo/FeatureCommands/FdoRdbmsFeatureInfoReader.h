@@ -19,9 +19,8 @@
 
 #include "FdoRdbms.h"
 #include "Sm/Lp/ClassDefinition.h"
-#include "FdoDefaultFeatureReader.h"
 
-class FdoRdbmsFeatureInfoReader: public FdoDefaultFeatureReader
+class FdoRdbmsFeatureInfoReader: public FdoIFeatureReader
 {
   friend class FdoRdbmsInsertCommand;
   friend class FdoRdbmsUpdateCommand;

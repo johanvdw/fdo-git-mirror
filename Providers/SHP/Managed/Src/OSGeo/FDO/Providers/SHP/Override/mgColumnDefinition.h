@@ -26,18 +26,16 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE
 /// The FdoShpOvColumnDefinition class defines a raster image which contains a name 
 /// and the extents of the raster image.
 /// </summary>
-public ref class ColumnDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
+public __gc class ColumnDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping
 {
 public:
 	/// <summary>Constructs a new empty class definition.</summary>
 	ColumnDefinition();
 
-internal:
+public private:
 	ColumnDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoShpOvColumnDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_SHP_OVERRIDE

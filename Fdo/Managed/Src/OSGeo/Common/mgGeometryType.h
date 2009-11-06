@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON
 /// GeometryType is an enumeration to denote the type of a Geometry.
 /// \remarks
 /// This enumeration applies to types that derive from IGeometry.
-public enum class GeometryType
+public __value enum GeometryType
 {
     /// Indicates no specific type; used for "unknown", "don't care" or an incompletely constructed Geometry object.
     GeometryType_None = FdoGeometryType_None,
@@ -71,7 +71,7 @@ public enum class GeometryType
 /// Enumeration for components of Geometry.
 /// \remarks
 /// This enumeration applies to certain helper types that are used to compose other types which derive from IGeometry.
-public enum class GeometryComponentType
+public __value enum GeometryComponentType
 {
     /// LinearRing type
     GeometryComponentType_LinearRing = FdoGeometryComponentType_LinearRing,

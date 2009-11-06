@@ -27,12 +27,10 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 ///type object property mapping. Under the Single mapping type, the object 
 ///property is kept in the same table as its containing class.
 ///</summary>
-public ref class OvPropertyMappingSingle : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition
+public __gc class OvPropertyMappingSingle : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition
 {
-internal:
+public private:
 	FdoRdbmsOvPropertyMappingSingle* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 	
 public protected:
 	OvPropertyMappingSingle(System::IntPtr unmanaged, System::Boolean autoDelete);
@@ -42,13 +40,12 @@ public:
     ///Gets the prefix which is prepended to the name of each column
     ///</summary>
     /// <returns>Returns the prefix</returns>
+	__property System::String* get_Prefix();
+
     ///<summary>Sets the prefix</summary>
     /// <returns>Returns nothing</returns>
-    virtual property System::String^ Prefix
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Prefix(System::String* prefix);
+
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

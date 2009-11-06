@@ -24,56 +24,132 @@
 class FdoPhysicalSchemaMappingCollection;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlSaxContext;
-ref class XmlSaxHandler;
-ref class XmlAttributeCollection;
+public __gc class XmlSaxContext;
+public __gc class XmlSaxHandler;
+public __gc class XmlAttributeCollection;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
-interface class IConnection;
+public __gc __interface IConnection;
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
-ref class PhysicalSchemaMapping;
+public __gc class PhysicalSchemaMapping;
 
 /// \ingroup (OSGeoFDOCommandsSchema)
 /// \brief
 /// PhysicalSchemaMappingCollection defines a collection of Schema Override
 /// sets. This is a generic collection which can contain override sets for different 
 /// FDO Providers.
-[System::Reflection::DefaultMemberAttribute("Item")]
-public ref class PhysicalSchemaMappingCollection sealed : public NAMESPACE_OSGEO_COMMON::CollectionBase, 
-    public NAMESPACE_OSGEO_FDO_XML::IXmlDeserializable, public NAMESPACE_OSGEO_FDO_XML::IXmlSerializable
+[System::Reflection::DefaultMemberAttribute("RealTypeItem")]
+public __sealed __gc class PhysicalSchemaMappingCollection : public NAMESPACE_OSGEO_RUNTIME::Disposable, public System::Collections::IList, public NAMESPACE_OSGEO_FDO_XML::IXmlDeserializable, public NAMESPACE_OSGEO_FDO_XML::IXmlSerializable
 {
 /// \cond DOXYGEN-IGNORE
-internal:
-	PhysicalSchemaMappingCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_COMMON::CollectionBase(unmanaged, autoDelete)
+private:
+    /// \brief
+    /// A Nested class defined to provide enumeration of Dictionary elements
+    ///
+    /// Enumerators can be used to read the data in the collection, 
+    /// but they cannot be used to modify the underlying collection.
+    ///
+    /// An enumerator remains valid as long as the collection remains unchanged. 
+    /// If changes are made to the collection, such as adding, modifying, or deleting 
+    /// elements, the enumerator is irrecoverably invalidated and the next call to 
+    /// MoveNext or Reset throws an InvalidOperationException. If the collection is 
+    /// modified between MoveNext and Current, Current returns the element that it is 
+    /// set to, even if the enumerator is already invalidated.
+    ///
+    /// The enumerator does not have exclusive access to the collection; therefore, 
+    /// enumerating through a collection is intrinsically not a thread-safe procedure. 
+    /// Even when a collection is synchronized, other threads can still modify the 
+    /// collection, which causes the enumerator to throw an exception. To guarantee 
+    /// thread safety during enumeration, you can either lock the collection during 
+    /// the entire enumeration or catch the exceptions resulting from changes made 
+    /// by other threads.
+    /// 
+	__gc class Enumerator : public System::Collections::IEnumerator
+	{
+	private:
+		PhysicalSchemaMappingCollection* m_pCol;
+		System::Int32 m_nIdx;
+
+	public:
+        /// \brief
+        /// Constructs a new Collection Enumerator
+        /// 
+        /// \param col 
+        /// Input The collection to enumerate.
+        /// 
+		Enumerator(PhysicalSchemaMappingCollection* elements) : m_pCol(elements), m_nIdx(-1) 
+		{
+
+		}
+
+        /// \brief
+        /// Retrieves the current object at the enumerator location
+        /// 
+        /// \return
+        /// Retuns the current object referenced by the enumerator
+        /// 
+		__property System::Object *get_Current();
+
+        /// \brief
+        /// Initially, the enumerator is positioned before the first object in the collection. 
+        /// At this position, calling the Current property throws an exception. 
+        /// Therefore, you must call the MoveNext method to advance the enumerator 
+        /// to the first element of the collection before reading the value of Current.
+        /// If MoveNext passes the end of the collection, the enumerator is positioned 
+        /// after the last element in the collection and MoveNext returns false. 
+        /// When the enumerator is at this position, subsequent calls to MoveNext also return false. 
+        /// If the last call to MoveNext returned false, calling Current throws an exception. 
+        /// To set Current to the first element of the collection again, you can call Reset 
+        /// followed by MoveNext.
+        /// 
+        /// \return
+        /// Retuns true if the Enumerator is able to move to a valid element
+        /// otherwise false.
+        /// 
+		System::Boolean MoveNext();
+
+        /// \brief
+        /// Initially, the enumerator is positioned before the first element in the collection. 
+        /// The Reset method brings the enumerator back to this position. 
+        /// 
+		System::Void Reset();
+	};
+
+public private:
+	PhysicalSchemaMappingCollection(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoPhysicalSchemaMappingCollection* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 private:
-    virtual property System::Object^ IndexInternal[System::Int32]
-    {
-        private: System::Object^ get(System::Int32 index) sealed = IList::default::get;
-        private: void set(System::Int32 index, System::Object^ value) sealed = IList::default::set;
-    }
+    // System::Collections::ICollection interface properties
+    __property System::Object* System::Collections::ICollection::get_SyncRoot();
+    __property System::Boolean System::Collections::ICollection::get_IsSynchronized();
+
+    // System::Collections::ICollection interface methods
+    System::Void System::Collections::ICollection::CopyTo(System::Array* array,System::Int32 index);
+
+    // System::Collections::IList interface properties
+    __property System::Boolean System::Collections::IList::get_IsFixedSize();
+    __property System::Boolean System::Collections::IList::get_IsReadOnly();
+    __property Object* System::Collections::IList::get_Item(System::Int32 index);
+    __property System::Void  System::Collections::IList::set_Item(System::Int32 index, Object* value);
 
     // System::Collections::IList interface methods
-    virtual System::Int32 Add(System::Object^ value) sealed = IList::Add;
-    virtual System::Boolean Contains(System::Object^ value) sealed = IList::Contains;
-    virtual System::Int32 IndexOf(System::Object^ value) sealed = IList::IndexOf;
-    virtual System::Void Insert(System::Int32 index, System::Object^ value) sealed = IList::Insert;
-    virtual System::Void Remove(System::Object^ value) sealed = IList::Remove;
-
+    System::Int32 System::Collections::IList::Add(Object* value);
+    System::Boolean System::Collections::IList::Contains(Object* value);
+    System::Int32 System::Collections::IList::IndexOf(Object* value);
+    System::Void System::Collections::IList::Insert(System::Int32 index, Object* value);
+    System::Void System::Collections::IList::Remove(Object* value);
 /// \endcond
 
 public:
@@ -92,10 +168,15 @@ public:
     /// \return
     /// Returns the number of items in the collection.
     /// 
-    property System::Int32 Count
-    {
-        virtual System::Int32 get() override;
-    }
+	__property System::Int32 get_Count(System::Void);
+
+    /// \brief
+    /// Gets an enumerator that can iterate through a collection.
+    /// 
+    /// \return
+    /// Returns an enumerator on the dictionary.
+    /// 
+	__sealed System::Collections::IEnumerator* GetEnumerator(System::Void);
 
     /// \brief
     /// Removes the index-th PhysicalSchemaMapping from this collection.
@@ -103,12 +184,12 @@ public:
     /// \param index 
     /// Input index of the element to remove.
     /// 
-	virtual System::Void RemoveAt(System::Int32 index) override;
+	System::Void RemoveAt(System::Int32 index);
 
     /// \brief
     /// Removes all elements from the collection.
     /// 
-	virtual System::Void  Clear() override;
+	System::Void  Clear();
 
     /// \brief
     /// Adds a PhysicalSchemaMapping object into the collection.
@@ -119,7 +200,7 @@ public:
     /// \return
     /// Returns the position into which the new element was inserted.
     /// 
-	System::Int32 Add(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
+	System::Int32 Add(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     /// Determines the index of a specific PhysicalSchemaMapping object.
@@ -130,7 +211,7 @@ public:
     /// \return
     /// The index of value if found in the collection; otherwise, -1.
     /// 
-	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
+	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     /// Inserts a PhysicalSchemaMapping object into the collection at the specified position.
@@ -140,7 +221,7 @@ public:
     /// \param value 
     /// Input the PhysicalSchemaMapping object to insert.
     /// 
-	System::Void Insert(System::Int32 index, NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
+	System::Void Insert(System::Int32 index, NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     /// Removes the first occurrence of a specific PhysicalSchemaMapping object.
@@ -148,7 +229,7 @@ public:
     /// \param value 
     /// Input the PhysicalSchemaMapping object to remove from the collection.
     /// 
-	System::Void Remove(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
+	System::Void Remove(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     /// Determines whether the collection contains a specific PhysicalSchemaMapping object.
@@ -159,7 +240,7 @@ public:
     /// \return
     /// Returns true if the value is found in the collection; otherwise, false.
     /// 
-	System::Boolean Contains(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
+	System::Boolean Contains(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     /// Copies the elements of the collection to an array.
@@ -170,7 +251,7 @@ public:
     /// \param startAt 
     /// Input an integer that represents the index in array at which copying begins.
     /// 
-	System::Void CopyTo(array<NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^>^ pArray, System::Int32 index);
+	System::Void CopyTo(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* array[],System::Int32 startAt);
 
     /// \brief
     /// Gets the item in the collection at the specified index. 
@@ -182,6 +263,8 @@ public:
     /// Returns an instance of a the collected item.
     /// Throws an instance of Exception if the index is out of range or an error occurs.
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* get_RealTypeItem(System::Int32 index);
+
     /// \brief
     /// Sets the value of the item at the specified index
     /// 
@@ -191,13 +274,31 @@ public:
     /// \param value 
     /// Input the value of the item
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ Item[System::Int32]
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ get(System::Int32 index);
-        System::Void set(System::Int32 index, NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
-    }
+	__property System::Void  set_RealTypeItem(System::Int32 index, NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
-    /* 
+    /// \brief
+    /// Gets an item in the collection.
+    /// 
+    /// \param index 
+    /// Input index of the item to retrieve.
+    /// 
+    /// \return
+    /// Returns the item at the specified index
+    /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* get_Item(System::Int32 index);
+
+    /// \brief
+    /// Sets the value of the item at the specified index
+    /// 
+    /// \param index 
+    /// Input index of the item to set.
+    /// 
+    /// \param value 
+    /// Input the value of the item
+    /// 
+	__property System::Void  set_Item(System::Int32 index, NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
+
+	/* 
 	*	Special interface implementation
 	*/
 
@@ -210,7 +311,7 @@ public:
     /// \return
     /// Returns the Schema Override set at the specified index
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ GetItem(System::Int32 index);
+	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* GetItem(System::Int32 index);
 
     /// \brief
     /// Gets the Schema Override set for the specified 
@@ -226,9 +327,9 @@ public:
     /// Schema, where the  [company] and [provider] parts of the set’s providerName 
     /// and the given providerName match exactly. The set with the highest 
     /// [version], that is less than or equal to the [version] of the given provider, 
-    /// is returned.  nullptr is return if a set was not found.
+    /// is returned.  NULL is return if a set was not found.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping ^ GetItem(System::String^ providerName, System::String^ schemaName);
+	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping * GetItem(System::String* providerName, System::String* schemaName);
 
     /// \brief
     /// Gets the Schema Override set for the specified Feature Schema and the
@@ -243,10 +344,10 @@ public:
     /// 
     /// \return
     /// Returns the Schema Override set for the given Feature Schema and 
-    /// Provider for the given connection. nullptr is return if the set was not 
+    /// Provider for the given connection. NULL is return if the set was not 
     /// found.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping ^ GetItem(NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ connection, System::String^ schemaName);
+	NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping * GetItem(NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* connection, System::String* schemaName);
 
 	/*
 		IXmlSaxHandler Implemenations
@@ -260,10 +361,10 @@ public:
     /// Input caller specified contextual information
     /// 
     /// \return
-    /// Returns the SAX Handler for the document's root element. If nullptr then 
+    /// Returns the SAX Handler for the document's root element. If NULL then 
     /// this SAX handler will handle the root element
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ XmlStartDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ saxContext);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* XmlStartDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* saxContext);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -272,7 +373,7 @@ public:
     /// \param saxContext 
     /// Input caller specified contextual information
     /// 
-	virtual System::Void XmlEndDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ saxContext);
+	System::Void XmlEndDocument(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* saxContext);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -290,10 +391,10 @@ public:
     /// Input the attributes for the element.
     /// 
     /// \return
-    /// Returns the SAX Handler for the element's sub-elements. If nullptr then 
+    /// Returns the SAX Handler for the element's sub-elements. If NULL then 
     /// this SAX handler will handle the sub-elements
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ XmlStartElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, String^ resourceLocation, String^ name, String^ qualifiedName, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* XmlStartElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, String* resourceLocation, String* name, String* qualifiedName, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -313,7 +414,7 @@ public:
     /// cause the parse to continue. Return value is ignored if the current parse
     /// is not an incremental parse ( see XmlReader::Parse())
     /// 
-	virtual System::Boolean XmlEndElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ resourceLocation, System::String^ name, System::String^ qualifiedName);
+	System::Boolean XmlEndElement(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* resourceLocation, System::String* name, System::String* qualifiedName);
 
     /// \brief
     /// Default Sax callback that is called when the XmlReader 
@@ -327,7 +428,7 @@ public:
     /// \param characters 
     /// Input the next chunk of simple content
     /// 
-	virtual System::Void XmlCharacters(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ characters);
+	System::Void XmlCharacters(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* characters);
 
 	/*
 		IXmlDeserializable Implemenations
@@ -339,7 +440,7 @@ public:
     /// \param fileName 
     /// Input the file name. Must consist of an XML document.
     /// 
-	virtual System::Void ReadXml(System::String^ fileName);
+	System::Void ReadXml(System::String* fileName);
 
     /// \brief
     /// Reads from an XML document in a file.
@@ -348,9 +449,9 @@ public:
     /// Input the file name. Must consist of an XML document.
     /// \param flags 
     /// Input controls the reading of the elements from the document.
-    /// If nullptr then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
+    /// If NULL then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
     /// 
-	virtual System::Void ReadXml(System::String^ fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void ReadXml(System::String* fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Reads an XML document from an XML reader.
@@ -358,7 +459,7 @@ public:
     /// \param xmlReader 
     /// Input the XML reader.
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ xmlReader);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_XML::XmlReader* xmlReader);
 
     /// \brief
     /// Reads an XML document from an XML reader.
@@ -367,9 +468,9 @@ public:
     /// Input the XML reader.
     /// \param flags 
     /// Input controls the reading of the elements from the document. 
-    /// If nullptr then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
+    /// If NULL then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ xmlReader, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_XML::XmlReader* xmlReader, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Reads an XML document from a text reader.
@@ -378,7 +479,7 @@ public:
     /// Input the text reader. Must be positioned at the
     /// start of an XML document.
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoTextReader^ textReader);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoTextReader* textReader);
 
     /// \brief
     /// Reads an XML document from a text reader.
@@ -388,9 +489,9 @@ public:
     /// start of an XML document.
     /// \param flags 
     /// Input controls the reading of the elements from the document. 
-    /// If nullptr then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
+    /// If NULL then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoTextReader^ textReader, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoTextReader* textReader, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Reads an XML document from a stream.
@@ -399,7 +500,7 @@ public:
     /// Input the stream. Must be positioned at the
     /// start of an XML document.
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     /// Reads an XML document from a stream.
@@ -409,9 +510,9 @@ public:
     /// start of an XML document.
     /// \param flags 
     /// Input controls the reading of the elements from the document. 
-    /// If nullptr then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
+    /// If NULL then the default flags are used (see NAMESPACE_OSGEO_FDO_XML::XmlFlags::Create())
     /// 
-	virtual System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void ReadXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Gets the XML Flags that were passed to the ReadXml() 
@@ -421,7 +522,7 @@ public:
     /// \return
     /// Returns the XML Flags
     /// 
-	virtual NAMESPACE_OSGEO_FDO_XML::XmlFlags^ GetDeserializationFlags();
+	NAMESPACE_OSGEO_FDO_XML::XmlFlags* GetDeserializationFlags();
 
     /// \brief
     /// Gets the current XML Reader. This function would 
@@ -432,7 +533,7 @@ public:
     /// \return
     /// Returns the XML reader
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::XmlReader^ GetXmlReader();
+	NAMESPACE_OSGEO_COMMON_XML::XmlReader* GetXmlReader();
 
     /// \brief
     /// Gets the stylesheet for converting the XML document from 
@@ -441,9 +542,9 @@ public:
     /// stylesheet that does the conversion.
     /// 
     /// \return
-    /// Returns nullptr by default (no internal format defined)
+    /// Returns NULL by default (no internal format defined)
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::XmlReader^ GetFromExternalStylesheet();
+	NAMESPACE_OSGEO_COMMON_XML::XmlReader* GetFromExternalStylesheet();
 
     /// \brief
     /// Gets the SAX context to pass to the XmlSaxHandler callbacks.
@@ -451,10 +552,10 @@ public:
     /// specify a SAX context with class-specific information.
     /// 
     /// \return
-    /// Returns nullptr by default, the default NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext is used.
+    /// Returns NULL by default, the default NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext is used.
     /// The default provides basic error handling functionality.
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ GetSaxContext();
+	NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* GetSaxContext();
 
 	/*
 		IXmlSerializable Implemenations
@@ -467,7 +568,7 @@ public:
     /// \param fileName 
     /// Input the file name.
     /// 
-	virtual System::Void WriteXml(String^ fileName);
+	System::Void WriteXml(String* fileName);
 
     /// \brief
     /// Writes this object to a file. A complete XML document,
@@ -477,9 +578,9 @@ public:
     /// Input the file name.
     /// \param flags 
     /// Input controls the writing of the elements to the document.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(String^ fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(String* fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to an XML writer. This object is appended to the XML document
@@ -490,7 +591,7 @@ public:
     /// Input the XML writer. When this function completes, the
     /// XML writer's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter);
 
     /// \brief
     /// Writes to an XML writer. This object is appended to the XML document
@@ -502,9 +603,9 @@ public:
     /// XML writer's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the writer.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to a text writer. A complete XML document,
@@ -514,7 +615,7 @@ public:
     /// Input the text writer.When this function completes, the
     /// text writer's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ textWriter);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* textWriter);
 
     /// \brief
     /// Writes to a text writer. A complete XML document,
@@ -525,9 +626,9 @@ public:
     /// text writer's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the writer.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ textWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* textWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to a stream. A complete XML document,
@@ -537,7 +638,7 @@ public:
     /// Input the stream. When this function completes, the
     /// stream's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     /// Writes to a stream. A complete XML document,
@@ -548,9 +649,9 @@ public:
     /// stream's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the stream.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Gets the stylesheet for converting the XML document from 
@@ -559,9 +660,14 @@ public:
     /// stylesheet that does the conversion.
     /// 
     /// \return
-    /// Returns nullptr by default (no internal format defined)
+    /// Returns NULL by default (no internal format defined)
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::XmlReader^ GetFromInternalStylesheet();
+	NAMESPACE_OSGEO_COMMON_XML::XmlReader* GetFromInternalStylesheet();
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA

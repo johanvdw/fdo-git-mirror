@@ -89,7 +89,6 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)\Xalan-C_1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -279,7 +278,6 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)\Xalan-C_1D.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -17,7 +17,6 @@
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <vector>
 #include <FdoExpressionEngine.h>
-#include "FdoDefaultFeatureReader.h"
 
 //forward declare
 class SdfConnection;
@@ -27,7 +26,7 @@ class BinaryReader;
 class DataDb;
 struct PropertyStub;
 
-class SdfSimpleFeatureReader :public FdoDefaultFeatureReader
+class SdfSimpleFeatureReader :public FdoIFeatureReader
 {
     //-------------------------------------------------------
     // Constructor / destructor
