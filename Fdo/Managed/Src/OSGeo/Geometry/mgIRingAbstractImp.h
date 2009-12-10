@@ -23,7 +23,7 @@
 
 class FdoIRingAbstract;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IEnvelope;
+public __gc __interface IEnvelope;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \brief
 /// The IRingAbstractImp class is a ring Geometry helper type (abstract). FdoIRingAbstract is the most general ring type.
 /// It is similar to CurveAbstract, but is always closed.
-public ref class IRingAbstractImp : 
+public __gc class IRingAbstractImp : 
 	public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IRingAbstract
 {
 public:
@@ -48,6 +48,9 @@ public:
     /// 
 	IRingAbstractImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
+protected:
+	System::Void ReleaseUnmanagedObject();
+	
 public:
     /// \brief
     /// Gets the envelope for the object.
@@ -55,11 +58,8 @@ public:
     /// \return
     /// Returns the envelope
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ Envelope
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ get();
-    }
-
+	__property NAMESPACE_OSGEO_GEOMETRY::IEnvelope *get_Envelope();
+	
     /// \brief
     /// Gets the dimensionality of ordinates in this object.
     /// 
@@ -70,15 +70,10 @@ public:
     /// \return
     /// Returns the ordinate dimensionality
     /// 
-    property System::Int32 Dimensionality
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_Dimensionality();
 
-internal:
-	inline FdoIRingAbstract* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	inline FdoIRingAbstract *GetImpObj();
 };
 END_NAMESPACE_OSGEO_GEOMETRY
 

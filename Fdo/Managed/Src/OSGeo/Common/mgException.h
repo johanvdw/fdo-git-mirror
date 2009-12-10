@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON
 /// Exception is a root class for the exception type thrown from classes. It derives from a language 
 /// level exception class that is environment specific.
 [System::SerializableAttribute]
-public ref class Exception : public System::Exception
+public __gc class Exception : public System::Exception
 {
 public:
     /// \brief
@@ -36,19 +36,7 @@ public:
     /// \param ex 
     /// Input A Pointer to the unmanaged object.
     /// 
-	static NAMESPACE_OSGEO_COMMON::Exception^ Create(System::IntPtr ex);
-
-    /// \brief
-    ///  Returns the native error code of the underlying provider.
-    /// 
-    ///
-    /// \returns
-    /// The native error code of the underlying provider
-    /// 
-    System::Int64 GetNativeErrorCode()
-    {
-        return m_nativeErrorCode;
-    }
+	static NAMESPACE_OSGEO_COMMON::Exception* Create(System::IntPtr ex);
 
 public:
     /// \brief
@@ -65,37 +53,7 @@ public:
     /// \param msg 
     /// Input the error message
     /// 
-	NAMESPACE_OSGEO_COMMON::Exception(String^ msg) : System::Exception(msg), m_nativeErrorCode(0)
-	{
-		
-	}
-
-    /// \brief
-    /// Creates an instance of an Exception using the specified arguments.
-    /// 
-    /// \param msg 
-    /// Input the error message
-    ///
-    /// \param nativeErrroCode 
-    /// Input the native error code
-    /// 
-    NAMESPACE_OSGEO_COMMON::Exception(String^ msg, System::Int64 nativeErrorCode) 
-        : System::Exception(msg), m_nativeErrorCode(nativeErrorCode)
-    {
-    
-    }
-
-    /// \brief
-    ///  Returns an instance of a Exception using the specified arguments.
-    /// 
-    /// \param msg 
-    /// Input the error message
-    ///
-    /// \param cause 
-    /// Input the cause of the error
-    /// 
-	NAMESPACE_OSGEO_COMMON::Exception(System::String^ msg, System::Exception^ cause) 
-        : System::Exception(msg, cause), m_nativeErrorCode(0)
+	NAMESPACE_OSGEO_COMMON::Exception(String* msg) : System::Exception(msg)
 	{
 		
 	}
@@ -108,26 +66,18 @@ public:
     ///
     /// \param cause 
     /// Input the cause of the error
-    ///
-    /// \param nativeErrroCode 
-    /// Input the native error code
     /// 
-    NAMESPACE_OSGEO_COMMON::Exception(System::String^ msg, System::Exception^ cause, System::Int64 nativeErrorCode) 
-        : System::Exception(msg, cause), m_nativeErrorCode(nativeErrorCode)
-    {
-
-    }
-
-    
+	NAMESPACE_OSGEO_COMMON::Exception(System::String* msg, System::Exception* cause) : System::Exception(msg, cause)
+	{
+		
+	}
 
 /// \cond DOXYGEN-IGNORE
 protected:
-	NAMESPACE_OSGEO_COMMON::Exception(System::Runtime::Serialization::SerializationInfo^ info, System::Runtime::Serialization::StreamingContext context) : System::Exception(info, context)
+	NAMESPACE_OSGEO_COMMON::Exception(System::Runtime::Serialization::SerializationInfo* info, System::Runtime::Serialization::StreamingContext context) : System::Exception(info, context)
 	{
 		
 	}
-
-    System::Int64   m_nativeErrorCode;
 /// \endcond
 };
 END_NAMESPACE_OSGEO_COMMON

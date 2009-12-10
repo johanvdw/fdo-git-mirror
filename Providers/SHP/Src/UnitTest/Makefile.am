@@ -50,8 +50,7 @@ UnitTest_SOURCES = \
   FidelityTests.cpp \
   BigPerformanceTests.cpp \
   ExtendedSelectTests.cpp \
-  FdoExpressionFunctionTest.cpp \
-  ReaderTest.cpp
+  FdoExpressionFunctionTest.cpp
 
 noinst_HEADERS = $(UnitTest_SOURCES) \
   BigPerformanceTests.h \
@@ -76,8 +75,7 @@ noinst_HEADERS = $(UnitTest_SOURCES) \
   OverridesTest.h \
   SelectAggregatesTests.h \
   UpdateTests.h \
-  ExtendedSelectTests.h \
-  ReaderTest.h
+  ExtendedSelectTests.h
 
 INCLUDES = \
   -I../ShpRead \

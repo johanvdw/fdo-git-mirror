@@ -22,65 +22,66 @@
 #include "mgIEnvelopeImp.h"
 #include <FdoGeometry.h>
 
-FdoIEnvelope* NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::GetImpObj()
+FdoIEnvelope * NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::GetImpObj()
 {
-	return static_cast<FdoIEnvelope*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoIEnvelope *>(__super::UnmanagedObject.ToPointer());
 }
-
-IntPtr NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
 
 NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::IEnvelopeImp(System::IntPtr unmanaged, System::Boolean autoDelete)
 	: NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 {
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MinX::get()
+System::Void NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::ReleaseUnmanagedObject()
 {
-	System::Double ret;
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MinX()
+{
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMinX())
 	return ret;
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MinY::get()
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MinY()
 {
-	System::Double ret;
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMinY())
 	return ret;
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MinZ::get()
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MinZ()
 {
-	System::Double ret;
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMinZ())
 	return ret;
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MaxX::get()
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MaxX()
 {
-	System::Double ret;
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMaxX())
 	return ret;
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MaxY::get()
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MaxY()
 {
-	System::Double ret;
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMaxY())
 	return ret;
 }
 
-System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::MaxZ::get()
+System::Double NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_MaxZ()
 {
-	System::Double ret;
+	FdoDouble ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetMaxZ())
 	return ret;
 }
 
-System::Boolean NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::IsEmpty::get()
+System::Boolean NAMESPACE_OSGEO_GEOMETRY::IEnvelopeImp::get_IsEmpty()
 {
 	System::Boolean ret;
 	EXCEPTION_HANDLER(ret = !!GetImpObj()->GetIsEmpty())

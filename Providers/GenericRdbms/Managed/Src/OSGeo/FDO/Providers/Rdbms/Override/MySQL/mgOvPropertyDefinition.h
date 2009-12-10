@@ -25,13 +25,12 @@ class FdoMySQLOvPropertyDefinition;
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
 ///<summary>Abstract class defining physical schema overrides for a property definition.</summary>
-public ref class OvPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
+public __gc class OvPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyDefinition
 {
-internal:
-	OvPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	inline FdoMySQLOvPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+	OvPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL

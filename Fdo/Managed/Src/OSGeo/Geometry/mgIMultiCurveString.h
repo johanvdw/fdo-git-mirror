@@ -22,7 +22,7 @@
 #include "mgIGeometricAggregateAbstract.h"
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ICurveString;
+public __gc __interface ICurveString;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The IMultiCurveString class is a multi-CurveString collection Geometry type.
 /// The curves contained here do not have to
 /// be contiguous, nor spatially interact in any other way.
-public interface class IMultiCurveString : public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstract
+public __gc __interface IMultiCurveString : public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstract
 {
 public:
     /// \brief
@@ -45,10 +45,7 @@ public:
     /// \return
     /// Returns a CurveString
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::ICurveString^ default[System::Int32]
-    {
-        NAMESPACE_OSGEO_GEOMETRY::ICurveString^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::ICurveString *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

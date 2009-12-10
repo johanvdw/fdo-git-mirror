@@ -24,12 +24,12 @@
 class FdoXslTransformer;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlReader;
-ref class XmlWriter;
+public __gc class XmlReader;
+public __gc class XmlWriter;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_COMMON
-ref class DictionaryElementCollection;
+public __gc class DictionaryElementCollection;
 END_NAMESPACE_OSGEO_COMMON
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XSL
@@ -38,7 +38,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON_XSL
 /// \brief
 /// XslTransformer provides a way to execute an XSL stylesheet
 /// on an XML document.
-public ref class XslTransformer sealed : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __sealed __gc class XslTransformer : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -52,7 +52,7 @@ public:
     /// \param inDoc 
     /// Input the XML document to transform.
     /// 
-    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ inDoc);
+    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader* inDoc);
 
     /// \brief
     /// Constructs an XSL Transformer object.
@@ -62,7 +62,7 @@ public:
     /// \param stylesheet 
     /// Input the XSL stylesheet with transformation instructions.
     /// 
-    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader^ stylesheet);
+    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader* inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader* stylesheet);
 
     /// \brief
     /// Constructs an XSL Transformer object.
@@ -78,7 +78,7 @@ public:
     /// Therefore, these objects must be destroyed before reading back the 
     /// transformed document.
     /// 
-	XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader^ stylesheet, NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ outDoc);
+	XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader* inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader* stylesheet, NAMESPACE_OSGEO_COMMON_XML::XmlWriter* outDoc);
 
     /// \brief
     /// Constructs an XSL Transformer object.
@@ -96,7 +96,7 @@ public:
     /// \param log 
     /// Input the logging object.
     /// 
-    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader^ stylesheet, NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ outDoc, NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ log);
+    XslTransformer(NAMESPACE_OSGEO_COMMON_XML::XmlReader* inDoc, NAMESPACE_OSGEO_COMMON_XML::XmlReader* stylesheet, NAMESPACE_OSGEO_COMMON_XML::XmlWriter* outDoc, NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* log);
 
     /// \brief
     /// Gets the document being transformed
@@ -104,17 +104,15 @@ public:
     /// \return
     /// Returns the input document.
     /// 
+	__property NAMESPACE_OSGEO_COMMON_XML::XmlReader* get_InDoc();
+
     /// \brief
     /// Sets the document to transform.
     /// 
     /// \param inDoc 
     /// Input the XML document to transform.
     /// 
-    property NAMESPACE_OSGEO_COMMON_XML::XmlReader^ InDoc
-    {
-        NAMESPACE_OSGEO_COMMON_XML::XmlReader^ get();
-        System::Void set(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ inDoc);
-    }
+	__property System::Void set_InDoc(NAMESPACE_OSGEO_COMMON_XML::XmlReader* inDoc );
 
     /// \brief
     /// Gets the XSL Stylesheet
@@ -122,17 +120,15 @@ public:
     /// \return
     /// Returns the stylesheet.
     /// 
+	__property NAMESPACE_OSGEO_COMMON_XML::XmlReader* get_Stylesheet();
+
     /// \brief
     /// Sets the XSL stylesheet
     /// 
     /// \param stylesheet 
     /// Input the stylesheet
     /// 
-    property NAMESPACE_OSGEO_COMMON_XML::XmlReader^ Stylesheet
-    {
-        NAMESPACE_OSGEO_COMMON_XML::XmlReader^ get();
-        System::Void set(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ stylesheet);
-    }
+	__property System::Void set_Stylesheet(NAMESPACE_OSGEO_COMMON_XML::XmlReader* stylesheet);
 
     /// \brief
     /// Gets the output document.
@@ -140,6 +136,8 @@ public:
     /// \return
     /// Returns the out document
     /// 
+	__property NAMESPACE_OSGEO_COMMON_XML::XmlWriter* get_OutDoc();
+
     /// \brief
     /// Sets the output document
     /// 
@@ -148,11 +146,7 @@ public:
     /// <p><b>Note:</b> The output document is not completely written until outDoc
     /// and this transformer are destroyed by releasing all references to them.
     /// 
-    property NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ OutDoc
-    {
-        NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ get();
-        System::Void set(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ outDoc);
-    }
+	__property System::Void set_OutDoc(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* outDoc);
 
     /// \brief
     /// Gets the input logging object.
@@ -160,17 +154,15 @@ public:
     /// \return
     /// Returns the input logging object
     /// 
+	__property NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* get_Log();
+
     /// \brief
     /// Sets the input logging object
     /// 
     /// \param outDoc 
     /// Input the logging object
     /// 
-    property NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ Log
-    {
-        NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ get();
-        System::Void set(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ outDoc);
-    }
+	__property System::Void set_Log(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* outDoc);
 
     /// \brief
     /// Gets the list of parameters that will be passed to the 
@@ -183,10 +175,7 @@ public:
     /// \return
     /// Returns the parameter list.
     /// 
-    property NAMESPACE_OSGEO_COMMON::DictionaryElementCollection^ Parameters
-    {
-        NAMESPACE_OSGEO_COMMON::DictionaryElementCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_COMMON::DictionaryElementCollection* get_Parameters();
 
     /// \brief
     /// Performs the transformation.
@@ -209,10 +198,11 @@ public:
 	}
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoXslTransformer* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+protected:
+	System::Void ReleaseUnmanagedObject();
 /// \endcond
 };
 

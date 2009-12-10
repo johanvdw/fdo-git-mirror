@@ -29,12 +29,15 @@ BEGIN_NAMESPACE_OSGEO_FDO_CLIENTSERVICES
 /// \brief
 /// Class ProviderNameTokens represents an FDO provider name that 
 /// has been tokenized into its company, name and version parts.
-public ref class ProviderNameTokens : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class ProviderNameTokens : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
-internal:
+public private:
 	inline FdoProviderNameTokens* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 
 public:
     /// \brief
@@ -63,7 +66,7 @@ public:
     /// \return
     /// Returns ProviderNameTokens
     /// 
-	ProviderNameTokens(System::String^ name);
+	ProviderNameTokens(System::String* name);
 
     /// \brief
     /// Gets all of the tokens in this provider name
@@ -74,7 +77,7 @@ public:
     ///   Element 1 is the unqualified name
     ///   the rest of the elements are the individual parts of the version number.
     /// 
-	array<System::String^>^ GetNameTokens();
+	System::String *GetNameTokens()[];
 
     /// \brief
     /// Gets all of the version number components in this provider name
@@ -84,7 +87,7 @@ public:
     /// example, if the full provider name is "OSGeo.SDF.3.2" then 
     /// {3,2} is returned.
     /// 
-	array<System::Double>^ GetVersionTokens();
+	System::Double GetVersionTokens()[];
 
     /// \brief
     /// Gets the local (unqualified) name of this provider.
@@ -94,11 +97,11 @@ public:
     /// example, if the full provider name is "OSGeo.SDF.3.2" then 
     /// "SDF" is returned.
     /// 
-	System::String^ GetLocalName();
+	System::String *GetLocalName();
 
 private:
-	static array<System::String^>^ FdoStringsToStringArray(const FdoStringsP &sa);
-    static array<System::Double>^ FdoVectorToDoubleArrary(const FdoVectorP &da);
+	static System::String *FdoStringsToStringArray(const FdoStringsP &sa)[];
+	static System::Double FdoVectorToDoubleArrary(const FdoVectorP &da)[];
 };
 
 END_NAMESPACE_OSGEO_FDO_CLIENTSERVICES

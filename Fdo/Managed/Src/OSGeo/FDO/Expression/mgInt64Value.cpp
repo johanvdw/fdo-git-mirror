@@ -32,56 +32,51 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Int64Value(IntPtr unmanaged, Boolean
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Int64Value() : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoInt64Value::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoInt64Value::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Int64Value(System::Int64 value) : DataValue(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoInt64Value::Create(value)), true))
+	EXCEPTION_HANDLER(Attach(FdoInt64Value::Create(value), true))
 }
 
 FdoInt64Value* NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::GetImpObj()
 {
-	return static_cast<FdoInt64Value*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoInt64Value*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::operator System::Int64( NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value^ value )
+System::Int64 NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value* value )
 {
 	return (value->GetImpObj())->operator FdoInt64();
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::DataType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataType NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::get_DataType()
 {
 	FdoDataType unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataType())
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::DataType>(unobj);
 }
 
-System::Int64 NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Int64::get()
+System::Int64 NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::get_Int64()
 {
-	System::Int64 unobj;
+	FdoInt64 unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetInt64())
 	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Int64::set(System::Int64 value)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::set_Int64(System::Int64 value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetInt64(value))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value::ToString()
 {
 	FdoString* unstr;
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
-	return CHECK_STRING(unstr);
+	return unstr;
 }

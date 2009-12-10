@@ -74,7 +74,10 @@ enum ePartTypes {
 // T Y P E D E F S
 //*******************************************************************
 
-#pragma pack(push, 1)
+#ifdef _WIN32
+#pragma pack(push)
+#pragma pack(4)
+#endif
 
 // ESRI Shape Structures
 typedef struct {
@@ -98,7 +101,7 @@ typedef struct {
 } ESRIPolygonRecord;
 
 typedef struct {
-    unsigned int nOffset;
+    ULONG nOffset;
     int nContentLength;
 } SHPIndexRecordHeader;
 
@@ -128,7 +131,9 @@ typedef struct {
 } SHPHeader;
 const int SHPHeaderSize = sizeof (SHPHeader);
 
+#ifdef _WIN32
 #pragma pack(pop)
+#endif
 
 //*******************************************************************
 // D E F I N E S
@@ -250,6 +255,6 @@ const CHAR END_OF_FILE = (CHAR)0x1a;
 //     polygons (exterior rings and interior rings). A MultiPolygon may result as
 //     well, depending on the number of exterior rings detected).
 
-#define RELATE_RINGS    true
+#define RELATE_RINGS    false
 
 #endif  // CONSTANTS_H

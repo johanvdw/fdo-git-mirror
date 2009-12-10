@@ -20,7 +20,6 @@
 #include <Fdo/Commands/Feature/IFeatureReader.h>
 #include <Fdo/Commands/PropertyValueCollection.h>
 #include <Fdo/Schema/ClassDefinition.h>
-#include "FdoDefaultFeatureReader.h"
 
 namespace fdo { namespace postgis {
 
@@ -30,7 +29,7 @@ namespace fdo { namespace postgis {
 /// This reader works against collection of properties and it 
 /// does not query PostGIS datastore.
 ///
-class InsertFeatureReader : public FdoDefaultFeatureReader
+class InsertFeatureReader : public FdoIFeatureReader
 {
 public:
 
@@ -132,7 +131,7 @@ private:
     // Private data members
     //
 
-    typedef FdoDefaultFeatureReader Base;
+    typedef FdoIFeatureReader Base;
 	
     FdoPtr<FdoPropertyValueCollection> mProps;
     FdoPtr<FdoClassDefinition> mClassDef;

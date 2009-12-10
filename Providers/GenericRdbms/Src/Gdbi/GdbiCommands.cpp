@@ -54,7 +54,7 @@ void GdbiCommands::ThrowException()
     if( m_pRdbiContext->last_error_msg == NULL )
         ::rdbi_get_msg (m_pRdbiContext);
     
-    throw GdbiException::Create( m_pRdbiContext->last_error_msg, m_pRdbiContext->rdbi_last_status);
+    throw GdbiException::Create( m_pRdbiContext->last_error_msg );
 }
 
 int GdbiCommands::err_stat()

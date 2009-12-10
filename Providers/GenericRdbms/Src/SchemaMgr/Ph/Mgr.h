@@ -193,8 +193,6 @@ public:
 
     virtual bool IsRdbUnicode();
 
-    virtual bool ConfigIncludeNativeSCs();
-
 	void SetStaticReader( FdoStringP readerName, FdoPtr<FdoSmPhReader> reader );
 	FdoPtr<FdoSmPhReader> GetStaticReader( FdoStringP readerName );
 	void RemoveStaticReaders();

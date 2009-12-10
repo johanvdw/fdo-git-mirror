@@ -27,109 +27,104 @@
 
 NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::RasterPropertyDefinition() : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoRasterPropertyDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoRasterPropertyDefinition::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::RasterPropertyDefinition(System::String^ name, System::String^ description) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::RasterPropertyDefinition(System::String* name, System::String* description) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoRasterPropertyDefinition::Create(StringToUni(name), StringToUni(description))), true))
+	EXCEPTION_HANDLER(Attach(FdoRasterPropertyDefinition::Create(StringToUni(name), StringToUni(description)), true))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::RasterPropertyDefinition(System::String^ name, System::String^ description, System::Boolean system) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::RasterPropertyDefinition(System::String* name, System::String* description, System::Boolean system) : NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoRasterPropertyDefinition::Create(StringToUni(name), StringToUni(description), system)), true))
+	EXCEPTION_HANDLER(Attach(FdoRasterPropertyDefinition::Create(StringToUni(name), StringToUni(description), system), true))
 }
 
 FdoRasterPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::GetImpObj()
 {
-	return static_cast<FdoRasterPropertyDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoRasterPropertyDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::GetDisposableObject()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_ReadOnly ()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::ReadOnly::get()
-{
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetReadOnly())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::ReadOnly::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_ReadOnly (System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetReadOnly(value))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::Nullable::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_Nullable()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetNullable())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::Nullable::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_Nullable(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetNullable(value))
 }
 
-NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultDataModel::get()
+NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel* NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_DefaultDataModel()
 {
 	FdoRasterDataModel* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDefaultDataModel())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateRasterDataModel(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateRasterDataModel(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultDataModel::set(NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_DefaultDataModel (NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetDefaultDataModel((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetDefaultDataModel((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultImageXSize::get()
+System::Int32 NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_DefaultImageXSize()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDefaultImageXSize())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultImageXSize::set(System::Int32 value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_DefaultImageXSize (System::Int32 value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDefaultImageXSize(value))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultImageYSize::get()
+System::Int32 NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_DefaultImageYSize ()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDefaultImageYSize())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::DefaultImageYSize::set(System::Int32 value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_DefaultImageYSize (System::Int32 value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDefaultImageYSize(value))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::SpatialContextAssociation::set(System::String^ spatialContextName)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::set_SpatialContextAssociation(System::String* spatialContextName)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSpatialContextAssociation(StringToUni(spatialContextName)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::SpatialContextAssociation::get()
+System::String* NAMESPACE_OSGEO_FDO_SCHEMA::RasterPropertyDefinition::get_SpatialContextAssociation()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSpatialContextAssociation())
 
-	return CHECK_STRING(result);
+	return result;
 }

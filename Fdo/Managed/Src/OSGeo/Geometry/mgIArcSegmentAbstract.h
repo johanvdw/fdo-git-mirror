@@ -22,8 +22,8 @@
 #include "mgICurveSegmentAbstract.h"
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ICurveSegmentAbstract;
-interface class IDirectPosition;
+public __gc __interface ICurveSegmentAbstract;
+public __gc __interface IDirectPosition;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \interface OSGeo::FDO::Geometry::IArcSegmentAbstract
 /// \brief
 /// The IArcSegmentAbstract class is an arc curve segment (abstract)
-public interface class IArcSegmentAbstract : public NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstract
+public __gc __interface IArcSegmentAbstract : public NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstract
 {
 public:
 	
@@ -49,10 +49,8 @@ public:
     /// \return
     /// Returns a midpoint on the curve
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ MidPoint
-    {
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_MidPoint();
+	
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

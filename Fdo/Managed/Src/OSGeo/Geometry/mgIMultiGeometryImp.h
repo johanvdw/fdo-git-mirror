@@ -23,7 +23,7 @@
 
 class FdoIMultiGeometry;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IGeometry;
+public __gc __interface IGeometry;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -33,8 +33,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// The IMultiGeometryImp class is a heterogeneous MultiGeometry type.
 /// One MultiGeometry containing another MultiGeometry
 /// is not supported.
-private ref class IMultiGeometryImp : 
-    public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiGeometry
+private __gc class IMultiGeometryImp : 
+	public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiGeometry
 {
 public:
     /// \brief
@@ -49,10 +49,8 @@ public:
     /// 
 	IMultiGeometryImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIMultiGeometry* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIMultiGeometry *GetImpObj();
 
 public:
     /// \brief
@@ -64,10 +62,7 @@ public:
     /// \return
     /// Returns a Geometry
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IGeometry^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IGeometry^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IGeometry *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

@@ -22,7 +22,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
 ///<summary>Abstract class defining the physical schema overrides for object property table
 ///mappings.</summary>
-public interface class IOvPropertyMappingDefinition  : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyMappingDefinition
+public __gc __interface IOvPropertyMappingDefinition  : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyMappingDefinition
 {
 
 };

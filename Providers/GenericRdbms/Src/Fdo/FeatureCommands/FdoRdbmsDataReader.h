@@ -19,7 +19,6 @@
 #endif
 
 #include "FdoRdbmsFeatureReader.h"
-#include "FdoDefaultDataReader.h"
 
 static char* errorMsg = "Internal error";
 #define   EXECUTE_METHOD( method ) {\
@@ -34,7 +33,7 @@ class FdoRdbmsSelectAggregates;
 /// FdoIDataReader is returned from the SQLCommands ExecuteReader method.
 /// The initial position of the FdoIDataReader interface is prior to the first item.
 /// Thus, you must call ReadNext to begin accessing any data.</summary>
-class FdoRdbmsDataReader: public FdoDefaultDataReader
+class FdoRdbmsDataReader: public FdoIDataReader
 {
     friend class FdoRdbmsSelectAggregates;
 
@@ -58,15 +57,7 @@ public:
     /// <returns>Returns the property name</returns>
     virtual FdoString* GetPropertyName(FdoInt32 index)
     {
-        EXECUTE_METHOD(GetPropertyNameForDataReader( index ));
-    }
-
-    /// <summary>Gets the index of the property with the specified name.</summary>
-    /// <param name="propertyName">Input the name of the property.</param>
-    /// <returns>Returns the property index</returns>
-    virtual FdoInt32 GetPropertyIndex(FdoString* propertyName)
-    {
-        EXECUTE_METHOD(GetPropertyIndexForDataReader( propertyName ));
+        EXECUTE_METHOD(GetPropertyName( index ));
     }
 
     /// <summary>Gets the data type of the property with the specified name.</summary>

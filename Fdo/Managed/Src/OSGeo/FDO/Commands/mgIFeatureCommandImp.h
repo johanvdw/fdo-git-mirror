@@ -24,11 +24,11 @@
 class FdoIFeatureCommand;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
-ref class Identifier;
+public __gc class Identifier;
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 
 BEGIN_NAMESPACE_OSGEO_FDO_FILTER
-ref class Filter;
+public __gc class Filter;
 END_NAMESPACE_OSGEO_FDO_FILTER
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
@@ -43,7 +43,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
 /// In addition, feature commands can operate on related features if one or 
 /// more relation directives are specified. Each relation directive specifies 
 /// the relation to follow and how many levels of depth to follow it.
-private ref class IFeatureCommandImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IFeatureCommandImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                         public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
 {
 public:
@@ -53,6 +53,8 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* get_FeatureClassName();
+
     /// \brief
     /// Sets the name of the class to be operated upon as an identifier.
     /// 
@@ -62,11 +64,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ FeatureClassName
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ value);
-    }
+	__property System::Void set_FeatureClassName(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* value);
 
     /// \brief
     /// Sets the name of the class to be operated upon as an identifier.
@@ -77,7 +75,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetFeatureClassName(System::String^ value);
+	System::Void SetFeatureClassName(System::String* value);
 
     /// \brief
     /// Gets the filter as a filter tree.
@@ -85,6 +83,8 @@ public:
     /// \return
     /// Returns the filter object
     /// 
+	__property NAMESPACE_OSGEO_FDO_FILTER::Filter* get_Filter();
+
     /// \brief
     /// Sets the filter as a Filter tree.
     /// 
@@ -94,11 +94,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual property NAMESPACE_OSGEO_FDO_FILTER::Filter^ Filter
-    {
-        NAMESPACE_OSGEO_FDO_FILTER::Filter^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_FILTER::Filter^ value);
-    }
+	__property System::Void set_Filter(NAMESPACE_OSGEO_FDO_FILTER::Filter* value);
 
     /// \brief
     /// Sets the filter as a Filter tree.
@@ -109,17 +105,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetFilter(System::String^ value);
+	System::Void SetFilter(System::String* value);
 
-internal:
+public private:
 	IFeatureCommandImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIFeatureCommand* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS

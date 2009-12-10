@@ -370,14 +370,12 @@ the_exit:
 
 int rdbi_sql_va(rdbi_context_def *context, int opts, int sqlid, const char* sql, ...)
 {
-    rdbi_string_def str;
-    int rc;
-
     va_list args;
     va_start(args, sql);
     
+    rdbi_string_def str;
     str.ccString = sql;
-    rc = local_rdbi_sql_va(context, opts, sqlid, &str, args);
+    int rc = local_rdbi_sql_va(context, opts, sqlid, &str, args);
 
     va_end(args);
     return rc;
@@ -385,14 +383,12 @@ int rdbi_sql_va(rdbi_context_def *context, int opts, int sqlid, const char* sql,
 
 int rdbi_sql_vaW(rdbi_context_def *context, int opts, int sqlid, const wchar_t* sql, ...)
 {
-    rdbi_string_def str;
-    int rc;
-
     va_list args;
     va_start(args, sql);
     
+    rdbi_string_def str;
     str.cwString = sql;
-    rc = local_rdbi_sql_va(context, opts, sqlid, &str, args);
+    int rc = local_rdbi_sql_va(context, opts, sqlid, &str, args);
 
     va_end(args);
     return rc;

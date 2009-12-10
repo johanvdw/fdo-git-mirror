@@ -88,7 +88,6 @@ typedef ULONG_PTR DWORD_PTR;
 #endif // _WIN32
 
 #include <cstring>
-#include <cstdio>
 #include <Fdo.h>
 #include <FdoCommonStringUtil.h>
 #include <FdoCommonMiscUtil.h>

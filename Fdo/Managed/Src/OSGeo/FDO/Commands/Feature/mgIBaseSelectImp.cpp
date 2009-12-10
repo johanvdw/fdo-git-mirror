@@ -29,38 +29,33 @@
 
 FdoIBaseSelect* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::GetImpObj()
 {
-    return static_cast<FdoIBaseSelect*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIBaseSelect*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::PropertyNames::get()
+NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::get_PropertyNames()
 {
 	FdoIdentifierCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetPropertyNames())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIdentifierCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIdentifierCollection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::Ordering::get()
+NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::get_Ordering()
 {
 	FdoIdentifierCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetOrdering())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIdentifierCollection(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIdentifierCollection(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::OrderingOption::set(NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::set_OrderingOption(NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetOrderingOption(static_cast<FdoOrderingOption>(value)))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::OrderingOption::get()
+NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::get_OrderingOption()
 {
 	FdoOrderingOption result;
 
@@ -68,18 +63,3 @@ NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption NAMESPACE_OSGEO_FDO_COMMANDS_FEATUR
 
 	return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS::OrderingOption>(result);
 }
-
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::FetchSize::set(System::Int32 value)
-{
-	EXCEPTION_HANDLER(GetImpObj()->SetFetchSize(static_cast<FdoInt32>(value)))
-}
-
-System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp::FetchSize::get()
-{
-	FdoInt32 result;
-
-	EXCEPTION_HANDLER(result = GetImpObj()->GetFetchSize())
-
-	return static_cast<System::Int32>(result);
-}
-

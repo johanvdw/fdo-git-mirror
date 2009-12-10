@@ -36,7 +36,7 @@ public:
 
 	virtual ~FdoSmPhColumnDouble(void) {}
 
-    virtual FdoSmPhColType GetType() const
+    virtual FdoSmPhColType GetType()
     {
         return FdoSmPhColType_Double;
     }

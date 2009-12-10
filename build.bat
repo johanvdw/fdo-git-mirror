@@ -239,7 +239,7 @@ if not exist "%FDOORGPATH%" mkdir "%FDOORGPATH%"
 
 :start_exbuild
 SET PROVCALLCMDEXFDO=-o="%FDOORGPATH%" -c=%TYPEBUILD% -p=%TYPEPLATFORM% -a=%TYPEACTION% -d=%DOCENABLE% -py=%PYTHONENABLE%
-SET PROVCALLCMDEXPLTFRM=-o="%FDOORGPATH%" -c=%TYPEBUILD% -p=%TYPEPLATFORM% -a=%TYPEACTION% -d=%DOCENABLE%
+SET PROVCALLCMDEXSDF=-o="%FDOORGPATH%" -c=%TYPEBUILD% -p=%TYPEPLATFORM% -a=%TYPEACTION% -d=%DOCENABLE%
 SET PROVCALLCMDEX=-o="%FDOORGPATH%" -c=%TYPEBUILD% -a=%TYPEACTION% -d=%DOCENABLE%
 
 :rebuild_fdo
@@ -253,7 +253,7 @@ if "%FDOERROR%"=="1" goto error
 if "%SHPENABLE%"=="no" goto rebuild_sdf
 if not exist Providers\SHP\build.bat goto rebuild_sdf
 pushd Providers\SHP
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -261,7 +261,7 @@ if "%FDOERROR%"=="1" goto error
 if "%SDFENABLE%"=="no" goto rebuild_wfs
 if not exist Providers\SDF\build.bat goto rebuild_wfs
 pushd Providers\SDF
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEXSDF%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -269,7 +269,7 @@ if "%FDOERROR%"=="1" goto error
 if "%WFSENABLE%"=="no" goto rebuild_wms
 if not exist Providers\WFS\build.bat goto rebuild_wms
 pushd Providers\WFS
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -277,7 +277,7 @@ if "%FDOERROR%"=="1" goto error
 if "%WMSENABLE%"=="no" goto rebuild_arc
 if not exist Providers\WMS\build.bat goto rebuild_arc
 pushd Providers\WMS
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -286,7 +286,7 @@ if "%ARCENABLE%"=="no" goto rebuild_odbc
 if not exist "%SDEHOME%" goto rebuild_odbc
 if not exist Providers\ArcSDE\build.bat goto rebuild_odbc
 pushd Providers\ArcSDE
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -294,7 +294,7 @@ if "%FDOERROR%"=="1" goto error
 if "%ODBCENABLE%"=="no" goto rebuild_mysql
 if not exist Providers\GenericRdbms\Src\ODBC\build.bat goto rebuild_mysql
 pushd Providers\GenericRdbms\Src\ODBC
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -303,7 +303,7 @@ if "%MYSQLENABLE%"=="no" goto rebuild_gdal
 if not exist "%FDOMYSQL%" goto rebuild_gdal
 if not exist Providers\GenericRdbms\Src\MySQL\build.bat goto rebuild_gdal
 pushd Providers\GenericRdbms\Src\MySQL
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -311,7 +311,7 @@ if "%FDOERROR%"=="1" goto error
 if "%GDALENABLE%"=="no" goto rebuild_ogr
 if not exist Providers\GDAL\build.bat goto rebuild_ogr
 pushd Providers\GDAL
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -319,7 +319,7 @@ if "%FDOERROR%"=="1" goto error
 if "%OGRENABLE%"=="no" goto rebuild_postgis
 if not exist Providers\OGR\build.bat goto rebuild_postgis
 pushd Providers\OGR
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -327,7 +327,7 @@ if "%FDOERROR%"=="1" goto error
 if "%POSTGISENABLE%"=="no" goto rebuild_kingoracle
 if not exist Providers\PostGIS\build.bat goto rebuild_kingoracle
 pushd Providers\PostGIS
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -336,7 +336,7 @@ if "%KINGORACLEENABLE%"=="no" goto rebuild_sqlspatial
 if not exist "%FDOORACLE%" goto rebuild_sqlspatial
 if not exist Providers\KingOracle\build.bat goto rebuild_sqlspatial
 pushd Providers\KingOracle
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -344,7 +344,7 @@ if "%FDOERROR%"=="1" goto error
 if "%SQLSPATIALENABLE%"=="no" goto rebuild_sqlite
 if not exist Providers\GenericRdbms\Src\SQLServerSpatial\build.bat goto rebuild_sqlite
 pushd Providers\GenericRdbms\Src\SQLServerSpatial
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEX%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -352,7 +352,7 @@ if "%FDOERROR%"=="1" goto error
 if "%SQLITEENABLE%"=="no" goto end
 if not exist Providers\SQLite\build.bat goto end
 pushd Providers\SQLite
-call build.bat %PROVCALLCMDEXPLTFRM%
+call build.bat %PROVCALLCMDEXSDF%
 popd
 if "%FDOERROR%"=="1" goto error
 
@@ -388,47 +388,51 @@ echo                                  install,
 echo                                  clean
 echo BuildDocs:             -d[ocs]=skip(default), build
 echo BuildPythonWrappers:   -py[thon]=skip(default), build
-echo WithModule:            -w[ith]=all(default),
-echo                                fdo,
+SET MROVBYPROVP=
+SET MPROVECAPABP=WithModule:            -w[ith]=all(default), fdo
 :shp_check
 if not exist Providers\SHP\build.bat goto sdf_check
-echo                                shp,
+	SET MROVBYPROVP=%MROVBYPROVP%, shp
 :sdf_check
 if not exist Providers\SDF\build.bat goto wfs_check
-echo                                sdf,
+	SET MROVBYPROVP=%MROVBYPROVP%, sdf
 :wfs_check
 if not exist Providers\WFS\build.bat goto wms_check
-echo                                wfs,
+	SET MROVBYPROVP=%MROVBYPROVP%, wfs
 :wms_check
 if not exist Providers\WMS\build.bat goto arc_check
-echo                                wms,
+	SET MROVBYPROVP=%MROVBYPROVP%, wms
 :arc_check
 if not exist Providers\ArcSDE\build.bat goto odbc_check
-echo                                arcsde,
+	SET MROVBYPROVP=%MROVBYPROVP%, arcsde
 :odbc_check
 if not exist Providers\GenericRdbms\Src\ODBC\build.bat goto mysql_check
-echo                                odbc,
+	SET MROVBYPROVP=%MROVBYPROVP%, odbc
 :mysql_check
 if not exist Providers\GenericRdbms\Src\MySQL\build.bat goto gdal_check
-echo                                mysql,
+	SET MROVBYPROVP=%MROVBYPROVP%, mysql
 :gdal_check
 if not exist Providers\GDAL\build.bat goto ogr_check
-echo                                gdal,
+	SET MROVBYPROVP=%MROVBYPROVP%, gdal
 :ogr_check
 if not exist Providers\OGR\build.bat goto postgis_check
-echo                                ogr,
+	SET MROVBYPROVP=%MROVBYPROVP%, ogr
 :postgis_check
 if not exist Providers\PostGIS\build.bat goto kingoracle_check
-echo                                postgis,
+	SET MROVBYPROVP=%MROVBYPROVP%, postgis
 :kingoracle_check
 if not exist Providers\KingOracle\build.bat goto sqlspatial_check
-echo                                kingoracle,
+	SET MROVBYPROVP=%MROVBYPROVP%, kingoracle
 :sqlspatial_check
 if not exist Providers\GenericRdbms\Src\SQLServerSpatial\build.bat goto sqlite_check
-echo                                sqlspatial,
+	SET MROVBYPROVP=%MROVBYPROVP%, sqlspatial
 :sqlite_check
-if not exist Providers\SQLite\build.bat goto end_show_capabilities
-echo                                sqlite
-:end_show_capabilities
+if not exist Providers\SQLite\build.bat goto providers_show
+	SET MROVBYPROVP=%MROVBYPROVP%, sqlspatial
+:providers_show
+if ("%MROVBYPROVP%")==("") goto show_capabilities
+	SET MPROVECAPABP=%MPROVECAPABP%, providers%MROVBYPROVP%
+:show_capabilities
+echo %MPROVECAPABP%
 echo ************************************************************************
 exit /B 0

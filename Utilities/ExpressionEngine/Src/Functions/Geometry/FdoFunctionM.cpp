@@ -158,12 +158,7 @@ FdoLiteralValue *FdoFunctionM::Evaluate (
 	// Get the position and return the value
 	p = static_cast<FdoIPoint *> (geom.p);
 	pos = p->GetPosition();
-
-    if ( FdoExpressionEngineGeometryUtil::IsOrdinateNull(pos->GetM()) )
-        return_double_value->SetNull();
-    else
-        return_double_value->SetDouble(pos->GetM());
-
+    return_double_value->SetDouble(pos->GetM());
     return FDO_SAFE_ADDREF(return_double_value.p);
 
 }  //  Evaluate ()

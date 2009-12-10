@@ -23,10 +23,10 @@
 class FdoOdbcOvDataPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC
-ref class OvColumn;
+public __gc class OvColumn;
 
 ///<summary>Concrete class defining physical schema overrides for a data property definition.</summary>
-public ref class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvDataPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::IOvPropertyDefinition
+public __gc class OvDataPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvDataPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::IOvPropertyDefinition
 {
 public:
     ///<summary>Constructs a default of an FdoOdbcOvDataPropertyDefinition</summary>
@@ -36,24 +36,20 @@ public:
     ///<summary>Constructs an instance of an FdoOdbcOvDataPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns FdoOdbcOvDataPropertyDefinition</returns>
-	OvDataPropertyDefinition(System::String^ name);
+	OvDataPropertyDefinition(System::String* name);
 
     ///<summary>Gets the Odbc column</summary>
     /// <returns>Returns the Odbc column</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvColumn* get_Column();
+
     ///<summary>Sets the Odbc column</summary>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvColumn^ Column
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvColumn^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvColumn^ value);
-    }
+	__property System::Void set_Column(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvColumn *column);
 
-internal:
+public private:
 	OvDataPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoOdbcOvDataPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC

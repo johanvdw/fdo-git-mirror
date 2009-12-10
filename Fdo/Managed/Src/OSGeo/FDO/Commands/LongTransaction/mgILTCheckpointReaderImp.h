@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// the GetLongTransactionCheckpoints command. The initial position of
 /// the ILongTransactionCheckpointReader is prior to the first item.
 /// Thus, you must call ReadNext to begin accessing any data.
-private ref class ILongTransactionCheckpointReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+private __gc class ILongTransactionCheckpointReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                                          public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionCheckpointReader
 {
 public:
@@ -44,7 +44,7 @@ public:
     /// \return
     /// Returns the checkpoint name
     /// 
-	virtual System::String^ GetCheckpointName();
+	System::String* GetCheckpointName();
 
     /// \brief
     /// Gets the description of the checkpoint currently being read.
@@ -52,7 +52,7 @@ public:
     /// \return
     /// Returns the checkpoint description
     /// 
-	virtual System::String^ GetCheckpointDescription();
+	System::String* GetCheckpointDescription();
 
     /// \brief
     /// Gets the creation date of the checkpoint currently being read.
@@ -60,7 +60,7 @@ public:
     /// \return
     /// Returns the creation date
     /// 
-	virtual System::DateTime GetCreationDate();
+	System::DateTime GetCreationDate();
 
     /// \brief
     /// Returns true if the checkpoint currently being read is the active
@@ -69,7 +69,7 @@ public:
     /// \return
     /// Returns true if the checkpoint is active.
     /// 
-	virtual System::Boolean IsActive();
+	System::Boolean IsActive();
 
     /// \brief
     /// Advances the reader to the next item. The default position of the
@@ -79,7 +79,7 @@ public:
     /// \return
     /// Returns true if there is a next item.
     /// 
-	virtual System::Boolean ReadNext();
+	System::Boolean ReadNext();
 
     /// \brief
     /// Closes the ILongTransactionCheckpointReader object, freeing any
@@ -88,17 +88,21 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Close();
+	System::Void Close();
 
-internal:
+public private:
 	ILongTransactionCheckpointReaderImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoILongTransactionCheckpointReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <Runtime\Disposable.h>
+#include "Runtime\Disposable.h"
 
 /// \cond DOXYGEN-IGNORE
 BEGIN_NAMESPACE_OSGEO_COMMON
@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON
 /// \ingroup (OSGeoFDOCommon)
 /// \brief
 /// Enumeration for datatypes used by stream readers.
-public enum class StreamReaderType
+public __value enum StreamReaderType
 {
     /// Byte Stream Reader type
 	StreamReaderType_Byte = FdoStreamReaderType_Byte,
@@ -41,7 +41,7 @@ public enum class StreamReaderType
 /// \brief
 /// The IStreamReader class is a top level interface for stream reader classes. 
 /// The API it provides allows the user to read large streams of data in blocks of items. 
-public interface class IStreamReader : public System::IDisposable
+public __gc __interface IStreamReader : public System::IDisposable
 {
 public:
     /// \brief
@@ -50,10 +50,7 @@ public:
     /// \return
     /// Returns the Stream Reader type
     /// 
-    property StreamReaderType Type
-    {
-        StreamReaderType get();
-    }
+	__property StreamReaderType get_Type();
 };
 
 /// \cond DOXYGEN-IGNORE

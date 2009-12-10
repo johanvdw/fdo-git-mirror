@@ -31,7 +31,7 @@
 #endif // _WIN32
 
 #include "FdoRfpCommonReader.h"
-#include "FdoDefaultFeatureReader.h"
+
 //
 // Class forward declarations
 //
@@ -40,9 +40,8 @@
 // Implementation of FdoIFeatureReader
 //
 class FdoRfpFeatureReader :
-	public FdoRfpCommonReader<FdoDefaultFeatureReader>
+	public FdoRfpCommonReader<FdoIFeatureReader>
 {
-    typedef FdoRfpCommonReader<FdoDefaultFeatureReader> superclass;
 //
 // Data members
 //

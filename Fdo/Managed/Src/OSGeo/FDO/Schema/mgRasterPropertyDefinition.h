@@ -23,7 +23,7 @@
 class FdoRasterPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_RASTER
-ref class RasterDataModel;
+public __gc class RasterDataModel;
 END_NAMESPACE_OSGEO_FDO_RASTER
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
@@ -35,7 +35,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// the information necessary to insert a 'new' raster, in the absence of
 /// any other information, for the properties defined using this schema
 /// element.
-public ref class RasterPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
+public __gc class RasterPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
 {
 public:
     /// \brief
@@ -52,7 +52,7 @@ public:
     /// \param description 
     /// Input description
     /// 
-	RasterPropertyDefinition(System::String^ name, System::String^ description);
+	RasterPropertyDefinition(System::String* name, System::String* description);
 
     /// \brief
     /// Constructs an instance of an RasterPropertyDefinition using the
@@ -66,7 +66,7 @@ public:
     /// Input true if this is a system generated property, false otherwise.
     /// <p><b>Note:</b> A client would never set system to true, only a provider.
     /// 
-	RasterPropertyDefinition(System::String^ name, System::String^ description, System::Boolean system);
+	RasterPropertyDefinition(System::String* name, System::String* description, System::Boolean system);
 
     // 
     // PropertyDefinition interface
@@ -78,6 +78,8 @@ public:
     /// \return
     /// Returns a Boolean value
     /// 
+	__property System::Boolean get_ReadOnly ();
+
     /// \brief
     /// Sets a Boolean value that indicates if this property is read-only.
     /// 
@@ -87,11 +89,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Boolean ReadOnly
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_ReadOnly (System::Boolean value);
 
     /// \brief
     /// Returns a Boolean value that indicates if this property's value can be
@@ -100,6 +98,8 @@ public:
     /// \return
     /// Returns a Boolean value
     /// 
+	__property System::Boolean get_Nullable();
+
     /// \brief
     /// Sets a Boolean value that indicates if this property's value can be
     /// null.
@@ -111,11 +111,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Boolean Nullable
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_Nullable(System::Boolean value);
 
     /// \brief
     /// Gets the default data model used by this raster property.
@@ -123,6 +119,8 @@ public:
     /// \return
     /// Returns the current default data model.
     /// 
+	__property NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel* get_DefaultDataModel();
+
     /// \brief
     /// Sets the default data model used by this raster property.
     /// Allowed values are only those data models that are acceptable to the
@@ -132,11 +130,7 @@ public:
     /// The datamodel to be used for newly created
     /// rasters, or the default datamodel to be used when returning raster data.
     /// 
-    property NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ DefaultDataModel
-    {
-        NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel^ dataModel);
-    }
+	__property System::Void set_DefaultDataModel (NAMESPACE_OSGEO_FDO_RASTER::RasterDataModel* dataModel);
 
     /// \brief
     /// Gets the default size of image file in the horizontal
@@ -146,6 +140,8 @@ public:
     /// Returns the current default horizontal image size in pixels
     /// (number of columns).
     /// 
+	__property System::Int32 get_DefaultImageXSize ();
+
     /// \brief
     /// Sets the default size of an image file in the horizontal
     /// direction in pixels (number of columns).
@@ -154,11 +150,7 @@ public:
     /// The desired default horizontal image size in pixels
     /// (number of columns).
     /// 
-    property System::Int32 DefaultImageXSize
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 size);
-    }
+	__property System::Void set_DefaultImageXSize (System::Int32 size);
 
     /// \brief
     /// Gets the default size of an image file in the vertical
@@ -168,6 +160,8 @@ public:
     /// Returns the current default vertical image size in pixels
     /// (number of rows).
     /// 
+	__property System::Int32 get_DefaultImageYSize ();
+
     /// \brief
     /// Sets the default size of an image file in the vertical
     /// direction in pixels (number of rows).
@@ -176,11 +170,7 @@ public:
     /// The desired default vertical image size in pixels
     /// (number of rows).
     /// 
-    property System::Int32 DefaultImageYSize
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 size);
-    }
+	__property System::Void set_DefaultImageYSize (System::Int32 size);
 
     //
     /// Spatial Context Support.
@@ -196,17 +186,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property System::Void set_SpatialContextAssociation(System::String* spatialContextName);
+
     /// \brief
     /// Gets the Spatial Context name associated to this raster property.
     /// 
     /// \return
     /// Returns a String value representing the Spatial Context name.
     /// 
-    property System::String^ SpatialContextAssociation
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::String* get_SpatialContextAssociation();
 
     /// \brief
     /// Constructs a RasterPropertyDefinition object based on an unmanaged instance of the object
@@ -223,10 +211,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoRasterPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

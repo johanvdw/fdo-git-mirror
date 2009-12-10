@@ -38,12 +38,7 @@
 
 FdoRdbmsOvObjectPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::GetImpObj()
 {
-	return dynamic_cast<FdoRdbmsOvObjectPropertyDefinition*>((FdoIDisposable*)UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return dynamic_cast<FdoRdbmsOvObjectPropertyDefinition*>((FdoIDisposable*)__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::OvObjectPropertyDefinition(IntPtr unmanaged, Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition(unmanaged, autoDelete)
@@ -51,44 +46,44 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::OvObje
 	
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::MappingDefinition::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::get_MappingDefinition()
 {
-	FdoRdbmsOvPropertyMappingDefinition* result;
+	FdoRdbmsOvPropertyMappingDefinition * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetMappingDefinition())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetMappingDefinition())
 
-	return ObjectFactory::CreateOvPropertyMappingDefinition(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyMappingDefinition(unobj, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes, System::String^ mappingType, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ mappingAttributes)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes, System::String* mappingType, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* mappingAttributes)
 {
 	EXCEPTION_HANDLER(GetImpObj()->InitFromXml(static_cast<FdoXmlSaxContext*>(context->UnmanagedObject.ToPointer()), static_cast<FdoXmlAttributeCollection*>(attributes->UnmanagedObject.ToPointer()), StringToUni(mappingType), static_cast<FdoXmlAttributeCollection*>(mappingAttributes->UnmanagedObject.ToPointer())))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingSingle^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateSingleMapping(System::Boolean attach)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingSingle* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateSingleMapping(System::Boolean attach)
 {
-	FdoRdbmsOvPropertyMappingSingle* result;
+	FdoRdbmsOvPropertyMappingSingle * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->CreateSingleMapping(attach))
+	EXCEPTION_HANDLER(unobj = GetImpObj()->CreateSingleMapping(attach))
 
-	return ObjectFactory::CreateOvPropertyMappingSingle(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyMappingSingle(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingClass^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateClassMapping(System::Boolean attach)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingClass* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateClassMapping(System::Boolean attach)
 {
-	FdoRdbmsOvPropertyMappingClass* result;
+	FdoRdbmsOvPropertyMappingClass * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->CreateClassMapping(attach))
+	EXCEPTION_HANDLER(unobj = GetImpObj()->CreateClassMapping(attach))
 
-	return ObjectFactory::CreateOvPropertyMappingClass(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyMappingClass(unobj, true);
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingConcrete^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateConcreteMapping(System::Boolean attach)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingConcrete* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition::CreateConcreteMapping(System::Boolean attach)
 {
-	FdoRdbmsOvPropertyMappingConcrete* result;
+	FdoRdbmsOvPropertyMappingConcrete * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->CreateConcreteMapping(attach))
+	EXCEPTION_HANDLER(unobj = GetImpObj()->CreateConcreteMapping(attach))
 
-	return ObjectFactory::CreateOvPropertyMappingConcrete(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyMappingConcrete(unobj, true);
 }
 
