@@ -30,12 +30,7 @@
 
 FdoICreateSpatialIndex* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::GetImpObj()
 {
-	return static_cast<FdoICreateSpatialIndex*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoICreateSpatialIndex*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::ICreateSpatialIndexImp(IntPtr unmanaged, Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
@@ -43,35 +38,35 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::ICreateSpatialIndex
 
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::get_Name()
 {
-	FdoString* unobj;
+	const wchar_t* unobj;
 
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetName())
 
-    return CHECK_STRING(unobj);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::Name::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::set_Name(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::SpatialContextName::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::get_SpatialContextName()
 {
-	FdoString* unobj;
+	const wchar_t* unobj;
 
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetSpatialContextName())
 
-    return CHECK_STRING(unobj);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::SpatialContextName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::set_SpatialContextName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSpatialContextName(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::RdbmsSpatialIndexType::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::get_RdbmsSpatialIndexType()
 {
 	SpatialIndexType unobj;
 
@@ -80,12 +75,12 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType NAMESPACE_OSGEO_FDO_P
 	return static_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType>(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::RdbmsSpatialIndexType::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::set_RdbmsSpatialIndexType(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSpatialIndexType(static_cast<SpatialIndexType>(value)))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::NumDimensions::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::get_NumDimensions()
 {
 	SpatialIndexDimensionType unobj;
 
@@ -94,23 +89,23 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType NAMESPACE_OS
 	return static_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType>(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::NumDimensions::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::set_NumDimensions(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetNumDimensions(static_cast<SpatialIndexDimensionType>(value)))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::GeometricProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::set_GeometricProperty(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition *value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetGeometricProperty(static_cast<FdoGeometricPropertyDefinition*>(value->UnmanagedObject.ToPointer())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::GeometricProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::get_GeometricProperty()
 {
-	FdoGeometricPropertyDefinition* result;
+	FdoGeometricPropertyDefinition* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetGeometricProperty())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetGeometricProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(IntPtr(result), true);
+		return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateGeometricPropertyDefinition(unobj, true);
 }
 
 System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndexImp::Execute()

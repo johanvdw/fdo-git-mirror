@@ -24,7 +24,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS
 /// This command gets the styles list supportted by specified FeatureClass
 /// from WMS service.
 ///</summary>
-public interface class IGetFeatureClassStyles : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IGetFeatureClassStyles : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// <summary>
@@ -38,17 +38,15 @@ public:
     /// <returns>
     /// Returns nothing.
     /// </returns> 
+    __property System::Void set_FeatureClassName(System::String* name);
+
     /// <summary>
     /// Gets the name of FeatureClass to get the supportted styles.
     /// </summary>
     /// <returns>
     ///  Returns the name of the FeatureClass name.
     /// </returns> 
-    property String^ FeatureClassName
-    {
-        String^ get();
-        System::Void set(String^ value);
-    }
+    __property System::String* get_FeatureClassName();
 
     /// <summary>
     /// Executes the IGetFeatureClassStyles command and returns a StringCollection
@@ -59,7 +57,7 @@ public:
     /// <returns>
     /// Returns a string collection of styles supportted by specific featureclass.
     /// </returns>
-    NAMESPACE_OSGEO_COMMON::StringCollection^ Execute();
+    NAMESPACE_OSGEO_COMMON::StringCollection* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS

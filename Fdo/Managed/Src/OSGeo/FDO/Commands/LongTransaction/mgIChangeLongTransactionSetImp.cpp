@@ -24,29 +24,24 @@
 
 FdoIChangeLongTransactionSet* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::GetImpObj()
 {
-    return static_cast<FdoIChangeLongTransactionSet*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIChangeLongTransactionSet*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::LongTransactionName::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::get_LongTransactionName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetLongTransactionName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::LongTransactionName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::set_LongTransactionName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetLongTransactionName(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::Operation::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::get_Operation()
 {
 	FdoLongTransactionSetOperations result;
 
@@ -55,7 +50,7 @@ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations NAMES
 	return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations>(result);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::Operation::set(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IChangeLongTransactionSetImp::set_Operation(NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::LongTransactionSetOperations value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetOperation(static_cast<FdoLongTransactionSetOperations>(value)))
 }

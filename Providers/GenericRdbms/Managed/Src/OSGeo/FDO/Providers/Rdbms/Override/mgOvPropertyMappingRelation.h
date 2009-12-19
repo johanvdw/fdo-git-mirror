@@ -24,18 +24,16 @@ class FdoRdbmsOvPropertyMappingRelation;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
-ref class OvClassDefinition;
+public __gc class OvClassDefinition;
 
 ///<summary>
 ///Abstract class defining the physical schema overrides for relation type 
 ///object property table mappings.
 ///</summary>
-public ref class OvPropertyMappingRelation : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyMappingRelation
+public __gc class OvPropertyMappingRelation : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyMappingRelation
 {	
-internal:
+public private:
 	FdoRdbmsOvPropertyMappingRelation* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 	
 public protected:
 	OvPropertyMappingRelation(System::IntPtr unmanaged, System::Boolean autoDelete);
@@ -43,13 +41,10 @@ public protected:
 public:
     ///<summary>Gets the internal class</summary>
     /// <returns>Returns the internal class</returns>
-    virtual property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ InternalClass
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* get_InternalClass();
 
 	// Creates and optionally attaches an internal class override object.
-	virtual NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ CreateInternalClass(System::Boolean attach);
+	NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* CreateInternalClass(System::Boolean attach);
 
 };
 

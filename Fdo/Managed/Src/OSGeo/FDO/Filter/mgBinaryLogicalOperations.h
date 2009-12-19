@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_FILTER
 /// The BinaryLogicalOperations enumeration lists the binary logical operations
 /// available.
 [System::FlagsAttribute]
-public enum class BinaryLogicalOperations
+public __value enum BinaryLogicalOperations
 {
     /// Perform a logical And between the two filters.
 	BinaryLogicalOperations_And = FdoBinaryLogicalOperations_And,

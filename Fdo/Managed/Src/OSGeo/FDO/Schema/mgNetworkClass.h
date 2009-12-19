@@ -24,7 +24,7 @@
 class FdoNetworkClass;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class NetworkLayerClass;
+public __gc class NetworkLayerClass;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -37,7 +37,7 @@ ref class NetworkLayerClass;
 /// <p><b>Note:</b> <span class="red_text">This Help topic is provided for informational use only. There is
 /// no interface or support provided. OSGeo reserves the right to change
 /// the software related to the content herein.</span>
-public ref class NetworkClass : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
+public __gc class NetworkClass : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
 {
 public:
     /// \brief
@@ -53,7 +53,7 @@ public:
     /// \param description 
     /// Input description
     /// 
-	NetworkClass(System::String^ name, System::String^ description);
+	NetworkClass(System::String* name, System::String* description);
 
     /// \brief
     /// Gets the concrete class type.
@@ -61,10 +61,7 @@ public:
     /// \return
     /// Returns class type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType ClassType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get_ClassType();
 
     /// \brief
     /// Gets a reference to the layer class.
@@ -72,6 +69,8 @@ public:
     /// \return
     /// Returns a network layer class definition
     /// 
+	__property  NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass* get_LayerClass();
+
     /// \brief
     /// Sets a reference to the layer class. The layer class is used to define the system
     /// layers ordered collection object  property.
@@ -82,11 +81,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass^ LayerClass
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass^ value);
-    }
+	__property  System::Void set_LayerClass(NAMESPACE_OSGEO_FDO_SCHEMA::NetworkLayerClass* value);
 
     /// \brief
     /// Constructs a NetworkClass object based on an unmanaged instance of the object
@@ -103,10 +98,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoNetworkClass* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

@@ -26,8 +26,8 @@
 class FdoAssociationPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class DataPropertyDefinitionCollection;
-ref class ClassDefinition;
+public __gc class DataPropertyDefinitionCollection;
+public __gc class ClassDefinition;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -35,7 +35,7 @@ ref class ClassDefinition;
 /// the association between two classes.
 /// The class of the associated class must already be defined in the feature
 /// schema and cannot be abstract.
-public ref class AssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
+public __gc class AssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition
 {
 public:
     /// \brief
@@ -52,7 +52,7 @@ public:
     /// \param description 
     /// Input the property definition description
     /// 
-	AssociationPropertyDefinition(System::String^ name, System::String^ description);
+	AssociationPropertyDefinition(System::String* name, System::String* description);
 
     /// \brief
     /// Constructs an instance of an AssociationPropertyDefinition using the specified
@@ -66,7 +66,7 @@ public:
     /// Input true if this is a system generated property, false otherwise.
     /// <p><b>Note:</b> A client would never set system to true, only a provider.
     /// 
-	AssociationPropertyDefinition(System::String^ name, System::String^ description, System::Boolean system);
+	AssociationPropertyDefinition(System::String* name, System::String* description, System::Boolean system);
 
     /// \brief
     /// Gets the concrete property type.
@@ -74,10 +74,7 @@ public:
     /// \return
     /// Returns the concrete property type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType PropertyType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get_PropertyType();
 
     /// \brief
     /// Gets a reference to the associated class.
@@ -85,17 +82,15 @@ public:
     /// \return
     /// Returns class definition
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* get_AssociatedClass();
+
     /// \brief
     /// Sets a reference to the associated class.
     /// 
     /// \param value 
     /// Input class definition
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ AssociatedClass
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ value);
-    }
+	__property System::Void set_AssociatedClass(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* value);
 
     /// \brief
     /// Gets a reference to an NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection which is a collection of 
@@ -110,10 +105,7 @@ public:
     /// \return
     /// Returns data property definition
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ IdentityProperties
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection* get_IdentityProperties();
 
     /// \brief
     /// Gets a reference to an NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection used to return a collection 
@@ -125,10 +117,7 @@ public:
     /// \return
     /// Returns data property definition
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ ReverseIdentityProperties
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection* get_ReverseIdentityProperties();
 
     /// \brief
     /// Gets the reverse name of this property. See description of SetReverseName.
@@ -136,6 +125,8 @@ public:
     /// \return
     /// Returns the reverse name
     /// 
+	__property System::String* get_ReverseName();
+
     /// \brief
     /// This method is used to set the name of this association as seen by the associated 
     /// class. This is an optional parameter that can be provided if the navigation back from the 
@@ -149,11 +140,7 @@ public:
     /// \param name 
     /// Input reverse name
     /// 
-    property System::String^ ReverseName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_ReverseName(System::String* name);
 
     /// \brief
     /// Gets the delete rule.
@@ -161,17 +148,15 @@ public:
     /// \return
     /// Returns the delete rule
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DeleteRule get_DeleteRule();
+
     /// \brief
     /// Sets the delete rule.
     /// 
     /// \param value 
     /// Input the delete rule
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DeleteRule DeleteRule
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DeleteRule get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::DeleteRule value);
-    }
+	__property System::Void set_DeleteRule(NAMESPACE_OSGEO_FDO_SCHEMA::DeleteRule value);
 
     /// \brief
     /// Gets the lock cascade option. true to cascade the lock otherwise the lock is not cascaded
@@ -179,17 +164,15 @@ public:
     /// \return
     /// Returns the lock cascade option
     /// 
+	__property System::Boolean get_LockCascade();
+
     /// \brief
     /// Sets the lock cascade option.
     /// 
     /// \param value 
     /// Input the lock cascade option.
     /// 
-    property System::Boolean LockCascade
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_LockCascade(System::Boolean value);
 
     /// \brief
     /// This method is used to verify if this association property is a read-only association 
@@ -201,6 +184,8 @@ public:
     /// \return
     /// Returns true if the association property is read-only. otherwise false.
     /// 
+	__property System::Boolean get_IsReadOnly();
+
     /// \brief
     /// This method is used to set the read-only status of the association property. 
     /// This method should only be called by FDO providers to set to read-only the association 
@@ -210,11 +195,7 @@ public:
     /// \param value 
     /// Input the read-only flag
     /// 
-    property System::Boolean IsReadOnly
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_IsReadOnly(System::Boolean value);
 
     /// \brief
     /// This method is used to return the association multiplicity from the owner class 
@@ -223,6 +204,8 @@ public:
     /// \return
     /// Returns a System::String that represent the multiplicity.
     /// 
+	__property System::String* get_Multiplicity();
+
     /// \brief
     /// This method is used to set the association multiplicity from the property owner class side. 
     /// The only possible values are 1 or m. If the multiplicity is set to ?? then only one instance
@@ -233,11 +216,7 @@ public:
     /// \param value 
     /// The multiplicity from the property owner class side. Valid values are:  ?? or “m?
     /// 
-    property System::String^ Multiplicity
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Multiplicity(System::String* value);
 
     /// \brief
     /// This method is used to return the association multiplicity from the associated class 
@@ -246,6 +225,8 @@ public:
     /// \return
     /// Returns a System::String that represent the reverse multiplicity.
     /// 
+	__property System::String* get_ReverseMultiplicity();
+
     /// \brief
     /// This method is used to set the association multiplicity from the associated class side.
     /// The only possible values are 0 or 1. If the multiplicity is set to ?? then it is not mandatory 
@@ -255,11 +236,7 @@ public:
     /// \param value 
     /// The multiplicity from the associated class side. Valid values are:  ?? or ??
     /// 
-    property System::String^ ReverseMultiplicity
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_ReverseMultiplicity(System::String* value);
 
     /// \brief
     /// Constructs a AssociationPropertyDefinition object based on an unmanaged instance of the object
@@ -276,10 +253,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoAssociationPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

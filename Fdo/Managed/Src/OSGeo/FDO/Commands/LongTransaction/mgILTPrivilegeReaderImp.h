@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// the GetLongTransactionPrivileges command. The initial position of
 /// the ILongTransactionPrivilegeReader is prior to the first item.
 /// Thus, you must call ReadNext to begin accessing any data.
-private ref class ILongTransactionPrivilegeReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
+private __gc class ILongTransactionPrivilegeReaderImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, 
                                                         public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionPrivilegeReader
 {
 public:
@@ -44,7 +44,7 @@ public:
     /// \return
     /// Returns the user name
     /// 
-	virtual System::String^ GetUsername();
+	System::String* GetUsername();
 
     /// \brief
     /// Gets the privileges granted to the user currently being read. The
@@ -55,7 +55,7 @@ public:
     /// \return
     /// Returns the privileges as a bit masked value based on LongTransactionPrivileges enumeration
     /// 
-	virtual System::Int32 GetPrivileges();
+	System::Int32 GetPrivileges();
 
     /// \brief
     /// Advances the reader to the next item. The default position of the
@@ -65,7 +65,7 @@ public:
     /// \return
     /// Returns true if there is a next item
     /// 
-	virtual System::Boolean ReadNext();
+	System::Boolean ReadNext();
 
     /// \brief
     /// Closes the ILongTransactionPrivilegesReader object, freeing any
@@ -74,17 +74,21 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Close();
+	System::Void Close();
 
-internal:
+public private:
 	ILongTransactionPrivilegeReaderImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoILongTransactionPrivilegeReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	__sealed System::Void ReleaseUnmanagedObject();
+/// \endcond
+
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

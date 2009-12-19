@@ -355,11 +355,6 @@ FdoSchemaMappingsP FdoSmPhMgr::GetConfigMappings()
     return mConfigMappings;
 }
 
-bool FdoSmPhMgr::ConfigIncludeNativeSCs()
-{
-    return false;
-}
-
 FdoStringP FdoSmPhMgr::GetDbObjectClassification( FdoStringP dbObjectName )
 {
     FdoStringP              className;
@@ -523,7 +518,7 @@ FdoSmPhSpatialContextGroupWriterP FdoSmPhMgr::GetSpatialContextGroupWriter()
     if ( !mSpatialContextGroupWriter ) 
         mSpatialContextGroupWriter = NewSpatialContextGroupWriter();
 
-    mSpatialContextGroupWriter->Initialize();
+    mSpatialContextGroupWriter->Clear();
 
     return mSpatialContextGroupWriter;
 }

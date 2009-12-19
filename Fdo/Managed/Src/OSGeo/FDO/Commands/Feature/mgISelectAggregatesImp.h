@@ -24,15 +24,15 @@
 class FdoISelectAggregates;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS
-ref class IdentifierCollection;
+public __gc class IdentifierCollection;
 END_NAMESPACE_OSGEO_FDO_COMMANDS
 
 BEGIN_NAMESPACE_OSGEO_FDO_FILTER
-ref class Filter;
+public __gc class Filter;
 END_NAMESPACE_OSGEO_FDO_FILTER
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
-interface class IDataReader;
+public __gc __interface IDataReader;
 
 /// \ingroup (OSGeoFDOCommandsFeature)
 /// \brief
@@ -42,7 +42,7 @@ interface class IDataReader;
 /// It handles selection of properties that are aggregate functions and supports selecting distinct property values. 
 /// It also includes grouping criteria. The execute method returns an IDataReader which is not tied to a specific class. 
 /// Unlike Select, ISelectAggregate does not include any locking functions.
-private ref class ISelectAggregatesImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp, 
+private __gc class ISelectAggregatesImp : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp, 
                                           public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::ISelectAggregates
 {
 public:
@@ -52,7 +52,7 @@ public:
     /// \return
     /// Returns the data reader.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDataReader* Execute();
 
     /// \brief
     /// Set the distinct option of the selection. 
@@ -65,17 +65,15 @@ public:
     /// Returns nothing
     /// 
     /// Note: Grouping criteria is not supported with Distinct. 
+	__property System::Void set_Distinct(System::Boolean value);
+
     /// \brief
     /// Get the distinct option.
     /// 
     /// \return
     /// Returns true if distinct is set, false otherwise.
     /// 
-    virtual property System::Boolean Distinct
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Boolean get_Distinct();
 
     /// \brief
     /// Gets the IdentifierCollection that holds the list of group by property names. If empty no grouping is used. This list is initially
@@ -85,10 +83,7 @@ public:
     /// \return
     /// Returns the list of group by property names.
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection^ Grouping
-    {
-        virtual NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS::IdentifierCollection* get_Grouping();
 
     /// \brief
     /// Set the grouping by filter. Use the grouping filter to restrict the groups of returned properties to those groups for 
@@ -101,27 +96,23 @@ public:
     /// \return
     /// Returns nothing
     /// 
+	__property System::Void set_GroupingFilter(NAMESPACE_OSGEO_FDO_FILTER::Filter* filter);
+
     /// \brief
     /// Gets the grouping by filter.
     /// 
     /// \return
     /// Returns the grouping filter.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_FILTER::Filter^ GroupingFilter
-    {
-        NAMESPACE_OSGEO_FDO_FILTER::Filter^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_FILTER::Filter^ value);
-    }
+	__property NAMESPACE_OSGEO_FDO_FILTER::Filter* get_GroupingFilter();
 
-internal:
+public private:
 	ISelectAggregatesImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IBaseSelectImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoISelectAggregates* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

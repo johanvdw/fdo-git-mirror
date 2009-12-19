@@ -2059,32 +2059,21 @@ void FdoCommonMiscUtil::GetExpressionType(FdoFunctionDefinitionCollection *funct
 
         FdoPtr<FdoReadOnlySignatureDefinitionCollection> sigDefs = funcDef->GetSignatures();
         bool bFound = false;
-
         for (int s=0; s<sigDefs->GetCount() && !bFound; s++)
         {
             FdoPtr<FdoSignatureDefinition> sigDef = sigDefs->GetItem(s);
             FdoPtr<FdoReadOnlyArgumentDefinitionCollection> sigArgs = sigDef->GetArguments();
-
-            if (sigArgs->GetCount() != numArgs && !funcDef->SupportsVariableArgumentsList())
+            if (sigArgs->GetCount() != numArgs)
                 continue;
 
             bFound = true;
             for (int a=0; a<numArgs && bFound; a++)
             {
-                // In case we deal with a function with variable list of arguments,
-                // then don't do further matching.
-                if ( a >= sigArgs->GetCount() && funcDef->SupportsVariableArgumentsList())
-                {
-                    break;
-                }
-                else
-                {
-                    FdoPtr<FdoArgumentDefinition> sigArg = sigArgs->GetItem(a);
+                FdoPtr<FdoArgumentDefinition> sigArg = sigArgs->GetItem(a);
 
-                    bFound = (argPropType[a] == sigArg->GetPropertyType());
-                    if (bFound && (argPropType[a] == FdoPropertyType_DataProperty))
-                        bFound = (argDataType[a] == sigArg->GetDataType());
-                }
+                bFound = (argPropType[a] == sigArg->GetPropertyType());
+                if (bFound && (argPropType[a] == FdoPropertyType_DataProperty))
+                    bFound = (argDataType[a] == sigArg->GetDataType());
             }
 
             if (bFound)

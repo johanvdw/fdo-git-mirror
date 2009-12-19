@@ -24,11 +24,10 @@
 #endif // _WIN32
 
 #include "FdoWmsReader.h"
-#include "FdoDefaultDataReader.h"
 
-class FdoWmsDataReader : public virtual FdoWmsReader<FdoDefaultDataReader>
+class FdoWmsDataReader : public virtual FdoWmsReader<FdoIDataReader>
 {
-    typedef FdoWmsReader<FdoDefaultDataReader> superclass;
+    typedef FdoWmsReader<FdoIDataReader> superclass;
     friend class FdoWmsSelectAggregatesCommand;
 
 protected:
@@ -57,11 +56,6 @@ public:
     /// <param name="index">Input the position of the property.</param> 
     /// <returns>Returns the property name</returns> 
     virtual FdoString* GetPropertyName(FdoInt32 index);
-
-    /// <summary>Gets the index of the property with the specified name.</summary>
-    /// <param name="propertyName">Input the name of the property.</param> 
-    /// <returns>Returns the property index</returns> 
-    virtual FdoInt32 GetPropertyIndex(FdoString* propertyName);
 
     /// <summary>Gets the data type of the property with the specified name.</summary>
     /// <param name="propertyName">Input the property name.</param> 

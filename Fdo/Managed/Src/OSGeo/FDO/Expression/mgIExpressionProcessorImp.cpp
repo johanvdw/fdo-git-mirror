@@ -29,10 +29,12 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp::IExpressionProcessorImp
 
 FdoIExpressionProcessor* NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp::GetImpObj()
 {
-	return static_cast<FdoIExpressionProcessor*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoIExpressionProcessor*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }

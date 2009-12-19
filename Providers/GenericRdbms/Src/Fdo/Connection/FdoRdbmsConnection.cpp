@@ -254,11 +254,6 @@ FdoConnectionState FdoRdbmsConnection::DbiOpen(bool skipPending)
     return theState;
 }
 
-FdoStringP FdoRdbmsConnection::GenConnectionStringParm( FdoStringP connectionString )
-{
-    return connectionString;
-}
-
 FdoConnectionState FdoRdbmsConnection::Open (
     bool skipPending
     )
@@ -326,12 +321,7 @@ FdoConnectionState FdoRdbmsConnection::Open (
         if (prop != NULL)
             defaultGeometryWanted = prop->GetValue();
         
-        // do provider-specific native connection string customizations.
-        // Persist in member variable since mDbiConnection holds weak references to connection
-        // parms.
-        mConnectionStringParm = GenConnectionStringParm(connectionString);
-
-        mDbiConnection->SetConnectData( datasource, user, password, schema, mConnectionStringParm, defaultGeometryWanted);
+        mDbiConnection->SetConnectData( datasource, user, password, schema, connectionString, defaultGeometryWanted);
 
         // This is done in a separate method since we need to use __try/__except to catch the delay-loader's
         // Structured Exceptions, which is incompatible with having destructible objects on the stack:

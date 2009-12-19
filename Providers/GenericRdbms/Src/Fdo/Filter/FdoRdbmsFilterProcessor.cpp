@@ -889,11 +889,6 @@ bool FdoRdbmsFilterProcessor::CanOptimizeRelationQuery( const FdoSmLpClassDefini
     return true;
 }
 
-bool FdoRdbmsFilterProcessor::CanSelectDistinctColType( FdoSmPhColType colType )
-{
-    return true;
-}
-
 // This method is used to follow a value type object property or an m:1 association
 // and add the necessary column spec and table mappings for joining them later.
 void FdoRdbmsFilterProcessor::FollowRelation( FdoStringP    &relationColumns, const FdoSmLpPropertyDefinition* propertyDefinition, FdoIdentifierCollection *selectedProperties )
@@ -1021,7 +1016,7 @@ void FdoRdbmsFilterProcessor::AppendObjectProperty( const FdoSmLpClassDefinition
     FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
     AppendString( GetTableAlias( sqlTableName ) );
     AppendString( L"." );
-    AppendString( (FdoString*)(pkCols->RefItem(0)->GetName()) );
+    AppendString( pkCols->RefItem(0)->GetName() );
 }
 
 void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinition* currentClass, const FdoSmLpGeometricPropertyDefinition* geomProp, bool useOuterJoin, bool inSelectList )
@@ -1420,8 +1415,7 @@ void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* property, bool sca
         if( dynamic_cast<FdoComputedIdentifier *>( property ) != NULL )
         {
             // Add the pseudo column for the computed identifier expression.
-            FdoRdbmsSchemaUtil * pUtil = mDbiConnection->GetSchemaUtil();
-            PrependString( (const char *)pUtil->GetAliasSqlName(pUtil->MakeDBValidName(property->GetName())) );
+            PrependString( mDbiConnection->GetSchemaUtil()->MakeDBValidName(property->GetName()) );
             PrependString( L" AS " );
         }
         PrependString( compIdentPseudoCol );
@@ -2211,13 +2205,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
         {
             if(( FdoCommonOSUtil::wcsicmp( dataPropertyDef->GetColumnName(), L"classname" )  != 0 ) &&
                ( FdoCommonOSUtil::wcsicmp( dataPropertyDef->GetColumnName(), L"schemaname" ) != 0 )     )
-            {
-                if ( dataPropertyDef->RefColumn() )
-				{
-					const FdoSmPhColumn* column = dataPropertyDef->RefColumn();
-                    all->Add( column->GetDbName() );
-                }
-            }
+                all->Add( dataPropertyDef->GetColumnName() );
         }
 		else
 		{
@@ -2230,19 +2218,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
 					const FdoSmPhColumn* column = geomPropertyDef->RefColumn();
 					all->Add(GetGeometryString(column->GetDbName(), true));
 				}
-                else
-                {
-                    if ( geomPropertyDef->GetGeometricColumnType() == FdoSmOvGeometricColumnType_Double &&
-                         geomPropertyDef->GetGeometricContentType() == FdoSmOvGeometricContentType_Ordinates )  
-                    {
-                        if ( geomPropertyDef->RefColumnX() )
-					        all->Add( geomPropertyDef->GetColumnNameX() );
-                        if ( geomPropertyDef->RefColumnY() )
-					        all->Add( geomPropertyDef->GetColumnNameY() );
-                        if ( geomPropertyDef->RefColumnZ() )
-					        all->Add( geomPropertyDef->GetColumnNameZ() );
-                    }
-                }
 			}
 		}
     }
@@ -2260,10 +2235,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
     {
         FdoString * tableAlias = GetTableAlias( tableName );
         if (wcscmp(tableAlias, tableName) != 0)
-        {
-            AppendString(  L" " );
             AppendString(  GetTableAlias( tableName ) );
-        }
         AppendString( L" WHERE " );
         HandleFilter( filter );
     }
@@ -2307,9 +2279,6 @@ void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString
             if ( colType != FdoSmPhColType_Unknown ) 
             {
 		        bool bGeometry = colType == FdoSmPhColType_Geom;
-
-                if ( mRequiresDistinct && !CanSelectDistinctColType(colType) ) 
-                    continue;
 
                 if (!first )
                     PrependString( L"," );

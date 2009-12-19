@@ -219,7 +219,7 @@ FdoInt32 ArcSDEUpdateCommand::Execute ()
         if (lockable)
         {
             // set up a temporary log file
-            connection->MakeLog (&log, table);
+            ArcSDELockUtility::MakeLog (&log, connection->GetConnection (), table);
             ArcSDELockUtility::GetLogFile (logfile, connection->GetConnection (), log);
 
             // accumulate the query in the log file

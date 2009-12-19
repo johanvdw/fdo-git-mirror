@@ -24,10 +24,11 @@
 #endif // _WIN32
 
 #include <Fdo/Xml/FeatureReader.h>
-#include "FdoDefaultFeatureReader.h"
 
-class FdoWfsFeatureReader : public FdoDefaultFeatureReader	
+class FdoWfsFeatureReader : public FdoIFeatureReader	
 {
+    typedef FdoWfsReader<FdoIFeatureReader> superclass;	
+
 public:
     FdoWfsFeatureReader ();	
     virtual ~FdoWfsFeatureReader (void);

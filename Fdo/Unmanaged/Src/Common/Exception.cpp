@@ -26,9 +26,9 @@
 
 
 #ifdef _WIN32
-#define CATALOG        "FDOMessage.dll"
+#define CATALOG		"FDOMessage.dll"
 #else
-#define CATALOG        "FDOMessage.cat"
+#define CATALOG		"FDOMessage.cat"
 #endif
 #ifdef _DEBUG
     static const    FdoInt32    countBuffers = 4;
@@ -43,8 +43,8 @@ extern "C" {CRITICAL_SECTION NlsMsgGetCriticalSection;}
 extern "C" {pthread_mutex_t NlsMsgGetCriticalSection = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;}
 #endif
 
-extern "C" 
-void nls_msg_close_handles();
+extern "C"   
+void nls_msg_close_handles();  
 
 class NlsMsgGetAccess
 {
@@ -60,11 +60,11 @@ public:
     ~NlsMsgGetAccess()
     {
 #ifdef _WIN32
-        DeleteCriticalSection (&NlsMsgGetCriticalSection);
+    DeleteCriticalSection (&NlsMsgGetCriticalSection);
 #else
-        pthread_mutex_destroy(&NlsMsgGetCriticalSection);
+    pthread_mutex_destroy(&NlsMsgGetCriticalSection);
 #endif
-        nls_msg_close_handles();
+    nls_msg_close_handles(); 
     }
 };
 
@@ -72,63 +72,43 @@ static NlsMsgGetAccess NlsMsgGetInitializer;
 
 extern "C" 
 wchar_t * nls_msg_get_W2(wchar_t *msg_string, 
-                        const char *cat_name, 
+                        char *cat_name, 
                         int set_num, 
                         unsigned long msg_num, // was DWORD 
-                        const char *default_msg, 
+                        char *default_msg, 
                         va_list arguments); 
 
 FdoException* FdoException::Create()
 {
-    return new FdoException();
+	return new FdoException();
 }
 
 FdoException* FdoException::Create(FdoString* message)
 {
-    return new FdoException(message);
-}
-
-FdoException* FdoException::Create(FdoString* message, FdoInt64 nativeErrorCode)
-{
-    return new FdoException(message, NULL, nativeErrorCode);
+	return new FdoException(message);
 }
 
 FdoException* FdoException::Create(FdoString* message, FdoException* cause)
 {
-    return new FdoException(message, cause);
-}
-
-FdoException* FdoException::Create(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode)
-{
-    return new FdoException(message, cause, nativeErrorCode);
+	return new FdoException(message, cause);
 }
 
 FdoException::FdoException()
 {
-    m_message = NULL;
-    m_cause = NULL;
-    m_nativeErrorCode = 0;
+	m_message = NULL;
+	m_cause = NULL;
 }
 
 FdoException::FdoException(FdoString* message)
 {
     m_message = FdoStringUtility::MakeString(message);
-    m_cause = NULL;
-    m_nativeErrorCode = 0;
+	m_cause = NULL;
 }
 
 FdoException::FdoException(FdoString* message, FdoException* cause)
 {
-    m_message = FdoStringUtility::MakeString(message);
-    m_cause = FDO_SAFE_ADDREF(cause);
-    m_nativeErrorCode = 0;
-}
-
-FdoException::FdoException(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode)
-{
-    m_message = FdoStringUtility::MakeString(message);
-    m_cause = FDO_SAFE_ADDREF(cause);
-    m_nativeErrorCode = nativeErrorCode;
+	m_message = FdoStringUtility::MakeString(message);
+	m_cause = FDO_SAFE_ADDREF(cause);
 }
 
 FdoException::~FdoException()
@@ -154,12 +134,12 @@ FdoException* FdoException::GetCause()
 
 FdoException* FdoException::GetRootCause()
 {
-    FdoException*    pRoot = NULL;
-    
-    if (m_cause != NULL)
-        pRoot = m_cause->GetRootCause();
-    else 
-        pRoot = FDO_SAFE_ADDREF(this);
+	FdoException*	pRoot = NULL;
+	
+	if (m_cause != NULL)
+		pRoot = m_cause->GetRootCause();
+	else 
+		pRoot = FDO_SAFE_ADDREF(this);
     return pRoot;
 }
 
@@ -175,7 +155,7 @@ FdoString* FdoException::ToString()
     return NULL;
 }
 
-FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* file, int line, ...)
+FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* file, int line, ...)
 {
     va_list arguments;
 
@@ -185,7 +165,7 @@ FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, cons
     return result;
 }
 
-FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* file, int line, const char* catalog, va_list arguments)
+FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* file, int line, char* catalog, va_list arguments)
 {
 #ifdef  _DEBUG
 
@@ -197,14 +177,14 @@ FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, cons
     pBuffer[sizeBuffers - 1] = 0;
     return pBuffer;
 #else
-    // eliminate unreferenced parameter warning
-    (void)file;
-    (void)line;
+	// eliminate unreferenced parameter warning
+	(void)file;
+	(void)line;
     return nls_msg_get_W2(NULL, catalog, 1, msgNum, defMsg, arguments); 
 #endif
 }
 
-FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, ...)
+FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, char* defMsg, ...)
 {
     va_list arguments;
 
@@ -214,12 +194,8 @@ FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, ...)
     return result;
 }
 
-FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* catalog, va_list arguments)
+FdoString* FdoException::NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* catalog, va_list arguments)
 {
     return nls_msg_get_W2(NULL, catalog, 1, msgNum, defMsg, arguments); 
 }
 
-FdoInt64 FdoException::GetNativeErrorCode()
-{
-    return m_nativeErrorCode;
-}

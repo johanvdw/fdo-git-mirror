@@ -31,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE
 /// IDataStorePropertyDictionary. IDataStorePropertyDictionary exposes a dictionary style interface
 /// to the datastore properties. The properties required to create or destroy a datastore
 /// can be determined and their values can be set through this interface.
-private ref class IDataStorePropertyDictionaryImp : public NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionaryImp, public NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary
+private __gc class IDataStorePropertyDictionaryImp : public NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionaryImp, public NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary
 {
 public:
     /// \brief
@@ -43,7 +43,7 @@ public:
     /// \return
     /// Returns true if the specified property is a file name
     /// 
-    virtual System::Boolean IsPropertyFileName(System::String^ name) override;
+    System::Boolean IsPropertyFileName(System::String* name);
 
     /// \brief
     /// Determines if the specified property represents a path name.
@@ -54,17 +54,15 @@ public:
     /// \return
     /// Returns true if the specified property is a path name
     /// 
-    virtual System::Boolean IsPropertyFilePath(System::String^ name) override;
+    System::Boolean IsPropertyFilePath(System::String* name);
 
-internal:
+public private:
 	IDataStorePropertyDictionaryImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionaryImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIDataStorePropertyDictionary* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE

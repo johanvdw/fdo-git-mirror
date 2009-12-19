@@ -24,15 +24,15 @@ class FdoFunction;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-ref class ExpressionCollection;
-interface class IExpressionProcessor;
+public __gc class ExpressionCollection;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The Function class derives from Expression and represents a function call. As
 /// such it defines the name of the function and the collection of arguments to
 /// be passed to it.
-public ref class Function : public NAMESPACE_OSGEO_FDO_EXPRESSION::Expression
+public __gc class Function : public NAMESPACE_OSGEO_FDO_EXPRESSION::Expression
 {
 public:
     /// \brief
@@ -54,7 +54,7 @@ public:
     /// \return
     /// Returns Function
     /// 
-	Function(System::String^ name, array<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^>^ arguments);
+	Function(System::String* name, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* arguments []);
 
     /// \brief
     /// Constructs an instance of a function using the specified arguments.
@@ -67,7 +67,7 @@ public:
     /// \return
     /// Returns Function
     /// 
-	Function(System::String^ name, NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionCollection^ arguments);
+	Function(System::String* name, NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionCollection* arguments);
 
     /// \brief
     /// Gets the name of the function.
@@ -75,6 +75,8 @@ public:
     /// \return
     /// Returns name of the function
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the function.
     /// 
@@ -84,11 +86,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Gets the ExpressionCollection that contains the arguments to the
@@ -97,10 +95,7 @@ public:
     /// \return
     /// Returns arguments as collection
     /// 
-    property NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionCollection^ Arguments
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionCollection* get_Arguments();
 
     /// \brief
     /// Overrides Expression.Process to pass the Function to the appropriate
@@ -112,7 +107,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -120,7 +115,7 @@ public:
     /// \return
     /// Returns the well defined text representation of this expression
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a Function object based on an unmanaged instance of the object
@@ -134,10 +129,8 @@ public:
     /// 
 	Function(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoFunction* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION

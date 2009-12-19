@@ -38,7 +38,6 @@ public:
         FdoString*	            columnName,
 		bool                    hasElevation,
         bool                    hasMeasure,
-        FdoInt32                geometryType,
         bool                    isDerived,
         FdoSmPhSpatialContextP  spatialContext,
         FdoSmPhSpatialContextsP spatialContexts
@@ -49,7 +48,6 @@ public:
 		mColumnName = columnName;
 		mHasElevation = hasElevation;	
 		mHasMeasure = hasMeasure;	
-        mGeometryType = geometryType;
         mIsDerived = isDerived;
         mpOwner = (FdoSmPhOwner*) pOwner;
         mSpatialContext = spatialContext;
@@ -68,9 +66,6 @@ public:
     bool GetHasElevation() { return mHasElevation; }
 
     bool GetHasMeasure() { return mHasMeasure; }
-
-    // Allowed geometry types in hexcode format.
-    FdoInt32 GetGeometryType() { return mGeometryType; }
 
     // Generates a unique name for this spatial context geometry.
     // The name is unique with owners (datastores).
@@ -101,8 +96,8 @@ private:
     FdoStringP		        mColumnName;
 	bool			        mHasElevation;
 	bool			        mHasMeasure;
+
     bool                    mIsDerived;
-    FdoInt32                mGeometryType;
     FdoSmPhOwner*           mpOwner;
     FdoSmPhSpatialContextP  mSpatialContext;
     FdoSmPhSpatialContextsP mSpatialContexts;

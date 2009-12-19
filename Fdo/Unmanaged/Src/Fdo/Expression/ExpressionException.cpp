@@ -31,21 +31,11 @@ FdoExpressionException* FdoExpressionException::Create(FdoString* message)
 	return new FdoExpressionException(message);
 }
 
-FdoExpressionException* FdoExpressionException::Create(FdoString* message, FdoInt64 nativeErrorCode)
-{
-    return new FdoExpressionException(message, NULL, nativeErrorCode);
-}
-
 // Constructs an instance of a ExpressionException using the specified
 // arguments.
 FdoExpressionException* FdoExpressionException::Create(FdoString* message, FdoException* cause)
 {
 	return new FdoExpressionException(message, cause);
-}
-
-FdoExpressionException* FdoExpressionException::Create(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode)
-{
-    return new FdoExpressionException(message, cause, nativeErrorCode);
 }
 
 // Constructs a default instance of a ExpressionException.
@@ -65,11 +55,6 @@ FdoExpressionException::FdoExpressionException(FdoString* message) :
 // arguments.
 FdoExpressionException::FdoExpressionException(FdoString* message, FdoException* cause) :
   FdoException(message, cause)
-{
-}
-
-FdoExpressionException::FdoExpressionException(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode) :
-  FdoException(message, cause, nativeErrorCode)
 {
 }
 

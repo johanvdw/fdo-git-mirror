@@ -33,33 +33,28 @@ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::IListDataStoresImp(S
 
 FdoIListDataStores* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::GetImpObj()
 {
-    return static_cast<FdoIListDataStores*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIListDataStores*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::GetDisposableObject()
+System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::get_IncludeNonFdoEnabledDatastores()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::IncludeNonFdoEnabledDatastores::get()
-{
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetIncludeNonFdoEnabledDatastores())
 
     return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::IncludeNonFdoEnabledDatastores::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::set_IncludeNonFdoEnabledDatastores(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIncludeNonFdoEnabledDatastores(value))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader^ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReader* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IListDataStoresImp::Execute()
 {
 	FdoIDataStoreReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDataStoreReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDataStoreReader(result, true);
 }

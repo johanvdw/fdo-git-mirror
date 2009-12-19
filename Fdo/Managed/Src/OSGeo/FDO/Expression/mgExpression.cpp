@@ -32,33 +32,35 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::Expression(IntPtr unmanaged, Boolean
 
 FdoExpression* NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::GetImpObj()
 {
-	return static_cast<FdoExpression*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoExpression*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::Parse(System::String^ expressionText)
+NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::Parse(System::String* expressionText)
 {
-	FdoExpression* result;
+	FdoExpression* unexp;
 
-	EXCEPTION_HANDLER(result = FdoExpression::Parse(StringToUni(expressionText)))
+	EXCEPTION_HANDLER(unexp = FdoExpression::Parse(StringToUni(expressionText)))
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateExpression(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateExpression(unexp, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessorImp*>(processor))->GetImpObj()))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::ToString()
+System::String* NAMESPACE_OSGEO_FDO_EXPRESSION::Expression::ToString()
 {
 	FdoString* unstr;
 
 	EXCEPTION_HANDLER(unstr = GetImpObj()->ToString())
 
-	return CHECK_STRING(unstr);
+	return unstr;
 }

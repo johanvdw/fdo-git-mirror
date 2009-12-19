@@ -34,7 +34,7 @@ public:
 
 	virtual ~FdoSmPhColumnInt32(void) {}
 
-    virtual FdoSmPhColType GetType() const
+    virtual FdoSmPhColType GetType()
     {
         return FdoSmPhColType_Int32;
     }

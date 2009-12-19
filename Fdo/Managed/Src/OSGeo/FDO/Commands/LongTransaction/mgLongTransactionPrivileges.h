@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// The LongTransactionPrivileges enumeration defines the long transaction
 /// privilege flags.
 [System::FlagsAttribute]
-public enum class LongTransactionPrivileges
+public __value enum LongTransactionPrivileges
 {
     /// The access privilege is required for a user if the user needs to access
     /// a long transaction.

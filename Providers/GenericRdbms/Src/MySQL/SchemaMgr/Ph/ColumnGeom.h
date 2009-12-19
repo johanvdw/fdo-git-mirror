@@ -22,7 +22,6 @@
 #include <Sm/Ph/ColumnGeom.h>
 #include "Rd/ColumnReader.h"
 #include "Column.h"
-#include "ColTypeMapper.h"
 
 // Represents a MySql geometric type column.
 class FdoSmPhMySqlColumnGeom :
@@ -44,10 +43,9 @@ public:
         FdoSmPhColumn    ( columnName, L"geometry", elementState, parentObject, bNullable, rootColumnName),
         FdoSmPhColumnGeom( AssociatedSCInfo, bHasElevation, bHasMeasure )
     {
-        m_FdoGeomType = FdoSmPhMySqlColTypeMapper::GetColFdoGeometricType(L"geometry");
-        m_FdoGeometryType = FdoSmPhMySqlColTypeMapper::GetColFdoGeometryType(L"geometry");
-        mSRID = -1;
-
+        m_FdoGeomType = FdoGeometricType_Point | FdoGeometricType_Curve | FdoGeometricType_Surface;
+        m_FdoGeometryType = FdoCommonGeometryUtil::GetAllGeometryTypesCode();
+		mSRID = -1;
         if (NULL != reader)
         {
             try
@@ -56,7 +54,7 @@ public:
                 if (pReader != NULL)
                 {
                     m_FdoGeomType = pReader->GetFdoGeometricType();
-                    m_FdoGeometryType = pReader->GetFdoGeometryType();
+                    m_FdoGeometryType = FdoCommonGeometryUtil::MapGeometryTypeToHexCode( pReader->GetFdoGeometryType() );
                 }
             }
             catch ( FdoException* e ){e->Release();}

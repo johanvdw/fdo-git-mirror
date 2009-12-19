@@ -23,17 +23,17 @@
 class FdoInt64Value;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The Int64Value class derives from DataValue and represents a 64-bit signed integer value.
-public ref class Int64Value : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
+public __gc class Int64Value : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns a 64 bit integer
     /// 
-	static operator System::Int64( NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value^ value );
+	static System::Int64 op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::Int64Value* value );
 
     /// \brief
     /// Constructs a default instance of an Int64Value with a value of null.
@@ -69,10 +69,7 @@ public:
     /// \return
     /// Returns an DataType
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the Int64Value.
@@ -80,6 +77,8 @@ public:
     /// \return
     /// Returns a 64 bit integer
     /// 
+	__property System::Int64 get_Int64();
+
     /// \brief
     /// Sets the Int64Value.
     /// 
@@ -89,11 +88,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Int64 Int64
-    {
-        System::Int64 get();
-        System::Void set(System::Int64 value);
-    }
+	__property System::Void set_Int64(System::Int64 value);
 
     /// \brief
     /// Overrides Expression.Process to pass the Int64Value to the appropriate
@@ -105,7 +100,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -113,7 +108,7 @@ public:
     /// \return
     /// Returns a character string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs an Int64Value object based on an unmanaged instance of the object
@@ -127,10 +122,8 @@ public:
     /// 
 	Int64Value(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoInt64Value* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION

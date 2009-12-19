@@ -17,11 +17,6 @@
  */
 
 #include "stdafx.h"
-#include <Sm/Ph/DbObject.h>
-#include <Sm/Ph/Mgr.h>
-#include <Sm/Collection.h>
-#include <Sm/Ph/ColumnCollection.h>
-#include <Sm/Ph/Table.h>
 #include <Sm/Ph/Rd/TableJoin.h>
 
 FdoSmPhRdTableJoin::FdoSmPhRdTableJoin(

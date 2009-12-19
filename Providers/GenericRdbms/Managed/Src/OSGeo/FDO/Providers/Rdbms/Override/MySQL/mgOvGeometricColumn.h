@@ -23,13 +23,12 @@ class FdoMySQLOvGeometricColumn;
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL
 
 ///<summary>Concrete class defining physical schema overrides for a geometric column.</summary>
-public ref class OvGeometricColumn : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumn
+public __gc class OvGeometricColumn : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumn
 {	
-internal:
-	OvGeometricColumn(System::IntPtr unmanaged, System::Boolean autoDelete);
+public private:
 	FdoMySQLOvGeometricColumn* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+	
+	OvGeometricColumn(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     ///<summary>Constructs a default of an OvGeometricColumn</summary>
@@ -39,7 +38,7 @@ public:
     ///<summary>Constructs an instance of an OvGeometricColumn using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns OvGeometricColumn</returns>
-	OvGeometricColumn(System::String^ name);
+	OvGeometricColumn(System::String* name);
 
 };
 
