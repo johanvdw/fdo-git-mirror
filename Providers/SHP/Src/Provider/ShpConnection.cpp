@@ -18,12 +18,8 @@
  */
 
 #include "stdafx.h"
-
 #define SHP_MESSAGE_DEFINE
-
-#include <../Message/ShpMessageStatic.h>
 #include <../Message/Inc/ShpMessage.h>
-
 #include "ShpSchemaUtilities.h"
 
 #include <malloc.h>
@@ -104,6 +100,13 @@ extern "C" FDOSHP_API FdoIConnection* CreateConnection ()
    return (new ShpConnection ());
 }
 
+// Globals to keep track of opened connections and the files to compress after
+// delete command. The compression is triggered on the last connection close().
+FdoCommonThreadMutex ShpConnection::mMutex;
+int ShpConnection::mGlobalRefCount = 0;
+
+std::vector<std::wstring> ShpConnGlobalFilesToCompress;
+
 ShpConnection::ShpConnection (void) :
     mConnectionString ((wchar_t*)NULL),
     mConnectionState(FdoConnectionState_Closed),
@@ -114,11 +117,24 @@ ShpConnection::ShpConnection (void) :
     // Create the default SC
     ShpSpatialContextP defltSpatialContext = new ShpSpatialContext();
     mSpatialContextColl->Add( defltSpatialContext );
+
+    mMutex.Enter();
+    mGlobalRefCount++;
+    mMutex.Leave();
+
+	InitFunctions();
 }
 
 ShpConnection::~ShpConnection (void)
 {
     Close ();
+
+    // Do files compression (get rid of the deleted rows)
+    CompressFileSets();
+
+    mMutex.Enter();
+    mGlobalRefCount--;
+    mMutex.Leave();
 }
 
 // <summary>Dispose this object.</summary>
@@ -440,6 +456,14 @@ FdoConnectionState ShpConnection::Open ()
 
     // Connection is now open:
     mConnectionState = FdoConnectionState_Open;
+
+    // Do not count the bare connections.
+    //if (mConnectionString != NULL && wcslen(mConnectionString) != 0)
+    //{
+    //    mMutex.Enter();
+    //    mGlobalRefCount++;
+    //    mMutex.Leave();
+    //}
     return (GetConnectionState ());
 }
 
@@ -458,7 +482,6 @@ void ShpConnection::Close ()
 
     mFile = L"";
     mDirectory = L"";
-    
     mLastEditedFileSet = NULL;
 
     // Reset the Spatial Contexts collection. Create the default SC.
@@ -468,6 +491,13 @@ void ShpConnection::Close ()
 
     // Connection is now closed:
     mConnectionState = FdoConnectionState_Closed;
+
+    //if (mConnectionString != NULL && wcslen(mConnectionString) != 0)
+    //{
+    //    mMutex.Enter();
+    //    mGlobalRefCount--;
+    //    mMutex.Leave();
+    //}
 }
 
 /// <summary>Begins a transaction and returns an object that realizes
@@ -1129,6 +1159,128 @@ bool ShpConnection::IsConfigured ()
     return (mConfigured);
 }
 
+#define CPY_SUFFIX    L"_cpy"
+#define EXECUTE_NO_EX(f)  try { f; } catch (FdoException *ex) { ex->Release(); }
+
+void ShpConnection::CompressFileSets()
+{
+    // Do files compression (get rid of the deleted rows)
+    if ( mGlobalRefCount == 1 )
+    {
+        for (size_t i = 0; i < ShpConnGlobalFilesToCompress.size(); i++ )
+        {
+            CompressFileSet( ShpConnGlobalFilesToCompress[i].c_str() );
+        }
+        ShpConnGlobalFilesToCompress.clear();
+    }
+}
+
+void ShpConnection::CompressFileSet (const wchar_t*    baseName)
+{
+    eShapeTypes        type;
+    bool            compressed = false;
+
+    // Check the file set still exists
+    FdoStringP        test_name = FdoStringP::Format(L"%ls%ls", baseName, DBF_EXTENSION);
+
+    if ( !FdoCommonFile::FileExists( (FdoString*) test_name) )
+        return;
+
+    // Use the current directory. At this point we know it is writable.
+    FdoString*        tmpDir = NULL;    
+
+    // Create a file set object.
+    ShpFileSet*  fileset = new ShpFileSet(baseName, tmpDir);
+    
+    // Save the file names
+    FdoStringP    dbf_name = FdoStringP(fileset->GetDbfFile()->FileName());
+    FdoStringP    shp_name = FdoStringP(fileset->GetShapeFile()->FileName());
+    FdoStringP    shx_name = FdoStringP(fileset->GetShapeIndexFile()->FileName());
+    FdoStringP    ssi_name = FdoStringP(fileset->GetSpatialIndex(true)->FileName());
+
+    // Compressed file names
+    FdoStringP    dbfC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)dbf_name, CPY_SUFFIX);
+    FdoStringP    shpC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)shp_name, CPY_SUFFIX);
+    FdoStringP    shxC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)shx_name, CPY_SUFFIX);
+    FdoStringP    ssiC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)ssi_name, CPY_SUFFIX);
+
+    // Create compressed DBF file
+    ShapeDBF *dbfC = new ShapeDBF ((FdoString *)dbfC_name, fileset->GetDbfFile()->GetColumnInfo(), fileset->GetDbfFile()->GetLDID());
+    delete dbfC;
+
+    dbfC = new ShapeDBF ((FdoString *)dbfC_name);
+    dbfC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
+    dbfC->PutFileHeaderDetails ();
+    fileset->SetDbfFileC( dbfC );
+
+    // Create compressed SHP file
+    ShapeFile *shpC = new ShapeFile ((FdoString *)shpC_name, fileset->GetShapeFile()->GetFileShapeType(), false);
+    shpC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
+    fileset->SetShapeFileC( shpC );
+
+    // Create compressed SHX file
+    ShapeIndex *shxC = new ShapeIndex ((FdoString *)shxC_name, shpC, tmpDir);
+    shxC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
+    fileset->SetShapeIndexFileC( shxC );
+
+    // Create compressed IDX file (spatial index)
+    ShpSpatialIndex *ssiC = new ShpSpatialIndex ((FdoString *)ssiC_name, tmpDir, shpC->GetFileShapeType (), shxC->HasMData ());
+    fileset->SetSpatialIndexC( ssiC );
+
+    ShapeDBF *dbf = fileset->GetDbfFile();
+    for ( int i = 0, j = 0; i < dbf->GetNumRecords(); i++)
+    {
+        RowData *data = NULL;
+        Shape    *shape = NULL;
+
+        fileset->GetObjectAt( &data, type, &shape, i);
+        if ( data && !data->IsDeleted())
+        {
+            // Change the record number and save it (batch mode)
+            shape->SetRecordNum(j+1);
+
+            fileset->SetObjectAt(data, shape, true, true );
+
+            j++;
+        }
+        delete data;
+        delete shape;
+    }
+    
+    // Flush the compressed file set
+    fileset->Flush (true);
+
+    // Cleanup
+    delete fileset;
+    delete shpC;
+    delete dbfC;
+    delete shxC;
+    delete ssiC;
+
+    // Copy over the compressed files
+    bool dbf_renamed = FdoCommonFile::Move((FdoString *)dbfC_name, (FdoString *)dbf_name);
+    bool shp_renamed = FdoCommonFile::Move((FdoString *)shpC_name, (FdoString *)shp_name);
+    bool shx_renamed = FdoCommonFile::Move((FdoString *)shxC_name, (FdoString *)shx_name);
+
+    // Check results.
+    if ( dbf_renamed && shp_renamed && shx_renamed )
+    {
+        bool ssi_renamed = FdoCommonFile::Move((FdoString *)ssiC_name, (FdoString *)ssi_name);
+
+        // Remove .sbx file in case it exists (it is stale now, ESRI tools is using it)
+        FdoStringP  sbx_name = FdoStringP::Format(L"%ls%ls", baseName, L".sbx");
+        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)sbx_name, true));
+    }
+    else
+    {
+        // Something went wrong (like sharing violation); remove the files.
+        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)dbfC_name, true));
+        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)shpC_name, true));
+        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)shxC_name, true));
+        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)ssiC_name, true));
+    }
+}
+
 double ShpConnection::GetToleranceXY( FdoGeometricPropertyDefinition* geomProp )
 {
 	double		xyTol = SPATIALCONTEXT_DEFAULT_XY_TOLERANCE;
@@ -1145,4 +1297,29 @@ double ShpConnection::GetToleranceXY( FdoGeometricPropertyDefinition* geomProp )
 			xyTol = SPATIALCONTEXT_DEFAULT_XY_TOLERANCE_LL ;
 	}
 	return xyTol;
+}
+
+void ShpConnection::InitFunctions()
+{
+
+	FdoPtr<FdoExpressionEngineFunctionCollection> customFuncs = FdoExpressionEngineFunctionCollection::Create();
+
+	// Add function X to the list of supported function
+	FdoPtr<FdoExpressionEngineIFunction> funcX = FdoFunctionX::Create();
+	customFuncs->Add( funcX );
+
+	// Add function Y to the list of supported function
+	FdoPtr<FdoExpressionEngineIFunction> funcY = FdoFunctionY::Create();
+	customFuncs->Add( funcY );
+
+	// Add function Z to the list of supported function
+	FdoPtr<FdoExpressionEngineIFunction> funcZ = FdoFunctionZ::Create();
+	customFuncs->Add( funcZ );
+
+	// Add function M to the list of supported function
+	FdoPtr<FdoExpressionEngineIFunction> funcM = FdoFunctionM::Create();
+	customFuncs->Add( funcM );
+
+    FdoExpressionEngine::RegisterFunctions(customFuncs);
+
 }

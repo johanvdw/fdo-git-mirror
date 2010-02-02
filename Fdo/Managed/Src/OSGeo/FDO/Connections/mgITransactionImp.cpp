@@ -31,19 +31,21 @@ NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::ITransactionImp(IntPtr unmanag
 
 FdoITransaction* NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::GetImpObj()
 {
-    return static_cast<FdoITransaction*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoITransaction*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::Connection::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::get_Connection()
 {
-	FdoIConnection* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetConnection())
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnection(IntPtr(result), true);
+	FdoIConnection* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetConnection())
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnection(unobj, true);
 }
 
 System::Void NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp::Commit()

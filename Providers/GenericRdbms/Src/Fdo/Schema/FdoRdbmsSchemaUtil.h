@@ -146,8 +146,7 @@ public:
                                  FdoPropertyValueCollection      *propValCollection,
                                  bool                            *containsObjectProperties );
 
-    // Given a property name, adds enclosing ANSI quotes if RDBMS supports them
-    virtual FdoStringP GetAliasSqlName(const char * propName);
+
 };
 
 #endif // FdoRdbmsSchemaUtil_H

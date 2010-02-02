@@ -35,13 +35,12 @@ class WmsTestDescribeSchema : public WmsTests
 	CPPUNIT_TEST (testServer2);
 	// This server cannot connect any more
     //CPPUNIT_TEST (testServer3);
-	//CPPUNIT_TEST (testServer4);
+	CPPUNIT_TEST (testServer4);
 	CPPUNIT_TEST (testServer5);
 	CPPUNIT_TEST (testCeoware2);
     CPPUNIT_TEST (testKortPlandk);
 	CPPUNIT_TEST (testSchemaMapping);
-    // This server cannot connect any more
-    //CPPUNIT_TEST (testLibCwms);
+    CPPUNIT_TEST (testLibCwms);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:

@@ -24,7 +24,7 @@
 class FdoIGetLongTransactionPrivileges;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
-interface class ILongTransactionPrivilegeReader;
+public __gc __interface ILongTransactionPrivilegeReader;
 
 /// \ingroup (OSGeoFDOCommandsLongTransaction)
 /// \brief
@@ -35,7 +35,7 @@ interface class ILongTransactionPrivilegeReader;
 /// privileges of a long transaction established for each user. The ability to 
 /// successfully execute the command might be restricted by the datastore security 
 /// if the long transaction doesn’t belong to the user executing the command.
-private ref class IGetLongTransactionPrivilegesImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IGetLongTransactionPrivilegesImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                       public NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IGetLongTransactionPrivileges
 {
 public:
@@ -46,6 +46,8 @@ public:
     /// \return
     /// Returns the long transaction name
     /// 
+	__property System::String* get_LongTransactionName();
+
     /// \brief
     /// Sets the name of the long transaction for which privileges should be
     /// enumerated.
@@ -56,11 +58,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ LongTransactionName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_LongTransactionName(System::String* value);
 
     /// \brief
     /// Executes the GetLongTransactionPrivileges command, returning a reference
@@ -69,17 +67,15 @@ public:
     /// \return
     /// Returns the long transaction privilege reader.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionPrivilegeReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionPrivilegeReader* Execute();
 
-internal:
+public private:
 	IGetLongTransactionPrivilegesImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIGetLongTransactionPrivileges* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION

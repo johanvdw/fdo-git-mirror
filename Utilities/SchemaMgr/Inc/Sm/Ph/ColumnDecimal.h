@@ -58,7 +58,7 @@ public:
         return sizeof(double);
     }
 
-    virtual FdoSmPhColType GetType() const
+    virtual FdoSmPhColType GetType()
     {
         return FdoSmPhColType_Decimal;
     }

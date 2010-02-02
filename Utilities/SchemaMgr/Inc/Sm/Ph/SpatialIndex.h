@@ -19,7 +19,7 @@
  */
 
 //#include <Sm/Ph/Index.h>
-#include <Sm/Ph/DbObject.h>
+#include <Sm/Ph/Table.h>
 
 // Represents a spatial index on a geometric column.
 class FdoSmPhSpatialIndex : public FdoSmPhIndex
@@ -44,13 +44,13 @@ protected:
     /// 
     /// Parameters:
     /// 	name: Index name
-    ///     pParent: the index's database object (object that contains the index columns).
+    ///      pParent: the index's table.
     /// 	isUnique: true if the index is unique, false if non-unique
     ///          for most providers, index would always be non-unique
-    ///     elementState: Indicates whether the index is new or already exists.
+    ///      elementState: Indicates whether the index is new or already exists.
     FdoSmPhSpatialIndex(
         FdoStringP name, 
-        FdoSmPhDbObject* pParent,
+        const FdoSmPhTable* pParent,
         bool isUnique,
 		FdoSchemaElementState elementState = FdoSchemaElementState_Added
     );

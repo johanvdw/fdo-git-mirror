@@ -21,14 +21,14 @@
 #include "FDO\Connections\mgProviderDatastoreType.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
-interface class IConnectionPropertyDictionary;
+public __gc __interface IConnectionPropertyDictionary;
 
 /// \ingroup (OSGeoFDOConnections)
 /// \interface OSGeo::FDO::Connections::IConnectionInfo
 /// \brief
 /// The IConnectionInfo interface exposes information about the feature provider
 /// and provides access to the IConnectionPropertyDictionary interface.
-public interface class IConnectionInfo : public System::IDisposable
+public __gc __interface IConnectionInfo : public System::IDisposable
 {
 public:
     /// \brief
@@ -37,10 +37,7 @@ public:
     /// \return
     /// Returns the provider name
     /// 
-    property System::String^ ProviderName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderName();
 
     /// \brief
     /// Gets the display name of the feature provider.
@@ -48,10 +45,7 @@ public:
     /// \return
     /// Returns the provider's display name
     /// 
-    property System::String^ ProviderDisplayName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderDisplayName();
 
     /// \brief
     /// Gets the description of the feature provider.
@@ -59,10 +53,7 @@ public:
     /// \return
     /// Returns the provider description
     /// 
-    property System::String^ ProviderDescription
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderDescription();
 
     /// \brief
     /// Gets the version of the feature provider.
@@ -70,10 +61,7 @@ public:
     /// \return
     /// Returns provider version
     /// 
-    property System::String^ ProviderVersion
-    {
-        System::String^ get();
-    }
+	__property System::String* get_ProviderVersion();
 
     /// \brief
     /// Gets the version of the Feature Data Objects specification to which this provider conforms.
@@ -81,10 +69,7 @@ public:
     /// \return
     /// Returns FDO version supported.
     /// 
-    property System::String^ FeatureDataObjectsVersion
-    {
-        System::String^ get();
-    }
+	__property System::String* get_FeatureDataObjectsVersion();
 
     /// \brief
     /// Gets the IConnectionPropertyDictionary interface that can be used to dynamically query and set the properties required to establish a connection.
@@ -92,10 +77,7 @@ public:
     /// \return
     /// Returns the property dictionary
     /// 
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary^ ConnectionProperties
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnectionPropertyDictionary* get_ConnectionProperties();
 
     /// \brief
     /// Returns the provider type. A provider can be a file-based, database-based or
@@ -107,24 +89,18 @@ public:
     /// \return
     /// Returns the provider data store type.
     /// 
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType ProviderDatastoreType
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType get();
-    }
+    __property NAMESPACE_OSGEO_FDO_CONNECTIONS::ProviderDatastoreType get_ProviderDatastoreType();
 
     /// \brief
     /// File-based providers depend on a various files. This function returns a list
-    /// of fully qualified dependend file names. The return parameter will be nullptr if
+    /// of fully qualified dependend file names. The return parameter will be NULL if
     /// the provider is not a file-based provider.
     /// 
     /// \return
     /// Returns the list of fully-qualified dependend file names if the provider is a
-    /// file-based provider, nullptr otherwise.
+    /// file-based provider, NULL otherwise.
     /// 
-    property NAMESPACE_OSGEO_COMMON::StringCollection^ DependentFileNames
-    {
-        NAMESPACE_OSGEO_COMMON::StringCollection^ get();
-    }
+    __property NAMESPACE_OSGEO_COMMON::StringCollection* get_DependentFileNames();
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS

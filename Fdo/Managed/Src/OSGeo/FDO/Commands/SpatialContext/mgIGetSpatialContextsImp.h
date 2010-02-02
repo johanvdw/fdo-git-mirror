@@ -24,14 +24,14 @@
 class FdoIGetSpatialContexts;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT
-interface class ISpatialContextReader;
+public __gc __interface ISpatialContextReader;
 
 /// \ingroup (OSGeoFDOCommandsSpatialContext)
 /// \brief
 /// The IGetSpatialContextsImp class is a concrete implementation of IGetSpatialContexts.
 /// The IGetSpatialContexts interface defines the GetSpatialContexts command,
 /// which enumerates the existing spatial contexts.
-private ref class IGetSpatialContextsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IGetSpatialContextsImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                             public NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::IGetSpatialContexts
 {
 public:
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns Boolean value
     /// 
+	__property System::Boolean get_ActiveOnly();
+
     /// \brief
     ///  Sets a Boolean flag that indicates if the GetSpatialContexts command
     /// will return only the active spatial context or all spatial contexts. The
@@ -54,11 +56,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::Boolean ActiveOnly
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean value);
-    }
+	__property System::Void set_ActiveOnly(System::Boolean value);
 
     /// \brief
     /// Executes the GetSpatialContexts command returning an ISpatialContextReader.
@@ -66,17 +64,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReader* Execute();
 
-internal:
+public private:
 	IGetSpatialContextsImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIGetSpatialContexts* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT

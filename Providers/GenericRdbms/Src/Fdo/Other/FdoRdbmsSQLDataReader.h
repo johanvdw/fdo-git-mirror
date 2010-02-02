@@ -20,7 +20,6 @@
 #include "FdoRdbms.h"
 #include "FdoRdbmsBLOBStreamReader.h"
 #include "FdoRdbmsFeatureReader.h"
-#include "FdoDefaultSqlDataReader.h"
 
 class DbiConnection;
 
@@ -29,7 +28,7 @@ class DbiConnection;
 // ISQLDataReader is returned from the SQLCommands ExecuteReader method.
 // The initial position of the ISQLDataReader is prior to the first item.
 // Therefore you must call ReadNext to begin accessing any data.
-class FdoRdbmsSQLDataReader: public FdoDefaultSqlDataReader
+class FdoRdbmsSQLDataReader: public FdoISQLDataReader
 {
 
     friend class FdoRdbmsSQLCommand;
@@ -60,9 +59,6 @@ protected:
 
     // Gets the name of the column at the given ordinal position.
     virtual const wchar_t* GetColumnName(FdoInt32 index);
-
-    // Gets the index of the column with the specified column name.
-    virtual FdoInt32 GetColumnIndex(FdoString* columnName);
 
     // Gets the data type of the column with the specified name.
     virtual FdoDataType GetColumnType(const wchar_t* columnName);

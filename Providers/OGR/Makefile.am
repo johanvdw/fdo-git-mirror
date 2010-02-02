@@ -38,7 +38,6 @@ noinst_HEADERS = $(libOGRProvider_la_SOURCES) \
 
 libOGRProvider_la_LIBADD =  \
   ../../Fdo/Unmanaged/Src/libFDO.la \
-  ../../Utilities/Common/libProvidersCommon.la \
  -lgdal  
 
 libOGRProvider_la_LDFLAGS = \
@@ -49,7 +48,6 @@ libOGRProvider_la_LDFLAGS = \
 
 INCLUDES = \
   -I../../Fdo/Unmanaged/Inc \
-  -I../../Utilities/Common/Inc \
   -I$(FDOGDAL)/include \
   -I$(FDOGDAL)/ogr \
   -I$(FDOGDAL)/ogr/ogrsf_frmts \

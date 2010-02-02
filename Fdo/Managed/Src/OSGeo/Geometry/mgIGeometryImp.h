@@ -24,7 +24,7 @@
 class FdoIGeometry;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IEnvelope;
+public __gc __interface IEnvelope;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -33,8 +33,8 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \brief
 /// The IGeometryImp class defines the properties and methods common to all geometric types. 
 /// IGeometryImp is a concreate implementation of IGeometry.
-public ref class IGeometryImp :
-    public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IGeometry
+public __gc class IGeometryImp 
+	: public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_GEOMETRY::IGeometry
 {
 public:
     /// \brief
@@ -49,6 +49,11 @@ public:
     /// 
 	IGeometryImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
 public:
     /// \brief
     /// Gets the envelope for the Geometry.
@@ -56,10 +61,7 @@ public:
     /// \return
     /// Returns the envelope
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ Envelope
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IEnvelope^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IEnvelope* get_Envelope();
 
     /// \brief
     /// Gets the dimensionality of ordinates in this object.
@@ -71,10 +73,7 @@ public:
     /// \return
     /// Returns the ordinate dimensionality
     /// 
-    property System::Int32 Dimensionality
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_Dimensionality();
 
     /// \brief
     /// Gets the type of the most-derived interface 
@@ -86,10 +85,7 @@ public:
     /// \return
     /// Returns the derived type
     /// 
-    property NAMESPACE_OSGEO_COMMON::GeometryType DerivedType
-    {
-        virtual NAMESPACE_OSGEO_COMMON::GeometryType get();
-    }
+	__property NAMESPACE_OSGEO_COMMON::GeometryType get_DerivedType();
 
     /// \brief
     /// Gets the text string representation of this Geometry.
@@ -104,15 +100,10 @@ public:
     /// \return
     /// Returns the text string
     /// 
-    property System::String^ Text
-    {
-        virtual System::String^ get();
-    }
+	__property System::String* get_Text();
 
-internal:
-	FdoIGeometry* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIGeometry *GetImpObj();
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

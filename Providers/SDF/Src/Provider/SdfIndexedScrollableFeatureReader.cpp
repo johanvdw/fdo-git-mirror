@@ -164,9 +164,6 @@ bool SdfIndexedScrollableFeatureReader::ReadAt(FdoPropertyValueCollection* key)
 	return ReadAtIndex( recordindex );
 }
 
-#pragma warning(push)
-#pragma warning(disable: 4018)  // '<' : signed/unsigned mismatch
-
 bool  SdfIndexedScrollableFeatureReader::ReadAtIndex( unsigned int recordindex )
 {
 	if( recordindex > m_TableSize || recordindex < 1 )
@@ -220,5 +217,3 @@ unsigned int SdfIndexedScrollableFeatureReader::IndexOf(FdoPropertyValueCollecti
 
 	return 0;
 }
-
-#pragma warning(pop) // '<' : signed/unsigned mismatch

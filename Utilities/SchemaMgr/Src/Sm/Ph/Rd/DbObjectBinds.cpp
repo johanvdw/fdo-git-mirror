@@ -17,7 +17,6 @@
  */
 
 #include "stdafx.h"
-#include <Sm/Ph/Mgr.h>
 #include <Sm/Ph/Rd/DbObjectBinds.h>
 
 FdoSmPhRdDbObjectBinds::FdoSmPhRdDbObjectBinds(

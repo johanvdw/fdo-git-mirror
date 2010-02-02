@@ -27,6 +27,9 @@
 #define SHP_DO_COMPRESSION	true
 #define SHP_SAVE_EXT		L"_save"
 
+FdoCommonThreadMutex ShpFileSet::mMutex;
+extern std::vector<std::wstring> ShpConnGlobalFilesToCompress;
+
 static bool match (const wchar_t* name, size_t length, const wchar_t* base, size_t base_length, const wchar_t* pattern, size_t pattern_length)
 {
     bool ret;
@@ -40,9 +43,6 @@ static bool match (const wchar_t* name, size_t length, const wchar_t* base, size
 
     return (ret);
 }
-
-FdoCommonThreadMutex ShpFileSet::mMutex;
-FileSetRefCounterType ShpFileSet::mGlobalRefCountOfFileSet;
 
 ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
     mTmpDir (tmp_dir ),
@@ -321,19 +321,6 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
         // else
         //     it's not an error if it doesn't exist
 
-        // Increase the reference counter on every SHP file.
-        mMutex.Enter ();
-        FdoStringP baseName( base_name );
-        FileSetRefCounterType::iterator iter = mGlobalRefCountOfFileSet.find( baseName ) ;
-        if ( iter != mGlobalRefCountOfFileSet.end() )
-        {
-            iter->second.first++;
-        }
-        else
-        {
-            mGlobalRefCountOfFileSet[baseName] = std::pair<int, bool>(1, false) ;
-        }
-        mMutex.Leave ();
 	}
     catch (FdoException* ge)
     {
@@ -366,33 +353,28 @@ ShpFileSet::~ShpFileSet (void)
         }
 	}
 
-    // Decrease the reference counter and remember to compress this in the last fileset.
-    FdoStringP baseName;
-    if ( NULL != mDbf && !mDbf->IsTemporaryFile() )
-        baseName = FdoStringP(mDbf->FileName()).Left(DBF_EXTENSION);
-    else if ( NULL != mShp && !mShp->IsTemporaryFile() )
-        baseName = FdoStringP(mShp->FileName()).Left(SHP_EXTENSION);
-   
-    bool doCompress = false;
-    mMutex.Enter();
-    FileSetRefCounterType::iterator iter = mGlobalRefCountOfFileSet.find(baseName);
-    if ( iter != mGlobalRefCountOfFileSet.end() )
-    {
-        iter->second.first--;
-        if ( SHP_DO_COMPRESSION && mHasDeletedRecords 
-             && !mDbf->IsTemporaryFile() && !mShx->IsTemporaryFile() 
-             && !mShp->IsTemporaryFile() && ( mSSI && !mSSI->IsTemporaryFile() ) )
-        {
-            iter->second.second = true ;
-        }
+	// Remember to compress this file set (on final connection Close())
+	if ( SHP_DO_COMPRESSION && mHasDeletedRecords &&
+		 !mDbf->IsTemporaryFile() && !mShx->IsTemporaryFile() && 
+		 !mShp->IsTemporaryFile() && (mSSI && !mSSI->IsTemporaryFile()))
+	{
+		FdoStringP	fullName = FdoStringP(mDbf->FileName()).Left(DBF_EXTENSION);
+		bool		found = false;
 
-        if ( iter->second.first == 0 )
-        {
-            doCompress = iter->second.second ;
-            mGlobalRefCountOfFileSet.erase( iter ) ;
-        }
-    }
-     mMutex.Leave ();
+
+		// Add this file set to the list in case not already there.
+		mMutex.Enter();
+
+		for (size_t i = 0; i < ShpConnGlobalFilesToCompress.size() && !found; i++ )
+		{
+			found = ( wcscmp((FdoString *)fullName, ShpConnGlobalFilesToCompress[i].c_str() ) == 0 );
+		}
+
+		if ( !found )	
+			ShpConnGlobalFilesToCompress.push_back((FdoString *)fullName);
+		
+		mMutex.Leave();
+	}
 
     delete mShp;
     delete mDbf;
@@ -400,11 +382,6 @@ ShpFileSet::~ShpFileSet (void)
     delete mPrj;
     delete mSSI;
 	delete mCpg;
-
-    if ( doCompress )
-    {
-        CompressFileSet( (const wchar_t*)baseName );
-    }
 }
 
 FdoString* ShpFileSet::CreateBaseName (FdoString* name)
@@ -554,20 +531,7 @@ void ShpFileSet::GetObjectAt (RowData** row, eShapeTypes& type, Shape** shape, i
 		if (length < 0 )
 			*shape = NullShape::NewNullShape (nRecordNumber);
 		else
-        {
-            try
-            {
-                *shape = GetShapeFile ()->GetObjectAt (offset, type);
-            }
-            catch (FdoException* ex)
-            {
-                throw ex;
-            }
-            catch (...)
-            {
-                *shape = NullShape::NewNullShape (nRecordNumber);
-            }
-        }
+			*shape = GetShapeFile ()->GetObjectAt (offset, type);
     }
 }
 
@@ -645,11 +609,8 @@ bool ShpFileSet::AdjustExtents (Shape* shape, bool remove, bool useCopyFiles)
         shp->SetBoundingBoxMaxY (after.yMax);
         shp->SetBoundingBoxMinZ (after.zMin);
         shp->SetBoundingBoxMaxZ (after.zMax);
-        if (after.mMin > fNO_DATA && after.mMax > fNO_DATA)
-        {
-            shp->SetBoundingBoxMinM (after.mMin);
-            shp->SetBoundingBoxMaxM (after.mMax);
-        }
+        shp->SetBoundingBoxMinM (after.mMin);
+        shp->SetBoundingBoxMaxM (after.mMax);
         shp->SetHeaderDirty (true);
         shx->SetBoundingBoxMinX (after.xMin);
         shx->SetBoundingBoxMaxX (after.xMax);
@@ -657,11 +618,8 @@ bool ShpFileSet::AdjustExtents (Shape* shape, bool remove, bool useCopyFiles)
         shx->SetBoundingBoxMaxY (after.yMax);
         shx->SetBoundingBoxMinZ (after.zMin);
         shx->SetBoundingBoxMaxZ (after.zMax);
-        if (after.mMin > fNO_DATA && after.mMax > fNO_DATA)
-        {
-            shx->SetBoundingBoxMinM (after.mMin);
-            shx->SetBoundingBoxMaxM (after.mMax);
-        }
+        shx->SetBoundingBoxMinM (after.mMin);
+        shx->SetBoundingBoxMaxM (after.mMax);
         shx->SetHeaderDirty (true);
     }
 
@@ -694,25 +652,20 @@ void ShpFileSet::MakeSpace (int nRecordNumber, ULONG offset, int length, int new
             buffer = new char[size];
             shp->SetFilePointer64 ((FdoInt64)offset);
             plus = 0;
-            bool eof = false;
-            while (!eof)
+            while (shp->ReadFile (buffer + plus, size, &read) && (size == read))
             {
-                shp->ReadFile (buffer + plus, size, &read);
                 shp->SetFilePointer64 ((FdoInt64)(offset + excess));
-                eof = ( read < size );
-                if (!eof)
-                {
-                    shp->WriteFile (buffer, BUFFER_SIZE);
-                    memmove (buffer, buffer + BUFFER_SIZE, excess);
-                    offset += BUFFER_SIZE;
-                    size = BUFFER_SIZE;
-                    plus = excess;
-                    shp->SetFilePointer64 ((FdoInt64)(offset + excess));
-                }
-                else // write the leftover
-                {
-                    shp->WriteFile (buffer, plus + read);
-                }
+                shp->WriteFile (buffer, BUFFER_SIZE);
+                memmove (buffer, buffer + BUFFER_SIZE, excess);
+                offset += BUFFER_SIZE;
+                size = BUFFER_SIZE;
+                plus = excess;
+                shp->SetFilePointer64 ((FdoInt64)(offset + excess));
+            }
+            if (0 != read)
+            {
+                shp->SetFilePointer64 ((FdoInt64)(offset + excess));
+                shp->WriteFile (buffer, plus + read);
             }
             delete [] buffer;
         }
@@ -1197,113 +1150,4 @@ bool ShpFileSet::IsWritable()
     }
 
     return bWritable;
-}
-
-#define CPY_SUFFIX    L"_cpy"
-#define EXECUTE_NO_EX(f)  try { f; } catch (FdoException *ex) { ex->Release(); }
-
-void ShpFileSet::CompressFileSet (const wchar_t*    baseName)
-{
-    eShapeTypes        type;
-    bool            compressed = false;
-
-    // Check the file set still exists
-    FdoStringP        test_name = FdoStringP::Format(L"%ls%ls", baseName, DBF_EXTENSION);
-
-    if ( !FdoCommonFile::FileExists( (FdoString*) test_name) )
-        return;
-
-    // Use the current directory. At this point we know it is writable.
-    FdoString*        tmpDir = NULL;    
-
-    // Create a file set object.
-    ShpFileSet*  fileset = new ShpFileSet(baseName, tmpDir);
-    
-    // Save the file names
-    FdoStringP    dbf_name = FdoStringP(fileset->GetDbfFile()->FileName());
-    FdoStringP    shp_name = FdoStringP(fileset->GetShapeFile()->FileName());
-    FdoStringP    shx_name = FdoStringP(fileset->GetShapeIndexFile()->FileName());
-    FdoStringP    ssi_name = FdoStringP(fileset->GetSpatialIndex(true)->FileName());
-
-    // Compressed file names
-    FdoStringP    dbfC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)dbf_name, CPY_SUFFIX);
-    FdoStringP    shpC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)shp_name, CPY_SUFFIX);
-    FdoStringP    shxC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)shx_name, CPY_SUFFIX);
-    FdoStringP    ssiC_name = FdoStringP::Format(L"%ls%ls", (FdoString *)ssi_name, CPY_SUFFIX);
-
-    // Create compressed DBF file
-    ShapeDBF *dbfC = new ShapeDBF ((FdoString *)dbfC_name, fileset->GetDbfFile()->GetColumnInfo(), fileset->GetDbfFile()->GetLDID());
-    delete dbfC;
-
-    dbfC = new ShapeDBF ((FdoString *)dbfC_name);
-    dbfC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
-    dbfC->PutFileHeaderDetails ();
-    fileset->SetDbfFileC( dbfC );
-
-    // Create compressed SHP file
-    ShapeFile *shpC = new ShapeFile ((FdoString *)shpC_name, fileset->GetShapeFile()->GetFileShapeType(), false);
-    shpC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
-    fileset->SetShapeFileC( shpC );
-
-    // Create compressed SHX file
-    ShapeIndex *shxC = new ShapeIndex ((FdoString *)shxC_name, shpC, tmpDir);
-    shxC->Reopen( FdoCommonFile::IDF_OPEN_UPDATE);
-    fileset->SetShapeIndexFileC( shxC );
-
-    // Create compressed IDX file (spatial index)
-    ShpSpatialIndex *ssiC = new ShpSpatialIndex ((FdoString *)ssiC_name, tmpDir, shpC->GetFileShapeType (), shxC->HasMData ());
-    fileset->SetSpatialIndexC( ssiC );
-
-    ShapeDBF *dbf = fileset->GetDbfFile();
-    for ( int i = 0, j = 0; i < dbf->GetNumRecords(); i++)
-    {
-        RowData *data = NULL;
-        Shape    *shape = NULL;
-
-        fileset->GetObjectAt( &data, type, &shape, i);
-        if ( data && !data->IsDeleted())
-        {
-            // Change the record number and save it (batch mode)
-            shape->SetRecordNum(j+1);
-
-            fileset->SetObjectAt(data, shape, true, true );
-
-            j++;
-        }
-        delete data;
-        delete shape;
-    }
-    
-    // Flush the compressed file set
-    fileset->Flush (true);
-
-    // Cleanup
-    delete fileset;
-    delete shpC;
-    delete dbfC;
-    delete shxC;
-    delete ssiC;
-
-    // Copy over the compressed files
-    bool dbf_renamed = FdoCommonFile::Move((FdoString *)dbfC_name, (FdoString *)dbf_name);
-    bool shp_renamed = FdoCommonFile::Move((FdoString *)shpC_name, (FdoString *)shp_name);
-    bool shx_renamed = FdoCommonFile::Move((FdoString *)shxC_name, (FdoString *)shx_name);
-
-    // Check results.
-    if ( dbf_renamed && shp_renamed && shx_renamed )
-    {
-        bool ssi_renamed = FdoCommonFile::Move((FdoString *)ssiC_name, (FdoString *)ssi_name);
-
-        // Remove .sbx file in case it exists (it is stale now, ESRI tools is using it)
-        FdoStringP  sbx_name = FdoStringP::Format(L"%ls%ls", baseName, L".sbx");
-        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)sbx_name, true));
-    }
-    else
-    {
-        // Something went wrong (like sharing violation); remove the files.
-        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)dbfC_name, true));
-        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)shpC_name, true));
-        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)shxC_name, true));
-        EXECUTE_NO_EX( FdoCommonFile::Delete((FdoString *)ssiC_name, true));
-    }
 }

@@ -37,7 +37,6 @@ libSmPhRd_la_SOURCES = \
   PkeyReader.cpp \
   PropertyReader.cpp \
   QueryReader.cpp \
-  SchemaDbObjectBinds.cpp \
   SchemaReader.cpp \
   SpatialContextGeomReader.cpp \
   SpatialContextGroupReader.cpp \

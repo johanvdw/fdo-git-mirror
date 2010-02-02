@@ -22,7 +22,7 @@
 class FdoWmsOvClassDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE
-ref class OvRasterDefinition;
+public __gc class OvRasterDefinition;
 
 /// <summary> 
 /// The FdoWmsOvOvClassDefinition class defines mapping overrides for a 
@@ -30,7 +30,7 @@ ref class OvRasterDefinition;
 /// properties defined here will be used in the WMS Getap operation 
 /// when querying data from the WMS server.
 /// </summary>
-public ref class OvClassDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
+public __gc class OvClassDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
 {
 public:
 	/// <summary>Constructs a new empty WMS physical mapping class definition.</summary>
@@ -38,21 +38,17 @@ public:
     
     /// <summary>Gets the physical overrides for a raster property definition.</summary>
     /// <returns>Returns the raster definition. </returns> 
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition* get_RasterDefinition();
+
     /// <summary>Sets the physical overrides for a raster property definition.</summary>	
     /// <param name="rasterDefinition">Input raster definition</param>
 	/// <returns>Returns nothing</returns> 
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition^ RasterDefinition
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition^ rasterDefinition);
-    }
+    __property System::Void set_RasterDefinition(NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE::OvRasterDefinition* rasterDefinition);
 
-internal:
+public private:
 	OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoWmsOvClassDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_WMS_OVERRIDE

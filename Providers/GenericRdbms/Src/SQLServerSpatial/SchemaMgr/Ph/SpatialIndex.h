@@ -33,7 +33,7 @@ public:
 
     FdoSmPhSqsSpatialIndex(
         FdoStringP name,
-        FdoSmPhDbObject* pParent,
+        const FdoSmPhTable* pParent,
         FdoSchemaElementState elementState = FdoSchemaElementState_Added
     );
 

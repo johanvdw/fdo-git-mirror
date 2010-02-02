@@ -33,67 +33,62 @@
 
 FdoNetworkFeatureClass* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::GetImpObj()
 {
-	return static_cast<FdoNetworkFeatureClass*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoNetworkFeatureClass*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::CostProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::get_CostProperty()
 {
 	FdoDataPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCostProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::CostProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::set_CostProperty(NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetCostProperty((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetCostProperty((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::NetworkProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::get_NetworkProperty()
 {
 	FdoAssociationPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetNetworkProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::NetworkProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::set_NetworkProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetNetworkProperty((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetNetworkProperty((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::ReferencedFeatureProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::get_ReferencedFeatureProperty()
 {
 	FdoAssociationPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetReferencedFeatureProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::ReferencedFeatureProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::set_ReferencedFeatureProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetReferencedFeatureProperty((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetReferencedFeatureProperty((value == NULL ? NULL : value->GetImpObj())))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::ParentNetworkFeatureProperty::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::get_ParentNetworkFeatureProperty()
 {
 	FdoAssociationPropertyDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetParentNetworkFeatureProperty())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateAssociationPropertyDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::ParentNetworkFeatureProperty::set(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::NetworkFeatureClass::set_ParentNetworkFeatureProperty(NAMESPACE_OSGEO_FDO_SCHEMA::AssociationPropertyDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetParentNetworkFeatureProperty((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetParentNetworkFeatureProperty((value == NULL ? NULL : value->GetImpObj())))
 }
 

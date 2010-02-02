@@ -1,5 +1,6 @@
 #ifndef _IDISPOSABLE_H_
 #define _IDISPOSABLE_H_
+// 
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -34,7 +35,7 @@ protected:
     /// \return
     /// Returns nothing
     /// 
-    FDO_API_COMMON FdoIDisposable() : m_refCount(1), m_objectThreadLockingEnabled(false) {};
+    FDO_API_COMMON FdoIDisposable() : m_refCount(1) {};
 
     /// \brief
     /// Default destructor for this class.
@@ -51,19 +52,6 @@ protected:
     /// Returns nothing
     /// 
     FDO_API_COMMON virtual void Dispose() = 0;
-	
-public:
-    /// \brief
-    /// Sets a global threading state for all disposable objects. Indicates if thread-safe calls
-    /// should be used to manage the lifespan of all disposable objects.
-    /// 
-    /// \param enable 
-    /// Input A flag indicating if global level thread locking should be enabled
-    /// 
-    /// \return
-    /// Returns nothing
-    /// 
-    FDO_API_COMMON static void EnableGlobalThreadLocking(bool enable) { m_globalThreadLockingEnabled = enable; }
 
 public:
     /// \brief
@@ -72,7 +60,7 @@ public:
     /// \return
     /// Returns the new reference count (value for debugging use only).
     /// 
-    FDO_API_COMMON virtual FdoInt32 AddRef();
+    FDO_API_COMMON virtual FdoInt32 AddRef() { return ++m_refCount; }
 
     /// \brief
     /// Decrease the reference count.
@@ -90,29 +78,30 @@ public:
     /// 
     FDO_API_COMMON virtual FdoInt32 GetRefCount() { return m_refCount; }
 
-    /// Enables threading support for this disposable object. Indicates if
-    /// thread-safe calls should be used to manage the lifespan of this object.
-    /// 
-    /// \param enable 
-    /// Input A flag indicating if object level thread locking should be enabled
-    /// 
-    /// \return
-    /// Returns nothing.
-    /// 
-    FDO_API_COMMON virtual void EnableObjectThreadLocking(bool enable) { m_objectThreadLockingEnabled = enable; }
-
 private:
-    FdoInt32 m_refCount;
-    bool m_objectThreadLockingEnabled;
-    static bool m_globalThreadLockingEnabled;
+    FdoInt32    m_refCount;
 };
 
-/// \brief
-/// Define helper macros FDO_SAFE_ADDREF/FDO_SAFE_RELEASE
-///
+#include <Common/Exception.h>
+
+inline
+FdoInt32 FdoIDisposable::Release()
+{
+#ifdef _DEBUG
+    if (m_refCount <= 0)
+        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_MEMORY_DEALLOCATION_ERROR), 
+                                                           L"FdoIDisposable::Release",
+                                                           L"FdoIDisposable"));
+#endif
+    if (0 != --m_refCount )
+        return m_refCount;
+    Dispose();
+    return 0;
+}
+
+
 #define FDO_SAFE_RELEASE(x) {if (x) (x)->Release(); (x) = NULL;}
 #define FDO_SAFE_ADDREF(x)  ((x != NULL) ? (x)->AddRef(), (x) : (NULL))
-
 #endif
 
 

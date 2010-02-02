@@ -22,7 +22,7 @@
 #include "mgIGetImageFormats.h"
 #include "mgIGetImageFormatsImp.h"
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::GetImageFormatsCommand(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand^ command, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(command, autoDelete)
+NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::GetImageFormatsCommand(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* command, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(command, autoDelete)
 {
 }
 
@@ -32,17 +32,12 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::GetImageFormatsComman
 
 FdoWmsIGetImagefromats* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::GetImpObj()
 {
-    return static_cast<FdoWmsIGetImagefromats*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoWmsIGetImagefromats*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_COMMON::StringCollection^ NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::Execute()
+NAMESPACE_OSGEO_COMMON::StringCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_WMS::GetImageFormatsCommand::Execute()
 {
     FdoStringCollection* result;
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute());
-    return (gcnew NAMESPACE_OSGEO_COMMON::StringCollection(IntPtr(result), true));
+    return (new NAMESPACE_OSGEO_COMMON::StringCollection(result, true));
 }

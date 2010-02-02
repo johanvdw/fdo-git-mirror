@@ -31,8 +31,6 @@
 #include <ShapePRJ.h>
 #include <ShapeCPG.h>
 
-typedef std::map< FdoStringP, std::pair<int, bool> > FileSetRefCounterType;
-
 class ShpConnection;
 
 class ShpFileSet
@@ -59,10 +57,7 @@ class ShpFileSet
 	FdoStringP			mSSIFileName;
 	bool				mIsSSITempFile;
 
-    // Globals to keep track of FileSet for every SHP file and compress after 
-    // delete command. This compression is triggered in destructing of last FileSet.
-	static	FdoCommonThreadMutex   mMutex;
-    static  FileSetRefCounterType  mGlobalRefCountOfFileSet;
+	static	FdoCommonThreadMutex mMutex;
 
 public:
     ShpFileSet (FdoString* shp_file, FdoString* tmp_dir = NULL);
@@ -117,10 +112,6 @@ private:
     /// <returns>Returns true if the extents of the file set have changed.</returns> 
     bool AdjustExtents (Shape* shape, bool remove, bool useCopyFiles);
 
-    /// <summary>Compresses a file set (eliminates the deleted rows)</summary>
-	/// <param name="baseName">Fileset full path</param> 
-	/// <returns>Returns nothing</returns> 
-	void CompressFileSet (const wchar_t* baseName);
 };
 
 inline FdoString* ShpFileSet::GetBaseName ()

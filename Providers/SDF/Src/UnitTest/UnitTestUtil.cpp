@@ -393,7 +393,7 @@ void UnitTestUtil::CreateData( bool create, FdoIConnection  *inConn, int featCou
 
 	FdoPtr<FdoPropertyValue> pvNumb = FdoPropertyValue::Create(L"Numb", svNumb);
 
-	FdoDateTime dt(2006,4,21,19,40,(float)10.0001);
+	FdoDateTime dt(2006,4,21,19,40,10.0001);
 	FdoPtr<FdoDateTimeValue> dtv = FdoDateTimeValue::Create(dt);
 	FdoPtr<FdoPropertyValue> pvDateTime = FdoPropertyValue::Create(L"datetime", dtv);
 
@@ -462,7 +462,7 @@ void UnitTestUtil::CreateData( bool create, FdoIConnection  *inConn, int featCou
         {
             for(unsigned int i=0;i<strlen(tmp);i++)putchar(8);
             sprintf(tmp,"Count = %d",count);
-            printf( "%s", tmp);
+            printf(tmp);
 
             rdr->ReadNext();
             int id = rdr->GetInt32(L"ID");
@@ -483,7 +483,7 @@ void UnitTestUtil::CreateData( bool create, FdoIConnection  *inConn, int featCou
 	{
 		for(unsigned int i=0;i<strlen(tmp);i++)putchar(8);
 		sprintf(tmp,"Count = %d",count);
-		printf( "%s", tmp);
+		printf(tmp);
 		finish = clock ();
 		printf ("  time: %2.3f seconds\n", (double)(finish - start) / CLOCKS_PER_SEC);
 	}

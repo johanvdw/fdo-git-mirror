@@ -128,11 +128,6 @@ logical_op_list* ShpFeatIdQueryEvaluator::GetFeatidFilterOpsList()
     return &m_LogicalOpsList;
 }
 
-left_right_op_list* ShpFeatIdQueryEvaluator::GetLeftRightOpsList()
-{
-    return &m_LeftRightOpsList;
-}
-
 recno_list*  ShpFeatIdQueryEvaluator::GetMergedFeatidList()
 {
     return m_MergedFeatidList;
@@ -496,7 +491,7 @@ FdoGeometricPropertyDefinition* ShpFeatIdQueryEvaluator::FindGeomProp(FdoClassDe
 recno_list* ShpFeatIdQueryEvaluator::FeatidListsUnion(recno_list* left, recno_list* right)
 {
     //if one of the lists is null it means it iterates over all features...
-    //so return NULL as the union of the two
+    //so return NULL as the union of the two.
     if (left == NULL || right == NULL)
         return NULL;  
 
@@ -652,7 +647,6 @@ bool  ShpFeatIdQueryEvaluator::MergeFeatidLists( size_t maxAllowedSize, int maxR
     // Quit if too large
     if ( aproxListSize > maxAllowedSize )
         return false;
-    
 
 	if (SHP_DEBUG_PARSE_TREE)
 		PrintFlattenParseTree();

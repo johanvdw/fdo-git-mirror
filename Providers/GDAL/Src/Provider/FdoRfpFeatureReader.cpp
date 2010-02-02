@@ -28,7 +28,7 @@
 #include "FdoCommonSchemaUtil.h"
 
 FdoRfpFeatureReader::FdoRfpFeatureReader(const FdoClassDefinitionP& classDef, const FdoPtr<FdoRfpQueryResult>& queryResult) :
-											superclass(queryResult), m_classDef(classDef)
+											FdoRfpCommonReader<FdoIFeatureReader>(queryResult), m_classDef(classDef)
 {
 }
 

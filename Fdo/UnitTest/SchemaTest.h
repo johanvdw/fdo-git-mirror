@@ -43,7 +43,6 @@ class SchemaTest : public CppUnit::TestCase
     FDO_CPPUNIT_DEFINE(testXmlUnsupported);
     FDO_CPPUNIT_DEFINE(testXmlExternal);
     FDO_CPPUNIT_DEFINE(testXmlSchemaMappings);
-    FDO_CPPUNIT_DEFINE(testGml212);
     FDO_CPPUNIT_DEFINE(testNetworkOK);
     FDO_CPPUNIT_DEFINE(testNetworkFail1);
     FDO_CPPUNIT_DEFINE(testNetworkFail2);
@@ -90,7 +89,6 @@ class SchemaTest : public CppUnit::TestCase
     CPPUNIT_TEST(testXmlUnsupported);
     CPPUNIT_TEST(testXmlExternal);
     CPPUNIT_TEST(testXmlSchemaMappings);
-    CPPUNIT_TEST(testGml212);
     CPPUNIT_TEST(testNetworkOK);
     CPPUNIT_TEST(testNetworkFail1);
     CPPUNIT_TEST(testNetworkFail2);
@@ -170,8 +168,6 @@ protected:
     void testXmlExternal();
 
     void testXmlSchemaMappings();
-
-    void testGml212();
 
     void testNetworkOK();
     void testNetworkFail1();

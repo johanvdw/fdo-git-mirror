@@ -45,8 +45,6 @@ public:
 
     virtual int GetNumParts ();
 
-    FdoIGeometry* CreateGeometryFromRings( FdoLinearRingCollection* rings, bool relateRings );
-
 protected:
     ESRIPolygonRecord* mRecord;
 };

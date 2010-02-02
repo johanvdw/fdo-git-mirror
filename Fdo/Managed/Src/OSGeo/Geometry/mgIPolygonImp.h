@@ -23,7 +23,7 @@
 class FdoIPolygon;
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ILinearRing;
+public __gc __interface ILinearRing;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// IPolygonImp is defined by one exterior boundary and zero or more 
 /// interior boundaries.
 /// Each of the boundaries must be a closed, simple LinearRing.
-public ref class IPolygonImp :
+public __gc class IPolygonImp :
 	public NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IPolygon
 {
 public:
@@ -50,10 +50,8 @@ public:
     /// 
 	IPolygonImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIPolygon* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIPolygon *GetImpObj();
 
 public:
     /// \brief
@@ -62,10 +60,7 @@ public:
     /// \return
     /// Returns the exterior ring
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ ExteriorRing
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::ILinearRing* get_ExteriorRing();
 
     /// \brief
     /// Gets the number of interior rings.
@@ -73,10 +68,7 @@ public:
     /// \return
     /// Returns the number of interior rings
     /// 
-    property System::Int32 InteriorRingCount
-    {
-        virtual System::Int32 get();
-    }
+	__property System::Int32 get_InteriorRingCount();
 
     /// \brief
     /// Gets the interior ring at the specified (zero-based) index.
@@ -87,7 +79,8 @@ public:
     /// \return
     /// Returns the interior ring
     /// 
-	virtual NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ GetInteriorRing(System::Int32 index);
+	NAMESPACE_OSGEO_GEOMETRY::ILinearRing* GetInteriorRing(System::Int32 index);
+	
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

@@ -25,45 +25,47 @@
 
 NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags() : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeatureFlags::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeatureFlags::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String^ location) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String* location) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeatureFlags::Create(StringToUni(location))), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeatureFlags::Create(StringToUni(location)), true))
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String^ location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String* location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel))), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel)), true))
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String^ location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel, System::Boolean nameAdjust) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String* location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel, System::Boolean nameAdjust) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel), nameAdjust)), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel), nameAdjust), true))
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String^ location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel, System::Boolean nameAdjust, NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption conflictOption) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::XmlFeatureFlags(System::String* location, NAMESPACE_OSGEO_FDO_XML::XmlFlags::ErrorLevel errorLevel, System::Boolean nameAdjust, NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption conflictOption) : NAMESPACE_OSGEO_FDO_XML::XmlFlags(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel), nameAdjust, static_cast<FdoXmlFeatureFlags::ConflictOption>(conflictOption))), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeatureFlags::Create(StringToUni(location), static_cast<FdoXmlFlags::ErrorLevel>(errorLevel), nameAdjust, static_cast<FdoXmlFeatureFlags::ConflictOption>(conflictOption)), true))
 }
 
 FdoXmlFeatureFlags* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::GetImpObj()
 {
-    return static_cast<FdoXmlFeatureFlags*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoXmlFeatureFlags*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::Conflictoption::set(NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_Conflictoption(NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetConflictOption(static_cast<FdoXmlFeatureFlags::ConflictOption>(value)))
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::Conflictoption::get()
+NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_Conflictoption()
 {
 	FdoXmlFeatureFlags::ConflictOption result;
 
@@ -72,26 +74,26 @@ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption NAMESPACE_OSGEO_FDO_XML
 	return static_cast<NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::ConflictOption>(result);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::WriteCollection::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_WriteCollection(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetWriteCollection(value))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::WriteCollection::get()
+System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_WriteCollection()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetWriteCollection())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::WriteMember::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_WriteMember(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetWriteMember(value))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::WriteMember::get()
+System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_WriteMember()
 {
 	FdoBoolean result;
 
@@ -100,109 +102,109 @@ System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::WriteMember::get()
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::CollectionUri::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_CollectionUri(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCollectionUri(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::CollectionUri::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_CollectionUri()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCollectionUri())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::CollectionName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_CollectionName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCollectionName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::CollectionName::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_CollectionName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCollectionName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::MemberUri::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_MemberUri(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetMemberUri(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::MemberUri::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_MemberUri()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetMemberUri())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::MemberName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_MemberName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetMemberName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::MemberName::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_MemberName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetMemberName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::GmlIdPrefix::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_GmlIdPrefix(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetGmlIdPrefix(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::GmlIdPrefix::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_GmlIdPrefix()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetGmlIdPrefix())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::SchemaLocation::set(System::String^ schemaNamespace, System::String^ schemaLocation)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_SchemaLocation(System::String* schemaNamespace, System::String* schemaLocation)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSchemaLocation(StringToUni(schemaNamespace), StringToUni(schemaLocation)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::SchemaLocation::get(System::String^ schemaNamespace)
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_SchemaLocation(System::String* schemaNamespace)
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSchemaLocation(StringToUni(schemaNamespace)))
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-NAMESPACE_OSGEO_COMMON::StringCollection^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::Namespaces::get()
+NAMESPACE_OSGEO_COMMON::StringCollection* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_Namespaces()
 {
 	FdoStringCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetNamespaces())
 
-	return NAMESPACE_OSGEO_COMMON::ObjectFactory::CreateStringCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_COMMON::ObjectFactory::CreateStringCollection(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::DefaultNamespace::set(System::String^ defaultNamespace)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::set_DefaultNamespace(System::String* defaultNamespace)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDefaultNamespace(StringToUni(defaultNamespace)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::DefaultNamespace::get()
+System::String* NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags::get_DefaultNamespace()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDefaultNamespace())
 
-	return CHECK_STRING(result);
+	return result;
 }

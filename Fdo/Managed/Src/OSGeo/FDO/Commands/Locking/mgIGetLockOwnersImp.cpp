@@ -27,19 +27,14 @@
 
 FdoIGetLockOwners* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockOwnersImp::GetImpObj()
 {
-    return static_cast<FdoIGetLockOwners*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIGetLockOwners*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockOwnersImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReader^ NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockOwnersImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockOwnersReader* NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::IGetLockOwnersImp::Execute()
 {
 	FdoILockOwnersReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockOwnersReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockOwnersReader(result, true);
 }

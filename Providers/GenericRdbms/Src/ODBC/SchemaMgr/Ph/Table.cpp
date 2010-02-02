@@ -23,6 +23,7 @@
 #include "Rd/PkeyReader.h"
 #include "Rd/FkeyReader.h"
 #include "Rd/ConstraintReader.h"
+#include "Rd/IndexReader.h"
 #include "Rd/DbObjectReader.h"
 
 
@@ -64,6 +65,13 @@ FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhOdbcTable::CreateConstraintReader( FdoS
     return new FdoSmPhRdOdbcConstraintReader( pOdbcOwner, GetName(), type );
 }
 
+FdoPtr<FdoSmPhRdIndexReader> FdoSmPhOdbcTable::CreateIndexReader() const
+{
+    FdoSmPhOdbcTable* pTable = (FdoSmPhOdbcTable*) this;
+
+    return new FdoSmPhRdOdbcIndexReader( pTable->GetManager(), FDO_SAFE_ADDREF(pTable) );
+}
+
 bool FdoSmPhOdbcTable::Add()
 {
     FdoSmPhOdbcMgrP mgr = GetManager()->SmartCast<FdoSmPhOdbcMgr>();
@@ -96,6 +104,25 @@ bool FdoSmPhOdbcTable::Delete()
     gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
 
     return true;
+}
+
+FdoSmPhIndexP FdoSmPhOdbcTable::NewIndex(
+    FdoStringP name,
+    bool isUnique,
+    FdoSchemaElementState elementState
+)
+{
+    return new FdoSmPhOdbcIndex( name, this, isUnique, elementState );
+}
+
+FdoSmPhIndexP FdoSmPhOdbcTable::NewSpatialIndex(
+    FdoStringP name,
+    bool isUnique,
+    FdoSchemaElementState elementState
+)
+{
+    throw FdoSchemaException::Create();
+    return (FdoSmPhIndex*)NULL;
 }
 
 FdoSmPhFkeyP FdoSmPhOdbcTable::NewFkey(
