@@ -77,7 +77,6 @@
 #include <Functions/Geometry/FdoFunctionY.h>
 #include <Functions/Geometry/FdoFunctionZ.h>
 #include <Functions/Geometry/FdoFunctionM.h>
-#include <sys/stat.h>
 
 bool SdfConnection::m_bInitFunctions = false;
 
@@ -261,22 +260,9 @@ FdoConnectionState SdfConnection::Open( SdfCompareHandler* cmpHandler )
     if (m_bCreate == false && strcmp(m_mbsFullPath,":memory:") != 0 )
     {
 #ifdef _WIN32
-        FdoStringP fileNamew = m_mbsFullPath;
-        struct _stat statInfo;
-        if (0 != _wstat ((const wchar_t*)fileNamew, &statInfo) || (statInfo.st_mode&_S_IFREG) == 0 || ((statInfo.st_mode&_S_IREAD) == 0))
-            throw FdoConnectionException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_50_NONEXISTING_FILE), "SDF connect failed. File does not exist or cannot be opened in specified access mode."));
-        if (!m_bReadOnly)
-            m_bReadOnly = ((statInfo.st_mode&_S_IWRITE)==0);
-
-        FILE* f = _wfopen((const wchar_t*)fileNamew, L"rb");
-#else 
-        struct stat statInfo;
-        if (0 != stat (m_mbsFullPath, &statInfo) || (statInfo.st_mode&S_IFREG) == 0 || ((statInfo.st_mode&S_IREAD) == 0))
-            throw FdoConnectionException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_50_NONEXISTING_FILE), "SDF connect failed. File does not exist or cannot be opened in specified access mode."));
-        if (!m_bReadOnly)
-            m_bReadOnly = ((statInfo.st_mode&S_IWRITE)==0);
-
-        FILE* f = fopen(m_mbsFullPath, "rb");
+        FILE* f = _wfopen((const wchar_t*)FdoStringP(m_mbsFullPath), m_bReadOnly ? L"rb" : L"rb+");
+#else
+        FILE* f = fopen(m_mbsFullPath, m_bReadOnly ? "rb" : "rb+");
 #endif
         if (!f)
             throw FdoConnectionException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_50_NONEXISTING_FILE), "SDF connect failed. File does not exist or cannot be opened in specified access mode."));
@@ -363,8 +349,8 @@ void SdfConnection::Close()
 {
     m_connState = FdoConnectionState_Closed;
 
-    m_bReadOnly = false;
     CloseDatabases();
+
 }
 
 void SdfConnection::CloseDatabases()
@@ -531,6 +517,8 @@ void SdfConnection::UpdateConnectionString()
 
     if (_wcsnicmp(rdonly, RDONLY_TRUE, wcslen(RDONLY_TRUE)) == 0)
         m_bReadOnly = true;
+    else
+        m_bReadOnly = false;
 
     const wchar_t* strMaxCacheSize = dict->GetProperty(PROP_NAME_MAXCACHESIZE);
 
