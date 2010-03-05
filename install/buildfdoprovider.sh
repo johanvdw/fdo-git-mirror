@@ -4,7 +4,7 @@
 #
 BUILDDIR=`pwd`
 BUILDLIST=${BUILDDIR}/filelist
-FDOBUILD=${BUILDDIR}/..
+FDOBUILD=/root/fdo
 FDOTARGET=/usr/local/fdo-3.5.0
 #FDOTARGET=/opt/osgeo/fdo-3.5.0
 
