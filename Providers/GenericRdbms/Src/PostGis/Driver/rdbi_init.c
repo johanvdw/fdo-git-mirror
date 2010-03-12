@@ -31,11 +31,10 @@
 #include "fetch.h"
 #include "fre_cursor.h"
 #include "geom_srid.h"
-#include "get_next_seq.h"
+#include "get_gen_id.h"
 #include "get_msg.h"
 #include "null.h"
 #include "run_sql.h"
-#include "set_database.h"
 #include "sql.h"
 #include "term.h"
 #include "vndr_info.h"
@@ -97,16 +96,12 @@ int postgis_rdbi_init (void **contextp, rdbi_methods methods)
         methods->usr_exists   = NULL;
         methods->get_con_var  = NULL;
         methods->do_break     = NULL;
-        methods->set_schema   = (int (*)(void*, const char*))postgis_set_database;
+        methods->set_schema   = NULL;
         methods->set_schemaW  = NULL;
         methods->vndr_info    = (int (*)(void*, rdbi_vndr_info_def*))postgis_vndr_info;
         methods->geom_srid_set   = (int (*)(void*, char*, char*, long))postgis_geom_srid_set;
         methods->geom_dimens_set = NULL;
         methods->get_geoms_ext   = NULL;
-        methods->get_gen_id      = NULL;
-        methods->get_gen_idW     = NULL;
-        methods->get_next_seq    = (int (*)(void*, const char*,long*))postgis_get_next_seq;
-        methods->get_next_seqW   = NULL;
         methods->lob_create_ref  = NULL;
         methods->lob_destroy_ref = NULL;
         methods->lob_get_size    = NULL;
@@ -124,6 +119,8 @@ int postgis_rdbi_init (void **contextp, rdbi_methods methods)
         methods->capabilities.supports_autoincrement = 0;
         methods->capabilities.supports_unicode       = 0;
         methods->capabilities.supports_int64_binding = 1;
+
+        methods->get_gen_id = (int (*)(void*, const char*, /*const char*, */int*))postgis_get_gen_id;
 
         *contextp = context;
         ret = RDBI_SUCCESS;

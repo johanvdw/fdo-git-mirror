@@ -128,15 +128,19 @@ void FdoRdbmsDataStoreReader::LoadDescription()
 		mDatastoreDescription = L"";
         mDescriptionLoaded = true;
 
-		try 
+        // No description if no MetaSchema.
+		if ( mPhOwnerReader->GetHasMetaSchema() )
 		{
-			mDatastoreDescription = mPhOwnerReader->GetDescription();
+			try 
+			{
+				mDatastoreDescription = mPhOwnerReader->GetDescription();
 
-		} catch (FdoException *ex) {
-			// Old F_SCHEMAINFO might not contain 'description' field. 
-			// Or the owner might not be "dbo" for the SQL Server.
-			// Return "NONE" and continue.
-			ex->Release();
+			} catch (FdoException *ex) {
+				// Old F_SCHEMAINFO might not contain 'description' field. 
+				// Or the owner might not be "dbo" for the SQL Server.
+				// Return "NONE" and continue.
+				ex->Release();
+			}
 		}
     }
 }

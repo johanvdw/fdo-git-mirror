@@ -29,7 +29,6 @@ c_KgOraSelectAggregates::c_KgOraSelectAggregates (c_KgOraConnection* Conn)
     : c_KgOraFdoFeatureCommand<FdoISelectAggregates> (Conn)
 {
   m_OrderingOption = FdoOrderingOption_Ascending;
-  m_Distinct = false;
 }
 
 
@@ -422,11 +421,7 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
 
     
     
-    FdoStringP sbuff;
-    if( GetDistinct() ) 
-      sbuff = FdoStringP::Format(L"SELECT DISTINCT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
-    else
-      sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
+    FdoStringP sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
     
     if( phys_class->GetIsSdeClass() )
     {

@@ -89,9 +89,8 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhPostGisTable::CreatePkeyReader() const
 
     // Create primary key reader
     FdoSmPhRdPostGisPkeyReader* reader = NULL;
-    FdoSmPhOwnerP owner = FDO_SAFE_ADDREF(static_cast<FdoSmPhOwner*>(const_cast<FdoSmSchemaElement*>(GetParent())));
     reader = new FdoSmPhRdPostGisPkeyReader(
-        owner, thisTable);
+        thisTable->GetManager(), thisTable);
     
     return reader;
 }

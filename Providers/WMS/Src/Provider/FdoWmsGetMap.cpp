@@ -106,10 +106,7 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
     ret += FdoOwsGlobals::And;
     ret += FdoWmsXmlGlobals::EXCEPTIONS;
     ret += FdoOwsGlobals::Equal;
-    if (FdoStringP(GetVersion()) == FdoWmsXmlGlobals::WmsVersion)
-        ret += FdoWmsXmlGlobals::ExceptionType130;
-    else
-        ret += FdoWmsXmlGlobals::ExceptionType;
+    ret += FdoWmsXmlGlobals::ExceptionType;
 
 	// Add "LAYERS" parameters in the request	
 	ret += FdoOwsGlobals::And;
@@ -161,6 +158,19 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 	ret += FdoWmsXmlGlobals::WmsRequestSRS;
 	ret += FdoOwsGlobals::Equal;
 	ret += mSrsName; // Don't escape, even though there is a ":", ErMapper services don't like this
+
+	// Here the commented is another approach which first checkes the WMS version, then
+	// selects "CRS" or "SRS" according to the version to construct the request. 
+	// Unfortunately it fails when testing some non-strict servers.
+
+	// Add "CRS" or "SRS" parameter in the request	
+	//ret += FdoOwsGlobals::And;
+	//if (FdoCommonStringUtil::StringCompare(FdoOwsRequest::GetVersion (), L"1.3.0") >= 0)
+	//	ret += FdoWmsXmlGlobals::WmsRequestCRS;
+	//else
+	//	ret += FdoWmsXmlGlobals::WmsRequestSRS;
+	//ret += FdoOwsGlobals::Equal;
+	//ret += mSrsName;
 
 	// Add "FORMAT" in the request
 	ret += FdoOwsGlobals::And;

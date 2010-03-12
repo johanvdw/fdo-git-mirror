@@ -34,7 +34,6 @@
 #include "FdoCommonSchemaUtil.h"
 #include "SQLiteSchemaMergeContext.h"
 #include "SltTransaction.h"
-#include <sys/stat.h>
 
 #ifndef _MSC_VER
 #include "SpatialIndex.h"
@@ -110,7 +109,6 @@ SltConnection::SltConnection() : m_refCount(1)
     m_changesAvailable = false;
     m_connDet = NULL;
     m_defSpatialContextId = 0;
-    m_isReadOnlyConnection = true;
 }
 
 SltConnection::~SltConnection()
@@ -147,113 +145,45 @@ void SltConnection::SetConnectionString(FdoString* value)
 {
     m_mProps->clear();
     
-    if(!value)
-        return;
+    //parse the connection properties from the connection string
+    size_t len = wcslen(value);
+    wchar_t* valcpy = (wchar_t*)alloca(sizeof(wchar_t) * (len + 1));
+    wcscpy(valcpy, value);
 
-    std::wstring token;
-    bool isError = false;
-    short state = 0;
-    int pos = 0, possn = 0, possv = 0, posend = 0;
-    do
+#ifdef _WIN32
+    wchar_t* token = wcstok(valcpy, L";");
+#else
+    wchar_t* ptr = NULL; //for Linux wcstok
+    wchar_t* token = wcstok(valcpy, L";", &ptr);
+#endif
+
+    //tokenize input string into separate connection properties
+    while (token) 
     {
-        switch(state)
-        {
-            case 0: // looking for start property name skipping spaces, e.g. <  Name=Val>
-                if (*(value+pos) == L'=')
-                    isError = true;
-                else if (*(value+pos) != L' ' && *(value+pos) != L';')
-                {
-                    possn = pos;
-                    posend = pos+1;
-                    state = 1;
-                }
-                token.clear();
-            break;
-            case 1: //get property name skipping spaces after name, e.g. <Name  =Val>
-                if (*(value+pos) == L'=')
-                {
-                    token.append(value+possn, posend-possn);
-                    if (*(value+pos+1) == L'\"')
-                    {
-                        pos++;
-                        state = 3;
-                    }
-                    else if (*(value+pos+1) == L' ')
-                    {
-                        pos++;
-                        state = 4;
-                    }
-                    else
-                    {
-                        posend = pos+1;
-                        state = 2;
-                    }
-                    possv = pos+1;
-                }
-                else if(*(value+pos) == L';' || *(value+pos) == L'\0')
-                    isError = true;
-                else if(*(value+pos) != L' ')
-                    posend = pos+1;
-            break;
-            case 2:  // get property value in case value is not surrounded by "
-                if(*(value+pos) == L'\"')
-                    isError = true;
-                else if(*(value+pos) == L';' || *(value+pos) == L'\0')
-                {
-                    if (posend != possv)
-                    {
-                        std::wstring val(value+possv, posend-possv);
-                        SetProperty(token.c_str(), val.c_str());
-                    }
-                    else
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos) != L' ')
-                    posend = pos+1;
-            break;
-            case 3:  //get property value in case value is surrounded by "
-                if(*(value+pos) == L'\"')
-                {
-                    if (pos != possv)
-                    {
-                        std::wstring val(value+possv, pos-possv);
-                        SetProperty(token.c_str(), val.c_str());
-                    }
-                    else
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos+1) == L'\0')
-                    isError = true;
-            break;
-            case 4:  // handle space before ", it skipsd all spaces before ", e.g. <Name=  Val;>
-                if (*(value+pos) == L'\"')
-                {
-                    pos++;
-                    state = 3;
-                }
-                else if(*(value+pos) == L';')
-                {
-                    // handle empty values like: <File=;> or <File="";> or <File= ;>
-                    // and cases like <File=val; ;; Test=;>
-                    if (!token.empty())
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos) != L' ')
-                {
-                    posend = pos;
-                    state = 2;
-                }
-                possv = pos;
-            break;
-        }
-        pos++;
-    }while(*(value+pos-1) != L'\0' && !isError);
+        //token is in the form "<prop_name>=<prop_value>"
+        //look for the = sign
+        wchar_t* eq = wcschr(token, L'=');
 
-    if (isError)
-        throw FdoConnectionException::Create(L"Invalid connection string!");
+        if (eq)
+        {
+            *eq = L'\0';
+    
+                //pass empty string instead of null. This means the null prop value
+                //exception is delayed up to until the user attempts to open the 
+                //connection. This gives the opportunity to fix the connection
+                //string before opening the connection.
+            if (*(eq+1) == L'\0')
+                SetProperty(token, L"");
+            else
+                SetProperty(token, eq+1);
+        }
+    
+    #ifdef _WIN32
+            token = wcstok(NULL, L";");
+    #else
+            token = wcstok(NULL, L";", &ptr);
+    #endif
+    }
 }
 
 //creates a new database, based on the filename stored in the
@@ -352,17 +282,11 @@ FdoConnectionState SltConnection::Open()
     std::string file = W2A_SLOW(dsw);
 
 #ifdef _WIN32
-    struct _stat statInfo;
-    if (0 != _wstat (dsw, &statInfo) || (statInfo.st_mode&_S_IFREG) == 0)
+    if (_waccess(dsw, 0) == -1)
         throw FdoConnectionException::Create(L"File does not exist!");
-    if ((statInfo.st_mode&_S_IREAD) == 0)
-        throw FdoConnectionException::Create(L"File cannot be accessed!");
 #else 
-    struct stat statInfo;
-    if (0 != stat (file.c_str(), &statInfo) || (statInfo.st_mode&S_IFREG) == 0)
+    if (access(file.c_str(), 0) == -1)
         throw FdoConnectionException::Create(L"File does not exist!");
-    if ((statInfo.st_mode&S_IREAD) == 0)
-        throw FdoConnectionException::Create(L"File cannot be accessed!");
 #endif
 
     const wchar_t* sUseMeta = GetProperty(PROP_NAME_FDOMETADATA);
@@ -434,11 +358,6 @@ FdoConnectionState SltConnection::Open()
     m_dbRead->pUserArg = m_connDet;
     m_dbWrite->pUserArg = m_connDet;
 
-#ifdef _WIN32
-    m_isReadOnlyConnection = ((statInfo.st_mode&_S_IWRITE)==0);
-#else // _WIN32
-    m_isReadOnlyConnection = ((statInfo.st_mode&S_IWRITE)==0);
-#endif // _WIN32
     return m_connState;
 }
 
@@ -500,7 +419,6 @@ void SltConnection::Close()
 
     m_updateHookEnabled = false;
     m_changesAvailable = false;
-    m_isReadOnlyConnection = true;
 
     delete m_connDet;
     m_connDet = NULL;
@@ -723,6 +641,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
     if (m_connState != FdoConnectionState_Open)
         throw FdoCommandException::Create(L"Connection must be open in order to Select.");
 
+
     const wchar_t* wfc = fcname->GetName();
     size_t wlen = wcslen(wfc);
     size_t clen = 4 * wlen+1;
@@ -737,7 +656,6 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
     bool canFastStep = true;
     bool mustKeepFilterAlive = false;
 
-    const wchar_t* idClassProp = L"rowid";
     SltMetadata* md = GetMetadata(mbfc);
     if (md == NULL)
     {
@@ -749,16 +667,11 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
     FdoPtr<FdoClassDefinition> fc = md->ToClass();
     if (md->IsView())
     {
-        if (md->GetIdName() == NULL)
-        {
-            CacheViewContent(mbfc);
-            sbfcn.Reset();
-            sbfcn.Append("$view", 5);
-            sbfcn.Append(wfc);
-            mbfc = sbfcn.Data();
-        }
-        else
-            idClassProp = md->GetIdName();
+        CacheViewContent(mbfc);
+        sbfcn.Reset();
+        sbfcn.Append("$view", 5);
+        sbfcn.Append(wfc);
+        mbfc = sbfcn.Data();
     }
 
     //Translate the filter from FDO to SQLite where clause.
@@ -823,9 +736,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
     if (!ordering.empty())
     {
         StringBuffer sb;
-        sb.Append("SELECT ", 7);
-        sb.AppendDQuoted(idClassProp);
-        sb.Append(" FROM ", 6);
+        sb.Append("SELECT ROWID FROM ", 18);
         sb.AppendDQuoted(mbfc);
         sb.Append(" ORDER BY ", 10);
 
@@ -864,7 +775,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
 
         sqlite3_stmt* stmt = NULL;
         const char* tail = NULL;
-        VectorMF* rows = new VectorMF(); //accumulate ordered row ids here
+        std::vector<__int64>* rows = new std::vector<__int64>(); //accumulate ordered row ids here
 
         int rc = sqlite3_prepare_v2(m_dbRead, sb.Data(), -1, &stmt, &tail);
 
@@ -876,14 +787,14 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
         //First, read the spatial iterator fully -- it will return results in sorted order
         if (siter)
         {
-            std::vector<FdoInt64> srows;
+            std::vector<int> srows;
             int start = -1;
             int end = -1;
 
             while (siter->NextRange(start, end))
             {
                 for (int i=start; i<=end; i++)
-                    srows.push_back((*siter)[i]);
+                    srows.push_back(i);
             }
 
             //Second, we will check for each result of the ordering query, if
@@ -916,7 +827,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
         if (strWhere.Length()>0 && scrollable)
         {
             FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
-            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(idClassProp);
+            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
             collidf->Add(rowIdIdf);
             SltReader* rdrSc = new SltReader(this, collidf, mbfcname, strWhere.Data(), siter, canFastStep, ri, parmValues);
             ri = GetScrollableIterator(rdrSc);
@@ -931,7 +842,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
         if (strWhere.Length()>0 && scrollable)
         {
             FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
-            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(idClassProp);
+            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
             collidf->Add(rowIdIdf);
             SltReader* rdrSc = new SltReader(this, collidf, mbfcname, strWhere.Data(), siter, canFastStep, ri, parmValues);
             ri = GetScrollableIterator(rdrSc);
@@ -947,14 +858,14 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
             //row list with the spatial result list
             if (siter)
             {
-                VectorMF* rows = new VectorMF();
+                std::vector<__int64>* rows = new std::vector<__int64>;
                 int start = -1;
                 int end = -1;
 
                 while (siter->NextRange(start, end))
                 {
                     for (int i=start; i<=end; i++)
-                        rows->push_back((*siter)[i]);
+                        rows->push_back(i);
                 }
 
                 delete siter;
@@ -970,7 +881,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
                 // in case we run Count(rowid) and set the count will not work either since we could have:
                 // Feat1Id=40, Feat2Id=50 and Feat3Id=100, how can we implement move to, e.g MoveTo(2)!?
                 FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
-                FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(idClassProp);
+                FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
                 collidf->Add(rowIdIdf);
                 SltReader* rdrSc = new SltReader(this, collidf, mbfcname, "", NULL, canFastStep, NULL, NULL);
                 ri = GetScrollableIterator(rdrSc);
@@ -988,7 +899,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
 
 RowidIterator* SltConnection::GetScrollableIterator(SltReader* rdr)
 {
-    VectorMF* list = new VectorMF();
+    std::vector<__int64>* list = new std::vector<__int64>;
     while (rdr->ReadNext())
     {
         //With a default SltReader we know that rowID will
@@ -1026,7 +937,7 @@ FdoIDataReader* SltConnection::SelectAggregates(FdoIdentifier*              fcna
         throw FdoException::Create(errVal.c_str(), 1);
     }
     FdoPtr<FdoClassDefinition> fc = md->ToClass();
-    if (md->IsView() && md->GetIdName() == NULL)
+    if (md->IsView())
     {
         CacheViewContent(mbfc);
         sbfcn.Reset();
@@ -1237,23 +1148,23 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
         else if (bbox.Intersects(total_ext))
         {
             SpatialIterator* siter = new SpatialIterator(bbox, si);
-            VectorMF* mfrowids = new VectorMF();
+            rowids = new std::vector<__int64>();
             int start = -1;
             int end = -1;
 
             while (siter->NextRange(start, end))
             {
                 for (int i=start; i<=end; i++)
-                    mfrowids->push_back((*siter)[i]);
+                    rowids->push_back(i);
             }
             delete siter;
-            if (mfrowids->size() == 0)
+            if (rowids->size() == 0)
             {
-                delete mfrowids;
+                delete rowids;
                 return 0;
             }
             else
-                ri = new RowidIterator(-1, mfrowids);
+                ri = new RowidIterator(-1, rowids);
         }
         else
             return 0; // enforce an empty result since result will be empty
@@ -1427,23 +1338,23 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
         else if (bbox.Intersects(total_ext))
         {
             SpatialIterator* siter = new SpatialIterator(bbox, si);
-            VectorMF* mfrowids = new VectorMF();
+            rowids = new std::vector<__int64>();
             int start = -1;
             int end = -1;
 
             while (siter->NextRange(start, end))
             {
                 for (int i=start; i<=end; i++)
-                    mfrowids->push_back((*siter)[i]);
+                    rowids->push_back(i);
             }
             delete siter;
-            if (mfrowids->size() == 0)
+            if (rowids->size() == 0)
             {
-                delete mfrowids;
+                delete rowids;
                 return 0;
             }
             else
-                ri = new RowidIterator(-1, mfrowids);
+                ri = new RowidIterator(-1, rowids);
         }
         else
             return 0; // enforce an empty result since result will be empty
@@ -1659,31 +1570,14 @@ SpatialIndex* SltConnection::GetSpatialIndex(const char* table)
 #endif
     //build the spatial index, if this is the first time it
     //is needed
-    bool autodel = true;
+    si = new SpatialIndex(NULL);
     // lets create the description in case we get an exception we don't leak
     SltMetadata* md = GetMetadata(table);
     if(md == NULL || md->IsView())
-    {
-        if(md != NULL && md->GetIdName() != NULL)
-        {
-            si = GetSpatialIndex(md->GetMainViewTable());
-            autodel = (si==NULL);
-        }
-        if (autodel)
-            si = new SpatialIndex(NULL);
-
-        spDesc = new SpatialIndexDescriptor(si, autodel);
-    }
+        spDesc = new SpatialIndexDescriptor(si);
     else
-    {
-        si = new SpatialIndex(NULL);
         spDesc = new SpatialIndexDescriptor(this, table, si);
-    }
     m_mNameToSpatialIndex[_strdup(table)] = spDesc; //Note the memory allocation
-
-    // SI already built return it
-    if (!autodel)
-        return si;
 
     //we will need the ID and the geometry when we build the spatial index, so add them to the query
     FdoPtr<FdoIdentifierCollection> idcol = FdoIdentifierCollection::Create();
@@ -2927,7 +2821,6 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
     bool canFastStep = true;
     bool mustKeepFilterAlive = false;
 
-    const wchar_t* idClassProp = L"rowid";
     SltMetadata* md = GetMetadata(mbfc);
     if (md == NULL)
     {
@@ -2938,16 +2831,11 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
     }
     if (md->IsView())
     {
-        if (md->GetIdName() == NULL)
-        {
-            CacheViewContent(mbfc);
-            sbfcn.Reset();
-            sbfcn.Append("$view", 5);
-            sbfcn.Append(wfc);
-            mbfc = sbfcn.Data();
-        }
-        else
-            idClassProp = md->GetIdName();
+        CacheViewContent(mbfc);
+        sbfcn.Reset();
+        sbfcn.Append("$view", 5);
+        sbfcn.Append(wfc);
+        mbfc = sbfcn.Data();
     }
 
     //Translate the filter from FDO to SQLite where clause.
@@ -3010,7 +2898,7 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
     }
     else
     {
-        FdoPtr<FdoIdentifier> idf = FdoIdentifier::Create(idClassProp);
+        FdoPtr<FdoIdentifier> idf = FdoIdentifier::Create(L"rowid");
         props->Add(idf);
     }
 
@@ -3712,11 +3600,6 @@ bool SltConnection::IsCoordSysLatLong()
         sqlite3_finalize(pStmt);
     }
     return retVal;
-}
-
-bool SltConnection::IsReadOnlyConnection()
-{
-    return m_isReadOnlyConnection;
 }
 
 ConnInfoDetails::ConnInfoDetails(SltConnection* conn)

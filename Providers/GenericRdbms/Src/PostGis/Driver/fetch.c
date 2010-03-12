@@ -172,11 +172,8 @@ int postgis_fetch (postgis_context_def *context,
                         case PGSQL_TYPE_INT8:
                             {
                                 assert(sizeof(rdbi_int64_t) == curs->defines[i].buffer_length);
-#ifdef _WIN32
-                                rdbi_int64_t val = (rdbi_int64_t)_strtoi64(fvalue, NULL, 10);
-#else
-                                rdbi_int64_t val = (rdbi_int64_t)strtoll(fvalue, NULL, 10);
-#endif
+
+                                rdbi_int64_t val = (rdbi_int64_t)strtol(fvalue, NULL, 10);
                                 size_t type_size = sizeof(rdbi_int64_t);
                                 memcpy(curs->defines[i].buffer, &val, type_size);
                             }

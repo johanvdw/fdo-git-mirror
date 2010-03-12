@@ -18,32 +18,23 @@
 #include "PkeyReader.h"
 #include "../Mgr.h"
 #include "../Owner.h"
-#include <Sm/Ph/Rd/SchemaDbObjectBinds.h>
 #include "../../../../SchemaMgr/Ph/Rd/QueryReader.h"
 
-FdoSmPhRdPostGisPkeyReader::FdoSmPhRdPostGisPkeyReader(FdoSmPhOwnerP owner,
+FdoSmPhRdPostGisPkeyReader::FdoSmPhRdPostGisPkeyReader(FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP dbObject)
-    : FdoSmPhRdPkeyReader(),
+    : FdoSmPhRdPkeyReader(MakeReader(mgr,
+        static_cast<const FdoSmPhOwner*>(dbObject->GetParent()), dbObject)),
     mDbObject(dbObject)
 {
-    SetSubReader(
-        MakeReader(
-            owner,
-            DbObject2Objects(dbObject)
-        )
-    );
+    // idle
 }
 
-FdoSmPhRdPostGisPkeyReader::FdoSmPhRdPostGisPkeyReader(FdoSmPhOwnerP owner,
-    FdoStringsP objectNames)
-    : FdoSmPhRdPkeyReader()
+FdoSmPhRdPostGisPkeyReader::FdoSmPhRdPostGisPkeyReader(FdoSmPhMgrP mgr,
+    FdoSmPhOwnerP owner)
+    : FdoSmPhRdPkeyReader(MakeReader(mgr,
+        static_cast<FdoSmPhOwner*>(owner), NULL))
 {
-    SetSubReader(
-        MakeReader(
-            owner,
-            objectNames
-        )
-    );
+    // idle
 }
 
 FdoSmPhRdPostGisPkeyReader::~FdoSmPhRdPostGisPkeyReader()
@@ -51,16 +42,22 @@ FdoSmPhRdPostGisPkeyReader::~FdoSmPhRdPostGisPkeyReader()
     // idle
 }
 
-FdoSmPhReaderP FdoSmPhRdPostGisPkeyReader::MakeReader(
-    FdoSmPhOwnerP owner,
-    FdoStringsP objectNames,
-    FdoSmPhRdTableJoinP join)
+FdoSmPhReaderP FdoSmPhRdPostGisPkeyReader::MakeReader(FdoSmPhMgrP mgr,
+    const FdoSmPhOwner* owner,
+    FdoSmPhDbObjectP dbObject)
 {
     // NOTE: mloskot - We need to remove const qualifier first,
     // then cast to specialized type.
-    FdoSmPhMgrP mgr = owner->GetManager();
     FdoSmPhPostGisMgrP   pgMgr = mgr->SmartCast<FdoSmPhPostGisMgr>();
-    FdoSmPhPostGisOwnerP pgOwner = owner->SmartCast<FdoSmPhPostGisOwner>();
+    FdoSmPhPostGisOwner* pgOwner = 
+        static_cast<FdoSmPhPostGisOwner*>(
+            const_cast<FdoSmPhOwner*>(owner));
+
+    FdoStringP objectName = (dbObject ? dbObject->GetName() : L"");
+    if( objectName.Contains(L".") )
+        objectName = objectName.Right(L".");
+
+    FdoStringP ownerName = owner->GetName();
 
     //
     // Generate SQL statement to get foreign keys
@@ -103,29 +100,48 @@ FdoSmPhReaderP FdoSmPhRdPostGisPkeyReader::MakeReader(
     FdoStringP sqlString = FdoStringP::Format(
       L"select tc.constraint_name as constraint_name,\n"
       L" tc.table_schema||'.'||tc.table_name as table_name, kcu.column_name as column_name\n"
-      L" from %ls tc, %ls kcu $(JOIN_FROM)\n"
+      L" from %ls tc, %ls kcu\n"
       L" where (tc.constraint_schema = kcu.constraint_schema\n"
       L"     and tc.constraint_name = kcu.constraint_name\n"
       L"     and tc.table_schema = kcu.table_schema\n"
       L"     and tc.table_name = kcu.table_name\n"
-      L"     $(AND) $(QUALIFICATION)\n"
+      //L"     and tc.table_schema = $1\n"
+      L"     %ls\n"
       L"     and tc.constraint_type = 'PRIMARY KEY')\n"
       L" order by %ls, %ls, kcu.ordinal_position",
       (FdoString*) pgOwner->GetTableConstraintsTable(),
       (FdoString*) pgOwner->GetKeyColumnUsageTable(),
+      dbObject ? L"and tc.table_name = $1" : L"",
       (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_schema"),
       (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_name")
     );
 
-    FdoSmPhReaderP reader = MakeQueryReader(
-        L"",
-        owner,
-        sqlString,
-        L"tc.table_schema",
-        L"tc.table_name",
-        objectNames,
-        join
-    );
+    // Create a field object for each field in the select list.
+    FdoSmPhRowsP rows = MakeRows(mgr);
+
+    // Create and set the bind variables
+    FdoSmPhRowP binds(new FdoSmPhRow(mgr, L"Binds"));
+    FdoSmPhDbObjectP rowObj(binds->GetDbObject());
+
+    //FdoSmPhFieldP field(new FdoSmPhField(binds,
+    //    L"owner_name",
+   //     rowObj->CreateColumnDbObject(L"owner_name", false)));
+
+    //field->SetFieldValue(ownerName);
+
+    if (dbObject)
+    {
+        FdoSmPhFieldP field = new FdoSmPhField(binds,
+            L"object_name",
+            rowObj->CreateColumnDbObject(L"object_name", false));
+
+        field->SetFieldValue(objectName);
+    }
+
+    //TODO: cache this query to make full use of the binds.
+    FdoSmPhRdGrdQueryReader* reader = NULL;
+    reader = new FdoSmPhRdGrdQueryReader(
+        FdoSmPhRowP(rows->GetItem(0)), sqlString, mgr, binds);
 
     return reader;
 }

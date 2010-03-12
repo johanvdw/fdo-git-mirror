@@ -25,7 +25,7 @@ FdoSmPhPostGisColumnByte::FdoSmPhPostGisColumnByte(FdoStringP columnName,
     FdoPtr<FdoDataValue> defaultValue,
     FdoSmPhRdColumnReader* reader)
     : FdoSmPhPostGisColumn (reader),
-      FdoSmPhColumn(columnName, L"smallint", state, parentObject,
+      FdoSmPhColumn(columnName, L"CHARACTER(1)", state, parentObject,
         isNullable, rootColumnName, defaultValue)
 {
     // TODO: mloskot - Verify the typeName passed to the FdoSmPhColumn?

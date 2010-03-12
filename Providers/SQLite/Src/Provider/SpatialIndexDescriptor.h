@@ -28,8 +28,7 @@ public:
         m_conn(conn),
         m_sRows(NULL),
         m_sMaxRow(NULL),
-        m_sGetRow(NULL),
-        m_bAutoDelSi(true)
+        m_sGetRow(NULL)
     {
         sqlite3* db = conn->GetDbRead();
         StringBuffer sb;
@@ -53,12 +52,11 @@ public:
         rc = sqlite3_prepare_v2(db, sb.Data(), -1, &m_sMaxRow, &tail);
     }
     // for views only
-    SpatialIndexDescriptor(SpatialIndex* spIndex, bool bAutoDelSi = true)
+    SpatialIndexDescriptor(SpatialIndex* spIndex)
         : m_spIndex(spIndex),
         m_sRows(NULL),
         m_sMaxRow(NULL),
-        m_sGetRow(NULL),
-        m_bAutoDelSi(bAutoDelSi)
+        m_sGetRow(NULL)
     {
     }
 
@@ -70,8 +68,7 @@ public:
             sqlite3_finalize(m_sMaxRow);
         if (NULL != m_sGetRow)
             sqlite3_finalize(m_sGetRow);
-        if (m_bAutoDelSi)
-            delete m_spIndex;
+        delete m_spIndex;
     }
 
     FdoInt64 GetFeatureCount()
@@ -159,7 +156,6 @@ private:
     sqlite3_stmt* m_sRows;
     sqlite3_stmt* m_sMaxRow;
     sqlite3_stmt* m_sGetRow;
-    bool m_bAutoDelSi;
     SpatialIndex* m_spIndex;
     RowIdxUpdateList m_updRows;
     RowIdList m_delRows;
