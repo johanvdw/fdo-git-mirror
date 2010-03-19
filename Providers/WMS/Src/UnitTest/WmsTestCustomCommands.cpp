@@ -48,7 +48,7 @@ void WmsTestCustomCommands::testGetImageFormats ()
         //test for formats command
         FdoPtr<FdoWmsIGetImagefromats> cmdGIF = static_cast<FdoWmsIGetImagefromats *> (connection->CreateCommand(FdoWmsCommandType_GetImageFormats));
         FdoStringsP formats = cmdGIF->Execute ();
-        CPPUNIT_ASSERT(formats->GetCount() == 7);
+        CPPUNIT_ASSERT(formats->GetCount() == 6);
 #ifdef _DEBUG
 		for (int i = 0; i < formats->GetCount(); ++i)
 		{
@@ -105,7 +105,7 @@ void WmsTestCustomCommands::testSpacialFeatureClassName ()
         
         //test for get styles command
         FdoPtr<FdoWmsIGetFeatureClassStyles> cmdGLS = static_cast<FdoWmsIGetFeatureClassStyles *> (connection->CreateCommand(FdoWmsCommandType_GetFeatureClassStyles));
-        cmdGLS->SetFeatureClassName(L"Foundation BARRIERL_1M"); // layer name is Foundation:BARRIERL_1M
+        cmdGLS->SetFeatureClassName(L"BARRIERL_1M Foundation"); // layer name is BARRIERL_1M:Foundation
         FdoStringsP styles = cmdGLS->Execute();
         CPPUNIT_ASSERT(styles->GetCount() == 1);
 #ifdef _DEBUG
@@ -116,7 +116,7 @@ void WmsTestCustomCommands::testSpacialFeatureClassName ()
 #endif
         //test for get CRS command
         FdoPtr<FdoWmsIGetFeatureClassCRSNames> cmdGLCRS = static_cast<FdoWmsIGetFeatureClassCRSNames *> (connection->CreateCommand(FdoWmsCommandType_GetFeatureClassCRSNames));
-        cmdGLCRS->SetFeatureClassName(L"Foundation BARRIERL_1M");//layer name is Foundation:BARRIERL_1M
+        cmdGLCRS->SetFeatureClassName(L"BARRIERL_1M Foundation");//layer name is BARRIERL_1M:Foundation
         FdoStringsP crsNames = cmdGLCRS->Execute();
         CPPUNIT_ASSERT(crsNames->GetCount() == 1);
 #ifdef _DEBUG

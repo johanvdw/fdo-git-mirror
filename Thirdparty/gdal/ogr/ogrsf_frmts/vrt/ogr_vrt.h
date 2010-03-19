@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vrt.h 17729 2009-10-02 17:23:59Z warmerdam $
+ * $Id: ogr_vrt.h 15583 2008-10-23 00:04:33Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VRT driver.
@@ -30,7 +30,6 @@
 #ifndef _OGR_VRT_H_INCLUDED
 #define _OGR_VRT_H_INCLUDED
 
-#include <vector>
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
 #include "cpl_minixml.h"
@@ -58,7 +57,6 @@ class OGRVRTLayer : public OGRLayer
     int                 bNeedReset;
     int                 bSrcLayerFromSQL;
     int                 bSrcDSShared;
-    int                 bAttrFilterPassThrough;
 
     // Layer spatial reference system, and srid.
     OGRSpatialReference *poSRS;
@@ -69,7 +67,6 @@ class OGRVRTLayer : public OGRLayer
     OGRGeometry         *poSrcRegion;
 
     int                 iFIDField; // -1 means pass through. 
-    int                 iStyleField; // -1 means pass through.
 
     // Geometry interpretation related.
     OGRVRTGeometryStyle eGeometryType;
@@ -82,15 +79,11 @@ class OGRVRTLayer : public OGRLayer
     int                 bUseSpatialSubquery;
 
     // Attribute Mapping
-    std::vector<int>    anSrcField;
-    std::vector<int>    abDirectCopy;
+    int                *panSrcField;
+    int                *pabDirectCopy;
 
-    int                 bUpdate;
-
-    OGRFeature         *TranslateFeature( OGRFeature*& , int bUseSrcRegion );
+    OGRFeature         *TranslateFeature( OGRFeature * );
     OGRErr              createFromShapeBin( GByte *, OGRGeometry **, int );
-    
-    OGRFeature         *TranslateVRTFeatureToSrcFeature( OGRFeature* poVRTFeature);
 
     int                 ResetSourceReading();
 
@@ -99,16 +92,13 @@ class OGRVRTLayer : public OGRLayer
     virtual             ~OGRVRTLayer();
 
     virtual int         Initialize( CPLXMLNode *psLTree, 
-                                    const char *pszVRTDirectory,
-                                    int bUpdate);
+                                    const char *pszVRTDirectory );
 
     virtual void        ResetReading();
     virtual OGRFeature *GetNextFeature();
 
     virtual OGRFeature *GetFeature( long nFeatureId );
-
-    virtual OGRErr      SetNextByIndex( long nIndex );
-
+    
     virtual OGRFeatureDefn *GetLayerDefn() { return poFeatureDefn; }
 
     virtual OGRSpatialReference *GetSpatialRef();
@@ -118,16 +108,6 @@ class OGRVRTLayer : public OGRLayer
     virtual OGRErr      SetAttributeFilter( const char * );
 
     virtual int         TestCapability( const char * );
-
-    virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
-
-    virtual void        SetSpatialFilter( OGRGeometry * poGeomIn );
-
-    virtual OGRErr      CreateFeature( OGRFeature* poFeature );
-
-    virtual OGRErr      SetFeature( OGRFeature* poFeature );
-
-    virtual OGRErr      DeleteFeature( long nFID );
 };
 
 /************************************************************************/
@@ -145,8 +125,7 @@ class OGRVRTDataSource : public OGRDataSource
                         OGRVRTDataSource();
                         ~OGRVRTDataSource();
 
-    int                 Initialize( CPLXMLNode *psXML, const char *pszName,
-                                    int bUpdate );
+    int                 Initialize( CPLXMLNode *psXML, const char *pszName );
 
     const char          *GetName() { return pszName; }
     int                 GetLayerCount() { return nLayers; }

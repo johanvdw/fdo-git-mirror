@@ -355,11 +355,6 @@ FdoSchemaMappingsP FdoSmPhMgr::GetConfigMappings()
     return mConfigMappings;
 }
 
-bool FdoSmPhMgr::ConfigIncludeNativeSCs()
-{
-    return false;
-}
-
 FdoStringP FdoSmPhMgr::GetDbObjectClassification( FdoStringP dbObjectName )
 {
     FdoStringP              className;
@@ -523,7 +518,7 @@ FdoSmPhSpatialContextGroupWriterP FdoSmPhMgr::GetSpatialContextGroupWriter()
     if ( !mSpatialContextGroupWriter ) 
         mSpatialContextGroupWriter = NewSpatialContextGroupWriter();
 
-    mSpatialContextGroupWriter->Initialize();
+    mSpatialContextGroupWriter->Clear();
 
     return mSpatialContextGroupWriter;
 }
@@ -645,11 +640,6 @@ FdoStringP FdoSmPhMgr::GetDcRdbmsObjectName( FdoStringP objectName )
 FdoStringP FdoSmPhMgr::GetRealDbObjectName( FdoStringP objectName)
 {
     return objectName;
-}
-
-FdoStringP FdoSmPhMgr::GetDefaultPhysicalSchemaName()
-{
-    return L"";
 }
 
 FdoStringP FdoSmPhMgr::DbObject2MetaSchemaName( FdoStringP objectName )
@@ -827,11 +817,6 @@ FdoPtr<FdoDataValue> FdoSmPhMgr::ParseSQLVal( FdoStringP stringValue )
 FdoStringP FdoSmPhMgr::FormatOrderCol( FdoStringP colName, FdoSmPhColType colType )
 {
 	return colName;
-}
-
-FdoStringP FdoSmPhMgr::FormatConcatSql( FdoStringP arg1, FdoStringP arg2 )
-{
-    return arg1 + L" || " + arg2;
 }
 
 void FdoSmPhMgr::ValidateStringLength( 

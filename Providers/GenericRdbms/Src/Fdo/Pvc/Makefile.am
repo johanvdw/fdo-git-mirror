@@ -20,7 +20,6 @@ AUTOMAKE_OPTIONS = foreign
 noinst_LTLIBRARIES = libFdoRdbms_Pvc.la
 
 libFdoRdbms_Pvc_la_SOURCES = \
-  FdoRdbmsPvcHandler.cpp  \
   FdoRdbmsPvcInsertHandler.cpp  \
   FdoRdbmsPvcProcessor.cpp \
   FdoRdbmsPvcOperation.cpp      \

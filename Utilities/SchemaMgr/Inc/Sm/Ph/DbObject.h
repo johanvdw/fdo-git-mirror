@@ -68,19 +68,19 @@ class FdoSmPhDbObject : public FdoSmPhDbElement
 public:
     /// Returns all the columns in this database object.
     const FdoSmPhColumnCollection* RefColumns() const;
-    virtual FdoSmPhColumnsP GetColumns();
+    FdoSmPhColumnsP GetColumns();
 
     /// Returns all the primary key columns in this database object.
     const FdoSmPhColumnCollection* RefPkeyColumns() const;
-    virtual FdoSmPhColumnsP GetPkeyColumns();
+    FdoSmPhColumnsP GetPkeyColumns();
 
     /// Returns all the indexes in this database object.
     const FdoSmPhIndexCollection* RefIndexes() const;
-    virtual FdoPtr<FdoSmPhIndexCollection> GetIndexes();
+    FdoPtr<FdoSmPhIndexCollection> GetIndexes();
 
     /// Returns all foreign keys for which this database object is the foreign "table"
     const FdoSmPhFkeyCollection* RefFkeysUp() const;
-    virtual FdoSmPhFkeysP GetFkeysUp();
+    FdoSmPhFkeysP GetFkeysUp();
 
     /// Returns all the attribute dependencies (from F_AttributeDependencies)
     /// where this database object is the primary key "table".	
@@ -369,10 +369,10 @@ public:
     virtual void CacheColumns( FdoPtr<FdoSmPhRdColumnReader> rdr );
 
     // Load this database object's indexes from the given reader
-    virtual bool CacheIndexes( FdoPtr<FdoSmPhRdIndexReader> rdr );
+    virtual void CacheIndexes( FdoPtr<FdoSmPhRdIndexReader> rdr );
 
     // Returns true if this database object's indexes have been cached.
-    virtual bool IndexesLoaded();
+    bool IndexesLoaded();
 
     // Load this object's columns from the given reader
     virtual void CacheBaseObjects( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
@@ -392,11 +392,6 @@ public:
 
     /// Drops this database object whether or not it has data.
     void ForceDelete();
-
-    // Checks each foreign key for this DbObject and adds the referenced (primary) DbObject
-    // to the cache candidates list for its owner. This allows more efficient fetch of 
-    // these referenced DbObjects when they are not yet cached.
-    virtual void LoadFkeyRefCands();
 
     /// Gather all errors for this element and child elements into a chain of exceptions.
     /// Adds each error as an exception, to the given exception chain and returns
@@ -440,13 +435,6 @@ protected:
 
 	virtual ~FdoSmPhDbObject(void);
 
-    // Retrieve current base object list without going to the RDBMS if not already cached.
-    // Returns null pointer if not cached.
-    FdoSmPhBaseObjectsP Get_BaseObjects();
-
-    // Remove all cached base objects.
-    void DiscardBaseObjects();
-
     // Utility function for generating SQL clauses for referencing given columns.
     FdoStringsP _getRefColsSql( FdoSmPhColumnCollection* columns );
 
@@ -472,12 +460,9 @@ protected:
     void LoadPkeys( FdoPtr<FdoSmPhReader> pkeyRdr, bool isSkipAdd = false );
 
     /// Load Indexes if not yet loaded
-    bool LoadIndexes();
-    bool LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
+    void LoadIndexes();
+    void LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
 	
-    // Load a column from a reader into an index.
-    virtual void LoadIndexColumn( FdoPtr<FdoSmPhTableIndexReader> indexRdr, FdoPtr<FdoSmPhIndex> index );
-
     /// Load Foreign Keys if not yet loaded
     void LoadFkeys();
     void LoadFkeys( FdoPtr<FdoSmPhReader> fkeyRdr, bool isSkipAdd );
@@ -491,7 +476,7 @@ protected:
     );
 
     /// Add an index from an index reader
-    virtual FdoPtr<FdoSmPhIndex> CreateIndex(
+    FdoPtr<FdoSmPhIndex> CreateIndex(
         FdoPtr<FdoSmPhTableIndexReader> rdr
     );
 

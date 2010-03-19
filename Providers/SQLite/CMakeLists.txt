@@ -1,10 +1,9 @@
-project(fdosqlite)
 
-# Make CPack available to easy generate binary packages
-include(CPack)
+cmake_minimum_required (VERSION 2.6)
+project (SQLiteProvider)
 
-if( NOT FDO_CORE_BUILD )
-	find_package( FDO REQUIRED )
-endif( NOT FDO_CORE_BUILD )
+add_subdirectory (sqlite-3.6.2) 
+add_subdirectory (SpatialIndex)
+add_subdirectory (Provider)
 
-add_subdirectory( Src )
+

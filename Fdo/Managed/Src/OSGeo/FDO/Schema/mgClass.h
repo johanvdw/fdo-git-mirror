@@ -34,7 +34,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// containment. However, they can also be used at global scope and
 /// instances can be created, deleted, updated, and selected through FDO
 /// commands. The Class type does not pre-define any base properties.
-public ref class Class : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
+public __gc class Class : public NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition
 {
 public:
     /// \brief
@@ -53,7 +53,7 @@ public:
     /// \return
     /// Returns an FDO Class
     /// 
-	Class(System::String^ name, System::String^ description);
+	Class(System::String* name, System::String* description);
 
     /// \brief
     /// Gets the concrete FDO class type.
@@ -61,10 +61,7 @@ public:
     /// \return
     /// Returns the FDO class type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType ClassType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassType get_ClassType();
 
     /// \brief
     /// Constructs an FDO Class object based on an unmanaged instance of the object
@@ -81,10 +78,8 @@ public:
 
 	}
 
-internal:
+public private:
 	inline FdoClass* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

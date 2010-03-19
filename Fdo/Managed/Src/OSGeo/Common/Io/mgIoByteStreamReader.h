@@ -23,12 +23,12 @@
 class FdoIoByteStreamReader;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_IO
-ref class IoStream;
+public __gc class IoStream;
 
 /// \ingroup (OSGeoFDOCommonIo)
 /// \brief
 ///     IoByteStreamReader is an FDO reader for a Byte stream.
-public ref class IoByteStreamReader sealed : public NAMESPACE_OSGEO_COMMON::IStreamReaderImp
+public __sealed __gc class IoByteStreamReader : public NAMESPACE_OSGEO_COMMON::IStreamReaderImp
 {
 public:
     /// \brief
@@ -37,7 +37,7 @@ public:
     /// \param stream 
     ///     Input the stream to read from
     /// 
-	IoByteStreamReader(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	IoByteStreamReader(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 	
     /// \brief
     ///     Skips a number of items
@@ -63,7 +63,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-	System::Int32 ReadNext(array<System::Byte>^ buffer);
+	System::Int32 ReadNext(System::Byte buffer[]);
 
     /// \brief
     ///     Reads in the next block of items. Use ReadNext( buffer) to read in 
@@ -82,7 +82,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-	System::Int32 ReadNext(array<System::Byte>^ buffer, System::Int32 offset);
+	System::Int32 ReadNext(System::Byte buffer[], System::Int32 offset);
 
     /// \brief
     ///     Reads in the next block of items. Use ReadNext( buffer) to read in 
@@ -105,7 +105,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-    System::Int32 ReadNext(array<System::Byte>^ buffer, System::Int32 offset, System::Int32 count);
+    System::Int32 ReadNext(System::Byte buffer[], System::Int32 offset, System::Int32 count);
 
     /// \brief
     ///     Gets the stream length
@@ -114,10 +114,7 @@ public:
     ///     Returns the size of the data source in number of items 
     /// 
     ///  
-    property System::Int64 Length
-    {
-        System::Int64 get();
-    }
+	__property System::Int64 get_Length();   
 
     /// \brief
     ///     Gets the current stream position. Position is 
@@ -126,10 +123,7 @@ public:
     /// \return
     ///     Returns the current index in the stream
     /// 
-    property System::Int64 Index
-    {
-        System::Int64 get();
-    }
+	__property System::Int64 get_Index();  
 
     /// \brief
     ///     Constructs a stream reader based on an unmanaged instance of the object
@@ -144,10 +138,8 @@ public:
 	IoByteStreamReader(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoIoByteStreamReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

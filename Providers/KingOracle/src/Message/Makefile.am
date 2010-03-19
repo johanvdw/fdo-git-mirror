@@ -1,5 +1,5 @@
 ##
-## Copyright (C) 2004-2006  Autodesk, Inc.
+## Copyright (C) 2004-2007  Autodesk, Inc.
 ## 
 ## This library is free software; you can redistribute it and/or
 ## modify it under the terms of version 2.1 of the GNU Lesser
@@ -25,35 +25,34 @@ EXTRA_DIST = resource.h \
 
 CATDIR = ../../Nls/Linux/en_US
 
-CATALOGS = KgOraMessage.msf
+CATALOGS = KgOraMessage.mc
 
-CATALOGS_CAT = $(patsubst %.msf,$(CATDIR)/%.cat,$(CATALOGS))
+CATALOGS_CAT = $(patsubst %.mc,$(CATDIR)/%.cat,$(CATALOGS))
 
-all : catalog_init $(CATALOGS_CAT)
+all: catalog_init $(CATALOGS_CAT)
 
 clean :
-	@rm -rf $(CATDIR)/*.cat  
-	@rm -f inc/*.h
-	@rm -f *.msf
+	@rm -rf $(CATDIR)/KgOraMessage.cat  
+	@rm -f ../../inc/KgOraMessage.h
+	@rm -f KgOraMessage.msf
 
 catalog_init ::
 	@if [ ! -d $(CATDIR) ]; then mkdir -p $(CATDIR); fi
 
 $(CATALOGS_CAT) : $(CATDIR)/%.cat : %.msf
-	@mkdir -p "inc/"
-	@rm -f "inc/$(basename $(notdir $<)).h"	
+	@rm -f "../../inc/$(basename $(notdir $<)).h"
 	@echo "../../../../Thirdparty/linux/mkcatdefs/mkcatdefs $(basename $(notdir $<)) $< | gencat $@"; \
 	../../../../Thirdparty/linux/mkcatdefs/mkcatdefs $(basename $(notdir $<)) $< > $(addsuffix .tmp, $(basename $(notdir $<))); \
 	gencat $@ $(addsuffix .tmp, $(basename $(notdir $<))); \
 	sed -e '/#include/d' -e '/MF_/s/"\(.*\)\.cat"/\1_cat/' \
 	$(addsuffix _msg.h, $(basename $(notdir $<))) > \
-	inc/$(addsuffix _msg.h, $(basename $(notdir $<)))
+	../../inc/$(addsuffix _msg.h, $(basename $(notdir $<)))
 	@rm $(addsuffix _msg.h, $(basename $(notdir $<))) \
 	$(addsuffix .tmp, $(basename $(notdir $<)))
-	@mv ./inc/$(basename $(notdir $<))_msg.h ./inc/$(basename $(notdir $<)).h
+	@mv ../../inc/$(basename $(notdir $<))_msg.h ../../inc/$(basename $(notdir $<)).h
 
-KgOraMessage.msf : KgOraMessage.mc
-	../../../../Fdo/Unmanaged/Src/McToMsf/McToMsf KgOraMessage.mc KgOraMessage.msf M_KGORA 
+%.msf : %.mc
+	../../../../Fdo/Unmanaged/Src/McToMsf/McToMsf $< $@ "*" KINGORACLEMESSAGE
 
 INSTALL_DIR  = $(prefix)/nls
 
@@ -63,5 +62,4 @@ install :
 
 uninstall :
 	@rm -f $(INSTALL_DIR)/KgOraMessage.cat
-
 

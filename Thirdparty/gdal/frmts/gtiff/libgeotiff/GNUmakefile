@@ -14,8 +14,7 @@ OBJ	= \
 	geo_normalize.o \
 	geotiff_proj4.o \
 	geo_extra.o \
-	geo_trans.o \
-	geo_simpletags.o 
+	geo_trans.o
 
 O_OBJ	=	$(foreach file,$(OBJ),../../o/$(file))
 
@@ -26,14 +25,14 @@ ALL_C_FLAGS	:=	-I../libtiff $(ALL_C_FLAGS)
 endif
 
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f $(O_OBJ) *.o *.a
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
-../../o/%.$(OBJ_EXT):	%.c
+../../o/%.o:	%.c
 	$(CC) -c -I../../port $(ALL_C_FLAGS) $< -o $@
 
 #
@@ -41,8 +40,8 @@ install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
 # except for a few files that hook to GDALs own CPL services.
 #
 import:
-	@if test ! -d ~/libgeotiff ; then \
-	  echo reimport requires libgeotiff checked out ~/libgeotiff ; \
+	@if test ! -d ~/geotiff ; then \
+	  echo reimport requires libgeotiff checked out ~/geotiff ; \
 	  exit 1; \
 	fi
 
@@ -50,8 +49,8 @@ import:
 	mkdir safe
 	mv cpl_serv.h geo_config.h safe
 
-	copymatch.sh ~/libgeotiff *.cpp *.c *.h *.inc
-	copymatch.sh ~/libgeotiff/libxtiff xtiff*.c xtiffio.h
+	copymatch.sh ~/geotiff/libgeotiff *.cpp *.c *.h *.inc
+	copymatch.sh ~/geotiff/libgeotiff/libxtiff xtiff*.c xtiffio.h
 
 	mv safe/* .
 	rm -rf safe

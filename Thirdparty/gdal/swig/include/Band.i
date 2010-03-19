@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Band.i 17884 2009-10-23 21:34:11Z rouault $
+ * $Id: Band.i 15763 2008-11-19 15:15:03Z warmerdam $
  *
  * Name:     Band.i
  * Project:  GDAL Python Interface
@@ -33,97 +33,22 @@
  * Define the extensions for Band (nee GDALRasterBandShadow)
  *
 *************************************************************************/
-
-
-%{
-/* Returned size is in bytes or 0 if an error occured */
-static
-int ComputeBandRasterIOSize (int buf_xsize, int buf_ysize, int nPixelSize,
-                             int nPixelSpace, int nLineSpace,
-                             int bSpacingShouldBeMultipleOfPixelSize )
-{
-    const int MAX_INT = 0x7fffffff;
-    if (buf_xsize <= 0 || buf_ysize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for buffer size");
-        return 0;
-    }
-
-    if (nPixelSpace < 0 || nLineSpace < 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for space arguments");
-        return 0;
-    }
-
-    if (nPixelSize == 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal value for data type");
-        return 0;
-    }
-
-    if( nPixelSpace == 0 )
-        nPixelSpace = nPixelSize;
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nPixelSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nPixelSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if( nLineSpace == 0 )
-    {
-        if (nPixelSpace > MAX_INT / buf_xsize)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-            return 0;
-        }
-        nLineSpace = nPixelSpace * buf_xsize;
-    }
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nLineSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nLineSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if ((buf_ysize - 1) > MAX_INT / nLineSpace ||
-        (buf_xsize - 1) > MAX_INT / nPixelSpace ||
-        (buf_ysize - 1) * nLineSpace > MAX_INT - (buf_xsize - 1) * nPixelSpace ||
-        (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace > MAX_INT - nPixelSize)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-        return 0;
-    }
-
-    return (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace + nPixelSize;
-}
-%}
-
-#if !defined(SWIGCSHARP) && !defined(SWIGJAVA)
 %{
 static
 CPLErr ReadRaster_internal( GDALRasterBandShadow *obj, 
                             int xoff, int yoff, int xsize, int ysize,
                             int buf_xsize, int buf_ysize,
                             GDALDataType buf_type,
-                            int *buf_size, char **buf,
-                            int pixel_space, int line_space)
+                            int *buf_size, char **buf )
 {
   CPLErr result;
-  
-  *buf_size = ComputeBandRasterIOSize (buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8,
-                                       pixel_space, line_space, FALSE );
-  
-  if (*buf_size == 0)
-  {
-      *buf = 0;
-      return CE_Failure;
-  }
-  
-  *buf = (char*) malloc( *buf_size );
+  *buf_size = (size_t)buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8);
+  *buf = (char*) VSIMalloc3( buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8 );
   if (*buf)
   {
     result =  GDALRasterIO( obj, GF_Read, xoff, yoff, xsize, ysize,
                                     (void *) *buf, buf_xsize, buf_ysize,
-                                    buf_type, pixel_space, line_space );
+                                    buf_type, 0, 0 );
     if ( result != CE_None ) {
         free( *buf );
         *buf = 0;
@@ -132,7 +57,6 @@ CPLErr ReadRaster_internal( GDALRasterBandShadow *obj,
   }
   else
   {
-    CPLError(CE_Failure, CPLE_OutOfMemory, "Not enough memory to allocate %d bytes", *buf_size);
     result = CE_Failure;
     *buf = 0;
     *buf_size = 0;
@@ -145,25 +69,16 @@ CPLErr WriteRaster_internal( GDALRasterBandShadow *obj,
                              int xoff, int yoff, int xsize, int ysize,
                              int buf_xsize, int buf_ysize,
                              GDALDataType buf_type,
-                             int buf_size, char *buffer,
-                             int pixel_space, int line_space)
+                             int buf_size, char *buffer )
 {
-    int min_buffer_size = ComputeBandRasterIOSize (buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8,
-                                                   pixel_space, line_space, FALSE );
-    if ( min_buffer_size == 0 )
-      return CE_Failure;
-      
-    if ( buf_size < min_buffer_size ) {
-      CPLError(CE_Failure, CPLE_AppDefined, "Buffer too small");
+    if ( buf_size < buf_xsize * buf_ysize * GDALGetDataTypeSize( buf_type) /8 ) {
       return CE_Failure;
     }
 
     return GDALRasterIO( obj, GF_Write, xoff, yoff, xsize, ysize, 
-		        (void *) buffer, buf_xsize, buf_ysize, buf_type, pixel_space, line_space );
+		        (void *) buffer, buf_xsize, buf_ysize, buf_type, 0, 0 );
 }
 %}
-
-#endif
 
 %rename (Band) GDALRasterBandShadow;
 
@@ -180,36 +95,16 @@ public:
   GDALDataType DataType;
 %mutable;
 
-  /* Interface method added for GDAL 1.7.0 */
-  int GetBand()
-  {
-    return GDALGetBandNumber(self);
-  }
-
 %apply (int *OUTPUT){int *pnBlockXSize, int *pnBlockYSize}
 
   void GetBlockSize(int *pnBlockXSize, int *pnBlockYSize) {
       GDALGetBlockSize(self, pnBlockXSize, pnBlockYSize);
   }
 
-  // Preferred name to match C++ API
-  /* Interface method added for GDAL 1.7.0 */
-  GDALColorInterp GetColorInterpretation() {
-    return GDALGetRasterColorInterpretation( self );
-  }
-
-  // Deprecated name
   GDALColorInterp GetRasterColorInterpretation() {
     return GDALGetRasterColorInterpretation( self );
   }
 
-  // Preferred name to match C++ API
-  /* Interface method added for GDAL 1.7.0 */
-  CPLErr SetColorInterpretation( GDALColorInterp val ) {
-    return GDALSetRasterColorInterpretation( self, val );
-  }
-
-  // Deprecated name
   CPLErr SetRasterColorInterpretation( GDALColorInterp val ) {
     return GDALSetRasterColorInterpretation( self, val );
   }
@@ -220,11 +115,6 @@ public:
 
   CPLErr SetNoDataValue( double d) {
     return GDALSetRasterNoDataValue( self, d );
-  }
-  
-  /* Interface method added for GDAL 1.7.0 */
-  const char* GetUnitType() {
-      return GDALGetRasterUnitType( self );
   }
   
   %apply (char **options) { (char **) };
@@ -264,15 +154,6 @@ public:
   }
 %clear (CPLErr);
 
-  /* Interface method added for GDAL 1.7.0 */
-%apply (double *OUTPUT){double *min, double *max, double *mean, double *stddev};
-%apply (IF_ERROR_RETURN_NONE) { (CPLErr) }; 
-  CPLErr ComputeStatistics( bool approx_ok, double *min = NULL, double *max = NULL, double *mean = NULL, double *stddev = NULL,
-                            GDALProgressFunc callback = NULL, void* callback_data=NULL){
-    return GDALComputeRasterStatistics( self, approx_ok, min, max, mean, stddev, callback, callback_data );
-  }
-%clear (CPLErr);
-
   CPLErr SetStatistics( double min, double max, double mean, double stddev ) {
     return GDALSetRasterStatistics( self, min, max, mean, stddev );
   }
@@ -285,11 +166,6 @@ public:
     return (GDALRasterBandShadow*) GDALGetOverview( self, i );
   }
 
-#if defined (SWIGJAVA)
-  int Checksum( int xoff, int yoff, int xsize, int ysize) {
-    return GDALChecksumImage( self, xoff, yoff, xsize, ysize );
-  }
-#else
 %apply (int *optional_int) {(int*)};
 %feature ("kwargs") Checksum;
   int Checksum( int xoff = 0, int yoff = 0, int *xsize = 0, int *ysize = 0) {
@@ -298,7 +174,6 @@ public:
     return GDALChecksumImage( self, xoff, yoff, nxsize, nysize );
   }
 %clear (int*);
-#endif
 
   void ComputeRasterMinMax( double argout[2], int approx_ok = 0) {
     GDALComputeRasterMinMax( self, approx_ok, argout );
@@ -313,7 +188,7 @@ public:
     return GDALFillRaster( self, real_fill, imag_fill );
   }
 
-#if !defined(SWIGCSHARP) && !defined(SWIGJAVA)
+#ifndef SWIGCSHARP
 %apply ( int *nLen, char **pBuf ) { (int *buf_len, char **buf ) };
 %apply ( int *optional_int ) {(int*)};
 %feature( "kwargs" ) ReadRaster;
@@ -321,17 +196,13 @@ public:
                      int *buf_len, char **buf,
                      int *buf_xsize = 0,
                      int *buf_ysize = 0,
-                     int *buf_type = 0,
-                     int *buf_pixel_space = 0,
-                     int *buf_line_space = 0) {
+                     int *buf_type = 0 ) {
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype  = (buf_type==0) ? GDALGetRasterDataType(self)
                                         : (GDALDataType)*buf_type;
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
     return ReadRaster_internal( self, xoff, yoff, xsize, ysize,
-                                nxsize, nysize, ntype, buf_len, buf, pixel_space, line_space );
+                                nxsize, nysize, ntype, buf_len, buf );
   }
 %clear (int *buf_len, char **buf );
 %clear (int*);
@@ -343,21 +214,17 @@ public:
                       int buf_len, char *buf_string,
                       int *buf_xsize = 0,
                       int *buf_ysize = 0,
-                      int *buf_type = 0,
-                      int *buf_pixel_space = 0,
-                      int *buf_line_space = 0) {
+                      int *buf_type = 0 ) {
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype  = (buf_type==0) ? GDALGetRasterDataType(self)
                                         : (GDALDataType)*buf_type;
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
     return WriteRaster_internal( self, xoff, yoff, xsize, ysize,
-                                 nxsize, nysize, ntype, buf_len, buf_string, pixel_space, line_space );
+                                 nxsize, nysize, ntype, buf_len, buf_string );
   }
 %clear (int buf_len, char *buf_string);
 %clear (int*);
-#endif /* !defined(SWIGCSHARP) && !defined(SWIGJAVA) */
+#endif /* SWIGCSHARP */
 
   void FlushCache() {
     GDALFlushRasterCache( self );
@@ -368,7 +235,7 @@ public:
     return (GDALColorTableShadow*) GDALGetRasterColorTable( self );
   }
 
-  // Preferred name to match C++ API
+  // Preferred name 
   GDALColorTableShadow *GetColorTable() {
     return (GDALColorTableShadow*) GDALGetRasterColorTable( self );
   }
@@ -378,7 +245,7 @@ public:
     return GDALSetRasterColorTable( self, arg );
   }
  
-  // Preferred name to match C++ API
+  // Preferred name.
   int SetColorTable( GDALColorTableShadow *arg ) {
     return GDALSetRasterColorTable( self, arg );
   }
@@ -403,14 +270,14 @@ public:
       return GDALCreateMaskBand( self, nFlags );
   }
 
-#ifndef SWIGJAVA
 #if defined(SWIGCSHARP)
 %apply (int inout[ANY]) {int *panHistogram};
 #elif defined(SWIGPERL)
 %apply (int len, int *output) {(int buckets, int *panHistogram)};
 %apply (IF_ERROR_RETURN_NONE) { (CPLErr) }; 
-#endif
+#else
 %feature( "kwargs" ) GetHistogram;
+#endif
   CPLErr GetHistogram( double min=-0.5,
                      double max=255.5,
                      int buckets=256,
@@ -431,9 +298,7 @@ public:
 %clear (int buckets, int *panHistogram);
 %clear (CPLErr);
 #endif
-#endif
 
-#ifndef SWIGJAVA
 #if defined(SWIGPERL)
 %apply (double *OUTPUT){double *min_ret, double *max_ret}
 %apply (int *nLen, const int **pList) {(int *buckets_ret, int **ppanHistogram)};
@@ -453,9 +318,8 @@ CPLErr GetDefaultHistogram( double *min_ret=NULL, double *max_ret=NULL, int *buc
 %clear (int *buckets_ret, int **ppanHistogram);
 %clear (CPLErr);
 #endif
-#endif
 
-#if defined(SWIGPERL) || defined(SWIGPYTHON) || defined(SWIGJAVA)
+#if defined(SWIGPERL) || defined(SWIGPYTHON)
 %apply (int nList, int* pList) {(int buckets_in, int *panHistogram_in)}
 #endif
 CPLErr SetDefaultHistogram( double min, double max, 
@@ -463,14 +327,14 @@ CPLErr SetDefaultHistogram( double min, double max,
     return GDALSetDefaultHistogram( self, min, max, 
     	   			    buckets_in, panHistogram_in );
 }
-#if defined(SWIGPERL) || defined(SWIGPYTHON) || defined(SWIGJAVA)
+#if defined(SWIGPERL) || defined(SWIGPYTHON)
 %clear (int buckets_in, int *panHistogram_in);
 #endif
 
-  /* Interface method added for GDAL 1.7.0 */
-  bool HasArbitraryOverviews() {
-      return (GDALHasArbitraryOverviews( self ) != 0) ? true : false;
-  }
+/* NEEDED */
+/* GetStatistics */
+/* SetStatistics */
+/* ComputeStatistics */
 
 } /* %extend */
 

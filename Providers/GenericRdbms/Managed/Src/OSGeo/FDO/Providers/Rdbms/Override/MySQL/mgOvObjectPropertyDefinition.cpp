@@ -32,12 +32,7 @@
 
 FdoMySQLOvObjectPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::GetImpObj()
 {
-	return dynamic_cast<FdoMySQLOvObjectPropertyDefinition*>((FdoIDisposable*)UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return dynamic_cast<FdoMySQLOvObjectPropertyDefinition*>((FdoIDisposable*)__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::OvObjectPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition(unmanaged, autoDelete)
@@ -46,34 +41,34 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::OvObjectPropertyDefinition() : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr((FdoIDisposable*)FdoMySQLOvObjectPropertyDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach((FdoIDisposable*)FdoMySQLOvObjectPropertyDefinition::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::OvObjectPropertyDefinition(System::String^ name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::OvObjectPropertyDefinition(System::String* name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvObjectPropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr((FdoIDisposable*)FdoMySQLOvObjectPropertyDefinition::Create(StringToUni(name))), true))
+	EXCEPTION_HANDLER(Attach((FdoIDisposable*)FdoMySQLOvObjectPropertyDefinition::Create(StringToUni(name)), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::MappingDefinition::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::get_MappingDefinition()
 {
-	FdoMySQLOvPropertyMappingDefinition* result;
+	FdoMySQLOvPropertyMappingDefinition * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetMappingDefinition())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetMappingDefinition())
 
-	return ObjectFactory::CreateIOvPropertyMappingDefinition(IntPtr(result), true);
+	return ObjectFactory::CreateIOvPropertyMappingDefinition(unobj, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::MappingDefinition::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvObjectPropertyDefinition::set_MappingDefinition(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::IOvPropertyMappingDefinition* propertyMappingDefinition)
 {
-    if (nullptr != value)
-    {
-        System::IDisposable^ baseDisp = static_cast<System::IDisposable^>(value);
-        NAMESPACE_OSGEO_RUNTIME::Disposable^ fdoDisp = static_cast<NAMESPACE_OSGEO_RUNTIME::Disposable^>(baseDisp);
-        FdoIDisposable* ptr = static_cast<FdoIDisposable*>(fdoDisp->UnmanagedObject.ToPointer());
-    	EXCEPTION_HANDLER(GetImpObj()->SetMappingDefinition(dynamic_cast<FdoMySQLOvPropertyMappingDefinition*>(ptr)))
-    }
-    else
-    {
-    	EXCEPTION_HANDLER(GetImpObj()->SetMappingDefinition(nullptr))
-    }
+    if (NULL != propertyMappingDefinition) 
+    { 
+        System::IDisposable* baseDisp = static_cast<System::IDisposable*>(propertyMappingDefinition); 
+        NAMESPACE_OSGEO_RUNTIME::Disposable* fdoDisp = static_cast<NAMESPACE_OSGEO_RUNTIME::Disposable*>(baseDisp); 
+        FdoIDisposable* ptr = static_cast<FdoIDisposable*>(fdoDisp->UnmanagedObject.ToPointer()); 
+        EXCEPTION_HANDLER(GetImpObj()->SetMappingDefinition(dynamic_cast<FdoMySQLOvPropertyMappingDefinition*>(ptr))) 
+    } 
+    else 
+    { 
+        EXCEPTION_HANDLER(GetImpObj()->SetMappingDefinition(NULL)) 
+    } 
 }

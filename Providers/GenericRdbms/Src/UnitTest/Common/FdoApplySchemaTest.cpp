@@ -1085,12 +1085,12 @@ void FdoApplySchemaTest::TestLT ()
 #ifdef RDBI_DEF_ORA
         pTable = ph->FindDbObject(L"CIRCLE_LT1_GRIP",L"",L"",false);
 #else
-        if ( ph->IsRdbObjNameAscii7() ) 
-            pTable = ph->FindDbObject(L"CIRCLE_LT_GRIP",L"",L"",false);
-        else
-            pTable = ph->FindDbObject(ph->GetDcDbObjectName(L"Circle Lt_Grip"),L"",L"",false);
+#ifdef RDBI_DEF_SSQL
+        pTable = ph->FindDbObject(ph->GetDcDbObjectName(L"Circle Lt_Grip"),L"",L"",false);
+#else
+        pTable = ph->FindDbObject(L"CIRCLE_LT_GRIP",L"",L"",false);
 #endif
-        CPPUNIT_ASSERT(pTable);
+#endif
         column = pTable->RefColumns()->RefItem( ph->GetDcColumnName(L"ltid") );
         CPPUNIT_ASSERT( (LtLckMethod == 1) == (column != NULL) );
 
@@ -1771,7 +1771,7 @@ void FdoApplySchemaTest::TestNoMeta ()
 	try {
         staticConn = UnitTestUtil::NewStaticConnection();
         staticConn->connect();
-        FdoSmPhOwnerP owner = UnitTestUtil::CreateDBNoMeta( 
+        UnitTestUtil::CreateDBNoMeta( 
             staticConn->CreateSchemaManager(),
             UnitTestUtil::GetEnviron("datastore", DB_NAME_NO_META_SUFFIX)
         );
@@ -1850,8 +1850,6 @@ xmlns:sqs=\"http://www.autodesk.com/isd/fdo/SQLServerProvider\">\
 
 void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticConnection* staticConn )
 {
-    FdoStringP providerName = UnitTestUtil::GetEnviron("provider");
-
     FdoPtr<FdoIGetSpatialContexts> gscCmd = (FdoIGetSpatialContexts*) connection->CreateCommand( FdoCommandType_GetSpatialContexts );
     gscCmd->SetActiveOnly(false);
 
@@ -2021,7 +2019,6 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
     schemas->WriteXml(stream);
     stream->Reset();
 
-    FdoStringP masterFile = FdoStringP::Format( L"apply_no_meta_test1_%ls_master.xml", (FdoString*) providerName );
     FdoStringP resultsFile = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test1.xml" );
     FdoStringP masterFile2 = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test2_master.xml" );
     FdoStringP resultsFile2 = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test2.xml" );
@@ -2039,7 +2036,7 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
         stream = FdoIoMemoryStream::Create();
 
         FdoXslTransformerP tfmr = FdoXslTransformer::Create(
-            FdoXmlReaderP( FdoXmlReader::Create(masterFile) ),
+            FdoXmlReaderP( FdoXmlReader::Create(L"apply_no_meta_test1_master.xml") ),
             FdoXmlReaderP( FdoXmlReader::Create(stylesheetStream) ),
             FdoXmlWriterP( FdoXmlWriter::Create(stream, false) )
         );
@@ -2058,7 +2055,7 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
         UnitTestUtil::Config2SortedFile(stream, resultsFile2 );
     }
 
-    UnitTestUtil::CheckOutput( masterFile,(const char*) resultsFile );
+    UnitTestUtil::CheckOutput( "apply_no_meta_test1_master.xml",(const char*) resultsFile );
 
     if ( CanCreateSchemaWithoutMetaSchema() )
         UnitTestUtil::CheckOutput( (const char*) masterFile2,(const char*) resultsFile2 );
@@ -2155,18 +2152,12 @@ void FdoApplySchemaTest::ModMetaClassSchema( FdoIConnection* connection )
 	}
 	catch ( FdoSchemaException* e )
 	{
-#ifdef WIN32
-#ifdef _DEBUG
+#ifdef _WIN32
         FdoString* pMessage = wcschr( e->GetExceptionMessage(), ')' );
         if (pMessage) pMessage += 2;
 	    CPPUNIT_ASSERT(pMessage && wcscmp( pMessage, L"MetaClass schema F_MetaClass is read-only; cannot modify it ") == 0);
 #else
         FdoString* pMessage = e->GetExceptionMessage();
-#endif
-	    CPPUNIT_ASSERT(pMessage && wcscmp( pMessage, L"MetaClass schema F_MetaClass is read-only; cannot modify it ") == 0);
-#else
-        FdoString* pMessage = e->GetExceptionMessage();
-
         CPPUNIT_ASSERT(pMessage && wcscmp( pMessage, L"MetaClass schema F_MetaClass is read-only; cannot modify it") == 0);
 #endif
 		FDO_SAFE_RELEASE(e);
@@ -2773,24 +2764,10 @@ void FdoApplySchemaTest::CreateLandSchema( FdoIConnection* connection, bool hasM
     InsertObject(connection, false, pSchema->GetName(), L"Driveway", L"Pav'd", L"1", NULL );
 
     if ( hasMetaSchema ) {
-#ifdef RDBI_DEF_ORA
-        UnitTestUtil::Sql2Db( 
-            FdoStringP::Format(
-                L"insert into parcel_person ( %ls, %ls, parcel_province, parcel_pin ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )",
-                (FdoString*) GetParcelFirstName(),
-                (FdoString*) GetParcelLastName()
-            ),
-            connection 
-        );
+#ifdef RDBI_DEF_SSQL
+        UnitTestUtil::Sql2Db( L"insert into \"parcel_person\" ( \"first name\", \"last name\", \"parcel_province\", \"parcel_pin\" ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )", connection );
 #else
-        UnitTestUtil::Sql2Db( 
-            FdoStringP::Format(
-                L"insert into \"parcel_person\" ( \"%ls\", \"%ls\", \"parcel_province\", \"parcel_pin\" ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )",
-                (FdoString*) GetParcelFirstName(),
-                (FdoString*) GetParcelLastName()
-            ),
-            connection 
-        );
+        UnitTestUtil::Sql2Db( L"insert into parcel_person ( first_name, last_name, parcel_province, parcel_pin ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )", connection );
 #endif
     }
 }
@@ -5673,32 +5650,6 @@ void FdoApplySchemaTest::ModOverrideSchema2( FdoIConnection* connection, FdoRdbm
     pProp->SetNullable(true);
     FdoPropertiesP(pViewOpClass->GetProperties())->Add( pProp );
 
-    pFeatClass = FdoFeatureClass::Create( L"viewbase", L"a class" );
-    FdoClassesP(pSchema->GetClasses())->Add( pFeatClass );
-    pFeatClass->SetIsAbstract(false);
-
-    pProp = FdoDataPropertyDefinition::Create( L"id", L"id" );
-    pProp->SetDataType( FdoDataType_Int64 );
-    pProp->SetNullable(false);
-    pProp->SetIsAutoGenerated(true);
-    FdoPropertiesP(pFeatClass->GetProperties())->Add( pProp );
-    FdoDataPropertiesP(pFeatClass->GetIdentityProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"col1", L"" );
-    pProp->SetDataType( FdoDataType_String );
-    pProp->SetNullable(true);
-    pProp->SetLength(50);
-    FdoPropertiesP(pFeatClass->GetProperties())->Add( pProp );
-
-    pProp = FdoDataPropertyDefinition::Create( L"Column2", L"" );
-    pProp->SetDataType( FdoDataType_Int16 );
-    pProp->SetNullable(true);
-    FdoPropertiesP(pFeatClass->GetProperties())->Add( pProp );
-
-    pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"" );
-    FdoPropertiesP(pFeatClass->GetProperties())->Add( pGeomProp );
-    pFeatClass->SetGeometryProperty(pGeomProp);
-
     pFeatClass = FdoFeatureClass::Create( L"view1", L"a class" );
     FdoClassesP(pSchema->GetClasses())->Add( pFeatClass );
     pFeatClass->SetIsAbstract(false);
@@ -6337,42 +6288,6 @@ FdoRdbmsOvPhysicalSchemaMapping* FdoApplySchemaTest::CreateOverrides( FdoIConnec
     );
     GeometricPropOvSetColumn(pGeomProp4, pGeomCol4);
 
-    pClass = CreateOvClassDefinition( L"viewbase" );
-    ClassesOvAdd(pOverrides, pClass);
-    pTable = CreateOvTable( L"viewbase" );
-    ClassOvSetTable(pClass, pTable);
-    pProp = CreateOvDataPropertyDefinition( 
-        L"id"
-    );
-    pCol = CreateOvColumn( 
-        L"id"
-    );
-    DataPropOvSetColumn(pProp, pCol);
-    PropertiesOvAdd(pClass, pProp);
-    pProp = CreateOvDataPropertyDefinition( 
-        L"col1"
-    );
-    pCol = CreateOvColumn( 
-        L"col1"
-    );
-    DataPropOvSetColumn(pProp, pCol);
-    PropertiesOvAdd(pClass, pProp);
-    pProp = CreateOvDataPropertyDefinition( 
-        L"Column2"
-    );
-    pCol = CreateOvColumn( 
-        L"col2"
-    );
-    DataPropOvSetColumn(pProp, pCol);
-    PropertiesOvAdd(pClass, pProp);
-    FdoRdbmsOvGeometricPropertyP pGeomProp = CreateOvGeometricPropertyDefinition(
-        L"Geometry"
-    );
-    PropertiesOvAdd(pClass, pGeomProp);
-    FdoRdbmsOvGeometricColumnP pGeomCol = CreateOvGeometricColumn( 
-        L"geometry"
-    );
-    GeometricPropOvSetColumn(pGeomProp, pGeomCol);
     pClass = CreateOvClassDefinition( L"view1" );
     ClassesOvAdd(pOverrides, pClass);
     pTable = CreateOvTable( L"view1" );
@@ -7070,12 +6985,8 @@ FdoStringP FdoApplySchemaTest::SchemaTestErrFile( int fileNum, bool isMaster )
 
 FdoStringP FdoApplySchemaTest::SchemaNoMetaErrFile( int fileNum, bool isMaster )
 {
-    FdoStringP providerName;
-    if ( (fileNum == 3) || (fileNum == 5) )
-        providerName = FdoStringP(L"_") + UnitTestUtil::GetEnviron("provider");
-
-    if (isMaster)
-		return FdoStringP::Format( L"apply_no_meta_err%d%ls%ls.txt", fileNum, (FdoString*) providerName, L"_master");
+	if (isMaster)
+		return FdoStringP::Format( L"apply_no_meta_err%d%ls.txt", fileNum, L"_master");
 	else
 		return UnitTestUtil::GetOutputFileName( FdoStringP::Format( L"apply_no_meta_err%d.txt", fileNum) );
 }
@@ -7192,7 +7103,7 @@ FdoFeatureSchemaP FdoApplySchemaTest::GetDefaultSchema( FdoIConnection* connecti
 
     CPPUNIT_ASSERT( schemas->GetCount() > 0 );
 
-    defSchema = schemas->FindItem(GetDefaultSchemaName());
+    defSchema = schemas->FindItem(L"dbo");
     if ( !defSchema ) 
         defSchema = schemas->GetItem(0);
 
@@ -7214,21 +7125,6 @@ bool FdoApplySchemaTest::CreateGeometrySICol()
 FdoStringP FdoApplySchemaTest::GetValueColumnName()
 {
 	return L"Value1";
-}
-
-FdoStringP FdoApplySchemaTest::GetParcelFirstName()
-{
-	return L"first name";
-}
-
-FdoStringP FdoApplySchemaTest::GetParcelLastName()
-{
-	return L"last name";
-}
-
-FdoStringP FdoApplySchemaTest::GetDefaultSchemaName()
-{
-	return L"";
 }
 
 FdoPtr<FdoIConnection> FdoApplySchemaTest::GetDirectConnection (FdoIConnection *currentConnection)

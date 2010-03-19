@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <fdo:DataStore xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml" xmlns:fdo="http://fdo.osgeo.org/schemas" xmlns:fds="http://fdo.osgeo.org/schemas/fds">
-<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/OracleProvider" provider="Autodesk.Oracle.3.5" name="OverridesA">
+<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/OracleProvider" provider="Autodesk.Oracle.3.4" name="OverridesA">
 <complexType name="OvClassAType" tableMapping="Concrete">
 <Table pkeyName="PK_OVCLASSA" name="OVCLASSA"/>
 <element name="DataA">
@@ -404,21 +404,6 @@
 </element>
 <element name="seq">
 <Column name="SEQ"/>
-</element>
-</complexType>
-<complexType name="viewbaseType" tableMapping="Concrete">
-<Table pkeyName="PK_VIEWBASE" name="VIEWBASE"/>
-<element name="Column2">
-<Column name="COL2"/>
-</element>
-<element name="Geometry">
-<GeometricColumn name="GEOMETRY"/>
-</element>
-<element name="col1">
-<Column name="COL1"/>
-</element>
-<element name="id">
-<Column name="ID"/>
 </element>
 </complexType>
 </SchemaMapping>

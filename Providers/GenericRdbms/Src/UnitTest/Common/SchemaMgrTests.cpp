@@ -30,63 +30,6 @@ FdoString* SchemaMgrTests::DB_NAME_COPY_SUFFIX =      L"_schema_mgr_copy";
 FdoString* SchemaMgrTests::DB_NAME_FOREIGN_SUFFIX =   L"_schema_mgr_f";
 FdoString* SchemaMgrTests::DB_NAME_CONFIGERR_SUFFIX =   L"_schema_mgr_configerr";
 
-// The following stylesheet handles cases when the order of the reverse-engineered
-// spatial contexts, in an output XML, is not in a consistent order. It pastes
-// the spatial context info onto referencing geometries. Empty spatial contexts
-// are still written out so that we can check that the right number of spatial
-// contexts were generated.
-
-static char* pSortScConfigSheet = 
-"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\
-<stylesheet version=\"1.0\" \
-xmlns=\"http://www.w3.org/1999/XSL/Transform\" \
-xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" \
-xmlns:gml=\"http://www.opengis.net/gml\" \
-xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" \
-xmlns:fdo=\"http://fdo.osgeo.org/schemas\" \
-xmlns:ora=\"http://www.autodesk.com/isd/fdo/OracleProvider\" \
-xmlns:mql=\"http://fdomysql.osgeo.org/schemas\" \
-xmlns:sqs=\"http://www.autodesk.com/isd/fdo/SQLServerProvider\">\
-<xsl:template match=\"fdo:DataStore\">\
-    <xsl:copy>\
-        <xsl:apply-templates select=\"@*\"/>\
-        <xsl:apply-templates select=\"gml:DerivedCRS\"/>\
-        <xsl:apply-templates select=\"xs:schema\"/>\
-        <xsl:apply-templates select=\"ora:SchemaMapping\"/>\
-    </xsl:copy>\
-</xsl:template>\
-<xsl:template match=\"gml:DerivedCRS\">\
-    <xsl:copy/>\
-</xsl:template>\
-<xsl:template match=\"xs:schema\">\
-    <xsl:copy>\
-        <xsl:apply-templates select=\"@*\"/>\
-        <xsl:apply-templates select=\"xs:annotation\"/>\
-        <xsl:apply-templates select=\"xs:element\"/>\
-        <xsl:apply-templates select=\"xs:complexType\"/>\
-    </xsl:copy>\
-</xsl:template>\
-<xsl:template match=\"xs:element[@fdo:srsName]\">\
-    <xsl:copy>\
-        <xsl:apply-templates select=\"@*\"/>\
-        <xsl:variable name=\"sc\" select=\"@fdo:srsName\"/>\
-        <xsl:for-each select=\"//fdo:DataStore/gml:DerivedCRS[@gml:id = $sc]\">\
-            <xsl:apply-templates select=\"gml:metaDataProperty\"/>\
-            <xsl:apply-templates select=\"gml:validArea\"/>\
-            <xsl:apply-templates select=\"gml:baseCRS\"/>\
-        </xsl:for-each>\
-    </xsl:copy>\
-</xsl:template>\
-<xsl:template match=\"@fdo:srsName\">\
-</xsl:template>\
-<xsl:template match=\"@*|node()\">\
-  <xsl:copy>\
-    <xsl:apply-templates select=\"@*|node()\"/>\
-  </xsl:copy>\
-  </xsl:template>\
-</stylesheet>";
-
-
 SchemaMgrTests::SchemaMgrTests (void)
 {
 }
@@ -142,21 +85,19 @@ void SchemaMgrTests::testGenDefault ()
 
         FdoSmPhOwnerP owner = UnitTestUtil::CreateDBNoMeta( mgr, datastore );
 
-        owner->SetCurrent();
-
         FdoSmPhTableP table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE1" ));
         SetLtLck(table, lt_mode);
         FdoSmPhColumnP column = table->CreateColumnInt32( L"ID", false );
         table->AddPkeyCol( column->GetName() );
-        FdoSmPhColumnP fkeyColumn = table->CreateColumnInt32( L"TABLE1_ID012345678901234567890", false );
+        FdoSmPhColumnP fkeyColumn = table->CreateColumnInt32( L"TABLE1_ID", false );
         column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
         FdoSmPhFkeyP fkey = table->CreateFkey( "FK_RTABLE1_TABLE1", phMgr->GetDcDbObjectName("TABLE1") );
-        fkey->AddFkeyColumn( fkeyColumn, L"ID3456789012345678901234567890" );
+        fkey->AddFkeyColumn( fkeyColumn, L"ID" );
 
         table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE1" ));
         SetLtLck(table, lt_mode);
-        column = table->CreateColumnInt32( L"ID3456789012345678901234567890", false );
+        column = table->CreateColumnInt32( L"ID", false );
         table->AddPkeyCol( column->GetName() );
         column = table->CreateColumnBLOB( L"BLOB_COLUMN", true );
         column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
@@ -166,19 +107,19 @@ void SchemaMgrTests::testGenDefault ()
         column = table->CreateColumnDecimal( L"DECIMAL_COLUMN", true, 10, 5 );
         column = table->CreateColumnBool( L"BOOL_COLUMN", true );
         column = table->CreateColumnByte( L"BYTE_COLUMN", true );
-        column = table->CreateColumnInt16( L"INT16_COLUMN345678901234567890", true );
+        column = table->CreateColumnInt16( L"INT16_COLUMN", true );
         column = table->CreateColumnInt32( L"INT32_COLUMN", true );
         column = table->CreateColumnInt64( L"INT64_COLUMN", true );
         column = table->CreateColumnDbObject( L"OBJECT_NAME", true );
         column = table->CreateColumnGeom( L"GEOM_COLUMN", (FdoSmPhScInfo*) NULL, true, false );
         AddProviderColumns( table );
-        FdoSmPhCheckConstraintP constraint = new FdoSmPhCheckConstraint( L"int16_check", L"INT16_COLUMN345678901234567890", L"\"INT16_COLUMN345678901234567890\" < 20000" );
+        FdoSmPhCheckConstraintP constraint = new FdoSmPhCheckConstraint( L"int16_check", L"INT16_COLUMN", L"INT16_COLUMN < 20000" );
         table->AddCkeyCol( constraint );
-		constraint = new FdoSmPhCheckConstraint( L"decimal_check", L"DECIMAL_COLUMN", L"\"DECIMAL_COLUMN\" > \"BYTE_COLUMN\"" );
+		constraint = new FdoSmPhCheckConstraint( L"decimal_check", L"DECIMAL_COLUMN", L"DECIMAL_COLUMN > BYTE_COLUMN" );
 		table->AddCkeyCol( constraint );
-        constraint = new FdoSmPhCheckConstraint( L"int32_check", L"INT32_COLUMN", L"\"INT32_COLUMN\" = 45 or \"INT32_COLUMN\" > 100" );
+        constraint = new FdoSmPhCheckConstraint( L"int32_check", L"INT32_COLUMN", L"INT32_COLUMN = 45 or INT32_COLUMN > 100" );
         table->AddCkeyCol( constraint );
-        constraint = new FdoSmPhCheckConstraint( L"single_check", L"SINGLE_COLUMN", L"\"SINGLE_COLUMN\" = 45 or \"DOUBLE_COLUMN\" > 100" );
+        constraint = new FdoSmPhCheckConstraint( L"single_check", L"SINGLE_COLUMN", L"SINGLE_COLUMN = 45 or DOUBLE_COLUMN > 100" );
         table->AddCkeyCol( constraint );
 
         FdoSmPhTableP table2 = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE2" ));
@@ -190,9 +131,9 @@ void SchemaMgrTests::testGenDefault ()
         column = table2->CreateColumnGeom( L"GEOM_COLUMN", (FdoSmPhScInfo*) NULL );
 
         FdoSmPhViewP view1 = owner->CreateView( phMgr->GetDcDbObjectName(L"VIEW1"), L"", owner->GetName(), phMgr->GetDcDbObjectName(L"TABLE1" ));
-        column = view1->CreateColumnInt32( L"ID3456789012345678901234567890", false, false, L"ID3456789012345678901234567890" );
+        column = view1->CreateColumnInt32( L"ID", false, false, L"ID" );
         if ( SupportsViewPkey() ) 
-            view1->AddPkeyCol( L"ID3456789012345678901234567890" );
+            view1->AddPkeyCol( L"ID" );
         column = view1->CreateColumnDecimal( L"DEC_COL_RENAME", true, 10, 5, L"DECIMAL_COLUMN" );
         column = view1->CreateColumnByte( L"BYTE_COLUMN", true, L"BYTE_COLUMN" );
 
@@ -226,7 +167,7 @@ void SchemaMgrTests::testGenDefault ()
         FdoSmPhColumnP fkeyColumn3 = table->CreateColumnChar( L"TABLE3_KEY2", false, 10 );
 
         fkey = table->CreateFkey( "FK_RTABLE2_TABLE1", phMgr->GetDcDbObjectName("TABLE1" ));
-        fkey->AddFkeyColumn( fkeyColumn1, L"ID3456789012345678901234567890" );
+        fkey->AddFkeyColumn( fkeyColumn1, L"ID" );
 
         fkey = table->CreateFkey( "FK_RTABLE2_TABLE3", phMgr->GetDcDbObjectName("TABLE3" ));
         fkey->AddFkeyColumn( fkeyColumn2, L"KEY1" );
@@ -247,39 +188,39 @@ void SchemaMgrTests::testGenDefault ()
         column = view3->CreateColumnInt16( L"INT16_COLUMN", true, false, L"INT16_COLUMN" );
         column = view3->CreateColumnGeom( L"GEOM_COLUMN", (FdoSmPhScInfo*) NULL, true, true, false, L"GEOM_COLUMN" );
 
-        if ( SupportsFkeyDoubleDecimal() ) {
-            table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE5" ));
-            column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
-            table->AddPkeyCol( column->GetName() );
-            column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
+#ifndef RDBI_DEF_SSQL
+        table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE5" ));
+        column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
+        table->AddPkeyCol( column->GetName() );
+        column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
-            table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE5" ));
-            column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
-            table->AddPkeyCol( column->GetName() );
-            FdoSmPhColumnP fkeyColumn5 = table->CreateColumnDouble( L"TABLE5_ID", false );
-            column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
+        table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE5" ));
+        column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
+        table->AddPkeyCol( column->GetName() );
+        FdoSmPhColumnP fkeyColumn5 = table->CreateColumnDouble( L"TABLE5_ID", false );
+        column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
-            fkey = table->CreateFkey( "FK_RTABLE5_TABLE5", phMgr->GetDcDbObjectName("TABLE5" ));
-            fkey->AddFkeyColumn( fkeyColumn5, L"ID" );
+        fkey = table->CreateFkey( "FK_RTABLE5_TABLE5", phMgr->GetDcDbObjectName("TABLE5" ));
+        fkey->AddFkeyColumn( fkeyColumn5, L"ID" );
 
-            table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE6" ));
-            column = table->CreateColumnDecimal( L"ID1", false, 10, 2 );
-            table->AddPkeyCol( column->GetName() );
-            column = table->CreateColumnChar( L"ID2", false, 50 );
-            table->AddPkeyCol( column->GetName() );
-            column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
+        table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE6" ));
+        column = table->CreateColumnDecimal( L"ID1", false, 10, 2 );
+        table->AddPkeyCol( column->GetName() );
+        column = table->CreateColumnChar( L"ID2", false, 50 );
+        table->AddPkeyCol( column->GetName() );
+        column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
-            table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE6" ));
-            column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
-            table->AddPkeyCol( column->GetName() );
-            FdoSmPhColumnP fkeyColumn6a = table->CreateColumnDouble( L"TABLE6_ID1", false );
-            FdoSmPhColumnP fkeyColumn6b = table->CreateColumnChar( L"TABLE6_ID2", false, 50 );
-            column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
+        table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE6" ));
+        column = table->CreateColumnDecimal( L"ID", false, 10, 2 );
+        table->AddPkeyCol( column->GetName() );
+        FdoSmPhColumnP fkeyColumn6a = table->CreateColumnDouble( L"TABLE6_ID1", false );
+        FdoSmPhColumnP fkeyColumn6b = table->CreateColumnChar( L"TABLE6_ID2", false, 50 );
+        column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
-            fkey = table->CreateFkey( "FK_RTABLE6_TABLE6", phMgr->GetDcDbObjectName("TABLE6" ));
-            fkey->AddFkeyColumn( fkeyColumn6a, L"ID1" );
-            fkey->AddFkeyColumn( fkeyColumn6b, L"ID2" );
-        }
+        fkey = table->CreateFkey( "FK_RTABLE6_TABLE6", phMgr->GetDcDbObjectName("TABLE6" ));
+        fkey->AddFkeyColumn( fkeyColumn6a, L"ID1" );
+        fkey->AddFkeyColumn( fkeyColumn6b, L"ID2" );
+#endif
 
         table = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE7" ));
         column = table->CreateColumnInt64( L"ID", false, true);
@@ -289,17 +230,17 @@ void SchemaMgrTests::testGenDefault ()
         table = owner->CreateTable( phMgr->GetDcDbObjectName(L"RTABLE7" ));
         column = table->CreateColumnInt64( L"ID", false);
         table->AddPkeyCol( column->GetName() );
-        FdoSmPhColumnP fkeyColumn7 = table->CreateColumnInt64( L"TABLE7_ID12345678901234567890", false, true);
+        FdoSmPhColumnP fkeyColumn7 = table->CreateColumnInt64( L"TABLE7_ID", false, true);
         column = table->CreateColumnChar( L"STRING_COLUMN", false, 50 );
 
         fkey = table->CreateFkey( "FK_RTABLE7_TABLE7", phMgr->GetDcDbObjectName("TABLE7" ));
         fkey->AddFkeyColumn( fkeyColumn7, L"ID" );
 
         table->CreateUkey();
-    	table->AddUkeyCol( table->GetUkeyColumns()->GetCount() - 1, L"TABLE7_ID12345678901234567890" );
+    	table->AddUkeyCol( table->GetUkeyColumns()->GetCount() - 1, L"TABLE7_ID" );
 
         database->Commit();
-
+        
         owner->DiscardDbObject(table);
         // Make sure RTABLE2 got removed from the not found list.
         CPPUNIT_ASSERT( owner->FindDbObject(phMgr->GetDcDbObjectName(L"RTABLE2")) != NULL );
@@ -332,7 +273,7 @@ void SchemaMgrTests::testGenDefault ()
         view1 = phMgr->FindDbObject( phMgr->GetDcDbObjectName(L"VIEW1"), datastore, L"", false ).p->SmartCast<FdoSmPhView>();
         CPPUNIT_ASSERT( view1 != NULL );
         CPPUNIT_ASSERT( view1->GetColumns()->GetCount() == 3 );
-        CPPUNIT_ASSERT( wcscmp(FdoSmPhColumnP(view1->GetColumns()->GetItem(0))->GetName(),L"ID3456789012345678901234567890") == 0 );
+        CPPUNIT_ASSERT( wcscmp(FdoSmPhColumnP(view1->GetColumns()->GetItem(0))->GetName(),L"ID") == 0 );
         CPPUNIT_ASSERT( wcscmp(FdoSmPhColumnP(view1->GetColumns()->GetItem(1))->GetName(),L"DEC_COL_RENAME") == 0 );
         CPPUNIT_ASSERT( wcscmp(FdoSmPhColumnP(view1->GetColumns()->GetItem(2))->GetName(),L"BYTE_COLUMN") == 0 );
 
@@ -467,19 +408,10 @@ void SchemaMgrTests::testGenDefault ()
             // Only execute the second check if the provider is SQL Server. Otherwise issue the
             // exception.
             if ( providerName.ICompare(L"SqlServer") == 0 )
-                try {
-	                UnitTestUtil::CheckOutput( 
-                        FdoStringP::Format(L"gen_default1_%ls2008_master.txt", (FdoString*) providerName),
-                        UnitTestUtil::GetOutputFileName( L"gen_default1.xml" )
-                    );
-                }
-                catch (CppUnit::Exception exception)
-                {
-                    UnitTestUtil::CheckOutput( 
-                        FdoStringP::Format(L"gen_default1_%ls2005_master.txt", (FdoString*) providerName),
-                        UnitTestUtil::GetOutputFileName( L"gen_default1.xml" )
-                    );
-                }
+	            UnitTestUtil::CheckOutput( 
+                    FdoStringP::Format(L"gen_default1_%ls2005_master.txt", (FdoString*) providerName),
+                    UnitTestUtil::GetOutputFileName( L"gen_default1.xml" )
+                );
             else
                 throw exception;
         }
@@ -602,18 +534,13 @@ void SchemaMgrTests::testGenGeom ()
             UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
         );
 
-        FdoSmPhOwnerP fowner;
-        
-        if ( SupportsCrossDatastoreDependencies() )
-            fowner = UnitTestUtil::CreateDBNoMeta( mgr, fdatastore );
+        FdoSmPhOwnerP fowner = UnitTestUtil::CreateDBNoMeta( mgr, fdatastore );
 
         FdoStringP datastore = phMgr->GetDcOwnerName(
             UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX)
         );
 
         FdoSmPhOwnerP owner = UnitTestUtil::CreateDBNoMeta( mgr, datastore );
-
-        owner->SetCurrent();
 
         CreateMultiGeomTable( owner, L"INDEX_WINS1", 8, 0x01, 0xa3 );
         CreateMultiGeomTable( owner, L"INDEX_WINS2", 3, 0x02, 0x00 );
@@ -847,64 +774,62 @@ void SchemaMgrTests::testGenGeom ()
 
         UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_SUFFIX );
 
-        if ( SupportsCrossDatastoreDependencies() ) {
-            CreateMultiGeomView( fowner, L"F_INDEX_WINS1", owner, L"INDEX_WINS1", 8 );
-            CreateMultiGeomView( fowner, L"F_INDEX_WINS2", owner, L"INDEX_WINS2", 3 );
-            CreateMultiGeomView( fowner, L"F_INDEX_WINS3", owner, L"INDEX_WINS3", 3 );
-            CreateMultiGeomView( fowner, L"F_INDEX_WINS4", owner, L"INDEX_WINS4", 3 );
+        CreateMultiGeomView( fowner, L"F_INDEX_WINS1", owner, L"INDEX_WINS1", 8 );
+        CreateMultiGeomView( fowner, L"F_INDEX_WINS2", owner, L"INDEX_WINS2", 3 );
+        CreateMultiGeomView( fowner, L"F_INDEX_WINS3", owner, L"INDEX_WINS3", 3 );
+        CreateMultiGeomView( fowner, L"F_INDEX_WINS4", owner, L"INDEX_WINS4", 3 );
 
-            fowner->Commit();
+        fowner->Commit();
 
-            printf( "Reverse-engineering foreign datastore 1 ...\n" );
+        printf( "Reverse-engineering foreign datastore 1 ...\n" );
 
-            fdoConn = UnitTestUtil::CreateConnection(
-                false,
-                false,
-                DB_NAME_FOREIGN_SUFFIX
-            );
+        fdoConn = UnitTestUtil::CreateConnection(
+            false,
+            false,
+            DB_NAME_FOREIGN_SUFFIX
+        );
 
-            pDescSchemaCmd = (FdoIDescribeSchema*) fdoConn->CreateCommand(FdoCommandType_DescribeSchema);
-            fsc = pDescSchemaCmd->Execute();
-            schema = fsc->GetItem(0);
-            schemaName = schema->GetName();
-            classes = schema->GetClasses();
+        pDescSchemaCmd = (FdoIDescribeSchema*) fdoConn->CreateCommand(FdoCommandType_DescribeSchema);
+        fsc = pDescSchemaCmd->Execute();
+        schema = fsc->GetItem(0);
+        schemaName = schema->GetName();
+        classes = schema->GetClasses();
 
-            classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS1") );
-            VldGenGeom( fdoConn, classDef );
-            classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS2") );
-            VldGenGeom( fdoConn, classDef );
-            classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS3") );
-            VldGenGeom( fdoConn, classDef );
-            classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS4") );
-            VldGenGeom( fdoConn, classDef );
+        classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS1") );
+        VldGenGeom( fdoConn, classDef );
+        classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS2") );
+        VldGenGeom( fdoConn, classDef );
+        classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS3") );
+        VldGenGeom( fdoConn, classDef );
+        classDef = classes->FindItem( table2class(phMgr,L"F_INDEX_WINS4") );
+        VldGenGeom( fdoConn, classDef );
 
-            UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_FOREIGN_SUFFIX );
+        UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_FOREIGN_SUFFIX );
 
-            printf( "Reverse-engineering foreign datastore 1 one class at a time...\n" );
+        printf( "Reverse-engineering foreign datastore 1 one class at a time...\n" );
 
-            fdoConn = UnitTestUtil::CreateConnection(
-                false,
-                false,
-                DB_NAME_FOREIGN_SUFFIX
-            );
+        fdoConn = UnitTestUtil::CreateConnection(
+            false,
+            false,
+            DB_NAME_FOREIGN_SUFFIX
+        );
 
-            pDescSchemaCmd = (FdoIDescribeSchema*) fdoConn->CreateCommand(FdoCommandType_DescribeSchema);
-            fsc = pDescSchemaCmd->Execute();
-            schema = fsc->GetItem(0);
-            schemaName = schema->GetName();
-            classes = schema->GetClasses();
+        pDescSchemaCmd = (FdoIDescribeSchema*) fdoConn->CreateCommand(FdoCommandType_DescribeSchema);
+        fsc = pDescSchemaCmd->Execute();
+        schema = fsc->GetItem(0);
+        schemaName = schema->GetName();
+        classes = schema->GetClasses();
 
-            classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS1"), fsc );
-            VldGenGeom( fdoConn, classDef );
-            classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS2"), fsc );
-            VldGenGeom( fdoConn, classDef );
-            classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS3"), fsc );
-            VldGenGeom( fdoConn, classDef );
-            classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS4"), fsc );
-            VldGenGeom( fdoConn, classDef );
+        classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS1"), fsc );
+        VldGenGeom( fdoConn, classDef );
+        classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS2"), fsc );
+        VldGenGeom( fdoConn, classDef );
+        classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS3"), fsc );
+        VldGenGeom( fdoConn, classDef );
+        classDef = TestCommonMiscUtil::DescribeClass( fdoConn, schemaName, table2class(phMgr,L"F_INDEX_WINS4"), fsc );
+        VldGenGeom( fdoConn, classDef );
 
-            UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_FOREIGN_SUFFIX );
-        }
+        UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_FOREIGN_SUFFIX );
 
         phMgr = NULL;
         mgr = NULL;
@@ -915,20 +840,14 @@ void SchemaMgrTests::testGenGeom ()
     }
     catch (FdoException* e ) 
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -994,31 +913,24 @@ void SchemaMgrTests::testGenConfig1 ()
         owner->Commit();
 
         FdoSmPhOwnerP fOwner = phMgr->FindOwner( fDatastore, L"", false );
-
-        if ( SupportsCrossDatastoreDependencies() ) {
-            if ( fOwner ) {
-                fOwner->SetElementState( FdoSchemaElementState_Deleted );
-                fOwner->Commit();
-            }
-
-            fOwner = database->CreateOwner(
-                fDatastore, 
-                false
-            );
-            fOwner->SetPassword( L"test" );
+        if ( fOwner ) {
+            fOwner->SetElementState( FdoSchemaElementState_Deleted );
             fOwner->Commit();
         }
 
-        owner->SetCurrent();
+        fOwner = database->CreateOwner(
+            fDatastore, 
+            false
+        );
+        fOwner->SetPassword( L"test" );
+        owner->Commit();
 
         CreateTableGroup( owner, L"AB_", 3, lt_mode );
         CreateTableGroup( owner, L"CD_", 5, lt_mode );
         CreateTableGroup( owner, L"EF_", 2, lt_mode );
         CreateTableGroup( owner, L"GH_", 8, lt_mode );
-        if ( SupportsCrossDatastoreDependencies() ) {
-            CreateTableGroup( fOwner, L"KL_", 1, lt_mode );
-            CreateTableGroup( fOwner, L"MN_", 1, lt_mode );
-        }
+        CreateTableGroup( fOwner, L"KL_", 1, lt_mode );
+        CreateTableGroup( fOwner, L"MN_", 1, lt_mode );
 
         CreateFkey( owner, L"CD_TABLE2", L"CD_TABLE1" );
         CreateFkey( owner, L"AB_TABLE2", L"AB_TABLE3" );
@@ -1038,11 +950,9 @@ void SchemaMgrTests::testGenConfig1 ()
         owner->Commit();
         gdbiCommands->tran_end( "Owner" );
 
-        if ( SupportsCrossDatastoreDependencies() ) {
-            gdbiCommands->tran_begin( "FOwner" );
-            fOwner->Commit();
-            gdbiCommands->tran_end( "FOwner" );
-        }
+        gdbiCommands->tran_begin( "FOwner" );
+        fOwner->Commit();
+        gdbiCommands->tran_end( "FOwner" );
 
         phMgr = NULL;
         mgr = NULL;
@@ -1061,103 +971,27 @@ void SchemaMgrTests::testGenConfig1 ()
         fdoConn->Open();
  
         FdoIoMemoryStreamP stream3 = FdoIoMemoryStream::Create();
-        FdoXmlSpatialContextFlagsP flags = 
-            FdoXmlSpatialContextFlags::Create(  
-            L"fdo.osgeo.org/schemas/feature",
-            FdoXmlSpatialContextFlags::ErrorLevel_Normal,
-            true,
-            FdoXmlSpatialContextFlags::ConflictOption_Add,
-            true
-        );
-        UnitTestUtil::ExportDb( fdoConn, stream3, flags );
+        UnitTestUtil::ExportDb( fdoConn, stream3 );
         FdoIoStreamP stream4 = OverrideBend( stream3, datastorePrefix, L"(user)" );
-   		UnitTestUtil::Config2SortedFile( stream4, UnitTestUtil::GetOutputFileName( L"schemaGenConfig1.xml" ), pSortScConfigSheet );
-
-        printf( "Reopening connection ...\n" );
-
-        fdoConn->Close();
-
-        stream1 = FdoIoFileStream::Create( L"config1b_in.xml", L"rt" );
-        stream2 = OverrideBend( stream1, L"(user)", datastorePrefix );
-
-        fdoConn->SetConfiguration(CvtConf(stream2));
-        fdoConn->Open();
- 
-        printf( "Testing config without autogen ...\n" );
-
-        FdoPtr<FdoIGetSpatialContexts> scCmd = (FdoIGetSpatialContexts*) fdoConn->CreateCommand( FdoCommandType_GetSpatialContexts );
-        FdoPtr<FdoISpatialContextReader> scReader = scCmd->Execute();
-
-        int count = 0;
-        while ( scReader->ReadNext() ) {
-            count++;
-#ifdef RDBI_DEF_ORA
-            if ( wcscmp(scReader->GetName(), L"Default") == 0 )
-                CPPUNIT_ASSERT( wcscmp(scReader->GetCoordinateSystem(),L"Quebec MTM Zone 4 (NAD 83)") == 0 );
-            else if ( wcscmp(scReader->GetName(), L"sc_1") == 0 )
-                CPPUNIT_ASSERT( wcscmp(scReader->GetCoordinateSystem(),L"Longitude / Latitude (NAD 83) Datum 33") == 0 );
-            else
-                CPPUNIT_FAIL( (const char*) FdoStringP::Format(L"Unexpected spatial context '%ls'", scReader->GetName()) );
-#endif
-        }
-        scReader = NULL;
-
-        CPPUNIT_ASSERT( count == 2 );
-
-        printf( "Reopening connection ...\n" );
-
-        fdoConn->Close();
-
-        stream1 = FdoIoFileStream::Create( L"config1c_in.xml", L"rt" );
-        stream2 = OverrideBend( stream1, L"(user)", datastorePrefix );
-
-        fdoConn->SetConfiguration(CvtConf(stream2));
-        fdoConn->Open();
- 
-        printf( "Testing config with sc_2 spatial context ...\n" );
-
-        stream3 = FdoIoMemoryStream::Create();
-        UnitTestUtil::ExportDb( fdoConn, stream3, flags );
-        stream4 = OverrideBend( stream3, datastorePrefix, L"(user)" );
-   		UnitTestUtil::Config2SortedFile( stream4, UnitTestUtil::GetOutputFileName( L"schemaGenConfig1c.xml" ), pSortScConfigSheet );
-        
-        scCmd = (FdoIGetSpatialContexts*) fdoConn->CreateCommand( FdoCommandType_GetSpatialContexts );
-        scReader = scCmd->Execute();
-
-        while ( scReader->ReadNext() ) {
-#ifdef RDBI_DEF_ORA
-            if ( wcscmp(scReader->GetName(), L"Default") == 0 )
-                CPPUNIT_ASSERT( wcscmp(scReader->GetCoordinateSystem(),L"Quebec MTM Zone 4 (NAD 83)") == 0 );
-            else if ( wcscmp(scReader->GetName(), L"sc_2") == 0 )
-                CPPUNIT_ASSERT( wcscmp(scReader->GetCoordinateSystem(),L"Longitude / Latitude (NAD 83) Datum 33") == 0 );
-#endif
-        }
-        scReader = NULL;
+        UnitTestUtil::Stream2File( stream4, UnitTestUtil::GetOutputFileName( L"schemaGenConfig1.xml" ) );
 
         UnitTestUtil::CloseConnection( fdoConn, false, L"_schema_mgr" );
 
 #ifdef RDBI_DEF_ORA
 	    UnitTestUtil::CheckOutput( "schemaGenConfig1_master.txt", UnitTestUtil::GetOutputFileName( L"schemaGenConfig1.xml" ) );
-	    UnitTestUtil::CheckOutput( "schemaGenConfig1c_master.txt", UnitTestUtil::GetOutputFileName( L"schemaGenConfig1c.xml" ) );
 #endif
         printf( "Done\n" );
     }
     catch (FdoException* e ) 
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -1212,7 +1046,6 @@ void SchemaMgrTests::testGenKeys ()
         );
         owner->SetPassword( L"test" );
         owner->Commit();
-        owner->SetCurrent();
     
         // Tests choosing primary key over index as the identity    
         FdoSmPhTableP table = CreateIxTable(owner, L"TABLE_IX1", lt_mode );
@@ -1475,7 +1308,7 @@ void SchemaMgrTests::testGenKeys ()
             idProps = featClass->GetIdentityProperties();
             CPPUNIT_ASSERT( idProps->GetCount() == 0 );
 
-            for ( int pass2 = 0; pass2 < 3; pass2++ ) {
+            for ( pass = 0; pass < 3; pass++ ) {
                 FdoStringP viewName = FdoStringP::Format( L"VIEW_IX3%c", 'B' + pass );
                 featClass = classes->GetItem( table2class(phMgr, viewName) );
                 idProps = featClass->GetIdentityProperties();
@@ -1515,29 +1348,28 @@ void SchemaMgrTests::testGenKeys ()
         phMgr = mgr->GetPhysicalSchema()->SmartCast<FdoSmPhGrdMgr>();
         database = phMgr->GetDatabase();
         owner = phMgr->FindOwner( datastore, L"", false );
-        owner->SetCurrent();
 
         table = owner->FindDbObject( phMgr->GetDcDbObjectName(L"TABLE_IX1") ).p->SmartCast<FdoSmPhTable>();
-        FdoSmPhIndexP index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"ALT_KEY1") );
+        FdoSmPhIndexP index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"ALT_KEY1") );
         index->SetElementState( FdoSchemaElementState_Deleted );
         AddIndex( table, false, L"IX_11", L"STRING_COL2" );
 
         table = owner->FindDbObject( phMgr->GetDcDbObjectName(L"TABLE_IX2") ).p->SmartCast<FdoSmPhTable>();
-        index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"IX_22") );
+        index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"IX_22") );
         CPPUNIT_ASSERT( index->GetIsUnique() );
         index->SetElementState( FdoSchemaElementState_Deleted );
         AddIndex( table, true, L"IX_23", L"STRING_COL2" );
 
         table = owner->FindDbObject( phMgr->GetDcDbObjectName(L"TABLE_IX4") ).p->SmartCast<FdoSmPhTable>();
-        index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"IX_41") );
+        index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"IX_41") );
         index->SetElementState( FdoSchemaElementState_Deleted );
-        index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"IX_42") );
+        index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"IX_42") );
         index->SetElementState( FdoSchemaElementState_Deleted );
-        index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"IX_43") );
+        index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"IX_43") );
         index->SetElementState( FdoSchemaElementState_Deleted );
 
         table = owner->FindDbObject( phMgr->GetDcDbObjectName(L"TABLE_IX7") ).p->SmartCast<FdoSmPhTable>();
-        index = table->GetIndexes()->GetItem( GetIndexName(phMgr, L"IX_72") );
+        index = table->GetIndexes()->GetItem( phMgr->GetDcColumnName(L"IX_72") );
         index->SetElementState( FdoSchemaElementState_Deleted );
 
         database->Commit();
@@ -1587,20 +1419,14 @@ void SchemaMgrTests::testGenKeys ()
     }
     catch (FdoException* e ) 
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -1654,7 +1480,6 @@ void SchemaMgrTests::testFKeys ()
 		);
 		owner->SetPassword( L"test" );
         owner->Commit();
-        owner->SetCurrent();
 
         // The following creates a table with 3 foreign keys. The table also
         // contains columns named the same as the foreign keys. This tests 
@@ -1739,20 +1564,14 @@ void SchemaMgrTests::testFKeys ()
     }
     catch (FdoException* e ) 
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -1811,7 +1630,6 @@ void SchemaMgrTests::testViews ()
         owner->Commit();
     
         FdoSmPhOwnerP fowner = phMgr->FindOwner( fdatastore, L"", false );
-
         if ( fowner ) {
             fowner->SetElementState( FdoSchemaElementState_Deleted );
             fowner->Commit();
@@ -1823,24 +1641,20 @@ void SchemaMgrTests::testViews ()
         );
         fowner->SetPassword( L"test" );
         fowner->Commit();
-
-        owner->SetCurrent();
-
+    
         FdoSmPhTableP tableA = owner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE1") );
         FdoSmPhColumnP column = tableA->CreateColumnInt32( phMgr->GetDcColumnName(L"ID"), false );
         tableA->AddPkeyCol( column->GetName() );
         column = tableA->CreateColumnInt32( phMgr->GetDcColumnName(L"PARENT_ID"), false );
         column = tableA->CreateColumnInt16( phMgr->GetDcColumnName(L"INT16_COL1"), false );
 
-        FdoSmPhTableP tableB;
-        tableB = fowner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE1") );
+        FdoSmPhTableP tableB = fowner->CreateTable( phMgr->GetDcDbObjectName(L"TABLE1") );
         column = tableB->CreateColumnInt32( phMgr->GetDcColumnName(L"ID"), false );
         tableB->AddPkeyCol( column->GetName() );
         column = tableB->CreateColumnInt32( phMgr->GetDcColumnName(L"PARENT_ID"), false );
         column = tableB->CreateColumnInt16( phMgr->GetDcColumnName(L"INT16_COL1"), false );
 
         database->Commit();
-
 
         FdoSmPhGrdOwnerP grdOwner = fowner->SmartCast<FdoSmPhGrdOwner>();
 
@@ -1927,20 +1741,14 @@ void SchemaMgrTests::testViews ()
     }
     catch (FdoException* e ) 
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -1987,33 +1795,21 @@ void SchemaMgrTests::testConfigError ()
     catch (FdoException* e ) 
     {
 #ifdef _WIN32
-#ifdef _DEBUG
             FdoStringP expectedMessage = FdoStringP::Format(
                 L" Cannot use configuration document with current connection, datastore '%ls' has MetaSchema. ",
                 (FdoString*) datastoreName
             );
             FdoString* pMessage = wcschr( e->GetExceptionMessage(), ')' );
             if (pMessage) pMessage++;
-#else
-            FdoStringP expectedMessage = FdoStringP::Format(
-                L"Cannot use configuration document with current connection, datastore '%ls' has MetaSchema. ",
-                (FdoString*) datastoreName
-            );
-                FdoString* pMessage = e->GetExceptionMessage();
-#endif
             CPPUNIT_ASSERT( pMessage && expectedMessage.ICompare(pMessage) == 0 );
 #endif
     }
     catch (CppUnit::Exception exception)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         throw exception;
     }
     catch (...)
     {
-        fdoConn = NULL;
-        if ( conn ) delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -2022,6 +1818,61 @@ void SchemaMgrTests::testGenConfigGeom()
 {
     //TODO: add tests for autogenerating geometric property attributes.
 }
+
+// The following stylesheet handles cases when the order of the reverse-engineered
+// spatial contexts, in an output XML, is not in a consistent order. It pastes
+// the spatial context info onto referencing geometries. Empty spatial contexts
+// are still written out so that we can check that the right number of spatial
+// contexts were generated.
+
+static char* pSortScConfigSheet = 
+"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\
+<stylesheet version=\"1.0\" \
+xmlns=\"http://www.w3.org/1999/XSL/Transform\" \
+xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" \
+xmlns:gml=\"http://www.opengis.net/gml\" \
+xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" \
+xmlns:fdo=\"http://fdo.osgeo.org/schemas\" \
+xmlns:ora=\"http://www.autodesk.com/isd/fdo/OracleProvider\" \
+xmlns:mql=\"http://fdomysql.osgeo.org/schemas\" \
+xmlns:sqs=\"http://www.autodesk.com/isd/fdo/SQLServerProvider\">\
+<xsl:template match=\"fdo:DataStore\">\
+    <xsl:copy>\
+        <xsl:apply-templates select=\"@*\"/>\
+        <xsl:apply-templates select=\"gml:DerivedCRS\"/>\
+        <xsl:apply-templates select=\"xs:schema\"/>\
+    </xsl:copy>\
+</xsl:template>\
+<xsl:template match=\"gml:DerivedCRS\">\
+    <xsl:copy/>\
+</xsl:template>\
+<xsl:template match=\"xs:schema\">\
+    <xsl:copy>\
+        <xsl:apply-templates select=\"@*\"/>\
+        <xsl:apply-templates select=\"xs:annotation\"/>\
+        <xsl:apply-templates select=\"xs:element\"/>\
+        <xsl:apply-templates select=\"xs:complexType\"/>\
+    </xsl:copy>\
+</xsl:template>\
+<xsl:template match=\"xs:element[@fdo:srsName]\">\
+    <xsl:copy>\
+        <xsl:apply-templates select=\"@*\"/>\
+        <xsl:variable name=\"sc\" select=\"@fdo:srsName\"/>\
+        <xsl:for-each select=\"//fdo:DataStore/gml:DerivedCRS[@gml:id = $sc]\">\
+            <xsl:apply-templates select=\"gml:metaDataProperty\"/>\
+            <xsl:apply-templates select=\"gml:validArea\"/>\
+            <xsl:apply-templates select=\"gml:baseCRS\"/>\
+        </xsl:for-each>\
+    </xsl:copy>\
+</xsl:template>\
+<xsl:template match=\"@fdo:srsName\">\
+</xsl:template>\
+<xsl:template match=\"@*|node()\">\
+  <xsl:copy>\
+    <xsl:apply-templates select=\"@*|node()\"/>\
+  </xsl:copy>\
+  </xsl:template>\
+</stylesheet>";
 
 void SchemaMgrTests::testSpatialContexts()
 {
@@ -2305,32 +2156,17 @@ void SchemaMgrTests::CreateTableGroup( FdoSmPhOwnerP owner, FdoStringP prefix, F
     int i;
 
     for ( i = 1; i <= count; i++ ) {
-        int sridIndex = 3;
-        switch (i) {
-            case 1:
-            case 4:
-                sridIndex = 0;
-                break;
-            case 5:
-                sridIndex = 1;
-                break;
-            case 2:
-                sridIndex = 2;
-                break;
-        }
-
-        FdoSmPhScInfoP scinfo = CreateSc( GetSrid(sridIndex), 0, 0, 1, 1, 0.0333, 0.0111 );
         FdoStringP tablename = FdoStringP::Format( L"%lsTABLE%d", (FdoString*) prefix, i );
         FdoSmPhTableP table = owner->CreateTable( tablename );
         SetLtLck(table, lt_mode);
         FdoSmPhColumnP column = table->CreateColumnInt32( L"ID", false );
         table->AddPkeyCol( column->GetName() );
-        column = table->CreateColumnGeom( L"GEOM_COLUMN", scinfo );
+        column = table->CreateColumnGeom( L"GEOM_COLUMN", (FdoSmPhScInfo*) NULL );
         column = table->CreateColumnInt32( L"FOREIGN_COLUMN", false );
         column = table->CreateColumnDouble( L"DOUBLE_COLUMN", true );
 
         if ( (prefix.ICompare(L"gh_") == 0) && (i == 5) ) {
-            FdoSmPhCheckConstraintP constraint = new FdoSmPhCheckConstraint( L"double_check", L"DOUBLE_COLUMN", L"\"DOUBLE_COLUMN\" < 100.35" );
+            FdoSmPhCheckConstraintP constraint = new FdoSmPhCheckConstraint( L"double_check", L"DOUBLE_COLUMN", L"DOUBLE_COLUMN < 100.35" );
             table->AddCkeyCol( constraint );
 
         	FdoSmPhBatchColumnsP ukeys = table->GetUkeyColumns(); 
@@ -2658,11 +2494,6 @@ FdoSmPhScInfoP SchemaMgrTests::CreateSc( FdoInt64 srid, double minx, double miny
 FdoInt64 SchemaMgrTests::GetSrid( int index )
 {
     return 0;
-}
-
-FdoStringP SchemaMgrTests::GetIndexName( FdoSmPhMgrP mgr, FdoStringP indexName )
-{
-    return mgr->GetDcColumnName( indexName );
 }
 
 SchemaMgrTests::ExpectedClassGeometricProperty::ExpectedClassGeometricProperty ()

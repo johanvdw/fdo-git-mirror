@@ -804,13 +804,3 @@ bool FdoRdbmsSchemaUtil::IsRingValid( FdoIRing *ring, double xyResol )
 
     return arcIsValid;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-FdoStringP FdoRdbmsSchemaUtil::GetAliasSqlName(const char * propName)
-{
-    FdoStringP strAlias = "\"";
-    strAlias += propName;
-    strAlias += "\"";
-
-    return strAlias;
-}

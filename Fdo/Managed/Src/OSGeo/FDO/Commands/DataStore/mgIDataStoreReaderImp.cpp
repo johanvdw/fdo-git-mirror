@@ -33,53 +33,55 @@ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::IDataStoreReaderImp
 
 FdoIDataStoreReader* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetImpObj()
 {
-    return static_cast<FdoIDataStoreReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIDataStoreReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetName()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-    return CHECK_STRING(result);
+	return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetDescription()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetDescription()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDescription())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetIsFdoEnabled()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetIsFdoEnabled())
 
 	return result;
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary^ NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetDataStoreProperties()
+NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStorePropertyDictionary* NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::GetDataStoreProperties()
 {
 	FdoIDataStorePropertyDictionary* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDataStoreProperties())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDataStorePropertyDictionary(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIDataStorePropertyDictionary(result, true);
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_DATASTORE::IDataStoreReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadNext())
 

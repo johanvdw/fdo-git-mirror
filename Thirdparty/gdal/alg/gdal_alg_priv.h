@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg_priv.h 18522 2010-01-11 18:07:15Z mloskot $
+ * $Id: gdal_alg_priv.h 15701 2008-11-10 15:40:02Z warmerdam $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes and definitions for various GDAL based algorithms:
@@ -35,51 +35,23 @@
 
 CPL_C_START
 
-/** Source of the burn value */
-typedef enum {
-    /*! Use value from padfBurnValue */    GBV_UserBurnValue = 0,
-    /*! Use value from the Z coordinate */    GBV_Z = 1,
-    /*! Use value form the M value */    GBV_M = 2
-} GDALBurnValueSrc;
-
-typedef struct {
-    unsigned char * pabyChunkBuf;
-    int nXSize;
-    int nYSize;
-    int nBands;
-    GDALDataType eType;
-    double *padfBurnValue;
-    GDALBurnValueSrc eBurnValueSource;
-} GDALRasterizeInfo;
-
 /************************************************************************/
 /*      Low level rasterizer API.                                       */
 /************************************************************************/
 
-typedef void (*llScanlineFunc)( void *, int, int, int, double );
-typedef void (*llPointFunc)( void *, int, int, double );
+typedef void (*llScanlineFunc)( void *, int, int, int );
+typedef void (*llPointFunc)( void *, int, int );
 
-void GDALdllImagePoint( int nRasterXSize, int nRasterYSize,
-                        int nPartCount, int *panPartSize,
-                        double *padfX, double *padfY, double *padfVariant,
-                        llPointFunc pfnPointFunc, void *pCBData );
+void GDALdllImagePoint( int, int, int, int *, double *, double *,
+                        llPointFunc, void * );
 
 void GDALdllImageLine( int nRasterXSize, int nRasterYSize, 
                        int nPartCount, int *panPartSize,
-                       double *padfX, double *padfY, double *padfVariant,
+                       double *padfX, double *padfY,
                        llPointFunc pfnPointFunc, void *pCBData );
 
-void GDALdllImageLineAllTouched(int nRasterXSize, int nRasterYSize, 
-                                int nPartCount, int *panPartSize,
-                                double *padfX, double *padfY,
-                                double *padfVariant,
-                                llPointFunc pfnPointFunc, void *pCBData );
-
-void GDALdllImageFilledPolygon(int nRasterXSize, int nRasterYSize, 
-                               int nPartCount, int *panPartSize,
-                               double *padfX, double *padfY,
-                               double *padfVariant,
-                               llScanlineFunc pfnScanlineFunc, void *pCBData );
+void GDALdllImageFilledPolygon( int, int, int, int *, double *, double *,
+                               llScanlineFunc, void * );
 
 CPL_C_END
 

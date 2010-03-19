@@ -24,24 +24,19 @@
 
 FdoIActivateLongTransaction* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::GetImpObj()
 {
-    return static_cast<FdoIActivateLongTransaction*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIActivateLongTransaction*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::get_Name()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::Name::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::IActivateLongTransactionImp::set_Name(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetName(StringToUni(value)))
 }

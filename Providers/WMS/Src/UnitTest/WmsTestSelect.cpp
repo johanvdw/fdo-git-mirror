@@ -406,6 +406,13 @@ void WmsTestSelect::testServer2 ()
 	    CPPUNIT_ASSERT (featReader->ReadNext ());
 	    raster = featReader->GetRaster (L"Raster");
 	    CPPUNIT_ASSERT (!featReader->ReadNext ());
+    	
+	    // Layer "BSC_WMS" (non-queryable)
+	    cmd->SetFeatureClassName (L"BSC_WMS");
+	    featReader = cmd->Execute ();
+	    CPPUNIT_ASSERT (featReader->ReadNext ());
+	    raster = featReader->GetRaster (L"Raster");
+	    CPPUNIT_ASSERT (!featReader->ReadNext ());
     }
     catch (FdoException* e)
     {
@@ -519,7 +526,7 @@ void WmsTestSelect::testDefaultHeight()
 
 	    FdoICommand* cmd = conn->CreateCommand(FdoCommandType_Select);
 	    FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*>(cmd);
-        cmdSelect->SetFeatureClassName(L"IBA");
+	    cmdSelect->SetFeatureClassName(L"BSC_WMS");
 
 
 	    FdoPtr<FdoIFeatureReader> featureReader = cmdSelect->Execute();
@@ -609,7 +616,7 @@ void WmsTestSelect::testNASAServerDefaultOverrides ()
             
             FdoWmsOvClassesP ovClasses = ovMapping->GetClasses();
             FdoInt32 numClasses = ovClasses->GetCount();
-            CPPUNIT_ASSERT (numClasses == 20);
+            CPPUNIT_ASSERT (numClasses == 19);
 
             FdoWmsOvClassDefinitionP ovClass = ovClasses->GetItem(0);
             CPPUNIT_ASSERT (FdoStringP(ovClass->GetName()) == L"global_mosaic");
@@ -781,7 +788,7 @@ void WmsTestSelect::testCubeServer ()
 #endif//_DEBUG
 
         FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*>(conn->CreateCommand(FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName(L"Foundation LANDICEA_1M");
+        cmdSelect->SetFeatureClassName(L"LANDICEA_1M Foundation");
 
         FdoPtr<FdoIFeatureReader> featureReader = cmdSelect->Execute();
         FdoPtr<FdoClassDefinition> classDef2 = featureReader->GetClassDefinition();
@@ -1858,64 +1865,6 @@ void WmsTestSelect::testquestionmarkend ()
         cmdSelect->SetFeatureClassName(L"WMS_Schema:Karttakone");
 
         FdoPtr<FdoIFeatureReader> rasterReader = cmdSelect->Execute();
-    }
-    catch (FdoException* e)
-    {
-        fail(e);
-    }
-}
-
-//http://62.214.147.252:8080
-void WmsTestSelect::testURLEcoding ()
-{
-    try
-    {
-        FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
-
-        FdoStringP sServer = L"FeatureServer=http://62.214.147.252:8080/cgi-bin/mapserv.exe?map=C%3a%5cProgram+Files%5cms4w%5cApache%5chtdocs%5cBB2009%5cBB2009.map&version=1.1.1";
-        connection->SetConnectionString((FdoString*)sServer);
-        FdoConnectionState state = connection->Open ();
-
-        FdoPtr<FdoIDescribeSchema> cmdDS = static_cast<FdoIDescribeSchema *> (connection->CreateCommand (FdoCommandType_DescribeSchema));
-        FdoPtr<FdoFeatureSchemaCollection> schemas = cmdDS->Execute ();
-        FdoInt32 cntSchemas = schemas->GetCount ();
-        CPPUNIT_ASSERT (cntSchemas == 1);
-
-        FdoPtr<FdoFeatureSchema> schema = schemas->GetItem (0);
-        FdoPtr<FdoClassCollection> classes = schema->GetClasses ();
-        FdoPtr<FdoClassDefinition> clsDef = classes->GetItem (L"Brandenburg2009");
-        FdoFeatureClass* featClsDef = static_cast<FdoFeatureClass *> (clsDef.p);
-        FdoPtr<FdoPropertyDefinitionCollection> props = clsDef->GetProperties ();
-        FdoPtr<FdoPropertyDefinition> prop = props->GetItem (L"Raster");
-        FdoRasterPropertyDefinition* rasterProp = (FdoRasterPropertyDefinition*)(prop.p);
-        FdoStringP rasterAssoc = rasterProp->GetSpatialContextAssociation();
-        CPPUNIT_ASSERT (rasterAssoc == L"EPSG:25833");
-
-        FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*> (connection->CreateCommand (FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName (L"Brandenburg2009");
-        FdoPtr<FdoIFeatureReader> featReader = cmdSelect->Execute ();
-        CPPUNIT_ASSERT (featReader->ReadNext ());	    
-        FdoPtr<FdoIRaster> raster = featReader->GetRaster (L"Raster");
-
-        raster->SetImageXSize(1024);
-        raster->SetImageYSize(1024);
-
-        FdoPtr<FdoIStreamReaderTmpl<FdoByte> > byteStreamReader = static_cast<FdoIStreamReaderTmpl<FdoByte>*> (raster->GetStreamReader ());
-
-        FdoByte buff[4096];
-        FdoInt64 cntTotal = 0;
-        FdoInt32 cntRead = 0;
-        do
-        {
-            cntRead = byteStreamReader->ReadNext (buff, 0 , 4096);
-            cntTotal += cntRead;
-        }
-        while (cntRead);
-
-        CPPUNIT_ASSERT (cntTotal > 0);
-        CPPUNIT_ASSERT (!featReader->ReadNext ());
-
-        connection->Close ();
     }
     catch (FdoException* e)
     {

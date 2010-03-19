@@ -1,4 +1,4 @@
-/* $Id: tif_ojpeg.c,v 1.46 2009-09-03 20:45:22 bfriesen Exp $ */
+/* $Id: tif_ojpeg.c,v 1.42 2008/06/17 19:48:22 fwarmerdam Exp $ */
 
 /* WARNING: The type of JPEG encapsulation defined by the TIFF Version 6.0
    specification is now totally obsolete and deprecated for new applications and
@@ -237,7 +237,6 @@ typedef struct {
 	#endif
 	TIFFVGetMethod vgetparent;
 	TIFFVSetMethod vsetparent;
-	TIFFPrintMethod printdir;
 	uint64 file_size;
 	uint32 image_width;
 	uint32 image_length;
@@ -454,7 +453,6 @@ TIFFInitOJPEG(TIFF* tif, int scheme)
 	tif->tif_tagmethods.vgetfield=OJPEGVGetField;
 	sp->vsetparent=tif->tif_tagmethods.vsetfield;
 	tif->tif_tagmethods.vsetfield=OJPEGVSetField;
-	sp->printdir=tif->tif_tagmethods.printdir;
 	tif->tif_tagmethods.printdir=OJPEGPrintDir;
 	/* Some OJPEG files don't have strip or tile offsets or bytecounts tags.
 	   Some others do, but have totally meaningless or corrupt values
@@ -626,8 +624,6 @@ OJPEGPrintDir(TIFF* tif, FILE* fd, long flags)
 		fprintf(fd,"  JpegProc: %u\n",(unsigned int)sp->jpeg_proc);
 	if (TIFFFieldSet(tif,FIELD_OJPEG_JPEGRESTARTINTERVAL))
 		fprintf(fd,"  JpegRestartInterval: %u\n",(unsigned int)sp->restart_interval);
-	if (sp->printdir)
-		(*sp->printdir)(tif, fd, flags);
 }
 
 static int
@@ -921,7 +917,6 @@ OJPEGCleanup(TIFF* tif)
 	{
 		tif->tif_tagmethods.vgetfield=sp->vgetparent;
 		tif->tif_tagmethods.vsetfield=sp->vsetparent;
-		tif->tif_tagmethods.printdir=sp->printdir;
 		if (sp->qtable[0]!=0)
 			_TIFFfree(sp->qtable[0]);
 		if (sp->qtable[1]!=0)
@@ -1155,9 +1150,6 @@ OJPEGWriteHeaderInfo(TIFF* tif)
 	if ((sp->subsampling_force_desubsampling_inside_decompression==0) && (sp->samples_per_pixel_per_plane>1))
 	{
 		sp->libjpeg_jpeg_decompress_struct.raw_data_out=1;
-#if JPEG_LIB_VERSION >= 70
-		sp->libjpeg_jpeg_decompress_struct.do_fancy_upsampling=FALSE;
-#endif
 		sp->libjpeg_jpeg_query_style=0;
 		if (sp->subsampling_convert_log==0)
 		{
@@ -2390,7 +2382,7 @@ OJPEGLibjpegJpegErrorMgrOutputMessage(jpeg_common_struct* cinfo)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message)(cinfo,buffer);
-	TIFFWarningExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg","%s",buffer);
+	TIFFWarningExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg",buffer);
 }
 
 static void
@@ -2398,7 +2390,7 @@ OJPEGLibjpegJpegErrorMgrErrorExit(jpeg_common_struct* cinfo)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message)(cinfo,buffer);
-	TIFFErrorExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg","%s",buffer);
+	TIFFErrorExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg",buffer);
 	jpeg_encap_unwind((TIFF*)(cinfo->client_data));
 }
 
@@ -2413,8 +2405,8 @@ OJPEGLibjpegJpegSourceMgrFillInputBuffer(jpeg_decompress_struct* cinfo)
 {
 	TIFF* tif=(TIFF*)cinfo->client_data;
 	OJPEGState* sp=(OJPEGState*)tif->tif_data;
-	void* mem=0;
-	uint32 len=0U;
+	void* mem;
+	uint32 len;
 	if (OJPEGWriteStream(tif,&mem,&len)==0)
 	{
 		TIFFErrorExt(tif->tif_clientdata,"LibJpeg","Premature end of JPEG data");

@@ -1,7 +1,7 @@
-$Id: README 18465 2010-01-07 20:39:16Z mloskot $
+$Id: README 11480 2007-05-11 07:27:10Z mloskot $
 =============================================================================
  GDAL port for Window CE
- Originally ported by Mateusz Loskot, mateusz@loskot.net
+ Mateusz Loskot, mateusz@loskot.net
 =============================================================================
 
 GDAL 1.4.0 includes following features for Windows CE platform:

@@ -23,7 +23,7 @@ class FdoOdbcOvTable;
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC
 
 ///<summary>Concrete class defining physical schema overrides for a table.</summary>
-public ref class OvTable : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable
+public __gc class OvTable : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvTable
 {
 public:
     ///<summary>Constructs a default of an FdoOdbcOvTable</summary>
@@ -33,14 +33,12 @@ public:
     ///<summary>Constructs an instance of an FdoOdbcOvTable using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns FdoOdbcOvTable</returns>
-	OvTable(System::String^ name);
+	OvTable(System::String* name);
 
-internal:
+public private:
 	OvTable(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoOdbcOvTable* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC

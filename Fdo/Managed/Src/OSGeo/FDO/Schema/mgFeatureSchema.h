@@ -24,11 +24,11 @@
 class FdoFeatureSchema;
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class ClassCollection;
+public __gc class ClassCollection;
 
 /// \ingroup (OSGeoFDOSchema)
 /// \brief
@@ -40,7 +40,7 @@ ref class ClassCollection;
 /// DescribeSchema command. In this case the schema objects have additional properties,
 /// such as coordinate system definitions that can be useful to the
 /// application when placed in context with the schema objects.
-public ref class FeatureSchema : public NAMESPACE_OSGEO_FDO_SCHEMA::SchemaElement, public NAMESPACE_OSGEO_FDO_XML::IXmlSerializable
+public __gc class FeatureSchema : public NAMESPACE_OSGEO_FDO_SCHEMA::SchemaElement, public NAMESPACE_OSGEO_FDO_XML::IXmlSerializable
 {
 public:
     /// \brief
@@ -62,7 +62,7 @@ public:
     /// \return
     /// Returns FeatureSchema
     /// 
-	FeatureSchema(System::String^ name, System::String^ description);
+	FeatureSchema(System::String* name, System::String* description);
 
     /// \brief
     /// Returns an ClassCollection that contains all of the classes defined in
@@ -71,10 +71,7 @@ public:
     /// \return
     /// Returns an ClassCollection
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::ClassCollection^ Classes
-    {
-        virtual NAMESPACE_OSGEO_FDO_SCHEMA::ClassCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::ClassCollection* get_Classes();
 
     /// \brief
     /// Accepts all of the changes that have been made to the feature schema.
@@ -88,7 +85,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void AcceptChanges();
+	System::Void AcceptChanges();
 
     /// \brief
     /// Rejects all of the changes that have been made to the feature schema.
@@ -100,7 +97,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void RejectChanges();
+	System::Void RejectChanges();
 
     /// \brief
     /// Constructs a FeatureSchema object based on an unmanaged instance of the object
@@ -128,7 +125,7 @@ public:
     /// \param fileName 
     /// Input the file name.
     /// 
-	virtual System::Void WriteXml(String^ fileName);
+	System::Void WriteXml(String* fileName);
 
     /// \brief
     /// Writes this object to a file. A complete XML document,
@@ -138,9 +135,9 @@ public:
     /// Input the file name.
     /// \param flags 
     /// Input controls the writing of the elements to the document.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(String^ fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(String* fileName, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to an XML writer. This object is appended to the XML document
@@ -151,7 +148,7 @@ public:
     /// Input the XML writer. When this function completes, the
     /// XML writer's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter);
 
     /// \brief
     /// Writes to an XML writer. This object is appended to the XML document
@@ -163,9 +160,9 @@ public:
     /// XML writer's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the writer.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to a text writer. A complete XML document,
@@ -175,7 +172,7 @@ public:
     /// Input the text writer.When this function completes, the
     /// text writer's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ textWriter);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* textWriter);
 
     /// \brief
     /// Writes to a text writer. A complete XML document,
@@ -186,9 +183,9 @@ public:
     /// text writer's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the writer.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter^ textWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoTextWriter* textWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Writes to a stream. A complete XML document,
@@ -198,7 +195,7 @@ public:
     /// Input the stream. When this function completes, the
     /// stream's current position will be just after this object.
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     /// Writes to a stream. A complete XML document,
@@ -209,9 +206,9 @@ public:
     /// stream's current position will be just after this object.
     /// \param flags 
     /// Input controls the writing of the elements to the stream.
-    /// If nullptr then the default flags are used (see XmlFlags::Create())
+    /// If NULL then the default flags are used (see XmlFlags::Create())
     /// 
-	virtual System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Gets the stylesheet for converting the XML document from 
@@ -220,15 +217,13 @@ public:
     /// stylesheet that does the conversion.
     /// 
     /// \return
-    /// Returns nullptr by default (no internal format defined)
+    /// Returns NULL by default (no internal format defined)
     /// 
-	virtual NAMESPACE_OSGEO_COMMON_XML::XmlReader^ GetFromInternalStylesheet();
+	NAMESPACE_OSGEO_COMMON_XML::XmlReader* GetFromInternalStylesheet();
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoFeatureSchema* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

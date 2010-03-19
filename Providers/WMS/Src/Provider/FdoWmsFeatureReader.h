@@ -25,10 +25,11 @@
 
 #include "FdoWmsReader.h"
 #include "FdoWmsRect.h"
-#include "FdoDefaultFeatureReader.h"
 
-class FdoWmsFeatureReader : public virtual FdoWmsReader<FdoDefaultFeatureReader>
+class FdoWmsFeatureReader : public virtual FdoWmsReader<FdoIFeatureReader>
 {
+    typedef FdoWmsReader<FdoIFeatureReader> superclass;
+
 protected:
     // <summary>Virtual Destructor.</summary>
     // <returns>Returns nothing</returns> 

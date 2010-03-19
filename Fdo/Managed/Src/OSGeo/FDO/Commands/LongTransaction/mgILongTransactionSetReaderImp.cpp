@@ -24,35 +24,37 @@
 
 FdoILongTransactionSetReader* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetImpObj()
 {
-    return static_cast<FdoILongTransactionSetReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoILongTransactionSetReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetDisposableObject()
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetLongTransactionName()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetLongTransactionName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetLongTransactionName())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetOwner()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::GetOwner()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetOwner())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION::ILongTransactionSetReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->ReadNext())
 

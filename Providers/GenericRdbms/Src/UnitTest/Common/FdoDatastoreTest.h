@@ -48,7 +48,6 @@ protected:
 	void predelete();
     void Cmd_ListDatastores ();
 	void Cmd_CreateDatastore ();
-    void Cmd_CreateNoMeta();
 	void Cmd_DestroyDatastore ();
     virtual void TestReservedName();
 	virtual int  ListDatastores( bool include );

@@ -27,9 +27,8 @@ FdoSmPhRdOdbcColumnReader::FdoSmPhRdOdbcColumnReader(
     FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
-    FdoSmPhRdColumnReader(mgr, (FdoSmPhRowCollection*) NULL, dbObject)
+    FdoSmPhRdColumnReader(mgr, MakeRows(mgr), dbObject)
 {
-    SetRows(MakeRows(mgr));
     FdoSmPhOdbcMgr*      pMgr = (FdoSmPhOdbcMgr*)(FdoSmPhMgr*)mgr;
 
     rdbi_context = pMgr->GetRdbiContext();

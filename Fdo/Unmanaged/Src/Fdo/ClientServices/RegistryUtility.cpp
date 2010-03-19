@@ -789,7 +789,7 @@ wchar_t *FdoRegistryUtility::GetFileName()
             const char *me;
             char *home;
             char *last;
-            const char *install = "/usr/local/fdo-3.5.0";
+            char *install = "/usr/local/fdo-3.4.0";
 
             // Determine the user-specified FDO install location
             char *fdo_home = getenv( "FDOHOME" );
@@ -808,15 +808,12 @@ wchar_t *FdoRegistryUtility::GetFileName()
                 *last = '\0';
             }
             else
-                home = (char*)"./";
+                home = "./";
             
             sprintf (_fileName, "%s%s", home, "providers.xml");
             if ((0 != stat (_fileName, &my_stat)) || !S_ISREG(my_stat.st_mode))
                 // not found or not a file, try the install location
                 if ((0 == stat (install, &my_stat)) && S_ISDIR(my_stat.st_mode))
-                // Try lib64 first, since some 64 bits linux install put libraries it there
-                    sprintf (_fileName, "%s%s", install, "/lib64/providers.xml");
-                if ((0 != stat (_fileName, &my_stat)) || !S_ISREG(my_stat.st_mode))
                     sprintf (_fileName, "%s%s", install, "/lib/providers.xml");
 			mbstowcs(fileName, _fileName, 512);        }
 #else

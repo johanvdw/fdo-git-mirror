@@ -20,32 +20,19 @@
 #include "stdafx.h"
 #include "Common\mgException.h"
 
-NAMESPACE_OSGEO_COMMON::Exception^ NAMESPACE_OSGEO_COMMON::Exception::Create(System::IntPtr ex)
+NAMESPACE_OSGEO_COMMON::Exception* NAMESPACE_OSGEO_COMMON::Exception::Create(System::IntPtr ex)
 {
-    NAMESPACE_OSGEO_COMMON::Exception^ ret = nullptr;
-    if (IntPtr::Zero != ex)
+	//TODO: maybe some type-check code need adding here.
+
+	if (NULL != ex)
 	{
-		try
-        {
-            FdoException* fdoEx = static_cast<FdoException*>(ex.ToPointer());
-            FdoPtr<FdoException> fdoCauseEx = fdoEx->GetCause();
-	        if (fdoCauseEx)
-            {
-                NAMESPACE_OSGEO_COMMON::Exception^ mgCause = Create(System::IntPtr(fdoCauseEx));
-                ret = gcnew NAMESPACE_OSGEO_COMMON::Exception(gcnew String(fdoEx->GetExceptionMessage()), 
-                                                                           mgCause, 
-                                                                           fdoEx->GetNativeErrorCode());
-            }
-	        else
-            {
-		        ret = gcnew NAMESPACE_OSGEO_COMMON::Exception(gcnew String(fdoEx->GetExceptionMessage()),
-                                                                           fdoEx->GetNativeErrorCode());
-            }
-        }
-        catch (...)
-        {
-        }
+		FdoException* e = (FdoException*) ex.ToPointer();
+		NAMESPACE_OSGEO_COMMON::Exception* mg = Create(e->GetCause());
+		if (NULL != mg)
+			return new NAMESPACE_OSGEO_COMMON::Exception(e->GetExceptionMessage(), mg);
+		else
+			return new NAMESPACE_OSGEO_COMMON::Exception(e->GetExceptionMessage());
 	}
 
-	return ret;
+	return NULL;
 }

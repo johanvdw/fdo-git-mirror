@@ -23,21 +23,13 @@
 #pragma once
 #endif
 
-#include <cstring>
-
 #ifdef _WIN32
 #pragma pack(push, 16) /* large alignment */
 #include <config-win.h>
 #else
-#include <algorithm>
-#include <string>
-#include <vector>
 #include <my_global.h>
 #endif
-
 #include <mysql.h>
-
-
 #ifdef _WIN32
 #pragma pack(pop) /* restore alignment */
 #define WIN32_LEAN_AND_MEAN /* exclude rarely-used stuff from Windows headers */
@@ -45,7 +37,7 @@
 #include <windows.h>
 #endif
 
-
+#include <cstring>
 #include <Inc/rdbi.h>
 #include <stdio.h>
 #include <string.h>

@@ -31,9 +31,8 @@ FdoSmPhRdOdbcConstraintReader::FdoSmPhRdOdbcConstraintReader(
     FdoSmPhOwnerP owner,
     FdoStringP constraintName
 ) :
-FdoSmPhRdConstraintReader(owner->GetManager(), (FdoSmPhRowCollection*) NULL )
+FdoSmPhRdConstraintReader(owner->GetManager(), MakeRows(owner->GetManager()))
 {
-    SetRows(MakeRows(owner->GetManager()));
 }
 
 FdoSmPhRdOdbcConstraintReader::FdoSmPhRdOdbcConstraintReader(
@@ -41,9 +40,8 @@ FdoSmPhRdOdbcConstraintReader::FdoSmPhRdOdbcConstraintReader(
 	FdoStringP tableName,
     FdoStringP constraintType
 ) :
-    FdoSmPhRdConstraintReader(owner->GetManager(), (FdoSmPhRowCollection*) NULL)
+    FdoSmPhRdConstraintReader(owner->GetManager(), MakeRows(owner->GetManager()))
 {
-    SetRows(MakeRows(owner->GetManager()));
 }
 
 FdoSmPhRdOdbcConstraintReader::~FdoSmPhRdOdbcConstraintReader(void)

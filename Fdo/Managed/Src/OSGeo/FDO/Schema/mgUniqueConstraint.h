@@ -31,14 +31,17 @@ BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
 /// of two or more properties is called a composite unique constraint.
 /// This constraint type applies to all data property types except for Boolean, BLOB, and CLOB. A Boolean property 
 /// can be included if it’s part of a composite unique constraint.
-public ref class UniqueConstraint : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class UniqueConstraint : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	UniqueConstraint(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoUniqueConstraint* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public:    
     /// \brief
@@ -55,10 +58,8 @@ public:
     /// \return
     /// Returns the collection that holds the properties that defines the constraint.
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ Properties
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection* get_Properties();
+
 };
 
 END_NAMESPACE_OSGEO_FDO_SCHEMA

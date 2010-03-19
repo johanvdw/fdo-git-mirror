@@ -21,11 +21,11 @@
 #include "FDO\Commands\mgICommand.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-ref class FeatureSchema;
+public __gc class FeatureSchema;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
-ref class PhysicalSchemaMapping;
+public __gc class PhysicalSchemaMapping;
 
 /// \ingroup (OSGeoFDOCommandsSchema)
 /// \interface OSGeo::FDO::Commands::Schema::IApplySchema
@@ -36,7 +36,7 @@ ref class PhysicalSchemaMapping;
 /// a provider-specific IPhysicalSchemaMapping interface can be specified that can be
 /// used to control how the feature schema elements are mapped into physical
 /// storage.
-public interface class IApplySchema : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface IApplySchema : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -45,6 +45,8 @@ public:
     /// \return
     /// Returns the name of the schema to create
     /// 
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchema* get_FeatureSchema();
+
     /// \brief
     /// Sets the name of the schema to create.
     /// 
@@ -54,11 +56,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchema^ FeatureSchema
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchema^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchema^ value);
-    }
+	__property System::Void set_FeatureSchema(NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchema* value);
 
     /// \brief
     ///  Gets the PhysicalSchemaMapping used to specify how the schema definition
@@ -67,6 +65,8 @@ public:
     /// \return
     /// Returns PhysicalSchemaMapping
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* get_PhysicalMapping();
+
     /// \brief
     /// Sets the PhysicalSchemaMapping used to specify how the schema definition
     /// gets mapped into physical storage.
@@ -77,11 +77,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ PhysicalMapping
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ value);
-    }
+	__property System::Void set_PhysicalMapping(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* value);
 
     /// \brief
     ///  Indicates whether Execute() will ignore element states 
@@ -91,6 +87,8 @@ public:
     /// Returns true if elements states will be ignored, false otherwise. 
     /// 
     ///  
+	__property System::Boolean get_IgnoreStates();
+
     /// \brief
     /// Changes the handling of element states by Execute().
     /// 
@@ -104,11 +102,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Boolean IgnoreStates
-    {
-        System::Boolean get();
-        System::Void set(System::Boolean ignoreStates);
-    }
+	__property System::Void set_IgnoreStates(System::Boolean ignoreStates );
 
     /// \brief
     /// Executes the ApplySchema command that creates metadata and physical

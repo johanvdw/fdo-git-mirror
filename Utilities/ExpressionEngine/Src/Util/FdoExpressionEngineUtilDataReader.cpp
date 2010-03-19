@@ -197,55 +197,23 @@ FdoInt32 FdoExpressionEngineUtilDataReader::GetPropertyCount()
 FdoString* FdoExpressionEngineUtilDataReader::GetPropertyName(FdoInt32 index)
 {
     FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(index);
-
+   
     return ps->m_name;
-}
-
-FdoInt32 FdoExpressionEngineUtilDataReader::GetPropertyIndex(FdoString* propertyName)
-{
-    FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(propertyName);
-    if (NULL == ps)
-    {
-        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
-    }
-
-    return ps->m_recordIndex;
 }
 
 FdoDataType FdoExpressionEngineUtilDataReader::GetDataType(FdoString* propertyName)
 {
     FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(propertyName);
-    if (NULL == ps)
-    {
-        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
-    }
 
     _ASSERT (ps->m_dataType != FdoDataType(-1));
 
-    return ps->m_dataType;
+    return ps->m_dataType;         
 }
 
 FdoPropertyType FdoExpressionEngineUtilDataReader::GetPropertyType(FdoString* propertyName)
 {
     FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(propertyName);
-    if (NULL == ps)
-    {
-        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
-    }
-
     return ps->m_propertyType;         
-}
-
-FdoDataType FdoExpressionEngineUtilDataReader::GetDataType(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetDataType(propertyName);
-}
-
-FdoPropertyType FdoExpressionEngineUtilDataReader::GetPropertyType(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetPropertyType(propertyName);
 }
 
 FdoCommonBinaryReader* FdoExpressionEngineUtilDataReader::perform_checks (
@@ -357,10 +325,6 @@ FdoIStreamReader* FdoExpressionEngineUtilDataReader::GetLOBStreamReader(const wc
 bool FdoExpressionEngineUtilDataReader::IsNull(FdoString* propertyName)
 {
     FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(propertyName);
-    if (NULL == ps)
-    {
-        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
-    }
 
     FdoPtr<FdoCommonBinaryReader> reader = GetBinaryReader();
     int len = reader->PositionReader(ps->m_recordIndex, m_propIndex);
@@ -375,10 +339,6 @@ bool FdoExpressionEngineUtilDataReader::IsNull(FdoString* propertyName)
 FdoByteArray* FdoExpressionEngineUtilDataReader::GetGeometry(FdoString* propertyName)
 {
     FdoCommonPropertyStub* ps = m_propIndex->GetPropInfo(propertyName);
-    if (NULL == ps)
-    {
-        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
-    }
 
     if (ps->m_dataType != FdoDataType(-1))
         throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
@@ -398,90 +358,6 @@ FdoIRaster* FdoExpressionEngineUtilDataReader::GetRaster(FdoString* propertyName
     (void)propertyName;  // to avoid compile-time warning of unreferenced parameter
 
     throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_70_PROPERTY_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoPropertyTypeToString(FdoPropertyType_RasterProperty)));
-}
-
-bool FdoExpressionEngineUtilDataReader::GetBoolean (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetBoolean(propertyName);
-}
-
-FdoByte FdoExpressionEngineUtilDataReader::GetByte (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetByte(propertyName);
-}
-
-FdoDateTime FdoExpressionEngineUtilDataReader::GetDateTime (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetDateTime(propertyName);
-}
-
-double FdoExpressionEngineUtilDataReader::GetDouble (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetDouble(propertyName);
-}
-
-FdoInt16 FdoExpressionEngineUtilDataReader::GetInt16 (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetInt16(propertyName);
-}
-
-FdoInt32 FdoExpressionEngineUtilDataReader::GetInt32 (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetInt32(propertyName);
-}
-
-FdoInt64 FdoExpressionEngineUtilDataReader::GetInt64 (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetInt64(propertyName);
-}
-
-float FdoExpressionEngineUtilDataReader::GetSingle (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetSingle(propertyName);
-}
-
-FdoString* FdoExpressionEngineUtilDataReader::GetString (FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetString(propertyName);
-}
-
-FdoLOBValue* FdoExpressionEngineUtilDataReader::GetLOB(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetLOB(propertyName);
-}
-
-FdoIStreamReader* FdoExpressionEngineUtilDataReader::GetLOBStreamReader(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetLOBStreamReader(propertyName);
-}
-
-bool FdoExpressionEngineUtilDataReader::IsNull(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return IsNull(propertyName);
-}
-
-FdoByteArray* FdoExpressionEngineUtilDataReader::GetGeometry(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetGeometry(propertyName);
-}
-
-FdoIRaster* FdoExpressionEngineUtilDataReader::GetRaster(FdoInt32 index)
-{
-    FdoStringP propertyName = GetPropertyName(index);
-    return GetRaster(propertyName);
 }
 
 void FdoExpressionEngineUtilDataReader::Close()
@@ -752,7 +628,7 @@ void FdoExpressionEngineUtilDataReader::PerformDistinct()
     {
         FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
 
-        std::pair <HASHMAP_ITER, bool> testresult = hashmap.insert(HASHMAP_PAIR(bytes, (FdoByteArray *)NULL));
+        std::pair <HASHMAP_ITER, bool> testresult = hashmap.insert(HASHMAP_PAIR(bytes, NULL));
         // Do a release ONLY if its not been inserted into the hashmap:
         if (!testresult.second)
             FDO_SAFE_RELEASE(bytes);

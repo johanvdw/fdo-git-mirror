@@ -24,7 +24,7 @@ FdoSmPhRdBaseObjectReader::FdoSmPhRdBaseObjectReader(
     FdoSmPhReaderP reader,
     FdoSmPhOwnerP owner
 ) :
-	FdoSmPhRdReader(reader),
+	FdoSmPhReader(reader),
     mOwner(owner)
 {
 }
@@ -33,7 +33,7 @@ FdoSmPhRdBaseObjectReader::FdoSmPhRdBaseObjectReader(
     FdoSmPhReaderP reader,
     FdoSmPhDbObjectP dbObject
 ) :
-	FdoSmPhRdReader(reader),
+	FdoSmPhReader(reader),
     mDbObject(dbObject)
 {
 }

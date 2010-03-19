@@ -54,7 +54,7 @@ void GdbiCommands::ThrowException()
     if( m_pRdbiContext->last_error_msg == NULL )
         ::rdbi_get_msg (m_pRdbiContext);
     
-    throw GdbiException::Create( m_pRdbiContext->last_error_msg, m_pRdbiContext->rdbi_last_status);
+    throw GdbiException::Create( m_pRdbiContext->last_error_msg );
 }
 
 int GdbiCommands::err_stat()
@@ -465,22 +465,8 @@ long GdbiCommands::NextRDBMSSequenceNumber( FdoString* adbSequenceName )
     gdbi_full_seq_def   *gptr = &mFeatureSeq;
     long                number = -1;
     int                 CURSOR = -1;
-    FdoStringP          sequenceName(adbSequenceName);
 
     CheckDB();
-
-#ifndef USE_NONRDBMS_HEADER
-    if (SupportsUnicode())
-    {
-        if ( ::rdbi_get_next_seqW ( m_pRdbiContext, sequenceName, &number ) != RDBI_SUCCESS )
-      		ThrowException();
-    }
-    else
-    {
-        if ( ::rdbi_get_next_seq ( m_pRdbiContext, sequenceName, &number ) != RDBI_SUCCESS )
-      		ThrowException();
-    }
-#else
 
     if ( (gptr->next < gptr->size) && (FdoCommonOSUtil::wcsicmp(adbSequenceName, gptr->seq_name) == 0) )
     {
@@ -565,7 +551,6 @@ the_exit:
 
     if( ! rc )
         ThrowException();
-#endif
 
     return number;
 }

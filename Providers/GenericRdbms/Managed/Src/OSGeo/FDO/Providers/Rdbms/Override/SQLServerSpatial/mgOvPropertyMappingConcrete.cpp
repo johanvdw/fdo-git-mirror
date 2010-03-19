@@ -25,7 +25,7 @@
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::OvPropertyMappingConcrete() : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingConcrete(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr((FdoIDisposable*)FdoSqlServerOvPropertyMappingConcrete::Create()), true))
+	EXCEPTION_HANDLER(Attach((FdoIDisposable*)FdoSqlServerOvPropertyMappingConcrete::Create(), true))
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::OvPropertyMappingConcrete(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyMappingConcrete(unmanaged, autoDelete)
@@ -35,24 +35,19 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMapping
 
 FdoSqlServerOvPropertyMappingConcrete* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::GetImpObj()
 {
-	return dynamic_cast<FdoSqlServerOvPropertyMappingConcrete*>((FdoIDisposable*)UnmanagedObject.ToPointer());
+	return dynamic_cast<FdoSqlServerOvPropertyMappingConcrete*>((FdoIDisposable*)__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::InternalClass::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::get_InternalClass()
 {
 	FdoSqlServerOvClassDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetInternalClass())
 	
-	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::ObjectFactory::CreateOvClassDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::ObjectFactory::CreateOvClassDefinition(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::InternalClass::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition^ value)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyMappingConcrete::set_InternalClass(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvClassDefinition* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetInternalClass((nullptr == value ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetInternalClass((NULL == value ? NULL : value->GetImpObj())))
 }

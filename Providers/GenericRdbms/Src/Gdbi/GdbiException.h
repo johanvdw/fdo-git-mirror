@@ -64,11 +64,7 @@ public:
 
     GdbiException(const wchar_t* message);
 
-    GdbiException(const wchar_t* message, FdoInt64 nativeErrorCode);
-
     GdbiException(const wchar_t* message, FdoException* cause);
-
-    GdbiException(const wchar_t* message, FdoException* cause, FdoInt64 nativeErrorCode);
 
     virtual void Dispose();
 
@@ -77,15 +73,9 @@ public:
 
     static GdbiException* Create(const wchar_t* message);
 
-    static GdbiException* Create(const wchar_t* message, FdoInt64 nativeErrorCode);
-
     static GdbiException* Create(const char* message);
 
-    static GdbiException* Create(const char* message, FdoInt64 nativeErrorCode);
-
     static GdbiException* Create(const wchar_t* message, FdoException* cause);
-
-    static GdbiException* Create(const wchar_t* message, FdoException* cause, FdoInt64 nativeErrorCode);
 };
 
 #endif // _GDBIEXCEPTION_

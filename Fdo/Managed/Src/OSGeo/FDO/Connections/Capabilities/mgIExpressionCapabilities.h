@@ -21,19 +21,19 @@
 #include "FDO\Expression\mgExpressionType.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
-enum class ExpressionType;
+public __value enum ExpressionType;
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 
-ref class FunctionDefinitionCollection;
+public __gc class FunctionDefinitionCollection;
 
 /// \ingroup (OSGeoFDOConnectionsCapabilities)
 /// \interface OSGeo::FDO::Connections::Capabilities::IExpressionCapabilities
 /// \brief
 /// The IExpressionCapbilities interface declares the feature provider's level
 /// of support for Expression classes.
-public interface class IExpressionCapabilities : public System::IDisposable
+public __gc __interface IExpressionCapabilities : public System::IDisposable
 {
 public:
     /// \brief
@@ -42,10 +42,7 @@ public:
     /// \return
     /// Returns the list of expression types
     /// 
-    property array<NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType>^ ExpressionTypes
-    {
-        array<NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType>^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::ExpressionType get_ExpressionTypes() [];
 
     /// \brief
     /// Returns a collection of FunctionDefinition objects the feature provider supports within expressions.
@@ -53,10 +50,8 @@ public:
     /// \return
     /// Returns the collection of function definitions
     /// 
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection^ Functions
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionDefinitionCollection* get_Functions();
+
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES

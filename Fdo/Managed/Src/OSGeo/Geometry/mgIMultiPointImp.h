@@ -22,7 +22,7 @@
 
 class FdoIMultiPoint;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class IPoint;
+public __gc __interface IPoint;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \ingroup (OSGeoFDOGeometry)
 /// \brief
 /// The IMultiPointImp class is a multi-point aggregate Geometry type.
-private ref class IMultiPointImp : 
+private __gc class IMultiPointImp : 
 	public NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp, public NAMESPACE_OSGEO_GEOMETRY::IMultiPoint
 {
 public:
@@ -46,10 +46,8 @@ public:
     /// 
 	IMultiPointImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
-	FdoIMultiPoint* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+public private:
+	FdoIMultiPoint *GetImpObj();
 
 public:
     /// \brief
@@ -61,10 +59,7 @@ public:
     /// \return
     /// Returns a point
     /// 
-    property NAMESPACE_OSGEO_GEOMETRY::IPoint^ default[System::Int32]
-    {
-        virtual NAMESPACE_OSGEO_GEOMETRY::IPoint^ get(System::Int32 index);
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IPoint *get_Item(System::Int32 index);
 };
 
 END_NAMESPACE_OSGEO_GEOMETRY

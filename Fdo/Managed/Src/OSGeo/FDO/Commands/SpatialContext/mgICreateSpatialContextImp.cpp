@@ -21,73 +21,68 @@
 #include <Fdo\Commands\SpatialContext\ICreateSpatialContext.h>
 #include "FDO\Commands\SpatialContext\mgICreateSpatialContextImp.h"
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Name::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_Name()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
 FdoICreateSpatialContext* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::GetImpObj()
 {
-    return static_cast<FdoICreateSpatialContext*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoICreateSpatialContext*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Name::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_Name(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetName(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Description::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_Description()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDescription())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Description::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_Description(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDescription(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::CoordinateSystem::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_CoordinateSystem()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCoordinateSystem())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::CoordinateSystem::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_CoordinateSystem(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCoordinateSystem(StringToUni(value)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::CoordinateSystemWkt::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_CoordinateSystemWkt()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCoordinateSystemWkt())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::CoordinateSystemWkt::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_CoordinateSystemWkt(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCoordinateSystemWkt(StringToUni(value)))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::ExtentType::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_ExtentType()
 {
 	FdoSpatialContextExtentType result;
 
@@ -96,80 +91,69 @@ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_
 	return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>(result);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::ExtentType::set(NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_ExtentType(NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetExtentType(static_cast<FdoSpatialContextExtentType>(value)))
 }
 
-array<System::Byte>^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Extent::get()
+System::Byte NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_Extent() []
 {
-	FdoByteArray* arr;
-    array<System::Byte>^ result;
-    try
-    {
-    	EXCEPTION_HANDLER(arr = GetImpObj()->GetExtent())
-    	result = FdoByteArrayToByteArray(arr->GetData(), arr->GetCount());
-    }
-    finally
-    {
-        if (arr != nullptr)
-	        arr->Release();
-    }
-	return result;
+	FdoByteArray* result;
+
+	EXCEPTION_HANDLER(result = GetImpObj()->GetExtent())
+
+	System::Byte mgBuffer __gc[] = FdoByteArrayToByteArray(result->GetData(), result->GetCount());
+	result->Release();
+	return mgBuffer;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::Extent::set(array<System::Byte>^ buffer)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_Extent(System::Byte buffer[])
 {
 	FdoByteArray* byteArray = ByteArrayToFdoByteArray(buffer);
-    try
-    {
-	    EXCEPTION_HANDLER(GetImpObj()->SetExtent(byteArray))
-    }
-    finally
-    {
-        if (byteArray != nullptr)
-	        byteArray->Release();
-    }
+
+	EXCEPTION_HANDLER(GetImpObj()->SetExtent(byteArray))
+
+	byteArray->Release();
 }
 
-System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::XYTolerance::get()
+System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_XYTolerance()
 {
-	System::Double result;
+	FdoDouble result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetXYTolerance())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::XYTolerance::set(System::Double value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_XYTolerance(System::Double value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetXYTolerance(value))
 }
 
-System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::ZTolerance::get()
+System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_ZTolerance()
 {
-	System::Double result;
+	FdoDouble result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetZTolerance())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::ZTolerance::set(System::Double value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_ZTolerance(System::Double value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetZTolerance(value))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::UpdateExisting::get()
+System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::get_UpdateExisting()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetUpdateExisting())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::UpdateExisting::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ICreateSpatialContextImp::set_UpdateExisting(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetUpdateExisting(value))
 }

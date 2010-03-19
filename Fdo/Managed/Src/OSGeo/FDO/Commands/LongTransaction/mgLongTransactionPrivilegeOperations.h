@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// of available operations that can be performed by the
 /// ChangeLongTransactionPrivileges command.
 [System::FlagsAttribute]
-public enum class LongTransactionPrivilegeOperations
+public __value enum LongTransactionPrivilegeOperations
 {
     /// Indicates the user is to be granted the specified privileges.
 	LongTransactionPrivilegeOperations_Grant = FdoLongTransactionPrivilegeOperations_Grant,

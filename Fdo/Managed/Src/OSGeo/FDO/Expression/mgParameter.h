@@ -24,7 +24,7 @@ class FdoParameter;
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
@@ -35,7 +35,7 @@ interface class IExpressionProcessor;
 /// \remarks
 /// For information on how to set the value of a parameter, see the 
 /// ICommand interface and ParameterValue.
-public ref class Parameter : public NAMESPACE_OSGEO_FDO_EXPRESSION::ValueExpression
+public __gc class Parameter : public NAMESPACE_OSGEO_FDO_EXPRESSION::ValueExpression
 {
 public:
 
@@ -56,7 +56,7 @@ public:
     /// \return
     /// Returns Parameter
     /// 
-	Parameter(System::String^ name);
+	Parameter(System::String* name);
 
     /// \brief
     /// Gets the name of the parameter.
@@ -64,6 +64,8 @@ public:
     /// \return
     /// Returns the parameter name
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the parameter.
     /// 
@@ -73,11 +75,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Overrides Expression.Process to pass the Parameter to the appropriate
@@ -89,7 +87,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -97,7 +95,7 @@ public:
     /// \return
     /// Returns the well defined text string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a Parameter object based on an unmanaged instance of the object
@@ -111,10 +109,8 @@ public:
     /// 
 	Parameter(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoParameter* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION

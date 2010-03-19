@@ -1,6 +1,6 @@
 /*
 * 
-* Copyright (C) 2009  SL-King
+* Copyright (C) 2006  SL-King
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -22,9 +22,9 @@
 #define KGORAPROVIDER_H
 
 
-#define D_KGORA_PROVIDER_NAME					L"King.Oracle.3.5"
-#define D_KGORA_PROVIDER_VERSION				L"3.5.0.0"
-#define D_KGORA_FDO_VERSION						L"3.5.0.0"
+#define D_KGORA_PROVIDER_NAME					L"OSGeo.KingOracle.3.4"
+#define D_KGORA_PROVIDER_VERSION				L"3.4.0.0"
+#define D_KGORA_FDO_VERSION						L"3.4.0.0"
 
 #define D_KGORA_PROVIDER_DEFAULT_DISPLAY_NAME	"FDO Provider for Oracle"
 #define D_KGORA_PROVIDER_DEFAULT_DESCRIPTION	"Read/write access to spatial and attribute data in an Oracle Spatial."
@@ -37,7 +37,6 @@
 #define D_CONN_PROPERTY_SERVICE_NAME  L"Service"
 #define D_CONN_PROPERTY_ORACLE_SCHEMA L"OracleSchema"
 #define D_CONN_PROPERTY_KING_FDO_CLASS L"KingFdoClass"
-#define D_CONN_PROPERTY_SDE_SCHEMA L"SDE Schema"
 
 
 

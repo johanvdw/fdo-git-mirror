@@ -7,9 +7,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Id: user.hpp 49268 2008-10-11 06:26:17Z agurtovoy $
-// $Date: 2008-10-11 02:26:17 -0400 (Sat, 11 Oct 2008) $
-// $Revision: 49268 $
+// $Source: /cvsroot/boost/boost/libs/mpl/preprocessed/include/typeof_based/user.hpp,v $
+// $Date: 2004/09/14 12:39:55 $
+// $Revision: 1.3 $
 
 #define BOOST_NO_CONFIG
 #define BOOST_MPL_CFG_TYPEOF_BASED_SEQUENCES

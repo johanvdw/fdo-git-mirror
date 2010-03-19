@@ -27,22 +27,16 @@ FdoSmPhRdMySqlColumnReader::FdoSmPhRdMySqlColumnReader(
     FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
-    FdoSmPhRdColumnReader((FdoSmPhReader*) NULL, dbObject)
+    FdoSmPhRdColumnReader(MakeQueryReader(mgr, (const FdoSmPhOwner*)(dbObject->GetParent()), dbObject), dbObject)
 {
-    SetSubReader(
-        MakeQueryReader(mgr, (const FdoSmPhOwner*)(dbObject->GetParent()), dbObject)
-    );
 }
 
 FdoSmPhRdMySqlColumnReader::FdoSmPhRdMySqlColumnReader(
     FdoSmPhOwnerP owner,
     FdoSmPhRdTableJoinP join
 ) :
-    FdoSmPhRdColumnReader()
+    FdoSmPhRdColumnReader(MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, (FdoSmPhDbObject*)NULL, join), (FdoSmPhDbObject*)NULL)
 {
-    SetSubReader(
-        MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, (FdoSmPhDbObject*)NULL, join)
-    );
 }
 
 FdoSmPhRdMySqlColumnReader::~FdoSmPhRdMySqlColumnReader(void)

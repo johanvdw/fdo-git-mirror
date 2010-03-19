@@ -29,11 +29,9 @@
 
 // Maximum allowed size for the merged list of FeatIds 
 // produced by the ShpFeatIdQueryEvaluator optimizer
-#define SHP_MAX_FEATID_LIST_SIZE    100000
+#define SHP_MAX_FEATID_LIST_SIZE    10000
 
 #define SHP_CACHED_GEOMETRY_INITIAL_SIZE    100 // bytes
-
-#define SHP_DEBUG_PARSE_TREE2   false
 
 class ShpQueryOptimizer;
 class ShpFeatIdQueryTester;
@@ -629,12 +627,7 @@ public:
                 ret = false;
             // if it's the singleton geometry property, it's null if the shape is NullShape:
             else if (0 == wcscmp (propertyName, mLogicalGeometryPropertyName))
-            {
-                if(!mShape)                
-                    ret = true;
-                else
-                    ret = (eNullShape == mShape->GetShapeType ());
-            }
+                ret = (eNullShape == mShape->GetShapeType ());
             // if it's anything else, need to explicitly check:
             else
             {
@@ -973,98 +966,93 @@ private:
                 break;
             }
 
-            // Evaluate the expresion for the current feature
-            retno_lists*        featidLists = mFeatIdFilterExecutor->GetFeatidLists();
-            logical_op_list*    logicalOpsList = mFeatIdFilterExecutor->GetFeatidFilterOpsList();
-            left_right_op_list* leftRightOpsList = mFeatIdFilterExecutor->GetLeftRightOpsList();
+            //Results available in lists;
+            retno_lists*        intervals = mFeatIdFilterExecutor->GetFeatidLists();
+            logical_op_list*    logical_ops = mFeatIdFilterExecutor->GetFeatidFilterOpsList();
 
-	        long	last_leaf_index = (long)featidLists->size() - 1;
-	        bool	isSimpleExpr = (leftRightOpsList->size() == 0);
-	        bool	first_leaf = true;
+            retno_lists::iterator       iter_comp_op = intervals->end();
+            logical_op_list::iterator   iter_logical_op = logical_ops->end();
+            int                         curr_logical_op = ShpLogicalOperation_None;
 
-            std::vector<bool> tmp_stack;
+            // Evaluate each filter
+            for (; iter_comp_op != intervals->begin(); )
+            {
+                iter_comp_op--;
 
-	        // Find the beginnig of the leaf. Start from the deepest one.
-	        for ( ; last_leaf_index >= 0; last_leaf_index-- ) 
-	        {
-		        interval_res*		curr_filter = featidLists->at( last_leaf_index );
-		        int                 curr_comp_op = curr_filter->op;
-		        recno_list*         featid_list = &curr_filter->queryResults;
-		        int					depth = curr_filter->depth;
-        		
-		        if ( isSimpleExpr || leftRightOpsList->at(depth) == 0 ) // Left
-		        {	
-			        if (SHP_DEBUG_PARSE_TREE2)
-				        printf("--Process expression depth %d\n", depth );
+                interval_res*       curr_filter = *iter_comp_op; // rename
+                int                 curr_comp_op = curr_filter->op;
+                recno_list*         featid_list = &curr_filter->queryResults;
 
-			        // Process the current leaf expression
-			        for ( size_t i = last_leaf_index; i < featidLists->size(); i++ )
-			        {
-				        interval_res*		curr_filter2 = featidLists->at(i);
-				        int					depth2 = curr_filter2->depth;
 
-				        // Done when hitting a Left leaf already processed
-				        if ( i != last_leaf_index && ( !isSimpleExpr && leftRightOpsList->at(depth2) == 0 ) )
-					        break;
+                // Handle NOT operator and advance 
+                if ( curr_logical_op == ShpUnaryLogicalOperation_Not )
+                {
+                    ret_final = !ret_final;
+                    if ( iter_logical_op != logical_ops->begin() )
+                        curr_logical_op = (*--iter_logical_op);
+                }
 
-				        if (SHP_DEBUG_PARSE_TREE2) {
-					        if ( !isSimpleExpr )
-						        printf("\tProcess node depth %d: logicalOp=%d  (%c)\n", depth2, logicalOpsList->at(depth2),
-														        leftRightOpsList->at(depth2) == 0 ? 'L' : 'R');
-				        }
+                // The result set may be empty (say a spatial query returning nothing)
+                if ( featid_list->size() == 0 )
+                {
+                    ret = false;
+                }
+                else
+                {
+                    FdoInt32    featId = (*featid_list->begin());
 
-				        int	 curr_logical_op = ( (i == last_leaf_index) || isSimpleExpr ) ?
-											        ShpLogicalOperation_None : logicalOpsList->at(depth2);
+                    switch ( curr_comp_op )
+                    {
+                    case FdoComparisonOperations_EqualTo : 
+                        ret = ( mFeatureNumber == featId );
+                        break;
+                    case FdoComparisonOperations_NotEqualTo : 
+                        ret = ( mFeatureNumber != featId );
+                        break;
+                    case FdoComparisonOperations_GreaterThan : 
+                        ret = ( mFeatureNumber > featId );
+                        break;
+                    case FdoComparisonOperations_GreaterThanOrEqualTo : 
+                        ret = ( mFeatureNumber >= featId );
+                        break;
+                    case FdoComparisonOperations_LessThan : 
+                        ret = ( mFeatureNumber < featId );
+                        break;
+                    case FdoComparisonOperations_LessThanOrEqualTo : 
+                        ret = ( mFeatureNumber <= featId );
+                        break;
+                    case ShpComparisonOperation_In : // In or Spatial query candidates
+                        ret = std::binary_search( featid_list->begin( ), featid_list->end( ), mFeatureNumber, std::less<FdoInt32>() );
+                        break;
+                    case FdoComparisonOperations_Like :
+                    default:
+                        throw FdoException::Create (L"Invalid comparison operation type");
+                    }
+                }
 
-				        ProcessLeafExpession( curr_filter2, curr_logical_op, &tmp_stack );
-			        }
+                // Use current binary logical operation to proceed or not
+                switch ( curr_logical_op )
+                {
+                case FdoBinaryLogicalOperations_And:
+                    ret_final = ret_final && ret;
+                    break;
+                case FdoBinaryLogicalOperations_Or:
+                    ret_final = ret_final || ret; 
+                    break;
+                case ShpLogicalOperation_None:
+                    ret_final = ret_final && ret;     
+                    break;
+                default:
+                    throw FdoException::Create (L"Invalid logical operation type");
+                }
 
-			        // Use current binary logical operation to merge the current leaf result to the global list
-			        if ( first_leaf )
-			        {
-                        // Do nothing, the value is on the stack
-			        }
-			        else
-			        {
-				        // Extract the Logical operation between 2 leafs
-				        int		depth3 = ( last_leaf_index == 0 )?  0 : depth-1;
+                // Advance in the list of logical operations.
+                if ( iter_logical_op != logical_ops->begin() )
+                     curr_logical_op = (*--iter_logical_op);
+            }
 
-				        switch ( logicalOpsList->at(depth3))
-				        {
-				        case FdoBinaryLogicalOperations_And:
-					        {
-                                bool    ret1 = tmp_stack.back();
-                                tmp_stack.pop_back();
-                                bool    ret2 = tmp_stack.back();                       
-                                tmp_stack.pop_back();
-                                tmp_stack.push_back( ret1 && ret2 );
-						        break;
-					        }
-				        case FdoBinaryLogicalOperations_Or:
-					        {
-                                bool    ret1 = tmp_stack.back();
-                                tmp_stack.pop_back();
-                                bool    ret2 = tmp_stack.back();
-                                tmp_stack.pop_back();
-                                tmp_stack.push_back( ret1 || ret2 );
-						        break;
-					        }
-                        case ShpLogicalOperation_None:
-                            {
-                                break;
-                            }          
-				        default:
-					        throw FdoException::Create (L"Invalid logical operation type");
-				        }
-			        }
-        		
-			        first_leaf = false;
-		        }
-	        }
-
-            // Get the boolean result
-            ret_final = tmp_stack.back();
-            tmp_stack.pop_back();
+            if ( curr_logical_op == ShpUnaryLogicalOperation_Not )
+                ret_final = !ret_final;
 
             // Go and fetch the row
             deleted = false;
@@ -1095,87 +1083,6 @@ private:
         while (!pass);
 
         return (ret_final);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    void ProcessLeafExpession( interval_res* curr_filter, int curr_logical_op, std::vector<bool> *bvals_stack )
-    {
-        int                 curr_comp_op = curr_filter->op;
-        recno_list*         featid_list = &curr_filter->queryResults;
-        bool                ret = false;
-
-        // The result set may be empty (say a spatial query returning nothing)
-        if ( featid_list->size() == 0 )
-        {
-            ret = false;
-        }
-        else
-        {
-            FdoInt32    featId = (*featid_list->begin());
-
-            switch ( curr_comp_op )
-            {
-            case FdoComparisonOperations_EqualTo : 
-                ret = ( mFeatureNumber == featId );
-                break;
-            case FdoComparisonOperations_NotEqualTo : 
-                ret = ( mFeatureNumber != featId );
-                break;
-            case FdoComparisonOperations_GreaterThan : 
-                ret = ( mFeatureNumber > featId );
-                break;
-            case FdoComparisonOperations_GreaterThanOrEqualTo : 
-                ret = ( mFeatureNumber >= featId );
-                break;
-            case FdoComparisonOperations_LessThan : 
-                ret = ( mFeatureNumber < featId );
-                break;
-            case FdoComparisonOperations_LessThanOrEqualTo : 
-                ret = ( mFeatureNumber <= featId );
-                break;
-            case ShpComparisonOperation_In : // In or Spatial query candidates
-                ret = std::binary_search( featid_list->begin( ), featid_list->end( ), mFeatureNumber, std::less<FdoInt32>() );
-                break;
-            case FdoComparisonOperations_Like :
-            default:
-                throw FdoException::Create (L"Invalid comparison operation type");
-            }
-        }
-
-       // Use current binary logical operation to merge the current list
-
-        switch ( curr_logical_op )
-	    {
-	    case FdoBinaryLogicalOperations_And:
-		    {
-                bool    ret1 = bvals_stack->back();
-                bvals_stack->pop_back();
-                bvals_stack->push_back( ret1 && ret );
-			    break;
-		    }
-	    case FdoBinaryLogicalOperations_Or:
-		    {
-                bool    ret1 = bvals_stack->back();
-                bvals_stack->pop_back();
-                bvals_stack->push_back( ret1 || ret );
-			    break;
-		    }
-        case ShpLogicalOperation_None:
-            {
-                bvals_stack->push_back( ret );     
-                break;
-            }          
-	    default:
-		    throw FdoException::Create (L"Invalid logical operation type");
-	    }
-
-        logical_op_list*    logicalOpsList = mFeatIdFilterExecutor->GetFeatidFilterOpsList();
-	    if ( (logicalOpsList->size() != 0 ) && logicalOpsList->at(curr_filter->depth) == ShpUnaryLogicalOperation_Not )
-        {
-            bool    ret1 = bvals_stack->back();
-            bvals_stack->pop_back();
-            bvals_stack->push_back( !ret1 );
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

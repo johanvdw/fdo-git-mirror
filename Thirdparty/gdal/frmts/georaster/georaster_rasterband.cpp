@@ -29,7 +29,6 @@
  *****************************************************************************/
 
 #include "georaster_priv.h"
-#include "cpl_vsi.h"
 
 //  ---------------------------------------------------------------------------
 //                                                        GeoRasterRasterBand()
@@ -40,9 +39,8 @@ GeoRasterRasterBand::GeoRasterRasterBand( GeoRasterDataset *poGDS,
                                           int nLevel )
 {
     poDS                = (GDALDataset*) poGDS;
-    poGeoRaster         = poGDS->poGeoRaster;
     this->nBand         = nBand;
-    this->eDataType     = OWGetDataType( poGeoRaster->pszCellDepth );
+    poGeoRaster         = poGDS->poGeoRaster;
     poColorTable        = new GDALColorTable();
     poDefaultRAT        = NULL;
     pszVATName          = NULL;
@@ -53,42 +51,14 @@ GeoRasterRasterBand::GeoRasterRasterBand( GeoRasterDataset *poGDS,
     dfNoData            = 0.0;
     bValidStats         = false;
     nOverviewLevel      = nLevel;
-    papoOverviews       = NULL;
-    nOverviews          = 0;
-
-    //  -----------------------------------------------------------------------
-    //  Initialize overview list
-    //  -----------------------------------------------------------------------
-
-    if( nLevel == 0 && poGeoRaster->nPyramidMaxLevel > 0 )
-    {
-        nOverviews      = poGeoRaster->nPyramidMaxLevel;
-        papoOverviews   = (GeoRasterRasterBand**) VSIMalloc(
-                sizeof(GeoRasterRasterBand*) * nOverviews );
-        for( int i = 0; i < nOverviews; i++ )
-        {
-          papoOverviews[i] = new GeoRasterRasterBand(
-                (GeoRasterDataset*) poDS, nBand, i + 1 );
-        }
-    }
-
-    //  -----------------------------------------------------------------------
-    //  Initialize this band as an overview
-    //  -----------------------------------------------------------------------
+    paphOverviewLinks   = NULL;
+    nOverviewLinks      = 0;
 
     if( nLevel )
     {
         double dfScale  = pow( (double) 2.0, (double) nLevel );
-
-        nRasterXSize    = (int) floor( nRasterXSize / dfScale );
-        nRasterYSize    = (int) floor( nRasterYSize / dfScale );
-
-        if( nRasterXSize <= ( nBlockXSize / 2.0 ) &&
-            nRasterYSize <= ( nBlockYSize / 2.0 ) )
-        {
-            nBlockXSize = nRasterXSize;
-            nBlockYSize = nRasterYSize;
-        }
+        nRasterXSize    = (int) ceil( nRasterXSize / dfScale );
+        nRasterYSize    = (int) ceil( nRasterYSize / dfScale );
     }
 }
 
@@ -100,18 +70,20 @@ GeoRasterRasterBand::~GeoRasterRasterBand()
 {
     delete poColorTable;
     delete poDefaultRAT;
-    
     CPLFree( pszVATName );
 
-    if( nOverviews && papoOverviews )
+    if( nOverviewLinks )
     {
-        for( int i = 0; i < nOverviews; i++ )
+        int i;
+
+        for( i = 0; i < nOverviewLinks; i++ )
         {
-            delete papoOverviews[i];
+            CPLFree( paphOverviewLinks[i] );
         }
 
-        CPLFree( papoOverviews );
+        CPLFree( paphOverviewLinks );
     }
+
 }
 
 //  ---------------------------------------------------------------------------
@@ -122,6 +94,11 @@ CPLErr GeoRasterRasterBand::IReadBlock( int nBlockXOff,
                                         int nBlockYOff,
                                         void *pImage )
 {
+    if( poDS->GetAccess() == GA_Update )
+    {
+        return CE_None;
+    }
+
     if( poGeoRaster->GetDataBlock( nBand,
                                    nOverviewLevel,
                                    nBlockXOff,
@@ -360,10 +337,19 @@ CPLErr GeoRasterRasterBand::SetDefaultRAT( const GDALRasterAttributeTable *poRAT
     poDefaultRAT = poRAT->Clone();
 
     // ----------------------------------------------------------
+    // Create VAT named based on RDT and RID (potential multi-reference)
+    // ----------------------------------------------------------
+
+    if( ! pszVATName )
+    {
+        pszVATName = CPLStrdup( CPLSPrintf(
+            "RAT_%s_%d", poGeoRaster->pszDataTable, poGeoRaster->nRasterId ) );
+    }
+
+    // ----------------------------------------------------------
     // Format Table description
     // ----------------------------------------------------------
 
-    char szName[OWTEXT];
     char szDescription[OWTEXT];
     int  iCol = 0;
 
@@ -371,15 +357,8 @@ CPLErr GeoRasterRasterBand::SetDefaultRAT( const GDALRasterAttributeTable *poRAT
 
     for( iCol = 0; iCol < poRAT->GetColumnCount(); iCol++ )
     {
-        strcpy( szName, poRAT->GetNameOfCol( iCol ) );
-
-    if( EQUAL( szName, "histogram" ) )
-    {
-        return CE_None;
-    }
-
         strcpy( szDescription, CPLSPrintf( "%s, %s",
-            szDescription, szName ) );
+            szDescription, poRAT->GetNameOfCol( iCol ) ) );
 
         if( poRAT->GetTypeOfCol( iCol ) == GFT_Integer )
         {
@@ -398,19 +377,6 @@ CPLErr GeoRasterRasterBand::SetDefaultRAT( const GDALRasterAttributeTable *poRAT
         }
     }
     strcpy( szDescription, CPLSPrintf( "%s )", szDescription ) );
-
-    // ----------------------------------------------------------
-    // Create VAT named based on RDT and RID and Layer (nBand)
-    // ----------------------------------------------------------
-
-    if( ! pszVATName )
-    {
-        pszVATName = CPLStrdup( CPLSPrintf(
-            "RAT_%s_%d_%d", 
-            poGeoRaster->pszDataTable, 
-            poGeoRaster->nRasterId,
-            nBand ) );
-    }
 
     // ----------------------------------------------------------
     // Create VAT table
@@ -443,19 +409,17 @@ CPLErr GeoRasterRasterBand::SetDefaultRAT( const GDALRasterAttributeTable *poRAT
     delete poStmt;
 
     // ----------------------------------------------------------
-    // Insert Data to VAT
+    // Create virtual file with INSERT instatements
     // ----------------------------------------------------------
 
+    char* pszInserts = NULL;
+    int nSize        = 0;
     int iEntry       = 0;
     int nEntryCount  = poRAT->GetRowCount();
     int nColunsCount = poRAT->GetColumnCount();
+    int nBytesCount  = 0;
 
     char szInsert[OWTEXT];
-
-    CPLString osInserts = 
-        "DECLARE\n"
-        "  GR1  SDO_GEORASTER   := NULL;\n"
-        "BEGIN\n";
 
     for( iEntry = 0; iEntry < nEntryCount; iEntry++ )
     {
@@ -470,43 +434,62 @@ CPLErr GeoRasterRasterBand::SetDefaultRAT( const GDALRasterAttributeTable *poRAT
             {
                 strcat( szInsert, CPLSPrintf ( ", '%s'", 
                     poRAT->GetValueAsString( iEntry, iCol ) ) );
+
             }
             if( poRAT->GetTypeOfCol( iCol ) == GFT_Integer ||
                 poRAT->GetTypeOfCol( iCol ) == GFT_Real )
             {
                 strcat( szInsert, CPLSPrintf ( ", %s", 
                     poRAT->GetValueAsString( iEntry, iCol ) ) );
+
             }
         }
-
         strcat( szInsert, ");\n" );
-        osInserts += szInsert;
+
+        nBytesCount += strlen( szInsert );
+        pszInserts = (char*) CPLRealloc( pszInserts, sizeof(char) * ( nBytesCount + 1 ));
+        strcpy( &pszInserts[nSize], szInsert );
+        nSize = nBytesCount;
     }
 
-    osInserts += CPLSPrintf(
-        "  SELECT %s INTO GR1 FROM %s T WHERE\n"
-        "    T.%s.RasterDataTable = '%s' AND\n"
-        "    T.%s.RasterId = %d FOR UPDATE;\n"
+    // ----------------------------------------------------------
+    // Insert Data to VAT
+    // ----------------------------------------------------------
+
+    poStmt = poGeoRaster->poConnection->CreateStatement( CPLSPrintf(
+        "DECLARE\n"
+        "  TAB  VARCHAR2(68)    := UPPER(:1);\n"
+        "  GR1  SDO_GEORASTER   := NULL;\n"
+        "BEGIN\n"
+        "%s"
+        "\n"
+        "  SELECT %s INTO GR1 FROM %s T WHERE"
+        "    T.%s.RasterDataTable = :rdt AND"
+        "    T.%s.RasterId = :rid FOR UPDATE;\n"
         "  SDO_GEOR.setVAT(GR1, %d, '%s');\n"
-        "  UPDATE %s T SET %s = GR1 WHERE\n"
-        "    T.%s.RasterDataTable = '%s' AND\n"
-        "    T.%s.RasterId = %d;\n"
+        "  UPDATE %s T SET %s = GR1 WHERE"
+        "    T.%s.RasterDataTable = :rdt AND"
+        "    T.%s.RasterId = :rid;\n"
         "END;",
+        pszInserts,
         poGeoRaster->pszColumn, poGeoRaster->pszTable,
-        poGeoRaster->pszColumn, poGeoRaster->pszDataTable,
-        poGeoRaster->pszColumn, poGeoRaster->nRasterId,
+        poGeoRaster->pszColumn, poGeoRaster->pszColumn,
         nBand, pszVATName,
         poGeoRaster->pszTable,  poGeoRaster->pszColumn,
-        poGeoRaster->pszColumn, poGeoRaster->pszDataTable,
-        poGeoRaster->pszColumn, poGeoRaster->nRasterId  );
+        poGeoRaster->pszColumn, poGeoRaster->pszColumn  ) );
 
-    poStmt = poGeoRaster->poConnection->CreateStatement( osInserts.c_str() );
+    poStmt->Bind( pszVATName );
+    poStmt->BindName( (char*) ":rdt", poGDS->poGeoRaster->pszDataTable );
+    poStmt->BindName( (char*) ":rid", &poGDS->poGeoRaster->nRasterId );
 
     if( ! poStmt->Execute() )
     {
+        CPLFree( pszInserts );
         CPLError( CE_Failure, CPLE_AppDefined, "Insert/registering VAT Error!" );
         return CE_Failure;
     }
+
+    CPLFree( pszInserts );
 
     delete poStmt;
 
@@ -667,7 +650,7 @@ const GDALRasterAttributeTable *GeoRasterRasterBand::GetDefaultRAT()
 
 int GeoRasterRasterBand::GetOverviewCount()
 {
-    return nOverviews;
+    return poGeoRaster->nPyramidMaxLevel;
 }
 
 //  ---------------------------------------------------------------------------
@@ -676,58 +659,48 @@ int GeoRasterRasterBand::GetOverviewCount()
 
 GDALRasterBand* GeoRasterRasterBand::GetOverview( int nLevel )
 {
-    if( nLevel < nOverviews && papoOverviews[ nLevel ] )
+    GeoRasterDataset* poGDS = (GeoRasterDataset*) poDS;
+
+    //  -----------------------------------------------------------------------
+    //  Check if there is a previous stored overview links
+    //  -----------------------------------------------------------------------
+
+    int i = 0;
+
+    for( i = 0; i < nOverviewLinks; i++ )
     {
-        return (GDALRasterBand*) papoOverviews[ nLevel ];
-    }
-    return (GDALRasterBand*) NULL;
-}
-
-//  ---------------------------------------------------------------------------
-//                                                             CreateMaskBand()
-//  ---------------------------------------------------------------------------
-
-CPLErr GeoRasterRasterBand::CreateMaskBand( int nFlags )
-{
-    (void) nFlags;
-
-    if( ! poGeoRaster->bHasBitmapMask )
-    {
-        return CE_Failure;
+        if( nLevel == paphOverviewLinks[i]->nLevel )
+        {
+            return paphOverviewLinks[i]->poOverview;
+        }
     }
 
-    return CE_None;
+    //  -----------------------------------------------------------------------
+    //  Creat RasterBand as Overview 
+    //  -----------------------------------------------------------------------
+
+    GeoRasterRasterBand* poOVR = NULL;
+    poOVR       = new GeoRasterRasterBand( poGDS, nBand, ( nLevel + 1 ) );
+
+    //  -----------------------------------------------------------------------
+    //  Create a Overview link
+    //  -----------------------------------------------------------------------
+
+    OverviewLink* phOVRLink = NULL;
+    phOVRLink   = (OverviewLink*) CPLMalloc( sizeof(OverviewLink) );
+    phOVRLink->nLevel       = nLevel;
+    phOVRLink->poOverview   = poOVR;
+
+    //  -----------------------------------------------------------------------
+    //  Save a Overview link
+    //  -----------------------------------------------------------------------
+
+    nOverviewLinks++;
+
+    paphOverviewLinks = (OverviewLink**) CPLRealloc(
+        paphOverviewLinks, sizeof(OverviewLink*) * nOverviewLinks );
+
+    paphOverviewLinks[ nOverviewLinks - 1 ] = phOVRLink;
+
+    return (GDALRasterBand*) poOVR;
 }
-
-//  ---------------------------------------------------------------------------
-//                                                                GetMaskBand()
-//  ---------------------------------------------------------------------------
-
-GDALRasterBand* GeoRasterRasterBand::GetMaskBand()
-{
-    GeoRasterDataset* poGDS = (GeoRasterDataset*) this->poDS;
-
-    if( poGDS->poMaskBand != NULL )
-    {
-        return (GDALRasterBand*) poGDS->poMaskBand;
-    }
-
-    return (GDALRasterBand*) NULL;
-}
-
-//  ---------------------------------------------------------------------------
-//                                                               GetMaskFlags()
-//  ---------------------------------------------------------------------------
-
-int GeoRasterRasterBand::GetMaskFlags()
-{
-    GeoRasterDataset* poGDS = (GeoRasterDataset*) this->poDS;
-
-    if( poGDS->poMaskBand != NULL )
-    {
-        return GMF_PER_DATASET;
-    }
-
-    return GMF_ALL_VALID;
-}
-

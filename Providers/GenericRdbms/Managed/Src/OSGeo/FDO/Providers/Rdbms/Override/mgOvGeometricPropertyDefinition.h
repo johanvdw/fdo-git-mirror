@@ -22,16 +22,14 @@ class FdoRdbmsOvGeometricPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
-ref class OvGeometricColumn;
+public __gc class OvGeometricColumn;
 
 /// <summary>Abstract class defining physical schema overrides for a geometric property
 /// definition.</summary>
-public ref class OvGeometricPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition
+public __gc class OvGeometricPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPropertyDefinition
 {
-internal:
+public private:
     inline FdoRdbmsOvGeometricPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public protected:
     OvGeometricPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
@@ -39,60 +37,49 @@ public protected:
 public:
     /// <summary>Gets the column override</summary>
     /// <returns>Returns OvGeometricColumn</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumn^ Column
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumn^ get();
-    }
+    __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumn* get_Column();
 
     /// <summary>Gets the geometric column type</summary>
     /// <returns>Returns the default geometric column type</returns>
+    __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumnType get_GeometricColumnType();
+
     /// <summary>Sets the geometric column type</summary>
     /// <param name="mappingType">Input the geometric column type</param>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumnType GeometricColumnType
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumnType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumnType columnType);
-    }
+    __property System::Void set_GeometricColumnType(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricColumnType columnType);
 
     /// <summary>Gets the geometric content type</summary>
     /// <returns>Returns the geometric content type</returns>
+    __property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricContentType get_GeometricContentType();
+
     /// <summary>Sets the content type</summary>
     /// <param name="mappingType">Input the content type</param>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricContentType GeometricContentType
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricContentType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricContentType contentType);
-    }
+    __property System::Void set_GeometricContentType(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvGeometricContentType contentType);
 
     /// <summary>Gets the ordinate column name for the X ordinate.
     /// This only applies when GeometricContentType==OvGeometricContentType_Ordinates.
     /// Default value is "X".
     /// </summary>
     /// <returns>Returns the ordinate column name for the X ordinate</returns>
+    __property System::String * get_XColumnName();
+
     /// <summary>Sets the ordinate column name for the X ordinate</summary>
     /// <param name="mappingType">Input the X ordinate column name</param>
     /// <returns>Returns nothing</returns>
-    property System::String^ XColumnName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+    __property System::Void set_XColumnName(System::String * columnName);
 
     /// <summary>Gets the ordinate column name for the Y ordinate.
     /// This only applies when GeometricContentType==OvGeometricContentType_Ordinates.
     /// Default value is "Y".
     /// </summary>
     /// <returns>Returns the ordinate column name for the Y ordinate</returns>
+    __property System::String * get_YColumnName();
+
     /// <summary>Sets the ordinate column name for the Y ordinate</summary>
     /// <param name="mappingType">Input the Y ordinate column name</param>
     /// <returns>Returns nothing</returns>
-    property System::String^ YColumnName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+    __property System::Void set_YColumnName(System::String * columnName);
 
     /// <summary>Gets the ordinate column name for the Z ordinate.
     /// This only applies when GeometricContentType==OvGeometricContentType_Ordinates
@@ -100,14 +87,12 @@ public:
     /// Default value is "Z".
     /// </summary>
     /// <returns>Returns the ordinate column name for the Z ordinate</returns>
+    __property System::String * get_ZColumnName();
+
     /// <summary>Sets the ordinate column name for the Z ordinate</summary>
     /// <param name="mappingType">Input the Z ordinate column name</param>
     /// <returns>Returns nothing</returns>
-    property System::String^ ZColumnName
-    {
-        System::String^ get();
-        System::Void set(System::String^ columnName);
-    }
+    __property System::Void set_ZColumnName(System::String * columnName);
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

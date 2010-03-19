@@ -27,19 +27,14 @@
 
 FdoIGetMeasureUnits* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IGetMeasureUnitsImp::GetImpObj()
 {
-    return static_cast<FdoIGetMeasureUnits*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIGetMeasureUnits*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IGetMeasureUnitsImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReader^ NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IGetMeasureUnitsImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IMeasureUnitReader* NAMESPACE_OSGEO_FDO_COMMANDS_UNITOFMEASURE::IGetMeasureUnitsImp::Execute()
 {
 	FdoIMeasureUnitReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIMeasureUnitReader(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIMeasureUnitReader(result, true);
 }

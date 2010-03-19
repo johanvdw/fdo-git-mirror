@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON_IO
 ///    IoStream defines the interface for all FDO streams. Streamed I/O support
 ///    for various locations, such as files, memory, etc. can be provided by classes
 ///    that implement this interface.
-public ref class IoStream : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class IoStream : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -49,7 +49,7 @@ public:
     ///     Returns the number of bytes that were read. 0 if already at the
     ///     end of the stream.
     /// 
-	virtual System::UInt32 Read(array<System::Byte>^ buffer, System::UInt32 count);
+	virtual System::UInt32 Read(System::Byte buffer[], System::UInt32 count);
 
     /// \brief
     ///     writes the number of bytes indicated by count, from the given buffer, 
@@ -66,7 +66,7 @@ public:
     ///     Note: Write will overwrite some of the contents of the stream 
     ///     if the current position is not at the end of the stream.
     /// 
-	virtual System::Void Write(array<System::Byte>^ buffer, System::UInt32 count);
+	virtual System::Void Write(System::Byte buffer[], System::UInt32 count);
 
     /// \brief
     ///     reads the number of bytes from the given stream, and writes them 
@@ -75,7 +75,7 @@ public:
     /// \param stream 
     ///     Input write from this buffer
     ///
-	virtual System::Void Write(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	virtual System::Void Write(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     ///     reads the number of bytes from the given stream, and writes them 
@@ -88,7 +88,7 @@ public:
     ///     Input the maximum number of bytes to read and write.
     ///     When 0, all remaining bytes are read from the given stream.
     /// 
-	virtual System::Void Write(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream, System::UInt32 count);
+	virtual System::Void Write(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream, System::UInt32 count);
 
     /// \brief
     ///     sets the position to the start of the stream.
@@ -116,6 +116,8 @@ public:
     ///     longer than the current stream length then the stream's length
     ///     is not changed.
     /// 
+	__property virtual System::Void set_Length(System::Int64 length);
+
     /// \brief
     ///     gets the current length of the stream.
     /// 
@@ -123,11 +125,7 @@ public:
     ///     Returns the length in bytes. Returns -1 if the length is unknown
     ///     or undefined.
     /// 
-    virtual property System::Int64 Length
-    {
-        System::Int64 get();
-        System::Void set(System::Int64 length);
-    }
+	__property virtual System::Int64 get_Length();
 
     /// \brief
     ///     gets the current position for the stream.
@@ -137,10 +135,7 @@ public:
     ///     the position is at the start of the stream. When Index() ==
     ///     Length() the position is at the end of the stream.
     /// 
-    virtual property System::Int64 Index
-    {
-        System::Int64 get();
-    }
+	__property virtual System::Int64 get_Index();
 
     /// \brief
     ///     Gets the reading capability of the stream.
@@ -148,10 +143,7 @@ public:
     /// \return
     ///     Returns true if the stream can be read.
     /// 
-    virtual property System::Boolean CanRead
-    {
-        System::Boolean get();
-    }
+    __property virtual System::Boolean get_CanRead();
 
     /// \brief
     ///     Gets the writing capability of the stream.
@@ -159,10 +151,7 @@ public:
     /// \return
     ///     Returns true if the stream can be written to.
     /// 
-    virtual property System::Boolean CanWrite
-    {
-        System::Boolean get();
-    }
+	__property virtual System::Boolean get_CanWrite();
 
     /// \brief
     ///     returns whether the stream has any positional context.
@@ -175,10 +164,7 @@ public:
     ///    Reset() functions are not supported.
     /// 
     ///  
-    virtual property System::Boolean HasContext
-    {
-        System::Boolean get();
-    }
+	__property virtual System::Boolean get_HasContext();
 
     /// \brief
     ///     Constructs a stream based on an unmanaged instance of the object
@@ -206,10 +192,10 @@ public:
 protected:
 	IoStream();
 
-internal:
+	System::Void ReleaseUnmanagedObject();
+
+public private:
 	inline FdoIoStream* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

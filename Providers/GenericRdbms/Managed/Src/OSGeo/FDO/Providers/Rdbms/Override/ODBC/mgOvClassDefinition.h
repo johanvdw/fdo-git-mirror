@@ -21,11 +21,11 @@
 class FdoOdbcOvClassDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC
-ref class OvPropertyDefinitionCollection;
-ref class OvTable;
+public __gc class OvPropertyDefinitionCollection;
+public __gc class OvTable;
 
 ///<summary>Concrete class defining physical schema overrides for a class definition.</summary>
-public ref class OvClassDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition
+public __gc class OvClassDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition
 {
 public:
     ///<summary>Constructs a default of an FdoOdbcOvClassDefinition</summary>
@@ -35,32 +35,25 @@ public:
     ///<summary>Constructs an instance of an FdoOdbcOvClassDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
     /// <returns>Returns FdoOdbcOvClassDefinition</returns>
-	OvClassDefinition(System::String^ name);
+	OvClassDefinition(System::String* name);
 
     ///<summary>Gets a collection of Odbc property overrides</summary>
     /// <returns>Returns the collection of Odbc property overrides</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvPropertyDefinitionCollection^ Properties
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvPropertyDefinitionCollection* get_Properties();
 
     ///<summary>Gets the Odbc table override for this class override</summary>
     /// <returns>Returns FdoOdbcOvTable</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvTable* get_Table();
+
     ///<summary>Sets the Odbc table override for this class override</summary>
     /// <param name="name">Input Odbc table override</param>
     /// <returns>Returns nothing</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvTable^ Table
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvTable^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvTable^ value);
-    }
+	__property System::Void set_Table(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC::OvTable* table);
 
-internal:
+public private:
 	OvClassDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoOdbcOvClassDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_ODBC

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: get_soundg.py 18195 2009-12-06 20:24:39Z rouault $
+# $Id: get_soundg.py 13097 2007-11-26 21:19:53Z hobu $
 #
 # Project:  OGR Python samples
 # Purpose:  Extract SOUNDGings from an S-57 dataset, and write them to
@@ -42,8 +42,8 @@ import sys
 
 #############################################################################
 def Usage():
-    print('Usage: get_soundg.py <s57file> <shapefile>')
-    print('')
+    print 'Usage: get_soundg.py <s57file> <shapefile>'
+    print
     sys.exit(1)
 
 #############################################################################

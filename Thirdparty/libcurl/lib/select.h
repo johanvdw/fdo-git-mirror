@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2008, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,15 +20,13 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: select.h,v 1.16 2008-07-10 18:01:45 yangtse Exp $
+ * $Id: select.h,v 1.13 2007-06-14 11:21:48 bagder Exp $
  ***************************************************************************/
 
 #include "setup.h"
 
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
-#elif defined(HAVE_POLL_H)
-#include <poll.h>
 #endif
 
 /*
@@ -37,25 +35,18 @@
 
 #if defined(USE_WINSOCK) && (USE_WINSOCK > 1) && \
     defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600)
-#  undef  HAVE_POLL
-#  define HAVE_POLL 1
-#  undef  HAVE_POLL_FINE
-#  define HAVE_POLL_FINE 1
-#  define poll(x,y,z) WSAPoll((x),(y),(z))
-#  if defined(_MSC_VER) && defined(POLLRDNORM)
-#    undef  POLLPRI
-#    define POLLPRI POLLRDBAND
-#    define HAVE_STRUCT_POLLFD 1
-#  endif
+#undef  HAVE_POLL
+#define HAVE_POLL 1
+#undef  HAVE_POLL_FINE
+#define HAVE_POLL_FINE 1
+#define poll(x,y,z) WSAPoll((x),(y),(z))
 #endif
 
 /*
  * Definition of pollfd struct and constants for platforms lacking them.
  */
 
-#if !defined(HAVE_STRUCT_POLLFD) && \
-    !defined(HAVE_SYS_POLL_H) && \
-    !defined(HAVE_POLL_H)
+#ifndef HAVE_POLL
 
 #define POLLIN      0x01
 #define POLLPRI     0x02

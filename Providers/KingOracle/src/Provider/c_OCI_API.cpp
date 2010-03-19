@@ -307,41 +307,22 @@ void c_Oci_Connection::LogOn( const wchar_t* UserName,const wchar_t* Password,co
       exit(1);
     }
     */
-    
 
-  ub4 plen = wcslen(Password)*sizeof(wchar_t);
-  /*
     c_OCI_API::OciCheckError(m_OciHpError, OCILogon2(m_OciHpEnvironment,m_OciHpError,&m_OciHpServiceContext,(CONST OraText *)UserName, (ub4)wcslen(UserName)*sizeof(wchar_t),
       (CONST OraText *)Password, (ub4)wcslen(Password)*sizeof(wchar_t),(CONST OraText *)DbLink, (ub4)wcslen(DbLink)*sizeof(wchar_t),OCI_DEFAULT));
-  */
-  c_OCI_API::OciCheckError(m_OciHpError, OCILogon(m_OciHpEnvironment,m_OciHpError,&m_OciHpServiceContext,(CONST OraText *)UserName, (ub4)wcslen(UserName)*sizeof(wchar_t),
-    (CONST OraText *)Password, (ub4)wcslen(Password)*sizeof(wchar_t),(CONST OraText *)DbLink, (ub4)wcslen(DbLink)*sizeof(wchar_t)));
-    
+
     // describe spatial object types 
     c_OCI_API::OciCheckError(m_OciHpError, OCIHandleAlloc(m_OciHpEnvironment, (dvoid **)&m_OciHpDescribe, 
       (ub4)OCI_HTYPE_DESCRIBE, (size_t)0,
       (dvoid **)0));
 
-
-    m_OciType_SdoGeometry = NULL;
-    m_OciType_SdoDimArray = NULL;
-    m_OciType_SdoDimElement = NULL;
+    m_OciType_SdoGeometry = GetOciType(D_OCI_SDO_GEOMETRY);
     
-    // Ignore error of missing SDO_GEMETRY TYPES
-    try
-    {
-      m_OciType_SdoGeometry = GetOciType(D_OCI_SDO_GEOMETRY);
-      
-      // describe spatial object types 
-     
-      m_OciType_SdoDimArray = GetOciType(D_OCI_SDO_DIM_ARRAY);
-     
-      m_OciType_SdoDimElement = GetOciType(D_OCI_SDO_DIM_ELEMENT);
-    }
-    catch (c_Oci_Exception* e)
-    {
-      delete e; // ignore error
-    }
+    // describe spatial object types 
+   
+    m_OciType_SdoDimArray = GetOciType(D_OCI_SDO_DIM_ARRAY);
+   
+    m_OciType_SdoDimElement = GetOciType(D_OCI_SDO_DIM_ELEMENT);
 
 }
 

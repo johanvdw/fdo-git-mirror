@@ -31,7 +31,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LONGTRANSACTION
 /// transaction is based upon the root data. Input to the create long
 /// transaction command includes a name and description for the new long
 /// transaction.
-public interface class ICreateLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
+public __gc __interface ICreateLongTransaction : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommand
 {
 public:
     /// \brief
@@ -40,6 +40,8 @@ public:
     /// \return
     /// Returns the name of the long transaction
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the long transaction to create as a string.
     /// 
@@ -49,11 +51,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Gets the description of the long transaction to create as a string.
@@ -61,6 +59,8 @@ public:
     /// \return
     /// Returns the description of the long transaction
     /// 
+	__property System::String* get_Description();
+
     /// \brief
     /// Sets the description of the long transaction to create as a string.
     /// 
@@ -70,11 +70,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ Description
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Description(System::String* value);
 
     /// \brief
     /// Executes the create long transaction command.

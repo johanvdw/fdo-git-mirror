@@ -24,50 +24,52 @@
 
 #include "FDO\Commands\SpatialContext\mgISpatialContextReaderImp.h"
 
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
 FdoISpatialContextReader* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetImpObj()
 {
-    return static_cast<FdoISpatialContextReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoISpatialContextReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetName()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetName())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetDescription()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetDescription()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetDescription())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetCoordinateSystem()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetCoordinateSystem()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCoordinateSystem())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetCoordinateSystemWkt()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetCoordinateSystemWkt()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetCoordinateSystemWkt())
 
-	return CHECK_STRING(result);
+		return result;
 }
 
 NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetExtentType()
@@ -79,27 +81,20 @@ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType NAMESPACE_
 	return static_cast<NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::SpatialContextExtentType>(result);
 }
 
-array<System::Byte>^ NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetExtent()
+System::Byte NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetExtent() []
 {
-	FdoByteArray* arr;
-    array<System::Byte>^ result;
-    try
-    {
-	    EXCEPTION_HANDLER(arr = GetImpObj()->GetExtent())
+	FdoByteArray* result;
 
-	    result = FdoByteArrayToByteArray(arr->GetData(), arr->GetCount());
-    }
-    finally
-    {
-        if(arr != nullptr)
-	        arr->Release();
-    }
-	return result;
+	EXCEPTION_HANDLER(result = GetImpObj()->GetExtent())
+
+	System::Byte mgBuffer __gc[] = FdoByteArrayToByteArray(result->GetData(), result->GetCount());
+	result->Release();
+	return mgBuffer;
 }
 
 System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetXYTolerance()
 {
-	System::Double result;
+	FdoDouble result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetXYTolerance())
 
@@ -108,7 +103,7 @@ System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReade
 
 System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::GetZTolerance()
 {
-	System::Double result;
+	FdoDouble result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetZTolerance())
 
@@ -117,7 +112,7 @@ System::Double NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReade
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::IsActive()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->IsActive())
 
@@ -126,7 +121,7 @@ System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextRead
 
 System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::ISpatialContextReaderImp::ReadNext()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->ReadNext())
 

@@ -154,7 +154,7 @@ FdoString* FdoBinaryLogicalOperator::ToStringInternal( FdoIdentifierCollection *
         }
     }
 
-    const wchar_t*    szOp;
+    wchar_t*    szOp;
     switch (GetOperation())
     {
     default:

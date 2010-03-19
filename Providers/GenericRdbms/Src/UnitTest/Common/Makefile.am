@@ -37,7 +37,6 @@ FdoAssociationSelectTest.cpp \
 FdoAssociationUpdateTest.cpp \
 FdoCapabilityTest.cpp \
 FdoConnectTest.cpp \
-FdoConnectionInfoTest.cpp \
 FdoConstraintsTest.cpp \
 FdoDatastoreTest.cpp \
 FdoDeleteTest.cpp \
@@ -58,8 +57,7 @@ SchemaMgrTests.cpp \
 SchemaOverrideUtil.cpp \
 SelectTests.cpp \
 XmlFormatter.cpp \
-UnitTestUtil.cpp \
-ReaderTest.cpp
+UnitTestUtil.cpp
 
 noinst_HEADERS = $(libCommonUnitTests_la_SOURCES) \
 ConnectionUtil.h \
@@ -75,7 +73,6 @@ FdoAssociationSelectTest.h \
 FdoAssociationUpdateTest.h \
 FdoCapabilityTest.h \
 FdoConnectTest.h \
-FdoConnectionInfoTest.h \
 FdoConstraintsTest.h \
 FdoDatastoreTest.h \
 FdoDeleteTest.h \
@@ -98,8 +95,7 @@ SelectTests.h \
 StringPropertiesDictionary.h \
 UnitTestUtil.h \
 XmlFormatter.h \
-Pch.h \
-ReaderTest.h
+Pch.h
 
 INCLUDES = \
   -I$(FDO)/Unmanaged/Inc \

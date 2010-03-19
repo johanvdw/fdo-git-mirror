@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_python.i 18192 2009-12-06 19:41:32Z rouault $
+ * $Id: ogr_python.i 14282 2008-04-13 09:56:34Z rouault $
  *
  * python specific code for ogr bindings.
  */
@@ -15,9 +15,6 @@
   
 %}
 
-%{
-typedef char retStringAndCPLFree;
-%}
 
 /*%{
     
@@ -42,7 +39,6 @@ typedef char retStringAndCPLFree;
 %rename (RegisterAll) OGRRegisterAll();
 
 %include "python_exceptions.i"
-%include "python_strings.i"
 
 %extend OGRDataSourceShadow {
   %pythoncode {
@@ -74,7 +70,7 @@ ds[0] would return the first layer on the datasource.
 ds['aname'] would return the layer named "aname".
 ds[0:4] would return a list of the first four layers."""
         import types
-        if isinstance(value, slice):
+        if isinstance(value, types.SliceType):
             output = []
             for i in xrange(value.start,value.stop,value.step):
                 try:
@@ -82,38 +78,38 @@ ds[0:4] would return a list of the first four layers."""
                 except OGRError: #we're done because we're off the end
                     return output
             return output
-        if isinstance(value, int):
+        if isinstance(value, types.IntType):
             if value > len(self)-1:
                 raise IndexError
             return self.GetLayer(value)
-        elif isinstance(value, str):
+        elif isinstance(value,types.StringType):
             return self.GetLayer(value)
         else:
-            raise TypeError('Input %s is not of String or Int type' % type(value))
+            raise TypeError, 'Input %s is not of String or Int type' % type(value)
 
     def GetLayer(self,iLayer=0):
         """Return the layer given an index or a name"""
         import types
-        if isinstance(iLayer, str):
+        if isinstance(iLayer, types.StringTypes):
             return self.GetLayerByName(str(iLayer))
-        elif isinstance(iLayer, int):
+        elif isinstance(iLayer, types.IntType):
             return self.GetLayerByIndex(iLayer)
         else:
-            raise TypeError("Input %s is not of String or Int type" % type(iLayer))
+            raise TypeError, "Input %s is not of String or Int type" % type(iLayer)
 
     def DeleteLayer(self, value):
         """Deletes the layer given an index or layer name"""
         import types
-        if isinstance(value, str):
+        if isinstance(value, types.StringTypes):
             for i in range(self.GetLayerCount()):
                 name = self.GetLayer(i).GetName()
                 if name == value:
                     return _ogr.DataSource_DeleteLayer(self, i)
-            raise ValueError("Layer %s not found to delete" % value)
-        elif isinstance(value, int):
+            raise ValueError, "Layer %s not found to delete" % value
+        elif isinstance(value, types.IntType):
             return _ogr.DataSource_DeleteLayer(self, value)
         else:
-            raise TypeError("Input %s is not of String or Int type" % type(iLayer))
+            raise TypeError, "Input %s is not of String or Int type" % type(iLayer)
   }
 }
 
@@ -136,7 +132,7 @@ ds[0:4] would return a list of the first four layers."""
 layer[0] would return the first feature on the layer.
 layer[0:4] would return a list of the first four features."""
         import types
-        if isinstance(value, slice):
+        if isinstance(value, types.SliceType):
             output = []
             if value.stop == sys.maxint:
                 #for an unending slice, sys.maxint is used
@@ -152,12 +148,12 @@ layer[0:4] would return a list of the first four features."""
                 else:
                     return output
             return output
-        if isinstance(value, int):
+        if isinstance(value, types.IntType):
             if value > len(self)-1:
                 raise IndexError
             return self.GetFeature(value)
         else:
-            raise TypeError("Input %s is not of IntType or SliceType" % type(value))
+            raise TypeError,"Input %s is not of IntType or SliceType" % type(value)
 
     def CreateFields(fields):
         """Create a list of fields on the Layer"""
@@ -211,14 +207,14 @@ layer[0:4] would return a list of the first four features."""
         try:
             return self.GetField(name)
         except:
-            raise AttributeError(name)
+            raise AttributeError, name
 
     def GetField(self, fld_index):
         import types
-        if isinstance(fld_index, str):
+        if isinstance(fld_index, types.StringType):
             fld_index = self.GetFieldIndex(fld_index)
         if (fld_index < 0) or (fld_index > self.GetFieldCount()):
-            raise ValueError("Illegal field requested in GetField()")
+            raise ValueError, "Illegal field requested in GetField()"
         if not (self.IsFieldSet(fld_index)):
             return None
         fld_type = self.GetFieldType(fld_index)
@@ -226,8 +222,8 @@ layer[0:4] would return a list of the first four features."""
             return self.GetFieldAsInteger(fld_index)
         if fld_type == OFTReal:
             return self.GetFieldAsDouble(fld_index)
-        ## if fld_type == OFTDateTime or fld_type == OFTDate or fld_type == OFTTime:
-        #     return self.GetFieldAsDate(fld_index)
+        if fld_type == OFTDateTime or fld_type == OFTDate or fld_type == OFTTime:
+            return self.GetFieldAsDate(fld_index)
         # default to returning as a string.  Should we add more types?
         return self.GetFieldAsString(fld_index)
     
@@ -266,8 +262,8 @@ layer[0:4] would return a list of the first four features."""
         if not as_object:
             try:
                 import simplejson
-            except ImportError:
-                raise ImportError("Unable to import simplejson, needed for ExportToJson.")
+            except ImportError, error:
+                raise ImportError("Unable to import simplejson, needed for ExportToJson. (%s)" % error)
             output = simplejson.dumps(output)
         
         return output
@@ -294,18 +290,7 @@ layer[0:4] would return a list of the first four features."""
   def __setstate__(self, state):
       result = CreateGeometryFromWkb(state)
       self.this = result.this
-        
-  def __iter__(self):
-      self.iter_subgeom = 0
-      return self
-      
-  def next(self):
-      if self.iter_subgeom < self.GetGeometryCount():
-          subgeom = self.GetGeometryRef(self.iter_subgeom)
-          self.iter_subgeom += 1
-          return subgeom
-      else:
-          raise StopIteration
+
 }
 }
 
