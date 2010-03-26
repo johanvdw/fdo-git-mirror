@@ -19,51 +19,46 @@
 #include "ConstraintReader.h"
 #include "../Mgr.h"
 #include "../Owner.h"
-#include <Sm/Ph/Rd/SchemaDbObjectBinds.h>
 #include "../../../../SchemaMgr/Ph/Rd/QueryReader.h"
 
 FdoSmPhRdPostGisConstraintReader::FdoSmPhRdPostGisConstraintReader(
     FdoSmPhOwnerP owner,
     FdoStringP constraintName)
-    : FdoSmPhRdConstraintReader(),
+    : FdoSmPhRdConstraintReader((FdoSmPhReader*) NULL),
       mConstraintName(constraintName),
       mOwner(owner)
 {
-    SetSubReader(MakeReader(owner, constraintName));
+    SetSubReader(
+        MakeReader(owner, constraintName)
+    );
 }
 
 FdoSmPhRdPostGisConstraintReader::FdoSmPhRdPostGisConstraintReader(
     FdoSmPhOwnerP owner,
 	FdoStringP tableName,
     FdoStringP constraintType)
-    : FdoSmPhRdConstraintReader(),
+    : FdoSmPhRdConstraintReader(
+        (FdoSmPhReader*) NULL),
       mConstraintName(constraintType),
 	  mTableName(tableName),
       mOwner(owner)
 {
-    SetSubReader(MakeReader(owner, DbObjectName2Objects(tableName), NULL, constraintType));
-}
-
-FdoSmPhRdPostGisConstraintReader::FdoSmPhRdPostGisConstraintReader(
-    FdoSmPhOwnerP owner,
-	FdoStringsP tableNames,
-    FdoStringP constraintType)
-    : FdoSmPhRdConstraintReader(),
-      mConstraintName(constraintType),
-      mOwner(owner)
-{
-    SetSubReader(MakeReader(owner, tableNames, NULL, constraintType));
+    SetSubReader(
+        MakeReader(owner, tableName, NULL, constraintType)
+    );
 }
 
 FdoSmPhRdPostGisConstraintReader::FdoSmPhRdPostGisConstraintReader(
     FdoSmPhOwnerP owner,
     FdoSmPhRdTableJoinP join,
     FdoStringP constraintType)
-    : FdoSmPhRdConstraintReader(),
+    : FdoSmPhRdConstraintReader((FdoSmPhReader*) NULL),
       mConstraintName(constraintType.Upper()),
       mOwner(owner)
 {
-    SetSubReader(MakeReader(owner, DbObjectName2Objects(L""), join, constraintType));
+    SetSubReader(
+        MakeReader(owner, L"", join, constraintType)
+    );
 }
 
 FdoSmPhRdPostGisConstraintReader::~FdoSmPhRdPostGisConstraintReader()
@@ -158,10 +153,11 @@ FdoStringP FdoSmPhRdPostGisConstraintReader::GetString( FdoStringP tableName, Fd
     FdoStringP fieldValue;
 
     if ( fieldName == L"check_clause" )  {
-        // postgres adds the data type to each element in the constraint. The constraint parser does not expect the type much less the
+        // postgres return an IN condition is the form: "prop" = ANY (ARRAY[...]). The caller expect the IN clause.
+        // Also postgres add the data type to each element of the list. The constarint parser does not expect the type much less the
         // postgres types. We have to strip off any type qualifier from the list such as: ("PropList"::text = ANY (ARRAY['Str10'::character varying, 'Str50'::character varying]::text[]))
         FdoStringP defValue = FdoSmPhRdConstraintReader::GetString( tableName, fieldName ); 
-        if( defValue != NULL  )
+        if( defValue != NULL && (defValue.Contains(L"= ANY (ARRAY[") || defValue.Contains(L"= ANY ((ARRAY[") ) )
         {
             fieldValue = defValue.Replace(L"= ANY ((ARRAY[",L"IN (");
             fieldValue = fieldValue.Replace(L"= ANY (ARRAY[",L"IN (");
@@ -205,7 +201,7 @@ FdoStringP FdoSmPhRdPostGisConstraintReader::GetString( FdoStringP tableName, Fd
 
 FdoSmPhReaderP FdoSmPhRdPostGisConstraintReader::MakeReader(
     FdoSmPhOwnerP owner,
-    FdoStringsP tableNames,
+	FdoStringP	tableName,
     FdoSmPhRdTableJoinP join,
     FdoStringP constraintType)
 {
@@ -215,84 +211,132 @@ FdoSmPhReaderP FdoSmPhRdPostGisConstraintReader::MakeReader(
     // PostgreSQL does support CHECK constraints:
     // http://www.postgresql.org/docs/8.2/interactive/infoschema-table-constraints.html
 
-    FdoStringP sqlString;
-
-    if ( constraintType == L"C" ) 
+    FdoStringP ownerName(owner->GetName());
+ 
+    // If joining to another table, generated from sub-clause for table.
+    FdoStringP joinFrom;
+    if ((NULL != join) && (L"" == tableName))
     {
-        sqlString = FdoStringP::Format(
-            L" SELECT %ls tc.conname AS constraint_name,"
-            L" ns.nspname ||'.'|| c.relname AS table_name,"
-            L" tc.conkey[1] AS column_name, "
-            L" ns.nspname AS table_schema,"
-            L" substring(pg_get_constraintdef(tc.oid),7) as check_clause, "
-            L" %ls as collate_schema_name, "
-            L" %ls as collate_table_name, "
-            L" %ls as collate_constraint_name "
-            L" FROM pg_constraint tc, pg_class c, pg_namespace ns $(JOIN_FROM) "
-            L" WHERE tc.contype = 'c' "
-            L" and array_upper(tc.conkey,1) = 1 "
-            L" and c.oid = tc.conrelid and ns.oid = tc.connamespace "
-            L" $(AND) $(QUALIFICATION)\n"
-            L" ORDER BY collate_schema_name, collate_table_name, collate_constraint_name",
-            (join ? L"distinct" : L""),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"ns.nspname"),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"c.relname"),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.conname")
-        );
+        joinFrom = FdoStringP::Format(L"  , %ls\n",
+            static_cast<FdoString*>(join->GetFrom()));
     }
-    else if ( constraintType == L"U" )
-	{
-        sqlString = FdoStringP::Format(
-            L" SELECT %ls tc.conname AS constraint_name,"
-            L" ns.nspname ||'.'|| c.relname AS table_name,"
-            L" cast(tc.conkey as text) AS column_name, "
-            L" ns.nspname AS table_schema,"
-            L" %ls as collate_schema_name, "
-            L" %ls as collate_table_name, "
-            L" %ls as collate_constraint_name "
-            L" FROM pg_constraint tc, pg_class c, pg_namespace ns $(JOIN_FROM) "
-            L" WHERE tc.contype = 'u' "
-            L" and c.oid = tc.conrelid and ns.oid = tc.connamespace "
-            L" $(AND) $(QUALIFICATION)\n"
-            L" ORDER BY collate_schema_name, collate_table_name, collate_constraint_name",
-            (join ? L"distinct" : L""),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"ns.nspname"),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"c.relname"),
-            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.conname")
-        );
+
+    FdoStringP qualification;
+
+    if (tableName != L"")
+    {
+        // Selecting single object, qualify by this object.
+        qualification = L"  and tc.table_name = $1\n";
+    } 
+    else
+    {
+        if (NULL != join)
+        {
+            // Otherwise, if joining to another table, generated join clause.
+            qualification = FdoStringP::Format(L"  and (%ls)\n",
+                static_cast<FdoString*>(join->GetWhere(L"tc.table_name")));
+        }
     }
-      
-    FdoSmPhReaderP reader = FdoSmPhRdConstraintReader::MakeQueryReader(
-        L"",
-        owner,
-        sqlString,
-        L"ns.nspname",
-        L"c.relname",
-        tableNames,
-        join
-    );
 
-    return reader;
-}
+    // Create a field object for each field in the select list.
+    FdoSmPhRowsP rows(new FdoSmPhRowCollection());
 
-FdoSmPhRowsP FdoSmPhRdPostGisConstraintReader::MakeRows( FdoSmPhMgrP mgr )
-{
-    // Call superclass to populate generic row/columns:
-    FdoSmPhRowsP rows = FdoSmPhRdConstraintReader::MakeRows(mgr);
-    FdoSmPhRowP row = rows->GetItem(0);
+    // Single row, no joins
+    FdoSmPhRowP row(new FdoSmPhRow(owner->GetManager(),
+                        L"ConstraintColumns", NULL));
+    rows->Add(row);
+    
+    // Each field adds itself to the row.
+    FdoSmPhFieldP field(new FdoSmPhField(row, L"constraint_name",
+                            row->CreateColumnDbObject(L"constraint_name",
+                            false)));
 
-    FdoSmPhFieldP field = new FdoSmPhField(
+    field = new FdoSmPhField(row, L"table_name",
+                row->CreateColumnDbObject(L"table_name", false));
+
+    field = new FdoSmPhField(row, L"column_name",
+                row->CreateColumnDbObject(L"column_name", false));
+
+    field = new FdoSmPhField(
         row, 
         L"table_schema",
         row->CreateColumnDbObject(L"table_schema",false)
     );
 
-    field = new FdoSmPhField(
-	    row, 
-        L"check_clause",
-	    row->CreateColumnDbObject(L"check_clause",false)
-    );
+    FdoStringP sqlString;
 
-    return( rows);
+    if ( constraintType == L"C" ) 
+    {
+        sqlString = FdoStringP::Format(
+            L" SELECT %ls tc.constraint_name AS constraint_name,"
+            L" tc.table_schema ||'.'|| tc.table_name AS table_name,"
+            L" tc.column_name AS column_name, "
+            L" tc.table_schema AS table_schema,"
+            L" kcu.check_clause as check_clause, "
+            L" %ls as collate_schema_name, "
+            L" %ls as collate_table_name, "
+            L" %ls as collate_constraint_name "
+            L" FROM %ls AS tc, %ls AS kcu %ls"
+            L" WHERE (tc.table_schema = kcu.constraint_schema"
+            L" %ls\n"
+            L" AND tc.constraint_name = kcu.constraint_name)"
+            L" ORDER BY collate_schema_name, collate_table_name, collate_constraint_name",
+            (join ? L"distinct" : L""),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_schema"),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_name"),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.constraint_name"),
+            L"information_schema.constraint_column_usage",
+            L"information_schema.check_constraints",
+            static_cast<FdoString*>(joinFrom),
+            static_cast<FdoString*>(qualification));
+
+        field = new FdoSmPhField(
+			    row, 
+                L"check_clause",
+			    row->CreateColumnDbObject(L"check_clause",false)
+		    );
+    }
+    else if ( constraintType == L"U" )
+	{
+        sqlString = FdoStringP::Format(
+            L" SELECT %ls tc.constraint_name AS constraint_name,"
+            L" tc.table_schema ||'.'|| tc.table_name AS table_name,"
+            L" tc.column_name AS column_name, "
+            L" tc.table_schema AS table_schema,"
+            L" %ls as collate_schema_name, "
+            L" %ls as collate_table_name, "
+            L" %ls as collate_constraint_name "
+            L" FROM %ls AS tc, %ls AS kcu %ls"
+            L" WHERE (tc.table_schema = kcu.constraint_schema"
+            L" AND kcu.constraint_type ='UNIQUE'"
+            L" %ls\n"
+            L" AND tc.constraint_name = kcu.constraint_name)"
+            L" ORDER BY collate_schema_name, collate_table_name, collate_constraint_name",
+            (join ? L"distinct" : L""),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_schema"),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.table_name"),
+            (FdoString*) pgMgr->FormatCollateColumnSql(L"tc.constraint_name"),
+            L"information_schema.constraint_column_usage",
+            L"information_schema.table_constraints",
+            static_cast<FdoString*>(joinFrom),
+            static_cast<FdoString*>(qualification));
+    }
+      
+    // Create the bind variables
+    FdoSmPhRowP binds(new FdoSmPhRow(owner->GetManager(), L"Binds")); 
+    if (tableName != L"")
+    {
+        field = new FdoSmPhField(binds, "table_name",
+                    binds->CreateColumnDbObject(L"table_name", false));
+
+        field->SetFieldValue(tableName);
+    }
+
+    // TODO: cache this query to make full use of the binds.
+
+    FdoSmPhRdGrdQueryReader* reader = NULL;
+    reader = new FdoSmPhRdGrdQueryReader(FdoSmPhRowP(rows->GetItem(0)),
+                sqlString, owner->GetManager(), binds );
+
+    return reader;
 }
-

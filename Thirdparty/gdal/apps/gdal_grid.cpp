@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: gdal_grid.cpp 18482 2010-01-08 23:22:58Z mloskot $
+ * $Id: gdal_grid.cpp 15053 2008-07-27 17:29:27Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL scattered data gridding (interpolation) tool
@@ -27,7 +27,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include <cstdlib>
 #include <vector>
 #include <algorithm>
 
@@ -36,9 +35,8 @@
 #include "gdal_alg.h"
 #include "ogr_spatialref.h"
 #include "ogr_api.h"
-#include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: gdal_grid.cpp 18482 2010-01-08 23:22:58Z mloskot $");
+CPL_CVSID("$Id: gdal_grid.cpp 15053 2008-07-27 17:29:27Z rouault $");
 
 static const char szAlgNameInvDist[] = "invdist";
 static const char szAlgNameAverage[] = "average";
@@ -46,9 +44,6 @@ static const char szAlgNameNearest[] = "nearest";
 static const char szAlgNameMinimum[] = "minimum";
 static const char szAlgNameMaximum[] = "maximum";
 static const char szAlgNameRange[] = "range";
-static const char szAlgNameCount[] = "count";
-static const char szAlgNameAverageDistance[] = "average_distance";
-static const char szAlgNameAverageDistancePts[] = "average_distance_pts";
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -64,16 +59,13 @@ static void Usage()
         "    [-of format] [-co \"NAME=VALUE\"]\n"
         "    [-zfield field_name]\n"
         "    [-a_srs srs_def] [-spat xmin ymin xmax ymax]\n"
-        "    [-clipsrc <xmin ymin xmax ymax>|WKT|datasource|spat_extent]\n"
-        "    [-clipsrcsql sql_statement] [-clipsrclayer layer]\n"
-        "    [-clipsrcwhere expression]\n"
         "    [-l layername]* [-where expression] [-sql select_statement]\n"
         "    [-txe xmin xmax] [-tye ymin ymax] [-outsize xsize ysize]\n"
         "    [-a algorithm[:parameter1=value1]*]"
-        "    [-q]\n"
+        "    [-quiet]\n"
         "    <src_datasource> <dst_filename>\n"
         "\n"
-        "Available algorithms and parameters with their's defaults:\n"
+        "Available algorithms and parameters with their defaults:\n"
         "    Inverse distance to a power (default)\n"
         "        invdist:power=2.0:smoothing=0.0:radius1=0.0:radius2=0.0:angle=0.0:max_points=0:min_points=0:nodata=0.0\n"
         "    Moving average\n"
@@ -86,12 +78,7 @@ static void Usage()
         "            minimum\n"
         "            maximum\n"
         "            range\n"
-        "            count\n"
-        "            average_distance\n"
-        "            average_distance_pts\n"
         "\n");
-
-    GDALDestroyDriverManager();
     exit( 1 );
 }
 
@@ -101,8 +88,7 @@ static void Usage()
 /*      Translates algortihm code into mnemonic name.                   */
 /************************************************************************/
 
-static void PrintAlgorithmAndOptions( GDALGridAlgorithm eAlgorithm,
-                                      void *pOptions )
+void PrintAlgorithmAndOptions(GDALGridAlgorithm eAlgorithm, void *pOptions)
 {
     switch ( eAlgorithm )
     {
@@ -173,41 +159,8 @@ static void PrintAlgorithmAndOptions( GDALGridAlgorithm eAlgorithm,
                 (unsigned long)((GDALGridDataMetricsOptions *)pOptions)->nMinPoints,
                 ((GDALGridDataMetricsOptions *)pOptions)->dfNoDataValue);
             break;
-        case GGA_MetricCount:
-            printf( "Algorithm name: \"%s\".\n", szAlgNameCount );
-            printf( "Options are "
-                    "\"radius1=%f:radius2=%f:angle=%f:min_points=%lu"
-                    ":nodata=%f\"\n",
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius1,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius2,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfAngle,
-                (unsigned long)((GDALGridDataMetricsOptions *)pOptions)->nMinPoints,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfNoDataValue);
-            break;
-        case GGA_MetricAverageDistance:
-            printf( "Algorithm name: \"%s\".\n", szAlgNameAverageDistance );
-            printf( "Options are "
-                    "\"radius1=%f:radius2=%f:angle=%f:min_points=%lu"
-                    ":nodata=%f\"\n",
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius1,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius2,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfAngle,
-                (unsigned long)((GDALGridDataMetricsOptions *)pOptions)->nMinPoints,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfNoDataValue);
-            break;
-        case GGA_MetricAverageDistancePts:
-            printf( "Algorithm name: \"%s\".\n", szAlgNameAverageDistancePts );
-            printf( "Options are "
-                    "\"radius1=%f:radius2=%f:angle=%f:min_points=%lu"
-                    ":nodata=%f\"\n",
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius1,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfRadius2,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfAngle,
-                (unsigned long)((GDALGridDataMetricsOptions *)pOptions)->nMinPoints,
-                ((GDALGridDataMetricsOptions *)pOptions)->dfNoDataValue);
-            break;
         default:
-            printf( "Algorithm is unknown.\n" );
+            printf( "Algorithm unknown.\n" );
             break;
     }
 }
@@ -241,12 +194,6 @@ static CPLErr ParseAlgorithmAndOptions( const char *pszAlgoritm,
         *peAlgorithm = GGA_MetricMaximum;
     else if ( EQUAL(papszParms[0], szAlgNameRange) )
         *peAlgorithm = GGA_MetricRange;
-    else if ( EQUAL(papszParms[0], szAlgNameCount) )
-        *peAlgorithm = GGA_MetricCount;
-    else if ( EQUAL(papszParms[0], szAlgNameAverageDistance) )
-        *peAlgorithm = GGA_MetricAverageDistance;
-    else if ( EQUAL(papszParms[0], szAlgNameAverageDistancePts) )
-        *peAlgorithm = GGA_MetricAverageDistancePts;
     else
     {
         fprintf( stderr, "Unsupported gridding method \"%s\".\n",
@@ -349,9 +296,6 @@ static CPLErr ParseAlgorithmAndOptions( const char *pszAlgoritm,
         case GGA_MetricMinimum:
         case GGA_MetricMaximum:
         case GGA_MetricRange:
-        case GGA_MetricCount:
-        case GGA_MetricAverageDistance:
-        case GGA_MetricAverageDistancePts:
             *ppOptions =
                 CPLMalloc( sizeof(GDALGridDataMetricsOptions) );
 
@@ -383,32 +327,6 @@ static CPLErr ParseAlgorithmAndOptions( const char *pszAlgoritm,
 }
 
 /************************************************************************/
-/*                          ProcessGeometry()                           */
-/*                                                                      */
-/*  Extract point coordinates from the geometry reference and set the   */
-/*  Z value as requested. Test whther we are in the clipped region      */
-/*  before processing.                                                  */
-/************************************************************************/
-
-static void ProcessGeometry( OGRPoint *poGeom, OGRGeometry *poClipSrc,
-                             int iBurnField, double dfBurnValue,
-                             std::vector<double> &adfX,
-                             std::vector<double> &adfY,
-                             std::vector<double> &adfZ)
-
-{
-    if ( poClipSrc && !poGeom->Within(poClipSrc) )
-        return;
-
-    adfX.push_back( poGeom->getX() );
-    adfY.push_back( poGeom->getY() );
-    if ( iBurnField < 0 )
-        adfZ.push_back( poGeom->getZ() );
-    else
-        adfZ.push_back( dfBurnValue );
-}
-
-/************************************************************************/
 /*                            ProcessLayer()                            */
 /*                                                                      */
 /*      Process all the features in a layer selection, collecting       */
@@ -416,7 +334,6 @@ static void ProcessGeometry( OGRPoint *poGeom, OGRGeometry *poClipSrc,
 /************************************************************************/
 
 static void ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
-                          OGRGeometry *poClipSrc,
                           GUInt32 nXSize, GUInt32 nYSize, int nBand,
                           int& bIsXExtentSet, int& bIsYExtentSet,
                           double& dfXMin, double& dfXMax,
@@ -449,43 +366,32 @@ static void ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
 /*      Collect the geometries from this layer, and build list of       */
 /*      values to be interpolated.                                      */
 /* -------------------------------------------------------------------- */
-    OGRFeature *poFeat;
+    OGRFeatureH hFeat;
     std::vector<double> adfX, adfY, adfZ;
 
     OGR_L_ResetReading( hSrcLayer );
 
-    while( (poFeat = (OGRFeature *)OGR_L_GetNextFeature( hSrcLayer )) != NULL )
+    while( (hFeat = OGR_L_GetNextFeature( hSrcLayer )) != NULL )
     {
-        OGRGeometry *poGeom = poFeat->GetGeometryRef();
+        OGRGeometryH hGeom;
 
-        if ( poGeom != NULL )
+        hGeom = OGR_F_GetGeometryRef( hFeat );
+
+        // FIXME: handle collections
+        if ( hGeom != NULL &&
+             (OGR_G_GetGeometryType( hGeom ) == wkbPoint
+              || OGR_G_GetGeometryType( hGeom ) == wkbPoint25D) )
         {
-            OGRwkbGeometryType eType = wkbFlatten( poGeom->getGeometryType() );
-            double  dfBurnValue = 0.0;
-
-            if ( iBurnField >= 0 )
-                dfBurnValue = poFeat->GetFieldAsDouble( iBurnField );
-
-            if ( eType == wkbMultiPoint )
-            {
-                int iGeom;
-                int nGeomCount = ((OGRMultiPoint *)poGeom)->getNumGeometries();
-
-                for ( iGeom = 0; iGeom < nGeomCount; iGeom++ )
-                {
-                    ProcessGeometry( (OGRPoint *)((OGRMultiPoint *)poGeom)->getGeometryRef(iGeom),
-                                     poClipSrc, iBurnField, dfBurnValue,
-                                     adfX, adfY, adfZ);
-                }
-            }
-            else if ( eType == wkbPoint )
-            {
-                ProcessGeometry( (OGRPoint *)poGeom, poClipSrc,
-                                 iBurnField, dfBurnValue, adfX, adfY, adfZ);
-            }
+            adfX.push_back( OGR_G_GetX( hGeom, 0 ) );
+            adfY.push_back( OGR_G_GetY( hGeom, 0 ) );
+            if ( iBurnField < 0 )
+                adfZ.push_back( OGR_G_GetZ( hGeom, 0 ) );
+            else
+                adfZ.push_back( OGR_F_GetFieldAsDouble( hFeat, iBurnField ) );
         }
 
-        OGRFeature::DestroyFeature( poFeat );
+        
+        OGR_F_Destroy( hFeat );
     }
 
     if (adfX.size() == 0)
@@ -593,92 +499,6 @@ static void ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
 }
 
 /************************************************************************/
-/*                            LoadGeometry()                            */
-/*                                                                      */
-/*  Read geometries from the given dataset using specified filters and  */
-/*  returns a collection of read geometries.                            */
-/************************************************************************/
-
-static OGRGeometryCollection* LoadGeometry( const char* pszDS,
-                                            const char* pszSQL,
-                                            const char* pszLyr,
-                                            const char* pszWhere )
-{
-    OGRDataSource       *poDS;
-    OGRLayer            *poLyr;
-    OGRFeature          *poFeat;
-    OGRGeometryCollection *poGeom = NULL;
-        
-    poDS = OGRSFDriverRegistrar::Open( pszDS, FALSE );
-    if ( poDS == NULL )
-        return NULL;
-
-    if ( pszSQL != NULL )
-        poLyr = poDS->ExecuteSQL( pszSQL, NULL, NULL ); 
-    else if ( pszLyr != NULL )
-        poLyr = poDS->GetLayerByName( pszLyr );
-    else
-        poLyr = poDS->GetLayer(0);
-        
-    if ( poLyr == NULL )
-    {
-        fprintf( stderr,
-            "FAILURE: Failed to identify source layer from datasource.\n" );
-        OGRDataSource::DestroyDataSource( poDS );
-        return NULL;
-    }
-    
-    if ( pszWhere )
-        poLyr->SetAttributeFilter( pszWhere );
-        
-    while ( (poFeat = poLyr->GetNextFeature()) != NULL )
-    {
-        OGRGeometry* poSrcGeom = poFeat->GetGeometryRef();
-        if ( poSrcGeom )
-        {
-            OGRwkbGeometryType eType =
-                wkbFlatten( poSrcGeom->getGeometryType() );
-            
-            if ( poGeom == NULL )
-                poGeom = new OGRMultiPolygon();
-
-            if ( eType == wkbPolygon )
-                poGeom->addGeometry( poSrcGeom );
-            else if ( eType == wkbMultiPolygon )
-            {
-                int iGeom;
-                int nGeomCount =
-                    ((OGRMultiPolygon *)poSrcGeom)->getNumGeometries();
-
-                for ( iGeom = 0; iGeom < nGeomCount; iGeom++ )
-                {
-                    poGeom->addGeometry(
-                        ((OGRMultiPolygon *)poSrcGeom)->getGeometryRef(iGeom) );
-                }
-            }
-            else
-            {
-                fprintf( stderr, "FAILURE: Geometry not of polygon type.\n" );
-                OGRGeometryFactory::destroyGeometry( poGeom );
-                OGRFeature::DestroyFeature( poFeat );
-                if ( pszSQL != NULL )
-                    poDS->ReleaseResultSet( poLyr );
-                OGRDataSource::DestroyDataSource( poDS );
-                return NULL;
-            }
-        }
-    
-        OGRFeature::DestroyFeature( poFeat );
-    }
-    
-    if( pszSQL != NULL )
-        poDS->ReleaseResultSet( poLyr );
-    OGRDataSource::DestroyDataSource( poDS );
-    
-    return poGeom;
-}
-
-/************************************************************************/
 /*                                main()                                */
 /************************************************************************/
 
@@ -700,17 +520,16 @@ int main( int argc, char ** argv )
     int             bQuiet = FALSE;
     GDALProgressFunc pfnProgress = GDALTermProgress;
     int             i;
-    OGRGeometry     *poSpatialFilter = NULL;
-    int             bClipSrc = FALSE;
-    OGRGeometry     *poClipSrc = NULL;
-    const char      *pszClipSrcDS = NULL;
-    const char      *pszClipSrcSQL = NULL;
-    const char      *pszClipSrcLayer = NULL;
-    const char      *pszClipSrcWhere = NULL;
+    OGRGeometryH    hSpatialFilter = NULL;
 
-    /* Check strict compilation and runtime library version as we use C++ API */
-    if (! GDAL_CHECK_VERSION(argv[0]))
+    /* Check that we are running against at least GDAL 1.5 */
+    /* Note to developers : if we use newer API, please change the requirement */
+    if (atoi(GDALVersionInfo("VERSION_NUM")) < 1500)
+    {
+        fprintf(stderr, "At least, GDAL >= 1.5.0 is required for this version of %s, "
+                "which was compiled against GDAL %s\n", argv[0], GDAL_RELEASE_NAME);
         exit(1);
+    }
 
     GDALAllRegister();
     OGRRegisterAll();
@@ -735,7 +554,7 @@ int main( int argc, char ** argv )
             pszFormat = argv[++i];
         }
 
-        else if( EQUAL(argv[i],"-q") || EQUAL(argv[i],"-quiet") )
+        else if( EQUAL(argv[i],"-quiet") )
         {
             bQuiet = TRUE;
             pfnProgress = GDALDummyProgress;
@@ -757,9 +576,9 @@ int main( int argc, char ** argv )
 
             if( eOutputType == GDT_Unknown )
             {
-                fprintf( stderr, "FAILURE: Unknown output pixel type: %s\n",
-                         argv[i + 1] );
+                fprintf( stderr, "Unknown output pixel type: %s\n", argv[i+1] );
                 Usage();
+                exit( 2 );
             }
             i++;
         }
@@ -815,82 +634,17 @@ int main( int argc, char ** argv )
                  && argv[i+3] != NULL 
                  && argv[i+4] != NULL )
         {
-            OGRLinearRing  oRing;
+            OGRGeometryH hRing = OGR_G_CreateGeometry( wkbLinearRing );
 
-            oRing.addPoint( atof(argv[i+1]), atof(argv[i+2]) );
-            oRing.addPoint( atof(argv[i+1]), atof(argv[i+4]) );
-            oRing.addPoint( atof(argv[i+3]), atof(argv[i+4]) );
-            oRing.addPoint( atof(argv[i+3]), atof(argv[i+2]) );
-            oRing.addPoint( atof(argv[i+1]), atof(argv[i+2]) );
+            OGR_G_AddPoint_2D( hRing, atof(argv[i+1]), atof(argv[i+2]) );
+            OGR_G_AddPoint_2D( hRing, atof(argv[i+1]), atof(argv[i+4]) );
+            OGR_G_AddPoint_2D( hRing, atof(argv[i+3]), atof(argv[i+4]) );
+            OGR_G_AddPoint_2D( hRing, atof(argv[i+3]), atof(argv[i+2]) );
+            OGR_G_AddPoint_2D( hRing, atof(argv[i+1]), atof(argv[i+2]) );
 
-            poSpatialFilter = new OGRPolygon();
-            ((OGRPolygon *) poSpatialFilter)->addRing( &oRing );
+            hSpatialFilter = OGR_G_CreateGeometry( wkbPolygon );
+            OGR_G_AddGeometry( hSpatialFilter, hRing );
             i += 4;
-        }
-
-        else if ( EQUAL(argv[i],"-clipsrc") && i < argc - 1 )
-        {
-            bClipSrc = TRUE;
-            errno = 0;
-            const double unused = strtod( argv[i + 1], NULL );    // XXX: is it a number or not?
-            if ( errno != 0
-                 && argv[i + 2] != NULL
-                 && argv[i + 3] != NULL
-                 && argv[i + 4] != NULL)
-            {
-                OGRLinearRing  oRing;
-
-                oRing.addPoint( atof(argv[i + 1]), atof(argv[i + 2]) );
-                oRing.addPoint( atof(argv[i + 1]), atof(argv[i + 4]) );
-                oRing.addPoint( atof(argv[i + 3]), atof(argv[i + 4]) );
-                oRing.addPoint( atof(argv[i + 3]), atof(argv[i + 2]) );
-                oRing.addPoint( atof(argv[i + 1]), atof(argv[i + 2]) );
-
-                poClipSrc = new OGRPolygon();
-                ((OGRPolygon *) poClipSrc)->addRing( &oRing );
-                i += 4;
-
-                (void)unused;
-            }
-            else if (EQUALN(argv[i + 1], "POLYGON", 7)
-                     || EQUALN(argv[i + 1], "MULTIPOLYGON", 12))
-            {
-                OGRGeometryFactory::createFromWkt(&argv[i + 1], NULL, &poClipSrc);
-                if ( poClipSrc == NULL )
-                {
-                    fprintf( stderr, "FAILURE: Invalid geometry. "
-                             "Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
-                    Usage();
-                }
-                i++;
-            }
-            else if (EQUAL(argv[i + 1], "spat_extent") )
-            {
-                i++;
-            }
-            else
-            {
-                pszClipSrcDS = argv[i + 1];
-                i++;
-            }
-        }
-
-        else if ( EQUAL(argv[i], "-clipsrcsql") && i < argc - 1 )
-        {
-            pszClipSrcSQL = argv[i + 1];
-            i++;
-        }
-
-        else if ( EQUAL(argv[i], "-clipsrclayer") && i < argc - 1 )
-        {
-            pszClipSrcLayer = argv[i + 1];
-            i++;
-        }
-
-        else if ( EQUAL(argv[i], "-clipsrcwhere") && i < argc - 1 )
-        {
-            pszClipSrcWhere = argv[i + 1];
-            i++;
         }
 
         else if( EQUAL(argv[i],"-a_srs") && i < argc-1 )
@@ -922,10 +676,11 @@ int main( int argc, char ** argv )
 
         else if( argv[i][0] == '-' )
         {
-            fprintf( stderr,
-                     "FAILURE: Option %s incomplete, or not recognised.\n\n", 
-                     argv[i] );
+            fprintf( stderr, "Option %s incomplete, or not recognised.\n\n", 
+                    argv[i] );
             Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
 
         else if( pszSource == NULL )
@@ -940,8 +695,10 @@ int main( int argc, char ** argv )
 
         else
         {
-            fprintf( stderr, "FAILURE: Too many command options.\n\n" );
+            fprintf( stderr, "Too many command options.\n\n" );
             Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
     }
 
@@ -949,30 +706,8 @@ int main( int argc, char ** argv )
         || (pszSQL == NULL && papszLayers == NULL) )
     {
         Usage();
-    }
-
-    if ( bClipSrc && pszClipSrcDS != NULL )
-    {
-        poClipSrc = LoadGeometry( pszClipSrcDS, pszClipSrcSQL,
-                                  pszClipSrcLayer, pszClipSrcWhere );
-        if ( poClipSrc == NULL )
-        {
-            fprintf( stderr, "FAILURE: cannot load source clip geometry\n\n" );
-            Usage();
-        }
-    }
-    else if ( bClipSrc && poClipSrc == NULL )
-    {
-        if ( poSpatialFilter )
-            poClipSrc = poSpatialFilter->clone();
-        if ( poClipSrc == NULL )
-        {
-            fprintf( stderr,
-                     "FAILURE: -clipsrc must be used with -spat option or \n"
-                     "a bounding box, WKT string or datasource must be "
-                     "specified\n\n" );
-            Usage();
-        }
+        GDALDestroyDriverManager();
+        exit( 2 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -983,8 +718,7 @@ int main( int argc, char ** argv )
     {
         int	iDr;
         
-        fprintf( stderr,
-                 "FAILURE: Output driver `%s' not recognised.\n", pszFormat );
+        fprintf( stderr, "Output driver `%s' not recognised.\n", pszFormat );
         fprintf( stderr,
         "The following format drivers are configured and support output:\n" );
         for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
@@ -1002,6 +736,11 @@ int main( int argc, char ** argv )
         }
         printf( "\n" );
         Usage();
+        
+        GDALDestroyDriverManager();
+        CSLDestroy( argv );
+        CSLDestroy( papszCreateOptions );
+        exit( 3 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -1057,12 +796,11 @@ int main( int argc, char ** argv )
     {
         OGRLayerH hLayer;
 
-        hLayer = OGR_DS_ExecuteSQL( hSrcDS, pszSQL,
-                                    (OGRGeometryH)poSpatialFilter, NULL ); 
+        hLayer = OGR_DS_ExecuteSQL( hSrcDS, pszSQL, hSpatialFilter, NULL ); 
         if( hLayer != NULL )
         {
             // Custom layer will be rasterized in the first band.
-            ProcessLayer( hLayer, hDstDS, poClipSrc, nXSize, nYSize, 1,
+            ProcessLayer( hLayer, hDstDS, nXSize, nYSize, 1,
                           bIsXExtentSet, bIsYExtentSet,
                           dfXMin, dfXMax, dfYMin, dfYMax, pszBurnAttribute,
                           eOutputType, eAlgorithm, pOptions,
@@ -1089,8 +827,8 @@ int main( int argc, char ** argv )
                 break;
         }
 
-        if ( poSpatialFilter != NULL )
-            OGR_L_SetSpatialFilter( hLayer, (OGRGeometryH)poSpatialFilter );
+        if( hSpatialFilter != NULL )
+          OGR_L_SetSpatialFilter( hLayer, hSpatialFilter );
 
         // Fetch the first meaningful SRS definition
         if ( !pszOutputSRS )
@@ -1100,7 +838,7 @@ int main( int argc, char ** argv )
                 OSRExportToWkt( hSRS, &pszOutputSRS );
         }
 
-        ProcessLayer( hLayer, hDstDS, poClipSrc, nXSize, nYSize,
+        ProcessLayer( hLayer, hDstDS, nXSize, nYSize,
                       i + 1 + nBands - nLayerCount,
                       bIsXExtentSet, bIsYExtentSet,
                       dfXMin, dfXMax, dfYMin, dfYMax, pszBurnAttribute,
@@ -1132,16 +870,12 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
+    CSLDestroy( papszCreateOptions );
+    CPLFree( pOptions );
     OGR_DS_Destroy( hSrcDS );
     GDALClose( hDstDS );
-    OGRGeometryFactory::destroyGeometry( poSpatialFilter );
-    OGRGeometryFactory::destroyGeometry( poClipSrc );
-
-    CPLFree( pOptions );
-    CSLDestroy( papszCreateOptions );
     CSLDestroy( argv );
     CSLDestroy( papszLayers );
-
     OGRCleanupAll();
 
     GDALDestroyDriverManager();

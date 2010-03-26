@@ -71,9 +71,6 @@ package Geo::GDAL;
 *GetConfigOption = *Geo::GDALc::GetConfigOption;
 *CPLBinaryToHex = *Geo::GDALc::CPLBinaryToHex;
 *CPLHexToBinary = *Geo::GDALc::CPLHexToBinary;
-*FileFromMemBuffer = *Geo::GDALc::FileFromMemBuffer;
-*Unlink = *Geo::GDALc::Unlink;
-*HasThreadSupport = *Geo::GDALc::HasThreadSupport;
 *GDAL_GCP_GCPX_get = *Geo::GDALc::GDAL_GCP_GCPX_get;
 *GDAL_GCP_GCPX_set = *Geo::GDALc::GDAL_GCP_GCPX_set;
 *GDAL_GCP_GCPY_get = *Geo::GDALc::GDAL_GCP_GCPY_get;
@@ -110,12 +107,9 @@ package Geo::GDAL;
 *_ComputeProximity = *Geo::GDALc::_ComputeProximity;
 *_RasterizeLayer = *Geo::GDALc::_RasterizeLayer;
 *_Polygonize = *Geo::GDALc::_Polygonize;
-*FillNodata = *Geo::GDALc::FillNodata;
 *_SieveFilter = *Geo::GDALc::_SieveFilter;
 *_RegenerateOverview = *Geo::GDALc::_RegenerateOverview;
 *_AutoCreateWarpedVRT = *Geo::GDALc::_AutoCreateWarpedVRT;
-*ApplyGeoTransform = *Geo::GDALc::ApplyGeoTransform;
-*InvGeoTransform = *Geo::GDALc::InvGeoTransform;
 *VersionInfo = *Geo::GDALc::VersionInfo;
 *AllRegister = *Geo::GDALc::AllRegister;
 *GDALDestroyDriverManager = *Geo::GDALc::GDALDestroyDriverManager;
@@ -139,6 +133,7 @@ package Geo::GDAL;
 *_Open = *Geo::GDALc::_Open;
 *_OpenShared = *Geo::GDALc::_OpenShared;
 *IdentifyDriver = *Geo::GDALc::IdentifyDriver;
+*GeneralCmdLineProcessor = *Geo::GDALc::GeneralCmdLineProcessor;
 
 ############# Class : Geo::GDAL::SavedEnv ##############
 
@@ -369,15 +364,11 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 *swig_YSize_set = *Geo::GDALc::Band_YSize_set;
 *swig_DataType_get = *Geo::GDALc::Band_DataType_get;
 *swig_DataType_set = *Geo::GDALc::Band_DataType_set;
-*GetBand = *Geo::GDALc::Band_GetBand;
 *GetBlockSize = *Geo::GDALc::Band_GetBlockSize;
-*GetColorInterpretation = *Geo::GDALc::Band_GetColorInterpretation;
 *GetRasterColorInterpretation = *Geo::GDALc::Band_GetRasterColorInterpretation;
-*SetColorInterpretation = *Geo::GDALc::Band_SetColorInterpretation;
 *SetRasterColorInterpretation = *Geo::GDALc::Band_SetRasterColorInterpretation;
 *GetNoDataValue = *Geo::GDALc::Band_GetNoDataValue;
 *SetNoDataValue = *Geo::GDALc::Band_SetNoDataValue;
-*GetUnitType = *Geo::GDALc::Band_GetUnitType;
 *GetRasterCategoryNames = *Geo::GDALc::Band_GetRasterCategoryNames;
 *SetRasterCategoryNames = *Geo::GDALc::Band_SetRasterCategoryNames;
 *GetMinimum = *Geo::GDALc::Band_GetMinimum;
@@ -385,7 +376,6 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 *GetOffset = *Geo::GDALc::Band_GetOffset;
 *GetScale = *Geo::GDALc::Band_GetScale;
 *GetStatistics = *Geo::GDALc::Band_GetStatistics;
-*ComputeStatistics = *Geo::GDALc::Band_ComputeStatistics;
 *SetStatistics = *Geo::GDALc::Band_SetStatistics;
 *GetOverviewCount = *Geo::GDALc::Band_GetOverviewCount;
 *GetOverview = *Geo::GDALc::Band_GetOverview;
@@ -408,7 +398,6 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 *_GetHistogram = *Geo::GDALc::Band__GetHistogram;
 *GetDefaultHistogram = *Geo::GDALc::Band_GetDefaultHistogram;
 *SetDefaultHistogram = *Geo::GDALc::Band_SetDefaultHistogram;
-*HasArbitraryOverviews = *Geo::GDALc::Band_HasArbitraryOverviews;
 *ContourGenerate = *Geo::GDALc::Band_ContourGenerate;
 sub DISOWN {
     my $self = shift;
@@ -427,7 +416,7 @@ sub ACQUIRE {
 
 package Geo::GDAL::ColorTable;
 use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
-@ISA = qw( Geo::GDAL );
+@ISA = qw( Geo::GDAL::MajorObject Geo::GDAL );
 %OWNER = ();
 sub new {
     my $pkg = shift;
@@ -476,7 +465,7 @@ sub ACQUIRE {
 
 package Geo::GDAL::RasterAttributeTable;
 use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
-@ISA = qw( Geo::GDAL );
+@ISA = qw( Geo::GDAL::MajorObject Geo::GDAL );
 %OWNER = ();
 sub new {
     my $pkg = shift;
@@ -516,8 +505,6 @@ sub DESTROY {
 *SetValueAsDouble = *Geo::GDALc::RasterAttributeTable_SetValueAsDouble;
 *SetRowCount = *Geo::GDALc::RasterAttributeTable_SetRowCount;
 *_CreateColumn = *Geo::GDALc::RasterAttributeTable__CreateColumn;
-*GetLinearBinning = *Geo::GDALc::RasterAttributeTable_GetLinearBinning;
-*SetLinearBinning = *Geo::GDALc::RasterAttributeTable_SetLinearBinning;
 *GetRowOfValue = *Geo::GDALc::RasterAttributeTable_GetRowOfValue;
 sub DISOWN {
     my $self = shift;
@@ -583,7 +570,7 @@ package Geo::GDAL;
     use Geo::OGR;
     use Geo::OSR;
     our $VERSION = '0.23';
-    our $GDAL_VERSION = '1.7.1';
+    our $GDAL_VERSION = '1.6.0';
     use vars qw/
 	%TYPE_STRING2INT %TYPE_INT2STRING
 	%ACCESS_STRING2INT %ACCESS_INT2STRING
@@ -707,10 +694,9 @@ package Geo::GDAL;
 	_RasterizeLayer(@_);
     }
     sub Polygonize {
-        my @params = @_;
-        $params[6] = 1 if $params[5] and not defined $params[6];
-        $params[3] = $params[2]->GetLayerDefn->GetFieldIndex($params[3]) unless $params[3] =~ /^\d/;
-	_Polygonize(@params);
+        $_[6] = 1 if $_[5] and not defined $_[6];
+        $_[3] = $_[2]->GetLayerDefn->GetFieldIndex($_[3]) unless $_[3] =~ /^\d/;
+	_Polygonize(@_);
     }
     sub SieveFilter {
     	$_[7] = 1 if $_[6] and not defined $_[7];

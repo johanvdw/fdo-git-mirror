@@ -701,107 +701,6 @@
 </xs:extension>
 </xs:complexContent>
 </xs:complexType>
-<xs:element name="table_delcol1" type="dbo:table_delcol1Type" abstract="false" substitutionGroup="gml:_Feature">
-<xs:key name="table_delcol1Key">
-<xs:selector xpath=".//table_delcol1"/>
-<xs:field xpath="ID"/>
-</xs:key>
-<xs:unique name="table_delcol1Key_0">
-<xs:selector xpath=".//table_delcol1"/>
-<xs:field xpath="UNIQUE_COLUMN"/>
-</xs:unique>
-</xs:element>
-<xs:complexType name="table_delcol1Type" abstract="false">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:complexContent>
-<xs:extension base="fdo:ClassType">
-<xs:sequence>
-<xs:element name="CHECK_COLUMN">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:string">
-<xs:maxLength value="50"/>
-<xs:enumeration value="a"/>
-<xs:enumeration value="b"/>
-<xs:enumeration value="c"/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
-<xs:element name="ID">
-<xs:simpleType>
-<xs:restriction base="fdo:int32"/>
-</xs:simpleType>
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-</xs:element>
-<xs:element name="SINGLE_COLUMN" minOccurs="0">
-<xs:simpleType>
-<xs:restriction base="xs:float"/>
-</xs:simpleType>
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-</xs:element>
-<xs:element name="STRING_COLUMN">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:string">
-<xs:maxLength value="20"/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
-<xs:element name="UNIQUE_COLUMN" minOccurs="0">
-<xs:simpleType>
-<xs:restriction base="fdo:int64"/>
-</xs:simpleType>
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-</xs:element>
-</xs:sequence>
-</xs:extension>
-</xs:complexContent>
-</xs:complexType>
-<xs:element name="table_delcol2" type="dbo:table_delcol2Type" abstract="false" substitutionGroup="gml:_Feature">
-<xs:key name="table_delcol2Key">
-<xs:selector xpath=".//table_delcol2"/>
-<xs:field xpath="ID"/>
-</xs:key>
-</xs:element>
-<xs:complexType name="table_delcol2Type" abstract="false">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:complexContent>
-<xs:extension base="fdo:ClassType">
-<xs:sequence>
-<xs:element name="ID">
-<xs:simpleType>
-<xs:restriction base="fdo:int32"/>
-</xs:simpleType>
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-</xs:element>
-<xs:element name="INT64_COLUMN" minOccurs="0">
-<xs:simpleType>
-<xs:restriction base="fdo:int64"/>
-</xs:simpleType>
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-</xs:element>
-</xs:sequence>
-</xs:extension>
-</xs:complexContent>
-</xs:complexType>
 <xs:element name="view1" type="dbo:view1Type" abstract="false" substitutionGroup="gml:_Feature">
 <xs:key name="view1Key">
 <xs:selector xpath=".//view1"/>
@@ -1954,42 +1853,36 @@
 </xs:schema>
 <SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/SQLServerSpatialProvider" textInRow="NotInRow" provider="OSGeo.SQLServerSpatial.3.5" name="dbo">
 <complexType name="rtable1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_rtable1" name="dbo.rtable1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_rtable1" name="dbo.rtable1"/>
 </complexType>
 <complexType name="rtable2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_rtable2" name="dbo.rtable2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_rtable2" name="dbo.rtable2"/>
 </complexType>
 <complexType name="rtable7Type" identityIsGloballyUnique="false" identitySeed="1" identityIncrement="1" identityPropertyName="TABLE7_ID12345678901234567890">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_rtable7" name="dbo.rtable7"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_rtable7" name="dbo.rtable7"/>
 </complexType>
 <complexType name="table1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table1" name="dbo.table1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table1" name="dbo.table1"/>
 </complexType>
 <complexType name="table3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table3" name="dbo.table3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table3" name="dbo.table3"/>
 </complexType>
 <complexType name="table4Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table4" name="dbo.table4"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table4" name="dbo.table4"/>
 </complexType>
 <complexType name="table7Type" identityIsGloballyUnique="false" identitySeed="1" identityIncrement="1" identityPropertyName="ID">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table7" name="dbo.table7"/>
-</complexType>
-<complexType name="table_delcol1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table_delcol1" name="dbo.table_delcol1"/>
-</complexType>
-<complexType name="table_delcol2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table_delcol2" name="dbo.table_delcol2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table7" name="dbo.table7"/>
 </complexType>
 <complexType name="view1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_view1" name="dbo.view1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_view1" name="dbo.view1"/>
 </complexType>
 <complexType name="view3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_view3" name="dbo.view3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_view3" name="dbo.view3"/>
 </complexType>
 </SchemaMapping>
 <SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/SQLServerSpatialProvider" textInRow="NotInRow" provider="OSGeo.SQLServerSpatial.3.5" name="guest">
 <complexType name="vertable1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertable1" name="guest.vertable1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertable1" name="guest.vertable1"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2007,7 +1900,7 @@
 </element>
 </complexType>
 <complexType name="vertable2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertable2" name="guest.vertable2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertable2" name="guest.vertable2"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2025,7 +1918,7 @@
 </element>
 </complexType>
 <complexType name="vertable3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertable3" name="guest.vertable3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertable3" name="guest.vertable3"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2043,7 +1936,7 @@
 </element>
 </complexType>
 <complexType name="vertable4Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertable4" name="guest.vertable4"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertable4" name="guest.vertable4"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2061,7 +1954,7 @@
 </element>
 </complexType>
 <complexType name="vertable5Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertable5" name="guest.vertable5"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertable5" name="guest.vertable5"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2079,7 +1972,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookup1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookup1" name="guest.vertablelookup1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookup1" name="guest.vertablelookup1"/>
 <element name="id2">
 <Column name="id2"/>
 </element>
@@ -2088,7 +1981,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookup2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookup2" name="guest.vertablelookup2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookup2" name="guest.vertablelookup2"/>
 <element name="id2">
 <Column name="id2"/>
 </element>
@@ -2097,7 +1990,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookup3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookup3" name="guest.vertablelookup3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookup3" name="guest.vertablelookup3"/>
 <element name="id2">
 <Column name="id2"/>
 </element>
@@ -2106,7 +1999,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookup4Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookup4" name="guest.vertablelookup4"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookup4" name="guest.vertablelookup4"/>
 <element name="id2">
 <Column name="id2"/>
 </element>
@@ -2115,7 +2008,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookup5Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookup5" name="guest.vertablelookup5"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookup5" name="guest.vertablelookup5"/>
 <element name="id2">
 <Column name="id2"/>
 </element>
@@ -2124,7 +2017,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookupb1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookupb1" name="guest.vertablelookupb1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookupb1" name="guest.vertablelookupb1"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2136,7 +2029,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookupb2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookupb2" name="guest.vertablelookupb2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookupb2" name="guest.vertablelookupb2"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2148,7 +2041,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookupb3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookupb3" name="guest.vertablelookupb3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookupb3" name="guest.vertablelookupb3"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2160,7 +2053,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookupb4Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookupb4" name="guest.vertablelookupb4"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookupb4" name="guest.vertablelookupb4"/>
 <element name="id1">
 <Column name="id1"/>
 </element>
@@ -2172,7 +2065,7 @@
 </element>
 </complexType>
 <complexType name="vertablelookupb5Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_vertablelookupb5" name="guest.vertablelookupb5"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_guest_vertablelookupb5" name="guest.vertablelookupb5"/>
 <element name="id1">
 <Column name="id1"/>
 </element>

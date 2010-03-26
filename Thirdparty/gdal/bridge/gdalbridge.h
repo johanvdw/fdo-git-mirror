@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalbridge.h 17542 2009-08-19 17:02:26Z mloskot $
+ * $Id: gdalbridge.h 11457 2007-05-10 20:24:14Z tamas $
  *
  * Project:  GDAL Bridge 
  * Purpose:  Declarations for GDAL Bridge support.
@@ -77,8 +77,8 @@ typedef int             GBool;
 
 /*! Pixel data types */
 typedef enum {
-    /*! Unknown or unspecified type */ 		    GDT_Unknown = 0,
-    /*! Eight bit unsigned integer */ 		    GDT_Byte = 1,
+    GDT_Unknown = 0,
+    /*! Eight bit unsigned integer */ 		GDT_Byte = 1,
     /*! Sixteen bit unsigned integer */         GDT_UInt16 = 2,
     /*! Sixteen bit signed integer */           GDT_Int16 = 3,
     /*! Thirty two bit unsigned integer */      GDT_UInt32 = 4,

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gensql.cpp 17648 2009-09-17 15:11:18Z warmerdam $
+ * $Id: ogr_gensql.cpp 15844 2008-11-28 22:22:37Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGenSQLResultsLayer.
@@ -31,7 +31,7 @@
 #include "ogr_gensql.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_gensql.cpp 17648 2009-09-17 15:11:18Z warmerdam $");
+CPL_CVSID("$Id: ogr_gensql.cpp 15844 2008-11-28 22:22:37Z rouault $");
 
 /************************************************************************/
 /*                       OGRGenSQLResultsLayer()                        */
@@ -386,19 +386,7 @@ int OGRGenSQLResultsLayer::GetFeatureCount( int bForce )
 {
     swq_select *psSelectInfo = (swq_select *) pSelectInfo;
 
-    if( psSelectInfo->query_mode == SWQM_DISTINCT_LIST )
-    {
-        if( !PrepareSummary() )
-            return 0;
-
-        swq_summary *psSummary = psSelectInfo->column_summary + 0;
-
-        if( psSummary == NULL )
-            return 0;
-
-        return psSummary->count;
-    }
-    else if( psSelectInfo->query_mode != SWQM_RECORDSET )
+    if( psSelectInfo->query_mode != SWQM_RECORDSET )
         return 1;
     else if( m_poAttrQuery == NULL )
         return poSrcLayer->GetFeatureCount( bForce );
@@ -578,8 +566,6 @@ OGRFeature *OGRGenSQLResultsLayer::TranslateFeature( OGRFeature *poSrcFeat )
     poDstFeat->SetFID( poSrcFeat->GetFID() );
 
     poDstFeat->SetGeometry( poSrcFeat->GetGeometryRef() );
-
-    poDstFeat->SetStyleString( poSrcFeat->GetStyleString() );
     
 /* -------------------------------------------------------------------- */
 /*      Copy fields from primary record to the destination feature.     */
@@ -587,9 +573,6 @@ OGRFeature *OGRGenSQLResultsLayer::TranslateFeature( OGRFeature *poSrcFeat )
     for( int iField = 0; iField < psSelectInfo->result_columns; iField++ )
     {
         swq_col_def *psColDef = psSelectInfo->column_defs + iField;
-
-        if( psColDef->table_index != 0 )
-            continue;
 
         if ( psColDef->field_index >= iFIDFieldIndex &&
             psColDef->field_index < iFIDFieldIndex + SPECIAL_FIELD_COUNT )
@@ -599,14 +582,11 @@ OGRFeature *OGRGenSQLResultsLayer::TranslateFeature( OGRFeature *poSrcFeat )
               case SWQ_INTEGER:
                 poDstFeat->SetField( iField, poSrcFeat->GetFieldAsInteger(psColDef->field_index) );
                 break;
-              case SWQ_FLOAT:
-                poDstFeat->SetField( iField, poSrcFeat->GetFieldAsDouble(psColDef->field_index) );
-                break;
               default:
                 poDstFeat->SetField( iField, poSrcFeat->GetFieldAsString(psColDef->field_index) );
             }
         }
-        else
+        else if( psColDef->table_index == 0 )
         {
             switch (psColDef->target_type)
             {
@@ -668,21 +648,10 @@ OGRFeature *OGRGenSQLResultsLayer::TranslateFeature( OGRFeature *poSrcFeat )
             break;
 
           case OFTString:
-          {
-              char *pszEscaped = CPLEscapeString( psSrcField->String, 
-                                                  strlen(psSrcField->String),
-                                                  CPLES_SQL );
-              if( strlen(pszEscaped) + strlen(szFilter) < sizeof(szFilter)-3 )
-                  sprintf( szFilter+strlen(szFilter), "\'%s\'", 
-                           pszEscaped );
-              else
-              {
-                  strcat( szFilter, "' '" );
-                  CPLDebug( "GenSQL", "Skip long join field value." );
-              }
-              CPLFree( pszEscaped );
-          }
-          break;
+            // the string really ought to be escaped. 
+            sprintf( szFilter+strlen(szFilter), "\"%s\"", 
+                     psSrcField->String );
+            break;
 
           default:
             CPLAssert( FALSE );
@@ -929,10 +898,6 @@ void OGRGenSQLResultsLayer::CreateOrderByIndex()
                         psDstField->Integer = poSrcFeat->GetFieldAsInteger(psKeyDef->field_index);
                         break;
 
-                      case SWQ_FLOAT:
-                        psDstField->Real = poSrcFeat->GetFieldAsDouble(psKeyDef->field_index);
-                        break;
-
                       default:
                         psDstField->String = CPLStrdup( poSrcFeat->GetFieldAsString(psKeyDef->field_index) );
                         break;
@@ -1162,12 +1127,6 @@ int OGRGenSQLResultsLayer::Compare( OGRField *pasFirstTuple,
                 if( pasFirstTuple[iKey].Integer < pasSecondTuple[iKey].Integer )
                     nResult = -1;
                 else if( pasFirstTuple[iKey].Integer > pasSecondTuple[iKey].Integer )
-                    nResult = 1;
-                break;
-              case SWQ_FLOAT:
-                if( pasFirstTuple[iKey].Real < pasSecondTuple[iKey].Real )
-                    nResult = -1;
-                else if( pasFirstTuple[iKey].Real > pasSecondTuple[iKey].Real )
                     nResult = 1;
                 break;
               case SWQ_STRING:

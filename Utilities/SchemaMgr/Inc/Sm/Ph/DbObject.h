@@ -470,17 +470,11 @@ protected:
     /// Load Primary Key if not yet loaded
     void LoadPkeys();
     void LoadPkeys( FdoPtr<FdoSmPhReader> pkeyRdr, bool isSkipAdd = false );
-    
-    // Load a primary key column from a reader.
-    virtual void LoadPkeyColumn( FdoPtr<FdoSmPhReader> pkeyRdr, FdoSmPhColumnsP pkeyColumns );
 
     /// Load Indexes if not yet loaded
     bool LoadIndexes();
     bool LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
 	
-    // Load a column from a reader into an index.
-    virtual void LoadIndexColumn( FdoPtr<FdoSmPhTableIndexReader> indexRdr, FdoPtr<FdoSmPhIndex> index );
-
     /// Load Foreign Keys if not yet loaded
     void LoadFkeys();
     void LoadFkeys( FdoPtr<FdoSmPhReader> fkeyRdr, bool isSkipAdd );
@@ -494,7 +488,7 @@ protected:
     );
 
     /// Add an index from an index reader
-    virtual FdoPtr<FdoSmPhIndex> CreateIndex(
+    FdoPtr<FdoSmPhIndex> CreateIndex(
         FdoPtr<FdoSmPhTableIndexReader> rdr
     );
 

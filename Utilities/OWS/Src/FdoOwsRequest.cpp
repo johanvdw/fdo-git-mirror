@@ -21,12 +21,12 @@
 #include <OWS/FdoOwsGlobals.h>
 #include <curl/curl.h>
 
-FdoOwsRequest::FdoOwsRequest() : m_addVersionToRequest(true)
+FdoOwsRequest::FdoOwsRequest()
 {
 }
 
 FdoOwsRequest::FdoOwsRequest(FdoString* service, FdoString* request) :
-   m_service(service), m_request(request), m_addVersionToRequest(true)
+                            m_service(service), m_request(request)
 {
 }
 
@@ -34,10 +34,9 @@ FdoOwsRequest::~FdoOwsRequest()
 {
 }
 
-void FdoOwsRequest::SetVersion(FdoString* version, bool addVersionToRequest)
+void FdoOwsRequest::SetVersion(FdoString* version)
 {
     m_version = version;
-    m_addVersionToRequest = addVersionToRequest;
 }
 
 FdoString* FdoOwsRequest::GetVersion ()
@@ -59,15 +58,13 @@ FdoString* FdoOwsRequest::GetRequest ()
 FdoStringP FdoOwsRequest::EncodeKVP()
 {
     FdoStringP ret;
-
-    if (m_addVersionToRequest)
+    if (m_version.GetLength() != 0)
     {
         ret += FdoOwsGlobals::version;
         ret += FdoOwsGlobals::Equal;
         ret += m_version;
         ret += FdoOwsGlobals::And;
     }
-
     ret += FdoOwsGlobals::service;
     ret += FdoOwsGlobals::Equal;
     ret += m_service;

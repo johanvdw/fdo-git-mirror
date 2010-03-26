@@ -132,10 +132,10 @@ const char *EIRDataset::GetKeyValue( const char *pszKey,
     for( i = 0; papszHDR[i] != NULL; i++ )
     {
         if( EQUALN(pszKey,papszHDR[i],strlen(pszKey))
-            && isspace((unsigned char)papszHDR[i][strlen(pszKey)]) )
+            && isspace(papszHDR[i][strlen(pszKey)]) )
         {
             const char *pszValue = papszHDR[i] + strlen(pszKey);
-            while( isspace((unsigned char)*pszValue) )
+            while( isspace(*pszValue) )
                 pszValue++;
             
             return pszValue;
@@ -349,8 +349,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else if( EQUAL(papszTokens[0],"FORMAT") )
         {
-            strncpy( szLayout, papszTokens[1], sizeof(szLayout) );
-            szLayout[sizeof(szLayout)-1] = '\0';
+            strncpy( szLayout, papszTokens[1], sizeof(szLayout)-1 );
         }
         else if( EQUAL(papszTokens[0],"DATATYPE") )
         {
@@ -389,9 +388,6 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
                 CPLError( CE_Failure, CPLE_NotSupported, 
                   "EIR driver does not support DATATYPE %s.", 
                   papszTokens[1] );
-                CSLDestroy( papszTokens );
-                CSLDestroy( papszHDR );
-                VSIFCloseL( fp );
                 return NULL;
             }
         }
@@ -421,25 +417,8 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         CSLDestroy( papszHDR );
         return NULL;
     }
-
-    if (!GDALCheckDatasetDimensions(nCols, nRows) ||
-        !GDALCheckBandCount(nBands, FALSE))
-    {
-        CSLDestroy( papszHDR );
-        return NULL;
-    }
     
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CSLDestroy( papszHDR );
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The EIR driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
+
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -478,25 +457,25 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Compute the line offset.                                        */
 /* -------------------------------------------------------------------- */
     int             nItemSize = GDALGetDataTypeSize(eDataType)/8;
-    int             nPixelOffset, nLineOffset;
-    vsi_l_offset    nBandOffset;
+    int             nPixelOffset;
+    vsi_l_offset    nLineOffset, nBandOffset;
 
     if( EQUAL(szLayout,"BIP") )
     {
         nPixelOffset = nItemSize * nBands;
-        nLineOffset = nPixelOffset * nCols;
+        nLineOffset = (vsi_l_offset)nPixelOffset * nCols;
         nBandOffset = (vsi_l_offset)nItemSize;
     }
     else if( EQUAL(szLayout,"BSQ") )
     {
         nPixelOffset = nItemSize;
-        nLineOffset = nPixelOffset * nCols;
+        nLineOffset = (vsi_l_offset)nPixelOffset * nCols;
         nBandOffset = (vsi_l_offset)nLineOffset * nRows;
     }
     else /* assume BIL */
     {
         nPixelOffset = nItemSize;
-        nLineOffset = nItemSize * nBands * nCols;
+        nLineOffset = (vsi_l_offset)nItemSize * nBands * nCols;
         nBandOffset = (vsi_l_offset)nItemSize * nCols;
     }
     
@@ -541,16 +520,18 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
             GDALReadWorldFile( poOpenInfo->pszFilename, "wld", 
                                poDS->adfGeoTransform );
     
-/* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->TryLoadXML();
-    
+
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
+/* -------------------------------------------------------------------- */
+/*      Initialize any PAM information.                                 */
+/* -------------------------------------------------------------------- */
+    poDS->TryLoadXML();
+    
+    
     return( poDS );
 }
 

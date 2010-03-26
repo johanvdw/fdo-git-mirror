@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dodsdataset2.cpp 18515 2010-01-10 19:59:11Z rouault $
+ * $Id: dodsdataset2.cpp 15184 2008-08-22 17:39:47Z dnadeau $
  *
  * Project:  OPeNDAP Raster Driver
  * Purpose:  Implements DODSDataset and DODSRasterBand classes.
@@ -63,7 +63,7 @@
 
 using namespace libdap;
 
-CPL_CVSID("$Id: dodsdataset2.cpp 18515 2010-01-10 19:59:11Z rouault $");
+CPL_CVSID("$Id: dodsdataset2.cpp 15184 2008-08-22 17:39:47Z dnadeau $");
 
 CPL_C_START
 void GDALRegister_DODS(void);
@@ -642,8 +642,6 @@ char **DODSDataset::ParseBandsFromURL( string oVarList )
         }
     }
 
-    CSLDestroy(papszVars);
-
     return papszResultList;
 }
 
@@ -695,25 +693,6 @@ void DODSDataset::HarvestDAS()
 /* -------------------------------------------------------------------- */
 /*      Try and fetch the corresponding DAS subtree if it exists.       */
 /* -------------------------------------------------------------------- */
-#ifdef LIBDAP_39
-    AttrTable *poFileInfo = oDAS.get_table( "GLOBAL" );
-
-    if( poFileInfo == NULL )
-    {
-        poFileInfo = oDAS.get_table( "NC_GLOBAL" );
-
-	if( poFileInfo == NULL )
-	{
-	    poFileInfo = oDAS.get_table( "HDF_GLOBAL" );
-
-	    if( poFileInfo == NULL )
-	    {
-	        CPLDebug( "DODS", "No GLOBAL DAS info." );
-	        return;
-	    }
-	}
-    }
-#else
     AttrTable *poFileInfo = oDAS.find_container( "GLOBAL" );
 
     if( poFileInfo == NULL )
@@ -731,7 +710,6 @@ void DODSDataset::HarvestDAS()
 	    }
 	}
     }
-#endif
 
 /* -------------------------------------------------------------------- */
 /*      Try and fetch the bounds                                        */
@@ -971,7 +949,6 @@ DODSDataset::Open(GDALOpenInfo *poOpenInfo)
 
     
     DODSDataset *poDS = new DODSDataset();
-    char **papszVarConstraintList = NULL;
 
     poDS->nRasterXSize = 0;
     poDS->nRasterYSize = 0;
@@ -1010,6 +987,7 @@ DODSDataset::Open(GDALOpenInfo *poOpenInfo)
 /*      DDS and try to identify grids or arrays that are good           */
 /*      targets and return them in the same format.                     */
 /* -------------------------------------------------------------------- */
+        char **papszVarConstraintList = NULL;
 
         if( oVarList.length() == 0 )
             papszVarConstraintList = poDS->CollectBandsFromDDS();
@@ -1063,28 +1041,13 @@ DODSDataset::Open(GDALOpenInfo *poOpenInfo)
     }
 
     catch (Error &e) {
-        string msg =
+	string msg =
 "An error occurred while creating a virtual connection to the DAP server:\n";
-        msg += e.get_error_message();
+	msg += e.get_error_message();
         CPLError(CE_Failure, CPLE_AppDefined, msg.c_str());
-        delete poDS;
-        poDS = NULL;
+	return 0;
     }
 
-    CSLDestroy(papszVarConstraintList);
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poDS != NULL && poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The DODS driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
     return poDS;
 }
 
@@ -1312,11 +1275,7 @@ void DODSRasterBand::HarvestDAS()
 /* -------------------------------------------------------------------- */
 /*      Try and fetch the corresponding DAS subtree if it exists.       */
 /* -------------------------------------------------------------------- */
-#ifdef LIBDAP_39
-    AttrTable *poBandInfo = poDODS->GetDAS().get_table( oVarName );
-#else
     AttrTable *poBandInfo = poDODS->GetDAS().find_container( oVarName );
-#endif
 
     if( poBandInfo == NULL )
     {

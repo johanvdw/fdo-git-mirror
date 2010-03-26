@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdatasource.cpp 16933 2009-05-03 19:49:41Z rouault $
+ * $Id: ogrdatasource.cpp 14432 2008-05-10 18:47:46Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the OGRDataSource class.
@@ -34,7 +34,7 @@
 #include "ogr_attrind.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrdatasource.cpp 16933 2009-05-03 19:49:41Z rouault $");
+CPL_CVSID("$Id: ogrdatasource.cpp 14432 2008-05-10 18:47:46Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGRDataSource()                           */
@@ -649,12 +649,6 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
 
     (void) pszDialect;
 
-    swq_field_list sFieldList;
-    int            nFIDIndex = 0;
-    OGRGenSQLResultsLayer *poResults = NULL;
-
-    memset( &sFieldList, 0, sizeof(sFieldList) );
-
 /* -------------------------------------------------------------------- */
 /*      Handle CREATE INDEX statements specially.                       */
 /* -------------------------------------------------------------------- */
@@ -689,10 +683,6 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
 /*      fields.                                                         */
 /* -------------------------------------------------------------------- */
     int  nFieldCount = 0, iTable, iField;
-    int  iEDS;
-    int  nExtraDSCount = 0;
-    OGRDataSource** papoExtraDS = NULL;
-    OGRSFDriverRegistrar *poReg=OGRSFDriverRegistrar::GetRegistrar();
 
     for( iTable = 0; iTable < psSelectInfo->table_count; iTable++ )
     {
@@ -713,13 +703,12 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
                               psTableDef->data_source );
 
                 swq_select_free( psSelectInfo );
-                goto end;
+                return NULL;
             }
 
-            /* Keep in an array to release at the end of this function */
-            papoExtraDS = (OGRDataSource** )CPLRealloc(papoExtraDS,
-                               sizeof(OGRDataSource*) * (nExtraDSCount + 1));
-            papoExtraDS[nExtraDSCount++] = poTableDS;
+            // This drops explicit reference, but leave it open for use by
+            // code in ogr_gensql.cpp
+            poTableDS->Dereference();
         }
 
         poSrcLayer = poTableDS->GetLayerByName( psTableDef->table_name );
@@ -730,7 +719,7 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
                       "SELECT from table %s failed, no such table/featureclass.",
                       psTableDef->table_name );
             swq_select_free( psSelectInfo );
-            goto end;
+            return NULL;
         }
 
         nFieldCount += poSrcLayer->GetLayerDefn()->GetFieldCount();
@@ -739,7 +728,10 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
 /* -------------------------------------------------------------------- */
 /*      Build the field list for all indicated tables.                  */
 /* -------------------------------------------------------------------- */
+    swq_field_list sFieldList;
+    int            nFIDIndex = 0;
 
+    memset( &sFieldList, 0, sizeof(sFieldList) );
     sFieldList.table_count = psSelectInfo->table_count;
     sFieldList.table_defs = psSelectInfo->table_defs;
 
@@ -803,7 +795,7 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
         swq_select_free( psSelectInfo );
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "SQL: %s", pszError );
-        goto end;
+        return NULL;
     }
 
     for (iField = 0; iField < SPECIAL_FIELD_COUNT; iField++)
@@ -821,36 +813,28 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
     
     pszError = swq_select_parse( psSelectInfo, &sFieldList, 0 );
 
-    if( pszError != NULL )
-    {
-        swq_select_free( psSelectInfo );
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "SQL: %s", pszError );
-        goto end;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Everything seems OK, try to instantiate a results layer.        */
-/* -------------------------------------------------------------------- */
-
-    poResults = new OGRGenSQLResultsLayer( this, psSelectInfo, 
-                                           poSpatialFilter );
-
-    // Eventually, we should keep track of layers to cleanup.
-
-end:
     CPLFree( sFieldList.names );
     CPLFree( sFieldList.types );
     CPLFree( sFieldList.table_ids );
     CPLFree( sFieldList.ids );
 
-    /* Release the datasets we have opened with OGROpenShared() */
-    /* It is safe to do that as the 'new OGRGenSQLResultsLayer' itself */
-    /* has taken a reference on them, which it will release in its */
-    /* destructor */
-    for(iEDS = 0; iEDS < nExtraDSCount; iEDS++)
-        poReg->ReleaseDataSource( papoExtraDS[iEDS] );
-    CPLFree(papoExtraDS);
+    if( pszError != NULL )
+    {
+        swq_select_free( psSelectInfo );
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "SQL: %s", pszError );
+        return NULL;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Everything seems OK, try to instantiate a results layer.        */
+/* -------------------------------------------------------------------- */
+    OGRGenSQLResultsLayer *poResults;
+
+    poResults = new OGRGenSQLResultsLayer( this, psSelectInfo, 
+                                           poSpatialFilter );
+
+    // Eventually, we should keep track of layers to cleanup.
 
     return poResults;
 }
@@ -903,7 +887,6 @@ int OGR_DS_TestCapability( OGRDataSourceH hDS, const char *pszCap )
 
 {
     VALIDATE_POINTER1( hDS, "OGR_DS_TestCapability", 0 );
-    VALIDATE_POINTER1( pszCap, "OGR_DS_TestCapability", 0 );
 
     return ((OGRDataSource *) hDS)->TestCapability( pszCap );
 }
@@ -1014,40 +997,3 @@ void OGRDataSource::SetDriver( OGRSFDriver *poDriver )
     m_poDriver = poDriver;
 }
 
-/************************************************************************/
-/*                         OGR_DS_GetStyleTable()                       */
-/************************************************************************/
-
-OGRStyleTableH OGR_DS_GetStyleTable( OGRDataSourceH hDS )
-
-{
-    VALIDATE_POINTER1( hDS, "OGR_DS_GetStyleTable", NULL );
-    
-    return (OGRStyleTableH) ((OGRDataSource *) hDS)->GetStyleTable( );
-}
-
-/************************************************************************/
-/*                         OGR_DS_SetStyleTableDirectly()               */
-/************************************************************************/
-
-void OGR_DS_SetStyleTableDirectly( OGRDataSourceH hDS,
-                                   OGRStyleTableH hStyleTable )
-
-{
-    VALIDATE_POINTER0( hDS, "OGR_DS_SetStyleTableDirectly" );
-    
-    ((OGRDataSource *) hDS)->SetStyleTableDirectly( (OGRStyleTable *) hStyleTable);
-}
-
-/************************************************************************/
-/*                         OGR_DS_SetStyleTable()                       */
-/************************************************************************/
-
-void OGR_DS_SetStyleTable( OGRDataSourceH hDS, OGRStyleTableH hStyleTable )
-
-{
-    VALIDATE_POINTER0( hDS, "OGR_DS_SetStyleTable" );
-    VALIDATE_POINTER0( hStyleTable, "OGR_DS_SetStyleTable" );
-    
-    ((OGRDataSource *) hDS)->SetStyleTable( (OGRStyleTable *) hStyleTable);
-}

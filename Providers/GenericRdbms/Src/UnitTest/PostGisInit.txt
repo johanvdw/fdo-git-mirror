@@ -1,1 +1,0 @@
-provider=PostgreSQL;service=144.111.133.108;username=postgres;password=changeme;clean=true;

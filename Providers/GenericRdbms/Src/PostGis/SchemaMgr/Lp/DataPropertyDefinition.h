@@ -111,6 +111,9 @@ protected:
         FdoStringP logicalName,
         FdoStringP physicalName,
         FdoPhysicalPropertyMapping* propOverrides) const;
+
+    virtual void Finalize();
+
 };
 
 /// \brief

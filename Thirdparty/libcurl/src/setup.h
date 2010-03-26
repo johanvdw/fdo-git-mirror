@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,16 +20,18 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: setup.h,v 1.63 2009-11-14 18:51:38 yangtse Exp $
+ * $Id: setup.h,v 1.51 2007-06-30 23:45:57 gknauf Exp $
  ***************************************************************************/
 
 #define CURL_NO_OLDIES
 
-/*
- * Define WIN32 when build target is Win32 API
- */
+#if !defined(WIN32) && defined(__WIN32__)
+/* Borland fix */
+#define WIN32
+#endif
 
-#if (defined(_WIN32) || defined(__WIN32__)) && !defined(WIN32) && !defined(__SYMBIAN32__)
+#if !defined(WIN32) && defined(_WIN32)
+/* VS2005 on x64 fix */
 #define WIN32
 #endif
 
@@ -39,15 +41,15 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "curl_config.h"
+#include "config.h"
 #else
 
 #ifdef WIN32
 #include "config-win32.h"
 #endif
 
-#if defined(macintosh) && defined(__MRC__)
-#  include "config-mac.h"
+#ifdef macintosh
+#include "config-mac.h"
 #endif
 
 #ifdef __riscos__
@@ -58,44 +60,28 @@
 #include "config-amigaos.h"
 #endif
 
-#ifdef __SYMBIAN32__
-#include "config-symbian.h"
-#endif
-
 #ifdef TPF
 #include "config-tpf.h"
+/* change which select is used for the curl command line tool */
+#define select(a,b,c,d,e) tpf_select_bsd(a,b,c,d,e)
+/* and turn off the progress meter */
+#define CONF_DEFAULT (0|CONF_NOPROGRESS)
 #endif
 
 #endif /* HAVE_CONFIG_H */
 
-/*
- * AIX 4.3 and newer needs _THREAD_SAFE defined to build
- * proper reentrant code. Others may also need it.
- */
-
-#ifdef NEED_THREAD_SAFE
-#  ifndef _THREAD_SAFE
-#    define _THREAD_SAFE
-#  endif
-#endif
-
-/*
- * Tru64 needs _REENTRANT set for a few function prototypes and
- * things to appear in the system header files. Unixware needs it
- * to build proper reentrant code. Others may also need it.
- */
-
-#ifdef NEED_REENTRANT
-#  ifndef _REENTRANT
-#    define _REENTRANT
-#  endif
+#if defined(CURLDEBUG) && defined(CURLTOOLDEBUG)
+/* This is an ugly hack for CURLDEBUG conditions only. We need to include
+   the file here, since it might set the _FILE_OFFSET_BITS define, which must
+   be set BEFORE all normal system headers. */
+#include "../lib/setup.h"
 #endif
 
 /* 
  * Include header files for windows builds before redefining anything.
  * Use this preproessor block only to include or exclude windows.h, 
  * winsock2.h, ws2tcpip.h or winsock.h. Any other windows thing belongs 
- * to any other further and independent block.  Under Cygwin things work
+ * to any other further and independant block.  Under Cygwin things work
  * just as under linux (e.g. <sys/socket.h>) and the winsock headers should
  * never be included when __CYGWIN__ is defined.  configure script takes
  * care of this, not defining HAVE_WINDOWS_H, HAVE_WINSOCK_H, HAVE_WINSOCK2_H,
@@ -135,13 +121,6 @@
 #  endif
 #endif
 
-#ifdef TPF
-#  include <sys/socket.h>
-   /* change which select is used for the curl command line tool */
-#  define select(a,b,c,d,e) tpf_select_bsd(a,b,c,d,e)
-   /* and turn off the progress meter */
-#  define CONF_DEFAULT (0|CONF_NOPROGRESS)
-#endif
 
 #include <stdio.h>
 
@@ -175,6 +154,9 @@ int fileno( FILE *stream);
 #ifdef word
 #undef word
 #endif
+#ifndef HAVE_LIMITS_H
+#define HAVE_LIMITS_H /* we have limits.h */
+#endif
 #define DIR_CHAR      "/"
 #define DOT_CHAR      "_"
 #else
@@ -196,6 +178,10 @@ int fileno( FILE *stream);
 
 #if (defined(NETWARE) && !defined(__NOVELL_LIBC__))
 #include <sys/timeval.h>
+#endif
+
+#ifndef SIZEOF_CURL_OFF_T
+#define SIZEOF_CURL_OFF_T sizeof(curl_off_t)
 #endif
 
 #ifndef UNPRINTABLE_CHAR

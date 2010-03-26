@@ -318,7 +318,7 @@ bool FdoSmPhColumn::DefinitionEquals( FdoSmPhColumnP otherColumn )
 {
     bool equals = false;
 
-    if ( GetType() == otherColumn->GetType() )
+    if ( (GetType() == otherColumn->GetType()) && (GetNullable() == otherColumn->GetNullable()) )
         equals = true;
 
     return equals;

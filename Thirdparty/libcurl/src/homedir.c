@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2005, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: homedir.c,v 1.12 2009-12-30 17:59:57 yangtse Exp $
+ * $Id: homedir.c,v 1.9 2005/12/18 15:36:14 yangtse Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -33,7 +33,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef __VMS
+#ifdef VMS
 #include <unixlib.h>
 #endif
 
@@ -68,10 +68,10 @@ char *GetEnv(const char *variable, char do_expand)
   }
 #else
   (void)do_expand;
-#ifdef __VMS
+#ifdef  VMS
   env = getenv(variable);
   if (env && strcmp("HOME",variable) == 0) {
-        env = decc_translate_vms(env);
+        env = decc$translate_vms(env);
   }
 #else
   /* no length control */
@@ -99,15 +99,13 @@ char *homedir(void)
    struct passwd *pw = getpwuid(geteuid());
 
    if (pw) {
-#ifdef __VMS
-     home = decc_translate_vms(pw->pw_dir);
+#ifdef VMS
+     home = decc$translate_vms(pw->pw_dir);
 #else
      home = pw->pw_dir;
 #endif
      if (home && home[0])
        home = strdup(home);
-     else
-       home = NULL;
    }
  }
 #endif /* PWD-stuff */

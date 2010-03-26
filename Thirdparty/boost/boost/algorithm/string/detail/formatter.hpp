@@ -1,10 +1,9 @@
 //  Boost string_algo library formatter.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003.
-//
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003. Use, modification and
+//  distribution is subject to the Boost Software License, Version
+//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
@@ -39,7 +38,7 @@ namespace boost {
             public:
                 // Construction
                 const_formatF(const RangeT& Format) :
-                    m_Format(::boost::begin(Format), ::boost::end(Format)) {}
+                    m_Format(begin(Format), end(Format)) {}
 
                 // Operation
 #if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564))
@@ -70,7 +69,7 @@ namespace boost {
                 template< typename Range2T >
                 const RangeT& operator()(const Range2T& Replace) const
                 {
-                    return RangeT(::boost::begin(Replace), ::boost::end(Replace));
+                    return RangeT(begin(Replace), end(Replace));
                 }
             };
 

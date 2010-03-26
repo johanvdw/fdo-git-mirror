@@ -23,14 +23,14 @@
 
 using namespace std;
 
-std::wstring ProjConverter::TranslateProjection(const wchar_t* proj)
+const wchar_t* ProjConverter::TranslateProjection(const wchar_t* proj)
 {
     //Quick return if no translations are installed
     if (m_translations.size() == 0)
         return proj;
 
-    string s = W2A_SLOW(proj);
-    std::wstring ret = proj;
+    W2A(proj);
+    string s(mbproj);
 
     std::map<std::string, std::string>::iterator res = m_translations.find(s);
     if (res != m_translations.end())
@@ -39,10 +39,11 @@ std::wstring ProjConverter::TranslateProjection(const wchar_t* proj)
         printf("Converted projection from %s to %s\"", mbproj, res->second.c_str());
 #endif
         const char* y = res->second.c_str();
-        ret = A2W_SLOW(y);
+        A2W(y);
+        proj = wy;
     }
 
-    return ret;
+    return proj;
 }
 
 bool ProjConverter::GetLine(ifstream& infile, char* dest, std::streamsize buffersize)

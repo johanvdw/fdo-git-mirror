@@ -124,9 +124,6 @@ int postgis_define (
                             }
                         }
                     }
-
-                    if ( pgres != NULL )
-                        PQclear(pgres);
                 } /* if (NULL != curs->stmt_name) */
             }
         }

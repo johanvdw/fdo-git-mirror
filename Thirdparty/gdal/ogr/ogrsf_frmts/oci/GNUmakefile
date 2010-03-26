@@ -9,7 +9,7 @@ OBJ	=	oci_utils.o ogrocisession.o ogrocistatement.o \
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(OCI_INCLUDE) $(CPPFLAGS)
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(O_OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)

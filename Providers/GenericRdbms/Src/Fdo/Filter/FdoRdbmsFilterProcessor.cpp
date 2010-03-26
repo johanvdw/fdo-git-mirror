@@ -2215,7 +2215,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
                 if ( dataPropertyDef->RefColumn() )
 				{
 					const FdoSmPhColumn* column = dataPropertyDef->RefColumn();
-                    all->Add( mDbiConnection->GetSchemaUtil()->GetColumnSqlName(dataPropertyDef) );
+                    all->Add( column->GetDbName() );
                 }
             }
         }

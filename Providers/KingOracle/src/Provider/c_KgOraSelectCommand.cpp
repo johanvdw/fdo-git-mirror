@@ -166,9 +166,6 @@ FdoIFeatureReader* c_KgOraSelectCommand::Execute ()
     
         
     c_KgOraSridDesc orasrid;
-    m_Connection->GetOracleSridDesc(classdef,orasrid);
-    
-    /*
     if( !m_PropertyNames.p || (m_PropertyNames->GetCount()==0) )
     {
       FdoPtr<FdoPropertyDefinition> propdef;        
@@ -189,6 +186,7 @@ FdoIFeatureReader* c_KgOraSelectCommand::Execute ()
         }
       }
     }
+    
     /*
     else
     {

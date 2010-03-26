@@ -14,6 +14,10 @@
 #ifndef FILEENDIAN_H
 #define FILEENDIAN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <stdio.h>
 #include "type.h"
 #include "datasource.h"
@@ -58,5 +62,9 @@ int fileBitRead (void *Dst, size_t dstLen, uShort2 num_bits, FILE *fp,
                  uChar * gbuf, sChar * gbufLoc);
 char fileBitWrite (void *Src, size_t srcLen, uShort2 numBits, FILE *fp,
                    uChar * pbuf, sChar * pbufLoc);
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
 
 #endif /* FILEENDIAN_H */
