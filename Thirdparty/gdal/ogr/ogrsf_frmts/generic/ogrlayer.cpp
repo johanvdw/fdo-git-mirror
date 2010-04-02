@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlayer.cpp 17223 2009-06-07 19:41:08Z rouault $
+ * $Id: ogrlayer.cpp 14828 2008-07-05 17:51:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the OGRSFLayer class.
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "ogr_attrind.h"
 
-CPL_CVSID("$Id: ogrlayer.cpp 17223 2009-06-07 19:41:08Z rouault $");
+CPL_CVSID("$Id: ogrlayer.cpp 14828 2008-07-05 17:51:09Z rouault $");
 
 /************************************************************************/
 /*                              OGRLayer()                              */
@@ -580,7 +580,6 @@ int OGR_L_TestCapability( OGRLayerH hLayer, const char *pszCap )
 
 {
     VALIDATE_POINTER1( hLayer, "OGR_L_TestCapability", 0 );
-    VALIDATE_POINTER1( pszCap, "OGR_L_TestCapability", 0 );
 
     return ((OGRLayer *) hLayer)->TestCapability( pszCap );
 }
@@ -719,8 +718,6 @@ int OGRLayer::InstallFilter( OGRGeometry * poFilter )
         return TRUE;
 
     OGRLinearRing *poRing = poPoly->getExteriorRing();
-    if (poRing == NULL)
-        return TRUE;
 
     if( poRing->getNumPoints() > 5 || poRing->getNumPoints() < 4 )
         return TRUE;
@@ -959,41 +956,3 @@ const char *OGR_L_GetGeometryColumn( OGRLayerH hLayer )
     return ((OGRLayer *) hLayer)->GetGeometryColumn();
 }
 
-/************************************************************************/
-/*                         OGR_L_GetStyleTable()                        */
-/************************************************************************/
-
-OGRStyleTableH OGR_L_GetStyleTable( OGRLayerH hLayer )
-
-{
-    VALIDATE_POINTER1( hLayer, "OGR_L_GetStyleTable", NULL );
-    
-    return (OGRStyleTableH) ((OGRLayer *) hLayer)->GetStyleTable( );
-}
-
-/************************************************************************/
-/*                         OGR_L_SetStyleTableDirectly()                */
-/************************************************************************/
-
-void OGR_L_SetStyleTableDirectly( OGRLayerH hLayer,
-                                  OGRStyleTableH hStyleTable )
-
-{
-    VALIDATE_POINTER0( hLayer, "OGR_L_SetStyleTableDirectly" );
-    
-    ((OGRLayer *) hLayer)->SetStyleTableDirectly( (OGRStyleTable *) hStyleTable);
-}
-
-/************************************************************************/
-/*                         OGR_L_SetStyleTable()                        */
-/************************************************************************/
-
-void OGR_L_SetStyleTable( OGRLayerH hLayer,
-                          OGRStyleTableH hStyleTable )
-
-{
-    VALIDATE_POINTER0( hLayer, "OGR_L_SetStyleTable" );
-    VALIDATE_POINTER0( hStyleTable, "OGR_L_SetStyleTable" );
-    
-    ((OGRLayer *) hLayer)->SetStyleTable( (OGRStyleTable *) hStyleTable);
-}

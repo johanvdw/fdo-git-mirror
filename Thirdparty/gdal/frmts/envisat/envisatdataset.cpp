@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: envisatdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: envisatdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Reader for ENVISAT format image data.
@@ -29,9 +29,8 @@
 
 #include "rawdataset.h"
 #include "cpl_string.h"
-#include "ogr_srs_api.h"					       
 
-CPL_CVSID("$Id: envisatdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: envisatdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 CPL_C_START
 #include "EnvisatFile.h"
@@ -137,7 +136,7 @@ const char *EnvisatDataset::GetGCPProjection()
 
 {
     if( nGCPCount > 0 )
-        return SRS_WKT_WGS84;
+        return "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",7030]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",6326]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",8901]],UNIT[\"DMSH\",0.0174532925199433,AUTHORITY[\"EPSG\",9108]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",4326]]";
     else
         return "";
 }
@@ -603,18 +602,7 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
         if( EQUAL(pszDSType,"M") )
             break;
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        EnvisatFile_Close( hEnvisatFile );
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The ENVISAT driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
+
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -751,15 +739,15 @@ GDALDataset *EnvisatDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->ScanForGCPs_ASAR();
 
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }

@@ -153,8 +153,8 @@ static void test1(const EVP_CIPHER *c,const unsigned char *key,int kn,
     
     if(kn != c->key_len)
 	{
-	fprintf(stderr,"Key length doesn't match, got %d expected %lu\n",kn,
-		(unsigned long)c->key_len);
+	fprintf(stderr,"Key length doesn't match, got %d expected %d\n",kn,
+		c->key_len);
 	test1_exit(5);
 	}
     EVP_CIPHER_CTX_init(&ctx);
@@ -220,18 +220,18 @@ static void test1(const EVP_CIPHER *c,const unsigned char *key,int kn,
 	    test1_exit(7);
 	    }
 
-	if(outl+outl2 != pn)
+	if(outl+outl2 != cn)
 	    {
 	    fprintf(stderr,"Plaintext length mismatch got %d expected %d\n",
-		    outl+outl2,pn);
+		    outl+outl2,cn);
 	    test1_exit(8);
 	    }
 
-	if(memcmp(out,plaintext,pn))
+	if(memcmp(out,plaintext,cn))
 	    {
 	    fprintf(stderr,"Plaintext mismatch\n");
-	    hexdump(stderr,"Got",out,pn);
-	    hexdump(stderr,"Expected",plaintext,pn);
+	    hexdump(stderr,"Got",out,cn);
+	    hexdump(stderr,"Expected",plaintext,cn);
 	    test1_exit(9);
 	    }
 	}
@@ -424,13 +424,6 @@ int main(int argc,char **argv)
 		continue;
 		}
 #endif
-#ifdef OPENSSL_NO_SEED
-	    if (strstr(cipher, "SEED") == cipher)
-		{
-		fprintf(stdout, "Cipher disabled, skipping %s\n", cipher); 
-		continue;
-		}
-#endif
 	    fprintf(stderr,"Can't find %s\n",cipher);
 	    EXIT(3);
 	    }
@@ -441,7 +434,7 @@ int main(int argc,char **argv)
 #endif
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
+    ERR_remove_state(0);
     ERR_free_strings();
     CRYPTO_mem_leaks_fp(stderr);
 

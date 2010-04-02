@@ -4,11 +4,8 @@
 FTP
 PASV
 RETR
-multi
-non-existing host
 </keywords>
 </info>
-
 # Server-side
 <reply>
 <data>

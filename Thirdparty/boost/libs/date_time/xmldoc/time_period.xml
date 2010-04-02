@@ -4,7 +4,7 @@
 
 <!-- Copyright (c) 2001-2006 CrystalClear Software, Inc.
      Subject to the Boost Software License, Version 1.0. 
-     (See accompanying file LICENSE_1_0.txt or  http://www.boost.org/LICENSE_1_0.txt)
+     (See accompanying file LICENSE-1.0 or  http://www.boost.org/LICENSE-1.0)
 -->
 
 <section id="date_time.posix_time.time_period">
@@ -60,9 +60,8 @@ or
 	  </row>
 	  <row>
 	    <entry><screen>date d(2002,Jan,01);
-ptime t1(d, seconds(10)); //10 sec after midnight
-ptime t2(d, hours(10)); //10 hours after midnight
-time_period tp(t1, t2);</screen>
+ptime t(d, seconds(10)); //10 sec after midnight
+time_period tp(t, hours(3));</screen>
 	    </entry>
           </row>
 
@@ -73,8 +72,9 @@ time_period tp(t1, t2);</screen>
 	  </row>
 	  <row>
 	    <entry><screen>date d(2002,Jan,01);
-ptime t(d, seconds(10)); //10 sec after midnight
-time_period tp(t, hours(3));</screen>
+ptime t1(d, seconds(10)); //10 sec after midnight
+ptime t2(d, hours(10)); //10 hours after midnight
+time_period tp(t1, t2);</screen>
 	    </entry>
           </row>
           
@@ -123,16 +123,14 @@ tp.shift(minutes(5));
 
           <row>
 	    <entry valign="top" morerows="1"><screen>time_period expand(days)</screen></entry>
-	    <entry>Subtract duration from begin and add duration to end.</entry>
+	    <entry>Add duration to both begin and end.</entry>
 	  </row>
 	  <row>
-	    <entry>
               <screen>
 time_period tp(ptime(date(2005,Jan,1),hours(1)), hours(2));
 tp.expand(minutes(5)); 
 // tp == 2005-Jan-01 00:55:00 to 2005-Jan-01 03:05:00
              </screen>
-	    </entry>
 	  </row>
 
 	</tbody>

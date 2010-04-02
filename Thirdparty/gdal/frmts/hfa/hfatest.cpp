@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatest.cpp 18178 2009-12-05 00:29:57Z warmerdam $
+ * $Id: hfatest.cpp 12436 2007-10-16 03:38:27Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Testing mainline for HFA services - transitory.
@@ -29,7 +29,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfatest.cpp 18178 2009-12-05 00:29:57Z warmerdam $");
+CPL_CVSID("$Id: hfatest.cpp 12436 2007-10-16 03:38:27Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -39,20 +39,6 @@ static void Usage()
 
 {
     printf( "hfatest [-dd] [-dt] [-dr] filename\n" );
-}
-
-/************************************************************************/
-/* Stub for HFAPCSStructToWKT, defined in hfadataset.cpp but used by    */
-/* hfaopen.cpp                                                          */
-/************************************************************************/
-
-char *
-HFAPCSStructToWKT( const Eprj_Datum *psDatum,
-                   const Eprj_ProParameters *psPro,
-                   const Eprj_MapInfo *psMapInfo,
-                   HFAEntry *poMapInformation )
-{
-    return NULL;
 }
 
 /************************************************************************/
@@ -137,13 +123,11 @@ int main( int argc, char ** argv )
         for( i = 1; i <= nBands; i++ )
         {
             int	nDataType, nColors, nOverviews, iOverview;
-            double	*padfRed, *padfGreen, *padfBlue, *padfAlpha, *padfBins;
+            double	*padfRed, *padfGreen, *padfBlue, *padfAlpha;
             int nBlockXSize, nBlockYSize, nCompressionType;
         
             HFAGetBandInfo( hHFA, i, &nDataType, &nBlockXSize, &nBlockYSize, 
-                            &nCompressionType );
-            nOverviews = HFAGetOverviewCount( hHFA, i );
-
+                            &nOverviews, &nCompressionType );
             printf( "Band %d: %dx%d tiles, type = %d\n",
                     i, nBlockXSize, nBlockYSize, nDataType );
 
@@ -157,7 +141,7 @@ int main( int argc, char ** argv )
             }
 
             if( HFAGetPCT( hHFA, i, &nColors, &padfRed, &padfGreen, 
-			   &padfBlue, &padfAlpha, &padfBins )
+			   &padfBlue, &padfAlpha )
                 == CE_None )
             {
                 int	j;
@@ -165,8 +149,7 @@ int main( int argc, char ** argv )
                 for( j = 0; j < nColors; j++ )
                 {
                     printf( "PCT[%d] = %f,%f,%f %f\n",
-                            (padfBins != NULL) ? (int) padfBins[j] : j,
-                            padfRed[j], padfGreen[j], 
+                            j, padfRed[j], padfGreen[j], 
 			    padfBlue[j], padfAlpha[j]);
                 }
             }

@@ -664,7 +664,7 @@ FdoPropertyValue* FdoCommonMiscUtil::GetItemNoThrow(FdoPropertyValueCollection *
 
 
 /// <summary> Handles read-only properties and default values in the given PropertyValue collection.</summary>
-void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *classDef, FdoPropertyValueCollection *propValues, bool bMakeNullsExplicit, bool bValidateProps)
+void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *classDef, FdoPropertyValueCollection *propValues, bool bMakeNullsExplicit)
 {
     FdoPtr<FdoPropertyDefinitionCollection> propertyDefs = classDef->GetProperties();
 
@@ -695,9 +695,10 @@ void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *class
             bIsIdentityProperty = FdoCommonSchemaUtil::IsIdentityProperty(classDef, dataPropertyDef->GetName());
 
             FdoString *defaultValue = dataPropertyDef->GetDefaultValue();
-            bHasDefaultValue = (defaultValue != NULL) && (*defaultValue != L'\0');
+            bHasDefaultValue = (defaultValue != NULL) && (wcslen(defaultValue) > 0);
 
-            if (bIsReadOnly && bValidateProps)
+
+            if (bIsReadOnly)
             {
                 if (bIsSet)
                     throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_97_CANNOT_SET_READONLY_PROPERTY, "Property '%1$ls' cannot be set because it is read-only.", propertyDef->GetName()));
@@ -734,21 +735,15 @@ void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *class
         }
     }
 
-    FdoPtr<FdoClassDefinition> baseCls = classDef->GetBaseClass();
-    if (baseCls != NULL){ // do not validate props for base classes make it on demand only
-        HandleReadOnlyAndDefaultValues(baseCls, propValues, bMakeNullsExplicit, false);
-    }else if (bValidateProps)
+    // Validate that all given property values have valid property names:
+    for (FdoInt32 i=0; i<propValues->GetCount(); i++)
     {
-        // Validate that all given property values have valid property names:
-        for (FdoInt32 i=0; i<propValues->GetCount(); i++)
-        {
-            FdoPtr<FdoPropertyValue> propVal = propValues->GetItem(i);
-            FdoPtr<FdoIdentifier> propValId = propVal->GetName();
-            // NOTE: we can skip checking the base properties since this provider currently doesn't support inheritance
-            FdoPtr<FdoPropertyDefinition> propertyDef = propertyDefs->FindItem(propValId->GetName());
-            if (propertyDef == NULL)
-                throw FdoException::Create(FdoException::NLSGetMessage(FDO_74_PROPERTY_NAME_NOT_FOUND, "The property '%1$ls' was not found.", propValId->GetName()));
-        }
+        FdoPtr<FdoPropertyValue> propVal = propValues->GetItem(i);
+        FdoPtr<FdoIdentifier> propValId = propVal->GetName();
+        // NOTE: we can skip checking the base properties since this provider currently doesn't support inheritance
+        FdoPtr<FdoPropertyDefinition> propertyDef = propertyDefs->FindItem(propValId->GetName());
+        if (propertyDef == NULL)
+            throw FdoException::Create(FdoException::NLSGetMessage(FDO_74_PROPERTY_NAME_NOT_FOUND, "The property '%1$ls' was not found.", propValId->GetName()));
     }
 }
 

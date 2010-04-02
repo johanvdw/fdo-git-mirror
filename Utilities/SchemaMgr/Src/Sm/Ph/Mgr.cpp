@@ -647,11 +647,6 @@ FdoStringP FdoSmPhMgr::GetRealDbObjectName( FdoStringP objectName)
     return objectName;
 }
 
-FdoStringP FdoSmPhMgr::GetDefaultPhysicalSchemaName()
-{
-    return L"";
-}
-
 FdoStringP FdoSmPhMgr::DbObject2MetaSchemaName( FdoStringP objectName )
 {
     return objectName;
@@ -814,9 +809,6 @@ FdoPtr<FdoDataValue> FdoSmPhMgr::ParseSQLVal( FdoStringP stringValue )
             // Expression must specifically be an FDO data value.
             parsedValue = FDO_SAFE_ADDREF(dynamic_cast<FdoDataValue*>(expr.p));
         }
-        catch ( FdoException* ex ) {
-            ex->Release();
-        }
         catch ( ... ) {
         }
 
@@ -830,11 +822,6 @@ FdoPtr<FdoDataValue> FdoSmPhMgr::ParseSQLVal( FdoStringP stringValue )
 FdoStringP FdoSmPhMgr::FormatOrderCol( FdoStringP colName, FdoSmPhColType colType )
 {
 	return colName;
-}
-
-FdoStringP FdoSmPhMgr::FormatConcatSql( FdoStringP arg1, FdoStringP arg2 )
-{
-    return arg1 + L" || " + arg2;
 }
 
 void FdoSmPhMgr::ValidateStringLength( 

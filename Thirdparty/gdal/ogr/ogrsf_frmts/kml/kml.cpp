@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.cpp 17946 2009-11-01 18:31:43Z rouault $
+ * $Id: kml.cpp 14947 2008-07-17 18:16:40Z condit $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -45,14 +45,12 @@ KML::KML()
 	poTrunk_ = NULL;
 	poCurrent_ = NULL;
 	nNumLayers_ = -1;
-        papoLayers_ = NULL;
 }
 
 KML::~KML()
 {
     if( NULL != pKMLFile_ )
         VSIFCloseL(pKMLFile_);
-    CPLFree(papoLayers_);
 
     delete poTrunk_;
 }
@@ -94,16 +92,13 @@ void KML::parse()
         poCurrent_ = NULL;
     }
 
-    XML_Parser oParser = OGRCreateExpatXMLParser();
+    XML_Parser oParser = XML_ParserCreate(NULL);
     XML_SetUserData(oParser, this);
     XML_SetElementHandler(oParser, startElement, endElement);
     XML_SetCharacterDataHandler(oParser, dataHandler);
-    oCurrentParser = oParser;
-    nWithoutEventCounter = 0;
 
     do
     {
-        nDataHandlerCounter = 0;
         nLen = (int)VSIFReadL( aBuf, 1, sizeof(aBuf), pKMLFile_ );
         nDone = VSIFEofL(pKMLFile_);
         if (XML_Parse(oParser, aBuf, nLen, nDone) == XML_STATUS_ERROR)
@@ -117,18 +112,11 @@ void KML::parse()
             VSIRewindL(pKMLFile_);
             return;
         }
-        nWithoutEventCounter ++;
-    } while (!nDone && nLen > 0 && nWithoutEventCounter < 10);
+    } while (!nDone && nLen > 0 );
 
     XML_ParserFree(oParser);
     VSIRewindL(pKMLFile_);
     poCurrent_ = NULL;
-
-    if (nWithoutEventCounter == 10)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Too much data inside one element. File probably corrupted");
-    }
 }
 
 void KML::checkValidity()
@@ -155,18 +143,14 @@ void KML::checkValidity()
         return;
     }
 
-    XML_Parser oParser = OGRCreateExpatXMLParser();
+    XML_Parser oParser = XML_ParserCreate(NULL);
     XML_SetUserData(oParser, this);
     XML_SetElementHandler(oParser, startElementValidate, NULL);
-    XML_SetCharacterDataHandler(oParser, dataHandlerValidate);
     int nCount = 0;
-
-    oCurrentParser = oParser;
 
     /* Parses the file until we find the first element */
     do
     {
-        nDataHandlerCounter = 0;
         nLen = (int)VSIFReadL( aBuf, 1, sizeof(aBuf), pKMLFile_ );
         nDone = VSIFEofL(pKMLFile_);
         if (XML_Parse(oParser, aBuf, nLen, nDone) == XML_STATUS_ERROR)
@@ -184,7 +168,6 @@ void KML::checkValidity()
                         (int)XML_GetCurrentColumnNumber(oParser));
             }
 
-            validity = KML_VALIDITY_INVALID;
             XML_ParserFree(oParser);
             VSIRewindL(pKMLFile_);
             return;
@@ -202,67 +185,57 @@ void KML::checkValidity()
 
 void XMLCALL KML::startElement(void* pUserData, const char* pszName, const char** ppszAttr)
 {
-    int i = 0;
+	int i = 0;
     KMLNode* poMynew = NULL;
-    Attribute* poAtt = NULL;
-
-    KML* poKML = (KML*) pUserData;
-
-    poKML->nWithoutEventCounter = 0;
-
-    if(poKML->poTrunk_ == NULL 
-    || (poKML->poCurrent_->getName()).compare("description") != 0)
+	Attribute* poAtt = NULL;
+	
+	if(((KML *)pUserData)->poTrunk_ == NULL 
+        || (((KML *)pUserData)->poCurrent_->getName()).compare("description") != 0)
     {
-        poMynew = new KMLNode();
-            poMynew->setName(pszName);
-        poMynew->setLevel(poKML->nDepth_);
-
-        for (i = 0; ppszAttr[i]; i += 2)
+    	poMynew = new KMLNode();
+	    poMynew->setName(pszName);
+    	poMynew->setLevel(((KML *)pUserData)->nDepth_);
+	
+    	for (i = 0; ppszAttr[i]; i += 2)
         {
             poAtt = new Attribute();
             poAtt->sName = ppszAttr[i];
             poAtt->sValue = ppszAttr[i + 1];
             poMynew->addAttribute(poAtt);
-        }
+    	}
 
-        if(poKML->poTrunk_ == NULL)
-            poKML->poTrunk_ = poMynew;
-        if(poKML->poCurrent_ != NULL)
-            poMynew->setParent(poKML->poCurrent_);
-        poKML->poCurrent_ = poMynew;
+        if(((KML *)pUserData)->poTrunk_ == NULL)
+            ((KML *)pUserData)->poTrunk_ = poMynew;
+        if(((KML *)pUserData)->poCurrent_ != NULL)
+            poMynew->setParent(((KML *)pUserData)->poCurrent_);
+        ((KML *)pUserData)->poCurrent_ = poMynew;
 
-        poKML->nDepth_++;
+    	((KML *)pUserData)->nDepth_++;
     }
     else
     {
         std::string sNewContent = "<";
         sNewContent += pszName;
-        for (i = 0; ppszAttr[i]; i += 2)
+    	for (i = 0; ppszAttr[i]; i += 2)
         {
             sNewContent += " ";
             sNewContent += ppszAttr[i];
-            sNewContent += "=\"";
+            sNewContent += "=";
             sNewContent += ppszAttr[i + 1];
-            sNewContent += "\"";
-        }
+    	}
         sNewContent += ">";
-        if(poKML->poCurrent_->numContent() == 0)
-            poKML->poCurrent_->addContent(sNewContent);
-        else
-            poKML->poCurrent_->appendContent(sNewContent);
+        ((KML *)pUserData)->poCurrent_->addContent(sNewContent);
     }
 }
 
 void XMLCALL KML::startElementValidate(void* pUserData, const char* pszName, const char** ppszAttr)
 {
     int i = 0;
-
-    KML* poKML = (KML*) pUserData;
-
-    if (poKML->validity != KML_VALIDITY_UNKNOWN)
+    
+    if (((KML *)pUserData)->validity != KML_VALIDITY_UNKNOWN)
         return;
 
-    poKML->validity = KML_VALIDITY_INVALID;
+    ((KML *)pUserData)->validity = KML_VALIDITY_INVALID;
 
     if(strcmp(pszName, "kml") == 0)
     {
@@ -274,201 +247,118 @@ void XMLCALL KML::startElementValidate(void* pUserData, const char* pszName, con
             {
                 // Is it KML 2.2?
                 if((strcmp(ppszAttr[i + 1], "http://earth.google.com/kml/2.2") == 0) || 
-                   (strcmp(ppszAttr[i + 1], "http://www.opengis.net/kml/2.2") == 0))
+				   (strcmp(ppszAttr[i + 1], "http://www.opengis.net/kml/2.2") == 0))
                 {
-                    poKML->validity = KML_VALIDITY_VALID;
-                    poKML->sVersion_ = "2.2";
+                    ((KML *)pUserData)->validity = KML_VALIDITY_VALID;
+                    ((KML *)pUserData)->sVersion_ = "2.2";
                 }
                 else if(strcmp(ppszAttr[i + 1], "http://earth.google.com/kml/2.1") == 0)
                 {
-                    poKML->validity = KML_VALIDITY_VALID;
-                    poKML->sVersion_ = "2.1";
+                    ((KML *)pUserData)->validity = KML_VALIDITY_VALID;
+                    ((KML *)pUserData)->sVersion_ = "2.1";
                 }
                 else if(strcmp(ppszAttr[i + 1], "http://earth.google.com/kml/2.0") == 0)
                 {
-                    poKML->validity = KML_VALIDITY_VALID;
-                    poKML->sVersion_ = "2.0";
-                }
-                else
-                {
-                    CPLDebug("KML", "Unhandled xmlns value : %s. Going on though...", ppszAttr[i]);
-                    poKML->validity = KML_VALIDITY_VALID;
-                    poKML->sVersion_ = "?";
+                    ((KML *)pUserData)->validity = KML_VALIDITY_VALID;
+                    ((KML *)pUserData)->sVersion_ = "2.0";
                 }
             }
         }
-
-        if (poKML->validity == KML_VALIDITY_INVALID)
-        {
-            CPLDebug("KML", "Did not find xmlns attribute in <kml> element. Going on though...");
-            poKML->validity = KML_VALIDITY_VALID;
-            poKML->sVersion_ = "?";
-        }
-    }
-}
-
-void XMLCALL KML::dataHandlerValidate(void * pUserData, const char * pszData, int nLen)
-{
-    KML* poKML = (KML*) pUserData;
-
-    poKML->nDataHandlerCounter ++;
-    if (poKML->nDataHandlerCounter >= BUFSIZ)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "File probably corrupted (million laugh pattern)");
-        XML_StopParser(poKML->oCurrentParser, XML_FALSE);
     }
 }
 
 void XMLCALL KML::endElement(void* pUserData, const char* pszName)
 {
     KMLNode* poTmp = NULL;
+    std::string sData;
+    std::string sTmp;
+    unsigned short nPos = 0;
 
-    KML* poKML = (KML*) pUserData;
-
-    poKML->nWithoutEventCounter = 0;
-
-    if(poKML->poCurrent_ != NULL &&
-       poKML->poCurrent_->getName().compare(pszName) == 0)
+	if(((KML *)pUserData)->poCurrent_ != NULL
+        && 
+	    ((KML *)pUserData)->poCurrent_->getName().compare(pszName) == 0)
     {
-        poKML->nDepth_--;
-        poTmp = poKML->poCurrent_;
+    	((KML *)pUserData)->nDepth_--;
+        poTmp = ((KML *)pUserData)->poCurrent_;
         // Split the coordinates
-        if(poKML->poCurrent_->getName().compare("coordinates") == 0 &&
-           poKML->poCurrent_->numContent() == 1)
+        if(((KML *)pUserData)->poCurrent_->getName().compare("coordinates") == 0)
         {
-            std::string sData = poKML->poCurrent_->getContent(0);
-            std::size_t nPos = 0;
-            std::size_t nLength = sData.length();
-            const char* pszData = sData.c_str();
-            while(TRUE)
+            sData = ((KML *)pUserData)->poCurrent_->getContent(0);
+            while(sData.length() > 0)
             {
                 // Cut off whitespaces
-                while(nPos < nLength &&
-                      (pszData[nPos] == ' ' || pszData[nPos] == '\n'
-                       || pszData[nPos] == '\r' || pszData[nPos] == '\t' ))
-                    nPos ++;
-
-                if (nPos == nLength)
-                    break;
-
-                std::size_t nPosBegin = nPos;
-
+           	    while((sData[nPos] == ' ' || sData[nPos] == '\n'
+                    || sData[nPos] == '\r' || 
+        	        sData[nPos] == '\t' ) && sData.length() > 0)
+                        sData = sData.substr(1, sData.length()-1);
+                
                 // Get content
-                while(nPos < nLength &&
-                      pszData[nPos] != ' ' && pszData[nPos] != '\n' && pszData[nPos] != '\r' && 
-                      pszData[nPos] != '\t')
-                    nPos++;
+                while(sData[nPos] != ' ' && sData[nPos] != '\n' && sData[nPos] != '\r' && 
+                    sData[nPos] != '\t' && nPos < sData.length()) 
+                        nPos++;
+                sTmp = sData.substr(0, nPos);
 
-                if(nPos - nPosBegin > 0)
-                {
-                    std::string sTmp(pszData + nPosBegin, nPos - nPosBegin);
-                    poKML->poCurrent_->addContent(sTmp);
-                }
-            }
-            if(poKML->poCurrent_->numContent() > 1)
-                poKML->poCurrent_->deleteContent(0);
-        }
-        else if (poKML->poCurrent_->numContent() == 1)
-        {
-            std::string sData = poKML->poCurrent_->getContent(0);
-            std::string sDataWithoutNL;
-            std::size_t nPos = 0;
-            std::size_t nLength = sData.length();
-            const char* pszData = sData.c_str();
-            std::size_t nLineStartPos = 0;
-            int bLineStart = TRUE;
-
-            /* Re-assemble multi-line content by removing leading spaces for each line */
-            /* I'm not sure why we do that. Shouldn't we preserve content as such ? */
-            while(nPos < nLength)
-            {
-                char ch = pszData[nPos];
-                if (bLineStart && (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'))
-                    nLineStartPos ++;
-                else if (ch == '\n' || ch == '\r')
-                {
-                    if (!bLineStart)
-                    {
-                        std::string sTmp(pszData + nLineStartPos, nPos - nLineStartPos);
-                        if (sDataWithoutNL.size() > 0)
-                            sDataWithoutNL += " ";
-                        sDataWithoutNL += sTmp;
-                        bLineStart = TRUE;
-                    }
-                    nLineStartPos = nPos + 1;
-                }
+            	if(sTmp.length() > 0)
+        	        ((KML *)pUserData)->poCurrent_->addContent(sTmp);
+                // Cut the content from the rest
+        	    if(nPos < sData.length())
+                    sData = sData.substr(nPos, sData.length() - nPos);
                 else
-                {
-                    bLineStart = FALSE;
-                }
-                nPos ++;
+                    break;
+                nPos = 0;
             }
-
-            if (nLineStartPos > 0)
-            {
-                if (nLineStartPos < nPos)
-                {
-                    std::string sTmp(pszData + nLineStartPos, nPos - nLineStartPos);
-                    if (sDataWithoutNL.size() > 0)
-                        sDataWithoutNL += " ";
-                    sDataWithoutNL += sTmp;
-                }
-
-                poKML->poCurrent_->deleteContent(0);
-                poKML->poCurrent_->addContent(sDataWithoutNL);
-            }
+            if(((KML *)pUserData)->poCurrent_->numContent() > 1)
+                ((KML *)pUserData)->poCurrent_->deleteContent(0);
         }
-
-        if(poKML->poCurrent_->getParent() != NULL)
-            poKML->poCurrent_ = poKML->poCurrent_->getParent();
+        
+        if(((KML *)pUserData)->poCurrent_->getParent() != NULL)
+            ((KML *)pUserData)->poCurrent_ = ((KML *)pUserData)->poCurrent_->getParent();
         else
-            poKML->poCurrent_ = NULL;
+            ((KML *)pUserData)->poCurrent_ = NULL;
 
-        if(!poKML->isHandled(pszName))
+    	if(!((KML *)pUserData)->isHandled(pszName))
         {
-            CPLDebug("KML", "Not handled: %s", pszName);
-            delete poTmp;
-        }
+    	    CPLDebug("KML", "Not handled: %s", pszName);
+    	    delete poTmp;
+	    }
         else
         {
-            if(poKML->poCurrent_ != NULL)
-                poKML->poCurrent_->addChildren(poTmp);
-        }
+	        if(((KML *)pUserData)->poCurrent_ != NULL)
+               	((KML *)pUserData)->poCurrent_->addChildren(poTmp);
+	    }
     }
-    else if(poKML->poCurrent_ != NULL)
+    else if(((KML *)pUserData)->poCurrent_ != NULL)
     {
         std::string sNewContent = "</";
         sNewContent += pszName;
         sNewContent += ">";
-        if(poKML->poCurrent_->numContent() == 0)
-            poKML->poCurrent_->addContent(sNewContent);
-        else
-            poKML->poCurrent_->appendContent(sNewContent);
+        ((KML *)pUserData)->poCurrent_->addContent(sNewContent);
     }
 }
 
 void XMLCALL KML::dataHandler(void* pUserData, const char* pszData, int nLen)
 {
-    KML* poKML = (KML*) pUserData;
-
-    poKML->nWithoutEventCounter = 0;
-
-    if(nLen < 1 || poKML->poCurrent_ == NULL)
+    if(nLen < 1 || ((KML *)pUserData)->poCurrent_ == NULL)
         return;
-
-    poKML->nDataHandlerCounter ++;
-    if (poKML->nDataHandlerCounter >= BUFSIZ)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "File probably corrupted (million laugh pattern)");
-        XML_StopParser(poKML->oCurrentParser, XML_FALSE);
-    }
-
     std::string sData(pszData, nLen);
-
-    if(poKML->poCurrent_->numContent() == 0)
-        poKML->poCurrent_->addContent(sData);
+    std::string sTmp;
+    
+	if(((KML *)pUserData)->poCurrent_->getName().compare("coordinates") == 0)
+	{
+	    if(((KML *)pUserData)->poCurrent_->numContent() == 0)
+	        ((KML *)pUserData)->poCurrent_->addContent(sData);
+	    else
+	        ((KML *)pUserData)->poCurrent_->appendContent(sData);
+    }
     else
-        poKML->poCurrent_->appendContent(sData);
+    {
+    	while(sData[0] == ' ' || sData[0] == '\n' || sData[0] == '\r' || sData[0] == '\t')
+        {
+    		sData = sData.substr(1, sData.length()-1);
+    	}
+       	if(sData.length() > 0)
+	        ((KML *)pUserData)->poCurrent_->addContent(sData);
+	}
 }
 
 bool KML::isValid()
@@ -548,11 +438,14 @@ int KML::getNumLayers() const
     return nNumLayers_;
 }
 
-bool KML::selectLayer(int nNum) {
-    if(this->nNumLayers_ < 1 || nNum >= this->nNumLayers_)
+bool KML::selectLayer(unsigned short nNum) {
+    if(this->nNumLayers_ < 1 || (short)nNum >= this->nNumLayers_)
         return FALSE;
-    poCurrent_ = papoLayers_[nNum];
-    return TRUE;
+    poCurrent_ = poTrunk_->getLayer(nNum);
+    if(poCurrent_ == NULL)
+        return FALSE;
+    else
+        return TRUE;
 }
 
 std::string KML::getCurrentName() const
@@ -573,15 +466,7 @@ Nodetype KML::getCurrentType() const
         return Unknown;
 }
 
-int KML::is25D() const
-{
-    if(poCurrent_ != NULL)
-        return poCurrent_->is25D();
-    else
-        return Unknown;
-}
-
-int KML::getNumFeatures()
+int KML::getNumFeatures() const
 {
     if(poCurrent_ != NULL)
         return static_cast<int>(poCurrent_->getNumFeatures());
@@ -589,10 +474,26 @@ int KML::getNumFeatures()
         return -1;
 }
 
-Feature* KML::getFeature(std::size_t nNum, int& nLastAsked, int &nLastCount)
+Feature* KML::getFeature(std::size_t nNum) const
 {
     if(poCurrent_ != NULL)
-        return poCurrent_->getFeature(nNum, nLastAsked, nLastCount);
+        return poCurrent_->getFeature(nNum);
     else
         return NULL;
 }
+
+bool KML::getExtents(double& pdfXMin, double& pdfXMax, double& pdfYMin, double& pdfYMax) const
+{
+    if( poCurrent_ != NULL )
+    {
+        Extent const* poXT = poCurrent_->getExtents();
+        pdfXMin = poXT->dfX1;
+        pdfXMax = poXT->dfX2;
+        pdfYMin = poXT->dfY1;
+        pdfYMax = poXT->dfY2;
+
+        return true;
+    }
+    return false;
+}
+

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfbilevel.cpp 16416 2009-02-25 21:13:08Z rouault $
+ * $Id: nitfimage.c 11241 2007-04-12 01:02:44Z warmerdam $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module implement BILEVEL (C1) compressed image reading.
@@ -39,7 +39,7 @@ CPL_C_END
 
 TIFF* VSI_TIFFOpen(const char* name, const char* mode);
 
-CPL_CVSID("$Id: nitfbilevel.cpp 16416 2009-02-25 21:13:08Z rouault $");
+CPL_CVSID("$Id: nitfimage.c 11241 2007-04-12 01:02:44Z warmerdam $");
 
 /************************************************************************/
 /*                       NITFUncompressBILEVEL()                        */
@@ -60,10 +60,6 @@ int NITFUncompressBILEVEL( NITFImage *psImage,
     osFilename.Printf( "/vsimem/nitf-wrk-%ld.tif", (long) CPLGetPID() );
 
     TIFF *hTIFF = VSI_TIFFOpen( osFilename, "w+" );
-    if (hTIFF == NULL)
-    {
-        return FALSE;
-    }
 
     TIFFSetField( hTIFF, TIFFTAG_IMAGEWIDTH,    psImage->nBlockWidth );
     TIFFSetField( hTIFF, TIFFTAG_IMAGELENGTH,   psImage->nBlockHeight );
@@ -91,11 +87,6 @@ int NITFUncompressBILEVEL( NITFImage *psImage,
     int bResult = TRUE;
 
     hTIFF = VSI_TIFFOpen( osFilename, "r" );
-    if (hTIFF == NULL)
-    {
-        return FALSE;
-    }
-
 
     if( TIFFReadEncodedStrip( hTIFF, 0, pabyOutputImage, nOutputBytes ) == -1 )
     {

@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: strtoofft.c,v 1.13 2007-11-05 09:45:09 bagder Exp $
+ * $Id: strtoofft.c,v 1.11 2007-02-16 18:19:36 yangtse Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -36,18 +36,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-
-/* Range tests can be used for alphanum decoding if characters are consecutive,
-   like in ASCII. Else an array is scanned. Determine this condition now. */
-
-#if('9' - '0') != 9 || ('Z' - 'A') != 25 || ('z' - 'a') != 25
-#include <string.h>
-
-#define NO_RANGE_TEST
-
-static const char valchars[] =
-            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-#endif
 
 static int get_char(char c, int base);
 
@@ -67,35 +55,35 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
 
   /* Skip leading whitespace. */
   end = (char *)nptr;
-  while(ISSPACE(end[0])) {
+  while (ISSPACE(end[0])) {
     end++;
   }
 
   /* Handle the sign, if any. */
-  if(end[0] == '-') {
+  if (end[0] == '-') {
     is_negative = 1;
     end++;
   }
-  else if(end[0] == '+') {
+  else if (end[0] == '+') {
     end++;
   }
-  else if(end[0] == '\0') {
+  else if (end[0] == '\0') {
     /* We had nothing but perhaps some whitespace -- there was no number. */
-    if(endptr) {
+    if (endptr) {
       *endptr = end;
     }
     return 0;
   }
 
   /* Handle special beginnings, if present and allowed. */
-  if(end[0] == '0' && end[1] == 'x') {
-    if(base == 16 || base == 0) {
+  if (end[0] == '0' && end[1] == 'x') {
+    if (base == 16 || base == 0) {
       end += 2;
       base = 16;
     }
   }
-  else if(end[0] == '0') {
-    if(base == 8 || base == 0) {
+  else if (end[0] == '0') {
+    if (base == 8 || base == 0) {
       end++;
       base = 8;
     }
@@ -104,7 +92,7 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
   /* Matching strtol, if the base is 0 and it doesn't look like
    * the number is octal or hex, we assume it's base 10.
    */
-  if(base == 0) {
+  if (base == 0) {
     base = 10;
   }
 
@@ -115,7 +103,7 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
        i != -1;
        end++, i = get_char(end[0], base)) {
     newval = base * value + i;
-    if(newval < value) {
+    if (newval < value) {
       /* We've overflowed. */
       overflow = 1;
       break;
@@ -124,14 +112,14 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
       value = newval;
   }
 
-  if(!overflow) {
-    if(is_negative) {
+  if (!overflow) {
+    if (is_negative) {
       /* Fix the sign. */
       value *= -1;
     }
   }
   else {
-    if(is_negative)
+    if (is_negative)
       value = CURL_LLONG_MIN;
     else
       value = CURL_LLONG_MAX;
@@ -139,7 +127,7 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
     SET_ERRNO(ERANGE);
   }
 
-  if(endptr)
+  if (endptr)
     *endptr = end;
 
   return value;
@@ -157,33 +145,18 @@ curlx_strtoll(const char *nptr, char **endptr, int base)
  */
 static int get_char(char c, int base)
 {
-#ifndef NO_RANGE_TEST
   int value = -1;
-  if(c <= '9' && c >= '0') {
+  if (c <= '9' && c >= '0') {
     value = c - '0';
   }
-  else if(c <= 'Z' && c >= 'A') {
+  else if (c <= 'Z' && c >= 'A') {
     value = c - 'A' + 10;
   }
-  else if(c <= 'z' && c >= 'a') {
+  else if (c <= 'z' && c >= 'a') {
     value = c - 'a' + 10;
   }
-#else
-  const char * cp;
-  int value;
 
-  cp = memchr(valchars, c, 10 + 26 + 26);
-
-  if(!cp)
-    return -1;
-
-  value = cp - valchars;
-
-  if(value >= 10 + 26)
-    value -= 26;                /* Lowercase. */
-#endif
-
-  if(value >= base) {
+  if (value >= base) {
     value = -1;
   }
 

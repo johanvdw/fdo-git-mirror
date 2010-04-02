@@ -19,11 +19,11 @@ bool bcp_implementation::is_source_file(const fs::path& p)
    static const boost::regex e(
       ".*\\."
       "(?:"
-         "c|cxx|h|hxx|inc|inl|.?pp|yy?"
+         "c|cxx|h|hxx|inc|.?pp|yy?"
       ")", 
       boost::regex::perl | boost::regex::icase
       );
-   return boost::regex_match(p.filename(), e);
+   return boost::regex_match(p.string(), e);
 }
 
 bool bcp_implementation::is_html_file(const fs::path& p)
@@ -34,12 +34,12 @@ bool bcp_implementation::is_html_file(const fs::path& p)
          "html?|css"
       ")"
       );
-   return boost::regex_match(p.filename(), e);
+   return boost::regex_match(p.string(), e);
 }
 
 bool bcp_implementation::is_binary_file(const fs::path& p)
 {
-   if(m_cvs_mode || m_svn_mode)
+   if(m_cvs_mode)
    {
       std::map<fs::path, bool, path_less>::iterator pos = m_cvs_paths.find(p);
       if(pos != m_cvs_paths.end()) return pos->second;
@@ -55,18 +55,3 @@ bool bcp_implementation::is_binary_file(const fs::path& p)
    return !boost::regex_match(p.leaf(), e);
 
 }
-
-bool bcp_implementation::is_jam_file(const fs::path& p)
-{
-   static const boost::regex e(
-      ".*\\."
-      "(?:"
-         "jam|v2"
-      ")"
-      "|"
-      "(Jamfile|Jamroot)\\.?", 
-      boost::regex::perl | boost::regex::icase
-      );
-   return boost::regex_match(p.filename(), e);
-}
-

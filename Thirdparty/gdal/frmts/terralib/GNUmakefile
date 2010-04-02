@@ -19,12 +19,12 @@ CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) $(EXTRAFLAGS)
 
 EXTRA_LIBS	:=	 $(EXTRA_LIBS) $(TERRALIB_LIB)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 plugin: gdal_TERRALIB.so
 

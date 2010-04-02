@@ -6,7 +6,6 @@ from checked_system import *
 from libxslt import *
 from log import *
 from makedirs import *
-from rename import *
 from tar import *
 from zip import *
 

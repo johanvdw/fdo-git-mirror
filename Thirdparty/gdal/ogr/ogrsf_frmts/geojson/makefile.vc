@@ -23,12 +23,12 @@ OBJ	=	$(GEOJSON_OBJ)
 
 default:	$(OBJ)
 	cd jsonc
-	$(MAKE) /f makefile.vc
+	nmake /f makefile.vc
 	cd ..
 	
 clean:
 	cd jsonc
-	$(MAKE) /f makefile.vc clean
+	nmake /f makefile.vc clean
 	cd ..
 	-del *.lib
 	-del *.obj *.pdb

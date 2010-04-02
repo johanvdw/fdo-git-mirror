@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mem.h 17807 2009-10-13 18:18:09Z rouault $
+ * $Id: ogr_mem.h 13027 2007-11-25 19:21:57Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the OGR Memory driver.
@@ -68,6 +68,7 @@ class OGRMemLayer : public OGRLayer
     OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
     int                 GetFeatureCount( int );
+    OGRErr              GetExtent(OGREnvelope *psExtent, int bForce);
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
                                      int bApproxOK = TRUE );

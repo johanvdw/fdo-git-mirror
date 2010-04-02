@@ -4,7 +4,7 @@
 
 <!-- Copyright (c) 2001-2004 CrystalClear Software, Inc.
      Subject to the Boost Software License, Version 1.0. 
-     (See accompanying file LICENSE_1_0.txt or  http://www.boost.org/LICENSE_1_0.txt)
+     (See accompanying file LICENSE-1.0 or  http://www.boost.org/LICENSE-1.0)
 -->
 
 <section id="date_time.buildinfo">
@@ -146,7 +146,7 @@
       <listitem><ulink url="../../libs/conversion/lexical_cast.htm">boost.lexical_cast </ulink> </listitem>
       <listitem><ulink url="../../libs/smart_ptr/smart_ptr.htm">boost.smart_ptr (local time only)</ulink> </listitem>
       <listitem><ulink url="../../libs/algorithm/string/">boost::string_algorithms </ulink> </listitem>
-      <listitem><ulink url="../../libs/serialization/index.html">boost::serialize (serialization code only) </ulink> </listitem>
+      <listitem><ulink url="../../libs/algorithm/serialize/">boost::serialize (serialization code only) </ulink> </listitem>
     </itemizedlist>
     so these libraries need to be installed. 
   </para>

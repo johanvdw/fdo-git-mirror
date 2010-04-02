@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr.i 18339 2009-12-18 23:44:32Z tamas $
+ * $Id: ogr.i 14906 2008-07-13 20:04:17Z tamas $
  *
  * Project:  OGR Core SWIG Interface declarations.
  * Purpose:  OGR declarations.
@@ -41,10 +41,7 @@
 %include swig_csharp_extensions.i
 #endif
 
-#ifndef SWIGJAVA
 %feature("compactdefaultargs");
-#endif
-
 %feature("autodoc");
 
 /************************************************************************/
@@ -117,7 +114,6 @@ typedef enum
 using namespace std;
 
 #include "ogr_api.h"
-#include "ogr_p.h"
 #include "ogr_core.h"
 #include "cpl_port.h"
 #include "cpl_string.h"
@@ -149,15 +145,7 @@ typedef void OGRFieldDefnShadow;
 %}
 
 #ifndef SWIGCSHARP
-#ifdef SWIGJAVA
-%javaconst(1);
-#endif
-/* Interface constant added for GDAL 1.7.0 */
-%constant wkb25DBit = 0x80000000;
-
-/* typo : deprecated */
-%constant wkb25Bit = 0x80000000;
-
+%constant wkb25Bit = wkb25DBit;
 %constant wkbUnknown = 0;
 
 %constant wkbPoint = 1;
@@ -197,8 +185,6 @@ typedef void OGRFieldDefnShadow;
 %constant wkbXDR = 0;
 %constant wkbNDR = 1;
 
-%constant NullFID = -1;
-
 %constant char *OLCRandomRead          = "RandomRead";
 %constant char *OLCSequentialWrite     = "SequentialWrite";
 %constant char *OLCRandomWrite         = "RandomWrite";
@@ -209,7 +195,6 @@ typedef void OGRFieldDefnShadow;
 %constant char *OLCTransactions        = "Transactions";
 %constant char *OLCDeleteFeature       = "DeleteFeature";
 %constant char *OLCFastSetNextByIndex  = "FastSetNextByIndex";
-%constant char *OLCStringsAsUTF8       = "StringsAsUTF8";
 
 %constant char *ODsCCreateLayer        = "CreateLayer";
 %constant char *ODsCDeleteLayer        = "DeleteLayer";
@@ -218,6 +203,15 @@ typedef void OGRFieldDefnShadow;
 %constant char *ODrCDeleteDataSource   = "DeleteDataSource";
 #else
 typedef int OGRErr;
+
+#define OGRERR_NONE                0
+#define OGRERR_NOT_ENOUGH_DATA     1    /* not enough data to deserialize */
+#define OGRERR_NOT_ENOUGH_MEMORY   2
+#define OGRERR_UNSUPPORTED_GEOMETRY_TYPE 3
+#define OGRERR_UNSUPPORTED_OPERATION 4
+#define OGRERR_CORRUPT_DATA        5
+#define OGRERR_FAILURE             6
+#define OGRERR_UNSUPPORTED_SRS     7
 
 #define wkb25DBit 0x80000000
 #define ogrZMarker 0x21125711
@@ -235,26 +229,12 @@ typedef int OGRErr;
 #define OLCTransactions        "Transactions"
 #define OLCDeleteFeature       "DeleteFeature"
 #define OLCFastSetNextByIndex  "FastSetNextByIndex"
-#define OLCStringsAsUTF8       "StringsAsUTF8"
 
 #define ODsCCreateLayer        "CreateLayer"
 #define ODsCDeleteLayer        "DeleteLayer"
 
 #define ODrCCreateDataSource   "CreateDataSource"
 #define ODrCDeleteDataSource   "DeleteDataSource"
-#endif
-
-#if defined(SWIGCSHARP) || defined(SWIGJAVA)
-
-#define OGRERR_NONE                0
-#define OGRERR_NOT_ENOUGH_DATA     1    /* not enough data to deserialize */
-#define OGRERR_NOT_ENOUGH_MEMORY   2
-#define OGRERR_UNSUPPORTED_GEOMETRY_TYPE 3
-#define OGRERR_UNSUPPORTED_OPERATION 4
-#define OGRERR_CORRUPT_DATA        5
-#define OGRERR_FAILURE             6
-#define OGRERR_UNSUPPORTED_SRS     7
-
 #endif
 
 #if defined(SWIGPYTHON)
@@ -315,9 +295,7 @@ public:
 %mutable;
 
 %newobject CreateDataSource;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) CreateDataSource;
-#endif
   OGRDataSourceShadow *CreateDataSource( const char *name, 
                                     char **options = 0 ) {
     OGRDataSourceShadow *ds = (OGRDataSourceShadow*) OGR_Dr_CreateDataSource( self, name, options);
@@ -325,9 +303,7 @@ public:
   }
   
 %newobject CopyDataSource;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) CopyDataSource;
-#endif
   OGRDataSourceShadow *CopyDataSource( OGRDataSourceShadow* copy_ds, 
                                   const char* name, 
                                   char **options = 0 ) {
@@ -336,24 +312,17 @@ public:
   }
   
 %newobject Open;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) Open;
-#endif
   OGRDataSourceShadow *Open( const char* name, 
                         int update=0 ) {
     OGRDataSourceShadow* ds = (OGRDataSourceShadow*) OGR_Dr_Open(self, name, update);
     return ds;
   }
 
-#ifdef SWIGJAVA
-  OGRErr DeleteDataSource( const char *name ) {
-#else
   int DeleteDataSource( const char *name ) {
-#endif
     return OGR_Dr_DeleteDataSource( self, name );
   }
 
-%apply Pointer NONNULL {const char * cap};
   bool TestCapability (const char *cap) {
     return (OGR_Dr_TestCapability(self, cap) > 0);
   }
@@ -414,9 +383,7 @@ public:
   }
 
   /* Note that datasources own their layers */
-#ifndef SWIGJAVA
   %feature( "kwargs" ) CreateLayer;
-#endif
   OGRLayerShadow *CreateLayer(const char* name, 
               OSRSpatialReferenceShadow* srs=NULL,
               OGRwkbGeometryType geom_type=wkbUnknown,
@@ -429,9 +396,7 @@ public:
     return layer;
   }
 
-#ifndef SWIGJAVA
   %feature( "kwargs" ) CopyLayer;
-#endif
   OGRLayerShadow *CopyLayer(OGRLayerShadow *src_layer,
             const char* new_name,
             char** options=0) {
@@ -441,12 +406,9 @@ public:
                                                       options);
     return layer;
   }
-
-#ifdef SWIGJAVA
-  OGRLayerShadow *GetLayerByIndex( int index ) {
-#else
+  
+  %feature( "kwargs" ) GetLayerByIndex;
   OGRLayerShadow *GetLayerByIndex( int index=0) {
-#endif
     OGRLayerShadow* layer = (OGRLayerShadow*) OGR_DS_GetLayer(self, index);
     return layer;
   }
@@ -460,9 +422,8 @@ public:
     return (OGR_DS_TestCapability(self, cap) > 0);
   }
 
-#ifndef SWIGJAVA
+
   %feature( "kwargs" ) ExecuteSQL;
-#endif
   OGRLayerShadow *ExecuteSQL(const char* statement,
                         OGRGeometryShadow* spatialFilter=NULL,
                         const char* dialect="") {
@@ -546,16 +507,15 @@ public:
     return OGR_L_SetNextByIndex(self, new_index);
   }
   
-%apply Pointer NONNULL {OGRFeatureShadow *feature};
   OGRErr SetFeature(OGRFeatureShadow *feature) {
     return OGR_L_SetFeature(self, feature);
   }
+  
 
   OGRErr CreateFeature(OGRFeatureShadow *feature) {
     return OGR_L_CreateFeature(self, feature);
   }
-%clear OGRFeatureShadow *feature;
-
+  
   OGRErr DeleteFeature(long fid) {
     return OGR_L_DeleteFeature(self, fid);
   }
@@ -568,9 +528,7 @@ public:
     return (OGRFeatureDefnShadow*) OGR_L_GetLayerDefn(self);
   }
 
-#ifndef SWIGJAVA
   %feature( "kwargs" ) GetFeatureCount;  
-#endif
   int GetFeatureCount(int force=1) {
     return OGR_L_GetFeatureCount(self, force);
   }
@@ -581,12 +539,8 @@ public:
     return OGR_L_GetExtent(self, extent, force);
   }
 #else
-#ifndef SWIGJAVA
   %feature( "kwargs" ) GetExtent;
-  OGRErr GetExtent(double argout[4], int force = 1) {
-#else
-  OGRErr GetExtent(double argout[4], int force) {
-#endif
+  OGRErr GetExtent(double argout[4], int force=1) {
     return OGR_L_GetExtent(self, (OGREnvelope*)argout, force);
   }
 #endif
@@ -595,14 +549,10 @@ public:
     return (OGR_L_TestCapability(self, cap) > 0);
   }
   
-#ifndef SWIGJAVA
   %feature( "kwargs" ) CreateField;
-#endif
-%apply Pointer NONNULL {OGRFieldDefnShadow *field_def};
   OGRErr CreateField(OGRFieldDefnShadow* field_def, int approx_ok = 1) {
     return OGR_L_CreateField(self, field_def, approx_ok);
   }
-%clear OGRFieldDefnShadow *field_def;
   
   OGRErr StartTransaction() {
     return OGR_L_StartTransaction(self);
@@ -637,13 +587,6 @@ public:
 /*                              OGRFeature                              */
 /************************************************************************/
 
-#ifdef SWIGJAVA
-%{
-typedef int* retIntArray;
-typedef double* retDoubleArray;
-%}
-#endif
-
 %rename (Feature) OGRFeatureShadow;
 class OGRFeatureShadow {
   OGRFeatureShadow();
@@ -654,11 +597,8 @@ public:
     OGR_F_Destroy(self);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") OGRFeatureShadow;
-#endif
-%apply Pointer NONNULL {OGRFeatureDefnShadow *feature_def};
-  OGRFeatureShadow( OGRFeatureDefnShadow *feature_def ) {
+  OGRFeatureShadow( OGRFeatureDefnShadow *feature_def = 0 ) {
       return (OGRFeatureShadow*) OGR_F_Create( feature_def );
   }
 
@@ -671,7 +611,6 @@ public:
   }
 
 /* The feature takes over owernship of the geometry. */
-/* Don't change the 'geom' name as Java bindings depends on it */
 %apply SWIGTYPE *DISOWN {OGRGeometryShadow *geom};
   OGRErr SetGeometryDirectly(OGRGeometryShadow* geom) {
     return OGR_F_SetGeometryDirectly(self, geom);
@@ -688,11 +627,9 @@ public:
     return (OGRFeatureShadow*) OGR_F_Clone(self);
   }
   
-%apply Pointer NONNULL {OGRFeatureShadow *feature};
   bool Equal(OGRFeatureShadow *feature) {
     return (OGR_F_Equal(self, feature) > 0);
   }
-%clear OGRFeatureShadow *feature;
   
   int GetFieldCount() {
     return OGR_F_GetFieldCount(self);
@@ -777,62 +714,18 @@ public:
   }
   %clear (int *);
 
-#if defined(SWIGJAVA)
-  retIntArray GetFieldAsIntegerList(int id, int *nLen, const int **pList) {
-      *pList = OGR_F_GetFieldAsIntegerList(self, id, nLen);
-      return (retIntArray)*pList;
-  }
-#elif defined(SWIGCSHARP)
-  %apply (int *intList) {const int *};
-  %apply (int *hasval) {int *count};
-  const int *GetFieldAsIntegerList(int id, int *count) {
-      return OGR_F_GetFieldAsIntegerList(self, id, count);
-  }
-  %clear (const int *);
-  %clear (int *count);
-#else
   void GetFieldAsIntegerList(int id, int *nLen, const int **pList) {
       *pList = OGR_F_GetFieldAsIntegerList(self, id, nLen);
   }
-#endif
 
-#if defined(SWIGJAVA)
-  retDoubleArray GetFieldAsDoubleList(int id, int *nLen, const double **pList) {
-      *pList = OGR_F_GetFieldAsDoubleList(self, id, nLen);
-      return (retDoubleArray)*pList;
-  }
-#elif defined(SWIGCSHARP)
-  %apply (double *doubleList) {const double *};
-  %apply (int *hasval) {int *count};
-  const double *GetFieldAsDoubleList(int id, int *count) {
-      return OGR_F_GetFieldAsDoubleList(self, id, count);
-  }
-  %clear (const double *);
-  %clear (int *count);
-#else
   void GetFieldAsDoubleList(int id, int *nLen, const double **pList) {
       *pList = OGR_F_GetFieldAsDoubleList(self, id, nLen);
   }
-#endif
 
-#if defined(SWIGJAVA)
-  %apply (char** retAsStringArrayNoFree) {(char**)};
-  char** GetFieldAsStringList(int id) {
-      return OGR_F_GetFieldAsStringList(self, id);
-  }
-  %clear char**;
-#elif defined(SWIGCSHARP) || defined(SWIGPYTHON)
-  %apply (char **options) {char **};
-  char **GetFieldAsStringList(int id) {
-      return OGR_F_GetFieldAsStringList(self, id);
-  }
-  %clear (char **);
-#else
   void GetFieldAsStringList(int id, char ***pList) {
       *pList = OGR_F_GetFieldAsStringList(self, id);
   }
-#endif
-
+  
   /* ---- IsFieldSet --------------------------- */
   bool IsFieldSet(int id) {
     return (OGR_F_IsFieldSet(self, id) > 0);
@@ -954,22 +847,16 @@ public:
       OGR_F_SetFieldDoubleList(self, id, nList, pList);
   }
 
-%apply (char **options) {char **pList};
   void SetFieldStringList(int id, char **pList) {
       OGR_F_SetFieldStringList(self, id, pList);
   }
-%clear char**pList;
 
   /* ------------------------------------------- */  
   
-#ifndef SWIGJAVA
   %feature("kwargs") SetFrom;
-#endif
-%apply Pointer NONNULL {OGRFeatureShadow *other};
   OGRErr SetFrom(OGRFeatureShadow *other, int forgiving=1) {
     return OGR_F_SetFrom(self, other, forgiving);
   }
-%clear OGRFeatureShadow *other;
   
   const char *GetStyleString() {
     return (const char*) OGR_F_GetStyleString(self);
@@ -1016,9 +903,7 @@ public:
     OGR_FD_Release( OGRFeatureDefnH(self) );
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") OGRFeatureDefnShadow;
-#endif
   OGRFeatureDefnShadow(const char* name_null_ok=NULL) {
     OGRFeatureDefnH h = OGR_FD_Create(name_null_ok);
     OGR_FD_Reference(h);
@@ -1042,11 +927,9 @@ public:
       return OGR_FD_GetFieldIndex(self, name);
   }
   
-%apply Pointer NONNULL {OGRFieldDefnShadow* defn};
   void AddFieldDefn(OGRFieldDefnShadow* defn) {
     OGR_FD_AddFieldDefn(self, defn);
   }
-%clear OGRFieldDefnShadow* defn;
   
   OGRwkbGeometryType GetGeomType() {
     return (OGRwkbGeometryType) OGR_FD_GetGeomType(self);
@@ -1071,30 +954,6 @@ public:
 
 %rename (FieldDefn) OGRFieldDefnShadow;
 
-%{
-    static int ValidateOGRFieldType(OGRFieldType field_type)
-    {
-        switch(field_type)
-        {
-            case OFTInteger:
-            case OFTIntegerList:
-            case OFTReal:
-            case OFTRealList:
-            case OFTString:
-            case OFTStringList:
-            case OFTBinary:
-            case OFTDate:
-            case OFTTime:
-            case OFTDateTime:
-                return TRUE;
-            default:
-                CPLError(CE_Failure, CPLE_IllegalArg, "Illegal field type value");
-                return FALSE;
-        }
-    }
-%}
-
-
 class OGRFieldDefnShadow {
   OGRFieldDefnShadow();
 public:
@@ -1104,15 +963,10 @@ public:
     OGR_Fld_Destroy(self);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") OGRFieldDefnShadow;
-#endif
   OGRFieldDefnShadow( const char* name_null_ok="unnamed", 
                       OGRFieldType field_type=OFTString) {
-    if (ValidateOGRFieldType(field_type))
-        return (OGRFieldDefnShadow*) OGR_Fld_Create(name_null_ok, field_type);
-    else
-        return NULL;
+    return (OGRFieldDefnShadow*) OGR_Fld_Create(name_null_ok, field_type);
   }
 
   const char * GetName() {
@@ -1132,8 +986,7 @@ public:
   }
 
   void SetType(OGRFieldType type) {
-    if (ValidateOGRFieldType(type))
-        OGR_Fld_SetType(self, type);
+    OGR_Fld_SetType(self, type);
   }
   
   OGRJustification GetJustify() {
@@ -1160,13 +1013,6 @@ public:
     OGR_Fld_SetPrecision(self, precision);
   }
 
-  /* Interface method added for GDAL 1.7.0 */
-  const char * GetTypeName()
-  {
-      return OGR_GetFieldTypeName(OGR_Fld_GetType(self));
-  }
-
-  /* Should be static */
   const char * GetFieldTypeName(OGRFieldType type) {
     return OGR_GetFieldTypeName(type);
   }
@@ -1214,6 +1060,7 @@ public:
 
 #ifdef SWIGJAVA
 %newobject CreateGeometryFromWkb;
+%feature("kwargs") CreateGeometryFromWkb;
 %inline {
 OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf, 
                                             OSRSpatialReferenceShadow *reference=NULL ) {
@@ -1228,9 +1075,7 @@ OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf,
 }
 #endif
 
-#ifndef SWIGJAVA
 %feature( "kwargs" ) CreateGeometryFromWkt;
-#endif
 %apply (char **ignorechange) { (char **) };
 %newobject CreateGeometryFromWkt;
 %inline %{
@@ -1269,9 +1114,7 @@ OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf,
 %}
 
 %newobject BuildPolygonFromEdges;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) BuildPolygonFromEdges;
-#endif
 %inline %{
   OGRGeometryShadow* BuildPolygonFromEdges( OGRGeometryShadow*  hLineCollection,  
                                             int bBestEffort = 0, 
@@ -1293,26 +1136,6 @@ OGRGeometryShadow* CreateGeometryFromWkb(int nLen, unsigned char *pBuf,
   return hPolygon;
   }
 %}
-
-%newobject ApproximateArcAngles;
-#ifndef SWIGJAVA
-%feature( "kwargs" ) ApproximateArcAngles;
-#endif
-%inline %{
-  OGRGeometryShadow* ApproximateArcAngles( 
-        double dfCenterX, double dfCenterY, double dfZ,
-  	double dfPrimaryRadius, double dfSecondaryAxis, double dfRotation, 
-        double dfStartAngle, double dfEndAngle,
-        double dfMaxAngleStepSizeDegrees ) {
-  
-  return OGR_G_ApproximateArcAngles( 
-             dfCenterX, dfCenterY, dfZ, 
-             dfPrimaryRadius, dfSecondaryAxis, dfRotation,
-             dfStartAngle, dfEndAngle, dfMaxAngleStepSizeDegrees );
-  }
-%}
-
-
 
 /************************************************************************/
 /*                             OGRGeometry                              */
@@ -1349,10 +1172,7 @@ public:
       return CreateGeometryFromGML( gml );
     }
     // throw?
-    else {
-        CPLError(CE_Failure, 1, "Empty geometries cannot be constructed");
-        return NULL;}
-
+    else return 0;
   }  
 #ifdef SWIGCSHARP
 %clear (char *wkb_buf);
@@ -1366,16 +1186,7 @@ public:
   }
 
 #ifndef SWIGCSHARP
-#ifdef SWIGJAVA
-%apply (GByte* outBytes) {GByte*};
-  GByte* ExportToWkb( int *nLen, char **pBuf, OGRwkbByteOrder byte_order=wkbXDR ) {
-    *nLen = OGR_G_WkbSize( self );
-    *pBuf = (char *) malloc( *nLen * sizeof(unsigned char) );
-    OGR_G_ExportToWkb(self, byte_order, (unsigned char*) *pBuf );
-    return (GByte*)*pBuf;
-  }
-%clear GByte*;
-#else
+#ifndef SWIGJAVA
   %feature("kwargs") ExportToWkb;
   OGRErr ExportToWkb( int *nLen, char **pBuf, OGRwkbByteOrder byte_order=wkbXDR ) {
     *nLen = OGR_G_WkbSize( self );
@@ -1385,42 +1196,19 @@ public:
 #endif
 #endif
 
-#if defined(SWIGJAVA) || defined(SWIGPYTHON) || defined(SWIGCSHARP)
-  retStringAndCPLFree* ExportToGML() {
-    return (retStringAndCPLFree*) OGR_G_ExportToGML(self);
-  }
-#else
-  /* FIXME : wrong typemap. The string should be freed */
   const char * ExportToGML() {
     return (const char *) OGR_G_ExportToGML(self);
   }
-#endif
-
-#if defined(SWIGJAVA) || defined(SWIGPYTHON) || defined(SWIGCSHARP)
-  retStringAndCPLFree* ExportToKML(const char* altitude_mode=NULL) {
-    return (retStringAndCPLFree *) OGR_G_ExportToKML(self, altitude_mode);
-  }
-#else
-  /* FIXME : wrong typemap. The string should be freed */
+  
   const char * ExportToKML(const char* altitude_mode=NULL) {
     return (const char *) OGR_G_ExportToKML(self, altitude_mode);
   }
-#endif
 
-#if defined(SWIGJAVA) || defined(SWIGPYTHON) || defined(SWIGCSHARP)
-  retStringAndCPLFree* ExportToJson() {
-    return (retStringAndCPLFree *) OGR_G_ExportToJson(self);
-  }
-#else
-  /* FIXME : wrong typemap. The string should be freed */
   const char * ExportToJson() {
     return (const char *) OGR_G_ExportToJson(self);
   }
-#endif
 
-#ifndef SWIGJAVA
   %feature("kwargs") AddPoint;
-#endif
   void AddPoint(double x, double y, double z = 0) {
     OGR_G_AddPoint( self, x, y, z );
   }
@@ -1430,7 +1218,6 @@ public:
   }
 
 /* The geometry now owns an inner geometry */
-/* Don't change the 'other_disown' name as Java bindings depends on it */
 %apply SWIGTYPE *DISOWN {OGRGeometryShadow* other_disown};
   OGRErr AddGeometryDirectly( OGRGeometryShadow* other_disown ) {
     return OGR_G_AddGeometryDirectly( self, other_disown );
@@ -1462,40 +1249,26 @@ public:
     return OGR_G_GetPointCount(self);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") GetX;  
-#endif
   double GetX(int point=0) {
     return OGR_G_GetX(self, point);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") GetY;  
-#endif
   double GetY(int point=0) {
     return OGR_G_GetY(self, point);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") GetZ;  
-#endif
   double GetZ(int point=0) {
     return OGR_G_GetZ(self, point);
   } 
 
-#ifdef SWIGJAVA
-  void GetPoint(int iPoint, double argout[3]) {
-#else
   void GetPoint(int iPoint = 0, double argout[3] = NULL) {
-#endif
     OGR_G_GetPoint( self, iPoint, argout+0, argout+1, argout+2 );
   }
 
-#ifdef SWIGJAVA
-  void GetPoint_2D(int iPoint, double argout[2]) {
-#else
   void GetPoint_2D(int iPoint = 0, double argout[2] = NULL) {
-#endif
     OGR_G_GetPoint( self, iPoint, argout+0, argout+1, NULL );
   }
 
@@ -1503,16 +1276,12 @@ public:
     return OGR_G_GetGeometryCount(self);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") SetPoint;    
-#endif
   void SetPoint(int point, double x, double y, double z=0) {
     OGR_G_SetPoint(self, point, x, y, z);
   }
 
-#ifndef SWIGJAVA
   %feature("kwargs") SetPoint_2D;
-#endif
   void SetPoint_2D(int point, double x, double y) {
     OGR_G_SetPoint_2D(self, point, x, y);
   }
@@ -1533,14 +1302,11 @@ public:
   } 
 
   %newobject Buffer;
-#ifndef SWIGJAVA
   %feature("kwargs") Buffer; 
-#endif
   OGRGeometryShadow* Buffer( double distance, int quadsecs=30 ) {
     return (OGRGeometryShadow*) OGR_G_Buffer( self, distance, quadsecs );
   }
 
-%apply Pointer NONNULL {OGRGeometryShadow* other};
   %newobject Intersection;
   OGRGeometryShadow* Intersection( OGRGeometryShadow* other ) {
     return (OGRGeometryShadow*) OGR_G_Intersection( self, other );
@@ -1564,7 +1330,6 @@ public:
   double Distance( OGRGeometryShadow* other) {
     return OGR_G_Distance(self, other);
   }
-%clear OGRGeometryShadow* other;
   
   void Empty () {
     OGR_G_Empty(self);
@@ -1586,7 +1351,6 @@ public:
     return (OGR_G_IsRing(self) > 0);
   }  
   
-%apply Pointer NONNULL {OGRGeometryShadow* other};
   bool Intersect (OGRGeometryShadow* other) {
     return (OGR_G_Intersect(self, other) > 0);
   }
@@ -1618,19 +1382,14 @@ public:
   bool Overlaps (OGRGeometryShadow* other) {
     return (OGR_G_Overlaps(self, other) > 0);
   }
-%clear OGRGeometryShadow* other;
 
-%apply Pointer NONNULL {OSRSpatialReferenceShadow* reference};
   OGRErr TransformTo(OSRSpatialReferenceShadow* reference) {
     return OGR_G_TransformTo(self, reference);
   }
-%clear OSRSpatialReferenceShadow* reference;
   
-%apply Pointer NONNULL {OSRCoordinateTransformationShadow* trans};
   OGRErr Transform(OSRCoordinateTransformationShadow* trans) {
     return OGR_G_Transform(self, trans);
   }
-%clear OSRCoordinateTransformationShadow* trans;
   
   %newobject GetSpatialReference;
   OSRSpatialReferenceShadow* GetSpatialReference() {
@@ -1652,11 +1411,6 @@ public:
     OGR_G_FlattenTo2D(self);
   }
 
-  void Segmentize(double dfMaxLength) {
-    OGR_G_Segmentize(self, dfMaxLength);
-  }
-
-
 #if defined(SWIGCSHARP)  
   void GetEnvelope(OGREnvelope *env) {
     OGR_G_GetEnvelope(self, env);
@@ -1670,7 +1424,7 @@ public:
 #ifndef SWIGJAVA
   %newobject Centroid;
   OGRGeometryShadow* Centroid() {
-    OGRGeometryShadow *pt = (OGRGeometryShadow*) OGR_G_CreateGeometry( wkbPoint );
+    OGRGeometryShadow *pt = new_OGRGeometryShadow( wkbPoint );
     OGR_G_Centroid( self, pt );
     return pt;
   }
@@ -1737,9 +1491,7 @@ void OGRRegisterAll();
 %}
 
 %newobject Open;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) Open;
-#endif
 %inline %{
   OGRDataSourceShadow* Open( const char *filename, int update =0 ) {
     CPLErrorReset();
@@ -1758,9 +1510,7 @@ void OGRRegisterAll();
 %}
 
 %newobject OpenShared;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) OpenShared;
-#endif
 %inline %{
   OGRDataSourceShadow* OpenShared( const char *filename, int update =0 ) {
     CPLErrorReset();
@@ -1785,74 +1535,6 @@ OGRDriverShadow* GetDriver(int driver_number) {
   return (OGRDriverShadow*) OGRGetDriver(driver_number);
 }
 %}
-#endif
-
-#if defined(SWIGPYTHON) || defined(SWIGJAVA)
-/* FIXME: other bindings should also use those typemaps to avoid memory leaks */
-%apply (char **options) {char ** papszArgv};
-%apply (char **out_ppsz_and_free) {(char **)};
-#else
-%apply (char **options) {char **};
-#endif
-
-/* Interface method added for GDAL 1.7.0 */
-#ifdef SWIGJAVA
-%inline %{
-  char **GeneralCmdLineProcessor( char **papszArgv, int nOptions = 0 ) {
-    int nResArgCount;
-    
-    /* We must add a 'dummy' element in front of the real argument list */
-    /* as Java doesn't include the binary name as the first */
-    /* argument, as C does... */
-    char** papszArgvModBefore = CSLInsertString(CSLDuplicate(papszArgv), 0, "dummy");
-    char** papszArgvModAfter = papszArgvModBefore;
-
-    nResArgCount = 
-      OGRGeneralCmdLineProcessor( CSLCount(papszArgvModBefore), &papszArgvModAfter, nOptions ); 
-
-    CSLDestroy(papszArgvModBefore);
-
-    if( nResArgCount <= 0 )
-    {
-        return NULL;
-    }
-    else
-    {
-        /* Now, remove the first dummy element */
-        char** papszRet = CSLDuplicate(papszArgvModAfter + 1);
-        CSLDestroy(papszArgvModAfter);
-        return papszRet;
-    }
-  }
-%}
-#else
-%inline %{
-  char **GeneralCmdLineProcessor( char **papszArgv, int nOptions = 0 ) {
-    int nResArgCount;
-
-    nResArgCount = 
-      OGRGeneralCmdLineProcessor( CSLCount(papszArgv), &papszArgv, nOptions ); 
-
-    if( nResArgCount <= 0 )
-        return NULL;
-    else
-        return papszArgv;
-  }
-%}
-#endif
-%clear char **;
-
-
-#ifdef SWIGJAVA
-class FeatureNative {
-  FeatureNative();
-  ~FeatureNative();
-};
-
-class GeometryNative {
-  GeometryNative();
-  ~GeometryNative();
-};
 #endif
 
 //************************************************************************

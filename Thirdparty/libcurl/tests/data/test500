@@ -1,10 +1,4 @@
 <testcase>
-<info>
-<keywords>
-HTTP
-HTTP GET
-</keywords>
-</info>
 #
 # Server-side
 <reply name="1">
@@ -38,19 +32,16 @@ lib500
 simple libcurl HTTP GET tool
  </name>
  <command>
-http://%HOSTIP:%HTTPPORT/500 log/ip500
+http://%HOSTIP:%HTTPPORT/500
 </command>
 </client>
 
 #
 # Verify data after the test has been "shot"
 <verify>
-<file name="log/ip500" mode="text">
-IP: %HOSTIP
-</file>
 <protocol>
 GET /500 HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 
 </protocol>

@@ -22,7 +22,7 @@
 # @return reference to an array of possible projection methods
 
 ## @fn @GetProjectionMethodParameterList($method)
-# @param method projection method name
+# @param method and projection method
 # @return (arrayref parameters, $projection_name)
 
 ## @fn @GetProjectionMethodParamInfo($method, $parameter)
@@ -279,8 +279,6 @@
 
 
 ## @class Geo::OSR::SpatialReference
-# @brief <a href="http://www.gdal.org/ogr/classOGRSpatialReference.html">Documentation
-# of the underlying C++ class at www.gdal.org</a>
 
 ## @ignore DISOWN
 ## @ignore ACQUIRE

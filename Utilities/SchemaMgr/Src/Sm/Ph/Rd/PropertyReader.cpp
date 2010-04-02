@@ -100,7 +100,6 @@ bool FdoSmPhRdPropertyReader::ReadNext()
                     // If required, a property for this type of column must be 
                     // specified in a config document.
                     if ( row && CheckColumn(column) ) {
-                        FdoStringP idPosn = GetIdPosn(column->GetName());
 						FdoSmPhFieldsP	pFields = row->GetFields();
 
                         // Set the property attributes from the column attributes
@@ -129,13 +128,7 @@ bool FdoSmPhRdPropertyReader::ReadNext()
                         field->SetFieldValue( FdoStringP::Format(L"%d", column ? column->GetScale() : 0) );
 
                         field = pFields->GetItem(L"isnullable");
-                        if ( idPosn == L"0" ) 
-                            field->SetFieldValue( column->GetNullable() ? L"1" : L"0" );
-                        else
-                            // This is an identity column 
-                            // Some RDBMS's always report view columns as nullable.
-                            // However FDO does not allow nullable identity properties
-                            field->SetFieldValue( L"0" );
+                        field->SetFieldValue( column->GetNullable() ? L"1" : L"0" );
 
                         // No MetaSchema so column is fixed
                         field = pFields->GetItem(L"isfixedcolumn");

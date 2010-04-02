@@ -30,8 +30,7 @@ namespace boost { namespace program_options {
         If 'm' already has a non-defaulted value of an option, that value
         is not changed, even if 'options' specify some value.        
     */
-    BOOST_PROGRAM_OPTIONS_DECL 
-    void store(const basic_parsed_options<char>& options, variables_map& m,
+    BOOST_PROGRAM_OPTIONS_DECL void store(const basic_parsed_options<char>& options, variables_map& m,
                     bool utf8 = false);
 
     /** Stores in 'm' all options that are defined in 'options'. 
@@ -39,8 +38,7 @@ namespace boost { namespace program_options {
         is not changed, even if 'options' specify some value.        
         This is wide character variant.
     */
-    BOOST_PROGRAM_OPTIONS_DECL 
-    void store(const basic_parsed_options<wchar_t>& options, 
+    BOOST_PROGRAM_OPTIONS_DECL void store(const basic_parsed_options<wchar_t>& options, 
                     variables_map& m);
 
 
@@ -89,11 +87,9 @@ namespace boost { namespace program_options {
         // be easily accessible, so we need to store semantic here.
         shared_ptr<const value_semantic> m_value_semantic;
 
-        friend BOOST_PROGRAM_OPTIONS_DECL
-        void store(const basic_parsed_options<char>& options, 
+        friend void store(const basic_parsed_options<char>& options, 
               variables_map& m, bool);
-
-        friend BOOST_PROGRAM_OPTIONS_DECL class variables_map;
+        friend void notify(variables_map& m);
     };
 
     /** Implements string->string mapping with convenient value casting
@@ -148,8 +144,6 @@ namespace boost { namespace program_options {
         // Resolve conflict between inherited operators.
         const variable_value& operator[](const std::string& name) const
         { return abstract_variables_map::operator[](name); }
-        
-        void notify();
 
     private:
         /** Implementation of abstract_variables_map::get
@@ -160,14 +154,9 @@ namespace boost { namespace program_options {
             be changed by subsequence assignments. */
         std::set<std::string> m_final;
 
-        friend BOOST_PROGRAM_OPTIONS_DECL
-        void store(const basic_parsed_options<char>& options, 
+        friend void store(const basic_parsed_options<char>& options, 
                           variables_map& xm,
                           bool utf8);
-        
-        /** Names of required options, filled by parser which has
-            access to options_description. */
-        std::set<std::string> m_required;
     };
 
 

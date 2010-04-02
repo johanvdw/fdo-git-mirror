@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogdidataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: ogdidataset.cpp 12396 2007-10-13 10:02:17Z rouault $
  *
  * Name:     ogdidataset.cpp
  * Project:  OGDI Bridge
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogdidataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: ogdidataset.cpp 12396 2007-10-13 10:02:17Z rouault $");
 
 CPL_C_START
 void	GDALRegister_OGDI(void);
@@ -558,18 +558,7 @@ GDALDataset *OGDIDataset::Open( GDALOpenInfo * poOpenInfo )
     
     if( !EQUALN(poOpenInfo->pszFilename,"gltp:",5) )
         return( NULL );
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The OGDI driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Has the user hardcoded a layer and family in the URL?           */
 /*      Honour quoted strings for the layer name, since some layers     */

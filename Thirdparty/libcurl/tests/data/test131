@@ -4,7 +4,7 @@
 FTP
 EPSV
 LIST
-netrc
+netrca
 </keywords>
 </info>
 #

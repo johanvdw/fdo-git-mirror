@@ -43,10 +43,6 @@ public:
     // Returns object name with user name part removed.
     virtual FdoStringP GetBestClassName() const;
 
-    // Given a 1-based position, return the column at this position
-    // from this object's column list.
-    FdoSmPhColumnP Position2Column( FdoInt32 position );
-
 protected:
 
     /// Default constructor.
@@ -68,11 +64,6 @@ protected:
     // original current schema after.
     void ActivateOwnerAndExecute(FdoStringP sqlStmt);
     
-    /// Add an index from an index reader
-    virtual FdoPtr<FdoSmPhIndex> CreateIndex(
-        FdoPtr<FdoSmPhTableIndexReader> rdr
-    );
-
     // Various column creator implementations
     virtual FdoSmPhColumnP NewColumnBLOB(FdoStringP columnName,
         FdoSchemaElementState state,
@@ -198,10 +189,6 @@ protected:
     // Column reader creator implementation.
     virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader();
     virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const;
-
-    virtual void LoadPkeyColumn( FdoPtr<FdoSmPhReader> pkeyRdr, FdoSmPhColumnsP pkeyColumns );
-    virtual void LoadIndexColumn( FdoPtr<FdoSmPhTableIndexReader> indexRdr, FdoPtr<FdoSmPhIndex> index );
-
 
 private:
 };

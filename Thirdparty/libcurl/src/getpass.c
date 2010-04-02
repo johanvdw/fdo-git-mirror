@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2005, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: getpass.c,v 1.25 2009-12-30 17:59:57 yangtse Exp $
+ * $Id: getpass.c,v 1.20 2007-07-06 14:58:59 gknauf Exp $
  ***************************************************************************/
 
 /* This file is a reimplementation of the previous one, due to license
@@ -54,7 +54,7 @@
 #include "memdebug.h"
 #endif
 
-#ifdef __VMS
+#ifdef VMS
 /* VMS implementation */
 #include descrip
 #include starlet
@@ -93,28 +93,19 @@ char *getpass_r(const char *prompt, char *buffer, size_t buflen)
   return buffer; /* we always return success */
 }
 #define DONE
-#endif /* __VMS */
-
+#endif /* VMS */
 
 #ifdef WIN32
 /* Windows implementation */
 #include <conio.h>
-#endif
-
-#ifdef __SYMBIAN32__
-#define getch() getchar()
-#endif
-
-#if defined(WIN32) || defined(__SYMBIAN32__)
-
 char *getpass_r(const char *prompt, char *buffer, size_t buflen)
 {
   size_t i;
   fputs(prompt, stderr);
 
   for(i=0; i<buflen; i++) {
-    buffer[i] = (char)getch();
-    if ( buffer[i] == '\r' || buffer[i] == '\n' ) {
+    buffer[i] = getch();
+    if ( buffer[i] == '\r' ) {
       buffer[i] = 0;
       break;
     }
@@ -124,10 +115,6 @@ char *getpass_r(const char *prompt, char *buffer, size_t buflen)
            previous one as well */
         i = i - (i>=1?2:1);
   }
-#ifndef __SYMBIAN32__  
-  /* since echo is disabled, print a newline */
-  fputs("\n", stderr);
-#endif
   /* if user didn't hit ENTER, terminate buffer */
   if (i==buflen)
     buffer[buflen-1]=0;
@@ -135,7 +122,7 @@ char *getpass_r(const char *prompt, char *buffer, size_t buflen)
   return buffer; /* we always return success */
 }
 #define DONE
-#endif /* WIN32 || __SYMBIAN32__ */
+#endif /* WIN32 */
 
 #ifdef NETWARE
 /* NetWare implementation */
@@ -195,7 +182,7 @@ static bool ttyecho(bool enable, int fd)
   static struct_term noecho;
 #endif
   if(!enable) {
-  /* disable echo by extracting the current 'withecho' mode and remove the
+  /* dissable echo by extracting the current 'withecho' mode and remove the
      ECHO bit and set back the struct */
 #ifdef HAVE_TERMIOS_H
     tcgetattr(fd, &withecho);

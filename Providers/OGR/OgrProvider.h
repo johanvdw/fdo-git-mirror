@@ -17,7 +17,6 @@
 //  
 
 #include "ProjConverter.h"
-
 #include "FdoDefaultFeatureReader.h"
 #include "FdoDefaultDataReader.h"
 

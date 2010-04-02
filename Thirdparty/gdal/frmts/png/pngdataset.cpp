@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pngdataset.cpp 18008 2009-11-12 22:16:00Z rouault $
+ * $Id: pngdataset.cpp 13859 2008-02-23 17:20:49Z rouault $
  *
  * Project:  PNG Driver
  * Purpose:  Implement GDAL PNG Support
@@ -49,19 +49,14 @@
 #include "cpl_string.h"
 #include <setjmp.h>
 
-CPL_CVSID("$Id: pngdataset.cpp 18008 2009-11-12 22:16:00Z rouault $");
+CPL_CVSID("$Id: pngdataset.cpp 13859 2008-02-23 17:20:49Z rouault $");
 
 CPL_C_START
 void	GDALRegister_PNG(void);
 CPL_C_END
 
 // Define SUPPORT_CREATE if you want Create() call supported.
-// Note: callers must provide blocks in increasing Y order.
-
-// Disclaimer (E. Rouault) : this code is NOT production ready at all.
-// A lot of issues remains : uninitialized variables, unclosed file,
-// inability to handle properly multiband case, inability to read&write
-// at the same time. Do NOT use it unless you're ready to fix it
+// Note: callers must provide blocks in increasing Y order. 
 //#define SUPPORT_CREATE
 
 
@@ -945,16 +940,16 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
 /*      Open overviews.                                                 */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename,
                                  poOpenInfo->papszSiblingFiles );
+
+/* -------------------------------------------------------------------- */
+/*      Initialize any PAM information.                                 */
+/* -------------------------------------------------------------------- */
+    poDS->SetDescription( poOpenInfo->pszFilename );
+    poDS->TryLoadXML();
 
 /* -------------------------------------------------------------------- */
 /*      Check for world file.                                           */
@@ -999,17 +994,16 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
 
     if( poSrcDS->GetRasterBand(1)->GetRasterDataType() != GDT_Byte 
-        && poSrcDS->GetRasterBand(1)->GetRasterDataType() != GDT_UInt16 )
+        && poSrcDS->GetRasterBand(1)->GetRasterDataType() != GDT_UInt16
+        && bStrict )
     {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
+        CPLError( CE_Failure, CPLE_NotSupported, 
                   "PNG driver doesn't support data type %s. "
-                  "Only eight bit (Byte) and sixteen bit (UInt16) bands supported. %s\n", 
+                  "Only eight bit (Byte) and sixteen bit (UInt16) bands supported.\n", 
                   GDALGetDataTypeName( 
-                      poSrcDS->GetRasterBand(1)->GetRasterDataType()),
-                  (bStrict) ? "" : "Defaulting to Byte" );
+                      poSrcDS->GetRasterBand(1)->GetRasterDataType()) );
 
-        if (bStrict)
-            return NULL;
+        return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1093,7 +1087,7 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
        dfNoDataValue = poSrcDS->GetRasterBand(1)->GetNoDataValue( &bHaveNoData );
 
-       if ( bHaveNoData && dfNoDataValue >= 0 && dfNoDataValue < 65536 )
+       if ( dfNoDataValue > 0 && dfNoDataValue < 65536 )
        {
           sTRNSColor.gray = (png_uint_16) dfNoDataValue;
           png_set_tRNS( hPNG, psPNGInfo, NULL, 0, &sTRNSColor );
@@ -1122,20 +1116,18 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
        // Otherwise, get the nodata value from the bands.
        else
        {
-          int	  bHaveNoDataRed = FALSE;
-          int	  bHaveNoDataGreen = FALSE;
-          int	  bHaveNoDataBlue = FALSE;
+          int	  bHaveNoData = FALSE;
           double dfNoDataValueRed = -1;
           double dfNoDataValueGreen = -1;
           double dfNoDataValueBlue = -1;
 
-          dfNoDataValueRed  = poSrcDS->GetRasterBand(1)->GetNoDataValue( &bHaveNoDataRed );
-          dfNoDataValueGreen= poSrcDS->GetRasterBand(2)->GetNoDataValue( &bHaveNoDataGreen );
-          dfNoDataValueBlue = poSrcDS->GetRasterBand(3)->GetNoDataValue( &bHaveNoDataBlue );
+          dfNoDataValueRed  = poSrcDS->GetRasterBand(1)->GetNoDataValue( &bHaveNoData );
+          dfNoDataValueGreen= poSrcDS->GetRasterBand(2)->GetNoDataValue( &bHaveNoData );
+          dfNoDataValueBlue = poSrcDS->GetRasterBand(3)->GetNoDataValue( &bHaveNoData );
 
-          if ( ( bHaveNoDataRed && dfNoDataValueRed >= 0 && dfNoDataValueRed < 65536 ) &&
-               ( bHaveNoDataGreen && dfNoDataValueGreen >= 0 && dfNoDataValueGreen < 65536 ) &&
-               ( bHaveNoDataBlue && dfNoDataValueBlue >= 0 && dfNoDataValueBlue < 65536 ) )
+          if ( ( dfNoDataValueRed > 0 && dfNoDataValueRed < 65536 ) &&
+             ( dfNoDataValueGreen > 0 && dfNoDataValueGreen < 65536 ) &&
+             ( dfNoDataValueBlue > 0 && dfNoDataValueBlue < 65536 ) )
           {
              sTRNSColor.red   = (png_uint_16) dfNoDataValueRed;
              sTRNSColor.green = (png_uint_16) dfNoDataValueGreen;
@@ -1266,8 +1258,8 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
     	double      adfGeoTransform[6];
 	
-	if( poSrcDS->GetGeoTransform( adfGeoTransform ) == CE_None )
-            GDALWriteWorldFile( pszFilename, "wld", adfGeoTransform );
+	poSrcDS->GetGeoTransform( adfGeoTransform );
+	GDALWriteWorldFile( pszFilename, "wld", adfGeoTransform );
     }
 
 /* -------------------------------------------------------------------- */
@@ -1482,9 +1474,6 @@ CPLErr PNGDataset::SetGeoTransform( double * padfTransform )
 
 CPLErr PNGRasterBand::SetColorTable(GDALColorTable* poCT)
 {
-    if( poCT == NULL )
-        return CE_Failure;
-
     // rcg, added to support Create().
     // We get called even for grayscale files, since some 
     // formats need a palette even then. PNG doesn't, so
@@ -1555,7 +1544,7 @@ CPLErr PNGDataset::write_png_header()
     {
         dfNoDataValue = this->GetRasterBand(1)->GetNoDataValue( &bHaveNoData );
 
-        if ( bHaveNoData && dfNoDataValue >= 0 && dfNoDataValue < 65536 )
+        if ( dfNoDataValue > 0 && dfNoDataValue < 65536 )
         {
             sTRNSColor.gray = (png_uint_16) dfNoDataValue;
             png_set_tRNS( m_hPNG, m_psPNGInfo, NULL, 0, &sTRNSColor );
@@ -1584,20 +1573,18 @@ CPLErr PNGDataset::write_png_header()
         // Otherwise, get the nodata value from the bands.
         else
         {
-            int	  bHaveNoDataRed = FALSE;
-            int	  bHaveNoDataGreen = FALSE;
-            int	  bHaveNoDataBlue = FALSE;
+            int	  bHaveNoData = FALSE;
             double dfNoDataValueRed = -1;
             double dfNoDataValueGreen = -1;
             double dfNoDataValueBlue = -1;
 
-            dfNoDataValueRed  = this->GetRasterBand(1)->GetNoDataValue( &bHaveNoDataRed );
-            dfNoDataValueGreen= this->GetRasterBand(2)->GetNoDataValue( &bHaveNoDataGreen );
-            dfNoDataValueBlue = this->GetRasterBand(3)->GetNoDataValue( &bHaveNoDataBlue );
+            dfNoDataValueRed  = this->GetRasterBand(1)->GetNoDataValue( &bHaveNoData );
+            dfNoDataValueGreen= this->GetRasterBand(2)->GetNoDataValue( &bHaveNoData );
+            dfNoDataValueBlue = this->GetRasterBand(3)->GetNoDataValue( &bHaveNoData );
 
-            if ( ( bHaveNoDataRed && dfNoDataValueRed >= 0 && dfNoDataValueRed < 65536 ) &&
-                 ( bHaveNoDataGreen && dfNoDataValueGreen >= 0 && dfNoDataValueGreen < 65536 ) &&
-                 ( bHaveNoDataBlue && dfNoDataValueBlue >= 0 && dfNoDataValueBlue < 65536 ) )
+            if ( ( dfNoDataValueRed > 0 && dfNoDataValueRed < 65536 ) &&
+                 ( dfNoDataValueGreen > 0 && dfNoDataValueGreen < 65536 ) &&
+                 ( dfNoDataValueBlue > 0 && dfNoDataValueBlue < 65536 ) )
             {
                 sTRNSColor.red   = (png_uint_16) dfNoDataValueRed;
                 sTRNSColor.green = (png_uint_16) dfNoDataValueGreen;

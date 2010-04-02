@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnstroke.cpp 18382 2009-12-24 05:17:27Z warmerdam $
+ * $Id: dgnstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Code to stroke Arcs/Ellipses into polylines.
@@ -30,7 +30,7 @@
 #include "dgnlibp.h"
 #include <math.h>
 
-CPL_CVSID("$Id: dgnstroke.cpp 18382 2009-12-24 05:17:27Z warmerdam $");
+CPL_CVSID("$Id: dgnstroke.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #define DEG_TO_RAD (PI/180.0)
 
@@ -43,14 +43,23 @@ static void ComputePointOnArc2D( double dfPrimary, double dfSecondary,
                                  double *pdfX, double *pdfY )
 
 {
-    //dfAxisRotation and dfAngle are suposed to be in Radians
-    double      dfCosRotation = cos(dfAxisRotation);
-    double      dfSinRotation = sin(dfAxisRotation);
-    double      dfEllipseX = dfPrimary * cos(dfAngle);
-    double      dfEllipseY = dfSecondary * sin(dfAngle);
+    double      dfRadiusSquared, dfRadius, dfX2, dfY2;
+    double      dfCosAngle = cos(dfAngle);
+    double      dfSinAngle = sin(dfAngle);
+    double      dfPrimarySquared = dfPrimary * dfPrimary;
+    double      dfSecondarySquared = dfSecondary * dfSecondary;
 
-    *pdfX = dfEllipseX * dfCosRotation - dfEllipseY * dfSinRotation;
-    *pdfY = dfEllipseX * dfSinRotation + dfEllipseY * dfCosRotation;
+    dfRadiusSquared = (dfPrimarySquared * dfSecondarySquared)
+        / (dfSecondarySquared * dfCosAngle * dfCosAngle
+           + dfPrimarySquared * dfSinAngle * dfSinAngle);
+
+    dfRadius = sqrt(dfRadiusSquared);
+
+    dfX2 = dfRadius * cos(dfAngle);
+    dfY2 = dfRadius * sin(dfAngle);
+
+    *pdfX = dfX2 * cos(dfAxisRotation) - dfY2 * sin(dfAxisRotation);
+    *pdfY = dfX2 * sin(dfAxisRotation) + dfY2 * cos(dfAxisRotation);
 }
 
 /************************************************************************/

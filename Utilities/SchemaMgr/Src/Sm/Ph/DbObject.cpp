@@ -460,17 +460,11 @@ FdoStringP FdoSmPhDbObject::GetAddPkeySql()
 
     if ( pkeyColumns->GetCount() > 0 ) {
         FdoStringsP pkColNames = GetKeyColsSql( pkeyColumns );
-
-        FdoStringP pkeyName = this->GenPkeyName();
-
-        // Remove qualification by physical schema if present.
-        if ( pkeyName.Contains(L".") ) 
-            pkeyName = mPkeyName.Right( L"." );
-
+        
         pkeySql = FdoStringP::Format( 
             L"constraint %ls%ls%ls primary key ( %ls )",
             ansiQuotes ? L"\"" : L"",
-            (FdoString*) pkeyName,
+            (FdoString*) this->GenPkeyName(),
             ansiQuotes ? L"\"" : L"",
             (FdoString*) pkColNames->ToString()
         );
@@ -1291,25 +1285,18 @@ void FdoSmPhDbObject::LoadPkeys( FdoSmPhReaderP pkeyRdr, bool isSkipAdd )
     // read each primary key column.
     while (pkeyRdr->ReadNext() ) {
         mPkeyName = pkeyRdr->GetString(L"", L"constraint_name");
+        FdoStringP columnName = pkeyRdr->GetString(L"",L"column_name");
 
-        if ( !isSkipAdd ) 
-            LoadPkeyColumn( pkeyRdr, mPkeyColumns );
-    }
-}
+        FdoSmPhColumnP pkeyColumn = GetColumns()->FindItem( columnName );
 
-void FdoSmPhDbObject::LoadPkeyColumn( FdoSmPhReaderP pkeyRdr, FdoSmPhColumnsP pkeyColumns )
-{
-    FdoStringP columnName = pkeyRdr->GetString(L"",L"column_name");
-
-    FdoSmPhColumnP pkeyColumn = GetColumns()->FindItem( columnName );
-
-    if ( pkeyColumn == NULL ) {
-        // Primary Key column must be in this table.
-        if ( GetElementState() != FdoSchemaElementState_Deleted )
-	        AddPkeyColumnError( columnName );
-    }
-    else  {
-        mPkeyColumns->Add(pkeyColumn);
+        if ( pkeyColumn == NULL ) {
+            // Primary Key column must be in this table.
+            if ( GetElementState() != FdoSchemaElementState_Deleted )
+		        AddPkeyColumnError( columnName );
+	    }
+	    else if( ! isSkipAdd ) {
+	        mPkeyColumns->Add(pkeyColumn);
+	    }
     }
 }
 
@@ -1363,26 +1350,21 @@ bool FdoSmPhDbObject::LoadIndexes( FdoSmPhTableIndexReaderP indexRdr, bool isSki
                 mIndexes->Add(index);
         }
 
-        LoadIndexColumn( indexRdr, index );
+        FdoStringP columnName = indexRdr->GetString(L"",L"column_name");
+        FdoSmPhColumnP column = GetColumns()->FindItem(columnName);
+
+        if ( column ) {
+            // Add the column to the current index.
+            index->AddColumn( column );
+        }
+        else {
+            // Index column must be in this table.
+            if ( GetElementState() != FdoSchemaElementState_Deleted )
+		        AddIndexColumnError( columnName );
+        }
     }
 
     return ret;
-}
-
-void FdoSmPhDbObject::LoadIndexColumn( FdoSmPhTableIndexReaderP indexRdr, FdoSmPhIndexP index )
-{
-    FdoStringP columnName = indexRdr->GetString(L"",L"column_name");
-    FdoSmPhColumnP column = GetColumns()->FindItem(columnName);
-
-    if ( column ) {
-        // Add the column to the current index.
-        index->AddColumn( column );
-    }
-    else {
-        // Index column must be in this table.
-        if ( GetElementState() != FdoSchemaElementState_Deleted )
-	        AddIndexColumnError( columnName );
-    }
 }
 
 bool FdoSmPhDbObject::CacheIndexes( FdoSmPhRdIndexReaderP rdr )
@@ -1684,13 +1666,7 @@ FdoStringP FdoSmPhDbObject::GenPkeyName()
 {
     if ( mPkeyName == L"" ) {
         FdoSmPhOwner* pOwner = dynamic_cast<FdoSmPhOwner*>((FdoSmPhSchemaElement*) GetParent());
-        FdoStringP PkeyName = GetName();
-        if ( PkeyName.Contains(L".") ) 
-            PkeyName = PkeyName.Replace( L".", L".pk_" );
-        else
-            PkeyName = FdoStringP(L"pk_") + PkeyName;
-
-        mPkeyName = pOwner->UniqueDbObjectName( PkeyName );
+        mPkeyName = pOwner->UniqueDbObjectName( FdoStringP(L"pk_") + FdoStringP(GetName()) ).Replace(L".",L"_");
     }
 
     return mPkeyName;

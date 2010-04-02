@@ -59,18 +59,14 @@ II. Build Notes
   2. Install ActiveState Perl, available from:
      
         http://www.activestate.com/ActivePerl
-		
-  2a. Install NASM, available from:
-  
-        http://www.nasm.us/
 
   3. Ensure that the Windows Environment Variables are set as follows:
 
         SET FDO=[FDO OpenSource]\Fdo
         SET FDOUTILITIES=[FDO OpenSource]\Utilities
         SET FDOTHIRDPARTY=[FDO OpenSource]\ThirdParty
-        SET XALANROOT=%FDOTHIRDPARTY%\apache\xalan
-        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xerces
+        SET XALANROOT=%FDOTHIRDPARTY%\apache\xml-xalan\c
+        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xml-xerces\c
         SET NLSDIR=%XALANROOT%\Src\xalanc\NLS
 
   4. In order to build all FDO Windows components, ensure that the Microsoft

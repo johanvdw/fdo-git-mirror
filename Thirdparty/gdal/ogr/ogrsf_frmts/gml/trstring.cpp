@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: trstring.cpp 16785 2009-04-17 10:07:28Z chaitanya $
+ * $Id: trstring.cpp 15594 2008-10-24 20:03:30Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Functions for translating back and forth between XMLCh and char.
@@ -172,7 +172,7 @@ void tr_strcpy( char *pszCString, const XMLCh *panXMLString )
 /* -------------------------------------------------------------------- */
     int i;
     wchar_t *pwszSource = (wchar_t *) CPLCalloc(sizeof(wchar_t),
-                                                tr_strlen(panXMLStringOriginal)+1 );
+                                                strlen(pszCString)+1 );
     for( i = 0; panXMLString[i] != 0; i++ )
         pwszSource[i] = panXMLString[i];
     pwszSource[i] = 0;

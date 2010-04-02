@@ -25,7 +25,7 @@
 pushd . >& /dev/null
 cd apache
 echo Building apche
-./build2.sh
+./build
 popd >& /dev/null
 
 pushd . >& /dev/null
