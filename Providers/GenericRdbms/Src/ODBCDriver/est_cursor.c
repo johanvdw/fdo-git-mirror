@@ -89,7 +89,6 @@ int odbcdr_est_cursor(
 
 	c->next = connData->cursors; // linked list management
 	connData->cursors = c;
-	c->is_sqlserver_insert   = FALSE;	
 	c->is_rollback = FALSE;	
 
 	rdbi_status = RDBI_SUCCESS;

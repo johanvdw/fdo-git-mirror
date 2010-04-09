@@ -88,12 +88,10 @@ typedef ULONG_PTR DWORD_PTR;
 #endif // _WIN32
 
 #include <cstring>
-#include <cstdio>
 #include <Fdo.h>
 #include <FdoCommonStringUtil.h>
 #include <FdoCommonMiscUtil.h>
 
-#include <../Message/ShpMessageStatic.h>
 #include <../Message/Inc/ShpMessage.h>
 
 #endif // SHPREAD_STDAFX_H

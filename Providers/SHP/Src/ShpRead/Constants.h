@@ -74,7 +74,10 @@ enum ePartTypes {
 // T Y P E D E F S
 //*******************************************************************
 
-#pragma pack(push, 1)
+#ifdef _WIN32
+#pragma pack(push)
+#pragma pack(4)
+#endif
 
 // ESRI Shape Structures
 typedef struct {
@@ -98,7 +101,7 @@ typedef struct {
 } ESRIPolygonRecord;
 
 typedef struct {
-    unsigned int nOffset;
+    ULONG nOffset;
     int nContentLength;
 } SHPIndexRecordHeader;
 
@@ -128,7 +131,9 @@ typedef struct {
 } SHPHeader;
 const int SHPHeaderSize = sizeof (SHPHeader);
 
+#ifdef _WIN32
 #pragma pack(pop)
+#endif
 
 //*******************************************************************
 // D E F I N E S
@@ -250,16 +255,6 @@ const CHAR END_OF_FILE = (CHAR)0x1a;
 //     polygons (exterior rings and interior rings). A MultiPolygon may result as
 //     well, depending on the number of exterior rings detected).
 
-#define RELATE_RINGS    true
-
-// RELATE_RINGS_NESTED flag controls the behaviour: 
-//     - FALSE we assume that there are no nested rings (rings inside an interior ring).
-//       Such ring will be associated with exterior ring.
-//     - TRUE then the an algorithm for correctly associating the nested rings, no matter
-//       the nesting level will be executed and turn them into exterior rings.
-// NOTE: The algorithm for nesting check is expensive and it might affect the performance
-//       on reading the polygons.
-
-#define RELATE_NESTED_RINGS    true
+#define RELATE_RINGS    false
 
 #endif  // CONSTANTS_H

@@ -28,75 +28,63 @@ BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS
 ///// command, which is spatial indexing the speciified spatial context.
 ///// Input to the command includes the name, spatial context, special index type,
 ///// the number of dimensions for the new spatial index.</summary>
-private ref class ICreateSpatialIndexImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndex
+private __gc class ICreateSpatialIndexImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::ICreateSpatialIndex
 {
-internal:
+public private:
+	FdoICreateSpatialIndex* GetImpObj();
+	
 	ICreateSpatialIndexImp(System::IntPtr unmanaged, System::Boolean autoDelete);   
-
-    FdoICreateSpatialIndex* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public:
     /// <summary>Gets the name of the Spatial index as a String.</summary>
     /// <returns>Returns the name of the spatial Index </returns>
+	__property System::String* get_Name();
+
     /// <summary>Sets the name of the spatial Index  to create as a String.</summary>
     /// <param name="value">Input the name of the spatial Index </param>
     /// <returns>Returns nothing</returns>
-    virtual property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// <summary>Gets the name of the spatial context as a String.</summary>
     /// <returns>Returns the description of the spatial context </returns>
+	__property System::String* get_SpatialContextName();
+
     /// <summary>Sets the name of the spatial context to create as a String.</summary>
     /// <param name="value">Input the description of the spatial spatial Index </param>
     /// <returns>Returns nothing</returns>
-    virtual property System::String^ SpatialContextName
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_SpatialContextName(System::String* value);
 
     /// <summary>Gets the type of the spatial Index, either Quad-Tree or R-Tree.</summary>
     /// <returns>Returns the spatial index type</returns>	
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType get_RdbmsSpatialIndexType();
+
     /// <summary>Sets the desired spatial Index  to create, either Quad-Tree or R-Tree.</summary>
     /// <param name="value">Input the index type</param>
     /// <returns>Returns nothing</returns>	
-    virtual property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType RdbmsSpatialIndexType
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType value);
-    }
+	__property System::Void set_RdbmsSpatialIndexType(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexType value);
 
     /// <summary>Gets the number of dimensions of the spatial Index.</summary>
     /// <returns>Returns the extent type</returns>
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType get_NumDimensions();
+
     /// <summary>Sets the desired value of the spatial Index dimension.</summary>
     /// <param name="value">Input the index dimension </param>
     /// <returns>Returns nothing</returns>
-    virtual property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType NumDimensions
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType value);
-    }
+	__property System::Void set_NumDimensions(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS::RdbmsSpatialIndexDimensionType value);
 
     /// <summary>Sets the geometric property.</summary>
     /// <param name="value">Input the geometric property definition.</param>
     /// <returns>Returns nothing</returns>
+	__property System::Void set_GeometricProperty(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition *value);
+
     /// <summary>Gets the geometric property previously set, if any.</summary>
     /// <returns>Returns NULL if not set or a pointer to a geometry property definition</returns>
-    virtual property NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ GeometricProperty
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ get();
-        System::Void set(NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition^ value);
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::GeometricPropertyDefinition* get_GeometricProperty();
 
     /// <summary>Executes the CreateSpatialIndex command. An exception is thrown if
     /// the spatial index or the spatial context names are not indicated.</summary>
     /// <returns>Returns nothing</returns>
-	virtual System::Void Execute();
+	System::Void Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS

@@ -23,17 +23,17 @@
 class FdoStringValue;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The StringValue class derives from DataValue and represents a literal string.
-public ref class StringValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
+public __gc class StringValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns a character string
     /// 
-	static operator System::String^( NAMESPACE_OSGEO_FDO_EXPRESSION::StringValue^ value );
+	static System::String* op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::StringValue* value );
 
     /// \brief
     /// Constructs a default instance of an StringValue with a value of null.
@@ -61,7 +61,7 @@ public:
     /// \return
     /// Returns the created StringValue
     /// 
-	StringValue(System::String^ value);
+	StringValue(System::String* value);
 
     /// \brief
     /// Gets the data type of the StringValue.
@@ -69,10 +69,7 @@ public:
     /// \return
     /// Returns DataType
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the StringValue as a string.
@@ -80,6 +77,8 @@ public:
     /// \return
     /// Returns a character string
     /// 
+	__property System::String* get_String();
+
     /// \brief
     /// Sets the StringValue as a string.
     /// 
@@ -89,11 +88,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::String^ String
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_String(System::String* value);
 
     /// \brief
     /// Sets the StringValue to a null value.
@@ -101,7 +96,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetNull() override;
+	System::Void SetNull();
 
     /// \brief
     /// Overrides Expression.Process to pass the StringValue to the appropriate
@@ -113,7 +108,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -121,7 +116,7 @@ public:
     /// \return
     /// Returns a character string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a StringValue object based on an unmanaged instance of the object
@@ -135,10 +130,8 @@ public:
     /// 
 	StringValue(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoStringValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION

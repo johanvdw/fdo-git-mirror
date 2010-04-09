@@ -84,23 +84,8 @@ void ShapeFileBase::OpenWrite (const wchar_t* name, eShapeTypes shape_type, bool
     m_dYMax = fNO_DATA;
     m_dZMin = fNO_DATA;
     m_dZMax = fNO_DATA;
-
-    // http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
-    // According to SHP specification, Mmin and Mmax is equal to 0.0, if not Measured type
-    // If the shapefile is empty (that is, has no records), the values
-    // for Xmin, Ymin, Xmax, and Ymax are unspecified. Mmin and Mmax can contain "no
-    // data" values for shapefiles of measured shape types that contain no measures.
-    if (has_m)
-    {
-        m_dMMin = fNO_DATA;
-        m_dMMax = fNO_DATA;
-    }
-    else
-    {
-        m_dMMin = 0.0;
-        m_dMMax = 0.0;
-    }
-
+    m_dMMin = fNO_DATA;
+    m_dMMax = fNO_DATA;
 	OpenFlags flags = IDF_OPEN_UPDATE;
 
 	if ( !FileExists (name) )
@@ -154,7 +139,13 @@ void ShapeFileBase::GetFileHeaderDetails ()
 
     // Read the File Header details
     if (!ReadFile (&shpHeader, SHPHeaderSize))
-        throw FdoCommonFile::LastErrorToException (L"ShapeFileBase::GetFileHeaderDetails");
+	{
+		FdoException*  ex = FdoCommonFile::LastErrorToException (L"ShapeFileBase::GetFileHeaderDetails");
+		if ( ex )
+			throw ex;
+		else
+			throw FdoException::Create (NlsMsgGet(SHP_READ_FILE_ERROR, "Error occured reading file '%1$ls'.", FileName() ));
+	}
 
     // We need to swap the BigEndian values
     m_nFileCode = shpHeader.nFileCode = SWAPLONG(shpHeader.nFileCode);
@@ -173,17 +164,12 @@ void ShapeFileBase::GetFileHeaderDetails ()
 
         m_dXMin = shpHeader.cXMin;
         m_dYMin = shpHeader.cYMin;
-
-        bool  hasShapes = (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize);
-        
-        if (hasShapes) // only check if there are shapes
+        if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
             CheckBoundingBox(m_dXMin, m_dYMin, eMinXMinY);
-
         m_dXMax = shpHeader.cXMax;
         m_dYMax = shpHeader.cYMax;
-        if (hasShapes) // only check if there are shapes
+        if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
             CheckBoundingBox(m_dXMax, m_dYMax, eMaxXMaxY);
-
         // Initialize
         m_dZMin = shpHeader.cZMin;
         m_dZMax = shpHeader.cZMax;
@@ -204,20 +190,15 @@ void ShapeFileBase::GetFileHeaderDetails ()
                 CheckBoundingBox(m_dZMin, m_dZMax, eMinZMaxZ);
 #endif
             // In the SHP specification there is a note about the M bounding box: if M values are not used
-            // then Mmin and Mmax are 0.0. Also if the file has records and M bounding box is unspecified 
-            // (non-standard but possible).
-            bool isMBoxUnpecified = ((m_dMMin == 0.0) && (m_dMMax == 0.0)) || 
-                                     (hasShapes && (m_dMMin <= fNO_DATA) && (m_dMMax <= fNO_DATA)); 
-            m_bMDataPresent = false;
-            if ( !isMBoxUnpecified )
+            // then Mmin and Mmax are 0.0. In such situation, m_bMdataPresent should not be set to true. 
+            if ((m_dMMin > fNO_DATA) && (m_dMMax > fNO_DATA) && (m_dMMin != 0.0) && (m_dMMax != 0.0))
             {
                 m_bMDataPresent = true;
-#if 0
-                // Same issue as with Z values validation. See comment above.
                 if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
                     CheckBoundingBox(m_dMMin, m_dMMax, eMinMMaxM);
-#endif
-            }                
+            }
+            else
+                m_bMDataPresent = false;
         }
         if ((m_nFileShapeType == ePointMShape) ||
             (m_nFileShapeType == ePolylineMShape) ||
@@ -361,9 +342,9 @@ void ShapeFileBase::CheckBoundingBox(double dMinValue, double dMaxValue, eMinMax
     }
 }
 
-const wchar_t* ShapeFileBase::ShapeTypeToString (eShapeTypes type)
+wchar_t* ShapeFileBase::ShapeTypeToString (eShapeTypes type)
 {
-    const wchar_t* ret;
+    wchar_t* ret;
 
     switch (type)
     {

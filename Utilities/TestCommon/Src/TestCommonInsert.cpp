@@ -114,9 +114,9 @@ void TestCommonInsert::DoSubtestDefaultValues(
 
     FdoPtr<FdoIDescribeSchema>  descCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
     FdoFeatureSchemasP schemas = descCmd->Execute();
-    FdoFeatureSchemaP schema = schemas->FindItem(GetDefaultSchemaName());
+    FdoFeatureSchemaP schema = schemas->FindItem(SCHEMA_NAME);
     if ( !schema )
-        schema = FdoFeatureSchema::Create( GetDefaultSchemaName(), L"" );
+        schema = FdoFeatureSchema::Create( SCHEMA_NAME, L"" );
 
     FdoPtr<FdoIApplySchema>  applyCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
     FdoClassesP classes = schema->GetClasses();
@@ -256,7 +256,7 @@ void TestCommonInsert::DoSubtestDefaultValues(
 
     descCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
   	schemas = descCmd->Execute();
-    FdoFeatureSchemaP schema2 = schemas->FindItem(GetDefaultSchemaName());
+    FdoFeatureSchemaP schema2 = schemas->FindItem(SCHEMA_NAME);
     CPPUNIT_ASSERT(schema2);
     FdoClassesP classes2 = schema2->GetClasses();
     FdoClassDefinitionP classDef2 = classes2->FindItem(testName);
@@ -279,10 +279,17 @@ void TestCommonInsert::DoSubtestDefaultValues(
             FdoStringP defaultStr = dataProp->GetDefaultValue();
 
             if ( defaultStr != L"" ) {
-                dataValue = FdoDataValue::Create(
-                    dataProp->GetDataType(),
-                    FdoPtr<FdoStringValue>(FdoStringValue::Create(defaultStr))
-                );
+                if ( dataProp->GetDataType() == FdoDataType_String ) {
+                    dataValue = FdoStringValue::Create(defaultStr);
+                }
+                else {
+                    try {
+                        FdoPtr<FdoExpression> expr = FdoExpression::Parse(defaultStr);
+                        dataValue = FDO_SAFE_ADDREF(dynamic_cast<FdoDataValue*>(expr.p));
+                    }
+                    catch ( ... ) {
+                    }
+                }
 
                 if ( dataValue ) {
                     propertyValue = TestCommonMiscUtil::AddNewProperty( propertyValues, prop2->GetName() );
@@ -539,7 +546,3 @@ TestCommonInsert::Context::~Context()
     }
 }
 
-FdoString* TestCommonInsert::GetDefaultSchemaName(void)
-{
-    return SCHEMA_NAME;
-}

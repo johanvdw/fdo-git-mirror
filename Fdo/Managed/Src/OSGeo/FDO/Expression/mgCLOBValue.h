@@ -23,18 +23,18 @@
 class FdoCLOBValue;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The CLOBValue class derives from LOBValue and represents a literal
 /// CLOB value.
-public ref class CLOBValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::LOBValue 
+public __gc class CLOBValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::LOBValue 
 {
 public:
     /// \brief
@@ -54,7 +54,7 @@ public:
     /// \return
     /// Returns the created CLOBValue
     /// 
-	CLOBValue(array<System::Byte>^ value);
+	CLOBValue(System::Byte value []);
 
     /// \brief
     /// Gets the data type of the CLOBValue.
@@ -62,10 +62,7 @@ public:
     /// \return
     /// Returns an DataType
     /// 
-	property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the CLOB value.
@@ -73,6 +70,8 @@ public:
     /// \return
     /// Returns a byte array
     /// 
+	__property System::Byte get_Data() [];
+
     /// \brief
     /// Sets the CLOB value.
     /// 
@@ -82,11 +81,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property array<System::Byte>^ Data
-    {
-        array<System::Byte>^ get();
-        System::Void set(array<System::Byte>^ value);
-    }
+	__property System::Void set_Data(System::Byte value []);
 
     /// \brief
     /// Sets the CLOB value to a null value.
@@ -94,7 +89,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void SetNull() override;
+	System::Void SetNull();
 
     /// \brief
     /// Overrides Expression.Process to pass the CLOBValue to the appropriate
@@ -106,7 +101,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -114,7 +109,7 @@ public:
     /// \return
     /// Returns a text string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a CLOBValue object based on an unmanaged instance of the object
@@ -128,10 +123,8 @@ public:
     /// 
 	CLOBValue(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoCLOBValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 

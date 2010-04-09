@@ -50,34 +50,25 @@ II. Build Notes
      Visual Studio 2008 C++ Express Edition: 
  
         http://www.microsoft.com/express/download/
-        
-     You will need to download and install Windows .NET Framework 3.5 Service Pack 1.
-     You can download it from the following location:
-     
-        http://msdn.microsoft.com/en-us/netframework/default.aspx
-     
+
   2. Install ActiveState Perl, available from:
      
         http://www.activestate.com/ActivePerl
-		
-  2a. Install NASM, available from:
-  
-        http://www.nasm.us/
 
   3. Ensure that the Windows Environment Variables are set as follows:
 
         SET FDO=[FDO OpenSource]\Fdo
         SET FDOUTILITIES=[FDO OpenSource]\Utilities
         SET FDOTHIRDPARTY=[FDO OpenSource]\ThirdParty
-        SET XALANROOT=%FDOTHIRDPARTY%\apache\xalan
-        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xerces
+        SET XALANROOT=%FDOTHIRDPARTY%\apache\xml-xalan\c
+        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xml-xerces\c
         SET NLSDIR=%XALANROOT%\Src\xalanc\NLS
 
   4. In order to build all FDO Windows components, ensure that the Microsoft
      MsBuild tool that is used by the the FDO build process is included in 
      the Windows system PATH.
 
-        set PATH=%PATH%;c:\WINDOWS\Microsoft.NET\Framework\v3.5
+        set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727
  
   5. In order to build the ArcSDE Provider, you will need to have the
      ArcSDE 9.1 Client SDK and/or ArcSDE 9.2 Client SDK installed 
@@ -106,7 +97,7 @@ II. Build Notes
   6. In order to build the MySQL Provider, you will need to download 
      and install the MySQL 5.0 Windows client and developer components from:
 
-        http://downloads.mysql.com/archives.php?p=mysql-5.0
+        http://dev.mysql.com/downloads/mysql/5.0.html
 
      Following the installation, set the following FDO Windows environment variable:
 
@@ -507,7 +498,7 @@ II. Build Notes
      directory must be set as writeable by the user, otherwise the user 
      will have to log in and build FDO as the ROOT user. This requirement
      is due to the fact that the FDO Libraries will be built and installed 
-     in /usr/local/fdo-3.5.0/lib
+     in /usr/local/fdo-3.4.0/lib
 
   2. Ensure that the following FDO Environment Variables are set as follows:
 
@@ -539,12 +530,12 @@ II. Build Notes
      extract the MySQL client and MySQL 5.0 devloper components from MySQL. 
      These components are located at:
  
-       http://downloads.mysql.com/archives.php?p=mysql-5.0
+       http://dev.mysql.com/downloads/mysql/5.0.html
         
-     For example, for Red Hat Enterprise Linux 5 RPM (x86)
+     For example, for Red Hat Enterprise Linux 3 RPM (x86)
        
-       Client:                   MySQL-client-community-5.0.86-0.rhel5.i386.rpm
-       Headers and Libraries:    MySQL-devel-community-5.0.86-0.rhel5.i386.rpm
+       Client:                   MySQL-client-standard-5.0.22-0.rhel3.i386.rpm
+       Headers and Libraries:    MySQL-devel-standard-5.0.22-0.rhel3.i386.rpm
 
      NOTE: Choosing the RPM install of the MySQL components is *strongly* 
      recommended. However, if a non-RPM installation of MySQL is chosen, 
@@ -561,7 +552,7 @@ II. Build Notes
            http://www.unixodbc.org/
 
            Download Location: 
-           http://sourceforge.net/projects/unixodbc/files/
+           http://sourceforge.net/project/showfiles.php?group_id=1544
 
            Download Files: 
            unixODBC-CORE  - unixODBC-2.2.11-1.i386.rpm
@@ -641,11 +632,11 @@ II. Build Notes
      In order to build the FDO Python Wrappers, build and install the FDO 
      libraries. Once the install is complete, run the 
      [FDO OpenSource]/Fdo/Python/build_linux.sh script. 
-     The Python components will be installed in /usr/local/fdo-3.5.0/lib
+     The Python components will be installed in /usr/local/fdo-3.4.0/lib
 
   9. NOTE: To run the unit test, you must set LD_LIBRARY_PATH as follows:
 
-       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.5.0/lib
+       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.4.0/lib
        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SDEHOME/lib:$FDOTHIRDPARTY/ESRI/ArcSDEClient91/Linux/lib
  
  10. NOTE: Several known problems exist if auto-mounted drives are used as 
@@ -748,8 +739,7 @@ II. Build Notes
                                      gdal,
                                      ogr.
                                      postgis
-                                     kingoracle,
-									 sqlite
+                                     kingoracle
            **************************************************************
 
            e.g.

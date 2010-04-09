@@ -63,11 +63,6 @@ FdoString* DataReader::GetPropertyName(FdoInt32 index)
     return Base::GetPropertyName(index);
 }
 
-FdoInt32 DataReader::GetPropertyIndex(FdoString* propertyName)
-{
-    return Base::GetPropertyIndex(propertyName);
-}
-
 FdoDataType DataReader::GetDataType(FdoString* propertyName)
 {
     return Base::GetDataType(propertyName);

@@ -20,13 +20,11 @@
 
 
 #include <time.h>
-#include "FdoDefaultFeatureReader.h"
 
 
-class c_KgMssFeatureReader : public c_KgMssReader< FdoDefaultFeatureReader>
+
+class c_KgMssFeatureReader : public c_KgMssReader< FdoIFeatureReader>
 {
-    typedef c_KgMssReader< FdoDefaultFeatureReader> superclass;
-
     public:
         c_KgMssFeatureReader(c_KgMssConnection * Connection
                             ,otl_stream* OtlStream,c_KgOtlStreamReader* OtlStreamReader

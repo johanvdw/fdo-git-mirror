@@ -44,7 +44,7 @@ ShapePRJ::ShapePRJ (const wchar_t* name, int& status)
             char*   buffer = new char[size + 1];
 
             if ( !FdoCommonFile::ReadFile( buffer, size ) )
-                throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ", name);
+                throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ");
             else
             {
                 buffer[size] = '\0'; // EOF
@@ -54,7 +54,7 @@ ShapePRJ::ShapePRJ (const wchar_t* name, int& status)
             delete[] buffer;
         }
         else
-            throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ", name);
+            throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ");
     }
     else
         throw FdoCommonFile::ErrorCodeToException (code, name, IDF_OPEN_READ);
@@ -73,7 +73,7 @@ ShapePRJ::ShapePRJ (const WCHAR* name, const WCHAR* wkt) :
 		char*	wkt2 = (char *)(const char *)mWKT; 
 
         if (!WriteFile (wkt2, (long) strlen(wkt2)))
-            throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ(wkt)", name);
+            throw FdoCommonFile::LastErrorToException (L"ShapePRJ::ShapePRJ(wkt)");
 
         CloseFile ();
     }

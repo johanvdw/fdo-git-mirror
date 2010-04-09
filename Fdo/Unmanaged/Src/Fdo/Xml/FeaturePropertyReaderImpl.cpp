@@ -36,7 +36,6 @@
 #include "Geometry.h"
 #include <xercesc/util/Base64.hpp>
 #include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
 
 // logical physical schema items
 #include "SchemaManager.h"
@@ -475,6 +474,7 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
         {
             if (curState == ParsingState_GmlDirectGeometry) // run last step only in this case
                 m_geometryHandler->RunLastParseStep(name, (FdoXmlGeometryHandler::GmlGeometryType)m_activeGmlGeometryType);
+
             tempGeometry =  m_geometryHandler->GetGeometry();
             FdoStringP pPropName = name;
             bool found = false;
@@ -494,6 +494,7 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
                 pPropName = L"gml/";
                 pPropName += name;
             }
+
             // match the names of geometry field
             if (NULL != classDef)
             {
@@ -502,6 +503,7 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
                 if (pMainGeomPropName != NULL && pPropName != pMainGeomPropName)
                     pPropName = pMainGeomPropName;
             }
+
             FdoByte* arrayData = NULL;
             FdoInt32 szArrayData = 0;
 	        if (tempGeometry){
@@ -511,6 +513,7 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
                 szArrayData = tempByteArray->GetCount();
                 }
             }
+
 	        isPauseParsing = curFeatureHandler->FeatureGeometricProperty(m_featureContext, 
 		                pPropName, arrayData, szArrayData);
         }
@@ -545,11 +548,11 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
         break;
     case ParsingState_base64Binary:
         {
-            XMLSize_t len;
+            unsigned int len;
             XMLByte* decoded = XERCES_CPP_NAMESPACE::Base64::decode((const XMLByte*)(const char*)m_dataProperty, &len);
             if (decoded != NULL) {
                 curFeatureHandler->FeatureBinaryData(m_featureContext, decoded, len);
-	            delete decoded;
+                XERCES_CPP_NAMESPACE::XMLString::release(&decoded);
             }
             curFeatureHandler->FeatureEndLobProperty(m_featureContext);
         }

@@ -49,8 +49,6 @@
 #include <Inc/Sys/stat.h>
 #include "Common/Xml/UtilXrcs.h"
 
-#include <xercesc/dom/impl/DOMLSOutputImpl.hpp>
-
 #ifdef _WIN32
 #define FILE_PATH_DELIMITER L'\\'
 #define FILE_PATH_DELIMITER2 L'/'
@@ -214,14 +212,14 @@ void FdoRegistryUtility::GetLibraryLocation(const wchar_t* providerName, std::ws
         if (strcmp(tmp, c_featureProviderRegistryName.c_str()) == 0)
         {
             XMLString::release(&tmp);
-            XMLSize_t numberFeatureProviders = featureProviders->getLength();
+            int numberFeatureProviders = featureProviders->getLength();
             // Search thru the registry two times. The first time an exact match is needed.
             // The second time 
             for (int h = 0; h < 2; h++)
             {
                 if (bFound == true)
                     break;
-                for (XMLSize_t i=0; i<numberFeatureProviders; i++)
+                for (int i=0; i<numberFeatureProviders; i++)
                 {
                     if (h == 0)
                     {
@@ -234,8 +232,8 @@ void FdoRegistryUtility::GetLibraryLocation(const wchar_t* providerName, std::ws
                     if (wcscmp(pFeatureProvider, c_featureProviderNameW.c_str()) == 0)
                     {
                         DOMNodeList *properties = featureProvider->getChildNodes();
-                        XMLSize_t numberProperties = properties->getLength();
-                        for (XMLSize_t j=0; j<numberProperties; j++)
+                        int numberProperties = properties->getLength();
+                        for (int j=0; j<numberProperties; j++)
                         {
                             if (h == 0)
                             {
@@ -253,8 +251,8 @@ void FdoRegistryUtility::GetLibraryLocation(const wchar_t* providerName, std::ws
                                 }
                                 DOMNode *nameNode = names->item(0);
                                 FdoStringP nameValue;
-                                XMLSize_t chars = 0;
-                                XMLSize_t length = XMLString::stringLen(nameNode->getNodeValue());
+                                unsigned int chars = 0;
+                                unsigned int length = XMLString::stringLen(nameNode->getNodeValue());
                                 XMLByte *res = new XMLByte[length*6];
                                 transcoder->transcodeTo(nameNode->getNodeValue(), length+1, res, length*6, chars, XMLTranscoder::UnRep_Throw);
                                 nameValue = (char*) res;
@@ -395,8 +393,8 @@ void FdoRegistryUtility::GetProviderCollection(std::vector<FdoProvider*> &provid
         {
             XMLString::release(&tmp);
             DOMNodeList *featureProviders = root->getChildNodes();
-            XMLSize_t numberFeatureProviders = featureProviders->getLength();
-            for (XMLSize_t i=0; i<numberFeatureProviders; i++)
+            int numberFeatureProviders = featureProviders->getLength();
+            for (int i=0; i<numberFeatureProviders; i++)
             {
 
                 name[0] = L'\0';
@@ -415,8 +413,8 @@ void FdoRegistryUtility::GetProviderCollection(std::vector<FdoProvider*> &provid
                     {
                         XMLString::release(&tmp);
                         DOMNodeList *properties = featureProvider->getChildNodes();
-                        XMLSize_t numberProperties = properties->getLength();
-                        for (XMLSize_t j=0; j<numberProperties; j++)
+                        int numberProperties = properties->getLength();
+                        for (int j=0; j<numberProperties; j++)
                         {
                             DOMNode *property = properties->item(j);
                             type = property->getNodeType();
@@ -434,8 +432,8 @@ void FdoRegistryUtility::GetProviderCollection(std::vector<FdoProvider*> &provid
                                     throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_11_PARSER_ERROR)));
                                 }
                                 DOMNode *nameNode = names->item(0);
-                                XMLSize_t chars = 0;
-                                XMLSize_t length = XMLString::stringLen(nameNode->getNodeValue());
+                                unsigned int chars = 0;
+                                unsigned int length = XMLString::stringLen(nameNode->getNodeValue());
                                 XMLByte *res = new XMLByte[length * 6];
                                 transcoder->transcodeTo(nameNode->getNodeValue(), length+1, res, length *6, chars, XMLTranscoder::UnRep_Throw);
                                 nameValue = (char*) res;
@@ -679,7 +677,7 @@ void FdoRegistryUtility::AddText(DOMDocument *doc, DOMElement* featureProviderEl
     XMLTranscoder* transcoder = XMLPlatformUtils::fgTransService->makeNewTranscoderFor(tmpCh, failReason, 1024);
     XMLString::release(&tmpCh);    
 
-    XMLSize_t chars = 0;
+    unsigned int chars = 0;
     unsigned int length = (unsigned int) strlen((const char*) tmp);
     XMLCh *res = new XMLCh[length+1];
     unsigned char *sizes = new unsigned char[length+1];
@@ -705,8 +703,8 @@ bool FdoRegistryUtility::DeleteProvider(DOMDocument *doc, const wchar_t * name)
     bool bDeleted = false;
     {
         DOMNodeList *featureProviders = root->getChildNodes();
-        XMLSize_t numberFeatureProviders = featureProviders->getLength();
-        for (XMLSize_t i=0; i<numberFeatureProviders && !bDeleted; i++)
+        int numberFeatureProviders = featureProviders->getLength();
+        for (int i=0; i<numberFeatureProviders && !bDeleted; i++)
         {
             DOMNode *featureProvider = featureProviders->item(i);
             char *tmp = XMLString::transcode(featureProvider->getNodeName());
@@ -716,8 +714,8 @@ bool FdoRegistryUtility::DeleteProvider(DOMDocument *doc, const wchar_t * name)
             if (wcscmp(nodeName, c_featureProviderNameW.c_str()) == 0)
             {
                 DOMNodeList *properies = featureProvider->getChildNodes();
-                XMLSize_t numberProperties = properies->getLength();
-                for (XMLSize_t j=0; j<numberProperties; j++)
+                int numberProperties = properies->getLength();
+                for (int j=0; j<numberProperties; j++)
                 {
                     DOMNode *property = properies->item(j);
                     tmp = XMLString::transcode(property->getNodeName());
@@ -791,7 +789,7 @@ wchar_t *FdoRegistryUtility::GetFileName()
             const char *me;
             char *home;
             char *last;
-            const char *install = "/usr/local/fdo-3.5.0";
+            char *install = "/usr/local/fdo-3.4.0";
 
             // Determine the user-specified FDO install location
             char *fdo_home = getenv( "FDOHOME" );
@@ -810,15 +808,12 @@ wchar_t *FdoRegistryUtility::GetFileName()
                 *last = '\0';
             }
             else
-                home = (char*)"./";
+                home = "./";
             
             sprintf (_fileName, "%s%s", home, "providers.xml");
             if ((0 != stat (_fileName, &my_stat)) || !S_ISREG(my_stat.st_mode))
                 // not found or not a file, try the install location
                 if ((0 == stat (install, &my_stat)) && S_ISDIR(my_stat.st_mode))
-                // Try lib64 first, since some 64 bits linux install put libraries it there
-                    sprintf (_fileName, "%s%s", install, "/lib64/providers.xml");
-                if ((0 != stat (_fileName, &my_stat)) || !S_ISREG(my_stat.st_mode))
                     sprintf (_fileName, "%s%s", install, "/lib/providers.xml");
 			mbstowcs(fileName, _fileName, 512);        }
 #else
@@ -884,7 +879,7 @@ DOMDocument* FdoRegistryUtility::GetDOMDocument()
 
 void FdoRegistryUtility::PutDOMDocument( DOMDocument* doc )
 {
-    DOMLSSerializer *serializer = NULL;
+    DOMWriter *serializer = NULL;
     XMLFormatTarget *target = NULL;
 
     try {
@@ -894,10 +889,9 @@ void FdoRegistryUtility::PutDOMDocument( DOMDocument* doc )
         impl = DOMImplementationRegistry::getDOMImplementation(tmpCh);
         XMLString::release(&tmpCh);
 
-        serializer = ((DOMImplementationLS*)impl)->createLSSerializer();
-		DOMConfiguration* dc = serializer->getDomConfig();
-        if (dc->canSetParameter (XMLUni::fgDOMWRTFormatPrettyPrint, true))
-            dc->setParameter (XMLUni::fgDOMWRTFormatPrettyPrint, true);
+        serializer = ((DOMImplementationLS*)impl)->createDOMWriter();
+        if (serializer->canSetFeature (XMLUni::fgDOMWRTFormatPrettyPrint, true))
+            serializer->setFeature (XMLUni::fgDOMWRTFormatPrettyPrint, true);
 		
 #ifndef _WIN32
 		char* pFileName;
@@ -906,14 +900,9 @@ void FdoRegistryUtility::PutDOMDocument( DOMDocument* doc )
 #else
         target = new LocalFileFormatTarget((const XMLCh*)GetFileName());
 #endif
-		
-		DOMLSOutputImpl* lsOut = new DOMLSOutputImpl();
-		lsOut->setByteStream(target);
-		serializer->write(doc->getDocumentElement(), lsOut);
+        serializer->writeNode(target, *doc);
 
         DOMCleanup( NULL, NULL, NULL, &serializer, &target );
-
-		lsOut->release();
     }
     catch ( const XMLException& ex )
     {
@@ -945,7 +934,7 @@ void FdoRegistryUtility::DOMCleanup(
     DOMDocument** doc, 
     XMLTranscoder** transcoder, 
     XercesDOMParser** parser,
-    DOMLSSerializer** serializer,
+    DOMWriter** serializer,
     XMLFormatTarget** target
 )
 {

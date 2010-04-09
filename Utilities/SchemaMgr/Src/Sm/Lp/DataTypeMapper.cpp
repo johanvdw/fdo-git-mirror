@@ -50,7 +50,7 @@ FdoSmLpDataTypeMapEntry* FdoSmLpDataTypeMapper::mMap[] = {
 };
 
 
-FdoSmLpDataTypeMapEntry::FdoSmLpDataTypeMapEntry(FdoDataType dataType, const wchar_t* dataTypeString)
+FdoSmLpDataTypeMapEntry::FdoSmLpDataTypeMapEntry(FdoDataType dataType, wchar_t* dataTypeString)
 {
 	mDataType = dataType;
 	mDataTypeString = FdoStringP(dataTypeString, false);
@@ -125,7 +125,7 @@ FdoStringP FdoSmLpDataTypeMapper::Type2String( FdoDataType dataType )
 
 	throw FdoSchemaException::Create( 
         FdoSmError::NLSGetMessage(
-            FDO_NLSID(FDOSM_160), 
+            FDO_NLSID(FDOSM_159), 
         	dataType 
             )
 	);

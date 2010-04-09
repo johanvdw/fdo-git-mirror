@@ -47,10 +47,7 @@ protected:
     FDO_API_COMMON FdoException(FdoString* message);
 
     /// Constructs an instance of a FdoException using the specified arguments.
-    FDO_API_COMMON FdoException(FdoString* message, FdoException* causeFdo);
-
-    /// Constructs an instance of a FdoException using the specified arguments.
-    FDO_API_COMMON FdoException(FdoString* message, FdoException* causeFdo, FdoInt64 nativeErrorCode);
+    FDO_API_COMMON FdoException(FdoString* message, FdoException* cause);
 
     /// Default destructor for FdoException class.
     FDO_API_COMMON virtual ~FdoException();
@@ -78,19 +75,6 @@ public:
     /// Returns the FdoException object
     /// 
     FDO_API_COMMON static FdoException* Create(FdoString* message);
-    
-    /// \brief
-    /// Returns an instance of a FdoException using the specified arguments.
-    /// 
-    /// \param message 
-    /// Input the error message
-    /// \param nativeErrorCode 
-    /// Input the native error code of the error, which is returned by FDO data source
-    /// 
-    /// \return
-    /// Returns the FdoException object
-    /// 
-    FDO_API_COMMON static FdoException* Create(FdoString* message, FdoInt64 nativeErrorCode);
 
     /// \brief
     ///  Returns an instance of a FdoException using the specified arguments.
@@ -104,21 +88,6 @@ public:
     /// Returns the FdoException object
     /// 
     FDO_API_COMMON static FdoException* Create(FdoString* message, FdoException* cause);
-
-    /// \brief
-    ///  Returns an instance of a FdoException using the specified arguments.
-    /// 
-    /// \param message 
-    /// Input the error message
-    /// \param cause 
-    /// Input the cause of the error
-    /// \param nativeErrorCode 
-    /// Input the native error code of the error, which is returned by FDO data source
-    /// 
-    /// \return
-    /// Returns the FdoException object
-    /// 
-    FDO_API_COMMON static FdoException* Create(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode);
 
     /// \brief
     /// Gets the message associated with this exception. If no message is
@@ -191,7 +160,7 @@ public:
     /// \return
     /// Returns the localized message text
     /// 
-    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* file, int line, ...);
+    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* file, int line, ...);
 
     /// \brief
     /// Gets the exception message. For internal use by FdoException class in getting a localized message.
@@ -212,7 +181,7 @@ public:
     /// \return
     /// Returns the localized message text
     /// 
-    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* file, int line, const char* catalog, va_list arguments);
+    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* file, int line, char* catalog, va_list arguments);
 
     /// \brief
     /// Gets the exception message. For internal use by template classes in getting a localized message.
@@ -229,7 +198,7 @@ public:
     /// \return
     /// Returns the localized message text
     /// 
-    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, const char* defMsg, ...);
+    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, char* defMsg, ...);
 
     /// \brief
     /// Gets the exception message. For internal use by FdoException class in getting a localized message.
@@ -246,22 +215,12 @@ public:
     /// \return
     /// Returns the localized message text
     /// 
-    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, const char* defMsg, const char* catalog, va_list arguments);
-
-    /// \brief
-    /// Gets the native error code returned from FDO data source
-    /// 
-    /// \return
-    /// Returns the native error code
-    /// 
-    FDO_API_COMMON virtual FdoInt64 GetNativeErrorCode();
-
+    FDO_API_COMMON static FdoString* NLSGetMessage(FdoInt32 msgNum, char* defMsg, char* catalog, va_list arguments);
 
 /// \cond DOXYGEN-IGNORE
 protected:
     wchar_t*        m_message;
     FdoException*   m_cause;
-    FdoInt64        m_nativeErrorCode;
 
 
 /// \endcond

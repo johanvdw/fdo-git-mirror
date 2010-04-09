@@ -7,9 +7,9 @@
 #
 # See http://www.boost.org/libs/mpl for documentation.
 
-# $Id: preprocess_map.py 49269 2008-10-11 06:30:50Z agurtovoy $
-# $Date: 2008-10-11 02:30:50 -0400 (Sat, 11 Oct 2008) $
-# $Revision: 49269 $
+# $Source: /cvsroot/boost/boost/libs/mpl/preprocessed/preprocess_map.py,v $
+# $Date: 2006/11/23 19:57:11 $
+# $Revision: 1.3.4.1 $
 
 import preprocess
 import os.path

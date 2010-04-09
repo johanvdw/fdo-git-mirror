@@ -35,10 +35,9 @@ SET ODBCENABLE=yes
 SET SQLSPATIALENABLE=yes
 SET SHOWHELP=no
 SET FDOTARZIPFOLDER=c:\OpenSource_FDO
-SET FDOBUILDNUMBER=DXXX
-SET FDORELNUMBER=3.5.0
+SET FDOBUILDNUMBER=GXXX
+SET FDORELNUMBER=3.4.0
 SET FDOZIPTEMP=7zTemp
-SET FILEPPLATFORMPREFIX=Win32
 
 :study_params
 if (%1)==() goto start_zip
@@ -57,9 +56,6 @@ if "%1"=="-outpath" goto get_output
 
 if "%1"=="-i"       goto get_input
 if "%1"=="-inpath"  goto get_input
-
-if "%1"=="-p"           goto get_platform
-if "%1"=="-platform"    goto get_platform
 
 if "%1"=="-w"       goto get_with
 if "%1"=="-with"    goto get_with
@@ -183,12 +179,6 @@ if not "%2"=="all" goto custom_error
 SET FDORELNUMBER=%2
 goto next_param
 
-:get_platform
-SET TYPEPLATFORM=%2
-if "%2"=="Win32" goto next_param
-if "%2"=="x64" goto next_param
-goto custom_error
-
 :get_build
 SET FDOBUILDNUMBER=%2
 goto next_param
@@ -209,22 +199,17 @@ goto study_params
 
 :start_zip
 
-if "%TYPEPLATFORM%"=="Win32" SET FILEPPLATFORMPREFIX=win32
-if "%TYPEPLATFORM%"=="x64" SET FILEPPLATFORMPREFIX=win64
-
-
 :start_zip_fdo
 if "%FDOCOREENABLE%"=="no" goto start_zip_shp
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
    mkdir %FDOZIPTEMP%\Bin\com
    copy "%FDOROOT%\Bin\providers.xml" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\xerces-c_3_1.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\Xalan-C_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\XalanMessages_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\gdal17.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\xerces-c_2_5_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\Xalan-C_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\gdal16.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOCommon.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOGeometry.dll" %FDOZIPTEMP%\Bin\
@@ -239,11 +224,11 @@ if "%FDOCOREENABLE%"=="no" goto start_zip_shp
    copy "%FDOROOT%\Bin\com\fdo_sys_idx.sql" %FDOZIPTEMP%\Bin\com\
    copy "%FDOROOT%\Bin\com\fdosys_sys.sql" %FDOZIPTEMP%\Bin\com\
    pushd "%FDOZIPTEMP%"
-   if exist "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cvf "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdo-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cvf "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdo-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_shp
@@ -255,11 +240,11 @@ if "%SHPENABLE%"=="no" goto start_zip_sdf
    copy "%FDOROOT%\Bin\SHPProvider.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.SHP.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdoshp-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdoshp-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_sdf
@@ -269,11 +254,11 @@ if "%SDFENABLE%"=="no" goto start_zip_wfs
    copy "%FDOROOT%\Bin\SDFMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\SDFProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdosdf-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdosdf-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_wfs
@@ -283,11 +268,11 @@ if "%WFSENABLE%"=="no" goto start_zip_wms
    copy "%FDOROOT%\Bin\WFSMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\WFSProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdowfs-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdowfs-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_wms
@@ -299,11 +284,11 @@ if "%WMSENABLE%"=="no" goto start_zip_arcsde
    copy "%FDOROOT%\Bin\WMSProvider.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.WMS.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdowms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdowms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_arcsde
@@ -315,11 +300,11 @@ if "%ARCSDEENABLE%"=="no" goto start_zip_rdbms
    copy "%FDOROOT%\Bin\ArcSDEProvider92.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\ArcSDEProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdoarcsde-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdoarcsde-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_rdbms
@@ -340,11 +325,11 @@ if "%RDBMSENABLE%"=="no" goto start_zip_mysql
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.MySQL.Overrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.ODBC.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdordbms-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdordbms-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_mysql
@@ -359,11 +344,11 @@ if "%MYSQLENABLE%"=="no" goto start_zip_odbc
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.Rdbms.Overrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.MySQL.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdomysql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdomysql-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_odbc
@@ -378,11 +363,11 @@ if "%ODBCENABLE%"=="no" goto start_zip_sqlspatial
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.Rdbms.Overrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.ODBC.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdoodbc-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdoodbc-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_sqlspatial
@@ -397,11 +382,11 @@ if "%SQLSPATIALENABLE%"=="no" goto start_zip_gdal
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.SQLServerSpatial.Overrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\OSGeo.FDO.Providers.Rdbms.Overrides.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdosqlspatial-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_gdal
@@ -412,11 +397,11 @@ if "%GDALENABLE%"=="no" goto start_zip_king_oracle
    copy "%FDOROOT%\Bin\GRFPOverrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\GRFPProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdogdal-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdogdal-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_king_oracle
@@ -427,11 +412,11 @@ if "%KINGORACLEENABLE%"=="no" goto start_zip_postgis
    copy "%FDOROOT%\Bin\KingOracleOverrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\KingOracleProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_postgis
@@ -442,11 +427,11 @@ if "%POSTGISENABLE%"=="no" goto start_zip_ogr
    copy "%FDOROOT%\Bin\PostGISOverrides.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\PostGISProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_ogr
@@ -455,11 +440,11 @@ if "%OGRENABLE%"=="no" goto start_zip_sqlite
    mkdir %FDOZIPTEMP%\Bin
    copy "%FDOROOT%\Bin\OGRProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdoogr-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdoogr-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_sqlite
@@ -468,11 +453,11 @@ if "%SQLITEENABLE%"=="no" goto end
    mkdir %FDOZIPTEMP%\Bin
    copy "%FDOROOT%\Bin\SQLiteProvider.dll" %FDOZIPTEMP%\Bin\
    pushd "%FDOZIPTEMP%"
-   if exist "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdosqlite-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   if exist "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdosqlite-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    deltree /Y "%FDOZIPTEMP%"
 	
@@ -493,13 +478,10 @@ echo NOTE: To use the createtarzipbinfiles script, download and install the
 echo       GnuWin32 command-line and Windows shell utilities for manipulating 
 echo       tar archives. 
 echo *
-echo Example: createtarzipbinfiles.bat -i=C:\G029 -o=C:\G029 -b=D001 -r=3.5.0
-echo *
 echo createtarzipbinfiles.bat [-h] 
 echo                          [-i=InFolder] 
 echo                          [-o=OutFolder] 
 echo                          [-w=WithModule] 
-echo                          [-p=PlatformType]
 echo                          [-b=BuildNumber]
 echo                          [-r=ReleaseNumber]
 echo *
@@ -523,7 +505,6 @@ echo                         kingoracle,
 echo                         ogr,
 echo                         postgis,
 echo                         sqlite
-echo PlatformType:   -p[latform]=Win32(default), x64
 echo BuildNumber:    -b[uild]=User-Defined build number appended to the end of the .tar.gz files
 echo ReleaseNumber:  -r[elease]=FDO build number appended to the end of the .tar.gz files
 echo **************************************************************************

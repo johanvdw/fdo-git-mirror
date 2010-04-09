@@ -31,86 +31,82 @@
 
 FdoMySQLOvPhysicalSchemaMapping* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::GetImpObj()
 {	
-	return static_cast<FdoMySQLOvPhysicalSchemaMapping*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoMySQLOvPhysicalSchemaMapping*>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(unmanaged, autoDelete)
 {
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ schemaMapping, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(schemaMapping, autoDelete)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* schemaMapping, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(schemaMapping, autoDelete)
 {
     // Validate IN Parameter
-    if (nullptr == schemaMapping)
+    if (NULL == schemaMapping) {
         return;
+    }
 
     // Retrieve the provider name for the FdoMySQLOvPhysicalSchemaMapping class
     FdoPtr<FdoMySQLOvPhysicalSchemaMapping> mySqlSchemaMapping = FdoMySQLOvPhysicalSchemaMapping::Create();
     FdoStringP shpProviderName = mySqlSchemaMapping->GetProvider();
 
     // Retrieve the provider name of the schema mapping object passed into the constructor
-    System::String^ sProviderName = schemaMapping->Provider;
+    System::String* sProviderName = schemaMapping->Provider;
 
     // If the provider named do not match throw an Invalid Argument exception
     if (shpProviderName != StringToUni(sProviderName)) {
         //Wait for changing again
-		throw gcnew System::ArgumentException();
+		throw new System::ArgumentException();
     }
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping() : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoMySQLOvPhysicalSchemaMapping::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoMySQLOvPhysicalSchemaMapping::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping(System::String^ name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::OvPhysicalSchemaMapping(System::String* name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvPhysicalSchemaMapping(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoMySQLOvPhysicalSchemaMapping::Create(StringToUni(name))), true))
+	EXCEPTION_HANDLER(Attach(FdoMySQLOvPhysicalSchemaMapping::Create(StringToUni(name)), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassCollection^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::Classes::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvClassCollection* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_Classes()
 {
-	FdoMySQLOvClassCollection* result;
+	FdoMySQLOvClassCollection * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetClasses())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetClasses())
 
-	return ObjectFactory::CreateOvClassCollection(IntPtr(result), true);
+	return ObjectFactory::CreateOvClassCollection(unobj, true);
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::DataDirectory::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_DataDirectory()
 {
-	FdoString* result;
+	FdoString* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetDataDirectory())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDataDirectory())
 
-	return CHECK_STRING(result);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::DataDirectory::set(System::String^ dataDirectory)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::set_DataDirectory(System::String* dataDirectory)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDataDirectory(StringToUni(dataDirectory)))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::IndexDirectory::set(System::String^ indexDirectory)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::set_IndexDirectory(System::String* indexDirectory)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIndexDirectory(StringToUni(indexDirectory)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::IndexDirectory::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_IndexDirectory()
 {
-	FdoString* result;
+	FdoString* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetIndexDirectory())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetIndexDirectory())
 
-	return CHECK_STRING(result);
+	return unobj;
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::StorageEngine::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_StorageEngine()
 {
 	MySQLOvStorageEngineType unobj;
 	
@@ -119,31 +115,31 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType NAMESPAC
 	return static_cast<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType>(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::StorageEngine::set(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType storageEngine)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::set_StorageEngine(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvStorageEngineType storageEngine)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetStorageEngine(static_cast<MySQLOvStorageEngineType>(storageEngine)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::Database::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_Database()
 {
-	FdoString* result;
+	FdoString* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetDatabase())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetDatabase())
 
-	return CHECK_STRING(result);
+	return unobj;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::Database::set(System::String^ database)
+System::Void NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::set_Database(System::String* database)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDatabase(StringToUni(database)))
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::Provider::get()
+System::String* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPhysicalSchemaMapping::get_Provider()
 {
-	FdoString* result;
+	FdoString* unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetProvider())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetProvider())
 
-	return CHECK_STRING(result);
+	return unobj;
 }
 

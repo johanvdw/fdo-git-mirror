@@ -24,7 +24,7 @@
 class FdoISQLCommand;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SQL
-interface class ISQLDataReader;
+public __gc __interface ISQLDataReader;
 
 /// \ingroup (OSGeoFDOCommandsSQL)
 /// \brief
@@ -33,7 +33,7 @@ interface class ISQLDataReader;
 /// execution of a SQL statement against an underlying RDBMS. Two execute
 /// methods are provided to distinguish between statements that return table data
 /// versus those that execute non query type operations.
-private ref class ISQLCommandImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class ISQLCommandImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                     public NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLCommand
 {
 public:
@@ -43,6 +43,8 @@ public:
     /// \return
     /// Returns the SQL statement.
     /// 
+	__property System::String* get_SQLStatement();
+
     /// \brief
     /// Sets the SQL statement to be executed as a string.
     /// 
@@ -52,34 +54,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ SQLStatement
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
-
-    /// \brief
-    /// Sets the fetch size of the data set when executing query against 
-    /// the underlying data store.
-    /// 
-    /// \param value
-    /// Input the fetch size.
-    /// 
-    /// \return  
-    /// Returns nothing.
-    /// 
-    /// \brief 
-    /// Gets the fetch size of the data set when executing query against 
-    /// the underlying data store.
-    /// 
-    /// \return  
-    /// Returns the fetch size.
-    /// 
-    virtual property System::Int32 FetchSize
-    {
-        System::Int32 get();
-        System::Void set(System::Int32 value);
-    }
+	__property System::Void set_SQLStatement(System::String* value);
 
     /// \brief
     /// Executes the SQL statement against the connection object and returns
@@ -88,7 +63,7 @@ public:
     /// \return
     /// Returns the number of rows affected.
     /// 
-	virtual System::Int32 ExecuteNonQuery();
+	System::Int32 ExecuteNonQuery();
 
     /// \brief
     /// Executes the SQL statement against the connection object and returns
@@ -97,17 +72,15 @@ public:
     /// \return
     /// Returns the data reader.
     /// 
-	virtual NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader^ ExecuteReader();
+	NAMESPACE_OSGEO_FDO_COMMANDS_SQL::ISQLDataReader* ExecuteReader();
 
-internal:
+public private:
 	ISQLCommandImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoISQLCommand* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SQL

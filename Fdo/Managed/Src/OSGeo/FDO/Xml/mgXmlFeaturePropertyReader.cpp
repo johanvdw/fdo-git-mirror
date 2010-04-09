@@ -30,88 +30,90 @@
 #include "FDO\Xml\mgXmlFeatureHandler.h"
 #include "FDO\Schema\mgFeatureSchemaCollection.h"
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::XmlFeaturePropertyReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ reader) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(System::IntPtr::Zero, false)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::ReleaseUnmanagedObject()
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeaturePropertyReader::Create(static_cast<FdoXmlReader*>(reader->UnmanagedObject.ToPointer()))), true))
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::XmlFeaturePropertyReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader^ reader, NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags^ flags) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::XmlFeaturePropertyReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader* reader) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoXmlFeaturePropertyReader::Create(static_cast<FdoXmlReader*>(reader->UnmanagedObject.ToPointer()), flags->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(FdoXmlFeaturePropertyReader::Create(static_cast<FdoXmlReader*>(reader->UnmanagedObject.ToPointer())), true))
+}
+
+NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::XmlFeaturePropertyReader(NAMESPACE_OSGEO_COMMON_XML::XmlReader* reader, NAMESPACE_OSGEO_FDO_XML::XmlFeatureFlags* flags) : NAMESPACE_OSGEO_COMMON_XML::XmlSaxHandler(System::IntPtr::Zero, false)
+{
+	EXCEPTION_HANDLER(Attach(FdoXmlFeaturePropertyReader::Create(static_cast<FdoXmlReader*>(reader->UnmanagedObject.ToPointer()), flags->GetImpObj()), true))
 }
 
 FdoXmlFeaturePropertyReader* NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::GetImpObj()
 {
-    return static_cast<FdoXmlFeaturePropertyReader*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoXmlFeaturePropertyReader*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_COMMON_XML::XmlReader^ NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::GetXmlReader()
+NAMESPACE_OSGEO_COMMON_XML::XmlReader* NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::GetXmlReader()
 {
 	FdoXmlReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetXmlReader())
 
-	return NAMESPACE_OSGEO_COMMON::ObjectFactory::CreateXmlReader(IntPtr(result), true);
+	return NAMESPACE_OSGEO_COMMON::ObjectFactory::CreateXmlReader(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection^ NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::FeatureSchemas::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection* NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::get_FeatureSchemas()
 {
 	FdoFeatureSchemaCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetFeatureSchemas())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateFeatureSchemaCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateFeatureSchemaCollection(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::FeatureSchemas::set(NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection^ schemas)
+System::Void NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::set_FeatureSchemas(NAMESPACE_OSGEO_FDO_SCHEMA::FeatureSchemaCollection* schemas)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetFeatureSchemas(schemas->GetImpObj()))
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
-	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse(nullptr, nullptr, false))
-
-	return result;
-}
-
-System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler^ featureHandler)
-{
-	System::Boolean result;
-
-	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == nullptr ? nullptr : featureHandler->GetImpObj()), nullptr, false))
+	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse(NULL, NULL, false))
 
 	return result;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler^ featureHandler, NAMESPACE_OSGEO_FDO_XML::XmlFeatureContext^ featureContext)
+System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler* featureHandler)
 {
-	System::Boolean result;
+	FdoBoolean result;
 
-	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == nullptr ? nullptr : featureHandler->GetImpObj()), (featureContext == nullptr ? nullptr : featureContext->GetImpObj()), false))
+	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == NULL ? NULL : featureHandler->GetImpObj()), NULL, false))
 
 	return result;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler^ featureHandler, NAMESPACE_OSGEO_FDO_XML::XmlFeatureContext^ featureContext, System::Boolean incremental)
+System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler* featureHandler, NAMESPACE_OSGEO_FDO_XML::XmlFeatureContext* featureContext)
 {
-	System::Boolean result;
+	FdoBoolean result;
 
-	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == nullptr ? nullptr : featureHandler->GetImpObj()), (featureContext == nullptr ? nullptr : featureContext->GetImpObj()), incremental))
+	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == NULL ? NULL : featureHandler->GetImpObj()), (featureContext == NULL ? NULL : featureContext->GetImpObj()), false))
+
+	return result;
+}
+
+System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::Parse(NAMESPACE_OSGEO_FDO_XML::XmlFeatureHandler* featureHandler, NAMESPACE_OSGEO_FDO_XML::XmlFeatureContext* featureContext, System::Boolean incremental)
+{
+	FdoBoolean result;
+
+	EXCEPTION_HANDLER(result = !!GetImpObj()->Parse((featureHandler == NULL ? NULL : featureHandler->GetImpObj()), (featureContext == NULL ? NULL : featureContext->GetImpObj()), incremental))
 
 	return result;
 }
 
 System::Boolean NAMESPACE_OSGEO_FDO_XML::XmlFeaturePropertyReader::GetEOF()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetEOF())
 

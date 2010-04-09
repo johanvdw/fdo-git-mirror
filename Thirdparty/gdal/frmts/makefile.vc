@@ -11,8 +11,7 @@ EXTRAFLAGS =	-DFRMT_ceos -DFRMT_aigrid -DFRMT_elas -DFRMT_hfa -DFRMT_gtiff\
 		-DFRMT_leveller -DFRMT_sgi -DFRMT_srtmhgt -DFRMT_idrisi \
 		-DFRMT_jaxapalsar -DFRMT_ers -DFRMT_ingr -DFRMT_dimap \
 		-DFRMT_gff -DFRMT_terragen -DFRMT_gsg -DFRMT_cosar -DFRMT_pds \
-		-DFRMT_adrg -DFRMT_coasp -DFRMT_tsx -DFRMT_blx -DFRMT_til \
-		-DFRMT_r -DFRMT_northwood -DFRMT_saga
+		-DFRMT_adrg -DFRMT_coasp -DFRMT_tsx -DFRMT_blx
 
 MOREEXTRA 	=	
 
@@ -23,10 +22,6 @@ PLUGINFLAGS 	=
 PLUGINDIRLIST 	=	$(PLUGINFLAGS:-DFRMT_=)
 
 !INCLUDE $(GDAL_ROOT)/nmake.opt
-
-!IFDEF PG_INC_DIR
-EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_wktraster
-!ENDIF
 
 !IFDEF JPEG_SUPPORTED
 EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_jpeg
@@ -104,7 +99,7 @@ PLUGINFLAGS	=	$(PLUGINFLAGS) -DFRMT_netcdf
 EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_grib
 !ENDIF
 
-!IFDEF CURL_LIB
+!IFDEF CURL_DIR
 EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_wcs -DFRMT_wms
 !ENDIF
 
@@ -120,12 +115,6 @@ PLUGINFLAGS	=	$(PLUGINFLAGS) -DFRMT_sde
 EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_georaster
 !ENDIF
 
-!IFDEF INCLUDE_OGR_FRMTS
-!IFDEF SQLITE_LIB
-EXTRAFLAGS	=	$(EXTRAFLAGS) -DFRMT_rasterlite
-!ENDIF
-!ENDIF
-
 default:	o\gdalallregister.obj subdirs
 
 list:
@@ -133,18 +122,16 @@ list:
 	echo $(PLUGINDIRLIST)
 
 subdirs:
-	for %d in ( $(DIRLIST) ) do \
+	-for %d in ( $(DIRLIST) ) do \
 		cd %d \
 		&& $(MAKE) /f makefile.vc \
-		&& cd .. \
-		|| exit 1
+		&& cd ..
 
 plugindirs:
 	-for %d in ( $(PLUGINDIRLIST) ) do \
 		cd %d \
 		&& $(MAKE) /f makefile.vc plugin \
-		&& cd .. \
-		|| exit 1
+		&& cd ..
 
 o\gdalallregister.obj:	gdalallregister.cpp ..\nmake.opt
 	$(CC) $(CFLAGS) $(MOREEXTRA) /c gdalallregister.cpp
@@ -155,13 +142,11 @@ clean:
 	-for %d in ( $(DIRLIST) ) do \
 		cd %d \
 		&& $(MAKE) /f makefile.vc clean \
-		&& cd .. \
-		|| exit 1
+		&& cd ..
 	-for %d in ( $(PLUGINDIRLIST) ) do \
 		cd %d \
 		&& $(MAKE) /f makefile.vc clean \
-		&& cd .. \
-		|| exit 1
+		&& cd ..
 	cd iso8211
 	$(MAKE) /f makefile.vc clean
 
@@ -169,8 +154,7 @@ plugins-install:
 	-for %d in ( $(PLUGINDIRLIST) ) do \
 		cd %d \
 		&& $(MAKE) /f makefile.vc plugin-install \
-		&& cd .. \
-		|| exit 1
+		&& cd ..
 
 html-install:
 	copy *.html $(HTMLDIR)

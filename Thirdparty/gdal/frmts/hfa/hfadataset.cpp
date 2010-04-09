@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfadataset.cpp 18729 2010-02-05 04:44:33Z warmerdam $
+ * $Id: hfadataset.cpp 15824 2008-11-27 22:24:32Z warmerdam $
  *
  * Name:     hfadataset.cpp
  * Project:  Erdas Imagine Driver
@@ -33,7 +33,7 @@
 #include "hfa_p.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: hfadataset.cpp 18729 2010-02-05 04:44:33Z warmerdam $");
+CPL_CVSID("$Id: hfadataset.cpp 15824 2008-11-27 22:24:32Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_HFA(void);
@@ -49,9 +49,6 @@ CPL_C_END
 #ifndef D2R
 #  define D2R	(PI/180)
 #endif
-
-OGRBoolean WritePeStringIfNeeded(OGRSpatialReference*	poSRS, HFAHandle hHFA);
-void ClearSR(HFAHandle hHFA);
 
 static const char *apszDatumMap[] = {
     /* Imagine name, WKT name */
@@ -344,8 +341,6 @@ class HFARasterBand : public GDALPamRasterBand
     int		nThisOverview;
     HFARasterBand **papoOverviewBands;
 
-    CPLErr      CleanOverviews();
-
     HFAHandle	hHFA;
 
     int         bMetadataDirty;
@@ -353,8 +348,6 @@ class HFARasterBand : public GDALPamRasterBand
     GDALRasterAttributeTable *poDefaultRAT; 
 
     void        ReadAuxMetadata();
-    void        ReadHistogramMetadata();
-    void        EstablishOverviews();
 
     GDALRasterAttributeTable* ReadNamedRAT( const char *pszName );
 
@@ -415,13 +408,12 @@ HFARasterBand::HFARasterBand( HFADataset *poDS, int nBand, int iOverview )
     this->papoOverviewBands = NULL;
     this->bMetadataDirty = FALSE;
     this->poDefaultRAT = NULL;
-    this->nOverviews = -1; 
 
     HFAGetBandInfo( hHFA, nBand, &nHFADataType,
-                    &nBlockXSize, &nBlockYSize, &nCompression );
+                    &nBlockXSize, &nBlockYSize, &nOverviews, &nCompression );
     
     if( nCompression != 0 )
-        GDALMajorObject::SetMetadataItem( "COMPRESSION", "RLE", 
+        GDALMajorObject::SetMetadataItem( "COMPRESSION", "RLC", 
                                           "IMAGE_STRUCTURE" );
 
     switch( nHFADataType )
@@ -479,7 +471,7 @@ HFARasterBand::HFARasterBand( HFADataset *poDS, int nBand, int iOverview )
     {
         GDALMajorObject::SetMetadataItem( 
             "NBITS", 
-            CPLString().Printf( "%d", HFAGetDataTypeBits( nHFADataType ) ), "IMAGE_STRUCTURE" );
+            CPLString().Printf("%d", HFAGetDataTypeBits( nHFADataType ) ) );
     }
 
     if( nHFADataType == EPT_s8 )
@@ -513,6 +505,8 @@ HFARasterBand::HFARasterBand( HFADataset *poDS, int nBand, int iOverview )
         }
     }
 
+
+
 /* -------------------------------------------------------------------- */
 /*      Collect color table if present.                                 */
 /* -------------------------------------------------------------------- */
@@ -543,6 +537,21 @@ HFARasterBand::HFARasterBand( HFADataset *poDS, int nBand, int iOverview )
                 poCT->SetColorEntry( (int) padfBins[iColor], &sEntry );
             else
                 poCT->SetColorEntry( iColor, &sEntry );
+        }
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Setup overviews if present                                      */
+/* -------------------------------------------------------------------- */
+    if( nThisOverview == -1 && nOverviews > 0 )
+    {
+        papoOverviewBands = (HFARasterBand **)
+            CPLMalloc(sizeof(void*)*nOverviews);
+
+        for( int iOvIndex = 0; iOvIndex < nOverviews; iOvIndex++ )
+        {
+            papoOverviewBands[iOvIndex] =
+                new HFARasterBand( poDS, nBand, iOvIndex );
         }
     }
 
@@ -605,54 +614,31 @@ void HFARasterBand::ReadAuxMetadata()
         {
           case 'd':
           {
-              int nCount, iValue;
               double dfValue;
-              CPLString osValueList;
 
-              nCount = poEntry->GetFieldCount( pszFieldName, &eErr );
-              for( iValue = 0; eErr == CE_None && iValue < nCount; iValue++ )
-              {
-                  CPLString osSubFieldName;
-                  osSubFieldName.Printf( "%s[%d]", pszFieldName, iValue );
-                  dfValue = poEntry->GetDoubleField( osSubFieldName, &eErr );
-                  if( eErr != CE_None )
-                      break;
-
-                  char szValueAsString[100];
-                  sprintf( szValueAsString, "%.14g", dfValue );
-
-                  if( iValue > 0 )
-                      osValueList += ",";
-                  osValueList += szValueAsString;
-              }
+              dfValue = poEntry->GetDoubleField( pszFieldName, &eErr );
               if( eErr == CE_None )
-                  SetMetadataItem( pszAuxMetaData[i+2], osValueList );
+              {
+                  char szValueAsString[100];
+
+                  sprintf( szValueAsString, "%.14g", dfValue );
+                  SetMetadataItem( pszAuxMetaData[i+2],
+                                   szValueAsString );
+              }
           }
           break;
           case 'i':
           case 'l':
           {
-              int nValue, nCount, iValue;
-              CPLString osValueList;
-
-              nCount = poEntry->GetFieldCount( pszFieldName, &eErr );
-              for( iValue = 0; eErr == CE_None && iValue < nCount; iValue++ )
-              {
-                  CPLString osSubFieldName;
-                  osSubFieldName.Printf( "%s[%d]", pszFieldName, iValue );
-                  nValue = poEntry->GetIntField( osSubFieldName, &eErr );
-                  if( eErr != CE_None )
-                      break;
-
-                  char szValueAsString[100];
-                  sprintf( szValueAsString, "%d", nValue );
-
-                  if( iValue > 0 )
-                      osValueList += ",";
-                  osValueList += szValueAsString;
-              }
+              int nValue;
+              nValue = poEntry->GetIntField( pszFieldName, &eErr );
               if( eErr == CE_None )
-                  SetMetadataItem( pszAuxMetaData[i+2], osValueList );
+              {
+                  char szValueAsString[100];
+
+                  sprintf( szValueAsString, "%d", nValue );
+                  SetMetadataItem( pszAuxMetaData[i+2], szValueAsString );
+              }
           }
           break;
           case 's':
@@ -668,157 +654,53 @@ void HFARasterBand::ReadAuxMetadata()
             CPLAssert( FALSE );
         }
     }
-}
-
-/************************************************************************/
-/*                       ReadHistogramMetadata()                        */
-/************************************************************************/
-
-void HFARasterBand::ReadHistogramMetadata()
-
-{
-    int i;
-    HFABand *poBand = hHFA->papoBand[nBand-1];
-
-    // only load metadata for full resolution layer.
-    if( nThisOverview != -1 )
-        return;
-
-    HFAEntry *poEntry = 
-        poBand->poNode->GetNamedChild( "Descriptor_Table.Histogram" );
-    if ( poEntry == NULL )
-        return;
-
-    int nNumBins = poEntry->GetIntField( "numRows" );
-
-/* -------------------------------------------------------------------- */
-/*      Fetch the histogram values.                                     */
-/* -------------------------------------------------------------------- */
-
-    int nOffset =  poEntry->GetIntField( "columnDataPtr" );
-    const char * pszType =  poEntry->GetStringField( "dataType" );
-    int nBinSize = 4;
+    // now try to read the histogram
+    HFAEntry *poEntry = poBand->poNode->GetNamedChild( "Descriptor_Table.Histogram" );
+    if ( poEntry != NULL )
+    {
+        int nNumBins = poEntry->GetIntField( "numRows" );
+        int nOffset =  poEntry->GetIntField( "columnDataPtr" );
+        const char * pszType =  poEntry->GetStringField( "dataType" );
+        int nBinSize = 4;
         
-    if( pszType != NULL && EQUALN( "real", pszType, 4 ) )
-        nBinSize = 8;
-
-    int *panHistValues = (int *) CPLMalloc(sizeof(int) * nNumBins);
-    GByte  *pabyWorkBuf = (GByte *) CPLMalloc(nBinSize * nNumBins);
-
-    VSIFSeekL( hHFA->fp, nOffset, SEEK_SET );
-
-    if( (int)VSIFReadL( pabyWorkBuf, nBinSize, nNumBins, hHFA->fp ) != nNumBins)
-    {
-        CPLError( CE_Failure, CPLE_FileIO, 
-                  "Cannot read histogram values." );
-        CPLFree( panHistValues );
-        CPLFree( pabyWorkBuf );
-        return;
-    }
-
-    // Swap into local order.
-    for( i = 0; i < nNumBins; i++ )
-        HFAStandard( nBinSize, pabyWorkBuf + i*nBinSize );
-
-    if( nBinSize == 8 ) // source is doubles
-    {
-        for( i = 0; i < nNumBins; i++ )
-            panHistValues[i] = (int) ((double *) pabyWorkBuf)[i];
-    }
-    else // source is 32bit integers
-    {
-        memcpy( panHistValues, pabyWorkBuf, 4 * nNumBins );
-    }
-
-    CPLFree( pabyWorkBuf );
-    pabyWorkBuf = NULL;
-
-/* -------------------------------------------------------------------- */
-/*      Do we have unique values for the bins?                          */
-/* -------------------------------------------------------------------- */
-    double *padfBinValues = NULL;
-    HFAEntry *poBinEntry = poBand->poNode->GetNamedChild( "Descriptor_Table.#Bin_Function840#" );
-
-    if( poBinEntry != NULL
-        && EQUAL(poBinEntry->GetType(),"Edsc_BinFunction840") 
-        && EQUAL(poBinEntry->GetStringField( "binFunction.type.string" ),
-                 "BFUnique") )
-        padfBinValues = HFAReadBFUniqueBins( poBinEntry, nNumBins );
-
-    if( padfBinValues )
-    {
-        int nMaxValue = 0;
-        int nMinValue = 1000000;
-        int bAllInteger = TRUE;
-        
-        for( i = 0; i < nNumBins; i++ )
+        if( pszType != NULL && EQUALN( "real", pszType, 4 ) )
         {
-            if( padfBinValues[i] != floor(padfBinValues[i]) )
-                bAllInteger = FALSE;
-            
-            nMaxValue = MAX(nMaxValue,(int)padfBinValues[i]);
-            nMinValue = MIN(nMinValue,(int)padfBinValues[i]);
+            nBinSize = 8;
         }
-        
-        if( nMinValue < 0 || nMaxValue > 1000 || !bAllInteger )
+        unsigned int nBufSize = 1024;
+        char * pszBinValues = (char *)CPLMalloc( nBufSize );
+        int    nBinValuesLen = 0;
+        pszBinValues[0] = 0;
+        for ( int nBin = 0; nBin < nNumBins; ++nBin )
         {
-            CPLFree( padfBinValues );
-            CPLFree( panHistValues );
-            CPLDebug( "HFA", "Unable to offer histogram because unique values list is not convenient to reform as HISTOBINVALUES." );
-            return;
-        }
-
-        int nNewBins = nMaxValue + 1;
-        int *panNewHistValues = (int *) CPLCalloc(sizeof(int),nNewBins);
-
-        for( i = 0; i < nNumBins; i++ )
-            panNewHistValues[(int) padfBinValues[i]] = panHistValues[i];
-
-        CPLFree( panHistValues );
-        panHistValues = panNewHistValues;
-        nNumBins = nNewBins;
-
-        SetMetadataItem( "STATISTICS_HISTOMIN", "0" );
-        SetMetadataItem( "STATISTICS_HISTOMAX", 
-                         CPLString().Printf("%d", nMaxValue ) );
-        SetMetadataItem( "STATISTICS_HISTONUMBINS", 
-                         CPLString().Printf("%d", nMaxValue+1 ) );
-
-        CPLFree(padfBinValues);
-        padfBinValues = NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Format into HISTOBINVALUES text format.                         */
-/* -------------------------------------------------------------------- */
-    unsigned int nBufSize = 1024;
-    char * pszBinValues = (char *)CPLMalloc( nBufSize );
-    int    nBinValuesLen = 0;
-    pszBinValues[0] = 0;
-
-    for ( int nBin = 0; nBin < nNumBins; ++nBin )
-    {
-        char szBuf[32];
-        snprintf( szBuf, 31, "%d", panHistValues[nBin] );
-        if ( ( nBinValuesLen + strlen( szBuf ) + 2 ) > nBufSize )
-        {
-            nBufSize *= 2;
-            char* pszNewBinValues = (char *)VSIRealloc( pszBinValues, nBufSize );
-            if (pszNewBinValues == NULL)
+            VSIFSeekL( hHFA->fp, nOffset + nBin*nBinSize, SEEK_SET );
+            char szBuf[32];
+            if ( nBinSize == 8 )
             {
-                CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate memory");
-                break;
+                double dfValue;
+                VSIFReadL( &dfValue, nBinSize, 1, hHFA->fp );
+                HFAStandard( nBinSize, &dfValue );
+                snprintf( szBuf, 31, "%.14g", dfValue );
             }
-            pszBinValues = pszNewBinValues;
+            else
+            {
+                int nValue;
+                VSIFReadL( &nValue, nBinSize, 1, hHFA->fp );
+                HFAStandard( nBinSize, &nValue );
+                snprintf( szBuf, 31, "%d", nValue );
+            }
+            if ( ( nBinValuesLen + strlen( szBuf ) + 2 ) > nBufSize )
+            {
+                nBufSize *= 2;
+                pszBinValues = (char *)CPLRealloc( pszBinValues, nBufSize );
+            }
+            strcat( pszBinValues+nBinValuesLen, szBuf );
+            strcat( pszBinValues+nBinValuesLen, "|" );
+            nBinValuesLen += strlen(pszBinValues+nBinValuesLen);
         }
-        strcat( pszBinValues+nBinValuesLen, szBuf );
-        strcat( pszBinValues+nBinValuesLen, "|" );
-        nBinValuesLen += strlen(pszBinValues+nBinValuesLen);
+        SetMetadataItem( "STATISTICS_HISTOBINVALUES", pszBinValues );
+        CPLFree( pszBinValues );
     }
-
-    SetMetadataItem( "STATISTICS_HISTOBINVALUES", pszBinValues );
-    CPLFree( panHistValues );
-    CPLFree( pszBinValues );
 }
 
 /************************************************************************/
@@ -892,40 +774,12 @@ double HFARasterBand::GetMaximum( int *pbSuccess )
 }
 
 /************************************************************************/
-/*                         EstablishOverviews()                         */
-/*                                                                      */
-/*      Delayed population of overview information.                     */
-/************************************************************************/
-
-void HFARasterBand::EstablishOverviews()
-
-{
-    if( nOverviews != -1 )
-        return;
-
-    nOverviews = HFAGetOverviewCount( hHFA, nBand );
-    if( nOverviews > 0 )
-    {
-        papoOverviewBands = (HFARasterBand **)
-            CPLMalloc(sizeof(void*)*nOverviews);
-
-        for( int iOvIndex = 0; iOvIndex < nOverviews; iOvIndex++ )
-        {
-            papoOverviewBands[iOvIndex] =
-                new HFARasterBand( (HFADataset *) poDS, nBand, iOvIndex );
-        }
-    }
-}
-
-/************************************************************************/
 /*                          GetOverviewCount()                          */
 /************************************************************************/
 
 int HFARasterBand::GetOverviewCount()
 
 {
-    EstablishOverviews();
-
     if( nOverviews == 0 )
         return GDALRasterBand::GetOverviewCount();
     else
@@ -939,8 +793,6 @@ int HFARasterBand::GetOverviewCount()
 GDALRasterBand *HFARasterBand::GetOverview( int i )
 
 {
-    EstablishOverviews();
-
     if( nOverviews == 0 )
         return GDALRasterBand::GetOverview( i );
     else if( i < 0 || i >= nOverviews )
@@ -961,15 +813,13 @@ CPLErr HFARasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     int         nThisDataType = nHFADataType; // overview may differ.
 
     if( nThisOverview == -1 )
-        eErr = HFAGetRasterBlockEx( hHFA, nBand, nBlockXOff, nBlockYOff,
-                                    pImage,
-                                    nBlockXSize * nBlockYSize * (GDALGetDataTypeSize(eDataType) / 8) );
+        eErr = HFAGetRasterBlock( hHFA, nBand, nBlockXOff, nBlockYOff,
+                                  pImage );
     else
     {
-        eErr =  HFAGetOverviewRasterBlockEx( hHFA, nBand, nThisOverview,
+        eErr =  HFAGetOverviewRasterBlock( hHFA, nBand, nThisOverview,
                                            nBlockXOff, nBlockYOff,
-                                           pImage,
-                                           nBlockXSize * nBlockYSize * (GDALGetDataTypeSize(eDataType) / 8));
+                                           pImage );
         nThisDataType = 
             hHFA->papoBand[nBand-1]->papoOverviews[nThisOverview]->nDataType;
     }
@@ -1114,8 +964,7 @@ const char * HFARasterBand::GetDescription() const
 /************************************************************************/
 void HFARasterBand::SetDescription( const char *pszName )
 {
-    if( strlen(pszName) > 0 )
-        HFASetBandName( hHFA, nBand, pszName );
+    HFASetBandName( hHFA, nBand, pszName );
 }
 
 /************************************************************************/
@@ -1148,31 +997,11 @@ GDALColorTable *HFARasterBand::GetColorTable()
 CPLErr HFARasterBand::SetColorTable( GDALColorTable * poCTable )
 
 {
-    if( GetAccess() == GA_ReadOnly )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess, 
-                  "Unable to set color table on read-only file." );
-        return CE_Failure;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Special case if we are clearing the color table.                */
-/* -------------------------------------------------------------------- */
-    if( poCTable == NULL )
-    {
-        delete poCT;
-        poCT = NULL;
-
-        HFASetPCT( hHFA, nBand, 0, NULL, NULL, NULL, NULL );
-
-        return CE_None;
-    }
+    int nColors = poCTable->GetColorEntryCount();
 
 /* -------------------------------------------------------------------- */
 /*      Write out the colortable, and update the configuration.         */
 /* -------------------------------------------------------------------- */
-    int nColors = poCTable->GetColorEntryCount();
-
     double *padfRed, *padfGreen, *padfBlue, *padfAlpha;
 
     padfRed   = (double *) CPLMalloc(sizeof(double) * nColors);
@@ -1234,74 +1063,6 @@ CPLErr HFARasterBand::SetMetadataItem( const char *pszTag, const char *pszValue,
 }
 
 /************************************************************************/
-/*                           CleanOverviews()                           */
-/************************************************************************/
-
-CPLErr HFARasterBand::CleanOverviews()
-
-{
-    if( nOverviews == 0 )
-        return CE_None;
-
-/* -------------------------------------------------------------------- */
-/*      Clear our reference to overviews as bands.                      */
-/* -------------------------------------------------------------------- */
-    int iOverview;
-
-    for( iOverview = 0; iOverview < nOverviews; iOverview++ )
-        delete papoOverviewBands[iOverview];
-
-    CPLFree( papoOverviewBands );
-    papoOverviewBands = NULL;
-    nOverviews = 0;
-
-/* -------------------------------------------------------------------- */
-/*      Search for any RRDNamesList and destroy it.                     */
-/* -------------------------------------------------------------------- */
-    HFABand *poBand = hHFA->papoBand[nBand-1];
-    HFAEntry *poEntry = poBand->poNode->GetNamedChild( "RRDNamesList" );
-    if( poEntry != NULL )
-    {
-        poEntry->RemoveAndDestroy();
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Destroy and subsample layers under our band.                    */
-/* -------------------------------------------------------------------- */
-    HFAEntry *poChild;
-    for( poChild = poBand->poNode->GetChild(); 
-         poChild != NULL; ) 
-    {
-        HFAEntry *poNext = poChild->GetNext();
-
-        if( EQUAL(poChild->GetType(),"Eimg_Layer_SubSample") )
-            poChild->RemoveAndDestroy();
-
-        poChild = poNext;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Clean up dependent file if we are the last band under the       */
-/*      assumption there will be nothing else referencing it after      */
-/*      this.                                                           */
-/* -------------------------------------------------------------------- */
-    if( hHFA->psDependent != hHFA && hHFA->psDependent != NULL )
-    {
-        CPLString osFilename = 
-            CPLFormFilename( hHFA->psDependent->pszPath, 
-                             hHFA->psDependent->pszFilename, NULL );
-        
-        HFAClose( hHFA->psDependent );
-        hHFA->psDependent = NULL;
-        
-        CPLDebug( "HFA", "Unlink(%s)", osFilename.c_str() );
-        VSIUnlink( osFilename );
-    }
-
-    return CE_None;
-}
-
-/************************************************************************/
 /*                           BuildOverviews()                           */
 /************************************************************************/
 
@@ -1314,8 +1075,6 @@ CPLErr HFARasterBand::BuildOverviews( const char *pszResampling,
     int iOverview;
     GDALRasterBand **papoOvBands;
     int bNoRegen = FALSE;
-
-    EstablishOverviews();
     
     if( nThisOverview != -1 )
     {
@@ -1324,9 +1083,6 @@ CPLErr HFARasterBand::BuildOverviews( const char *pszResampling,
 
         return CE_Failure;
     }
-
-    if( nReqOverviews == 0 )
-        return CleanOverviews();
 
     papoOvBands = (GDALRasterBand **) CPLCalloc(sizeof(void*),nReqOverviews);
 
@@ -1508,8 +1264,6 @@ GDALRasterAttributeTable *HFARasterBand::ReadNamedRAT( const char *pszName )
          poDTChild != NULL; 
          poDTChild = poDTChild->GetNext() )
     {
-        int i;
-
         if( EQUAL(poDTChild->GetType(),"Edsc_BinFunction") )
         {
             double dfMax = poDTChild->GetDoubleField( "maxLimit" );
@@ -1522,29 +1276,13 @@ GDALRasterAttributeTable *HFARasterBand::ReadNamedRAT( const char *pszName )
                                          (dfMax-dfMin) / (nBinCount-1) );
         }
 
-        if( EQUAL(poDTChild->GetType(),"Edsc_BinFunction840") 
-            && EQUAL(poDTChild->GetStringField( "binFunction.type.string" ),
-                     "BFUnique") )
-        {
-            double *padfBinValues = HFAReadBFUniqueBins( poDTChild, nRowCount );
-            
-            if( padfBinValues != NULL )
-            {
-                poRAT->CreateColumn( "Value", GFT_Integer, GFU_MinMax );
-                for( i = 0; i < nRowCount; i++ )
-                    poRAT->SetValue( i, poRAT->GetColumnCount()-1, 
-                                     padfBinValues[i] );
-
-                CPLFree( padfBinValues );
-            }
-        }
-
         if( !EQUAL(poDTChild->GetType(),"Edsc_Column") )
             continue;
 
         int nOffset = poDTChild->GetIntField( "columnDataPtr" );
         const char * pszType = poDTChild->GetStringField( "dataType" );
         GDALRATFieldUsage eType = GFU_Generic;
+        int i;
 
         if( pszType == NULL || nOffset == 0 )
             continue;
@@ -1564,24 +1302,16 @@ GDALRasterAttributeTable *HFARasterBand::ReadNamedRAT( const char *pszName )
             
         if( EQUAL(pszType,"real") )
         {
-            double *padfColData = (double*)VSIMalloc2(nRowCount, sizeof(double));
-            if (nRowCount != 0 && padfColData == NULL)
+            double *padfColData = (double*)VSIMalloc(nRowCount*sizeof(double));
+            if (padfColData == NULL)
             {
                 CPLError( CE_Failure, CPLE_OutOfMemory,
-                 "HFARasterBand::ReadNamedRAT : Out of memory");
-                delete poRAT;
+                 "HFARasterBand::ReadNamedRAT : Out of memory\n");
                 return NULL;
             }
 
             VSIFSeekL( hHFA->fp, nOffset, SEEK_SET );
-            if ((int)VSIFReadL( padfColData, sizeof(double), nRowCount, hHFA->fp ) != nRowCount)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                            "HFARasterBand::ReadNamedRAT : Cannot read values");
-                CPLFree(padfColData);
-                delete poRAT;
-                return NULL;
-            }
+            VSIFReadL( padfColData, nRowCount, sizeof(double), hHFA->fp );
 #ifdef CPL_MSB
             GDALSwapWords( padfColData, 8, nRowCount, 8 );
 #endif
@@ -1598,20 +1328,12 @@ GDALRasterAttributeTable *HFARasterBand::ReadNamedRAT( const char *pszName )
             if (pachColData == NULL)
             {
                 CPLError( CE_Failure, CPLE_OutOfMemory,
-                 "HFARasterBand::ReadNamedRAT : Out of memory");
-                delete poRAT;
+                 "HFARasterBand::ReadNamedRAT : Out of memory\n");
                 return NULL;
             }
 
             VSIFSeekL( hHFA->fp, nOffset, SEEK_SET );
-            if ((int)VSIFReadL( pachColData, nMaxNumChars, nRowCount, hHFA->fp ) != nRowCount)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                            "HFARasterBand::ReadNamedRAT : Cannot read values");
-                CPLFree(pachColData);
-                delete poRAT;
-                return NULL;
-            }
+            VSIFReadL( pachColData, nRowCount, nMaxNumChars, hHFA->fp );
 
             poRAT->CreateColumn(poDTChild->GetName(),GFT_String,eType);
             for( i = 0; i < nRowCount; i++ )
@@ -1627,24 +1349,16 @@ GDALRasterAttributeTable *HFARasterBand::ReadNamedRAT( const char *pszName )
         }
         else if( EQUALN(pszType,"int",3) )
         {
-            GInt32 *panColData = (GInt32*)VSIMalloc2(nRowCount, sizeof(GInt32));
-            if (nRowCount != 0 && panColData == NULL)
+            GInt32 *panColData = (GInt32*)VSIMalloc(nRowCount*sizeof(GInt32));
+            if (panColData == NULL)
             {
                 CPLError( CE_Failure, CPLE_OutOfMemory,
-                 "HFARasterBand::ReadNamedRAT : Out of memory");
-                delete poRAT;
+                 "HFARasterBand::ReadNamedRAT : Out of memory\n");
                 return NULL;
             }
 
             VSIFSeekL( hHFA->fp, nOffset, SEEK_SET );
-            if ((int)VSIFReadL( panColData, sizeof(GInt32), nRowCount, hHFA->fp ) != nRowCount)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                            "HFARasterBand::ReadNamedRAT : Cannot read values");
-                CPLFree(panColData);
-                delete poRAT;
-                return NULL;
-            }
+            VSIFReadL( panColData, nRowCount, sizeof(GInt32), hHFA->fp );
 #ifdef CPL_MSB
             GDALSwapWords( panColData, 4, nRowCount, 4 );
 #endif
@@ -1775,7 +1489,6 @@ CPLErr HFADataset::WriteProjection()
     OGRSpatialReference *poGeogSRS = NULL;
     int                 bHaveSRS;
     char		*pszP = pszProjection;
-    OGRBoolean peStrStored = FALSE;
 
     bGeoDirty = FALSE;
 
@@ -1840,9 +1553,6 @@ CPLErr HFADataset::WriteProjection()
             /* we will default to this (effectively WGS84) for now */
             sDatum.type = EPRJ_DATUM_PARAMETRIC;
         }
-
-        /* Verify if we need to write a ESRI PE string */
-        peStrStored = WritePeStringIfNeeded(&oSRS, hHFA);
 
         sPro.proSpheroid.sphereName = (char *)
             poGeogSRS->GetAttrValue( "GEOGCS|DATUM|SPHEROID" );
@@ -2111,7 +1821,7 @@ CPLErr HFADataset::WriteProjection()
         sPro.proParams[6] = oSRS.GetProjParm(SRS_PP_FALSE_EASTING);
         sPro.proParams[7] = oSRS.GetProjParm(SRS_PP_FALSE_NORTHING);
     }
-    else if( EQUAL(pszProjName,SRS_PT_ECKERT_V) )
+    else if( EQUAL(pszProjName,SRS_PT_ECKERT_VI) )
     {
         sPro.proNumber = EPRJ_ECKERT_V;
         sPro.proName = (char*) "Eckert V";
@@ -2208,16 +1918,12 @@ CPLErr HFADataset::WriteProjection()
     // Anything we can't map, we store as an ESRI PE_STRING 
     else if( oSRS.IsProjected() || oSRS.IsGeographic() )
     {
-      if(!peStrStored)
-      {
         char *pszPEString = NULL;
         oSRS.morphToESRI();
         oSRS.exportToWkt( &pszPEString );
         // need to transform this into ESRI format.
         HFASetPEString( hHFA, pszPEString );
         CPLFree( pszPEString );
-        peStrStored = TRUE;
-      }
     }
     else
     {
@@ -2303,13 +2009,11 @@ CPLErr HFADataset::WriteProjection()
                             adfGeoTransform );
     }
 
-    if( bHaveSRS && sPro.proName != NULL)
+    if( bHaveSRS && sPro.proName != NULL )
     {
         HFASetProParameters( hHFA, &sPro );
         HFASetDatum( hHFA, &sDatum );
     }
-    else if( !peStrStored )
-      ClearSR(hHFA);
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
@@ -2318,145 +2022,6 @@ CPLErr HFADataset::WriteProjection()
         delete poGeogSRS;
 
     return CE_None;
-}
-
-/************************************************************************/
-/*                       WritePeStringIfNeeded()                        */
-/************************************************************************/
-OGRBoolean WritePeStringIfNeeded(OGRSpatialReference*	poSRS, HFAHandle hHFA)
-{
-  OGRBoolean ret = FALSE;
-  if(!poSRS || !hHFA)
-    return ret;
-
-  const char *pszGEOGCS = poSRS->GetAttrValue( "GEOGCS" );
-  const char *pszDatum = poSRS->GetAttrValue( "DATUM" );
-  int gcsNameOffset = 0;
-  int datumNameOffset = 0;
-  if(strstr(pszGEOGCS, "GCS_"))
-    gcsNameOffset = strlen("GCS_");
-  if(strstr(pszDatum, "D_"))
-    datumNameOffset = strlen("D_");
-
-  if(!EQUAL(pszGEOGCS+gcsNameOffset, pszDatum+datumNameOffset))
-    ret = TRUE;
-  else
-  {
-    const char* name = poSRS->GetAttrValue("PRIMEM");
-    if(name && !EQUAL(name,"Greenwich"))
-      ret = TRUE;
-    if(!ret)
-    {
-      OGR_SRSNode * poAUnits = poSRS->GetAttrNode( "GEOGCS|UNIT" );
-      name = poAUnits->GetChild(0)->GetValue();
-      if(name && !EQUAL(name,"Degree"))
-        ret = TRUE;
-    }
-    if(!ret)
-    {
-      name = poSRS->GetAttrValue("UNIT");
-      if(name)
-      {
-        ret = TRUE;
-        for(int i=0; apszUnitMap[i] != NULL; i+=2)
-          if(EQUAL(name, apszUnitMap[i]))
-            ret = FALSE;
-      }
-    }
-    if(!ret)
-    {
-        int nGCS = poSRS->GetEPSGGeogCS();
-        switch(nGCS)
-        {
-          case 4326:
-            if(!EQUAL(pszDatum+datumNameOffset, "WGS_84"))
-              ret = TRUE;
-            break;
-          case 4322:
-            if(!EQUAL(pszDatum+datumNameOffset, "WGS_72"))
-              ret = TRUE;
-            break;
-          case 4267:
-            if(!EQUAL(pszDatum+datumNameOffset, "North_America_1927"))
-              ret = TRUE;
-            break;
-          case 4269:
-            if(!EQUAL(pszDatum+datumNameOffset, "North_America_1983"))
-              ret = TRUE;
-            break;
-        }
-    }
-  }
-  if(ret)
-  {
-    char *pszPEString = NULL;
-    poSRS->morphToESRI();
-    poSRS->exportToWkt( &pszPEString );
-    HFASetPEString( hHFA, pszPEString );
-    CPLFree( pszPEString );
-  }
-
-  return ret;
-}
-
-/************************************************************************/
-/*                              ClearSR()                               */
-/************************************************************************/
-void ClearSR(HFAHandle hHFA)
-{
-    for( int iBand = 0; iBand < hHFA->nBands; iBand++ )
-    {
-        HFAEntry	*poMIEntry;
-        if( hHFA->papoBand[iBand]->poNode && (poMIEntry = hHFA->papoBand[iBand]->poNode->GetNamedChild("Projection")) != NULL )
-        {
-            poMIEntry->MarkDirty();
-            poMIEntry->SetIntField( "proType", 0 );
-            poMIEntry->SetIntField( "proNumber", 0 );
-            poMIEntry->SetStringField( "proExeName", "");
-            poMIEntry->SetStringField( "proName", "");
-            poMIEntry->SetIntField( "proZone", 0 );
-            poMIEntry->SetDoubleField( "proParams[0]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[1]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[2]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[3]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[4]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[5]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[6]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[7]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[8]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[9]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[10]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[11]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[12]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[13]", 0.0 );
-            poMIEntry->SetDoubleField( "proParams[14]", 0.0 );
-            poMIEntry->SetStringField( "proSpheroid.sphereName", "" );
-            poMIEntry->SetDoubleField( "proSpheroid.a", 0.0 );
-            poMIEntry->SetDoubleField( "proSpheroid.b", 0.0 );
-            poMIEntry->SetDoubleField( "proSpheroid.eSquared", 0.0 );
-            poMIEntry->SetDoubleField( "proSpheroid.radius", 0.0 );
-            HFAEntry* poDatumEntry = poMIEntry->GetNamedChild("Datum");
-            if( poDatumEntry != NULL )
-            {
-                poDatumEntry->MarkDirty();
-                poDatumEntry->SetStringField( "datumname", "" );
-                poDatumEntry->SetIntField( "type", 0 );
-                poDatumEntry->SetDoubleField( "params[0]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[1]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[2]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[3]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[4]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[5]", 0.0 );
-                poDatumEntry->SetDoubleField( "params[6]", 0.0 );
-                poDatumEntry->SetStringField( "gridname", "" );
-            }
-            poMIEntry->FlushToDisk();
-            char* peStr = HFAGetPEString( hHFA );
-            if( peStr != NULL && strlen(peStr) > 0 )           
-                HFASetPEString( hHFA, "" );
-        }  
-    }
-    return;
 }
 
 /************************************************************************/
@@ -2894,14 +2459,13 @@ HFAPCSStructToWKT( const Eprj_Datum *psDatum,
     if( oSRS.GetAttrNode("GEOGCS") == NULL
         && oSRS.GetAttrNode("LOCAL_CS") == NULL )
     {
-        if( EQUAL(pszDatumName,"WGS 84") 
-            ||  EQUAL(pszDatumName,"WGS_1984") )
+        if( EQUAL(pszDatumName,"WGS 84") )
             oSRS.SetWellKnownGeogCS( "WGS84" );
         else if( strstr(pszDatumName,"NAD27") != NULL 
                  || EQUAL(pszDatumName,"North_American_Datum_1927") )
             oSRS.SetWellKnownGeogCS( "NAD27" );
-        else if( strstr(pszDatumName,"NAD83") != NULL
-                 || EQUAL(pszDatumName,"North_American_Datum_1983"))
+        else if( EQUAL(pszDatumName,"North_American_Datum_1983") 
+                 || strstr(pszDatumName,"NAD83") != NULL )
             oSRS.SetWellKnownGeogCS( "NAD83" );
         else
             oSRS.SetGeogCS( pszDatumName, pszDatumName, pszEllipsoidName,
@@ -2954,7 +2518,7 @@ CPLErr HFADataset::ReadProjection()
 /*      Special logic for PE string in ProjectionX node.                */
 /* -------------------------------------------------------------------- */
     pszPE_COORDSYS = HFAGetPEString( hHFA );
-    if( pszPE_COORDSYS != NULL
+    if( pszPE_COORDSYS != NULL 
         && oSRS.SetFromUserInput( pszPE_COORDSYS ) == OGRERR_NONE )
     {
         CPLFree( pszPE_COORDSYS );
@@ -2987,18 +2551,6 @@ CPLErr HFADataset::ReadProjection()
     }
 
     CPLFree( pszProjection );
-
-    if( !psDatum || !psPro ||
-        (psMapInfo == NULL && poMapInformation == NULL) ||
-        ((strlen(psDatum->datumname) == 0 || EQUAL(psDatum->datumname, "Unknown")) && 
-        (strlen(psPro->proName) == 0 || EQUAL(psPro->proName, "Unknown")) &&
-        (psMapInfo && (strlen(psMapInfo->proName) == 0 || EQUAL(psMapInfo->proName, "Unknown"))) && 
-        psPro->proZone == 0) )
-    {
-        pszProjection = CPLStrdup("");
-        return CE_None;
-    }
-
     pszProjection = HFAPCSStructToWKT( psDatum, psPro, psMapInfo, 
                                        poMapInformation );
 
@@ -3035,17 +2587,13 @@ CPLErr HFADataset::IBuildOverviews( const char *pszResampling,
         CPLErr eErr;
         GDALRasterBand *poBand;
 
-        void* pScaledProgressData = GDALCreateScaledProgress(
-                i * 1.0 / nListBands, (i + 1) * 1.0 / nListBands,
-                pfnProgress, pProgressData);
+        // TODO: We ought to used scaled progress monitors so we would get 
+        // 0 to 100 progress out of the whole process ... later.
 
         poBand = GetRasterBand( panBandList[i] );
         eErr = 
             poBand->BuildOverviews( pszResampling, nOverviews, panOverviewList,
-                                    GDALScaledProgress, pScaledProgressData );
-
-        GDALDestroyScaledProgress(pScaledProgressData);
-
+                                    pfnProgress, pProgressData );
         if( eErr != CE_None )
             return eErr;
     }
@@ -3195,7 +2743,6 @@ GDALDataset *HFADataset::Open( GDALOpenInfo * poOpenInfo )
         }
         
         poBand->ReadAuxMetadata();
-        poBand->ReadHistogramMetadata();
     }
 
 /* -------------------------------------------------------------------- */
@@ -3226,11 +2773,6 @@ GDALDataset *HFADataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
-    
 /* -------------------------------------------------------------------- */
 /*      Clear dirty metadata flags.                                     */
 /* -------------------------------------------------------------------- */
@@ -3434,17 +2976,9 @@ void HFADataset::UseXFormStack( int nStepCount,
             continue;
         }
 
-        int nCoefCount;
+        CPLAssert( pasPLForward[iStep].order == 2 );
 
-        if( pasPLForward[iStep].order == 2 )
-            nCoefCount = 10;
-        else
-        {
-            CPLAssert( pasPLForward[iStep].order == 3 );
-            nCoefCount = 18;
-        }
-
-        for( i = 0; i < nCoefCount; i++ )
+        for( i = 0; i < 10; i++ )
             GDALMajorObject::SetMetadataItem( 
                 CPLString().Printf("XFORM%d_FWD_POLYCOEFMTX[%d]", iStep, i),
                 CPLString().Printf("%.15g",
@@ -3458,7 +2992,7 @@ void HFADataset::UseXFormStack( int nStepCount,
                                    pasPLForward[iStep].polycoefvector[i]),
                 "XFORMS" );
             
-        for( i = 0; i < nCoefCount; i++ )
+        for( i = 0; i < 10; i++ )
             GDALMajorObject::SetMetadataItem( 
                 CPLString().Printf("XFORM%d_REV_POLYCOEFMTX[%d]", iStep, i),
                 CPLString().Printf("%.15g",
@@ -3743,7 +3277,31 @@ HFADataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         poCT = poBand->GetColorTable();
         if( poCT != NULL )
         {
-            poDS->GetRasterBand(iBand+1)->SetColorTable(poCT);
+            double	*padfRed, *padfGreen, *padfBlue, *padfAlpha;
+            int         nColors = poCT->GetColorEntryCount(), iColor;
+
+            padfRed   = (double *) CPLMalloc(sizeof(double) * nColors);
+            padfGreen = (double *) CPLMalloc(sizeof(double) * nColors);
+            padfBlue  = (double *) CPLMalloc(sizeof(double) * nColors);
+            padfAlpha  = (double *) CPLMalloc(sizeof(double) * nColors);
+            for( iColor = 0; iColor < nColors; iColor++ )
+            {
+                GDALColorEntry  sEntry;
+
+                poCT->GetColorEntryAsRGB( iColor, &sEntry );
+                padfRed[iColor]   = sEntry.c1 / 255.0;
+                padfGreen[iColor] = sEntry.c2 / 255.0;
+                padfBlue[iColor]  = sEntry.c3 / 255.0;
+                padfAlpha[iColor]  = sEntry.c4 / 255.0;
+            }
+
+            HFASetPCT( poDS->hHFA, iBand+1, nColors,
+                       padfRed, padfGreen, padfBlue, padfAlpha );
+
+            CPLFree( padfRed );
+            CPLFree( padfGreen );
+            CPLFree( padfBlue );
+            CPLFree( padfAlpha );
         }
     }
 
@@ -3756,19 +3314,8 @@ HFADataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     for( iBand = 0; iBand < nBandCount; iBand++ )
     {
-        int bSuccess;
         GDALRasterBand *poSrcBand = poSrcDS->GetRasterBand( iBand+1 );
-        GDALRasterBand *poDstBand = poDS->GetRasterBand(iBand+1);
-
-        if( poSrcBand->GetMetadata() != NULL )
-            poDstBand->SetMetadata( poSrcBand->GetMetadata() );
-
-        if( strlen(poSrcBand->GetDescription()) > 0 )
-            poDstBand->SetDescription( poSrcBand->GetDescription() );
-
-        double dfNoDataValue = poSrcBand->GetNoDataValue( &bSuccess );
-        if( bSuccess )
-            poDstBand->SetNoDataValue( dfNoDataValue );
+        poDS->GetRasterBand(iBand+1)->SetMetadata( poSrcBand->GetMetadata() );
     }
 
 /* -------------------------------------------------------------------- */

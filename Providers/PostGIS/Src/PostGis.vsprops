@@ -6,7 +6,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="..\..\Inc;&quot;$(FDO)\Unmanaged\Inc&quot;;&quot;$(FDOUTILITIES)\Common\Inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Inc&quot;;&quot;$(FDOTHIRDPARTY)\boost&quot;;&quot;$(FDOPOSTGRESQL)\include&quot;"
+		AdditionalIncludeDirectories="..\..\Inc;&quot;$(FDO)\Unmanaged\Inc&quot;;&quot;$(FDOUTILITIES)\Common\Inc&quot;;&quot;$(FDOTHIRDPARTY)\boost&quot;;&quot;$(FDOPOSTGRESQL)\include&quot;"
 		PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE"
 		UndefinePreprocessorDefinitions="FDOPOSTGIS_USE_VLD"
 	/>
@@ -22,12 +22,12 @@
 	/>
 	<UserMacro
 		Name="XALANROOT"
-		Value="$(FDOTHIRDPARTY)\apache\xalan"
+		Value="$(FDOTHIRDPARTY)\apache\xml-xalan\c"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro
 		Name="XERCESCROOT"
-		Value="$(FDOTHIRDPARTY)\apache\xerces"
+		Value="$(FDOTHIRDPARTY)\apache\xml-xerces\c"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro

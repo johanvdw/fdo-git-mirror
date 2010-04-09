@@ -23,14 +23,14 @@
 class FdoIoTextReader;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_IO
-ref class IoStream;
+public __gc class IoStream;
 
 /// \ingroup (OSGeoFDOCommonIo)
 /// \brief
 ///     IoTextReader reads from a binary stream containing UTF8 characters.
 ///     It formats these UTF8 characters into Unicode wide characters. This class is 
 ///     not yet complete, since the Read functions still have to be added.
-public ref class IoTextReader sealed : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __sealed __gc class IoTextReader : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 public:
     /// \brief
@@ -39,7 +39,7 @@ public:
     /// \param fileName 
     ///     Input name of the file to read.
     /// 
-	IoTextReader(System::String^ fileName);
+	IoTextReader(System::String* fileName);
 
     /// \brief
     ///     Constructs a text reader on a stream
@@ -47,7 +47,7 @@ public:
     /// \param stream 
     ///     Input the stream to read.
     /// 
-	IoTextReader(NAMESPACE_OSGEO_COMMON_IO::IoStream^ stream);
+	IoTextReader(NAMESPACE_OSGEO_COMMON_IO::IoStream* stream);
 
     /// \brief
     ///     Gets the underlying stream. If a stream was passed to this object
@@ -59,10 +59,7 @@ public:
     ///     Returns the underlying stream.
     /// 
     ///  
-    property NAMESPACE_OSGEO_COMMON_IO::IoStream^ Stream
-    {
-        NAMESPACE_OSGEO_COMMON_IO::IoStream^ get();
-    }
+	__property NAMESPACE_OSGEO_COMMON_IO::IoStream* get_Stream();
 
     /// \brief
     ///     Constructs a text reader based on an unmanaged instance of the object
@@ -76,10 +73,12 @@ public:
     /// 
 	IoTextReader(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+
+public private:
 	inline FdoIoTextReader* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

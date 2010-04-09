@@ -33,36 +33,38 @@ NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::ClassCapabilities(System::IntPtr 
 
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::ClassCapabilities(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ parent) : NAMESPACE_OSGEO_RUNTIME::Disposable(System::IntPtr::Zero, false)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::ReleaseUnmanagedObject()
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoClassCapabilities::Create(*(parent->GetImpObj()))), true))
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
+}
+
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::ClassCapabilities(NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* parent) : NAMESPACE_OSGEO_RUNTIME::Disposable(System::IntPtr::Zero, false)
+{
+	EXCEPTION_HANDLER(Attach(FdoClassCapabilities::Create(*(parent->GetImpObj())), true))
 }
 
 FdoClassCapabilities* NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::GetImpObj()
 {
-	return static_cast<FdoClassCapabilities*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoClassCapabilities*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::GetDisposableObject()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::get_SupportsLocking()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::SupportsLocking::get()
-{
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->SupportsLocking())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::SupportsLocking::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::set_SupportsLocking(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSupportsLocking(value))
 }
 
-array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::LockTypes::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::get_LockTypes() []
 {
 	FdoLockType* result;
 	FdoInt32 len;
@@ -72,46 +74,41 @@ array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ NAMESPACE_OSGEO_FDO_SCHEM
 	return WrapFdoLockTypeArray(result, len);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::LockTypes::set(array<NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType>^ types)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::set_LockTypes(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType types[])
 {
 	FdoLockTypeArray* typeArray = UnwrapLockTypeArray(types);
-    try
-    {
-	    EXCEPTION_HANDLER(GetImpObj()->SetLockTypes(typeArray->GetData(), typeArray->GetCount()))
-    }
-    finally
-    {
-        if (typeArray != nullptr)
-	        typeArray->Release();
-    }
+
+	EXCEPTION_HANDLER(GetImpObj()->SetLockTypes(typeArray->GetData(), typeArray->GetCount()))
+
+	typeArray->Release();
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::SupportsLongTransactions::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::get_SupportsLongTransactions()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->SupportsLongTransactions())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::SupportsLongTransactions::set(System::Boolean value )
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::set_SupportsLongTransactions(System::Boolean value )
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSupportsLongTransactions(value))
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition^ NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::Parent::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::ClassDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::get_Parent()
 {
 	FdoClassDefinition* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetParent())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateClassDefinition(result, true);
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::SupportsWrite::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::ClassCapabilities::get_SupportsWrite()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->SupportsWrite())
 

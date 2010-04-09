@@ -37,23 +37,20 @@ class WmsTestSelect : public WmsTests
     CPPUNIT_TEST (testHttpBasicAuthentification);
 #endif
 
-    CPPUNIT_TEST (testURLEcoding);
     CPPUNIT_TEST (testServer2);
     CPPUNIT_TEST (testResample);
     CPPUNIT_TEST (testClip);
     CPPUNIT_TEST (testDefaultHeight);
     CPPUNIT_TEST (testNASAServer);
     CPPUNIT_TEST (testNASAServer2);
-    // disabled because the server cannot connect
-    //CPPUNIT_TEST (testIntegraphWorld);
+    CPPUNIT_TEST (testIntegraphWorld);
     CPPUNIT_TEST (testCubeServer);
     CPPUNIT_TEST (testMultiLayers);
     CPPUNIT_TEST (testTerraService);
     CPPUNIT_TEST (testDefect786029);
-    // disabled because the server cannot connect
-    //CPPUNIT_TEST (testEusoils);
-    //CPPUNIT_TEST (testEusoilsPesera);
-    //CPPUNIT_TEST (testEusoilsMeusis);
+    CPPUNIT_TEST (testEusoils);
+    CPPUNIT_TEST (testEusoilsPesera);
+    CPPUNIT_TEST (testEusoilsMeusis);
     CPPUNIT_TEST (testSelectSpatialExtents);
     CPPUNIT_TEST (testTerraServiceThumbnail);
     CPPUNIT_TEST (testNS_TOPO_1000);
@@ -64,8 +61,7 @@ class WmsTestSelect : public WmsTests
     CPPUNIT_TEST (testCeoware2);
     CPPUNIT_TEST (testLioib);
     CPPUNIT_TEST (testKortPlandk);
-    // disabled because the server cannot connect
-    //CPPUNIT_TEST (testLibcwms);
+    CPPUNIT_TEST (testLibcwms);
     CPPUNIT_TEST (testStoboWms);
     CPPUNIT_TEST (testLinuxgurrl);
     CPPUNIT_TEST (testOpenmaps);
@@ -115,7 +111,8 @@ public:
     void testLinuxgurrl ();
 	void testOpenmaps ();
     void testquestionmarkend ();
-    void testURLEcoding ();
+
+
 };
 
 #endif//FDOWMSTESTSELECT_H

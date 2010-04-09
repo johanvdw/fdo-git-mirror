@@ -43,12 +43,12 @@
 
 <!-- used for looking assocation property references -->
 <xsl:key name="assocKey" match="AssociationProperty" use="concat(@associatedClassSchema,concat(':',@associatedClass))" />
-<xsl:variable name="g_associationProperties" select="//AssociationProperty"/>
+<xsl:key name="classKey" match="Schema/node()" use="concat(../@name,':',@name)" />
 
 <!-- Determine whether using GML 2 or 3 feature property type. Assumes GML 2 if GML 3 type not defined -->
 <xsl:variable name="g_featurePropertyType">
 	<xsl:choose>
-		<xsl:when test="//Schema/node()[concat(../@name,':',@name)='gml:FeaturePropertyType']">
+		<xsl:when test="key('classKey','gml:FeaturePropertyType')">
 			<xsl:value-of select="'gml:FeaturePropertyType'"/>
 		</xsl:when>
 		<xsl:otherwise>
@@ -137,32 +137,6 @@
   <xsl:element name="xs:complexType">
     <xsl:call-template name="feature_class_attributes" />
     <xsl:call-template name="element_subelements" />
-    
-    <xsl:choose>
-	<xsl:when test="@name='AbstractFeature'">
-		<xsl:variable name="myUri" >
-		    <xsl:call-template name="schema_to_uri">
-		        <xsl:with-param name="schema" select="../@name"/>
-		    </xsl:call-template>
-		</xsl:variable>
-		<xsl:choose>
-			<xsl:when test="$myUri='http://www.opengis.net/gml'">
-			  <!-- This is gml:AbstractFeature so don't extend from itself -->
-			  <xsl:call-template name="FeatureClassNotExtended"/>
-			</xsl:when>
-			<xsl:otherwise>
-			  <xsl:call-template name="FeatureClassExtended"/>
-			</xsl:otherwise>
-		</xsl:choose>
-	</xsl:when>
-	<xsl:otherwise>
-	  <xsl:call-template name="FeatureClassExtended"/>
-	</xsl:otherwise>
-    </xsl:choose>
-  </xsl:element>
-</xsl:template>
-
-<xsl:template name="FeatureClassExtended">
     <xsl:element name="xs:complexContent">
       <xsl:element name="xs:extension">
         <xsl:attribute name="base" >
@@ -181,11 +155,7 @@
         <xsl:call-template name="class_properties" />
       </xsl:element>
     </xsl:element>
-</xsl:template>
-
-<xsl:template name="FeatureClassNotExtended">
-   <!-- Write the properties as sub-elements -->
-   <xsl:call-template name="class_properties" />
+  </xsl:element>
 </xsl:template>
 
 <!-- Converts a non-feature class to GML -->
@@ -1159,20 +1129,19 @@
   		 properties are explicit, the already generated xs:key links the association
   		 property to its associated class.
   		-->
-  		<xsl:if test="not (count($g_associationProperties) = 0)">
-  		   <xsl:for-each select="key('assocKey',concat($elemSchema,':',@name))" >
-  		      <!-- Skip if schema for this element and the association property are 
-  		       not the same. When they are different, a separate external element is generated.
-  		      -->
-                  <xsl:if test="IdentityProperties and ($elemSchema = ancestor::Schema/@name)">
-                    <!-- Skip association properties with implicit identity properties, these
-                     are already linked through this element's xs:key
+  		<xsl:for-each select="key('assocKey',concat($elemSchema,':',@name))" >
+  		    <!-- Skip if schema for this element and the association property are 
+  		     not the same. When they are different, a separate external element is generated.
+  		    -->
+            <xsl:if test="IdentityProperties and ($elemSchema = ancestor::Schema/@name)">
+                <!-- Skip association properties with implicit identity properties, these
+                 are already linked through this element's xs:key
+                -->
+                <xsl:if test="not(IdentityProperties/@default)">
+                    <!-- Generate the xs:unique that will link the association property to 
+                     its associated class. This xs:unique is referenced by the association 
+                     property's xs:keyref.
                     -->
-                    <xsl:if test="not(IdentityProperties/@default)">
-                      <!-- Generate the xs:unique that will link the association property to 
-                       its associated class. This xs:unique is referenced by the association 
-                       property's xs:keyref.
-                      -->
 			        <xsl:element name="xs:key" >
   				        <xsl:attribute name="name" >
   			                <xsl:call-template name="assoc_property_key">
@@ -1194,8 +1163,7 @@
 			        </xsl:element>
                 </xsl:if>
             </xsl:if>
-         </xsl:for-each>
-	</xsl:if>
+        </xsl:for-each>
 
     <!-- Write the unique Constraints -->
     <xsl:for-each select="./UniqueConstraints/UniqueConstraint">

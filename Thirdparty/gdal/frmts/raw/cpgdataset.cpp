@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpgdataset.cpp 18073 2009-11-22 01:01:14Z rouault $
+ * $Id: cpgdataset.cpp 13044 2007-11-26 06:37:42Z pvachon $
  *
  * Project:  Polarimetric Workstation
  * Purpose:  Convair PolGASP data (.img/.hdr format). 
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpgdataset.cpp 18073 2009-11-22 01:01:14Z rouault $");
+CPL_CVSID("$Id: cpgdataset.cpp 13044 2007-11-26 06:37:42Z pvachon $");
 
 CPL_C_START
 void	GDALRegister_CPG(void);
@@ -68,11 +68,11 @@ class CPGDataset : public RawDataset
 
     int nInterleave;
     static int  AdjustFilename( char **, const char *, const char * );
-    static int FindType1( const char *pszWorkname );
-    static int FindType2( const char *pszWorkname );
-    static int FindType3( const char *pszWorkname );
-    static GDALDataset *InitializeType1Or2Dataset( const char *pszWorkname );
-    static GDALDataset *InitializeType3Dataset( const char *pszWorkname );
+    static int FindType1( char *pszWorkname );
+    static int FindType2( char *pszWorkname );
+    static int FindType3( char *pszWorkname );
+    static GDALDataset *InitializeType1Or2Dataset( char *pszWorkname );
+    static GDALDataset *InitializeType3Dataset( char *pszWorkname );
   CPLErr LoadStokesLine( int iLine, int bNativeOrder );
 
   public:
@@ -134,7 +134,9 @@ CPGDataset::~CPGDataset()
 
     if( nGCPCount > 0 )
     {
-        GDALDeinitGCPs( nGCPCount, pasGCPList );
+        for( int i = 0; i < nGCPCount; i++ )
+            CPLFree( pasGCPList[i].pszId );
+
         CPLFree( pasGCPList );
     }
 
@@ -261,7 +263,7 @@ int CPGDataset::AdjustFilename( char **pszFilename,
 /*         Search for the various types of Convair filesets             */
 /*         Return TRUE for a match, FALSE for no match                  */
 /************************************************************************/
-int CPGDataset::FindType1( const char *pszFilename )
+int CPGDataset::FindType1( char *pszFilename )
 {
   int nNameLen;
 
@@ -277,26 +279,20 @@ int CPGDataset::FindType1( const char *pszFilename )
       return FALSE;
 
   /* Expect all bands and headers to be present */
-  char* pszTemp = CPLStrdup(pszFilename);
-
-  int bNotFound = !AdjustFilename( &pszTemp, "hh", "img" ) 
-    || !AdjustFilename( &pszTemp, "hh", "hdr" ) 
-    || !AdjustFilename( &pszTemp, "hv", "img" ) 
-    || !AdjustFilename( &pszTemp, "hv", "hdr" ) 
-    || !AdjustFilename( &pszTemp, "vh", "img" ) 
-    || !AdjustFilename( &pszTemp, "vh", "hdr" ) 
-    || !AdjustFilename( &pszTemp, "vv", "img" ) 
-    || !AdjustFilename( &pszTemp, "vv", "hdr" );
-
-  CPLFree(pszTemp);
-
-  if (bNotFound)
+  if ( !AdjustFilename( &pszFilename, "hh", "img" ) 
+    || !AdjustFilename( &pszFilename, "hh", "hdr" ) 
+    || !AdjustFilename( &pszFilename, "hv", "img" ) 
+    || !AdjustFilename( &pszFilename, "hv", "hdr" ) 
+    || !AdjustFilename( &pszFilename, "vh", "img" ) 
+    || !AdjustFilename( &pszFilename, "vh", "hdr" ) 
+    || !AdjustFilename( &pszFilename, "vv", "img" ) 
+    || !AdjustFilename( &pszFilename, "vv", "hdr" ) )
       return FALSE;
 
   return TRUE;
 }
 
-int CPGDataset::FindType2( const char *pszFilename )
+int CPGDataset::FindType2( char *pszFilename )
 {
   int nNameLen;
 
@@ -307,18 +303,14 @@ int CPGDataset::FindType2( const char *pszFilename )
        && !EQUAL(pszFilename+nNameLen-8,"SIRC.img")))
       return FALSE;
 
-  char* pszTemp = CPLStrdup(pszFilename);
-  int bNotFound =  !AdjustFilename( &pszTemp, "", "img" ) 
-                || !AdjustFilename( &pszTemp, "", "hdr" );
-  CPLFree(pszTemp);
-
-  if (bNotFound)
-      return FALSE;
+  if ( !AdjustFilename( &pszFilename, "", "img" ) 
+       || !AdjustFilename( &pszFilename, "", "hdr" ))
+    return FALSE;
 
   return TRUE;
 }
 
-int CPGDataset::FindType3( const char *pszFilename )
+int CPGDataset::FindType3( char *pszFilename )
 {
   int nNameLen;
 
@@ -333,13 +325,9 @@ int CPGDataset::FindType3( const char *pszFilename )
        && !EQUAL(pszFilename+nNameLen-8,".img_def")))
       return FALSE;
 
-  char* pszTemp = CPLStrdup(pszFilename);
-  int bNotFound =  !AdjustFilename( &pszTemp, "stokes", "img" ) 
-                || !AdjustFilename( &pszTemp, "stokes", "img_def" );
-  CPLFree(pszTemp);
-
-  if (bNotFound)
-      return FALSE;
+  if ( !AdjustFilename( &pszFilename, "stokes", "img" ) 
+       || !AdjustFilename( &pszFilename, "stokes", "img_def" ))
+    return FALSE;
 
   return TRUE;
 }
@@ -452,7 +440,7 @@ CPLErr CPGDataset::LoadStokesLine( int iLine, int bNativeOrder )
 /*       Returns dataset if successful; NULL if there was a problem.    */
 /************************************************************************/
 
-GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
+GDALDataset* CPGDataset::InitializeType1Or2Dataset( char *pszWorkname )
 {
 
 /* -------------------------------------------------------------------- */
@@ -475,7 +463,6 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
     int iUTMParamsFound = 0, iUTMZone=0, iCorner=0;
     double dfnorth = 0.0, dfeast = 0.0;
 
-    char* pszWorkname = CPLStrdup(pszFilename);
     AdjustFilename( &pszWorkname, "hh", "hdr" );
     papszHdrLines = CSLLoad( pszWorkname );
 
@@ -583,17 +570,13 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
 /*      Check for successful completion.                                */
 /* -------------------------------------------------------------------- */
     if( nError )
-    {
-        CPLFree(pszWorkname);
         return NULL;
-    }
 
-    if( nLines <= 0 || nSamples <= 0 )
+    if( nLines == 0 || nSamples == 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
           "Did not find valid number_lines or number_samples keywords in %s.",
                   pszWorkname );
-        CPLFree(pszWorkname);
         return NULL;
     }
 
@@ -626,8 +609,6 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
             CPLError( CE_Failure, CPLE_OpenFailed, 
                       "Failed to open .img file: %s", 
                       pszWorkname );
-            CPLFree(pszWorkname);
-            delete poDS;
             return NULL;
         }
         for( iBand = 0; iBand < 4; iBand++ )
@@ -654,8 +635,6 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
                 CPLError( CE_Failure, CPLE_OpenFailed, 
                           "Failed to open .img file: %s", 
                           pszWorkname );
-                CPLFree(pszWorkname);
-                delete poDS;
                 return NULL;
             }
 
@@ -726,8 +705,7 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
         double dfgcpLine, dfgcpPixel, dfgcpX, dfgcpY, dftemp;
 
         poDS->nGCPCount = 16;
-        poDS->pasGCPList = (GDAL_GCP *) CPLCalloc(sizeof(GDAL_GCP),poDS->nGCPCount);
-        GDALInitGCPs(poDS->nGCPCount, poDS->pasGCPList);
+        poDS->pasGCPList = (GDAL_GCP *) CPLCalloc(sizeof(GDAL_GCP),16);
 
         for( ngcp = 0; ngcp < 16; ngcp ++ )
         {
@@ -778,22 +756,18 @@ GDALDataset* CPGDataset::InitializeType1Or2Dataset( const char *pszFilename )
             poDS->pasGCPList[ngcp].dfGCPPixel = dfgcpPixel;
             poDS->pasGCPList[ngcp].dfGCPLine = dfgcpLine;
 
-            CPLFree(poDS->pasGCPList[ngcp].pszId);
             poDS->pasGCPList[ngcp].pszId = CPLStrdup( szID );
+            poDS->pasGCPList[ngcp].pszInfo = (char *)"";
 
         }
-
-        CPLFree(poDS->pszGCPProjection);
         poDS->pszGCPProjection = CPLStrdup("LOCAL_CS[\"Ground range view / unreferenced meters\",UNIT[\"Meter\",1.0]]"); 
 
     }
 
-    CPLFree(pszWorkname);
-
     return poDS;
 }
 
-GDALDataset *CPGDataset::InitializeType3Dataset( const char *pszFilename )
+GDALDataset *CPGDataset::InitializeType3Dataset( char *pszWorkname )
 {
 
     char **papszHdrLines;
@@ -806,7 +780,6 @@ GDALDataset *CPGDataset::InitializeType3Dataset( const char *pszFilename )
     double dfnorth = 0.0, dfeast = 0.0, dfOffsetX = 0.0, dfOffsetY = 0.0;
     double dfxsize = 0.0, dfysize = 0.0;
 
-    char* pszWorkname = CPLStrdup(pszFilename);
     AdjustFilename( &pszWorkname, "stokes", "img_def" );
     papszHdrLines = CSLLoad( pszWorkname );
 
@@ -957,19 +930,14 @@ GDALDataset *CPGDataset::InitializeType3Dataset( const char *pszFilename )
 /*      Check for successful completion.                                */
 /* -------------------------------------------------------------------- */
     if( nError )
-    {
-        CPLFree(pszWorkname);
         return NULL;
-    }
 
-    if (!GDALCheckDatasetDimensions(nSamples, nLines) ||
-        !GDALCheckBandCount(nBands, FALSE) || iInterleave == -1 ||
-        iBytesPerPixel == 0 )
+    if( nLines == 0 || nSamples == 0 || iInterleave == -1 ||
+        nBands == 0 || iBytesPerPixel == 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
           "%s is missing a required parameter (number of pixels, number of lines,\nnumber of bands, bytes per pixel, or data organization).",
                   pszWorkname );
-        CPLFree(pszWorkname);
         return NULL;
     }
 
@@ -1002,8 +970,6 @@ GDALDataset *CPGDataset::InitializeType3Dataset( const char *pszFilename )
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "Failed to open .img file: %s", 
                   pszWorkname );
-        CPLFree(pszWorkname);
-        delete poDS;
         return NULL;
     }
     for( iBand = 0; iBand < 16; iBand++ )
@@ -1080,9 +1046,12 @@ GDALDataset *CPGDataset::Open( GDALOpenInfo * poOpenInfo )
     int nNameLen = strlen(poOpenInfo->pszFilename);
     int CPGType = 0;
 
-    if ( FindType1( poOpenInfo->pszFilename ))
+    /* scratch workspace that gets freed and reallocated by the tests */
+    char *pszWorkname = CPLStrdup(poOpenInfo->pszFilename);
+
+    if ( FindType1( pszWorkname ))
       CPGType = 1;
-    else if ( FindType2( poOpenInfo->pszFilename ))
+    else if ( FindType2( pszWorkname ))
       CPGType = 2;
    
     /* Stokes matrix convair data: not quite working yet- something
@@ -1092,20 +1061,22 @@ GDALDataset *CPGDataset::Open( GDALOpenInfo * poOpenInfo )
      * C12 = hh*conj(hv), etc.  Used geogratis data in both scattering
      * matrix and stokes format for comparison.
      */
-    //else if ( FindType3( poOpenInfo->pszFilename ))
+    //else if ( FindType3( pszWorkname ))
     //  CPGType = 3;
 
     /* Set working name back to original */
+    CPLFree( pszWorkname );
+    pszWorkname = CPLStrdup(poOpenInfo->pszFilename);
 
     if ( CPGType == 0 )
     {
-      nNameLen = strlen(poOpenInfo->pszFilename);
+      nNameLen = strlen(pszWorkname);
       if ( (nNameLen > 8) && 
-           ( ( strstr(poOpenInfo->pszFilename,"sso") != NULL ) ||
-             ( strstr(poOpenInfo->pszFilename,"polgasp") != NULL ) ) &&
-           ( EQUAL(poOpenInfo->pszFilename+nNameLen-4,"img") ||
-             EQUAL(poOpenInfo->pszFilename+nNameLen-4,"hdr") ||
-             EQUAL(poOpenInfo->pszFilename+nNameLen-7,"img_def") ) )
+           ( ( strstr(pszWorkname,"sso") != NULL ) ||
+             ( strstr(pszWorkname,"polgasp") != NULL ) ) &&
+           ( EQUAL(pszWorkname+nNameLen-4,"img") ||
+             EQUAL(pszWorkname+nNameLen-4,"hdr") ||
+             EQUAL(pszWorkname+nNameLen-7,"img_def") ) )
       {
         CPLError( CE_Failure, CPLE_OpenFailed, 
               "Apparent attempt to open Convair PolGASP data failed as\n"
@@ -1113,38 +1084,26 @@ GDALDataset *CPGDataset::Open( GDALOpenInfo * poOpenInfo )
               "are expected for scattering matrix format, two for Stokes)." );
       }
       else if ( (nNameLen > 8) && 
-                ( strstr(poOpenInfo->pszFilename,"SIRC") != NULL )  &&
-           ( EQUAL(poOpenInfo->pszFilename+nNameLen-4,"img") ||
-             EQUAL(poOpenInfo->pszFilename+nNameLen-4,"hdr")))
+                ( strstr(pszWorkname,"SIRC") != NULL )  &&
+           ( EQUAL(pszWorkname+nNameLen-4,"img") ||
+             EQUAL(pszWorkname+nNameLen-4,"hdr")))
       {
           CPLError( CE_Failure, CPLE_OpenFailed, 
                 "Apparent attempt to open SIRC Convair PolGASP data failed \n"
                 "as one of the expected files is missing (hdr or img)!" );
       }
+      CPLFree( pszWorkname );
       return NULL;
-    }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The CPG driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
     }
 
     /* Read the header info and create the dataset */
     CPGDataset     *poDS;
  
     if ( CPGType < 3 )
-      poDS = (CPGDataset *) InitializeType1Or2Dataset( poOpenInfo->pszFilename );
+      poDS = (CPGDataset *) InitializeType1Or2Dataset( pszWorkname );
     else
-      poDS = (CPGDataset *) InitializeType3Dataset( poOpenInfo->pszFilename );
+      poDS = (CPGDataset *) InitializeType3Dataset( pszWorkname );
 
-    if (poDS == NULL)
-        return NULL;
 /* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
 /* -------------------------------------------------------------------- */
@@ -1305,7 +1264,7 @@ CPLErr SIRC_QSLCRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         for( i = 0; i < 256; i++ )
         {
-            afPowTable[i] = (float) pow( 2.0, i-128 );
+            afPowTable[i] = pow( 2.0, i-128 );
         }
     }
 
@@ -1329,32 +1288,32 @@ CPLErr SIRC_QSLCRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             dfReSHH = Byte[3] * dfScale / 127.0;
             dfImSHH = Byte[4] * dfScale / 127.0;
 
-            ((float *) pImage)[iX*2  ] = (float) dfReSHH;
-            ((float *) pImage)[iX*2+1] = (float) dfImSHH;
+            ((float *) pImage)[iX*2  ] = dfReSHH;
+            ((float *) pImage)[iX*2+1] = dfImSHH;
         }        
         else if( nBand == 2 )
         {
             dfReSHV = Byte[5] * dfScale / 127.0;
             dfImSHV = Byte[6] * dfScale / 127.0;
 
-            ((float *) pImage)[iX*2  ] = (float) dfReSHV;
-            ((float *) pImage)[iX*2+1] = (float) dfImSHV;
+            ((float *) pImage)[iX*2  ] = dfReSHV;
+            ((float *) pImage)[iX*2+1] = dfImSHV;
         }
         else if( nBand == 3 )
         {
             dfReSVH = Byte[7] * dfScale / 127.0;
             dfImSVH = Byte[8] * dfScale / 127.0;
 
-            ((float *) pImage)[iX*2  ] = (float) dfReSVH;
-            ((float *) pImage)[iX*2+1] = (float) dfImSVH;
+            ((float *) pImage)[iX*2  ] = dfReSVH;
+            ((float *) pImage)[iX*2+1] = dfImSVH;
         }
         else if( nBand == 4 )
         {
             dfReSVV = Byte[9] * dfScale / 127.0;
             dfImSVV = Byte[10]* dfScale / 127.0;
 
-            ((float *) pImage)[iX*2  ] = (float) dfReSVV;
-            ((float *) pImage)[iX*2+1] = (float) dfImSVV;
+            ((float *) pImage)[iX*2  ] = dfReSVV;
+            ((float *) pImage)[iX*2+1] = dfImSVV;
         }
     }
 

@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_FILTER
 /// this interface to do something meaningful with a filter hierarchy. For
 /// example, a RDBMS feature provider can implement a processor class to convert a
 /// filter hierarchy to the SQL equivalent syntax.
-private ref class IFilterProcessorImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor
+private __gc class IFilterProcessorImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor
 {
 public:
     /// \brief
@@ -47,10 +47,13 @@ public:
     /// 
 	IFilterProcessorImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoIFilterProcessor* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 END_NAMESPACE_OSGEO_FDO_FILTER
 

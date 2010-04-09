@@ -53,12 +53,6 @@ GdbiException* GdbiException::Create(const wchar_t* message)
     return new GdbiException(message);
 }
 
-GdbiException* GdbiException::Create(const wchar_t* message, FdoInt64 nativeErrorCode)
-{
-    return new GdbiException(message, nativeErrorCode);
-}
-
-
 GdbiException* GdbiException::Create(const char* message)
 {
     GdbiException   *exp;
@@ -67,22 +61,9 @@ GdbiException* GdbiException::Create(const char* message)
     return exp;
 }
 
-GdbiException* GdbiException::Create(const char* message, FdoInt64 nativeErrorCode)
-{
-    GdbiException   *exp;
-    exp =  new GdbiException(FdoStringP(message), nativeErrorCode);
-
-    return exp;
-}
-
 GdbiException* GdbiException::Create(const wchar_t* message, FdoException* cause)
 {
     return new GdbiException(message, cause);
-}
-
-GdbiException* GdbiException::Create(const wchar_t* message, FdoException* cause, FdoInt64 nativeErrorCode)
-{
-    return new GdbiException(message, cause, nativeErrorCode);
 }
 
 
@@ -96,21 +77,10 @@ GdbiException::GdbiException(const wchar_t* message) :
 {
 }
 
-GdbiException::GdbiException(const wchar_t* message, FdoInt64 nativeErrorCode) :
-  FdoException(message, NULL, nativeErrorCode)
-{
-}
-
 GdbiException::GdbiException(const wchar_t* message, FdoException* cause) :
   FdoException(message, cause)
 {
 }
-
-GdbiException::GdbiException(const wchar_t* message, FdoException* cause, FdoInt64 nativeErrorCode) :
-  FdoException(message, cause, nativeErrorCode)
-{
-}
-
 
 GdbiException::~GdbiException()
 {

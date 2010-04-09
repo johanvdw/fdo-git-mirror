@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.h 18004 2009-11-12 15:44:51Z warmerdam $
+ * $Id: hdf5dataset.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.
@@ -30,7 +30,6 @@
 #ifndef _HDF5DATASET_H_INCLUDED_
 #define _HDF5DATASET_H_INCLUDED_
 
-#include "gdal_pam.h"
 #include "cpl_list.h"
 
 typedef struct HDF5GroupObjects {
@@ -46,7 +45,6 @@ typedef struct HDF5GroupObjects {
   hsize_t       *paDims;
   hid_t          native;
   hid_t          HDatatype;
-  unsigned long  objno[2];
   struct HDF5GroupObjects *poHparent;
   struct HDF5GroupObjects *poHchild;
 } HDF5GroupObjects;
@@ -59,10 +57,12 @@ herr_t HDF5CreateGroupObjs(hid_t, const char *,void *);
 /*				HDF5Dataset				*/
 /* ==================================================================== */
 /************************************************************************/
-class HDF5Dataset : public GDALPamDataset
+class HDF5Dataset : public GDALDataset
 {
+
   protected:
 
+  FILE             *fp;
   hid_t            hHDF5;     
   hid_t            hDatasetID;
   hid_t            hGroupID; /* H handler interface */
@@ -70,6 +70,7 @@ class HDF5Dataset : public GDALPamDataset
   int              bIsHDFEOS;
   int              nDatasetType;
   int              nSubDataCount;
+  char             *pszFilename;
 
 
   HDF5GroupObjects *poH5RootGroup; /* Contain hdf5 Groups information */
@@ -94,8 +95,10 @@ class HDF5Dataset : public GDALPamDataset
   HDF5Dataset();
   ~HDF5Dataset();
     
+  virtual char **GetMetadata(const char * pszDomain = "");
+
   static GDALDataset *Open(GDALOpenInfo *);
-  static int Identify(GDALOpenInfo *);
+
 };
 
 

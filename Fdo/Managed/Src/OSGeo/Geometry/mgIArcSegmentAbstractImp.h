@@ -23,8 +23,8 @@
 
 class FdoIArcSegmentAbstract;
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
-interface class ICurveSegmentAbstract;
-interface class IDirectPosition;
+public __gc __interface ICurveSegmentAbstract;
+public __gc __interface IDirectPosition;
 END_NAMESPACE_OSGEO_GEOMETRY
 
 BEGIN_NAMESPACE_OSGEO_GEOMETRY
@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_GEOMETRY
 /// \ingroup (OSGeoFDOGeometry)
 /// \brief
 /// The IArcSegmentAbstract class is an arc curve segment (abstract)
-public ref class IArcSegmentAbstractImp :
+public __gc class IArcSegmentAbstractImp :
 	public NAMESPACE_OSGEO_GEOMETRY::IArcSegmentAbstract, public NAMESPACE_OSGEO_GEOMETRY::ICurveSegmentAbstractImp
 {
 public:
@@ -48,10 +48,8 @@ public:
     /// 
 	IArcSegmentAbstractImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	FdoIArcSegmentAbstract *GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 public:
 	
@@ -68,10 +66,7 @@ public:
     /// \return
     /// Returns a midpoint on the curve
     /// 
-    virtual property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ MidPoint
-    {
-        NAMESPACE_OSGEO_GEOMETRY::IDirectPosition^ get();
-    }
+	__property NAMESPACE_OSGEO_GEOMETRY::IDirectPosition *get_MidPoint();
 	
 };
 

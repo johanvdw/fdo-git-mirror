@@ -31,11 +31,7 @@ namespace __gnu_cxx
     {
         size_t operator()( void* const& x ) const
         {
-#if __WORDSIZE == 64 
-            return hash< long >()( (long)x );
-#else			
             return hash< int >()( (int)x );
-#endif
         }
     };
 }

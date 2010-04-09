@@ -5,12 +5,10 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib511.c,v 1.8 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib511.c,v 1.5 2006-10-25 09:20:44 yangtse Exp $
  */
 
 #include "test.h"
-
-#include "memdebug.h"
 
 int test(char *URL)
 {
@@ -28,14 +26,12 @@ int test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_FILETIME, 1L);
-  test_setopt(curl, CURLOPT_NOBODY, 1L);
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_FILETIME, 1);
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   curl_easy_cleanup(curl);
   curl_global_cleanup();

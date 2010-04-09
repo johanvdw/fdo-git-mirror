@@ -1,13 +1,13 @@
 #ifndef POSTGRES_SQLCA_H
 #define POSTGRES_SQLCA_H
 
-#ifndef PGDLLIMPORT
+#ifndef DLLIMPORT
 #if  defined(WIN32) || defined(__CYGWIN__)
-#define PGDLLIMPORT __declspec (dllimport)
+#define DLLIMPORT __declspec (dllimport)
 #else
-#define PGDLLIMPORT
+#define DLLIMPORT
 #endif   /* __CYGWIN__ */
-#endif   /* PGDLLIMPORT */
+#endif   /* DLLIMPORT */
 
 #define SQLERRMC_LEN	150
 

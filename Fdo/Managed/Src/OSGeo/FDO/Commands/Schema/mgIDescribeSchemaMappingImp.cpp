@@ -27,47 +27,42 @@
 
 FdoIDescribeSchemaMapping* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::GetImpObj()
 {
-    return static_cast<FdoIDescribeSchemaMapping*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoIDescribeSchemaMapping*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::SchemaName::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::get_SchemaName()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetSchemaName())
 
-	return CHECK_STRING(result);
+	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::SchemaName::set(System::String^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::set_SchemaName(System::String* value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetSchemaName(StringToUni(value)))
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::IncludeDefaults::get()
+System::Boolean NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::get_IncludeDefaults()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetIncludeDefaults())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::IncludeDefaults::set(System::Boolean includeDefaults )
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::set_IncludeDefaults(System::Boolean includeDefaults )
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIncludeDefaults(includeDefaults))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMappingCollection^ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::Execute()
+NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMappingCollection* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaMappingImp::Execute()
 {
 	FdoPhysicalSchemaMappingCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePhysicalSchemaMappingCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreatePhysicalSchemaMappingCollection(result, true);
 }

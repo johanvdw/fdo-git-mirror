@@ -24,7 +24,6 @@
 class SqlServerFdoInsertTest : public FdoInsertTest
 {
     CPPUNIT_TEST_SUB_SUITE (SqlServerFdoInsertTest, FdoInsertTest);
-    CPPUNIT_TEST(testDefect1206136);
     CPPUNIT_TEST_SUITE_END ();
 
     void  set_provider();

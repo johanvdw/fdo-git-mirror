@@ -17,11 +17,6 @@
  */
 
 #include "stdafx.h"
-#include <Sm/Ph/DbObject.h>
-#include <Sm/Ph/Mgr.h>
-#include <Sm/Collection.h>
-#include <Sm/Ph/ColumnCollection.h>
-#include <Sm/Ph/Table.h>
 #include <Sm/Ph/Rd/TableJoin.h>
 
 FdoSmPhRdTableJoin::FdoSmPhRdTableJoin(
@@ -37,21 +32,6 @@ FdoSmPhRdTableJoin::~FdoSmPhRdTableJoin(void)
 {
 }
 
-FdoStringP FdoSmPhRdTableJoin::GetClause( 
-    FdoSmPhMgrP mgr, 
-    FdoStringP schemaColumn, 
-    FdoStringP tableColumn 
-)
-{
-    FdoStringP clause = FdoStringP::Format(
-        L"JOIN %ls on %ls",
-        (FdoString*) GetFrom(),
-        (FdoString*) GetWhere(mgr, schemaColumn, tableColumn)
-    );
-
-    return clause;
-}
-
 FdoStringP FdoSmPhRdTableJoin::GetWhere( FdoStringP joinColumn )
 {
     // This join derivation has only one join column. Convert column
@@ -60,25 +40,6 @@ FdoStringP FdoSmPhRdTableJoin::GetWhere( FdoStringP joinColumn )
     joinColumns->Add(joinColumn);
 
     return FdoSmPhRdJoin::GetWhere( joinColumns );
-}
-
-FdoStringP FdoSmPhRdTableJoin::GetWhere( FdoSmPhMgrP mgr, FdoStringP schemaColumn, FdoStringP tableColumn )
-{
-    // This join derivation has only one join column but it joins onto 2 columns
-    // in the RDBMS data dictionary, where 1 column is the physical schema part
-    // and the other is the table name part.
-   FdoStringP whereClause = FdoStringP::Format( 
-        L"  %ls and ((%ls = '%ls' and %ls = %ls) or ((%ls) = %ls))\n", 
-        (FdoString*) FdoSmPhRdJoin::GetWhere(),
-        (FdoString*) schemaColumn,
-        (FdoString*) mgr->GetDefaultPhysicalSchemaName(),
-        (FdoString*) tableColumn,
-        (FdoString*) GetJoinColumn(),
-        (FdoString*) mgr->FormatConcatSql( mgr->FormatConcatSql(schemaColumn,L"'.'"), tableColumn),
-        (FdoString*) GetJoinColumn()
-    );
-
-    return whereClause;
 }
 
 FdoStringP FdoSmPhRdTableJoin::GetJoinColumn()

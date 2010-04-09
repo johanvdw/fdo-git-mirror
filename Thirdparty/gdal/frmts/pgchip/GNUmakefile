@@ -11,14 +11,14 @@ OBJ	=	pgchipdataset.o pgchiprasterband.o pgchiputilities.o
 
 CPPFLAGS	:= -Wall -g $(XTRA_OPT) $(PG_INC) $(POSTGIS_INC) $(GDAL_INCLUDE) $(CPPFLAGS )
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-../o/%.$(OBJ_EXT):
+../o/%.o:
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-all:	$(OBJ:.o=.$(OBJ_EXT))
+all:	$(OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

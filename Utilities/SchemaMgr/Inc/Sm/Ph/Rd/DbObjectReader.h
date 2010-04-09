@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * 
  */
-#include <Sm/Ph/Rd/Reader.h>
+#include <Sm/Ph/Reader.h>
 #include <Sm/Ph/RowCollection.h>
 #include <Sm/Ph/DbObjType.h>
+#include <Sm/Ph/Mgr.h>
 
 // This abstract class reads database objects. Each provider must 
 // provide its own implementing class.
 
 
 
-class FdoSmPhRdDbObjectReader : public FdoSmPhRdReader
+class FdoSmPhRdDbObjectReader : public FdoSmPhReader
 {
 public:
     /// Get the type of the current database object.
