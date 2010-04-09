@@ -68,29 +68,6 @@ void FdoDeleteTest::FeatureDelete ()
 
         count = deleteCommand->Execute();
 
-        // FdoInsertTest keeps adding features to the Parcel class. When # of features
-        // hits 5000, delete them all in order to prevent parcel table from growing
-        // indefinitely.
-
-		FdoPtr<FdoISelect>selCmd = (FdoISelect*)connection->CreateCommand( FdoCommandType_Select );
-        selCmd->SetFeatureClassName(L"L\x00e4nd:Parcel");
-        FdoPtr<FdoIFeatureReader>myReader = selCmd->Execute();
-
-        int limit = 5000;
-        int featCount = 0;
-
-        while ( myReader->ReadNext() && (featCount < limit) )
-            featCount++;
-
-        myReader = NULL;
-        selCmd = NULL;
-
-        if ( featCount >= limit ) 
-        {
-    	    deleteCommand = (FdoIDelete *) connection->CreateCommand(FdoCommandType_Delete);
-            deleteCommand->SetFeatureClassName(L"L\x00e4nd:Parcel");
-            deleteCommand->Execute();
-        }
     }
 	catch ( FdoException* e ) 
 	{

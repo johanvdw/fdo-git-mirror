@@ -1,6 +1,5 @@
 // Copyright (C) 2001-2003
 // William E. Kempf
-// Copyright (C) 2007-9 Anthony Williams
 //
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying 
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,164 +18,77 @@
 #include <string>
 #include <stdexcept>
 
-#include <boost/config/abi_prefix.hpp>
+namespace boost {
 
-namespace boost
+class BOOST_THREAD_DECL thread_exception : public std::exception
 {
+protected:
+    thread_exception();
+    thread_exception(int sys_err_code);
 
-    class thread_interrupted
-    {};
+public:
+    ~thread_exception() throw();
 
-    class thread_exception:
-        public std::exception
-    {
-    protected:
-        thread_exception():
-            m_sys_err(0)
-        {}
-    
-        thread_exception(int sys_err_code):
-            m_sys_err(sys_err_code)
-        {}
-    
+    int native_error() const;
 
-    public:
-        ~thread_exception() throw()
-        {}
-    
+private:
+    int m_sys_err;
+};
 
-        int native_error() const
-        {
-            return m_sys_err;
-        }
-    
+class BOOST_THREAD_DECL lock_error : public thread_exception
+{
+public:
+    lock_error();
+    lock_error(int sys_err_code);
+    ~lock_error() throw();
 
-    private:
-        int m_sys_err;
-    };
+    virtual const char* what() const throw();
+};
 
-    class condition_error:
-        public std::exception
-    {
-    public:
-        const char* what() const throw()
-        {
-            return "Condition error";
-        }
-    };
-    
+class BOOST_THREAD_DECL thread_resource_error : public thread_exception
+{
+public:
+    thread_resource_error();
+    thread_resource_error(int sys_err_code);
+    ~thread_resource_error() throw();
 
-    class lock_error:
-        public thread_exception
-    {
-    public:
-        lock_error()
-        {}
-    
-        lock_error(int sys_err_code):
-            thread_exception(sys_err_code)
-        {}
-    
-        ~lock_error() throw()
-        {}
-    
+    virtual const char* what() const throw();
+};
 
-        virtual const char* what() const throw()
-        {
-            return "boost::lock_error";
-        }
-    };
+class BOOST_THREAD_DECL unsupported_thread_option : public thread_exception
+{
+public:
+    unsupported_thread_option();
+    unsupported_thread_option(int sys_err_code);
+    ~unsupported_thread_option() throw();
 
-    class thread_resource_error:
-        public thread_exception
-    {
-    public:
-        thread_resource_error()
-        {}
-    
-        thread_resource_error(int sys_err_code):
-            thread_exception(sys_err_code)
-        {}
-    
-        ~thread_resource_error() throw()
-        {}
-    
+    virtual const char* what() const throw();
+};
 
-        virtual const char* what() const throw()
-        {
-            return "boost::thread_resource_error";
-        }
-    
-    };
+class BOOST_THREAD_DECL invalid_thread_argument : public thread_exception
+{
+public:
+    invalid_thread_argument();
+    invalid_thread_argument(int sys_err_code);
+    ~invalid_thread_argument() throw();
 
-    class unsupported_thread_option:
-        public thread_exception
-    {
-    public:
-        unsupported_thread_option()
-        {}
-    
-        unsupported_thread_option(int sys_err_code):
-            thread_exception(sys_err_code)
-        {}
-    
-        ~unsupported_thread_option() throw()
-        {}
-    
+    virtual const char* what() const throw();
+};
 
-        virtual const char* what() const throw()
-        {
-            return "boost::unsupported_thread_option";
-        }
-    
-    };
+class BOOST_THREAD_DECL thread_permission_error : public thread_exception
+{
+public:
+    thread_permission_error();
+    thread_permission_error(int sys_err_code);
+    ~thread_permission_error() throw();
 
-    class invalid_thread_argument:
-        public thread_exception
-    {
-    public:
-        invalid_thread_argument()
-        {}
-    
-        invalid_thread_argument(int sys_err_code):
-            thread_exception(sys_err_code)
-        {}
-    
-        ~invalid_thread_argument() throw()
-        {}
-    
-
-        virtual const char* what() const throw()
-        {
-            return "boost::invalid_thread_argument";
-        }
-    
-    };
-
-    class thread_permission_error:
-        public thread_exception
-    {
-    public:
-        thread_permission_error()
-        {}
-    
-        thread_permission_error(int sys_err_code):
-            thread_exception(sys_err_code)
-        {}
-    
-        ~thread_permission_error() throw()
-        {}
-    
-
-        virtual const char* what() const throw()
-        {
-            return "boost::thread_permission_error";
-        }
-    
-    };
+    virtual const char* what() const throw();
+};
 
 } // namespace boost
 
-#include <boost/config/abi_suffix.hpp>
+#endif // BOOST_THREAD_CONFIG_PDM070801_H
 
-#endif
+// Change log:
+//    3 Jan 03  WEKEMPF Modified for DLL implementation.
+

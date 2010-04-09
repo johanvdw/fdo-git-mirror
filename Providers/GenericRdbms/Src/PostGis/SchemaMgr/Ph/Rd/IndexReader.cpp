@@ -19,24 +19,24 @@
 #include "../Mgr.h"
 #include "../../../../SchemaMgr/Ph/Rd/QueryReader.h"
 
-FdoSmPhRdPostGisIndexReader::FdoSmPhRdPostGisIndexReader(FdoSmPhOwnerP owner,
+FdoSmPhRdPostGisIndexReader::FdoSmPhRdPostGisIndexReader(FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP dbObject)
-    : FdoSmPhRdIndexReader()
+    : FdoSmPhRdIndexReader(),
+      mDbObject(dbObject)
 {
-    FdoStringsP objectNames = FdoStringCollection::Create();
-    if ( dbObject ) 
-        objectNames->Add(dbObject->GetName());
-    
-    SetSubReader(MakeReader(owner,objectNames));
+    const FdoSmPhOwner* owner = NULL;
+    owner = static_cast<const FdoSmPhOwner*>(dbObject->GetParent());
+
+    SetSubReader(MakeReader(mgr, owner, dbObject));
 }
 
-FdoSmPhRdPostGisIndexReader::FdoSmPhRdPostGisIndexReader(FdoSmPhOwnerP owner,
-    FdoStringsP objectNames)
+FdoSmPhRdPostGisIndexReader::FdoSmPhRdPostGisIndexReader(FdoSmPhMgrP mgr,
+    FdoSmPhOwnerP owner)
     : FdoSmPhRdIndexReader(NULL)
 {
     FdoSmPhOwner* smPhOwner = owner.p;
 
-    SetSubReader(MakeReader(owner, objectNames));
+    SetSubReader(MakeReader(mgr, smPhOwner, NULL));
 }
 
 FdoSmPhRdPostGisIndexReader::~FdoSmPhRdPostGisIndexReader()
@@ -44,51 +44,66 @@ FdoSmPhRdPostGisIndexReader::~FdoSmPhRdPostGisIndexReader()
     // idle
 }
 
-FdoSmPhReaderP FdoSmPhRdPostGisIndexReader::MakeReader(FdoSmPhOwnerP owner,
-    FdoStringsP objectNames)
+FdoSmPhReaderP FdoSmPhRdPostGisIndexReader::MakeReader(FdoSmPhMgrP mgr,
+    const FdoSmPhOwner* owner,
+    FdoSmPhDbObjectP dbObject)
 {
 
     //BR TODO:
-    //return (FdoSmPhReader*)NULL;
+    return (FdoSmPhReader*)NULL;
 
-    FdoSmPhMgrP mgr(owner->GetManager());
-    
-    FdoSmPhPostGisMgr* pgMgr = NULL;
-    pgMgr = static_cast<FdoSmPhPostGisMgr*>(mgr.p);
+
+    FdoStringP objectName = (dbObject ? dbObject->GetName() : L"");
+    FdoStringP ownerName = owner->GetName();
+
+    FdoSmPhPostGisMgrP   pgMgr = mgr->SmartCast<FdoSmPhPostGisMgr>();
+
+    //
+    // TODO: mloskot - Find out equivalent to non-standard
+    // table information_schema.statistics available in MySQL
+    //
 
     // Generate SQL statement for selecting the indexes and their columns
 
-    FdoStringP sqlString = FdoStringP::Format(
-        L"select (N.nspname || '.' || CI.relname) as index_name, \n"
-        L" (N.nspname || '.' || C.relname ) as table_name, \n"
-        L" I.indkey as column_name, \n"
-        L" CASE \n"
-        L"   WHEN indisunique THEN 'UNIQUE'::text \n" 
-        L"   ELSE 'NONUNIQUE'::text \n" 
-        L" END as uniqueness, "
-        L" NULL::text as index_type, \n"
-        L" %ls as collate_schema_name, "
-        L" %ls as collate_table_name, "
-        L" %ls as collate_index_name "
-        L" from pg_catalog.pg_index I, pg_class CI, pg_class C, pg_namespace N  $(JOIN_FROM)\n"
-        L" where\n"
-        L"    I.indexrelid = CI.oid and I.indrelid = C.oid and c.relnamespace = N.oid\n"
-        L"    $(AND) $(QUALIFICATION)\n"
-        L" ORDER BY collate_schema_name, collate_table_name, collate_index_name ASC ",
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"N.nspname"),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"C.relname"),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"CI.relname")
+    // TODO: mloskot - MySQL SQL left as a placeholder
+
+    FdoStringP sql = FdoStringP::Format(
+        L"select index_name, table_name, column_name, if(non_unique>0,'NONUNIQUE','UNIQUE') as uniqueness, index_type \n"
+        L"  from INFORMATION_SCHEMA.statistics\n"
+        L"  where\n"
+        L"    1 = 1\n"
+        L"    %ls\n"
+        L"  order by %ls, %ls, seq_in_index",
+        (FdoString*) pgMgr->FormatCollateColumnSql(L"table_name"),
+        (FdoString*) pgMgr->FormatCollateColumnSql(L"index_name"),
+        dbObject ? L"and table_name = $1" : L""
     );
 
-    FdoSmPhReaderP reader = FdoSmPhRdIndexReader::MakeQueryReader(
-        L"",
-        owner,
-        sqlString,
-        L"N.nspname",
-        L"C.relname",
-        objectNames,
-        NULL
-    );
+    // Create a field object for each field in the select list
+    FdoSmPhRowsP rows(MakeRows(mgr));
+
+    // Create and set the bind variables
+    FdoSmPhRowP binds(new FdoSmPhRow(mgr, L"Binds"));
+
+    //FdoSmPhFieldP field(new FdoSmPhField(binds,
+    //    L"table_schema",
+    //    binds->CreateColumnDbObject(L"table_schema", false)));
+
+    //field->SetFieldValue(ownerName);
+
+    if (dbObject)
+    {
+       FdoSmPhFieldP field = new FdoSmPhField(binds,
+            L"table_name",
+            binds->CreateColumnDbObject(L"table_name", false));
+
+        field->SetFieldValue(objectName);
+    }
+
+//TODO: cache this query to make full use of the binds.
+    FdoSmPhRdGrdQueryReader* reader = NULL;
+    reader = new FdoSmPhRdGrdQueryReader(
+        FdoSmPhRowP(rows->GetItem(0)), sql, mgr, binds );
 
     return reader;
 }

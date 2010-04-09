@@ -36,7 +36,6 @@
 #include "Geometry.h"
 #include <xercesc/util/Base64.hpp>
 #include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
 
 // logical physical schema items
 #include "SchemaManager.h"
@@ -545,11 +544,11 @@ FdoBoolean FdoXmlFeaturePropertyReaderImpl::XmlEndElement(
         break;
     case ParsingState_base64Binary:
         {
-            XMLSize_t len;
+            unsigned int len;
             XMLByte* decoded = XERCES_CPP_NAMESPACE::Base64::decode((const XMLByte*)(const char*)m_dataProperty, &len);
             if (decoded != NULL) {
                 curFeatureHandler->FeatureBinaryData(m_featureContext, decoded, len);
-	            delete decoded;
+                XERCES_CPP_NAMESPACE::XMLString::release(&decoded);
             }
             curFeatureHandler->FeatureEndLobProperty(m_featureContext);
         }

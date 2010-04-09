@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcidsktiledrasterband.cpp 17688 2009-09-25 16:01:19Z dron $
+ * $Id: pcidsktiledrasterband.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Implementation of PCIDSKTiledRasterBand
@@ -29,7 +29,7 @@
 
 #include "gdal_pcidsk.h"
 
-CPL_CVSID("$Id: pcidsktiledrasterband.cpp 17688 2009-09-25 16:01:19Z dron $");
+CPL_CVSID("$Id: pcidsktiledrasterband.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                           PCIDSKRasterBand()                         */
@@ -67,26 +67,7 @@ PCIDSKTiledRasterBand::PCIDSKTiledRasterBand( PCIDSKDataset *poDS,
     nBlockXSize = (int) CPLScanLong(achBData + 16, 8);
     nBlockYSize = (int) CPLScanLong(achBData + 24, 8);
     
-    int nBPR = (nBlockXSize) ? (nRasterXSize + nBlockXSize - 1) / nBlockXSize : 0;
-    int nBPC = (nBlockYSize) ? (nRasterYSize + nBlockYSize - 1) / nBlockYSize : 0;
-
-    /* nBPR * nBPC * 20 must fit on an int. See BuildTileMap() */
-    if ( nRasterXSize <= 0 || nRasterYSize <= 0 || nBlockXSize <= 0 || nBlockYSize <= 0
-         || nRasterXSize > INT_MAX - (nBlockXSize - 1)
-         || nRasterYSize > INT_MAX - (nBlockYSize - 1)
-         || (double)nBPR * (double)nBPC * 20 > INT_MAX )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, "Invalid raster or block dimensions" );
-        nRasterXSize = 0;
-        nRasterYSize = 0;
-        nBlockXSize = 0;
-        nBlockYSize = 0;
-    }
-    
     eDataType = poPDS->PCIDSKTypeToGDAL( achBData + 32 );
-
-    szCompression[8] = '\0';
-    memcpy( szCompression, achBData+54, 8 );
 }
 
 /************************************************************************/
@@ -131,7 +112,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
     if( poPDS->nBlockMapSeg < 1 )
         return FALSE;
 
-    nBMapSize = (int) poPDS->panSegSize[poPDS->nBlockMapSeg-1];
+    nBMapSize = poPDS->panSegSize[poPDS->nBlockMapSeg-1];
     pachBMap = (char *) CPLCalloc(nBMapSize+1,1);
     
     if( !poPDS->SegRead( poPDS->nBlockMapSeg, 0, nBMapSize, pachBMap ) )
@@ -152,13 +133,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
     int *panBackLink;
     int i, nLastBlock = -1;
 
-    panBackLink = (int *) VSICalloc( sizeof(int), nMaxBlocks );
-    if ( panBackLink == NULL )
-    {
-        VSIFree( pachBMap );
-        VSIFree( panBackLink );
-        return FALSE;
-    }
+    panBackLink = (int *) CPLCalloc(sizeof(int),nMaxBlocks);
     for( i = 0; i < nMaxBlocks; i++ )
         panBackLink[i] = -1;
 
@@ -168,7 +143,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
         int nThisImage = (int) CPLScanLong(pachEntry + 12,8);
         int nNextBlock = (int) CPLScanLong(pachEntry + 20,8);
 
-        if ( nThisImage != nImage || nNextBlock >= nMaxBlocks )
+        if( nThisImage != nImage )
             continue;
 
         if( nNextBlock == -1 )
@@ -191,12 +166,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
     }
 
     CPLFree( panBackLink );
-    panBlockOffset = (vsi_l_offset *) VSIMalloc(sizeof(vsi_l_offset)*nBlocks);
-    if ( panBlockOffset == NULL )
-    {
-        CPLFree( pachBMap );
-        return FALSE;
-    }
+    panBlockOffset = (vsi_l_offset *) CPLMalloc(sizeof(vsi_l_offset)*nBlocks);
 
 /* -------------------------------------------------------------------- */
 /*      Process blocks, transforming to absolute offsets in the         */
@@ -208,12 +178,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
         int nBDataSeg = CPLScanLong( pachEntry + 0, 4 );
         int nBDataBlock = CPLScanLong( pachEntry + 4, 8 );
 
-        if ( nBDataSeg <= 0 || nBDataSeg > poPDS->nSegCount
-             || poPDS->panSegType[nBDataSeg-1] != 182)
-        {
-            CPLFree( pachBMap );
-            return FALSE;
-        }
+        CPLAssert( poPDS->panSegType[nBDataSeg-1] == 182 );
 
         panBlockOffset[i] = 
             ((vsi_l_offset) nBDataBlock) * 8192
@@ -234,9 +199,7 @@ int PCIDSKTiledRasterBand::BuildBlockMap()
 int PCIDSKTiledRasterBand::BuildTileMap()
 
 {
-    if ( nTileCount < 0 )
-        return FALSE;
-    if( nTileCount > 0)
+    if( nTileCount )
         return TRUE;
 
     int nBPR = (nRasterXSize + nBlockXSize - 1) / nBlockXSize;
@@ -244,21 +207,12 @@ int PCIDSKTiledRasterBand::BuildTileMap()
 
     nTileCount = nBPR * nBPC;
     panTileOffset = (vsi_l_offset *) 
-        VSICalloc( sizeof(vsi_l_offset), nTileCount );
-    panTileSize = (int *) VSICalloc( sizeof(int), nTileCount );
+        CPLCalloc(sizeof(vsi_l_offset),nTileCount);
+    panTileSize = (int *) CPLCalloc(sizeof(int),nTileCount);
 
-    char *pachTileInfo = (char *) VSIMalloc( 20 * nTileCount );
-    if ( panTileOffset == NULL || panTileSize == NULL || pachTileInfo == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory" );
-        nTileCount = -1;
-        CPLFree( pachTileInfo );
-        return FALSE;
-    }
-
+    char *pachTileInfo = (char *) CPLMalloc(20 * nTileCount);
     if( !SysRead( 128, 20 * nTileCount, pachTileInfo ) )
     {
-        nTileCount = -1;
         CPLFree( pachTileInfo );
         return FALSE;
     }
@@ -286,14 +240,6 @@ CPLErr PCIDSKTiledRasterBand::IReadBlock( int nBlockX, int nBlockY,
 {
     int iTile;
 
-    if( !EQUALN(szCompression,"NONE",4) )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "Compression '%s' not supported by GDAL.", 
-                  szCompression );
-        return CE_Failure;
-    }
-
     if( !BuildTileMap() )
         return CE_Failure;
     
@@ -301,16 +247,9 @@ CPLErr PCIDSKTiledRasterBand::IReadBlock( int nBlockX, int nBlockY,
 
     iTile = nBlockX + nBlockY * nBPR;
 
-    if( panTileOffset[iTile] == (vsi_l_offset) -1 )
-    {
-        int   nWordSize = GDALGetDataTypeSize( eDataType ) / 8;
-        memset( pData, 0, nBlockXSize*nBlockYSize*nWordSize );
-    }
-    else
-    {
-        if( !SysRead( panTileOffset[iTile], panTileSize[iTile], pData ) )
-            return CE_Failure;
-    }
+    if( !SysRead( panTileOffset[iTile], panTileSize[iTile], pData ) )
+        return CE_Failure;
+
 
 /* -------------------------------------------------------------------- */
 /*      PCIDSK multibyte data is always big endian.  Swap if needed.    */
@@ -342,10 +281,7 @@ int PCIDSKTiledRasterBand::SysRead( vsi_l_offset nOffset,
         int          nOffsetInBlock, nThisReadBytes;
         
         iBlock = (int) (nNextOffset >> 13);
-        nOffsetInBlock = (int) (nNextOffset & 0x1fff);
-
-        if ( iBlock >= nBlocks )
-            return 0;
+        nOffsetInBlock = (nNextOffset & 0x1fff);
 
         nRealOffset = panBlockOffset[iBlock] + nOffsetInBlock;
         

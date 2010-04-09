@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IntergraphDataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $
+ * $Id: IntergraphDataset.cpp 15573 2008-10-22 03:54:47Z ilucena $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, dataset support
@@ -58,9 +58,6 @@ IntergraphDataset::IntergraphDataset()
     hVirtual.poDS = NULL;
     hVirtual.poBand = NULL;
     hVirtual.pszFileName = NULL;
-
-    memset(&hHeaderOne, 0, sizeof(hHeaderOne));
-    memset(&hHeaderTwo, 0, sizeof(hHeaderTwo));
 }
 
 //  ----------------------------------------------------------------------------
@@ -285,15 +282,6 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
 
     poDS->nRasterYSize = hHeaderOne.NumberOfLines;
 
-    if (poDS->nRasterXSize <= 0 || poDS->nRasterYSize <= 0)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Invalid dimensions : %d x %d",
-                  poDS->nRasterXSize, poDS->nRasterYSize);
-        delete poDS;
-        return NULL;
-    }
-
     // -------------------------------------------------------------------- 
     // Get Geo Transformation from Homogeneous Transformation Matrix (TRN)
     // -------------------------------------------------------------------- 
@@ -332,134 +320,56 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
         {
         case JPEGRGB:
         case JPEGCYMK:
-        {
-            IntergraphBitmapBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset, 1 ));
-            if (poBand->pabyBMPBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphBitmapBand( poDS, nBands, nBandOffset, 1 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset, 2 ));
-            if (poBand->pabyBMPBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphBitmapBand( poDS, nBands, nBandOffset, 2 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset, 3 ));
-            if (poBand->pabyBMPBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphBitmapBand( poDS, nBands, nBandOffset, 3 ));
             break;
-        }
         case JPEGGRAY:
         case CCITTGroup4:
-        {
-            IntergraphBitmapBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphBitmapBand( poDS, nBands, nBandOffset ));
-            if (poBand->pabyBMPBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphBitmapBand( poDS, nBands, nBandOffset ));
             break;
-        }
         case RunLengthEncoded:
         case RunLengthEncodedC:
         case AdaptiveGrayScale:
-        {
-            IntergraphRLEBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset ));
-            if (poBand->pabyBlockBuf == NULL || poBand->pabyRLEBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRLEBand( poDS, nBands, nBandOffset ));
             break;
-        }
         case AdaptiveRGB:
         case ContinuousTone:
-        {
-            IntergraphRLEBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset, 1 ));
-            if (poBand->pabyBlockBuf == NULL || poBand->pabyRLEBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRLEBand( poDS, nBands, nBandOffset, 1 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset, 2 ));
-            if (poBand->pabyBlockBuf == NULL || poBand->pabyRLEBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRLEBand( poDS, nBands, nBandOffset, 2 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRLEBand( poDS, nBands, nBandOffset, 3 ));
-            if (poBand->pabyBlockBuf == NULL || poBand->pabyRLEBlock == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRLEBand( poDS, nBands, nBandOffset, 3 ));
             break;
-        }
         case Uncompressed24bit:
-        {
-            IntergraphRGBBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRGBBand( poDS, nBands, nBandOffset, 1 ));
-            if (poBand->pabyBlockBuf == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRGBBand( poDS, nBands, nBandOffset, 1 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRGBBand( poDS, nBands, nBandOffset, 2 ));
-            if (poBand->pabyBlockBuf == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRGBBand( poDS, nBands, nBandOffset, 2 ));
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRGBBand( poDS, nBands, nBandOffset, 3 ));
-            if (poBand->pabyBlockBuf == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
+                new IntergraphRGBBand( poDS, nBands, nBandOffset, 3 ));
             break;
-        }
         default:
-        {
-            IntergraphRasterBand* poBand;
             nBands++;
             poDS->SetBand( nBands, 
-                poBand = new IntergraphRasterBand( poDS, nBands, nBandOffset ));
-            if (poBand->pabyBlockBuf == NULL)
-            {
-                delete poDS;
-                return NULL;
-            }
-        }
+                new IntergraphRasterBand( poDS, nBands, nBandOffset ));
         }
 
         // ----------------------------------------------------------------
@@ -478,12 +388,6 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
 
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-    /* -------------------------------------------------------------------- */
-    /*      Check for external overviews.                                   */
-    /* -------------------------------------------------------------------- */
-
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return ( poDS );
 }
@@ -642,14 +546,6 @@ GDALDataset *IntergraphDataset::CreateCopy( const char *pszFilename,
                                            void *pProgressData )
 {
     (void) bStrict;
-
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "Intergraph driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
 
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
     {

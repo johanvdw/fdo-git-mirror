@@ -217,12 +217,12 @@ AC_CONFIG_FILES([com/Makefile \
                  Src/SchemaMgr/Ph/Rd/Makefile \
                  Src/UnitTest/Common/Makefile \
                  Src/UnitTest/MySql/Makefile \
-                 Src/UnitTest/PostGis/Makefile \
                  Src/UnitTest/Makefile \
                  Src/Util/Makefile])
 
 #PostGIS
 AC_CONFIG_FILES([Src/PostGis/Makefile \
+                 Src/PostGis/Custom/Gdbi/Makefile \
                  Src/PostGis/Driver/Makefile \
                  Src/PostGis/Fdo/Makefile \
                  Src/PostGis/SchemaMgr/Makefile \

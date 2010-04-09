@@ -27,9 +27,6 @@ class FdoSmPhPostGisColumn : virtual public FdoSmPhColumn
 public:
     FdoSmPhColumnP GetBaseColumn();
 
-    // Gets the 1-based ordinal position of this column within its containing DbObject.
-    FdoInt32 GetPosition();
-
    	virtual void SetElementState(FdoSchemaElementState elementState);
 
 protected:
@@ -51,7 +48,6 @@ protected:
 
 private:
     FdoSmPhColumnP mBaseColumn;
-    FdoInt32       mPosition;
 
 };
 

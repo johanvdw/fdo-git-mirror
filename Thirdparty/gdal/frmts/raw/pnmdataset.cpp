@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pnmdataset.cpp 16865 2009-04-27 12:49:49Z chaitanya $
+ * $Id: pnmdataset.cpp 13663 2008-02-01 23:24:02Z rouault $
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: pnmdataset.cpp 16865 2009-04-27 12:49:49Z chaitanya $");
+CPL_CVSID("$Id: pnmdataset.cpp 13663 2008-02-01 23:24:02Z rouault $");
 
 CPL_C_START
 void    GDALRegister_PNM(void);
@@ -172,7 +172,7 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
                     iIn++;
             }
 
-            if( iOut != 0 && isspace((unsigned char)pszSrc[iIn]) )
+            if( iOut != 0 && isspace(pszSrc[iIn]) )
             {
                 szToken[iOut] = '\0';
 
@@ -188,7 +188,7 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
                 break;
             }
 
-            else if( !isspace((unsigned char)pszSrc[iIn]) )
+            else if( !isspace(pszSrc[iIn]) )
             {
                 szToken[iOut++] = pszSrc[iIn];
             }
@@ -256,13 +256,6 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( poOpenInfo->pabyHeader[1] == '5' )
     {
-        if (nWidth > INT_MAX / iPixelSize)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Int overflow occured.");
-            delete poDS;
-            return NULL;
-        }
         poDS->SetBand(
             1, new RawRasterBand( poDS, 1, poDS->fpImage, iIn, iPixelSize,
                                   nWidth*iPixelSize, eDataType, bMSBFirst, TRUE ));
@@ -270,13 +263,6 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else
     {
-        if (nWidth > INT_MAX / (3 * iPixelSize))
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Int overflow occured.");
-            delete poDS;
-            return NULL;
-        }
         poDS->SetBand(
             1, new RawRasterBand( poDS, 1, poDS->fpImage, iIn, 3*iPixelSize,
                                   nWidth*3*iPixelSize, eDataType, bMSBFirst, TRUE ));
@@ -302,15 +288,15 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
                            poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }

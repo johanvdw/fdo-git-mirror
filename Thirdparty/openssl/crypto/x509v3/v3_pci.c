@@ -82,7 +82,7 @@ static int process_pci_value(CONF_VALUE *val,
 		{
 		if (*language)
 			{
-			X509V3err(X509V3_F_PROCESS_PCI_VALUE,X509V3_R_POLICY_LANGUAGE_ALREADY_DEFINED);
+			X509V3err(X509V3_F_PROCESS_PCI_VALUE,X509V3_R_POLICY_LANGUAGE_ALREADTY_DEFINED);
 			X509V3_conf_err(val);
 			return 0;
 			}
@@ -97,7 +97,7 @@ static int process_pci_value(CONF_VALUE *val,
 		{
 		if (*pathlen)
 			{
-			X509V3err(X509V3_F_PROCESS_PCI_VALUE,X509V3_R_POLICY_PATH_LENGTH_ALREADY_DEFINED);
+			X509V3err(X509V3_F_PROCESS_PCI_VALUE,X509V3_R_POLICY_PATH_LENGTH_ALREADTY_DEFINED);
 			X509V3_conf_err(val);
 			return 0;
 			}
@@ -286,6 +286,12 @@ static PROXY_CERT_INFO_EXTENSION *r2i_pci(X509V3_EXT_METHOD *method,
 		X509V3err(X509V3_F_R2I_PCI,ERR_R_MALLOC_FAILURE);
 		goto err;
 		}
+	pci->proxyPolicy = PROXY_POLICY_new();
+	if (!pci->proxyPolicy)
+		{
+		X509V3err(X509V3_F_R2I_PCI,ERR_R_MALLOC_FAILURE);
+		goto err;
+		}
 
 	pci->proxyPolicy->policyLanguage = language; language = NULL;
 	pci->proxyPolicy->policy = policy; policy = NULL;
@@ -295,6 +301,11 @@ err:
 	if (language) { ASN1_OBJECT_free(language); language = NULL; }
 	if (pathlen) { ASN1_INTEGER_free(pathlen); pathlen = NULL; }
 	if (policy) { ASN1_OCTET_STRING_free(policy); policy = NULL; }
+	if (pci && pci->proxyPolicy)
+		{
+		PROXY_POLICY_free(pci->proxyPolicy);
+		pci->proxyPolicy = NULL;
+		}
 	if (pci) { PROXY_CERT_INFO_EXTENSION_free(pci); pci = NULL; }
 end:
 	sk_CONF_VALUE_pop_free(vals, X509V3_conf_free);

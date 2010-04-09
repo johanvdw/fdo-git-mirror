@@ -72,7 +72,6 @@ SLT_API TokenDateFormatType StringToDateFormat(const char* specifier);
 
 SLT_API char* EnsureNoIsLocalIndep(char* str);
 SLT_API wchar_t* EnsureNoIsLocalIndep(wchar_t* str);
-SLT_API const char* ExtractDbName(const char* v, int& stStr, int& lenStr);
 
 #endif
 

@@ -1,7 +1,7 @@
 
 Folks who have agreed to RFC 3 terms:
 
-SVN Login(s)  Name/Contact                 Area of Interest
+CVS Login(s)  Name/Contact                 Area of Interest
 ============  ============                 ================
 warmerda      Frank Warmerdam              all
 fwarmerdam    warmerdam@pobox.com
@@ -85,9 +85,7 @@ kosta         Dr. Konstantin Baumann       MySQL, SQLite
 rayg          Ray Gardener                 DEM drivers, leveller, terragen
               rayg@daylongraphics.com
 
-rouault       Even Rouault                 NITF/RPFTOC, BNA, GPX, ADRG,
-                                           XPlane, GeoRSS, PostgreSQL,
-                                           swig java bindings
+rouault       Even Rouault                 NITF/RPFTOC, BNA, GPX, ADRG
               even.rouault at mines-paris.org
 
 retsios       Bas Retsios                  ILWIS, GRIB
@@ -108,23 +106,8 @@ moratto	      Stefano Moratto              delphi bindings, OGR: shp
 dgrichard     Didier Richard               geoconcept, coordinate systems.
               didier.richard@ign.fr
 
-chaitanya     Chaitanya Kumar CH           
-              chaitanya.ch at gmail.com
 
-rprinceley    Robin Princeley              ESRI branches.
-              rprinceley at esri.com
-
-jorgearevalo  Jorge Arevalo		   WKT Raster driver.
-	      jorgearevalo at gis4free.org
-
-martinl       Martin Landa                 OGR: VFK and GRASS drivers
-              landa.martin at gmail.com
-
-
-
-===============
-Past developers
-===============
+Folks who have not yet agreed to RFC 3:
 
 CVS Login(s)	Name			Email / Contact			Project
 ============	====			===============			=======
@@ -157,5 +140,4 @@ nbrodin         Nacho Brodin            brodin_ign at gva.es            gdal
 collinsb	Benjamin Collins        collinsb at mitre.org		gdal
 
 marit		Marit Jentoft-Nilson    jentoft-nilsen at agnes.gsfc.nasa.gov geotiff
-
 

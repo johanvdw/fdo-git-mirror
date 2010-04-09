@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grassdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: grassdataset.cpp 12396 2007-10-13 10:02:17Z rouault $
  *
  * Project:  GRASS Driver
  * Purpose:  Implement GRASS raster read/write support
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: grassdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: grassdataset.cpp 12396 2007-10-13 10:02:17Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GRASS(void);
@@ -562,19 +562,7 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
                                             papszMapsets[iBand], 
                                             papszCells[iBand] ) );
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The GRASS driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     return poDS;
 }
 

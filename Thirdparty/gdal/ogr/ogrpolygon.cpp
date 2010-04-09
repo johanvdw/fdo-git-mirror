@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 16898 2009-05-01 12:23:36Z rouault $
+ * $Id: ogrpolygon.cpp 14881 2008-07-10 20:30:19Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -32,14 +32,14 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 16898 2009-05-01 12:23:36Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 14881 2008-07-10 20:30:19Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
 /************************************************************************/
 
 /**
- * \brief Create an empty polygon.
+ * Create an empty polygon.
  */
 
 OGRPolygon::OGRPolygon()
@@ -150,7 +150,7 @@ const char * OGRPolygon::getGeometryName() const
 /************************************************************************/
 
 /**
- * \brief Fetch reference to external polygon ring.
+ * Fetch reference to external polygon ring.
  *
  * Note that the returned ring pointer is to an internal data object of
  * the OGRPolygon.  It should not be modified or deleted by the application,
@@ -186,7 +186,7 @@ const OGRLinearRing *OGRPolygon::getExteriorRing() const
 /************************************************************************/
 
 /**
- * \brief Fetch the number of internal rings.
+ * Fetch the number of internal rings.
  *
  * Relates to the SFCOM IPolygon::get_NumInteriorRings() method.
  *
@@ -208,7 +208,7 @@ int OGRPolygon::getNumInteriorRings() const
 /************************************************************************/
 
 /**
- * \brief Fetch reference to indicated internal ring.
+ * Fetch reference to indicated internal ring.
  *
  * Note that the returned ring pointer is to an internal data object of
  * the OGRPolygon.  It should not be modified or deleted by the application,
@@ -246,7 +246,7 @@ const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
 /************************************************************************/
 
 /**
- * \brief Add a ring to a polygon.
+ * Add a ring to a polygon.
  *
  * If the polygon has no external ring (it is empty) this will be used as
  * the external ring, otherwise it is used as an internal ring.  The passed
@@ -277,7 +277,7 @@ void OGRPolygon::addRing( OGRLinearRing * poNewRing )
 /************************************************************************/
 
 /**
- * \brief Add a ring to a polygon.
+ * Add a ring to a polygon.
  *
  * If the polygon has no external ring (it is empty) this will be used as
  * the external ring, otherwise it is used as an internal ring.  Ownership
@@ -346,8 +346,7 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
 /*      Get the byte order byte.                                        */
 /* -------------------------------------------------------------------- */
     eByteOrder = DB2_V72_FIX_BYTE_ORDER((OGRwkbByteOrder) *pabyData);
-    if (!( eByteOrder == wkbXDR || eByteOrder == wkbNDR ))
-        return OGRERR_CORRUPT_DATA;
+    CPLAssert( eByteOrder == wkbXDR || eByteOrder == wkbNDR );
 
 /* -------------------------------------------------------------------- */
 /*      Get the geometry feature type.  For now we assume that          */
@@ -362,8 +361,7 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
     else
         eGeometryType = (OGRwkbGeometryType) pabyData[4];
 
-    if( eGeometryType != wkbPolygon )
-        return OGRERR_CORRUPT_DATA;
+    CPLAssert( eGeometryType == wkbPolygon );
 #endif    
 
     if( eByteOrder == wkbNDR )
@@ -396,27 +394,7 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
     if( OGR_SWAP( eByteOrder ) )
         nRingCount = CPL_SWAP32(nRingCount);
 
-    if (nRingCount < 0 || nRingCount > INT_MAX / 4)
-    {
-        nRingCount = 0;
-        return OGRERR_CORRUPT_DATA;
-    }
-
-    /* Each ring has a minimum of 4 bytes (point count) */
-    if (nSize != -1 && nSize - 9 < nRingCount * 4)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Length of input WKB is too small" );
-        nRingCount = 0;
-        return OGRERR_NOT_ENOUGH_DATA;
-    }
-
-    papoRings = (OGRLinearRing **) VSIMalloc2(sizeof(void*), nRingCount);
-    if (nRingCount != 0 && papoRings == NULL)
-    {
-        nRingCount = 0;
-        return OGRERR_NOT_ENOUGH_MEMORY;
-    }
+    papoRings = (OGRLinearRing **) OGRMalloc(sizeof(void*) * nRingCount);
 
     nDataOffset = 9;
     if( nSize != -1 )
@@ -435,7 +413,6 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
                                                  nSize );
         if( eErr != OGRERR_NONE )
         {
-            delete papoRings[iRing];
             nRingCount = iRing;
             return eErr;
         }
@@ -655,7 +632,6 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
     char        **papszRings;
     int         iRing, nCumulativeLength = 0, nNonEmptyRings = 0;
     OGRErr      eErr;
-    int         bMustWriteComma = FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      If we have no valid exterior ring, return POLYGON EMPTY.        */
@@ -683,7 +659,7 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
 
         eErr = papoRings[iRing]->exportToWkt( &(papszRings[iRing]) );
         if( eErr != OGRERR_NONE )
-            goto error;
+            return eErr;
 
         CPLAssert( EQUALN(papszRings[iRing],"LINEARRING (", 12) );
         nCumulativeLength += strlen(papszRings[iRing] + 11);
@@ -698,16 +674,12 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
     *ppszDstText = (char *) VSIMalloc(nCumulativeLength + nNonEmptyRings + 11);
 
     if( *ppszDstText == NULL )
-    {
-        eErr = OGRERR_NOT_ENOUGH_MEMORY;
-        goto error;
-    }
+        return OGRERR_NOT_ENOUGH_MEMORY;
 
 /* -------------------------------------------------------------------- */
 /*      Build up the string, freeing temporary strings as we go.        */
 /* -------------------------------------------------------------------- */
     strcpy( *ppszDstText, "POLYGON (" );
-    nCumulativeLength = strlen(*ppszDstText);
 
     for( iRing = 0; iRing < nRingCount; iRing++ )
     {                                                           
@@ -717,28 +689,18 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
             continue;
         }
 
-        if( bMustWriteComma )
-            (*ppszDstText)[nCumulativeLength++] = ',';
-        bMustWriteComma = TRUE;
+        if( iRing > 0 )
+            strcat( *ppszDstText, "," );
         
-        int nRingLen = strlen(papszRings[iRing] + 11);
-        memcpy( *ppszDstText + nCumulativeLength, papszRings[iRing] + 11, nRingLen );
-        nCumulativeLength += nRingLen;
+        strcat( *ppszDstText, papszRings[iRing] + 11 );
         VSIFree( papszRings[iRing] );
     }
 
-    (*ppszDstText)[nCumulativeLength++] = ')';
-    (*ppszDstText)[nCumulativeLength] = '\0';
+    strcat( *ppszDstText, ")" );
 
     CPLFree( papszRings );
 
     return OGRERR_NONE;
-
-error:
-    for( iRing = 0; iRing < nRingCount; iRing++ )
-        CPLFree(papszRings[iRing]);
-    CPLFree(papszRings);
-    return eErr;
 }
 
 /************************************************************************/
@@ -746,7 +708,7 @@ error:
 /************************************************************************/
 
 /**
- * \brief Compute the polygon centroid.
+ * Compute the polygon centroid.
  *
  * The centroid location is applied to the passed in OGRPoint object.
  *
@@ -1014,7 +976,7 @@ void OGRPolygon::closeRings()
 /************************************************************************/
 
 /**
- * \brief Compute area of polygon.
+ * Compute area of polygon.
  *
  * The area is computed as the area of the outer ring less the area of all
  * internal rings. 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocisession.cpp 16515 2009-03-08 19:25:45Z warmerdam $
+ * $Id: ogrocisession.cpp 14363 2008-04-27 15:16:13Z tamas $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCISession, which encapsulates much of the
@@ -31,7 +31,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 16515 2009-03-08 19:25:45Z warmerdam $");
+CPL_CVSID("$Id: ogrocisession.cpp 14363 2008-04-27 15:16:13Z tamas $");
 
 static OCIEnv *ghOracleEnvironment = NULL;
 
@@ -316,7 +316,7 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
         case SQLT_CHR:
         case SQLT_AFC: /* CHAR(), NCHAR() */
             poOGRDefn->SetType( OFTString );
-            if( nOCILen <= 4000 )
+            if( nOCILen < 2048 )
                 poOGRDefn->SetWidth( nOCILen );
             break;
 

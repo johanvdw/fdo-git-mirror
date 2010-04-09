@@ -30,9 +30,7 @@ public:
 
     /// Alternative constructor.
     /// \todo To be documented.
-    FdoSmPhRdPostGisColumnReader(FdoSmPhOwnerP owner, FdoSmPhDbObjectP dbObject);
-
-    FdoSmPhRdPostGisColumnReader(FdoSmPhOwnerP owner, FdoStringsP objectNames);
+    FdoSmPhRdPostGisColumnReader(FdoSmPhMgrP mgr, FdoSmPhDbObjectP dbObject);
 
     /// Alternative constructor.
     /// \todo To be documented.
@@ -57,21 +55,20 @@ public:
 
     virtual FdoStringP GetString( FdoStringP tableName, FdoStringP fieldName );
 
-protected:
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
-    
 private:
 
     /// Create the column reader.
     /// \todo To be documented.
-    FdoSmPhReaderP MakeQueryReader(FdoSmPhOwnerP owner,
-        FdoStringsP objectNames,
+    FdoSmPhReaderP MakeQueryReader(FdoSmPhMgrP mgr, const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP dbObject,
         FdoSmPhRdTableJoinP join = NULL);
+
+    /// \todo To be documented.
+    FdoSmPhRowP MakeBinds(FdoSmPhMgrP mgr, FdoStringP tableOwner,
+        FdoStringP tableName);
 
     /// Type of physical column.
     FdoSmPhColType mColType;
-    FdoInt32 mSize;
-    FdoInt32 mScale;
 
 };
 

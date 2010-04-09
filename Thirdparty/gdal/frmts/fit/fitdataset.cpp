@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fitdataset.cpp 16443 2009-03-01 19:01:54Z rouault $
+ * $Id: fitdataset.cpp 14048 2008-03-20 18:47:21Z rouault $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: fitdataset.cpp 16443 2009-03-01 19:01:54Z rouault $");
+CPL_CVSID("$Id: fitdataset.cpp 14048 2008-03-20 18:47:21Z rouault $");
 
 CPL_C_START
  
@@ -1085,14 +1085,6 @@ static GDALDataset *FITCreateCopy(const char * pszFilename,
 {
     CPLDebug("FIT", "CreateCopy %s - %i", pszFilename, bStrict);
 
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "FIT driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Create the dataset.                                             */
 /* -------------------------------------------------------------------- */
@@ -1133,19 +1125,19 @@ static GDALDataset *FITCreateCopy(const char * pszFilename,
     gst_swapb(head->ySize);
     head->zSize = 1;
     gst_swapb(head->zSize);
-
+    int nBands = poSrcDS->GetRasterCount();
     head->cSize = nBands;
     gst_swapb(head->cSize);
 
     GDALRasterBand *firstBand = poSrcDS->GetRasterBand(1);
     if (! firstBand) {
-        VSIFCloseL(fpImage);
+        //free(head);
         return NULL;
     }
 
     head->dtype = fitGetDataType(firstBand->GetRasterDataType());
     if (! head->dtype) {
-        VSIFCloseL(fpImage);
+        //free(head);
         return NULL;
     }
     gst_swapb(head->dtype);

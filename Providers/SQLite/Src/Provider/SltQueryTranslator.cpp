@@ -733,13 +733,6 @@ void SltQueryTranslator::ProcessIdentifier(FdoIdentifier& expr)
                 m_strgeomOperations++;
         }
     }
-    else
-    {
-        std::wstring err(L"The property '");
-        err.append(expr.GetName());
-        err.append(L"' was not found.");
-        throw FdoException::Create(err.c_str());
-    }
 
     m_sb.Reset();
     m_sb.AppendDQuoted(expr.GetName());
@@ -1207,13 +1200,6 @@ void SltExpressionTranslator::ProcessIdentifier(FdoIdentifier& expr)
                     return;
                 }
             }
-        }
-        else
-        {
-            std::wstring err(L"The property '");
-            err.append(expr.GetName());
-            err.append(L"' was not found.");
-            throw FdoException::Create(err.c_str());
         }
     }
     m_expr.AppendDQuoted(expr.GetName());

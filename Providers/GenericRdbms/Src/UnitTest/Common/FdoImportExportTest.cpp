@@ -689,13 +689,13 @@ void FdoImportExportTest::AddFeature( FdoIInsert* insertCommand, FdoInt32 idx )
     propertyValue = AddNewProperty( propertyValues, L"Geometry");
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
     
-    FdoPtr<FdoIPoint> point1;
+    FdoPtr<FdoILineString> line1;
     if ( supportsZ ) 
-        point1 = gf->CreatePoint(FdoDimensionality_XY|FdoDimensionality_Z, coordsBuffer);
+        line1 = gf->CreateLineString(FdoDimensionality_XY|FdoDimensionality_Z, segCount*3, coordsBuffer);
     else
-       point1 = gf->CreatePoint(FdoDimensionality_XY, coordsBuffer);
+       line1 = gf->CreateLineString(FdoDimensionality_XY, segCount*2, coordsBuffer);
     
-    FdoPtr<FdoByteArray> byteArray = gf->GetFgf(point1);
+    FdoPtr<FdoByteArray> byteArray = gf->GetFgf(line1);
     FdoPtr<FdoGeometryValue> geometryValue = FdoGeometryValue::Create(byteArray);
     propertyValue->SetValue(geometryValue);
 
