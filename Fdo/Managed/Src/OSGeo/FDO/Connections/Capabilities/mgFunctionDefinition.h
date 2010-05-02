@@ -26,15 +26,15 @@ class FdoFunctionDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES
 
-ref class ArgumentDefinitionCollection;
-ref class ReadOnlyArgumentDefinitionCollection;
-ref class SignatureDefinitionCollection;
-ref class ReadOnlySignatureDefinitionCollection;
+public __gc class ArgumentDefinitionCollection;
+public __gc class ReadOnlyArgumentDefinitionCollection;
+public __gc class SignatureDefinitionCollection;
+public __gc class ReadOnlySignatureDefinitionCollection;
 
 /// \ingroup (OSGeoFDOConnectionsCapabilities)
 /// \brief
 ///  The FunctionDefinition class contains metadata that describes a function and its arguments.
-public ref class FunctionDefinition : public NAMESPACE_OSGEO_RUNTIME::Disposable
+public __gc class FunctionDefinition : public NAMESPACE_OSGEO_RUNTIME::Disposable
 {
 
 public:
@@ -66,10 +66,10 @@ public:
     /// \return
     /// Returns FunctionDefinition
     /// 
-	FunctionDefinition (System::String ^name,
-                        System::String ^description,
+	FunctionDefinition (System::String *name,
+                        System::String *description,
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection ^arguments);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments);
 
     /// \brief
     /// Constructs an instance of a FunctionDefinition using the specified arguments.
@@ -85,18 +85,15 @@ public:
     /// \param functionCategoryType 
     /// Input the category the function belongs to. Valid values for this parameter are defined
     /// in the enumeration FunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FunctionDefinition
     /// 
-	FunctionDefinition (System::String ^name,
-                        System::String ^description,
+	FunctionDefinition (System::String *name,
+                        System::String *description,
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection ^arguments,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType,
-                        System::Boolean supportsVariableArgumentsList);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments,
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType);
 
     /// \brief
     ///  Constructs an instance of a FunctionDefinition using the specified arguments.
@@ -115,11 +112,11 @@ public:
     /// \return
     /// Returns FunctionDefinition
     /// 
-    FunctionDefinition (System::String ^name,
-                        System::String ^description,
+    FunctionDefinition (System::String *name,
+                        System::String *description,
                         NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType returnPropertyType,
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection ^arguments);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments);
 
     /// \brief
     ///  Constructs an instance of a FunctionDefinition using the specified arguments.
@@ -137,19 +134,16 @@ public:
     /// \param functionCategoryType 
     /// Input the category the function belongs to. Valid values for this parameter are defined
     /// in the enumeration FunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FunctionDefinition
     /// 
-    FunctionDefinition (System::String ^name,
-                        System::String ^description,
+    FunctionDefinition (System::String *name,
+                        System::String *description,
                         NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType returnPropertyType,
                         NAMESPACE_OSGEO_FDO_SCHEMA::DataType returnType,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection ^arguments,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType,
-                        System::Boolean supportsVariableArgumentsList);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ArgumentDefinitionCollection *arguments,
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType);
 
     /// \brief
     /// Constructs an instance of a FunctionDefinition using the specified arguments.
@@ -166,10 +160,10 @@ public:
     /// \return
     /// Returns FunctionDefinition
     /// 
-	FunctionDefinition (System::String ^name,
-                        System::String ^description,
+	FunctionDefinition (System::String *name,
+                        System::String *description,
                         System::Boolean isAggregate,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection ^signatures);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection *signatures);
 
     /// \brief
     /// Constructs an instance of a FunctionDefinition using the specified arguments.
@@ -185,18 +179,15 @@ public:
     /// \param functionCategoryType 
     /// Input the category the function belongs to. Valid values for this parameter are defined
     /// in the enumeration FunctionCategoryType.
-    /// \param supportsVariableArgumentsList
-    /// Input a flag indicating whether or not this function supports a variable list of arguments
     /// 
     /// \return
     /// Returns FunctionDefinition
     /// 
-	FunctionDefinition (System::String ^name,
-                        System::String ^description,
+	FunctionDefinition (System::String *name,
+                        System::String *description,
                         System::Boolean isAggregate,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection ^signatures,
-                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType,
-                        System::Boolean supportsVariableArgumentsList);
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::SignatureDefinitionCollection *signatures,
+                        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType functionCategoryType);
 
     /// \brief
     /// Gets the name of the function.
@@ -204,10 +195,7 @@ public:
     /// \return
     /// Returns the name of the function
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-    }
+	__property System::String *get_Name();
 
     /// \brief
     /// Gets a brief description of the function.
@@ -215,10 +203,7 @@ public:
     /// \return
     /// Returns the description of the function
     /// 
-    property System::String^ Description
-    {
-        System::String^ get();
-    }
+	__property System::String *get_Description();
 
     /// \brief
     /// Gets an array of ArgumentDefinition objects required for the function.
@@ -226,10 +211,7 @@ public:
     /// \return
     /// Returns the list of argument definitions
     /// 
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlyArgumentDefinitionCollection^ Arguments
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlyArgumentDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlyArgumentDefinitionCollection *get_Arguments();
 
     /// \brief
     /// Gets the PropertyType of the function return value.
@@ -237,10 +219,7 @@ public:
     /// \return
     /// Returns the function return property type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType ReturnPropertyType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType get_ReturnPropertyType();
 
     /// \brief
     /// Gets the DataType of the function return value.
@@ -248,10 +227,7 @@ public:
     /// \return
     /// Returns the function return type
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataType ReturnType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_ReturnType();
 
     /// \brief
     /// Indicates that this object allows its name to change. This function is
@@ -260,27 +236,18 @@ public:
     /// \return
     /// Returns true if the name of the object can be changed.
     /// 
-    property System::Boolean CanSetName
-    {
-        System::Boolean get();
-    }
+	__property System::Boolean get_CanSetName();
 
     /// \brief
 	/// Gets an array of SignatureDefinition objects that describe the different signatures
     /// supported by the function.
     ///
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection^ Signatures
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection^ get();
-    }
+    __property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::ReadOnlySignatureDefinitionCollection *get_Signatures();
 
     ///
     /// \brief
 	/// Returns true if the function is an aggregate function and false if it is a simple function.
-    property System::Boolean IsAggregate
-    {
-        System::Boolean get();
-    }
+    __property System::Boolean get_IsAggregate();
 
     /// \brief
     ///  Gets the category the function belongs to.
@@ -288,23 +255,19 @@ public:
     /// \return
     /// Returns the function category
     /// 
-    property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType FunctionCategoryType
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES::FunctionCategoryType get_FunctionCategoryType();
 
-    /// \brief
-    /// Returns true if the function allows a variable list of arguments and false otherwise.
-    ///
-    property System::Boolean SupportsVariableArgumentsList
-    {
-        System::Boolean get();
-    }
+/// \cond DOXYGEN-IGNORE
+protected:
 
-internal:
+	System::Void ReleaseUnmanagedObject();
+
+/// \endcond
+
+public private:
+
 	inline FdoFunctionDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
 };  //  FunctionDefinition
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS_CAPABILITIES

@@ -12,6 +12,8 @@ MAKEFILE=	Makefile
 AR=		ar r
 
 RC5_ENC=		rc5_enc.o
+# or use
+#DES_ENC=	r586-elf.o
 
 CFLAGS= $(INCLUDES) $(CFLAG)
 ASFLAGS= $(INCLUDES) $(ASFLAG)
@@ -42,8 +44,15 @@ lib:	$(LIBOBJ)
 	$(RANLIB) $(LIB) || echo Never mind.
 	@touch lib
 
-rc5-586.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	$(PERL) asm/rc5-586.pl $(PERLASM_SCHEME) $(CFLAGS) > $@
+# ELF
+r586-elf.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	(cd asm; $(PERL) rc5-586.pl elf $(CFLAGS) > ../$@)
+# COFF
+r586-cof.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	(cd asm; $(PERL) rc5-586.pl coff $(CFLAGS) > ../$@)
+# a.out
+r586-out.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	(cd asm; $(PERL) rc5-586.pl a.out $(CFLAGS) > ../$@)
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO

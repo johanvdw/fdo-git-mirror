@@ -51,11 +51,7 @@ libProvidersCommon_la_SOURCES = \
   Src/stdafx.cpp \
   Src/Parse/Lex.cpp \
   Src/Parse/Parse.cpp \
-  Src/Parse/yyConstraint.cpp \
-  Src/FdoDefaultDataReader.cpp \
-  Src/FdoDefaultFeatureReader.cpp \
-  Src/FdoDefaultScrollableFeatureReader.cpp \
-  Src/FdoDefaultSqlDataReader.cpp
+  Src/Parse/yyConstraint.cpp
 
 noinst_HEADERS = $(libProvidersCommon_la_SOURCES) \
   Inc/FdoCommonBinaryReader.h \
@@ -79,12 +75,7 @@ noinst_HEADERS = $(libProvidersCommon_la_SOURCES) \
   Inc/Parse/Lex.h \
   Inc/Parse/Parse.h \
   Inc/Parse/Types.h \
-  Inc/Parse/yyConstraint.h \
-  Inc/FdoDefaultDataReader.h \
-  Inc/FdoDefaultFeatureReader.h \
-  Inc/FdoDefaultFeatureReaderImpl.h \
-  Inc/FdoDefaultScrollableFeatureReader.h \
-  Inc/FdoDefaultSqlDataReader.h
+  Inc/Parse/yyConstraint.h
 
 INCLUDES = \
   -I$(FDO)/Unmanaged/Inc \

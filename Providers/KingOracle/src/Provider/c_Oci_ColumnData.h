@@ -44,9 +44,6 @@ public:
       e_OciSdoGeometry,
       e_OciSdoDimArray,
       e_OciString,
-      e_OciLongRaw,
-      e_OciBlob,
-      e_OciClob,
     };
 
 
@@ -82,9 +79,7 @@ public:
   const wchar_t* GetString();
   SDO_GEOMETRY_TYPE* GetSdoGeom(SDO_GEOMETRY_ind** GeomInd=NULL);
   OCIArray* GetSdoDimArray();
-  unsigned char* GetLongRaw();
-  long GetLongRawLength();
-  void* GetDataRealLengthBuffer();
+
 protected:
   int m_CurrentRow;
   sb2* m_CurrentPtr_ScalarInd;
@@ -115,12 +110,7 @@ protected:
     
     OCIArray** m_DataSdoDimArray;
     
-    //OCILobLocator** m_DataLob;
-    ub1* m_DataLongRaw;
-    
   };
-  
-  ub2* m_DataLength;
   
   union 
   {

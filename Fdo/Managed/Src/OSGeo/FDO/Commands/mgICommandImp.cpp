@@ -32,50 +32,53 @@ NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::ICommandImp(System::IntPtr unmanaged,
 
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::ICommandImp(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand^ command, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::ICommandImp(NAMESPACE_OSGEO_FDO_COMMANDS::ICommand* command, System::Boolean autoDelete) : NAMESPACE_OSGEO_RUNTIME::Disposable(System::IntPtr::Zero, false)
 {
-    if (nullptr == command)
+    if (NULL == command) {
 		return;
+	}
 
-    ICommandImp^ impObj = dynamic_cast<ICommandImp^>(command);
+    ICommandImp * impObj = dynamic_cast<ICommandImp*>(command);
 
-	EXCEPTION_HANDLER(Attach(IntPtr(impObj->GetImpObj()), autoDelete))
+	EXCEPTION_HANDLER(Attach(impObj->GetImpObj(), autoDelete))
+}
+
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::ReleaseUnmanagedObject()
+{
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
 FdoICommand* NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::GetImpObj()
 {
-    return static_cast<FdoICommand*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoICommand*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::Connection::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::get_Connection()
 {
 	FdoIConnection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetConnection())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnection(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateIConnection(result, true);
 }
 
-NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::Transaction::get()
+NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction* NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::get_Transaction()
 {
 	FdoITransaction* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetTransaction())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITransaction(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateITransaction(result, true);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::Transaction::set(NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction^ value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::set_Transaction(NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetTransaction((static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp^>(value))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->SetTransaction((static_cast<NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransactionImp*>(value))->GetImpObj()))
 }
 
-System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::CommandTimeOut::get()
+System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::get_CommandTimeOut()
 {
 	FdoInt32 result;
 
@@ -84,18 +87,18 @@ System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::CommandTimeOut::get()
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::CommandTimeOut::set(System::Int32 value)
+System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::set_CommandTimeOut(System::Int32 value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetCommandTimeout(value))
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS::ParameterValueCollection^ NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::ParameterValues::get()
+NAMESPACE_OSGEO_FDO_COMMANDS::ParameterValueCollection* NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::get_ParameterValues()
 {
 	FdoParameterValueCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetParameterValues())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateParameterValueCollection(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateParameterValueCollection(result, true);
 }
 
 System::Void NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp::Prepare()

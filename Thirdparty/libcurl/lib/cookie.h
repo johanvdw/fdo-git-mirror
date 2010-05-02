@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2008, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2006, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: cookie.h,v 1.28 2009-02-27 08:53:10 bagder Exp $
+ * $Id: cookie.h,v 1.24 2006-08-30 16:17:06 giva Exp $
  ***************************************************************************/
 
 #include <stdio.h>
@@ -50,7 +50,6 @@ struct Cookie {
 
   bool secure;       /* whether the 'secure' keyword was used */
   bool livecookie;   /* updated from a server, not a stored file */
-  bool httponly;     /* true if the httponly directive is present */
 };
 
 struct CookieInfo {
@@ -85,18 +84,17 @@ struct SessionHandle;
  */
 
 struct Cookie *Curl_cookie_add(struct SessionHandle *data,
-                               struct CookieInfo *, bool header, char *lineptr,
-                               const char *domain, const char *path);
+                               struct CookieInfo *, bool header, char *line,
+                               char *domain, char *path);
 
 struct CookieInfo *Curl_cookie_init(struct SessionHandle *data,
-                                    const char *, struct CookieInfo *, bool);
-struct Cookie *Curl_cookie_getlist(struct CookieInfo *, const char *,
-                                   const char *, bool);
-void Curl_cookie_freelist(struct Cookie *cookies, bool cookiestoo);
+                                    char *, struct CookieInfo *, bool);
+struct Cookie *Curl_cookie_getlist(struct CookieInfo *, char *, char *, bool);
+void Curl_cookie_freelist(struct Cookie *);
 void Curl_cookie_clearall(struct CookieInfo *cookies);
 void Curl_cookie_clearsess(struct CookieInfo *cookies);
 void Curl_cookie_cleanup(struct CookieInfo *);
-int Curl_cookie_output(struct CookieInfo *, const char *);
+int Curl_cookie_output(struct CookieInfo *, char *);
 
 #if defined(CURL_DISABLE_HTTP) || defined(CURL_DISABLE_COOKIES)
 #define Curl_cookie_list(x) NULL

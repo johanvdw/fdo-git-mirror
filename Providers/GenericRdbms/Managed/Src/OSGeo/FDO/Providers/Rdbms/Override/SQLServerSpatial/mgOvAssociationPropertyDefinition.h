@@ -22,11 +22,11 @@
 class FdoSqlServerOvAssociationPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL
-ref class OvPropertyDefinitionCollection;
+public __gc class OvPropertyDefinitionCollection;
 
 ///<summary>Concrete class defining physical schema overrides for an association property
 ///definition.</summary>
-public ref class OvAssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::IOvPropertyDefinition
+public __gc class OvAssociationPropertyDefinition : public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::IOvPropertyDefinition
 {
 public:
     ///<summary>Constructs a default of an FdoSqlServerOvAssociationPropertyDefinition</summary>
@@ -34,21 +34,16 @@ public:
 
     ///<summary>Constructs an instance of an FdoSqlServerOvAssociationPropertyDefinition using the specified arguments</summary>
     /// <param name="name">Input name</param>
-	OvAssociationPropertyDefinition(System::String^ name);
+	OvAssociationPropertyDefinition(System::String* name);
 
 	///<summary>Gets a collection of property definitions</summary>
     /// <returns>Returns a collection of property definitions</returns>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection^ IdentityProperties
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL::OvPropertyDefinitionCollection* get_IdentityProperties();
 
-internal:
+public private:
 	OvAssociationPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoSqlServerOvAssociationPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_SQLSERVERSPATIAL

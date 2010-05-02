@@ -432,10 +432,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\Sm\Ph\IndexLoader.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\Sm\Ph\LockTypes.cpp"
 				>
 			</File>
@@ -829,46 +825,6 @@
 							ObjectFile="$(IntDir)/$(InputName)1.obj"
 						/>
 					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\Src\Sm\Ph\Rd\Reader.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\Src\Sm\Ph\Rd\SchemaDbObjectBinds.cpp"
-					>
 				</File>
 				<File
 					RelativePath="Src\Sm\Ph\Rd\SchemaReader.cpp"
@@ -1715,10 +1671,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Inc\Sm\Ph\DbObjectComponentLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="Inc\Sm\Ph\DbObjType.h"
 				>
 			</File>
@@ -1764,10 +1716,6 @@
 			</File>
 			<File
 				RelativePath="Inc\Sm\Ph\IndexCollection.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Inc\Sm\Ph\IndexLoader.h"
 				>
 			</File>
 			<File
@@ -2022,14 +1970,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\Reader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\SchemaDbObjectBinds.h"
-					>
-				</File>
-				<File
 					RelativePath="Inc\Sm\Ph\Rd\SchemaReader.h"
 					>
 				</File>
@@ -2071,6 +2011,42 @@
 				</File>
 			</Filter>
 			<Filter
+				Name="Meta"
+				>
+				<File
+					RelativePath="Inc\Sm\Ph\Mt\AssociationReader.h"
+					>
+				</File>
+				<File
+					RelativePath="Inc\Sm\Ph\Mt\ClassReader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\inc\Sm\Ph\Mt\ClassTableJoin.h"
+					>
+				</File>
+				<File
+					RelativePath="Inc\Sm\Ph\Mt\PropertyReader.h"
+					>
+				</File>
+				<File
+					RelativePath="Inc\Sm\Ph\Mt\SchemaReader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextGeomReader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextGroupReader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextReader.h"
+					>
+				</File>
+			</Filter>
+			<Filter
 				Name="Rb"
 				>
 				<File
@@ -2093,42 +2069,6 @@
 					RelativePath=".\Inc\Sm\Ph\Rb\TableCollection.h"
 					>
 				</File>
-				<Filter
-					Name="Meta"
-					>
-					<File
-						RelativePath="Inc\Sm\Ph\Mt\AssociationReader.h"
-						>
-					</File>
-					<File
-						RelativePath="Inc\Sm\Ph\Mt\ClassReader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\inc\Sm\Ph\Mt\ClassTableJoin.h"
-						>
-					</File>
-					<File
-						RelativePath="Inc\Sm\Ph\Mt\PropertyReader.h"
-						>
-					</File>
-					<File
-						RelativePath="Inc\Sm\Ph\Mt\SchemaReader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextGeomReader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextGroupReader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Inc\Sm\Ph\Mt\SpatialContextReader.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="SchemaOptions"

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqlresultlayer.cpp 18362 2009-12-21 05:47:06Z chaitanya $
+ * $Id: ogrmysqlresultlayer.cpp 14272 2008-04-12 13:47:54Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLResultLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 18362 2009-12-21 05:47:06Z chaitanya $");
+CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 14272 2008-04-12 13:47:54Z rouault $");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */
@@ -126,20 +126,9 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
 
           case FIELD_TYPE_FLOAT:
           case FIELD_TYPE_DOUBLE:
-         /* MYSQL_FIELD is always reporting ->length = 22 and ->decimals = 31
-            for double type regardless of the data it returned. In an example,
-            the data it returned had only 5 or 6 decimal places which were
-            exactly as entered into the database but reported the decimals
-            as 31. */
-         /* Assuming that a length of 22 means no particular width and 31
-            decimals means no particular precision. */
             width = (int)psMSField->length;
-            precision = (int)psMSField->decimals;
+            oField.SetWidth(width);
             oField.SetType( OFTReal );
-            if( width != 22 )
-                oField.SetWidth(width);
-            if( precision != 31 )
-                oField.SetPrecision(precision);
             poDefn->AddFieldDefn( &oField );
             break;
 
@@ -174,10 +163,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
           case FIELD_TYPE_MEDIUM_BLOB:
           case FIELD_TYPE_LONG_BLOB:
           case FIELD_TYPE_BLOB:
-            if( psMSField->charsetnr == 63 )
-                oField.SetType( OFTBinary );
-            else
-                oField.SetType( OFTString );
+            oField.SetType( OFTBinary );
             oField.SetWidth((int)psMSField->max_length);
             poDefn->AddFieldDefn( &oField );
             break;

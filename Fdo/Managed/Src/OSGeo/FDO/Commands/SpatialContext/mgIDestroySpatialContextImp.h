@@ -32,7 +32,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT
 /// command, which destroys an existing spatial context. Input to the command is
 /// the name of the context to destroy. Destroying a spatial context destroys
 /// all data stored in that context.
-private ref class IDestroySpatialContextImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
+private __gc class IDestroySpatialContextImp : public NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp, 
                                                public NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT::IDestroySpatialContext
 {
 public:
@@ -42,6 +42,8 @@ public:
     /// \return
     /// Returns the name of the spatial context to be deleted
     /// 
+	__property System::String* get_Name();
+
     /// \brief
     /// Sets the name of the context to destroy as a string.
     /// 
@@ -51,11 +53,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    virtual property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::Void set_Name(System::String* value);
 
     /// \brief
     /// Executes the DestroySpatialContext command, removing all data stored
@@ -64,17 +62,15 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Execute();
+	System::Void Execute();
 
-internal:
+public private:
 	IDestroySpatialContextImp(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS::ICommandImp(unmanaged, autoDelete)
 	{
 
 	}
 
 	inline FdoIDestroySpatialContext* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SPATIALCONTEXT

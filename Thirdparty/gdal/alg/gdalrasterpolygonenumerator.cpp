@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: gdalrasterpolygonenumerator.cpp 18523 2010-01-11 18:12:25Z mloskot $
  *
  * Project:  GDAL
  * Purpose:  Raster Polygon Enumerator
@@ -31,7 +30,7 @@
 #include "cpl_conv.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 18523 2010-01-11 18:12:25Z mloskot $");
+CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 15701 2008-11-10 15:40:02Z warmerdam $");
 
 /************************************************************************/
 /*                    GDALRasterPolygonEnumerator()                     */

@@ -210,7 +210,7 @@ public:
 // This class handles all data that can vary based on environment variables or based on which rdbms is being accessed:
 class ArcSDETestConfig
 {
-public:
+private:
     enum ArcSDETestRdbmsType
     {
         ArcSDETestRdbmsType_Oracle,
@@ -218,6 +218,7 @@ public:
         ArcSDETestRdbmsType_Unknown
     };
 
+public:
     static ArcSDETestRdbmsType RdbmsType(void)
     {
         FdoStringP val = getenv("rdbms");
@@ -577,7 +578,6 @@ static FdoStringP QClassName##CLASSMETHODNAME() { return FdoStringP::Format(L"%l
     DECLARE_CLASS(TestSingleDb, Metadcov, TestClassComplex, L"TESTB");
     DECLARE_CLASS(TestMultiDb, Metadcov, TestClassSimpleMultiDb, L"TESTA");
     DECLARE_CLASS(Sde, Australia, LargeWithGeom, L"LARGEWITHGEOM");
-    DECLARE_CLASS(Sde, Metadcov, TestClassUuid, L"TEST_UUID");
 
     static FdoStringP ClassSchemaTreesUniqueName() { return FdoStringP::Format(L"%ls%ls", (FdoString*)FdoSchemaPrefixSde(), (FdoString*)UserNameMetadcov()); } \
     static FdoStringP ClassNameTreesUniqueName()   { return AdjustRdbmsName((FdoString*)FdoStringP::Format(L"TREES_%ls", (FdoString*)DatasetName())); } \

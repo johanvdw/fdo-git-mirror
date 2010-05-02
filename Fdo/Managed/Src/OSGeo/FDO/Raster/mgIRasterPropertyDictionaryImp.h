@@ -30,7 +30,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_RASTER
 /// their values can be retrieved and set.  Data values are exchanged
 /// through the DataValue object to accommodate various data types,
 /// boolean, integer, double, string etc.
-private ref class IRasterPropertyDictionaryImp: public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_RASTER::IRasterPropertyDictionary
+private __gc class IRasterPropertyDictionaryImp: public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_RASTER::IRasterPropertyDictionary
 {
 public:
     /// \brief
@@ -45,10 +45,7 @@ public:
     /// \return
     /// A collection of the names of properties in this dictionary.
     /// 
-    virtual property NAMESPACE_OSGEO_COMMON::StringCollection^ PropertyNames
-    {
-        NAMESPACE_OSGEO_COMMON::StringCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_COMMON::StringCollection* get_PropertyNames ();
 
     /// \brief
     /// Gets the data type for the specified property.
@@ -59,10 +56,7 @@ public:
     /// \return
     /// The data type of the property.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_SCHEMA::DataType PropertyDataType[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get(System::String^ name);
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_PropertyDataType (System::String* name);
 
     /// \brief
     /// Gets the value of the specified property (or its default).
@@ -73,6 +67,8 @@ public:
     /// \return
     /// The value of the property.
     /// 
+	__property NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue* get_Property (System::String* name);
+
     /// \brief
     /// Sets the value of the specified property.
     /// 
@@ -81,11 +77,7 @@ public:
     /// \param value 
     /// The new value for the property.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue^ Property[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue^ get(System::String^ name);
-        System::Void set(System::String^ name, NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue^ value);
-    }
+	__property System::Void set_Property (System::String* name, NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue* value);
 
     /// \brief
     /// Gets the default value for the specified property.
@@ -96,10 +88,7 @@ public:
     /// \return
     /// The default value of the property.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue^ PropertyDefault[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue^ get(System::String^ name);
-    }
+	__property  NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue* get_PropertyDefault (System::String* name);
 
     /// \brief
     /// Predicate to determine if the property is required to be set.
@@ -110,7 +99,7 @@ public:
     /// \return
     /// Returns true if the specified property is required, false if it is optional.
     /// 
-	virtual System::Boolean IsPropertyRequired (System::String^ name);
+	System::Boolean IsPropertyRequired (System::String* name);
 
     /// \brief
     /// Predicate to determine if the property is enumerable (has more than one value).
@@ -122,7 +111,7 @@ public:
     /// Returns true if the possible values for the specified property
     /// can be enumerated via the GetPropertyValues method.
     /// 
-	virtual System::Boolean IsPropertyEnumerable (System::String^ name);
+	System::Boolean IsPropertyEnumerable (System::String* name);
 
     /// \brief
     /// Access the values of the specified enumerable property.
@@ -134,6 +123,8 @@ public:
     /// \return
     /// A collection of datavaluesfor the enumerable property.
     /// 
+	__property NAMESPACE_OSGEO_FDO_RASTER::DataValueCollection* get_PropertyValues (System::String* name);
+
     /// \brief
     /// Set the values of the specified enumerable property.
     /// The property must respond TRUE to IsPropertyEnumerable.
@@ -147,11 +138,7 @@ public:
     /// \param collection 
     /// The collection of values for the enumerable property.
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_RASTER::DataValueCollection^ PropertyValues[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_RASTER::DataValueCollection^ get(System::String^ name);
-        System::Void set(System::String^ name, NAMESPACE_OSGEO_FDO_RASTER::DataValueCollection^ value);
-    }
+	__property System::Void set_PropertyValues (System::String* name, NAMESPACE_OSGEO_FDO_RASTER::DataValueCollection* collection);
 
     /// \brief
     /// Constructs a IRasterPropertyDictionaryImp object based on an unmanaged instance of the object
@@ -165,10 +152,13 @@ public:
     /// 
 	IRasterPropertyDictionaryImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
+
+public private:
 	inline FdoIRasterPropertyDictionary* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_RASTER
 

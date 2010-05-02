@@ -13,8 +13,7 @@ OBJ	= \
 	geo_write.obj \
 	geo_normalize.obj \
 	geo_extra.obj \
-	geotiff_proj4.obj \
-	geo_simpletags.obj
+	geotiff_proj4.obj
 
 GDAL_ROOT	=	..\..\..
 

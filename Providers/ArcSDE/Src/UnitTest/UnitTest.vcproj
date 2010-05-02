@@ -12,9 +12,6 @@
 		<Platform
 			Name="Win32"
 		/>
-		<Platform
-			Name="x64"
-		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -22,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Bin\Win32\Debug"
-			IntermediateDirectory=".\Win32\Debug"
+			IntermediateDirectory=".\Debug"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -47,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
+				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
 				GeneratePreprocessedFile="0"
 				KeepComments="false"
@@ -82,93 +79,6 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="..\..\Bin\Win64\Debug"
-			IntermediateDirectory=".\Win64\Debug"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				GeneratePreprocessedFile="0"
-				KeepComments="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="cppunitd.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Debug&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -195,7 +105,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Bin\Win32\Release"
-			IntermediateDirectory=".\Win32\Release"
+			IntermediateDirectory=".\Release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -216,451 +126,6 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				PrecompiledHeaderFile="$(IntDir)/$(TargetName).pch"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="cppunit.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			OutputDirectory="..\..\Bin\Win64\Release"
-			IntermediateDirectory=".\Win64\Release"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				PrecompiledHeaderFile="$(IntDir)/$(TargetName).pch"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="cppunit.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Release&quot;"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="17"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug91Only|Win32"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				GeneratePreprocessedFile="0"
-				KeepComments="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				WarningLevel="3"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="cppunitd.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Debug&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug91Only|x64"
-			OutputDirectory="Win64\$(ConfigurationName)"
-			IntermediateDirectory="Win64\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				GeneratePreprocessedFile="0"
-				KeepComments="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="cppunitd.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Debug&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="17"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release91Only|Win32"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				PrecompiledHeaderFile="$(IntDir)/$(TargetName).pch"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="cppunit.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release91Only|x64"
-			OutputDirectory="Win64\$(ConfigurationName)"
-			IntermediateDirectory="Win64\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -695,7 +160,7 @@
 				AdditionalDependencies="cppunit.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
 				OutputFile="$(OutDir)/UnitTest.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -703,7 +168,7 @@
 				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				TargetMachine="17"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -728,9 +193,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug92Only|Win32"
-			OutputDirectory="Win64\$(ConfigurationName)"
-			IntermediateDirectory="Win64\$(ConfigurationName)"
+			Name="Debug91Only|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -755,7 +220,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
+				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
 				GeneratePreprocessedFile="0"
 				KeepComments="false"
@@ -814,96 +279,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug92Only|x64"
-			OutputDirectory="Win64\$(ConfigurationName)"
-			IntermediateDirectory="Win64\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=""
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
-				GeneratePreprocessedFile="0"
-				KeepComments="false"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Pch.h"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="cppunitd.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
-				OutputFile="$(OutDir)/UnitTest.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Debug&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="17"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release92Only|Win32"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			Name="Release91Only|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -930,7 +308,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
+				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -991,9 +369,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release92Only|x64"
-			OutputDirectory="Win64\$(ConfigurationName)"
-			IntermediateDirectory="Win64\$(ConfigurationName)"
+			Name="Debug92Only|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -1014,14 +392,99 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
+				GeneratePreprocessedFile="0"
+				KeepComments="false"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				TreatWChar_tAsBuiltInType="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="Pch.h"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="cppunitd.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
+				OutputFile="$(OutDir)/UnitTest.exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Debug&quot;"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/UnitTest.pdb"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release92Only|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;&quot;$(FDOUTILITIES)\TestCommon\inc&quot;"
+				AdditionalIncludeDirectories="..\Provider;&quot;$(SDEHOME)\include&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\include&quot;;..\..\inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SDEVER_ARCUNITTEST=$(SDEVER_ARCUNITTEST)"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -1049,7 +512,7 @@
 				AdditionalDependencies="cppunit.lib FDO.lib FDOCommon.lib FDOGeometry.lib FdoSpatial.lib ProvidersCommon.lib Advapi32.lib"
 				OutputFile="$(OutDir)/UnitTest.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win64&quot;;&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(SDEHOME)\lib&quot;;&quot;$(FDOTHIRDPARTY)\cppunit\lib\Win32&quot;;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -1057,7 +520,7 @@
 				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				TargetMachine="17"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1126,10 +589,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ExpressionFunction.cpp"
-				>
-			</File>
-			<File
 				RelativePath="LockTests.cpp"
 				>
 			</File>
@@ -1153,23 +612,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1185,23 +628,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1217,23 +644,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1264,14 +675,6 @@
 			<File
 				RelativePath="ThreadingTests.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -1312,10 +715,6 @@
 			</File>
 			<File
 				RelativePath="BasicUpdateTests.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ExpressionFunction.h"
 				>
 			</File>
 			<File
@@ -1384,25 +783,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1420,25 +801,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1456,25 +819,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1500,25 +845,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1536,25 +863,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1572,25 +881,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1616,25 +907,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1652,25 +925,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1688,25 +943,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1732,25 +969,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1768,25 +987,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1804,25 +1005,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1853,27 +1036,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1893,27 +1056,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1933,27 +1076,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1980,25 +1103,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2016,25 +1121,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2052,25 +1139,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PrecompiledHeaderThrough="StdAfx.h"
-						PrecompiledHeaderFile="$(IntDir)/StdAfx.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -2098,29 +1167,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe91.dll&quot; copy &quot;$(SDEHOME)\bin\pe91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde91.dll&quot; copy &quot;$(SDEHOME)\bin\sde91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg91.dll&quot; copy &quot;$(SDEHOME)\bin\sg91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -2142,29 +1189,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe91.dll&quot; copy &quot;$(SDEHOME)\bin\pe91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde91.dll&quot; copy &quot;$(SDEHOME)\bin\sde91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg91.dll&quot; copy &quot;$(SDEHOME)\bin\sg91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe91.dll&quot; copy &quot;$(SDEHOME)\bin\pe91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde91.dll&quot; copy &quot;$(SDEHOME)\bin\sde91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg91.dll&quot; copy &quot;$(SDEHOME)\bin\sg91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -2186,29 +1211,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe91.dll&quot; copy &quot;$(SDEHOME)\bin\pe91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde91.dll&quot; copy &quot;$(SDEHOME)\bin\sde91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg91.dll&quot; copy &quot;$(SDEHOME)\bin\sg91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying ESRI files"
-						CommandLine="if exist &quot;$(SDEHOME)\bin\pe91.dll&quot; copy &quot;$(SDEHOME)\bin\pe91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde91.dll&quot; copy &quot;$(SDEHOME)\bin\sde91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg91.dll&quot; copy &quot;$(SDEHOME)\bin\sg91.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\pe.dll&quot; copy &quot;$(SDEHOME)\bin\pe.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sde.dll&quot; copy &quot;$(SDEHOME)\bin\sde.dll&quot; $(OutDir)&#x0D;&#x0A;if exist &quot;$(SDEHOME)\bin\sg.dll&quot; copy &quot;$(SDEHOME)\bin\sg.dll&quot; $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyArcSDE.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(SDEHOME)\bin\pe91.dll;$(SDEHOME)\bin\sde91.dll;$(SDEHOME)\bin\sg91.dll;$(SDEHOME)\bin\pe.dll;$(SDEHOME)\bin\sde.dll;$(SDEHOME)\bin\sg.dll"
-						Outputs="$(OutDir)\CopyArcSDE.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -2234,17 +1237,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
@@ -2252,17 +1244,6 @@
 						Description="Copying FDO files"
 						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
 						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb"
 						Outputs="$(OutDir)\CopyFdo.ilk"
 					/>
 				</FileConfiguration>
@@ -2278,17 +1259,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
 					>
 					<Tool
@@ -2296,17 +1266,6 @@
 						Description="Copying FDO files"
 						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
 						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb"
 						Outputs="$(OutDir)\CopyFdo.ilk"
 					/>
 				</FileConfiguration>
@@ -2322,17 +1281,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Win64\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Debug\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
 					>
 					<Tool
@@ -2340,17 +1288,6 @@
 						Description="Copying FDO files"
 						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
 						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win32\Release\FDOSpatial.pdb"
-						Outputs="$(OutDir)\CopyFdo.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying FDO files"
-						CommandLine="copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb $(OutDir)&#x0D;&#x0A;copy &quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyFdo.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.dll;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDO.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOCommon.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOGeometry.pdb;&quot;$(FDO)&quot;\Unmanaged\Bin\Win64\Release\FDOSpatial.pdb"
 						Outputs="$(OutDir)\CopyFdo.ilk"
 					/>
 				</FileConfiguration>
@@ -2364,19 +1301,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1D.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1D.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC79\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2386,19 +1312,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2408,19 +1323,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1D.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2430,19 +1334,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Release\xerces-c_3_1.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2452,19 +1345,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1D.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\Xalan-C_1_11D.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Debug\XalanMessages_1_11D.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Debug\xerces-c_3_1D.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunnerd.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunitd_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2474,19 +1356,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Release\xerces-c_3_1.dll"
-						Outputs="$(OutDir)\CopyThirdparty.ilk"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Copying thirdparty dlls"
-						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Release\Xalan-C_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Release\xerces-c_3_1.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
-						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win64\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win64\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\Xalan-C_1_11.dll;$(FDOTHIRDPARTY)\apache\xalan\Build\Win64\VC9\Release\XalanMessages_1_11.dll;$(FDOTHIRDPARTY)\apache\xerces\Build\Win64\VC9\Release\xerces-c_3_1.dll"
+						CommandLine="copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll $(OutDir)&#x0D;&#x0A;copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll $(OutDir)&#x0D;&#x0A;echo &quot;delete me please&quot;&gt;$(OutDir)\CopyThirdparty.ilk&#x0D;&#x0A;"
+						AdditionalDependencies="$(FDOTHIRDPARTY)\cppunit\Lib\Win32\testrunner.dll;$(FDOTHIRDPARTY)\cppunit\Lib\Win32\cppunit_dll.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\Xalan-C_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\VC9\Release\XalanMessages_1_7_0.dll;$(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll"
 						Outputs="$(OutDir)\CopyThirdparty.ilk"
 					/>
 				</FileConfiguration>
@@ -2506,17 +1377,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
@@ -2524,17 +1384,6 @@
 						Description="Performing fake install"
 						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
 						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll"
 						Outputs="$(OutDir)\providers.xml"
 					/>
 				</FileConfiguration>
@@ -2550,17 +1399,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release91Only|Win32"
 					>
 					<Tool
@@ -2568,17 +1406,6 @@
 						Description="Performing fake install"
 						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
 						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release91Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll"
 						Outputs="$(OutDir)\providers.xml"
 					/>
 				</FileConfiguration>
@@ -2594,17 +1421,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\debug\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release92Only|Win32"
 					>
 					<Tool
@@ -2612,17 +1428,6 @@
 						Description="Performing fake install"
 						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
 						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win32\release\ExpressionEngine.dll"
-						Outputs="$(OutDir)\providers.xml"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release92Only|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing fake install"
-						CommandLine="copy providers.xml $(OutDir)&#x0D;&#x0A;copy ..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll $(OutDir)&#x0D;&#x0A;"
-						AdditionalDependencies="providers.xml;..\..\..\..\Utilities\ExpressionEngine\bin\win64\release\ExpressionEngine.dll"
 						Outputs="$(OutDir)\providers.xml"
 					/>
 				</FileConfiguration>

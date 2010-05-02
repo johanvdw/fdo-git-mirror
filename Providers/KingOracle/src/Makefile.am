@@ -54,10 +54,10 @@ libKingOracleProvider_la_LIBADD =  \
   -locci \
   -lclntsh \
   -lociei \
-  -lnnz11
+  -lnnz10
 
 libKingOracleProvider_la_LDFLAGS = \
   -shared \
   -release $(VERSION) \
-  -L/usr/lib/oracle/11.2/client/lib \
+  -L/usr/lib/oracle/10.2.0.3/client/lib \
   -L$(FDOORACLE)/lib

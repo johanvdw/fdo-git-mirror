@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr.i 18491 2010-01-09 09:34:44Z rouault $
+ * $Id: osr.i 15742 2008-11-15 22:56:31Z rouault $
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  OGRSpatialReference related declarations.
@@ -27,8 +27,6 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-%include constraints.i
-
 #ifdef PERL_CPAN_NAMESPACE
 %module "Geo::OSR"
 #elif defined(SWIGCSHARP)
@@ -41,22 +39,101 @@
 %include swig_csharp_extensions.i
 #endif
 
-#ifndef SWIGJAVA
 %feature("compactdefaultargs");
-#endif
 
 #ifdef SWIGCSHARP
 %csconst(1);
-#elif defined(SWIGJAVA)
-%javaconst(1);
-#endif
-
-%include "../../ogr/ogr_srs_api.h"
-
-#ifdef SWIGCSHARP
+%include "ogr_srs_const.h"
 %csconst(0);
-#elif defined(SWIGJAVA)
-%javaconst(0);
+#else
+%constant char *SRS_PT_ALBERS_CONIC_EQUAL_AREA	= SRS_PT_ALBERS_CONIC_EQUAL_AREA;
+%constant char *SRS_PT_AZIMUTHAL_EQUIDISTANT	= SRS_PT_AZIMUTHAL_EQUIDISTANT;
+%constant char *SRS_PT_CASSINI_SOLDNER		= SRS_PT_CASSINI_SOLDNER;
+%constant char *SRS_PT_CYLINDRICAL_EQUAL_AREA	= SRS_PT_CYLINDRICAL_EQUAL_AREA;
+%constant char *SRS_PT_ECKERT_IV		= SRS_PT_ECKERT_IV;
+%constant char *SRS_PT_ECKERT_VI		= SRS_PT_ECKERT_VI;
+%constant char *SRS_PT_EQUIDISTANT_CONIC	= SRS_PT_EQUIDISTANT_CONIC;
+%constant char *SRS_PT_EQUIRECTANGULAR		= SRS_PT_EQUIRECTANGULAR;
+%constant char *SRS_PT_GALL_STEREOGRAPHIC	= SRS_PT_GALL_STEREOGRAPHIC;
+%constant char *SRS_PT_GAUSSSCHREIBERTMERCATOR  = SRS_PT_GAUSSSCHREIBERTMERCATOR;
+%constant char *SRS_PT_GNOMONIC			= SRS_PT_GNOMONIC;
+%constant char *SRS_PT_GOODE_HOMOLOSINE         = SRS_PT_GOODE_HOMOLOSINE;
+%constant char *SRS_PT_HOTINE_OBLIQUE_MERCATOR	= SRS_PT_HOTINE_OBLIQUE_MERCATOR;
+%constant char *SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN = SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN;
+%constant char *SRS_PT_LABORDE_OBLIQUE_MERCATOR	= SRS_PT_LABORDE_OBLIQUE_MERCATOR;
+%constant char *SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP = SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP;
+%constant char *SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP = SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP;
+%constant char *SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP_BELGIUM = SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP_BELGIUM;
+%constant char *SRS_PT_LAMBERT_AZIMUTHAL_EQUAL_AREA = SRS_PT_LAMBERT_AZIMUTHAL_EQUAL_AREA;
+%constant char *SRS_PT_MERCATOR_1SP		= SRS_PT_MERCATOR_1SP;
+%constant char *SRS_PT_MERCATOR_2SP		= SRS_PT_MERCATOR_2SP;
+%constant char *SRS_PT_MILLER_CYLINDRICAL	= SRS_PT_MILLER_CYLINDRICAL;
+%constant char *SRS_PT_MOLLWEIDE		= SRS_PT_MOLLWEIDE;
+%constant char *SRS_PT_NEW_ZEALAND_MAP_GRID     = SRS_PT_NEW_ZEALAND_MAP_GRID;
+%constant char *SRS_PT_OBLIQUE_STEREOGRAPHIC    = SRS_PT_OBLIQUE_STEREOGRAPHIC;
+%constant char *SRS_PT_ORTHOGRAPHIC		= SRS_PT_ORTHOGRAPHIC;
+%constant char *SRS_PT_POLAR_STEREOGRAPHIC      = SRS_PT_POLAR_STEREOGRAPHIC;
+%constant char *SRS_PT_POLYCONIC		= SRS_PT_POLYCONIC;
+%constant char *SRS_PT_ROBINSON			= SRS_PT_ROBINSON;
+%constant char *SRS_PT_SINUSOIDAL		= SRS_PT_SINUSOIDAL;
+%constant char *SRS_PT_STEREOGRAPHIC		= SRS_PT_STEREOGRAPHIC;
+%constant char *SRS_PT_SWISS_OBLIQUE_CYLINDRICAL= SRS_PT_SWISS_OBLIQUE_CYLINDRICAL;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR      = SRS_PT_TRANSVERSE_MERCATOR;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED = SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR_MI_22= SRS_PT_TRANSVERSE_MERCATOR_MI_22;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR_MI_23= SRS_PT_TRANSVERSE_MERCATOR_MI_23;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR_MI_24= SRS_PT_TRANSVERSE_MERCATOR_MI_24;
+%constant char *SRS_PT_TRANSVERSE_MERCATOR_MI_25= SRS_PT_TRANSVERSE_MERCATOR_MI_25;
+%constant char *SRS_PT_TUNISIA_MINING_GRID	= SRS_PT_TUNISIA_MINING_GRID;
+%constant char *SRS_PT_VANDERGRINTEN		= SRS_PT_VANDERGRINTEN;
+%constant char *SRS_PT_KROVAK			= SRS_PT_KROVAK;
+
+%constant char *SRS_PP_CENTRAL_MERIDIAN         = SRS_PP_CENTRAL_MERIDIAN;
+%constant char *SRS_PP_SCALE_FACTOR             = SRS_PP_SCALE_FACTOR;
+%constant char *SRS_PP_STANDARD_PARALLEL_1      = SRS_PP_STANDARD_PARALLEL_1;
+%constant char *SRS_PP_STANDARD_PARALLEL_2      = SRS_PP_STANDARD_PARALLEL_2;
+%constant char *SRS_PP_PSEUDO_STD_PARALLEL_1    = SRS_PP_PSEUDO_STD_PARALLEL_1;
+%constant char *SRS_PP_LONGITUDE_OF_CENTER      = SRS_PP_LONGITUDE_OF_CENTER;
+%constant char *SRS_PP_LATITUDE_OF_CENTER       = SRS_PP_LATITUDE_OF_CENTER;
+%constant char *SRS_PP_LONGITUDE_OF_ORIGIN      = SRS_PP_LONGITUDE_OF_ORIGIN;
+%constant char *SRS_PP_LATITUDE_OF_ORIGIN       = SRS_PP_LATITUDE_OF_ORIGIN;
+%constant char *SRS_PP_FALSE_EASTING            = SRS_PP_FALSE_EASTING;
+%constant char *SRS_PP_FALSE_NORTHING           = SRS_PP_FALSE_NORTHING;
+%constant char *SRS_PP_AZIMUTH                  = SRS_PP_AZIMUTH;
+%constant char *SRS_PP_LONGITUDE_OF_POINT_1     = SRS_PP_LONGITUDE_OF_POINT_1;
+%constant char *SRS_PP_LATITUDE_OF_POINT_1      = SRS_PP_LATITUDE_OF_POINT_1;
+%constant char *SRS_PP_LONGITUDE_OF_POINT_2     = SRS_PP_LONGITUDE_OF_POINT_2;
+%constant char *SRS_PP_LATITUDE_OF_POINT_2      = SRS_PP_LATITUDE_OF_POINT_2;
+%constant char *SRS_PP_LONGITUDE_OF_POINT_3     = SRS_PP_LONGITUDE_OF_POINT_3;
+%constant char *SRS_PP_LATITUDE_OF_POINT_3      = SRS_PP_LATITUDE_OF_POINT_3;
+%constant char *SRS_PP_RECTIFIED_GRID_ANGLE     = SRS_PP_RECTIFIED_GRID_ANGLE;
+%constant char *SRS_PP_LANDSAT_NUMBER           = SRS_PP_LANDSAT_NUMBER;
+%constant char *SRS_PP_PATH_NUMBER              = SRS_PP_PATH_NUMBER;
+%constant char *SRS_PP_PERSPECTIVE_POINT_HEIGHT = SRS_PP_PERSPECTIVE_POINT_HEIGHT;
+%constant char *SRS_PP_FIPSZONE                 = SRS_PP_FIPSZONE;
+%constant char *SRS_PP_ZONE                     = SRS_PP_ZONE;
+
+%constant char *SRS_UL_METER			= SRS_UL_METER;
+%constant char *SRS_UL_FOOT			= SRS_UL_FOOT;
+%constant char *SRS_UL_FOOT_CONV                = SRS_UL_FOOT_CONV;
+%constant char *SRS_UL_US_FOOT			= SRS_UL_US_FOOT;
+%constant char *SRS_UL_US_FOOT_CONV             = SRS_UL_US_FOOT_CONV;
+%constant char *SRS_UL_NAUTICAL_MILE		= SRS_UL_NAUTICAL_MILE;
+%constant char *SRS_UL_NAUTICAL_MILE_CONV       = SRS_UL_NAUTICAL_MILE_CONV;
+%constant char *SRS_UL_LINK			= SRS_UL_LINK;
+%constant char *SRS_UL_LINK_CONV                = SRS_UL_LINK_CONV;
+%constant char *SRS_UL_CHAIN			= SRS_UL_CHAIN;
+%constant char *SRS_UL_CHAIN_CONV               = SRS_UL_CHAIN_CONV;
+%constant char *SRS_UL_ROD			= SRS_UL_ROD;
+%constant char *SRS_UL_ROD_CONV                 = SRS_UL_ROD_CONV;
+
+%constant char *SRS_DN_NAD27			= SRS_DN_NAD27;
+%constant char *SRS_DN_NAD83			= SRS_DN_NAD83;
+%constant char *SRS_DN_WGS72			= SRS_DN_WGS72;
+%constant char *SRS_DN_WGS84			= SRS_DN_WGS84;
+
+%constant double SRS_WGS84_SEMIMAJOR             = SRS_WGS84_SEMIMAJOR;
+%constant double SRS_WGS84_INVFLATTENING         = SRS_WGS84_INVFLATTENING;
 #endif
 
 %{
@@ -76,8 +153,6 @@ typedef struct OGRCoordinateTransformationHS OGRCoordinateTransformationShadow;
 typedef void OSRSpatialReferenceShadow;
 typedef void OSRCoordinateTransformationShadow;
 #endif
-
-typedef char retStringAndCPLFree;
 
 %}
 
@@ -108,7 +183,6 @@ typedef int OGRErr;
 /************************************************************************/
 /*                        GetWellKnownGeogCSAsWKT()                     */
 /************************************************************************/
-%apply Pointer NONNULL {const char* name};
 %inline %{
 OGRErr GetWellKnownGeogCSAsWKT( const char *name, char **argout ) {
   OGRSpatialReferenceH srs = OSRNewSpatialReference("");
@@ -148,29 +222,16 @@ OGRErr GetUserInputAsWKT( const char *name, char **argout ) {
 
 #if !defined(SWIGPYTHON)
 %rename (GetProjectionMethods) OPTGetProjectionMethods;
-#ifdef SWIGJAVA
-%apply (char **out_ppsz_and_free) {(char **)};
-#else
 %apply (char **CSL) {(char **)};
-#endif
 char **OPTGetProjectionMethods();
 %clear (char **);
 
 %rename (GetProjectionMethodParameterList) OPTGetParameterList;
-#ifdef SWIGJAVA
-%apply (char **retAsStringArrayAndFree) {(char **)};
-%apply (char **OUTPUT) { char **username };
-#else
 %apply (char **CSL) {(char **)};
-#endif
 char **OPTGetParameterList( char *method, char **username );
 %clear (char **);
 
 %rename (GetProjectionMethodParamInfo) OPTGetParameterInfo;
-#ifdef SWIGJAVA
-%apply (char **OUTPUT) { char **usrname, char **type };
-%apply (double *OUTPUT) { double *defaultval };
-#endif
 void OPTGetParameterInfo( char *method, char *param, char **usrname,
                           char **type, double *defaultval );
 #endif
@@ -189,9 +250,7 @@ public:
 %extend {
 
 
-#ifndef SWIGJAVA
   %feature("kwargs") OSRSpatialReferenceShadow;
-#endif
   OSRSpatialReferenceShadow( char const * wkt = "" ) {
     return (OSRSpatialReferenceShadow*) OSRNewSpatialReference(wkt);
   }
@@ -202,24 +261,14 @@ public:
     }
   }
 
-/* FIXME : all bindings should avoid using the #else case */
-/* as the deallocator for the char* is delete[] where as */
-/* OSRExportToPrettyWkt uses CPL/VSIMalloc() */
-#if defined(SWIGPYTHON)||defined(SWIGJAVA)
-  retStringAndCPLFree *__str__() {
-    char *buf = 0;
-    OSRExportToPrettyWkt( self, &buf, 0 );
-    return buf;
-  }
-#else
+
 %newobject __str__;
   char *__str__() {
     char *buf = 0;
     OSRExportToPrettyWkt( self, &buf, 0 );
     return buf;
   }
-#endif
-%apply Pointer NONNULL {OSRSpatialReferenceShadow* rhs};
+
   int IsSame( OSRSpatialReferenceShadow *rhs ) {
     return OSRIsSame( self, rhs );
   }
@@ -238,10 +287,6 @@ public:
 
   int IsLocal() {
     return OSRIsLocal(self);
-  }
-
-  int EPSGTreatsAsLatLong() {
-    return OSREPSGTreatsAsLatLong(self);
   }
 
   OGRErr SetAuthority( const char * pszTargetKey,
@@ -646,15 +691,9 @@ public:
     return OSRCopyGeogCSFrom( self, rhs );
   }
 
-#ifdef SWIGJAVA
-  OGRErr SetTOWGS84( double p1, double p2, double p3,
-                     double p4, double p5,
-                     double p6, double p7 ) {
-#else
   OGRErr SetTOWGS84( double p1, double p2, double p3,
                      double p4 = 0.0, double p5 = 0.0,
                      double p6 = 0.0, double p7 = 0.0 ) {
-#endif
     return OSRSetTOWGS84( self, p1, p2, p3, p4, p5, p6, p7 );
   }
 
@@ -706,10 +745,6 @@ public:
     return OSRImportFromEPSG(self, arg);
   }
 
-  OGRErr ImportFromEPSGA( int arg ) {
-    return OSRImportFromEPSGA(self, arg);
-  }
-
   OGRErr ImportFromPCI( char const *proj, char const *units = "METRE",
                         double argin[17] = 0 ) {
     return OSRImportFromPCI( self, proj, units, argin );
@@ -723,10 +758,6 @@ public:
 
   OGRErr ImportFromXML( char const *xmlString ) {
     return OSRImportFromXML( self, xmlString );
-  }
-  
-  OGRErr ImportFromMICoordSys( char const *pszCoordSys ) {
-    return OSRImportFromMICoordSys( self, pszCoordSys );
   }
 
   OGRErr ExportToWkt( char **argout ) {
@@ -760,20 +791,19 @@ public:
   OGRErr ExportToXML( char **argout, const char *dialect = "" ) {
     return OSRExportToXML( self, argout, dialect );
   }
-  
-  OGRErr ExportToMICoordSys( char **argout ) {
-    return OSRExportToMICoordSys( self, argout );
-  }
 
 %newobject CloneGeogCS;
   OSRSpatialReferenceShadow *CloneGeogCS() {
     return (OSRSpatialReferenceShadow*) OSRCloneGeogCS(self);
   }
 
+/*
+ * Commented out until the headers have changed to make OSRClone visible.
 %newobject Clone;
   OSRSpatialReferenceShadow *Clone() {
     return (OSRSpatialReferenceShadow*) OSRClone(self);
   }
+*/
 
   OGRErr Validate() {
     return OSRValidate(self);
@@ -832,12 +862,8 @@ public:
 
 // Need to apply argin typemap second so the numinputs=1 version gets applied
 // instead of the numinputs=0 version from argout.
-#ifdef SWIGJAVA
-%apply (double argout[ANY]) {(double inout[3])};
-#else
 %apply (double argout[ANY]) {(double inout[3])};
 %apply (double argin[ANY]) {(double inout[3])};
-#endif
   void TransformPoint( double inout[3] ) {
     OCTTransform( self, 1, &inout[0], &inout[1], &inout[2] );
   }

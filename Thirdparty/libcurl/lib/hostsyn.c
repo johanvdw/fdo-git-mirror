@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,13 +18,16 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: hostsyn.c,v 1.17 2009-12-30 17:59:56 yangtse Exp $
+ * $Id: hostsyn.c,v 1.12 2007-04-03 18:25:18 yangtse Exp $
  ***************************************************************************/
 
 #include "setup.h"
 
 #include <string.h>
 
+#ifdef NEED_MALLOC_H
+#include <malloc.h>
+#endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -43,10 +46,14 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>     /* for the close() proto */
 #endif
-#ifdef __VMS
+#ifdef  VMS
 #include <in.h>
 #include <inet.h>
 #include <stdlib.h>
+#endif
+
+#ifdef HAVE_SETJMP_H
+#include <setjmp.h>
 #endif
 
 #ifdef HAVE_PROCESS_H
@@ -64,7 +71,11 @@
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
 
-#include "curl_memory.h"
+#if defined(HAVE_INET_NTOA_R) && !defined(HAVE_INET_NTOA_R_DECL)
+#include "inet_ntoa_r.h"
+#endif
+
+#include "memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrawrasterband.cpp 17902 2009-10-25 22:22:29Z rouault $
+ * $Id: vrtrawrasterband.cpp 15394 2008-09-19 18:20:39Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRawRasterBand
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: vrtrawrasterband.cpp 17902 2009-10-25 22:22:29Z rouault $");
+CPL_CVSID("$Id: vrtrawrasterband.cpp 15394 2008-09-19 18:20:39Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -89,15 +89,6 @@ CPLErr VRTRawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
         return CE_Failure;
     }
 
-    if( eRWFlag == GF_Write && eAccess == GA_ReadOnly )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Attempt to write to read only dataset in"
-                  "VRTRawRasterBand::IRasterIO().\n" );
-
-        return( CE_Failure );
-    }
-    
 /* -------------------------------------------------------------------- */
 /*      Do we have overviews that would be appropriate to satisfy       */
 /*      this request?                                                   */
@@ -110,8 +101,6 @@ CPLErr VRTRawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                               eBufType, nPixelSpace, nLineSpace ) == CE_None )
             return CE_None;
     }
-    
-    poRawRaster->SetAccess(eAccess);
 
     return poRawRaster->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize, 
                                   pData, nBufXSize, nBufYSize, 
@@ -150,9 +139,7 @@ CPLErr VRTRawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
                   "No raw raster band configured on VRTRawRasterBand." );
         return CE_Failure;
     }
-    
-    poRawRaster->SetAccess(eAccess);
-    
+
     return poRawRaster->WriteBlock( nBlockXOff, nBlockYOff, pImage );
 }
 
@@ -250,6 +237,7 @@ CPLErr VRTRawRasterBand::SetRawLink( const char *pszFilename,
 
     return CE_None;
 }
+
 
 /************************************************************************/
 /*                            ClearRawLink()                            */
@@ -417,40 +405,4 @@ CPLXMLNode *VRTRawRasterBand::SerializeToXML( const char *pszVRTPath )
         CPLCreateXMLElementAndValue( psTree, "ByteOrder", "MSB" );
     
     return psTree;
-}
-
-/************************************************************************/
-/*                             GetFileList()                            */
-/************************************************************************/
-
-void VRTRawRasterBand::GetFileList(char*** ppapszFileList, int *pnSize,
-                                int *pnMaxSize, CPLHashSet* hSetFiles)
-{
-    if (pszSourceFilename == NULL)
-        return;
-        
-/* -------------------------------------------------------------------- */
-/*      Is it already in the list ?                                     */
-/* -------------------------------------------------------------------- */
-    if( CPLHashSetLookup(hSetFiles, pszSourceFilename) != NULL )
-        return;
-        
-/* -------------------------------------------------------------------- */
-/*      Grow array if necessary                                         */
-/* -------------------------------------------------------------------- */
-    if (*pnSize + 1 >= *pnMaxSize)
-    {
-        *pnMaxSize = 2 + 2 * (*pnMaxSize);
-        *ppapszFileList = (char **) CPLRealloc(
-                    *ppapszFileList, sizeof(char*)  * (*pnMaxSize) );
-    }
-            
-/* -------------------------------------------------------------------- */
-/*      Add the string to the list                                      */
-/* -------------------------------------------------------------------- */
-    (*ppapszFileList)[*pnSize] = CPLStrdup(pszSourceFilename);
-    (*ppapszFileList)[(*pnSize + 1)] = NULL;
-    CPLHashSetInsert(hSetFiles, (*ppapszFileList)[*pnSize]);
-    
-    (*pnSize) ++;
 }

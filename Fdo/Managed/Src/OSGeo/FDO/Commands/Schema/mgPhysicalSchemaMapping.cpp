@@ -25,30 +25,26 @@ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::PhysicalSchemaMappin
 {
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::PhysicalSchemaMapping(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ schemaMapping, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::PhysicalSchemaMapping(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* schemaMapping, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping(System::IntPtr::Zero, false)
 {
-    if (nullptr == schemaMapping)
+    if (NULL == schemaMapping) {
 		return;
+	}
 
-	EXCEPTION_HANDLER(Attach(IntPtr(schemaMapping->GetImpObj()), autoDelete))
+	EXCEPTION_HANDLER(Attach(schemaMapping->GetImpObj(), autoDelete))
 }
 
 FdoPhysicalSchemaMapping* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::GetImpObj()
 {
-    return static_cast<FdoPhysicalSchemaMapping*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoPhysicalSchemaMapping*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-System::String^ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::Provider::get()
+System::String* NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping::get_Provider()
 {
 	FdoString* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetProvider())
 
-	return CHECK_STRING(result);
+	return result;
 }
 

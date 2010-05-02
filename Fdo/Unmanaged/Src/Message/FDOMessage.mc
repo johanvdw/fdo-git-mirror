@@ -831,11 +831,7 @@ SymbolicName=SCHEMA_151_DEFAULTDATEVIOLATION
 Language=English
 Data Property %1$ls default value '%2$ls' is not an FDO datetime; must be "TIMESTAMP 'YYYY-MM-DD HH24:MI:SS'", "DATE 'YYYY-MM-DD'" or "TIME 'HH24:MM:SS'"
 .
-MessageId=1152
-SymbolicName=SCHEMA_152_MODCLASSCONSTRAINT
-Language=English
-Cannot modify unique constraints for class '%1$ls'; class has data
-.
+
 MessageId=2001
 SymbolicName=EXPRESSION_1_BLOBVALUENULL
 Language=English
@@ -939,22 +935,22 @@ String does not represent a valid value expression.
 MessageId=2021
 SymbolicName=EXPRESSION_21_VALUETRUNCATED
 Language=English
-Cannot convert value %1$ls to %2$ls; it is outside the range [%3$s, %4$s]
+Cannot convert value %1$s to %2$ls; it is outside the range [%3$s, %4$s]
 .
 MessageId=2022
 SymbolicName=EXPRESSION_22_INCOMPATIBLEDATATYPES
 Language=English
-Cannot convert value %1$ls from %2$ls to %3$ls; incompatible data types
+Cannot convert value %1$s from %2$ls to %3$ls; incompatible data types
 .
 MessageId=2023
 SymbolicName=EXPRESSION_23_VALUESHIFTED
 Language=English
-Cannot convert value %1$ls to %2$ls without loss of precision
+Cannot convert value %1$s to %2$ls without loss of precision
 .
 MessageId=2024
 SymbolicName=EXPRESSION_24_BOOLEANTRUNCATED
 Language=English
-Cannot convert value %1$ls to boolean; it must be 0 or 1
+Cannot convert value %1$s to boolean; it must be 0 or 1
 .
 
 MessageId=3001
@@ -3094,9 +3090,4 @@ MessageId=9188
 SymbolicName=FUNCTION_M
 Language=English
 Determines the M ordinate of a given point geometry
-.
-MessageId=9189
-SymbolicName=FDO_185_READ_FILE_ERROR
-Language=English
-Error occured reading file '%1$ls'.
 .

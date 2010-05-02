@@ -29,12 +29,7 @@
 
 FdoMySQLOvAssociationPropertyDefinition* NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::GetImpObj()
 {
-	return dynamic_cast<FdoMySQLOvAssociationPropertyDefinition*>((FdoIDisposable*)UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return dynamic_cast<FdoMySQLOvAssociationPropertyDefinition*>((FdoIDisposable*)__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::OvAssociationPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition(unmanaged, autoDelete)
@@ -43,20 +38,20 @@ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinit
 
 NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::OvAssociationPropertyDefinition() : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr((FdoIDisposable*)FdoMySQLOvAssociationPropertyDefinition::Create()), true))
+	EXCEPTION_HANDLER(Attach((FdoIDisposable*)FdoMySQLOvAssociationPropertyDefinition::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::OvAssociationPropertyDefinition(System::String^ name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition(System::IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::OvAssociationPropertyDefinition(System::String* name) : NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvAssociationPropertyDefinition(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr((FdoIDisposable*)FdoMySQLOvAssociationPropertyDefinition::Create(StringToUni(name))), true))
+	EXCEPTION_HANDLER(Attach((FdoIDisposable*)FdoMySQLOvAssociationPropertyDefinition::Create(StringToUni(name)), true))
 }
 
-NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection ^ NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::IdentityProperties::get()
+NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvPropertyDefinitionCollection * NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE_MYSQL::OvAssociationPropertyDefinition::get_IdentityProperties()
 {
-	FdoMySQLOvPropertyDefinitionCollection * result;
+	FdoMySQLOvPropertyDefinitionCollection * unobj;
 
-	EXCEPTION_HANDLER(result = GetImpObj()->GetIdentityProperties())
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetIdentityProperties())
 
-	return ObjectFactory::CreateOvPropertyDefinitionCollection(IntPtr(result), true);
+	return ObjectFactory::CreateOvPropertyDefinitionCollection(unobj, true);
 }
 

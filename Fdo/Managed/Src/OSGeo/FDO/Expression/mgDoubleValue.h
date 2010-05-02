@@ -23,17 +23,17 @@
 class FdoDoubleValue;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The DoubleValue class derives from DataValue and represents a double-precision floating point number.
-public ref class DoubleValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
+public __gc class DoubleValue : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns a double
     /// 
-	static operator System::Double ( NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue^ value );
+	static System::Double op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::DoubleValue* value );
 
     /// \brief
     /// Constructs a default instance of an DoubleValue with a value of null.
@@ -69,10 +69,7 @@ public:
     /// \return
     /// Returns an DataType
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the double value.
@@ -80,6 +77,8 @@ public:
     /// \return
     /// Returns a double
     /// 
+	__property System::Double get_Double();
+
     /// \brief
     /// Sets the double value as a double precision floating point number.
     /// 
@@ -89,11 +88,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Double Double
-    {
-        System::Double get();
-        System::Void set(System::Double value);
-    }
+	__property System::Void set_Double(System::Double value);
 
     /// \brief
     /// Overrides Expression.Process to pass the DoubleValue to the appropriate
@@ -105,7 +100,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -113,7 +108,7 @@ public:
     /// \return
     /// Returns a character string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs a DoubleValue object based on an unmanaged instance of the object
@@ -127,10 +122,8 @@ public:
     /// 
 	DoubleValue(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoDoubleValue* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 

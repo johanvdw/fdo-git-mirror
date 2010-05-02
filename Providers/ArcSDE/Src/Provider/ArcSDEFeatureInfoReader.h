@@ -21,9 +21,7 @@
 #pragma once
 #endif // _WIN32
 
-#include "FdoDefaultFeatureReader.h"
-
-class ArcSDEFeatureInfoReader: public FdoDefaultFeatureReader
+class ArcSDEFeatureInfoReader: public FdoIFeatureReader
 {
     friend class ArcSDEInsertCommand;
 //    friend class ArcSDEUpdateCommand;

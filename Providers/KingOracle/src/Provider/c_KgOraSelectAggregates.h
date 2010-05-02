@@ -129,7 +129,7 @@ public:
     virtual FdoFilter* GetGroupingFilter( );
     
 protected:
-  std::wstring CreateSqlString(c_KgOraFilterProcessor& FilterProc,int& GeomSqlColumnIndex,FdoStringCollection* SqlColumns,FdoStringP& SdeSpatialExtent_ColumnName);
+  std::wstring CreateSqlString(c_KgOraFilterProcessor& FilterProc,int& GeomSqlColumnIndex,FdoStringCollection* SqlColumns);
   void CreateFilterSqlString(FdoFilter* Filter,string& WhereBuff);
   FdoStringP ToSqlString(FdoIdentifierCollection* Idents);
 };

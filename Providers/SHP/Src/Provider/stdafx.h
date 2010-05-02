@@ -99,7 +99,6 @@ DWORD dwHighDateTime;
 
 // Provider specific headers
 #include <ShpProvider.h>
-#include <../Message/ShpMessageStatic.h>
 #include <../Message/Inc/ShpMessage.h>
 #include <ShpConnectionCapabilities.h>
 #include <ShpCommandCapabilities.h>

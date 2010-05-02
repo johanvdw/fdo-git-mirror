@@ -641,7 +641,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, x, columnX); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", x);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -653,7 +653,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, y, columnY); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", y);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -665,7 +665,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 										i++;
 										values[index].len = 64;
 										values[index].value.strvalue = new char[values[index].len];
-                                        SetGeomOrdinateBindValue((char*)values[index].value.strvalue, z, columnZ); 
+										sprintf((char*)values[index].value.strvalue, "%.16g", z);
 										values[index].type = FdoDataType_String;
 										values[index].valueNeedsFree = true;
                                         mConnection->GetGdbiCommands()->set_nnull(values[index].null_ind, 0,0);
@@ -934,12 +934,6 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 				((values[i].type != FdoRdbmsDataType_Geometry) && 
 				(values[i].type != FdoDataType_BLOB)))
                 delete[] (char*)values[i].value.strvalue;
-
-            if ( values[i].type == FdoRdbmsDataType_Geometry )
-            {
-                FdoIDisposable* disp = (FdoIDisposable*)(values[i].value.strvalue);
-                FDO_SAFE_RELEASE( disp );
-            }
         }
         delete[] values;
 

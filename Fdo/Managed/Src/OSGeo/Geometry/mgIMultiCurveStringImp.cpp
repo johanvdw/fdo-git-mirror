@@ -24,14 +24,9 @@
 #include "mgICurveString.h"
 #include "mgObjectFactory.h"
 
-FdoIMultiCurveString* NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::GetImpObj()
+FdoIMultiCurveString * NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::GetImpObj()
 {
-	return static_cast<FdoIMultiCurveString*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIMultiCurveString *>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::IMultiCurveStringImp(System::IntPtr unmanaged, System::Boolean autoDelete)
@@ -39,10 +34,10 @@ NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::IMultiCurveStringImp(System::Int
 {
 }
 
-NAMESPACE_OSGEO_GEOMETRY::ICurveString^ NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::default::get(System::Int32 index)
+NAMESPACE_OSGEO_GEOMETRY::ICurveString *NAMESPACE_OSGEO_GEOMETRY::IMultiCurveStringImp::get_Item(System::Int32 index)
 {
-	FdoICurveString* ret;
+	FdoICurveString *ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetItem(index))
-	return NAMESPACE_OSGEO_GEOMETRY::ObjectFactory::CreateICurveString(IntPtr(ret), true);
+	return NAMESPACE_OSGEO_GEOMETRY::ObjectFactory::CreateICurveString(ret, true);
 }
 

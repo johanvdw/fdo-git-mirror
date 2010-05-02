@@ -145,9 +145,6 @@ class c_Oci_Statement
     double GetDouble(int ColNumber);
     OCIDate* GetOciDate(int ColNumber);
     const wchar_t* GetString( int ColNumber );
-    long GetLongRawLength( int ColNumber );
-    unsigned char* GetLongRaw( int ColNumber );
-    
     //SDO_GEOMETRY_TYPE* GetSdoGeom( int ColNumber,SDO_GEOMETRY_ind** geom_ind=NULL );
     c_SDO_GEOMETRY* GetSdoGeom( int ColNumber );
     //OCIArray* GetSdoDimArray( int ColNumber );
@@ -208,7 +205,6 @@ protected:
     }
     void DeleteBindValues();
     
-
 
 
 

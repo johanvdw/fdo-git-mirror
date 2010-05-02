@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gridlib.c 17435 2009-07-23 22:36:32Z rouault $
+ * $Id: gridlib.c 13500 2008-01-08 22:17:42Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -29,7 +29,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: gridlib.c 17435 2009-07-23 22:36:32Z rouault $");
+CPL_CVSID("$Id: gridlib.c 13500 2008-01-08 22:17:42Z rouault $");
 
 /************************************************************************/
 /*                    AIGProcessRaw32bitFloatBlock()                    */
@@ -45,12 +45,10 @@ CPLErr AIGProcessRaw32BitFloatBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
+    (void) nDataSize;
     (void) nMin;
-    if( nDataSize < nBlockXSize*nBlockYSize*4 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    }
+
+    CPLAssert( nDataSize >= nBlockXSize*nBlockYSize*4 );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -93,6 +91,8 @@ CPLErr AIGProcessIntConstBlock( GByte *pabyCur, int nDataSize, int nMin,
 
     (void) pabyCur;
     (void) nDataSize;
+
+    CPLAssert( nDataSize <= 8 );
     
 /* -------------------------------------------------------------------- */
 /*	Apply constant min value.					*/
@@ -117,11 +117,9 @@ CPLErr AIGProcessRaw32BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
-    if( nDataSize < nBlockXSize*nBlockYSize*4 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    }
+    (void) nDataSize;
+    
+    CPLAssert( nDataSize >= nBlockXSize*nBlockYSize*2 );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -152,11 +150,9 @@ CPLErr AIGProcessRaw16BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
-    if( nDataSize < nBlockXSize*nBlockYSize*2 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    }
+    (void) nDataSize;
+    
+    CPLAssert( nDataSize >= nBlockXSize*nBlockYSize*2 );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -184,11 +180,8 @@ CPLErr AIGProcessRaw4BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
-    if( nDataSize < (nBlockXSize*nBlockYSize+1)/2 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    } 
+    (void) nDataSize;
+    CPLAssert( nDataSize >= (nBlockXSize*nBlockYSize+1)/2 );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -218,11 +211,8 @@ CPLErr AIGProcessRaw1BitBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
-    if( nDataSize < (nBlockXSize*nBlockYSize+7)/8 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    }
+    (void) nDataSize;
+    CPLAssert( nDataSize >= (nBlockXSize*nBlockYSize+7)/8 );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -251,11 +241,9 @@ CPLErr AIGProcessRawBlock( GByte *pabyCur, int nDataSize, int nMin,
 {
     int		i;
 
-    if( nDataSize < nBlockXSize*nBlockYSize )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-        return CE_Failure;
-    }
+    (void) nDataSize;
+
+    CPLAssert( nDataSize >= nBlockXSize*nBlockYSize );
     
 /* -------------------------------------------------------------------- */
 /*      Collect raw data.                                               */
@@ -287,22 +275,13 @@ CPLErr AIGProcessFFBlock( GByte *pabyCur, int nDataSize, int nMin,
     int i, nDstBytes = (nBlockXSize * nBlockYSize + 7) / 8;
     unsigned char *pabyIntermediate;
 
-    pabyIntermediate = (unsigned char *) VSIMalloc(nDstBytes);
-    if (pabyIntermediate == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Cannot allocate %d bytes", nDstBytes);
-        return CE_Failure;
-    }
+    pabyIntermediate = (unsigned char *) CPLMalloc(nDstBytes);
     
     eErr = DecompressCCITTRLETile( pabyCur, nDataSize, 
                                    pabyIntermediate, nDstBytes,
                                    nBlockXSize, nBlockYSize );
     if( eErr != CE_None )
-    {
-        CPLFree(pabyIntermediate);
         return eErr;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Convert the bit buffer into 32bit integers and account for      */
@@ -364,12 +343,6 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
                 return CE_Failure;
             }
         
-            if( nDataSize < 4 )
-            {
-                CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-                return CE_Failure;
-            }
-
             nValue = 0;
             memcpy( &nValue, pabyCur, 4 );
             pabyCur += 4;
@@ -396,16 +369,9 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
                           nTotPixels - nPixels, nMarker );
                 return CE_Failure;
             }
-
-            if( nDataSize < 2 )
-            {
-                CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
-                return CE_Failure;
-            }
-
+        
             nValue = (pabyCur[0] * 256 + pabyCur[1]) + nMin;
             pabyCur += 2;
-            nDataSize -= 2;
 
             for( i = 0; i < nMarker; i++ )
                 panData[nPixels++] = nValue;
@@ -423,12 +389,6 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Run too long in AIGProcessBlock, needed %d values, got %d.", 
                           nTotPixels - nPixels, nMarker );
-                return CE_Failure;
-            }
-            
-            if( nDataSize < 1 )
-            {
-                CPLError(CE_Failure, CPLE_AppDefined, "Block too small");
                 return CE_Failure;
             }
         
@@ -492,7 +452,7 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
                 return CE_Failure;
             }
         
-            while( nMarker > 0 && nDataSize >= 2 )
+            while( nMarker > 0 && nDataSize > 0 )
             {
                 nValue = pabyCur[0] * 256 + pabyCur[1] + nMin;
                 panData[nPixels++] = nValue;
@@ -573,19 +533,7 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
 /* -------------------------------------------------------------------- */
 /*      Read the block into memory.                                     */
 /* -------------------------------------------------------------------- */
-    if (nBlockSize <= 0 || nBlockSize > 65535 * 2)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Invalid block size : %d", nBlockSize);
-        return CE_Failure;
-    }
-
-    pabyRaw = (GByte *) VSIMalloc(nBlockSize+2);
-    if (pabyRaw == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Cannot allocate memory for block");
-        return CE_Failure;
-    }
-
+    pabyRaw = (GByte *) CPLMalloc(nBlockSize+2);
     if( VSIFSeekL( fp, nBlockOffset, SEEK_SET ) != 0 
         || VSIFReadL( pabyRaw, nBlockSize+2, 1, fp ) != 1 )
     {
@@ -593,7 +541,7 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Read of %d bytes from offset %d for grid block failed.", 
                   nBlockSize+2, nBlockOffset );
-        CPLFree( pabyRaw );
+                  
         return CE_Failure;
     }
 
@@ -606,7 +554,7 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Block is corrupt, block size was %d, but expected to be %d.", 
                   (pabyRaw[0]*256 + pabyRaw[1])*2, nBlockSize );
-        CPLFree( pabyRaw );
+                  
         return CE_Failure;
     }
 
@@ -628,34 +576,10 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
 /* -------------------------------------------------------------------- */
 /*      Collect minimum value.                                          */
 /* -------------------------------------------------------------------- */
-
-    /* The first 2 bytes that give the block size are not included in nDataSize */
-    /* and have already been safely read */
     pabyCur = pabyRaw + 2;
 
-    /* Need at least 2 byte to read the nMinSize and the nMagic */
-    if (nDataSize < 2)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Corrupt block. Need 2 bytes to read nMagic and nMinSize, only %d available",
-                  nDataSize);
-        CPLFree( pabyRaw );
-        return CE_Failure;
-    }
-    nMagic = pabyCur[0];
     nMinSize = pabyCur[1];
     pabyCur += 2;
-    nDataSize -= 2;
-
-    /* Need at least nMinSize bytes to read the nMin value */
-    if (nDataSize < nMinSize)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Corrupt block. Need %d bytes to read nMin. Only %d available",
-                  nMinSize, nDataSize);
-        CPLFree( pabyRaw );
-        return CE_Failure;
-    }
 
     if( nMinSize > 4 )
     {
@@ -663,10 +587,9 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Corrupt 'minsize' of %d in block header.  Read aborted.", 
                   nMinSize );
-        CPLFree( pabyRaw );
         return CE_Failure;
     }
-
+    
     if( nMinSize == 4 )
     {
         memcpy( &nMin, pabyCur, 4 );
@@ -682,9 +605,7 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
             pabyCur++;
         }
 
-        /* If nMinSize = 0, then we might have only 4 bytes in pabyRaw */
-        /* don't try to read the 5th one then */
-        if( nMinSize != 0 && pabyRaw[4] > 127 )
+        if( pabyRaw[4] > 127 )
         {
             if( nMinSize == 2 )
                 nMin = nMin - 65536;
@@ -695,11 +616,12 @@ CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
         }
     }
     
-    nDataSize -= nMinSize;
+    nDataSize -= 2+nMinSize;
     
 /* -------------------------------------------------------------------- */
 /*	Call an apppropriate handler depending on magic code.		*/
 /* -------------------------------------------------------------------- */
+    nMagic = pabyRaw[2];
 
     if( nMagic == 0x08 )
     {
@@ -925,14 +847,7 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
         return CE_Failure;
     }
     VSIFSeekL( fp, 100, SEEK_SET );
-    if ((int)VSIFReadL( panIndex, 8, psTInfo->nBlocks, fp ) != psTInfo->nBlocks)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "AIGReadBlockIndex: Cannot read block info");
-        VSIFCloseL( fp );
-        CPLFree( panIndex );
-        return CE_Failure;
-    }
+    VSIFReadL( panIndex, 8, psTInfo->nBlocks, fp );
 
     VSIFCloseL( fp );
 
@@ -1080,4 +995,8 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
 
     return( CE_None );
 }
+
+
+
+
 

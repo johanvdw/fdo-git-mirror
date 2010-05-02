@@ -205,11 +205,6 @@ SymbolicName=M_KGORA_CONNECTION_PROPERTY_FDO_VIEWS_TABLE
 Language=English
 FdoViewsTable
 .
-MessageId=3008
-SymbolicName=M_KGORA_CONNECTION_PROPERTY_SDE_SCHEMA
-Language=English
-SDE Schema
-.
 
 ;//************************************************************************************
 ;//************************************************************************************

@@ -19,22 +19,22 @@
 #pragma once
 
 BEGIN_NAMESPACE_OSGEO_COMMON
-ref class StringCollection;
+public __gc class StringCollection;
 END_NAMESPACE_OSGEO_COMMON
 
 BEGIN_NAMESPACE_OSGEO_COMMON_XML
-ref class XmlSaxContext;
-ref class XmlWriter;
-ref class XmlAttributeCollection;
+public __gc class XmlSaxContext;
+public __gc class XmlWriter;
+public __gc class XmlAttributeCollection;
 END_NAMESPACE_OSGEO_COMMON_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlFlags;
+public __gc class XmlFlags;
 END_NAMESPACE_OSGEO_FDO_XML
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
-interface class IPhysicalElementMapping;
-ref class PhysicalSchemaMapping;
+public __gc __interface IPhysicalElementMapping;
+public __gc class PhysicalSchemaMapping;
 
 /// \ingroup (OSGeoFDOCommandsSchema)
 /// \interface OSGeo::FDO::Commands::Schema::IPhysicalElementMapping
@@ -51,7 +51,7 @@ ref class PhysicalSchemaMapping;
 /// \li \c Other types of schema override classes can be based directly on 
 /// PhysicalElementMapping.
 /// 
-public interface class IPhysicalElementMapping : public NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler
+public __gc __interface IPhysicalElementMapping : public NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler
 {
 public:
     /// \brief
@@ -61,10 +61,7 @@ public:
     /// \return
     /// Returns the PhysicalElementMapping of the parent
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IPhysicalElementMapping^ Parent
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IPhysicalElementMapping^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IPhysicalElementMapping* get_Parent();
 
     /// \brief
     /// Gets the PhysicalSchemaMapping that this element is a part of. Returns null if this
@@ -73,10 +70,7 @@ public:
     /// \return
     /// Returns PhysicalSchemaMapping this object is a part of
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ SchemaMapping
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping* get_SchemaMapping();
 
     /// \brief
     /// Gets the name of this element.
@@ -84,28 +78,23 @@ public:
     /// \return
     /// Returns the name of this element.
     /// 
+	__property System::Void set_Name(System::String* name);
+
     /// \brief
     /// Gets the fully qualified name of this element
     /// 
     /// \return
     /// default implementation simply returns the element name
     /// 
-    property System::String^ Name
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
-
+	__property System::String* get_Name();
+	
     /// \brief
     /// Gets the fully qualified name of this element.
     /// 
     /// \return
     /// Returns the qualified name of this element. 
     /// 
-    property System::String^ QualifiedName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_QualifiedName();
 
     /// \brief
     /// Indicates whether the name of the Element can be changed once
@@ -114,10 +103,7 @@ public:
     /// \return
     /// Returns true if the Element name can be changed; otherwise false.
     /// 
-    property System::Boolean CanSetName
-    {
-        System::Boolean get();
-    }
+	__property System::Boolean get_CanSetName();
 
     /// \brief
     /// Initializes this Physical Element Mapping from its XML attributes. Called when
@@ -132,7 +118,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection^ attributes);
+	System::Void InitFromXml(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, NAMESPACE_OSGEO_COMMON_XML::XmlAttributeCollection* attributes);
 
     /// \brief
     /// Writes this Physical Mapping Element to XML. Called when
@@ -147,7 +133,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter^ xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags^ flags);
+	System::Void WriteXml(NAMESPACE_OSGEO_COMMON_XML::XmlWriter* xmlWriter, NAMESPACE_OSGEO_FDO_XML::XmlFlags* flags);
 
     /// \brief
     /// Error reporting function that are not yet part of the supported FDO API.
@@ -162,7 +148,7 @@ public:
     /// \param subElement 
     /// Input the XML sub element
     ///
-	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ SubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ parentElement, System::String^ subElement);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* SubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* parentElement, System::String* subElement);
 
     /// \brief
     /// Error reporting function that are not yet part of the supported FDO API.
@@ -177,7 +163,7 @@ public:
     /// \param subElement 
     /// Input the XML sub element
     ///
-	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ MultiSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ parentElement, System::String^ subElement);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* MultiSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* parentElement, System::String* subElement);
 
     /// \brief
     /// Error reporting function that are not yet part of the supported FDO API.
@@ -192,7 +178,7 @@ public:
     /// \param subElements 
     /// Input the list of the XML sub elements
     ///
-	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ ChoiceSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ parentElement, NAMESPACE_OSGEO_COMMON::StringCollection^ subElements);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* ChoiceSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* parentElement, NAMESPACE_OSGEO_COMMON::StringCollection* subElements);
 
     /// \brief
     /// Error reporting function that are not yet part of the supported FDO API.
@@ -210,7 +196,7 @@ public:
     /// \param subElementName 
     /// Input the XML sub element name
     ///
-	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler^ DuplicateSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext^ context, System::String^ parentElement, System::String^ subElement, System::String^ subElementName);
+	NAMESPACE_OSGEO_COMMON_XML::IXmlSaxHandler* DuplicateSubElementError(NAMESPACE_OSGEO_COMMON_XML::XmlSaxContext* context, System::String* parentElement, System::String* subElement, System::String* subElementName);
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA

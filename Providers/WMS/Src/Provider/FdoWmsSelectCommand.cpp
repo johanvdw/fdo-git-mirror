@@ -124,7 +124,7 @@ FdoIFeatureReader* FdoWmsSelectCommand::Execute ()
 	}
 	else
 	{
-		FdoPtr<FdoIDisposableCollection> featClasses = schemas->FindClass (clsName);	
+		FdoIDisposableCollection* featClasses = schemas->FindClass (clsName);	
 		if (featClasses->GetCount () == 0)
 			throw FdoSchemaException::Create (NlsMsgGet(FDOWMS_NAMED_SCHEMACLASS_NOT_FOUND, "FDO Feature Class '%1$ls' was not found.", (FdoString*)clsName ));
 
@@ -411,11 +411,12 @@ FdoClassDefinition* FdoWmsSelectCommand::_getPrunedClassDefinition ()
 		clsDef = dynamic_cast<FdoFeatureClass *> (clsColl->FindItem (clsName));
 	}
 
-	FdoPtr<FdoClassDefinition> ret = FdoCommonSchemaUtil::DeepCopyFdoFeatureClass (clsDef);
 	if (mPropertiesToSelect && mPropertiesToSelect->GetCount () == 0)
 	{
-		return FDO_SAFE_ADDREF (ret.p);
+		return FDO_SAFE_ADDREF (clsDef.p);
 	}
+
+	FdoPtr<FdoClassDefinition> ret = FdoCommonSchemaUtil::DeepCopyFdoFeatureClass (clsDef);
 	
 	FdoPtr<FdoPropertyDefinition> prop;
 	FdoPtr<FdoPropertyDefinitionCollection> properties = ret->GetProperties ();

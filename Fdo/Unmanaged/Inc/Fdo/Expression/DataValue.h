@@ -196,51 +196,6 @@ public:
     FDO_API static FdoDataValue* Create(FdoByteArray* value, FdoDataType dataType);
 
     /// \brief
-    /// Constructs an instance of an FdoDataValue from another FdoDataValue.
-    /// 
-    /// \param dataType
-    /// Input the destination type. An FdoDataValue of this type is created. 
-    /// For more information on how the FdoDataValue is created, see the specific 
-    /// Create(FdoDataValue* FdoBoolean, FdoBoolean, FdoBoolean ) function for
-    /// each dataType. For example, if dataType=FdoDataType_Int16, see
-    /// FdoInt16Value::Create(FdoDataValue* FdoBoolean, FdoBoolean, FdoBoolean )
-    /// \param src 
-    /// Input the source (other) FdoDataValue
-    /// \param nullIfIncompatible 
-    /// Input will determine what to do if source value type is not compatible with the 
-    /// this type:
-    ///     true - return NULL.
-    ///     false - throw an exception
-    /// 
-    /// \param shift 
-    /// Input will determine what to do if the src value is within the range of 
-    /// valid values for the destination type but still must be shifted to be a 
-    /// valid destination type value (e.g. 3.5 must be shifted to convert it from
-    /// FdoDoubleValue to FdoInt32Value):
-    ///     true - perform the shift.
-    ///     false - behaviour depends on nullIfIncompatible:
-    ///         true - return NULL.
-    ///         false - throw an exception
-    /// 
-    /// \param truncate 
-    /// Input in the future will determine what to do if source value is outside the
-    ///  range of valid values for the destination type:
-    ///     true - convert values less than the minimum to the minimum, 
-    ///            convert values greater than maximum to the maximum
-    ///     false - behaviour depends on nullIfIncompatible:
-    ///         true - return NULL.
-    ///         false - throw an exception
-    /// \return
-    /// Returns an FdoDataValue, whose value is converted from the src value. 
-    FDO_API static FdoDataValue* Create(
-        FdoDataType dataType,
-        FdoDataValue* src, 
-        FdoBoolean nullIfIncompatible = false,
-        FdoBoolean shift = true,
-        FdoBoolean truncate = false
-    );
-
-    /// \brief
     /// Gets the data type of the FdoDataValue.
     /// 
     /// \return
@@ -334,6 +289,51 @@ protected:
     ///
     static FdoDataValue* Create( FdoDouble value );
 
+    /// \brief
+    /// Constructs an instance of an FdoDataValue from another FdoDataValue.
+    /// 
+    /// \param dataType
+    /// Input the destination type. An FdoDataValue of this type is created. 
+    /// For more information on how the FdoDataValue is created, see the specific 
+    /// Create(FdoDataValue* FdoBoolean, FdoBoolean, FdoBoolean ) function for
+    /// each dataType. For example, if dataType=FdoDataType_Int16, see
+    /// FdoInt16Value::Create(FdoDataValue* FdoBoolean, FdoBoolean, FdoBoolean )
+    /// \param src 
+    /// Input the source (other) FdoDataValue
+    /// \param nullIfIncompatible 
+    /// Input will determine what to do if source value type is not compatible with the 
+    /// this type:
+    ///     true - return NULL.
+    ///     false - throw an exception
+    /// 
+    /// \param shift 
+    /// Input will determine what to do if the src value is within the range of 
+    /// valid values for the destination type but still must be shifted to be a 
+    /// valid destination type value (e.g. 3.5 must be shifted to convert it from
+    /// FdoDoubleValue to FdoInt32Value):
+    ///     true - perform the shift.
+    ///     false - behaviour depends on nullIfIncompatible:
+    ///         true - return NULL.
+    ///         false - throw an exception
+    /// 
+    /// \param truncate 
+    /// Input in the future will determine what to do if source value is outside the
+    ///  range of valid values for the destination type:
+    ///     true - convert values less than the minimum to the minimum, 
+    ///            convert values greater than maximum to the maximum
+    ///     false - behaviour depends on nullIfIncompatible:
+    ///         true - return NULL.
+    ///         false - throw an exception
+    /// \return
+    /// Returns an FdoDataValue, whose value is converted from the src value. 
+    static FdoDataValue* Create(
+        FdoDataType dataType,
+        FdoDataValue* src, 
+        FdoBoolean nullIfIncompatible = false,
+        FdoBoolean shift = true,
+        FdoBoolean truncate = false
+    );
+
 /* Helper Templates for FdoDataValue::Create( FdoDataType, FdoDataValue*, FdoBoolean, FdoBoolean, FdoBoolean ) */
 
     // Converts values that may need shifting to other values.
@@ -347,8 +347,6 @@ protected:
         TI val,                             // input scalar value for obj
         TO min,                             // minimum value for TO type
         TO max,                             // maximum value for TO type
-        TI maxPlusOne,                      // trouble maker when converting floating point
-                                            // to integral.
         TI round,                           // amount for rounding 
         FdoBoolean nullIfIncompatible,      // see FdoDataValue::Create()
         FdoBoolean shift,                   // see FdoDataValue::Create()
@@ -361,7 +359,7 @@ protected:
         TO          out;
 
         // First, truncate the value to be between output type min and max.
-        Truncate<TI,TO>( val, out, isNull, min, max, maxPlusOne, round, nullIfIncompatible, truncate, sTO );
+        Truncate<TI,TO>( val, out, isNull, min, max, nullIfIncompatible, truncate, sTO );
                 
         if ( isNull ) 
         {
@@ -369,18 +367,6 @@ protected:
             ret = CO::Create();
         }
         else if ( (val < min) || (val > max) ) 
-        {
-            // value was truncated. Wrap it in FdoDataValue.
-            ret = CO::Create(out);
-        }
-        // When (round != 0) we're converting floating point to integral.
-        //  If val = max + 1 and the floating 
-        //  point type is sometimes less precise that the integral type then sometimes
-        //  (val > max) evaluates to false but (val == max) evaluates to true. 
-        //  The following handles this case:
-        //    (round != 0): converting from floating point to integral
-        //    (val == maxPlusOne): value was truncated by Truncate().
-        else if ( (round != 0) && (val == maxPlusOne) ) 
         {
             // value was truncated. Wrap it in FdoDataValue.
             ret = CO::Create(out);
@@ -417,7 +403,7 @@ protected:
         TO          out;
 
         // First, truncate the value to be between output type min and max.
-        Truncate<TI, TO>( val, out, isNull, min, max, 0, 0, nullIfIncompatible, truncate, sTO );
+        Truncate<TI, TO>( val, out, isNull, min, max, nullIfIncompatible, truncate, sTO );
                 
         if ( isNull ) 
             // Output determined to be null
@@ -441,8 +427,6 @@ protected:
                                     // truncate=false and nullIfIncompatible=true
         TO min,                     // minimum value for TO type
         TO max,                     // maximum value for TO type
-        TI maxPlusOne,              // trouble maker when converting floating point to integral.
-        TI round,
         bool nullIfIncompatible,    // see FdoDataValue::Create()
         bool truncate,              // see FdoDataValue::Create()
         FdoString* sTO              // TO in string format; for exception messages.
@@ -456,13 +440,8 @@ protected:
 
         if ( in < min ) 
             success = Truncate<TI, TO>( in, out, isNull, min, nullIfIncompatible, truncate );   
-        else if ( in > max ) {
+        else if ( in > max ) 
             success = Truncate<TI, TO>( in, out, isNull, max, nullIfIncompatible, truncate );
-        }
-        // This test handles a precision problem. See note in Compare().
-        else if ( (round != 0) && (in == maxPlusOne) ) {
-            success = Truncate<TI, TO>( in, out, isNull, max, nullIfIncompatible, truncate );
-        }
 
         if ( !success )
             throw FdoExpressionException::Create(
@@ -541,6 +520,5 @@ protected:
 typedef FdoPtr<FdoDataValue> FdoDataValueP;
 
 #endif
-
 
 

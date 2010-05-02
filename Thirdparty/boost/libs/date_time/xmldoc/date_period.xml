@@ -4,7 +4,7 @@
 
 <!-- Copyright (c) 2001-2006 CrystalClear Software, Inc.
      Subject to the Boost Software License, Version 1.0. 
-     (See accompanying file LICENSE_1_0.txt or  http://www.boost.org/LICENSE_1_0.txt)
+     (See accompanying file LICENSE-1.0 or  http://www.boost.org/LICENSE-1.0)
 -->
 
 <section id="date_time.gregorian.date_period">
@@ -113,16 +113,14 @@ dp.shift(days(3));
 
           <row>
 	    <entry valign="top" morerows="1"><screen>date_period expand(days)</screen></entry>
-	    <entry>Subtract duration from begin and add duration to end.</entry>
+	    <entry>Add duration to both begin and end.</entry>
 	  </row>
 	  <row>
-	    <entry>
               <screen>
 date_period dp(date(2005,Jan,2), days(2));
 dp.expand(days(1)); 
 // dp == 2005-Jan-01 to 2005-Jan-04
-              </screen>
-            </entry>
+             </screen>
 	  </row>
 
 	</tbody>

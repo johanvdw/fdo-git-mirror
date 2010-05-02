@@ -23,17 +23,17 @@
 class FdoInt16Value;
 
 BEGIN_NAMESPACE_OSGEO_FDO_SCHEMA
-enum class DataType;
+public __value enum DataType;
 END_NAMESPACE_OSGEO_FDO_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_EXPRESSION
 
-interface class IExpressionProcessor;
+public __gc __interface IExpressionProcessor;
 
 /// \ingroup (OSGeoFDOExpression)
 /// \brief
 /// The Int16Value class derives from DataValue and represents a 16-bit signed integer value.
-public ref class Int16Value : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
+public __gc class Int16Value : public NAMESPACE_OSGEO_FDO_EXPRESSION::DataValue
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// \return
     /// Returns a 16 bit integer
     /// 
-	static operator System::Int16( NAMESPACE_OSGEO_FDO_EXPRESSION::Int16Value^ value );
+	static System::Int16 op_Explicit( NAMESPACE_OSGEO_FDO_EXPRESSION::Int16Value* value );
 
     /// \brief
     /// Constructs a default instance of an Int16Value with a value of null.
@@ -69,10 +69,7 @@ public:
     /// \return
     /// Returns an DataType
     /// 
-    property NAMESPACE_OSGEO_FDO_SCHEMA::DataType DataType
-    {
-        NAMESPACE_OSGEO_FDO_SCHEMA::DataType get();
-    }
+	__property NAMESPACE_OSGEO_FDO_SCHEMA::DataType get_DataType();
 
     /// \brief
     /// Gets the Int16Value.
@@ -80,6 +77,8 @@ public:
     /// \return
     /// Returns a 16 bit integer
     /// 
+	__property System::Int16 get_Int16();
+
     /// \brief
     /// Sets the Int16Value.
     /// 
@@ -89,11 +88,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property System::Int16 Int16
-    {
-        System::Int16 get();
-        System::Void set(System::Int16 value);
-    }
+	__property System::Void set_Int16(System::Int16 value);
 
     /// \brief
     /// Overrides Expression.Process to pass the Int16Value to the appropriate
@@ -105,7 +100,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor^ processor) override;
+	System::Void Process(NAMESPACE_OSGEO_FDO_EXPRESSION::IExpressionProcessor* processor);
 
     /// \brief
     /// Returns the well defined text representation of this expression.
@@ -113,7 +108,7 @@ public:
     /// \return
     /// Returns a character string
     /// 
-	virtual System::String^ ToString() override;
+	System::String* ToString();
 
     /// \brief
     /// Constructs an Int16Value object based on an unmanaged instance of the object
@@ -127,10 +122,8 @@ public:
     /// 
 	Int16Value(System::IntPtr unmanaged, System::Boolean autoDelete);
 
-internal:
+public private:
 	inline FdoInt16Value* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_EXPRESSION

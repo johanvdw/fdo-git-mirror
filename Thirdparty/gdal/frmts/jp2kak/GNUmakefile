@@ -21,13 +21,13 @@ INSTOBJ = $(foreach d,$(APPOBJ),../o/$(notdir $(d)))
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(KAKINC) -I. $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 	rm -f $(INSTOBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 	cp $(APPOBJ) ../o
 
 $(OBJ) $(O_OBJ):	subfile_source.h

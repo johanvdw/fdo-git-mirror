@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2006, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: version.c,v 1.65 2010-01-23 13:53:33 yangtse Exp $
+ * $Id: version.c,v 1.52 2006-11-24 22:14:40 bagder Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -49,13 +49,6 @@
 #include <libssh2.h>
 #endif
 
-#ifdef HAVE_LIBSSH2_VERSION
-/* get it run-time if possible */
-#define CURL_LIBSSH2_VERSION libssh2_version(0)
-#else
-/* use build-time if run-time not possible */
-#define CURL_LIBSSH2_VERSION LIBSSH2_VERSION
-#endif
 
 char *curl_version(void)
 {
@@ -64,19 +57,12 @@ char *curl_version(void)
   size_t len;
   size_t left = sizeof(version);
   strcpy(ptr, LIBCURL_NAME "/" LIBCURL_VERSION );
-  len = strlen(ptr);
+  ptr=strchr(ptr, '\0');
+  left -= strlen(ptr);
+
+  len = Curl_ssl_version(ptr, left);
   left -= len;
   ptr += len;
-
-  if(left > 1) {
-    len = Curl_ssl_version(ptr + 1, left - 1);
-
-    if(len > 0) {
-      *ptr = ' ';
-      left -= ++len;
-      ptr += len;
-    }
-  }
 
 #ifdef HAVE_LIBZ
   len = snprintf(ptr, left, " zlib/%s", zlibVersion());
@@ -108,7 +94,7 @@ char *curl_version(void)
   ptr += len;
 #endif
 #ifdef USE_LIBSSH2
-  len = snprintf(ptr, left, " libssh2/%s", CURL_LIBSSH2_VERSION);
+  len = snprintf(ptr, left, " libssh2/%s", LIBSSH2_VERSION);
   left -= len;
   ptr += len;
 #endif
@@ -116,69 +102,43 @@ char *curl_version(void)
   return version;
 }
 
-/* data for curl_version_info
-
-   Keep the list sorted alphabetically. It is also written so that each
-   protocol line has its own #if line to make things easier on the eye.
- */
+/* data for curl_version_info */
 
 static const char * const protocols[] = {
-#ifndef CURL_DISABLE_DICT
-  "dict",
-#endif
-#ifndef CURL_DISABLE_FILE
-  "file",
+#ifndef CURL_DISABLE_TFTP
+  "tftp",
 #endif
 #ifndef CURL_DISABLE_FTP
   "ftp",
 #endif
-#if defined(USE_SSL) && !defined(CURL_DISABLE_FTP)
-  "ftps",
+#ifndef CURL_DISABLE_TELNET
+  "telnet",
 #endif
-#ifndef CURL_DISABLE_HTTP
-  "http",
-#endif
-#if defined(USE_SSL) && !defined(CURL_DISABLE_HTTP)
-  "https",
-#endif
-#ifndef CURL_DISABLE_IMAP
-  "imap",
-#endif
-#if defined(USE_SSL) && !defined(CURL_DISABLE_IMAP)
-  "imaps",
+#ifndef CURL_DISABLE_DICT
+  "dict",
 #endif
 #ifndef CURL_DISABLE_LDAP
   "ldap",
 #endif
-#if defined(HAVE_LDAP_SSL) && !defined(CURL_DISABLE_LDAP)
-  "ldaps",
+#ifndef CURL_DISABLE_HTTP
+  "http",
 #endif
-#ifndef CURL_DISABLE_POP3
-  "pop3",
+#ifndef CURL_DISABLE_FILE
+  "file",
 #endif
-#if defined(USE_SSL) && !defined(CURL_DISABLE_POP3)
-  "pop3s",
+
+#ifdef USE_SSL
+#ifndef CURL_DISABLE_HTTP
+  "https",
 #endif
-#ifndef CURL_DISABLE_RTSP
-  "rtsp",
+#ifndef CURL_DISABLE_FTP
+  "ftps",
 #endif
+#endif
+
 #ifdef USE_LIBSSH2
   "scp",
-#endif
-#ifdef USE_LIBSSH2
   "sftp",
-#endif
-#ifndef CURL_DISABLE_SMTP
-  "smtp",
-#endif
-#if defined(USE_SSL) && !defined(CURL_DISABLE_SMTP)
-  "smtps",
-#endif
-#ifndef CURL_DISABLE_TELNET
-  "telnet",
-#endif
-#ifndef CURL_DISABLE_TFTP
-  "tftp",
 #endif
 
   NULL
@@ -211,20 +171,16 @@ static curl_version_info_data version_info = {
 #ifdef HAVE_GSSAPI
   | CURL_VERSION_GSSNEGOTIATE
 #endif
-#ifdef DEBUGBUILD
+#ifdef CURLDEBUG
   | CURL_VERSION_DEBUG
 #endif
-#ifdef CURLDEBUG
-  | CURL_VERSION_CURLDEBUG
-#endif
-#ifdef CURLRES_ASYNCH
+#ifdef USE_ARES
   | CURL_VERSION_ASYNCHDNS
 #endif
 #ifdef HAVE_SPNEGO
   | CURL_VERSION_SPNEGO
 #endif
-#if (CURL_SIZEOF_CURL_OFF_T > 4) && \
-    ( (SIZEOF_OFF_T > 4) || defined(USE_WIN32_LARGE_FILES) )
+#if defined(ENABLE_64BIT) && (SIZEOF_CURL_OFF_T > 4)
   | CURL_VERSION_LARGEFILE
 #endif
 #if defined(CURL_DOES_CONVERSIONS)

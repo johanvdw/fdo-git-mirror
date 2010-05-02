@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalcolortable.cpp 16573 2009-03-14 12:34:17Z rouault $
+ * $Id: gdalcolortable.cpp 11879 2007-08-13 14:04:51Z mloskot $
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -29,14 +29,14 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalcolortable.cpp 16573 2009-03-14 12:34:17Z rouault $");
+CPL_CVSID("$Id: gdalcolortable.cpp 11879 2007-08-13 14:04:51Z mloskot $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */
 /************************************************************************/
 
 /**
- * \brief Construct a new color table.
+ * Construct a new color table.
  *
  * This constructor is the same as the C GDALCreateColorTable() function.
  *
@@ -54,11 +54,6 @@ GDALColorTable::GDALColorTable( GDALPaletteInterp eInterpIn )
 /*                        GDALCreateColorTable()                        */
 /************************************************************************/
 
-/**
- * \brief Construct a new color table.
- *
- * This function is the same as the C++ method GDALColorTable::GDALColorTable()
- */
 GDALColorTableH CPL_STDCALL GDALCreateColorTable( GDALPaletteInterp eInterp )
 
 {
@@ -71,7 +66,7 @@ GDALColorTableH CPL_STDCALL GDALCreateColorTable( GDALPaletteInterp eInterp )
 /************************************************************************/
 
 /**
- * \brief Destructor.
+ * Destructor.
  *
  * This descructor is the same as the C GDALDestroyColorTable() function.
  */
@@ -85,11 +80,6 @@ GDALColorTable::~GDALColorTable()
 /*                       GDALDestroyColorTable()                        */
 /************************************************************************/
 
-/**
- * \brief Destroys a color table.
- *
- * This function is the same as the C++ method GDALColorTable::~GDALColorTable()
- */
 void CPL_STDCALL GDALDestroyColorTable( GDALColorTableH hTable )
 
 {
@@ -101,7 +91,7 @@ void CPL_STDCALL GDALDestroyColorTable( GDALColorTableH hTable )
 /************************************************************************/
 
 /**
- * \brief Fetch a color entry from table.
+ * Fetch a color entry from table.
  *
  * This method is the same as the C function GDALGetColorEntry().
  *
@@ -123,12 +113,6 @@ const GDALColorEntry *GDALColorTable::GetColorEntry( int i ) const
 /*                         GDALGetColorEntry()                          */
 /************************************************************************/
 
-
-/**
- * \brief Fetch a color entry from table.
- *
- * This function is the same as the C++ method GDALColorTable::GetColorEntry()
- */
 const GDALColorEntry * CPL_STDCALL 
 GDALGetColorEntry( GDALColorTableH hTable, int i )
 
@@ -144,7 +128,7 @@ GDALGetColorEntry( GDALColorTableH hTable, int i )
 /************************************************************************/
 
 /**
- * \brief Fetch a table entry in RGB format.
+ * Fetch a table entry in RGB format.
  *
  * In theory this method should support translation of color palettes in
  * non-RGB color spaces into RGB on the fly, but currently it only works
@@ -174,11 +158,6 @@ int GDALColorTable::GetColorEntryAsRGB( int i, GDALColorEntry *poEntry ) const
 /*                       GDALGetColorEntryAsRGB()                       */
 /************************************************************************/
 
-/**
- * \brief Fetch a table entry in RGB format.
- *
- * This function is the same as the C++ method GDALColorTable::GetColorEntryAsRGB()
- */
 int CPL_STDCALL GDALGetColorEntryAsRGB( GDALColorTableH hTable, int i, 
                             GDALColorEntry *poEntry )
 
@@ -194,7 +173,7 @@ int CPL_STDCALL GDALGetColorEntryAsRGB( GDALColorTableH hTable, int i,
 /************************************************************************/
 
 /**
- * \brief Set entry in color table.
+ * Set entry in color table.
  *
  * Note that the passed in color entry is copied, and no internal reference
  * to it is maintained.  Also, the passed in entry must match the color
@@ -214,38 +193,25 @@ void GDALColorTable::SetColorEntry( int i, const GDALColorEntry * poEntry )
     if( i < 0 )
         return;
     
-    try
+    if( i >= static_cast<int>(aoEntries.size()) )
     {
-        if( i >= static_cast<int>(aoEntries.size()) )
-        {
-            GDALColorEntry oBlack;
-            oBlack.c1 = oBlack.c2 = oBlack.c3 = oBlack.c4 = 0;
-            aoEntries.resize(i+1, oBlack);
-        }
-    
-        aoEntries[i] = *poEntry;
+        GDALColorEntry oBlack;
+        oBlack.c1 = oBlack.c2 = oBlack.c3 = oBlack.c4 = 0;
+        aoEntries.resize(i+1, oBlack);
     }
-    catch(std::exception &e)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", e.what());
-    }
+
+    aoEntries[i] = *poEntry;
 }
 
 /************************************************************************/
 /*                         GDALSetColorEntry()                          */
 /************************************************************************/
 
-/**
- * \brief Set entry in color table.
- *
- * This function is the same as the C++ method GDALColorTable::SetColorEntry()
- */
 void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i, 
                         const GDALColorEntry * poEntry )
 
 {
     VALIDATE_POINTER0( hTable, "GDALSetColorEntry" );
-    VALIDATE_POINTER0( poEntry, "GDALSetColorEntry" );
 
     ((GDALColorTable *) hTable)->SetColorEntry( i, poEntry );
 }
@@ -256,7 +222,7 @@ void CPL_STDCALL GDALSetColorEntry( GDALColorTableH hTable, int i,
 /************************************************************************/
 
 /**
- * \brief Make a copy of a color table.
+ * Make a copy of a color table.
  *
  * This method is the same as the C function GDALCloneColorTable().
  */
@@ -271,11 +237,6 @@ GDALColorTable *GDALColorTable::Clone() const
 /*                        GDALCloneColorTable()                         */
 /************************************************************************/
 
-/**
- * \brief Make a copy of a color table.
- *
- * This function is the same as the C++ method GDALColorTable::Clone()
- */
 GDALColorTableH CPL_STDCALL GDALCloneColorTable( GDALColorTableH hTable )
 
 {
@@ -289,7 +250,7 @@ GDALColorTableH CPL_STDCALL GDALCloneColorTable( GDALColorTableH hTable )
 /************************************************************************/
 
 /**
- * \brief Get number of color entries in table.
+ * Get number of color entries in table.
  *
  * This method is the same as the function GDALGetColorEntryCount().
  *
@@ -306,11 +267,6 @@ int GDALColorTable::GetColorEntryCount() const
 /*                       GDALGetColorEntryCount()                       */
 /************************************************************************/
 
-/**
- * \brief Get number of color entries in table.
- *
- * This function is the same as the C++ method GDALColorTable::GetColorEntryCount()
- */
 int CPL_STDCALL GDALGetColorEntryCount( GDALColorTableH hTable )
 
 {
@@ -324,7 +280,7 @@ int CPL_STDCALL GDALGetColorEntryCount( GDALColorTableH hTable )
 /************************************************************************/
 
 /**
- * \brief Fetch palette interpretation.
+ * Fetch palette interpretation.
  *
  * The returned value is used to interprete the values in the GDALColorEntry.
  *
@@ -343,11 +299,6 @@ GDALPaletteInterp GDALColorTable::GetPaletteInterpretation() const
 /*                    GDALGetPaltteInterpretation()                     */
 /************************************************************************/
 
-/**
- * \brief Fetch palette interpretation.
- *
- * This function is the same as the C++ method GDALColorTable::GetPaletteInterpretation()
- */
 GDALPaletteInterp CPL_STDCALL 
 GDALGetPaletteInterpretation( GDALColorTableH hTable )
 
@@ -358,7 +309,7 @@ GDALGetPaletteInterpretation( GDALColorTableH hTable )
 }
 
 /**
- * \brief Create color ramp
+ * Create color ramp
  *
  * Automatically creates a color ramp from one color entry to
  * another. It can be called several times to create multiples ramps
@@ -444,11 +395,6 @@ int GDALColorTable::CreateColorRamp(
 /*                         GDALCreateColorRamp()                        */
 /************************************************************************/
 
-/**
- * \brief Create color ramp
- *
- * This function is the same as the C++ method GDALColorTable::CreateColorRamp()
- */
 void CPL_STDCALL 
 GDALCreateColorRamp( GDALColorTableH hTable, 
             int nStartIndex, const GDALColorEntry *psStartColor,

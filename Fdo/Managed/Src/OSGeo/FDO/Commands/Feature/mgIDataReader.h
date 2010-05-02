@@ -33,7 +33,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE
 /// IDataReader is returned from the ISQLCommands ExecuteReader method.
 /// The initial position of the IDataReader interface is prior to the first item.
 /// Thus, you must call ReadNext to begin accessing any data.
-public interface class IDataReader : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IReader
+public __gc __interface IDataReader : public NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IReader
 {
 public:
     /// \brief
@@ -45,6 +45,17 @@ public:
 	System::Int32 GetPropertyCount();
 
     /// \brief
+    /// Gets the name of the property at the given ordinal position.
+    /// 
+    /// \param index 
+    /// Input the position of the property.
+    /// 
+    /// \return
+    /// Returns the property name
+    /// 
+	System::String* GetPropertyName(System::Int32 index);
+
+    /// \brief
     /// Gets the data type of the property with the specified name.
     /// 
     /// \param name 
@@ -53,7 +64,7 @@ public:
     /// \return
     /// Returns the data type of the property corresponding to the property name.
     /// 
-	NAMESPACE_OSGEO_FDO_SCHEMA::DataType GetDataType(System::String^ name);
+	NAMESPACE_OSGEO_FDO_SCHEMA::DataType GetDataType(System::String* name);
 
     /// \brief
     /// Gets the property type of a given property. This is used
@@ -66,31 +77,7 @@ public:
     /// \return
     /// Returns the property type corresponding to the property name.
     /// 
-	NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType GetPropertyType(System::String^ name);
-
-    /// \brief
-    /// Gets the data type of the property at the specified index position.
-    /// 
-    /// \param index 
-    /// Input the index of the property.
-    /// 
-    /// \return
-    /// Returns the data type of the property corresponding to the index.
-    /// 
-    NAMESPACE_OSGEO_FDO_SCHEMA::DataType GetDataType(System::Int32 index);
-
-    /// \brief
-    /// Gets the property type of a given property at the specified index. This is used
-    /// to indicate if a given property is a geometric property or a data property. If the property is
-    /// a PropertyType_DataProperty, then GetDataType can be used to to find the data type of the property.
-    /// 
-    /// \param index 
-    /// Input the index of the property.
-    /// 
-    /// \return
-    /// Returns the property type corresponding to the property name.
-    /// 
-    NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType GetPropertyType(System::Int32 index);
+	NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType GetPropertyType(System::String* name);
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE

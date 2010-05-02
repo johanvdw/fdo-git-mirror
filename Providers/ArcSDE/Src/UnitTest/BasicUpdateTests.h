@@ -33,7 +33,6 @@ class BasicUpdateTests :
     CPPUNIT_TEST (geometry_update);
     CPPUNIT_TEST (spatial_filter);
     CPPUNIT_TEST (update_on_lock_enabled_table);
-    CPPUNIT_TEST (update_uuid);
     CPPUNIT_TEST_SUITE_END ();
 
     static FdoPtr<FdoIConnection> mConnection;
@@ -50,7 +49,6 @@ protected:
     void geometry_update ();
     void spatial_filter ();
     void update_on_lock_enabled_table ();
-    void update_uuid ();
 };
 
 #endif // CPP_UNIT_BasicUpdateTests_H

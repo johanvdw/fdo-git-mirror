@@ -58,10 +58,8 @@
 /* Signed size type */
 #ifdef _WIN64
 #  define TIFF_SSIZE_T GIntBig
-#  define TIFF_SSIZE_FORMAT CPL_FRMT_GIB
 #else
 #  define TIFF_SSIZE_T signed long
-#  define TIFF_SSIZE_FORMAT "%ld"
 #endif
 
 /* Unsigned 16-bit type */
@@ -76,15 +74,4 @@
 /* Unsigned 8-bit type */
 #define TIFF_UINT8_T unsigned char
 
-#define TIFF_UINT64_FORMAT CPL_FRMT_GUIB
-#define TIFF_INT64_FORMAT CPL_FRMT_GIB
 
-#ifdef JPEG_DUAL_MODE_8_12
-#  define LIBJPEG_12_PATH "../../jpeg/libjpeg12/jpeglib.h"
-#endif
-
-/* GDAL specific to indicate that internal libtiff is patched */
-/* with fix for GDAL ticket #3259. Can be removed as well as */
-/* its reference in geotiff.cpp as soon as a libtiff 4.0.0beta6 */
-/* will be released */
-#define BUG_3259_FIXED  1

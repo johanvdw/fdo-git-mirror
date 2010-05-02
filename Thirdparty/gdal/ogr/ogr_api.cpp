@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_api.cpp 16574 2009-03-14 13:09:10Z rouault $
+ * $Id: ogr_api.cpp 12428 2007-10-15 05:12:37Z hobu $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API Functions that don't correspond one-to-one with C++ 
@@ -36,10 +36,7 @@
 /*                        OGR_G_GetPointCount()                         */
 /************************************************************************/
 /**
- * \brief Fetch number of points from a geometry.
- *
- * Only wkbPoint[25D] or wkbLineString[25D] may return a valid value.
- * Other geometry types will silently return 0.
+ * Fetch number of points from a geometry.
  *
  * @param hGeom handle to the geometry from which to get the number of points.
  * @return the number of points.
@@ -60,8 +57,6 @@ int OGR_G_GetPointCount( OGRGeometryH hGeom )
       }
 
       default:
-        // autotest/pymod/ogrtest.py calls this method on any geometry. So keep silent
-        //CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0;
     }
 }
@@ -70,7 +65,7 @@ int OGR_G_GetPointCount( OGRGeometryH hGeom )
 /*                             OGR_G_GetX()                             */
 /************************************************************************/
 /**
- * \brief Fetch the x coordinate of a point from a geometry.
+ * Fetch the x coordinate of a point from a geometry.
  *
  * @param hGeom handle to the geometry from which to get the x coordinate.
  * @param i point to get the x coordinate.
@@ -87,17 +82,13 @@ double OGR_G_GetX( OGRGeometryH hGeom, int i )
           if( i == 0 )
               return ((OGRPoint *) hGeom)->getX();
           else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
               return 0.0;
-          }
       }
 
       case wkbLineString:
         return ((OGRLineString *) hGeom)->getX( i );
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0.0;
     }
 }
@@ -106,7 +97,7 @@ double OGR_G_GetX( OGRGeometryH hGeom, int i )
 /*                             OGR_G_GetY()                             */
 /************************************************************************/
 /**
- * \brief Fetch the x coordinate of a point from a geometry.
+ * Fetch the x coordinate of a point from a geometry.
  *
  * @param hGeom handle to the geometry from which to get the y coordinate.
  * @param i point to get the Y coordinate.
@@ -123,17 +114,13 @@ double OGR_G_GetY( OGRGeometryH hGeom, int i )
           if( i == 0 )
               return ((OGRPoint *) hGeom)->getY();
           else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
               return 0.0;
-          }
       }
 
       case wkbLineString:
           return ((OGRLineString *) hGeom)->getY( i );
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0.0;
     }
 }
@@ -142,7 +129,7 @@ double OGR_G_GetY( OGRGeometryH hGeom, int i )
 /*                             OGR_G_GetZ()                             */
 /************************************************************************/
 /**
- * \brief Fetch the z coordinate of a point from a geometry.
+ * Fetch the z coordinate of a point from a geometry.
  *
  * @param hGeom handle to the geometry from which to get the Z coordinate.
  * @param i point to get the Z coordinate.
@@ -159,17 +146,13 @@ double OGR_G_GetZ( OGRGeometryH hGeom, int i )
           if( i == 0 )
               return ((OGRPoint *) hGeom)->getZ();
           else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
               return 0.0;
-          }
       }
 
       case wkbLineString:
           return ((OGRLineString *) hGeom)->getZ( i );
 
       default:
-          CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
           return 0.0;
     }
 }
@@ -179,7 +162,7 @@ double OGR_G_GetZ( OGRGeometryH hGeom, int i )
 /************************************************************************/
 
 /**
- * \brief Fetch a point in line string or a point geometry.
+ * Fetch a point in line string or a point geometry.
  *
  * @param hGeom handle to the geometry from which to get the coordinates.
  * @param i the vertex to fetch, from 0 to getNumPoints()-1, zero for a point.
@@ -196,16 +179,13 @@ void OGR_G_GetPoint( OGRGeometryH hGeom, int i,
     {
       case wkbPoint:
       {
+          CPLAssert( i == 0 );
           if( i == 0 )
           {
               *pdfX = ((OGRPoint *)hGeom)->getX();
               *pdfY = ((OGRPoint *)hGeom)->getY();
               if( pdfZ != NULL )
                   *pdfZ = ((OGRPoint *)hGeom)->getZ();
-          }
-          else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
           }
       }
       break;
@@ -220,7 +200,7 @@ void OGR_G_GetPoint( OGRGeometryH hGeom, int i,
       break;
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        CPLAssert( FALSE );
         break;
     }
 }
@@ -229,7 +209,7 @@ void OGR_G_GetPoint( OGRGeometryH hGeom, int i,
 /*                           OGR_G_SetPoint()                           */
 /************************************************************************/
 /**
- * \brief Set the location of a vertex in a point or linestring geometry.
+ * Set the location of a vertex in a point or linestring geometry.
  *
  * If iPoint is larger than the number of existing
  * points in the linestring, the point count will be increased to
@@ -251,15 +231,12 @@ void OGR_G_SetPoint( OGRGeometryH hGeom, int i,
     {
       case wkbPoint:
       {
+          CPLAssert( i == 0 );
           if( i == 0 )
           {
               ((OGRPoint *) hGeom)->setX( dfX );
               ((OGRPoint *) hGeom)->setY( dfY );
               ((OGRPoint *) hGeom)->setZ( dfZ );
-          }
-          else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
           }
       }
       break;
@@ -269,7 +246,7 @@ void OGR_G_SetPoint( OGRGeometryH hGeom, int i,
         break;
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        CPLAssert( FALSE );
         break;
     }
 }
@@ -278,7 +255,7 @@ void OGR_G_SetPoint( OGRGeometryH hGeom, int i,
 /*                         OGR_G_SetPoint_2D()                          */
 /************************************************************************/
 /**
- * \brief Set the location of a vertex in a point or linestring geometry.
+ * Set the location of a vertex in a point or linestring geometry.
  *
  * If iPoint is larger than the number of existing
  * points in the linestring, the point count will be increased to
@@ -299,14 +276,11 @@ void OGR_G_SetPoint_2D( OGRGeometryH hGeom, int i,
     {
       case wkbPoint:
       {
+          CPLAssert( i == 0 );
           if( i == 0 )
           {
               ((OGRPoint *) hGeom)->setX( dfX );
               ((OGRPoint *) hGeom)->setY( dfY );
-          }
-          else
-          {
-              CPLError(CE_Failure, CPLE_NotSupported, "Only i == 0 is supported");
           }
       }
       break;
@@ -316,7 +290,7 @@ void OGR_G_SetPoint_2D( OGRGeometryH hGeom, int i,
         break;
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        CPLAssert( FALSE );
         break;
     }
 }
@@ -325,7 +299,7 @@ void OGR_G_SetPoint_2D( OGRGeometryH hGeom, int i,
 /*                           OGR_G_AddPoint()                           */
 /************************************************************************/
 /**
- * \brief Add a point to a geometry (line string or point).
+ * Add a point to a geometry (line string or point).
  *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
@@ -355,7 +329,7 @@ void OGR_G_AddPoint( OGRGeometryH hGeom,
         break;
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        CPLAssert( FALSE );
         break;
     }
 }
@@ -364,7 +338,7 @@ void OGR_G_AddPoint( OGRGeometryH hGeom,
 /*                           OGR_G_AddPoint()                           */
 /************************************************************************/
 /**
- * \brief Add a point to a geometry (line string or point).
+ * Add a point to a geometry (line string or point).
  *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
@@ -392,7 +366,7 @@ void OGR_G_AddPoint_2D( OGRGeometryH hGeom,
         break;
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        CPLAssert( FALSE );
         break;
     }
 }
@@ -401,11 +375,8 @@ void OGR_G_AddPoint_2D( OGRGeometryH hGeom,
 /*                       OGR_G_GetGeometryCount()                       */
 /************************************************************************/
 /**
- * \brief Fetch the number of elements in a geometry or number of geometries in container.
- *
- * Only geometries of type wkbPolygon[25D], wkbMultiPoint[25D], wkbMultiLineString[25D],
- * wkbMultiPolygon[25D] or wkbGeometryCollection[25D] may return a valid value.
- * Other geometry types will silently return 0.
+ * Fetch the number of elements in a geometry or number of geometries in
+ * container.
  *
  * @param hGeom single geometry or geometry container from which to get
  * the number of elements.
@@ -430,8 +401,6 @@ int OGR_G_GetGeometryCount( OGRGeometryH hGeom )
         return ((OGRGeometryCollection *)hGeom)->getNumGeometries();
 
       default:
-        // autotest/pymod/ogrtest.py calls this method on any geometry. So keep silent
-        //CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0;
     }
 }
@@ -441,7 +410,7 @@ int OGR_G_GetGeometryCount( OGRGeometryH hGeom )
 /************************************************************************/
 
 /**
- * \brief Fetch geometry from a geometry container.
+ * Fetch geometry from a geometry container.
  *
  * This function returns an handle to a geometry within the container.
  * The returned geometry remains owned by the container, and should not be
@@ -482,7 +451,6 @@ OGRGeometryH OGR_G_GetGeometryRef( OGRGeometryH hGeom, int iSubGeom )
             ((OGRGeometryCollection *)hGeom)->getGeometryRef( iSubGeom );
 
       default:
-        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0;
     }
 }
@@ -492,7 +460,7 @@ OGRGeometryH OGR_G_GetGeometryRef( OGRGeometryH hGeom, int iSubGeom )
 /************************************************************************/
 
 /**
- * \brief Add a geometry to a geometry container.
+ * Add a geometry to a geometry container.
  *
  * Some subclasses of OGRGeometryCollection restrict the types of geometry
  * that can be added, and may return an error.  The passed geometry is cloned
@@ -545,7 +513,7 @@ OGRErr OGR_G_AddGeometry( OGRGeometryH hGeom, OGRGeometryH hNewSubGeom )
 /*                     OGR_G_AddGeometryDirectly()                      */
 /************************************************************************/
 /**
- * \brief Add a geometry directly to an existing geometry container.
+ * Add a geometry directly to an existing geometry container.
  *
  * Some subclasses of OGRGeometryCollection restrict the types of geometry
  * that can be added, and may return an error.  Ownership of the passed
@@ -601,7 +569,7 @@ OGRErr OGR_G_AddGeometryDirectly( OGRGeometryH hGeom,
 /************************************************************************/
 
 /**
- * \brief Remove a geometry from an exiting geometry container.
+ * Remove a geometry from an exiting geometry container.
  *
  * Removing a geometry will cause the geometry count to drop by one, and all
  * "higher" geometries will shuffle down one in index.
@@ -653,7 +621,7 @@ OGRErr OGR_G_RemoveGeometry( OGRGeometryH hGeom, int iGeom, int bDelete )
 /************************************************************************/
 
 /**
- * \brief Compute geometry area.
+ * Compute geometry area.
  *
  * Computes the area for an OGRLinearRing, OGRPolygon or OGRMultiPolygon.
  * Undefined for all other geometry types (returns zero). 

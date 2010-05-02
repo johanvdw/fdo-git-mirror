@@ -12,48 +12,13 @@
  * OGR WKB import and  export. Both extensions make sure byte[] is used in    *
  * java instead of char[]                                                     *
  ******************************************************************************/
-
-%pragma(java) modulecode=%{
-
-    /* Uninstanciable class */
-    private ogr()
-    {
-    }
-
-    public static String[] GeneralCmdLineProcessor(String[] args, int nOptions)
-    {
-        java.util.Vector vArgs = new java.util.Vector();
-        int i;
-        for(i=0;i<args.length;i++)
-            vArgs.addElement(args[i]);
-
-        vArgs = GeneralCmdLineProcessor(vArgs, nOptions);
-        java.util.Enumeration eArgs = vArgs.elements();
-        args = new String[vArgs.size()];
-        i = 0;
-        while(eArgs.hasMoreElements())
-        {
-            String arg = (String)eArgs.nextElement();
-            args[i++] = arg;
-        }
-
-        return args;
-    }
-
-    public static String[] GeneralCmdLineProcessor(String[] args)
-    {
-        return GeneralCmdLineProcessor(args, 0);
-    }
-
-    public static DataSource Open(String filename, boolean update)
-    {
-        return Open(filename, (update)?1:0);
-    }
-%}
+ 
 
 %extend OGRGeometryShadow 
 {
-  OGRGeometryShadow( OGRwkbGeometryType type, char *wkt, int nLen, unsigned char *pBuf, const char *gml ) {
+  
+  %feature("kwargs") OGRGeometryShadow;
+  OGRGeometryShadow( OGRwkbGeometryType type = wkbUnknown, char *wkt = 0, int nLen= 0, unsigned char *pBuf = 0, char *gml = 0 ) {
     if (type != wkbUnknown ) {
       return (OGRGeometryShadow*) OGR_G_CreateGeometry( type );
     }
@@ -70,25 +35,15 @@
     else return 0;
   }
 
-  OGRGeometryShadow( OGRwkbGeometryType type ) {
-    if (type != wkbUnknown ) {
-      return (OGRGeometryShadow*) OGR_G_CreateGeometry( type );
-    }
-    // throw?
-    else return 0;
+  %feature("kwargs") ExportToWkb;
+  OGRErr ExportToWkb(int nLen, unsigned char *pBuf, OGRwkbByteOrder byte_order) {
+    return OGR_G_ExportToWkb((OGRGeometryH) self, byte_order, pBuf);
   }
-
-   retStringAndCPLFree* ExportToWkt()
-   {
-       char* argout = NULL;
-       OGR_G_ExportToWkt(self, &argout);
-       return argout;
-   }
 
   %newobject Centroid;
   OGRGeometryShadow* Centroid() {
-    OGRGeometryH pt = OGR_G_CreateGeometry( wkbPoint );
+    OGRGeometryShadow *pt = new_OGRGeometryShadow( wkbPoint );
     OGR_G_Centroid( (OGRGeometryH) self, (OGRGeometryH) pt );
-    return (OGRGeometryShadow*) pt;
+    return pt;
   }
 }

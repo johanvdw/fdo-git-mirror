@@ -320,7 +320,7 @@ FdoClassDefinition* FdoSmLpSchemaCollection::ConvertClassDefinition(const FdoSmL
     ASSERT(pLpClassDef);
     FdoClassDefinition* pFdoClassDef = (FdoClassDefinition*) mMappingClass.Map(pLpClassDef);
 
-    if (!aReferenced.classes.ContainsClassDefinition(pLpClassDef))
+    if (!aReferenced.classes.Contains(pLpClassDef))
         aReferenced.classes   .AddReference((FdoSmLpClassDefinition*)pLpClassDef);
 
     if (!pFdoClassDef)
@@ -1239,7 +1239,7 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
     for (int iSchema=0; iSchema < GetCount(); iSchema++)
     {
         const FdoSmLpSchema*     pLpSchema = RefItem(iSchema);
-        FdoStringP currSchemaName = pLpSchema->GetName();
+        FdoStringP schemaName = pLpSchema->GetName();
 
         if (featureClassNames)
         {
@@ -1252,24 +1252,17 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
 
                 if ( ((const wchar_t*)tempName)[0] == '\0' )
                 {
-                    if ( ((const wchar_t*)className)[0] != '\0' && ((const wchar_t*)currSchemaName)[0] != '\0' )
+                    if ( ((const wchar_t*)className)[0] != '\0' && ((const wchar_t*)schemaName)[0] != '\0' )
                     {
-                        if ( (schemaName != L"") && (schemaName != currSchemaName) ) 
-                            continue;
-                        className = currSchemaName + L":" + className;
+                        className = schemaName + L":" + className;
                     }
-                }
-                else 
-                {
-                    if ( currSchemaName != className.Left(delimiter) ) 
-                        continue;
                 }
 
                 const FdoSmLpClassDefinition* pLpClassDef = pLpSchema->FindClass(className, false);
                 if (pLpClassDef)
                 {
                     mFoundCount++;
-                    aTodo.classes.AddClassDefinition((FdoSmLpClassDefinition*)pLpClassDef);
+                    aTodo.classes.Add((FdoSmLpClassDefinition*)pLpClassDef);
                 }
             }
         }
@@ -1360,7 +1353,7 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
     {
         for (int iClass = 0; iClass < aTodo.classes.GetCount(); iClass++)
         {
-            const FdoSmLpClassDefinition* pLpClassDef = aTodo.classes.RefClassDefinition(iClass);
+            const FdoSmLpClassDefinition* pLpClassDef = aTodo.classes.GetItem(iClass);
             FdoFeatureSchema* pFdoFeatureSchema = ConvertSchema(pLpClassDef->RefLogicalPhysicalSchema(), pLpClassDef, aReferenced);
 
             if (pFdoFeatureSchema)

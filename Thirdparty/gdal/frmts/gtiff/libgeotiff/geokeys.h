@@ -4,10 +4,13 @@
  *
  *   Written By: Niles D. Ritter
  *
- *  copyright (c) 1995   Niles D. Ritter
+ *  Revision History:
  *
- *  Permission granted to use this software, so long as this copyright
- *  notice accompanies any products derived therefrom.
+ *     Rev.#  Author  M/D/Y Date     Key Changes/Additions
+ *     -----  ------  ----------  -------------------------------------
+ *       0      ndr    06/10/95      Inital Beta Release
+ *       1      ndr    09/18/95      Final 1.0 Release
+ *
  **********************************************************************/
 
 #ifndef __geokeys_h_
