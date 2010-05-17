@@ -26,15 +26,10 @@
 
 FdoPropertyDefinition* NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::GetImpObj()
 {
-	return static_cast<FdoPropertyDefinition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoPropertyDefinition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::PropertyType::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::get_PropertyType()
 {
 	FdoPropertyType result;
 
@@ -43,25 +38,25 @@ NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDef
 	return static_cast<NAMESPACE_OSGEO_FDO_SCHEMA::PropertyType>(result);
 }
 
-System::String^ NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::QualifiedName::get()
+System::String* NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::get_QualifiedName()
 {
 	FdoStringP result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetQualifiedName())
 
-	return CHECK_STRING((FdoString*)result);
+	return (FdoString*)result;
 }
 
-System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::IsSystem::get()
+System::Boolean NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::get_IsSystem()
 {
-	System::Boolean result;
+	FdoBoolean result;
 
 	EXCEPTION_HANDLER(result = !!GetImpObj()->GetIsSystem())
 
 	return result;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::IsSystem::set(System::Boolean value)
+System::Void NAMESPACE_OSGEO_FDO_SCHEMA::PropertyDefinition::set_IsSystem(System::Boolean value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetIsSystem(value))
 }

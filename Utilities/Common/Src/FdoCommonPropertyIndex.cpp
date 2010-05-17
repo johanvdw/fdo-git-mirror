@@ -148,7 +148,7 @@ FdoCommonPropertyStub* FdoCommonPropertyIndex::GetPropInfo(FdoString* name)
             return ps;
     }
 
-    return NULL;
+	return NULL;
 }
 
 bool FdoCommonPropertyIndex::IsPropAutoGen(FdoString* name)

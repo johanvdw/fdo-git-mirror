@@ -66,8 +66,7 @@ c_KgOraGeometryCapabilities.cpp \
 c_KgOraInsert.cpp \
 c_KgOraGetSpatialContextsCommand.cpp\
 c_SDO_DIM_ELEMENT.cpp \
-c_SDO_GEOMETRY.cpp \
-c_SdeGeom2AGF.cpp
+c_SDO_GEOMETRY.cpp
 
 
 noinst_HEADERS = $(libKingOracleProviderSrc_la_SOURCES) \
@@ -116,7 +115,6 @@ FDO_31_Types.h \
 KgOraProvider.h \
 c_SDO_DIM_ELEMENT.h \
 c_SDO_GEOMETRY.h \
-c_SdeGeom2AGF.h \
 stdafx.h
 
 libKingOracleProviderSrc_la_LDFLAGS = 
@@ -127,8 +125,8 @@ INCLUDES = \
   -I../Message/Inc \
   -I../../../../Fdo/Unmanaged/Inc \
   -I../../../../Utilities/Common/Inc \
-  -I/usr/include/oracle/11.2/client \
+  -I/usr/include/oracle/10.2.0.3/client \
   -I$(FDOORACLE)/include
 
-CXXFLAGS = @CXXFLAGS@ -D__USE_GNU -DLINUX -DLINUX_IA32 -D_FDO_3_2 -D_FDO_3_5
+CXXFLAGS = @CXXFLAGS@ -D__USE_GNU -DLINUX -DLINUX_IA32 -D_FDO_3_2
 

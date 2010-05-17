@@ -24,14 +24,14 @@
 class FdoXmlSchemaMapping;
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlElementMappingCollection;
-ref class XmlClassMappingCollection;
+public __gc class XmlElementMappingCollection;
+public __gc class XmlClassMappingCollection;
 
 /// \ingroup (OSGeoFDOXml)
 /// \brief
 /// XmlSchemaMapping specifies overrides for translating a feature schema between 
 /// FDO and GML.
-public ref class XmlSchemaMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping
+public __gc class XmlSchemaMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping
 {
 public:
     /// \brief
@@ -42,7 +42,7 @@ public:
     /// particular type of Schema Override set and is not the name of an actual FDO provider.
     /// 
     ///  
-	System::String^ GetProvider();
+	System::String* GetProvider();
 
     /// \brief
     /// Sets the target namespace URI for the GML version of this schema.
@@ -52,17 +52,15 @@ public:
     /// \param package 
     /// Input the target namespace.
     /// 
+	__property System::Void set_TargetNamespace(System::String* package);
+
     /// \brief
     /// Gets the target namespace URI for the GML version of this schema.
     /// 
     /// \return
     /// Returns the target namespace.
     /// 
-    property System::String^ TargetNamespace
-    {
-        System::String^ get();
-        System::Void set(System::String^ value);
-    }
+	__property System::String* get_TargetNamespace();
 
     /// \brief
     /// Gets the mappings between GML global elements and their types as Fdo Classes. These
@@ -78,7 +76,7 @@ public:
     /// \return
     /// Returns XmlElementMappingCollection
     /// 
-	NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection^ GetElementMappings();
+	NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection* GetElementMappings();
 
     /// \brief
     /// Gets the mappings for FDO Classes.
@@ -86,17 +84,15 @@ public:
     /// \return
     /// Returns XmlClassMappingCollection
     /// 
-	NAMESPACE_OSGEO_FDO_XML::XmlClassMappingCollection^ GetClassMappings();
+	NAMESPACE_OSGEO_FDO_XML::XmlClassMappingCollection* GetClassMappings();
 
-internal:
+public private:
 	XmlSchemaMapping(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalSchemaMapping(unmanaged, autoDelete)
 	{
 		
 	}
 
 	inline FdoXmlSchemaMapping* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_XML

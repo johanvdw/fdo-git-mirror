@@ -8,12 +8,12 @@ OBJ	=	vrtdataset.o vrtrasterband.o vrtdriver.o vrtsources.o \
 
 CPPFLAGS	:=	-I../raw $(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 $(OBJ) $(O_OBJ):	vrtdataset.h ../raw/rawdataset.h ../../gcore/gdal_proxy.h
 

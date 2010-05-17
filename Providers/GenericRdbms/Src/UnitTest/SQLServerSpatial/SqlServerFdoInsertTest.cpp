@@ -36,7 +36,6 @@ void SqlServerFdoInsertTest::set_provider()
 // environment.
 void SqlServerFdoInsertTest::insertDate ()
 {
-//TestCommonMiscUtil::SetupLeakReport();
     wprintf(L"InsertDate: Test insert command with different date/time settings.\n");
     FdoPtr<FdoIConnection> connection = UnitTestUtil::GetConnection(mSuffix, true);
 
@@ -181,4 +180,3 @@ void SqlServerFdoInsertTest::insertDate ()
 
     connection->Close();
 }
-

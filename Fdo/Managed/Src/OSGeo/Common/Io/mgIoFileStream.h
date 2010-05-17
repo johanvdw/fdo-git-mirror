@@ -27,7 +27,7 @@ BEGIN_NAMESPACE_OSGEO_COMMON_IO
 /// \ingroup (OSGeoFDOCommonIo)
 /// \brief
 ///     IoFileStream provides streamed I/O on a disk file.
-public ref class IoFileStream sealed : public NAMESPACE_OSGEO_COMMON_IO::IoStream
+public __sealed __gc class IoFileStream : public NAMESPACE_OSGEO_COMMON_IO::IoStream
 {
 public:
     /// \brief
@@ -40,7 +40,7 @@ public:
     ///     Input File access modes. Same as the fopen() C run-time library function
     ///     (mode parameter).
     /// 
-	IoFileStream(System::String^ fileName, System::String^ accessModes);
+	IoFileStream(System::String* fileName, System::String* accessModes);
 
     /// \brief
     ///     Constructs a stream reader based on an unmanaged instance of the object
@@ -55,10 +55,8 @@ public:
 	IoFileStream(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoIoFileStream* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

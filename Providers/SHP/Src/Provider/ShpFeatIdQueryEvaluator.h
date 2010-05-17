@@ -77,7 +77,6 @@ public:
     bool                    IsFeatidQuery();
     retno_lists*            GetFeatidLists();
     logical_op_list*        GetFeatidFilterOpsList();
-    left_right_op_list*     GetLeftRightOpsList();
     recno_list*             GetMergedFeatidList();
     bool                    MergeFeatidLists( size_t maxAllowedSize, int maxRecords );
 
@@ -93,6 +92,7 @@ private:
 	void					ProcessLeafExpession( interval_res* curr_filter, int curr_logical_op, int maxRecords );
 	void					PrintFlattenParseTree();
 	void					DoSecondaryFilter(FdoIGeometry *filterGeom, FdoSpatialOperations spatialOp );
+	FdoIGeometry*			ReconstructPolygon( FdoIGeometry *geometry );
 
     FdoGeometricPropertyDefinition* FindGeomProp(FdoClassDefinition* classDef);
 

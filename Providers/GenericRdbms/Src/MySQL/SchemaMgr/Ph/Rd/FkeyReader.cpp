@@ -25,19 +25,17 @@ FdoSmPhRdMySqlFkeyReader::FdoSmPhRdMySqlFkeyReader(
     FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
-    FdoSmPhRdFkeyReader((FdoSmPhReader*) NULL),
+    FdoSmPhRdFkeyReader(MakeReader(mgr, (const FdoSmPhOwner*) (dbObject->GetParent()), dbObject)),
     mDbObject(dbObject)
 {
-    SetSubReader(MakeReader(mgr, (const FdoSmPhOwner*) (dbObject->GetParent()), dbObject));
 }
 
 FdoSmPhRdMySqlFkeyReader::FdoSmPhRdMySqlFkeyReader(
     FdoSmPhMgrP mgr,
     FdoSmPhOwnerP    owner
 ) :
-    FdoSmPhRdFkeyReader((FdoSmPhReader*) NULL)
+    FdoSmPhRdFkeyReader(MakeReader(mgr, (FdoSmPhOwner*) owner, (FdoSmPhDbObject*) NULL))
 {
-    SetSubReader(MakeReader(mgr, (FdoSmPhOwner*) owner, (FdoSmPhDbObject*) NULL));
 }
 
 FdoSmPhRdMySqlFkeyReader::~FdoSmPhRdMySqlFkeyReader(void)

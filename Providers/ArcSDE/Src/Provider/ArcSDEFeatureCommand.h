@@ -25,7 +25,7 @@
 #include "Fdo.h"
 
 #ifdef SDE_UNICODE
-typedef std::map <std::wstring, long > PropsSdeTypeMap;
+typedef std::map <std::wstring, short > PropsSdeTypeMap;
 #endif
 
 template <class FDO_COMMAND> class ArcSDEFeatureCommand : public ArcSDECommand<FDO_COMMAND>
@@ -67,7 +67,7 @@ protected:
     // Set one or more values on a given ArcSDE stream:
     void assignValue (ArcSDEConnection* connection, SE_STREAM stream, CHAR* table, int index, FdoPropertyDefinition* definition, FdoPropertyValue* value, bool isUnicode);
     void assignValues (ArcSDEConnection *connection, SE_STREAM stream, CHAR* table, FdoPropertyDefinitionCollection *properties, FdoPropertyValueCollection *values, bool bAssignNulls = false, int uuidColumns=0,
-					   CHAR **uuid_list=NULL, FdoString *className=NULL, FdoPropertyValueCollection *idCollection=NULL);
+					   CHAR **uuid_list=NULL, FdoString *className=NULL);
 
     // Retrieve one value from an ArcSDE stream:
     FdoExpression* GetValueFromStream(SE_STREAM stream, int streamColumnIndex, FdoPropertyDefinition *fdoProperty);
@@ -306,7 +306,7 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
         FdoPtr<FdoIStreamReader> streamReader = value->GetStreamReader();
         if (streamReader != NULL)
             null = false;
-    }
+	}
 
 
     switch (definition->GetPropertyType ())
@@ -396,7 +396,6 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
                     case FdoDataType_String: // Null term. Character array
                         {
                             FdoStringValue* _string = NULL;
-                            CHAR* __string;
 
                             if (null)
                             {
@@ -415,15 +414,19 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
                                 _string = dynamic_cast<FdoStringValue*>(valueExpr.p);
                                 if (_string == NULL)
                                     throw FdoException::Create(NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoString", definition->GetName()));
-
-                                sde_wide_to_multibyte (__string, (wchar_t*)_string->GetString ());
+                                
 #ifdef SDE_UNICODE
                                 if (isUnicode)
-                                    ret = SE_stream_set_nstring (stream, columnIndex, __string);
+                                    ret = SE_stream_set_nstring (stream, columnIndex, (SE_WCHAR*)_string->GetString());
                                 else
-                                    ret = SE_stream_set_string (stream, columnIndex, __string);
+									ret = SE_stream_set_string (stream, columnIndex, (SE_WCHAR*)_string->GetString());
 #else
-                                ret = SE_stream_set_string (stream, columnIndex, __string);
+								//Convert from unicode -- allocate on heap in case we have large strings
+								long multiByteLength = (wcslen(_string->GetString()) + 1) * 6;
+								ACHAR* __string = new char[multiByteLength + 1];
+								wide_to_multibyte_noalloc (__string, (wchar_t*)_string->GetString ());
+								ret = SE_stream_set_string (stream, columnIndex, __string);
+								delete[] __string;
 #endif
                             }
                         }
@@ -495,6 +498,88 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
                             }
                         }
                         break;
+
+					case FdoDataType_CLOB: // Character Large Object
+						{
+							wchar_t *__buffer;
+							long __bufferLength = 0;
+
+							if (null)
+							{
+#ifdef SDE_UNICODE
+								if (isUnicode)
+									ret = SE_stream_set_nclob (stream, columnIndex, NULL);
+								else
+#endif
+									ret = SE_stream_set_clob (stream, columnIndex, NULL);
+							}
+							else
+							{
+								FdoPtr<FdoIStreamReader> streamReader = value->GetStreamReader ();
+								FdoBLOBStreamReader* blobStreamReader = dynamic_cast<FdoBLOBStreamReader*>(streamReader.p);
+								if (blobStreamReader != NULL)
+								{
+									FdoInt64 blobLength = blobStreamReader->GetLength();
+									__buffer = new wchar_t[(size_t)blobLength / 2 + 1];
+									__bufferLength = (long)blobLength;
+									FdoInt32 bytesRead = blobStreamReader->ReadNext((FdoByte*)__buffer);
+									if (bytesRead != blobLength)
+										throw FdoException::Create(NlsMsgGet(ARCSDE_UNEXPECTED_ERROR, "Unexpected error encountered in ArcSDE Provider."));
+								}
+								else
+								{
+									FdoPtr<FdoByteArray> bytes;
+									FdoPtr<FdoValueExpression> valueExpr = value->GetValue();
+									FdoCLOBValue* clobValue = dynamic_cast<FdoCLOBValue*>(valueExpr.p);
+									if (clobValue == NULL)
+										throw FdoException::Create(NlsMsgGet2(ARCSDE_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", L"FdoBLOB", definition->GetName()));
+
+									bytes = clobValue->GetData();
+									__buffer = (wchar_t*)bytes->GetData ();
+									__bufferLength = bytes->GetCount ();
+									if (NULL == __buffer)
+										__bufferLength = 0;
+								}
+
+#if SDE_UNICODE
+								if (isUnicode)
+								{
+									SE_NCLOB_INFO __nclob;
+									__nclob.nclob_buffer = (SE_WCHAR*)__buffer;
+									__nclob.nclob_length = __bufferLength;
+									ret = SE_stream_set_nclob (stream, columnIndex, &__nclob);
+									if (blobStreamReader != NULL) //only clean up if this was read into from a stream, otherwise we didn't allocate the buffer
+										SE_nclob_free(&__nclob); 
+								}
+								else
+								{
+									//No need to convert from unicode, the methods change with the use of SDENAME_C, which automatically
+									//switches to SE_CLOB_INFOW and SE_stream_set_clobw
+									SE_CLOB_INFO __clob;
+									__clob.clob_length = __bufferLength;
+									__clob.clob_buffer = (SE_WCHAR*)__buffer;
+
+									ret = SDENAME_C(SE_stream_set_clob) (stream, columnIndex, &__clob);
+									if (blobStreamReader != NULL) //only clean up if this was read into from a stream, otherwise we didn't allocate the buffer
+										SE_clob_free(&__clob); 
+								}
+#else
+								//Convert from UNICODE
+								SE_CLOB_INFO __clob;
+								__clob.clob_length = (__bufferLength + 1) * 6;
+								__clob.clob_buffer = new char[__clob.clob_length + 1];
+								wide_to_multibyte_noalloc(__clob.clob_buffer, (wchar_t*)__buffer);
+
+								ret = SE_stream_set_clob (stream, columnIndex, &__clob);
+
+								if (blobStreamReader != NULL)  //only clean up if this was read into from a stream, otherwise we didn't allocate the buffer
+									delete[] __buffer;
+								SE_clob_free(&__clob);
+#endif
+							}								
+
+						}
+						break;
                     //
                     // these aren't supported YET:
                     //
@@ -514,11 +599,11 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
                     //
                     // these will not be supported (at least not in R1):
                     //
-                    case FdoDataType_CLOB:
+                    
                     default:
                         throw FdoException::Create (NlsMsgGet1(ARCSDE_DATATYPE_UNHANDLED, "The FDO DataType %1$d is unsupported.", (int)type));
                         break;
-                }
+				}
             }
             break;
 
@@ -579,7 +664,7 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
 
 template <class FDO_COMMAND> 
 void ArcSDEFeatureCommand<FDO_COMMAND>::assignValues (ArcSDEConnection *connection, SE_STREAM stream, CHAR* table, FdoPropertyDefinitionCollection *properties, FdoPropertyValueCollection *values, bool bAssignNulls,
-													  int uuidColumns, CHAR **uuid_list, FdoString *className, FdoPropertyValueCollection *idCollection)
+													  int uuidColumns, CHAR **uuid_list, FdoString *className)
 {
     // ToDo: use input bind variables
 	int j = 0;
@@ -590,18 +675,9 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValues (ArcSDEConnection *connecti
     lresult = SE_table_describe (connection->GetConnection (), table, &lcolumn_count, &lcolumns);
     // since columns can be in a different order (we may have readonly columns, or autogenerated columns)
     // we cannot use index as column identifier.
-    int idxuuid = 0;
     PropsSdeTypeMap cols;
     for (int k = 0; k < lcolumn_count && lresult == SE_SUCCESS; k++)
-    {
         cols[sde_cstwc(lcolumns[k].column_name)] = lcolumns[k].sde_type;
-        if (idCollection != NULL && lcolumns[k].sde_type == SE_UUID_TYPE && idxuuid < uuidColumns)
-        {
-            FdoPtr<FdoStringValue> uuidPval = FdoStringValue::Create(sde_pus2wc(uuid_list[idxuuid++]));
-            FdoPtr<FdoPropertyValue> uuidPropv = FdoPropertyValue::Create(sde_pus2wc(lcolumns[k].column_name), uuidPval);
-            idCollection->Add(uuidPropv);
-        }
-    }
     if (lresult == SE_SUCCESS && lcolumns != NULL)
         SE_table_free_descriptions (lcolumns);
 #endif
@@ -623,7 +699,7 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValues (ArcSDEConnection *connecti
         if (isSet (value) || bAssignNulls)
         {
 #ifdef SDE_UNICODE
-            bool isUnicode = (lresult == SE_SUCCESS && cols[property->GetName()] == SE_NSTRING_TYPE);
+            bool isUnicode = (lresult == SE_SUCCESS && (cols[property->GetName()] == SE_NSTRING_TYPE || cols[property->GetName()] == SE_NCLOB_TYPE));
             assignValue (connection, stream, table, j + 1, property, value, isUnicode);
 #else
             assignValue (connection, stream, table, j + 1, property, value, false);

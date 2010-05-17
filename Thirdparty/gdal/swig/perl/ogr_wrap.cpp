@@ -1512,7 +1512,6 @@ SWIGEXPORT void SWIG_init (CV *cv, CPerlObj *);
 using namespace std;
 
 #include "ogr_api.h"
-#include "ogr_p.h"
 #include "ogr_core.h"
 #include "cpl_port.h"
 #include "cpl_string.h"
@@ -1789,7 +1788,6 @@ SWIGINTERN OGRDataSourceShadow *OGRDriverShadow_Open(OGRDriverShadow *self,char 
     return ds;
   }
 SWIGINTERN int OGRDriverShadow_DeleteDataSource(OGRDriverShadow *self,char const *name){
-
     return OGR_Dr_DeleteDataSource( self, name );
   }
 SWIGINTERN bool OGRDriverShadow_TestCapability(OGRDriverShadow *self,char const *cap){
@@ -1877,7 +1875,6 @@ SWIGINTERN OGRLayerShadow *OGRDataSourceShadow_CopyLayer(OGRDataSourceShadow *se
     return layer;
   }
 SWIGINTERN OGRLayerShadow *OGRDataSourceShadow_GetLayerByIndex(OGRDataSourceShadow *self,int index=0){
-
     OGRLayerShadow* layer = (OGRLayerShadow*) OGR_DS_GetLayer(self, index);
     return layer;
   }
@@ -1964,9 +1961,6 @@ CreateArrayFromDoubleArray( double *first, unsigned int size ) {
 }
 
 SWIGINTERN OGRErr OGRLayerShadow_GetExtent(OGRLayerShadow *self,double argout[4],int force=1){
-
-
-
     return OGR_L_GetExtent(self, (OGREnvelope*)argout, force);
   }
 SWIGINTERN bool OGRLayerShadow_TestCapability(OGRLayerShadow *self,char const *cap){
@@ -1996,7 +1990,7 @@ SWIGINTERN GIntBig OGRLayerShadow_GetFeaturesRead(OGRLayerShadow *self){
 SWIGINTERN void delete_OGRFeatureShadow(OGRFeatureShadow *self){
     OGR_F_Destroy(self);
   }
-SWIGINTERN OGRFeatureShadow *new_OGRFeatureShadow(OGRFeatureDefnShadow *feature_def){
+SWIGINTERN OGRFeatureShadow *new_OGRFeatureShadow(OGRFeatureDefnShadow *feature_def=0){
       return (OGRFeatureShadow*) OGR_F_Create( feature_def );
   }
 SWIGINTERN OGRFeatureDefnShadow *OGRFeatureShadow_GetDefnRef(OGRFeatureShadow *self){
@@ -2189,36 +2183,11 @@ SWIGINTERN void OGRFeatureDefnShadow_SetGeomType(OGRFeatureDefnShadow *self,OGRw
 SWIGINTERN int OGRFeatureDefnShadow_GetReferenceCount(OGRFeatureDefnShadow *self){
     return OGR_FD_GetReferenceCount(self);
   }
-
-    static int ValidateOGRFieldType(OGRFieldType field_type)
-    {
-        switch(field_type)
-        {
-            case OFTInteger:
-            case OFTIntegerList:
-            case OFTReal:
-            case OFTRealList:
-            case OFTString:
-            case OFTStringList:
-            case OFTBinary:
-            case OFTDate:
-            case OFTTime:
-            case OFTDateTime:
-                return TRUE;
-            default:
-                CPLError(CE_Failure, CPLE_IllegalArg, "Illegal field type value");
-                return FALSE;
-        }
-    }
-
 SWIGINTERN void delete_OGRFieldDefnShadow(OGRFieldDefnShadow *self){
     OGR_Fld_Destroy(self);
   }
 SWIGINTERN OGRFieldDefnShadow *new_OGRFieldDefnShadow(char const *name_null_ok="unnamed",OGRFieldType field_type=OFTString){
-    if (ValidateOGRFieldType(field_type))
-        return (OGRFieldDefnShadow*) OGR_Fld_Create(name_null_ok, field_type);
-    else
-        return NULL;
+    return (OGRFieldDefnShadow*) OGR_Fld_Create(name_null_ok, field_type);
   }
 SWIGINTERN char const *OGRFieldDefnShadow_GetName(OGRFieldDefnShadow *self){
     return (const char *) OGR_Fld_GetNameRef(self);
@@ -2233,8 +2202,7 @@ SWIGINTERN OGRFieldType OGRFieldDefnShadow_GetType(OGRFieldDefnShadow *self){
     return OGR_Fld_GetType(self);
   }
 SWIGINTERN void OGRFieldDefnShadow_SetType(OGRFieldDefnShadow *self,OGRFieldType type){
-    if (ValidateOGRFieldType(type))
-        OGR_Fld_SetType(self, type);
+    OGR_Fld_SetType(self, type);
   }
 SWIGINTERN OGRJustification OGRFieldDefnShadow_GetJustify(OGRFieldDefnShadow *self){
     return OGR_Fld_GetJustify(self);
@@ -2253,9 +2221,6 @@ SWIGINTERN int OGRFieldDefnShadow_GetPrecision(OGRFieldDefnShadow *self){
   }
 SWIGINTERN void OGRFieldDefnShadow_SetPrecision(OGRFieldDefnShadow *self,int precision){
     OGR_Fld_SetPrecision(self, precision);
-  }
-SWIGINTERN char const *OGRFieldDefnShadow_GetTypeName(OGRFieldDefnShadow *self){
-      return OGR_GetFieldTypeName(OGR_Fld_GetType(self));
   }
 SWIGINTERN char const *OGRFieldDefnShadow_GetFieldTypeName(OGRFieldDefnShadow *self,OGRFieldType type){
     return OGR_GetFieldTypeName(type);
@@ -2326,19 +2291,6 @@ SWIGINTERN char const *OGRFieldDefnShadow_GetFieldTypeName(OGRFieldDefnShadow *s
   return hPolygon;
   }
 
-
-  OGRGeometryShadow* ApproximateArcAngles( 
-        double dfCenterX, double dfCenterY, double dfZ,
-  	double dfPrimaryRadius, double dfSecondaryAxis, double dfRotation, 
-        double dfStartAngle, double dfEndAngle,
-        double dfMaxAngleStepSizeDegrees ) {
-  
-  return OGR_G_ApproximateArcAngles( 
-             dfCenterX, dfCenterY, dfZ, 
-             dfPrimaryRadius, dfSecondaryAxis, dfRotation,
-             dfStartAngle, dfEndAngle, dfMaxAngleStepSizeDegrees );
-  }
-
 SWIGINTERN void delete_OGRGeometryShadow(OGRGeometryShadow *self){
     OGR_G_DestroyGeometry( self );
   }
@@ -2356,10 +2308,7 @@ SWIGINTERN OGRGeometryShadow *new_OGRGeometryShadow(OGRwkbGeometryType type=wkbU
       return CreateGeometryFromGML( gml );
     }
     // throw?
-    else {
-        CPLError(CE_Failure, 1, "Empty geometries cannot be constructed");
-        return NULL;}
-
+    else return 0;
   }
 SWIGINTERN OGRErr OGRGeometryShadow_ExportToWkt(OGRGeometryShadow *self,char **argout){
     return OGR_G_ExportToWkt(self, argout);
@@ -2415,11 +2364,9 @@ SWIGINTERN double OGRGeometryShadow_GetZ(OGRGeometryShadow *self,int point=0){
     return OGR_G_GetZ(self, point);
   }
 SWIGINTERN void OGRGeometryShadow_GetPoint(OGRGeometryShadow *self,int iPoint=0,double argout[3]=NULL){
-
     OGR_G_GetPoint( self, iPoint, argout+0, argout+1, argout+2 );
   }
 SWIGINTERN void OGRGeometryShadow_GetPoint_2D(OGRGeometryShadow *self,int iPoint=0,double argout[2]=NULL){
-
     OGR_G_GetPoint( self, iPoint, argout+0, argout+1, NULL );
   }
 SWIGINTERN int OGRGeometryShadow_GetGeometryCount(OGRGeometryShadow *self){
@@ -2518,14 +2465,11 @@ SWIGINTERN void OGRGeometryShadow_CloseRings(OGRGeometryShadow *self){
 SWIGINTERN void OGRGeometryShadow_FlattenTo2D(OGRGeometryShadow *self){
     OGR_G_FlattenTo2D(self);
   }
-SWIGINTERN void OGRGeometryShadow_Segmentize(OGRGeometryShadow *self,double dfMaxLength){
-    OGR_G_Segmentize(self, dfMaxLength);
-  }
 SWIGINTERN void OGRGeometryShadow_GetEnvelope(OGRGeometryShadow *self,double argout[4]){
     OGR_G_GetEnvelope(self, (OGREnvelope*)argout);
   }
 SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Centroid(OGRGeometryShadow *self){
-    OGRGeometryShadow *pt = (OGRGeometryShadow*) OGR_G_CreateGeometry( wkbPoint );
+    OGRGeometryShadow *pt = new_OGRGeometryShadow( wkbPoint );
     OGR_G_Centroid( self, pt );
     return pt;
   }
@@ -2620,19 +2564,6 @@ OGRDriverShadow* GetDriver(int driver_number) {
   return (OGRDriverShadow*) OGRGetDriver(driver_number);
 }
 
-
-  char **GeneralCmdLineProcessor( char **papszArgv, int nOptions = 0 ) {
-    int nResArgCount;
-
-    nResArgCount = 
-      OGRGeneralCmdLineProcessor( CSLCount(papszArgv), &papszArgv, nOptions ); 
-
-    if( nResArgCount <= 0 )
-        return NULL;
-    else
-        return papszArgv;
-  }
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2722,8 +2653,6 @@ XS(_wrap_Driver_name_get) {
         
         
         
-        
-        
       }
       
       
@@ -2803,9 +2732,9 @@ XS(_wrap_Driver_CreateDataSource) {
       }
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2813,8 +2742,6 @@ XS(_wrap_Driver_CreateDataSource) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2915,9 +2842,9 @@ XS(_wrap_Driver_CopyDataSource) {
       }
     }
     {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg3)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2925,8 +2852,6 @@ XS(_wrap_Driver_CopyDataSource) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3002,9 +2927,9 @@ XS(_wrap_Driver_Open) {
       arg3 = static_cast< int >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3012,8 +2937,6 @@ XS(_wrap_Driver_Open) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3071,9 +2994,9 @@ XS(_wrap_Driver_DeleteDataSource) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3081,8 +3004,6 @@ XS(_wrap_Driver_DeleteDataSource) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3138,9 +3059,9 @@ XS(_wrap_Driver_TestCapability) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *cap) */
+      if (!arg2)
+      SWIG_croak("The capability must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3148,8 +3069,6 @@ XS(_wrap_Driver_TestCapability) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3204,8 +3123,6 @@ XS(_wrap_Driver_GetName) {
         
         
         
-        
-        
       }
       
       
@@ -3255,8 +3172,6 @@ XS(_wrap_DataSource_name_get) {
         
         
         
-        
-        
       }
       
       
@@ -3302,8 +3217,6 @@ XS(_wrap_delete_DataSource) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3356,8 +3269,6 @@ XS(_wrap_DataSource_GetRefCount) {
         
         
         
-        
-        
       }
       
       
@@ -3404,8 +3315,6 @@ XS(_wrap_DataSource_GetSummaryRefCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3458,8 +3367,6 @@ XS(_wrap_DataSource_GetLayerCount) {
         
         
         
-        
-        
       }
       
       
@@ -3509,8 +3416,6 @@ XS(_wrap_DataSource__GetDriver) {
         
         
         
-        
-        
       }
       
       
@@ -3557,8 +3462,6 @@ XS(_wrap_DataSource_GetName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3616,8 +3519,6 @@ XS(_wrap_DataSource__DeleteLayer) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3729,9 +3630,9 @@ XS(_wrap_DataSource__CreateLayer) {
       }
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3739,8 +3640,6 @@ XS(_wrap_DataSource__CreateLayer) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3853,8 +3752,6 @@ XS(_wrap_DataSource_CopyLayer) {
         
         
         
-        
-        
       }
       
       
@@ -3926,8 +3823,6 @@ XS(_wrap_DataSource__GetLayerByIndex) {
         
         
         
-        
-        
       }
       
       
@@ -3988,8 +3883,6 @@ XS(_wrap_DataSource__GetLayerByName) {
         
         
         
-        
-        
       }
       
       
@@ -4042,9 +3935,9 @@ XS(_wrap_DataSource_TestCapability) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *cap) */
+      if (!arg2)
+      SWIG_croak("The capability must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4052,8 +3945,6 @@ XS(_wrap_DataSource_TestCapability) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4143,8 +4034,6 @@ XS(_wrap_DataSource_ExecuteSQL) {
         
         
         
-        
-        
       }
       
       
@@ -4205,8 +4094,6 @@ XS(_wrap_DataSource_ReleaseResultSet) {
         
         
         
-        
-        
       }
       
       
@@ -4255,8 +4142,6 @@ XS(_wrap_Layer_GetRefCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4313,8 +4198,6 @@ XS(_wrap_Layer_SetSpatialFilter) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4400,8 +4283,6 @@ XS(_wrap_Layer_SetSpatialFilterRect) {
         
         
         
-        
-        
       }
       
       
@@ -4456,8 +4337,6 @@ XS(_wrap_Layer_GetSpatialFilter) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4519,8 +4398,6 @@ XS(_wrap_Layer_SetAttributeFilter) {
         
         
         
-        
-        
       }
       
       
@@ -4578,8 +4455,6 @@ XS(_wrap_Layer_ResetReading) {
         
         
         
-        
-        
       }
       
       
@@ -4626,8 +4501,6 @@ XS(_wrap_Layer_GetName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4680,8 +4553,6 @@ XS(_wrap_Layer_GetGeometryColumn) {
         
         
         
-        
-        
       }
       
       
@@ -4728,8 +4599,6 @@ XS(_wrap_Layer_GetFIDColumn) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4790,8 +4659,6 @@ XS(_wrap_Layer_GetFeature) {
         
         
         
-        
-        
       }
       
       
@@ -4840,8 +4707,6 @@ XS(_wrap_Layer_GetNextFeature) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4899,8 +4764,6 @@ XS(_wrap_Layer_SetNextByIndex) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4962,9 +4825,9 @@ XS(_wrap_Layer_SetFeature) {
     }
     arg2 = reinterpret_cast< OGRFeatureShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRFeatureShadow *feature) */
+      if (!arg2)
+      SWIG_croak("The feature must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4972,8 +4835,6 @@ XS(_wrap_Layer_SetFeature) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5035,9 +4896,9 @@ XS(_wrap_Layer_CreateFeature) {
     }
     arg2 = reinterpret_cast< OGRFeatureShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRFeatureShadow *feature) */
+      if (!arg2)
+      SWIG_croak("The feature must not be undefined");
     }
     {
       CPLErrorReset();
@@ -5045,8 +4906,6 @@ XS(_wrap_Layer_CreateFeature) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5116,8 +4975,6 @@ XS(_wrap_Layer_DeleteFeature) {
         
         
         
-        
-        
       }
       
       
@@ -5173,8 +5030,6 @@ XS(_wrap_Layer_SyncToDisk) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5234,8 +5089,6 @@ XS(_wrap_Layer_GetLayerDefn) {
         
         
         
-        
-        
       }
       
       
@@ -5292,8 +5145,6 @@ XS(_wrap_Layer_GetFeatureCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5364,8 +5215,6 @@ XS(_wrap_Layer_GetExtent) {
         
         
         
-        
-        
       }
       
       
@@ -5432,9 +5281,9 @@ XS(_wrap_Layer_TestCapability) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *cap) */
+      if (!arg2)
+      SWIG_croak("The capability must not be undefined");
     }
     {
       CPLErrorReset();
@@ -5442,8 +5291,6 @@ XS(_wrap_Layer_TestCapability) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5508,18 +5355,11 @@ XS(_wrap_Layer_CreateField) {
       arg3 = static_cast< int >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (OGRErr)OGRLayerShadow_CreateField(arg1,arg2,arg3);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5583,8 +5423,6 @@ XS(_wrap_Layer_StartTransaction) {
         
         
         
-        
-        
       }
       
       
@@ -5638,8 +5476,6 @@ XS(_wrap_Layer_CommitTransaction) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5699,8 +5535,6 @@ XS(_wrap_Layer_RollbackTransaction) {
         
         
         
-        
-        
       }
       
       
@@ -5757,8 +5591,6 @@ XS(_wrap_Layer_GetSpatialRef) {
         
         
         
-        
-        
       }
       
       
@@ -5805,8 +5637,6 @@ XS(_wrap_Layer_GetFeaturesRead) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5863,8 +5693,6 @@ XS(_wrap_delete_Feature) {
         
         
         
-        
-        
       }
       
       
@@ -5897,18 +5725,15 @@ XS(_wrap_new_Feature) {
     OGRFeatureShadow *result = 0 ;
     dXSARGS;
     
-    if ((items < 1) || (items > 1)) {
+    if ((items < 0) || (items > 1)) {
       SWIG_croak("Usage: new_Feature(feature_def);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OGRFeatureDefnShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Feature" "', argument " "1"" of type '" "OGRFeatureDefnShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OGRFeatureDefnShadow * >(argp1);
-    {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
+    if (items > 0) {
+      res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OGRFeatureDefnShadow, 0 |  0 );
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Feature" "', argument " "1"" of type '" "OGRFeatureDefnShadow *""'"); 
       }
+      arg1 = reinterpret_cast< OGRFeatureDefnShadow * >(argp1);
     }
     {
       CPLErrorReset();
@@ -5916,8 +5741,6 @@ XS(_wrap_new_Feature) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5967,8 +5790,6 @@ XS(_wrap_Feature_GetDefnRef) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6031,8 +5852,6 @@ XS(_wrap_Feature_SetGeometry) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6105,8 +5924,6 @@ XS(_wrap_Feature__SetGeometryDirectly) {
         
         
         
-        
-        
       }
       
       
@@ -6165,8 +5982,6 @@ XS(_wrap_Feature_GetGeometryRef) {
         
         
         
-        
-        
       }
       
       
@@ -6213,8 +6028,6 @@ XS(_wrap_Feature_Clone) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6267,9 +6080,9 @@ XS(_wrap_Feature_Equal) {
     }
     arg2 = reinterpret_cast< OGRFeatureShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRFeatureShadow *feature) */
+      if (!arg2)
+      SWIG_croak("The feature must not be undefined");
     }
     {
       CPLErrorReset();
@@ -6277,8 +6090,6 @@ XS(_wrap_Feature_Equal) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6330,8 +6141,6 @@ XS(_wrap_Feature_GetFieldCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6392,8 +6201,6 @@ XS(_wrap_Feature_GetFieldDefnRef__SWIG_0) {
         
         
         
-        
-        
       }
       
       
@@ -6446,9 +6253,9 @@ XS(_wrap_Feature_GetFieldDefnRef__SWIG_1) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -6456,8 +6263,6 @@ XS(_wrap_Feature_GetFieldDefnRef__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6600,8 +6405,6 @@ XS(_wrap_Feature_GetFieldAsString) {
         
         
         
-        
-        
       }
       
       
@@ -6661,8 +6464,6 @@ XS(_wrap_Feature_GetFieldAsInteger) {
         
         
         
-        
-        
       }
       
       
@@ -6719,8 +6520,6 @@ XS(_wrap_Feature_GetFieldAsDouble) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6807,8 +6606,6 @@ XS(_wrap_Feature_GetFieldAsDateTime) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6935,8 +6732,6 @@ XS(_wrap_Feature_GetFieldAsIntegerList) {
         
         
         
-        
-        
       }
       
       
@@ -7009,8 +6804,6 @@ XS(_wrap_Feature_GetFieldAsDoubleList) {
         
         
         
-        
-        
       }
       
       
@@ -7080,8 +6873,6 @@ XS(_wrap_Feature_GetFieldAsStringList) {
         
         
         
-        
-        
       }
       
       
@@ -7148,8 +6939,6 @@ XS(_wrap_Feature_IsFieldSet__SWIG_0) {
         
         
         
-        
-        
       }
       
       
@@ -7202,9 +6991,9 @@ XS(_wrap_Feature_IsFieldSet__SWIG_1) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -7212,8 +7001,6 @@ XS(_wrap_Feature_IsFieldSet__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7349,9 +7136,9 @@ XS(_wrap_Feature_GetFieldIndex) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -7359,8 +7146,6 @@ XS(_wrap_Feature_GetFieldIndex) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7412,8 +7197,6 @@ XS(_wrap_Feature_GetFID) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7474,8 +7257,6 @@ XS(_wrap_Feature_SetFID) {
         
         
         
-        
-        
       }
       
       
@@ -7533,8 +7314,6 @@ XS(_wrap_Feature_DumpReadable) {
         
         
         
-        
-        
       }
       
       
@@ -7588,8 +7367,6 @@ XS(_wrap_Feature__UnsetField) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7653,8 +7430,6 @@ XS(_wrap_Feature__SetField__SWIG_0) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7724,8 +7499,6 @@ XS(_wrap_Feature__SetField__SWIG_1) {
         
         
         
-        
-        
       }
       
       
@@ -7791,8 +7564,6 @@ XS(_wrap_Feature__SetField__SWIG_2) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7909,8 +7680,6 @@ XS(_wrap_Feature__SetField__SWIG_3) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8248,8 +8017,6 @@ XS(_wrap_Feature_SetFieldIntegerList) {
         
         
         
-        
-        
       }
       
       
@@ -8332,8 +8099,6 @@ XS(_wrap_Feature_SetFieldDoubleList) {
         
         
         
-        
-        
       }
       
       
@@ -8395,29 +8160,13 @@ XS(_wrap_Feature_SetFieldStringList) {
     } 
     arg2 = static_cast< int >(val2);
     {
-      /* %typemap(in) char **options */
-      if (SvOK(ST(2))) {
-        if (SvROK(ST(2))) {
-          if (SvTYPE(SvRV(ST(2)))==SVt_PVAV) {
-            AV *av = (AV*)(SvRV(ST(2)));
-            for (int i = 0; i < av_len(av)+1; i++) {
-              char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
-              arg3 = CSLAddString( arg3, pszItem );
-            }
-          } else if (SvTYPE(SvRV(ST(2)))==SVt_PVHV) {
-            HV *hv = (HV*)SvRV(ST(2));
-            SV *sv;
-            char *key;
-            I32 klen;
-            arg3 = NULL;
-            hv_iterinit(hv);
-            while(sv = hv_iternextsv(hv,&key,&klen)) {
-              arg3 = CSLAddNameValue( arg3, key, SvPV_nolen(sv) );
-            }
-          } else
-          SWIG_croak("'options' is not a reference to an array or hash");
-        } else
-        SWIG_croak("'options' is not a reference");   
+      /* %typemap(in) (char **pList) */
+      if (!(SvROK(ST(2)) && (SvTYPE(SvRV(ST(2)))==SVt_PVAV)))
+      SWIG_croak("expected a reference to an array");
+      AV *av = (AV*)(SvRV(ST(2)));
+      for (int i = 0; i < av_len(av)+1; i++) {
+        char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
+        arg3 = CSLAddString( arg3, pszItem );
       }
     }
     {
@@ -8426,8 +8175,6 @@ XS(_wrap_Feature_SetFieldStringList) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8448,16 +8195,18 @@ XS(_wrap_Feature_SetFieldStringList) {
     
     
     {
-      /* %typemap(freearg) char **options */
-      if (arg3) CSLDestroy( arg3 );
+      /* %typemap(freearg) (char **pList) */
+      if (arg3)
+      CSLDestroy( arg3 );
     }
     XSRETURN(argvi);
   fail:
     
     
     {
-      /* %typemap(freearg) char **options */
-      if (arg3) CSLDestroy( arg3 );
+      /* %typemap(freearg) (char **pList) */
+      if (arg3)
+      CSLDestroy( arg3 );
     }
     SWIG_croak_null();
   }
@@ -8500,18 +8249,11 @@ XS(_wrap_Feature_SetFrom) {
       arg3 = static_cast< int >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (OGRErr)OGRFeatureShadow_SetFrom(arg1,arg2,arg3);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8575,8 +8317,6 @@ XS(_wrap_Feature_GetStyleString) {
         
         
         
-        
-        
       }
       
       
@@ -8631,8 +8371,6 @@ XS(_wrap_Feature_SetStyleString) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8695,8 +8433,6 @@ XS(_wrap_Feature__GetFieldType__SWIG_0) {
         
         
         
-        
-        
       }
       
       
@@ -8749,9 +8485,9 @@ XS(_wrap_Feature__GetFieldType__SWIG_1) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -8759,8 +8495,6 @@ XS(_wrap_Feature__GetFieldType__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8894,8 +8628,6 @@ XS(_wrap_delete_FeatureDefn) {
         
         
         
-        
-        
       }
       
       
@@ -8948,8 +8680,6 @@ XS(_wrap_new_FeatureDefn) {
         
         
         
-        
-        
       }
       
       
@@ -8999,8 +8729,6 @@ XS(_wrap_FeatureDefn_GetName) {
         
         
         
-        
-        
       }
       
       
@@ -9047,8 +8775,6 @@ XS(_wrap_FeatureDefn_GetFieldCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9109,8 +8835,6 @@ XS(_wrap_FeatureDefn_GetFieldDefn) {
         
         
         
-        
-        
       }
       
       
@@ -9163,9 +8887,9 @@ XS(_wrap_FeatureDefn_GetFieldIndex) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -9173,8 +8897,6 @@ XS(_wrap_FeatureDefn_GetFieldIndex) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9228,9 +8950,9 @@ XS(_wrap_FeatureDefn_AddFieldDefn) {
     }
     arg2 = reinterpret_cast< OGRFieldDefnShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRFieldDefnShadow *defn) */
+      if (!arg2)
+      SWIG_croak("The field definition must not be undefined");
     }
     {
       CPLErrorReset();
@@ -9238,8 +8960,6 @@ XS(_wrap_FeatureDefn_AddFieldDefn) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9291,8 +9011,6 @@ XS(_wrap_FeatureDefn_GetGeomType) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9352,8 +9070,6 @@ XS(_wrap_FeatureDefn_SetGeomType) {
         
         
         
-        
-        
       }
       
       
@@ -9405,8 +9121,6 @@ XS(_wrap_FeatureDefn_GetReferenceCount) {
         
         
         
-        
-        
       }
       
       
@@ -9452,8 +9166,6 @@ XS(_wrap_delete_FieldDefn) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9519,8 +9231,6 @@ XS(_wrap_new_FieldDefn) {
         
         
         
-        
-        
       }
       
       
@@ -9569,8 +9279,6 @@ XS(_wrap_FieldDefn_GetName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9623,8 +9331,6 @@ XS(_wrap_FieldDefn_GetNameRef) {
         
         
         
-        
-        
       }
       
       
@@ -9674,9 +9380,9 @@ XS(_wrap_FieldDefn_SetName) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -9684,8 +9390,6 @@ XS(_wrap_FieldDefn_SetName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9737,8 +9441,6 @@ XS(_wrap_FieldDefn_GetType) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9798,8 +9500,6 @@ XS(_wrap_FieldDefn_SetType) {
         
         
         
-        
-        
       }
       
       
@@ -9848,8 +9548,6 @@ XS(_wrap_FieldDefn_GetJustify) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9909,8 +9607,6 @@ XS(_wrap_FieldDefn_SetJustify) {
         
         
         
-        
-        
       }
       
       
@@ -9959,8 +9655,6 @@ XS(_wrap_FieldDefn_GetWidth) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10020,8 +9714,6 @@ XS(_wrap_FieldDefn_SetWidth) {
         
         
         
-        
-        
       }
       
       
@@ -10070,8 +9762,6 @@ XS(_wrap_FieldDefn_GetPrecision) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10131,8 +9821,6 @@ XS(_wrap_FieldDefn_SetPrecision) {
         
         
         
-        
-        
       }
       
       
@@ -10152,57 +9840,6 @@ XS(_wrap_FieldDefn_SetPrecision) {
     XSRETURN(argvi);
   fail:
     
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_FieldDefn_GetTypeName) {
-  {
-    OGRFieldDefnShadow *arg1 = (OGRFieldDefnShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    char *result = 0 ;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: FieldDefn_GetTypeName(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OGRFieldDefnShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "FieldDefn_GetTypeName" "', argument " "1"" of type '" "OGRFieldDefnShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OGRFieldDefnShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (char *)OGRFieldDefnShadow_GetTypeName(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
     
     SWIG_croak_null();
   }
@@ -10240,8 +9877,6 @@ XS(_wrap_FieldDefn_GetFieldTypeName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10313,8 +9948,6 @@ XS(_wrap_CreateGeometryFromWkb) {
         
         
         
-        
-        
       }
       
       
@@ -10373,8 +10006,6 @@ XS(_wrap_CreateGeometryFromWkt) {
         
         
         
-        
-        
       }
       
       
@@ -10427,8 +10058,6 @@ XS(_wrap_CreateGeometryFromGML) {
         
         
         
-        
-        
       }
       
       
@@ -10476,8 +10105,6 @@ XS(_wrap_CreateGeometryFromJson) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10560,8 +10187,6 @@ XS(_wrap_BuildPolygonFromEdges) {
         
         
         
-        
-        
       }
       
       
@@ -10582,137 +10207,6 @@ XS(_wrap_BuildPolygonFromEdges) {
     
     XSRETURN(argvi);
   fail:
-    
-    
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_ApproximateArcAngles) {
-  {
-    double arg1 ;
-    double arg2 ;
-    double arg3 ;
-    double arg4 ;
-    double arg5 ;
-    double arg6 ;
-    double arg7 ;
-    double arg8 ;
-    double arg9 ;
-    double val1 ;
-    int ecode1 = 0 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    double val4 ;
-    int ecode4 = 0 ;
-    double val5 ;
-    int ecode5 = 0 ;
-    double val6 ;
-    int ecode6 = 0 ;
-    double val7 ;
-    int ecode7 = 0 ;
-    double val8 ;
-    int ecode8 = 0 ;
-    double val9 ;
-    int ecode9 = 0 ;
-    int argvi = 0;
-    OGRGeometryShadow *result = 0 ;
-    dXSARGS;
-    
-    if ((items < 9) || (items > 9)) {
-      SWIG_croak("Usage: ApproximateArcAngles(dfCenterX,dfCenterY,dfZ,dfPrimaryRadius,dfSecondaryAxis,dfRotation,dfStartAngle,dfEndAngle,dfMaxAngleStepSizeDegrees);");
-    }
-    ecode1 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
-    if (!SWIG_IsOK(ecode1)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "ApproximateArcAngles" "', argument " "1"" of type '" "double""'");
-    } 
-    arg1 = static_cast< double >(val1);
-    ecode2 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "ApproximateArcAngles" "', argument " "2"" of type '" "double""'");
-    } 
-    arg2 = static_cast< double >(val2);
-    ecode3 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "ApproximateArcAngles" "', argument " "3"" of type '" "double""'");
-    } 
-    arg3 = static_cast< double >(val3);
-    ecode4 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(3), &val4);
-    if (!SWIG_IsOK(ecode4)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "ApproximateArcAngles" "', argument " "4"" of type '" "double""'");
-    } 
-    arg4 = static_cast< double >(val4);
-    ecode5 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(4), &val5);
-    if (!SWIG_IsOK(ecode5)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "ApproximateArcAngles" "', argument " "5"" of type '" "double""'");
-    } 
-    arg5 = static_cast< double >(val5);
-    ecode6 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(5), &val6);
-    if (!SWIG_IsOK(ecode6)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "ApproximateArcAngles" "', argument " "6"" of type '" "double""'");
-    } 
-    arg6 = static_cast< double >(val6);
-    ecode7 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(6), &val7);
-    if (!SWIG_IsOK(ecode7)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "ApproximateArcAngles" "', argument " "7"" of type '" "double""'");
-    } 
-    arg7 = static_cast< double >(val7);
-    ecode8 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(7), &val8);
-    if (!SWIG_IsOK(ecode8)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "ApproximateArcAngles" "', argument " "8"" of type '" "double""'");
-    } 
-    arg8 = static_cast< double >(val8);
-    ecode9 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(8), &val9);
-    if (!SWIG_IsOK(ecode9)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "ApproximateArcAngles" "', argument " "9"" of type '" "double""'");
-    } 
-    arg9 = static_cast< double >(val9);
-    {
-      CPLErrorReset();
-      result = (OGRGeometryShadow *)ApproximateArcAngles(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRGeometryShadow, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    
-    
-    
     
     
     
@@ -10744,8 +10238,6 @@ XS(_wrap_delete_Geometry) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10839,8 +10331,6 @@ XS(_wrap_new_Geometry) {
         
         
         
-        
-        
       }
       
       
@@ -10897,8 +10387,6 @@ XS(_wrap_Geometry_ExportToWkt) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10994,8 +10482,6 @@ XS(_wrap_Geometry__ExportToWkb) {
         
         
         
-        
-        
       }
       
       
@@ -11071,8 +10557,6 @@ XS(_wrap_Geometry_ExportToGML) {
         
         
         
-        
-        
       }
       
       
@@ -11133,8 +10617,6 @@ XS(_wrap_Geometry_ExportToKML) {
         
         
         
-        
-        
       }
       
       
@@ -11183,8 +10665,6 @@ XS(_wrap_Geometry_ExportToJson) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11262,8 +10742,6 @@ XS(_wrap_Geometry_AddPoint_3D) {
         
         
         
-        
-        
       }
       
       
@@ -11334,8 +10812,6 @@ XS(_wrap_Geometry_AddPoint_2D) {
         
         
         
-        
-        
       }
       
       
@@ -11397,8 +10873,6 @@ XS(_wrap_Geometry_AddGeometryDirectly) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11473,8 +10947,6 @@ XS(_wrap_Geometry_AddGeometry) {
         
         
         
-        
-        
       }
       
       
@@ -11533,8 +11005,6 @@ XS(_wrap_Geometry_Clone) {
         
         
         
-        
-        
       }
       
       
@@ -11581,8 +11051,6 @@ XS(_wrap_Geometry_GetGeometryType) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11635,8 +11103,6 @@ XS(_wrap_Geometry_GetGeometryName) {
         
         
         
-        
-        
       }
       
       
@@ -11686,8 +11152,6 @@ XS(_wrap_Geometry_GetArea) {
         
         
         
-        
-        
       }
       
       
@@ -11734,8 +11198,6 @@ XS(_wrap_Geometry_GetPointCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11795,8 +11257,6 @@ XS(_wrap_Geometry_GetX) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11861,8 +11321,6 @@ XS(_wrap_Geometry_GetY) {
         
         
         
-        
-        
       }
       
       
@@ -11921,8 +11379,6 @@ XS(_wrap_Geometry_GetZ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11989,8 +11445,6 @@ XS(_wrap_Geometry_GetPoint_3D) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12067,8 +11521,6 @@ XS(_wrap_Geometry_GetPoint_2D) {
         
         
         
-        
-        
       }
       
       
@@ -12124,8 +11576,6 @@ XS(_wrap_Geometry_GetGeometryCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12211,8 +11661,6 @@ XS(_wrap_Geometry_SetPoint_3D) {
         
         
         
-        
-        
       }
       
       
@@ -12293,8 +11741,6 @@ XS(_wrap_Geometry_SetPoint_2D) {
         
         
         
-        
-        
       }
       
       
@@ -12358,8 +11804,6 @@ XS(_wrap_Geometry_GetGeometryRef) {
         
         
         
-        
-        
       }
       
       
@@ -12411,8 +11855,6 @@ XS(_wrap_Geometry_GetBoundary) {
         
         
         
-        
-        
       }
       
       
@@ -12459,8 +11901,6 @@ XS(_wrap_Geometry_ConvexHull) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12531,8 +11971,6 @@ XS(_wrap_Geometry_Buffer) {
         
         
         
-        
-        
       }
       
       
@@ -12586,9 +12024,9 @@ XS(_wrap_Geometry_Intersection) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12596,8 +12034,6 @@ XS(_wrap_Geometry_Intersection) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12652,9 +12088,9 @@ XS(_wrap_Geometry_Union) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12662,8 +12098,6 @@ XS(_wrap_Geometry_Union) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12718,9 +12152,9 @@ XS(_wrap_Geometry_Difference) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12728,8 +12162,6 @@ XS(_wrap_Geometry_Difference) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12784,9 +12216,9 @@ XS(_wrap_Geometry_SymmetricDifference) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12794,8 +12226,6 @@ XS(_wrap_Geometry_SymmetricDifference) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12850,9 +12280,9 @@ XS(_wrap_Geometry_Distance) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12860,8 +12290,6 @@ XS(_wrap_Geometry_Distance) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12915,8 +12343,6 @@ XS(_wrap_Geometry_Empty) {
         
         
         
-        
-        
       }
       
       
@@ -12963,8 +12389,6 @@ XS(_wrap_Geometry_IsEmpty) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13017,8 +12441,6 @@ XS(_wrap_Geometry_IsValid) {
         
         
         
-        
-        
       }
       
       
@@ -13065,8 +12487,6 @@ XS(_wrap_Geometry_IsSimple) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13119,8 +12539,6 @@ XS(_wrap_Geometry_IsRing) {
         
         
         
-        
-        
       }
       
       
@@ -13170,9 +12588,9 @@ XS(_wrap_Geometry_Intersect) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13180,8 +12598,6 @@ XS(_wrap_Geometry_Intersect) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13236,9 +12652,9 @@ XS(_wrap_Geometry_Equal) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13246,8 +12662,6 @@ XS(_wrap_Geometry_Equal) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13302,9 +12716,9 @@ XS(_wrap_Geometry_Disjoint) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13312,8 +12726,6 @@ XS(_wrap_Geometry_Disjoint) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13368,9 +12780,9 @@ XS(_wrap_Geometry_Touches) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13378,8 +12790,6 @@ XS(_wrap_Geometry_Touches) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13434,9 +12844,9 @@ XS(_wrap_Geometry_Crosses) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13444,8 +12854,6 @@ XS(_wrap_Geometry_Crosses) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13500,9 +12908,9 @@ XS(_wrap_Geometry_Within) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13510,8 +12918,6 @@ XS(_wrap_Geometry_Within) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13566,9 +12972,9 @@ XS(_wrap_Geometry_Contains) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13576,8 +12982,6 @@ XS(_wrap_Geometry_Contains) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13632,9 +13036,9 @@ XS(_wrap_Geometry_Overlaps) {
     }
     arg2 = reinterpret_cast< OGRGeometryShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OGRGeometryShadow *other) */
+      if (!arg2)
+      SWIG_croak("The other geometry must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13642,8 +13046,6 @@ XS(_wrap_Geometry_Overlaps) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13698,18 +13100,11 @@ XS(_wrap_Geometry_TransformTo) {
     }
     arg2 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (OGRErr)OGRGeometryShadow_TransformTo(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13771,9 +13166,9 @@ XS(_wrap_Geometry_Transform) {
     }
     arg2 = reinterpret_cast< OSRCoordinateTransformationShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (OSRCoordinateTransformationShadow *) */
+      if (!arg2)
+      SWIG_croak("The coordinate transformation must not be undefined");
     }
     {
       CPLErrorReset();
@@ -13781,8 +13176,6 @@ XS(_wrap_Geometry_Transform) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13844,8 +13237,6 @@ XS(_wrap_Geometry_GetSpatialReference) {
         
         
         
-        
-        
       }
       
       
@@ -13902,8 +13293,6 @@ XS(_wrap_Geometry_AssignSpatialReference) {
         
         
         
-        
-        
       }
       
       
@@ -13951,8 +13340,6 @@ XS(_wrap_Geometry_CloseRings) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14004,8 +13391,6 @@ XS(_wrap_Geometry_FlattenTo2D) {
         
         
         
-        
-        
       }
       
       
@@ -14023,66 +13408,6 @@ XS(_wrap_Geometry_FlattenTo2D) {
     
     XSRETURN(argvi);
   fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Geometry_Segmentize) {
-  {
-    OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
-    double arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: Geometry_Segmentize(self,dfMaxLength);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Geometry_Segmentize" "', argument " "1"" of type '" "OGRGeometryShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OGRGeometryShadow * >(argp1);
-    ecode2 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Geometry_Segmentize" "', argument " "2"" of type '" "double""'");
-    } 
-    arg2 = static_cast< double >(val2);
-    {
-      CPLErrorReset();
-      OGRGeometryShadow_Segmentize(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
     
     SWIG_croak_null();
   }
@@ -14117,8 +13442,6 @@ XS(_wrap_Geometry_GetEnvelope) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14178,8 +13501,6 @@ XS(_wrap_Geometry_Centroid) {
         
         
         
-        
-        
       }
       
       
@@ -14229,8 +13550,6 @@ XS(_wrap_Geometry_WkbSize) {
         
         
         
-        
-        
       }
       
       
@@ -14277,8 +13596,6 @@ XS(_wrap_Geometry_GetCoordinateDimension) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14338,8 +13655,6 @@ XS(_wrap_Geometry_SetCoordinateDimension) {
         
         
         
-        
-        
       }
       
       
@@ -14388,8 +13703,6 @@ XS(_wrap_Geometry_GetDimension) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14467,8 +13780,6 @@ XS(_wrap_Geometry_Move) {
         
         
         
-        
-        
       }
       
       
@@ -14516,8 +13827,6 @@ XS(_wrap_GetDriverCount) {
         
         
         
-        
-        
       }
       
       
@@ -14554,8 +13863,6 @@ XS(_wrap_GetOpenDSCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14606,8 +13913,6 @@ XS(_wrap_SetGenerate_DB2_V72_BYTE_ORDER) {
         
         
         
-        
-        
       }
       
       
@@ -14655,8 +13960,6 @@ XS(_wrap_RegisterAll) {
         
         
         
-        
-        
       }
       
       
@@ -14701,8 +14004,6 @@ XS(_wrap_GetOpenDS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14763,8 +14064,6 @@ XS(_wrap_Open) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14830,8 +14129,6 @@ XS(_wrap_OpenShared) {
         
         
         
-        
-        
       }
       
       
@@ -14876,9 +14173,9 @@ XS(_wrap_GetDriverByName) {
     }
     arg1 = reinterpret_cast< char * >(buf1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -14886,8 +14183,6 @@ XS(_wrap_GetDriverByName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14940,8 +14235,6 @@ XS(_wrap__GetDriver) {
         
         
         
-        
-        
       }
       
       
@@ -14959,108 +14252,6 @@ XS(_wrap__GetDriver) {
     
     XSRETURN(argvi);
   fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_GeneralCmdLineProcessor) {
-  {
-    char **arg1 = (char **) 0 ;
-    int arg2 = (int) 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int argvi = 0;
-    char **result = 0 ;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 2)) {
-      SWIG_croak("Usage: GeneralCmdLineProcessor(papszArgv,nOptions);");
-    }
-    {
-      /* %typemap(in) char **options */
-      if (SvOK(ST(0))) {
-        if (SvROK(ST(0))) {
-          if (SvTYPE(SvRV(ST(0)))==SVt_PVAV) {
-            AV *av = (AV*)(SvRV(ST(0)));
-            for (int i = 0; i < av_len(av)+1; i++) {
-              char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
-              arg1 = CSLAddString( arg1, pszItem );
-            }
-          } else if (SvTYPE(SvRV(ST(0)))==SVt_PVHV) {
-            HV *hv = (HV*)SvRV(ST(0));
-            SV *sv;
-            char *key;
-            I32 klen;
-            arg1 = NULL;
-            hv_iterinit(hv);
-            while(sv = hv_iternextsv(hv,&key,&klen)) {
-              arg1 = CSLAddNameValue( arg1, key, SvPV_nolen(sv) );
-            }
-          } else
-          SWIG_croak("'options' is not a reference to an array or hash");
-        } else
-        SWIG_croak("'options' is not a reference");   
-      }
-    }
-    if (items > 1) {
-      ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-      if (!SWIG_IsOK(ecode2)) {
-        SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeneralCmdLineProcessor" "', argument " "2"" of type '" "int""'");
-      } 
-      arg2 = static_cast< int >(val2);
-    }
-    {
-      CPLErrorReset();
-      result = (char **)GeneralCmdLineProcessor(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) char **options -> ( string ) */
-      AV* av = (AV*)sv_2mortal((SV*)newAV());
-      char **stringarray = result;
-      if ( stringarray != NULL ) {
-        int n = CSLCount( stringarray );
-        for ( int i = 0; i < n; i++ ) {
-          SV *s = newSVpv(stringarray[i], strlen(*stringarray));
-          if (!av_store(av, i, s))
-          SvREFCNT_dec(s);
-        }
-      }
-      ST(argvi) = newRV_noinc((SV*)av);
-      argvi++;
-    }
-    {
-      /* %typemap(freearg) char **options */
-      if (arg1) CSLDestroy( arg1 );
-    }
-    
-    XSRETURN(argvi);
-  fail:
-    {
-      /* %typemap(freearg) char **options */
-      if (arg1) CSLDestroy( arg1 );
-    }
     
     SWIG_croak_null();
   }
@@ -15259,14 +14450,12 @@ static swig_command_info swig_commands[] = {
 {"Geo::OGRc::FieldDefn_SetWidth", _wrap_FieldDefn_SetWidth},
 {"Geo::OGRc::FieldDefn_GetPrecision", _wrap_FieldDefn_GetPrecision},
 {"Geo::OGRc::FieldDefn_SetPrecision", _wrap_FieldDefn_SetPrecision},
-{"Geo::OGRc::FieldDefn_GetTypeName", _wrap_FieldDefn_GetTypeName},
 {"Geo::OGRc::FieldDefn_GetFieldTypeName", _wrap_FieldDefn_GetFieldTypeName},
 {"Geo::OGRc::CreateGeometryFromWkb", _wrap_CreateGeometryFromWkb},
 {"Geo::OGRc::CreateGeometryFromWkt", _wrap_CreateGeometryFromWkt},
 {"Geo::OGRc::CreateGeometryFromGML", _wrap_CreateGeometryFromGML},
 {"Geo::OGRc::CreateGeometryFromJson", _wrap_CreateGeometryFromJson},
 {"Geo::OGRc::BuildPolygonFromEdges", _wrap_BuildPolygonFromEdges},
-{"Geo::OGRc::ApproximateArcAngles", _wrap_ApproximateArcAngles},
 {"Geo::OGRc::delete_Geometry", _wrap_delete_Geometry},
 {"Geo::OGRc::new_Geometry", _wrap_new_Geometry},
 {"Geo::OGRc::Geometry_ExportToWkt", _wrap_Geometry_ExportToWkt},
@@ -15319,7 +14508,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::OGRc::Geometry_AssignSpatialReference", _wrap_Geometry_AssignSpatialReference},
 {"Geo::OGRc::Geometry_CloseRings", _wrap_Geometry_CloseRings},
 {"Geo::OGRc::Geometry_FlattenTo2D", _wrap_Geometry_FlattenTo2D},
-{"Geo::OGRc::Geometry_Segmentize", _wrap_Geometry_Segmentize},
 {"Geo::OGRc::Geometry_GetEnvelope", _wrap_Geometry_GetEnvelope},
 {"Geo::OGRc::Geometry_Centroid", _wrap_Geometry_Centroid},
 {"Geo::OGRc::Geometry_WkbSize", _wrap_Geometry_WkbSize},
@@ -15336,7 +14524,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::OGRc::OpenShared", _wrap_OpenShared},
 {"Geo::OGRc::GetDriverByName", _wrap_GetDriverByName},
 {"Geo::OGRc::_GetDriver", _wrap__GetDriver},
-{"Geo::OGRc::GeneralCmdLineProcessor", _wrap_GeneralCmdLineProcessor},
 {0,0}
 };
 /* -----------------------------------------------------------------------------
@@ -15632,13 +14819,8 @@ XS(SWIG_init) {
   }
   
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "wkb25DBit", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(0x80000000)));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "wkb25Bit", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(0x80000000)));
+    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(wkb25DBit)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
@@ -15812,11 +14994,6 @@ XS(SWIG_init) {
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "NullFID", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(-1)));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "OLCRandomRead", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_FromCharPtr("RandomRead"));
     SvREADONLY_on(sv);
@@ -15864,11 +15041,6 @@ XS(SWIG_init) {
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "OLCFastSetNextByIndex", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_FromCharPtr("FastSetNextByIndex"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "OLCStringsAsUTF8", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("StringsAsUTF8"));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {

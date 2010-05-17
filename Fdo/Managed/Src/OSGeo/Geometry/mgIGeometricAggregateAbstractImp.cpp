@@ -22,14 +22,9 @@
 #include "mgIGeometricAggregateAbstractImp.h"
 #include <FdoGeometry.h>
 
-FdoIGeometricAggregateAbstract* NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::GetImpObj()
+FdoIGeometricAggregateAbstract * NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::GetImpObj()
 {
-	return static_cast<FdoIGeometricAggregateAbstract*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoIGeometricAggregateAbstract *>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::IGeometricAggregateAbstractImp(System::IntPtr unmanaged, System::Boolean autoDelete)
@@ -37,7 +32,7 @@ NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::IGeometricAggregateAbs
 {
 }
 
-System::Int32 NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::Count::get()
+System::Int32 NAMESPACE_OSGEO_GEOMETRY::IGeometricAggregateAbstractImp::get_Count()
 {
 	System::Int32 ret;
 	EXCEPTION_HANDLER(ret = GetImpObj()->GetCount())

@@ -152,7 +152,7 @@ FdoPtr<FdoLiteralValue> TestCommonMiscUtil::ArgsToLiteral( va_list& arguments )
 
     switch ( dataType ) {
     case FdoDataType_Boolean:
-		boolArg = va_arg(arguments,int) == 1 ? true : false;
+        boolArg = (FdoBoolean) va_arg(arguments,int);
         literalValue = FdoDataValue::Create(boolArg);
         break;
     case FdoDataType_Byte:
@@ -160,7 +160,7 @@ FdoPtr<FdoLiteralValue> TestCommonMiscUtil::ArgsToLiteral( va_list& arguments )
         literalValue = FdoDataValue::Create(byteArg);
         break;
     case FdoDataType_Int16:
-        int16Arg = (FdoInt16)va_arg(arguments,int);
+        int16Arg = va_arg(arguments,int);
         literalValue = FdoDataValue::Create(int16Arg);
         break;
     case FdoDataType_Int32:
@@ -188,16 +188,12 @@ FdoPtr<FdoLiteralValue> TestCommonMiscUtil::ArgsToLiteral( va_list& arguments )
         dateTimeArg = va_arg(arguments,FdoDateTime *);
         literalValue = FdoDataValue::Create(*dateTimeArg);
         break;
+    case -1:
+        literalValue = va_arg(arguments,FdoGeometryValue *);
+        FDO_SAFE_ADDREF(literalValue.p);
+        break;
     default:
-        if ( (int) dataType == -1 ) 
-        {
-            literalValue = va_arg(arguments,FdoGeometryValue *);
-            FDO_SAFE_ADDREF(literalValue.p);
-        }
-        else
-        {
-            throw FdoException::Create( L"TestCommonMiscUtil::InsertObject dataType not yet implemented; please implement" );
-        }
+        throw FdoException::Create( L"TestCommonMiscUtil::InsertObject dataType not yet implemented; please implement" );
         break;
     }
 
@@ -211,9 +207,6 @@ void TestCommonMiscUtil::SetupLeakReport()
     _CrtSetReportHook( TestCommonMiscUtil::LeakReportHook );
     _CrtSetBreakAlloc( 3453788 );
 }
-
-#pragma warning(push)
-#pragma warning( disable : 4100 )
 
 int TestCommonMiscUtil::LeakReportHook( int reportType, char *message, int *returnValue )
 {
@@ -249,12 +242,17 @@ int TestCommonMiscUtil::LeakReportHook( int reportType, char *message, int *retu
         }
 
         if ( className  ) {
-            // Assume bad class name of > 199 characters
-            char checkstr[200];
-            strncpy( checkstr, className, 199 );
-            checkstr[199] = 0;
-            if ( strlen(checkstr) >= 199 )
+            try {
+                // Assume bad class name of > 199 characters
+                char checkstr[200];
+                strncpy( checkstr, className, 199 );
+                checkstr[199] = 0;
+                if ( strlen(checkstr) >= 199 )
+                    className = NULL;
+            }
+            catch (...) {
                 className = NULL;
+            }
         }
 
         if ( className ) {
@@ -288,10 +286,6 @@ int TestCommonMiscUtil::LeakReportHook( int reportType, char *message, int *retu
 
     return(0);
 }
-
-#pragma warning(pop)
-
-
 #endif
 
 
@@ -420,18 +414,5 @@ FdoClassDefinition* TestCommonMiscUtil::DescribeClass( FdoIConnection* fdoConn, 
     }
 
     return classDef;
-}
-
-FdoStringP TestCommonMiscUtil::Trim( FdoStringP in )
-{
-    FdoStringP out = in;
-    wchar_t* outStr = (wchar_t*) (FdoString*) out;
-
-    int posn;
-    for ( posn = (wcslen(outStr) - 1); (posn >= 0) && (outStr[posn] == ' '); posn-- );
-
-    out = out.Mid(0, posn + 1);
-
-    return out;
 }
 

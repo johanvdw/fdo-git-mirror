@@ -104,7 +104,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLServerSpatialProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLServerSpatialProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -222,8 +222,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm112"
 				Optimization="2"
+				AdditionalOptions="-Zm112"
 				AdditionalIncludeDirectories="..\Fdo\Capability;..\..\inc\fdo;../../inc/rdbi;../;../../;../../inc;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Filter;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SQLSERVER_EXPORTS;FDORDBMS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE;FDO_SPATIAL_STATIC"
 				BasicRuntimeChecks="0"
@@ -254,7 +254,7 @@
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/SQLServerSpatialProvider.pdb"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -284,7 +284,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MsSqlServerProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -313,8 +313,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm112"
 				Optimization="2"
+				AdditionalOptions="-Zm112"
 				AdditionalIncludeDirectories="..\Fdo\Capability;..\..\inc\fdo;../../inc/rdbi;../;../../;../../inc;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Filter;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SQLSERVER_EXPORTS;FDORDBMS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE;FDO_SPATIAL_STATIC"
 				BasicRuntimeChecks="0"
@@ -345,7 +345,7 @@
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/SQLServerSpatialProvider.pdb"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -375,7 +375,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MsSqlServerProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.4.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>

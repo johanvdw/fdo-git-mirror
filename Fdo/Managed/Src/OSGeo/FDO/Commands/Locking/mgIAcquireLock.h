@@ -23,7 +23,7 @@
 #include "FDO\Commands\Locking\mgLockStrategy.h"
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING
-interface class ILockConflictReader;
+public __gc __interface ILockConflictReader;
 
 /// \ingroup (OSGeoFDOCommandsLocking)
 /// \interface OSGeo::FDO::Commands::Locking::IAcquireLock
@@ -49,7 +49,7 @@ interface class ILockConflictReader;
 /// specified in the filter that are already locked by someone else.
 /// The command returns an empty ILockConflictReader list if all of the
 /// feature instances specified in the filter were successfully locked.
-public interface class IAcquireLock : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
+public __gc __interface IAcquireLock : public NAMESPACE_OSGEO_FDO_COMMANDS::IFeatureCommand
 {
 public:
     /// \brief
@@ -58,6 +58,8 @@ public:
     /// \return
     /// Returns the lock type.
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType get_LockType();
+
     /// \brief
     /// Sets the LockType value.
     /// 
@@ -67,11 +69,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType LockType
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType value);
-    }
+	__property System::Void set_LockType(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockType value);
 
     /// \brief
     /// Gets the LockStrategy value.
@@ -79,6 +77,8 @@ public:
     /// \return
     /// Returns the strategy value (all or partial).
     /// 
+	__property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy get_LockStrategy();
+
     /// \brief
     /// Sets the LockStrategy value (all or partial).
     /// 
@@ -88,11 +88,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-    property NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy LockStrategy
-    {
-        NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy get();
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy value);
-    }
+	__property System::Void set_LockStrategy(NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::LockStrategy value);
 
     /// \brief
     /// Executes the AcquireLock command, returning an ILockConflictReader.
@@ -106,7 +102,7 @@ public:
     /// one of the feature instances specified in the filter is already locked
     /// by someone else.
     /// 
-	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ Execute();
+	NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader* Execute();
 };
 
 END_NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING

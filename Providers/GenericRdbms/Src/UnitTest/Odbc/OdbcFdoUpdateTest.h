@@ -32,8 +32,6 @@ public:
 
     virtual void updateCities();
     virtual void updateTable1();
-    // tests insert/update of geometry ordinates in columns that aren't doubles.
-    virtual void updateNonDblGeom();
 
     virtual void MainFdoUpdateTest (FdoIConnection* Conn=NULL) {}
 	virtual void Update () {}
@@ -47,12 +45,6 @@ public:
   	virtual void ConditionalUpdate (){}
   	virtual void UpdateNoMeta (){}
 
-    void insertNonDblGeomRow( FdoString* className, int FeatId, double x, double y, double z );
-    void updateNonDblGeomRow( FdoString* className, int FeatId, double x, double y, double z );
-    void vldNonDblGeomRow( FdoString* className, int FeatId, double x, double y, double z );
-    virtual float getTable6X( bool inserted ) { return inserted ? (float) 123.45679 : (float) 1.12121212; }
-    int compareDbl( double num1, double num2 );
-
 protected:
     OdbcBaseSetup mSetup;
     FdoPtr<FdoIConnection> mConnection;
@@ -63,7 +55,6 @@ class OdbcOracleFdoUpdateTest : public OdbcBaseFdoUpdateTest
     CPPUNIT_TEST_SUB_SUITE (OdbcOracleFdoUpdateTest, FdoUpdateTest);
     CPPUNIT_TEST( updateCities );
     CPPUNIT_TEST( updateTable1 );
-    CPPUNIT_TEST( updateNonDblGeom );
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -76,13 +67,11 @@ class OdbcMySqlFdoUpdateTest : public OdbcBaseFdoUpdateTest
     CPPUNIT_TEST_SUB_SUITE (OdbcMySqlFdoUpdateTest, FdoUpdateTest);
     CPPUNIT_TEST( updateCities );
     CPPUNIT_TEST( updateTable1 );
-    CPPUNIT_TEST( updateNonDblGeom );
     CPPUNIT_TEST_SUITE_END ();
 
 public:
     OdbcMySqlFdoUpdateTest(void)   { this->mSetup.SetTypeDB(DataBaseType_MySQL); }
-    virtual void set_provider()    { UnitTestUtil::SetProvider( "OdbcMySql" ); }
-    virtual float getTable6X( bool inserted )     { return inserted ? (float) 123.457 : (float) 1.12121; }
+    virtual void set_provider()     { UnitTestUtil::SetProvider( "OdbcMySql" ); }
 };
 
 #ifdef _WIN32
@@ -91,7 +80,6 @@ class OdbcSqlServerFdoUpdateTest : public OdbcBaseFdoUpdateTest
     CPPUNIT_TEST_SUB_SUITE (OdbcSqlServerFdoUpdateTest, FdoUpdateTest);
     CPPUNIT_TEST( updateCities );
     CPPUNIT_TEST( updateTable1 );
-    CPPUNIT_TEST( updateNonDblGeom );
     CPPUNIT_TEST_SUITE_END ();
 
     OdbcSqlServerFdoUpdateTest(void)   { this->mSetup.SetTypeDB(DataBaseType_SqlServer); }
@@ -103,7 +91,6 @@ class OdbcAccessFdoUpdateTest : public OdbcBaseFdoUpdateTest
     CPPUNIT_TEST_SUB_SUITE (OdbcAccessFdoUpdateTest, FdoUpdateTest);
     CPPUNIT_TEST( updateCities );
     CPPUNIT_TEST( updateTable1 );
-    CPPUNIT_TEST( updateNonDblGeom );
     CPPUNIT_TEST_SUITE_END ();
 
 public:

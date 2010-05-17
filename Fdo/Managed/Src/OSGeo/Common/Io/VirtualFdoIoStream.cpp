@@ -29,9 +29,10 @@ FdoSize VirtualFdoIoStream::Read(FdoByte* buffer, FdoSize count)
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, ReadBit);
 
-		array<Byte>^ mgBuffer = gcnew array<Byte>(count);
+		Byte mgBuffer[] = new Byte[count];
 		Int32 rCount = GetWrapper()->Read(mgBuffer, count);
-		Marshal::Copy(IntPtr(buffer), mgBuffer, 0, rCount);
+		IntPtr upBuffer = buffer;
+		Marshal::Copy(upBuffer, mgBuffer, 0, rCount);
 		return rCount;
 	}
 	else
@@ -46,7 +47,7 @@ FdoVoid VirtualFdoIoStream::Write(FdoByte* buffer, FdoSize count)
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, WriteBufferBit);
 
-		array<Byte>^ mgBuffer = gcnew array<Byte>(count);
+		Byte mgBuffer[] = new Byte[count];
 		for (UInt32 i = 0; i < count; i++)
 		{
 			mgBuffer[i] = *(buffer + i);
@@ -62,7 +63,7 @@ FdoVoid VirtualFdoIoStream::Write(FdoIoStream* stream, FdoSize count)
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, WriteStreamBit);
 
-		GetWrapper()->Write(gcnew NAMESPACE_OSGEO_COMMON_IO::IoStream(IntPtr(stream), true), count);
+		GetWrapper()->Write(new NAMESPACE_OSGEO_COMMON_IO::IoStream(stream, true), count);
 	}
 }
 
@@ -72,7 +73,7 @@ FdoVoid VirtualFdoIoStream::SetLength(FdoInt64 length)
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, SetLengthBit);
 
-		GetWrapper()->Length = length;
+		GetWrapper()->set_Length(length);
 	}
 }
 
@@ -82,7 +83,7 @@ FdoInt64 VirtualFdoIoStream::GetLength()
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, GetLengthBit);
 
-		return GetWrapper()->Length;
+		return GetWrapper()->get_Length();
 	}
 
 	return 0;
@@ -104,7 +105,7 @@ FdoInt64 VirtualFdoIoStream::GetIndex()
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, GetIndexBit);
 
-		return GetWrapper()->Index;
+		return GetWrapper()->get_Index();
 	}
 
 	return 0;
@@ -126,7 +127,7 @@ FdoBoolean VirtualFdoIoStream::CanRead()
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, CanReadBit);
 
-		return GetWrapper()->CanRead;
+		return GetWrapper()->get_CanRead();
 	}
 
 	return true;
@@ -138,7 +139,7 @@ FdoBoolean VirtualFdoIoStream::CanWrite()
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, CanWriteBit);
 
-		return GetWrapper()->CanWrite;
+		return GetWrapper()->get_CanWrite();
 	}
 
 	return true;
@@ -150,7 +151,7 @@ FdoBoolean VirtualFdoIoStream::HasContext()
 	{
 		WrapperCallWrapper ctx(wrapperCallBits, HasContextBit);
 
-		return GetWrapper()->HasContext;
+		return GetWrapper()->get_HasContext();
 	}
 
 	return true;

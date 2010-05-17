@@ -76,11 +76,6 @@ public:
     /// Get a constraint clause for adding this foreign key to a table.
     FdoStringP GetAddSql();
 
-    // Adds the referenced (primary) DbObject
-    // to the cache candidates list for its owner. This allows more efficient fetch of 
-    // these referenced DbObjects when they are not yet cached.
-    void LoadRefCand();
-
 protected:
     /// unused constructor only for building on Linux
     FdoSmPhFkey() {}
@@ -103,9 +98,6 @@ protected:
     );
 
 	~FdoSmPhFkey(void);
-
-    // Given a primary key (referenced) column name, find the column in the primary key (referenced) table.
-    virtual FdoSmPhColumnP FindPkeyColumn( FdoPtr<FdoSmPhTable> pkTable, FdoStringP columnName );
 
 private:
 

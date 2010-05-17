@@ -3,11 +3,9 @@
 <keywords>
 HTTP
 HTTP GET
-Content-Range
 Resume
 </keywords>
 </info>
-
 # Server-side
 <reply>
 <data>
@@ -45,7 +43,7 @@ http://%HOSTIP:%HTTPPORT/want/92 -C 87
 <protocol>
 GET /want/92 HTTP/1.1
 Range: bytes=87-
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 
 </protocol>

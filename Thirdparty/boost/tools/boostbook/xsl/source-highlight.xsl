@@ -159,7 +159,7 @@
   </xsl:template>
 
   <xsl:template match="classname|methodname|functionname|libraryname|enumname|
-                       conceptname|macroname|globalname" mode="highlight">
+                       conceptname|macroname" mode="highlight">
     <xsl:apply-templates select="." mode="annotation"/>
   </xsl:template>
 </xsl:stylesheet>

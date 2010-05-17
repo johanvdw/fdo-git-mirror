@@ -28,7 +28,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_CONNECTIONS
 /// \brief
 /// The ITransaction interface represents a transaction to be performed in a DataStore, and is implemented
 /// by feature providers that support transactions.
-private ref class ITransactionImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction
+private __gc class ITransactionImp : public NAMESPACE_OSGEO_RUNTIME::Disposable, public NAMESPACE_OSGEO_FDO_CONNECTIONS::ITransaction
 {
 public:
     /// \brief
@@ -37,10 +37,7 @@ public:
     /// \return
     /// Returns IConnection object
     /// 
-    virtual property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ Connection
-    {
-        NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_CONNECTIONS::IConnection* get_Connection();
 
     /// \brief
     ///  Commits the transaction.
@@ -48,7 +45,7 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Commit();
+	System::Void Commit();
 
     /// \brief
     ///  Rolls back a transaction from a pending state.
@@ -56,14 +53,17 @@ public:
     /// \return
     /// Returns nothing
     /// 
-	virtual System::Void Rollback();
+	System::Void Rollback();
 
-internal:
+public private:
 	ITransactionImp(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoITransaction* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
+
+/// \cond DOXYGEN-IGNORE
+protected:
+	System::Void ReleaseUnmanagedObject();
+/// \endcond
 };
 
 END_NAMESPACE_OSGEO_FDO_CONNECTIONS

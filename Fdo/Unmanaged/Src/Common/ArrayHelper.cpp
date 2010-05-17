@@ -16,12 +16,8 @@
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
 #include <memory.h>
-#include <FdoCommon.h>
-#include <new>
 
-#ifdef _WIN32
-#include <new.h>
-#endif
+#include <FdoCommon.h>
 
 #define MIN_ALLOC 1
 #define GROWTH_FACTOR 1     /* Proportion of array size to grow when needed. */
@@ -155,9 +151,9 @@ void FdoCommonThreadData::ReleaseValue()
 
     if (NULL != data)
     {
-        // in case we set thread value to null before delete thread object
-        // the thread object will be recreated and all objects will readded to new pools
-        delete data;
+        // in case we set thread value to null before delete thread object  
+        // the thread object will be recreated and all objects will readded to new pools  
+        delete data;  
         SET_VALUE(threadDataKey_S, NULL);
     }
 }
@@ -236,12 +232,6 @@ FdoArrayHelper::GenericArray* FdoArrayHelper::AllocMore(GenericArray* array, Fdo
     if (NULL == newArray)
     {
         // Fix ticket 575 to avoid out-of-memory exception causing application crash.
-        // Suppress any existing new handler to avoid unexpected behavior.
-#ifdef _WIN32
-        _PNH prevHdlr = _set_new_handler(NULL);
-#else
-        std::new_handler prevHdlr = std::set_new_handler(NULL);
-#endif
         try
         {
             newArray = (GenericArray*) new FdoByte[newAllocBytes];
@@ -249,12 +239,6 @@ FdoArrayHelper::GenericArray* FdoArrayHelper::AllocMore(GenericArray* array, Fdo
         catch(...)
         {
         }
-        // restore old handler
-#ifdef _WIN32
-        _set_new_handler(prevHdlr);
-#else
-        std::set_new_handler(prevHdlr);
-#endif
     }
 	if (0==newArray)
 		throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));

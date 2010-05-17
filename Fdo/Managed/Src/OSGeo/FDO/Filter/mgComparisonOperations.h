@@ -36,7 +36,7 @@ BEGIN_NAMESPACE_OSGEO_FDO_FILTER
 /// set ([^abcdef]).
 /// 
 [System::FlagsAttribute]
-public enum class ComparisonOperations
+public __value enum ComparisonOperations
 {
     /// Test to see if the left and right expressions are equal.
 	ComparisonOperations_EqualTo = FdoComparisonOperations_EqualTo,

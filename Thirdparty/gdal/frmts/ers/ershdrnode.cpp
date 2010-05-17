@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ershdrnode.cpp 17867 2009-10-21 21:04:49Z rouault $
+ * $Id: ehdrdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of ERSHdrNode class for parsing/accessing .ers hdr.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ershdrnode.h"
 
-CPL_CVSID("$Id: ershdrnode.cpp 17867 2009-10-21 21:04:49Z rouault $");
+CPL_CVSID("$Id: ehdrdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 
 /************************************************************************/

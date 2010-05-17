@@ -63,7 +63,6 @@ public:
     virtual FdoStringP LogicalPhysicalFormat( FdoString* inFile );
 
 	virtual FdoStringP GetValueColumnName();
-    virtual FdoStringP GetDefaultSchemaName();
 };
 
 

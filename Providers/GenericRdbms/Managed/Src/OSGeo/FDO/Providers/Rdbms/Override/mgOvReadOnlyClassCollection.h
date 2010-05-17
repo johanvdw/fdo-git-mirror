@@ -21,40 +21,65 @@
 class FdoRdbmsOvReadOnlyClassCollection;
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
-ref class OvClassDefinition;
+public __gc class OvClassDefinition;
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 /// <summary>
 ///     OvReadOnlyClassCollection is a collection of name-value pairs.
 /// </summary>
-[System::Reflection::DefaultMemberAttribute("Item")]
-public ref class OvReadOnlyClassCollection sealed : public NAMESPACE_OSGEO_COMMON::CollectionReadOnlyBase
+[System::Reflection::DefaultMemberAttribute("RealTypeItem")]
+public __sealed __gc class OvReadOnlyClassCollection : public NAMESPACE_OSGEO_RUNTIME::Disposable, public System::Collections::ICollection, public System::Collections::IEnumerable
 {
-/// \cond DOXYGEN-IGNORE
-internal:
+private:
+	/// <summary>
+	///		nested class defined to provide Enumerator.
+	/// </summary>
+	__gc class Enumerator : public System::Collections::IEnumerator
+	{
+	private:
+		OvReadOnlyClassCollection* m_pCol;
+		System::Int32 m_nIdx;
+
+	public:
+		Enumerator(OvReadOnlyClassCollection* elements) : m_pCol(elements), m_nIdx(-1) 
+		{
+
+		}
+
+		__property System::Object* get_Current();
+
+		System::Boolean MoveNext();
+
+		System::Void Reset();
+	};
+
+public private:
 	OvReadOnlyClassCollection(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 	inline FdoRdbmsOvReadOnlyClassCollection* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 
 private:
-    virtual property System::Object^ IndexInternal[System::Int32]
-    {
-        private: System::Object^ get(System::Int32 index) sealed = NAMESPACE_OSGEO_COMMON::IListReadOnly::default::get;
-    }
+    // System::Collections::ICollection interfaces
+	System::Void System::Collections::ICollection::CopyTo(System::Array* array,System::Int32 index);
 
-/// \endcond
+	__property System::Object* System::Collections::ICollection::get_SyncRoot();
+
+	__property System::Boolean System::Collections::ICollection::get_IsSynchronized();
+
+protected:
+	System::Void ReleaseUnmanagedObject();
 
 public:
 	/// <summary>
 	///    Gets the count of items in collection.
 	/// </summary>
-    property System::Int32 Count
-    {
-        virtual System::Int32 get() override;
-    }
+	__property System::Int32 get_Count(System::Void);
+
+	/// <summary>
+	///    Gets an enumerator that can iterate through a collection.
+	/// </summary>
+	__sealed System::Collections::IEnumerator* GetEnumerator(System::Void);
 
 	/// <summary>
 	///     Determines the index of a specific OvClassDefinition object.
@@ -65,7 +90,7 @@ public:
 	/// <returns>
 	///		The index of value if found in the collection; otherwise, -1.
 	/// </returns>
-	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ value);
+	System::Int32 IndexOf(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* value);
 
 	/// <summary>
 	///     Determines whether the collection contains a specific OvClassDefinition object.
@@ -76,7 +101,7 @@ public:
 	/// <returns>
 	///		Returns true if the value is found in the collection; otherwise, false.
 	/// </returns>
-	System::Boolean Contains(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ value);
+	System::Boolean Contains(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* value);
 
 	/// <summary>
 	///     Copies the elements of the collection to an array.
@@ -87,7 +112,7 @@ public:
 	/// <param name="startAt">
 	///		Input an integer that represents the index in array at which copying begins. 
 	/// </param>
-	System::Void CopyTo(array<NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^>^ pArray, System::Int32 index);
+	System::Void CopyTo(NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* array[], System::Int32 index);
 
 	//this is a hedious workaround for a bug in VS2002. 
 	/// <summary>
@@ -96,14 +121,8 @@ public:
 	/// <param name="index">
 	///		Input index of the OvClassDefinition to retrieve or set (System::Int32). 
 	/// </param>
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ Item[System::Int32]
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ get(System::Int32 index);
-    }
-    property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ Item[System::String^]
-    {
-        NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition^ get(System::String^ index);
-    }
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* get_RealTypeItem(System::Int32 index);
+	__property NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::OvClassDefinition* get_RealTypeItem(System::String* index);
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

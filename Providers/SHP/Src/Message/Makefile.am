@@ -1,5 +1,5 @@
 ##
-## Copyright (C) 2004-2009  Autodesk, Inc.
+## Copyright (C) 2004-2006  Autodesk, Inc.
 ## 
 ## This library is free software; you can redistribute it and/or
 ## modify it under the terms of version 2.1 of the GNU Lesser
@@ -21,14 +21,14 @@ EXTRA_DIST = resource.h ShpMessage.mc ShpMessage.vcproj ShpMessageStatic.h ShpMe
 
 CATDIR = ../../nls/linux/en_US
 
-CATALOGS = ShpMessage.msf
+CATALOGS = ShpMessage.mc
 
-CATALOGS_CAT = $(patsubst %.msf,$(CATDIR)/%.cat,$(CATALOGS))
+CATALOGS_CAT = $(patsubst %.mc,$(CATDIR)/%.cat,$(CATALOGS))
 
 all : catalog_init $(CATALOGS_CAT)
 
 clean :
-	@rm -rf $(CATDIR)/*.cat  
+	@rm -rf $(CATDIR)/*.cat
 	@rm -f Inc/*.h
 	@rm -f *.msf
 
@@ -40,23 +40,26 @@ $(CATALOGS_CAT) : $(CATDIR)/%.cat : %.msf
 	@mkdir -p "Inc/"
 	@rm -f "Inc/$(basename $(notdir $<)).h"
 	@echo "$(FDOTHIRDPARTY)/linux/mkcatdefs/mkcatdefs $(basename $(notdir $<)) $< | gencat $@"; \
-    $(FDOTHIRDPARTY)/linux/mkcatdefs/mkcatdefs $(basename $(notdir $<)) $< > $(addsuffix .tmp, $(basename $(notdir $<))); \
+    	$(FDOTHIRDPARTY)/linux/mkcatdefs/mkcatdefs $(basename $(notdir $<)) $< > $(addsuffix .tmp, $(basename $(notdir $<))); \
 	gencat $@ $(addsuffix .tmp, $(basename $(notdir $<))); \
-    sed -e '/#include/d' -e '/MF_/s/"\(.*\)\.cat"/\1_cat/' \
-    $(addsuffix _msg.h, $(basename $(notdir $<))) > \
+    	sed -e '/#include/d' -e '/MF_/s/"\(.*\)\.cat"/\1_cat/' \
+    	$(addsuffix _msg.h, $(basename $(notdir $<))) > \
 	Inc/$(addsuffix _msg.h, $(basename $(notdir $<)))
 	@rm $(addsuffix _msg.h, $(basename $(notdir $<))) \
-    $(addsuffix .tmp, $(basename $(notdir $<)))
-	@mv ./Inc/$(basename $(notdir $<))_msg.h ./Inc/$(basename $(notdir $<)).h
+    	$(addsuffix .tmp, $(basename $(notdir $<)))
+	@mv Inc/$(basename $(notdir $<))_msg.h Inc/$(basename $(notdir $<))Dynamic.h
+	@cat $(basename $(notdir $<))Static.h Inc/$(basename $(notdir $<))Dynamic.h >Inc/$(basename $(notdir $<)).h
+	@rm Inc/$(basename $(notdir $<))Dynamic.h
 
-ShpMessage.msf : ShpMessage.mc
-	$(FDO)/Unmanaged/Src/McToMsf/McToMsf ShpMessage.mc ShpMessage.msf SHP 
+%.msf : %.mc
+	$(FDO)/Unmanaged/Src/McToMsf/McToMsf $< $@ "*" SHPMESSAGE
 
 INSTALL_DIR  = $(prefix)/nls
 
+#install data
 install :
 	@if [ ! -d $(INSTALL_DIR) ]; then mkdir -p $(INSTALL_DIR); fi
-	@cp -u -f $(CATDIR)/ShpMessage.cat  $(INSTALL_DIR)
+	@cp -u -f $(CATALOGS_CAT)  $(INSTALL_DIR)
 
 uninstall :
 	@rm -f $(INSTALL_DIR)/ShpMessage.cat

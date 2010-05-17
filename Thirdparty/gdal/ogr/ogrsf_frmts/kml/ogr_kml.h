@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_kml.h 16908 2009-05-02 14:53:26Z rouault $
+ * $Id: ogr_kml.h 14315 2008-04-18 12:52:56Z condit $
  *
  * Project:  KML Driver
  * Purpose:  Declarations for OGR wrapper classes for KML, and OGR->KML
@@ -60,6 +60,7 @@ public:
     //
     OGRFeatureDefn* GetLayerDefn();
     OGRSpatialReference* GetSpatialRef();
+    OGRErr GetExtent( OGREnvelope* psExtent, int bForce = TRUE );
     OGRErr CreateFeature( OGRFeature* poFeature );
     OGRErr CreateField( OGRFieldDefn* poField, int bApproxOK = TRUE );
     void ResetReading();
@@ -85,9 +86,6 @@ private:
     int nLayerNumber_;
     int nWroteFeatureCount_;
     char* pszName_;
-
-    int nLastAsked;
-    int nLastCount;
 };
 
 /************************************************************************/

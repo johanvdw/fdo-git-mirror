@@ -23,13 +23,13 @@
 class FdoXmlClassMapping;
 
 BEGIN_NAMESPACE_OSGEO_FDO_XML
-ref class XmlElementMappingCollection;
+public __gc class XmlElementMappingCollection;
 
 /// \ingroup (OSGeoFDOXml)
 /// \brief
 /// XmlClassMapping describes GML to FDO mappings for a particular FDO class
 /// Only mappings that cannot be represented in FDO are described.
-public ref class XmlClassMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
+public __gc class XmlClassMapping : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping
 {
 public:
     /// \brief
@@ -44,7 +44,7 @@ public:
     /// set when the type represents geometries and indicates what kind of geometries the type
     /// represents. 
     /// 
-	XmlClassMapping(System::String^ name, System::String^ schemaName, System::String^ wkBaseName);
+	XmlClassMapping(System::String* name, System::String* schemaName, System::String* wkBaseName);
 
     /// \brief
     /// Constructs an object describing the GML-FDO mappings for an FDO class.
@@ -60,7 +60,7 @@ public:
     /// \param wkSchemaName 
     /// Input name of the most specialized well-known schema base type. 
     /// 
-	XmlClassMapping(System::String^ name, System::String^ schemaName, System::String^ wkBaseName, System::String^ wkSchemaName);
+	XmlClassMapping(System::String* name, System::String* schemaName, System::String* wkBaseName, System::String* wkSchemaName);
 		
     /// \brief
     /// Gets the name of the class's corresponding GML complexType.
@@ -68,10 +68,7 @@ public:
     /// \return
     /// Returns System::String.
     /// 
-    property System::String^ GmlName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_GmlName();
 
     /// \brief
     /// Gets the most specialized well-known base type
@@ -79,10 +76,7 @@ public:
     /// \return
     /// Returns System::String.
     /// 
-    property System::String^ WkBaseName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_WkBaseName();
 
     /// \brief
     /// Gets the schema containing most specialized well-known base type
@@ -90,31 +84,23 @@ public:
     /// \return
     /// Returns System::String.
     /// 
-    property System::String^ WkSchemaName
-    {
-        System::String^ get();
-    }
+	__property System::String* get_WkSchemaName();
 
     /// \brief
     /// Gets the mappings between GML elements for this class's properties and their
     /// Fdo Classes. 
     /// 
     /// \return
-    /// Returns XmlElementMappingCollection^
+    /// Returns XmlElementMappingCollection*
     /// 
-    property NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection^ ElementMappings
-    {
-        NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection^ get();
-    }
+	__property NAMESPACE_OSGEO_FDO_XML::XmlElementMappingCollection* get_ElementMappings();
 
-internal:
+public private:
     XmlClassMapping(System::IntPtr unmanaged, System::Boolean autoDelete) : NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalClassMapping(unmanaged, autoDelete)
 	{
 	}
 
 	inline FdoXmlClassMapping* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 };
 
 END_NAMESPACE_OSGEO_FDO_XML

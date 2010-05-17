@@ -23,14 +23,9 @@
 
 #include "mgISurfaceAbstractImp.h"
 
-FdoISurfaceAbstract* NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp::GetImpObj()
+FdoISurfaceAbstract * NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp::GetImpObj()
 {
-	return static_cast<FdoISurfaceAbstract*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	return static_cast<FdoISurfaceAbstract *>(__super::UnmanagedObject.ToPointer());
 }
 
 NAMESPACE_OSGEO_GEOMETRY::ISurfaceAbstractImp::ISurfaceAbstractImp(System::IntPtr unmanaged, System::Boolean autoDelete)

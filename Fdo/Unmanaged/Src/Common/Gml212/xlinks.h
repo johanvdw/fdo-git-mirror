@@ -1,7 +1,7 @@
 #ifndef xlinks_H
 #define xlinks_H
 
-static const char* xlinks[] = {
+static char* xlinks[] = {
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
 "<schema targetNamespace=\"http://www.w3.org/1999/xlink\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns=\"http://www.w3.org/2001/XMLSchema\" version=\"2.1.2\">",
 "  <annotation>",

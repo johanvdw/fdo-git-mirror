@@ -255,8 +255,7 @@ extern "C" {
 	     : "r"(a), "r"(b));		\
 	ret;			})
 #  endif	/* compiler */
-# elif (defined(__x86_64) || defined(__x86_64__)) && \
-       (defined(SIXTY_FOUR_BIT_LONG) || defined(SIXTY_FOUR_BIT))
+# elif defined(__x86_64) && defined(SIXTY_FOUR_BIT_LONG)
 #  if defined(__GNUC__)
 #   define BN_UMULT_HIGH(a,b)	({	\
 	register BN_ULONG ret,discard;	\
@@ -482,7 +481,6 @@ BN_ULONG bn_add_part_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
 	int cl, int dl);
 BN_ULONG bn_sub_part_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
 	int cl, int dl);
-int bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp, const BN_ULONG *np,const BN_ULONG *n0, int num);
 
 #ifdef  __cplusplus
 }

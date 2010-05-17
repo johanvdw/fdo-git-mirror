@@ -27,28 +27,23 @@
 
 FdoIDelete* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDeleteImp::GetImpObj()
 {
-    return static_cast<FdoIDelete*>(UnmanagedObject.ToPointer());
-}
-
-IntPtr NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDeleteImp::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+    return static_cast<FdoIDelete*>(__super::UnmanagedObject.ToPointer());
 }
 
 System::Int32 NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDeleteImp::Execute()
 {
-	System::Int32 result;
+	FdoInt32 result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->Execute())
 
 	return result;
 }
 
-NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader^ NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDeleteImp::LockConflicts::get()
+NAMESPACE_OSGEO_FDO_COMMANDS_LOCKING::ILockConflictReader* NAMESPACE_OSGEO_FDO_COMMANDS_FEATURE::IDeleteImp::get_LockConflicts()
 {
 	FdoILockConflictReader* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetLockConflicts())
 
-    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockConflictReader(IntPtr(result), true);
+    return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateILockConflictReader(result, true);
 }

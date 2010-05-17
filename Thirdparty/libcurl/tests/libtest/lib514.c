@@ -5,12 +5,10 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib514.c,v 1.6 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib514.c,v 1.3 2006-10-25 09:20:44 yangtse Exp $
  */
 
 #include "test.h"
-
-#include "memdebug.h"
 
 int test(char *URL)
 {
@@ -29,7 +27,7 @@ int test(char *URL)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
 
   /* Based on a bug report by Niels van Tongeren on June 29, 2004:
 
@@ -40,24 +38,22 @@ int test(char *URL)
 
   */
 
-  test_setopt(curl, CURLOPT_POSTFIELDS, "moo");
-  test_setopt(curl, CURLOPT_POSTFIELDSIZE, 3L);
-  test_setopt(curl, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "moo");
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 3);
+  curl_easy_setopt(curl, CURLOPT_POST, 1);
 
   /* this is where transfer 1 would take place, but skip that and change
      options right away instead */
 
-  test_setopt(curl, CURLOPT_NOBODY, 1L);
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
 
-  test_setopt(curl, CURLOPT_VERBOSE, 1L); /* show verbose for debug */
-  test_setopt(curl, CURLOPT_HEADER, 1L); /* include header */
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1); /* show verbose for debug */
+  curl_easy_setopt(curl, CURLOPT_HEADER, 1); /* include header */
 
   /* Now, we should be making a fine HEAD request */
 
   /* Perform the request 2, res will get the return code */
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   /* always cleanup */
   curl_easy_cleanup(curl);

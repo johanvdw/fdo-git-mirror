@@ -3,10 +3,9 @@
 <keywords>
 HTTP
 HTTP GET
-Content-Range
+Range
 </keywords>
 </info>
-
 # Server-side
 <reply>
 <data>
@@ -21,9 +20,9 @@ Content-Range: bytes 100-200/3527
 Connection: close
 Content-Type: text/html
 
-..partial data returned from the
-server as a result of setting an explicit byte range
-in the request
+ink="#ffffff" vlink="#cccccc">
+<table width=100% cellspacing=0 cellpadding=0 border=0>
+ <tr> 0123456
 </data>
 </reply>
 
@@ -48,7 +47,7 @@ http://%HOSTIP:%HTTPPORT/want/12 -r 100-200
 <protocol>
 GET /want/12 HTTP/1.1
 Range: bytes=100-200
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 
 </protocol>

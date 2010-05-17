@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdedataset.cpp 17926 2009-10-30 12:59:56Z hobu $
+ * $Id: sdedataset.cpp 13348 2007-12-15 21:58:35Z hobu $
  *
  * Project:  ESRI ArcSDE Raster reader
  * Purpose:  Dataset implementaion for ESRI ArcSDE Rasters
@@ -161,10 +161,6 @@ CPLErr SDEDataset::ComputeRasterInfo() {
         return CE_Fatal;
     }
     CPLDebug("SDERASTER", "Tile origin: %.5f, %.5f", x0, y0);
-
-    // we also need to adjust dfMaxX and dfMinY otherwise the cell size will change
-    dfMaxX = (x0-dfMinX) + dfMaxX;
-    dfMinY = (y0-dfMaxY) + dfMinY;
 
     // adjust the bbox based on the tile origin.
     dfMinX = MIN(x0, dfMinX);

@@ -869,10 +869,7 @@ void OdbcConnectionUtil::SetupOracleDSN()
                 (SQLCHAR *) driverAttrs, (SQLSMALLINT) sizeof(driverAttrs), &driverAttrsLength);
             if (SQLRETURN_OK(rc))
             {
-                #ifdef WIN32
-                #pragma message("TODO: update this with each Oracle version update")
-                #endif
-                if (NULL != strstr(driverDesc, "Oracle") && (NULL != strstr(driverDesc, "10") || NULL != strstr(driverDesc, "11")))
+                if (NULL != strstr(driverDesc, "Oracle") && NULL != strstr(driverDesc, "10"))
                     strcpy(theOracleDriverName, driverDesc);
             }
             direction = SQL_FETCH_NEXT;

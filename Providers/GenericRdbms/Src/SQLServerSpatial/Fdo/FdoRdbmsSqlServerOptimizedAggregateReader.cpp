@@ -260,8 +260,3 @@ FdoPropertyType FdoRdbmsSqlServerOptimizedAggregateReader::GetPropertyType(FdoSt
 
 	return m_SelAggrList->at(index)->type; 
 }
-
-FdoString* FdoRdbmsSqlServerOptimizedAggregateReader::GetPropertyNameForDataReader(FdoInt32 index)
-{
-    return m_SelAggrList->at(index)->name;
-}

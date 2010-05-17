@@ -7,7 +7,7 @@ OBJ	=	ogrdodsdriver.o ogrdodsdatasource.o ogrdodslayer.o \
 
 CPPFLAGS	:=	-I.. $(GDAL_INCLUDE) $(CPPFLAGS) $(DODS_INC)
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(O_OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)

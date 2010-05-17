@@ -37,24 +37,26 @@ NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::UniqueConstraint(IntPtr unmanaged,
 
 NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::UniqueConstraint() : NAMESPACE_OSGEO_RUNTIME::Disposable(System::IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoUniqueConstraint::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoUniqueConstraint::Create(), true))
 }
 
 FdoUniqueConstraint* NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::GetImpObj()
 {
-    return static_cast<FdoUniqueConstraint*>(UnmanagedObject.ToPointer());
+    return static_cast<FdoUniqueConstraint*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::GetDisposableObject()
+Void NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::ReleaseUnmanagedObject()
 {
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
+	if (get_AutoDelete()) 
+        EXCEPTION_HANDLER(GetImpObj()->Release())
+	Detach();
 }
 
-NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection^ NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::Properties::get()
+NAMESPACE_OSGEO_FDO_SCHEMA::DataPropertyDefinitionCollection* NAMESPACE_OSGEO_FDO_SCHEMA::UniqueConstraint::get_Properties()
 {
 	FdoDataPropertyDefinitionCollection* result;
 
 	EXCEPTION_HANDLER(result = GetImpObj()->GetProperties())
 
-	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinitionCollection(IntPtr(result), true);
+	return NAMESPACE_OSGEO_FDO::ObjectFactory::CreateDataPropertyDefinitionCollection(result, true);
 }

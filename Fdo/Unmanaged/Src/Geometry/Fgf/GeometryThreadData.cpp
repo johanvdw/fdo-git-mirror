@@ -52,9 +52,9 @@ void FdoGeometryThreadData::ReleaseValue()
 
     if (NULL != data)
     {
-        // in case we set thread value to null before delete thread object
-        // the thread object will be recreated and all geometries will readded to new pools
-        delete data;
+        // in case we set thread value to null before delete thread object  
+        // the thread object will be recreated and all geometries will readded to new pools  
+        delete data;  
         SET_VALUE(threadDataKey_S, NULL);
     }
 }

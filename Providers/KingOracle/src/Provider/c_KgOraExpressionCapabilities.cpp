@@ -76,7 +76,6 @@ FdoFunctionDefinitionCollection* c_KgOraExpressionCapabilities::GetFunctions()
     ret->Add(wellKnownFunction);
     wellKnownFunction = wellKnownFunctions->GetItem(FDO_FUNCTION_MAX);
     ret->Add(wellKnownFunction);
-    
     wellKnownFunction = wellKnownFunctions->GetItem(FDO_FUNCTION_SPATIALEXTENTS);
     ret->Add(wellKnownFunction);
 

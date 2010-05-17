@@ -248,7 +248,7 @@ INCLUDES = \
   -I../Nls  \
   -I../Common \
   -I../Geometry \
-  -I$(FDOTHIRDPARTY)/apache/xerces/src
+  -I$(FDOTHIRDPARTY)/apache/xml-xerces/c/src
 
 libFDOSrc_la_LDFLAGS = 
 

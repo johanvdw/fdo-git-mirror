@@ -155,7 +155,7 @@ FdoIConnectionPropertyDictionary* c_KgOraConnectionInfo::GetConnectionProperties
         
     wide_to_multibyte (propname, D_CONN_PROPERTY_PASSWORD);
     newproperty = new ConnectionProperty (D_CONN_PROPERTY_PASSWORD,NlsMsgGet(M_KGORA_CONNECTION_PROPERTY_PASSWORD, propname),
-                L"", false, true, false, false, false, false,false, 0, NULL);
+                L"", false, false, false, false, false, false,false, 0, NULL);
     m_PropertyDictionary->AddProperty(newproperty);
                 
 		wide_to_multibyte (propname, D_CONN_PROPERTY_SERVICE_NAME);
@@ -174,12 +174,6 @@ FdoIConnectionPropertyDictionary* c_KgOraConnectionInfo::GetConnectionProperties
     newproperty = new ConnectionProperty (D_CONN_PROPERTY_KING_FDO_CLASS,
                                             NlsMsgGet(M_KGORA_CONNECTION_PROPERTY_FDO_VIEWS_TABLE, propname),
                                             L"", false, false, false, false, false, false,false, 0, NULL);
-    m_PropertyDictionary->AddProperty(newproperty);
-    
-    wide_to_multibyte (propname, D_CONN_PROPERTY_SDE_SCHEMA);
-    newproperty = new ConnectionProperty (D_CONN_PROPERTY_SDE_SCHEMA,
-      NlsMsgGet(M_KGORA_CONNECTION_PROPERTY_SDE_SCHEMA, propname),
-      L"", false, false, false, false, false, false,false, 0, NULL);
     m_PropertyDictionary->AddProperty(newproperty);
   }
   

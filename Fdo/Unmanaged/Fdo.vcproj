@@ -47,7 +47,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;Src/Nls;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;"
+				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src&quot;;Src/Nls"
 				PreprocessorDefinitions="_DEBUG;WIN32;_USRDLL;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NON_CONFORMING_SWPRINTFS;EXP_FDO;XML_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
@@ -74,12 +74,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_3D.lib Version.lib"
+				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_2.lib Version.lib"
 				OutputFile="$(OutDir)/FDO.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="Lib/Win32/Debug;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/win32/VC9/Debug&quot;"
-				IgnoreDefaultLibraryNames=""
+				AdditionalLibraryDirectories="Lib/Win32/Debug;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/win32/VC9/Release&quot;"
+				IgnoreDefaultLibraryNames="MSVCRT"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDO.pdb"
@@ -87,7 +87,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Debug/FDO.lib"
-				TargetMachine="1"
+				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -110,7 +110,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(ProjectName).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -143,7 +143,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;Src/Nls;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;"
+				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src&quot;;Src/Nls"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WIN64;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NON_CONFORMING_SWPRINTFS;EXP_FDO;XML_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
@@ -170,12 +170,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_3D.lib Version.lib"
+				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_2.lib Version.lib"
 				OutputFile="$(OutDir)/FDO.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="Lib/Win64/Debug;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/Win64/VC9/Debug&quot;"
-				IgnoreDefaultLibraryNames=""
+				AdditionalLibraryDirectories="Lib/Win64/Debug;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/Win64/VC9/Debug&quot;"
+				IgnoreDefaultLibraryNames="MSVCRT"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDO.pdb"
@@ -206,7 +206,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(ProjectName).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -241,7 +241,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;Src/Nls;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;"
+				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src&quot;;Src/Nls"
 				PreprocessorDefinitions="NDEBUG;WIN32;_USRDLL;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NON_CONFORMING_SWPRINTFS;EXP_FDO"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -266,11 +266,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_3.lib Version.lib"
+				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_2.lib Version.lib"
 				OutputFile="$(OutDir)/FDO.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="Lib/Win32/Release;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/win32/VC9/Release&quot;"
+				AdditionalLibraryDirectories="Lib/Win32/Release;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/win32/VC9/Release&quot;"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDO.pdb"
@@ -282,7 +282,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Release/FDO.lib"
-				TargetMachine="1"
+				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -305,7 +305,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(ProjectName).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -340,7 +340,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;Src/Nls;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;"
+				AdditionalIncludeDirectories="Inc;Src/Fdo;Src/Common;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src&quot;;Src/Nls"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WIN64;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NON_CONFORMING_SWPRINTFS;EXP_FDO"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -365,11 +365,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_3.lib Version.lib"
+				AdditionalDependencies="FDOCommon.lib FDOGeometry.lib Xerces-C_2.lib Version.lib"
 				OutputFile="$(OutDir)/FDO.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="Lib/Win64/Release;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/Win64/VC9/Release&quot;"
+				AdditionalLibraryDirectories="Lib/Win64/Release;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/Win64/VC9/Release&quot;"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDO.pdb"
@@ -404,7 +404,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(ProjectName).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\$(ProjectName).dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -2026,10 +2026,6 @@
 				</File>
 				<File
 					RelativePath="Inc\Fdo\Commands\OrderingOption.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Inc\Fdo\Commands\ParameterDirection.h"
 					>
 				</File>
 				<File

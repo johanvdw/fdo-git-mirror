@@ -17,6 +17,8 @@
 
 #include "stdafx.h"
 
+
+
 #include "c_OCI_API.h"
 #include "c_Ora_API2.h"
 #include "c_FdoOra_API2.h"
@@ -28,8 +30,6 @@
 #include <time.h>
 
 #define KGORA_MESSAGE_DEFINE
-
-#include <../Message/KgOraMessageStatic.h>
 #include <../Message/inc/KgOraMessage.h>
 
 #ifdef _WIN32
@@ -82,8 +82,6 @@ BOOL APIENTRY DllMain (HANDLE Module, DWORD Reason, LPVOID lpReserved)
 
     return (ret);
 }
-#else // _WIN32
-wchar_t* g_LogFileName = L"/tmp/kingora.log";
 #endif // _WIN32
 
 
@@ -329,8 +327,6 @@ g_Mutex.Enter();
     FdoStringP service = dictionary->GetProperty (D_CONN_PROPERTY_SERVICE_NAME);
     FdoStringP oraschema = dictionary->GetProperty (D_CONN_PROPERTY_ORACLE_SCHEMA);
     FdoStringP fdoviewstable = dictionary->GetProperty (D_CONN_PROPERTY_KING_FDO_CLASS);
-    
-    FdoStringP sdeschema = dictionary->GetProperty (D_CONN_PROPERTY_SDE_SCHEMA);
 		
 		
 		//FdoStringP username = dictionary->GetProperty (L"Username");
@@ -348,7 +344,6 @@ g_Mutex.Enter();
 	  m_OraConnectionDbLink = service;
 	  m_OraSchemaName = oraschema.Upper();
 	  m_FdoViewsTable = fdoviewstable.Upper();
-	  m_SdeSchema = sdeschema.Upper();
 	  
 	  
 	  if( !c_Ora_API2::GetOracleVersion(m_OciConnection,m_OracleMainVersion,m_OracleSubVersion) )
@@ -724,17 +719,11 @@ c_KgOraSchemaDesc* c_KgOraConnection::GetSchemaDesc()
   if( m_SchemaDesc.p == NULL )
   {
   // Now check into schema pool
-  // I have disabled an schema pool because of bug in MapGuide.
-  // Bug is demonstrated when several concurrent request are send to access data. 
-  // Bug is in MgServerGetFeatures::SerializeToXml(FdoClassDefinition* classDef) which will remove class from schema 
-  // and move class to temporary schema to be serialized.
-  // Problem also could happen when provider enables multiple commands per connection or when schemas are shared across connections (schema pooling).
-  #ifdef false // D_ENABLE_SCHEMA_POOL
+  #ifdef D_ENABLE_SCHEMA_POOL
     m_SchemaDesc = c_KgOraSchemaPool::GetSchemaData(this);
     if( !m_SchemaDesc.p )
     {
-      m_SchemaDesc = c_FdoOra_API2::DescribeSchema(this->GetOciConnection(),m_OraConnectionUserName.c_str(),m_OraSchemaName.c_str()
-                      ,m_FdoViewsTable.c_str(),m_SdeSchema.c_str());
+      m_SchemaDesc = c_FdoOra_API2::DescribeSchema(this->GetOciConnection(),m_OraConnectionUserName.c_str(),m_OraSchemaName.c_str(),m_FdoViewsTable.c_str());
       if( m_SchemaDesc.p )
       {
         c_KgOraSchemaPool::AddSchemaData(this,m_SchemaDesc.p);
@@ -742,7 +731,7 @@ c_KgOraSchemaDesc* c_KgOraConnection::GetSchemaDesc()
     }
   
   #else
-    m_SchemaDesc = c_FdoOra_API2::DescribeSchema(this->GetOciConnection(),m_OraConnectionUserName.c_str(),m_OraSchemaName.c_str(),m_FdoViewsTable.c_str(),m_SdeSchema.c_str());
+    m_SchemaDesc = c_FdoOra_API2::DescribeSchema(this->GetOciConnection(),m_OraConnectionUserName.c_str(),m_OraSchemaName.c_str(),m_FdoViewsTable.c_str());
   #endif
   }
   return FDO_SAFE_ADDREF(m_SchemaDesc.p);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_java.i 16554 2009-03-12 20:10:50Z rouault $
+ * $Id: osr_java.i 9183 2006-02-16 17:21:12Z collinsb $
  *
  * Name:     osr_java.i
  * Project:  GDAL SWIG Interface
@@ -19,7 +19,6 @@
 
 %include arrays_java.i
 %include typemaps_java.i
-%include java_exceptions.i
 
 %pragma(java) jniclasscode=%{
   private static boolean available = false;
@@ -38,14 +37,6 @@
   public static boolean isAvailable() {
     return available;
   }
-%}
-
-%pragma(java) modulecode=%{
-
-    /* Uninstanciable class */
-    private osr()
-    {
-    }
 %}
 
 /*
@@ -67,133 +58,3 @@
   }
 %}
 
-%typemap(javacode) OSRSpatialReferenceShadow %{
-  public boolean equals(Object obj) {
-    boolean equal = false;
-    if (obj instanceof $javaclassname)
-      equal = ((($javaclassname)obj).swigCPtr == this.swigCPtr);
-    return equal;
-  }
-
-  public Object clone()
-  {
-      return Clone();
-  }
-
-  public int hashCode() {
-     return (int)swigCPtr;
-  }
-
-  public String toString() {
-    return __str__();
-  }
-
-  public String ExportToWkt() {
-    String array[] = new String[] {null};
-    ExportToWkt(array);
-    return array[0];
-  }
-
-  public String ExportToPrettyWkt(int simplify) {
-    String array[] = new String[] {null};
-    ExportToPrettyWkt(array, simplify);
-    return array[0];
-  }
-
-  public String ExportToPrettyWkt() {
-    String array[] = new String[] {null};
-    ExportToPrettyWkt(array);
-    return array[0];
-  }
-
-  public String ExportToProj4() {
-    String array[] = new String[] {null};
-    ExportToProj4(array);
-    return array[0];
-  }
-
-  public String ExportToXML( String dialect) {
-    String array[] = new String[] {null};
-    ExportToXML(array, dialect);
-    return array[0];
-  }
-
-  public String ExportToXML() {
-    String array[] = new String[] {null};
-    ExportToXML(array);
-    return array[0];
-  }
-
-  public String ExportToMICoordSys() {
-    String array[] = new String[] {null};
-    ExportToMICoordSys(array);
-    return array[0];
-  }
-
-  public double[] GetTOWGS84()
-  {
-      double array[] = new double[7];
-      GetTOWGS84(array);
-      return array;
-  }
-  
-  public int SetTOWGS84( double p1, double p2, double p3)
-  {
-      return SetTOWGS84(p1, p2, p3, 0, 0, 0, 0);
-  }
-%}
-
-%typemap(javainterfaces) OSRSpatialReferenceShadow "Cloneable"
-
-%typemap(javacode) OSRCoordinateTransformationShadow %{
-  public double[] TransformPoint(double x, double y, double z) {
-    double[] ret = new double[3];
-    TransformPoint(ret, x, y, z);
-    return ret;
-  }
-
-  public double[] TransformPoint(double x, double y) {
-    return TransformPoint(x, y, 0);
-  }
-%}
-    
-/******************************************************************************
- *
- *  Global methods
- *
- */
-
-/************************************************************************/
-/*                        GetWellKnownGeogCSAsWKT()                     */
-/************************************************************************/
-
-%{
-typedef char retStringAndCPLFree;
-%}
-
-%inline %{
-retStringAndCPLFree* GetWellKnownGeogCSAsWKT( const char *name ) {
-  char* argout = NULL;
-  OGRSpatialReferenceH srs = OSRNewSpatialReference("");
-  OGRErr rcode = OSRSetWellKnownGeogCS( srs, name );
-  if( rcode == OGRERR_NONE )
-      rcode = OSRExportToWkt ( srs, &argout );  
-  OSRDestroySpatialReference( srs );
-  return argout;
-}
-%}
-
-/************************************************************************/
-/*                           GetUserInputAsWKT()                        */
-/************************************************************************/
-%inline %{
-retStringAndCPLFree* GetUserInputAsWKT( const char *name ) {
-  char* argout = NULL;
-  OGRSpatialReferenceH srs = OSRNewSpatialReference("");
-  OGRErr rcode = OSRSetFromUserInput( srs, name );
-  if( rcode == OGRERR_NONE )
-      rcode = OSRExportToWkt ( srs, &argout );  
-  OSRDestroySpatialReference( srs );
-  return argout;
-}
-%}

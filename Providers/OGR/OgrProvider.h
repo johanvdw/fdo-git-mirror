@@ -18,9 +18,6 @@
 
 #include "ProjConverter.h"
 
-#include "FdoDefaultFeatureReader.h"
-#include "FdoDefaultDataReader.h"
-
 //fwd decl
 class OGRDataSource;
 class OGRLayer;
@@ -508,15 +505,15 @@ public:
     //-------------------------------------------------------
 
     OGR_API virtual FdoString* GetProviderName()
-        { return L"OSGeo.OGR.3.6"; }
+        { return L"OSGeo.OGR.3.4"; }
     OGR_API virtual FdoString* GetProviderDisplayName()
         { return L"OSGeo FDO Provider for OGR"; }
     OGR_API virtual FdoString* GetProviderDescription()
         { return L"FDO Access to OGR Data Sources"; }
     OGR_API virtual FdoString* GetProviderVersion()
-        { return L"3.6.0.0"; }
+        { return L"3.4.0.0"; }
     OGR_API virtual FdoString* GetFeatureDataObjectsVersion()
-        { return L"3.6.0.0"; }
+        { return L"3.4.0.0"; }
     OGR_API virtual FdoIConnectionPropertyDictionary* GetConnectionProperties()
         { return FDO_SAFE_ADDREF(this); }
 
@@ -1011,7 +1008,7 @@ class OgrSpatialContextReader : public FdoISpatialContextReader
 };
 
 //feature reader -- returned when executing a select command
-class OgrFeatureReader : public FdoDefaultFeatureReader
+class OgrFeatureReader : public FdoIFeatureReader
 {
     public:
         OGR_API OgrFeatureReader(OgrConnection* connection,
@@ -1076,7 +1073,7 @@ class OgrFeatureReader : public FdoDefaultFeatureReader
 
 
 //data reader -- returned when executing a select aggregates command
-class OgrDataReader : public FdoDefaultDataReader
+class OgrDataReader : public FdoIDataReader
 {
     public:
 
@@ -1093,7 +1090,6 @@ class OgrDataReader : public FdoDefaultDataReader
 
         OGR_API virtual FdoInt32 GetPropertyCount();
         OGR_API virtual FdoString* GetPropertyName(FdoInt32 index);
-        OGR_API virtual FdoInt32 GetPropertyIndex(FdoString* propertyName);
         OGR_API virtual FdoDataType GetDataType(FdoString* propertyName);
         OGR_API virtual FdoPropertyType GetPropertyType(FdoString* propertyName);
         OGR_API virtual bool GetBoolean(FdoString* propertyName);

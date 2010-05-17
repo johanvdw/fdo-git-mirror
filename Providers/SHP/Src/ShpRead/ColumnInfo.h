@@ -24,7 +24,6 @@
 
 #include <malloc.h>
 #include <wchar.h>
-#include <../Message/ShpMessageStatic.h>
 #include <../Message/Inc/ShpMessage.h>
 
 // ***************************************************************************

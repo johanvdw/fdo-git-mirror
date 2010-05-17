@@ -24,12 +24,12 @@ template <typename T>
 class FdoIStreamReaderTmpl;
 
 BEGIN_NAMESPACE_OSGEO_COMMON_IO
-ref class IoStream;
+public __gc class IoStream;
 
 /// \ingroup (OSGeoFDOCommonIo)
 /// \brief
 ///     IoCharStreamReader reads items from a stream of chars.
-public ref class IoCharStreamReader sealed : public NAMESPACE_OSGEO_COMMON::IStreamReaderImp
+public __sealed __gc class IoCharStreamReader : public NAMESPACE_OSGEO_COMMON::IStreamReaderImp
 {
 public:
     /// \brief
@@ -56,7 +56,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-	System::Int32 ReadNext(array<System::Char>^ buffer);
+	System::Int32 ReadNext(System::Char buffer[]);
 
     /// \brief
     ///     Reads in the next block of items. Use ReadNext( buffer) to read in 
@@ -75,7 +75,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-    System::Int32 ReadNext(array<System::Char>^, System::Int32 offset);
+    System::Int32 ReadNext(System::Char buffer[], System::Int32 offset);
 
     /// \brief
     ///     Reads in the next block of items. Use ReadNext( buffer) to read in 
@@ -98,7 +98,7 @@ public:
     ///     Returns the number of items actually read in. When 0 (zero) then the 
     ///     end-of-stream was reached.
     /// 
-	System::Int32 ReadNext(array<System::Char>^, System::Int32 offset, System::Int32 count);
+	System::Int32 ReadNext(System::Char buffer[], System::Int32 offset, System::Int32 count);
 
     /// \brief
     ///     Gets the stream length
@@ -106,10 +106,7 @@ public:
     /// \return
     ///     Returns the size of the data source in number of items 
     /// 
-    property System::Int64 Length
-    {
-        System::Int64 get();
-    }
+	__property System::Int64 get_Length();
 
     /// \brief
     ///     Gets the current stream position. Position is 
@@ -118,10 +115,7 @@ public:
     /// \return
     ///     Returns the current index in the stream
     /// 
-    property System::Int64 Index
-    {
-        System::Int64 get();
-    }
+	__property System::Int64 get_Index();
 
     /// \brief
     ///     Constructs a stream reader based on an unmanaged instance of the object
@@ -136,10 +130,8 @@ public:
 	IoCharStreamReader(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 /// \cond DOXYGEN-IGNORE
-internal:
+public private:
 	inline FdoIStreamReaderTmpl<FdoCharacter>* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 /// \endcond
 };
 

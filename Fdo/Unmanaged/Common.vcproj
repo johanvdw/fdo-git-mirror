@@ -47,8 +47,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="Inc;&quot;$(FDOTHIRDPARTY)/apache/xalan/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win32/VC9/Release/Nls/Include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="Inc;$(FDOTHIRDPARTY)/apache/xml-xalan/c/src;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -71,10 +71,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Xalan-C_1.lib Xerces-C_3.lib FDONLS.lib"
+				AdditionalDependencies="Xalan-C_1.lib Xerces-C_2.lib FDONLS.lib"
 				OutputFile="$(OutDir)/FDOCommon.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xalan/build/win32/VC9/Release&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/win32/VC9/Release&quot;;.\Lib\Win32\Release\"
+				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xml-xalan/c/build/win32/VC9/Release&quot;;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/win32/VC9/Release&quot;;.\Lib\Win32\Release\"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDOCommon.pdb"
@@ -82,7 +82,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Release/FDOCommon.lib"
-				TargetMachine="1"
+				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOCommon.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -137,8 +137,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="Inc;&quot;$(FDOTHIRDPARTY)/apache/xalan/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win64/VC9/Release/Nls/Include&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WIN64;_USRDLL;EXP_FDO_COMMON;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="Inc;$(FDOTHIRDPARTY)/apache/xml-xalan/c/src;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WIN64;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -161,10 +161,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Xalan-C_1.lib Xerces-C_3.lib FDONLS.lib"
+				AdditionalDependencies="Xalan-C_1.lib Xerces-C_2.lib FDONLS.lib"
 				OutputFile="$(OutDir)/FDOCommon.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win64/VC9/Release&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/Win64/VC9/Release&quot;;.\Lib\Win64\Release\"
+				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xml-xalan/c/build/Win64/VC9/Release&quot;;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/Win64/VC9/Release&quot;;.\Lib\Win64\Release\"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDOCommon.pdb"
@@ -195,7 +195,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOCommon.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -227,8 +227,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Inc;&quot;$(FDOTHIRDPARTY)/apache/xalan/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win32/VC9/Debug/Nls/Include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE;_HAS_ITERATOR_DEBUGGING=0;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="Inc;$(FDOTHIRDPARTY)/apache/xml-xalan/c/src;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="3"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
@@ -250,10 +250,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="Xalan-C_1D.lib Xerces-C_3D.lib FDONLS.lib"
+				AdditionalDependencies="Xalan-C_1.lib Xerces-C_2.lib FDONLS.lib"
 				OutputFile="$(OutDir)/FDOCommon.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xalan/build/win32/VC9/Debug&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/win32/VC9/Debug&quot;;.\Lib\Win32\Debug"
+				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xml-xalan/c/build/win32/VC9/Release&quot;;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/win32/VC9/Release&quot;;.\Lib\Win32\Debug"
 				IgnoreDefaultLibraryNames="MSVCRT"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
@@ -262,7 +262,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="Lib/Win32/Debug/FDOCommon.lib"
-				TargetMachine="1"
+				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -285,7 +285,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOCommon.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -317,8 +317,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Inc;&quot;$(FDOTHIRDPARTY)/apache/xalan/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/src&quot;;&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win64/VC9/Debug/Nls/Include&quot;"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WIN64;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_HAS_ITERATOR_DEBUGGING=0"
+				AdditionalIncludeDirectories="Inc;$(FDOTHIRDPARTY)/apache/xml-xalan/c/src;$(FDOTHIRDPARTY)/apache/xml-xerces/c/src"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WIN64;_USRDLL;EXP_FDO_COMMON;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="3"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
@@ -340,11 +340,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/fixed:no"
-				AdditionalDependencies="Xalan-C_1D.lib Xerces-C_3D.lib FDONLS.lib"
+				AdditionalDependencies="Xalan-C_1.lib Xerces-C_2.lib FDONLS.lib"
 				OutputFile="$(OutDir)/FDOCommon.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xalan/build/Win64/VC9/Debug&quot;;&quot;$(FDOTHIRDPARTY)/apache/xerces/build/Win64/VC9/Debug&quot;;.\Lib\Win64\Debug"
-				IgnoreDefaultLibraryNames=""
+				AdditionalLibraryDirectories="&quot;$(FDOTHIRDPARTY)/apache/xml-xalan/c/build/Win64/VC9/Debug&quot;;&quot;$(FDOTHIRDPARTY)/apache/xml-xerces/c/build/Win64/VC9/Debug&quot;;.\Lib\Win64\Debug"
+				IgnoreDefaultLibraryNames="MSVCRT"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FDOCommon.pdb"
@@ -375,7 +375,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOCommon.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.4.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOCommon.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -413,10 +413,6 @@
 			</File>
 			<File
 				RelativePath="Src\Common\Exception.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Common\IDisposable.cpp"
 				>
 			</File>
 			<File
@@ -576,14 +572,6 @@
 				</File>
 				<File
 					RelativePath="Src\Common\Xsl\TransformerXalan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="Src\Common\Xsl\XML885915Transcoder.cpp"
-					>
-				</File>
-				<File
-					RelativePath="Src\Common\Xsl\XML885915Transcoder.h"
 					>
 				</File>
 			</Filter>

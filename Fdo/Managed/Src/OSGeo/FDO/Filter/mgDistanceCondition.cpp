@@ -36,66 +36,61 @@ NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition(System::IntPtr 
 
 NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition() : GeometricCondition(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDistanceCondition::Create()), true))
+	EXCEPTION_HANDLER(Attach(FdoDistanceCondition::Create(), true))
 }
 
-NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition(System::String^ propertyName, NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ geometry, System::Double distance) : GeometricCondition(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition(System::String* propertyName, NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* geometry, System::Double distance) : GeometricCondition(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDistanceCondition::Create(StringToUni(propertyName), static_cast<FdoDistanceOperations>(operation), geometry->GetImpObj(), distance)), true))
+	EXCEPTION_HANDLER(Attach(FdoDistanceCondition::Create(StringToUni(propertyName), static_cast<FdoDistanceOperations>(operation), geometry->GetImpObj(), distance), true))
 }
 
-NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier^ propertyName, NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ geometry, System::Double distance) : GeometricCondition(IntPtr::Zero, false)
+NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::DistanceCondition(NAMESPACE_OSGEO_FDO_EXPRESSION::Identifier* propertyName, NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations operation, NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* geometry, System::Double distance) : GeometricCondition(IntPtr::Zero, false)
 {
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoDistanceCondition::Create(propertyName->GetImpObj(), static_cast<FdoDistanceOperations>(operation), geometry->GetImpObj(), distance)), true))
+	EXCEPTION_HANDLER(Attach(FdoDistanceCondition::Create(propertyName->GetImpObj(), static_cast<FdoDistanceOperations>(operation), geometry->GetImpObj(), distance), true))
 }
 
 FdoDistanceCondition* NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::GetImpObj()
 {
-	return static_cast<FdoDistanceCondition*>(UnmanagedObject.ToPointer());
+	return static_cast<FdoDistanceCondition*>(__super::UnmanagedObject.ToPointer());
 }
 
-IntPtr NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::GetDisposableObject()
-{
-    return IntPtr(static_cast<FdoIDisposable*>(GetImpObj()));
-}
-
-NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Operation::get()
+NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::get_Operation()
 {
 	FdoDistanceOperations unobj;
 	EXCEPTION_HANDLER(unobj = GetImpObj()->GetOperation())
 	return static_cast<DistanceOperations>(unobj);
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Operation::set(NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations value)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::set_Operation(NAMESPACE_OSGEO_FDO_FILTER::DistanceOperations value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetOperation(static_cast<FdoDistanceOperations>(value)))
 }
 
-NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Geometry::get()
+NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::get_Geometry()
 {
-	FdoExpression* result;
-	EXCEPTION_HANDLER(result = GetImpObj()->GetGeometry())
-	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^>(ObjectFactory::CreateExpression(IntPtr(result), true));
+	FdoExpression* unobj;
+	EXCEPTION_HANDLER(unobj = GetImpObj()->GetGeometry())
+	return static_cast<NAMESPACE_OSGEO_FDO_EXPRESSION::Expression*>(ObjectFactory::CreateExpression(unobj, true));
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Geometry::set(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression^ value)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::set_Geometry(NAMESPACE_OSGEO_FDO_EXPRESSION::Expression* value)
 {
-	EXCEPTION_HANDLER(GetImpObj()->SetGeometry((value == nullptr ? nullptr : value->GetImpObj())))
+	EXCEPTION_HANDLER(GetImpObj()->SetGeometry((value == NULL ? NULL : value->GetImpObj())))
 }
 
-System::Double NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Distance::get()
+System::Double NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::get_Distance()
 {
-	System::Double d;
+	FdoDouble d;
 	EXCEPTION_HANDLER(d = GetImpObj()->GetDistance())
 	return d;
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Distance::set(System::Double value)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::set_Distance( System::Double value)
 {
 	EXCEPTION_HANDLER(GetImpObj()->SetDistance(value))
 }
 
-System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor^ processor)
+System::Void NAMESPACE_OSGEO_FDO_FILTER::DistanceCondition::Process(NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessor* processor)
 {
-	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp^>(processor))->GetImpObj()))
+	EXCEPTION_HANDLER(GetImpObj()->Process((static_cast<NAMESPACE_OSGEO_FDO_FILTER::IFilterProcessorImp*>(processor))->GetImpObj()))
 }

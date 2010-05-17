@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_sieve.py 18306 2009-12-15 18:57:11Z rouault $
+#  $Id: gdal_sieve.py 15700 2008-11-10 15:29:13Z warmerdam $
 # 
 #  Project:  GDAL Python Interface
-#  Purpose:  Application for applying sieve filter to raster data.
+#  Purpose:  Application for converting raster data to a vector polygon layer.
 #  Author:   Frank Warmerdam, warmerdam@pobox.com
 # 
 #******************************************************************************
@@ -38,10 +38,10 @@ import sys
 import os.path
 
 def Usage():
-    print("""
+    print """
 gdal_sieve [-q] [-st threshold] [-4] [-8] [-o name=value]
            srcfile [-nomask] [-mask filename] [-of format] [dstfile]
-""")
+"""
     sys.exit(1)
     
 # =============================================================================
@@ -79,7 +79,7 @@ while i < len(argv):
     elif arg == '-8':
         connectedness = 8
         
-    elif arg == '-q' or arg == '-quiet':
+    elif arg == '-q':
         quiet_flag = 1
         
     elif arg == '-st':
@@ -120,10 +120,10 @@ if src_filename is None:
 try:
     gdal.SieveFilter
 except:
-    print('')
-    print('gdal.SieveFilter() not available.  You are likely using "old gen"')
-    print('bindings or an older version of the next gen bindings.')
-    print('')
+    print
+    print 'gdal.SieveFilter() not available.  You are likely using "old gen"'
+    print 'bindings or an older version of the next gen bindings.'
+    print
     sys.exit(1)
 
 # =============================================================================
@@ -136,7 +136,7 @@ else:
     src_ds = gdal.Open( src_filename, gdal.GA_ReadOnly )
     
 if src_ds is None:
-    print('Unable to open ', src_filename)
+    print 'Unable to open ', src_filename
     sys.exit(1)
 
 srcband = src_ds.GetRasterBand(1)

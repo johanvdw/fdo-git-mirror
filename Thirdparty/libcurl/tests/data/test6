@@ -4,7 +4,6 @@
 HTTP
 HTTP GET
 HTTP set cookie
-cookies
 </keywords>
 </info>
 # Server-side
@@ -40,7 +39,7 @@ http://%HOSTIP:%HTTPPORT/we/want/that/page/6 -b "name=contents;name2=content2"
 </strip>
 <protocol>
 GET /we/want/that/page/6 HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 Cookie: name=contents;name2=content2
 

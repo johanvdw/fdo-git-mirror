@@ -66,21 +66,6 @@ protected:
     FDO_API FdoConnectionException(FdoString* message, FdoException* cause);
 
     /// \brief
-    /// Constructs an instance of an FdoConnectionException using the specified arguments.
-    /// 
-    /// \param message 
-    /// Input the error message
-    /// \param cause 
-    /// Input the cause of the error
-    /// \param nativeErrorCode 
-    /// Input the native error code of the error, which is returned by FDO data source
-    /// 
-    /// \return
-    /// Returns nothing
-    /// 
-    FDO_API FdoConnectionException(FdoString* message, FdoException* cause, FdoInt64 nativeErrroCode);
-
-    /// \brief
     /// Default destructor for FdoConnectionException class.
     /// 
     /// \return
@@ -116,19 +101,6 @@ public:
     /// 
     /// \param message 
     /// Input the error message.
-    /// \param nativeErrorCode 
-    /// Input the native error code of the error, which is returned by FDO data source
-    /// 
-    /// \return
-    /// Returns FdoConnectionException
-    /// 
-    FDO_API static FdoConnectionException* Create(FdoString* message, FdoInt64 nativeErrorCode);
-
-    /// \brief
-    ///  Returns an instance of an FdoConnectionException using the specified arguments.
-    /// 
-    /// \param message 
-    /// Input the error message.
     /// \param cause 
     /// Input the cause of the error.
     /// 
@@ -136,21 +108,6 @@ public:
     /// Returns FdoConnectionException
     /// 
     FDO_API static FdoConnectionException* Create(FdoString* message, FdoException* cause);
-
-    /// \brief
-    ///  Returns an instance of an FdoConnectionException using the specified arguments.
-    /// 
-    /// \param message 
-    /// Input the error message.
-    /// \param cause 
-    /// Input the cause of the error.
-    /// \param nativeErrorCode 
-    /// Input the native error code of the error, which is returned by FDO data source
-    /// 
-    /// \return
-    /// Returns FdoConnectionException
-    /// 
-    FDO_API static FdoConnectionException* Create(FdoString* message, FdoException* cause, FdoInt64 nativeErrorCode);
 };
 #endif
 

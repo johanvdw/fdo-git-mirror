@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalenhance.cpp 17553 2009-08-21 14:27:19Z rouault $
+ * $Id: gdalinfo.c 11466 2007-05-11 01:38:55Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to do image enhancement. 
@@ -33,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "vrt/vrtdataset.h"
 
-CPL_CVSID("$Id: gdalenhance.cpp 17553 2009-08-21 14:27:19Z rouault $");
+CPL_CVSID("$Id: gdal_translate.cpp 11658 2007-06-14 17:08:54Z warmerdam $");
 
 static int
 ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,
@@ -607,7 +607,7 @@ static CPLErr EnhancerCallback( void *hCBData,
     int nPixelCount = nXSize * nYSize;
     int iPixel;
     int bHaveNoData;
-    float fNoData = (float)psEInfo->poSrcBand->GetNoDataValue( &bHaveNoData );
+    float fNoData = psEInfo->poSrcBand->GetNoDataValue( &bHaveNoData );
     double dfScale = 
         psEInfo->nLUTBins / (psEInfo->dfScaleMax - psEInfo->dfScaleMin);
     

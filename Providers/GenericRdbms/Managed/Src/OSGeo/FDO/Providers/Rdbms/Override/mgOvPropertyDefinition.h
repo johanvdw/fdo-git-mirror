@@ -22,29 +22,24 @@
 class FdoRdbmsOvPropertyDefinition;
 
 BEGIN_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
-ref class PhysicalElementMapping;
+public __gc class PhysicalElementMapping;
 END_NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA
 
 BEGIN_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE
 
 ///<summary>Abstract class defining physical schema overrides for a property
 ///definition.</summary>
-public ref class OvPropertyDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalPropertyMapping, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyDefinition
+public __gc class OvPropertyDefinition : public NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalPropertyMapping, public NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE::IOvPropertyDefinition
 {	
-internal:
+public private:
 	FdoRdbmsOvPropertyDefinition* GetImpObj();
-public:
-    virtual IntPtr GetDisposableObject() override;
 	
 public protected:
 	OvPropertyDefinition(System::IntPtr unmanaged, System::Boolean autoDelete);
 
 public:
     // Makes SetParent function public
-    virtual property NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping^ Parent
-    {
-        System::Void set(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping^ value);
-    }
+	__property System::Void set_Parent(NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::PhysicalElementMapping* value);
 };
 
 END_NAMESPACE_OSGEO_FDO_PROVIDERS_RDBMS_OVERRIDE

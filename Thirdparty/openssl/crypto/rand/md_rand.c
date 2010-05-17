@@ -145,7 +145,7 @@ static unsigned int crypto_lock_rand = 0; /* may be set only when a thread
                                            * holds CRYPTO_LOCK_RAND
                                            * (to prevent double locking) */
 /* access to lockin_thread is synchronized by CRYPTO_LOCK_RAND2 */
-static CRYPTO_THREADID locking_threadid; /* valid iff crypto_lock_rand is set */
+static unsigned long locking_thread = 0; /* valid iff crypto_lock_rand is set */
 
 
 #ifdef PREDICT
@@ -213,10 +213,8 @@ static void ssleay_rand_add(const void *buf, int num, double add)
 	/* check if we already have the lock */
 	if (crypto_lock_rand)
 		{
-		CRYPTO_THREADID cur;
-		CRYPTO_THREADID_current(&cur);
 		CRYPTO_r_lock(CRYPTO_LOCK_RAND2);
-		do_not_lock = !CRYPTO_THREADID_cmp(&locking_threadid, &cur);
+		do_not_lock = (locking_thread == CRYPTO_thread_id());
 		CRYPTO_r_unlock(CRYPTO_LOCK_RAND2);
 		}
 	else
@@ -272,16 +270,8 @@ static void ssleay_rand_add(const void *buf, int num, double add)
 			}
 		else
 			MD_Update(&m,&(state[st_idx]),j);
-
-		/* DO NOT REMOVE THE FOLLOWING CALL TO MD_Update()! */
+			
 		MD_Update(&m,buf,j);
-		/* We know that line may cause programs such as
-		   purify and valgrind to complain about use of
-		   uninitialized data.  The problem is not, it's
-		   with the caller.  Removing that line will make
-		   sure you get really bad randomness and thereby
-		   other problems such as very insecure keys. */
-
 		MD_Update(&m,(unsigned char *)&(md_c[0]),sizeof(md_c));
 		MD_Final(&m,local_md);
 		md_c[1]++;
@@ -382,7 +372,7 @@ static int ssleay_rand_bytes(unsigned char *buf, int num)
 
 	/* prevent ssleay_rand_bytes() from trying to obtain the lock again */
 	CRYPTO_w_lock(CRYPTO_LOCK_RAND2);
-	CRYPTO_THREADID_current(&locking_threadid);
+	locking_thread = CRYPTO_thread_id();
 	CRYPTO_w_unlock(CRYPTO_LOCK_RAND2);
 	crypto_lock_rand = 1;
 
@@ -474,15 +464,9 @@ static int ssleay_rand_bytes(unsigned char *buf, int num)
 #endif
 		MD_Update(&m,local_md,MD_DIGEST_LENGTH);
 		MD_Update(&m,(unsigned char *)&(md_c[0]),sizeof(md_c));
-
-#ifndef PURIFY /* purify complains */
-		/* DO NOT REMOVE THE FOLLOWING CALL TO MD_Update()! */
-		MD_Update(&m,buf,j);
-		/* We know that line may cause programs such as
-		   purify and valgrind to complain about use of
-		   uninitialized data.  */
+#ifndef PURIFY
+		MD_Update(&m,buf,j); /* purify complains */
 #endif
-
 		k=(st_idx+MD_DIGEST_LENGTH/2)-st_num;
 		if (k > 0)
 			{
@@ -543,17 +527,15 @@ static int ssleay_rand_pseudo_bytes(unsigned char *buf, int num)
 
 static int ssleay_rand_status(void)
 	{
-	CRYPTO_THREADID cur;
 	int ret;
 	int do_not_lock;
 
-	CRYPTO_THREADID_current(&cur);
 	/* check if we already have the lock
 	 * (could happen if a RAND_poll() implementation calls RAND_status()) */
 	if (crypto_lock_rand)
 		{
 		CRYPTO_r_lock(CRYPTO_LOCK_RAND2);
-		do_not_lock = !CRYPTO_THREADID_cmp(&locking_threadid, &cur);
+		do_not_lock = (locking_thread == CRYPTO_thread_id());
 		CRYPTO_r_unlock(CRYPTO_LOCK_RAND2);
 		}
 	else
@@ -565,7 +547,7 @@ static int ssleay_rand_status(void)
 		
 		/* prevent ssleay_rand_bytes() from trying to obtain the lock again */
 		CRYPTO_w_lock(CRYPTO_LOCK_RAND2);
-		CRYPTO_THREADID_cpy(&locking_threadid, &cur);
+		locking_thread = CRYPTO_thread_id();
 		CRYPTO_w_unlock(CRYPTO_LOCK_RAND2);
 		crypto_lock_rand = 1;
 		}

@@ -108,15 +108,13 @@ namespace boost { namespace program_options { namespace detail {
         void extra_style_parser(style_parser s);
 
         void check_style(int style) const;
-        
-        bool is_style_active(style_t style) const;
+
 
         void init(const std::vector<std::string>& args);
 
         void
         finish_option(option& opt,
-                      std::vector<std::string>& other_tokens,
-                      const std::vector<style_parser>& style_parsers);
+                      std::vector<std::string>& other_tokens);
 
         // Copies of input.
         std::vector<std::string> args;

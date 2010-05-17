@@ -105,8 +105,6 @@ odbcdr_rdbi_init(
 		methods->run_sqlW           = (int (*)(void*, const wchar_t*,int,int*))odbcdr_run_sqlW;
         methods->get_gen_id         = (int (*)(void*, const char*,int*))odbcdr_get_gen_id;
         methods->get_gen_idW        = (int (*)(void*, const wchar_t*,int*))odbcdr_get_gen_idW;
-        methods->get_next_seq       = NULL;
-        methods->get_next_seqW      = NULL;
 	    methods->get_msg	        = (void (*)(void*, char*))odbcdr_get_msg;
 	    methods->get_msgW	        = (void (*)(void*, wchar_t*))odbcdr_get_msgW;
 	    methods->vndr_name	        = (char*(*)(void*))odbcdr_vndr_name;
@@ -237,8 +235,6 @@ static void context_init( odbcdr_context_def *context)
         context->odbcdr_conns[i] = (odbcdr_connData_def *)NULL;
 
     strcpy(context->odbcdr_automatic_logon_user, INIT_SLASH );	/* For default logon	*/
-
-    context->odbcdr_last_autoincrement = INIT_ZERO;
 
     context->odbcdr_last_rc = INIT_ZERO;
 

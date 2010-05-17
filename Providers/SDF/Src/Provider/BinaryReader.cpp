@@ -117,11 +117,7 @@ unsigned BinaryReader::GetDataLen()
 
 double BinaryReader::ReadDouble()
 {
-    if (m_pos > (m_len - (int)sizeof(double)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_100_READ_DOUBLE_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(double));
 
     //TODO: endian
     double ret = *(double*)(m_data + m_pos);
@@ -131,11 +127,7 @@ double BinaryReader::ReadDouble()
 
 float BinaryReader::ReadSingle()
 {
-    if (m_pos > (m_len - (int)sizeof(float)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_101_READ_SINGLE_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(float));
 
     //TODO: endian
     float ret = *(float*)(m_data + m_pos);
@@ -145,11 +137,7 @@ float BinaryReader::ReadSingle()
 
 int BinaryReader::ReadInt32()
 {
-    if (m_pos > (m_len - (int)sizeof(int)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_102_READ_INT32_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(int));
 
     //TODO: endian
     int ret = *(int*)(m_data + m_pos);
@@ -159,11 +147,7 @@ int BinaryReader::ReadInt32()
 
 unsigned BinaryReader::ReadUInt32()
 {
-    if (m_pos > (m_len - (int)sizeof(int)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_103_READ_UINT32_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(int));
 
     //TODO: endian
     unsigned ret = *(unsigned*)(m_data + m_pos);
@@ -173,11 +157,7 @@ unsigned BinaryReader::ReadUInt32()
 
 short BinaryReader::ReadInt16()
 {
-    if (m_pos > (m_len - (int)sizeof(short)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_104_READ_INT16_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(short));
 
     //TODO: endian
     short ret = *(short*)(m_data + m_pos);
@@ -187,11 +167,7 @@ short BinaryReader::ReadInt16()
 
 unsigned short BinaryReader::ReadUInt16()
 {
-    if (m_pos > (m_len - (int)sizeof(unsigned short)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_105_READ_UINT16_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(unsigned short));
 
     //TODO: endian
     unsigned short ret = *(unsigned short*)(m_data + m_pos);
@@ -201,11 +177,7 @@ unsigned short BinaryReader::ReadUInt16()
 
 FdoInt64 BinaryReader::ReadInt64()
 {
-    if (m_pos > (m_len - (int)sizeof(FdoInt64)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_106_READ_INT64_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(FdoInt64));
 
     //TODO: endian
     FdoInt64 ret = *(FdoInt64*)(m_data + m_pos);
@@ -216,11 +188,7 @@ FdoInt64 BinaryReader::ReadInt64()
 
 unsigned char BinaryReader::ReadByte()
 {
-    if (m_pos > (m_len - (int)sizeof(unsigned char)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_107_READ_BYTE_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(unsigned char));
 
     //TODO: endian
     unsigned char ret = *(m_data + m_pos);
@@ -230,11 +198,7 @@ unsigned char BinaryReader::ReadByte()
 
 char BinaryReader::ReadChar()
 {
-    if (m_pos > (m_len - (int)sizeof(char)))
-    {
-        _ASSERT(false);
-        throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_108_READ_CHAR_ERROR)));
-    }
+    _ASSERT(m_pos <= m_len - (int)sizeof(char));
 
     //TODO: endian
     char ret = *(m_data + m_pos);
@@ -251,9 +215,6 @@ const wchar_t* BinaryReader::ReadString()
 
     return ReadRawString(mbstrlen);
 }
-
-#pragma warning(push)
-#pragma warning(disable: 4018)  // '<' : signed/unsigned mismatch
 
 const wchar_t* BinaryReader::ReadRawString( unsigned mbstrlen, int index )
 {
@@ -288,8 +249,6 @@ const wchar_t* BinaryReader::ReadRawString( unsigned mbstrlen, int index )
 	wcsCacheLastIndex = index;
     return m_wcsStringCache[index].wcsString;
 }
-
-#pragma warning(pop) // '<' : signed/unsigned mismatch
 
 //
 // Should only be called from internal code that does not require the returned 

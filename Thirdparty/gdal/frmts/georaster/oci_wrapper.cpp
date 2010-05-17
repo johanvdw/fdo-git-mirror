@@ -63,8 +63,7 @@ OWConnection::OWConnection( const char* pszUserIn,
     hNumArrayTDO    = NULL;
     hGeometryTDO    = NULL;
     hGeoRasterTDO   = NULL;
-    bSuceeeded      = false;
-    nCharSize       = 1;
+    bSuceeded       = false;
 
     // ------------------------------------------------------
     //  Create Environment
@@ -96,7 +95,7 @@ OWConnection::OWConnection( const char* pszUserIn,
     // ------------------------------------------------------
     //  Logon to Oracle Server
     // ------------------------------------------------------
-    
+
     if( CheckError( OCILogon(
         hEnv,
         hError,
@@ -108,23 +107,13 @@ OWConnection::OWConnection( const char* pszUserIn,
         (text*) pszServer,
         (ub4) strlen(pszServer) ), hError ) )
     {
-        bSuceeeded = false;
+        bSuceeded = false;
         return;
     }
     else
     {
-        bSuceeeded = true;
+        bSuceeded = true;
     }
-
-    // ------------------------------------------------------
-    //  Get Character Size based on current Locale
-    // ------------------------------------------------------
-
-    OCINlsNumericInfoGet(
-            hEnv,
-            hError,
-            &nCharSize,
-            OCI_NLS_CHARSET_MAXBYTESZ );
 
     // ------------------------------------------------------
     //  Get Server Version
@@ -464,7 +453,6 @@ bool OWStatement::Execute( int nRows )
         return false;
     }
 
-
     if( nStatus == OCI_SUCCESS_WITH_INFO || nStatus == OCI_NO_DATA )
     {
         return false;
@@ -554,29 +542,6 @@ void OWStatement::Bind( double* pnData )
         (dvoid*) pnData,
         (sb4) sizeof(double),
         (ub2) SQLT_BDOUBLE,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-}
-
-void OWStatement::Bind( char* pData, long nData )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos( 
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) pData,
-        (sb4) nData,
-        (ub2) SQLT_LBI,
         (void*) NULL,
         (ub2*) NULL,
         (ub2*) NULL,
@@ -819,7 +784,7 @@ int OWStatement::GetInteger( OCINumber* ppoData )
 
 double OWStatement::GetDouble( OCINumber* ppoData )
 {
-    double dfRetVal = 0.0;
+    double dfRetVal;
 
     CheckError( OCINumberToReal(
         hError,
@@ -937,10 +902,7 @@ unsigned long OWStatement::ReadBlob( OCILobLocator* phLocator,
         (ub4) 1,
         (dvoid*) pBuffer,
         (ub4) nSize,
-        0,
-        0,
-        0,
-        0 ),
+        0, 0, 0, 0 ),
         hError ) )
     {
         return 0;
@@ -975,7 +937,7 @@ bool OWStatement::WriteBlob( OCILobLocator* phLocator, void* pBuffer,
     return ( nAmont == (ub4) nSize );
 }
 
-char* OWStatement::ReadCLob( OCILobLocator* phLocator )
+char* OWStatement::ReadClob( OCILobLocator* phLocator )
 {
     ub4 nSize  = 0;
     ub4 nAmont = 0;
@@ -992,8 +954,6 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
         return NULL;
     }
 
-    nSize *= this->poConnect->nCharSize;
-
     pszBuffer = (char*) VSIMalloc( sizeof(char*) * nSize );
 
     if( pszBuffer == NULL)
@@ -1009,17 +969,12 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
         (ub4) 1,
         (dvoid*) pszBuffer,
         (ub4) nSize,
-        (dvoid*) NULL,
-        NULL,
-        (ub2) 0,
-        (ub1) SQLCS_IMPLICIT ),
+        0, 0, 0, 0),
         hError ) )
     {
         CPLFree( pszBuffer );
         return NULL;
     }
-
-    nAmont *= this->poConnect->nCharSize;
 
     if( nAmont == nSize )
     {
@@ -1027,9 +982,7 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
     }
     else
     {
-        CPLFree( pszBuffer );
-
-        return NULL;
+        CPLFree( pszBuffer);
     }
 
     return pszBuffer;
@@ -1237,7 +1190,7 @@ const char *OWParseValue( const char* pszText,
 }
 
 /*****************************************************************************/
-/*                            Parse SDO_GEOR.INIT entries                    */
+/*                            Parse Release Version                          */
 /*****************************************************************************/
 
 /* Input Examples:
@@ -1379,6 +1332,9 @@ bool CheckError( sword nStatus, OCIError* hError )
     case OCI_SUCCESS:
         return false;
         break;
+    case OCI_SUCCESS_WITH_INFO:
+        CPLError( CE_Failure, CPLE_AppDefined, "OCI_SUCCESS_WITH_INFO\n" );
+        break;
     case OCI_NEED_DATA:
         CPLError( CE_Failure, CPLE_AppDefined, "OCI_NEED_DATA\n" );
         break;
@@ -1394,7 +1350,7 @@ bool CheckError( sword nStatus, OCIError* hError )
     case OCI_CONTINUE:
         CPLError( CE_Failure, CPLE_AppDefined, "OCI_CONTINUE\n" );
         break;
-    case OCI_ERROR: case OCI_SUCCESS_WITH_INFO:
+    case OCI_ERROR:
 
         if( hError == NULL)
         {
@@ -1414,23 +1370,9 @@ bool CheckError( sword nStatus, OCIError* hError )
         CPLError( CE_Failure, CPLE_AppDefined, "%.*s",
             sizeof(szMsg), szMsg );
         break;
-    
+
     default:
-
-            if( hError == NULL)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                    "OCI_ERROR with no error handler" );
-            }
-
-            OCIErrorGet( (dvoid *) hError, (ub4) 1,
-                (text *) NULL, &nCode, szMsg,
-                (ub4) sizeof(szMsg), OCI_HTYPE_ERROR);
-
-            CPLError( CE_Failure, CPLE_AppDefined, "%.*s",
-                sizeof(szMsg), szMsg );
-            break;
-
+        break;
     }
 
     return true;
