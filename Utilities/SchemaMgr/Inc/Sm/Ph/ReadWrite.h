@@ -42,9 +42,6 @@
 class FdoSmPhReadWrite : public FdoSmDisposable
 {
 public:
-    /// Create an empty reader-writer
-    FdoSmPhReadWrite();
-
     FdoSmPhReadWrite(FdoPtr<FdoSmPhReadWrite> subReadWrite);
     /// Create the reader-writer.
 	//
@@ -99,6 +96,9 @@ public:
     }
 
 protected:
+    /// Unused constructor needed only to build on Linux
+    FdoSmPhReadWrite() {}
+
     /// Set a string column value by name.
 	void SetString( FdoStringP tableName, FdoStringP fieldName, FdoStringP sValue );
 
@@ -116,9 +116,6 @@ protected:
 	
     /// Set a boolean column value by name.
 	void SetBoolean( FdoStringP tableName, FdoStringP fieldName, bool bValue );
-
-    // Sets the row collection for this reader.
-    void SetRows( FdoSmPhRowsP rows );
 
     /// Setter:
     void SetSubReaderWriter(FdoPtr<FdoSmPhReadWrite> subReaderWriter);

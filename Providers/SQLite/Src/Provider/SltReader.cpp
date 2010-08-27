@@ -32,7 +32,6 @@
 #include "FdoCommonMiscUtil.h"
 #include "vdbeInt.h"
 #include "SltQueryTranslator.h"
-#include "SltBLOBStreamReader.h"
 
 /*
 ** Check to see if column iCol of the given statement is valid.  If
@@ -74,17 +73,15 @@ m_sprops(NULL),
 m_closeOpcode(-1),
 m_si(NULL),
 m_nMaxProps(0),
-m_nTotalProps(0),
 m_eGeomFormat(eFGF),
 m_wkbBuffer(NULL),
 m_wkbBufferLen(0),
-m_closeDB(ReaderCloseType_None),
+m_closeDB(false),
 m_useFastStepping(false),
 m_ri(NULL),
 m_filter(NULL),
 m_aPropNames(NULL),
-m_fromwhere(),
-m_isViewSelect(false)
+m_fromwhere()
 {
 	m_connection = FDO_SAFE_ADDREF(connection);
     m_parmValues  = FDO_SAFE_ADDREF(parmValues);
@@ -92,14 +89,13 @@ m_isViewSelect(false)
     m_pStmt = m_connection->GetCachedParsedStatement(m_sql.Data());
 
 	InitPropIndex(m_pStmt);
-    m_nTotalProps = sqlite3_column_count(m_pStmt);
 }
 
 //constructor taking a general sql statement, which we will step through
 //Same as above, but this one takes a sqlite3 statement pointer rather than
 //a string. This means that it is a statement based on an ephemeral database
 //which this reader will close once it is done being read.
-SltReader::SltReader(SltConnection* connection, sqlite3_stmt* stmt, ReaderCloseType closeDB, FdoClassDefinition* cls, FdoParameterValueCollection*  parmValues)
+SltReader::SltReader(SltConnection* connection, sqlite3_stmt* stmt, bool closeDB, FdoClassDefinition* cls, FdoParameterValueCollection*  parmValues)
 : m_refCount(1),
 m_sql(""),
 m_sprops(NULL),
@@ -114,13 +110,12 @@ m_useFastStepping(false),
 m_ri(NULL),
 m_aPropNames(NULL),
 m_filter(NULL),
-m_fromwhere(),
-m_isViewSelect(false)
+m_fromwhere()
 {
 	m_connection = FDO_SAFE_ADDREF(connection);
     m_class = FDO_SAFE_ADDREF(cls);
     m_parmValues  = FDO_SAFE_ADDREF(parmValues);
-    m_nTotalProps = sqlite3_column_count(stmt);
+
     m_pStmt = stmt;
 	InitPropIndex(m_pStmt);
 }
@@ -130,7 +125,7 @@ m_isViewSelect(false)
 //requested columns collection is empty, it will start out with a query
 //for just featid and geometry, then redo the query if caller asks for other
 //property values
-SltReader::SltReader(SltConnection* connection, FdoIdentifierCollection* props, const char* fcname, const char* strWhere, SpatialIterator* si, bool useFastStepping, RowidIterator* ri, FdoParameterValueCollection*  parmValues, const char* strOrderBy)
+SltReader::SltReader(SltConnection* connection, FdoIdentifierCollection* props, const char* fcname, const char* where, SpatialIterator* si, bool useFastStepping, RowidIterator* ri, FdoParameterValueCollection*  parmValues)
 : m_refCount(1),
 m_pStmt(0),
 m_class(NULL),
@@ -138,21 +133,19 @@ m_sprops(NULL),
 m_closeOpcode(-1),
 m_si(si),
 m_nMaxProps(0),
-m_nTotalProps(0),
 m_eGeomFormat(eFGF),
 m_wkbBuffer(NULL),
 m_wkbBufferLen(0),
-m_closeDB(ReaderCloseType_None),
+m_closeDB(false),
 m_useFastStepping(useFastStepping),
 m_ri(ri),
 m_aPropNames(NULL),
 m_filter(NULL),
-m_fromwhere(),
-m_isViewSelect(false)
+m_fromwhere()
 {
 	m_connection = FDO_SAFE_ADDREF(connection);
     m_parmValues  = FDO_SAFE_ADDREF(parmValues);
-    DelayedInit(props, fcname, strWhere, strOrderBy);
+    DelayedInit(props, fcname, where);
 }
 
 //Same as above but does not initialize the reader.
@@ -169,17 +162,15 @@ m_closeOpcode(-1),
 m_si(NULL),
 m_ri(NULL),
 m_nMaxProps(0),
-m_nTotalProps(0),
 m_eGeomFormat(eFGF),
 m_wkbBuffer(NULL),
 m_wkbBufferLen(0),
-m_closeDB(ReaderCloseType_None),
+m_closeDB(false),
 m_useFastStepping(true),
 m_aPropNames(NULL),
 m_filter(NULL),
 m_fromwhere(),
-m_parmValues(NULL),
-m_isViewSelect(false)
+m_parmValues(NULL)
 {
 	m_connection = FDO_SAFE_ADDREF(connection);
 }
@@ -205,7 +196,7 @@ void SltReader::SetInternalFilter(FdoFilter* filter)
     m_filter = FDO_SAFE_ADDREF(filter);
 }
 
-void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, const char* strWhere, const char* strOrderBy, bool addPkOnly)
+void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, const char* where, bool addPkOnly)
 {
     int rc = 0;
 
@@ -218,8 +209,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
 	//so that he sees the properties he asked for. 
 	if (props && props->GetCount())
 	{
-        FdoPtr<FdoClassDefinition> clsDef = md->ToClass();
-        SltExpressionTranslator exTrans(props, clsDef);
+        SltExpressionTranslator exTrans(props, md->ToClass());
 		int nProps = props->GetCount();
         m_reissueProps.Reserve(nProps);
 		for (int i=0; i<nProps; i++)
@@ -229,72 +219,44 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
             id->Process(&exTrans);
             StringBuffer* exp = exTrans.GetExpression();
             m_reissueProps.Add(exp->Data(), exp->Length());
-        }
-        m_nTotalProps = nProps;
+		}
 	}
     else
     {
         m_reissueProps.Reserve(4);
     }
     
-    const wchar_t* idClassProp = L"rowid";
-
     m_fromwhere.Append(" FROM ", 6);
     if (!md->IsView())
         m_fromwhere.AppendDQuoted(fcname);
     else
     {
-        if (md->GetIdName() != NULL)
-        {
-            m_isViewSelect = true;
-            m_useFastStepping = false;
-            idClassProp = md->GetIdName();
-            m_fromwhere.AppendDQuoted(fcname);
-        }
-        else
-            throw FdoCommandException::Create(L"Requested feature class cannot use this select type.");
+        m_connection->CacheViewContent(fcname);
+        m_fromwhere.Append("\"$view");
+        m_fromwhere.Append(fcname);
+        m_fromwhere.Append("\"");
     }
 
     //construct the where clause and 
     //if necessary add FeatId filter -- in case we know which features we want
     //like when we have a spatial iterator
-    if (*strWhere==0)
+    if (*where==0)
     {
         if (m_si || m_ri)
-        {
-            m_fromwhere.Append(" WHERE ", 7);
-            m_fromwhere.AppendDQuoted(idClassProp);
-            m_fromwhere.Append("=?;", 3);
-        }
+            m_fromwhere.Append(" WHERE ROWID=?;", 15);
         else
-        {
-            if (*strOrderBy)
-            {
-                m_fromwhere.Append(" ORDER BY ", 10);
-                m_fromwhere.Append(strOrderBy);
-            }
             m_fromwhere.Append(";", 1);
-        }
     }
     else
     {
         m_fromwhere.Append(" WHERE ", 7);
 
         if (m_si || m_ri)
-        {
-            m_fromwhere.AppendDQuoted(idClassProp);
-            m_fromwhere.Append("=? AND ", 7);
-        }
+            m_fromwhere.Append("ROWID=? AND ", 12);
 
         m_fromwhere.Append("(", 1);
-        m_fromwhere.Append(strWhere);
-        m_fromwhere.Append(")", 1);
-        if (*strOrderBy)
-        {
-            m_fromwhere.Append(" ORDER BY ", 10);
-            m_fromwhere.Append(strOrderBy);
-        }
-        m_fromwhere.Append(";", 1);
+        m_fromwhere.Append(where);
+        m_fromwhere.Append(");", 2);
     }
 
     //remember the geometry encoding format
@@ -314,7 +276,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     //Caller passed empty property list -- assume the
     //resulting feature class is identical to the one in the schema.
     m_class = md->ToClass();
-    
+
 	//we have created the class definition -- now we can add the
     //columns from the feature class in the same order as they appear in it
     //We will speculatively add only the columns up to the geometry,
@@ -326,8 +288,6 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     int maxIndex = md->GetGeomIndex();
     if (maxIndex < md->GetIDIndex())
         maxIndex = md->GetIDIndex();
-
-    m_nTotalProps = pdc->GetCount();
     
     FdoPtr<FdoDataPropertyDefinitionCollection> pdic = m_class->GetIdentityProperties();
     bool addRowId = true;
@@ -348,7 +308,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     }
 
     StringBuffer propName(30);
-    if (addPkOnly && !m_isViewSelect)
+    if (addPkOnly)
     {
         for (int i = 0; i < pdic->GetCount(); i++)
         {
@@ -362,7 +322,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     {
         //If the query is for a single feature, we will directly add all the properties
         //since in this case it is more likely for the caller to need them
-        if (maxIndex == -1 || (m_ri && m_ri->Count() == 1) || m_isViewSelect)
+        if (maxIndex == -1 || (m_ri && m_ri->Count() == 1))
             maxIndex = pdc->GetCount() - 1;
 
         for (int i=0; i<=maxIndex; i++)
@@ -418,12 +378,10 @@ void SltReader::InitPropIndex(sqlite3_stmt* pStmt)
 	for (int i=0; i<nProps; i++)
 	{
 		const char* cname = sqlite3_column_name(pStmt, i);
-        int stProp = 0, lenProp = 0;
-        ExtractDbName(cname, stProp, lenProp);
         
         //Note buflen is longer than the column name, but the code we call will terminate when it sees the NULL terminator.
         //We just need to pass in a number that is bigger than the length of the string, and buflen is guaranteed to be.
-        int len = 1 + A2W_FAST(dst, buflen, cname+stProp, lenProp); 
+        int len = 1 + A2W_FAST(dst, buflen, cname, buflen); 
 
         m_propNames.push_back(dst);
         m_mNameToIndex.Add(dst, i);
@@ -444,7 +402,7 @@ int SltReader::AddColumnToQuery(const wchar_t* name)
     int cur_id = sqlite3_column_int(m_pStmt, 0);
 
     if (!m_class)
-        throw FdoCommandException::Create((std::wstring(L"The property \'") + name + L"\' was not found.").c_str());
+        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), name));
         //throw FdoException::Create(L"Attempted to access a property which was not listed in the Select command. API misuse by the caller!");
 
     //make sure the property exists in the feature class
@@ -476,7 +434,10 @@ int SltReader::AddColumnToQuery(const wchar_t* name)
         return index; // this is not accurate since other properties can be already selected...
     }
     else
-        throw FdoCommandException::Create((std::wstring(L"The property \'") + name + L"\' was not found.").c_str());
+    {
+        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), name));
+        //throw FdoCommandException::Create(L"Column does not exist in the select query.");
+    }
 
     return -1;
 }
@@ -531,7 +492,7 @@ void SltReader::Requery2()
     //to be safe for fast SQLite reading (no null termination
     //and memcopy for column values is needed), set a flag inidicating
     //that on the SQLite query execution engine
-    if (m_useFastStepping && !m_isViewSelect)
+    if (m_useFastStepping)
         ((Vdbe*)m_pStmt)->fdo = 1;
 }
 
@@ -657,7 +618,7 @@ FdoString* SltReader::GetString(int index)
 		else if(textmem->type == SQLITE_FLOAT)
 		{
 			m_sprops[i].EnsureSize(256);
-			swprintf(m_sprops[i].data, 256, L"%.16g", textmem->r);
+			swprintf(m_sprops[i].data, 256, L"%g", textmem->r);
 			m_sprops[i].valid = 1;
 		}
 		else if(textmem->type == SQLITE_NULL)
@@ -677,27 +638,6 @@ FdoString* SltReader::GetString(int index)
     }
     else
     {
-        int type = sqlite3_column_type(m_pStmt, i);
-        if (type == SQLITE_INTEGER)
-        {
-            FdoInt64 val = sqlite3_column_int64(m_pStmt, i);
-			m_sprops[i].EnsureSize(32);
-#ifdef _WIN32
-			_i64tow_s(val, m_sprops[i].data, 32, 10);
-#else
-		    swprintf(m_sprops[i].data, 256, L"%lld", (long long int)val);
-#endif
-			m_sprops[i].valid = 1;
-            return m_sprops[i].data;;
-        }
-        else if (type == SQLITE_FLOAT)
-        {
-            double val = sqlite3_column_double(m_pStmt, i);
-			m_sprops[i].EnsureSize(256);
-			swprintf(m_sprops[i].data, 256, L"%.16g", val);
-			m_sprops[i].valid = 1;
-            return m_sprops[i].data;;
-        }
         const char* text = (const char*)sqlite3_column_text(m_pStmt, i);
 
         if (!text)
@@ -719,22 +659,8 @@ FdoString* SltReader::GetString(FdoString* propertyName)
 //\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 FdoLOBValue* SltReader::GetLOB(int index)
 {
-    ValidateIndex(m_pStmt, index);
-    FdoByte* vblob = NULL;
-    int len = 0;
-    if (((Vdbe*)m_pStmt)->fdo)
-    {
-        Mem* blob = columnMem(m_pStmt, index);
-        len = blob->n;
-        vblob = (unsigned char*)blob->z;
-    }
-    else
-    {
-	    const void* ptr = sqlite3_column_blob(m_pStmt, index);
-	    len = sqlite3_column_bytes(m_pStmt, index);
-    	vblob = (unsigned char*)ptr;    
-    }
-    return (vblob) ? (FdoLOBValue*)FdoDataValue::Create(vblob, len, FdoDataType_BLOB) : NULL;
+    //TODO: do something similar to GetGeometry
+	throw FdoException::Create(L"Not Implemented.");
 }
 FdoLOBValue* SltReader::GetLOB(FdoString* propertyName)
 {
@@ -743,8 +669,7 @@ FdoLOBValue* SltReader::GetLOB(FdoString* propertyName)
 //\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 FdoIStreamReader* SltReader::GetLOBStreamReader(int index)
 {
-    FdoPtr<FdoLOBValue> blob = GetLOB(index);
-    return new SltBLOBStreamReader(blob); 
+	throw FdoException::Create(L"Not Implemented.");
 }
 FdoIStreamReader* SltReader::GetLOBStreamReader(FdoString* propertyName )
 {
@@ -785,7 +710,7 @@ FdoByteArray* SltReader::GetGeometry(int index)
 {
 	int len = 0;
     const void* ptr = SltReader::GetGeometry(index, &len);
-    return (len) ? FdoByteArray::Create((unsigned char*)ptr, len) : NULL;
+	return FdoByteArray::Create((unsigned char*)ptr, len);
 }
 FdoByteArray* SltReader::GetGeometry(FdoString* propertyName)
 {
@@ -822,8 +747,7 @@ const FdoByte* SltReader::GetGeometry(int i, FdoInt32* len)
     }
 
     //is geometry null?
-    if (!*len)
-        return NULL;
+    if (!len) return NULL;
 
     if (m_eGeomFormat == eFGF)
         return geom;
@@ -871,59 +795,6 @@ const FdoByte* SltReader::GetGeometry(int i, FdoInt32* len)
 
 //\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
-#pragma warning (disable: 4127)
-
-bool SltReader::ReadNextOnView()
-{
-    // we will use m_closeOpcode for read more than once from a view where ID=val
-    bool retVal = false;
-    do
-    {
-        if (m_curfid == 0 || m_closeOpcode == -1)
-        {
-            while (1)
-            {
-                //are we at the end of the current spatial iterator batch?
-                if (m_si)
-                {
-                    m_curfid++;
-                    if (m_curfid >= m_siEnd)
-                    {
-                        int start;
-                        bool ret = m_si->NextRange(start, m_siEnd);
-
-                        //spatial reader is done, so we are done
-                        if (!ret)
-                            return false;
-
-                        m_curfid = (sqlite3_int64)(start ? start : 1); //make sure we skip fid=0, which is not valid
-                    }
-                }
-                else if (m_ri) //or are we using a rowid iterator?
-                {
-                    bool res = m_ri->Next();
-
-                    if (res)
-                        m_curfid = m_ri->CurrentRowid();
-                    else
-                        return false; //scrolled past the end of the data
-                }
-                sqlite3_reset(m_pStmt);
-                sqlite3_bind_int64(m_pStmt, 1, ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]));
-                if (sqlite3_step(m_pStmt) == SQLITE_ROW)
-                {
-                    m_closeOpcode = 0;
-                    return true;
-                }
-            }
-        }
-        retVal = (sqlite3_step(m_pStmt) == SQLITE_ROW);
-        if (!retVal)
-            m_closeOpcode = -1;
-    }while(!retVal);
-
-    return true;
-}
 
 bool SltReader::ReadNext()
 {
@@ -940,14 +811,12 @@ bool SltReader::ReadNext()
     //we get either a rowid iterator or a spatial iterator, but not both.
     if (m_si || m_ri)
     {
-        if (m_isViewSelect)
-            return ReadNextOnView();
         while (1)
         {
             //are we at the end of the current spatial iterator batch?
             if (m_si)
             {
-                m_curfid++;
+                m_curfid ++;
                 if (m_curfid >= m_siEnd)
                 {
                     int start;
@@ -977,7 +846,7 @@ bool SltReader::ReadNext()
                 //Note that this is not the same as sqlite_bind_int64, because
                 //the execution engine copies the variables from the statement into
                 //internal memory, which we are setting directly here.
-                v->aMem[1].u.i = ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]);
+                v->aMem[1].u.i = m_curfid;
 
 
                 //now set the VDBE program counter to the instruction that
@@ -1021,7 +890,7 @@ bool SltReader::ReadNext()
                 //situation where we have to reset the statement (SLOWwwwwWWWWwwWWWWw!)
                 //Should only happen the first time we execute ReadNext.
                 sqlite3_reset(m_pStmt);
-                sqlite3_bind_int64(m_pStmt, 1, ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]));
+                sqlite3_bind_int64(m_pStmt, 1, m_curfid);
             }
 
             if (sqlite3_step(m_pStmt) == SQLITE_ROW)
@@ -1052,7 +921,10 @@ bool SltReader::ReadNext()
         //case where we are not using a spatial index
         //here we can simply step the statement and let
         //SQLite handle the work
-        return (sqlite3_step(m_pStmt) == SQLITE_ROW);
+        if (sqlite3_step(m_pStmt) == SQLITE_ROW)
+        {
+		    return true;
+        }
     }
 
     return false;
@@ -1069,7 +941,7 @@ void SltReader::Close()
     //NOTE: If Close() does not get called and the reader is left
     //dangling in this state, it spells ***CERTAIN DOOM*** for anybody trying to 
     //use the database connection thereafter! Consider yourself warned.
-    if (m_closeOpcode != -1 && !m_isViewSelect)
+    if (m_closeOpcode != -1)
     {
         Vdbe* v = (Vdbe*)m_pStmt;
         v->pc = m_closeOpcode;
@@ -1080,12 +952,15 @@ void SltReader::Close()
         m_closeOpcode = -1;
     }
 
+    //remember the underlying ephemeral database, 
+    //before killing the statement, so that we can free it,
+    //after we commit it... Phew.
     sqlite3* db = sqlite3_db_handle(m_pStmt); 
 
     //Finalize the statemenet, in case of ephemeral db, or release it to cache otherwise
     //We must do this before committing the transaction, in case we are being Closed()
     //before we were done calling ReadNext()
-    if (m_closeDB != ReaderCloseType_None)
+    if (m_closeDB)
     {
         sqlite3_finalize(m_pStmt);
     }
@@ -1094,7 +969,7 @@ void SltReader::Close()
 
     //Close the database as well, if it was an ephemeral database
     //used to return computed data
-    if (m_closeDB == ReaderCloseType_CloseDb)
+    if (m_closeDB)
         sqlite3_close(db);
 
 	m_pStmt = NULL;
@@ -1109,8 +984,6 @@ FdoClassDefinition* SltReader::GetClassDefinition()
 {
 	if (!m_class)
 	{
-        int additionalSize = 0;
-        std::vector<int> idxProperties;
         std::vector<int> unknownPropsIdx;
 		//decide on a name for the class -- just pick the table name
 		//for the first column :)
@@ -1118,6 +991,8 @@ FdoClassDefinition* SltReader::GetClassDefinition()
         //in case is a temp table filled with a view content use the view name
         if (NULL == tableName)
             tableName = "GeneratedClass";
+        else
+            tableName = DecodeTableName(tableName);
 
         std::wstring wtable = A2W_SLOW(tableName);
 		//find source feature class metadata
@@ -1132,10 +1007,10 @@ FdoClassDefinition* SltReader::GetClassDefinition()
 		//cache information about the returned columns
 		for (int i=0; i<nProps; i++)
 		{
-            idxProperties.push_back(-1);
 			bool propFound = false;
 			//get name of table that is the source for this column
 			const char* table = sqlite3_column_table_name(m_pStmt, i);
+            table = DecodeTableName(table);
 
 			//find source feature class metadata
             SltMetadata* md = (table == NULL)? NULL : m_connection->GetMetadata(table);
@@ -1149,34 +1024,16 @@ FdoClassDefinition* SltReader::GetClassDefinition()
 					? ((FdoFeatureClass*)origfc.p)->GetGeometryProperty() : NULL;
 
 				const wchar_t* pname = m_propNames[i];
-                const char* origin_name = NULL;
 
 				FdoPtr<FdoPropertyDefinition> srcprop = pdc->FindItem(pname);
-                if (!srcprop.p)
-                {
-                    origin_name = sqlite3_column_origin_name(m_pStmt, i);
-                    if (origin_name)
-                    {
-                        std::wstring worigin_name = A2W_SLOW(origin_name);
-                        srcprop = pdc->FindItem(worigin_name.c_str());
-                    }
-                }
 
                 if (srcprop.p)
                 {
                     FdoPtr<FdoPropertyDefinition> clonedprop = FdoCommonSchemaUtil::DeepCopyFdoPropertyDefinition(srcprop);
-                    if (origin_name)
-                        clonedprop->SetName(pname);
-
                     propFound = true;
-                    if (dstpdc->Contains(pname))
-                    {
-                        additionalSize += GenerateUniqueName(pname, clonedprop, dstpdc);
-                        idxProperties[i] = dstpdc->GetCount();
-                    }
-                    dstpdc->Add(clonedprop);
+    			    dstpdc->Add(clonedprop);
 
-                    if (idpdc->Contains(pname))
+				    if (idpdc->Contains(pname))
 					    dstidpdc->Add((FdoDataPropertyDefinition*)clonedprop.p);
 
 				    if (NULL != geompd && wcscmp(pname, geompd->GetName()) == 0)
@@ -1229,15 +1086,7 @@ FdoClassDefinition* SltReader::GetClassDefinition()
 					break;
 				}
                 if (dpd != NULL)
-                {
-                    const wchar_t* pname = dpd->GetName();
-                    if (dstpdc->Contains(pname))
-                    {
-                        additionalSize += GenerateUniqueName(pname, dpd, dstpdc);
-                        idxProperties[i] = dstpdc->GetCount();
-                    }
 				    dstpdc->Add(dpd);
-                }
 			}
 		}
         // do we have unknown calculations !?
@@ -1313,75 +1162,11 @@ FdoClassDefinition* SltReader::GetClassDefinition()
                 }
             }
         }
-        if (additionalSize != 0)
-        {
-            m_mNameToIndex.Clear();
-            int buflen = (int)(m_propNames.back() - m_propNames[0]) + wcslen(m_propNames.back()) + 1 + additionalSize;
-            wchar_t* aPropNames = new wchar_t[buflen];
-            wchar_t* dst = aPropNames;
-
-	        //convert column names to wchar and store in our buffer
-	        for (int i=0; i<nProps; i++)
-	        {
-                int len = 0;
-                if (idxProperties[i] == -1)
-                {
-                    // property name did not changed
-                    wcscpy(dst, m_propNames[i]);
-                    len = wcslen(dst) + 1;
-                }
-                else
-                {
-                    FdoPtr<FdoPropertyDefinition> propDefChg = dstpdc->GetItem(idxProperties[i]);
-                    FdoString* propNameChg = propDefChg->GetName();
-                    wcscpy(dst, propNameChg);
-                    len = wcslen(dst) + 1;
-                }
-                m_propNames.push_back(dst);
-                dst += len;
-	        }
-            delete[] m_aPropNames;
-            m_aPropNames = aPropNames;
-            m_propNames.erase(m_propNames.begin(), m_propNames.begin()+nProps);
-            for (int i=0; i<nProps; i++)
-            {
-                m_mNameToIndex.Add(m_propNames[i], i);
-            }
-
-            m_mNameToIndex.Prepare();
-        }
 	}
 
 	return FDO_SAFE_ADDREF(m_class);
 }
 
-// returns the additional size needs to be allocated
-int SltReader::GenerateUniqueName(const wchar_t* pname, FdoPropertyDefinition* prop, FdoPropertyDefinitionCollection* pcol)
-{
-    int idxProp = 1;
-    int idx = 0;
-    wchar_t buffer[5];
-    
-    int propsize = wcslen(pname);
-    wchar_t* pnewName = new wchar_t[propsize + 1 + 4]; // from 1 to max 999
-    memcpy(pnewName, pname, propsize * sizeof(wchar_t));
-    *(pnewName+propsize) = L'$';
-    do
-    {
-        swprintf(buffer, 5, L"%d", idxProp);
-        idx = 0;
-        while(buffer[idx] != L'\0')
-            *(pnewName+propsize+1+idx) = buffer[idx++];
-        *(pnewName+propsize+1+idx) = L'\0';
-        idxProp++;
-    }
-    while(pcol->Contains(pnewName));
-    
-    prop->SetName(pnewName);
-    delete[] pnewName;
-
-    return idx + 1; // '$' + len(no)
-}
 
 FdoInt32 SltReader::GetDepth()
 {
@@ -1614,27 +1399,22 @@ unsigned int SltReader::IndexOf(FdoPropertyValueCollection* key)
 //-------------------------------------------------------
 
 void SltReader::ValidateIndex(sqlite3_stmt *pStmt, int index)
-{    
-    if (index < 0 || index >= m_nTotalProps)
-    {
-		wchar_t tmp[15];
-		swprintf(tmp, 15, L"%d", index);
-        throw FdoCommandException::Create((std::wstring(L"Property index \'") + tmp + L"\' is out of bounds.").c_str());
-    }
-
-    //Trying to access a property that is theoretically available
-    //but was not queried in the initial query (which only assumes ID and geom)
+{
     int count = sqlite3_column_count(pStmt);
-    if (index >= count)
+    if (index < 0 || index >= count)
     {
-        FdoPtr<FdoPropertyDefinitionCollection> pdc = m_class->GetProperties();
-        for (int i=count; i<index; i++)
-        {
-            FdoPtr<FdoPropertyDefinition> pv = pdc->GetItem(i);
-            AddColumnToQuery(pv->GetName());
-        }
+        throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_73_PROPERTY_INDEXOUTOFBOUNDS), index));
     }
+}
 
+const char* SltReader::DecodeTableName(const char* name)
+{
+    if (name != NULL)
+    {
+        int pos = StringContains(name, "$view");
+        return (pos == 0) ? (name+5) : name;
+    }
+    return name;
 }
 
 // function supports following formats (note a+b is just a sample - it can be any expression)
@@ -1700,12 +1480,12 @@ std::wstring SltReader::ExtractExpression(const wchar_t* exp, const wchar_t* pro
 DelayedInitReader::DelayedInitReader(   SltConnection*              connection, 
                                         FdoIdentifierCollection*    props, 
                                         const char*                 fcname, 
-                                        const char*                 strWhere,
+                                        const char*                 where,
                                         RowidIterator* ri)
 : SltReader(connection),
 m_bInit(false),
 m_fcname(fcname),
-m_where(strWhere)
+m_where(where)
 {
     m_ri = ri;
     m_props = FDO_SAFE_ADDREF(props);   
@@ -1720,7 +1500,7 @@ bool DelayedInitReader::ReadNext()
 {
     if (!m_bInit)
     {
-        DelayedInit(m_props, m_fcname.c_str(), m_where.c_str(), "", true);
+        DelayedInit(m_props, m_fcname.c_str(), m_where.c_str(), true);
         m_bInit = true;
     }
 
@@ -1731,7 +1511,7 @@ FdoClassDefinition* DelayedInitReader::GetClassDefinition()
 {
     if (!m_bInit)
     {
-        DelayedInit(m_props, m_fcname.c_str(), m_where.c_str(), "", true);
+        DelayedInit(m_props, m_fcname.c_str(), m_where.c_str(), true);
         m_bInit = true;
     }
 
@@ -1762,13 +1542,11 @@ FdoClassDefinition* SltIdReader::GetClassDefinition()
 {
 	if (!m_cls)
 	{
-        m_cls = FdoFeatureClass::Create(L"GenClass", L"Id class");
-        FdoPtr<FdoPropertyDefinitionCollection> props = m_cls->GetProperties();
-        FdoPtr<FdoDataPropertyDefinitionCollection> pidtcoll = m_cls->GetIdentityProperties();
-        FdoPtr<FdoDataPropertyDefinition> idProp = FdoDataPropertyDefinition::Create(m_idProp->GetName(), L"Id");
-        idProp->SetDataType(m_idProp->GetDataType());
-        props->Add(idProp);
-        pidtcoll->Add(idProp);
+		m_cls = FdoFeatureClass::Create(L"GenClass", L"Id class");
+		FdoPtr<FdoPropertyDefinitionCollection> props = m_cls->GetProperties();
+		FdoPtr<FdoDataPropertyDefinition> idProp = FdoDataPropertyDefinition::Create(m_idProp->GetName(), L"Id");
+		idProp->SetDataType(m_idProp->GetDataType());
+		props->Add(idProp);
 	}
     return FDO_SAFE_ADDREF(m_cls);
 }
@@ -1779,48 +1557,44 @@ FdoInt32 SltIdReader::GetDepth()
 
 const FdoByte* SltIdReader::GetGeometry(FdoString* /*propertyName*/, FdoInt32* /*count*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoByteArray* SltIdReader::GetGeometry(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoIFeatureReader* SltIdReader::GetFeatureObject(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 const FdoByte* SltIdReader::GetGeometry(FdoInt32 /*index*/, FdoInt32* /*count*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoByteArray* SltIdReader::GetGeometry(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoIFeatureReader* SltIdReader::GetFeatureObject(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 void SltIdReader::CheckProperty(int idx)
 {
 	if (idx != 0)
-    {
-		wchar_t tmp[15];
-		swprintf(tmp, 15, L"%d", idx);
-        throw FdoCommandException::Create((std::wstring(L"Property index \'") + tmp + L"\' is out of bounds.").c_str());
-    }
+		throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_73_PROPERTY_INDEXOUTOFBOUNDS), idx));
 }
 
 void SltIdReader::CheckProperty(FdoString* propertyName)
 {
 	if (propertyName == NULL || *propertyName != *m_idProp->GetName())
-        throw FdoCommandException::Create((std::wstring(L"The property \'") + propertyName + L"\' was not found.").c_str());
+		throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_74_PROPERTY_NAME_NOT_FOUND), propertyName));
 }
 
 FdoInt32 SltIdReader::GetColumnCount()
@@ -1895,7 +1669,7 @@ FdoInt32 SltIdReader::GetPropertyIndex(FdoString* propertyName)
 
 bool SltIdReader::GetBoolean(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoByte SltIdReader::GetByte(FdoString* propertyName)
@@ -1905,12 +1679,12 @@ FdoByte SltIdReader::GetByte(FdoString* propertyName)
 
 FdoDateTime SltIdReader::GetDateTime(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 double SltIdReader::GetDouble(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoInt16 SltIdReader::GetInt16(FdoString* propertyName)
@@ -1930,22 +1704,22 @@ FdoInt64 SltIdReader::GetInt64(FdoString* propertyName)
 
 float SltIdReader::GetSingle(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoString* SltIdReader::GetString(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoLOBValue* SltIdReader::GetLOB(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoIStreamReader* SltIdReader::GetLOBStreamReader(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 bool SltIdReader::IsNull(FdoString* propertyName)
@@ -1956,12 +1730,12 @@ bool SltIdReader::IsNull(FdoString* propertyName)
 
 FdoIRaster* SltIdReader::GetRaster(FdoString* /*propertyName*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoBoolean SltIdReader::GetBoolean(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoByte SltIdReader::GetByte(FdoInt32 index)
@@ -1971,12 +1745,12 @@ FdoByte SltIdReader::GetByte(FdoInt32 index)
 
 FdoDateTime SltIdReader::GetDateTime(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoDouble SltIdReader::GetDouble(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoInt16 SltIdReader::GetInt16(FdoInt32 index)
@@ -1996,22 +1770,22 @@ FdoInt64 SltIdReader::GetInt64(FdoInt32 index)
 
 FdoFloat SltIdReader::GetSingle(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoString* SltIdReader::GetString(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoLOBValue* SltIdReader::GetLOB(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoIStreamReader* SltIdReader::GetLOBStreamReader(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 FdoBoolean SltIdReader::IsNull(FdoInt32 index)
@@ -2022,7 +1796,7 @@ FdoBoolean SltIdReader::IsNull(FdoInt32 index)
 
 FdoIRaster* SltIdReader::GetRaster(FdoInt32 /*index*/)
 {
-	throw FdoCommandException::Create(L"Invalid data type.");
+	throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_NLSID(EXPRESSION_15_INVALIDDATAVALUE)));
 }
 
 void SltIdReader::Close()

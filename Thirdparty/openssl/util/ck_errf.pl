@@ -7,16 +7,8 @@
 # perl util/ck_errf.pl */*.c */*/*.c
 #
 
-my $err_strict = 0;
-my $bad = 0;
-
 foreach $file (@ARGV)
 	{
-	if ($file eq "-strict")
-		{
-		$err_strict = 1;
-		next;
-		}
 	open(IN,"<$file") || die "unable to open $file\n";
 	$func="";
 	while (<IN>)
@@ -28,13 +20,13 @@ foreach $file (@ARGV)
 			$func = $1;
 			$func =~ tr/A-Z/a-z/;
 			}
-		if (/([A-Z0-9]+)err\(([^,]+)/ && ! /ckerr_ignore/)
+		if (/([A-Z0-9]+)err\(([^,]+)/)
 			{
 			$errlib=$1;
 			$n=$2;
 
 			if ($func eq "")
-				{ print "$file:$.:???:$n\n"; $bad = 1; next; }
+				{ print "$file:$.:???:$n\n"; next; }
 
 			if ($n !~ /([^_]+)_F_(.+)$/)
 				{
@@ -45,20 +37,14 @@ foreach $file (@ARGV)
 			$n=$2;
 
 			if ($lib ne $errlib)
-				{ print "$file:$.:$func:$n [${errlib}err]\n"; $bad = 1; next; }
+				{ print "$file:$.:$func:$n [${errlib}err]\n"; next; }
 
 			$n =~ tr/A-Z/a-z/;
 			if (($n ne $func) && ($errlib ne "SYS"))
-				{ print "$file:$.:$func:$n\n"; $bad = 1; next; }
+				{ print "$file:$.:$func:$n\n"; next; }
 	#		print "$func:$1\n";
 			}
 		}
 	close(IN);
         }
-
-if ($bad && $err_strict)
-	{
-	print STDERR "FATAL: error discrepancy\n";
-	exit 1;
-	}
 

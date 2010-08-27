@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rat.cpp 16570 2009-03-14 11:42:31Z rouault $
+ * $Id: gdal_rat.cpp 15228 2008-08-27 13:47:47Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALRasterAttributeTable and related classes.
@@ -30,7 +30,7 @@
 #include "gdal_priv.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id: gdal_rat.cpp 16570 2009-03-14 11:42:31Z rouault $");
+CPL_CVSID("$Id: gdal_rat.cpp 15228 2008-08-27 13:47:47Z warmerdam $");
 
 /**
  * \class GDALRasterAttributeTable
@@ -91,11 +91,6 @@ GDALRasterAttributeTable::GDALRasterAttributeTable()
 /*                   GDALCreateRasterAttributeTable()                   */
 /************************************************************************/
 
-/**
- * \brief Construct empty table.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GDALRasterAttributeTable()
- */
 GDALRasterAttributeTableH CPL_STDCALL GDALCreateRasterAttributeTable()
 
 {
@@ -131,11 +126,6 @@ GDALRasterAttributeTable::~GDALRasterAttributeTable()
 /*                  GDALDestroyRasterAttributeTable()                   */
 /************************************************************************/
 
-/**
- * \brief Destroys a RAT.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::~GDALRasterAttributeTable()
- */
 void CPL_STDCALL 
 GDALDestroyRasterAttributeTable( GDALRasterAttributeTableH hRAT )
 
@@ -187,11 +177,6 @@ int GDALRasterAttributeTable::GetColumnCount() const
 /*                       GDALRATGetColumnCount()                        */
 /************************************************************************/
 
-/**
- * \brief Fetch table column count.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetColumnCount()
- */
 int CPL_STDCALL GDALRATGetColumnCount( GDALRasterAttributeTableH hRAT )
 
 {
@@ -207,7 +192,8 @@ int CPL_STDCALL GDALRATGetColumnCount( GDALRasterAttributeTableH hRAT )
 /**
  * \brief Fetch name of indicated column.
  *
- * This method is the same as the C function GDALRATGetNameOfCol().
+ * This method is the same as the C function GDALRATGetNameOfCol(), except
+ * that the C function returns "const char *".
  *
  * @param iCol the column index (zero based). 
  *
@@ -228,11 +214,6 @@ const char *GDALRasterAttributeTable::GetNameOfCol( int iCol ) const
 /*                        GDALRATGetNameOfCol()                         */
 /************************************************************************/
 
-/**
- * \brief Fetch name of indicated column.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetNameOfCol()
- */
 const char *CPL_STDCALL GDALRATGetNameOfCol( GDALRasterAttributeTableH hRAT,
                                              int iCol )
 
@@ -280,11 +261,6 @@ GDALRATFieldUsage GDALRasterAttributeTable::GetUsageOfCol( int iCol ) const
 /*                        GDALRATGetUsageOfCol()                        */
 /************************************************************************/
 
-/**
- * \brief Fetch column usage value. 
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetUsageOfColetNameOfCol()
- */
 GDALRATFieldUsage CPL_STDCALL 
 GDALRATGetUsageOfCol( GDALRasterAttributeTableH hRAT, int iCol )
 
@@ -299,7 +275,7 @@ GDALRATGetUsageOfCol( GDALRasterAttributeTableH hRAT, int iCol )
 /************************************************************************/
 
 /**
- * \brief Fetch column type.
+ * \brief Fetch color type.
  *
  * This method is the same as the C function GDALRATGetTypeOfCol().
  *
@@ -322,11 +298,6 @@ GDALRATFieldType GDALRasterAttributeTable::GetTypeOfCol( int iCol ) const
 /*                        GDALRATGetTypeOfCol()                         */
 /************************************************************************/
 
-/**
- * \brief Fetch column type.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetTypeOfCol()
- */
 GDALRATFieldType CPL_STDCALL 
 GDALRATGetTypeOfCol( GDALRasterAttributeTableH hRAT, int iCol )
 
@@ -371,11 +342,6 @@ int GDALRasterAttributeTable::GetColOfUsage( GDALRATFieldUsage eUsage ) const
 /*                        GDALRATGetColOfUsage()                        */
 /************************************************************************/
 
-/**
- * \brief Fetch column index for given usage.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetColOfUsage()
- */
 int CPL_STDCALL 
 GDALRATGetColOfUsage( GDALRasterAttributeTableH hRAT, 
                       GDALRATFieldUsage eUsage )
@@ -407,11 +373,7 @@ int GDALRasterAttributeTable::GetRowCount() const
 /************************************************************************/
 /*                        GDALRATGetUsageOfCol()                        */
 /************************************************************************/
-/**
- * \brief Fetch row count.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetRowCount()
- */
+
 int CPL_STDCALL 
 GDALRATGetRowCount( GDALRasterAttributeTableH hRAT )
 
@@ -432,7 +394,8 @@ GDALRATGetRowCount( GDALRasterAttributeTableH hRAT )
  * as a string.  If the field is numeric, it is formatted as a string
  * using default rules, so some precision may be lost.
  *
- * This method is the same as the C function GDALRATGetValueAsString().
+ * This method is the same as the C function GDALRATGetValueAsString(), 
+ * except it returns a "const char *" result.
  *
  * @param iRow row to fetch (zero based).
  * @param iField column to fetch (zero based).
@@ -488,11 +451,7 @@ GDALRasterAttributeTable::GetValueAsString( int iRow, int iField ) const
 /************************************************************************/
 /*                      GDALRATGetValueAsString()                       */
 /************************************************************************/
-/**
- * \brief Fetch field value as a string.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetValueAsString()
- */
+
 const char * CPL_STDCALL 
 GDALRATGetValueAsString( GDALRasterAttributeTableH hRAT, int iRow, int iField )
 
@@ -564,11 +523,6 @@ GDALRasterAttributeTable::GetValueAsInt( int iRow, int iField ) const
 /*                        GDALRATGetValueAsInt()                        */
 /************************************************************************/
 
-/**
- * \brief Fetch field value as a integer.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetValueAsInt()
- */
 int CPL_STDCALL 
 GDALRATGetValueAsInt( GDALRasterAttributeTableH hRAT, int iRow, int iField )
 
@@ -636,11 +590,6 @@ GDALRasterAttributeTable::GetValueAsDouble( int iRow, int iField ) const
 /*                      GDALRATGetValueAsDouble()                       */
 /************************************************************************/
 
-/**
- * \brief Fetch field value as a double.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetValueAsDouble()
- */
 double CPL_STDCALL 
 GDALRATGetValueAsDouble( GDALRasterAttributeTableH hRAT, int iRow, int iField )
 
@@ -698,11 +647,6 @@ void GDALRasterAttributeTable::SetRowCount( int nNewCount )
 /*                         GDALRATSetRowCount()                         */
 /************************************************************************/
 
-/**
- * \brief Set row count.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::SetRowCount()
- */
 void CPL_STDCALL 
 GDALRATSetRowCount( GDALRasterAttributeTableH hRAT, int nNewCount )
 
@@ -773,11 +717,6 @@ void GDALRasterAttributeTable::SetValue( int iRow, int iField,
 /*                      GDALRATSetValueAsString()                       */
 /************************************************************************/
 
-/**
- * \brief Set field value from string.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::SetValue()
- */
 void CPL_STDCALL 
 GDALRATSetValueAsString( GDALRasterAttributeTableH hRAT, int iRow, int iField,
                          const char *pszValue )
@@ -854,11 +793,6 @@ void GDALRasterAttributeTable::SetValue( int iRow, int iField,
 /*                        GDALRATSetValueAsInt()                        */
 /************************************************************************/
 
-/**
- * \brief Set field value from integer.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::SetValue()
- */
 void CPL_STDCALL 
 GDALRATSetValueAsInt( GDALRasterAttributeTableH hRAT, int iRow, int iField,
                       int nValue )
@@ -935,11 +869,6 @@ void GDALRasterAttributeTable::SetValue( int iRow, int iField,
 /*                      GDALRATSetValueAsDouble()                       */
 /************************************************************************/
 
-/**
- * \brief Set field value from double.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::SetValue()
- */
 void CPL_STDCALL 
 GDALRATSetValueAsDouble( GDALRasterAttributeTableH hRAT, int iRow, int iField,
                          double dfValue )
@@ -1060,11 +989,6 @@ int GDALRasterAttributeTable::GetRowOfValue( int nValue ) const
 /*                        GDALRATGetRowOfValue()                        */
 /************************************************************************/
 
-/**
- * \brief Get row for pixel value.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetRowOfValue()
- */
 int CPL_STDCALL 
 GDALRATGetRowOfValue( GDALRasterAttributeTableH hRAT, double dfValue )
 
@@ -1108,11 +1032,6 @@ CPLErr GDALRasterAttributeTable::SetLinearBinning( double dfRow0MinIn,
 /*                      GDALRATSetLinearBinning()                       */
 /************************************************************************/
 
-/**
- * \brief Set linear binning information.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::SetLinearBinning()
- */
 CPLErr CPL_STDCALL 
 GDALRATSetLinearBinning( GDALRasterAttributeTableH hRAT, 
                          double dfRow0Min, double dfBinSize )
@@ -1135,8 +1054,8 @@ GDALRATSetLinearBinning( GDALRasterAttributeTableH hRAT,
  *
  * This method is the same as the C function GDALRATGetLinearBinning().
  *
- * @param pdfRow0Min (out) the lower bound (pixel value) of the first category.
- * @param pdfBinSize (out) the width of each category (in pixel value units).
+ * @param pdfRow0MinIn (out) the lower bound (pixel value) of the first category.
+ * @param pdfBinSizeIn (out) the width of each category (in pixel value units).
  *
  * @return TRUE if linear binning information exists or FALSE if there is none.
  */
@@ -1158,11 +1077,6 @@ int GDALRasterAttributeTable::GetLinearBinning( double *pdfRow0Min,
 /*                      GDALRATGetLinearBinning()                       */
 /************************************************************************/
 
-/**
- * \brief Get linear binning information.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::GetLinearBinning()
- */
 int CPL_STDCALL 
 GDALRATGetLinearBinning( GDALRasterAttributeTableH hRAT, 
                          double *pdfRow0Min, double *pdfBinSize )
@@ -1222,11 +1136,6 @@ CPLErr GDALRasterAttributeTable::CreateColumn( const char *pszFieldName,
 /*                        GDALRATCreateColumn()                         */
 /************************************************************************/
 
-/**
- * \brief Create new column.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::CreateColumn()
- */
 CPLErr CPL_STDCALL GDALRATCreateColumn( GDALRasterAttributeTableH hRAT, 
                                         const char *pszFieldName, 
                                         GDALRATFieldType eFieldType,
@@ -1307,11 +1216,6 @@ CPLErr GDALRasterAttributeTable::InitializeFromColorTable(
 /*                  GDALRATInitializeFromColorTable()                   */
 /************************************************************************/
 
-/**
- * \brief Initialize from color table.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::InitializeFromColorTable()
- */
 CPLErr CPL_STDCALL 
 GDALRATInitializeFromColorTable( GDALRasterAttributeTableH hRAT,
                                  GDALColorTableH hCT )
@@ -1420,11 +1324,6 @@ GDALColorTable *GDALRasterAttributeTable::TranslateToColorTable(
 /*                  GDALRATInitializeFromColorTable()                   */
 /************************************************************************/
 
-/**
- * \brief Translate to a color table.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::TranslateToColorTable()
- */
 GDALColorTableH CPL_STDCALL 
 GDALRATTranslateToColorTable( GDALRasterAttributeTableH hRAT,
                               int nEntryCount )
@@ -1631,11 +1530,6 @@ void GDALRasterAttributeTable::DumpReadable( FILE * fp )
 /*                        GDALRATDumpReadable()                         */
 /************************************************************************/
 
-/**
- * \brief Dump RAT in readable form.
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::DumpReadable()
- */
 void CPL_STDCALL 
 GDALRATDumpReadable( GDALRasterAttributeTableH hRAT, FILE *fp )
 
@@ -1670,11 +1564,6 @@ GDALRasterAttributeTable *GDALRasterAttributeTable::Clone() const
 /*                            GDALRATClone()                            */
 /************************************************************************/
 
-/**
- * \brief Copy Raster Attribute Table
- *
- * This function is the same as the C++ method GDALRasterAttributeTable::Clone()
- */
 GDALRasterAttributeTableH CPL_STDCALL 
 GDALRATClone( GDALRasterAttributeTableH hRAT )
 

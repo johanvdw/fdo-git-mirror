@@ -23,13 +23,99 @@
 #include <FdoExpressionEngineCopyFilter.h>
 #include <algorithm>
 
-SltQueryTranslator::SltQueryTranslator(FdoClassDefinition* fc, bool validateProps)
+recno_list* recno_list_union(recno_list* left, recno_list* right)
+{
+    //if one of the lists is null it means it iterates over all features...
+    //so return that list as the union of the two
+    if (left == NULL)
+        return right;
+
+    if (right == NULL)
+        return left;
+
+    std::sort(left->begin(), left->end(), std::less<__int64>());
+    std::sort(right->begin(), right->end(), std::less<__int64>());
+
+    recno_list::iterator iter1 = left->begin();
+    recno_list::iterator iter2 = right->begin();
+
+    recno_list* ret = new recno_list;
+
+    while (iter1 != left->end() || iter2 != right->end())
+    {
+        if (iter1 == left->end())
+            ret->push_back(*iter2++);
+        else if (iter2 == right->end())
+            ret->push_back(*iter1++);
+        else if (*iter2 < *iter1)
+            ret->push_back(*iter2++);
+        else if (*iter2 > *iter1)
+            ret->push_back(*iter1++);
+        else
+        {
+            ret->push_back(*iter1);
+            iter1++;
+            iter2++;
+        }
+    }
+
+    //dispose of inputs and return newly allocated list
+    delete left;
+    delete right;
+
+    return ret;
+}
+
+recno_list* recno_list_intersection(recno_list* left, recno_list* right)
+{
+    //if one of the lists is null it means it iterates over all features...
+    //so return the non-null list as the intersection of the two, if one is non-null
+    if (left == NULL)
+        return right;
+
+    if (right == NULL)
+        return left;
+
+    std::sort(left->begin(), left->end(), std::less<__int64>());
+    std::sort(right->begin(), right->end(), std::less<__int64>());
+
+    recno_list::iterator iter1 = left->begin();
+    recno_list::iterator iter2 = right->begin();
+
+    recno_list* ret = new recno_list;
+
+    while(iter1 != left->end() || iter2 != right->end())
+    {
+        if (iter1 == left->end())
+            break;
+        else if (iter2 == right->end())
+            break;
+        else if (*iter2 < *iter1)
+            iter2++;
+        else if (*iter2 > *iter1)
+            iter1++;
+        else
+        {
+            ret->push_back(*iter1);
+            iter1++;
+            iter2++;
+        }
+    }
+
+    //dispose of inputs and return newly allocated list
+    delete left;
+    delete right;
+
+    return ret;
+}
+
+
+SltQueryTranslator::SltQueryTranslator(FdoClassDefinition* fc)
 : m_refCount(1),
+m_optimizedChunk(NULL),
+m_restoreChunk(NULL),
 m_strgeomOperations(0),
-m_canUseFastStepping(true),
-m_mustKeepFilterAlive(false),
-m_foundEnvInt(false),
-m_validateProps(validateProps)
+m_geomCount(0)
 {
     m_fc = FDO_SAFE_ADDREF(fc);
     m_evalStack.reserve(4);
@@ -62,24 +148,234 @@ void SltQueryTranslator::ProcessBinaryLogicalOperator(FdoBinaryLogicalOperator& 
 
     FdoBinaryLogicalOperations op = filter.GetOperation();
 
-    ComplexFilterChunk* rVal = CreateComplexFilterChunk();
-    rVal->AddToList(CreateBaseFilterChunk("(", 1));
-    rVal->AddToList(lefts);
-    if (op == FdoBinaryLogicalOperations_And)
-        rVal->AddToList(CreateBaseFilterChunk(") AND (", 7));
-    else
-        rVal->AddToList(CreateBaseFilterChunk(") OR (", 6));
-    rVal->AddToList(rights);
-    rVal->AddToList(CreateBaseFilterChunk(")", 1));
+    StlFilterType leftType = lefts->GetType();
+    StlFilterType rightType = rights->GetType();
+    ComplexFilterChunk* rVal = NULL;
 
+    //determine logical op we want as string
+    //and also perform the operation on the bounding
+    //boxes associated with the two sides.
+    switch (op)
+    {
+    case FdoBinaryLogicalOperations_And: 
+        {
+            // we assume the expression cannot be optimized
+            if (lefts->m_canOmit || rights->m_canOmit)
+            {
+                // do we have already a replaceable chunk?
+                // this chunk can be replaced by a spatial chunk only in case we do not have lists involved
+                if (m_optimizedChunk != NULL && m_optimizedChunk->GetType() == StlFilterType_Spatial &&
+                    !(lefts->m_canOmit && leftType == StlFilterType_List) && 
+                    !(rights->m_canOmit && rightType == StlFilterType_List))
+                {
+                    double leftLen = (leftType == StlFilterType_Spatial) ? 0 : lefts->GetBounds()->GetBoundsLength();
+                    double rightLen = (rightType == StlFilterType_Spatial) ? 0 : rights->GetBounds()->GetBoundsLength();
+                    double actualLen = m_optimizedChunk->GetBounds()->GetBoundsLength();
+
+                    short useExpression = -1;
+                    if (lefts->m_canOmit && leftLen < actualLen)
+                    {
+                        actualLen = leftLen;
+                        useExpression = 0;
+                    }
+                    if (rights->m_canOmit && rightLen < actualLen)
+                        useExpression = 1;
+
+                    rVal = CreateComplexFilterChunk(StlFilterType_Spatial);
+                    rVal->m_bounds = new DBounds();
+                    // do we keep the old chunk!?
+                    if (useExpression == -1)
+                    {
+                        *rVal->m_bounds = *m_optimizedChunk->GetBounds();
+                        rVal->AddToList(CreateBaseFilterChunk("(", 1));
+                        rVal->AddToList(lefts);
+                        rVal->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                        rVal->AddToList(rights);
+                        rVal->AddToList(CreateBaseFilterChunk(")", 1));
+                    }
+                    else
+                    {
+                        Reset();
+                        // following chunk will be reactivated in case we find a better solution
+                        ComplexFilterChunk* useChunk = CreateComplexFilterChunk();
+                        useChunk->AddToList(CreateBaseFilterChunk("(", 1));
+                        useChunk->AddToList(lefts);
+                        useChunk->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                        useChunk->AddToList(rights);
+                        useChunk->AddToList(CreateBaseFilterChunk(")", 1));
+                        m_optimizedChunk = rVal;
+                        m_restoreChunk = useChunk;
+                        
+                        if (useExpression == 1)
+                        {
+                            *rVal->m_bounds = *rights->GetBounds();
+                            rVal->AddToList(lefts);
+                        }
+                        else // useExpression == 0
+                        {
+                            *rVal->m_bounds = *lefts->GetBounds();
+                            rVal->AddToList(rights);
+                        }
+                    }
+                }
+                else
+                {
+                    // in case we have a list ID=val has priority
+                    if (leftType == StlFilterType_List || rightType == StlFilterType_List)
+                    {
+                        bool enableReset = m_optimizedChunk == NULL || m_optimizedChunk->GetType() == StlFilterType_Spatial;
+                        // handle cases like ID=5 AND ID=7 result will be an empty list
+                        rVal = CreateComplexFilterChunk(StlFilterType_List);
+                        rVal->m_ids = recno_list_intersection(lefts->DetachIDList(), rights->DetachIDList());
+                        
+                        // in case we keep a geometry clean it since ID=val has priority
+                        if (enableReset && (leftType == StlFilterType_Spatial || rightType == StlFilterType_Spatial))
+                            Reset();
+
+                        // in case both chunks can be skipped we need to keep one
+                        if (enableReset && (lefts->m_canOmit && leftType == StlFilterType_List || 
+                            rights->m_canOmit && rightType == StlFilterType_List))
+                        {
+                            // following chunk will be reactivated in case we find a better solution
+                            ComplexFilterChunk* useChunk = CreateComplexFilterChunk();
+                            useChunk->AddToList(CreateBaseFilterChunk("(", 1));
+                            useChunk->AddToList(lefts);
+                            useChunk->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                            useChunk->AddToList(rights);
+                            useChunk->AddToList(CreateBaseFilterChunk(")", 1));
+                            m_optimizedChunk = rVal;
+                            m_restoreChunk = useChunk;
+                            
+                            if (lefts->m_canOmit && leftType == StlFilterType_List)
+                                rVal->AddToList(rights); // we can skip the left side and we add only the right side
+                            else
+                                rVal->AddToList(lefts); // we can skip the left side and we add only the left side
+                        }
+                        else
+                        {
+                            // in this case we cannot replace the skip chunk since is not a list
+                            // the list is coming from the other chunk
+                            rVal->AddToList(CreateBaseFilterChunk("(", 1));
+                            rVal->AddToList(lefts);
+                            rVal->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                            rVal->AddToList(rights);
+                            rVal->AddToList(CreateBaseFilterChunk(")", 1));
+                        }
+                    }
+                    else if (leftType == StlFilterType_Spatial || rightType == StlFilterType_Spatial)
+                    {
+                        rVal = CreateComplexFilterChunk(StlFilterType_Spatial);
+                        rVal->m_bounds = new DBounds();
+                        if (lefts->m_canOmit && leftType == StlFilterType_Spatial)
+                            *rVal->m_bounds = *lefts->GetBounds();
+                        else
+                            *rVal->m_bounds = *rights->GetBounds();
+
+                        // in case both chunks can be skipped we need to keep one
+                        // following chunk will be reactivated in case we find a better solution
+                        ComplexFilterChunk* useChunk = CreateComplexFilterChunk();
+                        useChunk->AddToList(CreateBaseFilterChunk("(", 1));
+                        useChunk->AddToList(lefts);
+                        useChunk->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                        useChunk->AddToList(rights);
+                        useChunk->AddToList(CreateBaseFilterChunk(")", 1));
+                        m_optimizedChunk = rVal;
+                        m_restoreChunk = useChunk;
+                        
+                        if (lefts->m_canOmit && leftType == StlFilterType_Spatial)
+                            rVal->AddToList(rights); // we can skip the left side and we add only the right side
+                        else
+                            rVal->AddToList(lefts); // we can skip the left side and we add only the left side
+                    }
+                    // else ;not possible since we can omit one 
+                }
+            }
+            else
+            {
+                if (leftType == StlFilterType_List || rightType == StlFilterType_List)
+                {
+                    // handle cases like ID=5 AND ID=7 result will be an empty list
+                    rVal = CreateComplexFilterChunk(StlFilterType_List);
+                    rVal->m_ids = recno_list_intersection(lefts->DetachIDList(), rights->DetachIDList());
+                    
+                    // in case we keep a geometry clean it since ID=val has priority
+                    if (m_optimizedChunk != NULL && m_optimizedChunk->GetType() == StlFilterType_Spatial && 
+                        (leftType == StlFilterType_Spatial || rightType == StlFilterType_Spatial))
+                        Reset();
+                }
+                else if (leftType == StlFilterType_Spatial || rightType == StlFilterType_Spatial)
+                {
+                    rVal = CreateComplexFilterChunk(StlFilterType_Spatial);
+                    rVal->m_bounds = new DBounds();
+                    // avoid doing intersect since we can have two disjoint bboxes and a feature intersecting both
+                    if (leftType == StlFilterType_Spatial && rightType == StlFilterType_Spatial)
+                        DBounds::Union(rVal->m_bounds, lefts->GetBounds(), rights->GetBounds());
+                    else if (leftType == StlFilterType_Spatial)
+                        *rVal->m_bounds = *lefts->GetBounds();
+                    else
+                        *rVal->m_bounds = *rights->GetBounds();
+                }
+                else
+                    rVal = CreateComplexFilterChunk();
+                
+                rVal->AddToList(CreateBaseFilterChunk("(", 1));
+                rVal->AddToList(lefts);
+                rVal->AddToList(CreateBaseFilterChunk(") AND (", 7));
+                rVal->AddToList(rights);
+                rVal->AddToList(CreateBaseFilterChunk(")", 1));
+            }
+        }
+        break;
+    case FdoBinaryLogicalOperations_Or:
+        {
+            if (leftType == rightType)
+            {
+                if (leftType == StlFilterType_List)
+                {
+                    // OR operations can omit only when we have only OR conditions
+                    rVal = CreateComplexFilterChunk(StlFilterType_List);
+                    rVal->m_ids = recno_list_union(lefts->DetachIDList(), rights->DetachIDList());
+                    if (lefts->m_canOmit && rights->m_canOmit)
+                        rVal->m_canOmit = true;
+                }
+                else if (leftType == StlFilterType_Spatial)
+                {
+                    // OR operations cannot omit, we just use the bounds
+                    rVal = CreateComplexFilterChunk(StlFilterType_Spatial);
+                    rVal->m_bounds = new DBounds();
+                    DBounds::Union(rVal->m_bounds, lefts->GetBounds(), rights->GetBounds());
+                }
+            }
+            if (rVal == NULL)
+            {
+                Reset();
+                rVal = CreateComplexFilterChunk();
+            }
+            rVal->AddToList(lefts);
+            rVal->AddToList(CreateBaseFilterChunk(" OR ", 4));
+            rVal->AddToList(rights);
+        }
+        break;
+    }
+    // minor memory release
+    if (m_optimizedChunk != NULL)
+    {
+        if (m_optimizedChunk != lefts)
+            lefts->ResetType();
+        if (m_optimizedChunk != rights)
+            rights->ResetType();
+    }
+    else
+    {
+        lefts->ResetType();
+        rights->ResetType();
+    }
     m_evalStack.push_back(rVal);
 }
 
 void SltQueryTranslator::ProcessSpatialCondition(FdoSpatialCondition& filter)
 {
     FdoSpatialOperations op = filter.GetOperation();
-    if (op == FdoSpatialOperations_EnvelopeIntersects)
-        m_foundEnvInt = true;
 
     //map the spatial op to the corresponding SQLite extension function name
     const char* sfunc = g_spatial_op_map[op];
@@ -101,24 +397,51 @@ void SltQueryTranslator::ProcessSpatialCondition(FdoSpatialCondition& filter)
     m_allocatedObjects.pop_back();
 
     FdoPtr<FdoIdentifier> pname = filter.GetPropertyName();
-    pname->Process(this);
-    IFilterChunk* exprName = m_evalStack.back();
-    m_evalStack.pop_back();
-    // we don't need to keep this value we delete it at the end
-    m_allocatedObjects.pop_back();
-
     //construct the SQLite function we want to use for this spatial op
     m_sb.Reset();
     m_sb.Append(sfunc);
     m_sb.Append("(", 1);
-    m_sb.Append(exprName->ToString());
+    m_sb.Append(pname->GetName());
     m_sb.Append(",", 1);
     m_sb.Append(expr->ToString());
     m_sb.Append(")", 1);
 
     FilterChunk* ret = CreateFilterChunk(m_sb.Data(), m_sb.Length(), StlFilterType_Spatial);
+    ret->m_bounds = new DBounds();
+    //for some operations, we can speed up the query by also
+    //performing a bbox check using the spatial index
+    switch(op)
+    {
+    //If the operation is just a bbox operation, we can
+    //indicate that the rewriter can completely remove
+    //the operation from the where clause (if possible)
+    //since it can be directly satisfied by the spatial
+    //index query. Also skip all the slow code below
+    //by setting the correct bbox and leaving early.
+    case FdoSpatialOperations_EnvelopeIntersects:
+        //TODO: another assumption here is that the
+        //geometry property tested with this operation
+        //is *the* geometry property of the feature class
+        //and not another geometry property
+        ret->m_canOmit = true;
+        *ret->m_bounds = *expr->GetBounds();
+        break;
+    case FdoSpatialOperations_Intersects:
+    case FdoSpatialOperations_Contains:
+    case FdoSpatialOperations_Within:
+    case FdoSpatialOperations_Inside:
+    case FdoSpatialOperations_Crosses:
+    case FdoSpatialOperations_Overlaps:
+        *ret->m_bounds = *expr->GetBounds();
+        break;
+    case FdoSpatialOperations_Disjoint:
+        Reset();
+        ret->ResetType();
+        break;
+    default:
+        break;
+    }
     delete expr;
-    delete exprName;
 
     m_evalStack.push_back(ret);
 }
@@ -130,6 +453,14 @@ void SltQueryTranslator::ProcessUnaryLogicalOperator(FdoUnaryLogicalOperator& fi
 
     arg->Process(this);
 
+    //if we have a negation, make sure the search bounds is reset
+    //since negation would, ahem, negate the search region.
+    //It is possible to search for a negated region using the
+    //spatial index, but the assumption is that this is a rare
+    //case, se we won't.
+    //also clear any specific IDs we are looking for
+    Reset();
+    
     IFilterChunk* expr = m_evalStack.back();
     m_evalStack.pop_back();
 
@@ -148,6 +479,34 @@ void SltQueryTranslator::ProcessComparisonCondition(FdoComparisonCondition& filt
     FdoPtr<FdoExpression> left = filter.GetLeftExpression();
     FdoPtr<FdoExpression> right = filter.GetRightExpression();
 
+    if (filter.GetOperation() == FdoComparisonOperations_EqualTo)
+    {
+        FilterChunk* ret = NULL;
+        FdoPtr<FdoDataPropertyDefinitionCollection> idpdc = m_fc->GetIdentityProperties();
+        if (idpdc->GetCount() == 1)
+        {
+            FdoPtr<FdoDataPropertyDefinition> idpd = idpdc->GetItem(0);
+            if (wcscmp(left->ToString(), idpd->GetName()) == 0)
+            {
+                __int64 idval = -1;
+                size_t len = 0;
+                int res = swscanf(right->ToString(), L"%lld%n", &idval, &len);
+
+                if (res == 1 && len == wcslen(right->ToString()))
+                {
+                    ret = CreateFilterChunk(filter.ToString(), StlFilterType_List);
+                    ret->m_ids = new recno_list;
+                    ret->m_canOmit = true;
+                    ret->m_ids->push_back(idval);
+                }
+            }
+        }
+        if (ret != NULL)
+        {
+            m_evalStack.push_back(ret);
+            return;
+        }
+    }
     m_convReqStack.push_back(StlConvReqOperationType_Default);
     // we need to be sure we handle datetime values, e.g. DATEPROP > DATE '10-10-2000'
     left->Process(this);
@@ -198,16 +557,9 @@ void SltQueryTranslator::ProcessInCondition(FdoInCondition& filter)
     for(int idx = 0; idx < cnt; idx++)
     {
         FdoPtr<FdoValueExpression> exp = vals->GetItem(idx);
-        if (exp->GetExpressionType() == FdoExpressionItemType_SubSelectExpression && cnt > 1)
-            throw FdoException::Create(L"Unsupported FDO type in filters");
         exp->Process(this);
     }
     m_convReqStack.pop_back();
-    if (!cnt)
-    {
-        FdoPtr<FdoSubSelectExpression> subsel = filter.GetSubSelect();
-        subsel->Process(this);
-    }
     size_t szAfter = m_evalStack.size();
 
     m_sb.Reset();
@@ -238,22 +590,15 @@ void SltQueryTranslator::ProcessInCondition(FdoInCondition& filter)
 void SltQueryTranslator::ProcessNullCondition(FdoNullCondition& filter)
 {
     FdoPtr<FdoIdentifier> idf = filter.GetPropertyName();
-    idf->Process(this);
-    IFilterChunk* idfName = m_evalStack.back();
-    m_evalStack.pop_back();
-    // we don't need to keep this value we delete it at the end
-    m_allocatedObjects.pop_back();
-
     m_sb.Reset();
-    m_sb.AppendDQuoted(idfName->ToString());
+    m_sb.AppendDQuoted(idf->GetName());
     m_sb.Append(" IS NULL", 8);
-    delete idfName;
     m_evalStack.push_back(CreateBaseFilterChunk(m_sb.Data(), m_sb.Length()));
 }
 
 void SltQueryTranslator::ProcessDistanceCondition(FdoDistanceCondition& filter)
 {
-    throw FdoException::Create(L"Unsupported FDO type in filters");
+    m_evalStack.push_back(CreateBaseFilterChunk(filter.ToString()));
 }
 
 //--------------------------------------------------------------------
@@ -368,48 +713,29 @@ void SltQueryTranslator::ProcessIdentifier(FdoIdentifier& expr)
     //are stored in non-volatile memory, so we can use fast
     //stepping for them.
 
-    if (m_validateProps)
+    FdoPtr<FdoPropertyDefinitionCollection> pdc = m_fc->GetProperties();
+
+    FdoPtr<FdoPropertyDefinition> pd = pdc->FindItem(expr.GetName());
+
+    if (pd.p)
     {
-        if (m_fc != NULL)
+        FdoPropertyType type = pd->GetPropertyType();
+
+        if (type == FdoPropertyType_GeometricProperty)
+            m_strgeomOperations++;
+        else if (type == FdoPropertyType_DataProperty)
         {
-            FdoPtr<FdoPropertyDefinitionCollection> pdc = m_fc->GetProperties();
+            FdoDataPropertyDefinition* dpd = (FdoDataPropertyDefinition*)(pd.p);
 
-            FdoPtr<FdoPropertyDefinition> pd = pdc->FindItem(expr.GetName());
+            FdoDataType dt = dpd->GetDataType();
 
-            if (pd.p)
-            {
-                FdoPropertyType type = pd->GetPropertyType();
-
-                if (type == FdoPropertyType_GeometricProperty)
-                    m_strgeomOperations++;
-                else if (type == FdoPropertyType_DataProperty)
-                {
-                    FdoDataPropertyDefinition* dpd = (FdoDataPropertyDefinition*)(pd.p);
-
-                    FdoDataType dt = dpd->GetDataType();
-
-                    if (dt == FdoDataType_String || dt == FdoDataType_BLOB)
-                        m_canUseFastStepping = false;
-                }
-            }
-            else
-            {
-                std::wstring err(L"The property '");
-                err.append(expr.GetName());
-                err.append(L"' was not found.");
-                throw FdoException::Create(err.c_str());
-            }
+            if (dt == FdoDataType_String || dt == FdoDataType_BLOB)
+                m_strgeomOperations++;
         }
-        m_sb.Reset();
-        m_sb.AppendDQuoted(expr.GetName());
-    }
-    else
-    {
-        // we can avoid overhead added by FDO API getting scope, name, ...
-        m_sb.Reset();
-        m_sb.AppendIdentifier(expr.GetText());
     }
 
+    m_sb.Reset();
+    m_sb.AppendDQuoted(expr.GetName());
     m_evalStack.push_back(CreateBaseFilterChunk(m_sb.Data(), m_sb.Length()));
 }
 
@@ -478,7 +804,7 @@ void SltQueryTranslator::ProcessDecimalValue(FdoDecimalValue& expr)
     {
         m_sb.Reset();
         char* ptr = m_sb.Data();
-        _snprintf(ptr, 256, "%.16g", expr.GetDecimal());
+        _snprintf(ptr, 256, "%g", expr.GetDecimal());
         EnsureNoIsLocalIndep(ptr);
         m_evalStack.push_back(CreateBaseFilterChunk(ptr, strlen(ptr)));
     }
@@ -492,7 +818,7 @@ void SltQueryTranslator::ProcessDoubleValue(FdoDoubleValue& expr)
     {
         m_sb.Reset();
         char* ptr = m_sb.Data();
-        _snprintf(ptr, 256, "%.16g", expr.GetDouble());
+        _snprintf(ptr, 256, "%g", expr.GetDouble());
         EnsureNoIsLocalIndep(ptr);
         m_evalStack.push_back(CreateBaseFilterChunk(ptr, strlen(ptr)));
     }
@@ -640,6 +966,7 @@ void SltQueryTranslator::ProcessGeometryValue(FdoGeometryValue& expr)
     FilterChunk* ret = CreateFilterChunk(wstr, StlFilterType_Spatial);
     delete[] wstr;
 #else
+    m_geomCount++;
     m_sb.Reset();
 #ifdef _WIN32
     _i64toa_s((FdoInt64)fgf.p, m_sb.Data(), 256, 10);
@@ -649,115 +976,76 @@ void SltQueryTranslator::ProcessGeometryValue(FdoGeometryValue& expr)
 
     FilterChunk* ret = CreateFilterChunk(m_sb.Data(), strlen(m_sb.Data()), StlFilterType_Spatial);
 #endif
-    // keep filter alive only in case we use the pointer to geometry
-    m_mustKeepFilterAlive = true;
+
     ret->m_bounds = new DBounds();
     *ret->m_bounds = ext;
     m_evalStack.push_back(ret);
 }
 
-void SltQueryTranslator::ProcessSubSelectExpression(FdoSubSelectExpression& expr)
-{
-    FdoPtr<FdoIdentifier> clsIdf = expr.GetFeatureClassName();
-    FdoPtr<FdoIdentifier> propIdf = expr.GetPropertyName();
-    FdoPtr<FdoFilter> filter = expr.GetFilter();
-    FdoPtr<FdoJoinCriteriaCollection> joinCrit = expr.GetJoinCriteria();
-    // since this expression can be used in 'IN' only it needs all important parameters set.
-    if (clsIdf == NULL || propIdf == NULL || filter == NULL)
-        throw FdoException::Create(L"Unsupported FDO type in filters");
-    m_sb.Reset();
-    m_sb.Append("SELECT ", 7);
-    // let's not pass m_fc to avoid validating the properties for now
-    SltExpressionTranslator exTrans;
-    propIdf->Process(&exTrans);
-    StringBuffer* exp = exTrans.GetExpression();
-    m_sb.Append(exp->Data(), exp->Length());
-    m_sb.Append(" FROM ", 6);
-    m_sb.AppendDQuoted(clsIdf->GetName());
-    if (joinCrit != NULL)
-    {
-        StringBuffer sbjd;
-        int cntJoin = joinCrit->GetCount();
-        for (int idx = 0; idx < cntJoin; idx++)
-        {
-            FdoPtr<FdoJoinCriteria> jc = joinCrit->GetItem(idx);
-            FdoPtr<FdoIdentifier> joinCls = jc->GetJoinClass();
-            FdoPtr<FdoFilter> jFilter = jc->GetFilter();
-            FdoJoinType jType = jc->GetJoinType();
-            switch (jType)
-            {
-            case FdoJoinType_Cross:
-                m_sb.Append(",", 1);
-                m_sb.AppendDQuoted(joinCls->GetName());
-                if (jc->HasAlias())
-                {
-                    m_sb.Append(" AS ", 4);
-                    m_sb.AppendDQuoted(jc->GetAlias());
-                }
-                break;
-            case FdoJoinType_Inner:
-                sbjd.Append(" INNER ", 7);
-                break;
-            case FdoJoinType_LeftOuter:
-                sbjd.Append(" LEFT OUTER ", 12);
-                break;
-            case FdoJoinType_RightOuter:
-                throw FdoException::Create(L"Right outer join type is not supported.");
-                break;
-            case FdoJoinType_FullOuter:
-                throw FdoException::Create(L"Full outer join type is not supported.");
-                break;
-            default:
-                throw FdoException::Create(L"Unsupported join type used in filter");
-                break;
-            }
-            if (jType == FdoJoinType_Cross)
-                continue;
-            sbjd.Append(" JOIN ", 6);
-            sbjd.AppendDQuoted(joinCls->GetName());
-            if (jc->HasAlias())
-            {
-                sbjd.Append(" AS ", 4);
-                sbjd.AppendDQuoted(jc->GetAlias());
-            }
-            if (jFilter == NULL)
-                throw FdoException::Create(L"Unsupported FDO type in filters");
-            sbjd.Append(" ON (", 5);
-            SltQueryTranslator qtj(NULL, false);
-            jFilter->Process(&qtj);
-            if (qtj.MustKeepFilterAlive())
-                m_mustKeepFilterAlive = true;
-            sbjd.Append(qtj.GetFilter());
-            sbjd.Append(") ", 2);
-        }
-        if (sbjd.Length())
-            m_sb.Append(sbjd.Data(), sbjd.Length());
-    }
-    m_sb.Append(" WHERE ", 7);
-    SltQueryTranslator qt(NULL, false);
-    filter->Process(&qt);
-    m_sb.Append(qt.GetFilter());
-    if (qt.MustKeepFilterAlive())
-        m_mustKeepFilterAlive = true;
 
-    m_evalStack.push_back(CreateBaseFilterChunk(m_sb.Data(), m_sb.Length()));
+void SltQueryTranslator::GetBBOX(DBounds& ext)
+{
+    IFilterChunk* main = (m_evalStack.size() == 0) ? NULL : m_evalStack[0];
+    if (main != NULL)
+    {
+        if (m_optimizedChunk != NULL && m_optimizedChunk->GetType() == StlFilterType_Spatial)
+            ext = *m_optimizedChunk->GetBounds();
+        else if (main->GetType() == StlFilterType_Spatial)
+            ext = *main->GetBounds();
+        else
+            ext.SetEmpty();
+    }
+    else
+        ext.SetEmpty();
+}
+
+//caller is responsible for deleting the return value once this 
+//function is called
+std::vector<__int64>* SltQueryTranslator::DetachIDList()
+{
+    if (m_evalStack.size() > 0)
+        return m_evalStack[0]->DetachIDList();
+    else
+        return NULL;
 }
 
 const char* SltQueryTranslator::GetFilter()
 {
-    return m_evalStack[0]->ToString();
-}
+    //is it just a BBOX query -- then it will be fully handled by the spatial index
+    IFilterChunk* main = (m_evalStack.size() == 0) ? NULL : m_evalStack[0];
+    if (main == NULL || main->m_canOmit || (main->GetType() == StlFilterType_List && main->GetList()->size() == 0))
+        return "";
 
-bool SltQueryTranslator::CanUseFastStepping()
-{
-    if (!m_canUseFastStepping)
-        return false;
-    return (m_foundEnvInt && (m_strgeomOperations==1));
+    return m_evalStack[0]->ToString();
 }
 
 bool SltQueryTranslator::MustKeepFilterAlive()
 {
-    return m_mustKeepFilterAlive;
+    return (m_geomCount - (short)(m_optimizedChunk != NULL && m_optimizedChunk->GetType() == StlFilterType_Spatial)) > 0;
+}
+
+bool SltQueryTranslator::CanUseFastStepping()
+{
+    //TODO: the processor needs to be enhanced
+    //to detect the cases where we cannot use
+    //fast stepping -- when string or blob
+    //identifiers are used in expressions. Until
+    //this is done, we will just disable fast
+    //stepping for any filter that is not just a BBOX filter.
+
+    //return (m_evalStack.size() == 0 || m_evalStack[0]->m_canOmit);
+    // when we do not use a geom or a string in a cond
+    return (m_strgeomOperations - (short)(m_optimizedChunk != NULL && m_optimizedChunk->GetType() == StlFilterType_Spatial)) > 0;
+}
+
+void SltQueryTranslator::Reset()
+{
+    if (m_restoreChunk != NULL && m_optimizedChunk != NULL)
+    {
+        m_optimizedChunk->ReplaceContent(m_restoreChunk);
+        m_restoreChunk = NULL;
+        m_optimizedChunk = NULL;
+    }
 }
 
 IFilterChunk* SltQueryTranslator::CreateBaseFilterChunk(const char* str, size_t len)
@@ -881,7 +1169,7 @@ void SltExpressionTranslator::ProcessIdentifier(FdoIdentifier& expr)
 {
     // most of the time m_convReqStack.size() == 0 and this should not add any performance impact
     if (m_convReqStack.size() != 0 && m_convReqStack.back() == StlConvReqOperationType_String
-        && m_fc != NULL && !m_avoidExp)
+        && m_fc != NULL)
     {
         FdoPtr<FdoPropertyDefinitionCollection> pdc = m_fc->GetProperties();
         FdoPtr<FdoPropertyDefinition> pd = pdc->FindItem(expr.GetName());
@@ -913,24 +1201,15 @@ void SltExpressionTranslator::ProcessIdentifier(FdoIdentifier& expr)
                 }
             }
         }
-        else
-        {
-            std::wstring err(L"The property '");
-            err.append(expr.GetName());
-            err.append(L"' was not found.");
-            throw FdoException::Create(err.c_str());
-        }
     }
-
-    // we can avoid overhead added by FDO API getting scope, name, ...
-    m_expr.AppendIdentifier(expr.GetText());
+    m_expr.AppendDQuoted(expr.GetName());
 }
 
 void SltExpressionTranslator::ProcessComputedIdentifier(FdoComputedIdentifier& expr)
 {
     m_convReqStack.push_back(StlConvReqOperationType_Default);
     FdoPtr<FdoExpression> param = expr.GetExpression();
-    if (m_props != NULL && !m_avoidExp)
+    if (m_props != NULL)
     {
         // expand the expressions in case we have expressions besad on other expressions.
         FdoPtr<FdoExpression> expandedExpression = FdoExpressionEngineCopyFilter::Copy(param, m_props);
@@ -988,7 +1267,7 @@ void SltExpressionTranslator::ProcessDecimalValue(FdoDecimalValue& expr)
 {
     if (!expr.IsNull())
     {
-        _snprintf(m_useConv, 256, "%.16g", expr.GetDecimal());
+        _snprintf(m_useConv, 256, "%g", expr.GetDecimal());
 
         EnsureNoIsLocalIndep(m_useConv);
         m_expr.Append(m_useConv, strlen(m_useConv));
@@ -1001,7 +1280,7 @@ void SltExpressionTranslator::ProcessDoubleValue(FdoDoubleValue& expr)
 {
     if (!expr.IsNull())
     {
-        _snprintf(m_useConv, 256, "%.16g", expr.GetDouble());
+        _snprintf(m_useConv, 256, "%g", expr.GetDouble());
 
         EnsureNoIsLocalIndep(m_useConv);
         m_expr.Append(m_useConv, strlen(m_useConv));
@@ -1085,16 +1364,11 @@ void SltExpressionTranslator::ProcessGeometryValue(FdoGeometryValue& expr)
     throw FdoException::Create(L"Unsupported FDO type in expression");
 }
 
-void SltExpressionTranslator::ProcessSubSelectExpression(FdoSubSelectExpression& expr)
-{
-    throw FdoException::Create(L"Unsupported FDO type in expression");
-}
-
 void SltExtractExpressionTranslator::ProcessComputedIdentifier(FdoComputedIdentifier& expr)
 {
     m_convReqStack.push_back(StlConvReqOperationType_Default);
     FdoPtr<FdoExpression> param = expr.GetExpression();
-    if (m_props != NULL && !m_avoidExp)
+    if (m_props != NULL)
     {
         // expand the expressions in case we have expressions besad on other expressions.
         FdoPtr<FdoExpression> expandedExpression = FdoExpressionEngineCopyFilter::Copy(param, m_props);

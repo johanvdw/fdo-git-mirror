@@ -37,7 +37,6 @@ FdoAssociationSelectTest.cpp \
 FdoAssociationUpdateTest.cpp \
 FdoCapabilityTest.cpp \
 FdoConnectTest.cpp \
-FdoConnectionInfoTest.cpp \
 FdoConstraintsTest.cpp \
 FdoDatastoreTest.cpp \
 FdoDeleteTest.cpp \
@@ -75,7 +74,6 @@ FdoAssociationSelectTest.h \
 FdoAssociationUpdateTest.h \
 FdoCapabilityTest.h \
 FdoConnectTest.h \
-FdoConnectionInfoTest.h \
 FdoConstraintsTest.h \
 FdoDatastoreTest.h \
 FdoDeleteTest.h \

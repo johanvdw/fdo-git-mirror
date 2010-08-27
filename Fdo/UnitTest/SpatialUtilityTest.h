@@ -65,18 +65,6 @@ class SpatialUtilityTest : public CppUnit::TestCase
     FDO_CPPUNIT_DEFINE(testGetExtents);
     FDO_CPPUNIT_DEFINE(testGetExtentsMalformed);
 
-    // Test FdoSpatialUtility::FixPolygonVertexOrder
-    FDO_CPPUNIT_DEFINE(testFixPolygonVertexOrder);
-
-    // Test FdoSpatialUtility::ReversePolygonVertexOrder
-	FDO_CPPUNIT_DEFINE(testReversePolygonVertexOrder);
-
-    // Test FdoSpatialUtility::CheckPolygonVertexOrder
-	FDO_CPPUNIT_DEFINE(testCheckPolygonVertexOrder);
-
-    // Test FdoSpatialUtility::GetPolygonVertexOrderAction
-	FDO_CPPUNIT_DEFINE(testGetPolygonVertexOrderAction);
-
     CPPUNIT_TEST_SUITE(SpatialUtilityTest);
 	CPPUNIT_TEST(testValidateGeometryByType);
 	CPPUNIT_TEST(testLinearizePoint);
@@ -93,10 +81,6 @@ class SpatialUtilityTest : public CppUnit::TestCase
 	CPPUNIT_TEST(testGridTransform);
 	CPPUNIT_TEST(testGetExtents);
 	CPPUNIT_TEST(testGetExtentsMalformed);
-	CPPUNIT_TEST(testFixPolygonVertexOrder);
-	CPPUNIT_TEST(testReversePolygonVertexOrder);
-	CPPUNIT_TEST(testCheckPolygonVertexOrder);
-	CPPUNIT_TEST(testGetPolygonVertexOrderAction);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -120,10 +104,6 @@ protected:
 	void testGridTransform();
 	void testGetExtents();
 	void testGetExtentsMalformed();
-	void testFixPolygonVertexOrder();
-	void testReversePolygonVertexOrder();
-	void testCheckPolygonVertexOrder();
-	void testGetPolygonVertexOrderAction();
 
 	FdoInt32 testGetExtentsMalformedSubsets(FdoByteArray * ba);
 };

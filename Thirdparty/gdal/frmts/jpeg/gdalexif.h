@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalexif.h 17443 2009-07-25 09:27:02Z rouault $
+ * $Id: gdalexif.h 12766 2007-11-14 10:18:16Z dron $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -34,7 +34,7 @@
 #define MAXSTRINGLENGTH 65535
 
 
-static const struct gpsname {
+static struct gpsname {
     GUInt16     tag;
     const char* name;
 } gpstags [] = {
@@ -72,7 +72,7 @@ static const struct gpsname {
     { 0xffff,       ""}
 }; 
 
-static const struct tagname {
+static struct tagname {
   GUInt16       tag;
   const char*   name;
 } tagnames [] = {
@@ -179,7 +179,7 @@ static const struct tagname {
 };
 
 
-static const struct intr_tag {
+static struct intr_tag {
   GInt16        tag;
   const char*   name;
 } intr_tags [] = {
@@ -190,6 +190,23 @@ static const struct intr_tag {
     { 0x1001,	"EXIF_Related_Image_Width"},
     { 0x1002,	"EXIF_Related_Image_Length"},
     { 0x0000,       ""}
+};
+
+
+static const int datawidth[] = {
+    0,	/* nothing */
+    1,	/* TIFF_BYTE */
+    1,	/* TIFF_ASCII */
+    2,	/* TIFF_SHORT */
+    4,	/* TIFF_LONG */
+    8,	/* TIFF_RATIONAL */
+    1,	/* TIFF_SBYTE */
+    1,	/* TIFF_UNDEFINED */
+    2,	/* TIFF_SSHORT */
+    4,	/* TIFF_SLONG */
+    8,	/* TIFF_SRATIONAL */
+    4,	/* TIFF_FLOAT */
+    8,	/* TIFF_DOUBLE */
 };
 
 #define TIFF_VERSION            42
@@ -247,6 +264,8 @@ typedef struct {
 } TIFFDirEntry;
 
 typedef GUInt32 tsize_t;          /* i/o size in bytes */
+
+#define	NWIDTHS	(sizeof (datawidth) / sizeof (datawidth[0]))
 
 
 CPL_C_START

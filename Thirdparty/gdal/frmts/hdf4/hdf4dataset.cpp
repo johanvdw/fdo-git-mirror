@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: hdf4dataset.cpp 15691 2008-11-07 09:54:58Z dron $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  HDF4 Datasets. Open HDF4 file, fetch metadata and list of
@@ -39,7 +39,7 @@
 #include "hdf4compat.h"
 #include "hdf4dataset.h"
 
-CPL_CVSID("$Id: hdf4dataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: hdf4dataset.cpp 15691 2008-11-07 09:54:58Z dron $");
 
 CPL_C_START
 void	GDALRegister_HDF4(void);
@@ -918,17 +918,12 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
                 GDinqfields( hGD, pszFieldList, paiRank, paiNumType );
 
 #if DEBUG
-                {
-                    char* pszTmp =
-                            SPrintArray( GDT_UInt32, paiRank, nFields, "," );
-                    CPLDebug( "HDF4", "Number of fields in grid %d: %d",
-                            (int) i, (int) nFields );
-                    CPLDebug( "HDF4", "List of fields in grid %d: %s",
-                            (int) i, pszFieldList );
-                    CPLDebug( "HDF4", "Fields ranks: %s",
-                            pszTmp );
-                    CPLFree( pszTmp );
-                }
+                CPLDebug( "HDF4", "Number of fields in grid %d: %d",
+                          (int) i, (int) nFields );
+                CPLDebug( "HDF4", "List of fields in grid %d: %s",
+                          (int) i, pszFieldList );
+                CPLDebug( "HDF4", "Fields ranks: %s",
+                          SPrintArray( GDT_UInt32, paiRank, nFields, "," ) );
 #endif
 
                 papszFields = CSLTokenizeString2( pszFieldList, ",",
@@ -1081,27 +1076,12 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if ( CSLCount( poDS->papszSubDatasets ) / 2 == 1 )
     {
-        char *pszSDSName;
-        pszSDSName = CPLStrdup( CSLFetchNameValue( poDS->papszSubDatasets,
-                            "SUBDATASET_1_NAME" ));
-        delete poDS;
-        poDS = (HDF4Dataset *) GDALOpen( pszSDSName, poOpenInfo->eAccess );
-        CPLFree( pszSDSName );
-    }
-    else
-    {
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-        if( poOpenInfo->eAccess == GA_Update )
-        {
-            delete poDS;
-            CPLError( CE_Failure, CPLE_NotSupported, 
-                      "The HDF4 driver does not support update access to existing"
-                      " datasets.\n" );
-            return NULL;
-        }
-    
+	char *pszSDSName;
+	pszSDSName = CPLStrdup( CSLFetchNameValue( poDS->papszSubDatasets,
+				        "SUBDATASET_1_NAME" ));
+	delete poDS;
+	poDS = (HDF4Dataset *) GDALOpen( pszSDSName, GA_ReadOnly );
+	CPLFree( pszSDSName );
     }
 
     return( poDS );

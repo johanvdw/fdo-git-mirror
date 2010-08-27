@@ -33,35 +33,15 @@
 
 class SelectTest : public CppUnit::TestCase
 {
-    CPPUNIT_TEST_SUITE( SelectTest );
-    CPPUNIT_TEST( TestSimpleSelect );
-    CPPUNIT_TEST( TestBindSelect );
-    CPPUNIT_TEST( TestSpatialSelect );
-    CPPUNIT_TEST( TestComplexSelect );
-    CPPUNIT_TEST(TestComplexWithBindSelect);
-    CPPUNIT_TEST(BooleanDataTest);  
-    CPPUNIT_TEST(TestAggregatesSelect);  
-    CPPUNIT_TEST(TestSelectInsertLowerId);  
-    CPPUNIT_TEST(TestSelectInsertLowerIdSQL);
-    CPPUNIT_TEST(TestDualConnection);
-    CPPUNIT_TEST(TestSelectMultipleCS);
-    CPPUNIT_TEST(TestViewSelects);
-    CPPUNIT_TEST(TestJoinViewSelects);
-    CPPUNIT_TEST(TestSubSelect);
-    CPPUNIT_TEST(TestJoin);
-    CPPUNIT_TEST(TestMSelect);
-    CPPUNIT_TEST(TestJoinAggregatesSelect);
-    CPPUNIT_TEST(TestMAggregatesSelect);
-    CPPUNIT_TEST_SUITE_END();
-
-private:
-    int SelectObjects(FdoIConnection* conn, FdoString* txt, FdoString* clsName = NULL);
-    int InsertValue(FdoIConnection* conn, FdoString* className, FdoString* valTxtFlt);
-    void UpdateValue(FdoIConnection* conn, int rowid, FdoString* className, FdoString* valTxtFlt);
-    void CreateFeatureClass(FdoIConnection* conn, FdoString* className, FdoString* scName);
-    int SelectObjects(FdoIConnection* conn, FdoFilter* filter, FdoString* clsName, FdoString* id);
-    void TestJoinType(FdoIConnection* conn, FdoJoinType jtype, int expCount);
-    void TestJoinTypeAggregates (FdoIConnection* conn, FdoJoinType jtype, int expMax);
+  CPPUNIT_TEST_SUITE( SelectTest );
+  CPPUNIT_TEST( TestSimpleSelect );
+  CPPUNIT_TEST( TestBindSelect );
+  CPPUNIT_TEST( TestSpatialSelect );
+  CPPUNIT_TEST( TestComplexSelect );
+  CPPUNIT_TEST(TestComplexWithBindSelect);
+  CPPUNIT_TEST(BooleanDataTest);  
+  CPPUNIT_TEST(TestAggregatesSelect);  
+  CPPUNIT_TEST_SUITE_END();
 
 public:
     SelectTest(void);
@@ -76,17 +56,6 @@ public:
     void TestComplexWithBindSelect();
     void BooleanDataTest ();
     void TestAggregatesSelect ();
-    void TestSelectInsertLowerId ();
-    void TestSelectInsertLowerIdSQL ();
-    void TestDualConnection ();
-    void TestSelectMultipleCS ();
-    void TestViewSelects ();
-    void TestJoinViewSelects ();
-    void TestSubSelect ();
-    void TestJoin ();
-    void TestMSelect ();
-    void TestJoinAggregatesSelect ();
-    void TestMAggregatesSelect ();
 };
 
 #endif

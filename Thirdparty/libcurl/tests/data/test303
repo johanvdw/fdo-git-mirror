@@ -1,12 +1,4 @@
 <testcase>
-<info>
-<keywords>
-HTTPS
-HTTP GET
-timeout
-</keywords>
-</info>
-
 # Server-side
 <reply>
 <data>
@@ -14,10 +6,10 @@ HTTP/1.1 200 OK
 Date: Thu, 09 Nov 2010 14:49:00 GMT
 Connection: close
 
-_data_result_data_
+<html>result</html>
 </data>
 <postcmd>
-wait 20
+wait 10
 </postcmd>
 </reply>
 
@@ -30,10 +22,10 @@ SSL
 https
 </server>
  <name>
-HTTPS with 8 secs timeout
+HTTPS with 2 secs timeout
  </name>
  <command>
--k https://%HOSTIP:%HTTPSPORT/want/303 -m 8
+http://%HOSTIP:%HTTPPORT/want/303 -m 2
 </command>
 </client>
 
@@ -44,7 +36,7 @@ HTTPS with 8 secs timeout
 </strip>
 <protocol>
 GET /want/303 HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 
 </protocol>

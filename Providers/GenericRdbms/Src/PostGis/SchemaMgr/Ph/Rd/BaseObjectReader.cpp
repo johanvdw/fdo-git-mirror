@@ -20,7 +20,6 @@
 #include "stdafx.h"
 #include "BaseObjectReader.h"
 #include <Sm/Ph/Rd/SchemaDbObjectBinds.h>
-#include <Sm/Ph/TableMergeReader.h>
 #include "../../../../SchemaMgr/Ph/Rd/QueryReader.h"
 #include "../Mgr.h"
 
@@ -73,91 +72,108 @@ FdoSmPhReaderP FdoSmPhRdPostGisBaseObjectReader::MakeQueryReader(
     FdoSmPhRdTableJoinP join
 )
 {
-    FdoSmPhReaderP reader1 = MakeInheritReader( owner, objectNames, join );
-    FdoSmPhReaderP reader2 = MakeViewDependReader( owner, objectNames, join );
-
-    // Merge the readers so that the merged results set is returned ordered by table name.
-    FdoSmPhReaderP reader = new FdoSmPhTableMergeReader( L"", L"name", reader1, reader2 );
-
-    return reader;
-}
-
-FdoSmPhReaderP FdoSmPhRdPostGisBaseObjectReader::MakeInheritReader(
-    FdoSmPhOwnerP owner,
-    FdoStringsP objectNames,
-    FdoSmPhRdTableJoinP join
-)
-{
+    FdoStringP           sqlString;
     FdoStringP           ownerName = owner->GetName();
     FdoSmPhMgrP          mgr = owner->GetManager();
     FdoSmPhPostGisMgrP   pgMgr = mgr->SmartCast<FdoSmPhPostGisMgr>();
 
-    FdoStringP sqlString = FdoStringP::Format(
-        L"select %ls (NS.nspname || '.' || S.relname) as name, (NB.nspname || '.' || B.relname) as base_name,\n"
-        L" NB.nspname as base_schema, cast(null as varchar) as base_database, \n"
-        L" cast('%ls' as varchar) as base_owner, "
-        L" %ls as collate_schema_name, "
-        L" %ls as collate_name "
-        L" from pg_namespace NS, pg_namespace NB, pg_class S, pg_class B, pg_inherits I $(JOIN_FROM)\n"
-        L" where \n"
-        L" I.inhrelid = S.oid and I.inhparent = B.oid\n"
-        L" and S.relnamespace = NS.oid and B.relnamespace = NB.oid\n"
-        L" $(AND) $(QUALIFICATION) \n"
-        L" order by collate_schema_name, collate_name, I.inhseqno asc",
-        join ? L"distinct" : L"",
-        (FdoString*) owner->GetName(),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"NS.nspname"),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"S.relname")
-    );
+    FdoSmPhReaderP reader;
 
-    FdoSmPhReaderP reader = FdoSmPhRdBaseObjectReader::MakeQueryReader(
-        L"",
-        owner,
-        sqlString,
-        L"NS.nspname",
-        L"S.relname",
-        objectNames,
-        join
-    );
+//TODO: cache the queries for performance
+/*
+    if ( object_set )
+        reader = pMgr->GetBaseObjectReader(dblink_set);
+    else
+        reader = pMgr->GetDbObjectsReader(dblink_set);
+*/
+    if ( !reader ) {
+        FdoSmPhRowsP rows = MakeRows( mgr );
+        FdoSmPhRowP row = rows->GetItem(0);
 
-    return reader;
-}
+        if ( owner->GetElementState() == FdoSchemaElementState_Added ) {
+            // The BaseObject query selects from owner.INFORMATION_SCHEMA tables so
+            // it will fail when the owner does not yet exist. In this case create
+            // an empty reader that returns no rows.
+            reader = new FdoSmPhReader( mgr, rows );
+        }
+        else {
+            // Generate sql statement if not already done
 
-FdoSmPhReaderP FdoSmPhRdPostGisBaseObjectReader::MakeViewDependReader(
-    FdoSmPhOwnerP owner,
-    FdoStringsP objectNames,
-    FdoSmPhRdTableJoinP join
-)
-{
-    FdoStringP           ownerName = owner->GetName();
-    FdoSmPhMgrP          mgr = owner->GetManager();
-    FdoSmPhPostGisMgrP   pgMgr = mgr->SmartCast<FdoSmPhPostGisMgr>();
+            // Create binds for object names
+            FdoSmPhRdSchemaDbObjectBindsP binds = new FdoSmPhRdSchemaDbObjectBinds(
+                mgr,
+                L"NS.nspname",
+                L"owner_name",
+                L"S.relname",
+                L"name",
+                objectNames
+            );
 
-    FdoStringP sqlString = FdoStringP::Format(
-        L"select %ls (VU.view_schema || '.' || VU.view_name) as name, \n"
-        L" (VU.table_schema || '.' || VU.table_name) as base_name,\n"
-        L" VU.table_schema as base_schema, cast(null as varchar) as base_database, \n"
-        L" cast('%ls' as varchar) as base_owner, "
-        L" %ls as collate_schema_name, "
-        L" %ls as collate_name "
-        L" from INFORMATION_SCHEMA.view_table_usage VU $(JOIN_FROM)\n"
-        L" $(WHERE) $(QUALIFICATION) \n"
-        L" order by collate_schema_name, collate_name asc",
-        join ? L"distinct" : L"",
-        (FdoString*) owner->GetName(),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"VU.view_schema"),
-        (FdoString*) pgMgr->FormatCollateColumnSql(L"VU.view_name")
-    );
+            // If joining to another table, generated from sub-clause for table.
+            FdoStringP joinFrom;
+            if ( join != NULL ) 
+                joinFrom = FdoStringP::Format( L"  , %ls\n", (FdoString*) join->GetFrom() );
 
-    FdoSmPhReaderP reader = FdoSmPhRdBaseObjectReader::MakeQueryReader(
-        L"",
-        owner,
-        sqlString,
-        L"VU.view_schema",
-        L"VU.view_name",
-        objectNames,
-        join
-    );
+            // Get where clause for owner and object name binds.
+            FdoStringP qualification = binds->GetSQL();
+
+            if ( join != NULL ) {
+                // If joining to another table, add join clause.
+            qualification += FdoStringP::Format( L"  and (%ls)\n", (FdoString*) join->GetWhere(L"S.relname") );
+            }
+
+            sqlString = FdoStringP::Format(
+                L"select %ls (NS.nspname || '.' || S.relname) as name, B.relname as base_name,\n"
+                L" NB.nspname as base_schema, cast(null as varchar) as base_database, \n"
+                L" cast('%ls' as varchar) as base_owner, "
+                L" %ls as collate_schema_name, "
+                L" %ls as collate_name "
+                L" from pg_namespace NS, pg_namespace NB, pg_class S, pg_class B, pg_inherits I%ls\n"
+                L" where \n"
+                L" I.inhrelid = S.oid and I.inhparent = B.oid\n"
+                L" and S.relnamespace = NS.oid and B.relnamespace = NB.oid\n"
+                L" %ls %ls \n"
+                L" order by collate_schema_name, collate_name, I.inhseqno asc",
+                join ? L"distinct" : L"",
+                (FdoString*) owner->GetName(),
+                (FdoString*) pgMgr->FormatCollateColumnSql(L"NS.nspname"),
+                (FdoString*) pgMgr->FormatCollateColumnSql(L"S.relname"),
+                (FdoString*)joinFrom,
+                (qualification == L"") ? L"" : L"and",
+                (FdoString*) qualification
+            );
+
+            reader = new FdoSmPhRdGrdQueryReader(row, sqlString, mgr, binds->GetBinds() );
+    /*
+            if ( object_set )
+                pMgr->SetBaseObjectReader(reader, dblink_set);
+            else
+                pMgr->SetDbObjectsReader(reader, dblink_set);
+    */
+        }
+    }
+    else {
+        // Re-executing so update bind variables first.
+        FdoSmPhRdGrdQueryReader* pReader = dynamic_cast<FdoSmPhRdGrdQueryReader*>((FdoSmPhReader*) reader);
+
+        // pReader is NULL when it is an empty reader. No need to re-execute in this case.
+        if ( pReader ) {
+            FdoSmPhRowP bindRow = pReader->GetBinds();
+
+            FdoSmPhRdSchemaDbObjectBindsP binds = new FdoSmPhRdSchemaDbObjectBinds(
+                mgr,
+                L"NS.nspname",
+                L"schema_name",
+                L"S.relname",
+                L"name",
+                objectNames,
+                bindRow,
+                true
+            );
+
+            pReader->Execute();
+        }
+    }
 
     return reader;
 }

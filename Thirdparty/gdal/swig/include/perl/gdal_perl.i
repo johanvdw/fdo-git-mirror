@@ -134,7 +134,7 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
     use Geo::OGR;
     use Geo::OSR;
     our $VERSION = '0.23';
-    our $GDAL_VERSION = '1.7.1';
+    our $GDAL_VERSION = '1.6.0';
     use vars qw/
 	%TYPE_STRING2INT %TYPE_INT2STRING
 	%ACCESS_STRING2INT %ACCESS_INT2STRING
@@ -258,10 +258,9 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	_RasterizeLayer(@_);
     }
     sub Polygonize {
-        my @params = @_;
-        $params[6] = 1 if $params[5] and not defined $params[6];
-        $params[3] = $params[2]->GetLayerDefn->GetFieldIndex($params[3]) unless $params[3] =~ /^\d/;
-	_Polygonize(@params);
+        $_[6] = 1 if $_[5] and not defined $_[6];
+        $_[3] = $_[2]->GetLayerDefn->GetFieldIndex($_[3]) unless $_[3] =~ /^\d/;
+	_Polygonize(@_);
     }
     sub SieveFilter {
     	$_[7] = 1 if $_[6] and not defined $_[7];

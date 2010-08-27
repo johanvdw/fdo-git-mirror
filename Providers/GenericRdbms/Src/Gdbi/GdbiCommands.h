@@ -221,9 +221,7 @@ public:
 
 	int err_stat();
 
-	bool SupportsUnicode() { 
-        return (m_pRdbiContext->dispatch.capabilities.supports_unicode == 1); 
-    }
+	bool SupportsUnicode() { return (m_pRdbiContext->dispatch.capabilities.supports_unicode == 1); }
 	bool SupportsInt64Binding() { return (m_pRdbiContext->dispatch.capabilities.supports_int64_binding == 1); }
 
 

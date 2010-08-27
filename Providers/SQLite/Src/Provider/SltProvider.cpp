@@ -34,7 +34,6 @@
 #include "FdoCommonSchemaUtil.h"
 #include "SQLiteSchemaMergeContext.h"
 #include "SltTransaction.h"
-#include <sys/stat.h>
 
 #ifndef _MSC_VER
 #include "SpatialIndex.h"
@@ -92,6 +91,7 @@ SltConnection::SltConnection() : m_refCount(1)
         g_fdo2sql_map[FdoDataType_String] =     "TEXT";
     }
 
+    m_dbRead = NULL;
     m_dbWrite = NULL;
     m_pSchema = NULL;
     m_mProps = new std::map<std::wstring, std::wstring>();
@@ -103,12 +103,12 @@ SltConnection::SltConnection() : m_refCount(1)
     m_bHasFdoMetadata = false;
     m_transactionState = SQLiteActiveTransactionType_None;
     m_cSupportsDetGeomType = -1;
-    m_cSupportsTolerance = -1;
     m_wkbBuffer = NULL;
     m_wkbBufferLen = 0;
+    m_updateHookEnabled = false;
     m_changesAvailable = false;
+    m_connDet = NULL;
     m_defSpatialContextId = 0;
-    m_isReadOnlyConnection = true;
 }
 
 SltConnection::~SltConnection()
@@ -145,167 +145,76 @@ void SltConnection::SetConnectionString(FdoString* value)
 {
     m_mProps->clear();
     
-    if(!value)
-        return;
+    //parse the connection properties from the connection string
+    size_t len = wcslen(value);
+    wchar_t* valcpy = (wchar_t*)alloca(sizeof(wchar_t) * (len + 1));
+    wcscpy(valcpy, value);
 
-    std::wstring token;
-    bool isError = false;
-    short state = 0;
-    int pos = 0, possn = 0, possv = 0, posend = 0;
-    do
+#ifdef _WIN32
+    wchar_t* token = wcstok(valcpy, L";");
+#else
+    wchar_t* ptr = NULL; //for Linux wcstok
+    wchar_t* token = wcstok(valcpy, L";", &ptr);
+#endif
+
+    //tokenize input string into separate connection properties
+    while (token) 
     {
-        switch(state)
-        {
-            case 0: // looking for start property name skipping spaces, e.g. <  Name=Val>
-                if (*(value+pos) == L'=')
-                    isError = true;
-                else if (*(value+pos) != L' ' && *(value+pos) != L';')
-                {
-                    possn = pos;
-                    posend = pos+1;
-                    state = 1;
-                }
-                token.clear();
-            break;
-            case 1: //get property name skipping spaces after name, e.g. <Name  =Val>
-                if (*(value+pos) == L'=')
-                {
-                    token.append(value+possn, posend-possn);
-                    if (*(value+pos+1) == L'\"')
-                    {
-                        pos++;
-                        state = 3;
-                    }
-                    else if (*(value+pos+1) == L' ')
-                    {
-                        pos++;
-                        state = 4;
-                    }
-                    else
-                    {
-                        posend = pos+1;
-                        state = 2;
-                    }
-                    possv = pos+1;
-                }
-                else if(*(value+pos) == L';' || *(value+pos) == L'\0')
-                    isError = true;
-                else if(*(value+pos) != L' ')
-                    posend = pos+1;
-            break;
-            case 2:  // get property value in case value is not surrounded by "
-                if(*(value+pos) == L'\"')
-                    isError = true;
-                else if(*(value+pos) == L';' || *(value+pos) == L'\0')
-                {
-                    if (posend != possv)
-                    {
-                        std::wstring val(value+possv, posend-possv);
-                        SetProperty(token.c_str(), val.c_str());
-                    }
-                    else
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos) != L' ')
-                    posend = pos+1;
-            break;
-            case 3:  //get property value in case value is surrounded by "
-                if(*(value+pos) == L'\"')
-                {
-                    if (pos != possv)
-                    {
-                        std::wstring val(value+possv, pos-possv);
-                        SetProperty(token.c_str(), val.c_str());
-                    }
-                    else
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos+1) == L'\0')
-                    isError = true;
-            break;
-            case 4:  // handle space before ", it skipsd all spaces before ", e.g. <Name=  Val;>
-                if (*(value+pos) == L'\"')
-                {
-                    pos++;
-                    state = 3;
-                }
-                else if(*(value+pos) == L';')
-                {
-                    // handle empty values like: <File=;> or <File="";> or <File= ;>
-                    // and cases like <File=val; ;; Test=;>
-                    if (!token.empty())
-                        SetProperty(token.c_str(), L"");
-                    state = 0;
-                }
-                else if(*(value+pos) != L' ')
-                {
-                    posend = pos;
-                    state = 2;
-                }
-                possv = pos;
-            break;
-        }
-        pos++;
-    }while(*(value+pos-1) != L'\0' && !isError);
+        //token is in the form "<prop_name>=<prop_value>"
+        //look for the = sign
+        wchar_t* eq = wcschr(token, L'=');
 
-    if (isError)
-        throw FdoConnectionException::Create(L"Invalid connection string!");
+        if (eq)
+        {
+            *eq = L'\0';
+    
+                //pass empty string instead of null. This means the null prop value
+                //exception is delayed up to until the user attempts to open the 
+                //connection. This gives the opportunity to fix the connection
+                //string before opening the connection.
+            if (*(eq+1) == L'\0')
+                SetProperty(token, L"");
+            else
+                SetProperty(token, eq+1);
+        }
+    
+    #ifdef _WIN32
+            token = wcstok(NULL, L";");
+    #else
+            token = wcstok(NULL, L";", &ptr);
+    #endif
+    }
 }
 
 //creates a new database, based on the filename stored in the
 //connection string and connection property dictionary.
 void SltConnection::CreateDatabase()
 {
-    if (m_dbWrite || m_connState != FdoConnectionState_Closed)
+    if (m_dbRead || m_connState != FdoConnectionState_Closed)
     {
         throw FdoCommandException::Create(L"Cannot create data store while connection is in open state.");
     }
 
-    FdoString* dsw = GetProperty(PROP_NAME_FILENAME);
-    sqlite3* tmpdb = NULL;
+    const wchar_t* dsw = GetProperty(PROP_NAME_FILENAME);
     
-    if (!dsw || *dsw == '\0')
-        throw FdoCommandException::Create(L"Invalid or empty data store name.");
+    std::string file = W2A_SLOW(dsw);
 
-    if (dsw && _wcsicmp(dsw, L":memory:") == 0)
-        throw FdoCommandException::Create(L"Cannot create in-memory data store, try direct open connection.");
+    sqlite3* tmpdb = NULL;
 
     //create the database
     //TODO: this will also work if the database exists -- in which 
     //case it will open it.
     int rc;
-    std::string file = W2A_SLOW(dsw);
     if((rc = sqlite3_open(file.c_str(), &tmpdb)) != SQLITE_OK )
     {
         std::wstring err = std::wstring(L"Failed to open or create: ") + dsw;
         throw FdoCommandException::Create(err.c_str(), rc);
     }
-    dsw = GetProperty(PROP_NAME_FDOMETADATA);
-    bool useFdoMetadata = (dsw && _wcsicmp(dsw, L"true") == 0);
 
-    rc = SltConnection::PrepareSpatialDatabase(tmpdb, useFdoMetadata);
-
-    //close the database -- CreateDataStore itself does not 
-    //open the FDO connection, subsequent call to Open() does.
-    sqlite3_close(tmpdb);
-
-    if (rc)
-        throw FdoCommandException::Create(L"Failed to create SQLite database.", rc);
-}
-
-int SltConnection::PrepareSpatialDatabase(sqlite3* db, bool useFdoMetadata, bool isInMemory)
-{
-    int rc = SQLITE_OK;
     //first things first -- set big page size for better
     //performance. Must be done on an empty db to have effect.
-    if (isInMemory) // use less memory in case we have an in-memory connection
-        rc += sqlite3_exec(db, "PRAGMA page_size=8192;", NULL, NULL, NULL);
-    else
-        rc += sqlite3_exec(db, "PRAGMA page_size=32768;", NULL, NULL, NULL);
-    rc += sqlite3_exec(db, "PRAGMA journal_mode=MEMORY;", NULL, NULL, NULL);
-    rc += sqlite3_exec(db, "PRAGMA legacy_file_format=FALSE;", NULL, NULL, NULL);
+    rc = sqlite3_exec(tmpdb, "PRAGMA page_size=32768;", NULL, NULL, NULL);
+    rc = sqlite3_exec(tmpdb, "PRAGMA journal_mode=MEMORY;", NULL, NULL, NULL);
     
     //create the spatial_ref_sys table
     //Note the sr_name field is not in the spec, we are adding it in order to 
@@ -320,7 +229,7 @@ int SltConnection::PrepareSpatialDatabase(sqlite3* db, bool useFdoMetadata, bool
                           ");";
 
     char* zerr = NULL;
-    rc += sqlite3_exec(db, srs_sql, NULL, NULL, &zerr);
+    rc = sqlite3_exec(tmpdb, srs_sql, NULL, NULL, &zerr);
 
     //create the geometry_columns table
     const char* gc_sql = "CREATE TABLE geometry_columns "
@@ -332,10 +241,13 @@ int SltConnection::PrepareSpatialDatabase(sqlite3* db, bool useFdoMetadata, bool
                          "srid INTEGER,"
                          "geometry_format TEXT);";  
 
-    rc += sqlite3_exec(db, gc_sql, NULL, NULL, &zerr);
+    int rc2 = sqlite3_exec(tmpdb, gc_sql, NULL, NULL, &zerr);
 
     //Check if we should create the FDO metadata table as well
-    if (useFdoMetadata)
+    dsw = GetProperty(PROP_NAME_FDOMETADATA);
+    int rc3 = 0;
+
+    if (dsw && _wcsicmp(dsw, L"true") == 0)
     {
         const char* fc_sql = "CREATE TABLE fdo_columns "
                              "(f_table_name TEXT,"
@@ -347,9 +259,17 @@ int SltConnection::PrepareSpatialDatabase(sqlite3* db, bool useFdoMetadata, bool
                              "fdo_data_precision INTEGER,"
                              "fdo_data_scale INTEGER);";  
 
-        rc += sqlite3_exec(db, fc_sql, NULL, NULL, &zerr);
+        rc3 = sqlite3_exec(tmpdb, fc_sql, NULL, NULL, &zerr);
     }
-    return rc;
+
+    //close the database -- CreateDataStore itself does not 
+    //open the FDO connection, subsequent call to Open() does.
+    sqlite3_close(tmpdb);
+
+    if (rc || rc2 || rc3)
+    {
+        throw FdoCommandException::Create(L"Failed to create SQLite database.", rc ? rc : rc2 ? rc2 : rc3);
+    }
 }
 
 FdoConnectionState SltConnection::Open()
@@ -358,30 +278,15 @@ FdoConnectionState SltConnection::Open()
         return m_connState;
 
     const wchar_t* dsw = GetProperty(PROP_NAME_FILENAME);
-    if (!dsw || *dsw == '\0')
-        throw FdoCommandException::Create(L"Invalid or empty data store name.");
-
+    
     std::string file = W2A_SLOW(dsw);
-    bool isInMemory = (_wcsicmp(dsw, L":memory:") == 0);
 
 #ifdef _WIN32
-    struct _stat statInfo;
-    if (!isInMemory)
-    {
-        if (0 != _wstat (dsw, &statInfo) || (statInfo.st_mode&_S_IFREG) == 0)
-            throw FdoConnectionException::Create(L"File does not exist!");
-        if ((statInfo.st_mode&_S_IREAD) == 0)
-            throw FdoConnectionException::Create(L"File cannot be accessed!");
-    }
+    if (_waccess(dsw, 0) == -1)
+        throw FdoConnectionException::Create(L"File does not exist!");
 #else 
-    struct stat statInfo;
-    if (!isInMemory)
-    {
-        if (0 != stat (file.c_str(), &statInfo) || (statInfo.st_mode&S_IFREG) == 0)
-            throw FdoConnectionException::Create(L"File does not exist!");
-        if ((statInfo.st_mode&S_IREAD) == 0)
-            throw FdoConnectionException::Create(L"File cannot be accessed!");
-    }
+    if (access(file.c_str(), 0) == -1)
+        throw FdoConnectionException::Create(L"File does not exist!");
 #endif
 
     const wchar_t* sUseMeta = GetProperty(PROP_NAME_FDOMETADATA);
@@ -389,33 +294,41 @@ FdoConnectionState SltConnection::Open()
     if (sUseMeta != NULL && _wcsicmp(sUseMeta, L"true") == 0)
         m_bUseFdoMetadata = true;
 
+    sqlite3_initialize();
+
+    //We will use two connections to the database -- one for reading and one for writing.
+    //This will help us with concurrent reads and writes (to different tables).
+    //If we use the same SQLite connection, we will get problems with transaction nesting
+    //due to interleaved reads and writes.
+
     //Allow sharing of memory caches between the reading and writing connections
-    int rc = SQLITE_OK;
-    if (!isInMemory)
-        rc = sqlite3_enable_shared_cache(1);
+    int rc = sqlite3_enable_shared_cache(1);
 
     if (rc != SQLITE_OK)
         fprintf(stderr, "Failed to enable shared cache.\n");
-
     //Open the Read connection
-    if( (rc = sqlite3_open(file.c_str(), &m_dbWrite)) != SQLITE_OK )
+    if( (rc = sqlite3_open(file.c_str(), &m_dbRead)) != SQLITE_OK )
     {
-        m_dbWrite = NULL;
+        m_dbRead = NULL;
         std::wstring err = std::wstring(L"Failed to open ") + dsw;
         throw FdoConnectionException::Create(err.c_str(), rc);
     }
 
-    if (isInMemory)
+    rc = sqlite3_exec(m_dbRead, "PRAGMA read_uncommitted=1;", NULL, NULL, NULL);
+
+    //Open the Write connection
+    if( (rc = sqlite3_open(file.c_str(), &m_dbWrite)) != SQLITE_OK )
     {
-        rc = SltConnection::PrepareSpatialDatabase(m_dbWrite, m_bUseFdoMetadata, isInMemory);
-        if (rc)
-            throw FdoCommandException::Create(L"Failed to create SQLite database.", rc);
+        sqlite3_close(m_dbRead);
+        m_dbRead = m_dbWrite = NULL;
+        std::wstring err = std::wstring(L"Failed to open ") + dsw;
+        throw FdoConnectionException::Create(err.c_str(), rc);
     }
 
-    rc = sqlite3_exec(m_dbWrite, "PRAGMA read_uncommitted=1;", NULL, NULL, NULL);
-
     //Register the extra SQL functions we would like to support
+    RegisterExtensions(m_dbRead);
     RegisterExtensions(m_dbWrite);
+    rc = sqlite3_exec(m_dbRead, "PRAGMA journal_mode=MEMORY;", NULL, NULL, NULL);
     rc = sqlite3_exec(m_dbWrite, "PRAGMA journal_mode=MEMORY;", NULL, NULL, NULL);
 
     //in case we have a FDO metadata use it since we can make things out of sync by mixing things.
@@ -423,7 +336,7 @@ FdoConnectionState SltConnection::Open()
     sqlite3_stmt* pstmt = NULL;
     const char* pzTail = NULL;
     m_bHasFdoMetadata = false;
-    rc = sqlite3_prepare_v2(m_dbWrite, tables_sql, -1, &pstmt, &pzTail); 
+    rc = sqlite3_prepare_v2(m_dbRead, tables_sql, -1, &pstmt, &pzTail); 
     if (rc == SQLITE_OK)
     {
         while (sqlite3_step(pstmt) == SQLITE_ROW)
@@ -441,22 +354,10 @@ FdoConnectionState SltConnection::Open()
 
     m_connState = FdoConnectionState_Open;
     
-    sqlite3_spatial_index_hook(m_dbWrite, SltConnection::sqlite3_spatial_index, this);
-    sqlite3_update_spatial_index_hook(m_dbWrite, SltConnection::sqlite3_update_spatial_index);
-    sqlite3_release_spatial_index_hook(m_dbWrite, SltConnection::sqlite3_release_spatial_index);
-    sqlite3_spatial_context_hook(m_dbWrite, SltConnection::sqlite3_spatial_context);
-    sqlite3_spatial_iterator_hook(m_dbWrite, SltConnection::sqlite3_spatial_iterator);
-    sqlite3_spatial_iterator_readnext_hook(m_dbWrite, SltConnection::sqlite3_spatial_iterator_readnext);
-    sqlite3_spatial_iterator_release_hook(m_dbWrite, SltConnection::sqlite3_spatial_iterator_release);
-    sqlite3_spatial_iterator_reset_hook(m_dbWrite, SltConnection::sqlite3_spatial_iterator_reset);
-    sqlite3_commit_hook(m_dbWrite, SltConnection::commit_hook, this);
-    sqlite3_rollback_hook(m_dbWrite, SltConnection::rollback_hook, this);
+    m_connDet = new ConnInfoDetails(this);
+    m_dbRead->pUserArg = m_connDet;
+    m_dbWrite->pUserArg = m_connDet;
 
-#ifdef _WIN32
-    m_isReadOnlyConnection = (isInMemory) ? false : ((statInfo.st_mode&_S_IWRITE)==0);
-#else // _WIN32
-    m_isReadOnlyConnection = (isInMemory) ? false : ((statInfo.st_mode&S_IWRITE)==0);
-#endif // _WIN32
     return m_connState;
 }
 
@@ -466,8 +367,8 @@ void SltConnection::Close()
     for (SpatialIndexCache::iterator iter = m_mNameToSpatialIndex.begin();
          iter != m_mNameToSpatialIndex.end(); iter++)
     {
-        iter->second->Release();
-        free((char*)iter->first); //it was created via strdup, must use free()
+        delete iter->second;
+        free(iter->first); //was allocated using strdup
     }
 
     m_mNameToSpatialIndex.clear();
@@ -498,8 +399,16 @@ void SltConnection::Close()
     m_wkbBuffer = NULL;
     m_wkbBufferLen = 0;
 
+    if (m_dbRead)
+    {
+        m_dbRead->pUserArg = NULL;
+        if(sqlite3_close(m_dbRead) != SQLITE_BUSY)
+            m_dbRead = NULL;
+    }
+
     if (m_dbWrite)
     {
+        m_dbWrite->pUserArg = NULL;
         if(sqlite3_close(m_dbWrite) != SQLITE_BUSY)
             m_dbWrite = NULL;
     }
@@ -508,8 +417,11 @@ void SltConnection::Close()
 
     m_connState = FdoConnectionState_Closed;
 
+    m_updateHookEnabled = false;
     m_changesAvailable = false;
-    m_isReadOnlyConnection = true;
+
+    delete m_connDet;
+    m_connDet = NULL;
 }
 
 FdoICommand* SltConnection::CreateCommand(FdoInt32 commandType)
@@ -647,28 +559,8 @@ FdoString* SltConnection::GetLocalizedName(FdoString* name)
 //Maps sqlite table descriptions to an FDO schema
 FdoFeatureSchemaCollection* SltConnection::DescribeSchema(FdoStringCollection* classNames, bool makeACopy)
 {
-    if (classNames && classNames->GetCount() != 0)
-    {
-        FdoPtr<FdoFeatureSchemaCollection> pSchema = FdoFeatureSchemaCollection::Create(NULL);
-        FdoPtr<FdoFeatureSchema> sch = FdoFeatureSchema::Create(L"Default", L"");
-        pSchema->Add(sch);
-        FdoPtr<FdoClassCollection> clss = sch->GetClasses();
-        for(int i = 0; i < classNames->GetCount(); i++)
-        {
-            FdoPtr<FdoIdentifier> idClass = FdoIdentifier::Create(classNames->GetString(i));
-            std::string clsName = W2A_SLOW(idClass->GetName());
-            SltMetadata* md = GetMetadata(clsName.c_str());
-            FdoPtr<FdoClassDefinition> fc = (md) ? md->ToClass() : NULL;
-            if (fc)
-            {
-                FdoPtr<FdoClassDefinition> fc_copy = FdoCommonSchemaUtil::DeepCopyFdoClassDefinition(fc);
-                clss->Add(fc_copy);
-            }
-            else
-                throw FdoException::Create(L"Failed to get all tables that can be FDO feature classes.");
-        }
-        return FDO_SAFE_ADDREF(pSchema.p);
-    }
+    //TODO: Take into account the classNames collection -- not required, but
+    //can potentially speed things up in some use cases
 
     if (m_pSchema)
     {
@@ -676,7 +568,7 @@ FdoFeatureSchemaCollection* SltConnection::DescribeSchema(FdoStringCollection* c
         return makeACopy ? FdoCommonSchemaUtil::DeepCopyFdoFeatureSchemas(m_pSchema, NULL) : FDO_SAFE_ADDREF(m_pSchema);
     }
 
-    if (!m_dbWrite)
+    if (!m_dbRead)
         return NULL;
 
     m_pSchema = FdoFeatureSchemaCollection::Create(NULL);
@@ -692,7 +584,7 @@ FdoFeatureSchemaCollection* SltConnection::DescribeSchema(FdoStringCollection* c
     sqlite3_stmt* pstmt = NULL;
     const char* pzTail = NULL;
     int rc;
-    if ((rc = sqlite3_prepare_v2(m_dbWrite, tables_sql, -1, &pstmt, &pzTail)) == SQLITE_OK)
+    if ((rc = sqlite3_prepare_v2(m_dbRead, tables_sql, -1, &pstmt, &pzTail)) == SQLITE_OK)
     {
         sqlite3_bind_text(pstmt, 1, "table", 5, SQLITE_STATIC);
         while (sqlite3_step(pstmt) == SQLITE_ROW)
@@ -700,7 +592,7 @@ FdoFeatureSchemaCollection* SltConnection::DescribeSchema(FdoStringCollection* c
     }
     else
     {
-        const char* err = sqlite3_errmsg(m_dbWrite);
+        const char* err = sqlite3_errmsg(m_dbRead);
         if (err != NULL)
             throw FdoException::Create(A2W_SLOW(err).c_str(), rc);
         else
@@ -739,231 +631,16 @@ FdoISpatialContextReader* SltConnection::GetSpatialContexts()
     return new SltSpatialContextReader(this);
 }
 
-SltReader* SltConnection::SelectView(FdoClassDefinition* fc,
-                                     FdoIdentifierCollection* props,
-                                     StringBuffer& strWhere,
-                                     FdoParameterValueCollection*  parmValues,
-                                     const std::vector<NameOrderingPair>& ordering)
-{
-    StringBuffer sb;
-    sb.Append("SELECT ", 7);
-    int cnt = (props == NULL) ? 0 : props->GetCount();
-    if (cnt != 0)
-    {
-        SltExpressionTranslator et;
-        for (int i = 0; i < cnt; i++)
-        {
-		    if (i) sb.Append(",", 1);
-            FdoPtr<FdoIdentifier> idf = props->GetItem(i);
-            
-            idf->Process(&et);
-            StringBuffer* exp = et.GetExpression();
-            sb.Append(exp->Data(), exp->Length());
-        }
-    }
-    else
-        sb.Append("*", 1);
-
-    sb.Append(" FROM ", 6);
-    sb.AppendDQuoted(fc->GetName());
-    if (strWhere.Length() != 0)
-    {
-        sb.Append(" WHERE ", 7);
-        sb.Append(strWhere.Data(), strWhere.Length());
-    }
-
-    if (!ordering.empty())
-    {
-        sb.Append(" ORDER BY ", 10);
-        SltExtractExpressionTranslator exTrans(props);
-        for (size_t i=0; i<ordering.size(); i++)
-        {
-            if (i)
-                sb.Append(",", 1);
-
-            // identifiers for order are provided as identifiers even are calculations.
-            // so in order to get the "expression" we need to look for them in the select list
-            FdoIdentifier* idfto = ordering[i].name;
-            FdoPtr<FdoIdentifier> idfadd;
-            if (props != NULL)
-            {
-                idfadd = props->FindItem(idfto->GetName());
-                if (idfadd != NULL)
-                {
-                    idfadd->Process(&exTrans);
-                    StringBuffer* exp = exTrans.GetExpression();
-                    sb.Append(exp->Data(), exp->Length());
-                    exTrans.Reset();
-                }
-            }
-            // in case it's a property not present in selection list just add it
-            if (idfadd == NULL)
-                sb.Append(idfto->ToString());
-
-            if (ordering[i].option == FdoOrderingOption_Ascending)
-                sb.Append(" ASC", 4);
-            else
-                sb.Append(" DESC", 5);
-        }
-    }
-    sb.Append(";", 1);
-    return new SltReader(this, sb.Data(), parmValues);
-}
-
-void SltConnection::AppendSelectJoin(StringBuffer& sb,
-                                     FdoJoinCriteriaCollection* joinCriteria,
-                                     FdoIdentifier* alias)
-{
-    if (alias != NULL)
-    {
-        sb.Append(" AS ", 4);
-        sb.AppendDQuoted(alias->GetName());        
-    }
-
-    StringBuffer sbjd;
-    int cntJoin = joinCriteria->GetCount();
-    for (int idx = 0; idx < cntJoin; idx++)
-    {
-        FdoPtr<FdoJoinCriteria> jc = joinCriteria->GetItem(idx);
-        FdoPtr<FdoIdentifier> joinCls = jc->GetJoinClass();
-        FdoPtr<FdoFilter> jFilter = jc->GetFilter();
-        FdoJoinType jType = jc->GetJoinType();
-        switch (jType)
-        {
-        case FdoJoinType_Cross:
-            sb.Append(",", 1);
-            sb.AppendDQuoted(joinCls->GetName());
-            if (jc->HasAlias())
-            {
-                sb.Append(" AS ", 4);
-                sb.AppendDQuoted(jc->GetAlias());
-            }
-            break;
-        case FdoJoinType_Inner:
-            sbjd.Append(" INNER ", 7);
-            break;
-        case FdoJoinType_LeftOuter:
-            sbjd.Append(" LEFT OUTER ", 12);
-            break;
-        case FdoJoinType_RightOuter:
-            throw FdoException::Create(L"Right outer join type is not supported.");
-            break;
-        case FdoJoinType_FullOuter:
-            throw FdoException::Create(L"Full outer join type is not supported.");
-            break;
-        default:
-            throw FdoException::Create(L"Unsupported join type used in filter");
-            break;
-        }
-        if (jType == FdoJoinType_Cross)
-            continue;
-        sbjd.Append(" JOIN ", 6);
-        sbjd.AppendDQuoted(joinCls->GetName());
-        if (jc->HasAlias())
-        {
-            sbjd.Append(" AS ", 4);
-            sbjd.AppendDQuoted(jc->GetAlias());
-        }
-        if (jFilter == NULL)
-            throw FdoException::Create(L"Unsupported FDO type in filters");
-        sbjd.Append(" ON (", 5);
-        SltQueryTranslator qtj(NULL, false);
-        jFilter->Process(&qtj);
-        sbjd.Append(qtj.GetFilter());
-        sbjd.Append(") ", 2);
-    }
-    if (sbjd.Length())
-        sb.Append(sbjd.Data(), sbjd.Length());
-}
-
-SltReader* SltConnection::SelectJoin(FdoClassDefinition* fc,
-                                     FdoIdentifierCollection* props, 
-                                     StringBuffer& strWhere,
-                                     FdoParameterValueCollection*  parmValues,
-                                     const std::vector<NameOrderingPair>& ordering,
-                                     FdoJoinCriteriaCollection* joinCriteria,
-                                     FdoIdentifier* alias)
-{
-    StringBuffer sb;
-    sb.Append("SELECT ", 7);
-    int cnt = (props == NULL) ? 0 : props->GetCount();
-    if (cnt != 0)
-    {
-        SltExpressionTranslator et;
-        for (int i = 0; i < cnt; i++)
-        {
-		    if (i) sb.Append(",", 1);
-            FdoPtr<FdoIdentifier> idf = props->GetItem(i);
-            
-            idf->Process(&et);
-            StringBuffer* exp = et.GetExpression();
-            sb.Append(exp->Data(), exp->Length());
-            et.Reset();
-        }
-    }
-    else
-        sb.Append("*", 1);
-
-    sb.Append(" FROM ", 6);
-    sb.AppendDQuoted(fc->GetName());
-    AppendSelectJoin(sb, joinCriteria, alias);
-
-    if (strWhere.Length() != 0)
-    {
-        sb.Append(" WHERE ", 7);
-        sb.Append(strWhere.Data(), strWhere.Length());
-    }
-
-    if (!ordering.empty())
-    {
-        sb.Append(" ORDER BY ", 10);
-        SltExtractExpressionTranslator exTrans(props);
-        for (size_t i=0; i<ordering.size(); i++)
-        {
-            if (i)
-                sb.Append(",", 1);
-
-            // identifiers for order are provided as identifiers even are calculations.
-            // so in order to get the "expression" we need to look for them in the select list
-            FdoIdentifier* idfto = ordering[i].name;
-            FdoPtr<FdoIdentifier> idfadd;
-            if (props != NULL)
-            {
-                idfadd = props->FindItem(idfto->GetName());
-                if (idfadd != NULL)
-                {
-                    idfadd->Process(&exTrans);
-                    StringBuffer* exp = exTrans.GetExpression();
-                    sb.Append(exp->Data(), exp->Length());
-                    exTrans.Reset();
-                }
-            }
-            // in case it's a property not present in selection list just add it
-            if (idfadd == NULL)
-                sb.Append(idfto->ToString());
-
-            if (ordering[i].option == FdoOrderingOption_Ascending)
-                sb.Append(" ASC", 4);
-            else
-                sb.Append(" DESC", 5);
-        }
-    }
-    sb.Append(";", 1);
-
-    return new SltReader(this, sb.Data(), parmValues);
-}
-
 SltReader* SltConnection::Select(FdoIdentifier* fcname, 
                                  FdoFilter* filter, 
                                  FdoIdentifierCollection* props, 
                                  bool scrollable, 
                                  const std::vector<NameOrderingPair>& ordering,
-                                 FdoParameterValueCollection*  parmValues,
-                                 FdoJoinCriteriaCollection* joinCriteria,
-                                 FdoIdentifier* alias)
+                                 FdoParameterValueCollection*  parmValues)
 {
     if (m_connState != FdoConnectionState_Open)
         throw FdoCommandException::Create(L"Connection must be open in order to Select.");
+
 
     const wchar_t* wfc = fcname->GetName();
     size_t wlen = wcslen(wfc);
@@ -975,11 +652,10 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
 
     DBounds bbox;
     std::vector<__int64>* rowids = NULL;
-    StringBuffer strWhere("");
+    StringBuffer strWhere((size_t)0);
     bool canFastStep = true;
     bool mustKeepFilterAlive = false;
 
-    const wchar_t* idClassProp = L"rowid";
     SltMetadata* md = GetMetadata(mbfc);
     if (md == NULL)
     {
@@ -988,20 +664,14 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
         errVal.append(L"' is not found");
         throw FdoException::Create(errVal.c_str(), 1);
     }
-    bool isJoinSelect = (joinCriteria != NULL && joinCriteria->GetCount());
     FdoPtr<FdoClassDefinition> fc = md->ToClass();
     if (md->IsView())
     {
-        if (md->GetIdName() == NULL)
-        {
-            if (scrollable)
-                throw FdoCommandException::Create(L"Cannot use scrollable select on normal views.");
-            idClassProp = NULL;
-        }
-        else
-            idClassProp = md->GetIdName();
-        if (isJoinSelect)
-            throw FdoCommandException::Create(L"Cannot use join selects on views.");
+        CacheViewContent(mbfc);
+        sbfcn.Reset();
+        sbfcn.Append("$view", 5);
+        sbfcn.Append(wfc);
+        mbfc = sbfcn.Data();
     }
 
     //Translate the filter from FDO to SQLite where clause.
@@ -1009,41 +679,72 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
     //by using the spatial index.
     if (filter)
     {
-        SltQueryTranslator qt(fc, !isJoinSelect);
+        SltQueryTranslator qt(fc);
         filter->Process(&qt);
 
         const char* txtFilter = qt.GetFilter();
         if (*txtFilter) 
             strWhere.Append(txtFilter);
+        qt.GetBBOX(bbox);
+        rowids = qt.DetachIDList();
         canFastStep = qt.CanUseFastStepping();
         mustKeepFilterAlive = qt.MustKeepFilterAlive();
     }
-    if (idClassProp == NULL)
-    {
-        SltReader* rdrRet = SelectView(fc, props, strWhere, parmValues, ordering);
-        if (rdrRet && mustKeepFilterAlive)
-            rdrRet->SetInternalFilter(filter);
-        return rdrRet;
-    }
 
-    if (isJoinSelect)
-    {
-        SltReader* rdrRet = SelectJoin(fc, props, strWhere, parmValues, ordering, joinCriteria, alias);
-        if (rdrRet && mustKeepFilterAlive)
-            rdrRet->SetInternalFilter(filter);
-        return rdrRet;
-    }
-
+    SpatialIterator* siter = NULL;
     RowidIterator* ri = NULL;
 
-    StringBuffer sbOrderBy("");
+
+    //if we have a query by specific ID, it will take precedence over spatial query
+    if (rowids && ordering.empty())
+    {
+        ri = new RowidIterator(-1, rowids);
+    }
+    else if (!bbox.IsEmpty())
+    {
+        //if we have a BBOX filter, we need to get the spatial index
+        SpatialIndex* si = GetSpatialIndex(mbfcname);
+
+        DBounds total_ext;
+        si->GetTotalExtent(total_ext);
+
+        if (bbox.Contains(total_ext))
+        {
+            //only use spatial iterator if the search bounds does not
+            //fully contain the data bounds
+        }
+        else if (bbox.Intersects(total_ext))
+        {
+            siter = new SpatialIterator(bbox, si);
+        }
+        else
+        {
+            // enforce an empty result since result will be empty
+            rowids = new std::vector<__int64>();
+            ri = new RowidIterator(-1, rowids);
+        }
+    }
+
+    //Now process any ordering options .
+    //Our strategy here is to perform any ordering without evaluating the where
+    //clause. Then we will pass the ordered list of IDs to the feature reader
+    //which will process the where clause (filter) in the same way regardless of ordering,
+    //or at least we hope it does.
+    //This approach may or may not be slower, it needs some experimentation to see if
+    //it's better to also perform the where clause here.
+
     if (!ordering.empty())
     {
+        StringBuffer sb;
+        sb.Append("SELECT ROWID FROM ", 18);
+        sb.AppendDQuoted(mbfc);
+        sb.Append(" ORDER BY ", 10);
+
         SltExtractExpressionTranslator exTrans(props);
         for (size_t i=0; i<ordering.size(); i++)
         {
             if (i)
-                sbOrderBy.Append(",", 1);
+                sb.Append(",", 1);
 
             // identifiers for order are provided as identifiers even are calculations.
             // so in order to get the "expression" we need to look for them in the select list
@@ -1056,32 +757,140 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
                 {
                     idfadd->Process(&exTrans);
                     StringBuffer* exp = exTrans.GetExpression();
-                    sbOrderBy.Append(exp->Data(), exp->Length());
+                    sb.Append(exp->Data(), exp->Length());
                     exTrans.Reset();
                 }
             }
             // in case it's a property not present in selection list just add it
             if (idfadd == NULL)
-                sbOrderBy.Append(idfto->ToString());
+                sb.Append(idfto->ToString());
 
             if (ordering[i].option == FdoOrderingOption_Ascending)
-                sbOrderBy.Append(" ASC", 4);
+                sb.Append(" ASC", 4);
             else
-                sbOrderBy.Append(" DESC", 5);
+                sb.Append(" DESC", 5);
+        }
+
+        sb.Append(";", 1);
+
+        sqlite3_stmt* stmt = NULL;
+        const char* tail = NULL;
+        std::vector<__int64>* rows = new std::vector<__int64>(); //accumulate ordered row ids here
+
+        int rc = sqlite3_prepare_v2(m_dbRead, sb.Data(), -1, &stmt, &tail);
+
+        //If there is also a spatial filter, we need to compute the intersection
+        //of the ordering with the spatial filter -- the SltReader cannot handle both
+        //a row id iterator and a spatial iterator, so we have to precompute this
+        //and pass it the intersected row id iterator.
+        
+        //First, read the spatial iterator fully -- it will return results in sorted order
+        if (siter)
+        {
+            std::vector<int> srows;
+            int start = -1;
+            int end = -1;
+
+            while (siter->NextRange(start, end))
+            {
+                for (int i=start; i<=end; i++)
+                    srows.push_back(i);
+            }
+
+            //Second, we will check for each result of the ordering query, if
+            //it exists in the spatial query results, and add it to a new list 
+            //if it does
+
+            // we need to get all rows
+            while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+            {
+                __int64 id = sqlite3_column_int64(stmt, 0);
+                //TODO: resolve rowid type issue (__int64 vs. int)
+                if (std::binary_search(srows.begin(), srows.end(), (int)id))
+                    rows->push_back(id);
+            }
+
+            //get rid of the spatial iterator -- we are done with it here
+            delete siter;
+            siter = NULL;
+        }
+        else
+        {
+            // we need to get all rows
+            while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
+                rows->push_back(sqlite3_column_int64(stmt, 0));
+        }
+        rc = sqlite3_finalize(stmt);
+
+        ri = new RowidIterator(-1, rows);
+
+        if (strWhere.Length()>0 && scrollable)
+        {
+            FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
+            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
+            collidf->Add(rowIdIdf);
+            SltReader* rdrSc = new SltReader(this, collidf, mbfcname, strWhere.Data(), siter, canFastStep, ri, parmValues);
+            ri = GetScrollableIterator(rdrSc);
+            delete rdrSc;
+            siter = NULL;
+            strWhere.Reset();
+            canFastStep = true;
         }
     }
-    if (scrollable)
+    else if (scrollable) //if we want the reader to be scrollable without ordering, we also need a rowid iterator
     {
-        FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
-        FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(idClassProp);
-        collidf->Add(rowIdIdf);
-        FdoPtr<SltReader> rdrSc = new SltReader(this, collidf, mbfcname, strWhere.Data(), NULL, canFastStep, ri, parmValues, sbOrderBy.Data());
-        ri = GetScrollableIterator(rdrSc.p);
-        strWhere.Reset();
-        sbOrderBy.Reset();
-        canFastStep = true;
+        if (strWhere.Length()>0 && scrollable)
+        {
+            FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
+            FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
+            collidf->Add(rowIdIdf);
+            SltReader* rdrSc = new SltReader(this, collidf, mbfcname, strWhere.Data(), siter, canFastStep, ri, parmValues);
+            ri = GetScrollableIterator(rdrSc);
+            delete rdrSc;
+            siter = NULL;
+            strWhere.Reset();
+            canFastStep = true;
+        }
+        else
+        {
+            //again, if we also have a spatial iterator, we need
+            //to eliminate it from the picture by intersecting the 
+            //row list with the spatial result list
+            if (siter)
+            {
+                std::vector<__int64>* rows = new std::vector<__int64>;
+                int start = -1;
+                int end = -1;
+
+                while (siter->NextRange(start, end))
+                {
+                    for (int i=start; i<=end; i++)
+                        rows->push_back(i);
+                }
+
+                delete siter;
+                siter = NULL;
+
+                ri = new RowidIterator(-1, rows);
+            }
+            else if (!ri)
+            {
+                // TODO: can we find a different way to get all items in scrollable reader?
+                // Issues to solve without this change: data store with 3 rows and max count=100
+                // since the other 97 rows were deleted. The returned count is 100, so Move to will not work.
+                // in case we run Count(rowid) and set the count will not work either since we could have:
+                // Feat1Id=40, Feat2Id=50 and Feat3Id=100, how can we implement move to, e.g MoveTo(2)!?
+                FdoPtr<FdoIdentifierCollection> collidf = FdoIdentifierCollection::Create();
+                FdoPtr<FdoIdentifier> rowIdIdf = FdoIdentifier::Create(L"rowid");
+                collidf->Add(rowIdIdf);
+                SltReader* rdrSc = new SltReader(this, collidf, mbfcname, "", NULL, canFastStep, NULL, NULL);
+                ri = GetScrollableIterator(rdrSc);
+                delete rdrSc;
+                canFastStep = true;
+            }
+        }
     }
-    SltReader* rdr = new SltReader(this, props, mbfcname, strWhere.Data(), NULL, canFastStep, ri, parmValues, sbOrderBy.Data());
+    SltReader* rdr = new SltReader(this, props, mbfcname, strWhere.Data(), siter, canFastStep, ri, parmValues);
     if (mustKeepFilterAlive)
         rdr->SetInternalFilter(filter);
 
@@ -1090,7 +899,7 @@ SltReader* SltConnection::Select(FdoIdentifier* fcname,
 
 RowidIterator* SltConnection::GetScrollableIterator(SltReader* rdr)
 {
-    VectorMF* list = new VectorMF();
+    std::vector<__int64>* list = new std::vector<__int64>;
     while (rdr->ReadNext())
     {
         //With a default SltReader we know that rowID will
@@ -1113,9 +922,7 @@ FdoIDataReader* SltConnection::SelectAggregates(FdoIdentifier*              fcna
                                                 FdoIdentifierCollection*    ordering,
                                                 FdoFilter*                  grFilter,
                                                 FdoIdentifierCollection*    grouping,
-                                                FdoParameterValueCollection*  parmValues,
-                                                FdoJoinCriteriaCollection* joinCriteria,
-                                                FdoIdentifier* alias)
+                                                FdoParameterValueCollection*  parmValues)
 {
     const wchar_t* wfc = fcname->GetName();
     StringBuffer sbfcn;
@@ -1130,16 +937,20 @@ FdoIDataReader* SltConnection::SelectAggregates(FdoIdentifier*              fcna
         throw FdoException::Create(errVal.c_str(), 1);
     }
     FdoPtr<FdoClassDefinition> fc = md->ToClass();
-    bool isJoinSelect = (joinCriteria != NULL && joinCriteria->GetCount());
+    if (md->IsView())
+    {
+        CacheViewContent(mbfc);
+        sbfcn.Reset();
+        sbfcn.Append("$view", 5);
+        sbfcn.Append(wfc);
+        mbfc = sbfcn.Data();
+    }
     
-    if (md->IsView() && isJoinSelect)
-        throw FdoCommandException::Create(L"Cannot use join aggregate selects on views.");
-
     StringBuffer sb;
-    SltExpressionTranslator exTrans(properties, NULL, isJoinSelect);
+    SltExpressionTranslator exTrans(properties);
     int propsCount = properties->GetCount();
     
-    if (!bDistinct && fc->GetClassType() == FdoClassType_FeatureClass && (propsCount == 1 || propsCount == 2) && !isJoinSelect)
+    if (!bDistinct && fc->GetClassType() == FdoClassType_FeatureClass && (propsCount == 1 || propsCount == 2))
     {
         SltReader* rdr = CheckForSpatialExtents(properties, (FdoFeatureClass*)fc.p, filter);
 
@@ -1168,15 +979,13 @@ FdoIDataReader* SltConnection::SelectAggregates(FdoIdentifier*              fcna
         sb.Append(" FROM ", 6);
     sb.AppendDQuoted(mbfc);
 
-    if (isJoinSelect)
-        AppendSelectJoin(sb, joinCriteria, alias);
-
     bool mustKeepFilterAlive = false;
     if(filter)
     {
-        SltQueryTranslator qt(fc, !isJoinSelect);
+        SltQueryTranslator qt(fc);
         filter->Process(&qt);
         mustKeepFilterAlive = qt.MustKeepFilterAlive();
+        qt.Reset(); // avoid optimize the filter
 
         const char* txtFilter = qt.GetFilter();
         if (*txtFilter)
@@ -1202,8 +1011,9 @@ FdoIDataReader* SltConnection::SelectAggregates(FdoIdentifier*              fcna
         }
         if (grFilter)
         {
-            SltQueryTranslator qt(fc, !isJoinSelect);
+            SltQueryTranslator qt(fc);
             grFilter->Process(&qt);
+            qt.Reset(); // avoid optimize the filter
 
             const char* txtFilter = qt.GetFilter();
             if (*txtFilter)
@@ -1249,7 +1059,12 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
                                FdoParameterValueCollection*  parmValues )
 {
     StringBuffer sb;
+    bool geomPropIsUpdated = false;
     int geomFormat = eFGF;
+
+    sb.Append("UPDATE ", 7);
+    sb.AppendDQuoted(fcname->GetName());
+    sb.Append(" SET ", 5);
 
     const wchar_t* wfc = fcname->GetName();
     size_t wlen = wcslen(wfc);
@@ -1266,32 +1081,9 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
     }
     geomFormat = md->GetGeomFormat();    
     FdoPtr<FdoClassDefinition> fc = md->ToClass();
-    sb.Append("UPDATE ", 7);
     // don't update views
     if (md->IsView())
-    {
-        // views well defined can be modified
-        if (md->GetIdName() == NULL)
-            throw FdoException::Create(L"Views cannot be updated");
-        sb.AppendDQuoted(md->GetMainViewTable());
-        md = GetMetadata(md->GetMainViewTable());
-        fc = (md) ? md->ToClass() : NULL;
-        if (fc == NULL)
-        {
-            std::wstring errVal(L"Class '");
-            errVal.append(wfc);
-            errVal.append(L"' is not found");
-            throw FdoException::Create(errVal.c_str(), 1);
-        }
-        // TODO: in case is needed handle filter with secondary properties
-        // now we just support filters for update with primary properties
-        // we need to select PK from view using the filter create a rowid list
-        // and pass RowidIterator* to the update statement.
-    }
-    else // we have a table
-        sb.AppendDQuoted(fcname->GetName());
-
-    sb.Append(" SET ", 5);
+        throw FdoException::Create(L"Views cannot be updated");
 
     FdoString* geomPropName = NULL;
     if (fc->GetClassType() == FdoClassType_FeatureClass)
@@ -1300,15 +1092,17 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
         FdoPtr<FdoGeometricPropertyDefinition> geomProp = fcl->GetGeometryProperty();
         geomPropName = geomProp->GetName();
     }
-    
+
     for (int i=0; i<propvals->GetCount(); i++)
     {
+        if (i) sb.Append(",", 1); 
+
         FdoPtr<FdoPropertyValue> pv = propvals->GetItem(i);
         FdoPtr<FdoIdentifier> id = pv->GetName();
         FdoString* propName = id->GetName();
-
-        if (i)
-            sb.Append(",", 1); 
+        
+        if (geomPropName != NULL && wcscmp(geomPropName, propName) == 0)
+            geomPropIsUpdated = true;
 
         sb.AppendDQuoted(propName);
         sb.Append("=?", 2);
@@ -1328,6 +1122,8 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
         const char* txtFilter = qt.GetFilter();
         if (*txtFilter) 
             strWhere.Append(txtFilter);
+        qt.GetBBOX(bbox);
+        rowids = qt.DetachIDList();
     }
 
     RowidIterator* ri = NULL;
@@ -1352,23 +1148,23 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
         else if (bbox.Intersects(total_ext))
         {
             SpatialIterator* siter = new SpatialIterator(bbox, si);
-            VectorMF* mfrowids = new VectorMF();
+            rowids = new std::vector<__int64>();
             int start = -1;
             int end = -1;
 
             while (siter->NextRange(start, end))
             {
-                for (int i=start; i<end; i++)
-                    mfrowids->push_back((*siter)[i]);
+                for (int i=start; i<=end; i++)
+                    rowids->push_back(i);
             }
             delete siter;
-            if (mfrowids->size() == 0)
+            if (rowids->size() == 0)
             {
-                delete mfrowids;
+                delete rowids;
                 return 0;
             }
             else
-                ri = new RowidIterator(-1, mfrowids);
+                ri = new RowidIterator(-1, rowids);
         }
         else
             return 0; // enforce an empty result since result will be empty
@@ -1401,6 +1197,9 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
     int rc = sqlite3_prepare_v2(m_dbWrite, sb.Data(), -1, &stmt, &tail);
     if (rc == SQLITE_OK)
     {
+        if (geomPropIsUpdated)
+            EnableHooks(true);
+
         if (!ri)
         {
             BindPropVals(propvals, stmt, geomFormat);
@@ -1410,6 +1209,8 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
             if ((rc = sqlite3_step(stmt)) != SQLITE_DONE)
             {
                 sqlite3_finalize(stmt);
+                if (geomPropIsUpdated)
+                    EnableHooks(false, true);
 
                 const char* err = sqlite3_errmsg(m_dbWrite);
                 if (err != NULL)
@@ -1436,6 +1237,8 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
                     sqlite3_finalize(stmt);
                     if (ri)
                         delete ri;
+                    if (geomPropIsUpdated)
+                        EnableHooks(false, true);
 
                 const char* err = sqlite3_errmsg(m_dbWrite);
                 if (err != NULL)
@@ -1450,6 +1253,8 @@ FdoInt32 SltConnection::Update(FdoIdentifier* fcname, FdoFilter* filter,
         if (ri)
             delete ri;
         sqlite3_finalize(stmt);
+        if (geomPropIsUpdated)
+            EnableHooks(false);
     }
     else
     {
@@ -1471,33 +1276,24 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
 {
     StringBuffer sb;
 
+    sb.Append("DELETE FROM ", 12);
+    sb.AppendDQuoted(fcname->GetName());
+
     std::vector<__int64>* rowids = NULL;
     StringBuffer strWhere((size_t)0);
     DBounds bbox;
     char* mbfc = NULL;
-    const wchar_t* wfc = fcname->GetName();
-    size_t wlen = wcslen(wfc);
-    size_t clen = 4 * wlen+1;
-    mbfc = (char*)alloca(4*wlen+1);
-    W2A_FAST(mbfc, clen, wfc, wlen);
-    SltMetadata* md = GetMetadata(mbfc);
-    if (md == NULL)
+    //Translate the filter from FDO to SQLite where clause.
+    //Also detect if there is a BBOX query that we can accelerate
+    //by using the spatial index.
+    if (filter)
     {
-        std::wstring errVal(L"Class '");
-        errVal.append(wfc);
-        errVal.append(L"' is not found");
-        throw FdoException::Create(errVal.c_str(), 1);
-    }
-    FdoPtr<FdoClassDefinition> fc = md->ToClass();
-    sb.Append("DELETE FROM ", 12);
-    // don't update views
-    if (md->IsView())
-    {
-        // views well defined can be modified
-        if (md->GetIdName() == NULL)
-            throw FdoException::Create(L"Views cannot be updated");
-        sb.AppendDQuoted(md->GetMainViewTable());
-        md = GetMetadata(md->GetMainViewTable());
+        const wchar_t* wfc = fcname->GetName();
+        size_t wlen = wcslen(wfc);
+        size_t clen = 4 * wlen+1;
+        mbfc = (char*)alloca(4*wlen+1);
+        W2A_FAST(mbfc, clen, wfc, wlen);
+        SltMetadata* md = GetMetadata(mbfc);
         if (md == NULL)
         {
             std::wstring errVal(L"Class '");
@@ -1505,20 +1301,10 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
             errVal.append(L"' is not found");
             throw FdoException::Create(errVal.c_str(), 1);
         }
-        fc = md->ToClass();
-        // TODO: in case is needed handle filter with secondary properties
-        // now we just support filters for delete with primary properties
-        // we need to select PK from view using the filter create a rowid list
-        // and pass RowidIterator* to the delete statement.
-    }
-    else // we have a table
-        sb.AppendDQuoted(fcname->GetName());
-
-    //Translate the filter from FDO to SQLite where clause.
-    //Also detect if there is a BBOX query that we can accelerate
-    //by using the spatial index.
-    if (filter)
-    {
+        FdoPtr<FdoClassDefinition> fc = md->ToClass();
+        // don't update views
+        if (md->IsView())
+            throw FdoException::Create(L"Views cannot be updated");
 
         SltQueryTranslator qt(fc);
         filter->Process(&qt);
@@ -1526,6 +1312,8 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
         const char* txtFilter = qt.GetFilter();
         if (*txtFilter) 
             strWhere.Append(txtFilter);
+        qt.GetBBOX(bbox);
+        rowids = qt.DetachIDList();
     }
 
     RowidIterator* ri = NULL;
@@ -1550,23 +1338,23 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
         else if (bbox.Intersects(total_ext))
         {
             SpatialIterator* siter = new SpatialIterator(bbox, si);
-            VectorMF* mfrowids = new VectorMF();
+            rowids = new std::vector<__int64>();
             int start = -1;
             int end = -1;
 
             while (siter->NextRange(start, end))
             {
-                for (int i=start; i<end; i++)
-                    mfrowids->push_back((*siter)[i]);
+                for (int i=start; i<=end; i++)
+                    rowids->push_back(i);
             }
             delete siter;
-            if (mfrowids->size() == 0)
+            if (rowids->size() == 0)
             {
-                delete mfrowids;
+                delete rowids;
                 return 0;
             }
             else
-                ri = new RowidIterator(-1, mfrowids);
+                ri = new RowidIterator(-1, rowids);
         }
         else
             return 0; // enforce an empty result since result will be empty
@@ -1598,6 +1386,7 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
     FdoInt64 ret = 0;
     if ((rc = sqlite3_prepare_v2(m_dbWrite, sb.Data(), -1, &stmt, &tail)) == SQLITE_OK)
     {
+        EnableHooks(true);
         if (!ri)
         { 
             if( parmValues != NULL )
@@ -1613,6 +1402,7 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
                     excThr = FdoCommandException::Create(L"Failed to execute delete statement.", rc);
 
                 sqlite3_finalize(stmt);
+                EnableHooks(false, true);
                 throw excThr;
             }
             ret += sqlite3_changes(m_dbWrite);
@@ -1639,6 +1429,7 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
                     if (ri)
                         delete ri;
 
+                    EnableHooks(false, true);
                     throw excThr;
                 }
                 ret += sqlite3_changes(m_dbWrite);
@@ -1648,6 +1439,7 @@ FdoInt32 SltConnection::Delete(FdoIdentifier* fcname, FdoFilter* filter, FdoPara
         if (ri)
             delete ri;
         sqlite3_finalize(stmt);
+        EnableHooks(false);
     }
     else
     {
@@ -1696,6 +1488,12 @@ SltMetadata* SltConnection::GetMetadata(const char* table)
     return ret;
 }
 
+FdoClassDefinition* SltConnection::GetFdoClassDefinition(const char* table)
+{
+	SltMetadata* md = GetMetadata(table);
+	return (md) ? md->ToClass() : NULL;
+}
+
 void SltConnection::GetGeometryExtent(const unsigned char* ptr, int len, DBounds* ext)
 {
     if (ptr != NULL && len != 0)
@@ -1722,43 +1520,46 @@ void SltConnection::GetGeometryExtent(const unsigned char* ptr, int len, DBounds
 
 SpatialIndex* SltConnection::GetSpatialIndex(const char* table)
 {
-    SpatialIndexDescriptor* desc = GetSpatialIndexDescriptor(table);
-    return (desc != NULL) ? desc->GetSpatialIndex() : NULL;
-}
-
-SpatialIndexDescriptor* SltConnection::GetSpatialIndexDescriptor(const char* table, int* geomIdx)
-{
     SpatialIndexCache::iterator iter = m_mNameToSpatialIndex.find((char*)table);
 
     SpatialIndex* si = NULL;
     SpatialIndexDescriptor* spDesc = NULL;
     SltReader* rdr = NULL;
-    Table* pTable = NULL;
     DBounds ext;
 
     if (iter != m_mNameToSpatialIndex.end())
     {
-        if (iter->second->IsReleased())
+        spDesc = iter->second;
+        si = spDesc->GetSpatialIndex();
+        // don't auto-update the SI for views we will need to find a different way to do that
+        if (spDesc->IsView())
+            return si;
+        FdoInt64 id = si->GetLastInsertedIdx();
+        FdoInt64 lastCnt = spDesc->GetFeatureCount();
+        if (id < lastCnt)
         {
-            iter->second->Release();
-            free((char*)iter->first); //it was created via strdup, must use free()
-            m_mNameToSpatialIndex.erase(iter);
-            pTable = sqlite3FindTable(m_dbWrite, table, 0);
-            if (pTable && pTable->pSpIndex)
+            // in this case is faster to not use a reader SltReader since we need limited
+            // functionality to get the id and the geometry
+            sqlite3_stmt* stmt = spDesc->GetNewFeatures(id);
+            if (stmt != NULL)
             {
-                spDesc = static_cast<SpatialIndexDescriptor*>(pTable->pSpIndex);
-                if (!spDesc->IsReleased())
+                FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
+                FdoPtr<FdoIGeometry> fg;
+                while(sqlite3_step(stmt) == SQLITE_ROW)
                 {
-                    spDesc->AddRef();
-                    m_mNameToSpatialIndex[_strdup(table)] = spDesc; //Note the memory allocation
-                    return spDesc;
+                    FdoInt64 idToAdd = sqlite3_column_int64(stmt, 0);
+	                const unsigned char* ptr = (const unsigned char*)sqlite3_column_blob(stmt, 1);
+	                int len = sqlite3_column_bytes(stmt, 1);
+                    GetGeometryExtent(ptr, len, &ext);
+                    if (!ext.IsEmpty())
+                        si->Insert((unsigned int)idToAdd, ext);
                 }
-                else
-                    spDesc = NULL;
             }
         }
-        else
-            return iter->second;
+        // in case we have outstanding changes commit them
+        if (spDesc->ChangesAvailable())
+            spDesc->CommitChanges();
+        return si;
     }
 
 #if 0
@@ -1769,88 +1570,20 @@ SpatialIndexDescriptor* SltConnection::GetSpatialIndexDescriptor(const char* tab
 #endif
     //build the spatial index, if this is the first time it
     //is needed
+    si = new SpatialIndex(NULL);
     // lets create the description in case we get an exception we don't leak
     SltMetadata* md = GetMetadata(table);
     if(md == NULL || md->IsView())
-    {
-        if (md == NULL)
-        {
-            std::wstring errVal(L"Class '");
-            errVal.append(A2W_SLOW(table));
-            errVal.append(L"' is not found");
-            throw FdoException::Create(errVal.c_str(), 1);
-        }
-        if (md->GetIdName() != NULL)
-        {
-            spDesc = GetSpatialIndexDescriptor(md->GetMainViewTable());
-            if (spDesc)
-            {
-                // The table has already a SI?
-                if (pTable == NULL)
-                    pTable = sqlite3FindTable(m_dbWrite, table, 0);
-                if (pTable && !pTable->pSpIndex)
-                {
-                    spDesc->AddRef();
-                    pTable->pSpIndex = spDesc;
-                }
-                spDesc->AddRef();
-                m_mNameToSpatialIndex[_strdup(table)] = spDesc; //Note the memory allocation
-                return spDesc;
-            }
-            std::wstring errVal(L"Unable to get spatial extents for class '");
-            errVal.append(A2W_SLOW(table));
-            errVal.append(L"'");
-            throw FdoException::Create(errVal.c_str(), 1);
-        }
-        else
-            return NULL;
-    }
+        spDesc = new SpatialIndexDescriptor(si);
     else
-    {
-        // The table has already a SI?
-        if (pTable == NULL)
-            pTable = sqlite3FindTable(m_dbWrite, table, 0);
-        if (pTable && pTable->pSpIndex)
-        {
-            spDesc = static_cast<SpatialIndexDescriptor*>(pTable->pSpIndex);
-            if (!spDesc->IsReleased())
-            {
-                spDesc->AddRef();
-                m_mNameToSpatialIndex[_strdup(table)] = spDesc; //Note the memory allocation
-                return spDesc;
-            }
-        }
-
-        si = new SpatialIndex(NULL);
-        spDesc = new SpatialIndexDescriptor(table, si);
-    }
-
-    if (SupportsTolerance())
-    {
-        double xyTolerance = 0.0;
-        double zTolerance = 0.0;
-        if (GetCSTolerances(table, xyTolerance, zTolerance))
-        {
-            spDesc->SetXYTolerance(xyTolerance);
-            spDesc->SetXYTolerance(zTolerance);
-        }
-    }
-
+        spDesc = new SpatialIndexDescriptor(this, table, si);
     m_mNameToSpatialIndex[_strdup(table)] = spDesc; //Note the memory allocation
 
     //we will need the ID and the geometry when we build the spatial index, so add them to the query
     FdoPtr<FdoIdentifierCollection> idcol = FdoIdentifierCollection::Create();
     FdoPtr<FdoIdentifier> idid = FdoIdentifier::Create(L"rowid");
     idcol->Add(idid);
-    FdoString* geomName = md->GetGeomName();
-    if (geomName == NULL)
-    {
-        std::wstring errVal(L"Class '");
-        errVal.append(A2W_SLOW(table));
-        errVal.append(L"' is not a feature class");
-        throw FdoException::Create(errVal.c_str(), 1);
-    }
-    FdoPtr<FdoIdentifier> idgeom = FdoIdentifier::Create(geomName);
+    FdoPtr<FdoIdentifier> idgeom = FdoIdentifier::Create(md->GetGeomName());
     idcol->Add(idgeom);
 
     rdr = new SltReader(this, idcol, table, "", NULL, true, NULL, NULL);
@@ -1882,15 +1615,7 @@ SpatialIndexDescriptor* SltConnection::GetSpatialIndexDescriptor(const char* tab
     printf("Spatial index build time: %d\n", t1 - t0);
 #endif
 
-    if (pTable && !pTable->pSpIndex)
-    {
-        spDesc->AddRef();
-        pTable->pSpIndex = spDesc;
-        if (geomIdx != NULL)
-            *geomIdx = md->GetGeomIndex();
-        pTable->nGeomColIdx = md->GetGeomIndex();
-    }
-    return spDesc;
+    return si;
 }
 
 void SltConnection::AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_t* fcname)
@@ -1911,30 +1636,17 @@ void SltConnection::AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_
     sb.Append(",'FGF',", 7); 
 
     int gtype = gpd->GetGeometryTypes();
-    int len = 0;
-    FdoGeometryType* gtypes = gpd->GetSpecificGeometryTypes(len);
-    switch (gtype)
-    {
-    // In case we have simple type just get the first type supported
-    case FdoGeometricType_Point:
-    case FdoGeometricType_Curve:
-    case FdoGeometricType_Surface:
-    case FdoGeometricType_Solid:
-        if (len)
-            gtype = *gtypes; // get the first type
-        break;
-    default:
-        //if gdettype remains 0 at this points, it will be treated as "All" types of geometry
-        gtype = 0;
-        break;
-    }
-
+    //if gdettype remains 0 at this points, it will be treated as "All" types
+    //of geometry
     sb.Append(gtype);
     sb.Append(",", 1);
 
+    int len = 0;
     int gdettype = 0;
+
     if (supDetGeom)
     {
+        FdoGeometryType* gtypes = gpd->GetSpecificGeometryTypes(len);
         for (int idx = 0; idx < len; idx++)
         {
             if (*(gtypes + idx) == FdoGeometryType_None)
@@ -1945,9 +1657,11 @@ void SltConnection::AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_
         sb.Append(",", 1);
     }
 
-    int dim = 2;
-    if (gpd->GetHasElevation()) dim++;
-    if (gpd->GetHasMeasure()) dim++;
+    int dim = 0x00;
+    if (gpd->GetHasElevation())
+        dim = 0x01;
+    if (gpd->GetHasMeasure())
+        dim |= 0x02;
     
     sb.Append(dim); //coord_dimension
     sb.Append(",", 1);
@@ -2013,15 +1727,16 @@ int SltConnection::FindSpatialContext(const wchar_t* name, int valIfNotFound)
         std::string sql2 = "SELECT srid FROM spatial_ref_sys WHERE srid=" + mbname + ";";
 
         int rc;
+        int ret = 0;
         sqlite3_stmt* stmt = NULL;
         const char* tail = NULL;
        
-        if ((rc = sqlite3_prepare_v2(m_dbWrite, sql1.c_str(), -1, &stmt, &tail)) != SQLITE_OK)
-            if ((rc = sqlite3_prepare_v2(m_dbWrite, sql2.c_str(), -1, &stmt, &tail)) != SQLITE_OK)
+        if ((rc = sqlite3_prepare_v2(m_dbRead, sql1.c_str(), -1, &stmt, &tail)) != SQLITE_OK)
+            if ((rc = sqlite3_prepare_v2(m_dbRead, sql2.c_str(), -1, &stmt, &tail)) != SQLITE_OK)
                 return (!valIfNotFound) ? 0 : valIfNotFound;
 
         if ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
-            retVal = sqlite3_column_int(stmt, 0);
+            ret = sqlite3_column_int(stmt, 0);
 
         sqlite3_finalize(stmt);
     }
@@ -2039,7 +1754,7 @@ int SltConnection::GetDefaultSpatialContext()
     sqlite3_stmt* stmt = NULL;
     const char* tail = NULL;
    
-    if ((rc = sqlite3_prepare_v2(m_dbWrite, "SELECT srid FROM spatial_ref_sys;", -1, &stmt, &tail)) != SQLITE_OK)
+    if ((rc = sqlite3_prepare_v2(m_dbRead, "SELECT srid FROM spatial_ref_sys;", -1, &stmt, &tail)) != SQLITE_OK)
         return m_defSpatialContextId;
 
     // avoid some lock issues in case there is a opened transaction tables can be locked 
@@ -2105,10 +1820,9 @@ void SltConnection::DeleteClassFromSchema(const wchar_t* fcName)
     SpatialIndexCache::iterator iter = m_mNameToSpatialIndex.find((char*)table.c_str());
     if (iter != m_mNameToSpatialIndex.end())
     {
-        iter->second->SetReleased(true);
-        iter->second->Release();
-        free((char*)iter->first); //it was created via strdup, must use free()
-        m_mNameToSpatialIndex.erase(iter);
+         delete iter->second;
+         free(iter->first); //was allocated using strdup
+         m_mNameToSpatialIndex.erase(iter);
     }
 }
 
@@ -2382,21 +2096,16 @@ void SltConnection::UpdateClassFromSchema(FdoClassCollection* classes, FdoClassD
         std::string tempClassNameA = W2A_SLOW(tempClassName.c_str());
         std::string originalClassNameA = W2A_SLOW(originalClassName.c_str());
         SpatialIndexCache::iterator iter = m_mNameToSpatialIndex.find((char*) tempClassNameA.c_str());
-        SpatialIndexDescriptor* desc = NULL;
         if (iter != m_mNameToSpatialIndex.end())
         {
-            iter->second->SetReleased(true);
-            desc = new SpatialIndexDescriptor(originalClassNameA.c_str(), iter->second->DetachSpatialIndex());
-            desc->SetXYTolerance(iter->second->GetXYTolerance());
-            desc->SetZTolerance(iter->second->GetZTolerance());
-            iter->second->Release();
-            free((char*)iter->first); //it was created via strdup, must use free()
-            m_mNameToSpatialIndex.erase(iter);
-            m_mNameToSpatialIndex[_strdup(desc->GetTableName())] = desc; //Note the memory allocation
+             m_mNameToSpatialIndex.erase(iter);
+             SpatialIndexDescriptor* desc = new SpatialIndexDescriptor(this, originalClassNameA.c_str(), iter->second->DetachSpatialIndex());
+             free(iter->first); //was allocated using strdup
+             m_mNameToSpatialIndex[_strdup(originalClassNameA.c_str())] = desc; //Note the memory allocation
         }
-
         // reset class name
         fc->SetName(originalClassName.c_str());
+
     } 
     else 
     {
@@ -3112,7 +2821,6 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
     bool canFastStep = true;
     bool mustKeepFilterAlive = false;
 
-    const wchar_t* idClassProp = L"rowid";
     SltMetadata* md = GetMetadata(mbfc);
     if (md == NULL)
     {
@@ -3123,10 +2831,11 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
     }
     if (md->IsView())
     {
-        if (md->GetIdName() == NULL)
-            idClassProp = NULL;
-        else
-            idClassProp = md->GetIdName();
+        CacheViewContent(mbfc);
+        sbfcn.Reset();
+        sbfcn.Append("$view", 5);
+        sbfcn.Append(wfc);
+        mbfc = sbfcn.Data();
     }
 
     //Translate the filter from FDO to SQLite where clause.
@@ -3140,6 +2849,8 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
         const char* txtFilter = qt.GetFilter();
         if (*txtFilter) 
             strWhere.Append(txtFilter);
+        qt.GetBBOX(bbox);
+        rowids = qt.DetachIDList();
         canFastStep = qt.CanUseFastStepping();
         mustKeepFilterAlive = qt.MustKeepFilterAlive();
     }
@@ -3185,9 +2896,9 @@ bool SltConnection::GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter
         FdoPtr<FdoIdentifier> idf = FdoIdentifier::Create(geomProp->GetName());
         props->Add(idf);
     }
-    else if (idClassProp != NULL)
+    else
     {
-        FdoPtr<FdoIdentifier> idf = FdoIdentifier::Create(idClassProp);
+        FdoPtr<FdoIdentifier> idf = FdoIdentifier::Create(L"rowid");
         props->Add(idf);
     }
 
@@ -3404,7 +3115,7 @@ SltReader* SltConnection::CheckForSpatialExtents(FdoIdentifierCollection* props,
             props->RemoveAt(0);
             props->Add(cntProp);
         }
-        return new SltReader(this, stmt, ReaderCloseType_CloseDb, cls, NULL);        
+        return new SltReader(this, stmt, true, cls, NULL);        
     }
     else
     {
@@ -3429,7 +3140,7 @@ FdoInt64 SltConnection::GetFeatureCount(const char* table)
     sb.AppendDQuoted(table);
     sb.Append(";", 1);
 
-    if (sqlite3_prepare_v2(m_dbWrite, sb.Data(), -1, &stmt, &tail) == SQLITE_OK)
+    if (sqlite3_prepare_v2(m_dbRead, sb.Data(), -1, &stmt, &tail) == SQLITE_OK)
     {
         int rc = sqlite3_step(stmt);
         int count = sqlite3_column_int(stmt, 0);
@@ -3443,11 +3154,11 @@ FdoInt64 SltConnection::GetFeatureCount(const char* table)
 // Do not use it in other functions than GetCachedParsedStatement
 // Statement is not cached -- make one, and also add an entry for it
 // into the cache table
-#define SQL_PREPARE_CACHEPARSEDSTM() {                                           \
+#define SQL_PREPARE_CACHEPARSEDSTM(db) {                                           \
     const char* tail = NULL;                                                       \
-    int rc = sqlite3_prepare_v2(m_dbWrite, sql, -1, &ret, &tail);   \
+    int rc = sqlite3_prepare_v2(((NULL==db)?m_dbRead:db), sql, -1, &ret, &tail);   \
     if (rc != SQLITE_OK || ret == NULL){                                           \
-        const char* err = sqlite3_errmsg(m_dbWrite);                \
+        const char* err = sqlite3_errmsg(((NULL==db)?m_dbRead:db));                \
         if (err != NULL)                                                           \
             throw FdoException::Create(A2W_SLOW(err).c_str(), rc);                 \
         else                                                                       \
@@ -3456,7 +3167,7 @@ FdoInt64 SltConnection::GetFeatureCount(const char* table)
 }                                                                                  \
 
 
-sqlite3_stmt* SltConnection::GetCachedParsedStatement(const char* sql)
+sqlite3_stmt* SltConnection::GetCachedParsedStatement(const char* sql, sqlite3* db)
 {
     //Don't let too many queries get cached.
     //There are legitimate cases where lots of different
@@ -3481,23 +3192,25 @@ sqlite3_stmt* SltConnection::GetCachedParsedStatement(const char* sql)
             QueryCacheRec& rec = lst[i];
             if (!rec.inUse)
             {
-                rec.inUse = true;
-                ret = rec.stmt;
-                sqlite3_reset(ret);
-                break;
+                if (db == NULL || (db == sqlite3_db_handle(rec.stmt)))
+                {
+                    rec.inUse = true;
+                    ret = rec.stmt;
+                    break;
+                }
             }
         }
         if (ret == NULL)
         {
             // to avoid a m_mCachedQueries.find() we will clone this small part
-            SQL_PREPARE_CACHEPARSEDSTM();
+            SQL_PREPARE_CACHEPARSEDSTM(db);
             lst.push_back(QueryCacheRec(ret));
         }
     }
     else
     {
         // to avoid a m_mCachedQueries.find() we will clone this small part
-        SQL_PREPARE_CACHEPARSEDSTM();
+        SQL_PREPARE_CACHEPARSEDSTM(db);
         m_mCachedQueries[_strdup(sql)].push_back(QueryCacheRec(ret));
     }
     if (ret == NULL)
@@ -3520,9 +3233,7 @@ void SltConnection::ReleaseParsedStatement(const char* sql, sqlite3_stmt* stmt)
 
             if (rec.stmt == stmt)
             {
-                // avoid reset on closed connections.
-                if (m_connState != FdoConnectionState_Closed)
-                    sqlite3_reset(stmt);
+                sqlite3_reset(stmt);
                 rec.inUse = false;
                 return;
             }
@@ -3586,17 +3297,6 @@ bool SltConnection::GetExtents(const wchar_t* fcname, double ext[4])
         ext[2] = dext.max[0];
         ext[3] = dext.max[1];
     }
-    else
-    {
-        SltMetadata* md = GetMetadata(table.c_str());
-        if (md != NULL && md->IsView())
-        {
-            FdoInt64 countReq;
-            FdoPtr<FdoClassDefinition> fc = md->ToClass();
-            if (fc != NULL && fc->GetClassType() == FdoClassType_FeatureClass)
-                GetExtentAndCountInfo(static_cast<FdoFeatureClass*>(fc.p), NULL, true, &countReq, &dext);
-        }
-    }
     return !dext.IsEmpty();
 }
 
@@ -3607,7 +3307,7 @@ bool SltConnection::SupportsDetailedGeomType()
     if (m_cSupportsDetGeomType == -1)
     {
         m_cSupportsDetGeomType = 0;
-        Table* table = sqlite3FindTable(m_dbWrite, "geometry_columns", 0);
+        Table* table = sqlite3FindTable(m_dbRead, "geometry_columns", 0);
         if( table )
         {
             for(int idx = 0; idx < table->nCol; idx++)
@@ -3678,13 +3378,7 @@ int SltConnection::StartTransaction(bool isUserTrans)
         if (rc == SQLITE_OK)
             m_transactionState = SQLiteActiveTransactionType_User;
         else
-        {
-            const char* err = sqlite3_errmsg(m_dbWrite);
-            if (err != NULL)
-                throw FdoException::Create(A2W_SLOW(err).c_str(), rc);
-            else
-                throw FdoException::Create(L"SQLite begin transaction failed!", rc);
-        }
+            throw FdoException::Create(L"SQLite begin transaction failed!", rc);
     }
     return rc;
 }
@@ -3706,8 +3400,10 @@ int SltConnection::CommitTransaction(bool isUserTrans)
 #endif
             if (rc == SQLITE_OK)
                 m_transactionState = SQLiteActiveTransactionType_None;
-            // else
-                //we need to handle this internally
+            // else we need to handle this internally
+            
+            if (!m_updateHookEnabled && m_changesAvailable)
+                SltConnection::commit_hook(this);
         }
     }
     else
@@ -3720,13 +3416,10 @@ int SltConnection::CommitTransaction(bool isUserTrans)
             if (rc == SQLITE_OK)
                 m_transactionState = SQLiteActiveTransactionType_None;
             else
-            {
-                const char* err = sqlite3_errmsg(m_dbWrite);
-                if (err != NULL)
-                    throw FdoException::Create(A2W_SLOW(err).c_str(), rc);
-                else
-                    throw FdoException::Create(L"SQLite commit transaction failed!", rc);
-            }
+                throw FdoException::Create(L"SQLite commit transaction failed!", rc);
+            
+            if (!m_updateHookEnabled && m_changesAvailable)
+                SltConnection::commit_hook(this);
         }
         else
             throw FdoException::Create(L"No active transaction to commit");
@@ -3750,6 +3443,9 @@ int SltConnection::RollbackTransaction(bool isUserTrans)
             rc = sqlite3_exec(m_dbWrite, "ROLLBACK;", NULL, NULL, NULL);
 #endif
             m_transactionState = SQLiteActiveTransactionType_None;
+            
+            if (!m_updateHookEnabled && m_changesAvailable)
+                SltConnection::rollback_hook(this);
         }
     }
     else
@@ -3758,22 +3454,71 @@ int SltConnection::RollbackTransaction(bool isUserTrans)
         {
             // commit internal transaction and open an user transaction
             rc = sqlite3_exec(m_dbWrite, "ROLLBACK;", NULL, NULL, NULL);
-            // should we throw an exception?
-            // how an application can recover from this point?
-            if (rc != SQLITE_OK)
-            {
-                const char* err = sqlite3_errmsg(m_dbWrite);
-                if (err != NULL)
-                    throw FdoException::Create(A2W_SLOW(err).c_str(), rc);
-                else
-                    throw FdoException::Create(L"SQLite rollback transaction failed!", rc);
-            }
+
             m_transactionState = SQLiteActiveTransactionType_None;
+            
+            if (!m_updateHookEnabled && m_changesAvailable)
+                SltConnection::rollback_hook(this);
         }
         else
             throw FdoException::Create(L"No active transaction to rollback");
     }
     return rc;
+}
+
+void SltConnection::CacheViewContent(const char* viewName)
+{
+    StringBuffer sb;
+    sb.Append("$view", 5);
+    sb.Append(viewName);
+    Table* table = sqlite3FindTable(m_dbRead, sb.Data(), 0);
+    if (table == NULL)
+    {
+        sb.Reset();
+        sb.Append("CREATE TEMP TABLE IF NOT EXISTS ", 32);
+        sb.Append("\"$view", 6);
+        sb.Append(viewName);
+        sb.Append("\" AS SELECT * FROM ", 19);
+        sb.AppendDQuoted(viewName);
+        sb.Append(";", 1);
+        sqlite3_exec(m_dbRead, sb.Data(), NULL, NULL, NULL);
+    }
+}
+
+// below section is a pain but is no other way to "see" the changes on update & delete
+void SltConnection::update_hook(void* caller, int action, char const* database,
+                                char const* tablename, sqlite3_int64 id)
+{
+    switch (action)
+    {
+    case SQLITE_DELETE:
+        {
+            SltConnection* conn = static_cast<SltConnection*>(caller);
+            SpatialIndexCache::iterator iter = conn->m_mNameToSpatialIndex.find((char*)tablename);
+            if (iter != conn->m_mNameToSpatialIndex.end())
+            {
+                iter->second->AddRowIdToDeleteList(id);
+                conn->m_changesAvailable = true;
+            }
+        }
+        break;
+    case SQLITE_UPDATE:
+        {
+            SltConnection* conn = static_cast<SltConnection*>(caller);
+            SpatialIndexCache::iterator iter = conn->m_mNameToSpatialIndex.find((char*)tablename);
+            if (iter != conn->m_mNameToSpatialIndex.end())
+            {
+                iter->second->AddRowIdToUpdateList(id);
+                conn->m_changesAvailable = true;
+            }
+        }
+        break;
+    //case SQLITE_INSERT:
+    default:
+        // in this case we do not do anything since
+        // insert is handled in a different way performance reasons
+        break;
+    }
 }
 
 int SltConnection::commit_hook(void* caller)
@@ -3784,7 +3529,7 @@ int SltConnection::commit_hook(void* caller)
         for (SpatialIndexCache::iterator iter = conn->m_mNameToSpatialIndex.begin();
              iter != conn->m_mNameToSpatialIndex.end(); iter++)
         {
-            iter->second->SetChangesAvailable(false);
+            iter->second->CommitChanges();
         }
         conn->m_changesAvailable = false;
     }
@@ -3801,11 +3546,10 @@ void SltConnection::rollback_hook(void* caller)
         for (SpatialIndexCache::iterator iter = conn->m_mNameToSpatialIndex.begin();
              iter != conn->m_mNameToSpatialIndex.end(); iter++)
         {
-            if (iter->second->GetChangesAvailable())
+            if (iter->second->ChangesAvailable())
             {
-                iter->second->SetReleased(true);
-                iter->second->Release();
-                free((char*)iter->first); //it was created via strdup, must use free()
+                delete iter->second;
+                free(iter->first); //was allocated using strdup
                 conn->m_mNameToSpatialIndex.erase(iter);
                 // we will get a crash in case we do not set it back
                 iter = conn->m_mNameToSpatialIndex.begin();
@@ -3815,151 +3559,42 @@ void SltConnection::rollback_hook(void* caller)
     }
 }
 
-void* SltConnection::sqlite3_spatial_index(void* caller, const char* tablename, int* geomIdx)
+void SltConnection::EnableHooks(bool enable, bool enforceRollback)
 {
-    SltConnection* conn = static_cast<SltConnection*>(caller);
-    return conn->GetSpatialIndexDescriptor(tablename, geomIdx);
-}
-
-void SltConnection::sqlite3_update_spatial_index(void* caller, void* sid, int action, sqlite3_int64 id, const void* blob, int szBlob)
-{
-    SltConnection* conn = static_cast<SltConnection*>(caller);
-    // handle szBlob==-1 when geometry could not be obtained
-    SpatialIndexDescriptor* sidVal = static_cast<SpatialIndexDescriptor*>(sid);
-    if (sidVal->IsReleased())
+    if (enable)
     {
-        std::string tablename = sidVal->GetTableName();
-        sidVal->Release();
-        sidVal = conn->GetSpatialIndexDescriptor(tablename.c_str());
-        if (sidVal == NULL || sidVal->IsReleased())
+        if (m_updateHookEnabled)
             return;
+        sqlite3_update_hook(m_dbWrite, SltConnection::update_hook, this);
+        sqlite3_commit_hook(m_dbWrite, SltConnection::commit_hook, this);
+        sqlite3_rollback_hook(m_dbWrite, SltConnection::rollback_hook, this);
+        m_updateHookEnabled = true;
     }
-    switch(action)
+    else
     {
-    case SQLITE_DELETE:
-        sidVal->GetSpatialIndex()->Delete(id);
-        sidVal->SetChangesAvailable(true);
-        conn->m_changesAvailable = true;
-        break;
-    case SQLITE_INSERT:
-        {
-            DBounds ext;
-            if (blob != NULL && szBlob > 0) // handle szBlob==-1 when geometry could not be obtained
-            {
-                GetFgfExtents((const unsigned char*)blob, szBlob, (double*)&ext);
-                sidVal->GetSpatialIndex()->Insert(id, ext);
-                sidVal->SetChangesAvailable(true);
-                conn->m_changesAvailable = true;
-            }
-        }
-        break;
-    case SQLITE_UPDATE:
-        {
-            DBounds ext;
-            if (blob != NULL && szBlob > 0) // handle szBlob==-1 when geometry could not be obtained
-                GetFgfExtents((const unsigned char*)blob, szBlob, (double*)&ext);
-            sidVal->GetSpatialIndex()->Update(id, ext);
-            sidVal->SetChangesAvailable(true);
-            conn->m_changesAvailable = true;
-        }
-        break;
+        sqlite3_update_hook(m_dbWrite, NULL, NULL);
+        sqlite3_commit_hook(m_dbWrite, NULL, NULL);
+        sqlite3_rollback_hook(m_dbWrite, NULL, NULL);
+        m_updateHookEnabled = false;
+
+         // we need to commit since user wants to "see" his change during a transaction
+        if (!enforceRollback)
+            SltConnection::commit_hook(this);
+        else
+            SltConnection::rollback_hook(this);
     }
 }
 
-void SltConnection::sqlite3_release_spatial_index(void* sid, const char* zTableName)
+bool SltConnection::IsCoordSysLatLong()
 {
-    SpatialIndexDescriptor* sidVal = static_cast<SpatialIndexDescriptor*>(sid);
-    sidVal->SetReleased(true);
-    sidVal->Release();
-}
+    if (m_dbRead == NULL)
+        return false;
 
-char SltConnection::sqlite3_spatial_context(void* caller, const char* tablename, const char* columnname)
-{
-    SltConnection* conn = static_cast<SltConnection*>(caller);
-    return conn->IsCoordSysLatLong(tablename, columnname) ? 1 : 2;
-}
-
-void* SltConnection::sqlite3_spatial_iterator(void* sid, const void* blob, int szBlob)
-{
-    DBounds ext;
-    SpatialIndexDescriptor* sidVal = static_cast<SpatialIndexDescriptor*>(sid);
-    if (sidVal->IsReleased())
-        return NULL;
-    if (szBlob == -1 && blob != NULL)
-    {
-        FdoByteArray* geomArray = static_cast<FdoByteArray*>((void*)blob);
-        blob = geomArray->GetData();
-        szBlob = geomArray->GetCount();
-    }
-    GetFgfExtents((const unsigned char*)blob, szBlob, (double*)&ext);
-    SpatialIterator* siter = NULL;
-    DBounds total_ext;
-    SpatialIndex* si = sidVal->GetSpatialIndex();
-    si->GetTotalExtent(total_ext);
-    if (ext.Contains(total_ext))
-    {
-        //only use spatial iterator if the search bounds does not
-        //fully contain the data bounds
-        return (void*)-1; // we do not have to use SI
-    }
-    else if (ext.Intersects(total_ext))
-        siter = new SpatialIterator(ext, si);
-
-    return new SpatialIteratorStep(siter);
-}
-
-sqlite3_int64 SltConnection::sqlite3_spatial_iterator_readnext(void* siit)
-{
-    SpatialIteratorStep* siitsp = static_cast<SpatialIteratorStep*>(siit);
-    return siitsp->ReadNext();
-}
-
-void SltConnection::sqlite3_spatial_iterator_release(void* siit)
-{
-    SpatialIteratorStep* siitToRel = static_cast<SpatialIteratorStep*>(siit);
-    delete siitToRel;
-}
-
-void SltConnection::sqlite3_spatial_iterator_reset(void* siit)
-{
-    SpatialIteratorStep* siitToRel = static_cast<SpatialIteratorStep*>(siit);
-    siitToRel->Reset();
-}
-
-bool SltConnection::IsCoordSysLatLong(const char* tablename, const char* columnname)
-{
-    bool retVal = false;
-    if (m_dbWrite == NULL)
-        return retVal;
-    
-    int spContext = 0;
-    SltMetadata* md = GetMetadata(tablename);
-    FdoPtr<FdoClassDefinition> fc = (md) ? md->ToClass() : NULL;
-    if (fc)
-    {
-        FdoPtr<FdoPropertyDefinitionCollection> props = fc->GetProperties();
-        std::wstring colName = A2W_SLOW(columnname);
-        FdoPtr<FdoPropertyDefinition> pdef = props->FindItem(colName.c_str());
-        if (pdef != NULL)
-        {
-            if(pdef->GetPropertyType() == FdoPropertyType_GeometricProperty)
-            {
-                FdoGeometricPropertyDefinition* propGeom = static_cast<FdoGeometricPropertyDefinition*>(pdef.p);
-                int dval = 0;
-                spContext = FindSpatialContext(propGeom->GetSpatialContextAssociation(), dval);
-            }
-        }
-    }
-    if (!spContext)
-        return retVal;
-
-    StringBuffer sb;
-    sb.Append("SELECT srid FROM spatial_ref_sys WHERE srtext LIKE '%GEOGCS%' AND srtext NOT LIKE '%PROJCS%' AND srid=", 102);
-    sb.Append(spContext);
-    sb.Append(";", 1);
+    const char* sql = "SELECT srid FROM spatial_ref_sys WHERE srtext LIKE '%GEOGCS%' AND srtext NOT LIKE '%PROJCS%';";
     sqlite3_stmt* pStmt = NULL;
     const char* zTail = NULL;
-    if (sqlite3_prepare_v2(m_dbWrite, sb.Data(), -1, &pStmt, &zTail) == SQLITE_OK)
+    bool retVal = false;
+    if (sqlite3_prepare_v2(m_dbRead, sql, -1, &pStmt, &zTail) == SQLITE_OK)
     {
         retVal = (sqlite3_step(pStmt) == SQLITE_ROW);
         sqlite3_finalize(pStmt);
@@ -3967,87 +3602,19 @@ bool SltConnection::IsCoordSysLatLong(const char* tablename, const char* columnn
     return retVal;
 }
 
-bool SltConnection::IsReadOnlyConnection()
+ConnInfoDetails::ConnInfoDetails(SltConnection* conn)
 {
-    return m_isReadOnlyConnection;
+    m_isInitialized = m_isCoordSysLatLong = false;
+    m_conn = conn;
 }
 
-bool SltConnection::SupportsTolerance()
+bool ConnInfoDetails::IsCoordSysLatLong()
 {
-    if (m_cSupportsTolerance == -1)
+    if (!m_isInitialized)
     {
-        m_cSupportsTolerance = 0;
-        Table* table = sqlite3FindTable(m_dbWrite, "spatial_ref_sys", 0);
-        if (table)
-        {
-            for (int idx = 0; idx < table->nCol; idx++)
-            {
-                if (sqlite3StrICmp((table->aCol+idx)->zName, "sr_xytol") == 0)
-                {
-                    m_cSupportsTolerance = 1;
-                    break;
-                }
-            }
-        }
+        // cache the result to avoid multiple callsto execute
+        m_isInitialized = true;
+        m_isCoordSysLatLong = m_conn->IsCoordSysLatLong();
     }
-    return (m_cSupportsTolerance != 0);
-}
-
-bool SltConnection::AddSupportForTolerance()
-{
-    StringBuffer sb;
-    int rc;
-    sb.Append("ALTER TABLE spatial_ref_sys ADD COLUMN sr_xytol REAL;", 53);
-    rc = sqlite3_exec(m_dbWrite, sb.Data(), NULL, NULL, NULL);
-    if (rc == SQLITE_OK)
-    {
-        sb.Reset();
-        sb.Append("ALTER TABLE spatial_ref_sys ADD COLUMN sr_ztol REAL;", 52);
-        rc = sqlite3_exec(m_dbWrite, sb.Data(), NULL, NULL, NULL);
-    }
-    if (rc != SQLITE_OK)
-    {
-        FdoException* baseExc = NULL;
-        const char* err = sqlite3_errmsg(m_dbWrite);
-        if (err != NULL)
-            baseExc = FdoException::Create(A2W_SLOW(err).c_str(), rc);
-        std::wstring errorMsg = std::wstring(L"Failed to update spatial context"); 
-        throw FdoException::Create(errorMsg.c_str(), baseExc, rc);
-    }
-    return true;
-}
-
-bool SltConnection::GetCSTolerances(const char* tablename, double& xyTolerance, double& zTolerance)
-{
-    int spContext = 0;
-    SltMetadata* md = GetMetadata(tablename);
-    FdoPtr<FdoClassDefinition> fc = (md) ? md->ToClass() : NULL;
-    if (fc && fc->GetClassType() == FdoClassType_FeatureClass)
-    {
-        FdoFeatureClass* fcDef = static_cast<FdoFeatureClass*>(fc.p);
-        FdoPtr<FdoGeometricPropertyDefinition> propGeom = fcDef->GetGeometryProperty();
-        if (propGeom != NULL)
-        {
-            int dval = 0;
-            spContext = FindSpatialContext(propGeom->GetSpatialContextAssociation(), dval);
-        }
-    }
-    if (!spContext)
-        return false;
-    StringBuffer sb;
-    sb.Append("SELECT sr_xytol,sr_ztol FROM spatial_ref_sys WHERE srid=", 56);
-    sb.Append(spContext);
-    sb.Append(";", 1);
-    sqlite3_stmt* pStmt = NULL;
-    const char* zTail = NULL;
-    if (sqlite3_prepare_v2(m_dbWrite, sb.Data(), -1, &pStmt, &zTail) == SQLITE_OK)
-    {
-        if(sqlite3_step(pStmt) == SQLITE_ROW)
-        {
-            xyTolerance = sqlite3_column_double(pStmt, 0);
-            zTolerance = sqlite3_column_double(pStmt, 1);
-        }
-        sqlite3_finalize(pStmt);
-    }
-    return (xyTolerance > 0.0);
+    return m_isCoordSysLatLong;
 }

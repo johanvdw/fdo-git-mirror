@@ -8,15 +8,13 @@
 //
 // ------------------------------------------------------------------
 //
-// $Id: time_string.hpp 47222 2008-07-08 14:29:03Z bemandawes $
+// $Id: time_string.hpp,v 1.1.2.1 2006/09/13 17:25:52 grafik Exp $
 
 #ifndef BOOST_TIME_STRING_HPP_GP_20060731
 #define BOOST_TIME_STRING_HPP_GP_20060731
 
 #include <string>
 #include <ctime>
-
-#include <boost/config/warning_disable.hpp>
 
 namespace boost {
 

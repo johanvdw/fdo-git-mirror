@@ -103,7 +103,7 @@ protected:
 /*
 	void GetJoinTree( FdoRdbmsSchemaManager* sm );
 */
-    virtual void GetClassCapabilities( FdoIConnection* connection, FdoString* schema, FdoStringCollection* classes);
+    virtual void GetClassCapabilities( FdoIConnection* connection );
     void CheckBaseProperties( FdoIConnection* connection );
     void CheckNonNumericForeignClass( FdoIConnection* connection );
 
@@ -184,10 +184,6 @@ protected:
 
     virtual bool CanDropCol();
 
-    virtual bool SupportsCrossDatastoreDependencies() {return true;};
-
-    virtual bool DelayNLSSchema() {return true;};
-
     virtual FdoStringP SchemaTestErrFile( int fileNum, bool isMaster );
 
     virtual FdoStringP SchemaNoMetaErrFile( int fileNum, bool isMaster );
@@ -199,10 +195,6 @@ protected:
 	virtual bool CreateGeometrySICol();
 
 	virtual FdoStringP GetValueColumnName();
-
-	virtual FdoStringP GetParcelFirstName();
-	virtual FdoStringP GetParcelLastName();
-    virtual FdoStringP GetDefaultSchemaName();
 
     void WriteXmlOverrides(
         FdoIConnection* connection,

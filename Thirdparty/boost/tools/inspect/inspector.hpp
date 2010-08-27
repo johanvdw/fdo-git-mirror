@@ -26,8 +26,6 @@ namespace boost
   {
     typedef std::set< string > string_set;
 
-    const char * line_break();
-
     class inspector
     {
     protected:

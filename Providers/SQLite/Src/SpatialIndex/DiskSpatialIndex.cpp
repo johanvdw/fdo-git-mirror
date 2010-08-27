@@ -35,10 +35,6 @@ void* _aligned_realloc(void* ptr, size_t size, size_t alignment)
 
 #endif
 
-#define MAPPED_BOUNDS_PERPAGE (64*1024)
-
-typedef MappedFile<Bounds, MAPPED_BOUNDS_PERPAGE> BoundsMappedFile;
-
 //====================================================================
 // This is a spatial skip list structure. 
 // It is built on the fly, and makes the assumption that
@@ -49,7 +45,6 @@ typedef MappedFile<Bounds, MAPPED_BOUNDS_PERPAGE> BoundsMappedFile;
 //====================================================================
 SpatialIndex::SpatialIndex(const wchar_t* seedname)
 {
-    _positionIdx = 1;
     _lastInsertedIdx = 0;
     _countChanges = 0;
 
@@ -75,8 +70,8 @@ SpatialIndex::~SpatialIndex()
             _aligned_free(_levels[i]);
         else
         {
-            ((BoundsMappedFile*)_levels[i])->close();
-            delete (BoundsMappedFile*)_levels[i];
+            ((MappedFile*)_levels[i])->close();
+            delete (MappedFile*)_levels[i];
         }
     }
 }
@@ -109,14 +104,8 @@ void SpatialIndex::GetSIFilename(std::wstring& res)
 
 static Bounds EMPTY_BOX(true);
 
-void SpatialIndex::Insert(FdoInt64 dbId, DBounds& ext)
+void SpatialIndex::Insert(unsigned fid, DBounds& ext)
 {
-    _linkMap[dbId] = _positionIdx;
-    if (_positionIdx >= _backMap.size()) // allocate a bit more
-        _backMap.setsize(_positionIdx, 0);
-    _backMap[_positionIdx-1] = dbId;
-
-    unsigned int fid = _positionIdx;
     //check if we have got a local offset
     //If not yet, then use the given bounds
     //to set it up
@@ -135,15 +124,14 @@ void SpatialIndex::Insert(FdoInt64 dbId, DBounds& ext)
     
     // avoid a update to change this value since update will provide 
     // fid < _lastInsertedIdx and we will force SI update
-    if (dbId > _lastInsertedIdx)
-        _lastInsertedIdx = dbId;
-    _positionIdx++;
+    if (fid > _lastInsertedIdx)
+        _lastInsertedIdx = fid;
 }
 
-void SpatialIndex::Insert(unsigned int fid, Bounds& b)
+void SpatialIndex::Insert(unsigned fid, Bounds& b)
 {
     //insert into the skip lists
-    unsigned int index = fid;
+    unsigned int index = (unsigned int)fid;
     unsigned int oldIndex = index;
     unsigned int* counts = _counts;
     void** levels = _levels;
@@ -159,7 +147,7 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
         {
             _levelTypes[i] = 1;
             
-            BoundsMappedFile* mf = new BoundsMappedFile(20);
+            MappedFile* mf = new MappedFile(sizeof(Bounds), sizeof(Bounds)*1024*64, 20);
             wchar_t tmp[16];
             swprintf(tmp, sizeof(tmp), L"%d", i);
             if (_seedName.size() == 0)
@@ -199,7 +187,7 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
         }
         else //otherwise get a memory mapped pointer
         {
-            BoundsMappedFile* mf = (BoundsMappedFile*)levels[i];
+            MappedFile* mf = (MappedFile*)levels[i];
             IndexType oldsz = mf->numrecs();
 
             //fill any newly allocated sections with empty boxes
@@ -239,7 +227,7 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
                     Bounds::Add(&n->b, &oldRoot->b);
                 }
             }
-            else if (fid < _positionIdx)
+            else if (fid <= _lastInsertedIdx)
             {
                 // in case we do an update we need to propagate the value till root
                 index = (unsigned int)fid;
@@ -261,54 +249,20 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
     }
 }
 
-void SpatialIndex::Update(FdoInt64 dbId, DBounds& ext)
+void SpatialIndex::Update(unsigned fid, DBounds& ext)
 {
-    // avoid getting NaN added to the SI when we update a geometry to null
-    if (ext.IsEmpty())
-    {
-        // since we set geometry to null we can delete the item
-        Delete(dbId);
-        return;
-    }
-
-    LinkMap::iterator it = _linkMap.find(dbId);
-    if (it == _linkMap.end())
-    {
-        // avoid out-of-sync in case user update rowid only
-        Insert(dbId, ext);
-        return;
-    }
     // we can use insert, however we need to count number of changes 
     // and later force a rebuild when the number of changes becomes too high
-    unsigned int fid = it->second;
-    //check if we have got a local offset
-    //If not yet, then use the given bounds
-    //to set it up
-    if (!_haveOffset)
-    {
-        for (int i=0; i<SI_DIM; i++)
-            _offset[i] = ext.min[i];
-
-        _haveOffset = true;
-    }
-
-    //translate the given bounds to local space
-    Bounds b;
-    TranslateBounds(&ext, _offset, &b);
-    Insert(fid, b);
+    Insert(fid, ext);
     _countChanges++;
-    unsigned int tproc = (unsigned int)(_positionIdx/10.0);
-    if (tproc && _countChanges > tproc)
+    if ((10*_countChanges) > _lastInsertedIdx)
         FullSpatialIndexUpdate();
 }
 
-void SpatialIndex::Delete(FdoInt64 dbId)
+void SpatialIndex::Delete(unsigned fid)
 {
-    LinkMap::iterator it = _linkMap.find(dbId);
-    if (it == _linkMap.end())
-        return;
     //insert into the skip lists
-    unsigned int index = it->second;
+    unsigned int index = (unsigned int)fid;
     void** levels = _levels;
 
     if (_sizes[0] > index)
@@ -321,24 +275,16 @@ void SpatialIndex::Delete(FdoInt64 dbId)
         }
         else //otherwise get a memory mapped pointer
         {
-            BoundsMappedFile* mf = (BoundsMappedFile*)levels[0];
+            MappedFile* mf = (MappedFile*)levels[0];
             n = (Node*)mf->load_noaddref(index);
             n->b = EMPTY_BOX;
         }
         _countChanges++;
-        unsigned int tproc = (unsigned int)(_positionIdx/10.0);
-        if (tproc && _countChanges > tproc)
+        if ((10*_countChanges) > _lastInsertedIdx)
             FullSpatialIndexUpdate();
-        else if (index == (_positionIdx-1))
-            _positionIdx = (index <= 1) ? 1 : (index-1);
+        else if (_lastInsertedIdx == index)
+            _lastInsertedIdx = (index == 0) ? 0 : (index-1);
     }
-    _backMap[it->second-1] = 0;
-    _linkMap.erase(it);
-}
-
-FdoInt64 SpatialIndex::operator[](int fid)
-{
-    return _backMap[fid-1];
 }
 
 void SpatialIndex::FullSpatialIndexUpdate()
@@ -359,7 +305,7 @@ void SpatialIndex::FullSpatialIndexUpdate()
         }
         else
         {
-            BoundsMappedFile* mf = (BoundsMappedFile*)levels[i];
+            MappedFile* mf = (MappedFile*)levels[i];
             for (unsigned int y = 0; y < counts[i]; y++)
             {
                 n = (Node*)mf->load_noaddref(y);
@@ -378,7 +324,7 @@ void SpatialIndex::FullSpatialIndexUpdate()
     }
     else
     {
-        BoundsMappedFile* mf = (BoundsMappedFile*)levels[0];
+        MappedFile* mf = (MappedFile*)levels[0];
         for (unsigned int y = 0; y < counts[0]; y++)
         {
             n = (Node*)mf->load_noaddref(y);
@@ -392,7 +338,7 @@ inline Node* SpatialIndex::GetNode(int level, int index)
     if (_levelTypes[level] == 0)
         return &((Node*)_levels[level])[index];
     else
-        return (Node*)((BoundsMappedFile*)_levels[level])->load_noaddref(index);
+        return (Node*)((MappedFile*)_levels[level])->load_noaddref(index);
 }
 
 
@@ -402,8 +348,10 @@ void SpatialIndex::ReOpen()
     {
         if (_levelTypes[i] == 1)
         {
-            BoundsMappedFile* mf = (BoundsMappedFile*)_levels[i];
-            mf->reopen();
+            MappedFile* mf = (MappedFile*)_levels[i];
+            const wchar_t* name =  mf->name().c_str();
+            mf->close();
+            mf->open(name);
         }
     }
 }
@@ -567,9 +515,4 @@ done:
         _prevStopLevel = prevStopLevel;
         return true;
     }
-}
-
-FdoInt64 SpatialIterator::operator[](int fid)
-{
-    return (*_si)[fid];
 }

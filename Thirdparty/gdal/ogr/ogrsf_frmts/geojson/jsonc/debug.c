@@ -34,7 +34,7 @@ static int _syslog = 0;
 static int _debug = 0;
 
 void mc_set_debug(int debug) { _debug = debug; }
-int mc_get_debug(void) { return _debug; }
+int mc_get_debug() { return _debug; }
 
 extern void mc_set_syslog(int syslog)
 {
@@ -51,7 +51,6 @@ void mc_abort(const char *msg, ...)
   } else
 #endif
 	  vprintf(msg, ap);
-  va_end(ap);
   exit(1);
 }
 
@@ -67,7 +66,6 @@ void mc_debug(const char *msg, ...)
 	} else
 #endif
 		vprintf(msg, ap);
-    va_end(ap);
   }
 }
 
@@ -81,7 +79,6 @@ void mc_error(const char *msg, ...)
 	} else
 #endif
 		vfprintf(stderr, msg, ap);
-  va_end(ap);
 }
 
 void mc_info(const char *msg, ...)
@@ -94,5 +91,4 @@ void mc_info(const char *msg, ...)
 	} else 
 #endif
 		vfprintf(stderr, msg, ap);
-  va_end(ap);
 }

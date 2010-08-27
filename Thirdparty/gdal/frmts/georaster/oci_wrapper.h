@@ -28,18 +28,20 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _OCI_WRAPPER_H_INCLUDED
-#define _OCI_WRAPPER_H_INCLUDED
-
-// GDAL supporting types
+#ifndef _ORCL_WRAP_H_INCLUDED
+#define _ORCL_WRAP_H_INCLUDED
 
 #include "gdal.h"
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-// Oracle Class Interface
-
 #include <oci.h>
+
+/***************************************************************************/
+/*                            default Model Coordinate Location is CENTER  */
+/***************************************************************************/
+
+#define OW_DEFAULT_CENTER true
 
 /***************************************************************************/
 /*                            Data type conversion table record type       */
@@ -67,7 +69,7 @@ int                 OWParseEPSG( const char* pszText );
 bool                OWIsNumeric( const char *pszText );
 const char*         OWParseSDO_GEOR_INIT( const char* pszInsert, int nField );
 const char*         OWReplaceString( const char* pszBaseString,
-                        const char* pszToken,
+                        const char* pszToken, 
                         const char* pszStopToken,
                         const char* pszOWReplaceToken );
 
@@ -87,7 +89,6 @@ const char*         OWReplaceString( const char* pszBaseString,
 #define SDO_GEOMETRY                TYPE_OWNER".SDO_GEOMETRY"
 #define SDO_GEORASTER               TYPE_OWNER".SDO_GEORASTER"
 #define SDO_NUMBER_ARRAY            TYPE_OWNER".SDO_NUMBER_ARRAY"
-#define OW_XMLNS        "xmlns=\"http://xmlns.oracle.com/spatial/georaster\""
 
 /***************************************************************************/
 /*                   USER DEFINED (actualy Oracle's) types                 */
@@ -172,13 +173,13 @@ class OWStatement;
 //  OWConnection
 //  ---------------------------------------------------------------------------
 
-class OWConnection
+class OWConnection 
 {
     friend class OWStatement;
 
 public:
 
-                        OWConnection(
+                        OWConnection( 
                             const char* pszUserIn,
                             const char* pszPasswordIn,
                             const char* pszServerIn );
@@ -192,12 +193,11 @@ private:
     OCIDescribe*        hDescribe;
 
     int                 nVersion;
-    sb4                 nCharSize;
 
-    bool                bSuceeeded;
+    bool                bSuceeded;
 
-    char*               pszUser;
-    char*               pszPassword;
+    char*               pszUser; 
+    char*               pszPassword; 
     char*               pszServer;
 
     OCIType*            hNumArrayTDO;
@@ -221,21 +221,19 @@ public:
     void                DestroyType( sdo_geometry** pphData );
     OCIType*            DescribeType( char *pszTypeName );
 
-    bool                Succeeded() { return bSuceeeded; };
+    bool                Succed() { return bSuceeded; };
 
     char*               GetUser() { return pszUser; };
     char*               GetPassword() { return pszPassword; };
     char*               GetServer() { return pszServer; };
     int                 GetVersion () { return nVersion; };
-    sb4                 GetCharSize () { return nCharSize; };
-
 };
 
 /***************************************************************************/
-/*                           OWStatement                                   */
+/*                           OWStatement                              */
 /***************************************************************************/
 
-class OWStatement
+class OWStatement 
 {
 
 public:
@@ -270,32 +268,31 @@ public:
     void                Define( int* pnData );
     void                Bind( int* pnData );
     void                Bind( double* pnData );
-    void                Bind( char* pData, long nData);    
     void                Define( double* pnData );
     void                Define( char* pszData, int nSize = OWNAME );
     void                Bind( char* pszData, int nSize = OWNAME );
-    void                Define( OCILobLocator** pphLocator,
+    void                Define( OCILobLocator** pphLocator, 
                             bool bBLOB = false);
     void                Define( OCIArray** pphData );
     void                Define( sdo_georaster** pphData );
     void                Define( sdo_geometry** pphData );
-    void                Define( OCILobLocator** pphLocator,
+    void                Define( OCILobLocator** pphLocator, 
                             int nIterations );
     void                BindName( char* pszName, int* pnData );
-    void                BindName( char* pszName, char* pszData,
+    void                BindName( char* pszName, char* pszData, 
                             int nSize = OWNAME );
-    void                BindName( char* pszName,
+    void                BindName( char* pszName, 
                             OCILobLocator** pphLocator );
     static void         Free( OCILobLocator** ppphLocator,
                             int nCount );
     unsigned long       ReadBlob( OCILobLocator* phLocator,
                             void* pBuffer, int nSize );
-    char*               ReadCLob( OCILobLocator* phLocator );
+    char*               ReadClob( OCILobLocator* phLocator );
     bool                WriteBlob( OCILobLocator* phLocator,
                             void* pBuffer, int nSize );
-    int                 GetElement( OCIArray** ppoData,
+    int                 GetElement( OCIArray** ppoData, 
                             int nIndex, int* pnResult );
-    double              GetElement( OCIArray** ppoData,
+    double              GetElement( OCIArray** ppoData, 
                             int nIndex, double* pdfResult );
 };
 

@@ -198,18 +198,8 @@ void FdoSmLpFeatureClass::PostFinalize()
 				    mGeometryProperty = geomProp;
 
                     if ( mGeometryProperty->GetElementState() == FdoSchemaElementState_Deleted ) {
-                        FdoSmLpPropertyP baseProperty = mGeometryProperty->GetBaseProperty();
-
-                        if ( baseProperty && (baseProperty->GetElementState() == FdoSchemaElementState_Deleted) ) {
-                            // Delete was cascaded from base property, so just
-                            // inherit main geometry removal.
-                            mGeometryProperty = NULL;
-                            mGeometryPropertyName = L"";
-                        }
-                        else {
-                            // Can't set to deleted geometric property
-                            AddGeomDeletedError();
-                        }
+                        // Can't set to deleted geometric property
+                        AddGeomDeletedError();
                     }
                     else {
     	    		    if ( (GetElementState() != FdoSchemaElementState_Unchanged) &&
@@ -298,10 +288,10 @@ void FdoSmLpFeatureClass::PostFinalize()
 		    FdoSmLpFeatureClassP baseClass;
 
 		    // Find the lowest base class with a GeometryProperty
-		    while ( currClass && currClass->GetBaseClass()) {
+		    while ( currClass && currClass->GetBaseClass() ) {
 			    currClass = currClass->GetBaseClass()->SmartCast<FdoSmLpFeatureClass>();
 
-			    if ( currClass && currClass->GetGeometryProperty() )
+			    if ( currClass->GetGeometryProperty() )
 				    baseClass = currClass;
 		    }
 

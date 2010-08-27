@@ -137,7 +137,7 @@ FdoPtr<FdoFeatureSchemaCollection> FdoSchemaMergeContext::GetUpdSchemas() const
 void FdoSchemaMergeContext::SetUpdSchemas( FdoFeatureSchemaCollection* schemas )
 {
     mUpdSchema = NULL;
-    mUpdSchemas = FDO_SAFE_ADDREF(schemas);
+    mUpdSchemas = schemas;
 }
 
 void FdoSchemaMergeContext::SetUpdSchema( FdoFeatureSchema* schema )
@@ -1204,13 +1204,15 @@ void FdoSchemaMergeContext::MergeSchema( FdoFeatureSchema* newSchema )
 
 void FdoSchemaMergeContext::CheckReferences()
 {
-    FdoInt32 idx;
-    FdoFeatureSchemasP schemas = GetSchemas();
+    if ( !GetIgnoreStates() ) {
+        FdoInt32 idx;
+        FdoFeatureSchemasP schemas = GetSchemas();
 
-    // Check references for each schema class.
-    for ( idx = 0; idx < schemas->GetCount(); idx++ ) {
-        FdoFeatureSchemaP schema = schemas->GetItem( idx );
-        schema->CheckReferences( this );
+        // Check references for each schema class.
+        for ( idx = 0; idx < schemas->GetCount(); idx++ ) {
+            FdoFeatureSchemaP schema = schemas->GetItem( idx );
+            schema->CheckReferences( this );
+        }
     }
 }
 

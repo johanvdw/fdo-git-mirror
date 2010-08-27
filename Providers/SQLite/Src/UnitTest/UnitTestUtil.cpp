@@ -117,32 +117,6 @@ FdoIConnection* UnitTestUtil::CreateConnection()
     return (manager->CreateConnection (L"OSGeo.SQLite"));
 }
 
-FdoIConnection* UnitTestUtil::OpenMemoryConnection( bool add_spc, FdoIConnection  *inConn)
-{
-    FdoIConnection *conn = inConn;
-	if( conn == NULL )
-		conn = UnitTestUtil::CreateConnection();
-	// Open the connection
-    std::wstring connStr = L"File=\":memory:\";UseFdoMetadata=TRUE;";
-	conn->SetConnectionString(connStr.c_str());
-	FdoPtr<FdoIConnectionInfo>info = conn->GetConnectionInfo();
-	FdoPtr<FdoIConnectionPropertyDictionary> prop = info->GetConnectionProperties();
-	conn->Open();
-
-    if (add_spc)
-    {
-	    // Create spatial context
-	    FdoPtr<FdoICreateSpatialContext> pCreateCreateSpatialContext = (FdoICreateSpatialContext*) conn->CreateCommand(FdoCommandType_CreateSpatialContext);
-	    pCreateCreateSpatialContext->SetCoordinateSystemWkt(L"LL84");
-	    pCreateCreateSpatialContext->SetDescription(L"World Coordinate System, Degrees, what else do you need to know?" );
-	    pCreateCreateSpatialContext->SetName( L"LL84" );
-	    pCreateCreateSpatialContext->SetXYTolerance( 17.0 );
-	    pCreateCreateSpatialContext->SetZTolerance(3.14159);
-	    pCreateCreateSpatialContext->Execute();
-    }
-	return conn;
-}
-
 FdoIConnection* UnitTestUtil::OpenConnection( FdoString* fileName, bool re_create, bool add_spc, FdoIConnection *inConn )
 {
 #ifdef _WIN32
@@ -185,9 +159,11 @@ FdoIConnection* UnitTestUtil::OpenConnection( FdoString* fileName, bool re_creat
         {
 		    // Create spatial context
 		    FdoPtr<FdoICreateSpatialContext> pCreateCreateSpatialContext = (FdoICreateSpatialContext*) conn->CreateCommand(FdoCommandType_CreateSpatialContext);
-		    pCreateCreateSpatialContext->SetCoordinateSystemWkt(L"GEOGCS[\"LL84\",DATUM[\"WGS84\",SPHEROID[\"WGS84\",6378137.000,298.25722293]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.01745329251994]]");
+		    pCreateCreateSpatialContext->SetCoordinateSystemWkt(L"LL84");
 		    pCreateCreateSpatialContext->SetDescription(L"World Coordinate System, Degrees, what else do you need to know?" );
 		    pCreateCreateSpatialContext->SetName( L"LL84" );
+		    pCreateCreateSpatialContext->SetXYTolerance( 17.0 );
+		    pCreateCreateSpatialContext->SetZTolerance(3.14159);
 		    pCreateCreateSpatialContext->Execute();
         }
 		return conn;
@@ -377,10 +353,6 @@ void UnitTestUtil::CreateData( bool create, FdoIConnection  *inConn, int featCou
     FdoPtr<FdoClassCapabilities> caps = cdef->GetCapabilities();
     CPPUNIT_ASSERT(caps->SupportsLocking() == false);
     CPPUNIT_ASSERT(caps->SupportsLongTransactions() == false);
-    CPPUNIT_ASSERT (caps->GetPolygonVertexOrderRule (L"Data") == FdoPolygonVertexOrderRule_None);
-    CPPUNIT_ASSERT (caps->GetPolygonVertexOrderStrictness (L"Data") == false);
-    CPPUNIT_ASSERT (caps->GetPolygonVertexOrderRule (L"Data2") == FdoPolygonVertexOrderRule_None);
-    CPPUNIT_ASSERT (caps->GetPolygonVertexOrderStrictness (L"Data2") == false);
     
 	FdoPtr<FdoPropertyDefinition> gpd = pdc->GetItem(L"Data2");
     CPPUNIT_ASSERT_MESSAGE("Expected a geometry property type", gpd->GetPropertyType() == FdoPropertyType_GeometricProperty );

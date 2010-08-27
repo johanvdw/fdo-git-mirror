@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALtest.java 17965 2009-11-04 21:41:21Z rouault $
+ * $Id: GDALtest.java 9134 2006-02-08 19:39:03Z collinsb $
  *
  * Name:     GDALtest.java
  * Project:  GDAL SWIG Interface
@@ -32,7 +32,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -222,7 +221,6 @@ public class GDALtest extends JFrame implements ActionListener{
 			System.out.println("Allocating ByteBuffer of size: " + buf_size);
 
 			ByteBuffer data = ByteBuffer.allocateDirect(buf_size);
-			data.order(ByteOrder.nativeOrder());
 
 			int returnVal = 0;
 			try {
@@ -294,7 +292,7 @@ public class GDALtest extends JFrame implements ActionListener{
 			data_type = BufferedImage.TYPE_BYTE_INDEXED;
 			cm = poBand.GetRasterColorTable().getIndexColorModel(
 								gdal.GetDataTypeSize(buf_type));
-			img = new BufferedImage(cm, raster, false, null);
+			img = new BufferedImage(cm, raster, true, null);
 		} else {
 			ColorSpace cs = null;
 			if(bandCount > 2){
@@ -332,12 +330,7 @@ public class GDALtest extends JFrame implements ActionListener{
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		GDALtest test = new GDALtest();
-                if (args.length >= 1)
-                {
-                    BufferedImage tmpImage = test.openFile(new File(args[0]));
-                    test.setImage(tmpImage);
-                }
+		new GDALtest();
 	}
 
 }

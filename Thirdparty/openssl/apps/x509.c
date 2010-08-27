@@ -99,13 +99,7 @@ static const char *x509_usage[]={
 " -passin arg     - private key password source\n",
 " -serial         - print serial number value\n",
 " -subject_hash   - print subject hash value\n",
-#ifndef OPENSSL_NO_MD5
-" -subject_hash_old   - print old-style (MD5) subject hash value\n",
-#endif
 " -issuer_hash    - print issuer hash value\n",
-#ifndef OPENSSL_NO_MD5
-" -issuer_hash_old    - print old-style (MD5) issuer hash value\n",
-#endif
 " -hash           - synonym for -subject_hash\n",
 " -subject        - print subject DN\n",
 " -issuer         - print issuer DN\n",
@@ -120,7 +114,6 @@ static const char *x509_usage[]={
 " -alias          - output certificate alias\n",
 " -noout          - no certificate output\n",
 " -ocspid         - print OCSP hash values for the subject name and public key\n",
-" -ocsp_uri       - print OCSP Responder URL(s)\n",
 " -trustout       - output a \"trusted\" certificate\n",
 " -clrtrust       - clear all trusted purposes\n",
 " -clrreject      - clear all rejected purposes\n",
@@ -185,11 +178,7 @@ int MAIN(int argc, char **argv)
 	int text=0,serial=0,subject=0,issuer=0,startdate=0,enddate=0;
 	int next_serial=0;
 	int subject_hash=0,issuer_hash=0,ocspid=0;
-#ifndef OPENSSL_NO_MD5
-	int subject_hash_old=0,issuer_hash_old=0;
-#endif
 	int noout=0,sign_flag=0,CA_flag=0,CA_createserial=0,email=0;
-	int ocsp_uri=0;
 	int trustout=0,clrtrust=0,clrreject=0,aliasout=0,clrext=0;
 	int C=0;
 	int x509req=0,days=DEF_DAYS,modulus=0,pubkey=0;
@@ -199,7 +188,7 @@ int MAIN(int argc, char **argv)
 	X509_REQ *rq=NULL;
 	int fingerprint=0;
 	char buf[256];
-	const EVP_MD *md_alg,*digest=NULL;
+	const EVP_MD *md_alg,*digest=EVP_sha1();
 	CONF *extconf = NULL;
 	char *extsect = NULL, *extfile = NULL, *passin = NULL, *passargin = NULL;
 	int need_rand = 0;
@@ -234,7 +223,7 @@ int MAIN(int argc, char **argv)
 
 	ctx=X509_STORE_new();
 	if (ctx == NULL) goto end;
-	X509_STORE_set_verify_cb(ctx,callb);
+	X509_STORE_set_verify_cb_func(ctx,callb);
 
 	argc--;
 	argv++;
@@ -389,8 +378,6 @@ int MAIN(int argc, char **argv)
 			C= ++num;
 		else if (strcmp(*argv,"-email") == 0)
 			email= ++num;
-		else if (strcmp(*argv,"-ocsp_uri") == 0)
-			ocsp_uri= ++num;
 		else if (strcmp(*argv,"-serial") == 0)
 			serial= ++num;
 		else if (strcmp(*argv,"-next_serial") == 0)
@@ -406,16 +393,8 @@ int MAIN(int argc, char **argv)
 		else if (strcmp(*argv,"-hash") == 0
 			|| strcmp(*argv,"-subject_hash") == 0)
 			subject_hash= ++num;
-#ifndef OPENSSL_NO_MD5
-		else if (strcmp(*argv,"-subject_hash_old") == 0)
-			subject_hash_old= ++num;
-#endif
 		else if (strcmp(*argv,"-issuer_hash") == 0)
 			issuer_hash= ++num;
-#ifndef OPENSSL_NO_MD5
-		else if (strcmp(*argv,"-issuer_hash_old") == 0)
-			issuer_hash_old= ++num;
-#endif
 		else if (strcmp(*argv,"-subject") == 0)
 			subject= ++num;
 		else if (strcmp(*argv,"-issuer") == 0)
@@ -643,7 +622,7 @@ bad:
 		if (!X509_set_subject_name(x,req->req_info->subject)) goto end;
 
 		X509_gmtime_adj(X509_get_notBefore(x),0);
-	        X509_time_adj_ex(X509_get_notAfter(x),days, 0, NULL);
+	        X509_gmtime_adj(X509_get_notAfter(x),(long)60*60*24*days);
 
 		pkey = X509_REQ_get_pubkey(req);
 		X509_set_pubkey(x,pkey);
@@ -752,17 +731,13 @@ bad:
 				ASN1_INTEGER_free(ser);
 				BIO_puts(out, "\n");
 				}
-			else if ((email == i) || (ocsp_uri == i))
+			else if (email == i) 
 				{
 				int j;
-				STACK_OF(OPENSSL_STRING) *emlst;
-				if (email == i)
-					emlst = X509_get1_email(x);
-				else
-					emlst = X509_get1_ocsp(x);
-				for (j = 0; j < sk_OPENSSL_STRING_num(emlst); j++)
-					BIO_printf(STDout, "%s\n",
-						   sk_OPENSSL_STRING_value(emlst, j));
+				STACK *emlst;
+				emlst = X509_get1_email(x);
+				for (j = 0; j < sk_num(emlst); j++)
+					BIO_printf(STDout, "%s\n", sk_value(emlst, j));
 				X509_email_free(emlst);
 				}
 			else if (aliasout == i)
@@ -776,22 +751,10 @@ bad:
 				{
 				BIO_printf(STDout,"%08lx\n",X509_subject_name_hash(x));
 				}
-#ifndef OPENSSL_NO_MD5
-			else if (subject_hash_old == i)
-				{
-				BIO_printf(STDout,"%08lx\n",X509_subject_name_hash_old(x));
-				}
-#endif
 			else if (issuer_hash == i)
 				{
 				BIO_printf(STDout,"%08lx\n",X509_issuer_name_hash(x));
 				}
-#ifndef OPENSSL_NO_MD5
-			else if (issuer_hash_old == i)
-				{
-				BIO_printf(STDout,"%08lx\n",X509_issuer_name_hash_old(x));
-				}
-#endif
 			else if (pprint == i)
 				{
 				X509_PURPOSE *ptmp;
@@ -922,18 +885,14 @@ bad:
 				int j;
 				unsigned int n;
 				unsigned char md[EVP_MAX_MD_SIZE];
-				const EVP_MD *fdig = digest;
 
-				if (!fdig)
-					fdig = EVP_sha1();
-
-				if (!X509_digest(x,fdig,md,&n))
+				if (!X509_digest(x,digest,md,&n))
 					{
 					BIO_printf(bio_err,"out of memory\n");
 					goto end;
 					}
 				BIO_printf(STDout,"%s Fingerprint=",
-						OBJ_nid2sn(EVP_MD_type(fdig)));
+						OBJ_nid2sn(EVP_MD_type(digest)));
 				for (j=0; j<(int)n; j++)
 					{
 					BIO_printf(STDout,"%02X%c",md[j],
@@ -953,6 +912,14 @@ bad:
 						passin, e, "Private key");
 					if (Upkey == NULL) goto end;
 					}
+#ifndef OPENSSL_NO_DSA
+		                if (Upkey->type == EVP_PKEY_DSA)
+		                        digest=EVP_dss1();
+#endif
+#ifndef OPENSSL_NO_ECDSA
+				if (Upkey->type == EVP_PKEY_EC)
+					digest=EVP_ecdsa();
+#endif
 
 				assert(need_rand);
 				if (!sign(x,Upkey,days,clrext,digest,
@@ -969,6 +936,14 @@ bad:
 						"CA Private Key");
 					if (CApkey == NULL) goto end;
 					}
+#ifndef OPENSSL_NO_DSA
+		                if (CApkey->type == EVP_PKEY_DSA)
+		                        digest=EVP_dss1();
+#endif
+#ifndef OPENSSL_NO_ECDSA
+				if (CApkey->type == EVP_PKEY_EC)
+					digest = EVP_ecdsa();
+#endif
 				
 				assert(need_rand);
 				if (!x509_certify(ctx,CAfile,digest,x,xca,
@@ -995,6 +970,15 @@ bad:
 					}
 
 				BIO_printf(bio_err,"Generating certificate request\n");
+
+#ifndef OPENSSL_NO_DSA
+		                if (pk->type == EVP_PKEY_DSA)
+		                        digest=EVP_dss1();
+#endif
+#ifndef OPENSSL_NO_ECDSA
+				if (pk->type == EVP_PKEY_EC)
+					digest=EVP_ecdsa();
+#endif
 
 				rq=X509_to_X509_REQ(x,pk,digest);
 				EVP_PKEY_free(pk);
@@ -1049,15 +1033,16 @@ bad:
 		}
 	else if (outformat == FORMAT_NETSCAPE)
 		{
-		NETSCAPE_X509 nx;
-		ASN1_OCTET_STRING hdr;
+		ASN1_HEADER ah;
+		ASN1_OCTET_STRING os;
 
-		hdr.data=(unsigned char *)NETSCAPE_CERT_HDR;
-		hdr.length=strlen(NETSCAPE_CERT_HDR);
-		nx.header= &hdr;
-		nx.cert=x;
+		os.data=(unsigned char *)NETSCAPE_CERT_HDR;
+		os.length=strlen(NETSCAPE_CERT_HDR);
+		ah.header= &os;
+		ah.data=(char *)x;
+		ah.meth=X509_asn1_meth();
 
-		i=ASN1_item_i2d_bio(ASN1_ITEM_rptr(NETSCAPE_X509),out,&nx);
+		i=ASN1_i2d_bio_of(ASN1_HEADER,i2d_ASN1_HEADER,out,&ah);
 		}
 	else	{
 		BIO_printf(bio_err,"bad output format specified for outfile\n");
@@ -1159,8 +1144,7 @@ static int x509_certify(X509_STORE *ctx, char *CAfile, const EVP_MD *digest,
 	/* NOTE: this certificate can/should be self signed, unless it was
 	 * a certificate request in which case it is not. */
 	X509_STORE_CTX_set_cert(&xsc,x);
-	X509_STORE_CTX_set_flags(&xsc, X509_V_FLAG_CHECK_SS_SIGNATURE);
-	if (!reqfile && X509_verify_cert(&xsc) <= 0)
+	if (!reqfile && !X509_verify_cert(&xsc))
 		goto end;
 
 	if (!X509_check_private_key(xca,pkey))
@@ -1176,7 +1160,7 @@ static int x509_certify(X509_STORE *ctx, char *CAfile, const EVP_MD *digest,
 		goto end;
 
 	/* hardwired expired */
-	if (X509_time_adj_ex(X509_get_notAfter(x),days, 0, NULL) == NULL)
+	if (X509_gmtime_adj(X509_get_notAfter(x),(long)60*60*24*days) == NULL)
 		goto end;
 
 	if (clrext)

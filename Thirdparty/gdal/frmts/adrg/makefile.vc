@@ -1,5 +1,5 @@
 
-OBJ	=	adrgdataset.obj srpdataset.obj
+OBJ	=	adrgdataset.obj
 
 EXTRAFLAGS = 	-I..\iso8211
 

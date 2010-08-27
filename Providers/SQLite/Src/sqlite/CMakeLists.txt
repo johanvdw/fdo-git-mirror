@@ -66,12 +66,6 @@ set( sqlitefdoprovider3_SRCS
 	vtab.c
 	walker.c
 	where.c
-	vdbetrace.c
-	ctime.c
-	fkey.c
-	fts3_snippet.c
-	fts3_write.c
-	wal.c
 ) 
 
 add_definitions(

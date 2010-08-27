@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: SWapi.c 18601 2010-01-19 21:25:01Z rouault $
+ * $Id: SWapi.c 15522 2008-10-13 06:17:52Z dron $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.
@@ -5328,7 +5328,7 @@ SWdefboxregion(int32 swathID, float64 cornerlon[], float64 cornerlat[],
     char           *latArr;	/* Latitude data array */
     char            dimlist[256];	/* Dimension list (geolocation
 					 * fields) */
-    char            latName[17];/* Latitude field name */
+    char            latName[16];/* Latitude field name */
     
 
     /* Check for valid swath ID */
@@ -5948,7 +5948,7 @@ SWregionindex(int32 swathID, float64 cornerlon[], float64 cornerlat[],
     char           *latArr;	/* Latitude data array */
     char            dimlist[256];	/* Dimension list (geolocation
 					 * fields) */
-    char            latName[17];/* Latitude field name */
+    char            latName[16];/* Latitude field name */
 
 
     /* Check for valid swath ID */

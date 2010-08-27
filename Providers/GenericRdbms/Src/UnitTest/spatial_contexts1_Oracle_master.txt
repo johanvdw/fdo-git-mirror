@@ -52,6 +52,17 @@
 <xs:complexContent>
 <xs:extension base="gml:AbstractFeatureType">
 <xs:sequence>
+<xs:element name="ID">
+<xs:annotation>
+<xs:documentation/>
+</xs:annotation>
+<xs:simpleType>
+<xs:restriction base="xs:decimal">
+<xs:totalDigits value="10"/>
+<xs:fractionDigits value=""/>
+</xs:restriction>
+</xs:simpleType>
+</xs:element>
 <xs:element name="GEOM_COLUMN1" type="gml:AbstractGeometryType" fdo:hasMeasure="false" fdo:hasElevation="true" fdo:geometricTypes="point curve surface " fdo:geometryTypes="point multipoint linestring multilinestring curvestring multicurvestring polygon multipolygon curvepolygon multicurvepolygon ">
 <gml:metaDataProperty>
 <gml:GenericMetaData>
@@ -258,17 +269,6 @@ PROJCS["Quebec MTM Zone 4 (NAD 83)", GEOGCS ["NAD 83 (Continental US)", DATUM ["
 </fdo:WKTCRS>
 </gml:baseCRS>
 </xs:element>
-<xs:element name="ID">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:decimal">
-<xs:totalDigits value="10"/>
-<xs:fractionDigits value=""/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
 </xs:sequence>
 </xs:extension>
 </xs:complexContent>
@@ -280,6 +280,17 @@ PROJCS["Quebec MTM Zone 4 (NAD 83)", GEOGCS ["NAD 83 (Continental US)", DATUM ["
 <xs:complexContent>
 <xs:extension base="gml:AbstractFeatureType">
 <xs:sequence>
+<xs:element name="ID">
+<xs:annotation>
+<xs:documentation/>
+</xs:annotation>
+<xs:simpleType>
+<xs:restriction base="xs:decimal">
+<xs:totalDigits value="10"/>
+<xs:fractionDigits value=""/>
+</xs:restriction>
+</xs:simpleType>
+</xs:element>
 <xs:element name="GEOM_COLUMN1" type="gml:AbstractGeometryType" fdo:hasMeasure="false" fdo:hasElevation="true" fdo:geometricTypes="point curve surface " fdo:geometryTypes="point multipoint linestring multilinestring curvestring multicurvestring polygon multipolygon curvepolygon multicurvepolygon ">
 <gml:metaDataProperty>
 <gml:GenericMetaData>
@@ -358,17 +369,6 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 </fdo:WKTCRS>
 </gml:baseCRS>
 </xs:element>
-<xs:element name="ID">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:decimal">
-<xs:totalDigits value="10"/>
-<xs:fractionDigits value=""/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
 </xs:sequence>
 </xs:extension>
 </xs:complexContent>
@@ -380,6 +380,17 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 <xs:complexContent>
 <xs:extension base="gml:AbstractFeatureType">
 <xs:sequence>
+<xs:element name="ID">
+<xs:annotation>
+<xs:documentation/>
+</xs:annotation>
+<xs:simpleType>
+<xs:restriction base="xs:decimal">
+<xs:totalDigits value="10"/>
+<xs:fractionDigits value=""/>
+</xs:restriction>
+</xs:simpleType>
+</xs:element>
 <xs:element name="GEOM_COLUMN1" type="gml:AbstractGeometryType" fdo:hasMeasure="false" fdo:hasElevation="true" fdo:geometricTypes="point curve surface " fdo:geometryTypes="point multipoint linestring multilinestring curvestring multicurvestring polygon multipolygon curvepolygon multicurvepolygon ">
 <gml:metaDataProperty>
 <gml:GenericMetaData>
@@ -432,17 +443,6 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 </fdo:WKTCRS>
 </gml:baseCRS>
 </xs:element>
-<xs:element name="ID">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:decimal">
-<xs:totalDigits value="10"/>
-<xs:fractionDigits value=""/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
 </xs:sequence>
 </xs:extension>
 </xs:complexContent>
@@ -454,6 +454,17 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 <xs:complexContent>
 <xs:extension base="gml:AbstractFeatureType">
 <xs:sequence>
+<xs:element name="ID">
+<xs:annotation>
+<xs:documentation/>
+</xs:annotation>
+<xs:simpleType>
+<xs:restriction base="xs:decimal">
+<xs:totalDigits value="10"/>
+<xs:fractionDigits value=""/>
+</xs:restriction>
+</xs:simpleType>
+</xs:element>
 <xs:element name="GEOM_COLUMN1" type="gml:AbstractGeometryType" fdo:hasMeasure="false" fdo:hasElevation="true" fdo:geometricTypes="point curve surface " fdo:geometryTypes="point multipoint linestring multilinestring curvestring multicurvestring polygon multipolygon curvepolygon multicurvepolygon ">
 <gml:metaDataProperty>
 <gml:GenericMetaData>
@@ -506,17 +517,6 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 </fdo:WKTCRS>
 </gml:baseCRS>
 </xs:element>
-<xs:element name="ID">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:decimal">
-<xs:totalDigits value="10"/>
-<xs:fractionDigits value=""/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
 </xs:sequence>
 </xs:extension>
 </xs:complexContent>
@@ -528,6 +528,17 @@ GEOGCS [ "Longitude / Latitude (NAD 83) Datum 33", DATUM ["GRS 80", SPHEROID ["G
 <xs:complexContent>
 <xs:extension base="gml:AbstractFeatureType">
 <xs:sequence>
+<xs:element name="ID">
+<xs:annotation>
+<xs:documentation/>
+</xs:annotation>
+<xs:simpleType>
+<xs:restriction base="xs:decimal">
+<xs:totalDigits value="10"/>
+<xs:fractionDigits value=""/>
+</xs:restriction>
+</xs:simpleType>
+</xs:element>
 <xs:element name="GEOM_COLUMN1" type="gml:AbstractGeometryType" fdo:hasMeasure="false" fdo:hasElevation="true" fdo:geometricTypes="point curve surface " fdo:geometryTypes="point multipoint linestring multilinestring curvestring multicurvestring polygon multipolygon curvepolygon multicurvepolygon ">
 <gml:metaDataProperty>
 <gml:GenericMetaData>
@@ -573,23 +584,12 @@ PROJCS["Quebec MTM Zone 4 (NAD 83)", GEOGCS ["NAD 83 (Continental US)", DATUM ["
 </gml:validArea>
 <gml:baseCRS xlink:href="http://fdo.osgeo.org/crs#default_cartesian"/>
 </xs:element>
-<xs:element name="ID">
-<xs:annotation>
-<xs:documentation/>
-</xs:annotation>
-<xs:simpleType>
-<xs:restriction base="xs:decimal">
-<xs:totalDigits value="10"/>
-<xs:fractionDigits value=""/>
-</xs:restriction>
-</xs:simpleType>
-</xs:element>
 </xs:sequence>
 </xs:extension>
 </xs:complexContent>
 </xs:complexType>
 </xs:schema>
-<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/OracleProvider" provider="Autodesk.Oracle.3.6" name="AutoGen">
+<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/OracleProvider" provider="Autodesk.Oracle.3.5" name="AutoGen">
 <complexType name="TABLE1Type">
 <Table pkeyName="PK_TABLE1" name="TABLE1"/>
 <element name="ID">

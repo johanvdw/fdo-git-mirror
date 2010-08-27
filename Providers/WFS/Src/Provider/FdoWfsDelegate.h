@@ -37,16 +37,15 @@ protected:
 public:
     static FdoWfsDelegate* Create(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);
 
-    FdoWfsServiceMetadata* GetCapabilities(FdoString* version);
-    FdoFeatureSchemaCollection* DescribeFeatureType(FdoStringCollection* typeNames,FdoString* version);
+    FdoWfsServiceMetadata* GetCapabilities();
+    FdoFeatureSchemaCollection* DescribeFeatureType(FdoStringCollection* typeNames);
     FdoIFeatureReader* GetFeature(FdoFeatureSchemaCollection* schemas, 
                                     FdoPhysicalSchemaMappingCollection* schemaMappings, 
                                     FdoString* targetNamespace, FdoString* srsName,
                                     FdoStringCollection* propertiesToSelect,
                                     FdoString* from,
                                     FdoFilter* where,
-                                    FdoString* schemaName,
-									FdoString* version);
+                                    FdoString* schemaName);
 
 };
 

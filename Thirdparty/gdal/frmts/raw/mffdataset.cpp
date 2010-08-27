@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mffdataset.cpp 18182 2009-12-05 01:12:13Z warmerdam $
+ * $Id: mffdataset.cpp 14720 2008-06-17 21:22:28Z rouault $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -33,13 +33,13 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: mffdataset.cpp 18182 2009-12-05 01:12:13Z warmerdam $");
+CPL_CVSID("$Id: mffdataset.cpp 14720 2008-06-17 21:22:28Z rouault $");
 
 CPL_C_START
 void	GDALRegister_MFF(void);
 CPL_C_END
 
-enum {
+typedef enum {
   MFFPRJ_NONE,
   MFFPRJ_LL,
   MFFPRJ_UTM,
@@ -364,13 +364,9 @@ void MFFDataset::ScanForGCPs()
     
     if( CSLFetchNameValue(papszHdrLines, "NUM_GCPS") != NULL )
         NUM_GCPS = atoi(CSLFetchNameValue(papszHdrLines, "NUM_GCPS"));
-    if (NUM_GCPS < 0)
-        return;
 
     nGCPCount = 0;
-    pasGCPList = (GDAL_GCP *) VSICalloc(sizeof(GDAL_GCP),5+NUM_GCPS);
-    if (pasGCPList == NULL)
-        return;
+    pasGCPList = (GDAL_GCP *) CPLCalloc(sizeof(GDAL_GCP),5+NUM_GCPS);
 
     for( nCorner = 0; nCorner < 5; nCorner++ )
     {
@@ -470,8 +466,6 @@ void MFFDataset::ScanForGCPs()
 
             nGCPCount++;
         }
-
-        CSLDestroy(papszTokens);
     }
 }
 
@@ -530,7 +524,7 @@ void MFFDataset::ScanForProjectionInfo()
             nZone = 31 + (int) floor(atof(pszOriginLong)/6.0);
 
 
-        if( nGCPCount >= 5 && pasGCPList[4].dfGCPY < 0 )
+        if( pasGCPList[4].dfGCPY < 0 )
             oProj.SetUTM( nZone, 0 );
         else
             oProj.SetUTM( nZone, 1 );
@@ -619,10 +613,7 @@ void MFFDataset::ScanForProjectionInfo()
 
         poTransform = OGRCreateCoordinateTransformation( &oLL, &oProj );
         if( poTransform == NULL )
-        {
-            CPLErrorReset();
             bSuccess = FALSE;
-        }
 
         for(gcp_index=0;gcp_index<nGCPCount;gcp_index++)
         {
@@ -646,10 +637,6 @@ void MFFDataset::ScanForProjectionInfo()
             transform_ok = GDALGCPsToGeoTransform(nGCPCount,pasGCPList,adfGeoTransform,0);
 
         }
-
-        if (poTransform)
-            delete poTransform;
-
         CPLFree(dfPrjX);
         CPLFree(dfPrjY);
 
@@ -762,19 +749,15 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
     if( CSLFetchNameValue(papszHdrLines,"no_rows") != NULL
         && CSLFetchNameValue(papszHdrLines,"no_columns") != NULL )
     {
-        poDS->nRasterXSize = atoi(CSLFetchNameValue(papszHdrLines,"no_columns"));
-        poDS->nRasterYSize = atoi(CSLFetchNameValue(papszHdrLines,"no_rows"));
+        poDS->RasterInitialize( 
+            atoi(CSLFetchNameValue(papszHdrLines,"no_columns")),
+            atoi(CSLFetchNameValue(papszHdrLines,"no_rows")) );
     }
     else
     {
-        poDS->nRasterXSize = atoi(CSLFetchNameValue(papszHdrLines,"LINE_SAMPLES"));
-        poDS->nRasterYSize = atoi(CSLFetchNameValue(papszHdrLines,"IMAGE_LINES"));
-    }
-
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
-    {
-        delete poDS;
-        return NULL;
+        poDS->RasterInitialize( 
+            atoi(CSLFetchNameValue(papszHdrLines,"LINE_SAMPLES")),
+            atoi(CSLFetchNameValue(papszHdrLines,"IMAGE_LINES")) );
     }
 
     if( CSLFetchNameValue( papszHdrLines, "BYTE_ORDER" ) != NULL )
@@ -803,14 +786,6 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
         if( CSLFetchNameValue(papszHdrLines,"tile_size_columns") )
             nTileXSize = 
                 atoi(CSLFetchNameValue(papszHdrLines,"tile_size_columns"));
-
-        if (nTileXSize <= 0 || nTileYSize <= 0 ||
-            poDS->nRasterXSize > INT_MAX - (nTileXSize - 1) ||
-            poDS->nRasterYSize > INT_MAX - (nTileYSize - 1))
-        {
-            delete poDS;
-            return NULL;
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -824,12 +799,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
     pszTargetBase = CPLStrdup(CPLGetBasename( poOpenInfo->pszFilename ));
     papszDirFiles = CPLReadDir( CPLGetPath( poOpenInfo->pszFilename ) );
     if( papszDirFiles == NULL )
-    {
-        CPLFree(pszTargetPath);
-        CPLFree(pszTargetBase);
-        delete poDS;
         return NULL;
-    }
 
     for( nRawBand = 0; TRUE; nRawBand++ )
     {
@@ -844,8 +814,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
                 continue;
 
             pszExtension = CPLGetExtension(papszDirFiles[i]);
-            if( strlen(pszExtension) >= 2
-                && isdigit(pszExtension[1])
+            if( isdigit(pszExtension[1])
                 && atoi(pszExtension+1) == nRawBand 
                 && strchr("bBcCiIjJrRxXzZ",pszExtension[0]) != NULL )
                 break;
@@ -960,14 +929,6 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else
         {
-            if (poDS->GetRasterXSize() > INT_MAX / nPixelOffset)
-            {
-                CPLError( CE_Warning, CPLE_AppDefined,  "Int overflow occured... skipping");
-                nSkipped++;
-                VSIFCloseL(fpRaw);
-                continue;
-            }
-
             poBand = 
                 new RawRasterBand( poDS, nBand, fpRaw, 0, nPixelOffset,
                                    nPixelOffset * poDS->GetRasterXSize(),
@@ -1004,6 +965,17 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
             return NULL;
         }
     }
+    
+/* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
+/*      Initialize any PAM information.                                 */
+/* -------------------------------------------------------------------- */
+    poDS->SetDescription( poOpenInfo->pszFilename );
+    poDS->TryLoadXML();
 
 /* -------------------------------------------------------------------- */
 /*      Set all information from the .hdr that isn't well know to be    */
@@ -1041,24 +1013,14 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->ScanForGCPs();
     poDS->ScanForProjectionInfo();
-    
-/* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }
 
 int GetMFFProjectionType(const char *pszNewProjection)
 {
-    OGRSpatialReference oSRS(pszNewProjection);
+    OGRSpatialReference *oSRS;
+    char *modifiableProjection = NULL;
 
     if( !EQUALN(pszNewProjection,"GEOGCS",6)
        && !EQUALN(pszNewProjection,"PROJCS",6)
@@ -1072,12 +1034,18 @@ int GetMFFProjectionType(const char *pszNewProjection)
       }
       else
       {
-             if ((oSRS.GetAttrValue("PROJECTION") != NULL) && 
-                 (EQUAL(oSRS.GetAttrValue("PROJECTION"),SRS_PT_TRANSVERSE_MERCATOR)))
+          /* importFromWkt updates the pointer, so don't use pszNewProjection directly */
+             modifiableProjection=CPLStrdup(pszNewProjection);
+
+             oSRS = new OGRSpatialReference;
+             oSRS->importFromWkt(&modifiableProjection);
+
+             if ((oSRS->GetAttrValue("PROJECTION") != NULL) && 
+                 (EQUAL(oSRS->GetAttrValue("PROJECTION"),SRS_PT_TRANSVERSE_MERCATOR)))
              {
                return MFFPRJ_UTM;
              }
-             else if ((oSRS.GetAttrValue("PROJECTION") == NULL) && (oSRS.IsGeographic()))
+             else if ((oSRS->GetAttrValue("PROJECTION") == NULL) && (oSRS->IsGeographic()))
              {
                   return MFFPRJ_LL;
              }
@@ -1101,13 +1069,6 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
 /* -------------------------------------------------------------------- */
 /*      Verify input options.                                           */
 /* -------------------------------------------------------------------- */
-    if (nBands <= 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "MFF driver does not support %d bands.\n", nBands);
-        return NULL;
-    }
-
     if( eType != GDT_Byte && eType != GDT_Float32 && eType != GDT_UInt16 
         && eType != GDT_CInt16 && eType != GDT_CFloat32 )
     {
@@ -1153,7 +1114,6 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "Couldn't create %s.\n", pszFilename );
-        CPLFree(pszBaseFilename);
         return NULL;
     }
 
@@ -1196,7 +1156,6 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
         {
             CPLError( CE_Failure, CPLE_OpenFailed, 
                       "Couldn't create %s.\n", pszFilename );
-            CPLFree(pszBaseFilename);
             return NULL;
         }
 
@@ -1227,19 +1186,10 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
 {
     MFFDataset	*poDS;
-    GDALDataType eType;
+    GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
     int          iBand;
     char **newpapszOptions=NULL;
 
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "MFF driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
-    eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
 
@@ -1377,7 +1327,6 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "Couldn't open %s for appending.\n", pszFilenameGEO );
-        CPLFree(pszBaseFilename);
         return NULL;
     }  
     
@@ -1402,7 +1351,10 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
           || tempGeoTransform[2] != 0.0 || tempGeoTransform[3] != 0.0
               || tempGeoTransform[4] != 0.0 || ABS(tempGeoTransform[5]) != 1.0 ))
       {
+          OGRSpatialReference oUTMorLL;
+          OGRSpatialReference oLL;
           OGRCoordinateTransformation *poTransform = NULL;          
+          char *srcProjection=NULL;
           char *newGCPProjection=NULL;
 
           padfTiepoints[0]=tempGeoTransform[0] + tempGeoTransform[1]*0.5 +\
@@ -1439,12 +1391,10 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                            tempGeoTransform[4]*(poSrcDS->GetRasterXSize())/2.0+\
                            tempGeoTransform[5]*(poSrcDS->GetRasterYSize())/2.0;
 
-          OGRSpatialReference oUTMorLL(poSrcDS->GetProjectionRef());
+          srcProjection = CPLStrdup(poSrcDS->GetProjectionRef());
+          oUTMorLL.importFromWkt(&srcProjection);
           (oUTMorLL.GetAttrNode("GEOGCS"))->exportToWkt(&newGCPProjection);
-          OGRSpatialReference oLL(newGCPProjection);
-          CPLFree(newGCPProjection);
-          newGCPProjection = NULL;
-
+          oLL.importFromWkt(&newGCPProjection);
           if EQUALN(poSrcDS->GetProjectionRef(),"PROJCS",6)
           {
             // projected coordinate system- need to translate gcps */
@@ -1473,65 +1423,96 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
   
     if (georef_created == TRUE)
     {
+          char *szValue;
+      
+          szValue = (char *) CPLMalloc(255);
     /* -------------------------------------------------------------------- */
     /*      top left                                                        */
     /* -------------------------------------------------------------------- */
-          fprintf( fp, "TOP_LEFT_CORNER_LATITUDE = %.10f\n", padfTiepoints[1] );
-          fprintf( fp, "TOP_LEFT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[0] );
+          sprintf( szValue, "TOP_LEFT_CORNER_LATITUDE = %.10f\n", padfTiepoints[1] );
+          fprintf( fp, szValue );
+          sprintf( szValue, "TOP_LEFT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[0] );
+          fprintf( fp, szValue );
     /* -------------------------------------------------------------------- */
     /*      top_right                                                       */
     /* -------------------------------------------------------------------- */
-          fprintf( fp, "TOP_RIGHT_CORNER_LATITUDE = %.10f\n", padfTiepoints[3] );
-          fprintf( fp, "TOP_RIGHT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[2] );
+          sprintf( szValue, "TOP_RIGHT_CORNER_LATITUDE = %.10f\n", padfTiepoints[3] );
+          fprintf( fp, szValue );
+          sprintf( szValue, "TOP_RIGHT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[2] );
+          fprintf( fp, szValue );
     /* -------------------------------------------------------------------- */
     /*      bottom_left                                                     */
     /* -------------------------------------------------------------------- */
-          fprintf( fp, "BOTTOM_LEFT_CORNER_LATITUDE = %.10f\n", padfTiepoints[5] );
-          fprintf( fp, "BOTTOM_LEFT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[4] );
+          sprintf( szValue, "BOTTOM_LEFT_CORNER_LATITUDE = %.10f\n", padfTiepoints[5] );
+          fprintf( fp, szValue );
+          sprintf( szValue, "BOTTOM_LEFT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[4] );
+          fprintf( fp, szValue );
     /* -------------------------------------------------------------------- */
     /*      bottom_right                                                    */
     /* -------------------------------------------------------------------- */
-          fprintf( fp, "BOTTOM_RIGHT_CORNER_LATITUDE = %.10f\n", padfTiepoints[7] );
-          fprintf( fp, "BOTTOM_RIGHT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[6] );
+          sprintf( szValue, "BOTTOM_RIGHT_CORNER_LATITUDE = %.10f\n", padfTiepoints[7] );
+          fprintf( fp, szValue );
+          sprintf( szValue, "BOTTOM_RIGHT_CORNER_LONGITUDE = %.10f\n", padfTiepoints[6] );
+          fprintf( fp, szValue );
     /* -------------------------------------------------------------------- */
     /*      Center                                                          */
     /* -------------------------------------------------------------------- */
-          fprintf( fp, "CENTRE_LATITUDE = %.10f\n", padfTiepoints[9] );
-          fprintf( fp, "CENTRE_LONGITUDE = %.10f\n", padfTiepoints[8] );
+          sprintf( szValue, "CENTRE_LATITUDE = %.10f\n", padfTiepoints[9] );
+          fprintf( fp, szValue );
+          sprintf( szValue, "CENTRE_LONGITUDE = %.10f\n", padfTiepoints[8] );
+          fprintf( fp, szValue );
+
+
+          CPLFree(szValue);
     /* ------------------------------------------------------------------- */
     /*     Ellipsoid/projection                                            */
     /* --------------------------------------------------------------------*/
 
           
+          OGRSpatialReference *oSRS;
           MFFSpheroidList *mffEllipsoids;
           double eq_radius, inv_flattening;
           OGRErr ogrerrorEq=OGRERR_NONE;
           OGRErr ogrerrorInvf=OGRERR_NONE;
           OGRErr ogrerrorOl=OGRERR_NONE;
-          const char *pszSrcProjection = poSrcDS->GetProjectionRef();
+          char *modifiableProjection = NULL;
+          char *pszNewProjection;
           char *spheroid_name = NULL;
 
-          if( !EQUALN(pszSrcProjection,"GEOGCS",6)
-           && !EQUALN(pszSrcProjection,"PROJCS",6)
-           && !EQUAL(pszSrcProjection,"") )
+          pszNewProjection = CPLStrdup( poSrcDS->GetProjectionRef() );
+ 
+          if( !EQUALN(pszNewProjection,"GEOGCS",6)
+           && !EQUALN(pszNewProjection,"PROJCS",6)
+           && !EQUAL(pszNewProjection,"") )
           {
             CPLError( CE_Warning, CPLE_AppDefined,
                     "Only OGC WKT Projections supported for writing to MFF.\n"
                     "%s not supported.",
-                      pszSrcProjection );
+                      pszNewProjection );
           }
-          else if (!EQUAL(pszSrcProjection,""))
+          else if (!EQUAL(pszNewProjection,""))
           {
-             OGRSpatialReference oSRS(pszSrcProjection);
+           
 
-             if ((oSRS.GetAttrValue("PROJECTION") != NULL) && 
-                 (EQUAL(oSRS.GetAttrValue("PROJECTION"),SRS_PT_TRANSVERSE_MERCATOR)))
+          /* importFromWkt updates the pointer, so don't use pszNewProjection directly */
+             modifiableProjection=CPLStrdup(pszNewProjection);
+
+             oSRS = new OGRSpatialReference;
+             oSRS->importFromWkt(&modifiableProjection);
+
+             if ((oSRS->GetAttrValue("PROJECTION") != NULL) && 
+                 (EQUAL(oSRS->GetAttrValue("PROJECTION"),SRS_PT_TRANSVERSE_MERCATOR)))
              {
+                 char *ol_txt;
+    
+                 ol_txt=(char *) CPLMalloc(255);
                  fprintf(fp,"PROJECTION_NAME = UTM\n");
-                 fprintf(fp,"PROJECTION_ORIGIN_LONGITUDE = %f\n",
-                         oSRS.GetProjParm(SRS_PP_CENTRAL_MERIDIAN,0.0,&ogrerrorOl));
+                 sprintf(ol_txt,"PROJECTION_ORIGIN_LONGITUDE = %f\n",
+                         oSRS->GetProjParm(SRS_PP_CENTRAL_MERIDIAN,0.0,&ogrerrorOl));
+                 fprintf(fp,ol_txt);
+                 CPLFree(ol_txt);
              }
-             else if ((oSRS.GetAttrValue("PROJECTION") == NULL) && (oSRS.IsGeographic()))
+             else if ((oSRS->GetAttrValue("PROJECTION") == NULL) && (oSRS->IsGeographic()))
              {
                   fprintf(fp,"PROJECTION_NAME = LL\n");
              }
@@ -1541,26 +1522,33 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                   "Unrecognized projection- no georeferencing information transferred.");
                   fprintf(fp,"PROJECTION_NAME = LL\n");
              }
-             eq_radius = oSRS.GetSemiMajor(&ogrerrorEq);
-             inv_flattening = oSRS.GetInvFlattening(&ogrerrorInvf);
+             eq_radius = oSRS->GetSemiMajor(&ogrerrorEq);
+             inv_flattening = oSRS->GetInvFlattening(&ogrerrorInvf);
              if ((ogrerrorEq == OGRERR_NONE) && (ogrerrorInvf == OGRERR_NONE)) 
              {
+                 char *ol_txt;
+    
+                 ol_txt=(char *) CPLMalloc(255);
                  mffEllipsoids = new MFFSpheroidList;
                  spheroid_name = mffEllipsoids->GetSpheroidNameByEqRadiusAndInvFlattening(eq_radius,inv_flattening);
                  if (spheroid_name != NULL)
                  {
-                     fprintf(fp,"SPHEROID_NAME = %s\n",spheroid_name );
+                     sprintf(ol_txt,"SPHEROID_NAME = %s\n",spheroid_name );
+                     fprintf(fp,ol_txt);
                  } 
                  else
                  {
-                     fprintf(fp,
+                     sprintf(ol_txt,
        "SPHEROID_NAME = USER_DEFINED\nSPHEROID_EQUATORIAL_RADIUS = %.10f\nSPHEROID_POLAR_RADIUS = %.10f\n",
                      eq_radius,eq_radius*(1-1.0/inv_flattening) );
+                     fprintf(fp,ol_txt);
                  }
                  delete mffEllipsoids;
+                 CPLFree(ol_txt);
                  CPLFree(spheroid_name);
               }
           } 
+          CPLFree(pszNewProjection);         
     } 
       
     CPLFree( padfTiepoints );
@@ -1586,12 +1574,10 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         GDALDriver *poMFFDriver = 
             (GDALDriver *) GDALGetDriverByName( "MFF" );
         poMFFDriver->Delete( pszFilename );
-        CPLFree(pszBaseFilename);
         return NULL;
     }
 
     poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
-    CPLFree(pszBaseFilename);
 
     return poDS;
 }

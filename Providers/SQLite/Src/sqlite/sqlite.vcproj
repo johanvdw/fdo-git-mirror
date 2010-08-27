@@ -339,10 +339,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\ctime.c"
-			>
-		</File>
-		<File
 			RelativePath=".\date.c"
 			>
 		</File>
@@ -359,27 +355,11 @@
 			>
 		</File>
 		<File
-			RelativePath=".\fkey.c"
-			>
-		</File>
-		<File
 			RelativePath=".\fts3_expr.c"
 			>
 		</File>
 		<File
 			RelativePath=".\fts3_expr.h"
-			>
-		</File>
-		<File
-			RelativePath=".\fts3_snippet.c"
-			>
-		</File>
-		<File
-			RelativePath=".\fts3_write.c"
-			>
-		</File>
-		<File
-			RelativePath=".\fts3Int.h"
 			>
 		</File>
 		<File
@@ -647,19 +627,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\vdbetrace.c"
-			>
-		</File>
-		<File
 			RelativePath=".\vtab.c"
-			>
-		</File>
-		<File
-			RelativePath=".\wal.c"
-			>
-		</File>
-		<File
-			RelativePath=".\wal.h"
 			>
 		</File>
 		<File

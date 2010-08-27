@@ -663,6 +663,7 @@ void FdoSmPhTable::LoadUkeys()
     }
 }
 
+
 void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
 {
     FdoStringP		 ukeyNameCurr;
@@ -672,6 +673,17 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
     while (ukeyRdr->ReadNext() ) {
 
         FdoStringP ukeyName			= ukeyRdr->GetString(L"", L"constraint_name");
+        FdoStringP columnName		= ukeyRdr->GetString(L"", L"column_name");
+
+		FdoSmPhColumnsP ukeyColumns = GetColumns();
+        FdoSmPhColumnP ukeyColumn = ukeyColumns->FindItem( columnName );
+
+        // Unique Key column must be in this table.
+        if ( ukeyColumn == NULL ) {
+		    if ( GetElementState() != FdoSchemaElementState_Deleted )
+		        AddUkeyColumnError( columnName );
+        }
+
 		// The subcollection is identified by the common ukeyName.
 		// The columns will be grouped this way.
 		if ( ukeyName != ukeyNameCurr ) {
@@ -682,10 +694,11 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
    			ukeysCurr = new FdoSmPhColumnCollection( ukeyName );
 		}		
 		
-        if ( ukeysCurr ) {
-            if ( !LoadUkeyColumn(ukeyRdr, ukeysCurr) )
-                ukeysCurr = NULL;
-        }
+        if ( ukeyColumn && ukeysCurr ) 
+            ukeysCurr->Add( ukeyColumn );
+        else
+            // Skip the entire unique constraint if any of its columns are missing
+            ukeysCurr = NULL;
 
         ukeyNameCurr = ukeyName;		
     }
@@ -695,25 +708,6 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
 		mUkeysCollection->Add( ukeysCurr );
 }
 
-bool FdoSmPhTable::LoadUkeyColumn( FdoSmPhReaderP ukeyRdr, FdoSmPhColumnsP ukey  )
-{
-    FdoStringP columnName		= ukeyRdr->GetString(L"", L"column_name");
-
-	FdoSmPhColumnsP ukeyColumns = GetColumns();
-    FdoSmPhColumnP ukeyColumn = ukeyColumns->FindItem( columnName );
-
-    // Unique Key column must be in this table.
-    if ( ukeyColumn == NULL ) {
-	    if ( GetElementState() != FdoSchemaElementState_Deleted )
-	        AddUkeyColumnError( columnName );
-
-        return false;
-    }
-
-    ukey->Add( ukeyColumn );
-
-    return true;
-}
 
 void FdoSmPhTable::LoadCkeys()
 {

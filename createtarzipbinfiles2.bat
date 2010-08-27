@@ -35,8 +35,8 @@ SET ODBCENABLE=yes
 SET SQLSPATIALENABLE=yes
 SET SHOWHELP=no
 SET FDOTARZIPFOLDER=c:\OpenSource_FDO
-SET FDOBUILDNUMBER=FXXX
-SET FDORELNUMBER=3.6.0
+SET FDOBUILDNUMBER=DXXX
+SET FDORELNUMBER=3.5.0
 SET FDOZIPTEMP=7zTemp
 SET FILEPPLATFORMPREFIX=Win32
 
@@ -219,12 +219,12 @@ if "%FDOCOREENABLE%"=="no" goto start_zip_shp
    mkdir %FDOZIPTEMP%\Bin
    mkdir %FDOZIPTEMP%\Bin\com
    copy "%FDOROOT%\Bin\providers.xml" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\xerces-c_3_1.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\Xalan-C_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\XalanMessages_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\gdal17.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\xerces-c_2_5_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\Xalan-C_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\XalanMessages_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\gdal16.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOCommon.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOGeometry.dll" %FDOZIPTEMP%\Bin\
@@ -493,7 +493,7 @@ echo NOTE: To use the createtarzipbinfiles script, download and install the
 echo       GnuWin32 command-line and Windows shell utilities for manipulating 
 echo       tar archives. 
 echo *
-echo Example: createtarzipbinfiles.bat -i=C:\G029 -o=C:\G029 -b=F001 -r=3.6.0
+echo Example: createtarzipbinfiles.bat -i=C:\G029 -o=C:\G029 -b=D001 -r=3.5.0
 echo *
 echo createtarzipbinfiles.bat [-h] 
 echo                          [-i=InFolder] 

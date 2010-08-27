@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_translate.cpp 18576 2010-01-17 22:32:24Z rouault $
+ * $Id: gdal_translate.cpp 15640 2008-10-29 20:19:56Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Image Translator Program
@@ -34,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "vrt/vrtdataset.h"
 
-CPL_CVSID("$Id: gdal_translate.cpp 18576 2010-01-17 22:32:24Z rouault $");
+CPL_CVSID("$Id: gdal_translate.cpp 15640 2008-10-29 20:19:56Z rouault $");
 
 static int ArgIsNumeric( const char * );
 static void AttachMetadata( GDALDatasetH, char ** );
@@ -52,13 +52,13 @@ static void Usage()
     printf( "Usage: gdal_translate [--help-general]\n"
             "       [-ot {Byte/Int16/UInt16/UInt32/Int32/Float32/Float64/\n"
             "             CInt16/CInt32/CFloat32/CFloat64}] [-strict]\n"
-            "       [-of format] [-b band] [-expand {gray|rgb|rgba}]\n"
+            "       [-of format] [-b band] [-expand {rgb|rgba}]\n"
             "       [-outsize xsize[%%] ysize[%%]]\n"
-            "       [-unscale] [-scale [src_min src_max [dst_min dst_max]]]\n"
+            "       [-scale [src_min src_max [dst_min dst_max]]]\n"
             "       [-srcwin xoff yoff xsize ysize] [-projwin ulx uly lrx lry]\n"
             "       [-a_srs srs_def] [-a_ullr ulx uly lrx lry] [-a_nodata value]\n"
             "       [-gcp pixel line easting northing [elevation]]*\n" 
-            "       [-mo \"META-TAG=VALUE\"]* [-q] [-sds]\n"
+            "       [-mo \"META-TAG=VALUE\"]* [-quiet] [-sds]\n"
             "       [-co \"NAME=VALUE\"]*\n"
             "       src_dataset dst_dataset\n\n" );
 
@@ -99,7 +99,7 @@ static int ProxyMain( int argc, char ** argv )
     char                **papszCreateOptions = NULL;
     int                 anSrcWin[4], bStrict = FALSE;
     const char          *pszProjection;
-    int                 bScale = FALSE, bHaveScaleSrc = FALSE, bUnscale=FALSE;
+    int                 bScale = FALSE, bHaveScaleSrc = FALSE;
     double	        dfScaleSrcMin=0.0, dfScaleSrcMax=255.0;
     double              dfScaleDstMin=0.0, dfScaleDstMax=255.0;
     double              dfULX, dfULY, dfLRX, dfLRY;
@@ -128,19 +128,6 @@ static int ProxyMain( int argc, char ** argv )
     if (! GDAL_CHECK_VERSION(argv[0]))
         exit(1);
 
-    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
-    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
-    /* for the --format or --formats options */
-    for( i = 1; i < argc; i++ )
-    {
-        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
-        {
-            CPLSetConfigOption( argv[i+1], argv[i+2] );
-
-            i += 2;
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Register standard GDAL drivers, and process generic GDAL        */
 /*      command options.                                                */
@@ -164,7 +151,7 @@ static int ProxyMain( int argc, char ** argv )
         else if( EQUAL(argv[i],"-of") && i < argc-1 )
             pszFormat = argv[++i];
 
-        else if( EQUAL(argv[i],"-q") || EQUAL(argv[i],"-quiet") )
+        else if( EQUAL(argv[i],"-quiet") )
         {
             bQuiet = TRUE;
             pfnProgress = GDALDummyProgress;
@@ -293,11 +280,6 @@ static int ProxyMain( int argc, char ** argv )
             }
         }   
 
-        else if( EQUAL(argv[i], "-unscale") )
-        {
-            bUnscale = TRUE;
-        }
-
         else if( EQUAL(argv[i],"-mo") && i < argc-1 )
         {
             papszMetadataOptions = CSLAddString( papszMetadataOptions,
@@ -344,15 +326,13 @@ static int ProxyMain( int argc, char ** argv )
 
         else if( EQUAL(argv[i],"-expand") && i < argc-1 )
         {
-            if (EQUAL(argv[i+1], "gray"))
-                nRGBExpand = 1;
-            else if (EQUAL(argv[i+1], "rgb"))
+            if (EQUAL(argv[i+1], "rgb"))
                 nRGBExpand = 3;
             else if (EQUAL(argv[i+1], "rgba"))
                 nRGBExpand = 4;
             else
             {
-                printf( "Value %s unsupported. Only gray, rgb or rgba are supported.\n\n", 
+                printf( "Value %s unsupported. Only rgb or rgba are supported.\n\n", 
                     argv[i] );
                 Usage();
                 GDALDestroyDriverManager();
@@ -421,37 +401,33 @@ static int ProxyMain( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Handle subdatasets.                                             */
 /* -------------------------------------------------------------------- */
-    if( !bCopySubDatasets 
-        && CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0 
-        && GDALGetRasterCount(hDataset) == 0 )
+    if( CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0 )
     {
-        fprintf( stderr,
-                 "Input file contains subdatasets. Please, select one of them for reading.\n" );
-        GDALClose( hDataset );
-        GDALDestroyDriverManager();
-        exit( 1 );
-    }
-
-    if( CSLCount(GDALGetMetadata( hDataset, "SUBDATASETS" )) > 0 
-        && bCopySubDatasets )
-    {
-        char **papszSubdatasets = GDALGetMetadata(hDataset,"SUBDATASETS");
-        char *pszSubDest = (char *) CPLMalloc(strlen(pszDest)+32);
-        int i;
-        int bOldSubCall = bSubCall;
-        
-        argv[iDstFileArg] = pszSubDest;
-        bSubCall = TRUE;
-        for( i = 0; papszSubdatasets[i] != NULL; i += 2 )
+        if( !bCopySubDatasets )
         {
-            argv[iSrcFileArg] = strstr(papszSubdatasets[i],"=")+1;
-            sprintf( pszSubDest, "%s%d", pszDest, i/2 + 1 );
-            if( ProxyMain( argc, argv ) != 0 )
-                break;
+            fprintf( stderr,
+                     "Input file contains subdatasets. Please, select one of them for reading.\n" );
         }
-        
-        bSubCall = bOldSubCall;
-        CPLFree( pszSubDest );
+        else
+        {
+            char **papszSubdatasets = GDALGetMetadata(hDataset,"SUBDATASETS");
+            char *pszSubDest = (char *) CPLMalloc(strlen(pszDest)+32);
+            int i;
+            int bOldSubCall = bSubCall;
+
+            argv[iDstFileArg] = pszSubDest;
+            bSubCall = TRUE;
+            for( i = 0; papszSubdatasets[i] != NULL; i += 2 )
+            {
+                argv[iSrcFileArg] = strstr(papszSubdatasets[i],"=")+1;
+                sprintf( pszSubDest, "%s%d", pszDest, i/2 + 1 );
+                if( ProxyMain( argc, argv ) != 0 )
+                    break;
+            }
+
+            bSubCall = bOldSubCall;
+            CPLFree( pszSubDest );
+        }
 
         GDALClose( hDataset );
 
@@ -627,8 +603,7 @@ static int ProxyMain( int argc, char ** argv )
 /*      virtual input source to copy from.                              */
 /* -------------------------------------------------------------------- */
     if( eOutputType == GDT_Unknown 
-        && !bScale && !bUnscale
-        && CSLCount(papszMetadataOptions) == 0 && bDefBands 
+        && !bScale && CSLCount(papszMetadataOptions) == 0 && bDefBands 
         && anSrcWin[0] == 0 && anSrcWin[1] == 0 
         && anSrcWin[2] == GDALGetRasterXSize(hDataset)
         && anSrcWin[3] == GDALGetRasterYSize(hDataset) 
@@ -804,8 +779,7 @@ static int ProxyMain( int argc, char ** argv )
         {
             poSrcBand = ((GDALDataset *) 
                      hDataset)->GetRasterBand(panBandList[0]);
-            GDALColorTable* poColorTable = poSrcBand->GetColorTable();
-            if (poColorTable == NULL)
+            if (poSrcBand->GetColorTable() == NULL)
             {
                 fprintf(stderr, "Error : band %d has no color table\n", panBandList[0]);
                 GDALClose( hDataset );
@@ -814,23 +788,6 @@ static int ProxyMain( int argc, char ** argv )
                 CSLDestroy( argv );
                 CSLDestroy( papszCreateOptions );
                 exit( 1 );
-            }
-            
-            /* Check that the color table only contains gray levels */
-            /* when using -expand gray */
-            if (nRGBExpand == 1)
-            {
-                int nColorCount = poColorTable->GetColorEntryCount();
-                int nColor;
-                for( nColor = 0; nColor < nColorCount; nColor++ )
-                {
-                    const GDALColorEntry* poEntry = poColorTable->GetColorEntry(nColor);
-                    if (poEntry->c1 != poEntry->c2 || poEntry->c1 != poEntry->c2)
-                    {
-                        fprintf(stderr, "Warning : color table contains non gray levels colors\n");
-                        break;
-                    }
-                }
             }
         }
         else
@@ -876,17 +833,11 @@ static int ProxyMain( int argc, char ** argv )
             dfOffset = -1 * dfScaleSrcMin * dfScale + dfScaleDstMin;
         }
 
-        if( bUnscale )
-        {
-            dfScale = poSrcBand->GetScale();
-            dfOffset = poSrcBand->GetOffset();
-        }
-
 /* -------------------------------------------------------------------- */
 /*      Create a simple or complex data source depending on the         */
 /*      translation type required.                                      */
 /* -------------------------------------------------------------------- */
-        if( bUnscale || bScale || (nRGBExpand != 0 && i < nRGBExpand) )
+        if( bScale || (nRGBExpand != 0 && i < nRGBExpand) )
         {
             poVRTBand->AddComplexSource( poSrcBand,
                                          anSrcWin[0], anSrcWin[1], 
@@ -902,85 +853,25 @@ static int ProxyMain( int argc, char ** argv )
                                         anSrcWin[2], anSrcWin[3], 
                                         0, 0, nOXSize, nOYSize );
 
-/* -------------------------------------------------------------------- */
-/*      In case of color table translate, we only set the color         */
-/*      interpretation other info copied by CopyCommonInfoFrom are      */
-/*      not relevant in RGB expansion.                                  */
-/* -------------------------------------------------------------------- */
-        if (nRGBExpand == 1)
-        {
-            poVRTBand->SetColorInterpretation( GCI_GrayIndex );
-        }
-        else if (nRGBExpand != 0 && i < nRGBExpand)
+        /* In case of color table translate, we only set the color interpretation */
+        /* other info copied by CopyCommonInfoFrom are not relevant in RGB expansion */
+        if (nRGBExpand != 0 && i < nRGBExpand)
         {
             poVRTBand->SetColorInterpretation( (GDALColorInterp) (GCI_RedBand + i) );
         }
-
+        else
+        {
 /* -------------------------------------------------------------------- */
 /*      copy over some other information of interest.                   */
 /* -------------------------------------------------------------------- */
-        else
-        {
             poVRTBand->CopyCommonInfoFrom( poSrcBand );
-
-            if( bUnscale )
-            {
-                poVRTBand->SetOffset( 0.0 );
-                poVRTBand->SetScale( 1.0 );
-            }
         }
 
 /* -------------------------------------------------------------------- */
 /*      Set a forcable nodata value?                                    */
 /* -------------------------------------------------------------------- */
         if( bSetNoData )
-        {
-            double dfVal = dfNoDataReal;
-            int bClamped = FALSE, bRounded = FALSE;
-
-#define CLAMP(val,type,minval,maxval) \
-    do { if (val < minval) { bClamped = TRUE; val = minval; } \
-    else if (val > maxval) { bClamped = TRUE; val = maxval; } \
-    else if (val != (type)val) { bRounded = TRUE; val = (type)(val + 0.5); } } \
-    while(0)
-
-            switch(eBandType)
-            {
-                case GDT_Byte:
-                    CLAMP(dfVal, GByte, 0.0, 255.0);
-                    break;
-                case GDT_Int16:
-                    CLAMP(dfVal, GInt16, -32768.0, 32767.0);
-                    break;
-                case GDT_UInt16:
-                    CLAMP(dfVal, GUInt16, 0.0, 65535.0);
-                    break;
-                case GDT_Int32:
-                    CLAMP(dfVal, GInt32, -2147483648.0, 2147483647.0);
-                    break;
-                case GDT_UInt32:
-                    CLAMP(dfVal, GUInt32, 0.0, 4294967295.0);
-                    break;
-                default:
-                    break;
-            }
-                
-            if (bClamped)
-            {
-                printf( "for band %d, nodata value has been clamped "
-                       "to %.0f, the original value being out of range.\n",
-                       i + 1, dfVal);
-            }
-            else if(bRounded)
-            {
-                printf("for band %d, nodata value has been rounded "
-                       "to %.0f, %s being an integer datatype.\n",
-                       i + 1, dfVal,
-                       GDALGetDataTypeName(eBandType));
-            }
-            
-            poVRTBand->SetNoDataValue( dfVal );
-        }
+            poVRTBand->SetNoDataValue( dfNoDataReal );
     }
 
 /* -------------------------------------------------------------------- */

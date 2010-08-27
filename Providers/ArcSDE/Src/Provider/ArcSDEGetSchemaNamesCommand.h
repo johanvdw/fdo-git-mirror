@@ -53,3 +53,4 @@ public:
 };
 
 #endif  // ARCSDEGETSCHEMANAMESCOMMAND_H
+

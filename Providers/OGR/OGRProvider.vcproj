@@ -64,9 +64,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_3D.lib fdospatial.lib ProvidersCommon.lib"
+				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_2D.lib fdospatial.lib ProvidersCommon.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win32\Debug;&quot;$(FDOGDAL)\lib\win32\Debug&quot;;..\..\Thirdparty\gdal\lib\win32\Debug;&quot;..\..\Thirdparty\apache\xerces\Build\Win32\VC9\Debug&quot;;..\..\Utilities\Common\Lib\Win32\Debug"
+				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win32\Debug;&quot;$(FDOGDAL)\lib\win32\Debug&quot;;..\..\Thirdparty\gdal\lib\win32\Debug;&quot;..\..\Thirdparty\apache\xml-xerces\c\Build\Win32\VC9\Debug&quot;;..\..\Utilities\Common\Lib\Win32\Debug"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -93,7 +93,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -142,9 +142,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_3D.lib fdospatial.lib ProvidersCommon.lib"
+				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_2D.lib fdospatial.lib ProvidersCommon.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win64\Debug;&quot;$(FDOGDAL)\lib\win64\Debug&quot;;..\..\Thirdparty\gdal\lib\win64\Debug;&quot;..\..\Thirdparty\apache\xerces\Build\Win64\VC9\Debug&quot;;..\..\Utilities\Common\Lib\Win64\Debug"
+				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win64\Debug;&quot;$(FDOGDAL)\lib\win64\Debug&quot;;..\..\Thirdparty\gdal\lib\win64\Debug;&quot;..\..\Thirdparty\apache\xml-xerces\c\Build\Win64\VC9\Debug&quot;;..\..\Utilities\Common\Lib\Win64\Debug"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -171,7 +171,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -220,9 +220,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_3.lib fdospatial.lib ProvidersCommon.lib"
+				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_2.lib fdospatial.lib ProvidersCommon.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win32\release;&quot;$(FDOGDAL)\lib\win32\Release&quot;;&quot;gdal\gdal-1.5.1&quot;;&quot;..\..\Thirdparty\apache\xerces\Build\Win32\VC9\Release&quot;;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win32\Release"
+				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win32\release;&quot;$(FDOGDAL)\lib\win32\Release&quot;;&quot;gdal\gdal-1.5.1&quot;;&quot;..\..\Thirdparty\apache\xml-xerces\c\Build\Win32\VC9\Release&quot;;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win32\Release"
 				GenerateManifest="true"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs="fdogeometry.dll"
@@ -255,7 +255,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -304,9 +304,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_3.lib fdospatial.lib ProvidersCommon.lib"
+				AdditionalDependencies="fdo.lib fdocommon.lib fdogeometry.lib wsock32.lib gdal_i.lib xerces-c_2.lib fdospatial.lib ProvidersCommon.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win64\release;&quot;$(FDOGDAL)\lib\win64\Release&quot;;&quot;gdal\gdal-1.5.1&quot;;&quot;..\..\Thirdparty\apache\xerces\Build\Win64\VC9\Release&quot;;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win64\Release"
+				AdditionalLibraryDirectories="..\..\Fdo\Unmanaged\lib\win64\release;&quot;$(FDOGDAL)\lib\win64\Release&quot;;&quot;gdal\gdal-1.5.1&quot;;&quot;..\..\Thirdparty\apache\xml-xerces\c\Build\Win64\VC9\Release&quot;;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win64\Release"
 				GenerateManifest="true"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs="fdogeometry.dll"
@@ -339,7 +339,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OGRProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>

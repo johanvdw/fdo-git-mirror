@@ -135,11 +135,12 @@
  * type of "FUNCTION*"). This removes the necessity for macro-generated wrapper
  * functions. */
 
-static LHASH_OF(FUNCTION) *prog_init(void );
-static int do_cmd(LHASH_OF(FUNCTION) *prog,int argc,char *argv[]);
-static void list_pkey(BIO *out);
-static void list_cipher(BIO *out);
-static void list_md(BIO *out);
+/* static unsigned long MS_CALLBACK hash(FUNCTION *a); */
+static unsigned long MS_CALLBACK hash(const void *a_void);
+/* static int MS_CALLBACK cmp(FUNCTION *a,FUNCTION *b); */
+static int MS_CALLBACK cmp(const void *a_void,const void *b_void);
+static LHASH *prog_init(void );
+static int do_cmd(LHASH *prog,int argc,char *argv[]);
 char *default_config_file=NULL;
 
 /* Make sure there is only one when MONOLITH is defined */
@@ -225,7 +226,7 @@ int main(int Argc, char *Argv[])
 	int n,i,ret=0;
 	int argc;
 	char **argv,*p;
-	LHASH_OF(FUNCTION) *prog=NULL;
+	LHASH *prog=NULL;
 	long errline;
  
 	arg.data=NULL;
@@ -272,21 +273,9 @@ int main(int Argc, char *Argv[])
 	i=NCONF_load(config,p,&errline);
 	if (i == 0)
 		{
-		if (ERR_GET_REASON(ERR_peek_last_error())
-		    == CONF_R_NO_SUCH_FILE)
-			{
-			BIO_printf(bio_err,
-				   "WARNING: can't open config file: %s\n",p);
-			ERR_clear_error();
-			NCONF_free(config);
-			config = NULL;
-			}
-		else
-			{
-			ERR_print_errors(bio_err);
-			NCONF_free(config);
-			exit(1);
-			}
+		NCONF_free(config);
+		config = NULL;
+		ERR_clear_error();
 		}
 
 	prog=prog_init();
@@ -295,7 +284,7 @@ int main(int Argc, char *Argv[])
 	program_name(Argv[0],pname,sizeof pname);
 
 	f.name=pname;
-	fp=lh_FUNCTION_retrieve(prog,&f);
+	fp=(FUNCTION *)lh_retrieve(prog,&f);
 	if (fp != NULL)
 		{
 		Argv[0]=pname;
@@ -330,8 +319,7 @@ int main(int Argc, char *Argv[])
 			else	prompt="OpenSSL> ";
 			fputs(prompt,stdout);
 			fflush(stdout);
-			if (!fgets(p,n,stdin))
-				goto end;
+			fgets(p,n,stdin);
 			if (p[0] == '\0') goto end;
 			i=strlen(p);
 			if (i <= 1) break;
@@ -362,7 +350,7 @@ end:
 		NCONF_free(config);
 		config=NULL;
 		}
-	if (prog != NULL) lh_FUNCTION_free(prog);
+	if (prog != NULL) lh_free(prog);
 	if (arg.data != NULL) OPENSSL_free(arg.data);
 
 	apps_shutdown();
@@ -378,13 +366,9 @@ end:
 
 #define LIST_STANDARD_COMMANDS "list-standard-commands"
 #define LIST_MESSAGE_DIGEST_COMMANDS "list-message-digest-commands"
-#define LIST_MESSAGE_DIGEST_ALGORITHMS "list-message-digest-algorithms"
 #define LIST_CIPHER_COMMANDS "list-cipher-commands"
-#define LIST_CIPHER_ALGORITHMS "list-cipher-algorithms"
-#define LIST_PUBLIC_KEY_ALGORITHMS "list-public-key-algorithms"
 
-
-static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
+static int do_cmd(LHASH *prog, int argc, char *argv[])
 	{
 	FUNCTION f,*fp;
 	int i,ret=1,tp,nl;
@@ -392,22 +376,7 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 	if ((argc <= 0) || (argv[0] == NULL))
 		{ ret=0; goto end; }
 	f.name=argv[0];
-	fp=lh_FUNCTION_retrieve(prog,&f);
-	if (fp == NULL)
-		{
-		if (EVP_get_digestbyname(argv[0]))
-			{
-			f.type = FUNC_TYPE_MD;
-			f.func = dgst_main;
-			fp = &f;
-			}
-		else if (EVP_get_cipherbyname(argv[0]))
-			{
-			f.type = FUNC_TYPE_CIPHER;
-			f.func = enc_main;
-			fp = &f;
-			}
-		}
+	fp=(FUNCTION *)lh_retrieve(prog,&f);
 	if (fp != NULL)
 		{
 		ret=fp->func(argc,argv);
@@ -422,7 +391,7 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 		}
 #endif
 		f.name=argv[0]+3;
-		ret = (lh_FUNCTION_retrieve(prog,&f) != NULL);
+		ret = (lh_retrieve(prog,&f) != NULL);
 		if (!ret)
 			BIO_printf(bio_stdout, "%s\n", argv[0]);
 		else
@@ -440,10 +409,7 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 		}
 	else if ((strcmp(argv[0],LIST_STANDARD_COMMANDS) == 0) ||
 		(strcmp(argv[0],LIST_MESSAGE_DIGEST_COMMANDS) == 0) ||
-		(strcmp(argv[0],LIST_MESSAGE_DIGEST_ALGORITHMS) == 0) ||
-		(strcmp(argv[0],LIST_CIPHER_COMMANDS) == 0) ||
-		(strcmp(argv[0],LIST_CIPHER_ALGORITHMS) == 0) ||
-		(strcmp(argv[0],LIST_PUBLIC_KEY_ALGORITHMS) == 0))
+		(strcmp(argv[0],LIST_CIPHER_COMMANDS) == 0))
 		{
 		int list_type;
 		BIO *bio_stdout;
@@ -452,12 +418,6 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 			list_type = FUNC_TYPE_GENERAL;
 		else if (strcmp(argv[0],LIST_MESSAGE_DIGEST_COMMANDS) == 0)
 			list_type = FUNC_TYPE_MD;
-		else if (strcmp(argv[0],LIST_MESSAGE_DIGEST_ALGORITHMS) == 0)
-			list_type = FUNC_TYPE_MD_ALG;
-		else if (strcmp(argv[0],LIST_PUBLIC_KEY_ALGORITHMS) == 0)
-			list_type = FUNC_TYPE_PKEY;
-		else if (strcmp(argv[0],LIST_CIPHER_ALGORITHMS) == 0)
-			list_type = FUNC_TYPE_CIPHER_ALG;
 		else /* strcmp(argv[0],LIST_CIPHER_COMMANDS) == 0 */
 			list_type = FUNC_TYPE_CIPHER;
 		bio_stdout = BIO_new_fp(stdout,BIO_NOCLOSE);
@@ -467,23 +427,10 @@ static int do_cmd(LHASH_OF(FUNCTION) *prog, int argc, char *argv[])
 		bio_stdout = BIO_push(tmpbio, bio_stdout);
 		}
 #endif
-
-		if (!load_config(bio_err, NULL))
-			goto end;
-
-		if (list_type == FUNC_TYPE_PKEY)
-			list_pkey(bio_stdout);	
-		if (list_type == FUNC_TYPE_MD_ALG)
-			list_md(bio_stdout);	
-		if (list_type == FUNC_TYPE_CIPHER_ALG)
-			list_cipher(bio_stdout);	
-		else
-			{
-			for (fp=functions; fp->name != NULL; fp++)
-				if (fp->type == list_type)
-					BIO_printf(bio_stdout, "%s\n",
-								fp->name);
-			}
+		
+		for (fp=functions; fp->name != NULL; fp++)
+			if (fp->type == list_type)
+				BIO_printf(bio_stdout, "%s\n", fp->name);
 		BIO_free_all(bio_stdout);
 		ret=0;
 		goto end;
@@ -546,94 +493,9 @@ static int SortFnByName(const void *_f1,const void *_f2)
     return strcmp(f1->name,f2->name);
     }
 
-static void list_pkey(BIO *out)
+static LHASH *prog_init(void)
 	{
-	int i;
-	for (i = 0; i < EVP_PKEY_asn1_get_count(); i++)
-		{
-		const EVP_PKEY_ASN1_METHOD *ameth;
-		int pkey_id, pkey_base_id, pkey_flags;
-		const char *pinfo, *pem_str;
-		ameth = EVP_PKEY_asn1_get0(i);
-		EVP_PKEY_asn1_get0_info(&pkey_id, &pkey_base_id, &pkey_flags,
-						&pinfo, &pem_str, ameth);
-		if (pkey_flags & ASN1_PKEY_ALIAS)
-			{
-			BIO_printf(out, "Name: %s\n", 
-					OBJ_nid2ln(pkey_id));
-			BIO_printf(out, "\tType: Alias to %s\n",
-					OBJ_nid2ln(pkey_base_id));
-			}
-		else
-			{
-			BIO_printf(out, "Name: %s\n", pinfo);
-			BIO_printf(out, "\tType: %s Algorithm\n", 
-				pkey_flags & ASN1_PKEY_DYNAMIC ?
-					"External" : "Builtin");
-			BIO_printf(out, "\tOID: %s\n", OBJ_nid2ln(pkey_id));
-			if (pem_str == NULL)
-				pem_str = "(none)";
-			BIO_printf(out, "\tPEM string: %s\n", pem_str);
-			}
-					
-		}
-	}
-
-static void list_cipher_fn(const EVP_CIPHER *c,
-			const char *from, const char *to, void *arg)
-	{
-	if (c)
-		BIO_printf(arg, "%s\n", EVP_CIPHER_name(c));
-	else
-		{
-		if (!from)
-			from = "<undefined>";
-		if (!to)
-			to = "<undefined>";
-		BIO_printf(arg, "%s => %s\n", from, to);
-		}
-	}
-
-static void list_cipher(BIO *out)
-	{
-	EVP_CIPHER_do_all_sorted(list_cipher_fn, out);
-	}
-
-static void list_md_fn(const EVP_MD *m,
-			const char *from, const char *to, void *arg)
-	{
-	if (m)
-		BIO_printf(arg, "%s\n", EVP_MD_name(m));
-	else
-		{
-		if (!from)
-			from = "<undefined>";
-		if (!to)
-			to = "<undefined>";
-		BIO_printf(arg, "%s => %s\n", from, to);
-		}
-	}
-
-static void list_md(BIO *out)
-	{
-	EVP_MD_do_all_sorted(list_md_fn, out);
-	}
-
-static int MS_CALLBACK function_cmp(const FUNCTION *a, const FUNCTION *b)
-	{
-	return strncmp(a->name,b->name,8);
-	}
-static IMPLEMENT_LHASH_COMP_FN(function, FUNCTION)
-
-static unsigned long MS_CALLBACK function_hash(const FUNCTION *a)
-	{
-	return lh_strhash(a->name);
-	}	
-static IMPLEMENT_LHASH_HASH_FN(function, FUNCTION)
-
-static LHASH_OF(FUNCTION) *prog_init(void)
-	{
-	LHASH_OF(FUNCTION) *ret;
+	LHASH *ret;
 	FUNCTION *f;
 	size_t i;
 
@@ -642,11 +504,23 @@ static LHASH_OF(FUNCTION) *prog_init(void)
 	    ;
 	qsort(functions,i,sizeof *functions,SortFnByName);
 
-	if ((ret=lh_FUNCTION_new()) == NULL)
+	if ((ret=lh_new(hash, cmp)) == NULL)
 		return(NULL);
 
 	for (f=functions; f->name != NULL; f++)
-		(void)lh_FUNCTION_insert(ret,f);
+		lh_insert(ret,f);
 	return(ret);
 	}
 
+/* static int MS_CALLBACK cmp(FUNCTION *a, FUNCTION *b) */
+static int MS_CALLBACK cmp(const void *a_void, const void *b_void)
+	{
+	return(strncmp(((const FUNCTION *)a_void)->name,
+			((const FUNCTION *)b_void)->name,8));
+	}
+
+/* static unsigned long MS_CALLBACK hash(FUNCTION *a) */
+static unsigned long MS_CALLBACK hash(const void *a_void)
+	{
+	return(lh_strhash(((const FUNCTION *)a_void)->name));
+	}

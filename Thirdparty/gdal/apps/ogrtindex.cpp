@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtindex.cpp 17890 2009-10-24 15:51:01Z rouault $
+ * $Id: ogrtindex.cpp 14818 2008-07-05 10:15:08Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Program to generate a UMN MapServer compatible tile index for a
@@ -34,7 +34,7 @@
 
 #include <cassert>
 
-CPL_CVSID("$Id: ogrtindex.cpp 17890 2009-10-24 15:51:01Z rouault $");
+CPL_CVSID("$Id: ogrtindex.cpp 14818 2008-07-05 10:15:08Z rouault $");
 
 static void Usage();
 
@@ -52,8 +52,6 @@ int main( int nArgc, char ** papszArgv )
     int write_absolute_path = FALSE;
     int skip_different_projection = FALSE;
     char* current_path = NULL;
-    int accept_different_schemas = FALSE;
-    int bFirstWarningForNonMatchingAttributes = TRUE;
     
     /* Check strict compilation and runtime library version as we use C++ API */
     if (! GDAL_CHECK_VERSION(papszArgv[0]))
@@ -85,10 +83,6 @@ int main( int nArgc, char ** papszArgv )
         else if( EQUAL(papszArgv[iArg],"-skip_different_projection"))
         {
             skip_different_projection = TRUE;
-        }
-        else if( EQUAL(papszArgv[iArg],"-accept_different_schemas"))
-        {
-            accept_different_schemas = TRUE;
         }
         else if( EQUAL(papszArgv[iArg],"-tileindex") && iArg < nArgc-1 )
         {
@@ -140,19 +134,19 @@ int main( int nArgc, char ** papszArgv )
 
         if( poDriver == NULL )
         {
-            fprintf( stderr, "Unable to find driver `%s'.\n", pszFormat );
-            fprintf( stderr, "The following drivers are available:\n" );
+            printf( "Unable to find driver `%s'.\n", pszFormat );
+            printf( "The following drivers are available:\n" );
         
             for( iDriver = 0; iDriver < poR->GetDriverCount(); iDriver++ )
             {
-                fprintf( stderr, "  -> `%s'\n", poR->GetDriver(iDriver)->GetName() );
+                printf( "  -> `%s'\n", poR->GetDriver(iDriver)->GetName() );
             }
             exit( 1 );
         }
 
         if( !poDriver->TestCapability( ODrCCreateDataSource ) )
         {
-            fprintf( stderr, "%s driver does not support data source creation.\n",
+            printf( "%s driver does not support data source creation.\n",
                     pszFormat );
             exit( 1 );
         }
@@ -164,7 +158,7 @@ int main( int nArgc, char ** papszArgv )
         poDstDS = poDriver->CreateDataSource( pszOutputName, NULL );
         if( poDstDS == NULL )
         {
-            fprintf( stderr, "%s driver failed to create %s\n", 
+            printf( "%s driver failed to create %s\n", 
                     pszFormat, pszOutputName );
             exit( 1 );
         }
@@ -174,56 +168,9 @@ int main( int nArgc, char ** papszArgv )
             OGRFieldDefn oLocation( pszTileIndexField, OFTString );
             
             oLocation.SetWidth( 200 );
-            
-            if( nFirstSourceDataset < nArgc && papszArgv[nFirstSourceDataset][0] == '-' )
-            {
-                nFirstSourceDataset++;
-            }
-            
-            OGRSpatialReference* poSrcSpatialRef = NULL;
-            
-            /* Fetches the SRS of the first layer and use it when creating the tileindex layer */
-            if (nFirstSourceDataset < nArgc)
-            {
-                OGRDataSource* poDS = OGRSFDriverRegistrar::Open( papszArgv[nFirstSourceDataset], 
-                                           FALSE );
-                                           
-                if (poDS)
-                {
-                    int iLayer;
 
-                    for( iLayer = 0; iLayer < poDS->GetLayerCount(); iLayer++ )
-                    {
-                        int bRequested = bLayersWildcarded;
-                        OGRLayer *poLayer = poDS->GetLayer(iLayer);
-
-                        for( iArg = 1; iArg < nArgc && !bRequested; iArg++ )
-                        {
-                            if( EQUAL(papszArgv[iArg],"-lnum") 
-                                && atoi(papszArgv[iArg+1]) == iLayer )
-                                bRequested = TRUE;
-                            else if( EQUAL(papszArgv[iArg],"-lname") 
-                                     && EQUAL(papszArgv[iArg+1],
-                                              poLayer->GetLayerDefn()->GetName()) )
-                                bRequested = TRUE;
-                        }
-
-                        if( !bRequested )
-                            continue;
-                            
-                        if ( poLayer->GetSpatialRef() )
-                            poSrcSpatialRef = poLayer->GetSpatialRef()->Clone();
-                        break;
-                    }
-                }
-                
-                OGRDataSource::DestroyDataSource( poDS );
-            }
-
-            poDstLayer = poDstDS->CreateLayer( "tileindex", poSrcSpatialRef );
+            poDstLayer = poDstDS->CreateLayer( "tileindex" );
             poDstLayer->CreateField( &oLocation, OFTString );
-            
-            OGRSpatialReference::DestroySpatialReference( poSrcSpatialRef );
         }
     }
 
@@ -235,7 +182,7 @@ int main( int nArgc, char ** papszArgv )
     poDstLayer = poDstDS->GetLayer(0);
     if( poDstLayer == NULL )
     {
-        fprintf( stderr, "Can't find any layer in output tileindex!\n" );
+        printf( "Can't find any layer in output tileindex!\n" );
         exit( 1 );
     }
 
@@ -243,12 +190,10 @@ int main( int nArgc, char ** papszArgv )
         poDstLayer->GetLayerDefn()->GetFieldIndex( pszTileIndexField );
     if( iTileIndexField == -1 )
     {
-        fprintf( stderr, "Can't find %s field in tile index dataset.\n", 
+        printf( "Can't find %s field in tile index dataset.\n", 
                 pszTileIndexField );
         exit( 1 );
     }
-
-    OGRFeatureDefn* poFeatureDefn = NULL;
 
     /* Load in memory existing file names in SHP */
     int nExistingLayers = 0;
@@ -288,11 +233,8 @@ int main( int nArgc, char ** papszArgv )
                             alreadyExistingSpatialRefValid = TRUE;
                             alreadyExistingSpatialRef =
                                     (poLayer->GetSpatialRef()) ? poLayer->GetSpatialRef()->Clone() : NULL;
-                                    
-                            if (poFeatureDefn == NULL)
-                                poFeatureDefn = poLayer->GetLayerDefn()->Clone();
                         }
-                        OGRDataSource::DestroyDataSource( poDS );
+                        delete poDS;
                     }
                 }
             }
@@ -313,6 +255,7 @@ int main( int nArgc, char ** papszArgv )
 /* ==================================================================== */
 /*      Process each input datasource in turn.                          */
 /* ==================================================================== */
+	OGRFeatureDefn* poFeatureDefn = NULL;
 
 	for(; nFirstSourceDataset < nArgc; nFirstSourceDataset++ )
     {
@@ -343,7 +286,7 @@ int main( int nArgc, char ** papszArgv )
 
         if( poDS == NULL )
         {
-            fprintf( stderr, "Failed to open dataset %s, skipping.\n", 
+            printf( "Failed to open dataset %s, skipping.\n", 
                     papszArgv[nFirstSourceDataset] );
             CPLFree(fileNameToWrite);
             continue;
@@ -421,7 +364,7 @@ int main( int nArgc, char ** papszArgv )
 			{
 				poFeatureDefn = poLayer->GetLayerDefn()->Clone();
 			}
-			else if ( !accept_different_schemas )
+			else
 			{
 				OGRFeatureDefn* poFeatureDefnCur = poLayer->GetLayerDefn();
 				assert(NULL != poFeatureDefnCur);
@@ -430,18 +373,11 @@ int main( int nArgc, char ** papszArgv )
 
 				if( fieldCount != poFeatureDefn->GetFieldCount())
 				{
-					fprintf( stderr, "Number of attributes of layer %s of %s does not match ... skipping it.\n",
-                             poLayer->GetLayerDefn()->GetName(), papszArgv[nFirstSourceDataset]);
-                    if (bFirstWarningForNonMatchingAttributes)
-                    {
-                        fprintf( stderr, "Note : you can override this behaviour with -accept_different_schemas option\n"
-                                         "but this may result in a tileindex incompatible with MapServer\n");
-                        bFirstWarningForNonMatchingAttributes = FALSE;
-                    }
-					continue;
+					printf( "Number of attributes of subsequent layers does not match ... terminating.\n" );
+					delete poDstDS;
+					exit( 1 );
 				}
 				
-                int bSkip = FALSE;
 				for( int fn = 0; fn < poFeatureDefnCur->GetFieldCount(); fn++ )
 				{
  					OGRFieldDefn* poField = poFeatureDefn->GetFieldDefn(fn);
@@ -456,21 +392,11 @@ int main( int nArgc, char ** papszArgv )
 						|| poField->GetPrecision() != poFieldCur->GetPrecision() 
 						|| !EQUAL( poField->GetNameRef(), poFieldCur->GetNameRef() ) )
 					{
-						fprintf( stderr, "Schema of attributes of layer %s of %s does not match ... skipping it.\n",
-                                 poLayer->GetLayerDefn()->GetName(), papszArgv[nFirstSourceDataset]);
-                        if (bFirstWarningForNonMatchingAttributes)
-                        {
-                            fprintf( stderr, "Note : you can override this behaviour with -accept_different_schemas option\n"
-                                             "but this may result in a tileindex incompatible with MapServer\n");
-                            bFirstWarningForNonMatchingAttributes = FALSE;
-                        }
-                        bSkip = TRUE; 
-                        break;
+						printf( "Schema of attributes of subsequent layers does not match ... terminating.\n" );
+						delete poDstDS;
+						exit( 1 );
 					}
 				}
-                
-                if (bSkip)
-                    continue;
 			}
 
 
@@ -484,7 +410,7 @@ int main( int nArgc, char ** papszArgv )
 
             if( poLayer->GetExtent( &sExtents, TRUE ) != OGRERR_NONE )
             {
-                fprintf( stderr, "GetExtent() failed on layer %s of %s, skipping.\n", 
+                printf( "GetExtent() failed on layer %s of %s, skipping.\n", 
                         poLayer->GetLayerDefn()->GetName(), 
                         papszArgv[nFirstSourceDataset] );
                 continue;
@@ -511,8 +437,8 @@ int main( int nArgc, char ** papszArgv )
 
             if( poDstLayer->CreateFeature( &oTileFeat ) != OGRERR_NONE )
             {
-                fprintf( stderr, "Failed to create feature on tile index ... terminating." );
-                OGRDataSource::DestroyDataSource( poDstDS );
+                printf( "Failed to create feature on tile index ... terminating." );
+                delete poDstDS;
                 exit( 1 );
             }
         }
@@ -521,17 +447,17 @@ int main( int nArgc, char ** papszArgv )
 /*      Cleanup this data source.                                       */
 /* -------------------------------------------------------------------- */
         CPLFree(fileNameToWrite);
-        OGRDataSource::DestroyDataSource( poDS );
+        delete poDS;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Close tile index and clear buffers.                             */
 /* -------------------------------------------------------------------- */
-    OGRDataSource::DestroyDataSource( poDstDS );
-	OGRFeatureDefn::DestroyFeatureDefn( poFeatureDefn );
+    delete poDstDS;
+	delete poFeatureDefn;
   
     if (alreadyExistingSpatialRef != NULL)
-        OGRSpatialReference::DestroySpatialReference( alreadyExistingSpatialRef );
+        delete alreadyExistingSpatialRef;
   
     CPLFree(current_path);
     
@@ -557,7 +483,6 @@ static void Usage()
 {
     printf( "Usage: ogrtindex [-lnum n]... [-lname name]... [-f output_format]\n"
             "                 [-write_absolute_path] [-skip_different_projection]\n"
-            "                 [-accept_different_schemas]\n"
             "                 output_dataset src_dataset...\n" );
     printf( "\n" );
     printf( "  -lnum n: Add layer number 'n' from each source file\n"
@@ -571,10 +496,6 @@ static void Usage()
     printf( "  -write_absolute_path: Filenames are written with absolute paths.\n" );
     printf( "  -skip_different_projection: Only layers with same projection ref \n"
             "        as layers already inserted in the tileindex will be inserted.\n" );
-    printf( "  -accept_different_schemas: by default ogrtindex checks that all layers inserted\n"
-            "                             into the index have the same attribute schemas. If you\n"
-            "                             specify this option, this test will be disabled. Be aware that\n"
-            "                             resulting index may be incompatible with MapServer!\n" );
     printf( "\n" );
     printf( "If no -lnum or -lname arguments are given it is assumed that\n"
             "all layers in source datasets should be added to the tile index\n"

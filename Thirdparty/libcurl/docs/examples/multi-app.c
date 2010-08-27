@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: multi-app.c,v 1.10 2010-01-21 09:53:30 bagder Exp $
+ * $Id: multi-app.c,v 1.7 2006-10-13 14:01:19 bagder Exp $
  *
  * This is an example application source code using the multi interface.
  */
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
   curl_easy_setopt(handles[HTTP_HANDLE], CURLOPT_URL, "http://website.com");
 
   curl_easy_setopt(handles[FTP_HANDLE], CURLOPT_URL, "ftp://ftpsite.com");
-  curl_easy_setopt(handles[FTP_HANDLE], CURLOPT_UPLOAD, 1L);
+  curl_easy_setopt(handles[FTP_HANDLE], CURLOPT_UPLOAD, TRUE);
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
@@ -105,23 +105,20 @@ int main(int argc, char **argv)
   /* See how the transfers went */
   while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
     if (msg->msg == CURLMSG_DONE) {
-      int idx, found = 0;
 
-      /* Find out which handle this message is about */
-      for (idx=0; idx<HANDLECOUNT; idx++) {
-        found = (msg->easy_handle == handles[idx]);
-        if(found)
-          break;
-      }
+       int idx, found = 0;
 
-      switch (idx) {
-      case HTTP_HANDLE:
-        printf("HTTP transfer completed with status %d\n", msg->data.result);
-        break;
-      case FTP_HANDLE:
-        printf("FTP transfer completed with status %d\n", msg->data.result);
-        break;
-      }
+       /* Find out which handle this message is about */
+       for (idx=0; (!found && (idx<HANDLECOUNT)); idx++) found = (msg->easy_handle == handles[idx]);
+
+       switch (idx) {
+         case HTTP_HANDLE:
+           printf("HTTP transfer completed with status %d\n", msg->data.result);
+           break;
+         case FTP_HANDLE:
+           printf("FTP transfer completed with status %d\n", msg->data.result);
+           break;
+       }
     }
   }
 

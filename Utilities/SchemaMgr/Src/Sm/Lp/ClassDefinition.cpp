@@ -1534,9 +1534,7 @@ void FdoSmLpClassBase::SetDbObjectName( FdoStringP objectName )
 
 FdoStringP FdoSmLpClassBase::DefaultDbObjectName()
 {
-    FdoSmPhMgrP pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
-
-    return pPhysical->ClassName2DbObjectName(GetLogicalPhysicalSchema()->GetName(), GetName());
+    return GetName();
 }
 
 void FdoSmLpClassBase::Finalize()
@@ -3405,20 +3403,6 @@ FdoSmLpClassBase::Capabilities::Capabilities(
                 memcpy( mLockTypes, lockTypes, mLockTypeCount*sizeof(FdoLockType) );
             }
             mSupportsWrite = pPhDbObject->GetSupportsWrite();
-
-            // Set polygon vertex order and strictness rule
-            const FdoSmLpPropertyDefinitionCollection* pLpPropDefColl = pClass->RefProperties();
-            for (int iProp=0; iProp < pLpPropDefColl->GetCount(); iProp++)
-            {
-                const FdoSmLpSimplePropertyDefinition* pLpPropDef = dynamic_cast<const FdoSmLpSimplePropertyDefinition*>(pLpPropDefColl->RefItem(iProp));
-                if (NULL != pLpPropDef && pLpPropDef->GetPropertyType() == FdoPropertyType_GeometricProperty)
-                {
-                    FdoString* propName = pLpPropDef->GetName();
-                    FdoString* columnName = (wcslen(pLpPropDef->GetRootColumnName()) > 0) ? pLpPropDef->GetRootColumnName() : pLpPropDef->GetColumnName();
-                    mPolygonVertexOrderRuleMap[propName] = pPhDbObject->GetPolygonVertexOrderRule(columnName);
-                    mPolygonVertexOrderStrictnessMap[propName] = pPhDbObject->GetPolygonVertexOrderStrictness(columnName);
-                }
-            }
         }
     }
 }
@@ -3447,27 +3431,7 @@ bool FdoSmLpClassBase::Capabilities::SupportsLongTransactions() const
 const FdoLockType* FdoSmLpClassBase::Capabilities::GetLockTypes(FdoInt32& size) const
 {
     size = mLockTypeCount;
-    return mLockTypes;
-}
-
-PolygonVertexOrderRuleMap FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderRule() const
-{
-    return mPolygonVertexOrderRuleMap;
-}
-
-PolygonVertexOrderStrictnessMap FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderStrictness() const
-{
-    return mPolygonVertexOrderStrictnessMap;
-}
-
-PolygonVertexOrderRuleMap& FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderRule()
-{
-    return mPolygonVertexOrderRuleMap;
-}
-
-PolygonVertexOrderStrictnessMap& FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderStrictness()
-{
-    return mPolygonVertexOrderStrictnessMap;
+	return mLockTypes;
 }
 
 FdoSmLpClassDefinition::FdoSmLpClassDefinition(FdoSmPhClassReaderP classReader, FdoSmLpSchemaElement* parent) : 

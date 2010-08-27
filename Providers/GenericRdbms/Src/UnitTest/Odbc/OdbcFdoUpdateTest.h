@@ -148,12 +148,10 @@ class OdbcExcelFdoUpdateTest : public OdbcBaseFdoUpdateTest
 
 
     // Some values that can vary by target datastore...
-    FdoString * GetConnectString();
+    FdoString * GetConnectString() {return L"ConnectionString=\"Driver={Microsoft Excel Driver (*.xls)};Dbq=Dbg/MsTest.xls;ReadOnly=False\"";}
     FdoString * GetConfigFile() {return L"MsTestXlsConfig.xml";}
     FdoString * GetSchemaName() {return L"Fdo";}
     FdoString * GetPhysicalSchemaName() {return L"";}
-private:
-    FdoStringP m_connectStringExcelUpdate;
 };
 #endif
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: mkgdaldist.sh 18737 2010-02-05 16:12:23Z hobu $
+# $Id: mkgdaldist.sh 15028 2008-07-25 17:34:16Z mloskot $
 #
 # mkgdaldist.sh - prepares GDAL source distribution package
 #
@@ -48,7 +48,7 @@ SVNMODULE="gdal"
 echo "Generating package '${GDAL_VERSION}' from '${SVNBRANCH}' branch"
 echo
  
-svn checkout ${SVNURL}/${SVNBRANCH}/${SVNMODULE} ${SVNMODULE}
+svn export ${SVNURL}/${SVNBRANCH}/${SVNMODULE} ${SVNMODULE}
 
 if [ \! -d gdal ] ; then
 	echo "svn checkout reported an error ... abandoning mkgdaldist"
@@ -124,18 +124,6 @@ rm -f ../gdal-${GDAL_VERSION}.tar.gz ../gdal${COMPRESSED_VERSION}.zip
 tar cf ../gdal-${GDAL_VERSION}.tar gdal-${GDAL_VERSION}
 gzip -9 ../gdal-${GDAL_VERSION}.tar
 zip -r ../gdal${COMPRESSED_VERSION}.zip gdal-${GDAL_VERSION}
-
-echo "* Generating MD5 sums ..."
-
-OSTYPE=`uname -s`
-if test "$OSTYPE" = "Darwin" ; then
-MD5=md5
-else
-MD5=md5sum
-fi
-
-$MD5 ../gdal-${GDAL_VERSION}.tar.gz > ../gdal-${GDAL_VERSION}.tar.gz.md5
-$MD5 ../gdal${COMPRESSED_VERSION}.zip > ../gdal${COMPRESSED_VERSION}.zip.md5
 
 echo "* Cleaning..."
 cd ..

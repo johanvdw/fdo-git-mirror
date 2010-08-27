@@ -40,9 +40,6 @@ public:
     /// Destructor deactivates the reader instance.
 	~FdoSmPhRdPostGisOwnerReader();
 
-    /// Returns true if current owner has MetaSchema tables.
-    virtual FdoBoolean GetHasMetaSchema();
-
 	/// Get description of the current owner from F_SCHEMAINFO.
     /// \return
     /// String with current owner description.

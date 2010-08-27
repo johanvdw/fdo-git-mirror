@@ -206,7 +206,7 @@ class SltQueryTranslator : public FdoIFilterProcessor,
 
 public:
 
-    SltQueryTranslator(FdoClassDefinition* fc, bool validateProps = true);
+    SltQueryTranslator(FdoClassDefinition* fc);
     ~SltQueryTranslator();
 
     SLT_IMPLEMENT_REFCOUNTING
@@ -248,11 +248,14 @@ public:
     virtual void ProcessBLOBValue               (FdoBLOBValue& expr);
     virtual void ProcessCLOBValue               (FdoCLOBValue& expr);
     virtual void ProcessGeometryValue           (FdoGeometryValue& expr);
-    virtual void ProcessSubSelectExpression     (FdoSubSelectExpression& expr);
 
 public:
+
+    void GetBBOX(DBounds& ext);
     const char* GetFilter();
     bool CanUseFastStepping();
+    recno_list* DetachIDList();
+    void Reset();
     bool MustKeepFilterAlive();
 
 private:
@@ -265,18 +268,22 @@ private:
 private:
     
     FilterChunkList             m_evalStack;
+    // this chunk needs to be restore in case we cannot optimize filter
+    // or we find a better chunk
+    ComplexFilterChunk*         m_optimizedChunk;
+    // in case we need to replace m_optimizedChunk this value will be restored with
+    IFilterChunk*                m_restoreChunk;
+    // will tell us in case we have conditions against text properties or spatial filters
+    int                        m_strgeomOperations;
     FdoClassDefinition*         m_fc;
+    short                       m_geomCount;
+
     // list used to destroy the allocated objects at the end
     FilterChunkList             m_allocatedObjects;
     // used as cache string operations
     StringBuffer                m_sb;
     // used to convert float/doubles on demand
     ConvReqOperationStack       m_convReqStack;
-    int                         m_strgeomOperations;
-    bool                        m_mustKeepFilterAlive;
-    bool                        m_canUseFastStepping;
-    bool                        m_foundEnvInt;
-    bool                        m_validateProps;
 };
 
 //Translates an FDO Expression to a SQLite expression
@@ -287,11 +294,10 @@ class SltExpressionTranslator : public FdoIExpressionProcessor
 
 public:
 
-    SltExpressionTranslator(FdoIdentifierCollection* props = NULL, FdoClassDefinition* classDef = NULL, bool avoidExp = false)
+    SltExpressionTranslator(FdoIdentifierCollection* props = NULL, FdoClassDefinition* classDef = NULL)
     {
         m_props = FDO_SAFE_ADDREF(props);
-        m_fc = FDO_SAFE_ADDREF(classDef);
-        m_avoidExp = avoidExp || props == NULL || (props->GetCount() == 0);
+        m_fc = classDef;
     }
     virtual ~SltExpressionTranslator()
     {}
@@ -329,7 +335,6 @@ public:
     virtual void ProcessBLOBValue               (FdoBLOBValue& expr);
     virtual void ProcessCLOBValue               (FdoCLOBValue& expr);
     virtual void ProcessGeometryValue           (FdoGeometryValue& expr);
-    virtual void ProcessSubSelectExpression     (FdoSubSelectExpression& expr);
 
 public:
     StringBuffer* GetExpression() { return &m_expr; }
@@ -337,11 +342,9 @@ public:
 
 protected:
     ConvReqOperationStack           m_convReqStack;
-    FdoPtr<FdoClassDefinition>      m_fc;
+    FdoClassDefinition*             m_fc;
     FdoPtr<FdoIdentifierCollection> m_props;
     StringBuffer m_expr;
-    StringBuffer m_sb;
-    bool m_avoidExp;
     char m_useConv[256];
 };
 
@@ -353,8 +356,8 @@ class SltExtractExpressionTranslator : public SltExpressionTranslator
 
 public:
 
-    SltExtractExpressionTranslator(FdoIdentifierCollection* props = NULL, bool avoidExp = false)
-        : SltExpressionTranslator(props, NULL, avoidExp)
+    SltExtractExpressionTranslator(FdoIdentifierCollection* props = NULL)
+        : SltExpressionTranslator(props)
     {
     }
     virtual ~SltExtractExpressionTranslator()
@@ -411,7 +414,6 @@ public:
     virtual void ProcessBLOBValue               (FdoBLOBValue& expr){m_error = true;}
     virtual void ProcessCLOBValue               (FdoCLOBValue& expr){m_error = true;}
     virtual void ProcessGeometryValue           (FdoGeometryValue& expr){m_error = true;}
-    virtual void ProcessSubSelectExpression     (FdoSubSelectExpression& expr) {m_error = true;}
 
 public:
     void Reset() 
