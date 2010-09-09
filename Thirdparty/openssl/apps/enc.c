@@ -67,7 +67,6 @@
 #include <openssl/x509.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
-#include <openssl/comp.h>
 #include <ctype.h>
 
 int set_hex(char *in,unsigned char *out,int size);
@@ -117,10 +116,6 @@ int MAIN(int argc, char **argv)
 	char *hkey=NULL,*hiv=NULL,*hsalt = NULL;
 	char *md=NULL;
 	int enc=1,printkey=0,i,base64=0;
-#ifdef ZLIB
-	int do_zlib=0;
-	BIO *bzl = NULL;
-#endif
 	int debug=0,olb64=0,nosalt=0;
 	const EVP_CIPHER *cipher=NULL,*c;
 	EVP_CIPHER_CTX *ctx = NULL;
@@ -146,18 +141,9 @@ int MAIN(int argc, char **argv)
 	program_name(argv[0],pname,sizeof pname);
 	if (strcmp(pname,"base64") == 0)
 		base64=1;
-#ifdef ZLIB
-	if (strcmp(pname,"zlib") == 0)
-		do_zlib=1;
-#endif
 
 	cipher=EVP_get_cipherbyname(pname);
-#ifdef ZLIB
-	if (!do_zlib && !base64 && (cipher == NULL)
-				&& (strcmp(pname,"enc") != 0))
-#else
 	if (!base64 && (cipher == NULL) && (strcmp(pname,"enc") != 0))
-#endif
 		{
 		BIO_printf(bio_err,"%s is an unknown cipher\n",pname);
 		goto bad;
@@ -213,10 +199,6 @@ int MAIN(int argc, char **argv)
 			base64=1;
 		else if	(strcmp(*argv,"-base64") == 0)
 			base64=1;
-#ifdef ZLIB
-		else if	(strcmp(*argv,"-z") == 0)
-			do_zlib=1;
-#endif
 		else if (strcmp(*argv,"-bufsize") == 0)
 			{
 			if (--argc < 1) goto bad;
@@ -243,12 +225,7 @@ int MAIN(int argc, char **argv)
 				goto bad;
 				}
 			buf[0]='\0';
-			if (!fgets(buf,sizeof buf,infile))
-				{
-				BIO_printf(bio_err,"unable to read key from '%s'\n",
-					file);
-				goto bad;
-				}
+			fgets(buf,sizeof buf,infile);
 			fclose(infile);
 			i=strlen(buf);
 			if ((i > 0) &&
@@ -306,11 +283,9 @@ bad:
 			BIO_printf(bio_err,"%-14s passphrase is the first line of the file argument\n","-kfile");
 			BIO_printf(bio_err,"%-14s the next argument is the md to use to create a key\n","-md");
 			BIO_printf(bio_err,"%-14s   from a passphrase.  One of md2, md5, sha or sha1\n","");
-			BIO_printf(bio_err,"%-14s salt in hex is the next argument\n","-S");
 			BIO_printf(bio_err,"%-14s key/iv in hex is the next argument\n","-K/-iv");
 			BIO_printf(bio_err,"%-14s print the iv/key (then exit if -P)\n","-[pP]");
 			BIO_printf(bio_err,"%-14s buffer size\n","-bufsize <n>");
-			BIO_printf(bio_err,"%-14s disable standard block padding\n","-nopad");
 #ifndef OPENSSL_NO_ENGINE
 			BIO_printf(bio_err,"%-14s use engine e, possibly a hardware device.\n","-engine e");
 #endif
@@ -471,19 +446,6 @@ bad:
 	rbio=in;
 	wbio=out;
 
-#ifdef ZLIB
-
-	if (do_zlib)
-		{
-		if ((bzl=BIO_new(BIO_f_zlib())) == NULL)
-			goto end;
-		if (enc)
-			wbio=BIO_push(bzl,wbio);
-		else
-			rbio=BIO_push(bzl,rbio);
-		}
-#endif
-
 	if (base64)
 		{
 		if ((b64=BIO_new(BIO_f_base64())) == NULL)
@@ -565,8 +527,7 @@ bad:
 			BIO_printf(bio_err,"invalid hex iv value\n");
 			goto end;
 			}
-		if ((hiv == NULL) && (str == NULL)
-		    && EVP_CIPHER_iv_length(cipher) != 0)
+		if ((hiv == NULL) && (str == NULL))
 			{
 			/* No IV was explicitly set and no IV was generated
 			 * during EVP_BytesToKey. Hence the IV is undefined,
@@ -678,9 +639,6 @@ end:
 	if (out != NULL) BIO_free_all(out);
 	if (benc != NULL) BIO_free(benc);
 	if (b64 != NULL) BIO_free(b64);
-#ifdef ZLIB
-	if (bzl != NULL) BIO_free(bzl);
-#endif
 	if(pass) OPENSSL_free(pass);
 	apps_shutdown();
 	OPENSSL_EXIT(ret);

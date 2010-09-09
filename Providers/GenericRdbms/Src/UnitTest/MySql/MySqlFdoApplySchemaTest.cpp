@@ -110,17 +110,6 @@ void MySqlFdoApplySchemaTest::VldClassCapabilities( int ltMode, int lckMode, Fdo
     FdoLockType* lockTypes = cc->GetLockTypes( lockTypeCount );
 
     CPPUNIT_ASSERT( lockTypeCount == 0 );
-
-    FdoPtr<FdoPropertyDefinitionCollection> props = pClass->GetProperties();
-    for ( FdoInt32 i = 0; i < props->GetCount(); i++ )
-    {
-        FdoPtr<FdoPropertyDefinition> prop = props->GetItem(i);
-        if (prop->GetPropertyType() == FdoPropertyType_GeometricProperty)
-        {
-            CPPUNIT_ASSERT( cc->GetPolygonVertexOrderRule(prop->GetName()) == FdoPolygonVertexOrderRule_CCW );
-            CPPUNIT_ASSERT( !cc->GetPolygonVertexOrderStrictness(prop->GetName()) );
-        }
-    }
 }
 
 FdoStringP MySqlFdoApplySchemaTest::LogicalPhysicalBend( FdoString* inFile )
@@ -152,14 +141,3 @@ FdoStringP MySqlFdoApplySchemaTest::SchemaTestErrFile( int fileNum, bool isMaste
     return UnitTestUtil::GetOutputFileName( FdoStringP::Format( L"apply_schema_err%d%ls.txt",fileNum,
         (fileNum == 2 || fileNum == 3 || fileNum == 5 || fileNum == 6 || fileNum == 8 || fileNum == 9) ? L"M" : L"") );
 }
-
-FdoStringP MySqlFdoApplySchemaTest::GetParcelFirstName()
-{
-	return L"first_name";
-}
-
-FdoStringP MySqlFdoApplySchemaTest::GetParcelLastName()
-{
-	return L"last_name";
-}
-

@@ -96,8 +96,6 @@ public:
     ///
     FdoStringP GetKeyColumnUsageTable() const;
 
-	virtual bool IsDbObjectNameReserved( FdoStringP objectName );
-
     // Removes a schema from the cache without dropping it from
     // the RDBMS.
     void DiscardSchema( FdoSmPhPostGisSchema* schema );
@@ -121,17 +119,12 @@ public:
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader(
         FdoStringP dbObject = L"") const;
 
-    /// Create a reader to get database objects this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoStringsP objectNames ) const;
-
     /// Create a reader to get all database objects for this join.
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader(
         FdoSmPhRdTableJoinP join) const;
 
     virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader() const;
-
-    virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader( FdoStringsP objectNames ) const;
 
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader(
@@ -141,9 +134,6 @@ public:
 	virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader(
         FdoStringP tableName, FdoStringP constraintType) const;
 
-    virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( 
-        FdoStringsP objectNames, FdoStringP constraintType ) const;
-
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader(
         FdoSmPhRdTableJoinP join, FdoStringP constraintType) const;
@@ -151,25 +141,14 @@ public:
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader() const;
 
-    /// Create a reader to get foreign keys for this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader(  FdoStringsP objectNames ) const;
-
-    // Create a reader to get all indexes (ordered by table) for this owner
+    /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const;
-
-    /// Create a reader to get all indexes for this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader( FdoStringsP objectNames ) const;
 
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader() const;
 
-    /// Create a reader to get primary keys for this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader(  FdoStringsP objectNames ) const;
-
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader() const;
-
-    virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader(FdoStringsP objectNames) const;
 
     /// \todo To be documented
     virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader(

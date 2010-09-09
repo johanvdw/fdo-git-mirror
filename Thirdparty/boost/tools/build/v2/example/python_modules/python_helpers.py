@@ -1,6 +1,3 @@
-# Copyright 2006 Vladimir Prus
-# Distributed under the Boost Software License, Version 1.0.
-# (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 
 # Declare a couple of functions called from Boost.Build
 #
@@ -13,6 +10,6 @@
 
 def test1(l):
     return ["foo", "bar"]
-
+    
 def test2(l, l2):
     return [l[0], l2[0]]

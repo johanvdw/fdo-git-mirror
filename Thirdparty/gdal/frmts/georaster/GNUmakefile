@@ -16,20 +16,12 @@ CPPFLAGS	:=	$(XTRA_OPT) $(GDAL_INCLUDE) $(OCI_INCLUDE) $(CPPFLAGS)
 
 PLUGIN_SO	= gdal_GEOR.so
 
-ifneq ($(JPEG_SETTING),no)
-CPPFLAGS	:=	$(CPPFLAGS) -DJPEG_SUPPORTED
-endif
-
-ifeq ($(JPEG_SETTING),internal)
-CPPFLAGS	:=	$(CPPFLAGS) -I../jpeg/libjpeg
-endif
-
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ) *.so
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 plugin: $(PLUGIN_SO)
 

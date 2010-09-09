@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: elasdataset.cpp 16396 2009-02-22 20:49:52Z rouault $
+ * $Id: elasdataset.cpp 14049 2008-03-20 19:01:59Z rouault $
  *
  * Project:  ELAS Translator
  * Purpose:  Complete implementation of ELAS translator module for GDAL.
@@ -29,7 +29,7 @@
 
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: elasdataset.cpp 16396 2009-02-22 20:49:52Z rouault $");
+CPL_CVSID("$Id: elasdataset.cpp 14049 2008-03-20 19:01:59Z rouault $");
 
 CPL_C_START
 void	GDALRegister_ELAS(void);
@@ -343,13 +343,6 @@ GDALDataset *ELASDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->nBands = CPL_MSBWORD32( poDS->sHeader.NC );
 
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize) ||
-        !GDALCheckBandCount(poDS->nBands, FALSE))
-    {
-        delete poDS;
-        return NULL;
-    }
-
     nELASDataType = (poDS->sHeader.IH19[2] & 0x7e) >> 2;
     nBytesPerSample = poDS->sHeader.IH19[3];
     
@@ -452,13 +445,6 @@ GDALDataset *ELASDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Verify input options.                                           */
 /* -------------------------------------------------------------------- */
-    if (nBands <= 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "ELAS driver does not support %d bands.\n", nBands);
-        return NULL;
-    }
-
     if( eType != GDT_Byte && eType != GDT_Float32 && eType != GDT_Float64 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,

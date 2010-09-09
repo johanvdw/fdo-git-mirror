@@ -53,8 +53,6 @@ public:
     /// Currently it is empty.
     ~FdoSmPhPostGisFkey();
 
-protected:
-    virtual FdoSmPhColumnP FindPkeyColumn( FdoSmPhTableP pkTable, FdoStringP columnName );
 };
 
 /// \brief

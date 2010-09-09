@@ -447,10 +447,10 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
 /*      Close down.                                                     */
 /* -------------------------------------------------------------------- */
-    OGRSpatialReference::DestroySpatialReference( poOutputSRS );
-    OGRSpatialReference::DestroySpatialReference( poSourceSRS ) ;
-    OGRDataSource::DestroyDataSource( poODS );
-    OGRDataSource::DestroyDataSource( poDS );
+    delete poOutputSRS;
+    delete poSourceSRS;
+    delete poODS;
+    delete poDS;
 
     CSLDestroy(papszSelFields);
     CSLDestroy( papszArgv );

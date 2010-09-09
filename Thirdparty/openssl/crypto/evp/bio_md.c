@@ -130,8 +130,8 @@ static int md_read(BIO *b, char *out, int outl)
 		{
 		if (ret > 0)
 			{
-			if (EVP_DigestUpdate(ctx,(unsigned char *)out,
-				(unsigned int)ret)<=0) return (-1);
+			EVP_DigestUpdate(ctx,(unsigned char *)out,
+				(unsigned int)ret);
 			}
 		}
 	BIO_clear_retry_flags(b);
@@ -157,11 +157,8 @@ static int md_write(BIO *b, const char *in, int inl)
 				(unsigned int)ret);
 			}
 		}
-	if(b->next_bio != NULL)
-		{
-		BIO_clear_retry_flags(b);
-		BIO_copy_next_retry(b);
-		}
+	BIO_clear_retry_flags(b);
+	BIO_copy_next_retry(b);
 	return(ret);
 	}
 
@@ -195,9 +192,13 @@ static long md_ctrl(BIO *b, int cmd, long num, void *ptr)
 			ret=0;
 		break;
 	case BIO_C_GET_MD_CTX:
-		pctx=ptr;
-		*pctx=ctx;
-		b->init = 1;
+		if (b->init)
+			{
+			pctx=ptr;
+			*pctx=ctx;
+			}
+		else
+			ret=0;
 		break;
 	case BIO_C_SET_MD_CTX:
 		if (b->init)
@@ -253,9 +254,7 @@ static int md_gets(BIO *bp, char *buf, int size)
 	ctx=bp->ptr;
 	if (size < ctx->digest->md_size)
 		return(0);
-	if (EVP_DigestFinal_ex(ctx,(unsigned char *)buf,&ret)<=0) 
-		return -1;
-		
+	EVP_DigestFinal_ex(ctx,(unsigned char *)buf,&ret);
 	return((int)ret);
 	}
 

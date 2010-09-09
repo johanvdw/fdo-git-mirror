@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_ingres.h 18518 2010-01-11 03:25:51Z warmerdam $
+ * $Id: ogr_ingres.h 15583 2008-10-23 00:04:33Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for Ingres OGR Driver Classes.
@@ -153,7 +153,6 @@ class OGRIngresTableLayer : public OGRIngresLayer
     int                 bPreservePrecision;
 
     OGRErr              PrepareOldStyleGeometry( OGRGeometry*, CPLString& );
-    OGRErr              PrepareNewStyleGeometry( OGRGeometry*, CPLString& );
     
   public:
                         OGRIngresTableLayer( OGRIngresDataSource *,
@@ -240,8 +239,6 @@ class OGRIngresDataSource : public OGRDataSource
 
     OGRIngresLayer     *poActiveLayer; /* this layer has active transaction */
 
-    int					bNewIngres; /* TRUE if new spatial library */
-
   public:
                         OGRIngresDataSource();
                         ~OGRIngresDataSource();
@@ -281,7 +278,6 @@ class OGRIngresDataSource : public OGRDataSource
     char               *LaunderName( const char * );
 
     void                EstablishActiveLayer( OGRIngresLayer * );
-    int					IsNewIngres();
 };
 
 /************************************************************************/

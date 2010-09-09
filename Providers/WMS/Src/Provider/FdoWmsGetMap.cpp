@@ -45,7 +45,6 @@ FdoWmsGetMap::FdoWmsGetMap (FdoStringCollection* layerNames,
 							FdoDouble maxx, 
 							FdoDouble maxy,
 							FdoString* version,
-							FdoString* exceptionFormat,
 							FdoBoolean bTransparent, 
 							FdoString* backgroundColor, 
 							FdoString* timeDimension, 
@@ -59,7 +58,6 @@ FdoWmsGetMap::FdoWmsGetMap (FdoStringCollection* layerNames,
         mMinY(miny), 
         mMaxX(maxx), 
         mMaxY(maxy),
-		mExceptionFormat(exceptionFormat),
 		mbTransparent(bTransparent),
 		mBackgroundColor(backgroundColor ? backgroundColor : L""),
 		mTimeDimension(timeDimension ? timeDimension : L""),
@@ -81,7 +79,6 @@ FdoWmsGetMap* FdoWmsGetMap::Create (FdoStringCollection* layerNames,
 									FdoDouble maxx, 
 									FdoDouble maxy,
 									FdoString* version,
-									FdoString* exceptionFormat,
 									FdoBoolean bTransparent, 
 									FdoString* backgroundColor, 
 									FdoString* timeDimension, 
@@ -92,7 +89,7 @@ FdoWmsGetMap* FdoWmsGetMap::Create (FdoStringCollection* layerNames,
                                                                L"FdoWmsGetMap",
                                                                L"layerNames"));
 
-	return new FdoWmsGetMap (layerNames, styleNames, srsName, imgFormat, height, width, minx, miny, maxx, maxy, version, exceptionFormat,bTransparent, backgroundColor, timeDimension, elevation);
+	return new FdoWmsGetMap (layerNames, styleNames, srsName, imgFormat, height, width, minx, miny, maxx, maxy, version, bTransparent, backgroundColor, timeDimension, elevation);
 }
 
 FdoWmsGetMap::~FdoWmsGetMap ()
@@ -104,11 +101,12 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 	// For common request, version and service
     FdoStringP ret = FdoOwsRequest::EncodeKVP();
 
+    // Some WMS servers do not correctly default to
+    // using the xml service exception report.
     ret += FdoOwsGlobals::And;
     ret += FdoWmsXmlGlobals::EXCEPTIONS;
     ret += FdoOwsGlobals::Equal;
-	if (mExceptionFormat.GetLength())
-		ret += mExceptionFormat;
+    ret += FdoWmsXmlGlobals::ExceptionType;
 
 	// Add "LAYERS" parameters in the request	
 	ret += FdoOwsGlobals::And;
@@ -160,6 +158,19 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 	ret += FdoWmsXmlGlobals::WmsRequestSRS;
 	ret += FdoOwsGlobals::Equal;
 	ret += mSrsName; // Don't escape, even though there is a ":", ErMapper services don't like this
+
+	// Here the commented is another approach which first checkes the WMS version, then
+	// selects "CRS" or "SRS" according to the version to construct the request. 
+	// Unfortunately it fails when testing some non-strict servers.
+
+	// Add "CRS" or "SRS" parameter in the request	
+	//ret += FdoOwsGlobals::And;
+	//if (FdoCommonStringUtil::StringCompare(FdoOwsRequest::GetVersion (), L"1.3.0") >= 0)
+	//	ret += FdoWmsXmlGlobals::WmsRequestCRS;
+	//else
+	//	ret += FdoWmsXmlGlobals::WmsRequestSRS;
+	//ret += FdoOwsGlobals::Equal;
+	//ret += mSrsName;
 
 	// Add "FORMAT" in the request
 	ret += FdoOwsGlobals::And;

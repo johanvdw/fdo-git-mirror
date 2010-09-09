@@ -26,11 +26,9 @@ FdoSmPhRdOdbcPkeyReader::FdoSmPhRdOdbcPkeyReader(
     FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
-    FdoSmPhRdPkeyReader(mgr, (FdoSmPhRowCollection*) NULL),
+    FdoSmPhRdPkeyReader(mgr, MakeRows(mgr)),
     mDbObject(dbObject)
 {
-    SetRows(MakeRows(mgr));
-
     FdoSmPhOdbcMgr*      pMgr = (FdoSmPhOdbcMgr*)(FdoSmPhMgr*)mgr;
 
     rdbi_context = pMgr->GetRdbiContext();

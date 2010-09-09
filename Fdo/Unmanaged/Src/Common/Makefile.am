@@ -62,8 +62,7 @@ libFDOCommon_la_SOURCES = \
   Xsl/TransformerXalan.cpp \
   Xsl/XML885915Transcoder.cpp \
   Gml212/Schema.cpp \
-  Gml212/Gml212.cpp \
-  Gml311/Gml311.cpp
+  Gml212/Gml212.cpp
 
 noinst_HEADERS = $(libFDOCommon_la_SOURCES) \
   ConvertUTF.h \
@@ -78,8 +77,8 @@ noinst_HEADERS = $(libFDOCommon_la_SOURCES) \
 
 INCLUDES = \
   -I../../Inc \
-  -I$(FDOTHIRDPARTY)/apache/xalan/src \
-  -I$(FDOTHIRDPARTY)/apache/xerces/src 
+  -I$(FDOTHIRDPARTY)/apache/xml-xalan/c/src \
+  -I$(FDOTHIRDPARTY)/apache/xml-xerces/c/src 
 
 libFDOCommon_la_LDFLAGS = 
 

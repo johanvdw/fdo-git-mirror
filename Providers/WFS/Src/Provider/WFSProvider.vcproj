@@ -67,7 +67,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="FDO.lib FDOCommon.lib FDOGeometry.lib FDOSpatial.lib FDONLS.lib ProvidersCommon.lib OWS.lib Advapi32.lib"
 				OutputFile="$(OutDir)/WFSProvider.dll"
-				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Debug&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Debug&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win32\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Debug&quot;;&quot;$(FDOTHIRDPARTY)\boost_1_32_0\bin\boost\libs\thread\build\boost_thread.dll\vc-9_0\debug\threading-multi\&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Debug&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win32\Debug&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win32\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/WFSProvider.pdb"
 				RandomizedBaseAddress="1"
@@ -96,7 +96,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WFSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -149,7 +149,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="FDO.lib FDOCommon.lib FDOGeometry.lib FDOSpatial.lib FDONLS.lib ProvidersCommon.lib OWS.lib Advapi32.lib"
 				OutputFile="$(OutDir)/WFSProvider.dll"
-				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Debug&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Debug64&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win64\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Debug&quot;;&quot;$(FDOTHIRDPARTY)\boost\stage\win64\debug\lib&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Debug64&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win64\Debug&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win64\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/WFSProvider.pdb"
 				RandomizedBaseAddress="1"
@@ -178,7 +178,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WFSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -229,7 +229,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="FDO.lib FDOCommon.lib FDOGeometry.lib FDONLS.lib ProvidersCommon.lib OWS.lib FDOSpatial.lib Advapi32.lib"
 				OutputFile="$(OutDir)/WFSProvider.dll"
-				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Release&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win32\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win32\Release&quot;;&quot;$(FDOTHIRDPARTY)\boost_1_32_0\bin\boost\libs\thread\build\boost_thread.dll\vc-9_0\release\threading-multi\&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Release&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win32\Release&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win32\Release&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/WFSProvider.pdb"
 				RandomizedBaseAddress="1"
@@ -258,7 +258,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WFSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -309,7 +309,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="FDO.lib FDOCommon.lib FDOGeometry.lib FDONLS.lib ProvidersCommon.lib OWS.lib FDOSpatial.lib Advapi32.lib"
 				OutputFile="$(OutDir)/WFSProvider.dll"
-				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Release&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Release64&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win64\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\Common\Lib\Win64\Release&quot;;&quot;$(FDOTHIRDPARTY)\boost\stage\win64\release\lib\threading-multi\&quot;;&quot;$(FDOTHIRDPARTY)\libcurl\lib\Release64&quot;;&quot;$(FDOUTILITIES)\OWS\Lib\Win64\Release&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\Lib\Win64\Release&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/WFSProvider.pdb"
 				RandomizedBaseAddress="1"
@@ -338,7 +338,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WFSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WFSProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -421,98 +421,6 @@
 				RelativePath=".\xlinks.h"
 				>
 			</File>
-			<Filter
-				Name="Gml311"
-				>
-				<File
-					RelativePath=".\Gml311\basicTypes3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\coordinateOperations3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\coordinateReferenceSystems3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\coordinateSystems3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\dataQuality3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\dictionary3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\direction3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\feature3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\geometryAggregates3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\geometryBasic0d1d3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\geometryBasic2d3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\geometryComplexes3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\geometryPrimitives3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\gml3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\gmlBase3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\grids3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\measures3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\referenceSystems3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\temporal3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\temporalReferenceSystems3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\units3.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Gml311\valueObjects3.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Capabilities"

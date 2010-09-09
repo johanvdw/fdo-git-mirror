@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringresdatasource.cpp 18518 2010-01-11 03:25:51Z warmerdam $
+ * $Id: ogringresdatasource.cpp 14468 2008-05-15 03:44:49Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresDataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogringresdatasource.cpp 18518 2010-01-11 03:25:51Z warmerdam $");
+CPL_CVSID("$Id: ogringresdatasource.cpp 14468 2008-05-15 03:44:49Z warmerdam $");
 /************************************************************************/
 /*                         OGRIngresDataSource()                        */
 /************************************************************************/
@@ -164,28 +164,6 @@ int OGRIngresDataSource::Open( const char *pszFullName,
     
     bDSUpdate = bUpdate;
 
-    // Check for new or old Ingres spatial library
-    {
-    	OGRIngresStatement oStmt( hConn );
-
-    	if( oStmt.ExecuteSQL("SELECT COUNT(*) FROM iicolumns WHERE table_name = 'iiattribute' AND column_name = 'attgeomtype'" ) )
-    	{
-    		char **papszFields;
-    		while( (papszFields = oStmt.GetRow()) )
-    		{
-    			CPLString osCount = papszFields[0];
-    			if( osCount[0] == '0' )
-    			{
-    				bNewIngres = FALSE;
-    			}
-    			else
-    			{
-    				bNewIngres = TRUE;
-    			}
-    		}
-    	}
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Get a list of available tables.                                 */
 /* -------------------------------------------------------------------- */
@@ -193,7 +171,7 @@ int OGRIngresDataSource::Open( const char *pszFullName,
     {
         OGRIngresStatement oStmt( hConn );
         
-        if( oStmt.ExecuteSQL( "select table_name from iitables where system_use = 'U' and table_name not like 'iietab_%'" ) )
+        if( oStmt.ExecuteSQL( "select table_name from iitables where system_use = 'U'" ) )
         {
             char **papszFields;
             while( (papszFields = oStmt.GetRow()) )
@@ -758,28 +736,10 @@ OGRIngresDataSource::CreateLayer( const char * pszLayerNameIn,
         pszGeometryType = "POINT";
 
     else if( wkbFlatten(eType) == wkbLineString)
-    {
-    	if( IsNewIngres() )
-    	{
-    		pszGeometryType = "LINESTRING";
-    	}
-    	else
-    	{
-            pszGeometryType = "LONG LINE";
-    	}
-    }
+        pszGeometryType = "LONG LINE";
 
     else if( wkbFlatten(eType) == wkbPolygon )
-    {
-    	if( IsNewIngres() )
-    	{
-    		pszGeometryType = "POLYGON";
-    	}
-    	else
-    	{
-            pszGeometryType = "LONG POLYGON";
-    	}
-    }
+        pszGeometryType = "LONG POLYGON";
 
 /* -------------------------------------------------------------------- */
 /*      Form table creation command.                                    */
@@ -991,11 +951,4 @@ void OGRIngresDataSource::EstablishActiveLayer( OGRIngresLayer *poNewLayer )
     poActiveLayer = poNewLayer;
 }
 
-/************************************************************************/
-/*                        IsNewIngres()                                 */
-/************************************************************************/
 
-int OGRIngresDataSource::IsNewIngres()
-{
-	return bNewIngres;
-}

@@ -14060,13 +14060,11 @@ void TestCommonExpressionFunctionW::TestSubstrFunction ()
     catch (FdoException *exp) {
 
       exp_err_msg = FdoStringP::Format(
-                       L"%ls '%ls' %ls",
+                       L"%ls '%ls' %ls ",
                        L"One or more arguments for function",
                        L"Substr",
                        L"did not match the expected argument types.");
-      ret_err_msg = TestCommonMiscUtil::Trim(exp->GetExceptionMessage());
-
-
+      ret_err_msg = exp->GetExceptionMessage();
 
       if (exp_err_msg.ICompare(ret_err_msg) == 0) {
 
@@ -15066,8 +15064,6 @@ void TestCommonExpressionFunctionW::AddFeature (
 
     double                     coordinate_buffer[7];
 
-    int                        coordCount = 0;
-
     FdoByte                    byte_value;
 
     FdoFloat                   flt_value;
@@ -15100,8 +15096,6 @@ void TestCommonExpressionFunctionW::AddFeature (
 
     try {
 
-        bool supportsZ = (FdoPtr<FdoIGeometryCapabilities>(current_connection->GetGeometryCapabilities())->GetDimensionalities() & FdoDimensionality_Z);
-
       // Create the FdoIInsert command and set the necessary command properties.
 
       insert_command = 
@@ -15115,21 +15109,17 @@ void TestCommonExpressionFunctionW::AddFeature (
 
       // Add the geometry information for the new object.
 
-      coordinate_buffer[coordCount++] = 100.0 + index;
-      coordinate_buffer[coordCount++] = 100.0 + index;
-      if ( supportsZ ) 
-          coordinate_buffer[coordCount++] = 0;
-      coordinate_buffer[coordCount++] = 101.0 + index;
-      coordinate_buffer[coordCount++] = 101.0 + index;
-      if ( supportsZ ) 
-          coordinate_buffer[coordCount++] = 0;
+      coordinate_buffer[0] = 100.0 + index;
+      coordinate_buffer[1] = 100.0 + index;
+      coordinate_buffer[2] = 0;
+      coordinate_buffer[3] = 101.0 + index;
+      coordinate_buffer[4] = 101.0 + index;
+      coordinate_buffer[5] = 0;
 
       geometry_factory = FdoFgfGeometryFactory::GetInstance();
       line_str         = geometry_factory->CreateLineString(
-                                    supportsZ ?
-                                        FdoDimensionality_XY|FdoDimensionality_Z :
-                                        FdoDimensionality_XY,
-                                    coordCount, 
+                                    FdoDimensionality_XY|FdoDimensionality_Z,
+                                    6, 
                                     coordinate_buffer);
       byte_array       = geometry_factory->GetFgf(line_str);
       geometry_value   = FdoGeometryValue::Create(byte_array);
@@ -15612,7 +15602,7 @@ void TestCommonExpressionFunctionW::AddTestSchema (
 
       printf(" >>> ...... adding feature classes \n");
       printf(" >>> ......... adding class exfct_c1 \n");
-      schema_feature_class = CreateFdoFeatureClass(L"exfct_c1", dimensionalities & FdoDimensionality_Z ? true : false);
+      schema_feature_class = CreateFdoFeatureClass(L"exfct_c1");
       classes->Add(schema_feature_class);
       FDO_SAFE_RELEASE(schema_feature_class);
 

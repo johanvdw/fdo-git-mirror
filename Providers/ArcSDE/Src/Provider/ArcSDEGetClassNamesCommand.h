@@ -65,3 +65,4 @@ protected:
 };
 
 #endif  // ARCSDEGETCLASSNAMESCOMMAND_H
+

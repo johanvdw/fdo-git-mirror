@@ -1,4 +1,4 @@
-/* $Id: tif_dir.c,v 1.101 2009-11-30 18:19:16 fwarmerdam Exp $ */
+/* $Id: tif_dir.c,v 1.97 2007/11/23 21:14:43 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -378,10 +378,6 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 			_TIFFsetShortArray(&td->td_transferfunction[i],
 			    va_arg(ap, uint16*), 1L<<td->td_bitspersample);
 		break;
-	case TIFFTAG_REFERENCEBLACKWHITE:
-		/* XXX should check for null range */
-		_TIFFsetFloatArray(&td->td_refblackwhite, va_arg(ap, float*), 6);
-		break;
 	case TIFFTAG_INKNAMES:
 		v = (uint16) va_arg(ap, uint16_vap);
 		s = va_arg(ap, char*);
@@ -621,14 +617,14 @@ end:
 	return (status);
 badvalue:
 	TIFFErrorExt(tif->tif_clientdata, module,
-		     "%s: Bad value %u for \"%s\" tag",
+		     "%s: Bad value %d for \"%s\" tag",
 		     tif->tif_name, v,
 		     TIFFFieldWithTag(tif, tag)->field_name);
 	va_end(ap);
 	return (0);
 badvalue32:
 	TIFFErrorExt(tif->tif_clientdata, module,
-		     "%s: Bad value %u for \"%s\" tag",
+		     "%s: Bad value %ld for \"%s\" tag",
 		     tif->tif_name, v32,
 		     TIFFFieldWithTag(tif, tag)->field_name);
 	va_end(ap);
@@ -686,47 +682,6 @@ TIFFSetField(TIFF* tif, uint32 tag, ...)
 	status = TIFFVSetField(tif, tag, ap);
 	va_end(ap);
 	return (status);
-}
-
-/*
- * Clear the contents of the field in the internal structure.
- */
-int
-TIFFUnsetField(TIFF* tif, uint32 tag)
-{
-    const TIFFField *fip =  TIFFFieldWithTag(tif, tag);
-    TIFFDirectory* td = &tif->tif_dir;
-
-    if( !fip )
-        return 0;
-
-    if( fip->field_bit != FIELD_CUSTOM )
-        TIFFClrFieldBit(tif, fip->field_bit);
-    else
-    {
-        TIFFTagValue *tv = NULL;
-        int i;
-
-        for (i = 0; i < td->td_customValueCount; i++) {
-                
-            tv = td->td_customValues + i;
-            if( tv->info->field_tag == tag )
-                break;
-        }
-
-        if( i < td->td_customValueCount )
-        {
-            _TIFFfree(tv->value);
-            for( ; i < td->td_customValueCount-1; i++) {
-                td->td_customValues[i] = td->td_customValues[i+1];
-            }
-            td->td_customValueCount--;
-        }
-    }
-        
-    tif->tif_flags |= TIFF_DIRTYDIRECT;
-
-    return (1);
 }
 
 /*
@@ -890,9 +845,6 @@ _TIFFVGetField(TIFF* tif, uint32 tag, va_list ap)
 				*va_arg(ap, uint16**) = td->td_transferfunction[1];
 				*va_arg(ap, uint16**) = td->td_transferfunction[2];
 			}
-			break;
-		case TIFFTAG_REFERENCEBLACKWHITE:
-			*va_arg(ap, float**) = td->td_refblackwhite;
 			break;
 		case TIFFTAG_INKNAMES:
 			*va_arg(ap, char**) = td->td_inknames;
@@ -1082,7 +1034,6 @@ TIFFFreeDirectory(TIFF* tif)
 	CleanupField(td_sampleinfo);
 	CleanupField(td_subifd);
 	CleanupField(td_inknames);
-	CleanupField(td_refblackwhite);
 	CleanupField(td_transferfunction[0]);
 	CleanupField(td_transferfunction[1]);
 	CleanupField(td_transferfunction[2]);

@@ -18,7 +18,6 @@
 #define FDORDBMSPHRDPOSTGISFKEYREADER_H
 
 #include <Sm/Ph/Rd/FkeyReader.h>
-//#include <Inc/Ocidr/context.h>
 
 /// Definition of foreign key reader for PostGIS provider.
 ///
@@ -33,7 +32,7 @@ public:
     /// \param
     /// dbObject [in] - Retrieve foreign keys for this database object.
     ///
-    FdoSmPhRdPostGisFkeyReader(FdoSmPhOwnerP owner, FdoSmPhDbObjectP dbObject);
+    FdoSmPhRdPostGisFkeyReader(FdoSmPhMgrP mgr, FdoSmPhDbObjectP dbObject);
 
     /// Create and execute the foreign key reader.
     ///
@@ -43,9 +42,9 @@ public:
     /// owner [in] - 
     ///
     /// \todo To be documented
-    FdoSmPhRdPostGisFkeyReader(FdoSmPhOwnerP owner, FdoStringsP objectNames);
+    FdoSmPhRdPostGisFkeyReader(FdoSmPhMgrP mgr, FdoSmPhOwnerP owner);
 
-    // Deactivates the foreign key reader.
+    /// Destructor deactivates the foreign key reader.
     ~FdoSmPhRdPostGisFkeyReader();
 
 private:
@@ -59,10 +58,9 @@ private:
     /// dbObject [in] - 
     ///
     /// \todo To be documented.
-    FdoSmPhReaderP MakeReader(
-        FdoSmPhOwnerP owner,
-        FdoStringsP objectNames,
-        FdoSmPhRdTableJoinP join = (FdoSmPhRdTableJoin*) NULL);
+    FdoSmPhReaderP MakeReader(FdoSmPhMgrP mgr,
+        const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP dbObject);
 
     /// \todo To be documented.
     FdoSmPhDbObjectP mDbObject;

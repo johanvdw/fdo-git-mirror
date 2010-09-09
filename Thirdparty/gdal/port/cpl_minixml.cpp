@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_minixml.cpp 17930 2009-10-30 22:58:03Z rouault $
+ * $Id: cpl_minixml.cpp 15264 2008-08-30 21:37:43Z mloskot $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implementation of MiniXML Parser and handling.
@@ -44,7 +44,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: cpl_minixml.cpp 17930 2009-10-30 22:58:03Z rouault $");
+CPL_CVSID("$Id: cpl_minixml.cpp 15264 2008-08-30 21:37:43Z mloskot $");
 
 typedef enum {
     TNone,
@@ -162,7 +162,7 @@ static XMLTokenType ReadToken( ParseContext *psContext )
     psContext->pszToken[0] = '\0';
     
     chNext = ReadChar( psContext );
-    while( isspace((unsigned char)chNext) )
+    while( isspace(chNext) )
         chNext = ReadChar( psContext );
 
 /* -------------------------------------------------------------------- */
@@ -225,17 +225,8 @@ static XMLTokenType ReadToken( ParseContext *psContext )
                     chNext = ReadChar( psContext );
                     AddToToken( psContext, chNext );
                 }
-                while( chNext != ']' && chNext != '\0'
+                while( chNext != ']'
                     && !EQUALN(psContext->pszInput+psContext->nInputOffset,"]>", 2) );
-                    
-                if (chNext == '\0')
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined, 
-                          "Parse error in DOCTYPE on or before line %d, "
-                          "reached end of file without ']'.", 
-                          psContext->nInputLine );
-                    break;
-                }
 
                 chNext = ReadChar( psContext );
                 AddToToken( psContext, chNext );
@@ -1820,7 +1811,7 @@ int CPLSerializeXMLTreeToFile( CPLXMLNode *psTree, const char *pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Write file.                                                     */
 /* -------------------------------------------------------------------- */
-    if( VSIFWriteL( pszDoc, 1, (size_t)nLength, fp ) != nLength )
+    if( VSIFWriteL( pszDoc, 1, nLength, fp ) != nLength )
     {
         CPLError( CE_Failure, CPLE_FileIO, 
                   "Failed to write whole XML document (%.500s).",

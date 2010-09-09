@@ -23,7 +23,6 @@
 #endif // _WIN32
 
 class FdoOwsRequestMetadataCollection;
-class FdoOwsOperationCollection;
 class FdoOwsRequest;
 class FdoOwsResponse;
 class FdoOwsUrlResolver;
@@ -32,7 +31,6 @@ class FdoOwsDelegate : public FdoIDisposable
 {
 private:
     FdoPtr<FdoOwsRequestMetadataCollection> m_requestMetadatas;
-	FdoPtr<FdoOwsOperationCollection> m_operationMetadatas;
     FdoStringP m_defaultUrl;
     FdoStringP m_userName;
     FdoStringP m_passwd;
@@ -46,7 +44,6 @@ protected:
 
 public:
     FDOOWS_API void SetRequestMetadatas(FdoOwsRequestMetadataCollection* requestMetadatas);
-    FDOOWS_API void SetOperationMetadatas(FdoOwsOperationCollection* operationMetadatas);
 
     FDOOWS_API FdoString* GetUrl() const { return m_defaultUrl; }
     FDOOWS_API FdoString* GetUserName() const { return m_userName; }

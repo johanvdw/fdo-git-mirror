@@ -48,9 +48,7 @@ EXTRA_DIST = \
   Inc/OWS/FdoOwsServiceMetadata.h \
   Inc/OWS/FdoOwsIEncodable.h \
   Inc/OWS/FdoOwsXmlSaxContext.h \
-  Inc/OWS/FdoOwsIHttpHandler.h \
-  Inc/OWS/FdoOwsOperationsMetadata.h \
-  Inc/OWS/FdoOwsServiceProvider.h 
+  Inc/OWS/FdoOwsIHttpHandler.h
 
 ##building libFdoOws.so
 lib_LTLIBRARIES = libFdoOws.la
@@ -66,7 +64,7 @@ libFdoOws_la_LIBADD =  \
   $(FDO)/Unmanaged/Src/Geometry/libFDOGeometry.la  \
   $(FDO)/Unmanaged/Src/Common/libFDOCommon.la  \
   $(FDOUTILITIES)/Common/libProvidersCommon.la \
-  $(FDOTHIRDPARTY)/boost/stage/lib/libboost_thread.a \
+  $(FDOTHIRDPARTY)/boost/stage/lib/libboost_thread-mt.a \
   $(FDOTHIRDPARTY)/libcurl/lib/linux/libcurl.a  \
   $(FDOTHIRDPARTY)/openssl/lib/linux/libssl.a \
   $(FDOTHIRDPARTY)/openssl/lib/linux/libcrypto.a \

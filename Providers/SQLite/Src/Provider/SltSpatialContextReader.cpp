@@ -26,27 +26,24 @@
 
 SltSpatialContextReader::SltSpatialContextReader(SltConnection* conn)
 {
-    m_bToleranceSupp = m_bHasScName = false;
+    m_bHasScName = false;
     m_connection = conn;
     m_connection->AddRef();
 
-    sqlite3* db = m_connection->GetDbConnection();
+    sqlite3* db = m_connection->GetDbRead();
 
     //We will attempt two ways to get the info -- one is in case
     //there is an sr_name column (i.e. data was created by FDO),
     //and the other in case there is no sr_name column
     const char* sql1 = "SELECT srid,auth_srid,srtext,sr_name FROM spatial_ref_sys;";
     const char* sql2 = "SELECT srid,auth_srid,srtext FROM spatial_ref_sys;";
-    const char* sql3 = "SELECT srid,auth_srid,srtext,sr_name,sr_xytol,sr_ztol FROM spatial_ref_sys;";
-    const char* sql4 = "SELECT srid,auth_srid,srtext,sr_xytol,sr_ztol FROM spatial_ref_sys;";
-    m_bToleranceSupp = m_connection->SupportsTolerance();
 
     m_pStmt = NULL;
     const char* zTail = NULL;
     int rc = SQLITE_OK;
-    if (sqlite3_prepare_v2(db, (m_bToleranceSupp)?sql3:sql1, -1, &m_pStmt, &zTail) == SQLITE_OK)
+    if (sqlite3_prepare_v2(db, sql1, -1, &m_pStmt, &zTail) == SQLITE_OK)
         m_bHasScName = true;
-    else if ((rc = sqlite3_prepare_v2(db, (m_bToleranceSupp)?sql4:sql2, -1, &m_pStmt, &zTail)) != SQLITE_OK)
+    else if ((rc = sqlite3_prepare_v2(db, sql2, -1, &m_pStmt, &zTail)) != SQLITE_OK)
     {
         const char* err = sqlite3_errmsg(db);
         if (err != NULL)
@@ -146,7 +143,7 @@ FdoByteArray* SltSpatialContextReader::GetExtent()
     }
     sqlite3_stmt* pstmt = NULL;
     const char* pzTail = NULL;
-    if (sqlite3_prepare_v2(m_connection->GetDbConnection(), sb.Data(), -1, &pstmt, &pzTail) == SQLITE_OK)
+    if (sqlite3_prepare_v2(m_connection->GetDbRead(), sb.Data(), -1, &pstmt, &pzTail) == SQLITE_OK)
     {
         while (sqlite3_step(pstmt) == SQLITE_ROW)
         {
@@ -175,12 +172,12 @@ FdoByteArray* SltSpatialContextReader::GetExtent()
 
 const double SltSpatialContextReader::GetXYTolerance()
 {
-    return (!m_bToleranceSupp) ? 0.0 : sqlite3_column_double(m_pStmt, (m_bHasScName)?4:3);
+    return 0.0;
 }
 
 const double SltSpatialContextReader::GetZTolerance()
 {    
-    return (!m_bToleranceSupp) ? 0.0 : sqlite3_column_double(m_pStmt, (m_bHasScName)?5:4);
+    return 0.0;
 }
 
 const bool SltSpatialContextReader::IsActive()

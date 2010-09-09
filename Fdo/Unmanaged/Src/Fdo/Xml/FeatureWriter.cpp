@@ -349,8 +349,6 @@ void FdoXmlFeatureWriter::_writeFeature(FdoString* elementTag,
     else
         mPropertyWriter->WriteFeatureStart(elementTag);
 
-	mPropertyWriter->SetClassDefinition(classDef);
-
     FdoInt32 count = propertyValues->GetCount();
     int i;
     for (i = 0; i < count; i ++) {

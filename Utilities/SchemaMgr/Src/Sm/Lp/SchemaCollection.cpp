@@ -320,7 +320,7 @@ FdoClassDefinition* FdoSmLpSchemaCollection::ConvertClassDefinition(const FdoSmL
     ASSERT(pLpClassDef);
     FdoClassDefinition* pFdoClassDef = (FdoClassDefinition*) mMappingClass.Map(pLpClassDef);
 
-    if (!aReferenced.classes.ContainsClassDefinition(pLpClassDef))
+    if (!aReferenced.classes.Contains(pLpClassDef))
         aReferenced.classes   .AddReference((FdoSmLpClassDefinition*)pLpClassDef);
 
     if (!pFdoClassDef)
@@ -552,16 +552,6 @@ FdoClassDefinition* FdoSmLpSchemaCollection::ConvertClassDefinition(const FdoSmL
             // capabilities->SetSupportsWrite(true); // TODO - Capability: How to determine whether true or false is to be set.
             capabilities->SetSupportsWrite( pLpCap->SupportsWrite() );
 
-            PolygonVertexOrderRuleMap::const_iterator iter1;
-            PolygonVertexOrderRuleMap vertexOrderRuleMap = pLpCap->GetPolygonVertexOrderRule();
-            for (iter1 = vertexOrderRuleMap.begin(); iter1 != vertexOrderRuleMap.end(); iter1++)
-                capabilities->SetPolygonVertexOrderRule(iter1->first, iter1->second);
-
-            PolygonVertexOrderStrictnessMap::const_iterator iter2;
-            PolygonVertexOrderStrictnessMap vertexOrderStrictnessMap = pLpCap->GetPolygonVertexOrderStrictness();
-            for (iter2 = vertexOrderStrictnessMap.begin(); iter2 != vertexOrderStrictnessMap.end(); iter2++)
-                capabilities->SetPolygonVertexOrderStrictness(iter2->first, iter2->second);
-
             pFdoClassDef->SetCapabilities( capabilities );
         }
 
@@ -719,12 +709,7 @@ FdoAssociationPropertyDefinition* FdoSmLpSchemaCollection::ConvertAssociationPro
             const FdoStringsP identProps = pLpAssocPropDef->GetIdentityProperties();
             for(int i=0; i<identProps->GetCount(); i++ )
             {
-                FdoPtr<FdoDataPropertyDefinition> fdoProp = (FdoDataPropertyDefinition*)FdoPtr<FdoPropertyDefinitionCollection>(pFdoAssocClassDef->GetProperties())->FindItem( (const wchar_t *)identProps->GetString(i) );
-                if ( !fdoProp ) 
-                {
-                    // Property might be inherited, check base properties
-                    fdoProp = (FdoDataPropertyDefinition*)FdoPtr<FdoReadOnlyPropertyDefinitionCollection>(pFdoAssocClassDef->GetBaseProperties())->GetItem( (const wchar_t *)identProps->GetString(i) );
-                }
+                FdoPtr<FdoDataPropertyDefinition> fdoProp = (FdoDataPropertyDefinition*)FdoPtr<FdoPropertyDefinitionCollection>(pFdoAssocClassDef->GetProperties())->GetItem( (const wchar_t *)identProps->GetString(i) );
                 if( fdoProp )
                     FdoPtr<FdoDataPropertyDefinitionCollection>(pFdoAssocPropDef->GetIdentityProperties())->Add( fdoProp );
             }
@@ -1254,7 +1239,7 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
     for (int iSchema=0; iSchema < GetCount(); iSchema++)
     {
         const FdoSmLpSchema*     pLpSchema = RefItem(iSchema);
-        FdoStringP currSchemaName = pLpSchema->GetName();
+        FdoStringP schemaName = pLpSchema->GetName();
 
         if (featureClassNames)
         {
@@ -1267,16 +1252,14 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
 
                 if ( ((const wchar_t*)tempName)[0] == '\0' )
                 {
-                    if ( ((const wchar_t*)className)[0] != '\0' && ((const wchar_t*)currSchemaName)[0] != '\0' )
+                    if ( ((const wchar_t*)className)[0] != '\0' && ((const wchar_t*)schemaName)[0] != '\0' )
                     {
-                        if ( (schemaName != L"") && (schemaName != currSchemaName) ) 
-                            continue;
-                        className = currSchemaName + L":" + className;
+                        className = schemaName + L":" + className;
                     }
                 }
                 else 
                 {
-                    if ( currSchemaName != className.Left(delimiter) ) 
+                    if ( schemaName != className.Left(delimiter) ) 
                         continue;
                 }
 
@@ -1284,7 +1267,7 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
                 if (pLpClassDef)
                 {
                     mFoundCount++;
-                    aTodo.classes.AddClassDefinition((FdoSmLpClassDefinition*)pLpClassDef);
+                    aTodo.classes.Add((FdoSmLpClassDefinition*)pLpClassDef);
                 }
             }
         }
@@ -1375,7 +1358,7 @@ FdoFeatureSchemasP FdoSmLpSchemaCollection::GetFdoSchemasEx(FdoStringP schemaNam
     {
         for (int iClass = 0; iClass < aTodo.classes.GetCount(); iClass++)
         {
-            const FdoSmLpClassDefinition* pLpClassDef = aTodo.classes.RefClassDefinition(iClass);
+            const FdoSmLpClassDefinition* pLpClassDef = aTodo.classes.GetItem(iClass);
             FdoFeatureSchema* pFdoFeatureSchema = ConvertSchema(pLpClassDef->RefLogicalPhysicalSchema(), pLpClassDef, aReferenced);
 
             if (pFdoFeatureSchema)

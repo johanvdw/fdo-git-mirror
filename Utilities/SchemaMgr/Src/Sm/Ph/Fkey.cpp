@@ -131,11 +131,6 @@ void FdoSmPhFkey::LoadRefCand()
     }
 }
 
-FdoSmPhColumnP FdoSmPhFkey::FindPkeyColumn( FdoSmPhTableP pkTable, FdoStringP columnName )
-{
-    return FdoSmPhColumnsP(mPkeyTable->GetColumns())->FindItem(columnName);
-}
-
 void FdoSmPhFkey::LoadPkeyTable()
 {
     FdoInt32 i;
@@ -157,7 +152,7 @@ void FdoSmPhFkey::LoadPkeyTable()
             // Find each primary key column.
             for ( i = 0; i < mPkeyColumnNames->GetCount(); i++ ) {
                 FdoStringP columnName = mPkeyColumnNames->GetString(i);
-                FdoSmPhColumnP column = FindPkeyColumn( mPkeyTable, columnName );
+                FdoSmPhColumnP column = FdoSmPhColumnsP(mPkeyTable->GetColumns())->FindItem(columnName);
 
                 if ( column ) {
                     mPkeyColumns->Add( column );

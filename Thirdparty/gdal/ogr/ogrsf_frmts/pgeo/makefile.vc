@@ -11,4 +11,6 @@ EXTRAFLAGS = -I.. -I..\..
 default:	$(OBJ)
 
 clean:
+	-del *.lib
 	-del *.obj *.pdb
+	-del *.exe

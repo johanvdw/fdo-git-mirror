@@ -7,7 +7,7 @@ OBJ	=	ogrmysqldriver.o ogrmysqldatasource.o \
 
 CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(MYSQL_INC) $(CPPFLAGS)
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(O_OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)

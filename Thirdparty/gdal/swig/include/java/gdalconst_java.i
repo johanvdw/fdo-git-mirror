@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst_java.i 16316 2009-02-13 20:51:00Z rouault $
+ * $Id: gdalconst_java.i 9183 2006-02-16 17:21:12Z collinsb $
  *
  * Name:     gdalconst_java.i
  * Project:  GDAL SWIG Interface
@@ -36,12 +36,5 @@
   }
 %}
 
-%pragma(java) modulecode=%{
-
-    /* Uninstanciable class */
-    private gdalconst()
-    {
-    }
-%}
 
 %include typemaps_java.i

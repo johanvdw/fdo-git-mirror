@@ -37,12 +37,10 @@ namespace FdoWfsGlobals
     static FdoString* Name                              = L"Name";
     static FdoString* Title                             = L"Title";
     static FdoString* SRS                               = L"SRS";
-	static FdoString* DefaultSRS                        = L"DefaultSRS";
 	static FdoString* Abstract                          = L"Abstract";
 	static FdoString* Keywords                          = L"Keywords";
 	static FdoString* MetadataURL                       = L"MetadataURL";
     static FdoString* LatLongBoundingBox                = L"LatLongBoundingBox";
-	static FdoString* WGS84BoundingBox                  = L"WGS84BoundingBox";
     static FdoString* minx                              = L"minx";
     static FdoString* miny                              = L"miny";
     static FdoString* maxx                              = L"maxx";
@@ -72,8 +70,6 @@ namespace FdoWfsGlobals
     static FdoString* Arithmetic_Operators              = L"Arithmetic_Operators";
     static FdoString* WFS                               = L"WFS";
     static FdoString* WfsVersion                        = L"1.0.0";
-	static FdoString* WfsVersion110						= L"1.1.0";
-
     static FdoString* DescribeFeatureType               = L"DescribeFeatureType";
     static FdoString* GetFeature                        = L"GetFeature";
     static FdoString* TYPENAME                          = L"TYPENAME";

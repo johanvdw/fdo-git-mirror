@@ -20,10 +20,6 @@
 #include "c_FgfToSdoGeom.h"
 #include "c_Ora_API2.h"
 
-// 1SPATIAL START
-#include "math.h"
-// 1SPATIAL END
-
 
 #define D_FILTER_OPEN_PARENTH L" ( "
 #define D_FILTER_CLOSE_PARENTH L" ) "
@@ -262,112 +258,17 @@ if( m_ClassDef.p && m_ClassDef->GetIsSdeClass() )
   FdoGeometryValue* geomval = dynamic_cast<FdoGeometryValue*>(geomexp.p);
   if (geomval)
   {
-  
-    // SELECT /*+ LEADING INDEX(S_ S2008_IX1) INDEX(SHAPE F2008_UK1) INDEX(MMY_AREA
-    // A2008_IX1) */  OID,  TOID,  FEATCODE,  VERSION,  VERDATE,  THEME,  CALCAREA,
-    // CHANGE,  DESCGROUP,  DESCTERM,  MAKE,  PHYSLEVEL,  PHYSPRES,  BROKEN, 
-    // LOADDATE,  SHAPE  ,S_.eminx,S_.eminy,S_.emaxx,S_.emaxy ,SHAPE.fid,
-    // SHAPE.numofpts,SHAPE.entity,SHAPE.points,SHAPE.rowid 
-    // FROM
-    //  (SELECT  /*+ INDEX(SP_ S2008_IX1) */ DISTINCT sp_fid, eminx, eminy, emaxx,
-    //  emaxy FROM OSMASTERMAP.S2008 SP_  WHERE SP_.gx >= :1 AND SP_.gx <= :2 AND
-    //  SP_.gy >= :3 AND SP_.gy <= :4 AND SP_.eminx <= :5 AND SP_.eminy <= :6 AND
-    //  SP_.emaxx >= :7 AND SP_.emaxy >= :8) S_ ,  
-    //  OSMASTERMAP.MMY_AREA ,
-    // OSMASTERMAP.F2008 SHAPE  WHERE S_.sp_fid = SHAPE.fid AND S_.sp_fid =
-    // OSMASTERMAP.MMY_AREA.SHAPE
-    
-    
-    
-    // create select statement for spatial index
-    
-    
     FdoPtr<FdoByteArray> fgf = geomval->GetGeometry();
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
     FdoPtr<FdoIGeometry> fgfgeom = gf->CreateGeometryFromFgf(fgf);
     FdoPtr<FdoIEnvelope> envelope = fgfgeom->GetEnvelope();
+
     double minx = envelope->GetMinX();
     double miny = envelope->GetMinY();
 
     double maxx = envelope->GetMaxX();
     double maxy = envelope->GetMaxY();
-    
-    // convert min max to sde integers
-    minx = (minx - m_OraSridDesc.m_SDE_FalseX) * m_OraSridDesc.m_SDE_XYUnit;
-    maxx = (maxx - m_OraSridDesc.m_SDE_FalseX) * m_OraSridDesc.m_SDE_XYUnit;
-    
-    miny = (miny - m_OraSridDesc.m_SDE_FalseY) * m_OraSridDesc.m_SDE_XYUnit;
-    maxy = (maxy - m_OraSridDesc.m_SDE_FalseY) * m_OraSridDesc.m_SDE_XYUnit;
 
-	// 1SPATIAL START
-	// for index
-	double gxmin = floor( minx / (m_OraSridDesc.m_SDE_XYUnit * m_ClassDef->GetSdeGSize1()));
-	double gxmax = floor( maxx / (m_OraSridDesc.m_SDE_XYUnit * m_ClassDef->GetSdeGSize1()));
-	double gymin = floor( miny / (m_OraSridDesc.m_SDE_XYUnit * m_ClassDef->GetSdeGSize1()));
-	double gymax = floor( maxy / (m_OraSridDesc.m_SDE_XYUnit * m_ClassDef->GetSdeGSize1()));
-	// 1SPATIAL END
-
-    wstring indexname = m_ClassDef->GetSdeIndexTableName();
-    indexname += L"_IX1";
-    
-    
-    FdoPtr<FdoDoubleValue> fval_gxmin = FdoDoubleValue::Create(gxmin);
-    FdoStringP param_gxmin = m_ExpressionProcessor.PushParameter(*fval_gxmin);
-    
-    FdoPtr<FdoDoubleValue> fval_gxmax = FdoDoubleValue::Create(gxmax);
-    FdoStringP param_gxmax = m_ExpressionProcessor.PushParameter(*fval_gxmax);
-    
-    FdoPtr<FdoDoubleValue> fval_gymin = FdoDoubleValue::Create(gymin);
-    FdoStringP param_gymin = m_ExpressionProcessor.PushParameter(*fval_gymin);
-    
-    FdoPtr<FdoDoubleValue> fval_gymax = FdoDoubleValue::Create(gymax);
-    FdoStringP param_gymax = m_ExpressionProcessor.PushParameter(*fval_gymax);
-    
-    FdoPtr<FdoDoubleValue> fval_maxx = FdoDoubleValue::Create(maxx);
-    FdoStringP param_maxx = m_ExpressionProcessor.PushParameter(*fval_maxx);
-    
-    FdoPtr<FdoDoubleValue> fval_maxy = FdoDoubleValue::Create(maxy);
-    FdoStringP param_maxy = m_ExpressionProcessor.PushParameter(*fval_maxy);
-    
-    FdoPtr<FdoDoubleValue> fval_minx = FdoDoubleValue::Create(minx);
-    FdoStringP param_minx = m_ExpressionProcessor.PushParameter(*fval_minx);
-    
-    FdoPtr<FdoDoubleValue> fval_miny = FdoDoubleValue::Create(miny);
-    FdoStringP param_miny = m_ExpressionProcessor.PushParameter(*fval_miny);
-    
-    
-    // this goes into FROM part of SQL
-    FdoStringP sbuff = FdoStringP::Format(L"(SELECT  /*+ INDEX(SP_ %s) */ DISTINCT sp_fid, eminx, eminy, emaxx,"
-        L" emaxy FROM %s SP_  WHERE "
-		// 1SPATIAL START
-       // L" SP_.gx >= 0 AND SP_.gy >= 0"
-		L" SP_.gx >= %s AND SP_.gx <= %s"
-		L" AND SP_.gy >= %s AND SP_.gy <= %s"
-		L" /* XYUnit=%.0lf  GSize1=%.0lf */"
-		// 1SPATIAL END
-        L" AND SP_.eminx <= %s AND SP_.eminy <= %s AND"
-        L" SP_.emaxx >= %s AND SP_.emaxy >= %s) S_",
-		indexname.c_str(),(const wchar_t*)m_ClassDef->GetSdeIndexTableName()
-		// 1SPATIAL START
-        // ,maxx,maxy,minx,miny
-		// ,minx,maxx,miny,maxy,maxx,maxy,minx,miny
-		,(const wchar_t*)param_gxmin,(const wchar_t*)param_gxmax,(const wchar_t*)param_gymin,(const wchar_t*)param_gymax
-		,m_OraSridDesc.m_SDE_XYUnit,m_ClassDef->GetSdeGSize1()
-		,(const wchar_t*)param_maxx,(const wchar_t*)param_maxy,(const wchar_t*)param_minx,(const wchar_t*)param_miny
-		// 1SPATIAL END
-       );
-       
-    m_SDE_SelectSpatialIndex = sbuff;   
-
-
-    // this goes into WHERE part of SQL
-    sbuff = FdoStringP::Format(L"S_.sp_fid = %s.fid",m_ClassDef->GetSdeGeomTableAlias());
-    m_SDE_WhereSpatialIndex = sbuff;
-    
-    AppendString(L"1=1"); // just to satisfy boolean operator. Spatial condition can be combined with other filters and 
-                          // filter processor will generate some boolean operators
-    
-    /*
     FdoStringP buff;
 
     AppendString(D_FILTER_OPEN_PARENTH);
@@ -401,8 +302,7 @@ if( m_ClassDef.p && m_ClassDef->GetIsSdeClass() )
     AppendString((FdoString*)buff);
 
     AppendString(D_FILTER_CLOSE_PARENTH);        
-    AppendString(D_FILTER_CLOSE_PARENTH);       
-    */ 
+    AppendString(D_FILTER_CLOSE_PARENTH);        
   }    
   return;
 }
@@ -491,6 +391,72 @@ switch( Filter.GetOperation() )
       }
       AppendString(D_FILTER_CLOSE_PARENTH);
     
+    
+    /*
+      AppendString(D_FILTER_OPEN_PARENTH);
+      AppendString(L"SDO_FILTER(");
+      ProcessExpresion( geomprop );
+      AppendString(L",");
+      
+      // Here I need spatial case of processing becase i want to create
+      // optimezed rect (not polygons) for  this query - needed for geodetic data 
+      FdoGeometryValue* geomval = dynamic_cast<FdoGeometryValue*>(geomexp.p);
+      if (geomval)
+      {
+        FdoPtr<FdoByteArray> fgf = geomval->GetGeometry();
+        FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
+        FdoPtr<FdoIGeometry> fgfgeom = gf->CreateGeometryFromFgf(fgf);
+        FdoPtr<FdoIEnvelope> envelope = fgfgeom->GetEnvelope();
+
+        double minx = envelope->GetMinX();
+        double miny = envelope->GetMinY();
+        
+        double maxx = envelope->GetMaxX();
+        double maxy = envelope->GetMaxY();
+
+        if( m_OraSridDesc.m_IsGeodetic )
+        {
+        // if it is geodetic data I need to check boundaries
+        // that will not go over 180 and 90
+        // MapGuide will send bigger and than oracle wan't return geometries
+        // so this is workarround for it
+        
+        
+          if( minx < - 180 ) minx = -180.0;
+          if( maxx > 180 ) maxx = 180.0;
+          
+          if( maxx < minx ) { minx=-180; maxx=180; }
+          
+          if( miny < -90.0 ) miny = -90.0;
+          if( maxy > 90.0 ) maxy = 90;
+          
+          if( maxy < miny ) { miny=-90; maxy=90; }
+          if( maxx < minx ) { minx=-180; maxx=180; }
+        
+        }
+
+      // create optimize rect
+        SDO_GEOMETRY *sdorect = c_Ora_API2::CreateOptimizedRect(m_OraSridDesc.m_OraSrid,minx,miny,maxx,maxy);
+        char * buff = c_Ora_API2::SdoGeomToString(sdorect);
+      
+        if( buff )
+        {
+          AppendString( buff );
+          delete [] buff;
+        }
+        
+        delete sdorect;
+      }
+      else
+      {
+        ProcessExpresion( geomexp,true );
+      }
+      
+      
+      AppendString(L")='TRUE'");
+      AppendString(D_FILTER_CLOSE_PARENTH);
+    
+    */
     }    
   }
   break;
@@ -551,36 +517,62 @@ switch( Filter.GetOperation() )
     else
     {    
       AppendString(D_FILTER_OPEN_PARENTH);
-
-	    
-      if( m_OracleMainVersion >= 10 )
-      {
-        
-        AppendString(L"SDO_ANYINTERACT(");
-      }
-      else
-      {
-        AppendString(L"SDO_RELATE(");
-      }
-      
-	  
+      AppendString(L"SDO_ANYINTERACT(");
       ProcessExpresion( geomprop );
       AppendString(L",");
       
       ProcessExpresion( geomexp,true );
-      
-      
-      if( m_OracleMainVersion >= 10 )
+      /*
+      // Here I need spatial case of processing becase i want to create
+      // optimezed rect (not polygons) for  this query - needed for geodetic data 
+      FdoGeometryValue* geomval = dynamic_cast<FdoGeometryValue*>(geomexp.p);
+      if (geomval)
       {
-        AppendString(L")='TRUE'");
+        FdoPtr<FdoByteArray> fgf = geomval->GetGeometry();
+        FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
+        FdoPtr<FdoIGeometry> fgfgeom = gf->CreateGeometryFromFgf(fgf);
+        FdoPtr<FdoIEnvelope> envelope = fgfgeom->GetEnvelope();
+
+        double minx = envelope->GetMinX();
+        double miny = envelope->GetMinY();
+        
+        double maxx = envelope->GetMaxX();
+        double maxy = envelope->GetMaxY();
+
+        if( m_OraSridDesc.m_IsGeodetic )
+        {
+        // if it is geodetic data I need to check boundaries
+        // that will not go over 180 and 90
+        // MapGuide will send bigger and than oracle wan't return geometries
+        // so this is workarround for it
+          if( minx < - 180 ) minx = -180.0;
+          if( maxx > 180 ) maxx = 180.0;
+          
+          if( miny < -90.0 ) miny = -90.0;
+          if( maxy > 90.0 ) maxy = 90;
+        }
+
+      // create optimize rect
+        SDO_GEOMETRY *sdorect = c_Ora_API2::CreateOptimizedRect(m_OraSridDesc.m_OraSrid,minx,miny,maxx,maxy);
+        char * buff = c_Ora_API2::SdoGeomToString(sdorect);
+      
+        if( buff )
+        {
+          AppendString( buff );
+          delete [] buff;
+        }
+        
+        delete sdorect;
+        
       }
       else
       {
-        AppendString(L",'mask=ANYINTERACT')='TRUE'");
+        ProcessExpresion( geomexp,true );
       }
+      */
       
-	 
-
+      
+      AppendString(L")='TRUE'");
       AppendString(D_FILTER_CLOSE_PARENTH);
     }
   }
@@ -622,7 +614,7 @@ switch( Filter.GetOperation() )
     ProcessExpresion( geomprop );
     AppendString(L",");
     ProcessExpresion( geomexp,true );
-    AppendString(L",'mask=ANYINTERACT')='FALSE'");
+    AppendString(L",'mask=DISJOINT')='TRUE'");
     AppendString(D_FILTER_CLOSE_PARENTH);
   }
   break;

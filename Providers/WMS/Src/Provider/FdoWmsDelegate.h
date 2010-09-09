@@ -50,8 +50,7 @@ public:
 		FdoString* backgroundColor,
 		FdoString* timeDimension,
 		FdoString* elevation,
-		FdoString* version,
-		FdoString* exceptionFormat);
+		FdoString* version);
 };
 
 typedef FdoPtr<FdoWmsDelegate> FdoWmsDelegateP;

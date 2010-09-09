@@ -34,8 +34,6 @@ FdoXmlFlags::FdoXmlFlags( FdoString* url, ErrorLevel errorLevel, FdoBoolean name
     mUseGmlId = false;
     mSchemaMappings = NULL;
     mElementDefaultNullability = false;
-
-	SetGmlVersion(FdoGmlVersion_212);
 }
 
 FdoXmlFlags::~FdoXmlFlags() 
@@ -113,15 +111,5 @@ FdoPhysicalSchemaMappingCollection* FdoXmlFlags::GetSchemaMappings() const
 void FdoXmlFlags::Dispose()
 {
     delete this;
-}
-
-void FdoXmlFlags::SetGmlVersion(FdoGmlVersion gmlVersion)
-{
-    mUseGmlVersion = gmlVersion;
-}
-
-FdoGmlVersion FdoXmlFlags::GetGmlVersion() const
-{
-    return mUseGmlVersion;
 }
 

@@ -65,9 +65,6 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
         return spatialTypes;
     }
     virtual bool SupportsFlush()                                    { return false; }
-    virtual bool SupportsJoins() const                              { return true; }
-    virtual FdoInt32 GetJoinTypes() const                           { return (FdoInt32)(FdoJoinType_Cross|FdoJoinType_Inner|FdoJoinType_LeftOuter); }
-    virtual bool SupportsSubSelects() const                         { return true; }
 
 
     //-------------------------------------------------------
@@ -171,7 +168,7 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
                                                                             FdoDataType_Int64,
                                                                             FdoDataType_Single,
                                                                             FdoDataType_String,
-                                                                            FdoDataType_BLOB,
+                                                                //          FdoDataType_BLOB,
                                                                 //          FdoDataType_CLOB,
                                                                 //          FdoDataType_UniqueID
         };

@@ -52,9 +52,6 @@ set( FDOSrc_SRCS
 	Fdo/Expression/UnaryExpression.cpp
 	Fdo/Expression/DataValueCollection.cpp
 	Fdo/Expression/LiteralValueCollection.cpp
-	Fdo/Expression/JoinCriteria.cpp
-	Fdo/Expression/JoinCriteriaCollection.cpp
-	Fdo/Expression/SubSelectExpression.cpp
 	Fdo/Filter/BinaryLogicalOperator.cpp
 	Fdo/Filter/ComparisonCondition.cpp
 	Fdo/Filter/DistanceCondition.cpp
@@ -189,7 +186,6 @@ set( FDOSrc_SRCS
 )
 
 set( FDOCommon_SRCS
-    Common/IDisposable.cpp
 	Common/ArrayHelper.cpp
 	Common/CommonInternal.cpp
 	Common/Context.cpp

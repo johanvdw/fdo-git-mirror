@@ -246,7 +246,7 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
     FdoStringP spatialClause;
     FdoPtr<FdoExpression> geomExpr = filter.GetGeometry();
     FdoGeometryValue *geom = dynamic_cast<FdoGeometryValue*>(geomExpr.p);
-    FdoPtr<FdoByteArray>    geomfgf;
+    FdoByteArray            *geomfgf = NULL;
     FdoIGeometry            *geometryObj = NULL;
 
     FdoStringP buf(L"");
@@ -826,6 +826,14 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessConcatFunction(FdoFunction& expr)
         AppendString(L")");
     }
     AppendString(CLOSE_PARENTH);
+}
+
+bool FdoRdbmsSqlServerFilterProcessor::IsDataValue (FdoExpression *expr)
+{
+    if (dynamic_cast<FdoDataValue *>(expr) != NULL)
+        return true;
+
+    return false;
 }
 
 //

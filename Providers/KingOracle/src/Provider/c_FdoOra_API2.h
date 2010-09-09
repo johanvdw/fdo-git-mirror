@@ -42,8 +42,7 @@ public:
   //static bool FdoDataTypeToOraDataType(FdoDataType DataTape,oracle::occi::Type& OraType);
   
   static bool SetOracleStatementData(c_Oci_Statement* Statement,int SqlParamNum,FdoDataValue* DataValue);
-  static bool SetOracleStatementData(c_Oci_Statement* Statement,const wchar_t*SqlParamName,FdoDataValue* DataValue);
-
+  
 protected:
 /*
   static void c_FdoOra_API2::DescribeSchemaSQL(oracle::occi::Connection * OraConn,oracle::occi::Statement* OraStm
@@ -51,7 +50,7 @@ protected:
 */                                              
   static bool DescribeTableProperties(c_Oci_Connection * OciConn,const wchar_t*Schema,const wchar_t*TableName,FdoPropertyDefinitionCollection* PropCollection);
   //static void DescribeSchemaSQL(c_Oci_Connection * OciConn,FdoClassCollection* FdoClasses,FdoKgOraClassCollection* PhysClasses ,c_KgOraSpatialContextCollection* SC_Collection,long& AliasNum,bool IsOracle9 );
-  static void DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* SqlString ,bool BindOwner,const wchar_t* ConnectionOraSchema,const wchar_t* Owner,FdoClassCollection* FdoClasses,FdoKgOraClassCollection* PhysClasses ,c_KgOraSpatialContextCollection* SC_Collection,long& AliasNum,bool IsOracle9 );
+  static void DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* SqlString ,bool BindOwner,const wchar_t* Owner,FdoClassCollection* FdoClasses,FdoKgOraClassCollection* PhysClasses ,c_KgOraSpatialContextCollection* SC_Collection,long& AliasNum,bool IsOracle9 );
   static void DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* Owner ,FdoClassCollection* FdoClasses,FdoKgOraClassCollection* PhysClasses ,c_KgOraSpatialContextCollection* SC_Collection,long& AliasNum );
 };
 

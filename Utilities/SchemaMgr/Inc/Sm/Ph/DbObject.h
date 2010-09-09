@@ -187,14 +187,6 @@ public:
     /// Returns NULL when size is 0.
 	virtual const FdoLockType* GetLockTypes(FdoInt32& size) const;
 
-    /// Get the current polygon vertex order rule. Different geometry type may have 
-    /// different polygon vertex order rule.
-    virtual FdoPolygonVertexOrderRule GetPolygonVertexOrderRule(FdoString* propName) const;
-
-    /// Get the current polygon vertex order strictness rule. Different geometry type
-    /// may have different rule.
-    virtual FdoBoolean GetPolygonVertexOrderStrictness(FdoString* propName) const;
-
     // Returns true if the given unique key has the same columns as the primary key.
     FdoBoolean IsUkeyPkey( FdoSmPhColumnsP ukeyColumns );
 
@@ -478,23 +470,14 @@ protected:
     /// Load Primary Key if not yet loaded
     void LoadPkeys();
     void LoadPkeys( FdoPtr<FdoSmPhReader> pkeyRdr, bool isSkipAdd = false );
-    
-    // Load a primary key column from a reader.
-    virtual void LoadPkeyColumn( FdoPtr<FdoSmPhReader> pkeyRdr, FdoSmPhColumnsP pkeyColumns );
 
     /// Load Indexes if not yet loaded
     bool LoadIndexes();
     bool LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
 	
-    // Load a column from a reader into an index.
-    virtual void LoadIndexColumn( FdoPtr<FdoSmPhTableIndexReader> indexRdr, FdoPtr<FdoSmPhIndex> index );
-
     /// Load Foreign Keys if not yet loaded
     void LoadFkeys();
     void LoadFkeys( FdoPtr<FdoSmPhReader> fkeyRdr, bool isSkipAdd );
-    // Load a foreign key column from a reader.
-    virtual void LoadFkeyColumn( FdoPtr<FdoSmPhReader> fkeyRdr, FdoSmPhFkeyP fkey );
-
 
     // Create new base object group reader
     virtual FdoPtr<FdoSmPhTableComponentReader> NewTableBaseReader( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
@@ -505,7 +488,7 @@ protected:
     );
 
     /// Add an index from an index reader
-    virtual FdoPtr<FdoSmPhIndex> CreateIndex(
+    FdoPtr<FdoSmPhIndex> CreateIndex(
         FdoPtr<FdoSmPhTableIndexReader> rdr
     );
 
@@ -703,8 +686,6 @@ protected:
     virtual void Discard();
 
     virtual void AddPkeyColumnError(FdoStringP columnName);
-
-    virtual void AddFkeyColumnCountError(FdoStringP fkeyName);
 
     virtual void AddIndexColumnError(FdoStringP columnName);
 

@@ -42,13 +42,10 @@ FdoWfsDelegate* FdoWfsDelegate::Create(FdoString* defaultUrl, FdoString* userNam
     return new FdoWfsDelegate(defaultUrl, userName, passwd);
 }
 
-FdoWfsServiceMetadata* FdoWfsDelegate::GetCapabilities(FdoString* version)
+FdoWfsServiceMetadata* FdoWfsDelegate::GetCapabilities()
 {
     FdoPtr<FdoOwsGetCapabilities> request = FdoOwsGetCapabilities::Create(FdoWfsGlobals::WFS);
-    if (version == NULL || wcslen(version) == 0)
-        request->SetVersion(FdoWfsGlobals::WfsVersion);
-    else
-        request->SetVersion(version, false); // version already in URL.
+    request->SetVersion(FdoWfsGlobals::WfsVersion);
 
     FdoPtr<FdoOwsResponse> response = Invoke(request);
     FdoPtr<FdoIoStream> stream = response->GetStream();
@@ -58,15 +55,16 @@ FdoWfsServiceMetadata* FdoWfsDelegate::GetCapabilities(FdoString* version)
     return FDO_SAFE_ADDREF(rv.p);
 }
 
-FdoFeatureSchemaCollection* FdoWfsDelegate::DescribeFeatureType(FdoStringCollection* typeNames, FdoString* version)
+FdoFeatureSchemaCollection* FdoWfsDelegate::DescribeFeatureType(FdoStringCollection* typeNames)
 {
-    FdoPtr<FdoWfsDescribeFeatureType> request = FdoWfsDescribeFeatureType::Create(typeNames,version);
+    FdoPtr<FdoWfsDescribeFeatureType> request = FdoWfsDescribeFeatureType::Create(typeNames);
+    request->SetVersion(FdoWfsGlobals::WfsVersion);
 
     FdoPtr<FdoOwsResponse> response = Invoke(request);
     FdoPtr<FdoIoStream> stream = response->GetStream();
 
     // now we should merge stream and all its referenced schema
-	FdoWfsSchemaMerger merger(version);
+    FdoWfsSchemaMerger merger;
     stream = merger.MergeSchema(stream, GetUrl(), L"");
     FdoPtr<FdoFeatureSchemaCollection> schemas = FdoFeatureSchemaCollection::Create(NULL);
     FdoPtr<FdoXmlFlags> flags = FdoXmlFlags::Create(FdoWfsGlobals::fdo_customer, FdoXmlFlags::ErrorLevel_VeryLow);
@@ -84,16 +82,14 @@ FdoIFeatureReader* FdoWfsDelegate::GetFeature(FdoFeatureSchemaCollection* schema
                                               FdoStringCollection* propertiesToSelect,
                                               FdoString* from,
                                               FdoFilter* where,
-                                              FdoString* schemaName,
-											  FdoString* version)
+                                              FdoString* schemaName)
 {
     FdoPtr<FdoWfsGetFeature> request = FdoWfsGetFeature::Create(targetNamespace, 
                                                                 srsName, 
                                                                 propertiesToSelect, 
                                                                 from, 
                                                                 where,
-                                                                schemaName,
-																version);
+                                                                schemaName);
     FdoPtr<FdoOwsResponse> response;
     FdoException* exc1 = NULL;
     try

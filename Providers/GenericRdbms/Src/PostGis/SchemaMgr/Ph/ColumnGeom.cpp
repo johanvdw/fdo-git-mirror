@@ -114,36 +114,13 @@ FdoStringP FdoSmPhPostGisColumnGeom::GetAddSql()
                 schemaName = objName.Left(L".");
                 tableName = objName.Right(L".");
             }
-
-            FdoStringP geomType = L"GEOMETRY";
-            FdoInt32 dimensions = 2;
-
-            if ( GetHasElevation() ) 
-            {
-                dimensions++;
-            }
-
-            if ( GetHasMeasure() )
-            {
-                // TODO: Find a way to set the geometry_columns row so that 3d XYZ 
-                // and XYM geometries are distinguishable. For an XYM geometry that can
-                // have only one geometry type,we can set geometry_columns.type to one of POINTM, 
-                // LINESTRINGM, etc. However, there doesn't seem to be a GEOMETRYM for the case
-                // when mutliple geometry types are allowed.
-                //
-                // For now, workaround this by making XYM geometries 4D, which has the unfortunate
-                // side effect of turning them into XYZM. 
-                dimensions = 4;
-            }
-
             sqlString = FdoStringP::Format(
-                L"select AddGeometryColumn( %ls, %ls, %ls, %ls, '%ls', %d)",
+                L"select AddGeometryColumn( %ls, %ls, %ls, %ls, 'GEOMETRY', %d)",
                 (FdoString*) mgr->FormatSQLVal((FdoString*)schemaName, FdoSmPhColType_String),
                 (FdoString*) mgr->FormatSQLVal((FdoString*)tableName, FdoSmPhColType_String),
                 (FdoString*) mgr->FormatSQLVal(GetName(), FdoSmPhColType_String),
                 (FdoString*) FdoCommonStringUtil::Int64ToString(GetSRID()),
-                (FdoString*) geomType,
-                dimensions
+                GetHasElevation() ? 3 : 2
             );
         }
     }
@@ -183,34 +160,18 @@ FdoSmPhSpatialIndexP FdoSmPhPostGisColumnGeom::CreateSpatialIndex( FdoStringP in
     return currIndex;
 }
 
-void FdoSmPhPostGisColumnGeom::RegenSpatialIndex()
-{
-    if ( GetElementState() != FdoSchemaElementState_Deleted ) {
-        FdoSmPhSpatialIndexP currIndex = GetSpatialIndex();
-
-        // If spatial index exists, delete and re-create it.
-        if ( currIndex && (currIndex->GetElementState() != FdoSchemaElementState_Deleted) ) {
-            currIndex->SetElementState( FdoSchemaElementState_Deleted );
-
-             CreateSpatialIndex();
-        }
-    }
-}
-
 bool FdoSmPhPostGisColumnGeom::Add()
 {
-    if ( dynamic_cast<FdoSmPhTable*>((FdoSmSchemaElement*) GetParent()) ) {
-        FdoSmPhPostGisMgrP mgr(GetManager()->SmartCast<FdoSmPhPostGisMgr>());
+    FdoSmPhPostGisMgrP mgr(GetManager()->SmartCast<FdoSmPhPostGisMgr>());
 
-        GdbiConnection* gdbiConn = NULL;
-        gdbiConn = mgr->GetGdbiConnection();
+    GdbiConnection* gdbiConn = NULL;
+    gdbiConn = mgr->GetGdbiConnection();
 
-        FdoStringP sqlStmt = GetAddSql();
+    FdoStringP sqlStmt = GetAddSql();
 
-        if ( sqlStmt != L"" ) {
-            gdbiConn->ExecuteNonQuery(
-                static_cast<const char*>(sqlStmt), true);
-        }
+    if ( sqlStmt != L"" ) {
+        gdbiConn->ExecuteNonQuery(
+            static_cast<const char*>(sqlStmt), true);
     }
 
     return true;
@@ -218,7 +179,8 @@ bool FdoSmPhPostGisColumnGeom::Add()
 
 void FdoSmPhPostGisColumnGeom::PostFinalize()
 {
-    LoadScGeom();
+    SetHasElevation(false);
+    SetHasMeasure(false);
 }
 
 void FdoSmPhPostGisColumnGeom::LoadScGeom()
@@ -237,8 +199,6 @@ void FdoSmPhPostGisColumnGeom::LoadScGeom()
             if ( mSRID == -1 ) 
                 mSRID = scGeom->GetSpatialContext()->GetSrid();
             mFdoGeometryType = scGeom->GetGeometryType();
-            this->SetHasElevation(scGeom->GetHasElevation());
-            this->SetHasMeasure(scGeom->GetHasMeasure());
         }
         else {
             // No scGeom, check if this is an inherited column
@@ -249,8 +209,6 @@ void FdoSmPhPostGisColumnGeom::LoadScGeom()
                 if ( mSRID == -1 ) 
                     mSRID = baseColumn->GetSRID();
                 mFdoGeometryType = baseColumn->GetGeometryType();
-            this->SetHasElevation(baseColumn->GetHasElevation());
-            this->SetHasMeasure(baseColumn->GetHasMeasure());
             }
         }
     }

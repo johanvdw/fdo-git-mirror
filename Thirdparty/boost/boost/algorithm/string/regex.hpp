@@ -1,12 +1,11 @@
 //  Boost string_algo library regex.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003.
-//
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003. Use, modification and
+//  distribution is subject to the Boost Software License, Version
+//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org/ for updates, documentation, and revision history.
+//  See http://www.boost.org for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_REGEX_HPP
 #define BOOST_STRING_REGEX_HPP
@@ -17,8 +16,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
-#include <boost/range/iterator.hpp>
-#include <boost/range/as_literal.hpp>
+#include <boost/range/result_iterator.hpp>
 
 #include <boost/algorithm/string/find_format.hpp>
 #include <boost/algorithm/string/regex_find_format.hpp>
@@ -54,16 +52,14 @@ namespace boost {
             typename CharT, 
             typename RegexTraitsT>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_iterator<RangeT>::type >
+            BOOST_STRING_TYPENAME range_result_iterator<RangeT>::type >
         find_regex( 
             RangeT& Input, 
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            iterator_range<BOOST_STRING_TYPENAME range_iterator<RangeT>::type> lit_input(::boost::as_literal(Input));
-
-            return ::boost::algorithm::regex_finder(Rx,Flags)(
-                ::boost::begin(lit_input), ::boost::end(lit_input) );
+            return regex_finder(Rx,Flags)(
+                begin(Input), end(Input) );
         }
 
 //  replace_regex --------------------------------------------------------------------//
@@ -98,11 +94,11 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            return ::boost::algorithm::find_format_copy( 
+            return find_format_copy( 
                 Output,
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
         //! Replace regex algorithm
@@ -120,10 +116,10 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            return ::boost::algorithm::find_format_copy( 
+            return find_format_copy( 
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
         //! Replace regex algorithm
@@ -147,10 +143,10 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            ::boost::algorithm::find_format( 
+            find_format( 
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
 //  replace_all_regex --------------------------------------------------------------------//
@@ -184,11 +180,11 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            return ::boost::algorithm::find_format_all_copy( 
+            return find_format_all_copy( 
                 Output,
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
         //! Replace all regex algorithm
@@ -206,10 +202,10 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            return ::boost::algorithm::find_format_all_copy( 
+            return find_format_all_copy( 
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
         //! Replace all regex algorithm
@@ -233,10 +229,10 @@ namespace boost {
             const std::basic_string<CharT, FormatStringTraitsT, FormatStringAllocatorT>& Format,
             match_flag_type Flags=match_default | format_default )
         {
-            ::boost::algorithm::find_format_all( 
+            find_format_all( 
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::regex_formatter( Format, Flags ) );
+                regex_finder( Rx, Flags ),
+                regex_formatter( Format, Flags ) );
         }
 
 //  erase_regex --------------------------------------------------------------------//
@@ -267,11 +263,11 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::find_format_copy(
+            return find_format_copy(
                 Output,
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
         //! Erase regex algorithm
@@ -287,10 +283,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::find_format_copy( 
+            return find_format_copy( 
                 Input, 
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
         //! Erase regex algorithm
@@ -311,10 +307,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            ::boost::algorithm::find_format( 
+            find_format( 
                 Input, 
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
 //  erase_all_regex --------------------------------------------------------------------//
@@ -346,11 +342,11 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::find_format_all_copy(
+            return find_format_all_copy(
                 Output,
                 Input,
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
         //! Erase all regex algorithm
@@ -366,10 +362,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::find_format_all_copy( 
+            return find_format_all_copy( 
                 Input, 
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
         //! Erase all regex algorithm
@@ -390,10 +386,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            ::boost::algorithm::find_format_all( 
+            find_format_all( 
                 Input, 
-                ::boost::algorithm::regex_finder( Rx, Flags ),
-                ::boost::algorithm::empty_formatter( Input ) );
+                regex_finder( Rx, Flags ),
+                empty_formatter( Input ) );
         }
 
 //  find_all_regex ------------------------------------------------------------------//
@@ -431,10 +427,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::iter_find(
+            return iter_find(
                 Result,
                 Input,
-                ::boost::algorithm::regex_finder(Rx,Flags) );         
+                regex_finder(Rx,Flags) );         
         }
 
 //  split_regex ------------------------------------------------------------------//
@@ -472,10 +468,10 @@ namespace boost {
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
-            return ::boost::algorithm::iter_split(
+            return iter_split(
                 Result,
                 Input,
-                ::boost::algorithm::regex_finder(Rx,Flags) );         
+                regex_finder(Rx,Flags) );         
         }
 
 //  join_if ------------------------------------------------------------------//
@@ -506,7 +502,7 @@ namespace boost {
         inline typename range_value<SequenceSequenceT>::type 
         join_if(
             const SequenceSequenceT& Input,
-            const Range1T& Separator,
+            Range1T& Separator,
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
@@ -515,8 +511,8 @@ namespace boost {
             typedef typename range_const_iterator<SequenceSequenceT>::type InputIteratorT;
 
             // Parse input
-            InputIteratorT itBegin=::boost::begin(Input);
-            InputIteratorT itEnd=::boost::end(Input);
+            InputIteratorT itBegin=begin(Input);
+            InputIteratorT itEnd=end(Input);
 
             // Construct container to hold the result
             ResultT Result;
@@ -525,23 +521,23 @@ namespace boost {
             // Roll to the first element that will be added
             while(
                 itBegin!=itEnd && 
-                !::boost::regex_match(::boost::begin(*itBegin), ::boost::end(*itBegin), Rx, Flags)) ++itBegin;
+                !regex_match(begin(*itBegin), end(*itBegin), Rx, Flags)) ++itBegin;
 
             // Add this element
             if(itBegin!=itEnd)
             {
-                detail::insert(Result, ::boost::end(Result), *itBegin);
+                detail::insert(Result, end(Result), *itBegin);
                 ++itBegin;
             }
 
             for(;itBegin!=itEnd; ++itBegin)
             {
-                if(::boost::regex_match(::boost::begin(*itBegin), ::boost::end(*itBegin), Rx, Flags))
+                if(regex_match(begin(*itBegin), end(*itBegin), Rx, Flags))
                 {
                     // Add separator
-                    detail::insert(Result, ::boost::end(Result), ::boost::as_literal(Separator));
+                    detail::insert(Result, end(Result), Separator);
                     // Add element
-                    detail::insert(Result, ::boost::end(Result), *itBegin);
+                    detail::insert(Result, end(Result), *itBegin);
                 }
             }
 
@@ -574,7 +570,7 @@ namespace boost {
         inline typename range_value<SequenceSequenceT>::type 
         join_if_regex(
             const SequenceSequenceT& Input,
-            const Range1T& Separator,
+            Range1T& Separator,
             const basic_regex<CharT, RegexTraitsT>& Rx,
             match_flag_type Flags=match_default )
         {
@@ -583,33 +579,33 @@ namespace boost {
             typedef typename range_const_iterator<SequenceSequenceT>::type InputIteratorT;
 
             // Parse input
-            InputIteratorT itBegin=::boost::begin(Input);
-            InputIteratorT itEnd=::boost::end(Input);
+            InputIteratorT itBegin=begin(Input);
+            InputIteratorT itEnd=end(Input);
 
             // Construct container to hold the result
             ResultT Result;
-
+                               
 
             // Roll to the first element that will be added
             while(
                 itBegin!=itEnd && 
-                !::boost::regex_match(::boost::begin(*itBegin), ::boost::end(*itBegin), Rx, Flags)) ++itBegin;
+                !regex_match(begin(*itBegin), end(*itBegin), Rx, Flags)) ++itBegin;
 
             // Add this element
             if(itBegin!=itEnd)
             {
-                detail::insert(Result, ::boost::end(Result), *itBegin);
+                detail::insert(Result, end(Result), *itBegin);
                 ++itBegin;
             }
 
             for(;itBegin!=itEnd; ++itBegin)
             {
-                if(::boost::regex_match(::boost::begin(*itBegin), ::boost::end(*itBegin), Rx, Flags))
+                if(regex_match(begin(*itBegin), end(*itBegin), Rx, Flags))
                 {
                     // Add separator
-                    detail::insert(Result, ::boost::end(Result), ::boost::as_literal(Separator));
+                    detail::insert(Result, end(Result), Separator);
                     // Add element
-                    detail::insert(Result, ::boost::end(Result), *itBegin);
+                    detail::insert(Result, end(Result), *itBegin);
                 }
             }
 
@@ -639,6 +635,8 @@ namespace boost {
 #else  // BOOST_NO_FUNCTION_TEMPLATE_ORDERING
     using algorithm::join_if_regex;
 #endif // BOOST_NO_FUNCTION_TEMPLATE_ORDERING
+
+
 
 } // namespace boost
 

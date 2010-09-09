@@ -16,19 +16,13 @@ import os ;
 
 feature.extend toolset : vacpp ;
 toolset.inherit vacpp : unix ;
-generators.override vacpp.prebuilt : builtin.prebuilt ;
+generators.override vacpp.prebuilt : builtin.lib-generator ;
 generators.override vacpp.searched-lib-generator : searched-lib-generator ;
+feature.subfeature toolset vacpp : version ;
 
 # Configure the vacpp toolset
 rule init ( version ? : command * : options * )
 {
-    local condition = [ 
-        common.check-init-parameters vacpp : version $(version) ] ;
-              
-    command = [ common.get-invocation-command vacpp : xlC
-        : $(command) : "/usr/vacpp/bin/xlC" ] ;
-                              
-    common.handle-options vacpp : $(condition) : $(command) : $(options) ;
 }
 
 # Declare generators
@@ -60,7 +54,7 @@ flags vacpp C++FLAGS <rtti>on : -qrtti ;
 # Enable 64-bit memory addressing model
 flags vacpp CFLAGS <address-model>64 : -q64 ;
 flags vacpp LINKFLAGS <address-model>64 : -q64 ;
-flags vacpp ARFLAGS <target-os>aix/<address-model>64 : -X 64 ;
+flags vacpp ARFLAGS <address-model>64 : -X 64 ;
 
 # Use absolute path when generating debug information
 flags vacpp CFLAGS <debug-symbols>on : -g -qfullpath ;
@@ -69,25 +63,14 @@ flags vacpp LINKFLAGS <debug-symbols>off : -s ;
 
 if [ os.name ] = AIX
 {
+    # Tell the linker to discard unneeded object files from archive libraries.
+    # Please note that the static constructors contained by the discarded object
+    # files will not be invoked.
     flags vacpp.compile C++FLAGS : -qfuncsect ;
-
-    # The -bnoipath strips the prepending (relative) path of libraries from
-    # the loader section in the target library or executable. Hence, during
-    # load-time LIBPATH (identical to LD_LIBRARY_PATH) or a hard-coded
-    # -blibpath (*similar* to -lrpath/-lrpath-link) is searched. Without
-    # this option, the prepending (relative) path + library name is
-    # hard-coded in the loader section, causing *only* this path to be
-    # searched during load-time. Note that the AIX linker does not have an
-    # -soname equivalent, this is as close as it gets.
-    #
-    # The above options are definately for AIX 5.x, and most likely also for
-    # AIX 4.x and AIX 6.x. For details about the AIX linker see:
-    # http://download.boulder.ibm.com/ibmdl/pub/software/dw/aix/es-aix_ll.pdf
-    #
-    flags vacpp.link LINKFLAGS <link>shared : -bnoipath ;
+    flags vacpp.link LINKFLAGS <link>static : -qtwolink ;
 
     # Run-time linking
-    flags vacpp.link EXE-LINKFLAGS <link>shared : -brtl ;
+    flags vacpp.link EXE-LINKFLAGS <link>shared : -brtl -qtwolink ;
 }
 else
 {
@@ -143,5 +126,5 @@ actions vacpp.compile.c++
 
 actions updated together piecemeal vacpp.archive
 {
-    ar $(ARFLAGS) ru "$(<)" "$(>)"
+    ar ru$(ARFLAGS:E="") "$(<)" "$(>)"
 }
