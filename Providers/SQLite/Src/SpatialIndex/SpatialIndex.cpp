@@ -44,7 +44,6 @@ void* _aligned_malloc(size_t size, size_t alignment)
 //====================================================================
 SpatialIndex::SpatialIndex(const wchar_t*)
 {
-    _positionIdx = 1;
     _lastInsertedIdx = 0;
     _countChanges = 0;
     _haveOffset = false;
@@ -63,14 +62,8 @@ SpatialIndex::~SpatialIndex()
 
 static Bounds EMPTY_BOX(true);
 
-void SpatialIndex::Insert(__int64 dbId, DBounds& ext)
+void SpatialIndex::Insert(unsigned fid, DBounds& ext)
 {
-    _linkMap[dbId] = _positionIdx;
-    if (_positionIdx >= _backMap.size()) // allocate a bit more
-        _backMap.insert(_backMap.end(), _positionIdx-_backMap.size()+8, 0);
-    _backMap[_positionIdx-1] = dbId;
-
-    unsigned int fid = _positionIdx;
     //check if we have got a local offset
     //If not yet, then use the given bounds
     //to set it up
@@ -89,15 +82,14 @@ void SpatialIndex::Insert(__int64 dbId, DBounds& ext)
 
     // avoid a update to change this value since update will provide 
     // fid < _lastInsertedIdx and we will force SI update
-    if (dbId > _lastInsertedIdx)
-        _lastInsertedIdx = dbId;
-    _positionIdx++;
+    if (fid > _lastInsertedIdx)
+        _lastInsertedIdx = fid;
 }
 
-void SpatialIndex::Insert(unsigned int fid, Bounds& b)
+void SpatialIndex::Insert(unsigned fid, Bounds& b)
 {
     //insert into the skip lists
-    unsigned int index = fid;
+    unsigned int index = (unsigned int)fid;
     unsigned int oldIndex = index;
     unsigned int* counts = _counts;
     Node** levels = _levels;
@@ -150,7 +142,7 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
                     Bounds::Add(&n.b, &oldRoot.b);
                 }
             }
-            else if (fid < _positionIdx)
+            else if (fid <= _lastInsertedIdx)
             {
                 // in case we do an update we need to propagate the value till root
                 index = (unsigned int)fid;
@@ -172,53 +164,20 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
     }
 }
 
-void SpatialIndex::Update(__int64 dbId, DBounds& ext)
+void SpatialIndex::Update(unsigned fid, DBounds& ext)
 {
-    // avoid getting NaN added to the SI when we update a geometry to null
-    if (ext.IsEmpty())
-    {
-        Delete(dbId);
-        return;
-    }
-
-    LinkMap::iterator it = _linkMap.find(dbId);
-    if (it == _linkMap.end())
-    {
-        // avoid out-of-sync in case user update rowid only
-        Insert(dbId, ext);
-        return;
-    }
     // we can use insert, however we need to count number of changes 
     // and later force a rebuild when the number of changes becomes too high
-    unsigned int fid = it->second;
-    //check if we have got a local offset
-    //If not yet, then use the given bounds
-    //to set it up
-    if (!_haveOffset)
-    {
-        for (int i=0; i<SI_DIM; i++)
-            _offset[i] = ext.min[i];
-
-        _haveOffset = true;
-    }
-
-    //translate the given bounds to local space
-    Bounds b;
-    TranslateBounds(&ext, _offset, &b);
-    Insert(fid, b);
+    Insert(fid, ext);
     _countChanges++;
-    unsigned int tproc = (unsigned int)(_positionIdx/10.0);
-    if (tproc && _countChanges > tproc)
+    if ((10*_countChanges) > _lastInsertedIdx)
         FullSpatialIndexUpdate();
 }
 
-void SpatialIndex::Delete(__int64 dbId)
+void SpatialIndex::Delete(unsigned fid)
 {
-    LinkMap::iterator it = _linkMap.find(dbId);
-    if (it == _linkMap.end())
-        return;
     //insert into the skip lists
-    unsigned int index = it->second;
+    unsigned int index = (unsigned int)fid;
     Node** levels = _levels;
 
     if (_sizes[0] > index)
@@ -226,15 +185,11 @@ void SpatialIndex::Delete(__int64 dbId)
         Node* n = &((Node*)levels[0])[index];
         n->b = EMPTY_BOX;
         _countChanges++;
-        unsigned int tproc = (unsigned int)(_positionIdx/10.0);
-        if (tproc && _countChanges > tproc)
+        if ((10*_countChanges) > _lastInsertedIdx)
             FullSpatialIndexUpdate();
+        else if (_lastInsertedIdx == index)
+            _lastInsertedIdx = (index == 0) ? 0 : (index-1);
     }
-}
-
-__int64 SpatialIndex::operator[](int fid)
-{
-    return _backMap[fid-1];
 }
 
 void SpatialIndex::FullSpatialIndexUpdate()
@@ -259,23 +214,9 @@ void SpatialIndex::FullSpatialIndexUpdate()
     }
 }
 
-//for API compatibility with disk-backed index
-void SpatialIndex::ReOpen()
-{
-} 
 
 void SpatialIndex::GetTotalExtent(DBounds& ext)
 {
-    //Is the spatial index empty? Return some default
-    //extent.
-    //TODO: what exactly is a good empty extent? Perhaps
-    //it is coord sys dependent
-    if (_counts[0] == 0)
-    {
-        ext.SetEmpty();
-        return;
-    }
-    
     Bounds* b = &_levels[_rootLevel][0].b;
 
     for (int i=0; i<SI_DIM; i++)
@@ -284,6 +225,11 @@ void SpatialIndex::GetTotalExtent(DBounds& ext)
         ext.max[i] = (double)b->max[i] + _offset[i];
     }
 }
+
+//for API compatibility with disk-backed index
+void SpatialIndex::ReOpen()
+{
+} 
 
 //====================================================================
 // The skip list search structure...
@@ -415,9 +361,4 @@ done:
         _prevStopLevel = prevStopLevel;
         return true;
     }
-}
-
-__int64 SpatialIterator::operator[](int fid)
-{
-    return (*_si)[fid];
 }

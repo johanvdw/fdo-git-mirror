@@ -79,7 +79,7 @@
 #include <openssl/bn.h>         /* To get BN_LLONG properly defined */
 #include <openssl/bio.h>
 
-#if defined(BN_LLONG) || defined(SIXTY_FOUR_BIT)
+#ifdef BN_LLONG
 # ifndef HAVE_LONG_LONG
 #  define HAVE_LONG_LONG 1
 # endif
@@ -115,9 +115,9 @@
 #define LDOUBLE double
 #endif
 
-#ifdef HAVE_LONG_LONG
-# if defined(_WIN32) && !defined(__GNUC__)
-# define LLONG __int64
+#if HAVE_LONG_LONG
+# if defined(OPENSSL_SYS_WIN32) && !defined(__GNUC__)
+# define LLONG _int64
 # else
 # define LLONG long long
 # endif

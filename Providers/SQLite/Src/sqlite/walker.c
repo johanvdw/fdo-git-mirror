@@ -11,6 +11,8 @@
 *************************************************************************
 ** This file contains routines used for walking the parser tree for
 ** an SQL statement.
+**
+** $Id: walker.c,v 1.4 2009/04/08 13:51:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -40,10 +42,11 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   int rc;
   if( pExpr==0 ) return WRC_Continue;
   testcase( ExprHasProperty(pExpr, EP_TokenOnly) );
+  testcase( ExprHasProperty(pExpr, EP_SpanToken) );
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
   if( rc==WRC_Continue
-              && !ExprHasAnyProperty(pExpr,EP_TokenOnly) ){
+              && !ExprHasAnyProperty(pExpr,EP_TokenOnly|EP_SpanToken) ){
     if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
     if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
@@ -60,14 +63,14 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
 ** an abort request is seen.
 */
 int sqlite3WalkExprList(Walker *pWalker, ExprList *p){
-  int i;
+  int i, rc = WRC_Continue;
   struct ExprList_item *pItem;
   if( p ){
     for(i=p->nExpr, pItem=p->a; i>0; i--, pItem++){
       if( sqlite3WalkExpr(pWalker, pItem->pExpr) ) return WRC_Abort;
     }
   }
-  return WRC_Continue;
+  return rc & WRC_Continue;
 }
 
 /*
@@ -100,7 +103,7 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   struct SrcList_item *pItem;
 
   pSrc = p->pSrc;
-  if( ALWAYS(pSrc) ){
+  if( pSrc ){
     for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
       if( sqlite3WalkSelect(pWalker, pItem->pSelect) ){
         return WRC_Abort;

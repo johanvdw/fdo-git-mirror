@@ -420,20 +420,12 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
        /******* Get Tile Sizes *********/
        tileSizeX = atoi(poDS->GetKeyword("IsisCube.Core.TileSamples",""));
        tileSizeY = atoi(poDS->GetKeyword("IsisCube.Core.TileLines",""));
-       if (tileSizeX <= 0 || tileSizeY <= 0)
-       {
-           CPLError( CE_Failure, CPLE_OpenFailed, "Wrong tile dimensions : %d x %d",
-                     tileSizeX, tileSizeY);
-           delete poDS;
-           return NULL;
-       }
     }
     else if (EQUAL(value,"BandSequential") )
         strcpy(szLayout,"BSQ");
     else {
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "%s layout not supported. Abort\n\n", value);
-        delete poDS;
         return NULL;
     }
 
@@ -469,7 +461,6 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
     else {
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "%s layout type not supported. Abort\n\n", itype);
-        delete poDS;
         return NULL;
     }
 
@@ -576,9 +567,7 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
     } else if (EQUAL( map_proj_name, "LambertConformal" )) {
         oSRS.OGRSpatialReference::SetLCC ( first_std_parallel, second_std_parallel, center_lat, center_lon, 0, 0 );
     } else {
-        CPLDebug( "ISIS3",
-                  "Dataset projection %s is not supported. Continuing...",
-                  map_proj_name );
+        printf("*** no projection define or supported! Are you sure this is a map projected cube?\n\n" );
         bProjectionSet = FALSE;
     }
 
@@ -690,7 +679,6 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( nRows < 1 || nCols < 1 || nBands < 1 )
     {
-        delete poDS;
         return NULL;
     }
 
@@ -838,15 +826,15 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
                                poDS->adfGeoTransform );
 
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }

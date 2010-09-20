@@ -1,4 +1,4 @@
-# $Id: GNUmakefile 15888 2008-12-03 08:22:31Z dron $
+# $Id: GNUmakefile 10656 2007-01-19 01:31:01Z mloskot $
 #
 # Makefile to build zlib using GNU Make and GCC.
 #
@@ -18,9 +18,9 @@ OBJ = \
 	uncompr.o \
 	zutil.o
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

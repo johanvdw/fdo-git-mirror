@@ -22,15 +22,6 @@
 #define BATCH_SHIFT 3
 #define BATCH_MASK ((~0) << BATCH_SHIFT)
 
-#ifndef _MSC_VER
-#ifndef __int64
-    typedef long long int __int64;
-#endif
-#endif
-
-typedef std::map<__int64, unsigned int> LinkMap;
-typedef std::vector<__int64> VectorMF;
-
 //We will have up to this many levels
 //in the skip list hierarchy
 //NOTE: MAX_LEVELS * BATCH_SHIFT must be less than 32,
@@ -53,21 +44,20 @@ public:
     SpatialIndex(const wchar_t*); //argument unused, for compatibility with disk backed implementation only
     ~SpatialIndex();
     
-    void Insert(__int64 dbId, DBounds& ext);
-    void Update(__int64 dbId, DBounds& ext);
-    void Delete(__int64 dbId);
-    void GetTotalExtent(DBounds& ext);
     void ReOpen(); //for API compatibility with disk-backed index
-    __int64 GetLastInsertedIdx() { return _lastInsertedIdx; }
+    void Insert(unsigned fid, DBounds& ext);
+    void Update(unsigned fid, DBounds& ext);
+    void Delete(unsigned fid);
+    void GetTotalExtent(DBounds& ext);
+    unsigned GetLastInsertedIdx() { return _lastInsertedIdx; }
 
-    __int64 operator[](int fid);
 private:
     void FullSpatialIndexUpdate();
     void Insert(unsigned fid, Bounds& b);
 private:
 
     // last inserted index
-    __int64   _lastInsertedIdx;
+    unsigned   _lastInsertedIdx;
 
     // count of changes
     unsigned   _countChanges;
@@ -88,11 +78,6 @@ private:
     //to local space (which we keep in float)
     double     _offset[SI_DIM];
     bool       _haveOffset;
-
-    // used to link ID with SI id
-    LinkMap    _linkMap;
-    VectorMF    _backMap;
-    unsigned   _positionIdx;
 };
 
 //==============================================
@@ -106,8 +91,6 @@ public:
 
     bool NextRange(int& start, int& end);
 
-    __int64 operator[](int fid);
-
 private:
 
     SpatialIndex* _si;
@@ -118,43 +101,4 @@ private:
     //on a 16 byte boundary
     char _barr[sizeof(Bounds)*2]; 
     Bounds* _b;
-};
-
-class SpatialIteratorStep
-{
-public:
-    SpatialIteratorStep(SpatialIterator* siit)
-    {
-        m_siit = siit;
-        m_curfid = 0; //position prior to first record
-        m_siEnd = -1;
-    }
-    ~SpatialIteratorStep()
-    {
-        delete m_siit;
-    }
-    __int64 ReadNext()
-    {
-        m_curfid++;
-        if (m_curfid >= m_siEnd)
-        {
-            int start;
-            //spatial reader is done, so we are done
-            if (m_siit == NULL || !m_siit->NextRange(start, m_siEnd))
-                return -1;
-            m_curfid = (__int64)(start ? start : 1); //make sure we skip fid=0, which is not valid
-        }
-        return (*m_siit)[(int)m_curfid];
-    }
-    void Reset()
-    {
-        m_curfid = 0; //position prior to first record
-        m_siEnd = -1;
-        if (m_siit != NULL)
-            m_siit->Reset();
-    }
-private:
-    int m_curfid;
-    int m_siEnd;
-    SpatialIterator* m_siit;
 };

@@ -34,9 +34,6 @@ UnitTest_SOURCES = \
   SQLCmdTest.cpp \
   TransactionTest.cpp \
   UnitTestUtil.cpp \
-  ApplySchemaTest.cpp \
-  ConstraintsTest.cpp \
-  DeleteTest.cpp \
   ReaderTest.cpp
 
 noinst_HEADERS = $(UnitTest_SOURCES) \
@@ -49,9 +46,6 @@ noinst_HEADERS = $(UnitTest_SOURCES) \
   UnitTestUtil.h \
   TransactionTest.h \
   tester-linux.h \
-  ApplySchemaTest.h \
-  ConstraintsTest.h \
-  DeleteTest.h \
   ReaderTest.h
 
 INCLUDES = \

@@ -54,7 +54,7 @@ FdoWmsServiceMetadata* FdoWmsDelegate::GetServiceMetadata(FdoString* pVersion)
     if (pVersion == NULL || wcslen(pVersion) == 0)
         request->SetVersion(FdoWmsXmlGlobals::WmsVersion);
     else
-        request->SetVersion(pVersion, false); // version already in URL.
+        request->SetVersion(L""); // version already in URL.
     FdoPtr<FdoOwsResponse> response = Invoke(request);
     FdoPtr<FdoIoStream> stream = response->GetStream();
     FdoWmsServiceMetadataP rv = FdoWmsServiceMetadata::Create();
@@ -73,8 +73,7 @@ FdoIoStream* FdoWmsDelegate::GetMap(FdoStringCollection* layerNames,
 									FdoString* backgroundColor,
 									FdoString* timeDimension,
 									FdoString* elevation,
-									FdoString* version,
-									FdoString* exceptionFormat)
+									FdoString* version)
 {
 	VALIDATE_ARGUMENT (layerNames);
 	VALIDATE_ARGUMENT (styleNames);
@@ -90,7 +89,7 @@ FdoIoStream* FdoWmsDelegate::GetMap(FdoStringCollection* layerNames,
 	FdoDouble maxX = bbox->GetMaxX ();
 	FdoDouble maxY = bbox->GetMaxY ();
 
-	FdoPtr<FdoWmsGetMap> request = FdoWmsGetMap::Create (layerNames, styleNames, crs, imgFormat, height, width, minX, minY, maxX, maxY, version,exceptionFormat, bTransparent, backgroundColor, timeDimension, elevation);
+	FdoPtr<FdoWmsGetMap> request = FdoWmsGetMap::Create (layerNames, styleNames, crs, imgFormat, height, width, minX, minY, maxX, maxY, version, bTransparent, backgroundColor, timeDimension, elevation);
     FdoPtr<FdoOwsResponse> response = Invoke (request);
 	FdoPtr<FdoIoStream> stream = response->GetStream ();
 

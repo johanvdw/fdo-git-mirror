@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: multireadtest.cpp 17754 2009-10-04 20:48:03Z rouault $
+ * $Id: multireadtest.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Multithreading test application.
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: multireadtest.cpp 17754 2009-10-04 20:48:03Z rouault $");
+CPL_CVSID("$Id: multireadtest.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 static int nThreadCount = 4, nIterations = 1, bLockOnOpen = TRUE;
 static int nOpenIterations = 1;
@@ -151,8 +151,6 @@ int main( int argc, char ** argv )
     CSLDestroy( argv );
     
     GDALDestroyDriverManager();
-    
-    return 0;
 }
 
 

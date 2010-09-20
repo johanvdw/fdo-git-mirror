@@ -20,14 +20,11 @@
 #define snprintf _snprintf
 
 #define HAVE_GETCWD 1
-/* gmt_notunix.h from GMT project also redefines getcwd. See #3138 */
-#ifndef getcwd
 #define getcwd _getcwd
-#endif
 
 /* Define if you have the ANSI C header files.  */
 #ifndef STDC_HEADERS
-#  define STDC_HEADERS 1
+#  define STDC_HEADERS
 #endif
 
 /* Define to 1 if you have the <assert.h> header file. */
@@ -90,6 +87,9 @@
    machine */
 #define HAVE_IEEEFP 1
 
+/* What to use to force variables to be threadlocal */
+/* #define CPL_THREADLOCAL __declspec(thread)  */
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
@@ -106,11 +106,6 @@
 #else
 #  define VSI_STAT64 _stat64
 #  define VSI_STAT64_T __stat64
-#endif
-
-/* VC6 doesn't known intptr_t */
-#if (_MSC_VER <= 1200)
-    typedef int intptr_t;
 #endif
 
 #pragma warning(disable: 4786)

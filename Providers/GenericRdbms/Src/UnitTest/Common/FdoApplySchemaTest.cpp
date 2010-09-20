@@ -113,7 +113,7 @@ void FdoApplySchemaTest::TestSchema ()
 		printf( "Creating Error Schema ... \n" );
 		CreateErrorSchema( connection );
 
-        bool succeeded = false;
+		bool succeeded = false;
 
 		printf( "Bad Electric schema create (already exists) ... \n" );
 		try {
@@ -129,7 +129,7 @@ void FdoApplySchemaTest::TestSchema ()
 		if ( succeeded ) 
 			CPPUNIT_FAIL( "2nd Electric schema create was supposed to fail" );
 
-        printf( "Modifying Electric Schema ... \n" );
+		printf( "Modifying Electric Schema ... \n" );
    		ModElectricSchema( connection );
 
 		printf( "Redefining a geometry ... \n" );
@@ -137,14 +137,8 @@ void FdoApplySchemaTest::TestSchema ()
 
 		printf( "Creating Land Schema ... \n" );
 		CreateLandSchema( connection );
-        FdoPtr<FdoStringCollection> classNames = FdoStringCollection::Create();
-        classNames->Add( L"Person" );
-        classNames->Add( L"Parcel" );
-        classNames->Add( L"Zoning" );
-        classNames->Add( L"County" );
-		GetClassCapabilities( connection, L"Land", classNames );
 
-        printf( "Deleting Properties with data ... \n" );
+		printf( "Deleting Properties with data ... \n" );
 		DelPropertyError( connection );
 
         printf( "Writing 1st LogicalPhysical Schema ... \n" );
@@ -204,31 +198,26 @@ void FdoApplySchemaTest::TestSchema ()
         CreateLongStringSchema( connection );
 #endif
 
-        bool delayNLSSchema = DelayNLSSchema();
-
-        if ( !delayNLSSchema ) {
-            printf( "Testing non-ASCII7 element names ... \n" );
-            CreateNLSSchema( connection, staticConn );
-        }
+#ifndef RDBI_DEF_SSQL
+        printf( "Testing non-ASCII7 element names ... \n" );
+        CreateNLSSchema( connection, staticConn );
+#endif
         printf( "Writing 3rd LogicalPhysical Schema ... \n" );
         mgr = staticConn->CreateSchemaManager();
         lp = mgr->RefLogicalPhysicalSchemas();
         lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_test3.xml" ) );
 
-        if ( delayNLSSchema ) {
-            printf( "Testing non-ASCII7 element names ... \n" );
-            CreateNLSSchema( connection, staticConn );
-        }
+#ifdef RDBI_DEF_SSQL
+        printf( "Testing non-ASCII7 element names ... \n" );
+        CreateNLSSchema( connection, staticConn );
+#endif
 /*
 		printf( "Testing Join Tree retrieval ... \n" );
 		GetJoinTree( sm );
 */
 
 		printf( "Testing Class Capabilities ... \n" );
-        classNames->Clear();
-        classNames->Add( L"AcDbEntity" );
-        classNames->Add( L"AcXData" );
-		GetClassCapabilities( connection, L"Acad", classNames );
+		GetClassCapabilities( connection );
 
 		printf( "Testing Base Properties ... \n" );
 		CheckBaseProperties( connection );
@@ -313,6 +302,7 @@ void FdoApplySchemaTest::TestSchema ()
         if ( SchemaTestErrFile(11,true).GetLength() > 0 )
 		    UnitTestUtil::CheckOutput( SchemaTestErrFile(11,true), SchemaTestErrFile(11,false) );
 #endif
+
     }
 	catch ( FdoException* e ) 
 	{
@@ -363,28 +353,25 @@ void FdoApplySchemaTest::TestOverrides ()
     try {
         FdoSchemaManagerP mgr;
         const FdoSmLpSchemaCollection* lp = NULL;
-        FdoFeatureSchemaP  pSchema;
 
-        if ( SupportsCrossDatastoreDependencies() ) {
-            // Re-create foreign test datastore first to destroy
-            // any dependent views on the overrides database.
-		    printf( "Initializing Foreign Connection ... \n" );
-		    connection = UnitTestUtil::CreateConnection(
-			    true,
-			    true,
-                DB_NAME_FOREIGN_SUFFIX,
-                0,
-                NULL,
-                0,
-                false
-		    );
+        // Re-create foreign test datastore first to destroy
+        // any dependent views on the overrides database.
+		printf( "Initializing Foreign Connection ... \n" );
+		connection = UnitTestUtil::CreateConnection(
+			true,
+			true,
+            DB_NAME_FOREIGN_SUFFIX,
+            0,
+            NULL,
+            0,
+            false
+		);
 
-            UnitTestUtil::CloseConnection(
-			    connection,
-			    false,
-                DB_NAME_FOREIGN_SUFFIX
-		    );
-        }
+        UnitTestUtil::CloseConnection(
+			connection,
+			false,
+            DB_NAME_FOREIGN_SUFFIX
+		);
 
         // delete, re-create and open the datastore
 		printf( "Initializing Connection ... \n" );
@@ -482,11 +469,18 @@ void FdoApplySchemaTest::TestOverrides ()
         lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_overrides3.xml" ) );
 
         FdoSmLpQClassesP classes;
-        classes = lp->TableToClasses( ph->GetRealDbObjectName(L"ovclassa") );
+#ifdef RDBI_DEF_SSQL
+        classes = lp->TableToClasses( L"dbo.ovclassa" );
+#else
+        classes = lp->TableToClasses( L"ovclassa" );
+#endif
         CPPUNIT_ASSERT( classes->GetCount() == 1 );
         CPPUNIT_ASSERT( wcscmp(classes->RefClassDefinition(0)->GetName(), L"OvClassA") == 0 );
-
-        classes = lp->TableToClasses( ph->GetRealDbObjectName(L"ov_table_c") );
+#ifdef RDBI_DEF_SSQL
+        classes = lp->TableToClasses( L"dbo.ov_table_c" );
+#else
+        classes = lp->TableToClasses( L"ov_table_c" );
+#endif
 		CPPUNIT_ASSERT( classes->GetCount() == 5 );
         CPPUNIT_ASSERT( wcscmp(classes->RefClassDefinition(0)->GetName(), L"OvClassC") == 0 );
         CPPUNIT_ASSERT( wcscmp(classes->RefClassDefinition(2)->GetName(), L"OvClassE") == 0 );
@@ -512,129 +506,128 @@ void FdoApplySchemaTest::TestOverrides ()
 			CPPUNIT_ASSERT( wcscmp(geomProp->GetColumnNameSi2(), L"GEOMA_SI_2") == 0 );
 		}
 
-        if ( SupportsCrossDatastoreDependencies() ) {
 #ifdef RDBI_DEF_ORA
-		    // For the test it is necessary to execute the following grant:
-            //  grant select on "<db_prefix>_APPLY_OVERRIDE"."FNESTED_DA" to <db_prefix>_apply_foreign
-            // For this to work, it is necessary to connect to the data store "<db_prefix>_APPLY_OVERRIDE"
-            // directly and execute the statement. Afterwards the connection must be revoked to the 
-            // current FDO user again.
-            FdoPtr<FdoIConnection> directConnection = GetDirectConnection(connection);
-            directConnection->Open();
-		    UnitTestUtil::GrantDatastore( directConnection, mgr, L"select", UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX) );
-            directConnection->Close();
+		// For the test it is necessary to execute the following grant:
+        //  grant select on "<db_prefix>_APPLY_OVERRIDE"."FNESTED_DA" to <db_prefix>_apply_foreign
+        // For this to work, it is necessary to connect to the data store "<db_prefix>_APPLY_OVERRIDE"
+        // directly and execute the statement. Afterwards the connection must be revoked to the 
+        // current FDO user again.
+        FdoPtr<FdoIConnection> directConnection = GetDirectConnection(connection);
+        directConnection->Open();
+		UnitTestUtil::GrantDatastore( directConnection, mgr, L"select", UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX) );
+        directConnection->Close();
 #endif
 
-            owner = ph->GetOwner();
-            table = owner->CreateTable( ph->GetDcDbObjectName(L"Storage") );
-            column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
-		    table->AddPkeyCol(column->GetName());
-            column = table->CreateColumnChar( ph->GetDcColumnName(L"Storage"), true, 50 );
-            column = table->CreateColumnGeom( ph->GetDcColumnName(L"Floor"), (FdoSmPhScInfo*) NULL );
-            column = table->CreateColumnInt16( ph->GetDcColumnName(L"Extra"), !CanAddNotNullCol() );
+        owner = ph->GetOwner();
+        table = owner->CreateTable( ph->GetDcDbObjectName(L"Storage") );
+        column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
+		table->AddPkeyCol(column->GetName());
+        column = table->CreateColumnChar( ph->GetDcColumnName(L"Storage"), true, 50 );
+        column = table->CreateColumnGeom( ph->GetDcColumnName(L"Floor"), (FdoSmPhScInfo*) NULL );
+        column = table->CreateColumnInt16( ph->GetDcColumnName(L"Extra"), !CanAddNotNullCol() );
 
-            table = owner->CreateTable( ph->GetDcDbObjectName(L"oneforeign") );
-            column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
-            column = table->CreateColumnChar( ph->GetDcColumnName(L"Data"), true, 50 );
+        table = owner->CreateTable( ph->GetDcDbObjectName(L"oneforeign") );
+        column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
+        column = table->CreateColumnChar( ph->GetDcColumnName(L"Data"), true, 50 );
 
-            owner->Commit();
+        owner->Commit();
 
 #ifdef RDBI_DEF_SSQL
-            UnitTestUtil::Sql2Db( 
-                L"insert into storage values ( 1, 'a string', NULL, 2)",
-                connection
-            );
+        UnitTestUtil::Sql2Db( 
+            L"insert into storage values ( 1, 'a string', NULL, 2)",
+            connection
+        );
 #else
-            UnitTestUtil::Sql2Db( 
-                L"insert into storage values ( 1, 'a string', NULL, 2)",
-                connection
-            );
+        UnitTestUtil::Sql2Db( 
+            L"insert into storage values ( 1, 'a string', NULL, 2)",
+            connection
+        );
 #endif
 
 #ifdef RDBI_DEF_ORA
-            directConnection = GetDirectConnection(connection);
-            directConnection->Open();
+        directConnection = GetDirectConnection(connection);
+        directConnection->Open();
 
-            UnitTestUtil::Sql2Db( 
-                FdoStringP::Format( 
-                            L"grant select on %ls.storage to %ls",
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
-                        ),
-                        directConnection
-                    );
+        UnitTestUtil::Sql2Db( 
+            FdoStringP::Format( 
+                        L"grant select on %ls.storage to %ls",
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
+                    ),
+                    directConnection
+                );
 
-            UnitTestUtil::Sql2Db( 
-                FdoStringP::Format( 
-                            L"grant select on %ls.oneforeign to %ls",
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
-                        ),
-                        directConnection
-                    );
-            directConnection->Close();
+        UnitTestUtil::Sql2Db( 
+            FdoStringP::Format( 
+                        L"grant select on %ls.oneforeign to %ls",
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
+                    ),
+                    directConnection
+                );
+        directConnection->Close();
 #endif
 
-            table = owner->CreateTable( ph->GetDcDbObjectName(L"Storage_Floor") );
-            column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
-            column = table->CreateColumnInt64( ph->GetDcColumnName(L"Storage_ID"), false );
-            column = table->CreateColumnChar( ph->GetDcColumnName(L"Storage"), true, 50 );
-            table->Commit();
+        table = owner->CreateTable( ph->GetDcDbObjectName(L"Storage_Floor") );
+        column = table->CreateColumnInt64( ph->GetDcColumnName(L"ID"), false );
+        column = table->CreateColumnInt64( ph->GetDcColumnName(L"Storage_ID"), false );
+        column = table->CreateColumnChar( ph->GetDcColumnName(L"Storage"), true, 50 );
+        table->Commit();
 
 #ifdef RDBI_DEF_ORA
-            directConnection = GetDirectConnection(connection);
-            directConnection->Open();
+        directConnection = GetDirectConnection(connection);
+        directConnection->Open();
 
-            UnitTestUtil::Sql2Db( 
-                FdoStringP::Format( 
-                            L"grant select on %ls.storage_floor to %ls",
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
-                ),
-                directConnection
-            );
-            directConnection->Close();
+        UnitTestUtil::Sql2Db( 
+            FdoStringP::Format( 
+                        L"grant select on %ls.storage_floor to %ls",
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
+            ),
+            directConnection
+        );
+        directConnection->Close();
 #endif
 
-            table = owner->CreateTable( ph->GetDcDbObjectName(L"NOFEATID") );
-            column = table->CreateColumnChar( ph->GetDcColumnName(L"ID"), false, 20 );
-		    table->AddPkeyCol(column->GetName());
-            column = table->CreateColumnChar( ph->GetDcColumnName(L"DATA"), true, 50 );
-            column = table->CreateColumnGeom( ph->GetDcColumnName(L"GEOMETRY"), (FdoSmPhScInfo*) NULL );
-		    if (CreateGeometrySICol())
-		    {
-			    column = table->CreateColumnChar( L"GEOMETRY_SI_1", true, 255 );
-			    column = table->CreateColumnChar( L"GEOMETRY_SI_2", true, 255 );
-		    }
+        table = owner->CreateTable( ph->GetDcDbObjectName(L"NOFEATID") );
+        column = table->CreateColumnChar( ph->GetDcColumnName(L"ID"), false, 20 );
+		table->AddPkeyCol(column->GetName());
+        column = table->CreateColumnChar( ph->GetDcColumnName(L"DATA"), true, 50 );
+        column = table->CreateColumnGeom( ph->GetDcColumnName(L"GEOMETRY"), (FdoSmPhScInfo*) NULL );
+		if (CreateGeometrySICol())
+		{
+			column = table->CreateColumnChar( L"GEOMETRY_SI_1", true, 255 );
+			column = table->CreateColumnChar( L"GEOMETRY_SI_2", true, 255 );
+		}
 
-            table->Commit();
+        table->Commit();
 
 #ifdef RDBI_DEF_ORA
-            directConnection = GetDirectConnection(connection);
-            directConnection->Open();
+        directConnection = GetDirectConnection(connection);
+        directConnection->Open();
 
-            UnitTestUtil::Sql2Db( 
-                FdoStringP::Format( 
-                            L"grant select, insert, update, delete on %ls.nofeatid to %ls",
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
-                            (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
-                ),
-                directConnection
-            );
-            directConnection->Close();
+        UnitTestUtil::Sql2Db( 
+            FdoStringP::Format( 
+                        L"grant select, insert, update, delete on %ls.nofeatid to %ls",
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX),
+                        (FdoString*) UnitTestUtil::GetEnviron("datastore", DB_NAME_FOREIGN_SUFFIX)
+            ),
+            directConnection
+        );
+        directConnection->Close();
 #endif
 
-            // Grab schemas and overrides to apply to foreign datastore
+        // Grab schemas and overrides to apply to foreign datastore
 
-            FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
-	        pDescCmd->SetSchemaName( L"OverridesA" );
-	        FdoFeatureSchemasP pSchemas = pDescCmd->Execute();
-	        pSchema = pSchemas->GetItem( L"OverridesA" );
+        FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
+	    pDescCmd->SetSchemaName( L"OverridesA" );
+	    FdoFeatureSchemasP pSchemas = pDescCmd->Execute();
+	    FdoFeatureSchemaP  pSchema = pSchemas->GetItem( L"OverridesA" );
 
-      	    pDescMappingCmd = (FdoIDescribeSchemaMapping*) connection->CreateCommand(FdoCommandType_DescribeSchemaMapping);
-            pDescMappingCmd->SetIncludeDefaults(true);
-            mappings = pDescMappingCmd->Execute();
-        }
+      	pDescMappingCmd = (FdoIDescribeSchemaMapping*) connection->CreateCommand(FdoCommandType_DescribeSchemaMapping);
+        pDescMappingCmd->SetIncludeDefaults(true);
+        mappings = pDescMappingCmd->Execute();
+
         mgr = NULL;
         lp = NULL;
         ph = NULL;
@@ -673,127 +666,126 @@ void FdoApplySchemaTest::TestOverrides ()
         UnitTestUtil::CheckOutput( "apply_schema_overrides_out2_master.txt", UnitTestUtil::GetOutputFileName( L"apply_schema_overrides_out2.xml" ) );
 #endif
 
-        if ( SupportsCrossDatastoreDependencies() ) {
-            printf( "Opening Foreign Connection ... \n" );
-		    connection = UnitTestUtil::CreateConnection(
-			    false,
-			    false,
-                DB_NAME_FOREIGN_SUFFIX,
-                0,
-                NULL,
-                0,
-                false
-		    );
+        printf( "Opening Foreign Connection ... \n" );
+		connection = UnitTestUtil::CreateConnection(
+			false,
+			false,
+            DB_NAME_FOREIGN_SUFFIX,
+            0,
+            NULL,
+            0,
+            false
+		);
 
-            staticConn = UnitTestUtil::NewStaticConnection();
-            staticConn->connect();
-            staticConn->SetSchema( DB_NAME_FOREIGN_SUFFIX );
+        staticConn = UnitTestUtil::NewStaticConnection();
+        staticConn->connect();
+        staticConn->SetSchema( DB_NAME_FOREIGN_SUFFIX );
 
-            // Modify the schema mappings to create foreign schema
-		    printf( "Creating Foreign Schema ... \n" );
+        // Modify the schema mappings to create foreign schema
+		printf( "Creating Foreign Schema ... \n" );
 
-            ModOverrideSchemaForeign( pSchema );
-            // TODO: Can't yet handle properties whose columns are missing in the foreign table.
-            FdoClassesP fdoClasses = pSchema->GetClasses();
-            fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view1") );
-            fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view2") );
-            fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view_op") );
+        ModOverrideSchemaForeign( pSchema );
+        // TODO: Can't yet handle properties whose columns are missing in the foreign table.
+        FdoClassesP fdoClasses = pSchema->GetClasses();
+        fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view1") );
+        fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view2") );
+        fdoClasses->RemoveAt( fdoClasses->IndexOf(L"view_op") );
 
-            FdoRdbmsOvSchemaMappingP mapping = (FdoRdbmsOvPhysicalSchemaMapping*) mappings->GetItem( connection, pSchema->GetName());
-            SchemaOvSetOwner(mapping, UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX) );
+        FdoRdbmsOvSchemaMappingP mapping = (FdoRdbmsOvPhysicalSchemaMapping*) mappings->GetItem( connection, pSchema->GetName());
+        SchemaOvSetOwner(mapping, UnitTestUtil::GetEnviron("datastore", DB_NAME_OVERRIDE_SUFFIX) );
 
-            // Apply the foreign schema
-            FdoPtr<FdoIApplySchema>  pApplyCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
-            pApplyCmd->SetFeatureSchema( pSchema );
-            pApplyCmd->SetPhysicalMapping( mapping );
-            pApplyCmd->SetIgnoreStates(true);
-            pApplyCmd->Execute();
+        // Apply the foreign schema
+        FdoPtr<FdoIApplySchema>  pApplyCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
+        pApplyCmd->SetFeatureSchema( pSchema );
+        pApplyCmd->SetPhysicalMapping( mapping );
+        pApplyCmd->SetIgnoreStates(true);
+        pApplyCmd->Execute();
 
-            CreateForeignBasedSchema( 
-                connection, 
-                pSchema, 
-                FdoRdbmsOvSchemaMappingP(CreateForeignBasedOverrides(connection))
-            );
+        CreateForeignBasedSchema( 
+            connection, 
+            pSchema, 
+            FdoRdbmsOvSchemaMappingP(CreateForeignBasedOverrides(connection))
+        );
 
-            printf( "Writing 1st LogicalPhysical Schema ... \n" );
-            mgr = staticConn->CreateSchemaManager();
-            lp = mgr->RefLogicalPhysicalSchemas();
-            lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign1.xml" ) );
-            ph = mgr->GetPhysicalSchema();
+        printf( "Writing 1st LogicalPhysical Schema ... \n" );
+        mgr = staticConn->CreateSchemaManager();
+        lp = mgr->RefLogicalPhysicalSchemas();
+        lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign1.xml" ) );
+        ph = mgr->GetPhysicalSchema();
 
-            WriteXmlOverrides( 
-                connection, 
-                false, 
-                L"", 
-                UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out1.xml" ),
-                ph->GetDcOwnerName(DB_NAME_OVERRIDE_SUFFIX)
-            );
+        WriteXmlOverrides( 
+            connection, 
+            false, 
+            L"", 
+            UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out1.xml" ),
+            ph->GetDcOwnerName(DB_NAME_OVERRIDE_SUFFIX)
+        );
 
-            WriteXmlOverrides( 
-                connection, 
-                true, 
-                L"", 
-                UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out2.xml" ),
-                ph->GetDcOwnerName(DB_NAME_OVERRIDE_SUFFIX)
-            );
+        WriteXmlOverrides( 
+            connection, 
+            true, 
+            L"", 
+            UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out2.xml" ),
+            ph->GetDcOwnerName(DB_NAME_OVERRIDE_SUFFIX)
+        );
 
 
-            printf( "Modifying foreign schema ... \n" );
-            ModOverrideSchemaForeign2( connection, mapping );
+        printf( "Modifying foreign schema ... \n" );
+        ModOverrideSchemaForeign2( connection, mapping );
 
-		    printf( "Writing 2nd LogicalPhysical Schema ... \n" );
-            mgr = staticConn->CreateSchemaManager();
-            lp = mgr->RefLogicalPhysicalSchemas();
-            lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign2.xml" ) );
+		printf( "Writing 2nd LogicalPhysical Schema ... \n" );
+        mgr = staticConn->CreateSchemaManager();
+        lp = mgr->RefLogicalPhysicalSchemas();
+        lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign2.xml" ) );
 
-            printf( "Checking access to feature class non-numeric id ... \n" );
-            CheckNonNumericForeignClass( connection );
+        printf( "Checking access to feature class non-numeric id ... \n" );
+        CheckNonNumericForeignClass( connection );
 
-            printf( "Destroying foreign schemas ... \n" );
-      	    FdoPtr<FdoIDestroySchema>  pDestCmd = (FdoIDestroySchema*) connection->CreateCommand(FdoCommandType_DestroySchema);
-    	    pDestCmd->SetSchemaName( L"ForeignBased" );
-    	    pDestCmd->Execute();
-    	    pDestCmd->SetSchemaName( L"OverridesA" );
-    	    pDestCmd->Execute();
+        printf( "Destroying foreign schemas ... \n" );
+      	FdoPtr<FdoIDestroySchema>  pDestCmd = (FdoIDestroySchema*) connection->CreateCommand(FdoCommandType_DestroySchema);
+    	pDestCmd->SetSchemaName( L"ForeignBased" );
+    	pDestCmd->Execute();
+    	pDestCmd->SetSchemaName( L"OverridesA" );
+    	pDestCmd->Execute();
 
-		    printf( "Writing 3rd LogicalPhysical Schema ... \n" );
-            mgr = staticConn->CreateSchemaManager();
-            lp = mgr->RefLogicalPhysicalSchemas();
-            lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign3.xml" ) );
+		printf( "Writing 3rd LogicalPhysical Schema ... \n" );
+        mgr = staticConn->CreateSchemaManager();
+        lp = mgr->RefLogicalPhysicalSchemas();
+        lp->XMLSerialize( UnitTestUtil::GetOutputFileName( L"apply_schema_foreign3.xml" ) );
 
-            FdoStringP ovfMaster1 = LogicalPhysicalBend(L"apply_schema_foreign1_master.txt");
-            FdoStringP ovf1       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign1.xml" ) );
-            FdoStringP ovfMaster2 = LogicalPhysicalBend(L"apply_schema_foreign2_master.txt");
-            FdoStringP ovf2       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign2.xml" ) );
-            FdoStringP ovfMaster3 = LogicalPhysicalBend(L"apply_schema_foreign3_master.txt");
-            FdoStringP ovf3       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign3.xml" ) );
+        FdoStringP ovfMaster1 = LogicalPhysicalBend(L"apply_schema_foreign1_master.txt");
+        FdoStringP ovf1       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign1.xml" ) );
+        FdoStringP ovfMaster2 = LogicalPhysicalBend(L"apply_schema_foreign2_master.txt");
+        FdoStringP ovf2       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign2.xml" ) );
+        FdoStringP ovfMaster3 = LogicalPhysicalBend(L"apply_schema_foreign3_master.txt");
+        FdoStringP ovf3       = LogicalPhysicalFormat(UnitTestUtil::GetOutputFileName( L"apply_schema_foreign3.xml" ) );
 
 #ifndef RDBI_DEF_SSQL
-            UnitTestUtil::CheckOutput( (const char*)ovfMaster1, (const char*)ovf1 );
-            UnitTestUtil::CheckOutput( (const char*)ovfMaster2, (const char*)ovf2 );
+        UnitTestUtil::CheckOutput( (const char*)ovfMaster1, (const char*)ovf1 );
+        UnitTestUtil::CheckOutput( (const char*)ovfMaster2, (const char*)ovf2 );
 #endif
-            UnitTestUtil::CheckOutput( (const char*)ovfMaster3, (const char*)ovf3 );
+        UnitTestUtil::CheckOutput( (const char*)ovfMaster3, (const char*)ovf3 );
 
-            //TODO: handle master comparison for other providers
+        //TODO: handle master comparison for other providers
 #ifdef RDBI_DEF_ORA
-            UnitTestUtil::CheckOutput( "apply_schema_foreign_out1_master.txt", UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out1.xml" ) );
-	        UnitTestUtil::CheckOutput( "apply_schema_foreign_out2_master.txt", UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out2.xml" ) );
+        UnitTestUtil::CheckOutput( "apply_schema_foreign_out1_master.txt", UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out1.xml" ) );
+	    UnitTestUtil::CheckOutput( "apply_schema_foreign_out2_master.txt", UnitTestUtil::GetOutputFileName( L"apply_schema_foreign_out2.xml" ) );
 #endif
 
-            mgr = NULL;
-            lp = NULL;
-            ph = NULL;
-            staticConn->disconnect();
-            delete staticConn;
-            staticConn = NULL;
+        mgr = NULL;
+        lp = NULL;
+        ph = NULL;
+        staticConn->disconnect();
+        delete staticConn;
+        staticConn = NULL;
 
-            printf( "Closing Connection ... \n" );
-		    UnitTestUtil::CloseConnection(
-			    connection,
-			    false,
-                DB_NAME_FOREIGN_SUFFIX
-		    );
-        }
+        printf( "Closing Connection ... \n" );
+		UnitTestUtil::CloseConnection(
+			connection,
+			false,
+            DB_NAME_FOREIGN_SUFFIX
+		);
+
     }
 	catch ( FdoException* e ) 
 	{
@@ -1293,7 +1285,7 @@ static char* pRmvLpMetaSchema2 =
     </xsl:copy>\
 </xsl:template>\
 <xsl:template match=\"lp:table\">\
-    <xsl:if test=\"not(@name = 'F_CLASSDEFINITION') and not(@name = 'f_classdefinition') and not(@name = 'dbo.f_classdefinition') and not(@name = 'public.f_classdefinition')\">\
+    <xsl:if test=\"not(@name = 'F_CLASSDEFINITION') and not(@name = 'f_classdefinition') and not(@name = 'dbo.f_classdefinition')\">\
         <xsl:variable name=\"tableName\" select=\"@name\"/>\
         <xsl:copy>\
             <xsl:apply-templates select=\"@*\"/>\
@@ -1409,8 +1401,7 @@ void FdoApplySchemaTest::TestConfigDoc ()
             FdoStringP objName = rdr->GetString(L"", L"name");
 
             if ( (objName.Mid( 0, 2 ).ICompare(L"F_") == 0) ||
-                 (objName.Mid( 0, 6 ) == L"dbo.f_") ||
-                 (objName.Mid( 0, 9 ) == L"public.f_")
+                 (objName.Mid( 0, 6 ) == L"dbo.f_")
             ) {
                 FdoSmPhDbObjectP dbObject = owner->CacheDbObject(rdr); 
        
@@ -1859,8 +1850,6 @@ xmlns:sqs=\"http://www.autodesk.com/isd/fdo/SQLServerProvider\">\
 
 void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticConnection* staticConn )
 {
-    FdoStringP providerName = UnitTestUtil::GetEnviron("provider");
-
     FdoPtr<FdoIGetSpatialContexts> gscCmd = (FdoIGetSpatialContexts*) connection->CreateCommand( FdoCommandType_GetSpatialContexts );
     gscCmd->SetActiveOnly(false);
 
@@ -2030,14 +2019,9 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
     schemas->WriteXml(stream);
     stream->Reset();
 
-    FdoStringP masterFile = FdoStringP::Format( L"apply_no_meta_test1_%ls_master.xml", (FdoString*) providerName );
-    FdoStringP sortedMasterFile = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test1_master.xml" );
     FdoStringP resultsFile = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test1.xml" );
     FdoStringP masterFile2 = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test2_master.xml" );
     FdoStringP resultsFile2 = UnitTestUtil::GetOutputFileName( L"apply_no_meta_test2.xml" );
-
-    FdoIoFileStreamP masterStream = FdoIoFileStream::Create(masterFile, L"r");
-    UnitTestUtil::Config2SortedFile(masterStream, sortedMasterFile );
 
     UnitTestUtil::Config2SortedFile(stream, resultsFile );
 
@@ -2052,7 +2036,7 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
         stream = FdoIoMemoryStream::Create();
 
         FdoXslTransformerP tfmr = FdoXslTransformer::Create(
-            FdoXmlReaderP( FdoXmlReader::Create(masterFile) ),
+            FdoXmlReaderP( FdoXmlReader::Create(L"apply_no_meta_test1_master.xml") ),
             FdoXmlReaderP( FdoXmlReader::Create(stylesheetStream) ),
             FdoXmlWriterP( FdoXmlWriter::Create(stream, false) )
         );
@@ -2071,7 +2055,7 @@ void FdoApplySchemaTest::ApplyNoMetaSuccess( FdoIConnection* connection, StaticC
         UnitTestUtil::Config2SortedFile(stream, resultsFile2 );
     }
 
-    UnitTestUtil::CheckOutput( sortedMasterFile,(const char*) resultsFile );
+    UnitTestUtil::CheckOutput( "apply_no_meta_test1_master.xml",(const char*) resultsFile );
 
     if ( CanCreateSchemaWithoutMetaSchema() )
         UnitTestUtil::CheckOutput( (const char*) masterFile2,(const char*) resultsFile2 );
@@ -2786,24 +2770,10 @@ void FdoApplySchemaTest::CreateLandSchema( FdoIConnection* connection, bool hasM
     InsertObject(connection, false, pSchema->GetName(), L"Driveway", L"Pav'd", L"1", NULL );
 
     if ( hasMetaSchema ) {
-#ifdef RDBI_DEF_ORA
-        UnitTestUtil::Sql2Db( 
-            FdoStringP::Format(
-                L"insert into parcel_person ( %ls, %ls, parcel_province, parcel_pin ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )",
-                (FdoString*) GetParcelFirstName(),
-                (FdoString*) GetParcelLastName()
-            ),
-            connection 
-        );
+#ifdef RDBI_DEF_SSQL
+        UnitTestUtil::Sql2Db( L"insert into \"parcel_person\" ( \"first name\", \"last name\", \"parcel_province\", \"parcel_pin\" ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )", connection );
 #else
-        UnitTestUtil::Sql2Db( 
-            FdoStringP::Format(
-                L"insert into \"parcel_person\" ( \"%ls\", \"%ls\", \"parcel_province\", \"parcel_pin\" ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )",
-                (FdoString*) GetParcelFirstName(),
-                (FdoString*) GetParcelLastName()
-            ),
-            connection 
-        );
+        UnitTestUtil::Sql2Db( L"insert into parcel_person ( first_name, last_name, parcel_province, parcel_pin ) values ( 'Fraser', 'Simon', 'Ontario', '1234-5678' )", connection );
 #endif
     }
 }
@@ -4301,7 +4271,6 @@ void FdoApplySchemaTest::ModDelSchemas( FdoIConnection* connection, bool hasMeta
 	FdoPtr<FdoIApplySchema>  pCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
 
 	FdoPtr<FdoFeatureSchema> pSchema;
-
     if ( hasMetaSchema || CanCreateSchemaWithoutMetaSchema() ) 
     	pSchema = pSchemas->GetItem( L"Electric'l" );
     else
@@ -4537,35 +4506,26 @@ void FdoApplySchemaTest::ReAddElements( FdoIConnection* connection, bool hasMeta
 	    FdoClassesP(pSchema->GetClasses())->Add( pStClass );
     }
 
-    FdoPtr<FdoGeometricPropertyDefinition> pGeomProp;
-    FdoClassDefinitionP classDef = FdoClassesP(pSchema->GetClasses())->GetItem( L"Transformer" );
-        
-    // PostgreSQL provider handles class inheritance when there is no metaschema.
-    // This means that deleting ElectricDevice.Geometry also removes Geometry from Transformer,
-    // meaning that it will turn into a non-feature class. Skip re-adding geometry in this 
-    // case since geometry can't be added to non-feature class.
-    if ( classDef->GetClassType() == FdoClassType_FeatureClass ) {
-        pClass = (FdoFeatureClass*) FDO_SAFE_ADDREF(classDef.p);
+	pClass = (FdoFeatureClass*) FdoClassesP(pSchema->GetClasses())->GetItem( L"Transformer" );
 
-        // Re-add deleted geometry
+	// Re-add deleted geometry
 
-        pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"location and shape" );
-        pGeomProp->SetGeometryTypes( FdoGeometricType_Surface );
-        // When MetaSchema, delete of ElectricDevice.Geometry causes delete of Transformer.Geometry.
-        // When no MetaSchema, inheritance not preserved so Transformer.Geometry not deleted and
-        // still exists at this point.
-        if ( hasMetaSchema && CanDropCol() ) {
-            FdoPropertiesP(pClass->GetProperties())->Add( pGeomProp );
-        }
-        else {
-            FdoClassDefinitionP baseClass = pClass->GetBaseClass();
-            if ( baseClass )
-                pGeomProp = (FdoGeometricPropertyDefinition*) FdoPropertiesP(baseClass->GetProperties())->FindItem(L"Geometry");
-            else
-                pGeomProp = (FdoGeometricPropertyDefinition*) FdoPropertiesP(pClass->GetProperties())->FindItem(L"Geometry");
-        }
-        pClass->SetGeometryProperty( pGeomProp );
+	FdoPtr<FdoGeometricPropertyDefinition> pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"location and shape" );
+	pGeomProp->SetGeometryTypes( FdoGeometricType_Surface );
+    // When MetaSchema, delete of ElectricDevice.Geometry causes delete of Transformer.Geometry.
+    // When no MetaSchema, inheritance not preserved so Transformer.Geometry not deleted and
+    // still exists at this point.
+    if ( hasMetaSchema && CanDropCol() ) {
+	    FdoPropertiesP(pClass->GetProperties())->Add( pGeomProp );
     }
+    else {
+        FdoClassDefinitionP baseClass = pClass->GetBaseClass();
+        if ( baseClass )
+            pGeomProp = (FdoGeometricPropertyDefinition*) FdoPropertiesP(baseClass->GetProperties())->FindItem(L"Geometry");
+        else
+            pGeomProp = (FdoGeometricPropertyDefinition*) FdoPropertiesP(pClass->GetProperties())->FindItem(L"Geometry");
+    }
+    pClass->SetGeometryProperty( pGeomProp );
 
     if ( hasMetaSchema ) {
         // Try geometry with similar name but different case (should get different column.
@@ -4583,7 +4543,7 @@ void FdoApplySchemaTest::ReAddElements( FdoIConnection* connection, bool hasMeta
 	    pProp = FdoDataPropertyDefinition::Create( L"Volume", L"" );
 	    pProp->SetDataType( FdoDataType_Int64 );
 	    pProp->SetNullable(true);
-	    FdoPropertiesP(classDef->GetProperties())->Add( pProp );
+	    FdoPropertiesP(pClass->GetProperties())->Add( pProp );
     }
 
     if ( hasMetaSchema ) {
@@ -5013,18 +4973,18 @@ void FdoApplySchemaTest::GetJoinTree( FdoRdbmsSchemaManager* sm )
 }
 #endif
 
-void FdoApplySchemaTest::GetClassCapabilities( FdoIConnection* connection, FdoString* schema, FdoStringCollection* classes)
+void FdoApplySchemaTest::GetClassCapabilities( FdoIConnection* connection )
 {
 	FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
-	pDescCmd->SetSchemaName( schema );
+	pDescCmd->SetSchemaName( L"Acad" );
 	FdoFeatureSchemasP pSchemas = pDescCmd->Execute();
-    FdoFeatureSchemaP pSchema = pSchemas->GetItem( schema );
+    FdoFeatureSchemaP pSchema = pSchemas->GetItem( L"Acad" );
 
-    for ( FdoInt32 i = 0; i < classes->GetCount(); ++i )
-    {
-        FdoClassDefinitionP pClass = FdoClassesP( pSchema->GetClasses() )->GetItem( classes->GetString(i) );
-        VldClassCapabilities( 0, 0, pClass );
-    }
+    FdoClassDefinitionP pClass = FdoClassesP( pSchema->GetClasses() )->GetItem( L"AcDbEntity" );
+    VldClassCapabilities( 0, 0, pClass );
+
+    pClass = FdoClassesP( pSchema->GetClasses() )->GetItem( L"AcXData" );
+    VldClassCapabilities( 0, 0, pClass );
 }
 
 void FdoApplySchemaTest::CheckBaseProperties( FdoIConnection* connection )
@@ -6808,18 +6768,6 @@ void FdoApplySchemaTest::VldClassCapabilities( int ltMode, int lckMode, FdoClass
 
     for ( i = 0; i < expLockCount; i++ )
         CPPUNIT_ASSERT( lockArray[i] );
-
-
-    FdoPtr<FdoPropertyDefinitionCollection> props = pClass->GetProperties();
-    for ( i = 0; i < props->GetCount(); i++ )
-    {
-        FdoPtr<FdoPropertyDefinition> prop = props->GetItem(i);
-        if (prop->GetPropertyType() == FdoPropertyType_GeometricProperty)
-        {
-            CPPUNIT_ASSERT( cc->GetPolygonVertexOrderRule(prop->GetName()) == FdoPolygonVertexOrderRule_CCW );
-            CPPUNIT_ASSERT( !cc->GetPolygonVertexOrderStrictness(prop->GetName()) );
-        }
-    }
 }
 
 void FdoApplySchemaTest::WriteXmlOverrides(
@@ -7105,12 +7053,8 @@ FdoStringP FdoApplySchemaTest::SchemaTestErrFile( int fileNum, bool isMaster )
 
 FdoStringP FdoApplySchemaTest::SchemaNoMetaErrFile( int fileNum, bool isMaster )
 {
-    FdoStringP providerName;
-    if ( (fileNum == 3) || (fileNum == 5) )
-        providerName = FdoStringP(L"_") + UnitTestUtil::GetEnviron("provider");
-
-    if (isMaster)
-		return FdoStringP::Format( L"apply_no_meta_err%d%ls%ls.txt", fileNum, (FdoString*) providerName, L"_master");
+	if (isMaster)
+		return FdoStringP::Format( L"apply_no_meta_err%d%ls.txt", fileNum, L"_master");
 	else
 		return UnitTestUtil::GetOutputFileName( FdoStringP::Format( L"apply_no_meta_err%d.txt", fileNum) );
 }
@@ -7227,7 +7171,7 @@ FdoFeatureSchemaP FdoApplySchemaTest::GetDefaultSchema( FdoIConnection* connecti
 
     CPPUNIT_ASSERT( schemas->GetCount() > 0 );
 
-    defSchema = schemas->FindItem(GetDefaultSchemaName());
+    defSchema = schemas->FindItem(L"dbo");
     if ( !defSchema ) 
         defSchema = schemas->GetItem(0);
 
@@ -7249,21 +7193,6 @@ bool FdoApplySchemaTest::CreateGeometrySICol()
 FdoStringP FdoApplySchemaTest::GetValueColumnName()
 {
 	return L"Value1";
-}
-
-FdoStringP FdoApplySchemaTest::GetParcelFirstName()
-{
-	return L"first name";
-}
-
-FdoStringP FdoApplySchemaTest::GetParcelLastName()
-{
-	return L"last name";
-}
-
-FdoStringP FdoApplySchemaTest::GetDefaultSchemaName()
-{
-	return L"";
 }
 
 FdoPtr<FdoIConnection> FdoApplySchemaTest::GetDirectConnection (FdoIConnection *currentConnection)

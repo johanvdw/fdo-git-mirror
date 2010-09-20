@@ -101,7 +101,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(Projectname).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -190,7 +190,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(Projectname).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -275,7 +275,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(Projectname).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -360,7 +360,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning $(Projectname).dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\$(ProjectName).dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -445,14 +445,6 @@
 				RelativePath=".\src\FdoOwsServiceMetadata.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\Src\FdoOwsServiceProvider.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\FdoOwsOperationsMetadata.cpp"
-				>
-			</File>		
 			<File
 				RelativePath=".\src\FdoOwsUrlResolver.cpp"
 				>
@@ -571,14 +563,6 @@
 				RelativePath=".\inc\Ows\FdoOwsServiceMetadata.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Inc\OWS\FdoOwsOperationsMetadata.h"
-				>
-			</File>			
-			<File
-				RelativePath=".\Inc\OWS\FdoOwsServiceProvider.h"
-				>
-			</File>	
 			<File
 				RelativePath=".\inc\Ows\FdoOwsXmlSaxContext.h"
 				>

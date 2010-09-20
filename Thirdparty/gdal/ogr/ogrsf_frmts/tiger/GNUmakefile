@@ -34,12 +34,10 @@ CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(CPPFLAGS)
 LIBS	:=	$(GDAL_LIB) $(LIBS)
 
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
-
-$(O_OBJ): ogr_tiger.h
+default:	$(O_OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-tigerinfo$(EXE):	tigerinfo.$(OBJ_EXT)
-	$(LD) $(LDFLAGS) tigerinfo.$(OBJ_EXT) $(CONFIG_LIBS) -o tigerinfo$(EXE)
+tigerinfo$(EXE):	tigerinfo.o
+	$(LD) $(LDFLAGS) tigerinfo.o $(CONFIG_LIBS) -o tigerinfo$(EXE)

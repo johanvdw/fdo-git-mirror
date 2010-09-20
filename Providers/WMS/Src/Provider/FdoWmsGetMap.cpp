@@ -21,8 +21,6 @@
 #include "FdoWmsXmlGlobals.h"
 #include <FdoCommonStringUtil.h>
 #include <OWS/FdoOwsGlobals.h>
-#include "FdoWmsReverseEpsgCodes.h"
-#include "FdoWmsGlobals.h"
 
 FdoWmsGetMap::FdoWmsGetMap () :   
 		FdoOwsRequest(FdoWmsXmlGlobals::WMSServiceName, FdoWmsXmlGlobals::WmsGetMapRequest), 
@@ -47,7 +45,6 @@ FdoWmsGetMap::FdoWmsGetMap (FdoStringCollection* layerNames,
 							FdoDouble maxx, 
 							FdoDouble maxy,
 							FdoString* version,
-							FdoString* exceptionFormat,
 							FdoBoolean bTransparent, 
 							FdoString* backgroundColor, 
 							FdoString* timeDimension, 
@@ -61,7 +58,6 @@ FdoWmsGetMap::FdoWmsGetMap (FdoStringCollection* layerNames,
         mMinY(miny), 
         mMaxX(maxx), 
         mMaxY(maxy),
-		mExceptionFormat(exceptionFormat),
 		mbTransparent(bTransparent),
 		mBackgroundColor(backgroundColor ? backgroundColor : L""),
 		mTimeDimension(timeDimension ? timeDimension : L""),
@@ -83,7 +79,6 @@ FdoWmsGetMap* FdoWmsGetMap::Create (FdoStringCollection* layerNames,
 									FdoDouble maxx, 
 									FdoDouble maxy,
 									FdoString* version,
-									FdoString* exceptionFormat,
 									FdoBoolean bTransparent, 
 									FdoString* backgroundColor, 
 									FdoString* timeDimension, 
@@ -94,7 +89,7 @@ FdoWmsGetMap* FdoWmsGetMap::Create (FdoStringCollection* layerNames,
                                                                L"FdoWmsGetMap",
                                                                L"layerNames"));
 
-	return new FdoWmsGetMap (layerNames, styleNames, srsName, imgFormat, height, width, minx, miny, maxx, maxy, version, exceptionFormat,bTransparent, backgroundColor, timeDimension, elevation);
+	return new FdoWmsGetMap (layerNames, styleNames, srsName, imgFormat, height, width, minx, miny, maxx, maxy, version, bTransparent, backgroundColor, timeDimension, elevation);
 }
 
 FdoWmsGetMap::~FdoWmsGetMap ()
@@ -106,11 +101,12 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 	// For common request, version and service
     FdoStringP ret = FdoOwsRequest::EncodeKVP();
 
+    // Some WMS servers do not correctly default to
+    // using the xml service exception report.
     ret += FdoOwsGlobals::And;
     ret += FdoWmsXmlGlobals::EXCEPTIONS;
     ret += FdoOwsGlobals::Equal;
-	if (mExceptionFormat.GetLength())
-		ret += mExceptionFormat;
+    ret += FdoWmsXmlGlobals::ExceptionType;
 
 	// Add "LAYERS" parameters in the request	
 	ret += FdoOwsGlobals::And;
@@ -163,6 +159,19 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 	ret += FdoOwsGlobals::Equal;
 	ret += mSrsName; // Don't escape, even though there is a ":", ErMapper services don't like this
 
+	// Here the commented is another approach which first checkes the WMS version, then
+	// selects "CRS" or "SRS" according to the version to construct the request. 
+	// Unfortunately it fails when testing some non-strict servers.
+
+	// Add "CRS" or "SRS" parameter in the request	
+	//ret += FdoOwsGlobals::And;
+	//if (FdoCommonStringUtil::StringCompare(FdoOwsRequest::GetVersion (), L"1.3.0") >= 0)
+	//	ret += FdoWmsXmlGlobals::WmsRequestCRS;
+	//else
+	//	ret += FdoWmsXmlGlobals::WmsRequestSRS;
+	//ret += FdoOwsGlobals::Equal;
+	//ret += mSrsName;
+
 	// Add "FORMAT" in the request
 	ret += FdoOwsGlobals::And;
 	ret += FdoWmsXmlGlobals::WmsRequestFormat;
@@ -176,41 +185,13 @@ FdoStringP FdoWmsGetMap::EncodeKVP()
 		ret += FdoOwsGlobals::And;
 		ret += FdoWmsXmlGlobals::WmsRequestBBOX;
 		ret += FdoOwsGlobals::Equal;
-
-		// handle the reverse at the last minute before sending request
-		FdoBoolean reverse;
-
-		if (wcscmp(FdoWmsGlobals::WmsVersion100,m_version) == 0 ||
-			wcscmp(FdoWmsGlobals::WmsVersion110,m_version) == 0 ||
-			wcscmp(FdoWmsGlobals::WmsVersion111,m_version) == 0)
-			reverse = false; 
-		else
-		{
-			// check reverse only when current version is 1.3.0 or later and cs is EPSG format
-			if (mSrsName.Contains(FdoWmsGlobals::ESPGPrefix))
-				reverse = _reverseCheck(mSrsName);
-		}
-
-		if (reverse)
-		{
-			ret += FdoStringP::Format(L"%lf", mMinY);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMinX);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMaxY);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMaxX);
-		}
-		else
-		{
-			ret += FdoStringP::Format(L"%lf", mMinX);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMinY);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMaxX);
-			ret += FdoWmsXmlGlobals::WmsRequestComma;
-			ret += FdoStringP::Format(L"%lf", mMaxY);
-		}
+		ret += FdoStringP::Format(L"%lf", mMinX);
+		ret += FdoWmsXmlGlobals::WmsRequestComma;
+		ret += FdoStringP::Format(L"%lf", mMinY);
+		ret += FdoWmsXmlGlobals::WmsRequestComma;
+		ret += FdoStringP::Format(L"%lf", mMaxX);
+		ret += FdoWmsXmlGlobals::WmsRequestComma;
+		ret += FdoStringP::Format(L"%lf", mMaxY);
 	}
 
 	// Add the "HEIGHT" and "WIDTH" parameters
@@ -278,4 +259,3 @@ FdoStringP FdoWmsGetMap::EncodeXml()
 	// TODO: shall we support this?
 	return L"";
 }
-

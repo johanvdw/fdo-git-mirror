@@ -513,11 +513,7 @@ void ReaderTest::TestExceptionalCase()
         select1->SetFeatureClassName(L"SHP_Schema:bayarea_cities");
 
         FdoPtr<FdoIdentifierCollection> props = select1->GetPropertyNames();
-        FdoPtr<FdoIdentifier> propIfd = FdoIdentifier::Create(L"CITY");
-        props->Add(propIfd);
-
-        FdoPtr<FdoIdentifierCollection> gprops = select1->GetGrouping();
-        gprops->Add(propIfd);
+        props->Add(FdoIdentifier::Create(L"CITY"));
 
         FdoPtr<FdoFilter> groupingFilter = FdoFilter::Parse(L"CITY='ALAMEDA'");
         select1->SetGroupingFilter(groupingFilter);
@@ -534,7 +530,6 @@ void ReaderTest::TestExceptionalCase()
         catch (FdoCommandException* exp)
         {
             FdoStringP expErr = exp->GetExceptionMessage();
-            exp->Release();
             CPPUNIT_ASSERT(expErr.Contains(L"Property index '100' is out of bounds."));
         }
 
@@ -546,7 +541,6 @@ void ReaderTest::TestExceptionalCase()
         //catch (FdoCommandException* exp)
         //{
         //    FdoStringP expErr = exp->GetExceptionMessage();
-        //    exp->Release();
         //    CPPUNIT_ASSERT(expErr.Contains(L"Fetching a property value did not match the property type."));
         //}
 
@@ -557,7 +551,6 @@ void ReaderTest::TestExceptionalCase()
         catch (FdoCommandException* exp)
         {
             FdoStringP expErr = exp->GetExceptionMessage();
-            exp->Release();
             CPPUNIT_ASSERT(expErr.Contains(L"The property 'missing_id' was not found."));
         }
 
@@ -584,7 +577,6 @@ void ReaderTest::TestExceptionalCase()
         catch (FdoCommandException* exp)
         {
             FdoStringP expErr = exp->GetExceptionMessage();
-            exp->Release();
             CPPUNIT_ASSERT(expErr.Contains(L"Property index '100' is out of bounds."));
         }
 
@@ -596,7 +588,6 @@ void ReaderTest::TestExceptionalCase()
         //catch (FdoCommandException* exp)
         //{
         //    FdoStringP expErr = exp->GetExceptionMessage();
-        //    exp->Release();
         //    CPPUNIT_ASSERT(expErr.Contains(L"Fetching a property value did not match the property type."));
         //}
 
@@ -607,7 +598,6 @@ void ReaderTest::TestExceptionalCase()
         catch (FdoCommandException* exp)
         {
             FdoStringP expErr = exp->GetExceptionMessage();
-            exp->Release();
             CPPUNIT_ASSERT(expErr.Contains(L"The property 'missing_id' was not found."));
         }
 
@@ -628,7 +618,6 @@ void ReaderTest::TestExceptionalCase()
         catch (FdoCommandException* exp)
         {
             FdoStringP expErr = exp->GetExceptionMessage();
-            exp->Release();
             CPPUNIT_ASSERT(expErr.Contains(L"Property index '100' is out of bounds."));
         }
 
@@ -640,7 +629,6 @@ void ReaderTest::TestExceptionalCase()
         //catch (FdoCommandException* exp)
         //{
         //    FdoStringP expErr = exp->GetExceptionMessage();
-        //    exp->Release();
         //    CPPUNIT_ASSERT(expErr.Contains(L"Fetching a property value did not match the property type."));
         //}
 
@@ -725,7 +713,6 @@ void ReaderTest::CompareFeatureReader(FdoIFeatureReader* reader)
     catch (FdoCommandException* exp)
     {
         FdoStringP expErr = exp->GetExceptionMessage();
-        exp->Release();
         CPPUNIT_ASSERT(false);
     }
 }
@@ -793,7 +780,6 @@ void ReaderTest::CompareDataReader(FdoIDataReader* reader)
     catch (FdoException* exp)
     {
         FdoStringP expErr = exp->GetExceptionMessage();
-        exp->Release();
         CPPUNIT_ASSERT(false);
     }
 }

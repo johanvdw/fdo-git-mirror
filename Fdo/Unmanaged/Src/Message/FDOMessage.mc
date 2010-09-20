@@ -939,22 +939,22 @@ String does not represent a valid value expression.
 MessageId=2021
 SymbolicName=EXPRESSION_21_VALUETRUNCATED
 Language=English
-Cannot convert value %1$ls to %2$ls; it is outside the range [%3$s, %4$s]
+Cannot convert value %1$s to %2$ls; it is outside the range [%3$s, %4$s]
 .
 MessageId=2022
 SymbolicName=EXPRESSION_22_INCOMPATIBLEDATATYPES
 Language=English
-Cannot convert value %1$ls from %2$ls to %3$ls; incompatible data types
+Cannot convert value %1$s from %2$ls to %3$ls; incompatible data types
 .
 MessageId=2023
 SymbolicName=EXPRESSION_23_VALUESHIFTED
 Language=English
-Cannot convert value %1$ls to %2$ls without loss of precision
+Cannot convert value %1$s to %2$ls without loss of precision
 .
 MessageId=2024
 SymbolicName=EXPRESSION_24_BOOLEANTRUNCATED
 Language=English
-Cannot convert value %1$ls to boolean; it must be 0 or 1
+Cannot convert value %1$s to boolean; it must be 0 or 1
 .
 
 MessageId=3001
@@ -1210,7 +1210,7 @@ NULL Pointer
 MessageId=7004
 SymbolicName=CLNT_4_PROVIDERNOTREGISTERED
 Language=English
-FDO Provider '%1$ls' Not Registered
+FDO Provider Not Registered
 .
 MessageId=7005
 SymbolicName=CLNT_5_OUTOFMEMORY
@@ -1230,7 +1230,7 @@ Action Failed
 MessageId=7008
 SymbolicName=CLNT_8_UNABLE_TO_LOAD_LIBRARY
 Language=English
-Unable to load the FDO Provider library '%1$ls': %2$s
+Unable to load the FDO Provider: %1$s
 .
 MessageId=7009
 SymbolicName=CLNT_9_INVALID_PROVIDER_ENTRY_POINT
@@ -3099,19 +3099,4 @@ MessageId=9189
 SymbolicName=FDO_185_READ_FILE_ERROR
 Language=English
 Error occured reading file '%1$ls'.
-.
-MessageId=9190
-SymbolicName=FDO_JOIN_INCOMPLETE_DEFINITION
-Language=English
-Join definition '%1$ls' is incomplete .
-.
-MessageId=9191
-SymbolicName=FDO_JOIN_CANNOTHAVE_FILTER
-Language=English
-Cross join '%1$ls' cannot have a filter defined.
-.
-MessageId=9192
-SymbolicName=FDO_JOIN_MUSTHAVE_FILTER
-Language=English
-Join '%1$ls' must have a filter defined.
 .

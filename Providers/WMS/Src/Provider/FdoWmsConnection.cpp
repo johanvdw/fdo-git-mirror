@@ -272,7 +272,7 @@ FdoStringCollection* FdoWmsConnection::GetSupportedStyles(FdoString* featureClas
         {
             throw FdoException::Create (NlsMsgGet(FDOWMS_12001_LAYER_NOT_EXIST, 
             "The WMS layer '%1$ls' does not exist.", 
-            layerName != L"" ? ((FdoString *) layerName) : featureClass));
+            (FdoString *) layerName));
         }
         _processLayerStyles(currentLayer, styleNames);
      
@@ -428,12 +428,8 @@ FdoConnectionState FdoWmsConnection::Open ()
     }
     FdoPtr<FdoWmsServiceMetadata> metadata = this->GetWmsServiceMetadata ();
     FdoPtr<FdoWmsCapabilities> capa = static_cast<FdoWmsCapabilities *> (metadata->GetCapabilities ());
-
     if (capa)
-	{
-		capa->AdjustBBoxOrder(metadata->GetVersion());
         capa->FillUpGeographicDataLayers();
-	}
     if (mConfigured)
     {
         // Some layer names may contain ":" or "." characters which are not allowed
@@ -901,80 +897,83 @@ FdoStringP _generateValidFdoClassName(FdoStringP& layerName)
 // helper function to create a feature class from a WMS layer and add the class into the collection
 void FdoWmsConnection::_addFeatureClass (FdoClassCollection* featClasses, FdoWmsLayer* layer, FdoClassDefinition* parent)
 {
-	FdoBoolean bAbstract = false;
+    FdoBoolean bAbstract = false;
 
-	// If the layer name is empty this means the WMS layer is abstract and cannot be
-	// queried from. Use the layer Title and the class name
-	FdoStringP layerName = layer->GetName ();
-	if (layerName.GetLength() == 0) {
-		bAbstract = true;
-		layerName = layer->GetTitle ();
-	}
+    // If the layer name is empty this means the WMS layer is abstract and cannot be
+    // queried from. Use the layer Title and the class name
+    FdoStringP layerName = layer->GetName ();
+    if (layerName.GetLength() == 0) {
+        bAbstract = true;
+        layerName = layer->GetTitle ();
+    }
 
-	// Generate a valid FDO class name from a WMS layer name
-	FdoStringP modLayerName = _generateValidFdoClassName(layerName);
+    // Generate a valid FDO class name from a WMS layer name
+    FdoStringP modLayerName = _generateValidFdoClassName(layerName);
+    
+    // If the layer name is valid, we can try and add the layer
+    FdoPtr<FdoClassDefinition> featureClassDef;
+    if (layerName.GetLength() != 0) 
+    {
+        // If the FDO Feature class exists, we cannot add it
+        FdoPtr<FdoClassDefinition> classDef = featClasses->FindItem (modLayerName);
+        if (NULL == classDef)
+        {
+            // Map the modified FDO class name to the WMS layer name so that the layer name can be used 
+            // in the FdoISelect command to return 
+            FdoDictionaryElementP dictElement = FdoDictionaryElement::Create(modLayerName, layerName);
+            mLayerMappings->Add(dictElement);
 
-	// If the layer name is valid, we can try and add the layer
-	FdoPtr<FdoClassDefinition> featureClassDef;
-	// If the FDO Feature class exists, we cannot add it
-	FdoPtr<FdoClassDefinition> classDef = featClasses->FindItem (modLayerName);
-	if (NULL == classDef)
-	{
-		// Map the modified FDO class name to the WMS layer name so that the layer name can be used 
-		// in the FdoISelect command to return 
-		FdoDictionaryElementP dictElement = FdoDictionaryElement::Create(modLayerName, layerName);
-		mLayerMappings->Add(dictElement);
+            // Create the FDO Feature class and set it's properties
+            FdoPtr<FdoFeatureClass> featClass = FdoFeatureClass::Create ();        
 
-		// Create the FDO Feature class and set it's properties
-		FdoPtr<FdoFeatureClass> featClass = FdoFeatureClass::Create ();        
+            // Set the unique layer name
+            featClass->SetName (modLayerName);
 
-		// Set the unique layer name
-		featClass->SetName (modLayerName);
+            // Set the layer description
+            FdoString* title = layer->GetTitle ();
+            if (FdoCommonStringUtil::StringCompare(title, L"") != 0) {
+                featClass->SetDescription (title);
+            }
+            else {
+                featClass->SetDescription (layer->GetAbstract ());
+            }
 
-		// Set the layer description
-		FdoString* title = layer->GetTitle ();
-		if (FdoCommonStringUtil::StringCompare(title, L"") != 0) {
-			featClass->SetDescription (title);
-		}
-		else {
-			featClass->SetDescription (layer->GetAbstract ());
-		}
+            // Flag the class as Abstract
+            if (bAbstract)
+            {
+                featClass->SetIsAbstract (true);
+            }
 
-		// Flag the class as Abstract
-		if (bAbstract)
-		{
-			featClass->SetIsAbstract (true);
-		}
+            // Used the parent FdoClassDefinition passed to this method as the parent class
+            featClass->SetBaseClass (parent);
 
-		// Used the parent FdoClassDefinition passed to this method as the parent class
-		featClass->SetBaseClass (parent);
+            // If this is a top level class, add the FeatId and Raster properties to the class definition
+            if (parent == NULL)
+            {
+                _setProperties (featClass);
+            }
+            else
+            {
+                _setBaseProperties (featClass, parent);
+            }
 
-		// If this is a top level class, add the FeatId and Raster properties to the class definition
-		if (parent == NULL)
-		{
-			_setProperties (featClass);
-		}
-		else
-		{
-			_setBaseProperties (featClass, parent);
-		}
+            // Create ans set the Feature classes capabilities
+            FdoClassCapabilitiesP classCapabilities = FdoClassCapabilities::Create(*featClass.p);
+            classCapabilities->SetSupportsLocking(false);
+            classCapabilities->SetSupportsLongTransactions(false);
+            classCapabilities->SetSupportsWrite(false);
+            featClass->SetCapabilities(classCapabilities);
 
-		// Create ans set the Feature classes capabilities
-		FdoClassCapabilitiesP classCapabilities = FdoClassCapabilities::Create(*featClass.p);
-		classCapabilities->SetSupportsLocking(false);
-		classCapabilities->SetSupportsLongTransactions(false);
-		classCapabilities->SetSupportsWrite(false);
-		featClass->SetCapabilities(classCapabilities);
+            // Associate the spatial context with the feature class' raster property
+            _setDefaultSpatialContextAssociation (featClass);
+            
+            // Add the newly defined feature class to the schema
+            featClasses->Add (featClass);
 
-		// Associate the spatial context with the feature class' raster property
-		_setDefaultSpatialContextAssociation (featClass);
-
-		// Add the newly defined feature class to the schema
-		featClasses->Add (featClass);
-
-		// Set the outer class definition object
-		featureClassDef = FDO_SAFE_ADDREF(featClass.p);
-	}
+            // Set the outer class definition object
+            featureClassDef = FDO_SAFE_ADDREF(featClass.p);
+        }
+    }
 
     // Recursively iterate through the child layers, adding feature classes for each child layer
     FdoWmsLayerCollectionP childLayers = layer->GetLayers ();

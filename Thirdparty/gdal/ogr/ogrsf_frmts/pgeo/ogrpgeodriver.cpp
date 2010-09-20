@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeodriver.cpp 18168 2009-12-03 23:56:59Z warmerdam $
+ * $Id: ogrpgeodriver.cpp 15783 2008-11-21 22:08:00Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -30,7 +30,7 @@
 #include "ogr_pgeo.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgeodriver.cpp 18168 2009-12-03 23:56:59Z warmerdam $");
+CPL_CVSID("$Id: ogrpgeodriver.cpp 15783 2008-11-21 22:08:00Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -80,11 +80,12 @@ OGRDataSource *OGRPGeoDriver::Open( const char * pszFilename,
     //
     if ( !InstallMdbDriver() )
     {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-                  "Unable to install MDB driver for ODBC, MDB access may not supported.\n" );
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Unable to install MDB driver for ODBC!\n" );
+        return NULL;
     }
-    else
-        CPLDebug( "PGeo", "MDB Tools driver installed successfully!");
+
+    CPLDebug( "PGeo", "MDB Tools driver installed successfully!");
 
 #endif /* ndef WIN32 */
 

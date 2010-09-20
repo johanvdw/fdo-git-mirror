@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcidskdataset.cpp 18241 2009-12-10 15:58:39Z warmerdam $
+ * $Id: pcidskdataset.cpp 12493 2007-10-22 14:08:09Z dron $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software
@@ -29,7 +29,7 @@
 
 #include "gdal_pcidsk.h"
 
-CPL_CVSID("$Id: pcidskdataset.cpp 18241 2009-12-10 15:58:39Z warmerdam $");
+CPL_CVSID("$Id: pcidskdataset.cpp 12493 2007-10-22 14:08:09Z dron $");
 
 CPL_C_START
 void    GDALRegister_PCIDSK(void);
@@ -46,7 +46,6 @@ PCIDSKDataset::PCIDSKDataset()
 {
     pszFilename = NULL;
     fp = NULL;
-    nFileSize = 0;
     nBands = 0;
     pszCreatTime = NULL;
     nGeoOffset = 0;
@@ -70,7 +69,6 @@ PCIDSKDataset::PCIDSKDataset()
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-    bGeoTransformValid = FALSE;
 
     nBandFileCount = 0;
     pafpBandFiles = NULL;
@@ -96,7 +94,14 @@ PCIDSKDataset::~PCIDSKDataset()
         CPLFree( pszCreatTime );
     if( nGCPCount > 0 )
     {
-        GDALDeinitGCPs( nGCPCount, pasGCPList );
+        for( i = 0; i < nGCPCount; i++ )
+        {
+            if ( pasGCPList[i].pszId )
+                CPLFree( pasGCPList[i].pszId );
+            if ( pasGCPList[i].pszInfo )
+                CPLFree( pasGCPList[i].pszInfo );
+        }
+
         CPLFree( pasGCPList );
     }
 
@@ -120,13 +125,9 @@ PCIDSKDataset::~PCIDSKDataset()
 
 CPLErr PCIDSKDataset::GetGeoTransform( double * padfTransform )
 {
-    if( !bGeoTransformValid )
-        return GDALPamDataset::GetGeoTransform( padfTransform );
-    else
-    {
-        memcpy( padfTransform, adfGeoTransform, sizeof(adfGeoTransform[0])*6 );
-        return CE_None;
-    }
+    memcpy( padfTransform, adfGeoTransform, sizeof(adfGeoTransform[0]) * 6 );
+
+    return CE_None;
 }
 
 /************************************************************************/
@@ -137,7 +138,6 @@ CPLErr PCIDSKDataset::SetGeoTransform( double * padfTransform )
 {
     memcpy( adfGeoTransform, padfTransform, sizeof(double) * 6 );
     bGeoSegmentDirty = TRUE;
-    bGeoTransformValid = TRUE;
 
     return CE_None;
 }
@@ -314,21 +314,7 @@ void PCIDSKDataset::WriteGeoSegment( )
     }
     else
     {
-        if( adfGeoTransform[0] == 0.0
-            && adfGeoTransform[1] == 1.0
-            && adfGeoTransform[2] == 0.0
-            && adfGeoTransform[3] == 0.0
-            && adfGeoTransform[4] == 0.0
-            && ABS(adfGeoTransform[5]) == 1.0 ) 
-        {
-            // no georeferencing at all.
-            CPLPrintStringFill( szTemp + 32, "PIXEL", 16 );
-        }
-        else
-        {
-            // georeferenced but not a known coordinate system.
-            CPLPrintStringFill( szTemp + 32, "METER", 16 );
-        }
+        CPLPrintStringFill( szTemp + 32, "PIXEL", 16 );
         CPLPrintInt32( szTemp + 48, 3, 8 );
         CPLPrintInt32( szTemp + 56, 3, 8 );
         CPLPrintStringFill( szTemp + 64, "METER", 16 );
@@ -424,9 +410,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
     char            szTemp[1024];
     char            *pszString;
 
-    VSIFSeekL( poDS->fp, 0, SEEK_END );
-    poDS->nFileSize = VSIFTellL( poDS->fp );
-
 /* -------------------------------------------------------------------- */
 /*      Read File Identification.                                       */
 /* -------------------------------------------------------------------- */
@@ -482,37 +465,15 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
         nSegBlocks = CPLScanLong( szTemp, 8 );
         poDS->nSegCount = ( nSegBlocks * 512 ) / 32;
 
-        if ( poDS->nSegCount < 0 ||
-             nSegPointersOffset + poDS->nSegCount * 32 >= poDS->nFileSize )
-        {
-            CPLDebug("PCIDSK", "nSegCount=%d", poDS->nSegCount);
-            delete poDS;
-            return NULL;
-        }
-
 /* -------------------------------------------------------------------- */
 /*      Allocate segment info structures.                               */
 /* -------------------------------------------------------------------- */
-        poDS->panSegType =
-            (int *) VSICalloc( sizeof(int), poDS->nSegCount );
-        poDS->papszSegName =
-            (char **) VSICalloc( sizeof(char*), poDS->nSegCount );
+        poDS->panSegType = (int *) CPLCalloc(sizeof(int),poDS->nSegCount );
+        poDS->papszSegName = (char **) CPLCalloc(sizeof(char*),poDS->nSegCount );
         poDS->panSegOffset = (vsi_l_offset *) 
-            VSICalloc( sizeof(vsi_l_offset), poDS->nSegCount );
+            CPLCalloc(sizeof(vsi_l_offset),poDS->nSegCount );
         poDS->panSegSize = (vsi_l_offset *) 
-            VSICalloc( sizeof(vsi_l_offset), poDS->nSegCount );
-        
-        if (poDS->panSegType == NULL ||
-            poDS->papszSegName == NULL ||
-            poDS->panSegOffset == NULL ||
-            poDS->panSegSize == NULL)
-        {
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                       "Not enough memory to hold segment description of %s",
-                      poOpenInfo->pszFilename );
-            delete poDS;
-            return NULL;
-        }
+            CPLCalloc(sizeof(vsi_l_offset),poDS->nSegCount );
 
 /* -------------------------------------------------------------------- */
 /*      Parse each segment pointer.                                     */
@@ -525,11 +486,7 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
             char szSegName[9];
             
             VSIFSeekL( poDS->fp, nSegPointersOffset + iSeg * 32, SEEK_SET );
-            if (VSIFReadL( szTemp, 1, 32, poDS->fp ) != 32)
-            {
-                delete poDS;
-                return NULL;
-            }
+            VSIFReadL( szTemp, 1, 32, poDS->fp );
             szTemp[32] = '\0';
             
             strncpy( szSegName, szTemp+4, 8 );
@@ -587,15 +544,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->nRasterXSize = CPLScanLong( szTemp + 384, 8 );
     poDS->nRasterYSize = CPLScanLong( szTemp + 392, 8 );
 
-    if  ( poDS->nRasterXSize <= 0 || poDS->nRasterYSize <= 0 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Invalid dimensions : %d x %d", 
-                  poDS->nRasterXSize, poDS->nRasterYSize );
-        delete poDS;
-        return NULL;
-    }
-
     nByteBands = CPLScanLong( szTemp + 464, 4 );
     nInt16Bands = CPLScanLong( szTemp + 468, 4 );
     nUInt16Bands = CPLScanLong( szTemp + 472, 4 );
@@ -643,11 +591,7 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
         FILE            *fp = poDS->fp;
 
         VSIFSeekL( poDS->fp, nImgHdrOffset, SEEK_SET );
-        if ( VSIFReadL( szTemp, 1, 1024, poDS->fp ) != 1024 )
-        {
-            delete poDS;
-            return NULL;
-        }
+        VSIFReadL( szTemp, 1, 1024, poDS->fp );
 
         pszString = CPLScanString( szTemp + 160, 8, TRUE, FALSE );
         eType = poDS->PCIDSKTypeToGDAL( pszString );
@@ -700,13 +644,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
               {
                   int nImage = atoi(pszFilename+5);
                   poBand = new PCIDSKTiledRasterBand( poDS, iBand+1, nImage );
-                  if ( poBand->GetXSize() == 0 )
-                  {
-                      CPLFree( pszFilename );
-                      delete poBand;
-                      delete poDS;
-                      return NULL;
-                  }
               }
 
               // Non-empty filename means we have data stored in
@@ -764,11 +701,25 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
 #endif
 
 #ifdef DEBUG
+#if defined(WIN32) && defined(_MSC_VER)
             CPLDebug( "PCIDSK",
-                      "Band %d: nImageOffset=" CPL_FRMT_GIB ", nPixelOffset=" CPL_FRMT_GIB ", "
-                      "nLineOffset=" CPL_FRMT_GIB ", nLineSize=" CPL_FRMT_GIB,
-                      iBand + 1, (GIntBig)nImageOffset, (GIntBig)nPixelOffset,
-                      (GIntBig)nLineOffset, (GIntBig)nLineSize );
+                      "Band %d: nImageOffset=%I64d, nPixelOffset=%I64d, "
+                      "nLineOffset=%I64d, nLineSize=%I64d",
+                      iBand + 1, nImageOffset, nPixelOffset,
+                      nLineOffset, nLineSize );
+#elif HAVE_LONG_LONG
+            CPLDebug( "PCIDSK",
+                      "Band %d: nImageOffset=%Ld, nPixelOffset=%Ld, "
+                      "nLineOffset=%Ld, nLineSize=%Ld",
+                      iBand + 1, nImageOffset, nPixelOffset,
+                      nLineOffset, nLineSize );
+#else
+            CPLDebug( "PCIDSK",
+                      "Band %d: nImageOffset=%ld, nPixelOffset=%ld, "
+                      "nLineOffset=%ld, nLineSize=%ld",
+                      iBand + 1, nImageOffset, nPixelOffset,
+                      nLineOffset, nLineSize );
+#endif
 #endif
             
             poBand = new PCIDSKRawRasterBand( poDS, iBand + 1, fp,
@@ -888,8 +839,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                             CPLScanDouble( szTemp + 26 * j, 26 );
                     }
 
-                    poDS->bGeoTransformValid = TRUE;
-
                     oSRS.importFromPCI( szProj, NULL, NULL );
                     if ( poDS->pszProjection )
                         CPLFree( poDS->pszProjection );
@@ -948,8 +897,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                             CPLScanDouble( szTemp + 26 * j, 26 );
                     }
 
-                    poDS->bGeoTransformValid = TRUE;
-
                     oSRS.importFromPCI( szProj, szUnits, adfProjParms );
                     if ( poDS->pszProjection )
                         CPLFree( poDS->pszProjection );
@@ -977,8 +924,7 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                     VSIFSeekL( poDS->fp, nGcpDataOffset, SEEK_SET );
                     VSIFReadL( szTemp, 1, 80, poDS->fp );
                     poDS->nGCPCount = CPLScanLong( szTemp, 16 );
-                    if ( poDS->nGCPCount > 0 &&
-                         nGcpDataOffset + poDS->nGCPCount * 128 + 512 < poDS->nFileSize )
+                    if ( poDS->nGCPCount > 0 )
                     {
                         double      dfUnitConv = 1.0;
                         char        szProj[17];
@@ -1011,8 +957,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                                 CPLScanDouble( szTemp + 96, 18 ) / dfUnitConv;
                         }
                     }
-
-                    poDS->bGeoTransformValid = TRUE;
                 }
             }
             break;
@@ -1050,12 +994,6 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                 PCIDSKTiledRasterBand *poOvBand;
 
                 poOvBand = new PCIDSKTiledRasterBand( poDS, 0, nImage );
-                if ( poOvBand->GetXSize() == 0 )
-                {
-                    delete poOvBand;
-                    delete poDS;
-                    return NULL;
-                }
 
                 poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
                
@@ -1070,23 +1008,15 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     
 /* -------------------------------------------------------------------- */
-/*      Check for worldfile if we have no other georeferencing.         */
+/*      Open overviews.                                                 */
 /* -------------------------------------------------------------------- */
-    if( !poDS->bGeoTransformValid ) 
-        poDS->bGeoTransformValid = 
-            GDALReadWorldFile( poOpenInfo->pszFilename, "pxw", 
-                               poDS->adfGeoTransform );
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Open overviews.                                                 */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }
@@ -1124,14 +1054,12 @@ int PCIDSKDataset::SegRead( int nSegment, vsi_l_offset nOffset,
 void PCIDSKDataset::CollectPCIDSKMetadata( int nSegment )
 
 {
-    int nSegSize = (int) panSegSize[nSegment-1];
+    int nSegSize = panSegSize[nSegment-1];
 
 /* -------------------------------------------------------------------- */
 /*      Read all metadata in one gulp.                                  */
 /* -------------------------------------------------------------------- */
-    char *pszMetadataBuf = (char *) VSICalloc( 1, nSegSize + 1 );
-    if ( pszMetadataBuf == NULL )
-        return;
+    char *pszMetadataBuf = (char *) CPLCalloc(1,nSegSize + 1);
 
     if( !SegRead( nSegment, 0, nSegSize, pszMetadataBuf ) )
     {
@@ -1457,25 +1385,15 @@ PCIDSKDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
 {
     PCIDSKDataset	*poDS;
-    GDALDataType eType;
+    GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
     int          iBand;
-
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "PCIDSK driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
 
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
 
-    eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
-
     /* check that other bands match type- sets type */
     /* to unknown if they differ.                  */
-    for( iBand = 1; iBand < nBands; iBand++ )
+    for( iBand = 1; iBand < poSrcDS->GetRasterCount(); iBand++ )
      {
          GDALRasterBand *poBand = poSrcDS->GetRasterBand( iBand+1 );
          eType = GDALDataTypeUnion( eType, poBand->GetRasterDataType() );

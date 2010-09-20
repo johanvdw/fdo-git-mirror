@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_multiproc.cpp 18652 2010-01-24 14:44:08Z rouault $
+ * $Id: cpl_multiproc.cpp 15260 2008-08-30 21:26:13Z mloskot $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL Multi-Threading, and process handling portability functions.
@@ -27,10 +27,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "cpl_multiproc.h"
 #include "cpl_conv.h"
 
@@ -40,7 +36,7 @@
 #  include <wce_time.h>
 #endif
 
-CPL_CVSID("$Id: cpl_multiproc.cpp 18652 2010-01-24 14:44:08Z rouault $");
+CPL_CVSID("$Id: cpl_multiproc.cpp 15260 2008-08-30 21:26:13Z mloskot $");
 
 #if defined(CPL_MULTIPROC_STUB) && !defined(DEBUG)
 #  define MUTEX_NONE
@@ -587,8 +583,6 @@ static DWORD WINAPI CPLStdCallThreadJacket( void *pData )
     psInfo->pfnMain( psInfo->pAppData );
 
     CPLFree( psInfo );
-    
-    CPLCleanupTLS();
 
     return 0;
 }
@@ -727,20 +721,11 @@ void *CPLCreateMutex()
 
     hMutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
 
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(HAVE_PTHREAD_MUTEX_RECURSIVE)
+#if defined(PTHREAD_MUTEX_RECURSIVE)
     {
         pthread_mutexattr_t  attr;
         pthread_mutexattr_init( &attr );
         pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_RECURSIVE );
-        pthread_mutex_init( hMutex, &attr );
-    }
-/* BSDs have PTHREAD_MUTEX_RECURSIVE as an enum, not a define. */
-/* But they have #define MUTEX_TYPE_COUNTING_FAST	PTHREAD_MUTEX_RECURSIVE */
-#elif defined(MUTEX_TYPE_COUNTING_FAST)
-    {
-        pthread_mutexattr_t  attr;
-        pthread_mutexattr_init( &attr );
-        pthread_mutexattr_settype( &attr, MUTEX_TYPE_COUNTING_FAST );
         pthread_mutex_init( hMutex, &attr );
     }
 #elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
@@ -799,7 +784,7 @@ void CPLDestroyMutex( void *hMutexIn )
 
 {
     pthread_mutex_destroy( (pthread_mutex_t *) hMutexIn );
-    free( hMutexIn );
+    CPLFree( hMutexIn );
 }
 
 /************************************************************************/
@@ -900,7 +885,7 @@ static void *CPLStdCallThreadJacket( void *pData )
     psInfo->pfnMain( psInfo->pAppData );
 
     CPLFree( psInfo );
-    
+
     return NULL;
 }
 

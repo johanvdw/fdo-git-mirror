@@ -30,18 +30,15 @@ class WmsTestSelect : public WmsTests
 {
 	CPPUNIT_TEST_SUITE (WmsTestSelect);
 
-#ifdef _FDO_RUN_INTERNAL_TEST		
-	CPPUNIT_TEST (testServer1);
-	CPPUNIT_TEST (testNestedClip);
-	CPPUNIT_TEST (testGetBounds);
-	// disabled because the server cannot connect
-	//CPPUNIT_TEST (testHttpBasicAuthentification);
+#ifdef _FDO_RUN_INTERNAL_TEST	
+    CPPUNIT_TEST (testServer1);
+    CPPUNIT_TEST (testNestedClip);
+    CPPUNIT_TEST (testGetBounds);
+    CPPUNIT_TEST (testHttpBasicAuthentification);
 #endif
 
     CPPUNIT_TEST (testURLEcoding);
     CPPUNIT_TEST (testServer2);
-	CPPUNIT_TEST (testServer3);
-	CPPUNIT_TEST (testServer4);
     CPPUNIT_TEST (testResample);
     CPPUNIT_TEST (testClip);
     CPPUNIT_TEST (testDefaultHeight);
@@ -52,7 +49,7 @@ class WmsTestSelect : public WmsTests
     CPPUNIT_TEST (testCubeServer);
     CPPUNIT_TEST (testMultiLayers);
     CPPUNIT_TEST (testTerraService);
-    //CPPUNIT_TEST (testDefect786029);
+    CPPUNIT_TEST (testDefect786029);
     // disabled because the server cannot connect
     //CPPUNIT_TEST (testEusoils);
     //CPPUNIT_TEST (testEusoilsPesera);
@@ -61,7 +58,7 @@ class WmsTestSelect : public WmsTests
     CPPUNIT_TEST (testTerraServiceThumbnail);
     CPPUNIT_TEST (testNS_TOPO_1000);
     CPPUNIT_TEST (testNS_CRS);
-    CPPUNIT_TEST (testMapConnect_SDE);
+    CPPUNIT_TEST (testDMSolutions);
     CPPUNIT_TEST (testNS_TOPO_5000);
     CPPUNIT_TEST (testNASAServerDefaultOverrides);
     CPPUNIT_TEST (testCeoware2);
@@ -107,7 +104,7 @@ public:
     void testTerraServiceThumbnail();
     void testNS_TOPO_1000();
     void testNS_CRS();
-    void testMapConnect_SDE(); 
+    void testDMSolutions(); 
     void testNS_TOPO_5000();
     void testNASAServerDefaultOverrides();
     void testCeoware2();
@@ -119,9 +116,6 @@ public:
 	void testOpenmaps ();
     void testquestionmarkend ();
     void testURLEcoding ();
-	//test 1.3.0 version server with axis issue
-	void testServer3();
-	void testServer4();
 };
 
 #endif//FDOWMSTESTSELECT_H

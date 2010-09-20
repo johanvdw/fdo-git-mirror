@@ -205,41 +205,24 @@ FdoIConnection* FdoConnectionManager::CreateConnection(const wchar_t* providerNa
 
     moduleIterator = m_moduleMap.find(providerName);
     if (moduleIterator == m_moduleMap.end()) {
-        bool bRegistered = FdoRegistryUtility::GetLibraryLocation(providerName, libraryLocation);
-        if ( !bRegistered )
-            // Provider not registered, assume providerName specified as library name.
-            libraryLocation = providerName;
+        FdoRegistryUtility::GetLibraryLocation(providerName, libraryLocation);
 
         // SPR 664919 Failure to load FDO.dll because of dependency with FDOSpatial
         // so we add ourselves first
         addPath (module);
 
-        addPath (libraryLocation );
+        addPath (libraryLocation);
 
         providerLibrary = LoadLibraryW(libraryLocation.c_str());
         if (providerLibrary == NULL) {
-            // Decide which message to throw
-            size_t len = wcslen(providerName);
-            bool bDLL = (len > 3) && (_wcsicmp(&(providerName[len - 4]),L".dll") == 0);
-
-            if ( bRegistered || bDLL ) 
-            {
-                // Provider is registered or library was specified. 
-                // Throw message indicating library failed to load.
-			    LPVOID lpMsgBuf;
-			    wchar_t szBuf[256];
-			    DWORD dw = GetLastError();
-			    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM, NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &lpMsgBuf, 0, NULL);
-                swprintf(szBuf, sizeof(szBuf), L"%hs", lpMsgBuf);
-			    FdoClientServiceException *ex = FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_8_UNABLE_TO_LOAD_LIBRARY), libraryLocation.c_str(), szBuf));
-			    LocalFree(lpMsgBuf);
-			    throw ex;
-            }
-            else
-            {
-                // Otherwise, report that provider is not registered.
-                throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_4_PROVIDERNOTREGISTERED), providerName));
-            }
+			LPVOID lpMsgBuf;
+			wchar_t szBuf[256];
+			DWORD dw = GetLastError();
+			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM, NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &lpMsgBuf, 0, NULL);
+            swprintf(szBuf, sizeof(szBuf), L"%hs", lpMsgBuf);
+			FdoClientServiceException *ex = FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_8_UNABLE_TO_LOAD_LIBRARY), szBuf));
+			LocalFree(lpMsgBuf);
+			throw ex;
         }
 
         m_moduleMap.insert(FdoNamedModulePair(std::wstring(providerName), providerLibrary));
@@ -279,10 +262,7 @@ FdoIConnection* FdoConnectionManager::CreateConnection(const wchar_t* providerNa
 
     moduleIterator = m_moduleMap.find(providerName);
     if (moduleIterator == m_moduleMap.end()) {
-        bool bRegistered = FdoRegistryUtility::GetLibraryLocation(providerName, libraryLocation);
-        if ( !bRegistered )
-            // Provider not registered, assume providerName specified as library name.
-            libraryLocation = providerName;
+        FdoRegistryUtility::GetLibraryLocation(providerName, libraryLocation);
 
         addPath (libraryLocation);
 
@@ -290,19 +270,7 @@ FdoIConnection* FdoConnectionManager::CreateConnection(const wchar_t* providerNa
         
         providerLibrary = dlopen(temp, RTLD_NOW);
         if (providerLibrary == NULL) {
-            // Decide which message to throw
-            int len = wcslen(providerName);
-            bool bSO = (len > 2) && (wcscmp(&(providerName[len - 3]),L".so") == 0);
-            if ( wcsstr(providerName, L".so.") )
-                bSO = true;
-
-            if ( bRegistered || bSO) 
-                // Provider is registered or library was specified. 
-                // Throw message indicating library failed to load.
-                throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_8_UNABLE_TO_LOAD_LIBRARY), libraryLocation.c_str(), dlerror()));
-            else
-                // Otherwise, report that provider is not registered.
-                throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_4_PROVIDERNOTREGISTERED), providerName));
+            throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_8_UNABLE_TO_LOAD_LIBRARY), dlerror()));
         }
 
         m_moduleMap.insert(FdoNamedModulePair(std::wstring(providerName), providerLibrary));

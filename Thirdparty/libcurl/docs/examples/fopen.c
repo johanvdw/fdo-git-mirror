@@ -45,9 +45,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifndef WIN32
-#  include <sys/time.h>
-#endif
+#include <sys/time.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -72,7 +70,7 @@ struct fcurl_data
 typedef struct fcurl_data URL_FILE;
 
 /* exported functions */
-URL_FILE *url_fopen(const char *url,const char *operation);
+URL_FILE *url_fopen(char *url,const char *operation);
 int url_fclose(URL_FILE *file);
 int url_feof(URL_FILE *file);
 size_t url_fread(void *ptr, size_t size, size_t nmemb, URL_FILE *file);
@@ -95,11 +93,11 @@ write_callback(char *buffer,
     URL_FILE *url = (URL_FILE *)userp;
     size *= nitems;
 
-    rembuff=url->buffer_len - url->buffer_pos; /* remaining space in buffer */
+    rembuff=url->buffer_len - url->buffer_pos;//remaining space in buffer
 
     if(size > rembuff)
     {
-        /* not enough space in buffer */
+        //not enuf space in buffer
         newbuff=realloc(url->buffer,url->buffer_len + (size - rembuff));
         if(newbuff==NULL)
         {
@@ -213,7 +211,7 @@ use_buffer(URL_FILE *file,int want)
 
 
 URL_FILE *
-url_fopen(const char *url,const char *operation)
+url_fopen(char *url,const char *operation)
 {
     /* this code could check for URLs or types in the 'url' and
        basicly use the real fopen() for standard files */
@@ -221,7 +219,7 @@ url_fopen(const char *url,const char *operation)
     URL_FILE *file;
     (void)operation;
 
-    file = malloc(sizeof(URL_FILE));
+    file = (URL_FILE *)malloc(sizeof(URL_FILE));
     if(!file)
         return NULL;
 
@@ -238,7 +236,7 @@ url_fopen(const char *url,const char *operation)
 
         curl_easy_setopt(file->handle.curl, CURLOPT_URL, url);
         curl_easy_setopt(file->handle.curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(file->handle.curl, CURLOPT_VERBOSE, 0L);
+        curl_easy_setopt(file->handle.curl, CURLOPT_VERBOSE, FALSE);
         curl_easy_setopt(file->handle.curl, CURLOPT_WRITEFUNCTION, write_callback);
 
         if(!multi_handle)
@@ -468,7 +466,7 @@ main(int argc, char *argv[])
 
     int nread;
     char buffer[256];
-    const char *url;
+    char *url;
 
     if(argc < 2)
     {
@@ -483,14 +481,14 @@ main(int argc, char *argv[])
     outf=fopen("fgets.test","w+");
     if(!outf)
     {
-        perror("couldn't open fgets output file\n");
+        perror("couldnt open fgets output file\n");
         return 1;
     }
 
     handle = url_fopen(url, "r");
     if(!handle)
     {
-        printf("couldn't url_fopen() %s\n", url);
+        printf("couldn't url_fopen()\n");
         fclose(outf);
         return 2;
     }
@@ -510,13 +508,13 @@ main(int argc, char *argv[])
     outf=fopen("fread.test","w+");
     if(!outf)
     {
-        perror("couldn't open fread output file\n");
+        perror("couldnt open fread output file\n");
         return 1;
     }
 
     handle = url_fopen("testfile", "r");
     if(!handle) {
-        printf("couldn't url_fopen() testfile\n");
+        printf("couldn't url_fopen()\n");
         fclose(outf);
         return 2;
     }
@@ -535,13 +533,13 @@ main(int argc, char *argv[])
     outf=fopen("rewind.test","w+");
     if(!outf)
     {
-        perror("couldn't open fread output file\n");
+        perror("couldnt open fread output file\n");
         return 1;
     }
 
     handle = url_fopen("testfile", "r");
     if(!handle) {
-        printf("couldn't url_fopen() testfile\n");
+        printf("couldn't url_fopen()\n");
         fclose(outf);
         return 2;
     }

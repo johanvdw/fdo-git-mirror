@@ -23,11 +23,6 @@
 #include "FdoWmsBoundingBox.h"
 #include "FdoWmsLayerCollection.h"
 #include "FdoWmsGlobals.h"
-#include <fstream>
-#include <algorithm>
-#include "FdoWmsReverseEpsgCodes.h"
-
-using namespace std;
 
 // the default message catalog filename
 #ifdef _WIN32
@@ -106,45 +101,3 @@ void _calcLayersBoundingBox (FdoWmsLayerCollection* layers, FdoString* srsName, 
         }
     }
 }
-
-FdoBoolean _reverseCheck(FdoStringP epsgName)
-{
-	FdoBoolean reverse = false;
-
-	FdoString* s = (FdoString*)epsgName;
-
-	static vector<wstring> epsgList;
-
-	if (epsgList.empty())
-	{
-		// load the interanl epsg list
-		for (int i = 0; internalReverseEpsgCodes[i] != NULL; i++ )
-			epsgList.push_back(internalReverseEpsgCodes[i]);
-
-		// try to read the epsg list from file if it exist
-		wifstream infile;
-		
-		FdoStringP strName = (FdoStringP)(FdoWmsGlobals::ExtendedReverseEPSGsFileName);
-		const char* name = (const char*)strName;	
-		infile.open (name, wifstream::in);
-		if (infile.good())
-		{
-			wstring line;
-			while (std::getline(infile,line))
-			{
-				// no need to replace the old one
-				// duplicats are ok since we just need to check whether the epsg
-				// is in the list
-				epsgList.push_back(line);
-			}
-		}
-	}
-
-	vector<wstring>::iterator it = find(epsgList.begin(),epsgList.end(),s);
-
-	if (it != epsgList.end()) // found it, need to reverse the axis order
-		reverse = true;
-
-	return reverse;
-}
-

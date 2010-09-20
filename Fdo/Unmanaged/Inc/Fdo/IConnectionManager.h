@@ -49,13 +49,8 @@ public:
     /// Creates an unitialized connection object given the provider name.
     /// 
     /// \param providerName 
-    /// The unique name of the feature provider. This name should be:
-    ///
-    /// name of a registered provider of the form: 
-    /// [Company].[Provider].[Version]
-    ///
-    /// or the name of the library that implements the provider, 
-    /// e.g. L"MySQLProvider.dll" or L"e:/fdo/bin/MySQLProvider.dll"
+    /// The unique name of the feature provider. This name should be of the form 
+    /// [Company].[Provider].[Version].
     /// 
     /// \return
     /// Returns an instance of an FdoIConnection object. Throws an instance of FdoClientServicesException * if an error occurs.

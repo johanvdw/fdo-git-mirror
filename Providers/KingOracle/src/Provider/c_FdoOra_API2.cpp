@@ -25,11 +25,6 @@
 #include "c_Ora_API2.h"
 #include "KgOraProvider.h"
 
-
-#define D_CLASSNAME_DELIMITER L"~"
-//#define D_CLASSNAME_DELIMITER L"_"
-
-
 c_FdoOra_API2::c_FdoOra_API2(void)
 {
 }
@@ -39,7 +34,7 @@ c_FdoOra_API2::~c_FdoOra_API2(void)
 }
 
 
-bool c_FdoOra_API2::OraTypeToFdoDataType(ub2 OCiDataType,int Precision,int Scale,int Length,FdoDataType & FdoType)
+bool c_FdoOra_API2::OraTypeToFdoDataType(ub2 OCiDataType,int Scale,int Length,FdoDataType & FdoType)
 {
   bool isfdotype=true;
   switch( OCiDataType )
@@ -51,36 +46,7 @@ bool c_FdoOra_API2::OraTypeToFdoDataType(ub2 OCiDataType,int Precision,int Scale
     
     case OCI_TYPECODE_NUMBER:  // NUMBER
     case OCI_TYPECODE_DECIMAL:  // NUMBER
-      if( Scale <= 0 ) 
-      {
-        if( Precision <= 4 )
-        {
-          FdoType = FdoDataType_Int16;  
-        }
-        else 
-        {
-          if( Precision <= 9 )
-          {
-            FdoType = FdoDataType_Int32;  
-          }
-          else
-          {
-            if( Precision <= 19 ) // this is deliberately to be 19 so it stay as integer (not decimal)
-                                  // even 19 places can exceed int64
-            {
-              FdoType = FdoDataType_Int64;  
-            }
-            else
-            {
-              //FdoType = FdoDataType_Decimal;  
-              
-              FdoType = FdoDataType_Int64;  
-            }
-          
-          }
-          
-        }
-      }
+      if( Scale == 0 ) FdoType = FdoDataType_Int32;  
       else FdoType = FdoDataType_Decimal;
     break;
     
@@ -89,12 +55,7 @@ bool c_FdoOra_API2::OraTypeToFdoDataType(ub2 OCiDataType,int Precision,int Scale
       else FdoType = FdoDataType_String;
     break;
     
-    case OCI_TYPECODE_SIGNED16:
-        FdoType = FdoDataType_Int16;
-    break;
-        
     case OCI_TYPECODE_INTEGER:
-    case OCI_TYPECODE_SIGNED32:
       FdoType = FdoDataType_Int32;
     break;
     
@@ -411,204 +372,8 @@ bool c_FdoOra_API2::SetOracleStatementData(c_Oci_Statement*  Statement,int SqlPa
   return true;
 }//end of c_FdoOra_API2::SetOracleStatementData
 
-bool c_FdoOra_API2::SetOracleStatementData(c_Oci_Statement*  Statement,const wchar_t*SqlParamName,FdoDataValue* DataValue)
-{
 
-  switch( DataValue->GetDataType() )
-  {
-  case FdoDataType_Boolean:
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindString(SqlParamName,NULL);
-      else
-      {
-        FdoBooleanValue * boolval = (FdoBooleanValue*)DataValue;
-        string val;
-        if( boolval->GetBoolean() )
-          Statement->BindStringValue(SqlParamName,L"1");          
-        else
-          Statement->BindStringValue(SqlParamName,L"0");
-
-
-      }
-    }
-    break;
-
-    /// Represents unsigned 8-bit integers with values between 0 and 255.
-  case FdoDataType_Byte:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindString(SqlParamName,NULL);
-      else
-      {
-        FdoByteValue * byteval = (FdoByteValue*)DataValue;
-        wchar_t chstr[2];
-        chstr[0] = byteval->GetByte();
-        chstr[1] = 0;
-
-        Statement->BindStringValue(SqlParamName,chstr);
-      }
-    }  
-    break;
-
-    /// Represents a date and time value.
-  case FdoDataType_DateTime:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindDate(SqlParamName,NULL);
-      else
-      {
-        FdoDateTimeValue * dateval = (FdoDateTimeValue*)DataValue;
-
-        FdoDateTime date = dateval->GetDateTime();
-        OCIDate val;
-        val.OCIDateYYYY = date.year;
-        val.OCIDateMM = date.month;
-        val.OCIDateDD = date.day;
-        val.OCIDateTime.OCITimeHH = date.hour;
-        val.OCIDateTime.OCITimeMI = date.minute;
-        val.OCIDateTime.OCITimeSS = (ub1)date.seconds;
-
-        Statement->BindDateValue(SqlParamName,val);
-      }
-    }
-    break;
-
-    /// Represents values ranging from 1.0 x 10^-28 to approximately 7.9 x 10^28
-    /// with 28-29 significant digits.
-  case FdoDataType_Decimal:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindDouble(SqlParamName,NULL);
-      else
-      {
-        FdoDecimalValue * dval = (FdoDecimalValue*)DataValue;
-
-        Statement->BindDoubleValue(SqlParamName,dval->GetDecimal());
-      }
-    }
-    break;
-
-    /// Represents a floating point value ranging from approximately 5.0 
-    /// x 10^-324 to 1.7 x 10^308 with a precision of 15-16 digits.
-  case FdoDataType_Double:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindDouble(SqlParamName,NULL);
-      else
-      {
-        FdoDoubleValue * dval = (FdoDoubleValue*)DataValue;                        
-        Statement->BindDoubleValue(SqlParamName,dval->GetDouble());
-      }
-    }
-    break;
-
-    /// Represents signed 16-bit integers with values between -32768 and 32767.
-  case FdoDataType_Int16:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindInt(SqlParamName,NULL);
-      else
-      {
-        FdoInt16Value * dval = (FdoInt16Value*)DataValue;                        
-        Statement->BindIntValue(SqlParamName,dval->GetInt16());
-      }
-    }
-    break;
-
-    /// Represents signed 32-bit integers with values between -2147483648 
-    /// and 2147483647.
-  case FdoDataType_Int32:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindInt(SqlParamName,NULL);
-      else
-      {
-        FdoInt32Value * dval = (FdoInt32Value*)DataValue;                        
-        Statement->BindIntValue(SqlParamName,dval->GetInt32());
-      }
-    }
-    break;
-
-    /// Represents signed 64-bit integers with values 
-    /// between -9223372036854775808 and 9223372036854775807.
-  case FdoDataType_Int64:
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindLong(SqlParamName,NULL);
-      else
-      {
-        FdoInt64Value * dval = (FdoInt64Value*)DataValue;                        
-
-        //long dval
-
-        Statement->BindLongValue(SqlParamName,(long)dval->GetInt64());
-      }
-    }
-    break;
-
-    /// Represents floating point values ranging from approximately 1.5 x 10^-45
-    /// to 3.4 x 10^38, with a precision of 7 digits. 
-  case FdoDataType_Single:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindDouble(SqlParamName,NULL);
-      else
-      {
-        FdoSingleValue * dval = (FdoSingleValue*)DataValue;                        
-        Statement->BindDoubleValue(SqlParamName,dval->GetSingle());
-      }
-    }
-    break;
-
-    /// Represents a Unicode character strings.
-  case FdoDataType_String:      
-    {
-
-      if( DataValue->IsNull() )
-        Statement->BindString(SqlParamName,NULL);
-      else
-      {
-        FdoStringValue * dval = (FdoStringValue*)DataValue;                        
-
-        Statement->BindString(SqlParamName,dval->GetString());
-      }
-    }
-    break;
-
-    /// Represents a binary large object stored as a collection of bytes.
-  case FdoDataType_BLOB:
-    {
-      Statement->BindBlob(SqlParamName,NULL,0);
-    }
-    break;
-
-    /// Represents a character large object stored as a collection of
-    /// characters.
-  case FdoDataType_CLOB:
-    {
-      Statement->BindClob(SqlParamName,NULL,0);
-    }
-    break;
-
-  default:
-    return false;
-    break;    
-  }
-
-  return true;
-}//end of c_FdoOra_API2::SetOracleStatementData
-
-bool c_FdoOra_API2::OraTypeToFdoDataType(const char* OraType,int Precision,int Scale,int Length,FdoDataType & FdoType)
+bool c_FdoOra_API2::OraTypeToFdoDataType(const char* OraType,int Scale,int Length,FdoDataType & FdoType)
 {
   
   bool isfdotype=false;
@@ -625,34 +390,7 @@ bool c_FdoOra_API2::OraTypeToFdoDataType(const char* OraType,int Precision,int S
   } else
   if( FdoCommonOSUtil::stricmp(OraType,"NUMBER") == 0 )
   {            
-    if( Scale <= 0 ) 
-    {
-      if( Precision <= 4 )
-      {
-        FdoType = FdoDataType_Int16;  
-      }
-      else 
-      {
-        if( Precision <= 9 )
-        {
-          FdoType = FdoDataType_Int32;  
-        }
-        else
-        {
-          if( Precision <= 19 ) // this is deliberately to be 19 so it stay as integer (not decimal)
-            // even 19 places can exceed int64
-          {
-            FdoType = FdoDataType_Int64;  
-          }
-          else
-          {
-            FdoType = FdoDataType_Decimal;  
-          }
-
-        }
-
-      }
-    }
+    if( Scale == 0 ) FdoType = FdoDataType_Int32;
     else FdoType = FdoDataType_Decimal;
     isfdotype=true;
   } else
@@ -662,12 +400,12 @@ bool c_FdoOra_API2::OraTypeToFdoDataType(const char* OraType,int Precision,int S
     else FdoType = FdoDataType_String;
     isfdotype=true;
   } else
-  if( FdoCommonOSUtil::stricmp(OraType,"BINARY_FLOAT") == 0 || (FdoCommonOSUtil::stricmp(OraType,"FLOAT") == 0) )
+  if( FdoCommonOSUtil::stricmp(OraType,"BINARY_FLOAT") == 0 )
   {            
     FdoType = FdoDataType_Single;    
     isfdotype=true;
   } else
-  if( FdoCommonOSUtil::stricmp(OraType,"BINARY_DOUBLE") == 0 || (FdoCommonOSUtil::stricmp(OraType,"DOUBLE") == 0) )
+  if( FdoCommonOSUtil::stricmp(OraType,"BINARY_DOUBLE") == 0 )
   {            
     FdoType = FdoDataType_Double;    
     isfdotype=true;
@@ -795,7 +533,7 @@ try
       (OCIError *) OciConn->m_OciHpError);
       
     FdoDataType fdotype;      
-    bool isfdotype = c_FdoOra_API2::OraTypeToFdoDataType(col_type,col_precision,col_scale,col_width,fdotype);
+    bool isfdotype = c_FdoOra_API2::OraTypeToFdoDataType(col_type,col_scale,col_width,fdotype);
 
     if( isfdotype )
     {            
@@ -894,6 +632,8 @@ if( OciConn->IsSdoTypes() )
   FdoPtr<FdoClassCollection> classes = schema->GetClasses();
   
   FdoPtr<FdoKgOraClassCollection> phys_classes = phschema->GetClasses();
+  
+  
   
   try
   {
@@ -1020,8 +760,7 @@ if( OciConn->IsSdoTypes() )
         L" where t.owner = a.owner and t.table_name=a.table_name and t.column_name = a.column_name and t.owner = :1 "
         L" order by a.owner, a.table_name ";
         */
-        //if( _wcsicmp(ConnectionOraSchema,UseOraSchema) == 0 )
-        if( FdoCommonOSUtil::wcsicmp(ConnectionOraSchema, UseOraSchema)==0 )
+        if( wcscmp(ConnectionOraSchema,UseOraSchema) == 0 )
         {
           sqlquery=\
           L" select NULL, a.table_name, a.column_name, a.srid, a.diminfo, b.CS_NAME, b.WKTEXT, c.index_name, d.sdo_layer_gtype, s.sequence_name, d.SDO_ROOT_MBR  "
@@ -1076,8 +815,7 @@ if( OciConn->IsSdoTypes() )
         L" order by a.owner, a.table_name ";
         */
         
-        //if( wcscmp(ConnectionOraSchema,UseOraSchema) == 0 )
-        if( FdoCommonOSUtil::wcsicmp(ConnectionOraSchema, UseOraSchema)==0 )
+        if( wcscmp(ConnectionOraSchema,UseOraSchema) == 0 )
         {
           sqlquery=\
           L" select NULL, a.table_name, a.column_name, a.srid, a.diminfo, b.CS_NAME, b.WKTEXT, c.index_name, d.sdo_layer_gtype, s.sequence_name, NULL SDO_ROOT_MBR "
@@ -1112,7 +850,7 @@ if( OciConn->IsSdoTypes() )
 
   
     
-    c_FdoOra_API2::DescribeSchemaSQL(OciConn,sqlquery.c_str(),bind_owner,ConnectionOraSchema,UseOraSchema,classes,phys_classes,sc_collection,aliasnum,isoracle9);
+    c_FdoOra_API2::DescribeSchemaSQL(OciConn,sqlquery.c_str(),bind_owner,UseOraSchema,classes,phys_classes,sc_collection,aliasnum,isoracle9);
     
     
     
@@ -1215,7 +953,7 @@ if( OciConn->IsSdoTypes() && KingFdoViews && *KingFdoViews )
     }
     
       
-    c_FdoOra_API2::DescribeSchemaSQL(OciConn,sqlstr.c_str(),false,ConnectionOraSchema,NULL, classes,phys_classes,sc_collection,aliasnum,isoracle9);
+    c_FdoOra_API2::DescribeSchemaSQL(OciConn,sqlstr.c_str(),false,NULL, classes,phys_classes,sc_collection,aliasnum,isoracle9);
     
     
   }
@@ -1383,8 +1121,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t*S
   
 */
 
-void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* SqlString,bool BindOwner
-            ,const wchar_t* ConnectionOraSchema,const wchar_t* Owner
+void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* SqlString,bool BindOwner,const wchar_t* Owner
             ,FdoClassCollection* FdoClasses,FdoKgOraClassCollection* PhysClasses
             ,c_KgOraSpatialContextCollection* SC_Collection,long& AliasNum,bool IsOracle9      )
 {
@@ -1689,7 +1426,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
       else
         ora_fullname = ora_tablename;
       
-      ora_fdo_classname = ora_tableowner + D_CLASSNAME_DELIMITER + ora_tablename + D_CLASSNAME_DELIMITER + ora_geom_colname;
+      ora_fdo_classname = ora_tableowner + L"~" + ora_tablename + L"~" + ora_geom_colname;
       
       FdoStringP w_fdo_classname = ora_fdo_classname.c_str();
       
@@ -1705,31 +1442,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
       if( !FdoClasses->FindItem( w_fdo_classname ) )
       {
       
-        FdoPtr<FdoFeatureClass> fc_geom;
-        FdoPtr<FdoClass> fc_nogeom;
-        FdoClassDefinition* fc;
-        
-        if( (ora_geom_colname.length() >  0) 
-            || ( (override_point_x_col.length() > 0) && (override_point_y_col.length() > 0) )
-          )
-        {
-          fc_geom = FdoFeatureClass::Create(w_fdo_classname, L"");      
-          fc = fc_geom.p;
-        }
-        else
-        {
-          fc_nogeom = FdoClass::Create(w_fdo_classname, L"");      
-          fc = fc_nogeom.p;
-        }
-        
-        
-        // set class capabilities
-        // sde class is read-only and no locking
-        FdoPtr<FdoClassCapabilities> capab = FdoClassCapabilities::Create(*fc);
-        capab->SetSupportsWrite(true);
-        capab->SetSupportsLocking(false);
-        capab->SetSupportsLongTransactions(false);
-        fc->SetCapabilities(capab);
+        FdoPtr<FdoFeatureClass> fc = FdoFeatureClass::Create(w_fdo_classname, L"");      
         
         FdoPtr<FdoKgOraClassDefinition> phys_class  = FdoKgOraClassDefinition::Create();
         
@@ -1795,24 +1508,6 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
         {
           FdoPtr<FdoGeometricPropertyDefinition> gpd = FdoGeometricPropertyDefinition::Create(FdoStringP(ora_geom_colname.c_str()), L"");                        
         
-        // set if Class has Z or M coordinate values
-          if( ora_dimlist.GetSize() >2 )
-          {
-            if( ora_dimlist.GetSize() == 3 )
-            {
-              c_SDO_DIM_ELEMENT dimelem = ora_dimlist.GetDimElement(2);
-              std::wstring dimname;
-              if( !dimelem.IsNullDimName() && (FdoCommonOSUtil::wcsicmp(dimelem.GetDimName(),L"M") == 0) )
-                gpd->SetHasMeasure(true);
-              else
-                gpd->SetHasElevation(true);  
-            }
-            else
-            {
-              gpd->SetHasElevation(true);
-              gpd->SetHasMeasure(true);
-            }
-          }
           gpd->SetGeometryTypes(fdo_geom_type);  
           
           if( spatial_context )
@@ -1822,7 +1517,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
           
           pdc->Add(gpd);
           
-          if( fc_geom.p ) fc_geom->SetGeometryProperty(gpd);
+          fc->SetGeometryProperty(gpd);
         }
         else
         {
@@ -1842,16 +1537,12 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
             
             pdc->Add(gpd);
             
-            if( fc_geom.p ) fc_geom->SetGeometryProperty(gpd);
+            fc->SetGeometryProperty(gpd);
             
             FdoStringP xcol = override_point_x_col.c_str();
             FdoStringP ycol = override_point_y_col.c_str();
             FdoStringP zcol = override_point_z_col.c_str();
             phys_class->SetPointGeometry(pointproperty,xcol,ycol,zcol);
-          }
-          else
-          {
-          // it is non-feature class
           }
         }
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1889,8 +1580,7 @@ void c_FdoOra_API2::DescribeSchemaSQL(c_Oci_Connection * OciConn,const wchar_t* 
         }
         else
         {
-          //if( BindOwner )
-          if( FdoCommonOSUtil::wcsicmp(ConnectionOraSchema, ora_tableowner.c_str()) != 0 )          
+          if( BindOwner )
             c_OCI_API::GetTablePkeyColumns(OciConn,ora_tableowner.c_str(),ora_tablename.c_str(),pcols);
           else
             c_OCI_API::GetTablePkeyColumns(OciConn,NULL,ora_tablename.c_str(),pcols);
@@ -1993,9 +1683,6 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
     L"SELECT l.layer_id, l.owner, l.table_name, l.spatial_column"
     L" ,g.g_table_schema,g.g_table_name,g.geometry_type,g.coord_dimension"
     L" ,r.srid,r.srtext,r.falsex,r.falsey,r.xyunits,r.falsez,r.zunits,r.falsem,r.munits" 
-	// 1SPATIAL START
-	L" ,l.gsize1"
-	// 1SPATIAL END
     L" FROM sde.layers l INNER JOIN (sde.geometry_columns g INNER JOIN sde.spatial_references r ON g.srid = r.srid)" 
     L" ON l.table_name = g.f_table_name and l.owner = g.f_table_schema";
 
@@ -2010,14 +1697,6 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
     stm = OciConn->CreateStatement();
     stm->Prepare(sqlquery.c_str());
     
-
-	// 1SPATIAL START
-	#ifdef _KGORA_EXTENDED_LOG 
-		FdoStringP szSQLQuery = sqlquery.c_str();
-		D_KGORA_ELOG_WRITE1("c_FdoOra_API2::DescribeSchemaSDE.Execute SQL: '%s'",(const char*)szSQLQuery);        
-	#endif
-	// 1SPATIAL END
-
     
     stm->ExecuteSelectAndDefine();
 
@@ -2085,9 +1764,9 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
       sde_geom_coord_dim = stm->IsColumnNull(8) ? 0 : stm->GetLong(8);
 
       sde_full_geometry_table_name = sde_geom_owner + L"." + sde_geom_table;
-      FdoStringP temp2 = FdoStringP::Format(L"%s.S%ld",sde_geom_owner.c_str(),sde_layer_id);
+      FdoStringP temp2 = FdoStringP::Format(L"S%ld",sde_layer_id);
       sde_full_index_table_name = temp2;
-      //sde_full_index_table_name = sde_geom_owner + sde_full_index_table_name;
+      sde_full_index_table_name = sde_geom_owner + L".S" + sde_full_index_table_name;
 
       sde_srid = stm->IsColumnNull(9) ? 0 : stm->GetLong(9);
       sde_coord_sys_wktext = stm->IsColumnNull(10) ? L"" : stm->GetString(10);
@@ -2103,12 +1782,8 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
       sde_zunits = stm->IsColumnNull(15) ? 1 : stm->GetDouble(15);
       
       sde_falsem = stm->IsColumnNull(16) ? 0 : stm->GetDouble(16);
+      sde_munits = stm->IsColumnNull(17) ? 1 : stm->GetDouble(16);
       
-		// 1SPATIAL START
-      //sde_munits = stm->IsColumnNull(17) ? 1 : stm->GetDouble(16);
-		sde_munits = stm->IsColumnNull(17) ? 1 : stm->GetDouble(17);
-		double gsize1 = stm->IsColumnNull(18) ? 1 : stm->GetDouble(18);
-		// 1SPATIAL END
       
 
       
@@ -2129,6 +1804,9 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
       orasriddesc.m_SDE_ZUnit = sde_zunits;
       orasriddesc.m_SDE_FalseM = sde_falsem;
       orasriddesc.m_SDE_MUnit = sde_munits;
+      
+      
+
 
       // Test for coordinate system if exists and 
       FdoPtr<c_KgOraSpatialContext> spatial_context;
@@ -2190,7 +1868,7 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
       else
         ora_fullname = ora_tablename;
 
-      ora_fdo_classname = ora_tableowner + D_CLASSNAME_DELIMITER + ora_tablename + D_CLASSNAME_DELIMITER + ora_geom_colname;
+      ora_fdo_classname = ora_tableowner + L"~" + ora_tablename + L"~" + ora_geom_colname;
 
       FdoStringP w_fdo_classname = ora_fdo_classname.c_str();
 
@@ -2203,13 +1881,6 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
       {
 
         FdoPtr<FdoFeatureClass> fc = FdoFeatureClass::Create(w_fdo_classname, L"");      
-        // set class capabillities
-        // sde class is read-only and no locking
-        FdoPtr<FdoClassCapabilities> capab = FdoClassCapabilities::Create(*fc);
-        capab->SetSupportsWrite(false);
-        capab->SetSupportsLocking(false);
-        capab->SetSupportsLongTransactions(false);
-        fc->SetCapabilities(capab);
 
         FdoPtr<FdoKgOraClassDefinition> phys_class  = FdoKgOraClassDefinition::Create();
 
@@ -2234,11 +1905,8 @@ void c_FdoOra_API2::DescribeSchemaSDE(c_Oci_Connection * OciConn,const wchar_t* 
         phys_class->SetOracleFullTableName( FdoStringP(ora_fullname.c_str()) );
         AliasNum++;
         phys_class->SetOraTableAliasNum( AliasNum );
-      
-		// 1SPATIAL START
-        //phys_class->SetSdeClass(true,sde_featurekey_colname.c_str(),sde_full_geometry_table_name.c_str(),sde_geom_type,sde_full_index_table_name.c_str());
-		phys_class->SetSdeClass(true,sde_featurekey_colname.c_str(),sde_full_geometry_table_name.c_str(),sde_geom_type,sde_full_index_table_name.c_str(), gsize1);
-		// 1SPATIAL END
+        
+        phys_class->SetSdeClass(true,sde_featurekey_colname.c_str(),sde_full_geometry_table_name.c_str(),sde_geom_type,sde_full_index_table_name.c_str());
 
         FdoPtr<FdoPropertyDefinitionCollection> pdc = fc->GetProperties();
 
@@ -2465,7 +2133,7 @@ bool c_FdoOra_API2::FdoPropertyToOraDataType(FdoPropertyDefinition* Property,Fdo
         break;
         
         case FdoDataType_Int16:
-          OraType = L"NUMBER(5,0)";
+          OraType = L"NUMBER(10,0)";
         break;
 
         case FdoDataType_Int32:
@@ -2473,7 +2141,7 @@ bool c_FdoOra_API2::FdoPropertyToOraDataType(FdoPropertyDefinition* Property,Fdo
         break;
 
         case FdoDataType_Int64:
-          OraType = L"NUMBER(19,0)";
+          OraType = L"NUMBER(10,0)";
         break;
         
         default:

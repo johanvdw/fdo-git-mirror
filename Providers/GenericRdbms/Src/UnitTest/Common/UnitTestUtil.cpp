@@ -167,8 +167,6 @@ void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMap
     FdoPtr<FdoRdbmsOvClassDefinition>pOvClass;
     SchemaOverrideUtilP overrideUtil = NewSchemaOverrideUtil();
 
-    bool supportsZ = (FdoPtr<FdoIGeometryCapabilities>(connection->GetGeometryCapabilities())->GetDimensionalities() & FdoDimensionality_Z);
-
     if( useBaseMapping )
     {
         pOverrides =  (FdoRdbmsOvPhysicalSchemaMapping*) connection->CreateSchemaMapping();
@@ -457,8 +455,7 @@ void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMap
 
     FdoGeometricPropertyDefinition* pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"location and shape" );
     pGeomProp->SetGeometryTypes( FdoGeometricType_Curve );
-    if ( supportsZ ) 
-        pGeomProp->SetHasElevation( true );
+    pGeomProp->SetHasElevation( true );
     pClass->GetProperties()->Add( pGeomProp );
 
     pClass->SetGeometryProperty( pGeomProp );
@@ -500,7 +497,6 @@ void UnitTestUtil::CreateLandSchema( FdoIConnection* connection )
     // This forces a re-create of the Land Schema in existing datastores.
     static wchar_t* currVersion = L"1.9";
     FdoPtr<FdoISchemaCapabilities>	schemaCap = connection->GetSchemaCapabilities();    
-    bool supportsZ = (FdoPtr<FdoIGeometryCapabilities>(connection->GetGeometryCapabilities())->GetDimensionalities() & FdoDimensionality_Z);
 
     FdoPtr<FdoIDescribeSchema> pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
 
@@ -647,8 +643,7 @@ void UnitTestUtil::CreateLandSchema( FdoIConnection* connection )
         );
         pGeomProp->SetGeometryTypes( FdoGeometricType_Point | FdoGeometricType_Curve);
         FdoPropertiesP(pParcelClass->GetProperties())->Add( pGeomProp );
-        if ( supportsZ ) 
-            pGeomProp->SetHasElevation( true );
+        pGeomProp->SetHasElevation( true );
         FdoClassesP(pSchema->GetClasses())->Add( pParcelClass );
 
 		FdoPtr<FdoFeatureClass> pParcelAClass = FdoFeatureClass::Create( L"Parcel_A", L"land parcel" );
@@ -739,8 +734,7 @@ void UnitTestUtil::CreateLandSchema( FdoIConnection* connection )
 
         pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"" );
         pGeomProp->SetGeometryTypes( FdoGeometricType_Point | FdoGeometricType_Curve );
-        if ( supportsZ ) 
-            pGeomProp->SetHasElevation( true );
+        pGeomProp->SetHasElevation( true );
         FdoPropertiesP(pCityClass->GetProperties())->Add( pGeomProp );
         pCityClass->SetGeometryProperty( pGeomProp );
 
@@ -846,8 +840,7 @@ void UnitTestUtil::CreateLandSchema( FdoIConnection* connection )
 
         pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"" );
         pGeomProp->SetGeometryTypes( FdoGeometricType_Point | FdoGeometricType_Curve );
-        if ( supportsZ ) 
-            pGeomProp->SetHasElevation( true );
+        pGeomProp->SetHasElevation( true );
         FdoPropertiesP(pBldgClass->GetProperties())->Add( pGeomProp );
         pBldgClass->SetGeometryProperty( pGeomProp );
 
@@ -862,7 +855,6 @@ void UnitTestUtil::CreateNonUniqueSchema( FdoIConnection* connection )
     // Version must be incremented each time the following Land schema is updated.
     // This forces a re-create of the NonUnique Schema in existing datastores.
     static wchar_t* currVersion = L"1.4";
-    bool supportsZ = (FdoPtr<FdoIGeometryCapabilities>(connection->GetGeometryCapabilities())->GetDimensionalities() & FdoDimensionality_Z);
 
     FdoPtr<FdoIDescribeSchema> pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
 
@@ -961,8 +953,7 @@ void UnitTestUtil::CreateNonUniqueSchema( FdoIConnection* connection )
         FdoPtr<FdoGeometricPropertyDefinition> pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"" );
         pGeomProp->SetGeometryTypes( FdoGeometricType_Point | FdoGeometricType_Curve);
         FdoPropertiesP(pParcelClass->GetProperties())->Add( pGeomProp );
-        if ( supportsZ ) 
-            pGeomProp->SetHasElevation( true );
+        pGeomProp->SetHasElevation( true );
         FdoClassesP(pSchema->GetClasses())->Add( pParcelClass );
 
         FdoPtr<FdoFeatureClass> pClass = FdoFeatureClass::Create( GetNlsObjectName(L"Industrial Parcel"), L"" );
@@ -995,8 +986,7 @@ void UnitTestUtil::CreateNonUniqueSchema( FdoIConnection* connection )
 
         pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"" );
         pGeomProp->SetGeometryTypes( FdoGeometricType_Point | FdoGeometricType_Curve );
-        if ( supportsZ )
-            pGeomProp->SetHasElevation( true );
+        pGeomProp->SetHasElevation( true );
         FdoPropertiesP(pPlineClass->GetProperties())->Add( pGeomProp );
         pPlineClass->SetGeometryProperty( pGeomProp );
 

@@ -75,9 +75,6 @@ protected:
         double ymax,
         FdoSpatialOperations spatialOperation,
         FdoInt32 numRowsExpected);
-
-    virtual bool CanHandleNullCol() {return false;};
-
 };
 
 #endif // SQLSERVER_CAPABILITIESTEST_H

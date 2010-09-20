@@ -59,18 +59,14 @@ II. Build Notes
   2. Install ActiveState Perl, available from:
      
         http://www.activestate.com/ActivePerl
-		
-  2a. Install NASM, available from:
-  
-        http://www.nasm.us/
 
   3. Ensure that the Windows Environment Variables are set as follows:
 
         SET FDO=[FDO OpenSource]\Fdo
         SET FDOUTILITIES=[FDO OpenSource]\Utilities
         SET FDOTHIRDPARTY=[FDO OpenSource]\ThirdParty
-        SET XALANROOT=%FDOTHIRDPARTY%\apache\xalan
-        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xerces
+        SET XALANROOT=%FDOTHIRDPARTY%\apache\xml-xalan\c
+        SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xml-xerces\c
         SET NLSDIR=%XALANROOT%\Src\xalanc\NLS
 
   4. In order to build all FDO Windows components, ensure that the Microsoft
@@ -507,7 +503,7 @@ II. Build Notes
      directory must be set as writeable by the user, otherwise the user 
      will have to log in and build FDO as the ROOT user. This requirement
      is due to the fact that the FDO Libraries will be built and installed 
-     in /usr/local/fdo-3.6.0/lib
+     in /usr/local/fdo-3.5.0/lib
 
   2. Ensure that the following FDO Environment Variables are set as follows:
 
@@ -641,11 +637,11 @@ II. Build Notes
      In order to build the FDO Python Wrappers, build and install the FDO 
      libraries. Once the install is complete, run the 
      [FDO OpenSource]/Fdo/Python/build_linux.sh script. 
-     The Python components will be installed in /usr/local/fdo-3.6.0/lib
+     The Python components will be installed in /usr/local/fdo-3.5.0/lib
 
   9. NOTE: To run the unit test, you must set LD_LIBRARY_PATH as follows:
 
-       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.6.0/lib
+       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.5.0/lib
        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SDEHOME/lib:$FDOTHIRDPARTY/ESRI/ArcSDEClient91/Linux/lib
  
  10. NOTE: Several known problems exist if auto-mounted drives are used as 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: rgb2pct.py 18194 2009-12-06 20:07:45Z rouault $
+#  $Id: rgb2pct.py 13110 2007-11-26 21:28:27Z hobu $
 # 
 #  Name:     rgb2pct
 #  Project:  GDAL Python Interface
@@ -38,18 +38,17 @@ import sys
 import os.path
 
 def Usage():
-    print('Usage: rgb2pct.py [-n colors | -pct palette_file] [-of format] source_file dest_file')
+    print 'Usage: rgb2pct.py [-n colors] [-of format] source_file dest_file'
     sys.exit(1)
 
 # =============================================================================
-#      Mainline
+# 	Mainline
 # =============================================================================
 
 color_count = 256
 format = 'GTiff'
 src_filename = None
 dst_filename = None
-pct_filename = None
 
 gdal.AllRegister()
 argv = gdal.GeneralCmdLineProcessor( sys.argv )
@@ -69,10 +68,6 @@ while i < len(argv):
         i = i + 1
         color_count = int(argv[i])
 
-    elif arg == '-pct':
-        i = i + 1
-        pct_filename = argv[i]
-
     elif src_filename is None:
         src_filename = argv[i]
 
@@ -91,34 +86,31 @@ if dst_filename is None:
 
 src_ds = gdal.Open( src_filename )
 if src_ds is None:
-    print('Unable to open ', src_filename)
+    print 'Unable to open ', src_filename
     sys.exit(1)
 
 if src_ds.RasterCount < 3:
-    print('%s has %d band(s), need 3 for inputs red, green and blue.' \
-          % (src_filename, src_ds.RasterCount))
+    print '%s has %d band(s), need 3 for inputs red, green and blue.' \
+          % (src_filename, src_ds.RasterCount)
     sys.exit(1)
 
 # Ensure we recognise the driver.
 
 dst_driver = gdal.GetDriverByName(format)
 if dst_driver is None:
-    print('"%s" driver not registered.' % format)
+    print '"%s" driver not registered.' % format
     sys.exit(1)
 
-# Generate palette
+# Generate the median cut PCT
 
 ct = gdal.ColorTable()
-if pct_filename is None:
-    err = gdal.ComputeMedianCutPCT( src_ds.GetRasterBand(1),
-                                    src_ds.GetRasterBand(2),
-                                    src_ds.GetRasterBand(3),
-                                    color_count, ct,
-                                    callback = gdal.TermProgress,
-                                    callback_data = 'Generate PCT' )
-else:
-    pct_ds = gdal.Open(pct_filename)
-    ct = pct_ds.GetRasterBand(1).GetRasterColorTable().Clone()
+
+err = gdal.ComputeMedianCutPCT( src_ds.GetRasterBand(1),
+                                src_ds.GetRasterBand(2),
+                                src_ds.GetRasterBand(3),
+                                color_count, ct,
+                                callback = gdal.TermProgress,
+                                callback_data = 'Generate PCT' )
 
 # Create the working file.  We have to use TIFF since there are few formats
 # that allow setting the color table after creation.
@@ -140,8 +132,6 @@ tif_ds.GetRasterBand(1).SetRasterColorTable( ct )
 
 tif_ds.SetProjection( src_ds.GetProjection() )
 tif_ds.SetGeoTransform( src_ds.GetGeoTransform() )
-if src_ds.GetGCPCount() > 0:
-    tif_ds.SetGCPs( src_ds.GetGCPs(), src_ds.GetGCPProjection() )
 
 # ----------------------------------------------------------------------------
 # Actually transfer and dither the data.
@@ -156,10 +146,16 @@ err = gdal.DitherRGB2PCT( src_ds.GetRasterBand(1),
 
 tif_ds = None
 
-if tif_filename != dst_filename:
+if tif_filename <> dst_filename:
     tif_ds = gdal.Open( tif_filename )
     dst_driver.CreateCopy( dst_filename, tif_ds )
     tif_ds = None
 
     gtiff_driver.Delete( tif_filename )
+
+
+
+
+
+
 

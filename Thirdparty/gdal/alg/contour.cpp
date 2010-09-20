@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: contour.cpp 18421 2010-01-01 20:54:00Z rouault $
+ * $Id: contour.cpp 14494 2008-05-19 17:27:26Z warmerdam $
  *
  * Project:  Contour Generation
  * Purpose:  Core algorithm implementation for contour line generation. 
@@ -32,7 +32,7 @@
 #include "gdal_alg.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: contour.cpp 18421 2010-01-01 20:54:00Z rouault $");
+CPL_CVSID("$Id: contour.cpp 14494 2008-05-19 17:27:26Z warmerdam $");
 
 // The amount of a contour interval that pixels should be fudged by if they
 // match a contour level exactly.
@@ -58,18 +58,15 @@ public:
     double *padfX;
     double *padfY;
 
-    int bLeftIsHigh;
-
     double dfTailX;
 
     GDALContourItem( double dfLevel );
     ~GDALContourItem();
 
     int    AddSegment( double dfXStart, double dfYStart,
-                       double dfXEnd, double dfYEnd, int bLeftHigh );
+                       double dfXEnd, double dfYEnd );
     void   MakeRoomFor( int );
     int    Merge( GDALContourItem * );
-    void   PrepareEjection();
 };
 
 /************************************************************************/
@@ -123,7 +120,7 @@ class GDALContourGenerator
 
     CPLErr AddSegment( double dfLevel, 
                        double dfXStart, double dfYStart,
-                       double dfXEnd, double dfYEnd, int bLeftHigh );
+                       double dfXEnd, double dfYEnd );
 
     CPLErr ProcessPixel( int iPixel );
     CPLErr ProcessRect( double, double, double, 
@@ -152,7 +149,7 @@ public:
           this->dfContourOffset = dfContourOffset; }
 
     void                SetFixedLevels( int, double * );
-    CPLErr              FeedLine( double *padfScanline );
+    CPLErr 		FeedLine( double *padfScanline );
     CPLErr              EjectContours( int bOnlyUnused = FALSE );
     
 };
@@ -162,7 +159,7 @@ public:
 /************************************************************************/
 
 GDALContourGeneratorH 
-GDAL_CG_Create( int nWidth, int nHeight, int bNoDataSet, double dfNoDataValue, 
+GDAL_CT_Create( int nWidth, int nHeight, int bNoDataSet, double dfNoDataValue, 
                 double dfContourInterval, double dfContourBase, 
                 GDALContourWriter pfnWriter, void *pCBData )
 
@@ -530,24 +527,15 @@ CPLErr GDALContourGenerator::ProcessRect(
         double adfX[4], adfY[4];
         CPLErr eErr;
 
-        /* Logs how many points we have af left + bottom,
-        ** and left + bottom + right.
-        */
-        int nPoints1 = 0, nPoints2 = 0, nPoints3 = 0;
-
-
         Intersect( dfUpLeft, dfUpLeftX, dfUpLeftY,
                    dfLoLeft, dfLoLeftX, dfLoLeftY,
                    dfLoRight, dfLevel, &nPoints, adfX, adfY );
-        nPoints1 = nPoints;
         Intersect( dfLoLeft, dfLoLeftX, dfLoLeftY,
                    dfLoRight, dfLoRightX, dfLoRightY,
                    dfUpRight, dfLevel, &nPoints, adfX, adfY );
-        nPoints2 = nPoints;
         Intersect( dfLoRight, dfLoRightX, dfLoRightY,
                    dfUpRight, dfUpRightX, dfUpRightY,
                    dfUpLeft, dfLevel, &nPoints, adfX, adfY );
-        nPoints3 = nPoints;
         Intersect( dfUpRight, dfUpRightX, dfUpRightY,
                    dfUpLeft, dfUpLeftX, dfUpLeftY,
                    dfLoLeft, dfLevel, &nPoints, adfX, adfY );
@@ -557,26 +545,7 @@ CPLErr GDALContourGenerator::ProcessRect(
 
         if( nPoints >= 2 )
         {
-            if( 
-                ( ( (nPoints1 == 1 && nPoints2 == 2)||
-                    (nPoints1 == 1 && nPoints3 == 2)|| 
-                    (nPoints1 == 1 && nPoints  == 2)  ) &&
-                                           dfUpLeft > dfLoLeft )
-                ||
-                ( ( (nPoints2 == 1 && nPoints3 == 2)||
-                    (nPoints2 == 1 && nPoints  == 2)  ) &&
-                                         dfLoLeft > dfLoRight )
-                ||
-                ( ( (nPoints3 == 1 && nPoints  == 2)  ) &&
-                                         dfLoRight > dfUpRight )
-              )
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   TRUE );
-            else
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   FALSE );
+            eErr = AddSegment( dfLevel, adfX[0], adfY[0], adfX[1], adfY[1] );
 
             if( eErr != CE_None )
                 return eErr;
@@ -584,13 +553,7 @@ CPLErr GDALContourGenerator::ProcessRect(
 
         if( nPoints == 4 )
         {
-            /* If we get here, we know the first was left+bottom, so we are at
-            ** right+top, therefore "left is high" if loRight is larger than
-            ** up right...
-            */
-            eErr = AddSegment( dfLevel,
-                               adfX[2], adfY[2], adfX[3], adfY[3],
-                               ( dfLoRight > dfUpRight) );
+            eErr = AddSegment( dfLevel, adfX[2], adfY[2], adfX[3], adfY[3] );
             if( eErr != CE_None )
                 return eErr;
         }
@@ -640,8 +603,7 @@ void GDALContourGenerator::Intersect( double dfVal1, double dfX1, double dfY1,
 
 CPLErr GDALContourGenerator::AddSegment( double dfLevel, 
                                          double dfX1, double dfY1,
-                                         double dfX2, double dfY2,
-                                         int bLeftHigh)
+                                         double dfX2, double dfY2 )
 
 {
     GDALContourLevel *poLevel = FindLevel( dfLevel );
@@ -663,7 +625,7 @@ CPLErr GDALContourGenerator::AddSegment( double dfLevel,
     {
         poTarget = poLevel->GetContour( iTarget );
 
-        poTarget->AddSegment( dfX1, dfY1, dfX2, dfY2, bLeftHigh );
+        poTarget->AddSegment( dfX1, dfY1, dfX2, dfY2 );
 
         poLevel->AdjustContour( iTarget );
         
@@ -675,7 +637,7 @@ CPLErr GDALContourGenerator::AddSegment( double dfLevel,
 /* -------------------------------------------------------------------- */
     poTarget = new GDALContourItem( dfLevel );
 
-    poTarget->AddSegment( dfX1, dfY1, dfX2, dfY2, bLeftHigh );
+    poTarget->AddSegment( dfX1, dfY1, dfX2, dfY2 );
 
     poLevel->InsertContour( poTarget );
 
@@ -824,9 +786,6 @@ CPLErr GDALContourGenerator::EjectContours( int bOnlyUnused )
             {
                 if( pfnWriter != NULL )
                 {
-                    // If direction is wrong, then reverse before ejecting.
-                    poTarget->PrepareEjection();
-
                     eErr = pfnWriter( poTarget->dfLevel, poTarget->nPoints, 
                                       poTarget->padfX, poTarget->padfY, 
                                       pWriterCBData );
@@ -1081,8 +1040,6 @@ GDALContourItem::GDALContourItem( double dfLevelIn )
     padfX = NULL;
     padfY = NULL;
     
-    bLeftIsHigh = FALSE;
-
     dfTailX = 0.0;
 }
 
@@ -1102,8 +1059,7 @@ GDALContourItem::~GDALContourItem()
 /************************************************************************/
 
 int GDALContourItem::AddSegment( double dfXStart, double dfYStart, 
-                                 double dfXEnd, double dfYEnd,
-                                 int bLeftHigh)
+                                 double dfXEnd, double dfYEnd )
 
 {
     MakeRoomFor( nPoints + 1 );
@@ -1122,9 +1078,6 @@ int GDALContourItem::AddSegment( double dfXStart, double dfYStart,
         bRecentlyAccessed = TRUE;
 
         dfTailX = padfX[1];
-
-        // Here we know that the left of this vector is the high side
-        bLeftIsHigh = bLeftHigh;
 
         return TRUE;
     }
@@ -1278,36 +1231,6 @@ void GDALContourItem::MakeRoomFor( int nNewPoints )
         padfY = (double *) CPLRealloc(padfY,sizeof(double) * nMaxPoints);
     }
 }
-
-/************************************************************************/
-/*                          PrepareEjection()                           */
-/************************************************************************/
-
-void GDALContourItem::PrepareEjection()
-
-{
-    /* If left side is the high side, then reverse to get curve normal
-    ** pointing downwards
-    */
-    if( bLeftIsHigh )
-    {
-        int i;
-
-        // Reverse the arrays
-        for( i = 0; i < nPoints / 2; i++ )
-        {
-            double dfTemp;
-            dfTemp = padfX[i];
-            padfX[i] = padfX[ nPoints - i - 1];
-            padfX[ nPoints - i - 1] = dfTemp;
-            
-            dfTemp = padfY[i];
-            padfY[i] = padfY[ nPoints - i - 1];
-            padfY[ nPoints - i - 1] = dfTemp;
-        }
-    }
-}
-
 
 /************************************************************************/
 /* ==================================================================== */

@@ -96,10 +96,6 @@ protected:
 
     virtual FdoStringP FixStringVal( FdoString* val );
 
-    virtual FdoInt64 GetSrid( FdoInt64 srid ); 
-
-    virtual bool CanHandleNullCol() {return true;};
-
 protected:
 	static FdoPropertyValue* AddNewProperty( FdoPropertyValueCollection* propertyValues, const wchar_t *name );
 

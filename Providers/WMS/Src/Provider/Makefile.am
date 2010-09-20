@@ -104,7 +104,6 @@ noinst_HEADERS = $(libWMSProviderSrc_la_SOURCES) \
   FdoWmsTopologyCapabilities.h \
   FdoWmsFeatureCommand.h \
   FdoWmsUtils.h \
-  FdoWmsReverseEpsgCodes.h \
   FdoWmsFeatureReader.h \
   FdoWmsXmlGlobals.h \
   FdoWmsFilterCapabilities.h \

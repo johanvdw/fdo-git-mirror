@@ -18,22 +18,21 @@
 
 #include "stdafx.h"
 #include "OgrFdoUtil.h"
-#include "OgrProvider.h"
 
-void tilde2dot(std::string& mbfc)
+void tilde2dot(char* mbfc)
 {
     //TODO HACK remove . from feature class names -- this is a workaround for Oracle
-    for (int i=(int)mbfc.length()-1; i>=0; i--)
+    for (int i=(int)strlen(mbfc)-1; i>=0; i--)
     {
         if (mbfc[i] == '~')
             mbfc[i] = '.';
     }
 }
 
-void dot2tilde(std::wstring& wname)
+void dot2tilde(wchar_t* wname)
 {
     //TODO HACK remove . from feature class names -- this is a workaround for Oracle
-    for (int i=(int)wname.length()-1; i>=0; i--)
+    for (int i=(int)wcslen(wname)-1; i>=0; i--)
     {
         if (wname[i] == '.')
             wname[i] = '~';
@@ -42,53 +41,17 @@ void dot2tilde(std::wstring& wname)
 
 FdoClassDefinition* OgrFdoUtil::ConvertClass(OGRLayer* layer, FdoIdentifierCollection* requestedProps)
 {
-    return ConvertClass(NULL, layer, requestedProps);
-}
-
-FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer* layer, FdoIdentifierCollection* requestedProps)
-{
     OGRFeatureDefn* fdefn = layer->GetLayerDefn();
 
     const char* name = fdefn->GetName();
-    std::wstring wname = A2W_SLOW(name);
+    A2W(name);
 
     dot2tilde(wname);
 
 #if DEBUG
     printf ("Feature class name: %s\n", name);
 #endif
-
-    FdoPtr<FdoFeatureClass> fc = FdoFeatureClass::Create(wname.c_str(), L"");
-    FdoPtr<FdoClassCapabilities> classCapabilities;
-    FdoPolygonVertexOrderRule vertexOrderRule = FdoPolygonVertexOrderRule_CCW;
-    bool bStrictness = false;
-    if (connection)
-    {
-        classCapabilities = FdoClassCapabilities::Create(*fc.p);
-        classCapabilities->SetSupportsLocking(false);
-        classCapabilities->SetSupportsLongTransactions(false);
-        classCapabilities->SetSupportsWrite(true);
-        fc->SetCapabilities(classCapabilities);
-
-        OGRDataSource* dataStore = connection->GetOGRDataSource();
-        if (NULL != dataStore)
-        {
-            OGRSFDriver* driver = dataStore->GetDriver();
-            if (NULL != driver)
-            {
-                const char* name = driver->GetName();
-
-                // As far as I know, ESRI Shapefile is the only feature source that uses
-                // clockwise vertex order. I assume other feature sources use counterclockwise
-                // vertex order.
-                if (strcmp(name, "ESRI Shapefile") == 0)
-                {
-                    vertexOrderRule = FdoPolygonVertexOrderRule_CW;
-                    bStrictness = true;
-                }
-            }
-        }
-    }
+    FdoPtr<FdoFeatureClass> fc = FdoFeatureClass::Create(wname, L"");
 
     FdoPtr<FdoPropertyDefinitionCollection> pdc = fc->GetProperties();
 
@@ -99,7 +62,7 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
     {
         OGRFieldDefn* field = fdefn->GetFieldDefn(j);
         const char* name = field->GetNameRef();
-        std::wstring wname = A2W_SLOW(name);
+        A2W(name);
 #if DEBUG
         printf("Attribute : %s\n", name);
 #endif
@@ -122,12 +85,12 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
         if (add)
         {
             //check if property is on the optional requested property list
-            FdoPtr<FdoIdentifier> found = (requestedProps) ? requestedProps->FindItem(wname.c_str()) : NULL;
+            FdoPtr<FdoIdentifier> found = (requestedProps) ? requestedProps->FindItem(wname) : NULL;
 
             //if it's on the list or there was no list at all, then add the property
             if (!requestedProps || requestedProps->GetCount() == 0 || (requestedProps && found.p))
             {
-                FdoPtr<FdoDataPropertyDefinition> dpd = FdoDataPropertyDefinition::Create(wname.c_str(), L"");
+                FdoPtr<FdoDataPropertyDefinition> dpd = FdoDataPropertyDefinition::Create(wname, L"");
 
                 dpd->SetDataType(dt);
                 dpd->SetLength(field->GetWidth());
@@ -141,10 +104,10 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
     //add geometry property -- this code assumes there is one
     const char* geomname = layer->GetGeometryColumn();
     if (*geomname == 0) geomname = "GEOMETRY";
-    std::wstring wgeomname = A2W_SLOW(geomname);
+    A2W(geomname);
 
     //check if property is on the optional requested property list
-    FdoPtr<FdoIdentifier> found = (requestedProps) ? requestedProps->FindItem(wgeomname.c_str()) : NULL;
+    FdoPtr<FdoIdentifier> found = (requestedProps) ? requestedProps->FindItem(wgeomname) : NULL;
 
     //if it's on the list or there was no list at all, then add the property
     if (!requestedProps || requestedProps->GetCount() == 0 || (requestedProps && found.p))
@@ -153,7 +116,7 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
         printf ("Geometry column : %s\n", geomname);
 #endif
 
-        FdoPtr<FdoGeometricPropertyDefinition> gpd = FdoGeometricPropertyDefinition::Create(wgeomname.c_str(), L"");
+        FdoPtr<FdoGeometricPropertyDefinition> gpd = FdoGeometricPropertyDefinition::Create(wgeomname, L"");
 
         OGRwkbGeometryType gt = fdefn->GetGeomType();
 
@@ -171,40 +134,34 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
 
         if (gpd)
         {
-            gpd->SetSpatialContextAssociation(wname.c_str());
+            gpd->SetSpatialContextAssociation(wname);
             pdc->Add(gpd);
             fc->SetGeometryProperty(gpd);
-
-            if (classCapabilities != NULL)
-            {
-                // Set vertex order and strictness rule for geometry property
-                classCapabilities->SetPolygonVertexOrderRule(gpd->GetName(), vertexOrderRule);
-                classCapabilities->SetPolygonVertexOrderStrictness(gpd->GetName(), bStrictness);
-            }
         }
+
     }
 
     //identity property
     const char* idname = layer->GetFIDColumn();
     if (*idname == 0) idname = "FID";
-    std::wstring widname = A2W_SLOW(idname);
+    A2W(idname);
 #if DEBUG
     printf ("Identity column : %s\n", idname);
 #endif
     //check if property is on the optional requested property list
-    found = (requestedProps) ? requestedProps->FindItem(widname.c_str()) : NULL;
+    found = (requestedProps) ? requestedProps->FindItem(widname) : NULL;
 
     //if it's on the list or there was no list at all, then add the property
     if (!requestedProps || requestedProps->GetCount() == 0 || (requestedProps && found.p))
     {
         //see if FID column was in the attributes we processed earlier
-        FdoPtr<FdoDataPropertyDefinition> fid = (FdoDataPropertyDefinition*)pdc->FindItem(widname.c_str());
+        FdoPtr<FdoDataPropertyDefinition> fid = (FdoDataPropertyDefinition*)pdc->FindItem(widname);
 
         //if not, create one. 
         //TODO: we may not need to do this at all
         if (!fid.p)
         {
-            fid = FdoDataPropertyDefinition::Create(widname.c_str(), L"");
+            fid = FdoDataPropertyDefinition::Create(widname, L"");
             fid->SetDataType(FdoDataType_Int32); //TODO should we use Int64?
             pdc->Add(fid);
         }
@@ -213,7 +170,7 @@ FdoClassDefinition* OgrFdoUtil::ConvertClass(OgrConnection* connection, OGRLayer
         //set the ID property of the feature class
         FdoPtr<FdoDataPropertyDefinitionCollection> idpdc = fc->GetIdentityProperties();
         idpdc->Add(fid);
-    }
+    }  
 
     return FDO_SAFE_ADDREF(fc.p);
 }
@@ -236,7 +193,7 @@ void OgrFdoUtil::ConvertFeature(FdoPropertyValueCollection* src, OGRFeature* dst
         FdoPtr<FdoPropertyValue> pv = src->GetItem(i);
 
         FdoString* propName = FdoPtr<FdoIdentifier>(pv->GetName())->GetName();
-        W2A_PROPNAME(propName);
+        W2A(propName);
 
         const char* geomname = layer->GetGeometryColumn();
         if (*geomname == 0) geomname = "GEOMETRY";
@@ -289,8 +246,8 @@ void OgrFdoUtil::ConvertFeature(FdoPropertyValueCollection* src, OGRFeature* dst
                     if (sv && !sv->IsNull())
                     {
                         FdoString* str = sv->GetString();
-                        std::string mbstr = W2A_SLOW(str);
-                        dst->SetField(mbpropName, mbstr.c_str());
+                        W2A(str);
+                        dst->SetField(mbpropName, (const char*)mbstr);
                     }
                 }
                 break;
@@ -386,8 +343,8 @@ void OgrFdoUtil::ApplyFilter(OGRLayer* layer, FdoFilter* filter)
     if (attr)
     {
         FdoString* attrsql = attr->ToString();
-        std::string mbattrsql = W2A_SLOW(attrsql);
-        layer->SetAttributeFilter(mbattrsql.c_str());
+        W2A(attrsql);
+        layer->SetAttributeFilter(mbattrsql);
     }
 
     //set spatial query

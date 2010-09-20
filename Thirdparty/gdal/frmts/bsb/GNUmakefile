@@ -10,16 +10,16 @@ DISTDIR =	bsb-$(VERSION)
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-bsb2raw$(EXE):	bsb2raw.$(OBJ_EXT)
-	$(LD) $(LDFLAGS) bsb2raw.$(OBJ_EXT) $(CONFIG_LIBS) -o bsb2raw$(EXE)
+bsb2raw$(EXE):	bsb2raw.o
+	$(LD) $(LDFLAGS) bsb2raw.o $(CONFIG_LIBS) -o bsb2raw$(EXE)
 
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 dist:	
 	rm -rf $(DISTDIR)

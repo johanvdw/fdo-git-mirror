@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msg_reader_core.cpp 16666 2009-03-28 12:46:49Z rouault $
+ * $Id: msg_reader_core.cpp 14857 2008-07-08 16:08:50Z mloskot $
  *
  * Project:  MSG Native Reader
  * Purpose:  Base class for reading in the headers of MSG native images
@@ -42,7 +42,7 @@
 #ifdef GDAL_SUPPORT
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: msg_reader_core.cpp 16666 2009-03-28 12:46:49Z rouault $");
+CPL_CVSID("$Id: msg_reader_core.cpp 14857 2008-07-08 16:08:50Z mloskot $");
 
 #else
 #define VSIFSeek(fp, pos, ref)    fseek(fp, pos, ref)
@@ -230,7 +230,8 @@ void Msg_reader_core::read_metadata_block(FILE* fin) {
             SEEK_CUR
         );
 
-        if (visir_line.channelId == 0 || visir_line.channelId > MSG_NUM_CHANNELS) {
+        // FIXME - mloskot: channelId is unsigned char, so the first comparison is always false
+        if (visir_line.channelId < 0 || visir_line.channelId > MSG_NUM_CHANNELS) {
             _open_success = false;
             break;
         }

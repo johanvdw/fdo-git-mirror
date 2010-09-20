@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrspatialreference.cpp 18544 2010-01-14 06:47:29Z warmerdam $
+ * $Id: ogrspatialreference.cpp 15868 2008-12-01 20:01:56Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSpatialReference class.
@@ -31,9 +31,8 @@
 #include "ogr_p.h"
 #include "cpl_csv.h"
 #include "cpl_http.h"
-#include "cpl_atomic_ops.h"
 
-CPL_CVSID("$Id: ogrspatialreference.cpp 18544 2010-01-14 06:47:29Z warmerdam $");
+CPL_CVSID("$Id: ogrspatialreference.cpp 15868 2008-12-01 20:01:56Z rouault $");
 
 // The current opinion is that WKT longitudes like central meridian
 // should be relative to greenwich, not the prime meridian in use. 
@@ -74,10 +73,10 @@ static void OGRPrintDouble( char * pszStrBuf, double dfValue )
 /************************************************************************/
 
 /**
- * \brief Constructor.
+ * Constructor.
  *
  * This constructor takes an optional string argument which if passed
- * should be a WKT representation of an SRS.  Passing this is equivalent
+ * should be a WKT representation of an SRS.  Passing this is equivelent
  * to not passing it, and then calling importFromWkt() with the WKT string.
  *
  * Note that newly created objects are given a reference count of one. 
@@ -104,11 +103,6 @@ OGRSpatialReference::OGRSpatialReference( const char * pszWKT )
 /*                       OSRNewSpatialReference()                       */
 /************************************************************************/
 
-/**
- * \brief Constructor.
- *
- * This function is the same as OGRSpatialReference::OGRSpatialReference()
- */
 OGRSpatialReferenceH CPL_STDCALL OSRNewSpatialReference( const char *pszWKT )
 
 {
@@ -125,6 +119,7 @@ OGRSpatialReferenceH CPL_STDCALL OSRNewSpatialReference( const char *pszWKT )
         }
     }
 
+    CPLAssert( NULL != poSRS );
     return (OGRSpatialReferenceH) poSRS;
 }
 
@@ -150,12 +145,10 @@ OGRSpatialReference::OGRSpatialReference(const OGRSpatialReference &oOther)
 /************************************************************************/
 
 /**
- * \brief OGRSpatialReference destructor. 
+ * OGRSpatialReference destructor. 
  *
  * The C function OSRDestroySpatialReference() does the same thing as this
- * method. Preferred C++ method : OGRSpatialReference::DestroySpatialReference() 
-  *
- * @deprecated
+ * method. 
  */
 
 OGRSpatialReference::~OGRSpatialReference()
@@ -166,41 +159,9 @@ OGRSpatialReference::~OGRSpatialReference()
 }
 
 /************************************************************************/
-/*                      DestroySpatialReference()                       */
-/************************************************************************/
-
-/**
- * \brief OGRSpatialReference destructor. 
- *
- * This static method will destroy a OGRSpatialReference.  It is
- * equivalent to calling delete on the object, but it ensures that the
- * deallocation is properly executed within the OGR libraries heap on
- * platforms where this can matter (win32).  
- *
- * This function is the same as OSRDestroySpatialReference()
- *
- * @param poSRS the object to delete
- *
- * @since GDAL 1.7.0
- */
- 
-void OGRSpatialReference::DestroySpatialReference(OGRSpatialReference* poSRS)
-{
-    delete poSRS;
-}
-
-/************************************************************************/
 /*                     OSRDestroySpatialReference()                     */
 /************************************************************************/
 
-/**
- * \brief OGRSpatialReference destructor. 
- *
- * This function is the same as OGRSpatialReference::~OGRSpatialReference()
- * and OGRSpatialReference::DestroySpatialReference()
- *
- * @param hSRS the object to delete
- */
 void CPL_STDCALL OSRDestroySpatialReference( OGRSpatialReferenceH hSRS )
 
 {
@@ -212,7 +173,7 @@ void CPL_STDCALL OSRDestroySpatialReference( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Wipe current definition.
+ * Wipe current definition.
  *
  * Returns OGRSpatialReference to a state with no definition, as it 
  * exists when first created.  It does not affect reference counts.
@@ -253,7 +214,7 @@ OGRSpatialReference::operator=(const OGRSpatialReference &oSource)
 /************************************************************************/
 
 /**
- * \brief Increments the reference count by one.
+ * Increments the reference count by one.
  *
  * The reference count is used keep track of the number of OGRGeometry objects
  * referencing this SRS.
@@ -266,18 +227,13 @@ OGRSpatialReference::operator=(const OGRSpatialReference &oSource)
 int OGRSpatialReference::Reference()
 
 {
-    return CPLAtomicInc(&nRefCount);
+    return ++nRefCount;
 }
 
 /************************************************************************/
 /*                            OSRReference()                            */
 /************************************************************************/
 
-/**
- * \brief Increments the reference count by one.
- *
- * This function is the same as OGRSpatialReference::Reference()
- */
 int OSRReference( OGRSpatialReferenceH hSRS )
 
 {
@@ -291,7 +247,7 @@ int OSRReference( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Decrements the reference count by one.
+ * Decrements the reference count by one.
  *
  * The method does the same thing as the C function OSRDereference(). 
  *
@@ -306,18 +262,13 @@ int OGRSpatialReference::Dereference()
                   "Dereference() called on an object with refcount %d,"
                   "likely already destroyed!", 
                   nRefCount );
-    return CPLAtomicDec(&nRefCount);
+    return --nRefCount;
 }
 
 /************************************************************************/
 /*                           OSRDereference()                           */
 /************************************************************************/
 
-/**
- * \brief Decrements the reference count by one.
- *
- * This function is the same as OGRSpatialReference::Dereference()
- */
 int OSRDereference( OGRSpatialReferenceH hSRS )
 
 {
@@ -333,7 +284,7 @@ int OSRDereference( OGRSpatialReferenceH hSRS )
 /**
  * \fn int OGRSpatialReference::GetReferenceCount() const;
  *
- * \brief Fetch current reference count.
+ * Fetch current reference count.
  *
  * @return the current reference count.
  */
@@ -343,7 +294,7 @@ int OSRDereference( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Decrements the reference count by one, and destroy if zero.
+ * Decrements the reference count by one, and destroy if zero.
  *
  * The method does the same thing as the C function OSRRelease(). 
  */
@@ -361,11 +312,6 @@ void OGRSpatialReference::Release()
 /*                             OSRRelease()                             */
 /************************************************************************/
 
-/**
- * \brief Decrements the reference count by one, and destroy if zero.
- *
- * This function is the same as OGRSpatialReference::Release()
- */
 void OSRRelease( OGRSpatialReferenceH hSRS )
 
 {
@@ -379,7 +325,7 @@ void OSRRelease( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Set the root SRS node.
+ * Set the root SRS node.
  *
  * If the object has an existing tree of OGR_SRSNodes, they are destroyed
  * as part of assigning the new root.  Ownership of the passed OGR_SRSNode is
@@ -402,7 +348,7 @@ void OGRSpatialReference::SetRoot( OGR_SRSNode * poNewRoot )
 /************************************************************************/
 
 /**
- * \brief Find named node in tree.
+ * Find named node in tree.
  *
  * This method does a pre-order traversal of the node tree searching for
  * a node with this exact value (case insensitive), and returns it.  Leaf
@@ -457,7 +403,7 @@ OGRSpatialReference::GetAttrNode( const char * pszNodePath ) const
 /************************************************************************/
 
 /**
- * \brief Fetch indicated attribute of named node.
+ * Fetch indicated attribute of named node.
  *
  * This method uses GetAttrNode() to find the named node, and then extracts
  * the value of the indicated child.  Thus a call to GetAttrValue("UNIT",1)
@@ -492,11 +438,6 @@ const char *OGRSpatialReference::GetAttrValue( const char * pszNodeName,
 /*                          OSRGetAttrValue()                           */
 /************************************************************************/
 
-/**
- * \brief Fetch indicated attribute of named node.
- *
- * This function is the same as OGRSpatialReference::GetAttrValue()
- */
 const char * CPL_STDCALL OSRGetAttrValue( OGRSpatialReferenceH hSRS,
                              const char * pszKey, int iChild )
 
@@ -511,7 +452,7 @@ const char * CPL_STDCALL OSRGetAttrValue( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Make a duplicate of this OGRSpatialReference.
+ * Make a duplicate of this OGRSpatialReference.
  *
  * This method is the same as the C function OSRClone().
  *
@@ -535,11 +476,6 @@ OGRSpatialReference *OGRSpatialReference::Clone() const
 /*                              OSRClone()                              */
 /************************************************************************/
 
-/**
- * \brief Make a duplicate of this OGRSpatialReference.
- *
- * This function is the same as OGRSpatialReference::Clone()
- */
 OGRSpatialReferenceH CPL_STDCALL OSRClone( OGRSpatialReferenceH hSRS )
 
 {
@@ -550,22 +486,10 @@ OGRSpatialReferenceH CPL_STDCALL OSRClone( OGRSpatialReferenceH hSRS )
 
 /************************************************************************/
 /*                         exportToPrettyWkt()                          */
+/*                                                                      */
+/*      Translate into a nicely formatted string for display to a       */
+/*      person.                                                         */
 /************************************************************************/
-
-/**
- * Convert this SRS into a a nicely formatted WKT string for display to a person.
- *
- * Note that the returned WKT string should be freed with OGRFree() or
- * CPLFree() when no longer needed.  It is the responsibility of the caller.
- *
- * This method is the same as the C function OSRExportToPrettyWkt().
- *
- * @param ppszResult the resulting string is returned in this pointer.
- * @param bSimplify TRUE if the AXIS, AUTHORITY and EXTENSION nodes should be stripped off
- *
- * @return currently OGRERR_NONE is always returned, but the future it
- * is possible error conditions will develop. 
- */
 
 OGRErr OGRSpatialReference::exportToPrettyWkt( char ** ppszResult, 
                                                int bSimplify ) const
@@ -597,13 +521,6 @@ OGRErr OGRSpatialReference::exportToPrettyWkt( char ** ppszResult,
 /*                        OSRExportToPrettyWkt()                        */
 /************************************************************************/
 
-
-/**
- * \brief Convert this SRS into a a nicely formatted WKT string for display to a person.
- *
- * This function is the same as OGRSpatialReference::exportToPrettyWkt().
- */
-
 OGRErr CPL_STDCALL OSRExportToPrettyWkt( OGRSpatialReferenceH hSRS, char ** ppszReturn,
                              int bSimplify)
 
@@ -621,7 +538,7 @@ OGRErr CPL_STDCALL OSRExportToPrettyWkt( OGRSpatialReferenceH hSRS, char ** ppsz
 /************************************************************************/
 
 /**
- * \brief Convert this SRS into WKT format.
+ * Convert this SRS into WKT format.
  *
  * Note that the returned WKT string should be freed with OGRFree() or
  * CPLFree() when no longer needed.  It is the responsibility of the caller.
@@ -653,7 +570,7 @@ OGRErr OGRSpatialReference::exportToWkt( char ** ppszResult ) const
 /************************************************************************/
 
 /** 
- * \brief Convert this SRS into WKT format.
+ * Convert this SRS into WKT format.
  *
  * This function is the same as OGRSpatialReference::exportToWkt().
  */
@@ -674,7 +591,7 @@ OGRErr CPL_STDCALL OSRExportToWkt( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Import from WKT string.
+ * Import from WKT string.
  *
  * This method will wipe the existing SRS definition, and
  * reassign it based on the contents of the passed WKT string.  Only as
@@ -709,7 +626,7 @@ OGRErr OGRSpatialReference::importFromWkt( char ** ppszInput )
 /************************************************************************/
 
 /**
- * \brief Import from WKT string.
+ * Import from WKT string.
  *
  * This function is the same as OGRSpatialReference::importFromWkt().
  */
@@ -727,7 +644,7 @@ OGRErr OSRImportFromWkt( OGRSpatialReferenceH hSRS, char **ppszInput )
 /************************************************************************/
 
 /**
- * \brief Set attribute value in spatial reference.
+ * Set attribute value in spatial reference.
  *
  * Missing intermediate nodes in the path will be created if not already
  * in existance.  If the attribute has no children one will be created and
@@ -803,11 +720,6 @@ OGRErr OGRSpatialReference::SetNode( const char * pszNodePath,
 /*                          OSRSetAttrValue()                           */
 /************************************************************************/
 
-/**
- * \brief Set attribute value in spatial reference.
- *
- * This function is the same as OGRSpatialReference::SetNode()
- */
 OGRErr CPL_STDCALL OSRSetAttrValue( OGRSpatialReferenceH hSRS, 
                         const char * pszPath, const char * pszValue )
 
@@ -840,7 +752,7 @@ OGRErr OGRSpatialReference::SetNode( const char *pszNodePath,
 /************************************************************************/
 
 /**
- * \brief Set the angular units for the geographic coordinate system.
+ * Set the angular units for the geographic coordinate system.
  *
  * This method creates a UNITS subnode with the specified values as a
  * child of the GEOGCS node. 
@@ -896,11 +808,6 @@ OGRErr OGRSpatialReference::SetAngularUnits( const char * pszUnitsName,
 /*                         OSRSetAngularUnits()                         */
 /************************************************************************/
 
-/**
- * \brief Set the angular units for the geographic coordinate system.
- *
- * This function is the same as OGRSpatialReference::SetAngularUnits()
- */
 OGRErr OSRSetAngularUnits( OGRSpatialReferenceH hSRS, 
                            const char * pszUnits, double dfInRadians )
 
@@ -916,7 +823,7 @@ OGRErr OSRSetAngularUnits( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Fetch angular geographic coordinate system units.
+ * Fetch angular geographic coordinate system units.
  *
  * If no units are available, a value of "degree" and SRS_UA_DEGREE_CONV 
  * will be assumed.  This method only checks directly under the GEOGCS node
@@ -965,11 +872,6 @@ double OGRSpatialReference::GetAngularUnits( char ** ppszName ) const
 /*                         OSRGetAngularUnits()                         */
 /************************************************************************/
 
-/**
- * \brief Fetch angular geographic coordinate system units.
- *
- * This function is the same as OGRSpatialReference::GetAngularUnits()
- */
 double OSRGetAngularUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
     
 {
@@ -983,14 +885,14 @@ double OSRGetAngularUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
 /************************************************************************/
 
 /**
- * \brief Set the linear units for the projection.
+ * Set the linear units for the projection.
  *
  * This method creates a UNITS subnode with the specified values as a
  * child of the PROJCS or LOCAL_CS node.   It works the same as the
  * SetLinearUnits() method, but it also updates all existing linear
  * projection parameter values from the old units to the new units. 
  *
- * @param pszName the units name to be used.  Some preferred units
+ * @param pszUnitsName the units name to be used.  Some preferred units
  * names can be found in ogr_srs_api.h such as SRS_UL_METER, SRS_UL_FOOT 
  * and SRS_UL_US_FOOT. 
  *
@@ -1042,11 +944,6 @@ OGRErr OGRSpatialReference::SetLinearUnitsAndUpdateParameters(
 /*                OSRSetLinearUnitsAndUpdateParameters()                */
 /************************************************************************/
 
-/**
- * \brief Set the linear units for the projection.
- *
- * This function is the same as OGRSpatialReference::SetLinearUnitsAndUpdateParameters()
- */
 OGRErr OSRSetLinearUnitsAndUpdateParameters( OGRSpatialReferenceH hSRS, 
                                              const char * pszUnits, 
                                              double dfInMeters )
@@ -1063,7 +960,7 @@ OGRErr OSRSetLinearUnitsAndUpdateParameters( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set the linear units for the projection.
+ * Set the linear units for the projection.
  *
  * This method creates a UNITS subnode with the specified values as a
  * child of the PROJCS or LOCAL_CS node. 
@@ -1127,11 +1024,6 @@ OGRErr OGRSpatialReference::SetLinearUnits( const char * pszUnitsName,
 /*                         OSRSetLinearUnits()                          */
 /************************************************************************/
 
-/**
- * \brief Set the linear units for the projection.
- *
- * This function is the same as OGRSpatialReference::SetLinearUnits()
- */
 OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS, 
                           const char * pszUnits, double dfInMeters )
 
@@ -1147,7 +1039,7 @@ OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Fetch linear projection units. 
+ * Fetch linear projection units. 
  *
  * If no units are available, a value of "Meters" and 1.0 will be assumed.
  * This method only checks directly under the PROJCS or LOCAL_CS node for 
@@ -1199,11 +1091,6 @@ double OGRSpatialReference::GetLinearUnits( char ** ppszName ) const
 /*                         OSRGetLinearUnits()                          */
 /************************************************************************/
 
-/**
- * \brief Fetch linear projection units. 
- *
- * This function is the same as OGRSpatialReference::GetLinearUnits()
- */
 double OSRGetLinearUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
     
 {
@@ -1217,7 +1104,7 @@ double OSRGetLinearUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
 /************************************************************************/
 
 /**
- * \brief Fetch prime meridian info.
+ * Fetch prime meridian info.
  *
  * Returns the offset of the prime meridian from greenwich in degrees,
  * and the prime meridian name (if requested).   If no PRIMEM value exists
@@ -1260,11 +1147,6 @@ double OGRSpatialReference::GetPrimeMeridian( char **ppszName ) const
 /*                        OSRGetPrimeMeridian()                         */
 /************************************************************************/
 
-/**
- * \brief Fetch prime meridian info.
- *
- * This function is the same as OGRSpatialReference::GetPrimeMeridian()
- */
 double OSRGetPrimeMeridian( OGRSpatialReferenceH hSRS, char **ppszName )
 
 {
@@ -1278,7 +1160,7 @@ double OSRGetPrimeMeridian( OGRSpatialReferenceH hSRS, char **ppszName )
 /************************************************************************/
 
 /**
- * \brief Set geographic coordinate system. 
+ * Set geographic coordinate system. 
  *
  * This method is used to set the datum, ellipsoid, prime meridian and
  * angular units for a geographic coordinate system.  It can be used on it's
@@ -1440,11 +1322,6 @@ OGRSpatialReference::SetGeogCS( const char * pszGeogName,
 /*                            OSRSetGeogCS()                            */
 /************************************************************************/
 
-/**
- * \brief Set geographic coordinate system. 
- *
- * This function is the same as OGRSpatialReference::SetGeogCS()
- */
 OGRErr OSRSetGeogCS( OGRSpatialReferenceH hSRS,
                      const char * pszGeogName,
                      const char * pszDatumName,
@@ -1469,7 +1346,7 @@ OGRErr OSRSetGeogCS( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set a GeogCS based on well known name.
+ * Set a GeogCS based on well known name.
  *
  * This may be called on an empty OGRSpatialReference to make a geographic
  * coordinate system, or on something with an existing PROJCS node to 
@@ -1564,11 +1441,6 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
 /*                       OSRSetWellKnownGeogCS()                        */
 /************************************************************************/
 
-/**
- * \brief Set a GeogCS based on well known name.
- *
- * This function is the same as OGRSpatialReference::SetWellKnownGeogCS()
- */
 OGRErr OSRSetWellKnownGeogCS( OGRSpatialReferenceH hSRS, const char *pszName )
 
 {
@@ -1582,7 +1454,7 @@ OGRErr OSRSetWellKnownGeogCS( OGRSpatialReferenceH hSRS, const char *pszName )
 /************************************************************************/
 
 /**
- * \brief Copy GEOGCS from another OGRSpatialReference.
+ * Copy GEOGCS from another OGRSpatialReference.
  *
  * The GEOGCS information is copied into this OGRSpatialReference from another.
  * If this object has a PROJCS root already, the GEOGCS is installed within
@@ -1641,11 +1513,6 @@ OGRErr OGRSpatialReference::CopyGeogCSFrom(
 /*                         OSRCopyGeogCSFrom()                          */
 /************************************************************************/
 
-/**
- * \brief Copy GEOGCS from another OGRSpatialReference.
- *
- * This function is the same as OGRSpatialReference::CopyGeogCSFrom()
- */
 OGRErr OSRCopyGeogCSFrom( OGRSpatialReferenceH hSRS, 
                           OGRSpatialReferenceH hSrcSRS )
 
@@ -1662,7 +1529,7 @@ OGRErr OSRCopyGeogCSFrom( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set spatial reference from various text formats.
+ * Set spatial reference from various text formats.
  *
  * This method will examine the provided input, and try to deduce the
  * format, and then use it to initialize the spatial reference system.  It
@@ -1717,7 +1584,6 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 /* -------------------------------------------------------------------- */
     if( EQUALN(pszDefinition,"PROJCS",6)
         || EQUALN(pszDefinition,"GEOGCS",6)
-        || EQUALN(pszDefinition,"COMPD_CS",6)
         || EQUALN(pszDefinition,"LOCAL_CS",8) )
     {
         err = importFromWkt( (char **) &pszDefinition );
@@ -1739,9 +1605,6 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 
     if( EQUALN(pszDefinition,"AUTO:",5) )
         return importFromWMSAUTO( pszDefinition );
-
-    if( EQUALN(pszDefinition,"OGC:",4) )  // WMS/WCS OGC codes like OGC:CRS84
-        return SetWellKnownGeogCS( pszDefinition+4 );
 
     if( EQUALN(pszDefinition,"DICT:",5) 
         && strstr(pszDefinition,",") )
@@ -1838,11 +1701,6 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 /*                        OSRSetFromUserInput()                         */
 /************************************************************************/
 
-/**
- * \brief Set spatial reference from various text formats.
- *
- * This function is the same as OGRSpatialReference::SetFromUserInput()
- */
 OGRErr CPL_STDCALL OSRSetFromUserInput( OGRSpatialReferenceH hSRS, 
                                         const char *pszDef )
 
@@ -1858,14 +1716,14 @@ OGRErr CPL_STDCALL OSRSetFromUserInput( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set spatial reference from a URL.
+ * Set spatial reference from a URL.
  *
  * This method will download the spatial reference at a given URL and 
  * feed it into SetFromUserInput for you.  
  *
  * This method does the same thing as the OSRImportFromUrl() function.
  * 
- * @param pszUrl text definition to try to deduce SRS from.
+ * @param pszDefinition text definition to try to deduce SRS from.
  *
  * @return OGRERR_NONE on success, or an error code with the curl 
  * error message if it is unable to dowload data.
@@ -1889,11 +1747,10 @@ OGRErr OGRSpatialReference::importFromUrl( const char * pszUrl )
 /* -------------------------------------------------------------------- */
     CPLErrorReset();
 
-    const char* pszHeaders = "HEADERS=Accept: application/x-ogcwkt";
-    const char* pszTimeout = "TIMEOUT=10";
+    CPLString osHeaders = "HEADERS=";
+    osHeaders += "Accept: application/x-ogcwkt";
     char *apszOptions[] = { 
-        (char *) pszHeaders,
-        (char *) pszTimeout,
+        (char *) osHeaders.c_str(),
         NULL 
     };
         
@@ -1908,11 +1765,9 @@ OGRErr OGRSpatialReference::importFromUrl( const char * pszUrl )
     if( psResult->nDataLen == 0 
         || CPLGetLastErrorNo() != 0 || psResult->pabyData == NULL  )
     {
-        if (CPLGetLastErrorNo() == 0)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                    "No data was returned from the given URL" );
-        }
+
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "No data was returned from the given URL" );
         CPLHTTPDestroyResult( psResult );
         return OGRERR_FAILURE;
     }
@@ -1947,11 +1802,6 @@ OGRErr OGRSpatialReference::importFromUrl( const char * pszUrl )
 /*                        OSRimportFromUrl()                            */
 /************************************************************************/
 
-/**
- * \brief Set spatial reference from a URL.
- *
- * This function is the same as OGRSpatialReference::importFromUrl()
- */
 OGRErr OSRImportFromUrl( OGRSpatialReferenceH hSRS, const char *pszUrl )
 
 {
@@ -1967,7 +1817,7 @@ OGRErr OSRImportFromUrl( OGRSpatialReferenceH hSRS, const char *pszUrl )
 /************************************************************************/
 
 /**
- * \brief Initialize from OGC URN. 
+ * Initialize from OGC URN. 
  *
  * Initializes this spatial reference from a coordinate system defined
  * by an OGC URN prefixed with "urn:ogc:def:crs:" per recommendation 
@@ -2094,19 +1944,12 @@ OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
 
 /************************************************************************/
 /*                         importFromWMSAUTO()                          */
+/*                                                                      */
+/*      Note that the WMS 1.3 specification does not include the        */
+/*      units code, while apparently earlier specs do.  We try to       */
+/*      guess around this.                                              */
 /************************************************************************/
 
-/**
- * \brief Initialize from WMSAUTO string.
- *
- * Note that the WMS 1.3 specification does not include the
- * units code, while apparently earlier specs do.  We try to
- * guess around this.
- *
- * @param pszDefinition the WMSAUTO string
- *
- * @return OGRERR_NONE on success or an error code.
- */
 OGRErr OGRSpatialReference::importFromWMSAUTO( const char * pszDefinition )
 
 {
@@ -2213,7 +2056,7 @@ OGRErr OGRSpatialReference::importFromWMSAUTO( const char * pszDefinition )
         break;
 
       case 9003:
-        SetLinearUnits( "US survey foot", CPLAtof(SRS_UL_US_FOOT_CONV) );
+        SetLinearUnits( "US survey foot", 0.304800609601 );
         break;
 
       default:
@@ -2239,7 +2082,7 @@ OGRErr OGRSpatialReference::importFromWMSAUTO( const char * pszDefinition )
 /************************************************************************/
 
 /**
- * \brief Get spheroid semi major axis.
+ * Get spheroid semi major axis.
  *
  * This method does the same thing as the C function OSRGetSemiMajor().
  *
@@ -2274,11 +2117,6 @@ double OGRSpatialReference::GetSemiMajor( OGRErr * pnErr ) const
 /*                          OSRGetSemiMajor()                           */
 /************************************************************************/
 
-/**
- * \brief Get spheroid semi major axis.
- *
- * This function is the same as OGRSpatialReference::GetSemiMajor()
- */
 double OSRGetSemiMajor( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 
 {
@@ -2292,7 +2130,7 @@ double OSRGetSemiMajor( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 /************************************************************************/
 
 /**
- * \brief Get spheroid inverse flattening.
+ * Get spheroid inverse flattening.
  *
  * This method does the same thing as the C function OSRGetInvFlattening().
  *
@@ -2327,11 +2165,6 @@ double OGRSpatialReference::GetInvFlattening( OGRErr * pnErr ) const
 /*                        OSRGetInvFlattening()                         */
 /************************************************************************/
 
-/**
- * \brief Get spheroid inverse flattening.
- *
- * This function is the same as OGRSpatialReference::GetInvFlattening()
- */
 double OSRGetInvFlattening( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 
 {
@@ -2345,7 +2178,7 @@ double OSRGetInvFlattening( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 /************************************************************************/
 
 /**
- * \brief Get spheroid semi minor axis.
+ * Get spheroid semi minor axis.
  *
  * This method does the same thing as the C function OSRGetSemiMinor().
  *
@@ -2373,11 +2206,6 @@ double OGRSpatialReference::GetSemiMinor( OGRErr * pnErr ) const
 /*                          OSRGetSemiMinor()                           */
 /************************************************************************/
 
-/**
- * \brief Get spheroid semi minor axis.
- *
- * This function is the same as OGRSpatialReference::GetSemiMinor()
- */
 double OSRGetSemiMinor( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 
 {
@@ -2391,7 +2219,7 @@ double OSRGetSemiMinor( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
 /************************************************************************/
 
 /**
- * \brief Set the user visible LOCAL_CS name.
+ * Set the user visible LOCAL_CS name.
  *
  * This method is the same as the C function OSRSetLocalCS(). 
  *
@@ -2427,11 +2255,6 @@ OGRErr OGRSpatialReference::SetLocalCS( const char * pszName )
 /*                           OSRSetLocalCS()                            */
 /************************************************************************/
 
-/**
- * \brief Set the user visible LOCAL_CS name.
- *
- * This function is the same as OGRSpatialReference::SetLocalCS()
- */
 OGRErr OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char * pszName )
 
 {
@@ -2445,7 +2268,7 @@ OGRErr OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char * pszName )
 /************************************************************************/
 
 /**
- * \brief Set the user visible PROJCS name.
+ * Set the user visible PROJCS name.
  *
  * This method is the same as the C function OSRSetProjCS(). 
  *
@@ -2491,11 +2314,6 @@ OGRErr OGRSpatialReference::SetProjCS( const char * pszName )
 /*                            OSRSetProjCS()                            */
 /************************************************************************/
 
-/**
- * \brief Set the user visible PROJCS name.
- *
- * This function is the same as OGRSpatialReference::SetProjCS()
- */
 OGRErr OSRSetProjCS( OGRSpatialReferenceH hSRS, const char * pszName )
 
 {
@@ -2509,7 +2327,7 @@ OGRErr OSRSetProjCS( OGRSpatialReferenceH hSRS, const char * pszName )
 /************************************************************************/
 
 /**
- * \brief Set a projection name.
+ * Set a projection name.
  *
  * This method is the same as the C function OSRSetProjection().
  *
@@ -2550,11 +2368,6 @@ OGRErr OGRSpatialReference::SetProjection( const char * pszProjection )
 /*                            OSRSetProjection()                        */
 /************************************************************************/
 
-/**
- * \brief Set a projection name.
- *
- * This function is the same as OGRSpatialReference::SetProjection()
- */
 OGRErr OSRSetProjection( OGRSpatialReferenceH hSRS,
                          const char * pszProjection )
 
@@ -2567,7 +2380,7 @@ OGRErr OSRSetProjection( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set a projection parameter value.
+ * Set a projection parameter value.
  *
  * Adds a new PARAMETER under the PROJCS with the indicated name and value.
  *
@@ -2630,11 +2443,6 @@ OGRErr OGRSpatialReference::SetProjParm( const char * pszParmName,
 /*                           OSRSetProjParm()                           */
 /************************************************************************/
 
-/**
- * \brief Set a projection parameter value.
- *
- * This function is the same as OGRSpatialReference::SetProjParm()
- */
 OGRErr OSRSetProjParm( OGRSpatialReferenceH hSRS, 
                        const char * pszParmName, double dfValue )
 
@@ -2646,18 +2454,11 @@ OGRErr OSRSetProjParm( OGRSpatialReferenceH hSRS,
 
 /************************************************************************/
 /*                            FindProjParm()                            */
+/*                                                                      */
+/*      Return the child index of the named projection parameter on     */
+/*      it's parent PROJCS node.  Returns -1 on failure.                */
 /************************************************************************/
 
-/**
-  * \brief Return the child index of the named projection parameter on
-  * its parent PROJCS node.
-  *
-  * @param pszParameter projection parameter to look for
-  * @param poPROJCS projection CS node to look in. If NULL is passed,
-  *        the PROJCS node of the SpatialReference object will be searched.
-  *
-  * @return the child index of the named projection parameter. -1 on failure
-  */
 int OGRSpatialReference::FindProjParm( const char *pszParameter,
                                        const OGR_SRSNode *poPROJCS ) const
 
@@ -2712,7 +2513,7 @@ int OGRSpatialReference::FindProjParm( const char *pszParameter,
 /************************************************************************/
 
 /**
- * \brief Fetch a projection parameter value.
+ * Fetch a projection parameter value.
  *
  * NOTE: This code should be modified to translate non degree angles into
  * degrees based on the GEOGCS unit.  This has not yet been done.
@@ -2764,11 +2565,6 @@ double OGRSpatialReference::GetProjParm( const char * pszName,
 /*                           OSRGetProjParm()                           */
 /************************************************************************/
 
-/**
- * \brief Fetch a projection parameter value.
- *
- * This function is the same as OGRSpatialReference::GetProjParm()
- */
 double OSRGetProjParm( OGRSpatialReferenceH hSRS, const char *pszName,
                        double dfDefaultValue, OGRErr *pnErr )
 
@@ -2784,7 +2580,7 @@ double OSRGetProjParm( OGRSpatialReferenceH hSRS, const char *pszName,
 /************************************************************************/
 
 /**
- * \brief Fetch a normalized projection parameter value.
+ * Fetch a normalized projection parameter value.                      
  *
  * This method is the same as GetProjParm() except that the value of
  * the parameter is "normalized" into degrees or meters depending on 
@@ -2838,11 +2634,6 @@ double OGRSpatialReference::GetNormProjParm( const char * pszName,
 /*                         OSRGetNormProjParm()                         */
 /************************************************************************/
 
-/**
- * \brief This function is the same as OGRSpatialReference::
- *
- * This function is the same as OGRSpatialReference::GetNormProjParm()
- */
 double OSRGetNormProjParm( OGRSpatialReferenceH hSRS, const char *pszName,
                            double dfDefaultValue, OGRErr *pnErr )
 
@@ -2858,7 +2649,7 @@ double OSRGetNormProjParm( OGRSpatialReferenceH hSRS, const char *pszName,
 /************************************************************************/
 
 /**
- * \brief Set a projection parameter with a normalized value.
+ * Set a projection parameter with a normalized value.
  *
  * This method is the same as SetProjParm() except that the value of
  * the parameter passed in is assumed to be in "normalized" form (decimal
@@ -2901,11 +2692,6 @@ OGRErr OGRSpatialReference::SetNormProjParm( const char * pszName,
 /*                         OSRSetNormProjParm()                         */
 /************************************************************************/
 
-/**
- * \brief Set a projection parameter with a normalized value.
- *
- * This function is the same as OGRSpatialReference::SetNormProjParm()
- */
 OGRErr OSRSetNormProjParm( OGRSpatialReferenceH hSRS, 
                            const char * pszParmName, double dfValue )
 
@@ -3715,7 +3501,7 @@ OGRErr OSRSetGnomonic( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set a Hotine Oblique Mercator projection using azimuth angle.
+ * Set a Hotine Oblique Mercator projection using azimuth angle.
  *
  * This method does the same thing as the C function OSRSetHOM().
  *
@@ -3753,11 +3539,7 @@ OGRErr OGRSpatialReference::SetHOM( double dfCenterLat, double dfCenterLong,
 /************************************************************************/
 /*                             OSRSetHOM()                              */
 /************************************************************************/
-/**
- * \brief Set a Hotine Oblique Mercator projection using azimuth angle.
- *
- * This is the same as the C++ method OGRSpatialReference::SetHOM()
- */
+
 OGRErr OSRSetHOM( OGRSpatialReferenceH hSRS, 
                   double dfCenterLat, double dfCenterLong,
                   double dfAzimuth, double dfRectToSkew, 
@@ -3780,7 +3562,7 @@ OGRErr OSRSetHOM( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set a Hotine Oblique Mercator projection using two points on projection
+ * Set a Hotine Oblique Mercator projection using two points on projection
  * centerline.
  *
  * This method does the same thing as the C function OSRSetHOM2PNO().
@@ -3821,12 +3603,7 @@ OGRErr OGRSpatialReference::SetHOM2PNO( double dfCenterLat,
 /************************************************************************/
 /*                           OSRSetHOM2PNO()                            */
 /************************************************************************/
-/**
- * \brief  Set a Hotine Oblique Mercator projection using two points on projection
- *  centerline.
- *
- * This is the same as the C++ method OGRSpatialReference::SetHOM2PNO()
- */
+
 OGRErr OSRSetHOM2PNO( OGRSpatialReferenceH hSRS, 
                       double dfCenterLat,
                       double dfLat1, double dfLong1,
@@ -4592,7 +4369,7 @@ OGRErr OSRSetVDG( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set UTM projection definition.
+ * Set UTM projection definition.
  *
  * This will generate a projection definition with the full set of 
  * transverse mercator projection parameters for the given UTM zone.
@@ -4644,11 +4421,6 @@ OGRErr OGRSpatialReference::SetUTM( int nZone, int bNorth )
 /*                             OSRSetUTM()                              */
 /************************************************************************/
 
-/**
- * \brief Set UTM projection definition.
- *
- * This is the same as the C++ method OGRSpatialReference::SetUTM()
- */
 OGRErr OSRSetUTM( OGRSpatialReferenceH hSRS, int nZone, int bNorth )
 
 {
@@ -4664,7 +4436,7 @@ OGRErr OSRSetUTM( OGRSpatialReferenceH hSRS, int nZone, int bNorth )
 /************************************************************************/
 
 /**
- * \brief Get utm zone information.
+ * Get utm zone information.
  *
  * This is the same as the C function OSRGetUTMZone().
  *
@@ -4717,11 +4489,6 @@ int OGRSpatialReference::GetUTMZone( int * pbNorth ) const
 /*                           OSRGetUTMZone()                            */
 /************************************************************************/
 
-/**
- * \brief Get utm zone information.
- *
- * This is the same as the C++ method OGRSpatialReference::GetUTMZone()
- */
 int OSRGetUTMZone( OGRSpatialReferenceH hSRS, int *pbNorth )
 
 {
@@ -4791,7 +4558,7 @@ OGRErr OSRSetWagner( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Set the authority for a node.
+ * Set the authority for a node.
  *
  * This method is the same as the C function OSRSetAuthority().
  *
@@ -4847,11 +4614,6 @@ OGRErr OGRSpatialReference::SetAuthority( const char *pszTargetKey,
 /*                          OSRSetAuthority()                           */
 /************************************************************************/
 
-/**
- * \brief Set the authority for a node.
- *
- * This function is the same as OGRSpatialReference::SetAuthority().
- */
 OGRErr OSRSetAuthority( OGRSpatialReferenceH hSRS, 
                         const char *pszTargetKey,
                         const char * pszAuthority, 
@@ -4870,7 +4632,7 @@ OGRErr OSRSetAuthority( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Get the authority code for a node.
+ * Get the authority code for a node.
  *
  * This method is used to query an AUTHORITY[] node from within the 
  * WKT tree, and fetch the code value.  
@@ -4926,11 +4688,6 @@ OGRSpatialReference::GetAuthorityCode( const char *pszTargetKey ) const
 /*                          OSRGetAuthorityCode()                       */
 /************************************************************************/
 
-/**
- * \brief Get the authority code for a node.
- *
- * This function is the same as OGRSpatialReference::GetAuthorityCode().
- */
 const char *OSRGetAuthorityCode( OGRSpatialReferenceH hSRS, 
                                  const char *pszTargetKey )
 
@@ -4945,7 +4702,7 @@ const char *OSRGetAuthorityCode( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Get the authority name for a node.
+ * Get the authority name for a node.
  *
  * This method is used to query an AUTHORITY[] node from within the 
  * WKT tree, and fetch the authority name value.  
@@ -5000,11 +4757,6 @@ OGRSpatialReference::GetAuthorityName( const char *pszTargetKey ) const
 /*                        OSRGetAuthorityName()                         */
 /************************************************************************/
 
-/**
- * \brief Get the authority name for a node.
- *
- * This function is the same as OGRSpatialReference::GetAuthorityName().
- */
 const char *OSRGetAuthorityName( OGRSpatialReferenceH hSRS, 
                                  const char *pszTargetKey )
 
@@ -5015,40 +4767,11 @@ const char *OSRGetAuthorityName( OGRSpatialReferenceH hSRS,
 }
 
 /************************************************************************/
-/*                           StripVertical()                            */
-/************************************************************************/
-
-/**
- * \brief Convert a compound cs into a horizontal CS.
- *
- * If this SRS is of type COMPD_CS[] then the vertical CS and the root COMPD_CS 
- * nodes are stripped resulting and only the horizontal coordinate system
- * portion remains (normally PROJCS, GEOGCS or LOCAL_CS). 
- *
- * If this is not a compound coordinate system then nothing is changed.
- */
-
-OGRErr OGRSpatialReference::StripVertical()
-
-{
-    if( GetRoot() == NULL 
-        || !EQUAL(GetRoot()->GetValue(),"COMPD_CS") )
-        return OGRERR_NONE;
-
-    OGR_SRSNode *poHorizontalCS = GetRoot()->GetChild( 1 );
-    if( poHorizontalCS != NULL )
-        poHorizontalCS = poHorizontalCS->Clone();
-    SetRoot( poHorizontalCS );
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
 /*                            StripCTParms()                            */
 /************************************************************************/
 
 /** 
- * \brief Strip OGC CT Parameters.
+ * Strip OGC CT Parameters.
  *
  * This method will remove all components of the coordinate system
  * that are specific to the OGC CT Specification.  That is it will attempt
@@ -5066,10 +4789,7 @@ OGRErr OGRSpatialReference::StripCTParms( OGR_SRSNode * poCurrent )
 
 {
     if( poCurrent == NULL )
-    {
-        StripVertical();
         poCurrent = GetRoot();
-    }
 
     if( poCurrent == NULL )
         return OGRERR_NONE;
@@ -5097,11 +4817,6 @@ OGRErr OGRSpatialReference::StripCTParms( OGR_SRSNode * poCurrent )
 /*                          OSRStripCTParms()                           */
 /************************************************************************/
 
-/** 
- * \brief Strip OGC CT Parameters.
- *
- * This function is the same as OGRSpatialReference::StripCTParms().
- */
 OGRErr OSRStripCTParms( OGRSpatialReferenceH hSRS )
 
 {
@@ -5115,7 +4830,7 @@ OGRErr OSRStripCTParms( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Check if projected coordinate system.
+ * Check if projected coordinate system.
  *
  * This method is the same as the C function OSRIsProjected().
  *
@@ -5129,22 +4844,16 @@ int OGRSpatialReference::IsProjected() const
     if( poRoot == NULL )
         return FALSE;
 
-    if( EQUAL(poRoot->GetValue(),"PROJCS") )
-        return TRUE;
-    else if( EQUAL(poRoot->GetValue(),"COMPD_CS") )
-        return GetAttrNode( "PROJCS" ) != NULL;
-    else 
-        return FALSE;
+    // If we eventually support composite coordinate systems this will
+    // need to improve. 
+
+    return EQUAL(poRoot->GetValue(),"PROJCS");
 }
 
 /************************************************************************/
 /*                           OSRIsProjected()                           */
 /************************************************************************/
-/** 
- * \brief Check if projected coordinate system.
- *
- * This function is the same as OGRSpatialReference::IsProjected().
- */
+
 int OSRIsProjected( OGRSpatialReferenceH hSRS ) 
 
 {
@@ -5158,7 +4867,7 @@ int OSRIsProjected( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Check if geographic coordinate system.
+ * Check if geographic coordinate system.
  *
  * This method is the same as the C function OSRIsGeographic().
  *
@@ -5172,23 +4881,13 @@ int OGRSpatialReference::IsGeographic() const
     if( GetRoot() == NULL )
         return FALSE;
 
-    if( EQUAL(poRoot->GetValue(),"GEOGCS") )
-        return TRUE;
-    else if( EQUAL(poRoot->GetValue(),"COMPD_CS") )
-        return GetAttrNode( "GEOGCS" ) != NULL 
-            && GetAttrNode( "PROJCS" ) == NULL;
-    else 
-        return FALSE;
+    return EQUAL(GetRoot()->GetValue(),"GEOGCS");
 }
 
 /************************************************************************/
 /*                          OSRIsGeographic()                           */
 /************************************************************************/
-/** 
- * \brief Check if geographic coordinate system.
- *
- * This function is the same as OGRSpatialReference::IsGeographic().
- */
+
 int OSRIsGeographic( OGRSpatialReferenceH hSRS )
 
 {
@@ -5202,7 +4901,7 @@ int OSRIsGeographic( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Check if local coordinate system.
+ * Check if local coordinate system.
  *
  * This method is the same as the C function OSRIsLocal().
  *
@@ -5222,11 +4921,7 @@ int OGRSpatialReference::IsLocal() const
 /************************************************************************/
 /*                          OSRIsLocal()                                */
 /************************************************************************/
-/** 
- * \brief Check if local coordinate system.
- *
- * This function is the same as OGRSpatialReference::IsLocal().
- */
+
 int OSRIsLocal( OGRSpatialReferenceH hSRS )
 
 {
@@ -5239,11 +4934,6 @@ int OSRIsLocal( OGRSpatialReferenceH hSRS )
 /*                            CloneGeogCS()                             */
 /************************************************************************/
 
-/**
- * \brief Make a duplicate of the GEOGCS node of this OGRSpatialReference object.
- *
- * @return a new SRS, which becomes the responsibility of the caller. 
- */
 OGRSpatialReference *OGRSpatialReference::CloneGeogCS() const
 
 {
@@ -5263,11 +4953,7 @@ OGRSpatialReference *OGRSpatialReference::CloneGeogCS() const
 /************************************************************************/
 /*                           OSRCloneGeogCS()                           */
 /************************************************************************/
-/**
- * \brief Make a duplicate of the GEOGCS node of this OGRSpatialReference object.
- *
- * This function is the same as OGRSpatialReference::CloneGeogCS().
- */
+
 OGRSpatialReferenceH CPL_STDCALL OSRCloneGeogCS( OGRSpatialReferenceH hSource )
 
 {
@@ -5282,7 +4968,7 @@ OGRSpatialReferenceH CPL_STDCALL OSRCloneGeogCS( OGRSpatialReferenceH hSource )
 /************************************************************************/
 
 /**
- * \brief Do the GeogCS'es match?
+ * Do the GeogCS'es match?
  *
  * This method is the same as the C function OSRIsSameGeogCS().
  *
@@ -5358,11 +5044,6 @@ int OGRSpatialReference::IsSameGeogCS( const OGRSpatialReference *poOther ) cons
 /*                          OSRIsSameGeogCS()                           */
 /************************************************************************/
 
-/** 
- * \brief Do the GeogCS'es match?
- *
- * This function is the same as OGRSpatialReference::IsSameGeogCS().
- */
 int OSRIsSameGeogCS( OGRSpatialReferenceH hSRS1, OGRSpatialReferenceH hSRS2 )
 
 {
@@ -5378,11 +5059,11 @@ int OSRIsSameGeogCS( OGRSpatialReferenceH hSRS1, OGRSpatialReferenceH hSRS2 )
 /************************************************************************/
 
 /**
- * \brief Do these two spatial references describe the same system ?
+ * These two spatial references describe the same system.
  *
  * @param poOtherSRS the SRS being compared to.
  *
- * @return TRUE if equivalent or FALSE otherwise. 
+ * @return TRUE if equivelent or FALSE otherwise. 
  */
 
 int OGRSpatialReference::IsSame( const OGRSpatialReference * poOtherSRS ) const
@@ -5439,7 +5120,7 @@ int OGRSpatialReference::IsSame( const OGRSpatialReference * poOtherSRS ) const
 /* -------------------------------------------------------------------- */
 /*      If they are LOCALCS/PROJCS, do they have the same units?        */
 /* -------------------------------------------------------------------- */
-    if( IsLocal() || IsProjected() )
+    if( EQUAL(GetRoot()->GetValue(),"LOCALCS") || IsProjected() )
     {
         if( GetLinearUnits() != 0.0 )
         {
@@ -5458,11 +5139,6 @@ int OGRSpatialReference::IsSame( const OGRSpatialReference * poOtherSRS ) const
 /*                             OSRIsSame()                              */
 /************************************************************************/
 
-/** 
- * \brief Do these two spatial references describe the same system ?
- *
- * This function is the same as OGRSpatialReference::IsSame().
- */
 int OSRIsSame( OGRSpatialReferenceH hSRS1, OGRSpatialReferenceH hSRS2 )
 
 {
@@ -5478,7 +5154,7 @@ int OSRIsSame( OGRSpatialReferenceH hSRS1, OGRSpatialReferenceH hSRS2 )
 /************************************************************************/
 
 /**
- * \brief Set the Bursa-Wolf conversion to WGS84. 
+ * Set the Bursa-Wolf conversion to WGS84. 
  * 
  * This will create the TOWGS84 node as a child of the DATUM.  It will fail
  * if there is no existing DATUM node.  Unlike most OGRSpatialReference
@@ -5555,11 +5231,6 @@ OGRErr OGRSpatialReference::SetTOWGS84( double dfDX, double dfDY, double dfDZ,
 /*                           OSRSetTOWGS84()                            */
 /************************************************************************/
 
-/** 
- * \brief Set the Bursa-Wolf conversion to WGS84. 
- *
- * This function is the same as OGRSpatialReference::SetTOWGS84().
- */
 OGRErr OSRSetTOWGS84( OGRSpatialReferenceH hSRS, 
                       double dfDX, double dfDY, double dfDZ, 
                       double dfEX, double dfEY, double dfEZ, 
@@ -5578,7 +5249,7 @@ OGRErr OSRSetTOWGS84( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Fetch TOWGS84 parameters, if available. 
+ * Fetch TOWGS84 parameters, if available. 
  * 
  * @param padfCoeff array into which up to 7 coefficients are placed.
  * @param nCoeffCount size of padfCoeff - defaults to 7.
@@ -5610,11 +5281,6 @@ OGRErr OGRSpatialReference::GetTOWGS84( double * padfCoeff,
 /*                           OSRGetTOWGS84()                            */
 /************************************************************************/
 
-/** 
- * \brief Fetch TOWGS84 parameters, if available. 
- *
- * This function is the same as OGRSpatialReference::GetTOWGS84().
- */
 OGRErr OSRGetTOWGS84( OGRSpatialReferenceH hSRS, 
                       double * padfCoeff, int nCoeffCount )
 
@@ -5680,11 +5346,11 @@ int OGRSpatialReference::IsLinearParameter( const char *pszParameterName )
 
 /************************************************************************/
 /*                            GetNormInfo()                             */
+/*                                                                      */
+/*      Set the internal information for normalizing linear, and        */
+/*      angular values.                                                 */
 /************************************************************************/
 
-/**
- * \brief Set the internal information for normalizing linear, and angular values.
- */
 void OGRSpatialReference::GetNormInfo(void) const
 
 {
@@ -5710,7 +5376,7 @@ void OGRSpatialReference::GetNormInfo(void) const
 /************************************************************************/
 
 /**
- * \brief Correct parameter ordering to match CT Specification.
+ * Correct parameter ordering to match CT Specification.
  *
  * Some mechanisms to create WKT using OGRSpatialReference, and some
  * imported WKT fail to maintain the order of parameters required according
@@ -5736,11 +5402,6 @@ OGRErr OGRSpatialReference::FixupOrdering()
 /*                          OSRFixupOrdering()                          */
 /************************************************************************/
 
-/** 
- * \brief Correct parameter ordering to match CT Specification.
- *
- * This function is the same as OGRSpatialReference::FixupOrdering().
- */
 OGRErr OSRFixupOrdering( OGRSpatialReferenceH hSRS )
 
 {
@@ -5754,7 +5415,7 @@ OGRErr OSRFixupOrdering( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Fixup as needed.
+ * Fixup as needed.
  *
  * Some mechanisms to create WKT using OGRSpatialReference, and some
  * imported WKT, are not valid according to the OGC CT specification.  This
@@ -5806,11 +5467,6 @@ OGRErr OGRSpatialReference::Fixup()
 /*                              OSRFixup()                              */
 /************************************************************************/
 
-/** 
- * \brief Fixup as needed.
- *
- * This function is the same as OGRSpatialReference::Fixup().
- */
 OGRErr OSRFixup( OGRSpatialReferenceH hSRS )
 
 {
@@ -5824,7 +5480,7 @@ OGRErr OSRFixup( OGRSpatialReferenceH hSRS )
 /************************************************************************/
 
 /**
- * \brief Fetch extension value.
+ * Fetch extension value.
  *
  * Fetch the value of the named EXTENSION item for the identified
  * target node.
@@ -5875,18 +5531,6 @@ const char *OGRSpatialReference::GetExtension( const char *pszTargetKey,
 /************************************************************************/
 /*                            SetExtension()                            */
 /************************************************************************/
-/**
- * \brief Set extension value.
- *
- * Set the value of the named EXTENSION item for the identified
- * target node.
- *
- * @param pszTargetKey the name or path to the parent node of the EXTENSION.
- * @param pszName the name of the extension being fetched.
- * @param pszValue the value to set
- *
- * @return OGRERR_NONE on success
- */
 
 OGRErr OGRSpatialReference::SetExtension( const char *pszTargetKey, 
                                           const char *pszName, 
@@ -5942,16 +5586,18 @@ OGRErr OGRSpatialReference::SetExtension( const char *pszTargetKey,
 /*                             OSRCleanup()                             */
 /************************************************************************/
 
-CPL_C_START 
-void CleanupESRIDatumMappingTable();
-CPL_C_END
-
 /**
- * \brief Cleanup cached SRS related memory.
+ * Cleanup cached SRS related memory.
  *
  * This function will attempt to cleanup any cache spatial reference
  * related information, such as cached tables of coordinate systems. 
  */
+
+CPL_C_START 
+void CleanupESRIDatumMappingTable();
+CPL_C_END
+
+
 void OSRCleanup( void )
 
 {
@@ -5964,7 +5610,7 @@ void OSRCleanup( void )
 /************************************************************************/
 
 /**
- * \brief Fetch the orientation of one axis.
+ * Fetch the orientation of one axis.
  *
  * Fetches the the request axis (iAxis - zero based) from the
  * indicated portion of the coordinate system (pszTargetKey) which
@@ -5972,7 +5618,7 @@ void OSRCleanup( void )
  *
  * No CPLError is issued on routine failures (such as not finding the AXIS).
  *
- * This method is equivalent to the C function OSRGetAxis().
+ * This method is equivelent to the C function OSRGetAxis().
  *
  * @param pszTargetKey the coordinate system part to query ("PROJCS" or "GEOGCS").
  * @param iAxis the axis to query (0 for first, 1 for second). 
@@ -6058,11 +5704,6 @@ OGRSpatialReference::GetAxis( const char *pszTargetKey, int iAxis,
 /*                             OSRGetAxis()                             */
 /************************************************************************/
 
-/**
- * \brief Fetch the orientation of one axis.
- *
- * This method is the equivalent of the C++ method OGRSpatialReference::GetAxis
- */
 const char *OSRGetAxis( OGRSpatialReferenceH hSRS,
                         const char *pszTargetKey, int iAxis, 
                         OGRAxisOrientation *peOrientation )
@@ -6078,13 +5719,6 @@ const char *OSRGetAxis( OGRSpatialReferenceH hSRS,
 /*                         OSRAxisEnumToName()                          */
 /************************************************************************/
 
-/**
- * \brief Return the string representation for the OGRAxisOrientation enumeration.
- *
- * For example "NORTH" for OAO_North.
- *
- * @return an internal string
- */
 const char *OSRAxisEnumToName( OGRAxisOrientation eOrientation )
 
 {
@@ -6105,12 +5739,12 @@ const char *OSRAxisEnumToName( OGRAxisOrientation eOrientation )
 /************************************************************************/
 
 /**
- * \brief Set the axes for a coordinate system.
+ * Set the axes for a coordinate system.
  *
  * Set the names, and orientations of the axes for either a projected 
  * (PROJCS) or geographic (GEOGCS) coordinate system.  
  *
- * This method is equivalent to the C function OSRSetAxes().
+ * This method is equivelent to the C function OSRSetAxes().
  *
  * @param pszTargetKey either "PROJCS" or "GEOGCS", must already exist in SRS.
  * @param pszXAxisName name of first axis, normally "Long" or "Easting". 
@@ -6171,11 +5805,7 @@ OGRSpatialReference::SetAxes( const char *pszTargetKey,
 /************************************************************************/
 /*                             OSRSetAxes()                             */
 /************************************************************************/
-/**
- * \brief Set the axes for a coordinate system.
- *
- * This method is the equivalent of the C++ method OGRSpatialReference::SetAxes
- */
+
 OGRErr OSRSetAxes( OGRSpatialReferenceH hSRS,
                    const char *pszTargetKey, 
                    const char *pszXAxisName, 
@@ -6200,11 +5830,7 @@ OGRSpatialReference CPL_DLL * MITABCoordSys2SpatialRef( const char * );
 /************************************************************************/
 /*                       OSRExportToMICoordSys()                        */
 /************************************************************************/
-/**
- * \brief Export coordinate system in Mapinfo style CoordSys format.
- *
- * This method is the equivalent of the C++ method OGRSpatialReference::exportToMICoordSys
- */
+
 OGRErr OSRExportToMICoordSys( OGRSpatialReferenceH hSRS, char ** ppszReturn )
 
 {
@@ -6220,7 +5846,7 @@ OGRErr OSRExportToMICoordSys( OGRSpatialReferenceH hSRS, char ** ppszReturn )
 /************************************************************************/
 
 /**
- * \brief Export coordinate system in Mapinfo style CoordSys format.
+ * Export coordinate system in Mapinfo style CoordSys format.
  *
  * Note that the returned WKT string should be freed with OGRFree() or
  * CPLFree() when no longer needed.  It is the responsibility of the caller.
@@ -6254,11 +5880,6 @@ OGRErr OGRSpatialReference::exportToMICoordSys( char **ppszResult ) const
 /************************************************************************/
 /*                       OSRImportFromMICoordSys()                      */
 /************************************************************************/
-/**
- * \brief Import Mapinfo style CoordSys definition.
- *
- * This method is the equivalent of the C++ method OGRSpatialReference::importFromMICoordSys
- */
 
 OGRErr OSRImportFromMICoordSys( OGRSpatialReferenceH hSRS,
                                 const char *pszCoordSys )
@@ -6274,11 +5895,11 @@ OGRErr OSRImportFromMICoordSys( OGRSpatialReferenceH hSRS,
 /************************************************************************/
 
 /**
- * \brief Import Mapinfo style CoordSys definition.
+ * Import Mapinfo style CoordSys definition.
  *
  * The OGRSpatialReference is initialized from the passed Mapinfo style CoordSys definition string.
  *
- * This method is the equivalent of the C function OSRImportFromMICoordSys().
+ * This method is the equivelent of the C function OSRImportFromMICoordSys().
  *
  * @param pszCoordSys Mapinfo style CoordSys definition string.
  *

@@ -62,7 +62,6 @@
 #include <Common/Xsl/Transformer.h>
 #include <Common/Gml212/Schema.h>
 #include <Common/Gml212/Gml212.h>
-#include <Common/Gml311/Gml311.h>
 
 #endif
 

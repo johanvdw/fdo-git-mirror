@@ -21,11 +21,8 @@
 #pragma once
 #endif // _WIN32
 
-
 class FdoOwsServiceIdentification;
 class FdoOwsCapabilities;
-class FdoOwsServiceProvider;
-class FdoOwsOperationsMetadata;
 
 class FdoOwsServiceMetadata :
     public FdoIDisposable,
@@ -38,8 +35,6 @@ private:
     FdoStringP m_updateSequence;
     FdoPtr<FdoOwsServiceIdentification> m_serviceId;
     FdoPtr<FdoOwsCapabilities> m_capabilities;
-	FdoPtr<FdoOwsServiceProvider> m_serviceprovider;
-	FdoPtr<FdoOwsOperationsMetadata> m_operationsMetadata;
 
 protected:
     FDOOWS_API FdoOwsServiceMetadata();
@@ -48,8 +43,6 @@ protected:
 
     FDOOWS_API virtual FdoOwsServiceIdentification* OnCreateServiceIdentification();
     FDOOWS_API virtual FdoOwsCapabilities* OnCreateCapabilities();
-	FDOOWS_API virtual FdoOwsServiceProvider* OnCreateServiceProvider();
-	FDOOWS_API virtual FdoOwsOperationsMetadata* OnCreateOperationsMeatadata();
 
 public:
     FDOOWS_API static FdoOwsServiceMetadata* Create();
@@ -58,8 +51,6 @@ public:
     FDOOWS_API FdoString* GetUpdateSequence() const;
     FDOOWS_API FdoOwsServiceIdentification* GetServiceIdentification() const;
     FDOOWS_API FdoOwsCapabilities* GetCapabilities() const;
-	FDOOWS_API FdoOwsServiceProvider* GetServiceProvider() const;
-	FDOOWS_API FdoOwsOperationsMetadata* GetOperationsMetadata() const;
 
     FDOOWS_API virtual FdoXmlSaxHandler* XmlStartElement(
         FdoXmlSaxContext* context, 

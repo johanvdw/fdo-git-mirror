@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2005, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: getenv.c,v 1.34 2009-12-30 17:59:56 yangtse Exp $
+ * $Id: getenv.c,v 1.28 2006/01/09 13:17:14 bagder Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -27,12 +27,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __VMS
+#ifdef VMS
 #include <unixlib.h>
 #endif
 
 #include <curl/curl.h>
-#include "curl_memory.h"
+#include "memory.h"
 
 #include "memdebug.h"
 
@@ -46,17 +46,20 @@ char *GetEnv(const char *variable)
   char env[MAX_PATH]; /* MAX_PATH is from windef.h */
   char *temp = getenv(variable);
   env[0] = '\0';
-  if(temp != NULL)
+  if (temp != NULL)
     ExpandEnvironmentStrings(temp, env, sizeof(env));
-  return (env[0] != '\0')?strdup(env):NULL;
 #else
+#ifdef  VMS
   char *env = getenv(variable);
-#ifdef __VMS
-  if(env && strcmp("HOME",variable) == 0)
-    env = decc_translate_vms(env);
+  if (env && strcmp("HOME",variable) == 0) {
+        env = decc$translate_vms(env);
+  }
+#else
+  /* no length control */
+  char *env = getenv(variable);
+#endif
 #endif
   return (env && env[0])?strdup(env):NULL;
-#endif
 #endif
 }
 
