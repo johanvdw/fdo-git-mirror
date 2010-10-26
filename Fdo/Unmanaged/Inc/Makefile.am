@@ -44,7 +44,6 @@ EXTRA_DIST = \
     Common/StringP.h \
     Common/Gml212/Gml212.h \
     Common/Gml212/Schema.h \
-	Common/Gml311/Gml311.h \
     Common/IDisposable.h \
     Common/Io/BufferStream.h \
     Common/Io/ByteStreamReader.h \
@@ -222,11 +221,6 @@ EXTRA_DIST = \
     Fdo/Expression/ExpressionCollection.h \
     Fdo/Expression/ExpressionException.h \
     Fdo/Expression/ExpressionType.h \
-    Fdo/Expression/JoinCriteria.h \
-    Fdo/Expression/JoinCriteriaCollection.h \
-    Fdo/Expression/JoinType.h \
-    Fdo/Expression/SubSelectExpression.h \
-    Fdo/Expression/ExpressionItemType.h \
     Fdo/Expression/Function.h \
     Fdo/Expression/GeometryValue.h \
     Fdo/Expression/Identifier.h \
@@ -297,7 +291,6 @@ EXTRA_DIST = \
     Fdo/Schema/ObjectPropertyDefinition.h \
     Fdo/Schema/ObjectType.h \
     Fdo/Schema/OrderType.h \
-	Fdo/Schema/PolygonVertexOrderRule.h \
     Fdo/Schema/PropertyDefinition.h \
     Fdo/Schema/PropertyDefinitionCollection.h \
     Fdo/Schema/PropertyType.h \
@@ -340,7 +333,6 @@ EXTRA_DIST = \
     Fdo/Xml/SpatialContextSerializer.h \
     Fdo/Xml/SpatialContextWriter.h \
     Fdo/Xml/FeatureWriter.h \
-	Fdo/Xml/GmlVersion.h \
     Geometry/Fgf/Factory.h \
     Geometry/DirectPositionImpl.h \
     Geometry/EnvelopeImpl.h \

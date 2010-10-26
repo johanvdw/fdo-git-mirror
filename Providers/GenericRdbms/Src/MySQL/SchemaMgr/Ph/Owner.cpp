@@ -97,22 +97,6 @@ FdoStringP FdoSmPhMySqlOwner::GetKeyColumnUsageTable()
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
-        
-        FdoStringP sqlWhereClause;
-        // Check if the server has a version higher than 5.5.0, including itself. 
-        // After that version, MySQL fixed one bug, see http://bugs.mysql.com/bug.php?id=35427
-        // After the fix, the information_schema.key_column_usage.table_catalog will have 
-        // a default value 'def', instead of null.
-        if ( !IsHigherVersionThan550() )
-            sqlWhereClause = L"where table_catalog is null and table_schema collate utf8_bin = ";
-        else
-        {
-            sqlWhereClause = FdoStringP::Format(
-                L"where table_catalog = %ls and table_schema collate utf8_bin = ", 
-                (FdoString*) GetManager()->FormatSQLVal(L"def", FdoSmPhColType_String));
-        }
-
-        sqlWhereClause += GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String );
 
         // Populate the temporary table from key_column_usage. Just need rows for this owner.
         sqlStmt = FdoStringP::Format( 
@@ -137,10 +121,10 @@ FdoStringP FdoSmPhMySqlOwner::GetKeyColumnUsageTable()
             L" referenced_table_schema,"
             L" referenced_table_name,"
             L" referenced_column_name"
-            L" from information_schema.key_column_usage %ls",
+            L" from information_schema.key_column_usage where table_catalog is null and table_schema collate utf8_bin = %ls",
             GetName(),
             (FdoString*) mKeyColumnUsageTable,
-            (FdoString*) sqlWhereClause
+            (FdoString*) GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String )
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
@@ -180,22 +164,6 @@ FdoStringP FdoSmPhMySqlOwner::GetTableConstraintsTable()
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
 
-        FdoStringP sqlWhereClause;
-        // Check if the server has a version higher than 5.5.0, including itself. 
-        // After that version, MySQL fixed one bug, see http://bugs.mysql.com/bug.php?id=35427
-        // After the fix, the information_schema.table_constraints.constraint_catalog will have 
-        // a default value 'def', instead of null.
-        if ( !IsHigherVersionThan550() )
-            sqlWhereClause = L"where constraint_catalog is null and table_schema collate utf8_bin = ";
-        else
-        {
-            sqlWhereClause = FdoStringP::Format(
-                L"where constraint_catalog = %ls and table_schema collate utf8_bin = ", 
-                (FdoString*) GetManager()->FormatSQLVal(L"def", FdoSmPhColType_String));
-        }
-
-        sqlWhereClause += GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String );
-
         // Populate the temporary table from table_constraints. Just need rows for this owner.
         sqlStmt = FdoStringP::Format( 
             L"insert into  \"%ls\".\"%ls\" ( "
@@ -211,10 +179,10 @@ FdoStringP FdoSmPhMySqlOwner::GetTableConstraintsTable()
             L" table_schema,"
             L" table_name,"
             L" constraint_type"
-            L" from information_schema.table_constraints %ls",
+            L" from information_schema.table_constraints where constraint_catalog is null and table_schema collate utf8_bin = %ls",
             GetName(),
             (FdoString*) mTableConstraintsTable,
-            (FdoString*) sqlWhereClause
+            (FdoString*) GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String )
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
@@ -257,22 +225,6 @@ FdoStringP FdoSmPhMySqlOwner::GetTablesTable(bool createTemp)
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
 
-        FdoStringP sqlWhereClause;
-        // Check if the server has a version higher than 5.5.0, including itself. 
-        // After that version, MySQL fixed one bug, see http://bugs.mysql.com/bug.php?id=35427
-        // After the fix, the information_schema.tables.table_catalog will have 
-        // a default value 'def', instead of null.
-        if ( !IsHigherVersionThan550() )
-            sqlWhereClause = L"where table_catalog is null and table_schema collate utf8_bin = ";
-        else
-        {
-                sqlWhereClause = FdoStringP::Format(
-                L"where table_catalog = %ls and table_schema collate utf8_bin = ", 
-                (FdoString*) GetManager()->FormatSQLVal(L"def", FdoSmPhColType_String));
-        }
-
-        sqlWhereClause += GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String );
-
         // Populate the temporary table from information_schema.tables. Just need rows for this owner.
         sqlStmt = FdoStringP::Format( 
             L"insert into  \"%ls\".\"%ls\" ( "
@@ -290,10 +242,10 @@ FdoStringP FdoSmPhMySqlOwner::GetTablesTable(bool createTemp)
             L" engine,"
             L" auto_increment,"
             L" table_collation"
-            L" from information_schema.tables %ls",
+            L" from information_schema.tables where table_catalog is null and table_schema collate utf8_bin = %ls",
             GetName(),
             (FdoString*) mTablesTable,
-            (FdoString*) sqlWhereClause
+            (FdoString*) GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String )
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
@@ -335,7 +287,7 @@ FdoStringP FdoSmPhMySqlOwner::GetColumnsTable(bool createTemp)
             L" numeric_precision bigint null,"
             L" numeric_scale bigint null,"
             L" column_type longtext not null,"
-            L" column_default varchar(64) null,"
+			L" column_default varchar(64) null,"
             L" extra varchar(20) not null collate utf8_bin,"
             L" character_set_name varchar(64) null collate utf8_bin,"
             L" primary key ( table_name, ordinal_position )"
@@ -345,22 +297,6 @@ FdoStringP FdoSmPhMySqlOwner::GetColumnsTable(bool createTemp)
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
-
-        FdoStringP sqlWhereClause;
-        // Check if the server has a version higher than 5.5.0, including itself. 
-        // After that version, MySQL fixed one bug, see http://bugs.mysql.com/bug.php?id=35427
-        // After the fix, the information_schema.columns.table_catalog will have 
-        // a default value 'def', instead of null.
-        if ( !IsHigherVersionThan550() )
-            sqlWhereClause = L"where table_catalog is null and table_schema collate utf8_bin = ";
-        else
-        {
-            sqlWhereClause = FdoStringP::Format(
-                L"where table_catalog = %ls and table_schema collate utf8_bin = ", 
-                (FdoString*) GetManager()->FormatSQLVal(L"def", FdoSmPhColType_String));
-        }
-
-        sqlWhereClause += GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String );
 
         // Populate the temporary table from information_schema.columns. Just need rows for this owner.
         sqlStmt = FdoStringP::Format( 
@@ -393,10 +329,10 @@ FdoStringP FdoSmPhMySqlOwner::GetColumnsTable(bool createTemp)
 			L" column_default,"
             L" extra,"
             L" character_set_name"
-            L" from information_schema.columns %ls",
+            L" from information_schema.columns where table_catalog is null and table_schema collate utf8_bin = %ls",
             GetName(),
             (FdoString*) mColumnsTable,
-            (FdoString*) sqlWhereClause
+            (FdoString*) GetManager()->FormatSQLVal( GetName(), FdoSmPhColType_String )
             );
 
         gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
@@ -689,18 +625,6 @@ FdoInt32 FdoSmPhMySqlOwner::NextTempTableNum()
     mMutex.Leave();
 
     return mTempTableNum;
-}
-
-// Check if the server has a higher version than 5.5.0, including 5.5.0.
-FdoBoolean FdoSmPhMySqlOwner::IsHigherVersionThan550()
-{
-    FdoSmPhMySqlMgrP mgr = GetManager()->SmartCast<FdoSmPhMySqlMgr>();
-    FdoVectorP version550 = FdoVector::Create(L"5.5.0", L".");
-    FdoVectorP dbVersion = FdoVector::Create(mgr->GetDbVersion(), L".");
-    if ( dbVersion < version550 )
-        return false;
-
-    return true;
 }
     
 void FdoSmPhMySqlOwner::DropTempTable( FdoStringP tableName)

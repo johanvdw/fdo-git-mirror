@@ -28,6 +28,7 @@ struct NameOrderingPair;
 class StringBuffer;
 class SpatialIndexDescriptor;
 struct DBounds;
+class ConnInfoDetails;
 
 // on read connection only the provider can open (internal) transactions
 enum SQLiteActiveTransactionType
@@ -68,7 +69,7 @@ typedef std::map<char*, SltMetadata*, string_less> MetadataCache;
 
 typedef std::map<FdoString*, FdoUniqueConstraint*, wstring_less> UniqueConstraints;
 
-typedef std::map<const char*, SpatialIndexDescriptor*, string_less> SpatialIndexCache;
+typedef std::map<char*, SpatialIndexDescriptor*, string_less> SpatialIndexCache;
 
 class SltConnection : public FdoIConnection, 
                       public FdoIConnectionInfo,
@@ -190,9 +191,7 @@ public:
                                                 FdoIdentifierCollection* props,
                                                 bool                     scrollable,
                                                 const std::vector<NameOrderingPair>& ordering,
-                                                FdoParameterValueCollection*  parmValues,
-                                                FdoJoinCriteriaCollection* joinCriteria = NULL,
-                                                FdoIdentifier* alias = NULL);
+                                                FdoParameterValueCollection*  parmValues);
 
     FdoIDataReader*     SelectAggregates       (FdoIdentifier*             fcname, 
                                                 FdoIdentifierCollection*   properties,
@@ -202,9 +201,7 @@ public:
                                                 FdoIdentifierCollection*   ordering,
                                                 FdoFilter*                 grFilter,
                                                 FdoIdentifierCollection*   grouping,
-                                                FdoParameterValueCollection*  parmValues,
-                                                FdoJoinCriteriaCollection* joinCriteria = NULL,
-                                                FdoIdentifier* alias = NULL);
+                                                FdoParameterValueCollection*  parmValues);
 
     FdoInt32            Update                 (FdoIdentifier*              fcname, 
                                                 FdoFilter*                  filter, 
@@ -215,34 +212,18 @@ public:
                                                 FdoFilter*                  filter,
                                                 FdoParameterValueCollection*  parmValues);
 
-    SltReader*          SelectView             (FdoClassDefinition* fc,
-                                                FdoIdentifierCollection* props,
-                                                StringBuffer& strWhere,
-                                                FdoParameterValueCollection*  parmValues,
-                                                const std::vector<NameOrderingPair>& ordering);
-
-    SltReader*          SelectJoin             (FdoClassDefinition* fc,
-                                                FdoIdentifierCollection* props, 
-                                                StringBuffer& strWhere,
-                                                FdoParameterValueCollection*  parmValues,
-                                                const std::vector<NameOrderingPair>& ordering,
-                                                FdoJoinCriteriaCollection* joinCriteria,
-                                                FdoIdentifier* alias = NULL);
-
-    void               AppendSelectJoin        (StringBuffer& sb,
-                                                FdoJoinCriteriaCollection* joinCriteria,
-                                                FdoIdentifier* alias);
 
     void                ApplySchema            (FdoFeatureSchema* schema, bool ignoreStates);
 
-    sqlite3*        GetDbConnection() { return m_dbWrite; }
+    sqlite3*        GetDbRead() { return m_dbRead; }
+    sqlite3*        GetDbWrite() { return m_dbWrite; }
     SpatialIndex*   GetSpatialIndex(const char* table);
     bool            GetExtents(const wchar_t* fcname, double ext[4]);
     SltMetadata*    GetMetadata(const char* table);
-    SltReader*      CheckForSpatialExtents(FdoIdentifierCollection* props, FdoFeatureClass* fc, FdoFilter* filter, FdoParameterValueCollection*  parmValues);
+    SltReader*      CheckForSpatialExtents(FdoIdentifierCollection* props, FdoFeatureClass* fc, FdoFilter* filter);
     FdoInt64        GetFeatureCount(const char* table);
     
-    sqlite3_stmt*   GetCachedParsedStatement(const char* sql);
+    sqlite3_stmt*   GetCachedParsedStatement(const char* sql, sqlite3* db = NULL);
     void            ReleaseParsedStatement(const char* sql, sqlite3_stmt* stmt);
     void            ClearQueryCache();
     
@@ -252,17 +233,15 @@ public:
     int CommitTransaction(bool isUserTrans = false);
     int RollbackTransaction(bool isUserTrans = false);
     bool IsTransactionStarted() { return (m_transactionState != SQLiteActiveTransactionType_None); }
+    void CacheViewContent(const char* viewName);
+    void EnableHooks(bool enable = true, bool enforceRollback = false);
     void GetGeometryExtent(const unsigned char* ptr, int len, DBounds* ext);
-    bool IsCoordSysLatLong(const char* tablename, const char* columnname);
-    bool GetCSTolerances(const char* tablename, double& xyTolerance, double& zTolerance);
-    bool IsReadOnlyConnection();
+    bool IsCoordSysLatLong();
     
     // when SC not found: if valIfNotFound = 0 the default SC will be returned else that value will be returned.
     int FindSpatialContext(const wchar_t* name, int valIfNotFound = 0);
     int GetDefaultSpatialContext();
-    bool SupportsTolerance();
-    bool AddSupportForTolerance();
-    void FreeCachedSchema (bool isAddition);
+	FdoClassDefinition* GetFdoClassDefinition(const char* table);
 
 private :
 
@@ -272,7 +251,7 @@ private :
     void DeleteClassFromSchema(FdoClassDefinition* fc);
     void DeleteClassFromSchema(const wchar_t* fcName);
     void UpdateClassFromSchema(FdoClassCollection* classes, FdoClassDefinition* fc, FdoClassDefinition* mainfc);
-    bool GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter, bool isExtentReq, FdoInt64* countReq, DBounds* extReq, FdoParameterValueCollection*  parmValues);
+    bool GetExtentAndCountInfo(FdoFeatureClass* fc, FdoFilter* filter, bool isExtentReq, FdoInt64* countReq, DBounds* extReq);
     void GenerateAutoGenerateTrigger(FdoClassDefinition* fc, bool dropTriggerFirst = false);
 
     void CollectBaseClassProperties(FdoClassCollection* myclasses, FdoClassDefinition* fc, FdoClassDefinition* mainfc, 
@@ -283,24 +262,15 @@ private :
     void AddComplexUniqueConstraints(FdoUniqueConstraintCollection* uniqueConstr, FdoClassDefinition* fc, StringBuffer& sb);
     std::wstring GenerateValidConstrName(FdoString* name);
     RowidIterator* GetScrollableIterator(SltReader* rdr);
-    static int PrepareSpatialDatabase(sqlite3* db, bool useFdoMetadata, bool isInMemory = false);
-    SpatialIndexDescriptor* GetSpatialIndexDescriptor(const char* table, int* geomIdx = NULL);
 
+    static void update_hook(void* caller, int action, char const* database, char const* tablename, sqlite3_int64 id);
     static int commit_hook(void* caller);
     static void rollback_hook(void* caller);
 
-    static void* sqlite3_spatial_index(void* caller, const char* tablename, int* geomIdx);
-    static void  sqlite3_update_spatial_index(void* caller, void* sid, int action, sqlite3_int64 id, const void* blob, int szBlob);
-    static void  sqlite3_release_spatial_index(void* sid, const char* zTableName);
-    static char  sqlite3_spatial_context(void* caller, const char* tablename, const char* columnname);
-    static void* sqlite3_spatial_iterator(void* si, const void* blob, int szBlob);
-    static sqlite3_int64 sqlite3_spatial_iterator_readnext(void* siit);
-    static void sqlite3_spatial_iterator_release(void* siit);
-    static void sqlite3_spatial_iterator_reset(void* siit);
-
+    bool                                    m_updateHookEnabled;
     bool                                    m_changesAvailable;
-    bool                                    m_isReadOnlyConnection;
 
+    sqlite3*                                m_dbRead;
     sqlite3*                                m_dbWrite;
 
     std::map<std::wstring, std::wstring>*   m_mProps;
@@ -321,6 +291,20 @@ private :
     // geometry conversion buffer
     unsigned char*                          m_wkbBuffer;
     int                                     m_wkbBufferLen;
+    ConnInfoDetails*                        m_connDet;
     int                                     m_defSpatialContextId;
-    char                                    m_cSupportsTolerance; // -1 = not init; 0=false; 1=true
+};
+
+class ConnInfoDetails
+{
+public:
+    ConnInfoDetails(SltConnection* conn);
+    bool IsCoordSysLatLong();
+
+private:
+    // don't use add ref here
+    SltConnection* m_conn;
+    bool m_isInitialized;
+    bool m_isCoordSysLatLong; // specify if connection is based on a lat/long CS
+    // other parameters needed to pass thru sqlite connection
 };

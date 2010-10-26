@@ -21,7 +21,7 @@ TYPEACTION=buildinstall
 TYPEBUILD=release
 TYPECONFIGURE=configure
 BUILDDOCS=skip
-PREFIXVAL=/usr/local/fdo-3.6.0
+PREFIXVAL=/usr/local/fdo-3.5.0
 
 DEFMODIFY=no
 FDOCOREENABLE=yes
@@ -145,7 +145,7 @@ do
         KINGORACLEENABLE=yes
         SQLITEENABLE=yes
     elif test "$1" == fdocore; then
-		FDOCOREENABLE=yes
+	FDOCOREENABLE=yes
     elif test "$1" == fdo; then
         FDOENABLE=yes
     elif test "$1" == utilities; then
@@ -291,7 +291,6 @@ if test "$TYPECONFIGURE" == configure ; then
          export CPPFLAGS="-march=i686" 
       fi
 
-	  chmod a+x ./configure
       if test "$TYPEBUILD" == release; then
          ./configure --prefix="$PREFIXVAL"
       else
@@ -307,16 +306,16 @@ CMDEX="--c $TYPEBUILD --a $TYPEACTION --d $BUILDDOCS --m $TYPECONFIGURE --p $PRE
 #build all of fdocore
 if test "$FDOCOREENABLE" == yes; then
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      sudo -E make
+      make
    fi
    if test "$TYPEACTION" == clean ; then
-      sudo -E make clean
+      make clean
    fi
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo -E make install
+      make install
    fi
    if test "$TYPEACTION" == uninstall ; then
-      sudo -E make uninstall
+      make uninstall
    fi
 fi
 
@@ -325,16 +324,16 @@ if test "$FDOENABLE" == yes; then
    pushd Fdo >& /dev/null
    
    if test "$TYPEACTION" == clean ; then
-      sudo -E make clean
+      make clean
    fi
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      sudo -E make
+      make
    fi
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo -E make install
+      make install
    fi
    if test "$TYPEACTION" == uninstall ; then
-      sudo -E make uninstall
+      make uninstall
    fi
    
    if test "$BUILDDOCS" == build ; then
@@ -373,16 +372,16 @@ if test "$UTILENABLE" == yes; then
    pushd Utilities >& /dev/null
    
    if test "$TYPEACTION" == clean ; then
-      sudo -E make clean
+      make clean
    fi
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      sudo -E make
+      make
    fi
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo -E make install
+      make install
    fi
    if test "$TYPEACTION" == uninstall ; then
-      sudo -E make uninstall
+      make uninstall
    fi
    
    popd >& /dev/null
@@ -392,8 +391,7 @@ fi
 if test "$SHPENABLE" == yes; then
    if test -e "Providers/SHP/build_linux.sh"; then
        pushd Providers/SHP >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -402,8 +400,7 @@ fi
 if test "$SDFENABLE" == yes; then
    if test -e "Providers/SDF/build_linux.sh"; then
        pushd Providers/SDF >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -412,8 +409,7 @@ fi
 if test "$WFSENABLE" == yes; then
    if test -e "Providers/WFS/build_linux.sh"; then
        pushd Providers/WFS >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -422,8 +418,7 @@ fi
 if test "$WMSENABLE" == yes; then
    if test -e "Providers/WMS/build_linux.sh"; then
        pushd Providers/WMS >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -432,8 +427,7 @@ fi
 if test "$ARCENABLE" == yes; then
    if test -e "Providers/ArcSDE/build_linux.sh"; then
        pushd Providers/ArcSDE >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -442,8 +436,7 @@ fi
 if test "$RDBMSENABLE" == yes; then
    if test -e "Providers/GenericRdbms/build_linux.sh"; then
        pushd Providers/GenericRdbms >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -452,8 +445,7 @@ fi
 if test "$GDALENABLE" == yes; then
    if test -e "Providers/GDAL/build_linux.sh"; then
        pushd Providers/GDAL >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -462,8 +454,7 @@ fi
 if test "$OGRENABLE" == yes; then
    if test -e "Providers/OGR/build_linux.sh"; then
        pushd Providers/OGR >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -472,8 +463,7 @@ fi
 if test "$POSTGISENABLE" == yes; then
    if test -e "Providers/PostGIS/build_linux.sh"; then
        pushd Providers/PostGIS >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -482,8 +472,7 @@ fi
 if test "$KINGORACLEENABLE" == yes; then
    if test -e "Providers/KingOracle/build_linux.sh"; then
        pushd Providers/KingOracle >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -492,8 +481,7 @@ fi
 if test "$SQLITEENABLE" == yes; then
    if test -e "Providers/SQLite/build_linux.sh"; then
        pushd Providers/SQLite >& /dev/null
-	   chmod a+x ./build_linux.sh
-       sudo -E sh ./build_linux.sh $CMDEX
+       ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi

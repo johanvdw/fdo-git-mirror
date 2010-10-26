@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rasterize.cpp 18164 2009-12-03 19:06:03Z chaitanya $
+ * $Id: gdal_rasterize.cpp 15712 2008-11-12 13:59:56Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Rasterize OGR shapes into a GDAL raster.
@@ -35,7 +35,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdal_rasterize.cpp 18164 2009-12-03 19:06:03Z chaitanya $");
+CPL_CVSID("$Id: gdal_rasterize.cpp 15712 2008-11-12 13:59:56Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -45,8 +45,8 @@ static void Usage()
 
 {
     printf( 
-        "Usage: gdal_rasterize [-b band] [-i] [-at]\n"
-        "       [-burn value] | [-a attribute_name] [-3d]\n"
+        "Usage: gdal_rasterize [-b band] [-i]\n"
+        "       [-burn value] | [-a attribute_name] | [-3d]\n"
 //      "       [-of format_driver] [-co key=value]\n"       
 //      "       [-te xmin ymin xmax ymax] [-tr xres yres] [-ts width height]\n"
         "       [-l layername]* [-where expression] [-sql select_statement]\n"
@@ -130,7 +130,7 @@ static void ProcessLayer(
     OGRLayerH hSrcLayer, 
     GDALDatasetH hDstDS, std::vector<int> anBandList,
     std::vector<double> &adfBurnValues, int b3D, int bInverse,
-    const char *pszBurnAttribute, char **papszRasterizeOptions )
+    const char *pszBurnAttribute )
 
 {
 /* -------------------------------------------------------------------- */
@@ -157,21 +157,21 @@ static void ProcessLayer(
         if( OSRIsSame(hSrcSRS, hDstSRS) == FALSE )
         {
             fprintf(stderr,
-                    "Warning : the output raster dataset and the input vector layer do not have the same SRS.\n"
-                    "Results might be incorrect (no on-the-fly reprojection of input data).\n");
+                    "Warning : the output raster dataset and the input vector layer do not have the same SRS. "
+                    "Results will be probably incorrect.\n");
         }
     }
     else if( hDstSRS != NULL && hSrcSRS == NULL )
     {
         fprintf(stderr,
-                "Warning : the output raster dataset has a SRS, but the input vector layer SRS is unknown.\n"
-                "Ensure input vector has the same SRS, otherwise results might be incorrect.\n");
+                "Warning : the output raster dataset has a SRS, but the input vector layer not. "
+                "Results will be probably incorrect.\n");
     }
     else if( hDstSRS == NULL && hSrcLayer != NULL )
     {
         fprintf(stderr,
-                "Warning : the input vector layer has a SRS, but the output raster dataset SRS is unknown.\n"
-                "Ensure output raster dataset has the same SRS, otherwise results might be incorrect.\n");
+                "Warning : the input vector layer has a SRS, but the output raster dataset not. "
+                "Results will be probably incorrect.\n");
     }
 
     if( hDstSRS != NULL )
@@ -211,12 +211,6 @@ static void ProcessLayer(
     {
         OGRGeometryH hGeom;
 
-        if( OGR_F_GetGeometryRef( hFeat ) == NULL )
-        {
-            OGR_F_Destroy( hFeat );
-            continue;
-        }
-
         hGeom = OGR_G_Clone( OGR_F_GetGeometryRef( hFeat ) );
         ahGeometries.push_back( hGeom );
 
@@ -225,21 +219,14 @@ static void ProcessLayer(
             if( adfBurnValues.size() > 0 )
                 adfFullBurnValues.push_back( 
                     adfBurnValues[MIN(iBand,adfBurnValues.size()-1)] );
+            else if( b3D )
+            {
+                // TODO: get geometry "z" value 
+                adfFullBurnValues.push_back( 0.0 );
+            }
             else if( pszBurnAttribute )
             {
                 adfFullBurnValues.push_back( OGR_F_GetFieldAsDouble( hFeat, iBurnField ) );
-            }
-            /* I have made the 3D option exclusive to other options since it
-               can be used to modify the value from "-burn value" or
-               "-a attribute_name" */
-            if( b3D )
-            {
-                // TODO: get geometry "z" value
-                /* Points and Lines will have their "z" values collected at the
-                   point and line levels respectively. However filled polygons
-                   (GDALdllImageFilledPolygon) can use some help by getting
-                   their "z" values here. */
-                adfFullBurnValues.push_back( 0.0 );
             }
         }
         
@@ -261,8 +248,7 @@ static void ProcessLayer(
 /* -------------------------------------------------------------------- */
     GDALRasterizeGeometries( hDstDS, anBandList.size(), &(anBandList[0]), 
                              ahGeometries.size(), &(ahGeometries[0]), 
-                             NULL, NULL, &(adfFullBurnValues[0]), 
-                             papszRasterizeOptions,
+                             NULL, NULL, &(adfFullBurnValues[0]), NULL,
                              GDALTermProgress, NULL );
 
 /* -------------------------------------------------------------------- */
@@ -291,7 +277,6 @@ int main( int argc, char ** argv )
     const char *pszWHERE = NULL;
     std::vector<int> anBandList;
     std::vector<double> adfBurnValues;
-    char **papszRasterizeOptions = NULL;
 
     /* Check that we are running against at least GDAL 1.4 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -331,17 +316,10 @@ int main( int argc, char ** argv )
         else if( EQUAL(argv[i],"-3d")  )
         {
             b3D = TRUE;
-            papszRasterizeOptions = 
-                CSLSetNameValue( papszRasterizeOptions, "BURN_VALUE_FROM", "Z");
         }
         else if( EQUAL(argv[i],"-i")  )
         {
             bInverse = TRUE;
-        }
-        else if( EQUAL(argv[i],"-at")  )
-        {
-            papszRasterizeOptions = 
-                CSLSetNameValue( papszRasterizeOptions, "ALL_TOUCHED", "TRUE" );
         }
         else if( EQUAL(argv[i],"-burn") && i < argc-1 )
         {
@@ -426,8 +404,7 @@ int main( int argc, char ** argv )
         if( hLayer != NULL )
         {
             ProcessLayer( hLayer, hDstDS, anBandList, 
-                          adfBurnValues, b3D, bInverse, pszBurnAttribute,
-                          papszRasterizeOptions );
+                          adfBurnValues, b3D, bInverse, pszBurnAttribute );
         }
     }
 
@@ -452,19 +429,16 @@ int main( int argc, char ** argv )
         }
 
         ProcessLayer( hLayer, hDstDS, anBandList, 
-                      adfBurnValues, b3D, bInverse, pszBurnAttribute,
-                      papszRasterizeOptions );
+                      adfBurnValues, b3D, bInverse, pszBurnAttribute );
     }
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
-
     OGR_DS_Destroy( hSrcDS );
     GDALClose( hDstDS );
 
     CSLDestroy( argv );
-    CSLDestroy( papszRasterizeOptions );
     CSLDestroy( papszLayers );
     
     GDALDestroyDriverManager();

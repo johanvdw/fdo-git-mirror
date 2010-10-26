@@ -46,7 +46,6 @@ public:
     virtual int GetNumParts ();
 
     FdoIGeometry* CreateGeometryFromRings( FdoLinearRingCollection* rings, bool relateRings );
-    bool PointInRing(FdoILinearRing* ring, double x, double y);
 
 protected:
     ESRIPolygonRecord* mRecord;

@@ -29,7 +29,6 @@
 #include "FdoRdbmsPostGisConnectionCapabilities.h"
 #include "FdoRdbmsPostGisCommandCapabilities.h"
 #include "FdoRdbmsPostGisFilterCapabilities.h"
-#include "FdoRdbmsPostGisExpressionCapabilities.h"
 #include <Rdbms/Override/PostGis/PostGisOvPhysicalSchemaMapping.h>
 #include <DbiConnection.h>
 #include <Inc/Rdbi/proto.h>
@@ -438,14 +437,3 @@ FdoIFilterCapabilities *FdoRdbmsPostGisConnection::GetFilterCapabilities()
     FDO_SAFE_ADDREF(mFilterCapabilities);
     return mFilterCapabilities;	
 }
-
-FdoIExpressionCapabilities* FdoRdbmsPostGisConnection::GetExpressionCapabilities()
-{
-    if (mExpressionCapabilities == NULL)
-        mExpressionCapabilities = new FdoRdbmsPostGisExpressionCapabilities();
-    FDO_SAFE_ADDREF(mExpressionCapabilities);
-    return mExpressionCapabilities;
-}
-
-
-

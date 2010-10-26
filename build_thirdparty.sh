@@ -19,7 +19,7 @@
 
 TYPEACTION=buildinstall
 TYPECONFIGURE=configure
-PREFIXVAL=/usr/local/fdo-3.6.0
+PREFIXVAL=/usr/local/fdo-3.5.0
 
 DEFMODIFY=no
 ALLENABLE=yes
@@ -169,7 +169,6 @@ if test "$TYPECONFIGURE" == configure ; then
   libtoolize --force
   automake --add-missing --copy
   autoconf
-  chmod a+x ./configure
   ./configure --prefix="$PREFIXVAL"
 fi
 
@@ -181,37 +180,30 @@ fi
 pushd "Thirdparty" >& /dev/null
 
 if test "$TYPEACTION" == clean ; then
-    sudo -E make clean
+    make clean
 fi
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
     if test "$ALLENABLE" == yes ; then
-	  chmod a+x ./Thirdparty.sh
-      sudo -E sh ./Thirdparty.sh
+      ./Thirdparty.sh
     elif test "$FDOENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_fdo.sh
-      sudo -E sh ./Thirdparty_fdo.sh
+      ./Thirdparty_fdo.sh
     elif test "$SDFENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_sdf.sh
-      sudo -E sh ./Thirdparty_sdf.sh
+      ./Thirdparty_sdf.sh
     elif test "$WMSENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_wms.sh
-      sudo -E sh ./Thirdparty_wms.sh
+      ./Thirdparty_wms.sh
     elif test "$WFSENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_wfs.sh
-      sudo -E sh ./Thirdparty_wfs.sh
+      ./Thirdparty_wfs.sh
     elif test "$GDALENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_gdal.sh
-      sudo -E sh ./Thirdparty_gdal.sh
+      ./Thirdparty_gdal.sh
     elif test "$OGRENABLE" == yes ; then
-	  chmod a+x ./Thirdparty_ogr.sh
-      sudo -E sh ./Thirdparty_ogr.sh
+      ./Thirdparty_ogr.sh
     fi
 fi
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-    sudo -E make install
+    make install
 fi
 if test "$TYPEACTION" == uninstall ; then
-    sudo -E make uninstall
+    make uninstall
 fi
 
 popd >& /dev/null

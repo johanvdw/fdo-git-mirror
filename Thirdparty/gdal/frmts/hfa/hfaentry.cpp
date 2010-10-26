@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaentry.cpp 16662 2009-03-27 12:37:45Z warmerdam $
+ * $Id: hfaentry.cpp 15768 2008-11-20 05:17:40Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAEntry class for reading and relating
@@ -37,7 +37,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: hfaentry.cpp 16662 2009-03-27 12:37:45Z warmerdam $");
+CPL_CVSID("$Id: hfaentry.cpp 15768 2008-11-20 05:17:40Z warmerdam $");
 
 /************************************************************************/
 /*                              HFAEntry()                              */
@@ -262,51 +262,6 @@ HFAEntry::~HFAEntry()
 }
 
 /************************************************************************/
-/*                          RemoveAndDestroy()                          */
-/*                                                                      */
-/*      Removes this entry, and it's children from the current          */
-/*      tree.  The parent and/or siblings are appropriately updated     */
-/*      so that they will be flushed back to disk without the           */
-/*      reference to this node.                                         */
-/************************************************************************/
-
-CPLErr HFAEntry::RemoveAndDestroy()
-
-{
-    if( poPrev != NULL )
-    {
-        poPrev->poNext = poNext;
-        if( poNext != NULL )
-            poPrev->nNextPos = poNext->nFilePos;
-        else
-            poPrev->nNextPos = 0;
-        poPrev->MarkDirty();
-    }
-    if( poParent != NULL && poParent->poChild == this )
-    {
-        poParent->poChild = poNext;
-        if( poNext )
-            poParent->nChildPos = poNext->nFilePos;
-        else
-            poParent->nChildPos = 0;
-        poParent->MarkDirty();
-    }
-
-    if( poNext != NULL )
-    {
-        poNext->poPrev = poPrev;
-    }
-    
-    poNext = NULL;
-    poPrev = NULL;
-    poParent = NULL;
-
-    delete this;
-
-    return CE_None;
-}
-
-/************************************************************************/
 /*                              SetName()                               */
 /*                                                                      */
 /*    Changes the name assigned to this node                            */
@@ -420,19 +375,6 @@ void HFAEntry::LoadData()
 }
 
 /************************************************************************/
-/*                           GetTypeObject()                            */
-/************************************************************************/
-
-HFAType *HFAEntry::GetTypeObject()
-
-{
-    if( poType == NULL )
-        poType = psHFA->poDictionary->FindType( szType );
-
-    return poType;
-}
-
-/************************************************************************/
 /*                              MakeData()                              */
 /*                                                                      */
 /*      Create a data block on the this HFAEntry in memory.  By         */
@@ -472,7 +414,6 @@ GByte *HFAEntry::MakeData( int nSize )
         if( nFilePos != 0 )
         {
             nFilePos = 0;
-            nDataPos = 0;
             if (poPrev != NULL) poPrev->MarkDirty(); 
             if (poNext != NULL) poNext->MarkDirty(); 
             if (poChild != NULL) poChild->MarkDirty(); 
@@ -875,13 +816,8 @@ CPLErr HFAEntry::FlushToDisk()
 /* -------------------------------------------------------------------- */
         if( poNext != NULL )
             nNextPos = poNext->nFilePos;
-        else
-            nNextPos = 0;
-
         if( poChild != NULL )
             nChildPos = poChild->nFilePos;
-        else
-            nChildPos = 0;
 
 /* -------------------------------------------------------------------- */
 /*      Write the Ehfa_Entry fields.                                    */

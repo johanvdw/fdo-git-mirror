@@ -25,7 +25,7 @@
 #include "FdoRdbmsSqlServerConnection.h"
 #include "FdoCommonOSUtil.h"
 #include "FdoRdbmsSqlServerSpatialGeometryConverter.h"
-#include "FdoRdbmsFunctionIsValid.h"
+#include "FdoRdbmsSqlServerFunctionIsValid.h"
 #include "../SchemaMgr/Ph/SpatialIndex.h"
 #include "../SchemaMgr/Ph/Mgr.h"
 
@@ -157,11 +157,6 @@ FdoRdbmsSqlServerFilterProcessor::~FdoRdbmsSqlServerFilterProcessor(void)
 {
 }
 
-bool FdoRdbmsSqlServerFilterProcessor::SupportsSpatialOrNonSpatialOperator()
-{
-    return true;
-}
-
 const FdoSmLpGeometricPropertyDefinition* FdoRdbmsSqlServerFilterProcessor::GetGeometricProperty( const FdoSmLpClassDefinition* currentClass, const wchar_t *geomPropName ) const
 {
     const FdoSmLpGeometricPropertyDefinition* geom = NULL;
@@ -251,7 +246,7 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
     FdoStringP spatialClause;
     FdoPtr<FdoExpression> geomExpr = filter.GetGeometry();
     FdoGeometryValue *geom = dynamic_cast<FdoGeometryValue*>(geomExpr.p);
-    FdoPtr<FdoByteArray>    geomfgf;
+    FdoByteArray            *geomfgf = NULL;
     FdoIGeometry            *geometryObj = NULL;
 
     FdoStringP buf(L"");
@@ -501,7 +496,7 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessFunction(FdoFunction& expr)
     if (FdoCommonOSUtil::wcsicmp(funcName, FDO_FUNCTION_SPATIALEXTENTS) == 0)
         return ProcessSpatialExtentsFunction(expr);
 
-    if (FdoCommonOSUtil::wcsicmp(funcName, FDORDBMS_FUNCTION_ISVALID) == 0)
+    if (FdoCommonOSUtil::wcsicmp(funcName, FDORDBMSSQLSERVER_FUNCTION_ISVALID) == 0)
         return ProcessIsValidFunction(expr);
 
     if (FdoCommonOSUtil::wcsicmp(funcName, FDO_FUNCTION_Z) == 0)
@@ -831,6 +826,14 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessConcatFunction(FdoFunction& expr)
         AppendString(L")");
     }
     AppendString(CLOSE_PARENTH);
+}
+
+bool FdoRdbmsSqlServerFilterProcessor::IsDataValue (FdoExpression *expr)
+{
+    if (dynamic_cast<FdoDataValue *>(expr) != NULL)
+        return true;
+
+    return false;
 }
 
 //

@@ -104,7 +104,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLServerSpatialProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLServerSpatialProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -284,7 +284,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MsSqlServerProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -375,7 +375,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MsSqlServerProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot;  $(OutDir)\SQLServerSpatialProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -418,6 +418,10 @@
 			</File>
 			<File
 				RelativePath=".\Fdo\FdoRdbmsSqlServerFilterProcessor.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Fdo\FdoRdbmsSqlServerFunctionIsValid.cpp"
 				>
 			</File>
 			<File
@@ -524,6 +528,10 @@
 			</File>
 			<File
 				RelativePath=".\Fdo\FdoRdbmsSqlServerFilterProcessor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Fdo\FdoRdbmsSqlServerFunctionIsValid.h"
 				>
 			</File>
 			<File

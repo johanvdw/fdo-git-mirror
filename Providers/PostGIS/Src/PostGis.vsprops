@@ -22,12 +22,12 @@
 	/>
 	<UserMacro
 		Name="XALANROOT"
-		Value="$(FDOTHIRDPARTY)\apache\xalan"
+		Value="$(FDOTHIRDPARTY)\apache\xml-xalan\c"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro
 		Name="XERCESCROOT"
-		Value="$(FDOTHIRDPARTY)\apache\xerces"
+		Value="$(FDOTHIRDPARTY)\apache\xml-xerces\c"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro

@@ -21,7 +21,7 @@ TYPEACTION=buildinstall
 TYPEBUILD=release
 TYPECONFIGURE=configure
 BUILDDOCS=no
-PREFIXVAL=/usr/local/fdo-3.6.0
+PREFIXVAL=/usr/local/fdo-3.5.0
 
 ### study parameters ###
 while test $# -gt 0
@@ -143,19 +143,19 @@ if test "$TYPECONFIGURE" == configure ; then
 fi
    
 if test "$TYPEACTION" == clean ; then
-  sudo -E make clean
+  make clean
 fi
 
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-   sudo -E make
+   make
 fi
 
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-   sudo -E make install
+   make install
 fi
 
 if test "$TYPEACTION" == uninstall ; then
-   sudo -E make uninstall
+   make uninstall
 fi
 
 exit 0

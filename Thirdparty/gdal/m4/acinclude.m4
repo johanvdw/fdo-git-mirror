@@ -1,5 +1,5 @@
 dnl ***************************************************************************
-dnl $Id: acinclude.m4 18310 2009-12-16 03:51:18Z hobu $
+dnl $Id: acinclude.m4 13257 2007-12-05 16:48:29Z warmerdam $
 dnl
 dnl Project:  GDAL
 dnl Purpose:  Configure extra local definitions.
@@ -102,7 +102,7 @@ AC_DEFUN([AC_UNIX_STDIO_64],
 
   if test x"$with_unix_stdio_64" = x"" ; then
     echo '#include <stdio.h>' > conftest.cpp
-    echo 'int main() { long long off=0; fseek64(NULL, off, SEEK_SET); off = ftell64(NULL); return 0; }' >> conftest.c
+    echo 'int main() { long long off=0; fseek64(NULL, SEEK_SET, off); off = ftell64(NULL); return 0; }' >> conftest.c
     if test -z "`${CC} -o conftest conftest.c 2>&1`" ; then
       with_unix_stdio_64=yes
       VSI_FTELL64=ftell64
@@ -117,7 +117,7 @@ AC_DEFUN([AC_UNIX_STDIO_64],
 
   if test x"$with_unix_stdio_64" = x"" ; then
     echo '#include <stdio.h>' > conftest.c
-    echo 'int main() { long long off=0; fseeko64(NULL, off, SEEK_SET); off = ftello64(NULL); return 0; }' >> conftest.c
+    echo 'int main() { long long off=0; fseeko64(NULL, SEEK_SET, off); off = ftello64(NULL); return 0; }' >> conftest.c
     if test -z "`${CXX} -o conftest conftest.c 2>&1`" ; then
       with_unix_stdio_64=yes
       VSI_FTELL64=ftello64
@@ -132,7 +132,7 @@ AC_DEFUN([AC_UNIX_STDIO_64],
   if test x"$with_unix_stdio_64" = x"" ; then
     echo '#define _LARGEFILE64_SOURCE' > conftest.c
     echo '#include <stdio.h>' >> conftest.c
-    echo 'int main() { long long off=0; fseeko64(NULL, off, SEEK_SET); off = ftello64(NULL); return 0; }' >> conftest.c
+    echo 'int main() { long long off=0; fseeko64(NULL, SEEK_SET, off); off = ftello64(NULL); return 0; }' >> conftest.c
     if test -z "`${CXX} -o conftest conftest.c 2>&1`" ; then
       with_unix_stdio_64=yes
       VSI_FTELL64=ftello64
@@ -152,20 +152,6 @@ AC_DEFUN([AC_UNIX_STDIO_64],
         VSI_FSEEK64=fseeko
         ;;
     esac
-  fi
-
-  dnl Test for BSD systems that support ftello/fseeko.
-  dnl OpenBSD throws warnings about using strcpy/strcat, so we use CC instead of CXX
-
-  if test x"$with_unix_stdio_64" = x"" ; then
-    echo '#include <stdio.h>' > conftest.c
-    echo 'int main() { fpos_t off=0; fseeko(NULL, off, SEEK_SET); off = ftello(NULL); return 0; }' >> conftest.c
-    if test -z "`${CC} -o conftest conftest.c 2>&1`" ; then
-      with_unix_stdio_64=yes
-      VSI_FTELL64=ftello
-      VSI_FSEEK64=fseeko
-    fi
-    rm -f conftest*
   fi
 
   if test x"$with_unix_stdio_64" = x"yes" ; then
@@ -420,15 +406,15 @@ AC_DEFUN([AM_PATH_PYTHON],
     dnl
     AC_CHECK_PROGS([PYTHON], [python python1.5 python1.4 python1.3], [no])
 
-dnl    if test "$with_ogpython" = no ; then
-dnl        echo "Old-gen Python support disabled"
-dnl        PYTHON=no
-dnl    fi
+    if test "$with_ogpython" = no ; then
+        echo "Old-gen Python support disabled"
+        PYTHON=no
+    fi
 
-dnl    if test "x$with_python" != xno -a "x$with_python" != "x" ; then
-dnl        echo "Old-gen Python support disabled since python enabled."
-dnl        PYTHON=no
-dnl    fi
+    if test "x$with_python" != xno -a "x$with_python" != "x" ; then
+        echo "Old-gen Python support disabled since python enabled."
+        PYTHON=no
+    fi
 
     ARCH=`uname -i 2>/dev/null`
     PYLIB=lib

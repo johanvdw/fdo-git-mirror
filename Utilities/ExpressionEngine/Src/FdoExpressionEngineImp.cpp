@@ -1,6 +1,6 @@
 /*
  * 
-* Copyright (C) 2004-2011  Autodesk, Inc.
+* Copyright (C) 2004-2007  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -507,7 +507,7 @@ FdoGeometryValue* FdoExpressionEngineImp::GetGeometricResult (bool &bIsNull)
     bIsNull = gv->IsNull();
     ret = gv;
 
-    //We don't (yet) cache geometry values:
+    //We dont (yet) cache geometry values:
     //RelinquishDataValue (dv);
     
     return (ret);
@@ -1084,7 +1084,7 @@ void FdoExpressionEngineImp::RelinquishDataValue (FdoLiteralValue* data)
     }
     else if (data->GetLiteralValueType() == FdoLiteralValueType_Geometry)
     {
-        // nothing to do since we don't pool geometry values (yet)
+        // nothing to do since we dont pool geometry values (yet)
     }
     else
         throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_57_UNEXPECTEDERROR)));
@@ -1470,7 +1470,7 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 	{
 		if (m_processingAggregate)
 		{
-	        FdoPtr<FdoLiteralValueCollection> functionParameters = ObtainLiteralValueCollection();
+	        FdoLiteralValueCollection* functionParameters = ObtainLiteralValueCollection();
 			FdoPtr<FdoExpressionCollection> args = expr.GetArguments ();
 			for (int i=0; i<args->GetCount(); i++)
 			{
@@ -1480,24 +1480,25 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 
             for (int i=0; i<args->GetCount(); i++)
             {
-    			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_retvals.back ();
+				FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+                
 				m_retvals.pop_back ();
 				functionParameters->Insert(0, dv);
+
+                // The geometries are not pooled so release them here.
+                if (dv->GetLiteralValueType() == FdoLiteralValueType_Geometry)
+                    FDO_SAFE_RELEASE(dv);
 			}
 
 			FdoExpressionEngineIAggregateFunction *func = m_AggregateFunctions.at(m_CurrentIndex);
 			func->Process(functionParameters);
 			for (int i=0; i<functionParameters->GetCount(); i++)
 			{
-				FdoLiteralValue* literalValue = functionParameters->GetItem(i);
+				FdoPtr<FdoLiteralValue> literalValue = functionParameters->GetItem(i);
 				RelinquishDataValue(literalValue);
-
-                // The geometries are not pooled so release them here.
-                if (literalValue->GetLiteralValueType() == FdoLiteralValueType_Geometry)
-                    FDO_SAFE_RELEASE(literalValue);
 			}
             functionParameters->Clear();
-            RelinquishLiteralValueCollection(functionParameters.Detach());
+            RelinquishLiteralValueCollection(functionParameters);
 		}
 		else
 		{
@@ -1610,7 +1611,8 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 	}
 	else
 	{
-	    FdoPtr<FdoLiteralValueCollection> functionParameters = ObtainLiteralValueCollection();
+
+	    FdoLiteralValueCollection* functionParameters = ObtainLiteralValueCollection();
 		FdoPtr<FdoExpressionCollection> args = expr.GetArguments ();
 		for (int i=0; i<args->GetCount(); i++)
 		{
@@ -1620,7 +1622,7 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 
         for (int i=0; i<args->GetCount(); i++)
         {
-			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_retvals.back ();
+			FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
 			m_retvals.pop_back ();
             functionParameters->Insert(0, dv);
         }
@@ -1629,11 +1631,11 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
         PushLiteralValue(result);
 		for (int i=0; i<functionParameters->GetCount(); i++)
 		{
-			FdoLiteralValue* literalValue = functionParameters->GetItem(i);
+			FdoPtr<FdoLiteralValue> literalValue = functionParameters->GetItem(i);
 			RelinquishDataValue(literalValue);
 		}
         functionParameters->Clear();
-        RelinquishLiteralValueCollection(functionParameters.Detach());
+        RelinquishLiteralValueCollection(functionParameters);
 		return;
 	}
 }
@@ -3630,8 +3632,8 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
 			    }
                 if( (retOpt == FdoOptimizeResultType_Invalid ) || 
                     (FdoSpatialUtility::Evaluate (geomRight, FdoSpatialOperations_Disjoint, geomLeft ) &&
-                    !((rightOp == FdoSpatialOperations_Touches || rightOp == FdoSpatialOperations_Crosses || rightOp == FdoSpatialOperations_Intersects || rightOp == FdoSpatialOperations_Overlaps || rightOp == FdoSpatialOperations_EnvelopeIntersects)
-                    && (leftOp == FdoSpatialOperations_Touches || leftOp == FdoSpatialOperations_Crosses || leftOp == FdoSpatialOperations_Intersects || leftOp == FdoSpatialOperations_Overlaps || leftOp == FdoSpatialOperations_EnvelopeIntersects))))
+                    !((rightOp == FdoSpatialOperations_Crosses || rightOp == FdoSpatialOperations_Intersects || rightOp == FdoSpatialOperations_Overlaps || rightOp == FdoSpatialOperations_EnvelopeIntersects)
+                    && (leftOp == FdoSpatialOperations_Crosses || leftOp == FdoSpatialOperations_Intersects || leftOp == FdoSpatialOperations_Overlaps || leftOp == FdoSpatialOperations_EnvelopeIntersects))))
 				{
                     resultIsInvalid = true;
 					// If the condition do not overlap, then replace it with a filter that returns 0 features.
@@ -3682,9 +3684,9 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
         void OptimizeSubSet(FilterList& lst)
         {
             FilterList lstEnvInt, lstSpatCond, lstOtherCond;
-            size_t cnt = lst.size();
+            int cnt = lst.size();
             bool invalidFilter = false;
-            for (size_t i = 0; i < cnt; i++)
+            for (int i = 0; i < cnt; i++)
             {
                 if (lst[i].first == OptFilterType_SpaCond)
                 {
@@ -3703,7 +3705,7 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
             if (cnt > 1)
             {
                 // try optimize all EnvelopeIntersects in case we have more
-                for (size_t i = 0; i < cnt; i++)
+                for (int i = 0; i < cnt; i++)
                 {
                     if ((i + 1) < cnt)
                     {
@@ -3733,12 +3735,12 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
                     }
                 }
             }
-            size_t cntSec = lstSpatCond.size();
+            int cntSec = lstSpatCond.size();
             if (cntSec > 1)
             {
                 // rare case when two spatial condition are in the same query
                 // try optimize all spatial cond in case we have more
-                for (size_t i = 0; i < cntSec; i++)
+                for (int i = 0; i < cntSec; i++)
                 {
                     if ((i + 1) < cntSec)
                     {
@@ -3772,9 +3774,9 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
             if (cnt > 0 && cntSec > 0)
             {
                 // not nice but I do not see other way
-                for (size_t i = 0; i < cnt; i++)
+                for (int i = 0; i < cnt; i++)
                 {
-                    for (size_t y = 0; y < cntSec; y++)
+                    for (int y = 0; y < cntSec; y++)
                     {
                         if ((i >= 0 && i < cnt) && (y >= 0 && y < cntSec))
                         {
@@ -3832,10 +3834,10 @@ FdoFilter* FdoExpressionEngineImp::OptimizeFilter( FdoFilter *filter )
         {
             FdoPtr<FdoBinaryLogicalOperator> blof = FdoBinaryLogicalOperator::Create();
             FdoFilter* filter = FDO_SAFE_ADDREF(blof.p);
-            size_t cnt = lst.size();
+            int cnt = lst.size();
 
             FdoFilter* tmp = NULL;
-            for (size_t i = 0; i < cnt; i++)
+            for (int i = 0; i < cnt; i++)
             {
                 if ((i + 2) >= cnt)
                 {
@@ -4567,7 +4569,7 @@ void FdoExpressionEngineImp::RegisterFunctions(FdoExpressionEngineFunctionCollec
 }
 
 // This method would only be usefully when calling from the Evaluate methods. The Evaluate method returns a FdoLiteralValue object to the user. This object should only be re-used
-// by the Expression Engine when the ref-count is 1(ie. the caller is not holding a reference to the object.)
+// by the Expression Egnine when the ref-count is 1(ie. the caller is not holding a reference to the object.)
 void FdoExpressionEngineImp::PotentialRelinquishLiteralValue(FdoLiteralValue *value)
 {
     if (value->GetLiteralValueType() == FdoLiteralValueType_Data)
@@ -4672,49 +4674,4 @@ void FdoExpressionEngineImp::PopulateFunctions()
         mutex.Leave();
         throw;
     }
-}
-
-void FdoExpressionEngineImp::GetExpressionIdentifiers(FdoFunctionDefinitionCollection *functionDefinitions, 
-                                                      FdoClassDefinition* originalClassDef, 
-                                                      FdoExpression *expression, 
-                                                      FdoIdentifierCollection* identifiers)
-{
-    return FdoCommonMiscUtil::GetExpressionIdentifiers(functionDefinitions, originalClassDef, expression, identifiers);
-}
-
-void FdoExpressionEngineImp::GetExpressionIdentifiers(FdoClassDefinition* originalClassDef,
-                                                      FdoExpression *expression, 
-                                                      FdoIdentifierCollection* identifiers)
-{
-    try
-    {
-        mutex.Enter();
-
-        FdoPtr<FdoExpressionEngineFunctionCollection> functions = initFunction.GetAllFunctions();
-        FdoPtr<FdoFunctionDefinitionCollection> functionDefinitions = FdoFunctionDefinitionCollection::Create();
-
-        for (int i=0; i<functions->GetCount(); i++)
-        {
-            FdoPtr<FdoExpressionEngineIFunction> function = functions->GetItem(i);
-            FdoPtr<FdoFunctionDefinition> functionDefinition = function->GetFunctionDefinition();
-            functionDefinitions->Add(functionDefinition);
-        }
-
-        FdoCommonMiscUtil::GetExpressionIdentifiers(functionDefinitions, originalClassDef, expression, identifiers);
-
-        functions = NULL;
-        mutex.Leave();
-    }
-    catch (FdoException *)
-    {
-        mutex.Leave();
-        throw;
-    }
-    catch (...)
-    {
-        mutex.Leave();
-        throw;
-    }
-
-    return;
 }

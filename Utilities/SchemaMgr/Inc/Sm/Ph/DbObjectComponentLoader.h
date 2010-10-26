@@ -57,7 +57,7 @@ public:
 
     FdoSmPhOwnerP GetOwner()
     {
-        return FDO_SAFE_ADDREF(mOwner);
+        return mOwner;
     }
 
     // Main function that lazy loads the components
@@ -276,8 +276,7 @@ protected:
     virtual bool CacheObjectComponents( FdoSmPhDbObjectP dbObject, FdoPtr<R> rdr ) = 0;
 
 private:
-    // Weak reference since an FdoSmPhOwner can own this object.
-    FdoSmPhOwner* mOwner;
+    FdoSmPhOwnerP mOwner;
     FdoSmPhDbObjectsP mDbObjects;
     FdoDictionaryP mCandidates;      // List of candidate objects for fetching components from RDBMS. 
     int mNextCandIdx;

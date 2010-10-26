@@ -98,9 +98,6 @@ public:
 	/// Get SQL for creating a CHECK constraint on an existing table
 	FdoStringP GetAddCkeySql(int uCollNum);
 
-    // Given a check constraint, return the SQL clause for adding it to its table.
-    virtual FdoStringP GetAddCkeySql(FdoSmPhCheckConstraint* ckey);
-    
     // Given a constraint name, return the name to use in DDL operations, such 
     // as dropping the constraint.
     virtual FdoStringP GetConstraintDDLName( FdoStringP constraintName ) const;
@@ -210,17 +207,14 @@ protected:
 	virtual bool AddConstraint( FdoStringP constraint ) = 0;
 
 
+private:
     /// Load Unique Keys if not yet loaded
 	void LoadUkeys();
 	void LoadUkeys( FdoPtr<FdoSmPhReader> ukeyRdr, bool isSkipAdd );
-    
-    // Load a unique key column from a reader.
-    virtual bool LoadUkeyColumn( FdoPtr<FdoSmPhReader> ukeyRdr, FdoSmPhColumnsP ukey  );
-    
     /// Load Check Keys if not yet loaded
 	void LoadCkeys();
-	virtual void LoadCkeys( FdoPtr<FdoSmPhReader> ckeyRdr, bool isSkipAdd );
-
+	void LoadCkeys( FdoPtr<FdoSmPhReader> ckeyRdr, bool isSkipAdd );
+	
     // Create new unique constraint group reader
     virtual FdoPtr<FdoSmPhTableComponentReader> NewTableUkeyReader( FdoPtr<FdoSmPhRdConstraintReader> rdr );
 
@@ -233,7 +227,6 @@ protected:
 	void AddCkeyError(FdoStringP columnNames);
     void AddDeleteNotEmptyError(void);
 
-private:
 	FdoSmPhBatchColumnsP		mUkeysCollection;
 	FdoSmPhCheckConstraintsP	mCkeysCollection;
 	FdoStringsP					mDeletedConstraints;

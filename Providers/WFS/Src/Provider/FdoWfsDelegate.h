@@ -35,37 +35,17 @@ protected:
     virtual void Dispose() { delete this; }
 
 public:
-    typedef bool (FdoWfsCancelExecutationHander)(void*);
     static FdoWfsDelegate* Create(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);
 
-    FdoWfsServiceMetadata* GetCapabilities(FdoString* version);
-    FdoFeatureSchemaCollection* DescribeFeatureType(FdoStringCollection* typeNames,FdoString* version);
+    FdoWfsServiceMetadata* GetCapabilities();
+    FdoFeatureSchemaCollection* DescribeFeatureType(FdoStringCollection* typeNames);
     FdoIFeatureReader* GetFeature(FdoFeatureSchemaCollection* schemas, 
                                     FdoPhysicalSchemaMappingCollection* schemaMappings, 
                                     FdoString* targetNamespace, FdoString* srsName,
                                     FdoStringCollection* propertiesToSelect,
                                     FdoString* from,
                                     FdoFilter* where,
-                                    FdoString* schemaName,
-                                    FdoString* version,
-                                    FdoWfsCancelExecutationHander handler,
-                                    void* handleData);
-
-private:
-
-	// pre-scan the stream
-	// some stream may contain invalid characters which doesn' defined in XML spec.
-	// and Xerces will stop the parse process and throw exceptions
-	// to allow resume read the main part information, a workaround is to 
-	// scan the XML before parsing it, and changing all the invalid characters with empty char.
-	//
-	// we are not going to do very restrictive replacement here and only 
-	// replace some found invalid characters reported by Xerces,current the list is
-	// [0x1 - 0x7] 
-	// [0x11 - 0x19]
-	// we trust Xerces can handle most of the characters now or in the future. 
-	//
-	FdoIoStream* preProcessStream(FdoIoStream* streamm, FdoWfsCancelExecutationHander handler, void* handleData);
+                                    FdoString* schemaName);
 
 };
 

@@ -46,7 +46,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm113"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Capability;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Filter;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;FDORDBMS_EXPORTS;_USRDLL;POSTGIS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -72,7 +72,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpq.lib FDO.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi.lib util.lib SchemaMgr_OVNew.lib Advapi32.lib"
+				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpq.lib FDO.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi_PostGis.lib util.lib SchemaMgr_OVNew.lib Advapi32.lib"
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\Lib\Win32\Debug;&quot;$(FDO)\Unmanaged\Lib\Win32\Debug&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win32\Debug&quot;"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -138,7 +138,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm113"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Capability;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Filter;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;FDORDBMS_EXPORTS;_USRDLL;POSTGIS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -164,7 +164,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpqdll.lib FDO.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi.lib util.lib SchemaMgr_OVNew.lib Advapi32.lib"
+				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpqdll.lib FDO.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi_PostGis.lib util.lib SchemaMgr_OVNew.lib Advapi32.lib"
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\Lib\Win64\Debug;&quot;$(FDO)\Unmanaged\Lib\Win64\Debug&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms\Win64&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms\Win64&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win64\Debug&quot;"
@@ -199,7 +199,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -231,7 +231,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Capability;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Filter;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;FDORDBMS_EXPORTS;_USRDLL;POSTGIS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -256,7 +256,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpq.lib FDO.lib geometry_fgf.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi.lib LongTransactionManager.lib SchemaMgr_OVNew.lib Advapi32.lib"
+				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpq.lib FDO.lib geometry_fgf.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi_PostGis.lib LongTransactionManager.lib SchemaMgr_OVNew.lib Advapi32.lib"
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\Lib\Win32\Release;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win32\Release&quot;"
@@ -292,7 +292,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -324,7 +324,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Capability;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Filter;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
+				AdditionalIncludeDirectories="../../inc/rdbi;../;../../;../../inc;../../inc/fdo;../Fdo/Connection;../Fdo/Other;../Fdo/FeatureCommands;../Fdo/Custom;../Fdo/Schema;../Fdo/Lt;../Fdo/Lock;../Fdo/SpatialContext;&quot;$(FDO)\Unmanaged&quot;;&quot;$(FDO)\Unmanaged\inc&quot;;&quot;$(FDOUTILITIES)/SchemaMgr/inc&quot;;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\Gdbi;..\LongTransactionManager;..\GenericLongTransactionManager;..\LockManager"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;FDORDBMS_EXPORTS;_USRDLL;POSTGIS_EXPORTS;_LIB;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -350,7 +350,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpqdll.lib FDO.lib geometry_fgf.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi.lib LongTransactionManager.lib SchemaMgr_OVNew.lib Advapi32.lib"
+				AdditionalDependencies="FdoGeneric.lib Rdbi.lib PostGisDriver.lib libpqdll.lib FDO.lib geometry_fgf.lib FDOGeometry.lib FDOCommon.lib FDOSpatial.lib Gdbi_PostGis.lib LongTransactionManager.lib SchemaMgr_OVNew.lib Advapi32.lib"
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\Lib\Win64\Release;&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms\Win64&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms\Win64&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win64\Release&quot;"
@@ -386,7 +386,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 				ExcludedFromBuild="true"
 			/>
 		</Configuration>
@@ -420,10 +420,6 @@
 			</File>
 			<File
 				RelativePath=".\Fdo\FdoRdbmsPostGisDeleteDataStore.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Fdo\FdoRdbmsPostGisExpressionCapabilities.cpp"
 				>
 			</File>
 			<File
@@ -513,10 +509,6 @@
 			</File>
 			<File
 				RelativePath="Fdo\FdoRdbmsPostGisDeleteDataStore.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Fdo\FdoRdbmsPostGisExpressionCapabilities.h"
 				>
 			</File>
 			<File

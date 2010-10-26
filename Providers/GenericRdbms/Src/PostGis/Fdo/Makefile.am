@@ -26,7 +26,6 @@ libFdoRdbmsPostGis_Fdo_la_SOURCES = \
   FdoRdbmsPostGisConnectionInfo.cpp \
   FdoRdbmsPostGisCreateDataStore.cpp \
   FdoRdbmsPostGisDeleteDataStore.cpp \
-  FdoRdbmsPostGisExpressionCapabilities.cpp \
   FdoRdbmsPostGisFilterCapabilities.cpp \
   FdoRdbmsPostGisFilterProcessor.cpp \
   FdoRdbmsPostGisGeometryCapabilities.cpp \
@@ -40,7 +39,6 @@ noinst_HEADERS = $(libFdoRdbmsPostGis_Fdo_la_SOURCES) \
   FdoRdbmsPostGisConnectionInfo.h \
   FdoRdbmsPostGisCreateDataStore.h \
   FdoRdbmsPostGisDeleteDataStore.h \
-  FdoRdbmsPostGisExpressionCapabilities.h \
   FdoRdbmsPostGisFilterCapabilities.h \
   FdoRdbmsPostGisFilterProcessor.h \
   FdoRdbmsPostGisGeometryCapabilities.h \
@@ -56,7 +54,6 @@ INCLUDES = \
   -I$(FDOUTILITIES)/Common/Inc \
   -I$(FDOUTILITIES)/SchemaMgr/Inc/Sm/Lp \
   -I$(FDOUTILITIES)/SchemaMgr/Inc \
-  -I$(FDOUTILITIES)/ExpressionEngine/Inc \
   -I../../../Src/Fdo/Other \
   -I../../../Src/Fdo/Capability \
   -I../../../Src/Fdo/Connection \

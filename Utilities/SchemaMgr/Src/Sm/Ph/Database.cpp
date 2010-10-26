@@ -55,7 +55,7 @@ FdoSmPhOwnerP FdoSmPhDatabase::FindOwner(FdoStringP owner)
         while (!pOwner && reader->ReadNext())
 		{
 			if (reader->GetName() == owner)
-				pOwner = NewOwner(reader->GetName(), reader->GetHasMetaSchema(), FdoSchemaElementState_Unchanged, reader);
+				pOwner = NewOwner(reader->GetName(), reader->GetHasMetaSchema(), FdoSchemaElementState_Unchanged);
         }
 
         if ( pOwner )

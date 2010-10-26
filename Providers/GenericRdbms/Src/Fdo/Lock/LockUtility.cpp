@@ -1667,12 +1667,7 @@ const char *LockUtility::GetFilterSQL (FdoRdbmsConnection              *dbi_conn
 													SqlCommandType_Select,
                                                     FdoCommandType_Select,
                                                     &filter_constrain, false));
-      const char* filter_sql_utf8 = dbi_connection->GetDbiConnection()->GetUtility()->UnicodeToUtf8( filter_sql );
-      
-      if ( filter_sql )
-          delete[] filter_sql;
-      
-      return filter_sql_utf8;
+      return( dbi_connection->GetDbiConnection()->GetUtility()->UnicodeToUtf8( filter_sql ) );
 
     }  //  try ...
 

@@ -17,13 +17,10 @@
 //  
 
 #include "SltGeomUtils.h"
-#include "vectormf.h"
 
 //Each tree node will contain 2^BATCH_SHIFT bounding boxes
 #define BATCH_SHIFT 3
 #define BATCH_MASK ((~0) << BATCH_SHIFT)
-
-typedef std::map<FdoInt64, unsigned int> LinkMap;
 
 //We will have up to this many levels
 //in the skip list hierarchy
@@ -54,24 +51,23 @@ public:
     SpatialIndex(const wchar_t* seedname);
     ~SpatialIndex();
 
-    void Insert(FdoInt64 dbId, DBounds& ext);
-    void Update(FdoInt64 dbId, DBounds& ext);
-    void Delete(FdoInt64 dbId);
+    void Insert(unsigned fid, DBounds& ext);
+    void Update(unsigned fid, DBounds& ext);
+    void Delete(unsigned fid);
     void GetTotalExtent(DBounds& ext);
     void ReOpen();
-    FdoInt64 GetLastInsertedIdx() { return _lastInsertedIdx; }
+    unsigned GetLastInsertedIdx() { return _lastInsertedIdx; }
 
     Node* GetNode(int level, int index);
-    FdoInt64 operator[](int fid);
 
 private:
     void FullSpatialIndexUpdate();
-    void Insert(unsigned int fid, Bounds& b);
+    void Insert(unsigned fid, Bounds& b);
     void GetSIFilename(std::wstring& res);
 private:
 
     // last inserted index
-    FdoInt64   _lastInsertedIdx;
+    unsigned   _lastInsertedIdx;
     
     // count of changes
     unsigned   _countChanges;
@@ -96,11 +92,6 @@ private:
     double     _offset[SI_DIM];
     bool       _haveOffset;
 
-    // used to link ID with SI id
-    LinkMap    _linkMap;
-    VectorMF    _backMap;
-    unsigned   _positionIdx;
-
     //base name for spatial index disk-backed levels
     std::wstring _seedName;
 };
@@ -116,8 +107,6 @@ public:
 
     bool NextRange(int& start, int& end);
 
-    FdoInt64 operator[](int fid);
-
 private:
 
     SpatialIndex* _si;
@@ -128,43 +117,4 @@ private:
     //on a 16 byte boundary
     char _barr[sizeof(Bounds)*2]; 
     Bounds* _b;
-};
-
-class SpatialIteratorStep
-{
-public:
-    SpatialIteratorStep(SpatialIterator* siit)
-    {
-        m_siit = siit;
-        m_curfid = 0; //position prior to first record
-        m_siEnd = -1;
-    }
-    ~SpatialIteratorStep()
-    {
-        delete m_siit;
-    }
-    FdoInt64 ReadNext()
-    {
-        m_curfid++;
-        if (m_curfid >= m_siEnd)
-        {
-            int start;
-            //spatial reader is done, so we are done
-            if (m_siit == NULL || !m_siit->NextRange(start, m_siEnd))
-                return -1;
-            m_curfid = (FdoInt64)(start ? start : 1); //make sure we skip fid=0, which is not valid
-        }
-        return (*m_siit)[(int)m_curfid];
-    }
-    void Reset()
-    {
-        m_curfid = 0; //position prior to first record
-        m_siEnd = -1;
-        if (m_siit != NULL)
-            m_siit->Reset();
-    }
-private:
-    int m_curfid;
-    int m_siEnd;
-    SpatialIterator* m_siit;
 };

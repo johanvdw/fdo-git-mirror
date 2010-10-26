@@ -44,7 +44,6 @@ public:
     virtual void spatial_query_defect792377() {};
     virtual void spatial_query_defect813611() {};
     virtual void spatial_query_defect880310() {};
-    virtual void spatial_or_attribute_query () {};
 
     virtual FdoString * GetClassName()          { return mSetup.LikesUC() ? L"TESTCLASS" : L"testClass"; };
 
@@ -204,7 +203,6 @@ public:
     void ComparisonFilterTable1Test();  // Contains a spatial query
     void RestrictedPropertiesTable1Test();
     void TestDefect779194();
-    virtual void spatial_or_attribute_query ();
 
     // Some values that can vary by target datastore...
     FdoString * GetConnectString() {return L"DataSourceName=MsTest;UserId=;Password=;";}
@@ -270,6 +268,7 @@ class OdbcExcelFdoSelectTest : public OdbcFdoSelectTest
     void CityTest();
 
     // Some values that can vary by target datastore...
+    //FdoString * GetConnectString() {return L"ConnectionString=\"Driver={Microsoft Excel Driver (*.xls)};Dbq=Dbg/MsTest.xls;\"";}
     FdoString * GetConnectString() {return L"DataSourceName=MsTestXls;UserId=;Password=;";}
     FdoString * GetConfigFile() {return L"MsTestXlsConfig.xml";}
     FdoString * GetConfigFile2() {return L"MsTestXlsConfigNoIdent.xml";}

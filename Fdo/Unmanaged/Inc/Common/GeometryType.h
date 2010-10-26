@@ -23,7 +23,7 @@
 #endif
 
 #ifdef __cplusplus
-    /// \ingroup (enums)
+/// \ingroup (enums)
     /// \brief
     ///  FdoGeometryType is an enumeration to denote the type of a Geometry.
     /// 
@@ -107,7 +107,5 @@
 } FdoGeometryComponentType;
 #endif
 #endif
-
-
 
 

@@ -1,6 +1,6 @@
 /*
  * 
-* Copyright (C) 2004-2011  Autodesk, Inc.
+* Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -664,7 +664,7 @@ FdoPropertyValue* FdoCommonMiscUtil::GetItemNoThrow(FdoPropertyValueCollection *
 
 
 /// <summary> Handles read-only properties and default values in the given PropertyValue collection.</summary>
-void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *classDef, FdoPropertyValueCollection *propValues, bool bMakeNullsExplicit, bool bValidateProps)
+void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *classDef, FdoPropertyValueCollection *propValues, bool bMakeNullsExplicit)
 {
     FdoPtr<FdoPropertyDefinitionCollection> propertyDefs = classDef->GetProperties();
 
@@ -695,9 +695,10 @@ void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *class
             bIsIdentityProperty = FdoCommonSchemaUtil::IsIdentityProperty(classDef, dataPropertyDef->GetName());
 
             FdoString *defaultValue = dataPropertyDef->GetDefaultValue();
-            bHasDefaultValue = (defaultValue != NULL) && (*defaultValue != L'\0');
+            bHasDefaultValue = (defaultValue != NULL) && (wcslen(defaultValue) > 0);
 
-            if (bIsReadOnly && bValidateProps)
+
+            if (bIsReadOnly)
             {
                 if (bIsSet)
                     throw FdoCommandException::Create(FdoException::NLSGetMessage(FDO_97_CANNOT_SET_READONLY_PROPERTY, "Property '%1$ls' cannot be set because it is read-only.", propertyDef->GetName()));
@@ -734,21 +735,15 @@ void FdoCommonMiscUtil::HandleReadOnlyAndDefaultValues(FdoClassDefinition *class
         }
     }
 
-    FdoPtr<FdoClassDefinition> baseCls = classDef->GetBaseClass();
-    if (baseCls != NULL){ // do not validate props for base classes make it on demand only
-        HandleReadOnlyAndDefaultValues(baseCls, propValues, bMakeNullsExplicit, false);
-    }else if (bValidateProps)
+    // Validate that all given property values have valid property names:
+    for (FdoInt32 i=0; i<propValues->GetCount(); i++)
     {
-        // Validate that all given property values have valid property names:
-        for (FdoInt32 i=0; i<propValues->GetCount(); i++)
-        {
-            FdoPtr<FdoPropertyValue> propVal = propValues->GetItem(i);
-            FdoPtr<FdoIdentifier> propValId = propVal->GetName();
-            // NOTE: we can skip checking the base properties since this provider currently doesn't support inheritance
-            FdoPtr<FdoPropertyDefinition> propertyDef = propertyDefs->FindItem(propValId->GetName());
-            if (propertyDef == NULL)
-                throw FdoException::Create(FdoException::NLSGetMessage(FDO_74_PROPERTY_NAME_NOT_FOUND, "The property '%1$ls' was not found.", propValId->GetName()));
-        }
+        FdoPtr<FdoPropertyValue> propVal = propValues->GetItem(i);
+        FdoPtr<FdoIdentifier> propValId = propVal->GetName();
+        // NOTE: we can skip checking the base properties since this provider currently doesn't support inheritance
+        FdoPtr<FdoPropertyDefinition> propertyDef = propertyDefs->FindItem(propValId->GetName());
+        if (propertyDef == NULL)
+            throw FdoException::Create(FdoException::NLSGetMessage(FDO_74_PROPERTY_NAME_NOT_FOUND, "The property '%1$ls' was not found.", propValId->GetName()));
     }
 }
 
@@ -2103,64 +2098,4 @@ void FdoCommonMiscUtil::GetExpressionType(FdoFunctionDefinitionCollection *funct
         if (!bFound)
             throw FdoException::Create(FdoException::NLSGetMessage(FDO_183_INVALID_FUNCTION_ARG, "One or more arguments for function '%1$ls' did not match the expected argument types.", function->GetName()));
     }
-}
-
-
-void FdoCommonMiscUtil::GetExpressionIdentifiers(FdoFunctionDefinitionCollection *functionDefinitions, 
-                                                 FdoClassDefinition *originalClassDef, 
-                                                 FdoExpression *expression,
-                                                 FdoIdentifierCollection *identifiers)
-{
-    VALIDATE_ARGUMENT(functionDefinitions);
-    VALIDATE_ARGUMENT(originalClassDef);
-    VALIDATE_ARGUMENT(expression);
-    VALIDATE_ARGUMENT(identifiers);
-
-    FdoIdentifier* identifier = dynamic_cast<FdoIdentifier*>(expression);
-    if (NULL != identifier)
-    {
-        FdoPtr<FdoIdentifier> id = identifiers->FindItem(identifier->GetName());
-        if (!id) 
-        {
-            identifiers->Add(identifier);
-        }
-
-        return;
-    }
-
-    FdoComputedIdentifier* computedIdentifier = dynamic_cast<FdoComputedIdentifier*>(expression);
-    if (NULL != computedIdentifier)
-    {
-        return GetExpressionIdentifiers(functionDefinitions, originalClassDef, FdoPtr<FdoExpression>(computedIdentifier->GetExpression()), identifiers);
-    }
-
-    FdoFunction* function = dynamic_cast<FdoFunction*>(expression);
-    if (NULL != function)
-    {
-        FdoPtr<FdoExpressionCollection> args = function->GetArguments();
-        FdoInt32 numArgs = args->GetCount();
-
-        for (FdoInt32 i=0; i<numArgs; i++)
-        {
-            GetExpressionIdentifiers(functionDefinitions, originalClassDef, FdoPtr<FdoExpression>(args->GetItem(i)), identifiers);
-        }
-
-        return;
-    }
-
-    FdoUnaryExpression* unaryExpr = dynamic_cast<FdoUnaryExpression*>(expression);
-    if (NULL != unaryExpr)
-    {
-        return GetExpressionIdentifiers(functionDefinitions, originalClassDef, FdoPtr<FdoExpression>(unaryExpr->GetExpression()), identifiers);
-    }
-
-    FdoBinaryExpression* binaryExpr = dynamic_cast<FdoBinaryExpression*>(expression);
-    if (NULL != binaryExpr)
-    {
-        GetExpressionIdentifiers(functionDefinitions, originalClassDef, FdoPtr<FdoExpression>(binaryExpr->GetLeftExpression()), identifiers);
-        GetExpressionIdentifiers(functionDefinitions, originalClassDef, FdoPtr<FdoExpression>(binaryExpr->GetRightExpression()), identifiers);
-        return;
-    }
-
-    return;
 }

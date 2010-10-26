@@ -23,23 +23,6 @@
 #include "StringUtil.h"
 #include "FdoCommonOSUtil.h"
 
-static std::string GetExprValue(Expr *pExpr)
-{
-    if (pExpr->flags & EP_IntValue)
-    {
-        char tmp[30];
-#ifdef _WIN32
-        _itoa(pExpr->u.iValue, tmp, 10);
-#else
-        _snprintf(tmp, 30, "%d", pExpr->u.iValue);
-#endif
-        return tmp;
-    }
-    else if (pExpr->u.zToken != NULL)
-        return pExpr->u.zToken;
-    return "";
-}
-
 static FdoDataType ConvertDataType(const char* type)
 {
     if (StringContains(type, "INT") >= 0)
@@ -63,12 +46,10 @@ static FdoDataType ConvertDataType(const char* type)
 SltMetadata::SltMetadata(SltConnection* connection, const char* name, bool bUseFdoMetadata)
 : m_tablename(name),
   m_bIsView(false),
-  m_bIsMSelectView(false),
   m_fc(NULL),
   m_connection(connection), //No addref -- it owns us, and we are private to it
   m_bUseFdoMetadata(bUseFdoMetadata),
   m_geomName(NULL),
-  m_idName(NULL),
   m_geomIndex(-1),
   m_idIndex(-1)
 {
@@ -88,13 +69,14 @@ FdoClassDefinition* SltMetadata::ToClass()
         return FDO_SAFE_ADDREF(m_fc);
     }
 
-    sqlite3* db = m_connection->GetDbConnection();
+    sqlite3* db = m_connection->GetDbRead();
 
     char* zErr = NULL;
     Table* pTable = NULL;
 
     sqlite3_mutex_enter(db->mutex);
 
+    (void)sqlite3SafetyOn(db);
     sqlite3BtreeEnterAll(db);
     int rc = sqlite3Init(db, &zErr);
 
@@ -104,6 +86,7 @@ FdoClassDefinition* SltMetadata::ToClass()
         if (zErr) 
             sqlite3DbFree(db, zErr);
         sqlite3BtreeLeaveAll(db);
+        (void)sqlite3SafetyOff(db);
         sqlite3_mutex_leave(db->mutex);
         return NULL;
     }
@@ -180,8 +163,6 @@ FdoClassDefinition* SltMetadata::ToClass()
         m_fc = FdoClass::Create(fname.c_str(), NULL);
     }
 
-    std::wstring enforcedPK;
-
     FdoPtr<FdoClassCapabilities> caps = FdoClassCapabilities::Create(*m_fc);
     caps->SetSupportsLocking(false);
     caps->SetSupportsLongTransactions(false);
@@ -209,7 +190,7 @@ FdoClassDefinition* SltMetadata::ToClass()
         }
     }
     else
-        caps->SetSupportsWrite(!m_connection->IsReadOnlyConnection());
+        caps->SetSupportsWrite(true);
 
     m_fc->SetCapabilities(caps);
     
@@ -272,21 +253,20 @@ FdoClassDefinition* SltMetadata::ToClass()
             FindSpatialContextName(srid, scname);            
             gpd->SetSpatialContextAssociation(scname.c_str());
 
-            if (gdims[gi] > 2)
+            if ((gdims[gi] & 0x01) != 0)
                 gpd->SetHasElevation(true);
-            if (gdims[gi] > 3)
+            if ((gdims[gi] & 0x02) != 0)
                 gpd->SetHasMeasure(true);
 
             int fgtype = gtypes[gi];
-            int fgdettype = gtypes[gi + 1];
-            if (fgdettype <= 0)
-            {
-                if (fgtype != 0 && fgtype != 8 && fgtype != 9 && fgtype <= (int)FdoGeometryType_MultiCurvePolygon)
-                    gpd->SetSpecificGeometryTypes((FdoGeometryType*)&fgtype, 1);
-                else
-                    gpd->SetGeometryTypes(FdoGeometricType_All); //0 = set all.
-            }
+
+            if (fgtype > 0)
+                gpd->SetGeometryTypes(fgtype); //unsure... set what we get.
             else
+                gpd->SetGeometryTypes(FdoGeometricType_All); //unsure... set all.
+
+            int fgdettype = gtypes[gi + 1];
+            if (fgdettype > 0)
             {
                 // update geometry subtypes in case we have them defined
                 int maxGeomVal = FdoGeometryType_MultiCurvePolygon;
@@ -307,10 +287,6 @@ FdoClassDefinition* SltMetadata::ToClass()
             }
 
             pdc->Add(gpd);
-
-            // Set vertex order and strictness rule for geometry property
-            caps->SetPolygonVertexOrderRule(gpd->GetName(), FdoPolygonVertexOrderRule_None);
-            caps->SetPolygonVertexOrderStrictness(gpd->GetName(), false);
         }
         else
         {
@@ -364,18 +340,7 @@ FdoClassDefinition* SltMetadata::ToClass()
                         int detail = (int)sqlite3_column_int(pfdostmt, 2);
                         dpd->SetIsSystem((detail & 0x01) != 0);
                         if ((detail & 0x02) != 0)
-                        {
-                            // if we have a view we might have an enforced PK 
-                            if (pTable->pSelect != NULL && (dt == FdoDataType_Int16 || dt == FdoDataType_Int32 || dt == FdoDataType_Int64))
-                            {
-                                // in case there are more properties marked as read only avoid set a PK
-                                if (!enforcedPK.size())
-                                    enforcedPK = A2W_SLOW(pname);
-                                else
-                                    enforcedPK = L" ";
-                            }
                             dpd->SetReadOnly(true);
-                        }
                         else
                             propMarkedAsReadOnly = false;
                         dpd->SetLength((int)sqlite3_column_int(pfdostmt, 3));
@@ -404,7 +369,7 @@ FdoClassDefinition* SltMetadata::ToClass()
                 case FdoDataType_String:
                 case FdoDataType_BLOB:
                 case FdoDataType_CLOB:
-                    dpd->SetLength(sqlite3_limit(m_connection->GetDbConnection(), SQLITE_LIMIT_LENGTH, -1));
+                    dpd->SetLength(sqlite3_limit(m_connection->GetDbRead(), SQLITE_LIMIT_LENGTH, -1));
                     break;
                 case FdoDataType_Boolean:
                 case FdoDataType_Byte:
@@ -482,10 +447,7 @@ FdoClassDefinition* SltMetadata::ToClass()
                         if (!dpd->GetIsAutoGenerated() && pTable->pTrigger != NULL &&
                             (dt == FdoDataType_Int16 || dt == FdoDataType_Int32 || dt == FdoDataType_Int64))
                         {
-                            if (dpd->GetReadOnly() && propMarkedAsReadOnly)
-                                dpd->SetIsAutoGenerated(true);
-                            else
-                                dpd->SetIsAutoGenerated(dpd->GetReadOnly());
+                            dpd->SetIsAutoGenerated(dpd->GetReadOnly());
                         }
                         // in case we use FDO metadata there are cases when SQLite can "mark" a property
                         // as auto-generated property (and SQLite is really generating the values), however
@@ -501,8 +463,6 @@ FdoClassDefinition* SltMetadata::ToClass()
                     m_idIndex = pdc->GetCount() - 1; //remember the index of the id property in the property collection
                     idpdc->Add(dpd);
                 }
-                if (dpd->GetIsAutoGenerated())
-                    dpd->SetNullable(false); // FDO API limitation... avoid some exceptions/warnings later
             }
             else if (pTable->pSelect != NULL) // is view
             {
@@ -517,29 +477,36 @@ FdoClassDefinition* SltMetadata::ToClass()
     // is view?
     if ((pTable->nCol && pTable->pSelect != NULL))
     {
-        if (m_fc->GetClassType() == FdoClassType_FeatureClass)
-            ProcessViewProperties(pTable);
-
-        if (idpdc->GetCount() == 1)
+        // views don't have a primary key we need to "generate" one as ROWID
+        std::wstring propAgName = L"rowid";
+        FdoPtr<FdoPropertyDefinition> epd = pdc->FindItem(propAgName.c_str());
+        if (epd != NULL)
         {
-            FdoPtr<FdoDataPropertyDefinition> pd = idpdc->GetItem(0);
-            FdoDataType dtView = pd->GetDataType();
-            caps->SetSupportsWrite(dtView == FdoDataType_Int16 || dtView == FdoDataType_Int32 || dtView == FdoDataType_Int64);
-        }
-        else if (enforcedPK.size() != 0 && enforcedPK[0] != ' ')
-        {
-            FdoPtr<FdoPropertyDefinition> pdef = pdc->FindItem(enforcedPK.c_str());
-            if (pdef != NULL && pdef->GetPropertyType() == FdoPropertyType_DataProperty)
+            propAgName = L"_rowid_";
+            epd = pdc->FindItem(propAgName.c_str());
+            if (epd != NULL)
             {
-                idpdc->Add(static_cast<FdoDataPropertyDefinition*>(pdef.p));
-                m_idName = pdef->GetName();
-                m_bIsMSelectView = true;
+                propAgName = L"oid";
+                epd = pdc->FindItem(propAgName.c_str());
+                // if (epd != NULL) - bad luck, not sure what to do in this case... use it...
             }
         }
-        else
+        if (epd == NULL)
         {
-            caps->SetSupportsWrite(false);
+            FdoPtr<FdoDataPropertyDefinition> dpd = FdoDataPropertyDefinition::Create(propAgName.c_str(), NULL);
+            dpd->SetDataType(FdoDataType_Int32);
+            dpd->SetIsAutoGenerated(true);
+            dpd->SetNullable(false);
+            dpd->SetReadOnly(true);
+            dpd->SetLength(8);
+            pdc->Add(dpd);
+            idpdc->Add(dpd);
         }
+        // TODO - use view source tables in update/delete/insert operations to delete the temporary view table
+        StlMapNamesList sources;
+        StlMapNamesList properties;
+        StlMapNamesList expressions;
+        ExtractViewDetailsInfo(sources, properties, expressions, pTable);
     }
 
     if (pTable->pSelect == NULL && pTable->pIndex != NULL)
@@ -571,154 +538,19 @@ FdoClassDefinition* SltMetadata::ToClass()
         sqlite3_finalize(pfdostmt);
 
     sqlite3BtreeLeaveAll(db);
+    (void)sqlite3SafetyOff(db);
     sqlite3_mutex_leave(db->mutex);
 
     return FDO_SAFE_ADDREF(m_fc);
 }
 
-void SltMetadata::ProcessViewProperties(Table* pTable)
+void SltMetadata::ExtractViewDetailsInfo(StlMapNamesList& sources, StlMapNamesList& properties, StlMapNamesList& expressions, Table* pTable)
 {
-    StlMapNamesList sources;
-    StlMapPropNamesList properties;
-    StlMapNamesList expressions;
-    ExtractViewDetailsInfo(sources, properties, expressions, pTable);
-    size_t propSz = properties.size();
-    size_t srcSz = sources.size();
-    if (srcSz == 0 || propSz == 0 || m_geomName == NULL)
-        return;
-    // search the table who has the geometry column
-    std::string geomName = W2A_SLOW(m_geomName);
-    std::string geomClassName;
-    for (size_t i = 0; i < propSz; i++)
-    {
-        StlPropNamePair& item = properties.at(i);
-        if (geomName == item.first)
-        {
-            geomClassName = item.second.first;
-            break;
-        }
-    }
-    FdoPtr<FdoClassDefinition> mainfc;
-    FdoPtr<FdoDataPropertyDefinition> idProp;
-    if (geomClassName.size() != 0 && m_bUseFdoMetadata)
-    {
-        SltMetadata* md = m_connection->GetMetadata(geomClassName.c_str());
-        if (md != NULL)
-        {
-            mainfc = md->ToClass();
-            if (mainfc != NULL)
-            {
-                FdoPtr<FdoDataPropertyDefinitionCollection> pIdColl = mainfc->GetIdentityProperties();
-                if (pIdColl->GetCount() == 1)
-                {
-                    idProp = pIdColl->GetItem(0);
-                    FdoDataType dtp = idProp->GetDataType();
-                    if (dtp != FdoDataType_Int16 && dtp != FdoDataType_Int32 && dtp != FdoDataType_Int64)
-                    {
-                        idProp = NULL;
-                    }
-                    else
-                    {
-                        StringBuffer sb;
-                        sqlite3_stmt* pstmt = NULL;
-                        const char* pzTail = NULL;
-                        sb.Append("SELECT fdo_data_details FROM fdo_columns WHERE f_table_name='", 61);
-                        sb.Append(mainfc->GetName());
-                        sb.Append("' AND f_column_name='", 21);
-                        sb.Append(idProp->GetName());
-                        sb.Append("';", 2);
-                        if (sqlite3_prepare_v2(m_connection->GetDbConnection(), sb.Data(), -1, &pstmt, &pzTail) == SQLITE_OK)
-                        {
-                            if (sqlite3_step(pstmt) == SQLITE_ROW)
-                            {
-                                int detail = (int)sqlite3_column_int(pstmt, 0);
-                                if ((detail & 0x02) == 0)
-                                    idProp = NULL; // property is not marked as read-only
-                            }
-                            else // ID is not registered so we cannot assume we can use this class as main class
-                                idProp = NULL;
-                            sqlite3_finalize(pstmt);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if (idProp != NULL)
-    {
-        FdoPtr<FdoDataPropertyDefinitionCollection> pIdColl = m_fc->GetIdentityProperties();
-        if (pIdColl->GetCount() == 0)
-        {
-            std::string idPropName = W2A_SLOW(idProp->GetName());
-            for (size_t i = 0; i < propSz; i++)
-            {
-                StlPropNamePair& item = properties.at(i);
-                if (idPropName == item.second.second && item.second.first == geomClassName)
-                {
-                    std::wstring wIdName = A2W_SLOW(item.first.c_str());
-                    FdoPtr<FdoPropertyDefinitionCollection> pClsColl = m_fc->GetProperties();
-                    FdoPtr<FdoPropertyDefinition> pDef = pClsColl->FindItem(wIdName.c_str());
-                    if (pDef != NULL && pDef->GetPropertyType() == FdoPropertyType_DataProperty)
-                    {
-                        FdoDataPropertyDefinition* pdNewId = static_cast<FdoDataPropertyDefinition*>(pDef.p);
-                        pdNewId->SetReadOnly(true); // make it read only
-                        pIdColl->Add(pdNewId);
-                        m_idName = pDef->GetName();
-                    }
-                    m_tablename = geomClassName;
-                    break;
-                }
-            }
-            if (mainfc != NULL)
-            {
-                // we have a well defined view let's mark read-only properties.
-                FdoPtr<FdoPropertyDefinitionCollection> propsColl = m_fc->GetProperties();
-                FdoPtr<FdoPropertyDefinitionCollection> propsMainColl = mainfc->GetProperties();
-                for (int i = 0; i < propsColl->GetCount(); i++)
-                {
-                    FdoPtr<FdoPropertyDefinition> propCls = propsColl->GetItem(i);
-                    FdoPtr<FdoPropertyDefinition> propMainCls = propsMainColl->FindItem(propCls->GetName());
-                    if (propMainCls == NULL) // is sec prop
-                    {
-                        FdoPropertyType ptype = propCls->GetPropertyType();
-                        if (FdoPropertyType_DataProperty == ptype)
-                        {
-                            FdoDataPropertyDefinition* pDataCls = static_cast<FdoDataPropertyDefinition*>(propCls.p);
-                            pDataCls->SetReadOnly(true);
-                        }
-                        else if (FdoPropertyType_GeometricProperty == ptype)
-                        {
-                            FdoGeometricPropertyDefinition* pGeomCls = static_cast<FdoGeometricPropertyDefinition*>(propCls.p);
-                            pGeomCls->SetReadOnly(true);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-bool SltMetadata::ExtractViewDetailsInfo(StlMapNamesList& sources, StlMapPropNamesList& properties, StlMapNamesList& expressions, Table* pTable)
-{
-    bool retVal = false;
     Select* pSelect = pTable->pSelect;
 
     if(pSelect == NULL || pSelect->pSrc == NULL || pSelect->pSrc->nSrc == 0 || 
-        pSelect->pEList == NULL || pSelect->pEList->nExpr == 0)
-        return false;
-    switch (pSelect->op)
-    {
-        // this can involve complicated queries which are not from one table
-        // extra checks need to be done to ensure we are not wrongfully 
-        // assuming we can use a PK and SI from a main table.
-    case TK_ALL:
-        retVal = true;
-        break;
-    case TK_SELECT:
-        break;
-    default:
-        return false;
-    }
+        pSelect->pEList == NULL || pSelect->pEList->nExpr == 0 || pSelect->op != TK_SELECT)
+        return;
     
     for(int idx = 0; idx < pSelect->pSrc->nSrc; idx++)
     {
@@ -726,77 +558,27 @@ bool SltMetadata::ExtractViewDetailsInfo(StlMapNamesList& sources, StlMapPropNam
         const char* name = pSelect->pSrc->a[idx].zName;
         if (name == NULL)
             continue;
-        sources.push_back(std::make_pair(name, ((alias == NULL) ? "" : alias)));
+        sources.push_back(std::make_pair(name, ((alias == NULL) ? "" : name)));
     }
-    if (sources.size() == 0)
-        return false;
-
     for(int idx = 0; idx < pSelect->pEList->nExpr; idx++)
     {
         const char* name = pSelect->pEList->a[idx].zName;
-        const char* exprVal = pSelect->pEList->a[idx].zSpan;
-        std::string value = (exprVal != NULL) ? exprVal : "";
+        std::string value;
+        if (pSelect->pEList->a[idx].pExpr->span.n)
+            value = std::string((const char*)pSelect->pEList->a[idx].pExpr->span.z, pSelect->pEList->a[idx].pExpr->span.n);
         // TODO study the resulted name for un-named expression 
         // e.g. select at.p1 + bt.p1 from at, bt;
         if (name == NULL && value.size() != 0)
             name = value.c_str();
-        else if (value.size() == 0 && name != NULL)
-            value = name;
 
-        if (name != NULL && value.size() != 0)
+        if (name != NULL)
         {
             if (pSelect->pEList->a[idx].pExpr->op == TK_DOT)
-            {
-                const char* propSrc = value.c_str();
-                int stClsStr = 0, lenClsStr = 0, stPropStr = 0, lenPropStr = 0;
-
-                const char* propToSrc = ExtractDbName(propSrc, stClsStr, lenClsStr);
-                if (lenClsStr != 0 && propToSrc != NULL)
-                    ExtractDbName(propToSrc, stPropStr, lenPropStr);
-                
-                if (lenClsStr != 0 && lenPropStr != 0)
-                {
-                    // property from a table/view
-                    std::string alias = std::string(propSrc+stClsStr, lenClsStr);
-                    for (StlMapNamesList::iterator it = sources.begin(); it < sources.end(); it++)
-                    {
-                        if (it->second == alias)
-                        {
-                            alias = it->first;
-                            break;
-                        }
-                    }
-                    std::string realPropName = std::string(propToSrc+stPropStr, lenPropStr);
-                    if (pSelect->pEList->a[idx].zName == NULL)
-                        name = realPropName.c_str();
-                    // do we have select * ?
-                    if (*name == '*' && realPropName.size() == 1)
-                    {
-                        SltMetadata* md = m_connection->GetMetadata(alias.c_str());
-                        if (md != NULL)
-                        {
-                            FdoPtr<FdoClassDefinition> fc = md->ToClass();
-                            if (fc != NULL)
-                            {
-                                FdoPtr<FdoPropertyDefinitionCollection> props = fc->GetProperties();
-                                for(int y = 0; y < props->GetCount(); y++)
-                                {
-                                    FdoPtr<FdoPropertyDefinition> pdata = props->GetItem(y);
-                                    std::string pdataName = W2A_SLOW(pdata->GetName());
-                                    properties.push_back(std::make_pair(pdataName, std::make_pair(alias, pdataName)));
-                                }
-                            }
-                        }
-                    }
-                    else
-                        properties.push_back(std::make_pair(name, std::make_pair(alias, realPropName)));
-                }
-            }
+                properties.push_back(std::make_pair(name, value)); // property from a table/view
             else
                 expressions.push_back(std::make_pair(name, value)); // it's an expression
         }
     }
-    return retVal;
 }
 
 FdoDataValue* SltMetadata::GenerateConstraintValue(FdoDataType type, FdoString* value)
@@ -991,35 +773,35 @@ bool SltMetadata::ExtractConstraints(Expr* node, std::vector<SQLiteExpression>& 
             valid = ExtractConstraints(node->pRight, result);
         break;
     case TK_STRING:
+        if(node->token.n != 0)
         {
-            std::string val = GetExprValue(node);
             StringBuffer sb;
-            const char* pValue = val.c_str();
-            if (*pValue == '\'' && *(pValue + val.size() - 1) == '\'')
-                sb.Append(pValue + 1, val.size() - 2);
+            const char* pValue = (const char*)node->token.z;
+            if (*pValue == '\'' && *(pValue + node->token.n - 1) == '\'')
+                sb.Append(pValue + 1, node->token.n - 2);
             else
-                sb.Append(pValue, val.size());
+                sb.Append(pValue, node->token.n);
             result.back().values.push_back(A2W_SLOW(sb.Data()));
         }
         break;
     case TK_INTEGER:
     case TK_FLOAT:
+        if(node->token.n != 0)
         {
-            std::string val = GetExprValue(node);
             StringBuffer sb;
-            sb.Append(val.c_str(), val.size());
+            sb.Append((const char*)node->token.z, node->token.n);
             result.back().values.push_back(A2W_SLOW(sb.Data()));
         }
         break;
     case TK_COLUMN:
+        if(node->token.n != 0)
         {
-            std::string val = GetExprValue(node);
             StringBuffer sb;
-            const char* pName = val.c_str();
+            const char* pName = (const char*)node->token.z;
             if (*pName == '\"')
-                sb.Append(pName + 1, val.size() - 2);
+                sb.Append(pName + 1, node->token.n - 2);
             else
-                sb.Append(pName, val.size());
+                sb.Append(pName, node->token.n);
             result.back().name = A2W_SLOW(sb.Data());
         }
         break;
@@ -1071,7 +853,7 @@ void SltMetadata::FindSpatialContextName(int srid, std::wstring& ret)
 		const char* tail = NULL;
 		//NOTE: This should fail around here if the column sr_name
 		//does not exist -- we'll deal with that 
-		if ((rc = sqlite3_prepare_v2(m_connection->GetDbConnection(), sql, -1, &stmt, &tail)) == SQLITE_OK)
+		if ((rc = sqlite3_prepare_v2(m_connection->GetDbRead(), sql, -1, &stmt, &tail)) == SQLITE_OK)
 		{
 			do
 			{

@@ -17,9 +17,9 @@ O_OBJ = $(foreach file,$(OBJ),../../o/$(file))
 
 CPPFLAGS := $(CPPFLAGS)
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(O_OBJ)
 
-../../o/%.$(OBJ_EXT):	%.c
+../../o/%.o:	%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 clean:

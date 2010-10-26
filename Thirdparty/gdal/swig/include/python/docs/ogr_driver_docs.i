@@ -1,21 +1,16 @@
 %extend OGRDriverShadow {
 // File: ogrsfdriver_8cpp.xml
 %feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogrsfdriver.cpp
-16319 2009-02-13 23:17:58Z rouault $\") ";
+11953 2007-08-24 14:14:21Z dron $\") ";
 
 %feature("docstring")  CreateDataSource "OGRDataSourceH
 OGR_Dr_CreateDataSource(OGRSFDriverH hDriver, const char *pszName,
 char **papszOptions)
 
 This function attempts to create a new data source based on the passed
-driver.
-
-The papszOptions argument can be used to control driver specific
-creation options. These options are normally documented in the format
-specific documentation.
-
-It is important to call OGR_DS_Destroy() when the datasource is no
-longer used to ensure that all data has been properly flushed to disk.
+driver. The papszOptions argument can be used to control driver
+specific creation options. These options are normally documented in
+the format specific documentation.
 
 This function is the same as the C++ method
 OGRSFDriver::CreateDataSource().
@@ -36,29 +31,7 @@ NULL is returned on failure, or a new OGRDataSource handle on success.
 
 %feature("docstring")  DeleteDataSource "OGRErr
 OGR_Dr_DeleteDataSource(OGRSFDriverH hDriver, const char
-*pszDataSource)
-
-Delete a datasource.
-
-Delete (from the disk, in the database, ...) the named datasource.
-Normally it would be safest if the datasource was not open at the
-time.
-
-Whether this is a supported operation on this driver case be tested
-using TestCapability() on ODrCDeleteDataSource.
-
-This method is the same as the C++ method
-OGRSFDriver::DeleteDataSource().
-
-Parameters:
------------
-
-hDriver:  handle to the driver on which data source deletion is based.
-
-pszDataSource:  the name of the datasource to delete.
-
-OGRERR_NONE on success, and OGRERR_UNSUPPORTED_OPERATION if this is
-not supported by this driver. ";
+*pszDataSource) ";
 
 %feature("docstring")  GetName "const char*
 OGR_Dr_GetName(OGRSFDriverH hDriver)
@@ -113,7 +86,7 @@ sources.
 ODrCDeleteDataSource: True if this driver supports deleting data
 sources.
 
-The #define macro forms of the capability names should be used in
+The define macro forms of the capability names should be used in
 preference to the strings themselves to avoid mispelling.
 
 This function is the same as the C++ method
@@ -130,31 +103,6 @@ TRUE if capability available otherwise FALSE. ";
 
 %feature("docstring")  CopyDataSource "OGRDataSourceH
 OGR_Dr_CopyDataSource(OGRSFDriverH hDriver, OGRDataSourceH hSrcDS,
-const char *pszNewName, char **papszOptions)
-
-This function creates a new datasource by copying all the layers from
-the source datasource.
-
-It is important to call OGR_DS_Destroy() when the datasource is no
-longer used to ensure that all data has been properly flushed to disk.
-
-This function is the same as the C++ method
-OGRSFDriver::CopyDataSource().
-
-Parameters:
------------
-
-hDriver:  handle to the driver on which data source creation is based.
-
-hSrcDS:  source datasource
-
-pszNewName:  the name for the new data source.
-
-papszOptions:  a StringList of name=value options. Options are driver
-specific, and driver information can be found at the following
-url:http://www.gdal.org/ogr/ogr_formats.html
-
-NULL is returned on failure, or a new OGRDataSource handle on success.
-";
+const char *pszNewName, char **papszOptions) ";
 
 }

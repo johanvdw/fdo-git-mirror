@@ -563,6 +563,7 @@ FdoSmPhGrdMgr::StringMap::StringMap()
     Insert( L"btree" );
     Insert( L"by" );
 
+    Insert( L"cascade" ); 
     Insert( L"char" ); 
     Insert( L"check" );  
     Insert( L"childstate" ); 
@@ -629,6 +630,7 @@ FdoSmPhGrdMgr::StringMap::StringMap()
 
     Insert( L"minus" ); 
     Insert( L"mlslabel" ); 
+    Insert( L"mode" ); 
     Insert( L"modify" );
 
     Insert( L"new" ); 
@@ -693,6 +695,7 @@ FdoSmPhGrdMgr::StringMap::StringMap()
     Insert( L"using" );
 
     Insert( L"validate" ); 
+    Insert( L"value" ); 
     Insert( L"values" ); 
     Insert( L"varchar" ); 
     Insert( L"varchar2" ); 
@@ -705,7 +708,7 @@ FdoSmPhGrdMgr::StringMap::StringMap()
 
 void FdoSmPhGrdMgr::StringMap::Insert( FdoString* resString)
 {
-    insert( std::pair<FdoStringP,void*>(FdoStringP(resString,true), (void*)NULL) );            
+    insert( std::pair<FdoStringP,void*>(FdoStringP(resString,true), NULL) );            
 }
 
 bool FdoSmPhGrdMgr::StringMap::IsReserved( FdoStringP checkString)

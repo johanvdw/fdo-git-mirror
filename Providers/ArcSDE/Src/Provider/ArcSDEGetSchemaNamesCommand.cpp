@@ -41,3 +41,4 @@ FdoStringCollection* ArcSDEGetSchemaNamesCommand::Execute()
 	
     return FDO_SAFE_ADDREF(retSchemaNames.p);
 }
+

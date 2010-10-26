@@ -1,16 +1,4 @@
 <testcase>
-<info>
-<keywords>
-HTTP
-HTTP GET
-HTTP CONNECT
-HTTP proxy
-HTTP proxy Basic auth
-proxytunnel
-multi
-</keywords>
-</info>
-
 # Server-side
 <reply>
 <data>
@@ -47,7 +35,7 @@ lib503
 simple multi http:// through proxytunnel with authentication info
  </name>
  <command>
-http://%HOSTIP:%HTTPSPORT/503 %HOSTIP:%HTTPPORT
+http://%HOSTIP:%HTTPSPORT/503 127.0.0.1:%HTTPPORT
 </command>
 <file name="log/test503.txt">
 foo
@@ -61,14 +49,14 @@ moo
 # Verify data after the test has been "shot"
 <verify>
 <protocol>
-CONNECT %HOSTIP:%HTTPSPORT HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
+CONNECT 127.0.0.1:%HTTPSPORT HTTP/1.0
+Host: 127.0.0.1:%HTTPSPORT
 Proxy-Authorization: Basic dGVzdDppbmc=
 Proxy-Connection: Keep-Alive
 
 GET /503 HTTP/1.1
 Authorization: Basic dGVzdDppbmc=
-Host: %HOSTIP:%HTTPSPORT
+Host: 127.0.0.1:%HTTPSPORT
 Accept: */*
 
 </protocol>

@@ -1,5 +1,6 @@
 #ifndef FDO_XML_IFEATUREREADER_H_
 #define FDO_XML_IFEATUREREADER_H_
+// 
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -151,3 +152,5 @@ public:
     FDO_API virtual FdoIFeatureReader* GetFeatureObject(FdoInt32 index) = 0;
 };
 #endif
+
+

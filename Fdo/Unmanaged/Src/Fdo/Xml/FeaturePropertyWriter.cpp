@@ -53,6 +53,7 @@ FdoXmlWriter* FdoXmlFeaturePropertyWriter::GetXmlWriter() {
     return FDO_SAFE_ADDREF(m_writer.p);
 }
 
+
 void FdoXmlFeaturePropertyWriter::SetClassDefinition(FdoClassDefinition* classDefinition) {
     m_classDef = FDO_SAFE_ADDREF(classDefinition);
 }
@@ -61,10 +62,6 @@ void FdoXmlFeaturePropertyWriter::WriteFeatureStart(FdoString* startTag) {
     if (startTag == NULL)
         startTag = m_classDef->GetName();
     m_writer->WriteStartElement(startTag);
-}
-
-void FdoXmlFeaturePropertyWriter::WriteAtribute(FdoString* name, FdoString* value) {
-	m_writer->WriteAttribute(name,value);
 }
 
 void FdoXmlFeaturePropertyWriter::WriteFeatureEnd() {
@@ -137,16 +134,18 @@ void FdoXmlFeaturePropertyWriter::WriteProperty(FdoString* name, FdoLOBValue* va
         m_writer->WriteStartElement(name);
     
     FdoPtr<FdoByteArray> v = value->GetData();
-    XMLSize_t encodedLen;
+    unsigned int encodedLen;
     const XMLByte* const inputData = v->GetData();
     const unsigned int   inputLength = v->GetCount();
     XMLByte* encoded = XERCES_CPP_NAMESPACE::Base64::encode(inputData, inputLength, &encodedLen);
     std::string encoded1((char*)encoded, encodedLen);
     m_writer->WriteCharacters((FdoString*)FdoStringP((const char*)encoded1.c_str()));
-	delete encoded;
+    XERCES_CPP_NAMESPACE::XMLString::release(&encoded);
+
 
     if (!valueOnly)
         m_writer->WriteEndElement();
+
 }
 
 template<typename T> void Stream2Base64(FdoIStreamReaderTmpl<T>* stream, std::basic_string<T>& b64) {
@@ -181,11 +180,11 @@ void FdoXmlFeaturePropertyWriter::WriteProperty(FdoString* name, FdoIStreamReade
         valueLen = v1.size() * sizeof(wchar_t);
     }
 
-    XMLSize_t encodedLen;
+    unsigned int encodedLen;
     XMLByte* encoded = XERCES_CPP_NAMESPACE::Base64::encode(value, (const unsigned int)valueLen, &encodedLen);
     std::string encoded1((char*)encoded, encodedLen);
     m_writer->WriteCharacters((FdoString*)FdoStringP(encoded1.c_str()));
-	delete encoded;
+    XERCES_CPP_NAMESPACE::XMLString::release(&encoded);
 
     if (!valueOnly)
         m_writer->WriteEndElement();
@@ -203,43 +202,7 @@ void FdoXmlFeaturePropertyWriter::WriteGeometricProperty(
 
 	FdoPtr<FdoFgfGeometryFactory> geoFactory = FdoFgfGeometryFactory::GetInstance();
 	FdoPtr<FdoIGeometry> geometry = geoFactory->CreateGeometryFromFgf(value, count);
-
-	FdoString* scName = L"EPSG:4326";
-	if (m_classDef != NULL)
-	{
-		FdoPtr<FdoPropertyDefinitionCollection> props = m_classDef->GetProperties();
-		FdoPtr<FdoPropertyDefinition> prop = (props->FindItem(name));
-
-		if (prop == NULL) // not found? try to look the base properties
-		{
-			FdoPtr<FdoReadOnlyPropertyDefinitionCollection> baseClassBaseProps = m_classDef->GetBaseProperties();
-			
-			// FdoReadOnlyPropertyDefinitionCollection doesn't provide FindItem method, 
-			// Instead the GetItem throws an invalid argument exception if an item with 
-			// the specified name does not exist in the collection
-			// we just try to find it and will provide default value if not found
-			// so catch the exception and continue
-			try
-			{
-				prop = (baseClassBaseProps->GetItem(name));
-			}
-			catch (FdoException *e)
-			{
-				e->Release();
-			}
-		}
-		if (prop != NULL && prop->GetPropertyType() == FdoPropertyType_GeometricProperty)
-		{
-			FdoPtr<FdoGeometricPropertyDefinition> geoProp = static_cast<FdoGeometricPropertyDefinition*>(FDO_SAFE_ADDREF(prop.p));
-			if (geoProp)
-				scName = geoProp->GetSpatialContextAssociation();
-		}
-	}
-
-	if (m_flags != NULL)
-		FdoGeometrySerializer::SerializeGeometry(geometry, m_writer, scName,m_flags->GetGmlVersion());	
-	else
-		FdoGeometrySerializer::SerializeGeometry(geometry, m_writer, scName,FdoGmlVersion_212);	
+	FdoGeometrySerializer::SerializeGeometry(geometry, m_writer, L"EPSG:4326");	
 
     if (!valueOnly)
         m_writer->WriteEndElement();

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ndfdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: ndfdataset.cpp 15596 2008-10-24 21:17:50Z warmerdam $
  *
  * Project:  NDF Driver
  * Purpose:  Implementation of NLAPS Data Format read support.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ndfdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: ndfdataset.cpp 15596 2008-10-24 21:17:50Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -225,19 +225,7 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
         CSLDestroy( papszHeader );
         return NULL;
     }
-        
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CSLDestroy( papszHeader );
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The NDF driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -253,22 +241,8 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create a raw raster band for each file.                         */
 /* -------------------------------------------------------------------- */
     int iBand;
-    const char* pszBand = CSLFetchNameValue(papszHeader, 
-                                        "NUMBER_OF_BANDS_IN_VOLUME");
-    if (pszBand == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Cannot find band count");
-        delete poDS;
-        return NULL;
-    }
-    int nBands = atoi(pszBand);
-
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize) ||
-        !GDALCheckBandCount(nBands, FALSE))
-    {
-        delete poDS;
-        return NULL;
-    }
+    int nBands = atoi(CSLFetchNameValue(papszHeader, 
+                                        "NUMBER_OF_BANDS_IN_VOLUME"));
 
     for( iBand = 0; iBand < nBands; iBand++ )
     {
@@ -336,9 +310,7 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
         for( i = 0; i < 15; i++ )
             adfUSGSParms[i] = atof(papszParmTokens[i]);
     }
-    CSLDestroy(papszParmTokens);
-    papszParmTokens = NULL;
-
+            
 /* -------------------------------------------------------------------- */
 /*      Minimal georef support ... should add full USGS style           */
 /*      support at some point.                                          */
@@ -412,15 +384,15 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
     CSLDestroy( papszUR );
                       
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }

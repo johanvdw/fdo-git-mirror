@@ -19,8 +19,6 @@
 #include "stdafx.h"
 #include "ColumnChar.h"
 #include "CharacterSet.h"
-#include "Mgr.h"
-#include "DbObject.h"
 
 FdoStringP FdoSmPhMySqlColumnChar::GetTypeSql()
 {
@@ -47,27 +45,3 @@ FdoInt64 FdoSmPhMySqlColumnChar::GetDbBinarySize()
     // Size is max characters X max character size. 
     return charCount * charSize;
 }
-
-FdoStringP FdoSmPhMySqlColumnChar::CalcTypeName( FdoSmPhRdColumnReader* reader, int length, FdoSmPhDbObject* parentObject, FdoPtr<FdoDataValue> defaultValue )
-{
-    FdoStringP typeName;
-
-    if ( reader )
-    {
-        // Column already exist so just get RDB type name from reader.
-        typeName = reader->GetString(L"", L"type_string").Upper();
-    }
-    else
-    {
-        // new column, determine RDB type from length.
-        typeName = 
-            length <= mVarcharMaxLen ? L"VARCHAR" :
-                ( length <= mTextMaxLen ? L"TEXT" :
-                    ( length <= mMediumTextMaxLen ? L"MEDIUMTEXT" : L"LONGTEXT"
-                    )
-                );
-    }
-
-    return typeName;
-}
-

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2readerp.h 17910 2009-10-27 02:07:33Z chaitanya $
+ * $Id: ili2readerp.h 11354 2007-04-26 00:26:17Z mloskot $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -78,8 +78,6 @@ class ILI2Handler : public DefaultHandler
     
     DOMDocument *dom_doc;
     DOMElement *dom_elem;
-    
-    int m_nEntityCounter;
 
 public:
     ILI2Handler( ILI2Reader *poReader );
@@ -99,15 +97,8 @@ public:
         const   XMLCh* const    localname,
         const   XMLCh* const    qname
     );
-#if XERCES_VERSION_MAJOR >= 3
     void characters( const XMLCh *const chars,
-                     const XMLSize_t length ); // xerces 3
-#else
-    void characters( const XMLCh *const chars,
-                     const unsigned int length ); // xerces 2
-#endif
-
-    void startEntity (const XMLCh *const name);
+                     const unsigned int length );
 
     void fatalError(const SAXParseException&);
 };

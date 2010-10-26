@@ -92,8 +92,7 @@ FdoSmPhOwnerP FdoSmPhOdbcDatabase::FindOwner(FdoStringP owner)
 FdoSmPhOwnerP FdoSmPhOdbcDatabase::NewOwner(
     FdoStringP owner,
     bool hasMetaSchema,
-    FdoSchemaElementState elementState,
-    FdoSmPhRdOwnerReader* /*reader*/
+    FdoSchemaElementState elementState
 )
 {
 

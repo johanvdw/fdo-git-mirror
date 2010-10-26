@@ -22,11 +22,11 @@
 #pragma once
 #endif //_WIN32
 
-#define WMS_PROVIDER_NAME					L"OSGeo.WMS.3.6"
+#define WMS_PROVIDER_NAME					L"OSGeo.WMS.3.5"
 #define WMS_PROVIDER_DEFAULT_DISPLAY_NAME	"OSGeo FDO Provider for WMS"
 #define WMS_PROVIDER_DEFAULT_DESCRIPTION	"Read access to OGC WMS-based data store."
-#define WMS_PROVIDER_VERSION				L"3.6.0.0"
-#define WMS_FDO_VERSION						L"3.6.0.0"
+#define WMS_PROVIDER_VERSION				L"3.5.0.0"
+#define WMS_FDO_VERSION						L"3.5.0.0"
 
 namespace FdoWmsGlobals
 {
@@ -74,13 +74,6 @@ namespace FdoWmsGlobals
 
 	static FdoString *DefaultEPSGCode     				    = L"EPSG:4326";
 	static FdoString *DefaultEPSGCode2     				    = L"CRS:4326";
-	static FdoString *ESPGPrefix     						= L"EPSG";
-	static FdoString *WmsVersion100     					= L"1.0.0";
-	static FdoString *WmsVersion110     					= L"1.1.0";
-	static FdoString *WmsVersion111     					= L"1.1.1";
-	static FdoString *WmsVersion130     					= L"1.3.0";
-	static FdoString *ExtendedReverseEPSGsFileName			= L"ExtendedReverseEPSG.txt";
-
 };
 
 

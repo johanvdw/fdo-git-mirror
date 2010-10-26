@@ -19,7 +19,7 @@ libpostgisdr_la_SOURCES = \
   fre_cursor.c \
   geom_srid.c \
   Geometry.c \
-  get_next_seq.c \
+  get_gen_id.c \
   desc_slct.c \
   pgresult_error.c \
   get_msg.c \
@@ -31,7 +31,6 @@ libpostgisdr_la_SOURCES = \
   rdbi_init.c \
   run_sql.c \
   set_err_msg.c \
-  set_database.c \
   sql.c \
   stdafx.c \
   term.c \

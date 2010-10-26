@@ -41,8 +41,7 @@ protected:
                                 FdoStringCollection* propertiesToSelect,
                                 FdoString* from,
                                 FdoFilter* where,
-                                FdoString* schemaName,
-								FdoString* version);
+                                FdoString* schemaName);
     virtual ~FdoWfsGetFeature();
     virtual void Dispose() { delete this; }
 
@@ -51,8 +50,7 @@ public:
                                 FdoStringCollection* propertiesToSelect,
                                 FdoString* from,
                                 FdoFilter* where,
-                                FdoString* schemaName,
-								FdoString* version);
+                                FdoString* schemaName);
 
     virtual FdoStringP EncodeKVP();
     virtual FdoStringP EncodeXml();

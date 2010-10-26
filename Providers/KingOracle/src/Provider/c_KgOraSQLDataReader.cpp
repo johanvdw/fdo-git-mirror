@@ -49,17 +49,16 @@ c_KgOraSQLDataReader::c_KgOraSQLDataReader(c_KgOraConnection * Connection
     int dtype = OciStatement->GetColumnOciType(ind+1);//m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_DATA_TYPE);
     int length = OciStatement->GetColumnWidth(ind+1);//m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_DATA_SIZE);
     int orascale = OciStatement->GetColumnScale(ind+1); //m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_SCALE);
-    int oraprecision = OciStatement->GetColumnPrecision(ind+1); //m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_SCALE);
 
     FdoDataType fdotype;
-    if( c_FdoOra_API2::OraTypeToFdoDataType(dtype,oraprecision,orascale,length,fdotype) )
+    if( c_FdoOra_API2::OraTypeToFdoDataType(dtype,orascale,length,fdotype) )
     {  
       m_SqlColumns->Add(cname);
       m_SqlColIndex.push_back(ind);
     }
     else
     {
-      if( oratype && FdoCommonOSUtil::wcsicmp(oratype,L"SDO_GEOMETRY") == 0 )
+      if( FdoCommonOSUtil::wcsicmp(oratype,L"SDO_GEOMETRY") == 0 )
       {
         m_SqlColumns->Add(cname);
         m_SqlColIndex.push_back(ind); 
@@ -151,10 +150,9 @@ FdoDataType c_KgOraSQLDataReader::GetColumnType(FdoString* ColumnName)
   int dtype = m_OciStatement->GetColumnOciType(ind+1); //m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_DATA_TYPE);
   int length = m_OciStatement->GetColumnWidth(ind+1); // m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_DATA_SIZE);
   int orascale = m_OciStatement->GetColumnScale(ind+1); // m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_SCALE);
-  int oraprecision = m_OciStatement->GetColumnPrecision(ind+1); // m_MetaData[ind].getInt(oracle::occi::MetaData::ATTR_SCALE);
 
   FdoDataType fdotype;
-  c_FdoOra_API2::OraTypeToFdoDataType(dtype,oraprecision,orascale,length,fdotype);
+  c_FdoOra_API2::OraTypeToFdoDataType(dtype,orascale,length,fdotype);
   
   return fdotype;
   
@@ -334,36 +332,6 @@ FdoByte  c_KgOraSQLDataReader::GetByte(FdoString* ColumnName)
 
  FdoLOBValue* c_KgOraSQLDataReader::GetLOB(FdoString* ColumnName)
 {
-  int oraind = ColumnNameToColumnIndex(ColumnName);
-  if( m_OciStatement && (oraind >= 0) )
-  {
-    oraind++; // for oci statement columns are 1 based
-    FdoBLOBValue* blobval;
-    unsigned long size = m_OciStatement->GetLongRawLength(oraind); 
-
-    if( m_OciStatement->IsColumnBlob(oraind) || m_OciStatement->IsColumnClob(oraind) )
-    {
-      if( m_OciStatement->IsColumnClob(oraind) ) size = size * 2; // 2 bytes per character
-
-      FdoPtr<FdoByteArray> barray = FdoByteArray::Create(size+2); // just preallocate 2 more, so when append two zeros for string it deosnt need to copy buffer
-      FdoByteArray::SetSize(barray,size);
-      long count = barray->GetCount();
-
-      m_OciStatement->GetLobData(oraind,size,barray->GetData());
-      blobval = FdoBLOBValue::Create( barray);
-    }
-    else
-    {
-      unsigned char* ptr = m_OciStatement->GetLongRaw(oraind); 
-
-      FdoPtr<FdoByteArray> barray = FdoByteArray::Create(ptr,size);
-      blobval = FdoBLOBValue::Create( barray);
-    }
-
-
-    return blobval;
-  }
-  return NULL;
     return NULL;
 }
 

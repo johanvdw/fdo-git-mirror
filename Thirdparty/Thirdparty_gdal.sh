@@ -29,7 +29,7 @@ if test "$FDOGDAL" == "$FDOTHIRDPARTY/gdal"; then
     rm -f lib/*.libgdal.a    
     rm -f lib/*.libgdal.so    
     rm -f lib/*.libgdal.so.1    
-    rm -f lib/*.libgdal.so.1.14.1   
+    rm -f lib/*.libgdal.so.1.13.0   
     rm -f include/*
     chmod a+x ./configure
     echo Build GDAL library with the following settings:
@@ -43,11 +43,11 @@ if test "$FDOGDAL" == "$FDOTHIRDPARTY/gdal"; then
     echo     OGR support         - yes
     echo     postgreSQL support  - no
     ./configure --with-gif=internal --with-jpeg=internal --with-png=internal --with-libtiff=internal --with-geotiff=internal --with-pg=no --with-python=no --with-libz=internal
-    sudo -E make
+    make
     cp -f .libs/libgdal.a lib/
     cp -f .libs/libgdal.so lib/
     cp -f .libs/libgdal.so.1 lib/
-    cp -f .libs/libgdal.so.1.14.1 lib/
+    cp -f .libs/libgdal.so.1.13.0 lib/
     cp -f port/*.h include/
     cp -f gcore/*.h include/
     cp -f alg/*.h include/

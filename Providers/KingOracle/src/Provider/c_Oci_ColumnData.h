@@ -85,9 +85,6 @@ public:
   unsigned char* GetLongRaw();
   long GetLongRawLength();
   void* GetDataRealLengthBuffer();
-  void GetLobData(unsigned long& BuffSize,void* BuffPtr);
-  bool IsClob();
-  bool IsBlob();
 protected:
   int m_CurrentRow;
   sb2* m_CurrentPtr_ScalarInd;
@@ -110,7 +107,6 @@ protected:
     OCINumber* m_DataNumber;
     
     OCIDate* m_DataDateTime;
-    OCILobLocator** m_DataLobLocator;
     
     //wchar_t** m_DataStringPtrArray;
     wchar_t* m_DataStringPtr;

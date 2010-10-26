@@ -9,12 +9,10 @@ O_OBJ = $(foreach file,$(OBJ),../../o/$(file))
 
 CPPFLAGS	:=	$(XERCES_INCLUDE) $(CPPFLAGS) -I..
 
-default:	 $(O_OBJ:.o=.$(OBJ_EXT))
+default:	 $(O_OBJ)
 
-../../o/%.$(OBJ_EXT):       %.cpp
+../../o/%.o:       %.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 clean:
 	rm -f *.o $(O_OBJ)
-
-$(O_OBJ):	iom.h iom_p.h

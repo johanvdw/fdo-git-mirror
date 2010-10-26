@@ -33,8 +33,6 @@ class FdoOwsCapabilities :
 
 private:
     FdoPtr<FdoOwsRequestMetadataCollection> m_requests;
-	FdoXmlCharDataHandlerP m_xmlContentHandler;
-	FdoPtr<FdoStringCollection> m_exceptionFormats;
 
 protected:
     FDOOWS_API FdoOwsCapabilities();
@@ -46,7 +44,6 @@ public:
     FDOOWS_API static FdoOwsCapabilities* Create();
 
     FDOOWS_API FdoOwsRequestMetadataCollection* GetRequestMetadatas() const;
-	FDOOWS_API FdoStringCollection* GetExceptionFormats() const;
 
 	FDOOWS_API virtual void InitFromXml(FdoXmlSaxContext* pContext, FdoXmlAttributeCollection* attrs);
     FDOOWS_API virtual FdoXmlSaxHandler* XmlStartElement(

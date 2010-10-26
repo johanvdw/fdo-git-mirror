@@ -57,9 +57,8 @@
 %token FdoToken_TRUE FdoToken_FALSE
 %token FdoToken_DATE FdoToken_TIME FdoToken_TIMESTAMP
 %token FdoToken_GEOMFROMTEXT
-%token FdoToken_JOINNONE FdoToken_JOININNER FdoToken_JOINRIGHTOUTER FdoToken_JOINLEFTOUTER FdoToken_JOINFULLOUTER FdoToken_JOINCROSS
 // ... operators
-%token FdoToken_AND FdoToken_OR FdoToken_NOT FdoToken_LIKE FdoToken_IN FdoToken_SELECT FdoToken_JOIN
+%token FdoToken_AND FdoToken_OR FdoToken_NOT FdoToken_LIKE FdoToken_IN
 // ... distance operations
 %token FdoToken_BEYOND FdoToken_WITHINDISTANCE
 // ... spatial operations

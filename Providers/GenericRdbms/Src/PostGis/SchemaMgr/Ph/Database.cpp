@@ -50,8 +50,7 @@ FdoPtr<FdoSmPhRdOwnerReader> FdoSmPhPostGisDatabase::CreateOwnerReader(
 
 FdoSmPhOwnerP FdoSmPhPostGisDatabase::NewOwner(FdoStringP owner,
     bool hasMetaSchema,
-    FdoSchemaElementState state,
-    FdoSmPhRdOwnerReader* /*reader*/)
+    FdoSchemaElementState state)
 {
 
     FdoStringP pgSchemaName = GetManager()->GetDefaultOwnerName();

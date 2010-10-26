@@ -98,9 +98,6 @@ FdoSmPhCharacterSetP FdoSmPhMySqlDbObject::GetCharacterSet()
     FdoSmPhCharacterSetP characterSet;
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*)(FdoSmSchemaElement*)(GetParent());
 
-    if ( !pOwner )
-        return NULL;
-
     if ( mCollationName != L"" ) {
         // Object has collation so retrieve it.
         FdoSmPhDatabase* pDatabase = (FdoSmPhDatabase*)(FdoSmSchemaElement*)(pOwner->GetParent());
@@ -387,17 +384,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnUnknown(
     FdoSmPhRdColumnReader* colRdr
 )
 {
-    return new FdoSmPhMySqlColumnUnknown(
-        columnName, 
-        colRdr ? colRdr->GetString(L"", L"type_string").Upper() : typeName, 
-        elementState, 
-        this, 
-        bNullable, 
-        length, 
-        scale, 
-        rootColumnName, 
-        colRdr
-    );
+    return new FdoSmPhMySqlColumnUnknown(columnName, typeName, elementState, this, bNullable, length, scale, rootColumnName, colRdr);
 }
 
 FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDbObject(

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nearblack.cpp 17737 2009-10-03 12:02:26Z rouault $
+ * $Id: gdalinfo.c 10660 2007-01-19 20:25:49Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -29,8 +29,6 @@
 
 #include "gdal.h"
 #include "cpl_conv.h"
-
-CPL_CVSID("$Id: nearblack.cpp 17737 2009-10-03 12:02:26Z rouault $");
 
 static void ProcessLine( GByte *pabyLine, int iStart, int iEnd, int nBands,
                          int nNearDist, int nMaxNonBlack, int bNearWhite,
@@ -246,8 +244,6 @@ int main( int argc, char ** argv )
         GDALClose( hInDS );
     GDALDumpOpenDatasets( stderr );
     GDALDestroyDriverManager();
-    
-    return 0;
 }
 
 /************************************************************************/

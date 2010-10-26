@@ -295,8 +295,6 @@ protected:
     //
     // Process expressions
     //
-    virtual void ProcessAggregateFunction (FdoFunction& expr);
-    
     virtual void ProcessBinaryExpression(FdoBinaryExpression& expr);
 
     virtual void ProcessUnaryExpression(FdoUnaryExpression& expr);
@@ -359,7 +357,6 @@ protected:
     virtual bool HasNativeSupportedFunctionArguments(FdoFunction& expr) const = 0;
     virtual FdoStringP GetGeometryString( FdoString* columnName, bool inSelectList );
     virtual FdoStringP GetGeometryTableString( FdoString* tableName );
-    bool IsDataValue (FdoExpression *expr);
 
 public:
 	virtual void GetLtTableExpression( const FdoSmLpClassDefinition *classDefinition, FdoStringP &ltJoin, FdoStringP &ltTableExp, FdoCommandType callerFdoCommand );
@@ -379,8 +376,6 @@ public:
     virtual bool CanOptimizeRelationQuery( const FdoSmLpClassDefinition* pClass, const FdoSmLpPropertyDefinition* propertyDefinition );
 
     virtual bool CanSelectDistinctColType( FdoSmPhColType colType );
-
-    virtual bool SupportsSpatialOrNonSpatialOperator();
 
     virtual const wchar_t* FilterToSql( FdoFilter *filter,
                                         const wchar_t *className,

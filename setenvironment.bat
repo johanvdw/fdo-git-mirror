@@ -1,7 +1,7 @@
 @echo off
 
 rem 
-rem Copyright (C) 2004-2006  Autodesk, Inc.
+rem Copyright (C) 2004-2010  Autodesk, Inc.
 rem 
 rem This library is free software; you can redistribute it and/or
 rem modify it under the terms of version 2.1 of the GNU Lesser
@@ -30,9 +30,9 @@ goto usage
 
 :setvcvarsall
 SET ACTIVENAMECHECK="Microsoft Visual Studio 9"
-SET ACTIVEPATHCHECK="C:\Program Files\Microsoft Visual Studio 9.0\VC"
-if exist %ACTIVEPATHCHECK% goto VSExist
 SET ACTIVEPATHCHECK="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC"
+if exist %ACTIVEPATHCHECK% goto VSExist
+SET ACTIVEPATHCHECK="C:\Program Files\Microsoft Visual Studio 9.0\VC"
 if exist %ACTIVEPATHCHECK% goto VSExist
 
 :VSExist
@@ -54,50 +54,33 @@ SET ACTIVEPATHCHECK=%FDOTHIRDPARTY%
 SET ACTIVENAMECHECK="FDO Thirdparty"
 if not exist "%FDOTHIRDPARTY%" goto error
 
-SET XALANROOT=%FDOTHIRDPARTY%\apache\xalan
-SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xerces
-SET NLSDIR=%FDOTHIRDPARTY%\apache\xalan\src\xalanc\NLS
+SET XALANROOT=%FDOTHIRDPARTY%\apache\xml-xalan\c
+SET XERCESCROOT=%FDOTHIRDPARTY%\apache\xml-xerces\c
+SET NLSDIR=%FDOTHIRDPARTY%\apache\xml-xalan\c\Src\xalanc\NLS
 
-if "%1" == ""		goto setfdovariables_x86
-if "%1" == "x86"	goto setfdovariables_x86
-
-:setfdovariables_x64
-if not exist "%FDOORACLE%" SET FDOORACLE=%FDOTHIRDPARTY%\oracle_x64\instantclient\10.2\sdk
-if not exist "%FDOORACLE%" echo OPTIONAL FDO environment variable FDOORACLE is not set
-if not exist "%FDOORACLE%" SET FDOORACLE=
-
-if not exist "%FDOMYSQL%" SET FDOMYSQL=%FDOTHIRDPARTY%\mysql_x64
-if not exist "%FDOMYSQL%" echo OPTIONAL FDO environment variable FDOMYSQL is not set
-if not exist "%FDOMYSQL%" SET FDOMYSQL=
-
-if not exist "%SDEHOME%" SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
-
-goto contsetfdovariables
-
-:setfdovariables_x86
-if not exist "%FDOORACLE%" SET FDOORACLE=%FDOTHIRDPARTY%\oracle\instant_client\10.2\sdk
-if not exist "%FDOORACLE%" echo OPTIONAL FDO environment variable FDOORACLE is not set
-if not exist "%FDOORACLE%" SET FDOORACLE=
-
-if not exist "%FDOMYSQL%" SET FDOMYSQL=%FDOTHIRDPARTY%\mysql
-if not exist "%FDOMYSQL%" echo OPTIONAL FDO environment variable FDOMYSQL is not set
-if not exist "%FDOMYSQL%" SET FDOMYSQL=
-
-if not exist "%SDEHOME%" SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Windows
-
-:contsetfdovariables
-if not exist "%FDOGDAL%" SET FDOGDAL=%FDOTHIRDPARTY%\gdal
-if not exist "%FDOGDAL%" echo OPTIONAL FDO environment variable FDOGDAL is not set
-if not exist "%FDOGDAL%" SET FDOGDAL=
-
-if not exist "%FDOPOSTGRESQL%" SET FDOPOSTGRESQL=%FDOTHIRDPARTY%\pgsql
-if not exist "%FDOPOSTGRESQL%" echo OPTIONAL FDO environment variable FDOPOSTGRESQL is not set
-if not exist "%FDOPOSTGRESQL%" SET FDOPOSTGRESQL=
-
+if "%1" == ""          SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Windows
+if "%1" == "x86"       SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Windows
+if "%1" == "amd64"     SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
+if "%1" == "x64"       SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
+if "%1" == "ia64"      SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
+if "%1" == "x86_amd64" SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
+if "%1" == "x86_ia64"  SET SDEHOME=%FDOTHIRDPARTY%\ESRI\ArcSDEClient931\Win64
 if not exist "%SDEHOME%" echo OPTIONAL FDO environment variable SDEHOME is not set
 if not exist "%SDEHOME%" SET SDEHOME=
 if exist "%SDEHOME%\bin\sde.dll" SET SDEVER_ARCUNITTEST=92
 if exist "%SDEHOME%\bin\sde91.dll" SET SDEVER_ARCUNITTEST=91
+
+if not exist "%FDOMYSQL%" SET FDOMYSQL=C:\Program Files\MySQL\MySQL Server 5.0
+if not exist "%FDOMYSQL%" echo OPTIONAL FDO environment variable FDOMYSQL is not set
+if not exist "%FDOMYSQL%" SET FDOMYSQL=
+
+if not exist "%FDOORACLE%" SET FDOORACLE=%FDOTHIRDPARTY%\oracle\instant_client\10.2\sdk
+if not exist "%FDOORACLE%" echo OPTIONAL FDO environment variable FDOORACLE is not set
+if not exist "%FDOORACLE%" SET FDOORACLE=
+
+if not exist "%FDOGDAL%" SET FDOGDAL=%FDOTHIRDPARTY%\gdal
+if not exist "%FDOGDAL%" echo OPTIONAL FDO environment variable FDOGDAL is not set
+if not exist "%FDOGDAL%" SET FDOGDAL=
 
 SET ACTIVENAMECHECK="7-Zip"
 SET ACTIVEPATHCHECK="C:\Program Files\7-Zip"
@@ -135,10 +118,10 @@ goto end
 :usage
 echo Error in script usage. The correct usage is:
 echo     %0 [option]
-echo where [option] is: x86 ^| x64 ^| ia64 ^| amd64 ^| x86_amd64 ^| x86_ia64
+echo where [option] is: x86 ^| ia64 ^| amd64 ^| x86_amd64 ^| x86_ia64
 echo:
 echo For example:
-echo     %0 x86_amd64
+echo     %0 x86_ia64
 exit /B 1
 
 :end

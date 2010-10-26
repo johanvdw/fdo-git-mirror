@@ -56,7 +56,6 @@ package Geo::OGR;
 *CreateGeometryFromGML = *Geo::OGRc::CreateGeometryFromGML;
 *CreateGeometryFromJson = *Geo::OGRc::CreateGeometryFromJson;
 *BuildPolygonFromEdges = *Geo::OGRc::BuildPolygonFromEdges;
-*ApproximateArcAngles = *Geo::OGRc::ApproximateArcAngles;
 *GetDriverCount = *Geo::OGRc::GetDriverCount;
 *GetOpenDSCount = *Geo::OGRc::GetOpenDSCount;
 *SetGenerate_DB2_V72_BYTE_ORDER = *Geo::OGRc::SetGenerate_DB2_V72_BYTE_ORDER;
@@ -66,7 +65,6 @@ package Geo::OGR;
 *OpenShared = *Geo::OGRc::OpenShared;
 *GetDriverByName = *Geo::OGRc::GetDriverByName;
 *_GetDriver = *Geo::OGRc::_GetDriver;
-*GeneralCmdLineProcessor = *Geo::OGRc::GeneralCmdLineProcessor;
 
 ############# Class : Geo::OGR::Driver ##############
 
@@ -354,7 +352,6 @@ sub new {
 *SetWidth = *Geo::OGRc::FieldDefn_SetWidth;
 *GetPrecision = *Geo::OGRc::FieldDefn_GetPrecision;
 *SetPrecision = *Geo::OGRc::FieldDefn_SetPrecision;
-*GetTypeName = *Geo::OGRc::FieldDefn_GetTypeName;
 *GetFieldTypeName = *Geo::OGRc::FieldDefn_GetFieldTypeName;
 sub DISOWN {
     my $self = shift;
@@ -448,7 +445,6 @@ sub new {
 *AssignSpatialReference = *Geo::OGRc::Geometry_AssignSpatialReference;
 *CloseRings = *Geo::OGRc::Geometry_CloseRings;
 *FlattenTo2D = *Geo::OGRc::Geometry_FlattenTo2D;
-*Segmentize = *Geo::OGRc::Geometry_Segmentize;
 *GetEnvelope = *Geo::OGRc::Geometry_GetEnvelope;
 *Centroid = *Geo::OGRc::Geometry_Centroid;
 *WkbSize = *Geo::OGRc::Geometry_WkbSize;
@@ -473,7 +469,6 @@ sub ACQUIRE {
 
 package Geo::OGR;
 
-*wkb25DBit = *Geo::OGRc::wkb25DBit;
 *wkb25Bit = *Geo::OGRc::wkb25Bit;
 *wkbUnknown = *Geo::OGRc::wkbUnknown;
 *wkbPoint = *Geo::OGRc::wkbPoint;
@@ -509,7 +504,6 @@ package Geo::OGR;
 *OJRight = *Geo::OGRc::OJRight;
 *wkbXDR = *Geo::OGRc::wkbXDR;
 *wkbNDR = *Geo::OGRc::wkbNDR;
-*NullFID = *Geo::OGRc::NullFID;
 *OLCRandomRead = *Geo::OGRc::OLCRandomRead;
 *OLCSequentialWrite = *Geo::OGRc::OLCSequentialWrite;
 *OLCRandomWrite = *Geo::OGRc::OLCRandomWrite;
@@ -520,7 +514,6 @@ package Geo::OGR;
 *OLCTransactions = *Geo::OGRc::OLCTransactions;
 *OLCDeleteFeature = *Geo::OGRc::OLCDeleteFeature;
 *OLCFastSetNextByIndex = *Geo::OGRc::OLCFastSetNextByIndex;
-*OLCStringsAsUTF8 = *Geo::OGRc::OLCStringsAsUTF8;
 *ODsCCreateLayer = *Geo::OGRc::ODsCCreateLayer;
 *ODsCDeleteLayer = *Geo::OGRc::ODsCDeleteLayer;
 *ODrCCreateDataSource = *Geo::OGRc::ODrCCreateDataSource;

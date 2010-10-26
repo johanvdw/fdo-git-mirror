@@ -27,7 +27,7 @@ cd boost
 echo Building boost
 cd tools/jam/src
 chmod a+x ./build.sh
-sudo -E sh ./build.sh
+./build.sh
 cd ../../../
 ./tools/jam/src/bin.linuxx86/bjam toolset=gcc variant=release threading=multi link=static --layout=system stage
 popd >& /dev/null
@@ -37,7 +37,7 @@ cd libcurl
 echo Building libcurl
 chmod a+x ./configure
 ./configure --without-libidn
-sudo -E make
+make
 mkdir -p lib/linux
 rm -f ./lib/linux/*.*
 cp -f ./lib/.libs/libcurl.a ./lib/linux
@@ -50,8 +50,8 @@ mkdir -p lib/linux
 rm -f ./lib/linux/*.*
 chmod a+x ./config
 ./config
-sudo -E make clean
-sudo -E make
+make clean
+make
 mv -f ./libssl.a ./lib/linux/libssl.a
 mv -f ./libcrypto.a ./lib/linux/libcrypto.a
 popd >& /dev/null

@@ -22,7 +22,6 @@
 #include "StringUtil.h"
 #include "SltMetadata.h"
 #include "RowidIterator.h"
-#include "SpatialIndexDescriptor.h"
 
 //When performing bulk inserts or updates, we commit the transaction 
 //once every so many features
@@ -45,10 +44,7 @@ class SltDescribeSchema : public SltCommand<FdoIDescribeSchema>
                                                                 { }
 
     protected:
-        virtual ~SltDescribeSchema()
-        {
-            FDO_SAFE_RELEASE(m_classNames); 
-        }
+        virtual ~SltDescribeSchema()                            { }
 
     //-------------------------------------------------------
     // FdoIDescribeSchema implementation
@@ -100,10 +96,7 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
 
         SltExtendedSelect(SltConnection* connection)
             : SltFeatureCommand<FdoIExtendedSelect>(connection),
-              m_orderingProps(NULL),
-              m_option(FdoOrderingOption_Ascending),
-              m_joinCriteria(NULL),
-              m_alias(NULL)
+              m_orderingProps(NULL)
         {
             m_properties = FdoIdentifierCollection::Create();
         }
@@ -113,8 +106,6 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
         {
             m_properties->Release();
             FDO_SAFE_RELEASE(m_orderingProps);
-            FDO_SAFE_RELEASE(m_joinCriteria);
-            FDO_SAFE_RELEASE(m_alias);
         }
 
     //-------------------------------------------------------
@@ -134,11 +125,11 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
                 for (int i=0; i<m_orderingProps->GetCount(); i++)
                 {
                     FdoPtr<FdoIdentifier> id = m_orderingProps->GetItem(i);
-                    ordering.push_back(NameOrderingPair(id.p, ((int)m_orderingOptions.size() != m_orderingProps->GetCount()) ? m_option : m_orderingOptions[id->GetName()])); 
+                    ordering.push_back(NameOrderingPair(id.p, m_orderingOptions[id->GetName()])); 
                 }
             }
 
-            return m_connection->Select(m_className, m_filter, m_properties, false, ordering, m_pParmeterValues, m_joinCriteria, m_alias);
+            return m_connection->Select(m_className, m_filter, m_properties, false, ordering, m_pParmeterValues);
         }
                
         virtual FdoIdentifierCollection*    GetOrdering()       
@@ -156,8 +147,8 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
         virtual void                        SetLockStrategy(FdoLockStrategy value) { };
         virtual FdoIFeatureReader*          ExecuteWithLock()               { return NULL; }
         virtual FdoILockConflictReader*     GetLockConflicts()              { return NULL; }
-        virtual void                        SetOrderingOption(FdoOrderingOption option) {m_option=option;}
-        virtual FdoOrderingOption           GetOrderingOption()             { return m_option; }
+        virtual void                        SetOrderingOption(FdoOrderingOption option) {}
+        virtual FdoOrderingOption           GetOrderingOption()             { return FdoOrderingOption_Ascending; }
 
     public:
 
@@ -185,26 +176,6 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
             m_orderingOptions.clear();
         }
 
-        virtual FdoJoinCriteriaCollection* GetJoinCriteria()
-        {
-            if (m_joinCriteria == NULL)
-                m_joinCriteria = FdoJoinCriteriaCollection::Create();
-
-            return FDO_SAFE_ADDREF(m_joinCriteria);
-        }
-
-        virtual FdoString* GetAlias()
-        {
-            return (m_alias == NULL) ? NULL : m_alias->GetName();
-        }
-
-        virtual void SetAlias(FdoString* alias)
-        {
-            FDO_SAFE_RELEASE(m_alias);
-            if (alias != NULL && *alias != '\0')
-                m_alias = FdoIdentifier::Create(alias);
-        }
-
         virtual FdoIScrollableFeatureReader* ExecuteScrollable()
         {
             std::vector<NameOrderingPair> ordering;
@@ -214,12 +185,9 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
                 for (int i=0; i<m_orderingProps->GetCount(); i++)
                 {
                     FdoPtr<FdoIdentifier> id = m_orderingProps->GetItem(i);
-                    ordering.push_back(NameOrderingPair(id.p, ((int)m_orderingOptions.size() != m_orderingProps->GetCount()) ? m_option : m_orderingOptions[id->GetName()])); 
+                    ordering.push_back(NameOrderingPair(id.p, m_orderingOptions[id->GetName()])); 
                 }
             }
-
-            if (m_joinCriteria != NULL && m_joinCriteria->GetCount())
-                throw FdoCommandException::Create(L"Cannot use scrollable select on join selects.");
 
             return m_connection->Select(m_className, m_filter, m_properties, true, ordering, m_pParmeterValues);
         }
@@ -232,9 +200,6 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
             FdoIdentifierCollection* m_orderingProps;
             FdoIdentifierCollection* m_properties;
             std::map<std::wstring, FdoOrderingOption> m_orderingOptions;
-            FdoOrderingOption m_option;
-            FdoJoinCriteriaCollection* m_joinCriteria;
-            FdoIdentifier* m_alias;
 };
 
 
@@ -254,9 +219,7 @@ class SltSelectAggregates : public SltFeatureCommand<FdoISelectAggregates>
             SltFeatureCommand<FdoISelectAggregates>(connection),
         m_bDistinct(false), 
         m_eOrderingOption(FdoOrderingOption_Ascending), 
-        m_grfilter(NULL),
-        m_joinCriteria(NULL),
-        m_alias(NULL)
+        m_grfilter(NULL)
         {
             m_grouping = FdoIdentifierCollection::Create();
             m_ordering = FdoIdentifierCollection::Create();
@@ -269,9 +232,6 @@ class SltSelectAggregates : public SltFeatureCommand<FdoISelectAggregates>
             m_grouping->Release();
             m_ordering->Release();
             m_properties->Release();
-            FDO_SAFE_RELEASE(m_grfilter);
-            FDO_SAFE_RELEASE(m_joinCriteria);
-            FDO_SAFE_RELEASE(m_alias);
         }
         
     //-------------------------------------------------------
@@ -290,9 +250,7 @@ class SltSelectAggregates : public SltFeatureCommand<FdoISelectAggregates>
                                                     m_ordering, 
                                                     m_grfilter, 
                                                     m_grouping,
-                                                    m_pParmeterValues,
-                                                    m_joinCriteria,
-                                                    m_alias); 
+                                                    m_pParmeterValues); 
         }
         virtual void                     SetDistinct( bool value )              { m_bDistinct = value; }
         virtual bool                     GetDistinct( )                         { return m_bDistinct; }
@@ -307,26 +265,6 @@ class SltSelectAggregates : public SltFeatureCommand<FdoISelectAggregates>
         virtual void                     SetOrderingOption( FdoOrderingOption option) { m_eOrderingOption = option; }
         virtual FdoOrderingOption        GetOrderingOption( )                   { return m_eOrderingOption; }
 
-        virtual FdoJoinCriteriaCollection* GetJoinCriteria()
-        {
-            if (m_joinCriteria == NULL)
-                m_joinCriteria = FdoJoinCriteriaCollection::Create();
-
-            return FDO_SAFE_ADDREF(m_joinCriteria);
-        }
-
-        virtual FdoString* GetAlias()
-        {
-            return (m_alias == NULL) ? NULL : m_alias->GetName();
-        }
-
-        virtual void SetAlias(FdoString* alias)
-        {
-            FDO_SAFE_RELEASE(m_alias);
-            if (alias != NULL && *alias != '\0')
-                m_alias = FdoIdentifier::Create(alias);
-        }
-
     private:
         FdoIdentifierCollection*    m_properties;
         bool                        m_bDistinct;
@@ -334,8 +272,6 @@ class SltSelectAggregates : public SltFeatureCommand<FdoISelectAggregates>
         FdoIdentifierCollection*    m_ordering;
         FdoFilter*                  m_grfilter;
         FdoIdentifierCollection*    m_grouping;
-        FdoJoinCriteriaCollection* m_joinCriteria;
-        FdoIdentifier* m_alias;
 };
 
 
@@ -355,7 +291,7 @@ class SltUpdate : public SltFeatureCommand<FdoIUpdate>
               m_bInTransaction(false)
         {
             m_properties = FdoPropertyValueCollection::Create();
-            m_db = m_connection->GetDbConnection();
+            m_db = m_connection->GetDbWrite();
         }
 
     protected:
@@ -462,7 +398,7 @@ class SltInsert : public SltCommand<FdoIInsert>
             m_properties = FdoPropertyValueCollection::Create();
             m_pCompiledSQL = NULL;
 			m_idProp = NULL;
-            m_db = m_connection->GetDbConnection();
+            m_db = m_connection->GetDbWrite();
             m_geomFormat = eFGF; //eFGF by default, we will get the correct 
                               //format later when we know the feature class
         }
@@ -479,10 +415,6 @@ class SltInsert : public SltCommand<FdoIInsert>
     // FdoIInsert implementation
     //-------------------------------------------------------
 
-        inline const char* FeatureClassName()
-        {
-            return (m_fcmainname.size()) ? m_fcmainname.c_str() : m_fcname.c_str();
-        }
     public:
         virtual FdoIdentifier* GetFeatureClassName()
 		{
@@ -493,7 +425,6 @@ class SltInsert : public SltCommand<FdoIInsert>
 		}
         virtual void SetFeatureClassName(FdoIdentifier* value)
         {
-            m_fcmainname.clear();
 			m_fcname.clear();
 			FDO_SAFE_RELEASE(m_idProp);
             if (value)
@@ -501,20 +432,12 @@ class SltInsert : public SltCommand<FdoIInsert>
 				// since applications will use only one command to insert multiple rows this 
 				// should not add any performance loss
 				m_fcname = W2A_SLOW(value->GetName());
-                SltMetadata* md = m_connection->GetMetadata(m_fcname.c_str());
-				FdoPtr<FdoClassDefinition> updClass = (md) ? md->ToClass() : NULL;
+				FdoPtr<FdoClassDefinition> updClass = m_connection->GetFdoClassDefinition(m_fcname.c_str());
 				if (!updClass)
 				{
 					m_fcname.clear();
 					throw FdoCommandException::Create(L"Requested feature class does not exist in the database.");
 				}
-                if (md->IsView() && md->GetMainViewTable() != NULL &&  !md->IsMultipleSelectSrcView())
-                {
-                    m_fcmainname = md->GetMainViewTable();
-                    md = m_connection->GetMetadata(m_fcmainname.c_str());
-                    if (!md)
-                        throw FdoCommandException::Create(L"Requested feature class does not exist in the database.");
-                }
 
 				FdoPtr<FdoDataPropertyDefinitionCollection> pdic = updClass->GetIdentityProperties();
 				if (pdic->GetCount() == 1)
@@ -575,6 +498,7 @@ class SltInsert : public SltCommand<FdoIInsert>
             BindPropVals(m_properties, m_pCompiledSQL, m_geomFormat);
 
             int rc = sqlite3_step(m_pCompiledSQL);
+
             if (rc != SQLITE_DONE)
             {
                 const char* err = sqlite3_errmsg(m_db);
@@ -617,7 +541,7 @@ class SltInsert : public SltCommand<FdoIInsert>
 
             //get the ID of the last inserted feature
             sqlite3_int64 id = sqlite3_last_insert_rowid(m_db);
-
+            
             //return the new feature
             //IMPORTANT: use a transaction-less reader so that
             //it does not commit the insert when disposed. SQLite 
@@ -655,35 +579,30 @@ class SltInsert : public SltCommand<FdoIInsert>
         void PrepareSQL()
         {
             StringBuffer sb;
-            StringBuffer sbval;
             sb.Append("INSERT INTO ");
-            sb.AppendDQuoted(FeatureClassName());
+            sb.AppendDQuoted(m_fcname.c_str());
             sb.Append(" (");
-
-            sbval.Append(") VALUES(");
 
             for (int i=0; i<m_properties->GetCount(); i++)
             {
+                if (i)
+                    sb.Append(",");
+                
                 FdoPtr<FdoPropertyValue> pv = m_properties->GetItem(i);
                 FdoPtr<FdoIdentifier> id = pv->GetName();
 
                 m_propNames.push_back(id->GetName()); //build up a list of the property names (see Execute() for why this is needed)
-
-                if (i)
-                {
-                    sb.Append(",", 1);
-                    sbval.Append(",?", 2);
-                }
-                else
-                    sbval.Append("?", 1);
-
                 sb.AppendDQuoted(id->GetName());
             }
 
-            sb.Append(sbval.Data(), sbval.Length());
+            //set up parametrized insert values
+            sb.Append(") VALUES(");
+            for (int i=0; i<m_properties->GetCount(); i++)
+                (i) ? sb.Append(",?") : sb.Append("?");
+
             sb.Append(");");
 
-            SltMetadata* md = m_connection->GetMetadata(FeatureClassName());
+            SltMetadata* md = m_connection->GetMetadata(m_fcname.c_str());
 
             if (md)
                 m_geomFormat = md->GetGeomFormat();
@@ -710,7 +629,6 @@ class SltInsert : public SltCommand<FdoIInsert>
         FdoPropertyValueCollection* m_properties;
 
         std::string                 m_fcname;
-        std::string                 m_fcmainname;
         sqlite3*                    m_db;
         sqlite3_stmt*               m_pCompiledSQL;
         int                         m_execCount;
@@ -803,7 +721,7 @@ class SltSql : public SltCommand<FdoISQLCommand>
             int count = 0;
             int rc = SQLITE_OK;
 
-            sqlite3* db = m_connection->GetDbConnection();
+            sqlite3* db = m_connection->GetDbWrite();
             sqlite3_stmt* pStmt = m_pCompiledSQL;
             if (NULL != pStmt)
             {
@@ -813,36 +731,44 @@ class SltSql : public SltCommand<FdoISQLCommand>
             }
             else
             {
-                m_pCompiledSQL = GetCachedParsedStatement(db, m_sb.Data());
-                pStmt = m_pCompiledSQL;
-
                 if (m_pParmeterValues != NULL && m_pParmeterValues->GetCount() != 0)
+                {
+                    //parse the SQL statement
+                    const char* tail = NULL;
+                    int rc;
+                    if ((rc = sqlite3_prepare_v2(db, m_sb.Data(), -1, &m_pCompiledSQL, &tail)) != SQLITE_OK)
+                    {
+                        const char* err = sqlite3_errmsg(db);
+                        if (err != NULL)
+                            throw FdoCommandException::Create(A2W_SLOW(err).c_str(), rc);                        
+                        else
+                            throw FdoCommandException::Create(L"Failed to parse SQL statement.", rc);
+                    }
+
+                    pStmt = m_pCompiledSQL;
                     BindPropVals(m_pParmeterValues, m_pCompiledSQL, false, eFGF /* with raw SQL we don't know what it really is, so assume FGF */);
+                }
+                else
+                    pStmt = m_connection->GetCachedParsedStatement(m_sb.Data(), db);
             }
 
+            m_connection->EnableHooks();
             while ((rc = sqlite3_step(pStmt)) == SQLITE_ROW);
             if( rc == SQLITE_DONE )
                 count = sqlite3_changes(db);
 
+            if (NULL == m_pCompiledSQL)
+                m_connection->ReleaseParsedStatement(m_sb.Data(), pStmt);
+
             if (rc == SQLITE_DONE)
             {
-                const char* sql = m_sb.Data();
-                if (StringStartsWith(sql, "create"))
-                    m_connection->FreeCachedSchema(true);
-                else if (StringStartsWith(sql, "drop") || StringStartsWith(sql, "alter"))
-                    m_connection->FreeCachedSchema(false);
-                // "CREATE/ALTER/DROP* will set sqlite3_changes = 0 so result will be 0
-                // INSERT/UPDATE/DELETE* will return affected rows 
-                // in case of error an exception will be thrown
+                m_connection->EnableHooks(false);
                 return count;
             }
             else 
             {
-                const char* err = sqlite3_errmsg(db);
-                if (err != NULL)
-                    throw FdoCommandException::Create(A2W_SLOW(err).c_str(), rc);                        
-                else
-                    throw FdoCommandException::Create(L"Failed to execute sql command.", rc);
+                m_connection->EnableHooks(false, true);
+                throw FdoCommandException::Create(L"Failed to execute sql command.", rc);
             }
         }
 
@@ -852,26 +778,11 @@ class SltSql : public SltCommand<FdoISQLCommand>
             if (m_sb.Length() == 0)
                 throw FdoCommandException::Create(L"Invalid empty SQL statement.");
             
-            sqlite3_stmt* pStmt = GetCachedParsedStatement(m_connection->GetDbConnection(), m_sb.Data());
+            sqlite3* db = m_connection->GetDbWrite();
+            sqlite3_stmt* pStmt = m_connection->GetCachedParsedStatement(m_sb.Data(), db);
             if( m_pParmeterValues != NULL && m_pParmeterValues->GetCount() != 0 )
                 BindPropVals(m_pParmeterValues, pStmt, false, eFGF /* with SQL command we don't know the precise geom type, so assume FGF */ );
-            return new SltReader(m_connection, pStmt, ReaderCloseType_CloseStmtOnly, NULL, NULL);
-        }
-
-        sqlite3_stmt* GetCachedParsedStatement(sqlite3* db, const char* sql)
-        {
-            sqlite3_stmt* ret = NULL;
-            const char* tail = NULL;
-            int rc = sqlite3_prepare_v2(db, sql, -1, &ret, &tail);
-            if (rc != SQLITE_OK || ret == NULL)
-            {
-                const char* err = sqlite3_errmsg(db);
-                if (err != NULL)
-                    throw FdoException::Create(A2W_SLOW(err).c_str(), rc);
-                else
-                    throw FdoException::Create(L"Failed to parse SQL statement", rc);
-            }
-            return ret;
+            return new SltReader(m_connection, pStmt, false, NULL, NULL);
         }
 
     private:
@@ -912,7 +823,6 @@ public:
         : SltCommand<FdoICreateSpatialContext>(connection)
     {
         m_updateExisting = false;
-        m_XYTolerance = m_ZTolerance = 0.0;
     }
 
 protected:
@@ -942,10 +852,10 @@ public:
     virtual void            SetExtentType(FdoSpatialContextExtentType value) { }
     virtual FdoByteArray*   GetExtent()                             { return NULL; }
     virtual void            SetExtent(FdoByteArray* value)          { }
-    virtual const double    GetXYTolerance()                        { return m_XYTolerance; }
-    virtual void            SetXYTolerance(const double value)      { m_XYTolerance = value; }
-    virtual const double    GetZTolerance()                         { return m_ZTolerance; }
-    virtual void            SetZTolerance(const double value)       { m_ZTolerance = value; }
+    virtual const double    GetXYTolerance()                        { return 0; }
+    virtual void            SetXYTolerance(const double value)      { }
+    virtual const double    GetZTolerance()                         { return 0; }
+    virtual void            SetZTolerance(const double value)       { }
     virtual const bool      GetUpdateExisting()                     { return m_updateExisting; }
     virtual void            SetUpdateExisting(const bool value)     { m_updateExisting = value; }
     virtual void            Execute()
@@ -954,23 +864,13 @@ public:
         int rc;
         char* zerr = NULL;
         int idToUpdate = -1;
-        if (m_connection->IsReadOnlyConnection())
-            FdoCommandException::Create(L"Connection is read-only and do not support write operations.");
-
         if (m_updateExisting && m_scName.size() != 0)
             idToUpdate = m_connection->FindSpatialContext(m_scName.c_str(), -1);
-
-        bool tolsupp = m_connection->SupportsTolerance();
-        if (!tolsupp && m_XYTolerance > 0.0)
-            tolsupp = m_connection->AddSupportForTolerance();
 
         // caller should ensure the SC is not already created
         if (idToUpdate == -1)
         {
-            if (!tolsupp || m_XYTolerance <= 0.0)
-                sb.Append("INSERT INTO spatial_ref_sys (sr_name,auth_name,srtext) VALUES(");
-            else
-                sb.Append("INSERT INTO spatial_ref_sys (sr_name,auth_name,srtext,sr_xytol,sr_ztol) VALUES(");
+            sb.Append("INSERT INTO spatial_ref_sys (sr_name,auth_name,srtext) VALUES(");
 
             if (m_scName.empty())
                 sb.Append("NULL", 4);
@@ -990,17 +890,6 @@ public:
                 sb.Append("NULL", 4);
             else
                 sb.AppendSQuoted(m_coordSysWkt.c_str());
-
-            if (tolsupp && m_XYTolerance > 0.0)
-            {
-                sb.Append(",", 1);
-                sb.Append(m_XYTolerance, "%.16g");
-                sb.Append(",", 1);
-                if (m_ZTolerance > 0.0)
-                    sb.Append(m_ZTolerance, "%.16g");
-                else
-                    sb.Append("NULL", 4);
-            }
 
             sb.Append(");", 2);
         }
@@ -1027,33 +916,14 @@ public:
             else
                 sb.AppendSQuoted(m_coordSysWkt.c_str());
 
-            if (tolsupp)
-            {
-                sb.Append(",sr_xytol=", 10);
-                if (m_XYTolerance > 0.0)
-                    sb.Append(m_XYTolerance, "%.16g");
-                else
-                    sb.Append("NULL");
-                sb.Append(",sr_ztol=", 9);
-                if (m_ZTolerance > 0.0)
-                    sb.Append(m_ZTolerance, "%.16g");
-                else
-                    sb.Append("NULL");
-            }
-
             sb.Append(" WHERE srid=");
             sb.Append(idToUpdate);
             sb.Append(";", 1);
         }
 
-        rc = sqlite3_exec(m_connection->GetDbConnection(), sb.Data(), NULL, NULL, &zerr);
+        rc = sqlite3_exec(m_connection->GetDbWrite(), sb.Data(), NULL, NULL, &zerr);
         if (rc != SQLITE_OK)
-        {
-            if (idToUpdate == -1)
-                FdoCommandException::Create(L"Failed to create spatial context.");
-            else
-                FdoCommandException::Create(L"Failed to update spatial context.");
-        }
+            FdoCommandException::Create(L"Failed to create spatial context.");
     }
 
     //-------------------------------------------------------
@@ -1070,8 +940,6 @@ private:
     FdoInt32                        m_extentLength;
 
     bool                            m_updateExisting;
-    double                          m_XYTolerance;
-    double                          m_ZTolerance;
 };
 
 

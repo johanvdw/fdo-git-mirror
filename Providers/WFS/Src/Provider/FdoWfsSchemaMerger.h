@@ -35,12 +35,9 @@ private:
     bool m_FeatureLoaded;
     bool m_GeometryLoaded;
     bool m_XlinksLoaded;
-	FdoStringP m_version;
-	std::map<FdoStringP,char** > m_Gml311;
 
 public:
     FdoWfsSchemaMerger();
-	FdoWfsSchemaMerger(FdoString* version);
     virtual ~FdoWfsSchemaMerger();
     FdoIoStream* MergeSchema(FdoIoStream* schema, FdoString* location, FdoString* uri);
 
@@ -48,8 +45,6 @@ public:
 private:
     void _mergeSchema(FdoIoStream* schema, FdoString* location, FdoString* uri);
     FdoStringP _getFullLocation(FdoString* relativeLocation, FdoString* baseLocation);
-
-	FdoStringP _getXSDName(FdoStringP location);
 };
 
 

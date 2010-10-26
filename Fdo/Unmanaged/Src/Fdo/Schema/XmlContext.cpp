@@ -131,28 +131,17 @@ void FdoSchemaXmlContext::AddElementMapping (
         elemMappings->Add( elemMapping );
     }
     else {
-        // The schema for the WFS at http://giswebservices.massgis.state.ma.us/geoserver/wfs 
-        // has a duplicated xs:element. Allow this schema to be read by suppressing this
-        // error when the error level is VeryLow (perform best-effort schema read).
-        bool isError = true;
-        FdoXmlFlagsP flags = GetFlags();
-
-        if ( flags && (flags->GetErrorLevel() == FdoXmlFlags::ErrorLevel_VeryLow) ) 
-            isError = false;
-
-        if ( isError ) {
-            AddError( 
-                FdoSchemaExceptionP(
-                    FdoSchemaException::Create(
-                        FdoException::NLSGetMessage(
-                            FDO_NLSID(SCHEMA_60_MULTIELEMMAPPING),
-                            elementSchema, 
-                            elementName
-                        )
+        AddError( 
+            FdoSchemaExceptionP(
+                FdoSchemaException::Create(
+                    FdoException::NLSGetMessage(
+                        FDO_NLSID(SCHEMA_60_MULTIELEMMAPPING),
+                        elementSchema, 
+                        elementName
                     )
                 )
-            );
-        }
+            )
+        );
     }
 }
 

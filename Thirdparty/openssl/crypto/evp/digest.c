@@ -126,8 +126,7 @@ EVP_MD_CTX *EVP_MD_CTX_create(void)
 	{
 	EVP_MD_CTX *ctx=OPENSSL_malloc(sizeof *ctx);
 
-	if (ctx)
-		EVP_MD_CTX_init(ctx);
+	EVP_MD_CTX_init(ctx);
 
 	return ctx;
 	}
@@ -175,7 +174,6 @@ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl)
 				{
 				/* Same comment from evp_enc.c */
 				EVPerr(EVP_F_EVP_DIGESTINIT_EX,EVP_R_INITIALIZATION_ERROR);
-				ENGINE_finish(impl);
 				return 0;
 				}
 			/* We'll use the ENGINE's private digest definition */
@@ -200,37 +198,19 @@ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl)
 		if (ctx->digest && ctx->digest->ctx_size)
 			OPENSSL_free(ctx->md_data);
 		ctx->digest=type;
-		if (!(ctx->flags & EVP_MD_CTX_FLAG_NO_INIT) && type->ctx_size)
-			{
-			ctx->update = type->update;
+		if (type->ctx_size)
 			ctx->md_data=OPENSSL_malloc(type->ctx_size);
-			if (ctx->md_data == NULL)
-				{
-				EVPerr(EVP_F_EVP_DIGESTINIT_EX,
-							ERR_R_MALLOC_FAILURE);
-				return 0;
-				}
-			}
 		}
 #ifndef OPENSSL_NO_ENGINE
 skip_to_init:
 #endif
-	if (ctx->pctx)
-		{
-		int r;
-		r = EVP_PKEY_CTX_ctrl(ctx->pctx, -1, EVP_PKEY_OP_TYPE_SIG,
-					EVP_PKEY_CTRL_DIGESTINIT, 0, ctx);
-		if (r <= 0 && (r != -2))
-			return 0;
-		}
-	if (ctx->flags & EVP_MD_CTX_FLAG_NO_INIT)
-		return 1;
 	return ctx->digest->init(ctx);
 	}
 
-int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *data, size_t count)
+int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *data,
+	     size_t count)
 	{
-	return ctx->update(ctx,data,count);
+	return ctx->digest->update(ctx,data,count);
 	}
 
 /* The caller can assume that this removes any secret data from the context */
@@ -292,32 +272,11 @@ int EVP_MD_CTX_copy_ex(EVP_MD_CTX *out, const EVP_MD_CTX *in)
 	EVP_MD_CTX_cleanup(out);
 	memcpy(out,in,sizeof *out);
 
-	if (in->md_data && out->digest->ctx_size)
+	if (out->digest->ctx_size)
 		{
-		if (tmp_buf)
-			out->md_data = tmp_buf;
-		else
-			{
-			out->md_data=OPENSSL_malloc(out->digest->ctx_size);
-			if (!out->md_data)
-				{
-				EVPerr(EVP_F_EVP_MD_CTX_COPY_EX,ERR_R_MALLOC_FAILURE);
-				return 0;
-				}
-			}
+		if (tmp_buf) out->md_data = tmp_buf;
+		else out->md_data=OPENSSL_malloc(out->digest->ctx_size);
 		memcpy(out->md_data,in->md_data,out->digest->ctx_size);
-		}
-
-	out->update = in->update;
-
-	if (in->pctx)
-		{
-		out->pctx = EVP_PKEY_CTX_dup(in->pctx);
-		if (!out->pctx)
-			{
-			EVP_MD_CTX_cleanup(out);
-			return 0;
-			}
 		}
 
 	if (out->digest->copy)
@@ -363,8 +322,6 @@ int EVP_MD_CTX_cleanup(EVP_MD_CTX *ctx)
 		OPENSSL_cleanse(ctx->md_data,ctx->digest->ctx_size);
 		OPENSSL_free(ctx->md_data);
 		}
-	if (ctx->pctx)
-		EVP_PKEY_CTX_free(ctx->pctx);
 #ifndef OPENSSL_NO_ENGINE
 	if(ctx->engine)
 		/* The EVP_MD we used belongs to an ENGINE, release the

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_csharp.i 17453 2009-07-25 19:23:06Z tamas $
+ * $Id: gdal_csharp.i 15475 2008-10-07 21:40:20Z tamas $
  *
  * Name:     gdal_csharp.i
  * Project:  GDAL CSharp Interface
@@ -55,22 +55,24 @@ DEFINE_EXTERNAL_CLASS(OGRLayerShadow, OSGeo.OGR.Layer)
 %define %rasterio_functions(GDALTYPE,CSTYPE)
  public CPLErr ReadRaster(int xOff, int yOff, int xSize, int ySize, CSTYPE[] buffer, int buf_xSize, int buf_ySize, int pixelSpace, int lineSpace) {
       CPLErr retval;
-      GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+      IntPtr ptr = Marshal.AllocHGlobal(buf_xSize * buf_ySize * Marshal.SizeOf(buffer[0]));
       try {
-          retval = ReadRaster(xOff, yOff, xSize, ySize, handle.AddrOfPinnedObject(), buf_xSize, buf_ySize, GDALTYPE, pixelSpace, lineSpace);
+          retval = ReadRaster(xOff, yOff, xSize, ySize, ptr, buf_xSize, buf_ySize, GDALTYPE, pixelSpace, lineSpace);
+          Marshal.Copy(ptr, buffer, 0, buf_xSize * buf_ySize);
       } finally {
-          handle.Free();
+          Marshal.FreeHGlobal(ptr);
       }
       GC.KeepAlive(this);
       return retval;
   }
   public CPLErr WriteRaster(int xOff, int yOff, int xSize, int ySize, CSTYPE[] buffer, int buf_xSize, int buf_ySize, int pixelSpace, int lineSpace) {
       CPLErr retval;
-      GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+      IntPtr ptr = Marshal.AllocHGlobal(buf_xSize * buf_ySize * Marshal.SizeOf(buffer[0]));
       try {
-          retval = WriteRaster(xOff, yOff, xSize, ySize, handle.AddrOfPinnedObject(), buf_xSize, buf_ySize, GDALTYPE, pixelSpace, lineSpace);
+          Marshal.Copy(buffer, 0, ptr, buf_xSize * buf_ySize);
+          retval = WriteRaster(xOff, yOff, xSize, ySize, ptr, buf_xSize, buf_ySize, GDALTYPE, pixelSpace, lineSpace);
       } finally {
-          handle.Free();
+          Marshal.FreeHGlobal(ptr);
       }
       GC.KeepAlive(this);
       return retval;
@@ -97,12 +99,13 @@ DEFINE_EXTERNAL_CLASS(OGRLayerShadow, OSGeo.OGR.Layer)
  public CPLErr ReadRaster(int xOff, int yOff, int xSize, int ySize, CSTYPE[] buffer, int buf_xSize, int buf_ySize, 
      int bandCount, int[] bandMap, int pixelSpace, int lineSpace, int bandSpace) {
       CPLErr retval;
-      GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+      IntPtr ptr = Marshal.AllocHGlobal(buf_xSize * buf_ySize * Marshal.SizeOf(buffer[0]));
       try {
-          retval = ReadRaster(xOff, yOff, xSize, ySize, handle.AddrOfPinnedObject(), buf_xSize, buf_ySize, GDALTYPE, 
+          retval = ReadRaster(xOff, yOff, xSize, ySize, ptr, buf_xSize, buf_ySize, GDALTYPE, 
                                bandCount, bandMap, pixelSpace, lineSpace, bandSpace);
+          Marshal.Copy(ptr, buffer, 0, buf_xSize * buf_ySize);
       } finally {
-          handle.Free();
+          Marshal.FreeHGlobal(ptr);
       }
       GC.KeepAlive(this);
       return retval;
@@ -110,12 +113,13 @@ DEFINE_EXTERNAL_CLASS(OGRLayerShadow, OSGeo.OGR.Layer)
   public CPLErr WriteRaster(int xOff, int yOff, int xSize, int ySize, CSTYPE[] buffer, int buf_xSize, int buf_ySize,
      int bandCount, int[] bandMap, int pixelSpace, int lineSpace, int bandSpace) {
       CPLErr retval;
-      GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+      IntPtr ptr = Marshal.AllocHGlobal(buf_xSize * buf_ySize * Marshal.SizeOf(buffer[0]));
       try {
-          retval = WriteRaster(xOff, yOff, xSize, ySize, handle.AddrOfPinnedObject(), buf_xSize, buf_ySize, GDALTYPE,
+          Marshal.Copy(buffer, 0, ptr, buf_xSize * buf_ySize);
+          retval = WriteRaster(xOff, yOff, xSize, ySize, ptr, buf_xSize, buf_ySize, GDALTYPE,
                                bandCount, bandMap, pixelSpace, lineSpace, bandSpace);
       } finally {
-          handle.Free();
+          Marshal.FreeHGlobal(ptr);
       }
       GC.KeepAlive(this);
       return retval;

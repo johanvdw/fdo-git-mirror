@@ -110,59 +110,5 @@ void FdoClassCapabilities::SetSupportsWrite(FdoBoolean value)
     m_supportsWrite = value;
 }
 
-FdoPolygonVertexOrderRule FdoClassCapabilities::GetPolygonVertexOrderRule( FdoString* geometryPropName )
-{
-    if (NULL == geometryPropName || geometryPropName[0] == L'\0')
-        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_14_NULLSTRING)));
 
-    if (m_polygonVertexOrderRuleMap.find(geometryPropName) == m_polygonVertexOrderRuleMap.end())
-        return FdoPolygonVertexOrderRule_None;
-
-    return m_polygonVertexOrderRuleMap[geometryPropName];
-}
-
-void FdoClassCapabilities::SetPolygonVertexOrderRule( FdoString* geometryPropName, FdoPolygonVertexOrderRule vertexOrderRule )
-{
-    if (NULL == geometryPropName || geometryPropName[0] == L'\0')
-        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_14_NULLSTRING)));
-
-    m_polygonVertexOrderRuleMap[geometryPropName] = vertexOrderRule;
-}
-
-FdoBoolean FdoClassCapabilities::GetPolygonVertexOrderStrictness(FdoString* geometryPropName )
-{
-    if (NULL == geometryPropName || geometryPropName[0] == L'\0')
-        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_14_NULLSTRING)));
-
-    if (m_polygonVertexOrderStrictnessMap.find(geometryPropName) == m_polygonVertexOrderStrictnessMap.end())
-        return FdoPolygonVertexOrderRule_None;
-
-    return m_polygonVertexOrderStrictnessMap[geometryPropName];
-}
-
-void FdoClassCapabilities::SetPolygonVertexOrderStrictness( FdoString* geometryPropName, FdoBoolean value )
-{
-    if (NULL == geometryPropName || geometryPropName[0] == L'\0')
-        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_14_NULLSTRING)));
-
-    m_polygonVertexOrderStrictnessMap[geometryPropName] = value;
-}
-
-void FdoClassCapabilities::Set( FdoClassCapabilities* pCapabilities )
-{
-    SetSupportsLocking( pCapabilities->SupportsLocking() );
-
-    FdoInt32 lockCount;
-    FdoLockType* lockTypes = pCapabilities->GetLockTypes( lockCount );
-    SetLockTypes( lockTypes, lockCount );
-
-    SetSupportsLongTransactions( pCapabilities->SupportsLongTransactions() );
-
-    SetSupportsWrite( pCapabilities->SupportsWrite() );
-
-    m_polygonVertexOrderRuleMap = pCapabilities->m_polygonVertexOrderRuleMap;
-
-    m_polygonVertexOrderStrictnessMap = pCapabilities->m_polygonVertexOrderStrictnessMap;
-
-}
 

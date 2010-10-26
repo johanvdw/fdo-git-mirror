@@ -20,7 +20,6 @@ public:
    virtual void enable_list_mode() = 0;
    virtual void enable_summary_list_mode() = 0;
    virtual void enable_cvs_mode() = 0;
-   virtual void enable_svn_mode() = 0;
    virtual void enable_unix_lines() = 0;
    virtual void enable_scan_mode() = 0;
    virtual void enable_license_mode() = 0;
@@ -29,9 +28,6 @@ public:
    virtual void set_boost_path(const char* p) = 0;
    virtual void set_destination(const char* p) = 0;
    virtual void add_module(const char* p) = 0;
-   virtual void set_namespace(const char* name) = 0;
-   virtual void set_namespace_alias(bool) = 0;
-   virtual void set_namespace_list(bool) = 0;
 
    virtual int run() = 0;
 

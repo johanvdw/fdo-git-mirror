@@ -77,7 +77,7 @@ protected:
 
     // Creates a set of rows describing the fields for this
     // reader. There is one field per database object attribute.
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
+    FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
 };
 
 typedef FdoPtr<FdoSmPhRdSqsBaseObjectReader> FdoSmPhRdSqsBaseObjectReaderP;

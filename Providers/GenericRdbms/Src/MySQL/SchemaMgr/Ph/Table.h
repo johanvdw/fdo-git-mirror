@@ -60,10 +60,6 @@ public:
 	/// Get SQL clause for dropping a constraint
 	virtual FdoStringP GetDropConstraintSql(FdoStringP constraintName);
 
-protected:
-    /// Determine RDB types for string columns
-    virtual void CommitChildren( bool isBeforeParent );
-
 private:
     FdoSmPhMySqlTable() {};
 
@@ -82,9 +78,6 @@ private:
     // Get SQL for setting storage parameters for table. 
     // Currently just selects the storage engine.
     FdoStringP GetAddStorageSql();
-
-    void AddToStrCols( FdoSmPhColumnsP cols, FdoSmPhColumnP col );
-
 };
 
 typedef FdoPtr<FdoSmPhMySqlTable> FdoSmPhMySqlTableP;

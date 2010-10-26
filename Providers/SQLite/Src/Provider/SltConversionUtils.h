@@ -67,13 +67,11 @@ SLT_API void BindPropVals(FdoPropertyValueCollection* props, sqlite3_stmt* stmt,
 SLT_API void BindPropVals(FdoParameterValueCollection* props, sqlite3_stmt* stmt, bool useParmName, int geomFormat);
 SLT_API void BindPropValue(sqlite3_stmt* stmt, int i, FdoLiteralValue* lv, int geomFormat);
 SLT_API int StringContains(const char* str, const char* val);
-SLT_API bool StringStartsWith(const char* str, const char* val);
 
 SLT_API TokenDateFormatType StringToDateFormat(const char* specifier);
 
 SLT_API char* EnsureNoIsLocalIndep(char* str);
 SLT_API wchar_t* EnsureNoIsLocalIndep(wchar_t* str);
-SLT_API const char* ExtractDbName(const char* v, int& stStr, int& lenStr);
 
 #endif
 

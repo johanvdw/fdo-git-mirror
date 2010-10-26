@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: XMLNode.i 18339 2009-12-18 23:44:32Z tamas $
+ * $Id: XMLNode.i 10967 2007-03-15 20:04:37Z warmerdam $
  *
  * Project:  GDAL SWIG Interface
  * Purpose:  GDAL XML SWIG Interface declarations.
@@ -59,42 +59,15 @@ typedef struct _CPLXMLNode
         return CPLParseXMLString( pszString );     
     }
 
-    /* Interface method added for GDAL 1.7.0 */
-    CPLXMLNode(CPLXMLNodeType eType, const char *pszText )
-    {
-        return CPLCreateXMLNode(NULL, eType, pszText);
-    }
-
     ~CPLXMLNode() 
     {
         CPLDestroyXMLNode( self );
     }
     
-    /* Interface method added for GDAL 1.7.0 */
-#ifdef SWIGJAVA
-    %newobject ParseXMLFile;
-    static CPLXMLNode* ParseXMLFile( const char *pszFilename )
-    {
-        return CPLParseXMLFile(pszFilename);
-    }
-#endif
-    
-#if defined(SWIGJAVA) || defined(SWIGCSHARP)
-    retStringAndCPLFree *SerializeXMLTree( )
-#else
     char *SerializeXMLTree( )
-#endif
     {
         return CPLSerializeXMLTree( self );
     }
-
-    /* Interface method added for GDAL 1.7.0 */
-#if defined(SWIGJAVA) || defined(SWIGCSHARP)
-    retStringAndCPLFree * toString()
-    {
-        return CPLSerializeXMLTree( self );
-    }
-#endif
     
     CPLXMLNode *SearchXMLNode( const char *pszElement )
     {
@@ -112,26 +85,9 @@ typedef struct _CPLXMLNode
         return CPLGetXMLValue( self, pszPath, pszDefault );                    
     }
     
-    // for Java, I don't want to deal with ownerships issues
-    // so I just clone
-#ifdef SWIGJAVA
-    %apply Pointer NONNULL {CPLXMLNode *psChild};
     void AddXMLChild( CPLXMLNode *psChild )
     {
-        CPLAddXMLChild( self, CPLCloneXMLTree(psChild) );
-    }
-    %clear CPLXMLNode *psChild;
-
-    %apply Pointer NONNULL {CPLXMLNode *psNewSibling};
-    void AddXMLSibling( CPLXMLNode *psNewSibling )
-    {
-        CPLAddXMLSibling( self, CPLCloneXMLTree(psNewSibling) );
-    }
-    %clear CPLXMLNode *psNewSibling;
-#else
-    void AddXMLChild( CPLXMLNode *psChild )
-    {
-        CPLAddXMLChild( self, psChild );
+        return CPLAddXMLChild( self, psChild );
     }
     
     int RemoveXMLChild( CPLXMLNode *psChild )
@@ -141,7 +97,7 @@ typedef struct _CPLXMLNode
     
     void AddXMLSibling( CPLXMLNode *psNewSibling )
     {
-        CPLAddXMLSibling( self, psNewSibling );
+        return CPLAddXMLSibling( self, psNewSibling );
     }
     
     CPLXMLNode *CreateXMLElementAndValue( const char *pszName, 
@@ -154,14 +110,6 @@ typedef struct _CPLXMLNode
     CPLXMLNode *CloneXMLTree( CPLXMLNode *psTree )
     {
         return CPLCloneXMLTree( psTree );
-    }
-#endif
-    
-    /* Interface method added for GDAL 1.7.0 */
-    %newobject Clone;
-    CPLXMLNode *Clone()
-    {
-        return CPLCloneXMLTree( self );
     }
     
     int SetXMLValue( const char *pszPath,

@@ -53,8 +53,7 @@ protected:
     virtual FdoSmPhOwnerP NewOwner(
         FdoStringP owner,
         bool hasMetaSchema,
-        FdoSchemaElementState elementState,
-        FdoSmPhRdOwnerReader* reader = NULL
+        FdoSchemaElementState elementState
     );
 
     virtual bool Add() {return true;}
