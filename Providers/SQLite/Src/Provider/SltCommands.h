@@ -167,14 +167,12 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
 
         virtual void SetOrderingOption(FdoString* propertyName, FdoOrderingOption option)  
         {
-            FdoPtr<FdoIdentifierCollection> tmp = GetOrdering(); //force creation of the ordering props collection
             if (m_orderingProps->Contains(propertyName))
                 m_orderingOptions[propertyName] = option;
         }
 
         virtual FdoOrderingOption GetOrderingOption(FdoString* propertyName)                
         { 
-            FdoPtr<FdoIdentifierCollection> tmp = GetOrdering(); //force creation of the ordering props collection
             if (m_orderingProps->Contains(propertyName))
                 return m_orderingOptions[propertyName];
 
