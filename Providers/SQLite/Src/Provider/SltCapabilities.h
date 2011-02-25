@@ -227,8 +227,6 @@ class SltCapabilities  : public FdoIConnectionCapabilities,
                                                                             FdoCommandType_CreateDataStore,
                                                                 //          FdoCommandType_DestroyDataStore,
                                                                             FdoCommandType_ExtendedSelect,
-                                                                            FdoCommandType_GetSchemaNames,
-                                                                            FdoCommandType_GetClassNames,
         };
 
         size = sizeof(commandsReadWrite) / sizeof(FdoCommandType);
