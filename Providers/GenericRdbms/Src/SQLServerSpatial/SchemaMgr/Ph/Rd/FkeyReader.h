@@ -22,7 +22,6 @@
 #endif
 
 #include <Sm/Ph/Rd/FkeyReader.h>
-#include <Sm/Ph/Rd/TableJoin.h>
 
 // SqlServer foreign key reader implementation
 
@@ -35,22 +34,13 @@ public:
     //      mgr: Physical Schema Manager
     //      dbObject: Retrieve foreign keys for this database object.
     FdoSmPhRdSqsFkeyReader(
-        FdoSmPhOwnerP    owner,
+        FdoSmPhMgrP mgr,
         FdoSmPhDbObjectP    dbObject
     );
 
     FdoSmPhRdSqsFkeyReader(
-        FdoSmPhOwnerP    owner,
-        FdoStringsP objectNames
-    );
-
-    FdoSmPhRdSqsFkeyReader(
+        FdoSmPhMgrP mgr,
         FdoSmPhOwnerP    owner
-    );
-
-    FdoSmPhRdSqsFkeyReader(
-        FdoSmPhOwnerP owner,
-        FdoSmPhRdTableJoinP join
     );
 
     // Deactivates the foreign key reader.
@@ -58,17 +48,12 @@ public:
 
     virtual FdoStringP GetString( FdoStringP tableName, FdoStringP fieldName );
 
-protected:
-    // Adds table_schema to field list.
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
-
 private:
 
     FdoSmPhReaderP MakeReader(
         FdoSmPhMgrP         mgr,
-        FdoSmPhOwnerP       owner,
-        FdoStringsP         objectNames,
-        FdoSmPhRdTableJoinP join = (FdoSmPhRdTableJoin*) NULL
+        const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP    dbObject
     );
 
     FdoSmPhDbObjectP mDbObject;

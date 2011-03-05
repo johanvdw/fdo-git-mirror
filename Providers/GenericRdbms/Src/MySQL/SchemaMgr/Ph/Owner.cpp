@@ -478,13 +478,6 @@ FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhMySqlOwner::CreateDbObjectReader( FdoStri
     return new FdoSmPhRdMySqlDbObjectReader( FDO_SAFE_ADDREF(pOwner), dbObject );
 }
 
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhMySqlOwner::CreateDbObjectReader( FdoStringsP objectNames) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
-
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhMySqlOwner::CreateDbObjectReader( FdoSmPhRdTableJoinP join ) const
 {
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
@@ -506,13 +499,6 @@ FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhMySqlOwner::CreateConstraintReader( Fdo
     return new FdoSmPhRdMySqlConstraintReader( FDO_SAFE_ADDREF(pOwner), tableName, constraintType );
 }
 
-FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhMySqlOwner::CreateConstraintReader( FdoStringsP tableNames, FdoStringP constraintType) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlConstraintReader( FDO_SAFE_ADDREF(pOwner), tableNames, constraintType );
-}
-
 FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhMySqlOwner::CreateConstraintReader( FdoSmPhRdTableJoinP join , FdoStringP constraintType) const
 {
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
@@ -524,28 +510,14 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhMySqlOwner::CreateFkeyReader() const
 {
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
 
-    return new FdoSmPhRdMySqlFkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhMySqlOwner::CreateFkeyReader(FdoStringsP objectNames) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlFkeyReader( FDO_SAFE_ADDREF(pOwner), objectNames );
+    return new FdoSmPhRdMySqlFkeyReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhMySqlOwner::CreateIndexReader() const
 {
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
 
-    return new FdoSmPhRdMySqlIndexReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdIndexReader> FdoSmPhMySqlOwner::CreateIndexReader( FdoStringsP objectNames) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlIndexReader( FDO_SAFE_ADDREF(pOwner), objectNames );
+    return new FdoSmPhRdMySqlIndexReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhMySqlOwner::CreatePkeyReader() const
@@ -553,13 +525,6 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhMySqlOwner::CreatePkeyReader() const
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
 
     return new FdoSmPhRdMySqlPkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhMySqlOwner::CreatePkeyReader( FdoStringsP objectNames) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlPkeyReader( FDO_SAFE_ADDREF(pOwner), objectNames );
 }
 
 FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhMySqlOwner::CreatePkeyReader( FdoPtr<FdoSmPhRdTableJoin> join ) const
@@ -574,13 +539,6 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhMySqlOwner::CreateColumnReader() const
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
 
     return new FdoSmPhRdMySqlColumnReader( FDO_SAFE_ADDREF(pOwner), (FdoSmPhRdTableJoin*)NULL );
-}
-
-FdoPtr<FdoSmPhRdColumnReader> FdoSmPhMySqlOwner::CreateColumnReader( FdoStringsP objectNames) const
-{
-    FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*) this;
-
-    return new FdoSmPhRdMySqlColumnReader( FDO_SAFE_ADDREF(pOwner), objectNames );
 }
 
 FdoPtr<FdoSmPhRdColumnReader> FdoSmPhMySqlOwner::CreateColumnReader( FdoSmPhRdTableJoinP join ) const
