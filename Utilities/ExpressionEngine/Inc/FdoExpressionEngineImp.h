@@ -93,8 +93,6 @@ public:
                                                               FdoExpression *expression,
                                                               FdoIdentifierCollection* identifiers);
 
-    EXPRESSIONENGINE_API static void UnRegisterFunctions(FdoExpressionEngineFunctionCollection *userDefinedFunctions);
-
 public:
     EXPRESSIONENGINE_API FdoPropertyType GetResultPropertyType ();
     EXPRESSIONENGINE_API FdoDataType GetResultDataType ();
