@@ -398,20 +398,6 @@ FdoSmPhCoordinateSystemP FdoSmPhOwner::FindCoordinateSystemByWkt( FdoStringP wkt
     return coordSys;
 }
 
-void FdoSmPhOwner::CacheCoordinateSystem( FdoSmPhCoordinateSystemP coordSys )
-{
-    FdoInt32 index = -1;
-
-    if ( !mCoordinateSystems ) 
-        mCoordinateSystems = new FdoSmPhCoordinateSystemCollection();
-    else
-        index = mCoordinateSystems->IndexOf(coordSys->GetName());
-
-    // Add coordinate system only if not already in collection.
-    if ( index < 0 ) 
-        mCoordinateSystems->Add(coordSys);
-}
-
 FdoStringP FdoSmPhOwner::GetBestSchemaName() const
 {
     return FdoSmPhMgr::RdSchemaPrefix + GetName();
@@ -717,16 +703,6 @@ void FdoSmPhOwner::ReadAndCacheDbObjects(bool cacheComponents)
                 if ( viewReader ) 
                     view->CacheView( viewReader );
             }
-
-            // The current object may have already been in the cache, but now its
-            // components have been added. In this case, the index and base object
-            // loaders may have already visited this object and skipped it for 
-            // bulk loading indexes and base objects. Reset the index and base object
-            // loaders, so that they will revisit this object. Now that it has its
-            // components, it might be a bulk load candidate.
-
-            FDO_SAFE_RELEASE(mIndexLoader);
-            mNextBaseCandIdx = 0;
         }
     }
 
@@ -1124,7 +1100,7 @@ FdoSmPhDbObjectP FdoSmPhOwner::CacheCandDbObjects( FdoStringP objectName )
             // loaders, so that they will revisit this object. Now that it has its
             // components, it might be a bulk load candidate.
 
-            FDO_SAFE_RELEASE(mIndexLoader);
+            mIndexLoader = NULL;
             mNextBaseCandIdx = 0;
         }
     }
@@ -1147,18 +1123,12 @@ FdoSmPhDbObjectP FdoSmPhOwner::CacheCandDbObjects( FdoStringP objectName )
 
 void FdoSmPhOwner::CacheCandIndexes( FdoStringP objectName )
 {
-    FdoPtr<FdoSmPhIndexLoader> indexLoader;
-
     if ( !mIndexLoader ) {
-        indexLoader = CreateIndexLoader( GetDbObjects() );
+        FdoPtr<FdoSmPhIndexLoader> indexLoader = CreateIndexLoader( GetDbObjects() );
         mIndexLoader = FDO_SAFE_ADDREF( indexLoader.p );
     }
-    else
-    {
-        indexLoader = FDO_SAFE_ADDREF(mIndexLoader);
-    }
 
-    indexLoader->Load( objectName, !mDbObjectsCached, GetCandFetchSize() );
+    mIndexLoader->Load( objectName, !mDbObjectsCached, GetCandFetchSize() );
 }
 
 bool FdoSmPhOwner::GetBulkLoadPkeys()

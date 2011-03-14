@@ -33,64 +33,6 @@ const int BULK_OP_SIZE = 10000;
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///                                   GET SCHEMA NAMES
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-class SltGetSchemaNames : public SltCommand<FdoIGetSchemaNames>
-{
-    public:
-        SltGetSchemaNames(SltConnection* connection) 
-            : SltCommand<FdoIGetSchemaNames>(connection) {}
-
-    protected:
-        virtual ~SltGetSchemaNames() { }
-
-    //-------------------------------------------------------
-    // FdoIGetSchemaNames implementation
-    //-------------------------------------------------------
-
-    public:
-        virtual FdoStringCollection* Execute()   
-        {
-            FdoStringCollection* schemaNames = FdoStringCollection::Create();
-            schemaNames->Add(L"Default");
-            return schemaNames;
-        }
-};
-
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///                                   GET CLASS NAMES
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-class SltGetClassNames : public SltCommand<FdoIGetClassNames>
-{
-    public:
-        SltGetClassNames(SltConnection* connection) 
-            : SltCommand<FdoIGetClassNames>(connection) {}
-
-    protected:
-        virtual ~SltGetClassNames() { }
-
-    //-------------------------------------------------------
-    // FdoIGetClassNames implementation
-    //-------------------------------------------------------
-
-    public:
-        virtual FdoString* GetSchemaName()           { return L"Default"; }
-        virtual void SetSchemaName(FdoString* value) { }
-        virtual FdoStringCollection* Execute()   
-        {
-            return m_connection->GetDbClasses();
-        }
-};
-
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 ///                                   DESCRIBE SCHEMA
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 ///\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -225,14 +167,12 @@ class SltExtendedSelect: public SltFeatureCommand<FdoIExtendedSelect>
 
         virtual void SetOrderingOption(FdoString* propertyName, FdoOrderingOption option)  
         {
-            FdoPtr<FdoIdentifierCollection> tmp = GetOrdering(); //force creation of the ordering props collection
             if (m_orderingProps->Contains(propertyName))
                 m_orderingOptions[propertyName] = option;
         }
 
         virtual FdoOrderingOption GetOrderingOption(FdoString* propertyName)                
         { 
-            FdoPtr<FdoIdentifierCollection> tmp = GetOrdering(); //force creation of the ordering props collection
             if (m_orderingProps->Contains(propertyName))
                 return m_orderingOptions[propertyName];
 
@@ -963,7 +903,7 @@ class SltSql : public SltCommand<FdoISQLCommand>
                 {
                     // if we clear the schema and the table is not in the schema we do it for nothing
                     // in case we create a non temp table free the cached schema
-                    if (!StringStartsWith(lastPos, "temp") && !StringStartsWith(lastPos, "index") && !StringStartsWith(lastPos, "trigger"))
+                    if (!StringStartsWith(lastPos, "TEMP"))
                         m_connection->FreeCachedSchema();
                 }
                 else if (StringStartsWith(sql, "drop", &lastPos)) // DROP VIEW/TABLE [IF EXIST] database.tablename

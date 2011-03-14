@@ -289,17 +289,6 @@ public:
                                                               FdoExpression *expression,
                                                               FdoIdentifierCollection* identifiers);
 
-    /// \brief
-    /// Unregisters the user-defined functions added by RegisterFunctions
-    ///
-    /// \param userDefinedFunctions
-    /// Input the user-defined functions to Unregister
-    ///
-    /// \return
-    /// Returns nothing
-    /// 
-    EXPRESSIONENGINE_API static void UnRegisterFunctions(FdoExpressionEngineFunctionCollection *userDefinedFunctions);
-
 protected:
     EXPRESSIONENGINE_API void Dispose ();
 
