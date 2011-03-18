@@ -18,7 +18,7 @@
 #include <Fdo/Schema/ClassCollection.h>
 
 // Constructs an instance of a ClassCollection using the specified argument.
-FdoClassCollection* FdoClassCollection::Create(FdoSchemaElement* parent)
+FDO_API FdoClassCollection* FdoClassCollection::Create(FdoSchemaElement* parent)
 {
     return new FdoClassCollection(parent);
 }

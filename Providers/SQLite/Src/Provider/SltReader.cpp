@@ -72,6 +72,7 @@ m_sql(sql),
 m_class(NULL),
 m_sprops(NULL),
 m_closeOpcode(-1),
+m_si(NULL),
 m_nMaxProps(0),
 m_nTotalProps(0),
 m_eGeomFormat(eFGF),
@@ -104,6 +105,7 @@ SltReader::SltReader(SltConnection* connection, sqlite3_stmt* stmt, ReaderCloseT
 m_sql(""),
 m_sprops(NULL),
 m_closeOpcode(-1),
+m_si(NULL),
 m_nMaxProps(0),
 m_eGeomFormat(eFGF),
 m_wkbBuffer(NULL),
@@ -130,12 +132,13 @@ m_canAddSelectProps(false)
 //requested columns collection is empty, it will start out with a query
 //for just featid and geometry, then redo the query if caller asks for other
 //property values
-SltReader::SltReader(SltConnection* connection, FdoIdentifierCollection* props, const char* fcname, const char* strWhere, bool useFastStepping, RowidIterator* ri, FdoParameterValueCollection*  parmValues, const char* strOrderBy)
+SltReader::SltReader(SltConnection* connection, FdoIdentifierCollection* props, const char* fcname, const char* strWhere, SpatialIterator* si, bool useFastStepping, RowidIterator* ri, FdoParameterValueCollection*  parmValues, const char* strOrderBy)
 : m_refCount(1),
 m_pStmt(0),
 m_class(NULL),
 m_sprops(NULL),
 m_closeOpcode(-1),
+m_si(si),
 m_nMaxProps(0),
 m_nTotalProps(0),
 m_eGeomFormat(eFGF),
@@ -166,6 +169,7 @@ m_pStmt(0),
 m_class(NULL),
 m_sprops(NULL),
 m_closeOpcode(-1),
+m_si(NULL),
 m_ri(NULL),
 m_nMaxProps(0),
 m_nTotalProps(0),
@@ -191,6 +195,7 @@ SltReader::~SltReader()
     FDO_SAFE_RELEASE(m_filter);
     FDO_SAFE_RELEASE(m_class);
     FDO_SAFE_RELEASE(m_parmValues);
+    delete m_si;
     delete m_ri;
 	m_connection->Release();
 	delete[] m_sprops;
@@ -261,7 +266,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     //like when we have a spatial iterator
     if (*strWhere==0)
     {
-        if (m_ri)
+        if (m_si || m_ri)
         {
             m_fromwhere.Append(" WHERE ", 7);
             m_fromwhere.AppendDQuoted(idClassProp);
@@ -281,7 +286,7 @@ void SltReader::DelayedInit(FdoIdentifierCollection* props, const char* fcname, 
     {
         m_fromwhere.Append(" WHERE ", 7);
 
-        if (m_ri)
+        if (m_si || m_ri)
         {
             m_fromwhere.AppendDQuoted(idClassProp);
             m_fromwhere.Append("=? AND ", 7);
@@ -512,6 +517,13 @@ void SltReader::Requery2()
 
     m_curfid = 0; //position prior to first record 
     m_closeOpcode = -1;
+
+    //reset the spatial iterator, if any
+    if (m_si)
+    {
+        m_siEnd = -1;
+        m_si->Reset();
+    }
 
     //reset the rowid iterator, if any
     //TODO: reading forward can be really slow in the case when someone 
@@ -882,7 +894,23 @@ bool SltReader::ReadNextOnView()
         {
             while (1)
             {
-                if (m_ri) //or are we using a rowid iterator?
+                //are we at the end of the current spatial iterator batch?
+                if (m_si)
+                {
+                    m_curfid++;
+                    if (m_curfid >= m_siEnd)
+                    {
+                        int start;
+                        bool ret = m_si->NextRange(start, m_siEnd);
+
+                        //spatial reader is done, so we are done
+                        if (!ret)
+                            return false;
+
+                        m_curfid = (sqlite3_int64)(start ? start : 1); //make sure we skip fid=0, which is not valid
+                    }
+                }
+                else if (m_ri) //or are we using a rowid iterator?
                 {
                     bool res = m_ri->Next();
 
@@ -892,7 +920,7 @@ bool SltReader::ReadNextOnView()
                         return false; //scrolled past the end of the data
                 }
                 sqlite3_reset(m_pStmt);
-                sqlite3_bind_int64(m_pStmt, 1, m_curfid);
+                sqlite3_bind_int64(m_pStmt, 1, ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]));
                 if (sqlite3_step(m_pStmt) == SQLITE_ROW)
                 {
                     m_closeOpcode = 0;
@@ -921,13 +949,29 @@ bool SltReader::ReadNext()
     //Note that we will not get both a spatial and rowid iterator.
     //The SltConntection::Select() function will pre-process data so that
     //we get either a rowid iterator or a spatial iterator, but not both.
-    if (m_ri)
+    if (m_si || m_ri)
     {
         if (m_isViewSelect)
             return ReadNextOnView();
         while (1)
         {
-            if (m_ri) //or are we using a rowid iterator?
+            //are we at the end of the current spatial iterator batch?
+            if (m_si)
+            {
+                m_curfid++;
+                if (m_curfid >= m_siEnd)
+                {
+                    int start;
+                    bool ret = m_si->NextRange(start, m_siEnd);
+
+                    //spatial reader is done, so we are done
+                    if (!ret)
+                        return false;
+
+                    m_curfid = (sqlite3_int64)(start ? start : 1); //make sure we skip fid=0, which is not valid
+                }
+            }
+            else if (m_ri) //or are we using a rowid iterator?
             {
                 bool res = m_ri->Next();
 
@@ -944,7 +988,7 @@ bool SltReader::ReadNext()
                 //Note that this is not the same as sqlite_bind_int64, because
                 //the execution engine copies the variables from the statement into
                 //internal memory, which we are setting directly here.
-                v->aMem[1].u.i = m_curfid;
+                v->aMem[1].u.i = ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]);
 
 
                 //now set the VDBE program counter to the instruction that
@@ -988,7 +1032,7 @@ bool SltReader::ReadNext()
                 //situation where we have to reset the statement (SLOWwwwwWWWWwwWWWWw!)
                 //Should only happen the first time we execute ReadNext.
                 sqlite3_reset(m_pStmt);
-                sqlite3_bind_int64(m_pStmt, 1, m_curfid);
+                sqlite3_bind_int64(m_pStmt, 1, ((m_si == NULL) ? m_curfid : (*m_si)[(int)m_curfid]));
             }
 
             if (sqlite3_step(m_pStmt) == SQLITE_ROW)

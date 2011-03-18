@@ -116,34 +116,12 @@ void ConnectTests::TestConnection8 ()
 
 void ConnectTests::TestConnection9 ()
 {
-    bool failed = false;
-    
-    try 
-	{
-        TestConnection(L"FeatureServer=http://www.dottedeyes.com/wms");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://www.dottedeyes.com/wms");
 }
 
 void ConnectTests::TestConnection10 ()
 {
-    bool failed = false;
-    
-    try 
-	{
-        TestConnection(L"FeatureServer=http://data.mapguide.com/mapguide/mapagent/mapagent.fcgi");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://data.mapguide.com/mapguide/mapagent/mapagent.fcgi");
 }
 
 void ConnectTests::TestConnection11 ()

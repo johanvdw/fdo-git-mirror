@@ -31,9 +31,6 @@
 
 #endif
 
-#include <vector>
-#include <string>
-
 #include <cstring>
 
 #ifdef _DEBUG
