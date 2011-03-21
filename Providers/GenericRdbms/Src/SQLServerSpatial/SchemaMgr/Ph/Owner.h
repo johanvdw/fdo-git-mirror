@@ -123,8 +123,6 @@ public:
 
     virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader() const;
 
-    virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader(  FdoStringsP objectNames ) const;
-
     virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const;
 
     /// Create a reader to get all indexes for this owner and object name list.
@@ -184,6 +182,12 @@ protected:
     virtual bool Delete();
 
     virtual FdoInt32 GetCandFetchSize();
+
+    // Caches spatial context to geometric column relationships, and physical spatial contexts.
+    // When dbObjectName is blank, retrieves all spatial contexts for this owner,
+    // otherwise only the spatial contexts associated with the geometric columns
+    // in the given db object are loaded.
+    virtual void LoadSpatialContexts( FdoStringP dbObjectName = L"" );
 
 private:
     // Loads all schemas into this owner's cache.

@@ -68,127 +68,125 @@ namespace Fdo_Test
             Expression.testParameter();
             Expression.testUnaryExpression();
 
-            Expression.testDataValueConvert();
+            //mgFilterParseTest
+            mgFilterParseTest FilterParseTest = new mgFilterParseTest();
+            FilterParseTest.test();
 
-                        //mgFilterParseTest
-                        mgFilterParseTest FilterParseTest = new mgFilterParseTest();
-                        FilterParseTest.test();
+            //mgFilterTest
+            mgFilterTest FilterTest = new mgFilterTest();
+            //FilterTest.testFilterTree(); //bad parameter
+            FilterTest.testBinaryLogicalOperator();
+            FilterTest.testComparisonCondition();
+            FilterTest.testDistanceCondition();
+            FilterTest.testInCondition();
+            FilterTest.testNullCondition();
+            FilterTest.testSpatialCondition();
+            FilterTest.testUnaryLogicalOperator();
+            FilterTest.testComputedIdentifier();
 
-                        //mgFilterTest
-                        mgFilterTest FilterTest = new mgFilterTest();
-                        //FilterTest.testFilterTree(); //bad parameter
-                        FilterTest.testBinaryLogicalOperator();
-                        FilterTest.testComparisonCondition();
-                        FilterTest.testDistanceCondition();
-                        FilterTest.testInCondition();
-                        FilterTest.testNullCondition();
-                        FilterTest.testSpatialCondition();
-                        FilterTest.testUnaryLogicalOperator();
-                        FilterTest.testComputedIdentifier();
+            //mgGeometryMemPerfTest
+            mgGeometryMemPerfTest GeometryMemPerfTest = new mgGeometryMemPerfTest();
+            GeometryMemPerfTest.testFgfConversion();
 
-                        //mgGeometryMemPerfTest
-                        mgGeometryMemPerfTest GeometryMemPerfTest = new mgGeometryMemPerfTest();
-                        GeometryMemPerfTest.testFgfConversion();
+            //mgGeometryTest
+            mgGeometryTest GeometryTest = new mgGeometryTest();
+            GeometryTest.testCircularArcSegment();
+            GeometryTest.testCurvePolygon();
+            GeometryTest.testCurveString();
+            GeometryTest.testDirectPosition();
+            GeometryTest.testEnvelope();
+            GeometryTest.testGeometryFromEnvelope();
+            GeometryTest.testLinearRing();
+            GeometryTest.testLineString();
+            GeometryTest.testLineStringSegment();
+            GeometryTest.testMultiCurvePolygon();
+            GeometryTest.testMultiCurveString();
+            GeometryTest.testMultiGeometry();
+            GeometryTest.testMultiLineString();
+            GeometryTest.testMultiPoint();
+            GeometryTest.testMultiPolygon();
+            GeometryTest.testPoint();
+            GeometryTest.testPolygon();
+            GeometryTest.testRing();
 
-                        //mgGeometryTest
-                        mgGeometryTest GeometryTest = new mgGeometryTest();
-                        GeometryTest.testCircularArcSegment();
-                        GeometryTest.testCurvePolygon();
-                        GeometryTest.testCurveString();
-                        GeometryTest.testDirectPosition();
-                        GeometryTest.testEnvelope();
-                        GeometryTest.testGeometryFromEnvelope();
-                        GeometryTest.testLinearRing();
-                        GeometryTest.testLineString();
-                        GeometryTest.testLineStringSegment();
-                        GeometryTest.testMultiCurvePolygon();
-                        GeometryTest.testMultiCurveString();
-                        GeometryTest.testMultiGeometry();
-                        GeometryTest.testMultiLineString();
-                        GeometryTest.testMultiPoint();
-                        GeometryTest.testMultiPolygon();
-                        GeometryTest.testPoint();
-                        GeometryTest.testPolygon();
-                        GeometryTest.testRing();
+            //mgGmlTest
+            mgGmlTest GmlTest = new mgGmlTest();
+            GmlTest.testInstantiateFeatureReader();
+            GmlTest.testSimpleFeature();
+            GmlTest.testSimpleGeometry();
+            GmlTest.testNestedGeometry();
+            GmlTest.testMultiGeometry();
+            GmlTest.testSimpleObject();
+            GmlTest.testNestedObject();
+            GmlTest.testBLOBBase64(); 
+            GmlTest.testBLOBHex();
 
-                        //mgGmlTest
-                        mgGmlTest GmlTest = new mgGmlTest();
-                        GmlTest.testInstantiateFeatureReader();
-                        GmlTest.testSimpleFeature();
-                        GmlTest.testSimpleGeometry();
-                        GmlTest.testNestedGeometry();
-                        GmlTest.testMultiGeometry();
-                        GmlTest.testSimpleObject();
-                        GmlTest.testNestedObject();
-                        GmlTest.testBLOBBase64(); 
-                        GmlTest.testBLOBHex();
+            //mgIoTest
+            mgIoTest IoTest = new mgIoTest();
+            IoTest.setUp();
+            IoTest.testStreams();
+            IoTest.testFileOpen();
+            IoTest.testFileRead();
+            IoTest.testFileWrite();
+            IoTest.testFileCapabilities();
+            IoTest.testMemoryStream();
+            //IoTest.testLargeFile();  //fail also in unmanaged code
 
-                        //mgIoTest
-                        mgIoTest IoTest = new mgIoTest();
-                        IoTest.setUp();
-                        IoTest.testStreams();
-                        IoTest.testFileOpen();
-                        IoTest.testFileRead();
-                        IoTest.testFileWrite();
-                        IoTest.testFileCapabilities();
-                        IoTest.testMemoryStream();
-                        //IoTest.testLargeFile();  //fail also in unmanaged code
+            //mgXmlTest
+            mgXmlTest XmlTest = new mgXmlTest();
+            //XmlTest.testXsl(); //first transform failed, output different result with the unmanaged code, quite strange
+            XmlTest.testNameAdjust();
+            //XmlTest.testRead(); //parse failed
+            XmlTest.testWrite();
+            XmlTest.testWriteClose();
+            //XmlTest.testReadWrite(); //parse failed, same to testReader
+            //XmlTest.testCopy(); //parse failed, same to testReader
 
-                        //mgXmlTest
-                        mgXmlTest XmlTest = new mgXmlTest();
-                        //XmlTest.testXsl(); //first transform failed, output different result with the unmanaged code, quite strange
-                        XmlTest.testNameAdjust();
-                        //XmlTest.testRead(); //parse failed
-                        XmlTest.testWrite();
-                        XmlTest.testWriteClose();
-                        //XmlTest.testReadWrite(); //parse failed, same to testReader
-                        //XmlTest.testCopy(); //parse failed, same to testReader
+            //mgSchemaTest
+            mgSchemaTest SchemaTest = new mgSchemaTest();
+            SchemaTest.testPropertyValue();
+            SchemaTest.testMultiSchema();
+            SchemaTest.testFeatureSchema();
+            SchemaTest.testClass();
+            SchemaTest.testFeatureClass();
+            SchemaTest.testSubClass();
+            SchemaTest.testRasterClass();
+            SchemaTest.testAssociationOK();
+            SchemaTest.testAssociationFail1();
+            SchemaTest.testAssociationFail2();
+            SchemaTest.testAssociationFail3();
+            SchemaTest.testNetworkOK();
+            SchemaTest.testNetworkFail1();
+            SchemaTest.testNetworkFail2();
+            SchemaTest.testXmlAll();
+            SchemaTest.testXmlRefs();
+            SchemaTest.testXmlMerge();
+            SchemaTest.testXmlUnsupported();
+            SchemaTest.testRefErrors();
+            SchemaTest.testXmlExternal();
+            //SchemaTest.testXmlSchemaMappings(); //fail unknown reason, maybe reset doesn't work
 
-                        //mgSchemaTest
-                        mgSchemaTest SchemaTest = new mgSchemaTest();
-                        SchemaTest.testPropertyValue();
-                        SchemaTest.testMultiSchema();
-                        SchemaTest.testFeatureSchema();
-                        SchemaTest.testClass();
-                        SchemaTest.testFeatureClass();
-                        SchemaTest.testSubClass();
-                        SchemaTest.testRasterClass();
-                        SchemaTest.testAssociationOK();
-                        SchemaTest.testAssociationFail1();
-                        SchemaTest.testAssociationFail2();
-                        SchemaTest.testAssociationFail3();
-                        SchemaTest.testNetworkOK();
-                        SchemaTest.testNetworkFail1();
-                        SchemaTest.testNetworkFail2();
-                        SchemaTest.testXmlAll();
-                        SchemaTest.testXmlRefs();
-                        SchemaTest.testXmlMerge();
-                        SchemaTest.testXmlUnsupported();
-                        SchemaTest.testRefErrors();
-                        SchemaTest.testXmlExternal();
-                        //SchemaTest.testXmlSchemaMappings(); //fail unknown reason, maybe reset doesn't work
+            //mgSpatialContextTest
+            mgSpatialContextTest SpatialContextTest = new mgSpatialContextTest();
+            SpatialContextTest.testXml(); //similar to SchemaTest.testXmlSchemaMappings()
+            SpatialContextTest.testXmlError();
+            SpatialContextTest.testXmlNesting();
 
-                        //mgSpatialContextTest
-                        mgSpatialContextTest SpatialContextTest = new mgSpatialContextTest();
-                        SpatialContextTest.testXml(); //similar to SchemaTest.testXmlSchemaMappings()
-                        SpatialContextTest.testXmlError();
-                        SpatialContextTest.testXmlNesting();
-
-                        //mgSpatialUtilityTest
-                        mgSpatialUtilityTest SpatialUtilityTest = new mgSpatialUtilityTest();
-                        SpatialUtilityTest.testGridTransform();
-                        SpatialUtilityTest.testLinearizeCurvePolygon();
-                        SpatialUtilityTest.testLinearizeCurveString();
-                        SpatialUtilityTest.testLinearizeLineString();
-                        SpatialUtilityTest.testLinearizeMultiCurvePolygon();
-                        SpatialUtilityTest.testLinearizeMultiCurveString();
-                        SpatialUtilityTest.testLinearizeMultiGeometry();
-                        SpatialUtilityTest.testLinearizeMultiLineString();
-                        SpatialUtilityTest.testLinearizeMultiPoint();
-                        SpatialUtilityTest.testLinearizeMultiPolygon();
-                        SpatialUtilityTest.testLinearizePoint();
-                        SpatialUtilityTest.testLinearizePolygon();
-                        SpatialUtilityTest.testValidateGeometryByType();
+            //mgSpatialUtilityTest
+            mgSpatialUtilityTest SpatialUtilityTest = new mgSpatialUtilityTest();
+            SpatialUtilityTest.testGridTransform();
+            SpatialUtilityTest.testLinearizeCurvePolygon();
+            SpatialUtilityTest.testLinearizeCurveString();
+            SpatialUtilityTest.testLinearizeLineString();
+            SpatialUtilityTest.testLinearizeMultiCurvePolygon();
+            SpatialUtilityTest.testLinearizeMultiCurveString();
+            SpatialUtilityTest.testLinearizeMultiGeometry();
+            SpatialUtilityTest.testLinearizeMultiLineString();
+            SpatialUtilityTest.testLinearizeMultiPoint();
+            SpatialUtilityTest.testLinearizeMultiPolygon();
+            SpatialUtilityTest.testLinearizePoint();
+            SpatialUtilityTest.testLinearizePolygon();
+            SpatialUtilityTest.testValidateGeometryByType();
 
             Console.WriteLine("Unit Test finish. Press return to exit...");
             Console.ReadLine();

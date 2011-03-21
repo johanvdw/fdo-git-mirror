@@ -47,7 +47,7 @@ public:
 
 	// 1SPATIAL START
 	//FDOKGORA_API void SetSdeClass(bool IsSde,FdoString * SdeFeatureKeyColumn,FdoString * SdeGeometryTableName,int SdeGeometryType,FdoString * SdeIndexTableName) 
-	FDOKGORA_API void SetSdeClass(bool IsSde,FdoString * SdeFeatureKeyColumn,FdoString * SdeGeometryTableName,int SdeGeometryType,FdoString * SdeIndexTableName, double GSize1, double GSize2) 
+	FDOKGORA_API void SetSdeClass(bool IsSde,FdoString * SdeFeatureKeyColumn,FdoString * SdeGeometryTableName,int SdeGeometryType,FdoString * SdeIndexTableName, double GSize1) 
 	// 1SPATIAL END
     { 
       m_IsClassSDE = IsSde;
@@ -58,7 +58,6 @@ public:
 
 		// 1SPATIAL START
 		m_SDE_GSize1 = GSize1;
-		m_SDE_GSize2 = GSize2;
 		// 1SPATIAL END
     }
     FDOKGORA_API bool GetIsSdeClass() { return m_IsClassSDE; }
@@ -70,7 +69,6 @@ public:
 
 	// 1SPATIAL START
 	FDOKGORA_API double GetSdeGSize1() { return m_SDE_GSize1; }
-	FDOKGORA_API double GetSdeGSize2() { return m_SDE_GSize2; }
 	// 1SPATIAL END
 
     FDOKGORA_API void SetPointGeometry(FdoString *GeomPropertyName, FdoString *X_OraColumn, FdoString *Y_OraColumn, FdoString *Z_OraColumn )
@@ -137,7 +135,6 @@ private:
 
 	// 1SPATIAL START
 	double m_SDE_GSize1;
-	double m_SDE_GSize2;
 	// 1SPATIAL START
 };
 

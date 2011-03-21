@@ -7,7 +7,6 @@ class ut_KgOraSdeSchema : public CppUnit::TestFixture
     CPPUNIT_TEST( DescribeSdeSchema );    
     CPPUNIT_TEST( SelectCommand );    
     CPPUNIT_TEST( SelectAggregate );
-    CPPUNIT_TEST( TestBigGeometry );
     CPPUNIT_TEST( TestPolygonWithHoles );
     CPPUNIT_TEST( ReadAllClassesGeomtries );    
     CPPUNIT_TEST( SelectCommand_RemoteSDE );
@@ -26,7 +25,7 @@ public:
   void ReadAllClassesGeomtries();
   void SelectCommand_RemoteSDE();
   void SelectAggregate();
-  void TestBigGeometry();
+
 
   void TestPolygonWithHoles();
   void SdeBinaryToFGF();
@@ -35,7 +34,6 @@ protected:
   void ReadAllProperties(FdoIDataReader* Reader);
   void ReadDataProperty(FdoIReader* Reader,FdoDataType DataType,FdoString* Name);
   
-
   
 };
 
