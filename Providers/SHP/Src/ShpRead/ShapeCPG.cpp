@@ -24,8 +24,9 @@
  *
  */
 
-#include "stdafx.h"
 #include <locale.h>
+
+#include "stdafx.h"
 #include "Constants.h"
 #include "ShapeCPG.h"
 

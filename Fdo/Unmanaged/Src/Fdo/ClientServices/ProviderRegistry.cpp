@@ -1,5 +1,5 @@
 /***************************************************************************
-* 
+ * 
 * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
@@ -16,6 +16,10 @@
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * 
  ***************************************************************************/
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN	// Exclude rarely-used stuff from Windows headers
+#include <windows.h>
+#endif
 
 #include "RegistryUtility.h"
 #include <Fdo/ClientServices/Provider.h>
@@ -65,12 +69,12 @@ const FdoProviderCollection* FdoProviderRegistry::GetProviders() const
 
 // Registers a provider given the necessary information to register the provider. 
 // If any of the parameters are missing or invalid and exception is thrown
-void FdoProviderRegistry::RegisterProvider(FdoString * name, 
-                                           FdoString * displayName, 
-                                           FdoString * description, 
-                                           FdoString * version, 
-                                           FdoString * fdoVersion, 
-                                           FdoString * libraryPath,
+void FdoProviderRegistry::RegisterProvider(const wchar_t * name, 
+                                           const wchar_t * displayName, 
+                                           const wchar_t * description, 
+                                           const wchar_t * version, 
+                                           const wchar_t * fdoVersion, 
+                                           const wchar_t * libraryPath,
                                            bool isManaged)
 {
     if (name == NULL || displayName == NULL || description == NULL || version == NULL || fdoVersion == NULL || libraryPath == NULL) {
@@ -100,7 +104,7 @@ void FdoProviderRegistry::RegisterProvider(FdoString * name,
 }
 
 // Unregisters the provider with the specified name
-void FdoProviderRegistry::UnregisterProvider(FdoString * name)
+void FdoProviderRegistry::UnregisterProvider(const wchar_t * name)
 {
     if (name == NULL) {
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_1_NULLINPUTPOINTER)));

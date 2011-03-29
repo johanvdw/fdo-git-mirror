@@ -259,18 +259,19 @@ void OdbcConnectionUtil::LoadInitializeFile()
 	catch(...){}
 }
 
-void OdbcConnectionUtil::CleanFiles(FdoStringCollection* files, FdoStringP& pTypeName)
+void OdbcConnectionUtil::CleanFiles(std::vector<std::wstring>& files, FdoStringP& pTypeName)
 {
 	try
 	{
 		FdoString* pTypeNamecst = pTypeName;
 		size_t lng = pTypeName.GetLength();
-        size_t count = files->GetCount();
+		size_t count = files.size();
 		for (size_t i = 0; i < count; i++)
 		{
-			FdoStringP name = files->GetString(i);
-            if (lng != name.GetLength())
+			FdoStringP name;
+			if (lng != files[i].length())
 			{
+				name = files[i].c_str ();
                 if (name.Contains(pTypeName))
 					FdoCommonFile::Delete (name, true);
 			}
@@ -287,7 +288,7 @@ OdbcConnectionUtil::~OdbcConnectionUtil(void)
 		if (pValue == L"false")
 			return;
 	}
-	FdoPtr<FdoStringCollection> files = FdoStringCollection::Create();
+	std::vector<std::wstring> files;
 	FdoCommonFile::GetAllFiles (L"", files);
 
 	FdoStringP pTypeName = L"OdbcMySql";

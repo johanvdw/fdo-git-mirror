@@ -19,34 +19,18 @@
 #ifndef FdoCommonSchemaUtil___H
 #define FdoCommonSchemaUtil___H	1
 
-#ifdef _WIN32
-#define USE_INTERNALHASH 1
-#endif
-
 #include <Fdo/Commands/IdentifierCollection.h>
 #include <Fdo/Schema/AssociationPropertyDefinition.h>
 #include <Fdo/Schema/FeatureSchemaCollection.h>
 #include <Fdo/Schema/Class.h>
 #include <Fdo/Schema/RasterPropertyDefinition.h>
-
-#ifndef USE_INTERNALHASH
 #include <map>
 
 // A Map that will allow copied schema elements to be tracked and will 
 // prevent duplicate elements from being copied.
 typedef std::map <FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementMap;
 typedef std::pair <FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementPair;
-typedef FdoSchemaElementMap::iterator FdoSchemaElementMapIterator;
-#else
-#include <FdoCommonHash.h>
-
-// A Map that will allow copied schema elements to be tracked and will 
-// prevent duplicate elements from being copied.
-typedef FdoCommonTypes::hash<FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementMap;
-typedef FdoCommonTypes::pair<FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementPair;
-typedef FdoSchemaElementMap::iterator FdoSchemaElementMapIterator;
-#endif
-
+typedef FdoSchemaElementMap::const_iterator FdoSchemaElementMapIterator;
 
 // A context class used to assist in copying schema elemts. The contained map assists in avoiding duplicate objects being copied.
 class FdoCommonSchemaCopyContext : public FdoDisposable

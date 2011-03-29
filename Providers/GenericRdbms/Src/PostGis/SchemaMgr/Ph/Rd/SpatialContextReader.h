@@ -110,8 +110,6 @@ private:
     FdoInt32 mDimension;
 
     FdoSmPhRowP mBinds;
-
-    FdoSmPhOwnerP mOwner;
 };
 
 // convenient smart pointer

@@ -566,10 +566,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Ph\Synonym.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\Ph\Table.cpp"
 					>
 				</File>
@@ -666,10 +662,6 @@
 					</File>
 					<File
 						RelativePath=".\Ph\Rd\SpatialContextReader.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Ph\Rd\SynonymReader.cpp"
 						>
 					</File>
 				</Filter>
@@ -844,10 +836,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Ph\Synonym.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Ph\Table.h"
 					>
 				</File>
@@ -912,10 +900,6 @@
 					</File>
 					<File
 						RelativePath=".\Ph\Rd\SpatialContextReader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Ph\Rd\SynonymReader.h"
 						>
 					</File>
 				</Filter>
