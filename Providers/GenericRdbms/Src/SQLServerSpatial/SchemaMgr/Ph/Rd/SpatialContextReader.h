@@ -37,13 +37,8 @@ public:
     );
 
 	FdoSmPhRdSqsSpatialContextReader(
-        FdoSmPhOwnerP owner, 
+        FdoSmPhOwnerP owner,             // Get Spatial Contexts for this database object.
         FdoStringP dbObjectName
-    );
-
-	FdoSmPhRdSqsSpatialContextReader(
-        FdoSmPhOwnerP owner, 
-        FdoStringsP objectNames
     );
 
     /// Deactivates the query.

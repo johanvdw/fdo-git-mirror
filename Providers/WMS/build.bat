@@ -131,12 +131,12 @@ if "%TYPEACTION%"=="clean" SET MSACTION=Clean
 if "%TYPEACTION%"=="install" goto install_files_wms
 
 echo %MSACTION% %TYPEBUILD% WMS provider dlls
-SET FDOACTIVEBUILD=%cd%\Src\WMSOS%VCBEXTENSION%
+SET FDOACTIVEBUILD=%cd%\Src\WMSOS
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild WMSOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
+msbuild WMSOS_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
-if exist WMSOS%VCBEXTENSION%_temp.sln del /Q /F WMSOS%VCBEXTENSION%_temp.sln
+if exist WMSOS_temp.sln del /Q /F WMSOS_temp.sln
 popd
 if "%FDOERROR%"=="1" goto error
 if "%TYPEACTION%"=="clean" goto end

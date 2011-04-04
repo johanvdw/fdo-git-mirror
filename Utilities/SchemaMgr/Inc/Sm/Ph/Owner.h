@@ -26,7 +26,6 @@
 #include <Sm/Ph/LockTypesCollection.h>
 #include <Sm/Ph/Table.h>
 #include <Sm/Ph/View.h>
-#include <Sm/Ph/Synonym.h>
 #include <Sm/Ph/SpatialContextCollection.h>
 #include <Sm/Ph/SpatialContextGeom.h>
 #include <Sm/Ph/CoordinateSystemCollection.h>
@@ -40,13 +39,11 @@ class FdoSmPhRdCoordSysReader;
 class FdoSmPhRdConstraintReader;
 class FdoSmPhRdColumnReader;
 class FdoSmPhRdBaseObjectReader;
-class FdoSmPhRdSynonymReader;
 class FdoSmPhRdTableJoin;
 class FdoSmPhRdSpatialContextReader;
 class FdoSmPhRdCoordSysReader;
 
 class FdoSmPhIndexLoader;
-class FdoSmPhSynonymBaseLoader;
 
 // This class represents an Owner (Physical Schema). The exact meaning
 // of Owner depends on the Provider. For example, in the Oracle Provider
@@ -155,10 +152,6 @@ public:
     // Returns NULL if coordinate system not found.
     virtual FdoSmPhCoordinateSystemP FindCoordinateSystemByWkt( FdoStringP wkt );
 
-    // Adds the given coordinate system to this owner's cache.
-    // Does nothing if the coordinate system is already cached.
-    virtual void CacheCoordinateSystem( FdoSmPhCoordinateSystemP coordSys );
-
     // Reverse-engineers an FDO feature schema name from this datastore.
     // Default implementation returns datastore name prepended by "Fdo".
     // "Fdo" is prepended to prevent name conflict with special schema 
@@ -181,17 +174,6 @@ public:
     /// Create a reader to get all database objects for this join.
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoPtr<FdoSmPhRdTableJoin> join ) const;
 
-    /// Create a reader to get derived objects for this owner.
-    /// A derived object is one where the RDBMS data dictionary does not explicitly
-    /// relate the object to its components (e.g. columns), but the object implicitly
-    /// has the same components as its base object. A typical derived object is a 
-    /// synonym. The body of DoLoadSpatialContexts provides more details on why these
-    /// retrievals are performed.
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDerivedObjectReader( FdoStringP objectName = L"") const;
-
-    /// Create a reader to get derived objects this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDerivedObjectReader( FdoStringsP objectNames ) const;
-
     /// Create a reader to get all views for this owner.
     virtual FdoPtr<FdoSmPhRdViewReader> CreateViewReader() const;
 
@@ -212,9 +194,6 @@ public:
 
 	/// Get reader to retrieve all spatial contexts for a database object.
 	virtual FdoPtr<FdoSmPhRdSpatialContextReader> CreateRdSpatialContextReader( FdoStringP dbObjectName );
-
-	/// Get reader to retrieve all spatial contexts for a list of database objects.
-	virtual FdoPtr<FdoSmPhRdSpatialContextReader> CreateRdSpatialContextReader( FdoStringsP objectNames );
 
     // Create a reader to get all foreign keys (ordered by foreign table) for this owner.
     // Default implementation returns NULL (not supported).
@@ -261,15 +240,6 @@ public:
 
     virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader( FdoStringsP objectNames ) const;
 
-    // Create a reader to get all synonyms for this owner
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader() const;
-
-    // Create a reader to get a particular synonym
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader( FdoStringP synonymName ) const;
-
-    // Create a reader to get all synonyms in the synonymNames collection.
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader( FdoStringsP synonymNames ) const;
-
     // Create a lazy bulk loader for indexes
     virtual FdoPtr<FdoSmPhIndexLoader> CreateIndexLoader(
         FdoSmPhDbObjectsP dbObjects      // candidate dbObject list. Index will be loaded for requested
@@ -292,28 +262,18 @@ public:
         FdoStringP rootObjectName
     );
 
-    /// Create a new synonym. Synonym is not posted to the datastore until its Commit() function
-    /// is called.
-    FdoSmPhSynonymP CreateSynonym(
-        FdoStringP synonymName,
-        FdoSmPhDbObjectP rootObject
-    );
-
     // read and cache all objects for this owner. This function providers the best performance
     // when all objects for the owner need to be accessed.
     //
     // Parameters:
     //  cacheComponents: if true, cache each object's components (primary key, foreign
-    //  keys, indexes). if false, then caching for listing purposes only.
+    //  keys, indexes).
     FdoSmPhDbObjectsP CacheDbObjects( bool cacheComponents );
 
     /// Given a DbObject reader, add its current database object to 
     /// this owner's cache.
     FdoSmPhDbObjectP CacheDbObject(
-        FdoPtr<FdoSmPhRdDbObjectReader> reader,
-        bool bulkFetchComponents = true
-            // false: caching for listing purposes only
-            // true: components will also be cached.
+        FdoPtr<FdoSmPhRdDbObjectReader> reader
     );
 
     /// Remove a database object from the cache.
@@ -330,9 +290,6 @@ public:
 
     // Remove a table or view name from the index fetch candidates list
     void RemoveCandIndex( FdoStringP objectName );
-
-    // Cache the base object for the given synonym along with up to 50 other candidates.
-    void CacheSynonymBases( FdoStringP synonymName );
 
     /// Gather all errors for this element and child elements into a chain of exceptions.
     /// Adds each error as an exception, to the given exception chain and returns
@@ -413,13 +370,6 @@ protected:
         FdoPtr<FdoSmPhRdDbObjectReader> reader
     );
 
-    virtual FdoSmPhDbObjectP NewSynonym(
-        FdoStringP synonymName,
-        FdoSmPhDbObjectP rootObject,
-        FdoSchemaElementState elementState,
-        FdoSmPhRdDbObjectReader* reader
-    );
-
     /// Commit modifications to database objects.
     virtual void CommitChildren( bool isBeforeParent );
 
@@ -453,21 +403,6 @@ protected:
     // Returns the number of object candidates to fetch in one operation (See CacheCandDbObjects). 
     virtual FdoInt32 GetCandFetchSize();
 
-    // Reset all loaders to start at the first cached dbObject when looking for 
-    // candidates to load.
-    void ResetLoaders();
-
-    // Change the fetch components status for the given dbObject
-    void SetBulkFetchComponents( 
-        FdoSmPhDbObjectP dbObject, 
-        bool bulkFetchComponents 
-            // false: This dbObject is being cached for listing purposes only. It can 
-            // be skipped when looking for candidates for lazy loading components
-            // (e.g.: indexes, base objects)
-            // true: This dbObject is being cached for component retrieval as well. It is 
-            // a candidate for lazy loading components. 
-    );
-
 protected:
     // Checks each DbObject in this owner and adds its base object (if any) to 
     // the Candidates list for the base object's owner.
@@ -490,12 +425,6 @@ private:
     void LoadLtLck();
 
     void DoLoadSpatialContexts( FdoStringP dbObjectName );
-
-    // Creates list of dbObjects that are candidates for spatial context loading.
-    // This allows bulk fetching of physical spatial context info when only partially
-    // describing a schema. 
-    // Returned list is empty if the given dbObject is not a candidate.
-    FdoStringsP GetRdScCands( FdoStringP dbObjectName );
 
     // Caches the coordinate systems retrieved by the given reader.
     void LoadCoordinateSystems( FdoPtr<FdoSmPhRdCoordSysReader> rdr );
@@ -534,15 +463,8 @@ private:
     // Any dbobjects with lower index in the cache have already been checked.
     int mNextBaseCandIdx;
 
-    // Current indexes for next dbObject to check for spatial context bulk fetching.
-    // Any dbobjects with lower index in the cache have already been checked.
-    int mNextRdScCandIdx;
-
     // Lazy bulk loader for indexes.
     FdoSmPhIndexLoader* mIndexLoader;
-
-    // Lazy bulk loader for synonyms.
-    FdoSmPhSynonymBaseLoader* mSynonymBaseLoader;
 
     // Cache of spatial contexts
     FdoSmPhSpatialContextsP mSpatialContexts;

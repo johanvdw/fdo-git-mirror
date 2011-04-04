@@ -82,7 +82,7 @@ void WmsTestDescribeSchema::testServer2 ()
 {
     try 
     {
-	    TestServer(L"http://wms.jpl.nasa.gov/wms.cgi", 16);
+	    TestServer(L"http://wms.jpl.nasa.gov/wms.cgi", 21);
     }
     catch (FdoException* e)
     {

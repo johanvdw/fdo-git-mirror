@@ -340,6 +340,7 @@ protected:
     FdoPtr<FdoClassDefinition>      m_fc;
     FdoPtr<FdoIdentifierCollection> m_props;
     StringBuffer m_expr;
+    StringBuffer m_sb;
     bool m_avoidExp;
     char m_useConv[256];
 };

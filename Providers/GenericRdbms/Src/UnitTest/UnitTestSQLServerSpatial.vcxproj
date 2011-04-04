@@ -106,7 +106,6 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/fixed:no %(AdditionalOptions)</AdditionalOptions>
@@ -136,7 +135,6 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/fixed:no %(AdditionalOptions)</AdditionalOptions>
@@ -161,7 +159,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FDONLS.lib;Rdbi.lib;cppunit.lib;FDO.lib;FDOCommon.lib;SQLServerSpatialOverrides.lib;FDOGeometry.lib;gdbi.lib;util.lib;FdoGeneric.lib;SQLServerSpatialProvider.lib;ProvidersCommon.lib;grdschemamgr.lib;rdbmsoverrides.lib;schemamgr_lpnew.lib;schemamgr_phnew.lib;SQLServerSpatialSchemaMgr.lib;schemamgrnew.lib;FDOSpatial.lib;SchemaMgr_OVNew.lib;SQLServerSpatialODBCDriver.lib;longtransactionmanager.lib;geometry_fgf.lib;TestCommon.lib;ExpressionEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -185,7 +182,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FDONLS.lib;Rdbi.lib;cppunit.lib;FDO.lib;FDOCommon.lib;SQLServerSpatialOverrides.lib;FDOGeometry.lib;gdbi.lib;util.lib;FdoGeneric.lib;SQLServerSpatialProvider.lib;ProvidersCommon.lib;grdschemamgr.lib;rdbmsoverrides.lib;schemamgr_lpnew.lib;schemamgr_phnew.lib;SQLServerSpatialSchemaMgr.lib;schemamgrnew.lib;FDOSpatial.lib;SchemaMgr_OVNew.lib;SQLServerSpatialODBCDriver.lib;longtransactionmanager.lib;geometry_fgf.lib;TestCommon.lib;ExpressionEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -716,6 +712,10 @@ echo "delete me please"&gt;$(OutDir)FakeInstall.ilk
     </ProjectReference>
     <ProjectReference Include="..\Util\util.vcxproj">
       <Project>{001b698f-66ff-4486-ad57-53318cf47a4a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="UnitTestSqlServer.vcxproj">
+      <Project>{c99add26-4c4c-4417-adfc-f296bede3b45}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
