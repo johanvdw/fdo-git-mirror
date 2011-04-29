@@ -142,7 +142,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning $(ProjectName).dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -189,7 +189,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning $(ProjectName).dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -219,7 +219,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>FDOCommon.lib;FDOGeometry.lib;Xerces-C_3_1.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FDOCommon.lib;FDOGeometry.lib;Xerces-C_3.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>Lib/Win32/Release;$(FDOTHIRDPARTY)/apache/xerces/build/win32/VC9/Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>
@@ -239,7 +239,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning $(ProjectName).dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -270,7 +270,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>FDOCommon.lib;FDOGeometry.lib;Xerces-C_3_1.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FDOCommon.lib;FDOGeometry.lib;Xerces-C_3.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>Lib/Win64/Release;$(FDOTHIRDPARTY)/apache/xerces/build/Win64/VC9/Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>
@@ -290,7 +290,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning $(ProjectName).dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\SubDoc\Fdo.version" $(OutDir)$(ProjectName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -947,6 +947,10 @@ del y.tab.h
     </ProjectReference>
     <ProjectReference Include="Geometry.vcxproj">
       <Project>{963bd148-9446-4600-bbbc-f37257278d1d}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="Spatial.vcxproj">
+      <Project>{44cabb29-0b72-48e7-8383-db4b040f3731}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

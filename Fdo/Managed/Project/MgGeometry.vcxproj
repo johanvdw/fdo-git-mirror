@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{00D27054-5167-4B39-BD0C-BC5D518E4E95}</ProjectGuid>
     <RootNamespace>MgGeometry</RootNamespace>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
     <ProjectName>OSGeo.FDO.Geometry</ProjectName>
   </PropertyGroup>
@@ -30,25 +30,25 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
     <CLRSupport>true</CLRSupport>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
     <CLRSupport>true</CLRSupport>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
     <CLRSupport>true</CLRSupport>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
     <CLRSupport>true</CLRSupport>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -134,7 +134,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -171,7 +171,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -201,7 +201,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -234,7 +234,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.7.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f"3.5.0.0%FDO_VERSION%" -v"..\Managed\Fdo.version" $(OutDir)OSGeo.FDO.Geometry.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -250,6 +250,14 @@
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="MgCommon.vcxproj">
+      <Project>{abe63099-2e2a-4de7-888b-95bcc247e8ee}</Project>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\OSGeo\Geometry\mgDirectPositionImpl.cpp" />
@@ -349,11 +357,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Src\OSGeo\Geometry\MgGeometry.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="MgCommon.vcxproj">
-      <Project>{abe63099-2e2a-4de7-888b-95bcc247e8ee}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

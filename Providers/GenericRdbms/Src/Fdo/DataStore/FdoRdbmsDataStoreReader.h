@@ -21,9 +21,8 @@
 #ifdef _WIN32
 #pragma once
 #endif
-
 #include <FdoStd.h>
-#include <Fdo/Commands/DataStore/IDataStoreReader.h>
+#include "Fdo/Commands/DataStore/IDataStoreReader.h"
 
 #include <Sm/Ph/SchemaReader.h>
 #include <Sm/Ph/Rd/OwnerReader.h>

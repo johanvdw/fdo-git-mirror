@@ -868,11 +868,11 @@ void MySqlFdoApplySchemaTest::VldClassCapabilities( int ltMode, int lckMode, Fdo
     }
 }
 
-FdoStringP MySqlFdoApplySchemaTest::LogicalPhysicalBend( FdoString* inFile, int hybridLevel )
+FdoStringP MySqlFdoApplySchemaTest::LogicalPhysicalBend( FdoString* inFile )
 {
     FdoStringP outFile = UnitTestUtil::GetOutputFileName( inFile );
 
-    _logicalPhysicalBend( inFile, outFile, L"MySql", hybridLevel );
+    _logicalPhysicalBend( inFile, outFile, L"MySql" );
 
     return outFile;
 }

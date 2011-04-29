@@ -39,8 +39,7 @@ FdoSmPhDbObject::FdoSmPhDbObject(
 ) : 
     FdoSmPhDbElement(name, (FdoSmPhMgr*) NULL, pOwner, elementState ),
     mLtMode(NoLtLock),
-    mLockingMode(NoLtLock),
-    mBulkFetchComponents(false)
+    mLockingMode(NoLtLock)
 {
 }
 
@@ -949,19 +948,15 @@ void FdoSmPhDbObject::CacheColumns( FdoSmPhRdColumnReaderP rdr )
 
 void FdoSmPhDbObject::CacheBaseObjects( FdoSmPhRdBaseObjectReaderP rdr )
 {
-    FdoSmPhTableComponentReaderP groupReader = NewTableBaseReader(
-        rdr
-    );
-
+    // Do nothing if base objects already loaded
 	if ( !mBaseObjects ) {
 		mBaseObjects = new FdoSmPhBaseObjectCollection( this );
 
+        FdoSmPhTableComponentReaderP groupReader = NewTableBaseReader(
+            rdr
+        );
+
         LoadBaseObjects( groupReader );
-    }
-    else
-    {
-        // Base objects already loaded, just skip ones in reader.
-        LoadBaseObjects( groupReader, true );
     }
 }
 
@@ -1424,16 +1419,6 @@ bool FdoSmPhDbObject::ColumnsLoaded()
 bool FdoSmPhDbObject::IndexesLoaded()
 {
     return (mIndexes != NULL);
-}
-
-bool FdoSmPhDbObject::GetBulkFetchComponents()
-{
-    return mBulkFetchComponents;
-}
-
-void FdoSmPhDbObject::SetBulkFetchComponents(bool bulkFetchComponents)
-{
-    mBulkFetchComponents = bulkFetchComponents;
 }
 
 void FdoSmPhDbObject::LoadFkeys(void)

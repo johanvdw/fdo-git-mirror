@@ -89,11 +89,6 @@ typedef struct bindname_map_def {
 	int		is_filled;						/* Is this bindame map element assigned */
 } bindname_map;
 
-typedef struct geom_srid_map_def {
-	int		            position; 						/* position of the bind variable	*/
-	int		            geom_srid_value;				/* srid value for the gem veriable */
-    geom_srid_map_def*  next;
-} geom_srid_map;
 
 typedef struct cursor_def {					/* Statement linked list		*/
     union
@@ -119,9 +114,6 @@ typedef struct cursor_def {					/* Statement linked list		*/
 
     PBYTE               odbcdr_blob_tmp;    /* define a working area for fething geoms as Blobs*/
     int                 odbcdr_blob_tmp_size;
-    void*               odbcdr_geom_handle;
-    geom_srid_map*      geom_srid_maping;
-    long                geom_version_value;
 
 } odbcdr_cursor_def;
 

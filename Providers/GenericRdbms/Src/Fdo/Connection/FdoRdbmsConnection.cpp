@@ -1019,8 +1019,3 @@ bool FdoRdbmsConnection::NeedsSecondaryFiltering( FdoRdbmsSpatialSecondaryFilter
 {
 	return ( filter->GetOperation() != FdoSpatialOperations_EnvelopeIntersects );
 }
-
-FdoInt32 FdoRdbmsConnection::ExecuteDdlNonQuery(FdoString* sql)
-{
-    return GetDbiConnection()->GetGdbiConnection()->ExecuteNonQuery(sql);
-}

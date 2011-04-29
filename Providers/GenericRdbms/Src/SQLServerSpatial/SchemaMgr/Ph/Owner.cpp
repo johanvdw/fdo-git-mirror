@@ -20,7 +20,6 @@
 #include "Owner.h"
 #include "Table.h"
 #include "View.h"
-#include "Synonym.h"
 #include "Mgr.h"
 #include "Rd/DbObjectReader.h"
 #include "Rd/BaseObjectReader.h"
@@ -29,7 +28,6 @@
 #include "Rd/FkeyReader.h"
 #include "Rd/IndexReader.h"
 #include "Rd/PkeyReader.h"
-#include "Rd/SynonymReader.h"
 #include "Rd/SpatialContextReader.h"
 #include "Rd/CoordSysReader.h"
 #include "Rd/DbSchemaReader.h"
@@ -232,16 +230,6 @@ FdoSmPhDbObjectP FdoSmPhSqsOwner::NewView(
     return new FdoSmPhSqsView(viewName, rootDatabase, rootOwner, rootObjectName, this, elementState, reader);
 }
 
-FdoSmPhDbObjectP FdoSmPhSqsOwner::NewSynonym(
-    FdoStringP synonymName,
-    FdoSmPhDbObjectP rootObject,
-    FdoSchemaElementState elementState,
-    FdoSmPhRdDbObjectReader* reader
-)
-{
-    return new FdoSmPhSqsSynonym(synonymName, rootObject, this, elementState, reader);
-}
-
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoStringP dbObject) const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
@@ -254,20 +242,6 @@ FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoString
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
     return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringP objectName ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectName, true  );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames, true );
 }
 
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoSmPhRdTableJoinP join ) const
@@ -324,22 +298,7 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader() const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
-    return new FdoSmPhRdSqsFkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdSqsFkeyReader* reader = NULL;
-    reader = new FdoSmPhRdSqsFkeyReader(
-        thisOwner,
-        objectNames
-        );
-
-    return reader;
+    return new FdoSmPhRdSqsFkeyReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhSqsOwner::CreateIndexReader() const
@@ -410,27 +369,6 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhSqsOwner::CreateColumnReader( FdoSmPhRdTabl
     return new FdoSmPhRdSqsColumnReader( FDO_SAFE_ADDREF(pOwner), join );
 }
 
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader() const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringP synonymName) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymName );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringsP synonymNames) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymNames );
-}
-
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader()
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this) );
@@ -439,11 +377,6 @@ FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextRea
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringP dbObjectName )
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), dbObjectName );
-}
-
-FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringsP objectNames )
-{
-    return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), objectNames );
 }
 
 FdoSmPhRdCoordSysReaderP FdoSmPhSqsOwner::CreateCoordSysReader( FdoInt64 srid ) const
@@ -481,31 +414,28 @@ bool FdoSmPhSqsOwner::Add()
     gdbiCommands->tran_end( "SmPreCreateDatabase" );
 
 	int autoCmtMode = gdbiCommands->autocommit_mode();
-	if (autoCmtMode == 0) //SQL_AUTOCOMMIT_OFF
+	if (autoCmtMode == 1) //SQL_AUTOCOMMIT_ON 
 	{
-        // we need it SQL_AUTOCOMMIT_ON with the new driver
-        gdbiCommands->autocommit_on();
+		gdbiCommands->autocommit_off();
 		autoCmtChanged = true;
 	}
     // Wrap the database create in a transaction.
     gdbiCommands->tran_begin( "SmCreateDatabase" );
     try {
-        gdbiConn->ExecuteNonQuery((FdoString*) sqlStmt, true);
+        gdbiConn->ExecuteNonQuery( (FdoString*) sqlStmt );
     }
     catch ( ... ) {
         try {
             gdbiCommands->tran_end( "SmCreateDatabase" );
 			if (autoCmtChanged)
-				gdbiCommands->autocommit_off();
+				gdbiCommands->autocommit_on();
         }
-        catch (FdoException *ex) { ex->Release(); }
-        catch ( ... ) {}            
-
+        catch ( ... ) {        
+        }
+    
         throw;
     }
     gdbiCommands->tran_end( "SmCreateDatabase" );
-    if (autoCmtChanged)
-	    gdbiCommands->autocommit_off();
 
     if ( GetHasMetaSchema() ) {
         FdoStringsP keywords = FdoStringCollection::Create();
@@ -714,6 +644,34 @@ void FdoSmPhSqsOwner::CreateMetaClass()
 			L"SYSTEM_USER,%ls,0,0)",
 			(FdoString *) GetManager()->FormatSQLVal(NlsMsgGet(FDORDBMS_503, "Bounding box for the feature"), FdoSmPhColType_String));
 	gdbiConn->ExecuteNonQuery( (const char*) sql_stmt);
+}
+
+void FdoSmPhSqsOwner::LoadSpatialContexts( FdoStringP dbObjectName )
+{
+    bool loadFkeys = GetBulkLoadFkeys();
+
+    // Temporary Hack: In SQLServerSpatial, loading spatial contexts triggers object
+    // loads when a spatial context is associated with a geometry column in a view.
+    // The base table for each view is also loaded, which brings in foreign keys
+    // if foreign key bulk loading is turned on.
+    // If Foreign Keys are also loaded, this can be expensive. For now, turn off
+    // foreign key loading and reset it after spatial contexts have been loaded.
+    //
+    // The next step will be to tune foreign key retrieval enough to make this 
+    // hack unnecessary.
+
+    try
+    {
+        SetBulkLoadFkeys(false);
+        FdoSmPhOwner::LoadSpatialContexts(dbObjectName);
+    }
+    catch ( ... )
+    {
+        SetBulkLoadFkeys(loadFkeys);
+        throw;
+    }
+
+    SetBulkLoadFkeys(loadFkeys);
 }
 
 void FdoSmPhSqsOwner::LoadSchemas()

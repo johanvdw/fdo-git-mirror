@@ -109,9 +109,6 @@ void FdoInsertTest::MainInsertTest (FdoIConnection *conn)
 
         try
         {
-            UnitTestUtil::CreateAcadSchema(connection);
-            UnitTestUtil::CreateLandSchema(connection);
-
             static double       coordsBuffer[400];
             int                 nRetCode = 0;
             int                 i;

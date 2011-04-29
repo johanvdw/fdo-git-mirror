@@ -198,11 +198,6 @@ FdoConnectionState FdoWfsConnection::Open ()
     FdoStringP mFeatureServer = dictionary->GetProperty (FdoWfsGlobals::FeatureServer);
     FdoStringP mUserName = dictionary->GetProperty (FdoWfsGlobals::Username);
     FdoStringP mPassword = dictionary->GetProperty (FdoWfsGlobals::Password);
-
-    FdoStringP proxyHost = dictionary->GetProperty (FdoWfsGlobals::ProxyServer);
-    FdoStringP proxyPort = dictionary->GetProperty (FdoWfsGlobals::ProxyPort);
-    FdoStringP proxyUser = dictionary->GetProperty (FdoWfsGlobals::ProxyUsername);
-    FdoStringP proxyPassword = dictionary->GetProperty (FdoWfsGlobals::ProxyPassword);
     
     if (0 == mFeatureServer.GetLength()) 
     {
@@ -222,7 +217,7 @@ FdoConnectionState FdoWfsConnection::Open ()
 	FdoStringP version = _getRequestWFSVersion(mFeatureServer);
 
     // set up the WFS delegate
-    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword, proxyHost, proxyPort, proxyUser, proxyPassword);
+    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword);
 
     // try to get the service metadata
     mServiceMetadata = mDelegate->GetCapabilities(version);

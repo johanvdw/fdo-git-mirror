@@ -755,6 +755,11 @@ SymbolicName=FDORDBMS_122
 Language=English
 Cannot create sequence %1$ls.%2$ls, an object of that name already exists.
 .
+MessageId=2328
+SymbolicName=FDORDBMS_123
+Language=English
+Cannot create synonym %1$ls.%2$ls, an object of that name already exists.
+.
 MessageId=2329
 SymbolicName=FDORDBMS_124
 Language=English
@@ -774,6 +779,16 @@ MessageId=2332
 SymbolicName=FDORDBMS_127
 Language=English
 Error in sequence for property '%1$ls': cannot create synonym for non-existent foreign sequence %2$ls.
+.
+MessageId=2333
+SymbolicName=FDORDBMS_128
+Language=English
+Error creating synonym '%1$ls': referenced database object not specified.
+.
+MessageId=2334
+SymbolicName=FDORDBMS_129
+Language=English
+Error loading synonym '%1$ls': cannot change referenced database object.
 .
 MessageId=2335
 SymbolicName=FDORDBMS_130
@@ -1989,24 +2004,4 @@ MessageId=2771
 SymbolicName=FDORDBMS_546
 Language=English
 OSGeo.SQLServerSpatial provider cannot perform spatial handling on server with version older than 10.0.
-.
-MessageId=2772
-SymbolicName=FDORDBMS_547
-Language=English
-The given stream offset '%1$d' is negative.
-.
-MessageId=2773
-SymbolicName=FDORDBMS_548
-Language=English
-The given stream offset '%1$d' is too large.
-.
-MessageId=2774
-SymbolicName=FDORDBMS_549
-Language=English
-The count '%1$d' is invalid. It must be either positive or -1 to read the entire stream.
-.
-MessageId=2775
-SymbolicName=FDORDBMS_550
-Language=English
-Buffer required argument was set to NULL.
 .
