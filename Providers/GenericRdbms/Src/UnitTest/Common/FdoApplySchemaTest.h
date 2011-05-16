@@ -82,10 +82,6 @@ protected:
 */
 	void ModOverrideSchema1( FdoIConnection* connection, FdoRdbmsOvPhysicalSchemaMapping* pOverrides = NULL );
 	void ModOverrideSchema2( FdoIConnection* connection, FdoRdbmsOvPhysicalSchemaMapping* pOverrides = NULL );
-	
-    // Tests defect 1296122 scenario (update description on data property with override 
-    // leads to finalization before update).
-    void ModOverrideSchema3( FdoIConnection* connection, FdoRdbmsOvPhysicalSchemaMapping* pOverrides = NULL );
 	void ModOverrideSchemaForeign( FdoFeatureSchema* pSchema, FdoRdbmsOvPhysicalSchemaMapping* pOverrides = NULL );
 	void ModOverrideSchemaForeign2( FdoIConnection* connection, FdoRdbmsOvPhysicalSchemaMapping* pOverrides = NULL );
 	void ModElectricSchema( FdoIConnection* connection, bool hasMetaSchema = true  );
@@ -107,16 +103,13 @@ protected:
 /*
 	void GetJoinTree( FdoRdbmsSchemaManager* sm );
 */
-    virtual void GetClassCapabilities( FdoIConnection* connection, FdoString* schema, FdoStringCollection* classes);
+    virtual void GetClassCapabilities( FdoIConnection* connection );
     void CheckBaseProperties( FdoIConnection* connection );
     void CheckNonNumericForeignClass( FdoIConnection* connection );
 
     void CopySchemas( 
         FdoFeatureSchemaCollection* pSchemas,
         FdoFeatureSchemaCollection* pSchemas2
-    );
-
-    void DescribePartialMetaSchema(
     );
 
     void CreateOverrideValueProperty( 
@@ -191,14 +184,6 @@ protected:
 
     virtual bool CanDropCol();
 
-    virtual bool SupportsCrossDatastoreDependencies() {return true;};
-
-    virtual bool SupportsPartialMetaSchema() {return true;};
-
-    virtual bool HasPhysicalSpatialContexts() {return true;};
-
-    virtual bool DelayNLSSchema() {return true;};
-
     virtual FdoStringP SchemaTestErrFile( int fileNum, bool isMaster );
 
     virtual FdoStringP SchemaNoMetaErrFile( int fileNum, bool isMaster );
@@ -210,10 +195,6 @@ protected:
 	virtual bool CreateGeometrySICol();
 
 	virtual FdoStringP GetValueColumnName();
-
-	virtual FdoStringP GetParcelFirstName();
-	virtual FdoStringP GetParcelLastName();
-    virtual FdoStringP GetDefaultSchemaName();
 
     void WriteXmlOverrides(
         FdoIConnection* connection,
@@ -232,9 +213,9 @@ protected:
     void InsertObject( FdoIConnection* connection, bool conditional, FdoStringP schemaName, FdoString* className, ... );
     void DeleteObjects( FdoIConnection* connection, FdoStringP schemaName, FdoStringP className );
 
-    void _logicalPhysicalBend( FdoString* inFile, FdoString* outFile, FdoStringP providerName, int hybridLevel );
+    void _logicalPhysicalBend( FdoString* inFile, FdoString* outFile, FdoStringP providerName );
     void _logicalPhysicalFormat( FdoString* inFile, FdoString* outFile, FdoStringP providerName );
-    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile, int hybridLevel = 0 );
+    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile );
     virtual FdoStringP LogicalPhysicalFormat( FdoString* inFile );
 
     FdoPtr<FdoFeatureSchema> GetDefaultSchema( FdoIConnection* connection );

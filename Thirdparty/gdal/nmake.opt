@@ -1,4 +1,4 @@
-# $Id: nmake.opt 18515 2010-01-10 19:59:11Z rouault $
+# $Id: nmake.opt 15884 2008-12-03 00:15:42Z warmerdam $
 #
 # nmake.opt - main configuration file for NMAKE makefiles.
 #
@@ -117,7 +117,7 @@ WIN64=YES
 STDCALL=YES
 
 # Version number embedded in DLL name. 
-VERSION =	17
+VERSION =	16
 
 # Comment the following out if you want PAM supported disabled
 # by default.  
@@ -129,14 +129,14 @@ DLLBUILD=1
 
 # Enable all OGR formats, or only raster formats?  Comment out to disable
 # vector formats. 
-INCLUDE_OGR_FRMTS = YES
+INCLUDE_OGR_FRMTS=YES
 
 # Location of Visual C++ directory (only required for following SETARGV stuff)
-VCDIR   = 	"D:\Software\VStudio\VC98"
+VCDIR   = 	D:\Software\VStudio\VC98
 
 # Enable the following if VCDIR set properly, and you want the utility
 # programs to be able to expand wildcards. 
-#SETARGV =	$(VCDIR)\lib\setargv.obj
+#SETARGV =	"$(VCDIR)\lib\setargv.obj"
 
 # Comment out the following to disable BSB support.
 BSB_SUPPORTED = 1
@@ -146,9 +146,6 @@ ODBC_SUPPORTED = 1
 
 # Comment out the following to disable JPEG support.
 JPEG_SUPPORTED = 1
-
-# This will enable 12bit libjpeg - use only with internal jpeg builds.
-JPEG12_SUPPORTED = 1
 
 #if using an external jpeg library uncomment the follwing lines
 #JPEG_EXTERNAL_LIB = 1
@@ -188,12 +185,12 @@ JPEG12_SUPPORTED = 1
 #OGDILIB =	$(OGDIDIR)\lib\$(TARGET)\ogdi$(OGDIVER).lib \
 #		$(OGDIDIR)\lib\$(TARGET)\zlib_ogdi$(OGDIVER).lib
 
-# Uncomment for Expat support (required for KML, GPX and GeoRSS read support).
+# Uncomment for Expat support (required for KML and GPX read support).
 #EXPAT_DIR = "C:\Program Files\Expat 2.0.1"
 #EXPAT_INCLUDE = -I$(EXPAT_DIR)/source/lib
 #EXPAT_LIB = $(EXPAT_DIR)/bin/libexpat.lib
 
-# Uncomment for Xerces based GML and ILI support.
+# Uncomment for Xerces based GML support.
 #XERCES_DIR =	c:\warmerda\supportlibs\xerces-c_2_6_0
 #XERCES_INCLUDE = -I$(XERCES_DIR)/include -I$(XERCES_DIR)/include/xercesc
 #XERCES_LIB = $(XERCES_DIR)/lib/xerces-c_2.lib
@@ -214,10 +211,8 @@ JPEG12_SUPPORTED = 1
 # of JasPer from ftp://ftp.remotesensing.org/gdal/
 #JASPER_INCLUDE = $(JASPER_INCLUDE) -DHAVE_JASPER_UUID
 
-# Uncommment and adjust paths if you have Kakadu 6.0 or newer
-#KAKDIR = 	\warmerda\pkg\kakadu-6.2.1
-#KAKLIB =	$(KAKDIR)\lib_x86\kdu_v62R.lib
-#KAKSRC =	$(KAKDIR)\vt_2_1-00256N
+# Uncommment if you have Kakadu 4.0 or newer
+#KAKDIR =	D:\warmerda\jp2\kakadu
 
 # Uncomment the following and update to enable NCSA HDF Release 4 support.
 #HDF4_PLUGIN = NO
@@ -248,15 +243,6 @@ JPEG12_SUPPORTED = 1
 # Enable the following if you prefer to build MrSID support as a plugin.
 #MRSID_PLUGIN = YES
 
-# PCIDSK Libraries - default configuration uses internal implementation
-PCIDSK_SETTING=INTERNAL
-# Replace with these to use an external build.
-#PCIDSK_SETTING=EXTERNAL
-#PCIDSK_INCLUDE=-I\warmerda\pcidsk\src
-#PCIDSK_LIB=\warmerda\pcidsk\src\pcidsk.lib
-# Use the following alternative to use the old PCIDSK implementation
-#PCIDSK_SETTING=OLD
-
 # PostGIS Libraries
 #PG_INC_DIR = n:\pkg\libpq_win32\include
 #PG_LIB = n:\pkg\libpq_win32\lib\libpqdll.lib wsock32.lib
@@ -269,9 +255,6 @@ PCIDSK_SETTING=INTERNAL
 # SQLite Libraries
 #SQLITE_INC=-IN:\pkg\sqlite-win32
 #SQLITE_LIB=N:\pkg\sqlite-win32\sqlite3_i.lib
-# For spatialite support, try this instead (assuming you grab the libspatialite-amalgamation-2.3.1 and installed it in osgeo4w):
-#SQLITE_INC=-IC:\osgeo4w\include -DHAVE_SPATIALITE
-#SQLITE_LIB=C:\osgeo4w\lib\spatialite_i.lib
 
 # Informix Data Blade
 #INFORMIXDIR="C:\Program Files\IBM\Informix\Client-SDK"
@@ -289,11 +272,11 @@ PCIDSK_SETTING=INTERNAL
 #FITS_LIB =	c:\dev32\usr\lib\cfitsio.lib
 
 # Comment out to disable GRIB support.
-GRIB_SETTING=yes
+GRIB_SETTING=YES
 
 # Uncomment the following to enable NetCDF format.
 #NETCDF_PLUGIN = NO
-#NETCDF_SETTING=yes
+#NETCDF_SETTING=YES
 #NETCDF_LIB=C:\Software\netcdf\lib\netcdf.lib
 #NETCDF_INC_DIR=C:\Software\netcdf\include
 # PROJ.4 stuff
@@ -309,11 +292,11 @@ GRIB_SETTING=yes
 # Uncomment the following if you prefer to build OCI support as a plugin.
 #OCI_PLUGIN = YES
 
-!IFDEF ORACLE_HOME
-OCI_LIB =	$(ORACLE_HOME)\oci\lib\msvc\ociw32.lib \
-		$(ORACLE_HOME)\oci\lib\msvc\oci.lib
-OCI_INCLUDE =	-I$(ORACLE_HOME)\oci\include
-!ENDIF
+#!IFDEF ORACLE_HOME
+#OCI_LIB =	$(ORACLE_HOME)\oci\lib\msvc\ociw32.lib \
+#		$(ORACLE_HOME)\oci\lib\msvc\oci.lib
+#OCI_INCLUDE =	-I$(ORACLE_HOME)\oci\include
+#!ENDIF
 
 #SDE_ENABLED = YES
 #SDE_VERSION=91
@@ -336,8 +319,6 @@ OCI_INCLUDE =	-I$(ORACLE_HOME)\oci\include
 # Uncomment for DODS / OPeNDAP support
 #DODS_DIR = C:\libdap3.6.2
 #DODS_LIB = $(DODSDIR)\lib\libdapMD.lib
-# Uncomment for libdap >= 3.9
-#DODS_FLAGS = -DLIBDAP_39
 
 # Uncomment for GEOS support
 #GEOS_DIR=C:/warmerda/geos
@@ -365,19 +346,15 @@ INC	=	-I$(GDAL_ROOT)\port -I$(GDAL_ROOT)\ogr -I$(GDAL_ROOT)\gcore \
 		-I$(GDAL_ROOT)\alg -I$(GDAL_ROOT)\ogr\ogrsf_frmts
 
 !IFDEF MSVC_VLD_DIR
-MSVC_VLD_FLAGS=-DMSVC_USE_VLD=1 -I$(MSVC_VLD_DIR)\include
+MSVC_VLD_FLAGS=-DMSVC_USE_VLD -I$(MSVC_VLD_DIR)\include
 MSVC_VLD_LIB=/LIBPATH:$(MSVC_VLD_DIR)/lib
-!ENDIF
-
-!IFDEF INCLUDE_OGR_FRMTS
-OGR_FLAG = -DOGR_ENABLED
 !ENDIF
 
 #LINKER_FLAGS =	/NODEFAULTLIB:LIBC 
 LINKER_FLAGS = $(MSVC_VLD_LIB) $(LDEBUG)
 
 
-CFLAGS	=	$(OPTFLAGS) $(INC) $(EXTRAFLAGS) $(OGR_FLAG) $(MSVC_VLD_FLAGS)
+CFLAGS	=	$(OPTFLAGS) $(INC) $(EXTRAFLAGS) $(MSVC_VLD_FLAGS)
 MAKE	=	nmake /nologo
 
 CC	=	cl
@@ -453,13 +430,12 @@ HDF5_LIB_LINK =
 SYM_PREFIX=_
 !ENDIF
 
-EXTERNAL_LIBS =	$(OGDILIB) $(XERCES_LIB) $(EXPAT_LIB) $(OCI_LIB) $(PG_LIB) \
-	$(ECW_LIB_LINK) $(HDF4_LIB_LINK) $(FME_LIB) $(MRSID_LIB_LINK) \
-	$(FITS_LIB_LINK) $(JPEG_LIB) $(NETCDF_LIB_LINK) $(PROJ4_LIB) \
-	$(GEOTIFF_LIB) $(TIFF_LIB) $(PROJ_LIBRARY) $(SQLITE_LIB) \
-	$(MYSQL_LIB) $(GEOS_LIB) $(HDF5_LIB_LINK) $(SDE_LIB) $(DWG_LIB) \
-	$(IDB_LIB) $(CURL_LIB) $(DODS_LIB) $(KAKLIB) $(PCIDSK_LIB) \
-	$(ODBCLIB) $(JASPER_LIB) $(PNG_LIB) $(ADD_LIBS) 
+EXTERNAL_LIBS =	$(OGDILIB) $(XERCES_LIB) $(EXPAT_LIB) $(OCI_LIB) $(PG_LIB) $(ODBCLIB) \
+		$(ECW_LIB_LINK) $(HDF4_LIB_LINK) $(FME_LIB) $(JASPER_LIB) $(MRSID_LIB_LINK) \
+		$(FITS_LIB_LINK) $(JPEG_LIB) $(PNG_LIB) $(NETCDF_LIB_LINK) $(PROJ4_LIB) \
+		$(GEOTIFF_LIB) $(TIFF_LIB) $(PROJ_LIBRARY) $(SQLITE_LIB) \
+		$(MYSQL_LIB) $(GEOS_LIB) $(HDF5_LIB_LINK) $(SDE_LIB) $(DWG_LIB) \
+		$(IDB_LIB) $(CURL_LIB) $(DODS_LIB) $(ADD_LIBS)
 		
 .c.obj:	
 	$(CC) $(CFLAGS) /c $*.c

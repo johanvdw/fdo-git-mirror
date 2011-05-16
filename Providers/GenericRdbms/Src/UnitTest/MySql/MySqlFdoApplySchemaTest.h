@@ -28,26 +28,11 @@ class MySqlFdoApplySchemaTest : public FdoApplySchemaTest
 {
 public:
     CPPUNIT_TEST_SUB_SUITE (MySqlFdoApplySchemaTest, FdoApplySchemaTest);
-    CPPUNIT_TEST( TestCharSize );
     CPPUNIT_TEST_SUITE_END ();
 	
 public:
 	void  set_provider();
 	
-    void TestCharSize();
-
-    void TestCharSize_AddToExpected(
-        FdoDictionaryP expected, 
-        FdoString* key,
-        FdoString* value
-    );
-
-    void TestCharSize_Validate(
-        FdoDictionaryP expected,
-        FdoFeatureSchemaP schema, 
-        FdoSmPhOwnerP owner
-    );
-
     // Helper methods for overrides tests; overriden by each provider:
    	virtual FdoRdbmsOvPhysicalSchemaMapping* CreateOverrideDefaults( FdoIConnection* connection, int passNum );
     virtual void CreateRdbmsSpecificElements(FdoIConnection* connection, FdoString* wDatastore);
@@ -57,18 +42,8 @@ public:
     virtual void VldClassCapabilities( int ltMode, int lckMode, FdoClassDefinition* pClass );
 
     virtual FdoStringP SchemaTestErrFile( int fileNum, bool isMaster );
-    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile, int hybridLevel = 0 );
+    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile );
     virtual FdoStringP LogicalPhysicalFormat( FdoString* inFile );
-
-  	virtual FdoStringP GetParcelFirstName();
-	virtual FdoStringP GetParcelLastName();
-
-    virtual bool DelayNLSSchema() {return false;};
-
-    virtual bool HasPhysicalSpatialContexts() {return false;};
-
-    static FdoString*      DB_NAME_CHARSIZE_SUFFIX;
-
 };
 
 

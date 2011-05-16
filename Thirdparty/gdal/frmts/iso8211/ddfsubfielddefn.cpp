@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfsubfielddefn.cpp 17405 2009-07-17 06:13:24Z chaitanya $
+ * $Id: ddfsubfielddefn.cpp 15632 2008-10-28 17:33:19Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFSubfieldDefn class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfsubfielddefn.cpp 17405 2009-07-17 06:13:24Z chaitanya $");
+CPL_CVSID("$Id: ddfsubfielddefn.cpp 15632 2008-10-28 17:33:19Z warmerdam $");
 
 /************************************************************************/
 /*                          DDFSubfieldDefn()                           */
@@ -903,7 +903,7 @@ int DDFSubfieldDefn::FormatIntValue( char *pachData, int nBytesAvailable,
                 else
                     iOut = i;
 
-                pachData[iOut] = (char)((nNewValue & nMask) >> (i*8));
+                pachData[iOut] = (nNewValue & nMask) >> (i*8);
                 nMask *= 256;
             }
             break;

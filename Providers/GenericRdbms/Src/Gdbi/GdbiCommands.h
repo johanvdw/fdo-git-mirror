@@ -221,9 +221,7 @@ public:
 
 	int err_stat();
 
-	bool SupportsUnicode() { 
-        return (m_pRdbiContext->dispatch.capabilities.supports_unicode == 1); 
-    }
+	bool SupportsUnicode() { return (m_pRdbiContext->dispatch.capabilities.supports_unicode == 1); }
 	bool SupportsInt64Binding() { return (m_pRdbiContext->dispatch.capabilities.supports_int64_binding == 1); }
 
 
@@ -251,11 +249,6 @@ public:
 			int				sqlid,
 			char			*geom_col_name,
 			long			srid );
-
-	int geom_version_set(
-			int				sqlid,
-			char			*geom_col_name,
-			long			version );
 };
 
 #endif // _GDBICOMMANDS_

@@ -1,51 +1,33 @@
-#########################################################################
-# $Id: Makefile.m32,v 1.50 2009-04-09 02:50:09 gknauf Exp $
+#############################################################
+# $Id: Makefile.m32,v 1.27 2007-07-04 13:45:46 gknauf Exp $
 #
-## Makefile for building curl.exe with MingW32 (GCC-3.2 or later)
-## and optionally OpenSSL (0.9.8), libssh2 (1.1), zlib (1.2.3)
+## Makefile for building curl.exe with MingW32 (GCC-3.2) and
+## optionally OpenSSL (0.9.8)
 ##
-## Usage:
-## mingw32-make -f Makefile.m32 [SSL=1] [SSH2=1] [ZLIB=1] [IDN=1] [SSPI=1] [IPV6=1] [LDAPS=1] [DYN=1]
-##
-## Hint: you can also set environment vars to control the build, f.e.:
-## set ZLIB_PATH=c:/zlib-1.2.3
-## set ZLIB=1
+## Use: make -f Makefile.m32 [SSL=1] [SSH2=1] [DYN=1]
 ##
 ## Comments to: Troy Engel <tengel@sonic.net> or
 ##              Joern Hartroth <hartroth@acm.org>
-#########################################################################
 
-# Edit the path below to point to the base of your Zlib sources.
+ifndef OPENSSL_PATH
+OPENSSL_PATH = ../../openssl-0.9.8d
+endif
+ifndef LIBSSH2_PATH
+LIBSSH2_PATH = ../../libssh2-0.14
+endif
 ifndef ZLIB_PATH
 ZLIB_PATH = ../../zlib-1.2.3
-endif
-# Edit the path below to point to the base of your OpenSSL package.
-ifndef OPENSSL_PATH
-OPENSSL_PATH = ../../openssl-0.9.8k
-endif
-# Edit the path below to point to the base of your LibSSH2 package.
-ifndef LIBSSH2_PATH
-LIBSSH2_PATH = ../../libssh2-1.1
-endif
-# Edit the path below to point to the base of your libidn package.
-ifndef LIBIDN_PATH
-LIBIDN_PATH = ../../libidn-1.13
-endif
-# Edit the path below to point to the base of your Novell LDAP NDK.
-ifndef LDAP_SDK
-LDAP_SDK = c:/novell/ndk/cldapsdk/win32
 endif
 
 ARES_LIB = ../ares
 
 CC = gcc
 CFLAGS = -g -O2
-# comment LDFLAGS below to keep debug info
-LDFLAGS = -s
+LDFLAGS =
 RC = windres
 RCFLAGS = --include-dir=../include -O COFF -i
-RM = del /q /f > NUL 2>&1
-CP = copy
+RM = rm -f
+STRIP = strip -s
 
 # We may need these someday
 # PERL = perl
@@ -54,7 +36,8 @@ CP = copy
 ########################################################
 ## Nothing more to do below this line!
 
-INCLUDES = -I. -I.. -I../include -I../lib
+INCLUDES = -I. -I.. -I../include -I../lib -I$(ZLIB_PATH)
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS) -o $@
 
 curl_PROGRAMS = curl.exe
@@ -64,12 +47,9 @@ ifdef DYN
 else
   curl_DEPENDENCIES = ../lib/libcurl.a
   curl_LDADD = -L../lib -lcurl
-  CFLAGS += -DCURL_STATICLIB
+  COMPILE += -DCURL_STATICLIB
 endif
 ifdef ARES
-  ifndef DYN
-    curl_DEPENDENCIES += $(ARES_LIB)/libcares.a
-  endif
   CFLAGS += -DUSE_ARES
   curl_LDADD += -L$(ARES_LIB) -lcares
 endif
@@ -81,83 +61,49 @@ ifdef SSL
   CFLAGS += -DUSE_SSLEAY -DHAVE_OPENSSL_ENGINE_H
   curl_LDADD += -L$(OPENSSL_PATH)/out -leay32 -lssl32
 endif
-ifdef ZLIB
-  INCLUDES += -I"$(ZLIB_PATH)"
-  CFLAGS += -DHAVE_LIBZ -DHAVE_ZLIB_H
-  curl_LDADD += -L$(ZLIB_PATH) -lz
-endif
-ifdef IDN
-  INCLUDES += -I"$(LIBIDN_PATH)/include"
-  CFLAGS += -DUSE_LIBIDN
-  curl_LDADD += -L$(LIBIDN_PATH)/lib -lidn
-endif
 ifdef SSPI
   CFLAGS += -DUSE_WINDOWS_SSPI
 endif
 ifdef IPV6
   CFLAGS += -DENABLE_IPV6
 endif
-ifdef LDAPS
-  CFLAGS += -DHAVE_LDAP_SSL
-endif
-ifdef USE_LDAP_NOVELL
-  CFLAGS += -DCURL_HAS_NOVELL_LDAPSDK
-  curl_LDADD += -L"$(LDAP_SDK)/lib/mscvc" -lldapsdk -lldapssl -lldapx
-endif
-ifdef USE_LDAP_OPENLDAP
-  CFLAGS += -DCURL_HAS_OPENLDAP_LDAPSDK
-  curl_LDADD += -L"$(LDAP_SDK)/lib" -lldap -llber
-endif
-ifndef USE_LDAP_NOVELL
-ifndef USE_LDAP_OPENLDAP
-curl_LDADD += -lwldap32
-endif
-endif
-curl_LDADD += -lws2_32
-COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
+curl_LDADD += -lwsock32 -lws2_32 -lwinmm -L$(ZLIB_PATH) -lz
 
 # Makefile.inc provides the CSOURCES and HHEADERS defines
 include Makefile.inc
 
 curl_OBJECTS := $(patsubst %.c,%.o,$(strip $(CURL_SOURCES)))
-ifdef DYN
-curlx_OBJECTS := $(patsubst %.c,%.o,$(notdir $(strip $(CURLX_ONES))))
-curl_OBJECTS += $(curlx_OBJECTS)
-vpath %.c ../lib
-endif
-
-RESOURCE = curl.res
+# curlx_OBJECTS := $(patsubst %.c,%.o,$(notdir $(strip $(CURLX_ONES))))
+# vpath %.c ../lib
 
 .SUFFIXES: .rc .res
 
 all: curl.exe
 
-curl.exe: $(RESOURCE) $(curl_OBJECTS) $(curl_DEPENDENCIES)
-	-$(RM) $@
+curl.exe: curl.res $(curl_OBJECTS) $(curl_DEPENDENCIES)
+	$(RM) $@
 	$(LINK) $< $(curl_OBJECTS) $(curl_LDADD)
+	$(STRIP) $@
 
 # We don't have nroff normally under win32
 # hugehelp.c: ../README.curl ../curl.1 mkhelp.pl
-# 	-$(RM) hugehelp.c
+# 	$(RM) hugehelp.c
 # 	$(NROFF) -man ../curl.1 | $(PERL) mkhelp.pl ../README.curl > hugehelp.c
-
-hugehelp.c:
-	@echo Creating $@
-	@$(CP) hugehelp.c.cvs $@
-
-.c.o:
-	$(COMPILE) -c $<
 
 .rc.res:
 	$(RC) $(RCFLAGS) $< -o $@
 
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
 clean:
-ifeq "$(wildcard hugehelp.c.cvs)" "hugehelp.c.cvs"
-	-$(RM) hugehelp.c
-endif
-	-$(RM) $(curl_OBJECTS) $(RESOURCE)
+	$(RM) $(curl_OBJECTS) curl.exe
 
 distrib: clean
-	-$(RM) $(curl_PROGRAMS)
-
-
+	$(RM) $(curl_PROGRAMS)

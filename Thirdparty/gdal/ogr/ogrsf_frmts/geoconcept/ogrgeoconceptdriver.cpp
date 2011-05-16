@@ -88,13 +88,6 @@ OGRDataSource *OGRGeoconceptDriver::CreateDataSource( const char* pszName,
     VSIStatBuf  stat;
     int         bSingleNewFile = FALSE;
 
-    if( pszName==NULL || strlen(pszName)==0 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Invalid datasource name (null or empty)");
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Is the target a valid existing directory?                       */
 /* -------------------------------------------------------------------- */
@@ -103,8 +96,9 @@ OGRDataSource *OGRGeoconceptDriver::CreateDataSource( const char* pszName,
         if( !VSI_ISDIR(stat.st_mode) )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                      "%s is not a valid existing directory.",
+                      "%s is not a valid existing directory.\n",
                       pszName );
+
             return NULL;
         }
     }
@@ -126,14 +120,13 @@ OGRDataSource *OGRGeoconceptDriver::CreateDataSource( const char* pszName,
 /* -------------------------------------------------------------------- */
     else
     {
-        VSIStatBuf  sStat;
-
-        if( VSIStat( pszName, &sStat ) == 0 )
+        if( VSIMkdir( pszName, 0755 ) != 0 )
         {
-            CPLError( CE_Failure, CPLE_OpenFailed,
-                      "Attempt to create datasource named %s, "
-                      "but that is an existing directory.",
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Failed to create directory %s\n"
+                      "for geoconcept datastore.\n",
                       pszName );
+
             return NULL;
         }
     }
@@ -144,7 +137,8 @@ OGRDataSource *OGRGeoconceptDriver::CreateDataSource( const char* pszName,
     OGRGeoconceptDataSource  *poDS = NULL;
 
     poDS = new OGRGeoconceptDataSource();
-    if( !poDS->Create( pszName, papszOptions ) )
+    if( bSingleNewFile &&
+        !poDS->Create( pszName, papszOptions ) )
     {
         delete poDS;
         return NULL;

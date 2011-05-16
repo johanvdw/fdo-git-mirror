@@ -22,7 +22,7 @@
 FdoSmPhRdFkeyReader::FdoSmPhRdFkeyReader(
     FdoSmPhReaderP reader
 ) :
-	FdoSmPhRdReader(reader)
+	FdoSmPhReader(reader)
 {
 }
 
@@ -30,7 +30,7 @@ FdoSmPhRdFkeyReader::FdoSmPhRdFkeyReader(
     FdoSmPhMgrP         mgr,
     FdoSmPhRowsP        rows
 ) :
-	FdoSmPhRdReader(mgr, rows)
+	FdoSmPhReader(mgr, rows)
 {
 }
 

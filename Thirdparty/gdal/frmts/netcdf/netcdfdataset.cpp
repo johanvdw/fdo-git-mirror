@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfdataset.cpp 18602 2010-01-19 21:25:18Z rouault $
+ * $Id: netcdfdataset.cpp 15704 2008-11-10 22:41:16Z warmerdam $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -29,7 +29,7 @@
 
 #include "netcdfdataset.h"
 #include "cpl_error.h"
-CPL_CVSID("$Id: netcdfdataset.cpp 18602 2010-01-19 21:25:18Z rouault $");
+CPL_CVSID("$Id: netcdfdataset.cpp 15704 2008-11-10 22:41:16Z warmerdam $");
 
 
 /************************************************************************/
@@ -185,16 +185,15 @@ CPLErr netCDFRasterBand::CreateBandMetadata( )
 
     for( i=0; i < nd-2 ; i++ ) {
 	if( i != nd - 2 -1 ) {
-            Sum = 1;
 	    for( j=i+1; j < nd-2; j++ ) {
 		Sum *= panBandZLev[j];
 	    }
-	    result = (int) ( ( nLevel-Taken) / Sum );
+	    result = (int) ( ( nLevel-Taken ) / Sum );
 	}
 	else {
-	    result = (int) ( ( nLevel-Taken) % Sum );
+	    result = (int) ( ( nLevel-Taken ) % Sum );
 	}
-        
+
 	strcpy(szVarName, poDS->papszDimName[poDS->paDimIds[
 			  panBandZPos[i]]] );
 
@@ -497,12 +496,7 @@ CPLErr netCDFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
 	
     start[nBandXPos] = 0;          // x dim can move arround in array
-    // check y order
-    if( ( ( netCDFDataset *) poDS )->bBottomUp ) {
-        start[nBandYPos] = ( ( netCDFDataset * ) poDS )->ydim - 1 - nBlockYOff;
-    } else {
-        start[nBandYPos] = nBlockYOff; // y
-    }
+    start[nBandYPos] = nBlockYOff; // y
         
     edge[nBandXPos] = nBlockXSize; 
     edge[nBandYPos] = 1;
@@ -522,25 +516,22 @@ CPLErr netCDFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*  BandPos1 = (nBand - (3*4) ) / (4)                                   */
 /*  BandPos2 = (nBand - (3*4) ) % (4)                                   */
 /* -------------------------------------------------------------------- */
-    if (nd > 3) 
-    {
-        Taken = 0;
-        for( i=0; i < nd-2 ; i++ ) 
-        {
-            if( i != nd - 2 -1 ) {
-                Sum = 1;
-                for( j=i+1; j < nd-2; j++ ) {
-                    Sum *= panBandZLev[j];
-                }
-                start[panBandZPos[i]] = (int) ( ( nLevel-Taken) / Sum );
-                edge[panBandZPos[i]] = 1;
-            } else {
-                start[panBandZPos[i]] = (int) ( ( nLevel-Taken) % Sum );
-                edge[panBandZPos[i]] = 1;
-            }
-            Taken += start[panBandZPos[i]] * Sum;
-        }
+    if( nd > 3 ) {
+	for( i=0; i < nd-2-1 ; i++ ) {
+	    Sum  = 1;
+	    Taken = 0;
+	    for( j=i+1; j < nd-2; j++ ) {
+		Sum *= panBandZLev[j];
+	    }
+	    start[panBandZPos[i]] = ( nLevel-Taken ) / Sum;
+	    edge[panBandZPos[i]] = 1;
+	    Taken += Sum;
+	}
+	start[panBandZPos[i]] = ( nLevel-( Taken-Sum ) ) % Sum;
+	edge[panBandZPos[i]] = 1;
     }
+
+
 
     if( eDataType == GDT_Byte )
         nErr = nc_get_vara_uchar( cdfid, nZId, start, edge, 
@@ -603,8 +594,9 @@ netCDFDataset::netCDFDataset()
     papszSubDatasets = NULL;
     bGotGeoTransform = FALSE;
     pszProjection    = NULL;
+    papszName        = NULL;
+    pszFilename      = NULL;
     cdfid             = 0;
-    bBottomUp        = FALSE;
 }
 
 
@@ -619,9 +611,11 @@ netCDFDataset::~netCDFDataset()
     FlushCache();
 
     CSLDestroy( papszMetadata );
+    CSLDestroy( papszName );
     CSLDestroy( papszSubDatasets );
 
     CPLFree( pszProjection );
+    CPLFree( pszFilename );
 
     if( cdfid ) 
 	nc_close( cdfid );
@@ -686,7 +680,6 @@ void netCDFDataset::SetProjection( int var )
     double       *pdfXCoord;
     double       *pdfYCoord;
     char         szDimNameX[ MAX_NC_NAME ];
-    char         szDimNameY[ MAX_NC_NAME ];
     int          nSpacingBegin;
     int          nSpacingMiddle;
     int          nSpacingLast;
@@ -737,11 +730,6 @@ void netCDFDataset::SetProjection( int var )
 	szDimNameX[i] = tolower( ( poDS->papszDimName[poDS->nDimXid] )[i] );
     }
     szDimNameX[3] = '\0';
-    for( i = 0; (i < strlen( poDS->papszDimName[ poDS->nDimYid ] )  && 
-		 i < 3 ); i++ ) {
-	szDimNameY[i] = tolower( ( poDS->papszDimName[poDS->nDimYid] )[i] );
-    }
-    szDimNameY[3] = '\0';
 
 /* -------------------------------------------------------------------- */
 /*      Read grid_mappinginformation and set projections               */
@@ -1031,10 +1019,8 @@ void netCDFDataset::SetProjection( int var )
                     yMinMax[1] = pdfYCoord[ydim-1];
                     node_offset = 0;
                 }
-                /* for CF-1 conventions, assume bottom first */
-                if( EQUAL( szDimNameY, "lat" ) && pdfYCoord[0] < pdfYCoord[1] )
-                    poDS->bBottomUp = TRUE;
 
+#ifdef notdef
                 // Check for reverse order of y-coordinate
                 if ( yMinMax[0] > yMinMax[1] ) {
                     dummy[0] = yMinMax[1];
@@ -1042,6 +1028,7 @@ void netCDFDataset::SetProjection( int var )
                     yMinMax[0] = dummy[0];
                     yMinMax[1] = dummy[1];
                 }
+#endif
 
                 poDS->adfGeoTransform[0] = xMinMax[0];
                 poDS->adfGeoTransform[2] = 0;
@@ -1081,7 +1068,7 @@ void netCDFDataset::SetProjection( int var )
 	
 	if( pszWKT != NULL ) {
 	    
-	    pszProjection = CPLStrdup( pszWKT );
+	    pszProjection = strdup( pszWKT );
 	    
 	    strcpy(szTemp,szGridMappingValue);
 	    strcat( szTemp, "#" );
@@ -1413,7 +1400,7 @@ void netCDFDataset::CreateSubDatasetList( )
 	    poDS->papszSubDatasets =
 		CSLSetNameValue( poDS->papszSubDatasets, szTemp,
 				 CPLSPrintf( "NETCDF:\"%s\":%s",
-					     poDS->osFilename.c_str(),
+					     poDS->pszFilename,
 					     szName) ) ;
 	    
 	    sprintf(  szTemp, "SUBDATASET_%d_DESC", nSub++ );
@@ -1463,56 +1450,27 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*       Check if filename start with NETCDF: tag                       */
 /* -------------------------------------------------------------------- */
+
     netCDFDataset 	*poDS;
     poDS = new netCDFDataset();
-    poDS->SetDescription( poOpenInfo->pszFilename );
 
-    if( EQUALN( poOpenInfo->pszFilename,"NETCDF:",7) )
-    {
-        char **papszName =
-            CSLTokenizeString2( poOpenInfo->pszFilename,
-                                ":", CSLT_HONOURSTRINGS|CSLT_PRESERVEESCAPES );
-                   
-    /* -------------------------------------------------------------------- */
-    /*    Check for drive name in windows NETCDF:"D:\...                    */
-    /* -------------------------------------------------------------------- */
-        if ( CSLCount(papszName) == 4 &&
-             strlen(papszName[1]) == 1 &&
-             (papszName[2][0] == '/' || papszName[2][0] == '\\') )
-        {
-            poDS->osFilename = papszName[1];
-            poDS->osFilename += ':';
-            poDS->osFilename += papszName[2];
-            poDS->osSubdatasetName = papszName[3];
-            poDS->bTreatAsSubdataset = TRUE;
-            CSLDestroy( papszName );
-        }
-        else if( CSLCount(papszName) == 3 )
-        {
-            poDS->osFilename = papszName[1];
-            poDS->osSubdatasetName = papszName[2];
-            poDS->bTreatAsSubdataset = TRUE;
-            CSLDestroy( papszName );
-    	}
-        else
-        {
-            CSLDestroy( papszName );
-            delete poDS;
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Failed to parse NETCDF: prefix string into expected three fields." );
-            return NULL;
-        }
+    poDS->papszName = 
+        CSLTokenizeString2( poOpenInfo->pszFilename,
+                            ":", CSLT_HONOURSTRINGS|CSLT_PRESERVEESCAPES );
+
+    if( EQUAL( poDS->papszName[0], "NETCDF" ) ) {
+	if( ( CSLCount(poDS->papszName) == 3  ) ){
+	    poDS->pszFilename = strdup( poDS->papszName[1] );
+	}
     }
-    else 
-    {
-	poDS->osFilename = poOpenInfo->pszFilename;
-        poDS->bTreatAsSubdataset = FALSE;
+    else {
+	poDS->pszFilename = strdup( poOpenInfo->pszFilename );
     }
 
 /* -------------------------------------------------------------------- */
 /*      Try opening the dataset.                                        */
 /* -------------------------------------------------------------------- */
-    if( nc_open( poDS->osFilename, NC_NOWRITE, &cdfid ) != NC_NOERR ) {
+    if( nc_open( poDS->pszFilename, NC_NOWRITE, &cdfid ) != NC_NOERR ) {
 	delete poDS;
         return NULL;
     }
@@ -1521,37 +1479,23 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     status = nc_inq(cdfid, &ndims, &nvars, &ngatts, &unlimdimid);
     if( status != NC_NOERR ) {
-        delete poDS;
+	CPLFree( poDS->pszFilename );
+	CSLDestroy( poDS->papszName );
         return NULL;
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The NETCDF driver does not support update access to existing"
-                  " datasets.\n" );
-        nc_close( cdfid );
-        delete poDS;
-        return NULL;
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Does the request variable exist?                                */
 /* -------------------------------------------------------------------- */
-    if( poDS->bTreatAsSubdataset )
-    {
-	status = nc_inq_varid( cdfid, poDS->osSubdatasetName, &var);
+    if( ( CSLCount(poDS->papszName) == 3  ) ){
+	status = nc_inq_varid( cdfid, poDS->papszName[2], &var);
 	if( status != NC_NOERR ) {
 	    CPLError( CE_Warning, CPLE_AppDefined, 
 		      "%s is a netCDF file, but %s is not a variable.",
 		      poOpenInfo->pszFilename, 
-		      poDS->osSubdatasetName.c_str() );
+		      poDS->papszName[2] );
 	    
 	    nc_close( cdfid );
-            delete poDS;
 	    return NULL;
 	}
     }
@@ -1563,7 +1507,6 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
                   poOpenInfo->pszFilename );
 
         nc_close( cdfid );
-        delete poDS;
         return NULL;
     }
 
@@ -1581,12 +1524,10 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
     if ( nc_inq_nvars ( cdfid, &var_count) != NC_NOERR )
-    {
-        delete poDS;
-	return NULL;
-    }    
+	return NULL;    
     
     CPLDebug( "GDAL_netCDF", "var_count = %d\n", var_count );
+    
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -1609,36 +1550,47 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*      We have more than one variable with 2 dimensions in the         */
-/*      file, then treat this as a subdataset container dataset.        */
+/*  We have more than one variable with 2 dimensions in the file        */
 /* -------------------------------------------------------------------- */
-    if( (nCount > 1) && !poDS->bTreatAsSubdataset )
-    {
-	poDS->CreateSubDatasetList();
+    if( (nCount > 1) && ( !EQUAL( poDS->papszName[0], "NETCDF" ) ) ) {
+	poDS->CreateSubDatasetList( );
 	poDS->SetMetadata( poDS->papszMetadata );
-        poDS->TryLoadXML();
 	return( poDS );
     }
+/* -------------------------------------------------------------------- */
+/*  If we have only one varialbe                                        */
+/*  Generate a new filename with format NETCDF:"filename":subdataset    */
+/* -------------------------------------------------------------------- */
+    if( ( nCount == 1 )  && ( !EQUAL( poDS->papszName[0], "NETCDF" ) ) ){
+	CPLFree( poDS->pszFilename );
+	CSLDestroy( poDS->papszName );
 
-/* -------------------------------------------------------------------- */
-/*      If we are not treating things as a subdataset, then capture     */
-/*      the name of the single available variable as the subdataset.    */
-/* -------------------------------------------------------------------- */
-    if( !poDS->bTreatAsSubdataset ) // nCount must be 1!
-    {
+	char pszNETCDFFilename[NC_MAX_NAME];
 	char szVarName[NC_MAX_NAME];
 
 	nc_inq_varname( cdfid, nVarID, szVarName);
-        poDS->osSubdatasetName = szVarName;
-    }
+
+	strcpy( pszNETCDFFilename,"NETCDF:\"" );
+	strcat( pszNETCDFFilename,poOpenInfo->pszFilename );
+	strcat( pszNETCDFFilename,"\":" );
+	strcat( pszNETCDFFilename, szVarName );
+
+	CPLDebug( "GDAL_netCDF", "NETCDFFilename = %s\n", 
+		  pszNETCDFFilename);
+
+	poDS->papszName = CSLTokenizeString2(  pszNETCDFFilename,
+					       ":", CSLT_HONOURSTRINGS );
+	poDS->pszFilename = strdup( pszNETCDFFilename );
+
+
+    }	
 
 /* -------------------------------------------------------------------- */
 /*      Open the NETCDF subdataset NETCDF:"filename":subdataset         */
 /* -------------------------------------------------------------------- */
 
     var=-1;
-    nc_inq_varid( cdfid, poDS->osSubdatasetName, &var);
-    nd = 0;
+    nc_inq_varid( cdfid, poDS->papszName[2], &var);
     nc_inq_varndims ( cdfid, var, &nd );
 
     poDS->paDimIds = (int *)CPLCalloc(nd, sizeof( int ) );
@@ -1654,7 +1606,6 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
     if ( nd < 2 ) {
 	CPLFree( poDS->paDimIds );
 	CPLFree( poDS->panBandDimPos );
-        delete poDS;
 	return NULL;
     }
 
@@ -1718,8 +1669,6 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
     poDS->SetProjection( var );
-    poDS->SetMetadata( poDS->papszMetadata );
-
 /* -------------------------------------------------------------------- */
 /*      Create bands                                                    */
 /* -------------------------------------------------------------------- */
@@ -1763,18 +1712,10 @@ GDALDataset *netCDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
-    if( poDS->bTreatAsSubdataset )
-    {
-        poDS->SetPhysicalFilename( poDS->osFilename );
-        poDS->SetSubdatasetName( poDS->osSubdatasetName );
-    }
-    
-    poDS->TryLoadXML();
+    poDS->SetMetadata( poDS->papszMetadata );
 
-    if( poDS->bTreatAsSubdataset )
-        poDS->oOvManager.Initialize( poDS, ":::VIRTUAL:::" );
-    else
-        poDS->oOvManager.Initialize( poDS, poDS->osFilename );
+    poDS->SetDescription( poOpenInfo->pszFilename );
+    poDS->TryLoadXML( );
 
     return( poDS );
 }
@@ -1864,7 +1805,6 @@ NCDFCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int  nXSize = poSrcDS->GetRasterXSize();
     int  nYSize = poSrcDS->GetRasterYSize();
     int  bProgressive = FALSE;
-    int  iBand;
 
     int  anBandDims[ NC_MAX_DIMS ];
     int  anBandMap[  NC_MAX_DIMS ];
@@ -1872,24 +1812,6 @@ NCDFCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int    bWriteGeoTransform = FALSE;
     char  pszNetcdfProjection[ NC_MAX_NAME ];
 
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "NetCDF driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
-    for( iBand=1; iBand <= nBands; iBand++ )
-    {
-        GDALRasterBand *poSrcBand = poSrcDS->GetRasterBand( iBand );
-        GDALDataType eDT = poSrcBand->GetRasterDataType();
-        if (eDT == GDT_Unknown || GDALDataTypeIsComplex(eDT))
-        {
-            CPLError( CE_Failure, CPLE_NotSupported, 
-                  "NetCDF driver does not support source dataset with band of complex type.");
-            return NULL;
-        }
-    }
 
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;

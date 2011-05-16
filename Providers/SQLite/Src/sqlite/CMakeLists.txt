@@ -66,17 +66,12 @@ set( sqlitefdoprovider3_SRCS
 	vtab.c
 	walker.c
 	where.c
-	vdbetrace.c
-	ctime.c
-	fkey.c
-	fts3_snippet.c
-	fts3_write.c
-	wal.c
 ) 
 
 add_definitions(
 	-DSQLITE_ENABLE_COLUMN_METADATA 
 	-DSQLITE_OMIT_TRACE 
+	-DSQLITE_OMIT_EXPLAIN 
 	-DSQLITE_OMIT_PROGRESS_CALLBACK 
 	-DSQLITE_OMIT_AUTHORIZATION
 	-DSQLITE_OMIT_UTF16 

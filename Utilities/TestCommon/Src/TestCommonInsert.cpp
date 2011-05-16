@@ -279,10 +279,17 @@ void TestCommonInsert::DoSubtestDefaultValues(
             FdoStringP defaultStr = dataProp->GetDefaultValue();
 
             if ( defaultStr != L"" ) {
-                dataValue = FdoDataValue::Create(
-                    dataProp->GetDataType(),
-                    FdoPtr<FdoStringValue>(FdoStringValue::Create(defaultStr))
-                );
+                if ( dataProp->GetDataType() == FdoDataType_String ) {
+                    dataValue = FdoStringValue::Create(defaultStr);
+                }
+                else {
+                    try {
+                        FdoPtr<FdoExpression> expr = FdoExpression::Parse(defaultStr);
+                        dataValue = FDO_SAFE_ADDREF(dynamic_cast<FdoDataValue*>(expr.p));
+                    }
+                    catch ( ... ) {
+                    }
+                }
 
                 if ( dataValue ) {
                     propertyValue = TestCommonMiscUtil::AddNewProperty( propertyValues, prop2->GetName() );

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: fileupload.c,v 1.5 2008-09-10 07:11:45 danf Exp $
+ * $Id: fileupload.c,v 1.2 2004/10/16 13:17:15 giva Exp $
  */
 
 #include <stdio.h>
@@ -17,6 +17,7 @@ int main(void)
 {
   CURL *curl;
   CURLcode res;
+  curl_off_t size;
   struct stat file_info;
   double speed_upload, total_time;
   FILE *fd;
@@ -27,11 +28,7 @@ int main(void)
     return 1; /* can't continue */
   }
 
-  /* to get the file size */
-  if(fstat(fileno(fd), &file_info) != 0) {
-
-    return 1; /* can't continue */
-  }
+  stat("debugit", &file_info); /* to get the file size */
 
   curl = curl_easy_init();
   if(curl) {
@@ -40,7 +37,7 @@ int main(void)
                      "file:///home/dast/src/curl/debug/new");
 
     /* tell it to "upload" to the URL */
-    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 
     /* set where to read from (on Windows you need to use READFUNCTION too) */
     curl_easy_setopt(curl, CURLOPT_READDATA, fd);
@@ -50,7 +47,7 @@ int main(void)
                      (curl_off_t)file_info.st_size);
 
     /* enable verbose for easier tracing */
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
     res = curl_easy_perform(curl);
 

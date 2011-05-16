@@ -1,5 +1,6 @@
 #ifndef FDO_XML_FEATUREREADER_IMPL_H_
 #define FDO_XML_FEATUREREADER_IMPL_H_
+//
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -21,8 +22,6 @@
 #ifdef _WIN32
 #pragma once
 #endif
-
-#include <vector>
 
 #include <FdoStd.h>
 #include <Fdo.h>
@@ -247,8 +246,6 @@ private:
 	//feature collection
 	int m_curFeatureIndex;
 	std::vector<FdoXmlFeatureReaderImpl*> m_featureCollection;
-
-    FdoPtr<FdoClassDefinition> m_classDefinition;
 
 	//feature properties
 	std::vector<FdoXmlDataProperty*> m_dataProperties;

@@ -1,5 +1,5 @@
 /*
- * $Id: osr_python.i 18192 2009-12-06 19:41:32Z rouault $
+ * $Id: osr_python.i 11532 2007-05-16 02:47:33Z hobu $
  *
  * python specific code for ogr bindings.
  */
@@ -8,7 +8,6 @@
 %feature("autodoc");
 
 %include "python_exceptions.i"
-%include "python_strings.i"
 
 %{
 static PyObject *
@@ -61,8 +60,6 @@ py_OPTGetProjectionMethods(PyObject *self, PyObject *args) {
 		                     papszMethods[iMethod], 
 				     pszUserMethodName, 
 		                     py_PList));
-        
-        Py_XDECREF( py_PList );
     }
 
     CSLDestroy( papszMethods );

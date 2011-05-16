@@ -19,7 +19,6 @@
 //
 
 #include <FdoStd.h>
-#include <Fdo/Xml/GmlVersion.h>
 
 class FdoPhysicalSchemaMappingCollection;
 
@@ -193,24 +192,6 @@ public:
 	FDO_API FdoBoolean GetUseGmlId() const;
 
     /// \brief
-    /// Sets the Use GML version.
-    /// 
-    /// \param gmlVersion 
-    /// input the GML version
-    /// 
-    /// 
-  	FDO_API void SetGmlVersion( FdoGmlVersion gmlVersion );
-
-    /// \brief
-	/// Gets the GML version (GML 2, GML 3).
-    /// 
-    /// \return
-    /// Returns the Used GML version.
-    /// 
-	FDO_API FdoGmlVersion GetGmlVersion() const;
-
-
-    /// \brief
     /// Sets the Schema Mapping Overrides for translating schemas 
     /// between GML and FDO. 
     /// 
@@ -253,8 +234,6 @@ private:
     FdoBoolean mSchemaNameAsPrefix;
     FdoBoolean mUseGmlId;
     FdoPhysicalSchemaMappingCollection* mSchemaMappings;
-
-	FdoGmlVersion mUseGmlVersion;
 
 /// \cond DOXYGEN-IGNORE
 private:

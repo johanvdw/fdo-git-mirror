@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarpoperation.cpp 18277 2009-12-12 17:33:37Z rouault $
+ * $Id: gdalwarpoperation.cpp 15365 2008-09-13 15:47:19Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpOperation class.
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: gdalwarpoperation.cpp 18277 2009-12-12 17:33:37Z rouault $");
+CPL_CVSID("$Id: gdalwarpoperation.cpp 15365 2008-09-13 15:47:19Z rouault $");
 
 /* Defined in gdalwarpkernel.cpp */
 int GWKGetFilterRadius(GDALResampleAlg eResampleAlg);
@@ -432,7 +432,6 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
 /*      resolution input type to ensure we can identify nodata values.  */
 /* -------------------------------------------------------------------- */
     if( psOptions->eWorkingDataType == GDT_Unknown 
-        && psOptions->hSrcDS != NULL 
         && psOptions->hDstDS != NULL 
         && psOptions->nBandCount >= 1 )
     {
@@ -613,27 +612,6 @@ void GDALDestroyWarpOperation( GDALWarpOperationH hOperation )
  *
  * @return CE_None on success or CE_Failure if an error occurs.
  */
- 
- struct WarpChunk { 
-    int dx, dy, dsx, dsy; 
-    int sx, sy, ssx, ssy; 
-}; 
- 
-static int OrderWarpChunk(const void* _a, const void *_b)
-{ 
-    const WarpChunk* a = (const WarpChunk* )_a;
-    const WarpChunk* b = (const WarpChunk* )_b;
-    if (a->dy < b->dy)
-        return -1; 
-    else if (a->dy > b->dy)
-        return 1; 
-    else if (a->dx < b->dx)
-        return -1; 
-    else if (a->dx > b->dx)
-        return 1; 
-    else
-        return 0; 
-} 
 
 CPLErr GDALWarpOperation::ChunkAndWarpImage( 
     int nDstXOff, int nDstYOff,  int nDstXSize, int nDstYSize )
@@ -644,9 +622,6 @@ CPLErr GDALWarpOperation::ChunkAndWarpImage(
 /* -------------------------------------------------------------------- */
     WipeChunkList();
     CollectChunkList( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
-    
-    /* Sort chucks from top to bottom, and for equal y, from left to right */
-    qsort(panChunkList, nChunkListCount, sizeof(WarpChunk), OrderWarpChunk); 
 
 /* -------------------------------------------------------------------- */
 /*      Total up output pixels to process.                              */
@@ -792,9 +767,6 @@ CPLErr GDALWarpOperation::ChunkAndWarpMulti(
 /* -------------------------------------------------------------------- */
     WipeChunkList();
     CollectChunkList( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
-
-    /* Sort chucks from top to bottom, and for equal y, from left to right */
-    qsort(panChunkList, nChunkListCount, sizeof(WarpChunk), OrderWarpChunk); 
 
 /* -------------------------------------------------------------------- */
 /*      Process them one at a time, updating the progress               */
@@ -988,30 +960,13 @@ CPLErr GDALWarpOperation::CollectChunkList(
     dfTotalMemoryUse =
         (((double) nSrcPixelCostInBits) * nSrcXSize * nSrcYSize
          + ((double) nDstPixelCostInBits) * nDstXSize * nDstYSize) / 8.0;
-         
-        
-    int nBlockXSize = 1, nBlockYSize = 1;
-    if (psOptions->hDstDS)
-    {
-        GDALGetBlockSize(GDALGetRasterBand(psOptions->hDstDS, 1),
-                         &nBlockXSize, &nBlockYSize);
-    }
 
     if( dfTotalMemoryUse > psOptions->dfWarpMemoryLimit 
         && (nDstXSize > 2 || nDstYSize > 2) )
     {
-        /* If the region width is greater than the region height, */
-        /* cut in half in the width. Do this only if each half part */
-        /* is at least as wide as the block width */
-        if( nDstXSize > nDstYSize &&
-            (nDstXSize / 2 >= nBlockXSize || nDstYSize == 1) )
+        if( nDstXSize > nDstYSize )
         {
             int nChunk1 = nDstXSize / 2;
-            
-            /* Try to stick on target block boundaries */
-            if (nChunk1 > nBlockXSize)
-                nChunk1 = (nChunk1 / nBlockXSize) * nBlockXSize;
-            
             int nChunk2 = nDstXSize - nChunk1;
 
             eErr = CollectChunkList( nDstXOff, nDstYOff, 
@@ -1027,10 +982,6 @@ CPLErr GDALWarpOperation::CollectChunkList(
         {
             int nChunk1 = nDstYSize / 2;
             int nChunk2 = nDstYSize - nChunk1;
-
-            /* Try to stick on target block boundaries */
-            if (nChunk1 > nBlockYSize)
-                nChunk1 = (nChunk1 / nBlockYSize) * nBlockYSize;
 
             eErr = CollectChunkList( nDstXOff, nDstYOff, 
                                      nDstXSize, nChunk1 );
@@ -1096,10 +1047,6 @@ CPLErr GDALWarpOperation::CollectChunkList(
  * @param nDstYOff Y offset to window of destination data to be produced.
  * @param nDstXSize Width of output window on destination file to be produced.
  * @param nDstYSize Height of output window on destination file to be produced.
- * @param nSrcXOff source window X offset (computed if window all zero)
- * @param nSrcYOff source window Y offset (computed if window all zero)
- * @param nSrcXSize source window X size (computed if window all zero)
- * @param nSrcYSize source window Y size (computed if window all zero)
  *
  * @return CE_None on success or CE_Failure if an error occurs.
  */
@@ -1135,20 +1082,11 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
     int  nWordSize = GDALGetDataTypeSize(psOptions->eWorkingDataType)/8;
     int  nBandSize = nWordSize * nDstXSize * nDstYSize;
 
-    if (nDstXSize > INT_MAX / nDstYSize ||
-        nDstXSize * nDstYSize > INT_MAX / (nWordSize * psOptions->nBandCount))
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Integer overflow : nDstXSize=%d, nDstYSize=%d",
-                  nDstXSize, nDstYSize);
-        return CE_Failure;
-    }
-
     pDstBuffer = VSIMalloc( nBandSize * psOptions->nBandCount );
     if( pDstBuffer == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "Out of memory allocating %d byte destination buffer.",
+                  "Out of memory allocatint %d byte destination buffer.",
                   nBandSize * psOptions->nBandCount );
         return CE_Failure;
     }
@@ -1159,13 +1097,11 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
 /*      from the hDstDS.  This is sometimes used to optimize            */
 /*      operation to a new output file ... it doesn't have to           */
 /*      written out and read back for nothing.                          */
-/* NOTE:The following code is 99% similar in gdalwarpoperation.cpp and  */
-/*      vrtwarped.cpp. Be careful to keep it in sync !                  */
 /* -------------------------------------------------------------------- */
     const char *pszInitDest = CSLFetchNameValue( psOptions->papszWarpOptions,
                                                  "INIT_DEST" );
 
-    if( pszInitDest != NULL && !EQUAL(pszInitDest, "") )
+    if( pszInitDest != NULL )
     {
         char **papszInitValues = 
             CSLTokenizeStringComplex( pszInitDest, ",", FALSE, FALSE );
@@ -1380,8 +1316,6 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     oWK.dfProgressScale = dfProgressScale;
 
     oWK.papszWarpOptions = psOptions->papszWarpOptions;
-    
-    oWK.padfDstNoDataReal = psOptions->padfDstNoDataReal;
 
 /* -------------------------------------------------------------------- */
 /*      Setup the source buffer.                                        */
@@ -1394,22 +1328,12 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     oWK.nSrcXSize = nSrcXSize;
     oWK.nSrcYSize = nSrcYSize;
 
-    if (nSrcXSize != 0 && nSrcYSize != 0 &&
-        (nSrcXSize > INT_MAX / nSrcYSize ||
-         nSrcXSize * nSrcYSize > INT_MAX / (nWordSize * psOptions->nBandCount)))
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Integer overflow : nSrcXSize=%d, nSrcYSize=%d",
-                  nSrcXSize, nSrcYSize);
-        return CE_Failure;
-    }
-
     oWK.papabySrcImage = (GByte **) 
         CPLCalloc(sizeof(GByte*),psOptions->nBandCount);
     oWK.papabySrcImage[0] = (GByte *)
         VSIMalloc( nWordSize * nSrcXSize * nSrcYSize * psOptions->nBandCount );
 
-    if( nSrcXSize != 0 && nSrcYSize != 0 && oWK.papabySrcImage[0] == NULL )
+    if( oWK.papabySrcImage[0] == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory, 
                   "Failed to allocate %d byte source buffer.",
@@ -1585,35 +1509,26 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 
 /* -------------------------------------------------------------------- */
 /*      If we have destination nodata values create, or update the      */
-/*      validity mask.  We clear the DstValid for any pixel that we     */
-/*      do no have valid data in *any* of the source bands.             */
-/*                                                                      */
-/*      Note that we don't support any concept of unified nodata on     */
-/*      the destination image.  At some point that should be added      */
-/*      and then this logic will be significantly different.            */
+/*      validity mask.                                                  */
 /* -------------------------------------------------------------------- */
     if( eErr == CE_None && psOptions->padfDstNoDataReal != NULL )
     {
-        GUInt32 *panBandMask = NULL, *panMergedMask = NULL;
+        GUInt32 *panBandMask = NULL;
         int     nMaskWords = (oWK.nDstXSize * oWK.nDstYSize + 31)/32;
 
         eErr = CreateKernelMask( &oWK, 0, "DstValid" );
         if( eErr == CE_None )
-        {
             panBandMask = (GUInt32 *) CPLMalloc(nMaskWords*4);
-            panMergedMask = (GUInt32 *) CPLCalloc(nMaskWords,4);
-        }
 
         if( eErr == CE_None && panBandMask != NULL )
         {
             int iBand, iWord;
-            
+
+            memset( oWK.panDstValid, 0, nMaskWords * 4 );
             for( iBand = 0; iBand < psOptions->nBandCount; iBand++ )
             {
                 double adfNoData[2];
             
-                memset( panBandMask, 0xff, nMaskWords * 4 );
-
                 adfNoData[0] = psOptions->padfDstNoDataReal[iBand];
                 adfNoData[1] = psOptions->padfDstNoDataImag[iBand];
             
@@ -1626,14 +1541,9 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                                           FALSE, panBandMask );
 
                 for( iWord = nMaskWords - 1; iWord >= 0; iWord-- )
-                    panMergedMask[iWord] |= panBandMask[iWord];
+                    oWK.panDstValid[iWord] |= panBandMask[iWord];
             }
             CPLFree( panBandMask );
-
-            for( iWord = nMaskWords - 1; iWord >= 0; iWord-- )
-                oWK.panDstValid[iWord] &= panMergedMask[iWord];
-
-            CPLFree( panMergedMask );
         }
     }
         
@@ -1888,34 +1798,12 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
   TryAgainWithGrid:
     nSamplePoints = 0;
     if( bUseGrid )
-    {
-        if (nStepCount > INT_MAX / nStepCount)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Too many steps : %d", nStepCount);
-            return CE_Failure;
-        }
         nSampleMax = nStepCount * nStepCount;
-    }
     else
-    {
-        if (nStepCount > INT_MAX / 4)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Too many steps : %d", nStepCount);
-            return CE_Failure;
-        }
         nSampleMax = nStepCount * 4;
-    }
 
-    pabSuccess = (int *) VSIMalloc2(sizeof(int), nSampleMax);
-    padfX = (double *) VSIMalloc2(sizeof(double) * 3, nSampleMax);
-    if (pabSuccess == NULL || padfX == NULL)
-    {
-        CPLFree( padfX );
-        CPLFree( pabSuccess );
-        return CE_Failure;
-    }
+    pabSuccess = (int *) CPLMalloc(sizeof(int) * nSampleMax);
+    padfX = (double *) CPLMalloc(sizeof(double) * 3 * nSampleMax);
     padfY = padfX + nSampleMax;
     padfZ = padfX + nSampleMax * 2;
 
@@ -1941,7 +1829,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
         }
     }
  /* -------------------------------------------------------------------- */
- /*      Setup sample points all around the edge of the output raster.   */
+ /*      Setup sample points all around the edge of the input raster.    */
  /* -------------------------------------------------------------------- */
     else
     {
@@ -1972,7 +1860,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(int nDstXOff, int nDstYOff,
     CPLAssert( nSamplePoints == nSampleMax );
 
 /* -------------------------------------------------------------------- */
-/*      Transform them to the input pixel coordinate space              */
+/*      Transform them to the output coordinate system.                 */
 /* -------------------------------------------------------------------- */
     if( !psOptions->pfnTransformer( psOptions->pTransformerArg, 
                                     TRUE, nSamplePoints, 

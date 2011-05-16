@@ -24,7 +24,7 @@
 #include "SchemaFromExternal.h"
 
 // Constructs an instance of a FeatureSchemaCollection using the specified argument.
-FdoFeatureSchemaCollection* FdoFeatureSchemaCollection::Create(FdoSchemaElement* parent)
+FDO_API FdoFeatureSchemaCollection* FdoFeatureSchemaCollection::Create(FdoSchemaElement* parent)
 {
     return new FdoFeatureSchemaCollection(parent);
 }

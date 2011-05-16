@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: debug.c,v 1.5 2009-06-05 18:40:40 yangtse Exp $
+ * $Id: debug.c,v 1.2 2006-10-20 21:26:10 bagder Exp $
  */
 
 #include <stdio.h>
@@ -29,12 +29,11 @@ void dump(const char *text,
     /* without the hex output, we can fit more on screen */
     width = 0x40;
 
-  fprintf(stream, "%s, %010.10ld bytes (0x%08.8lx)\n",
-          text, (long)size, (long)size);
+  fprintf(stream, "%s, %zd bytes (0x%zx)\n", text, size, size);
 
   for(i=0; i<size; i+= width) {
 
-    fprintf(stream, "%04.4lx: ", (long)i);
+    fprintf(stream, "%04zx: ", i);
 
     if(!nohex) {
       /* hex not disabled, show it */
@@ -66,7 +65,7 @@ void dump(const char *text,
 
 static
 int my_trace(CURL *handle, curl_infotype type,
-             char *data, size_t size,
+             unsigned char *data, size_t size,
              void *userp)
 {
   struct data *config = (struct data *)userp;
@@ -99,7 +98,7 @@ int my_trace(CURL *handle, curl_infotype type,
     break;
   }
 
-  dump(text, stderr, (unsigned char *)data, size, config->trace_ascii);
+  dump(text, stderr, data, size, config->trace_ascii);
   return 0;
 }
 
@@ -117,7 +116,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
     /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
     curl_easy_setopt(curl, CURLOPT_URL, "curl.haxx.se");
     res = curl_easy_perform(curl);

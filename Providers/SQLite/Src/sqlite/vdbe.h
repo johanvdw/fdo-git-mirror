@@ -14,6 +14,8 @@
 ** This header defines the interface to the virtual database engine
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
+**
+** $Id: vdbe.h,v 1.141 2009/04/10 00:56:29 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -32,7 +34,6 @@ typedef struct Vdbe Vdbe;
 */
 typedef struct VdbeFunc VdbeFunc;
 typedef struct Mem Mem;
-typedef struct SubProgram SubProgram;
 
 /*
 ** A single instruction of the virtual machine has an opcode
@@ -42,12 +43,12 @@ typedef struct SubProgram SubProgram;
 struct VdbeOp {
   u8 opcode;          /* What operation to perform */
   signed char p4type; /* One of the P4_xxx constants for p4 */
-  u8 opflags;         /* Mask of the OPFLG_* flags in opcodes.h */
+  u8 opflags;         /* Not currently used */
   u8 p5;              /* Fifth parameter is an unsigned character */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   int p3;             /* The third parameter */
-  union {             /* fourth parameter */
+  union {             /* forth parameter */
     int i;                 /* Integer value if p4type==P4_INT32 */
     void *p;               /* Generic pointer */
     char *z;               /* Pointer to data for string (char array) types */
@@ -57,10 +58,9 @@ struct VdbeOp {
     VdbeFunc *pVdbeFunc;   /* Used when p4type is P4_VDBEFUNC */
     CollSeq *pColl;        /* Used when p4type is P4_COLLSEQ */
     Mem *pMem;             /* Used when p4type is P4_MEM */
-    VTable *pVtab;         /* Used when p4type is P4_VTAB */
+    sqlite3_vtab *pVtab;   /* Used when p4type is P4_VTAB */
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
     int *ai;               /* Used when p4type is P4_INTARRAY */
-    SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
   } p4;
 #ifdef SQLITE_DEBUG
   char *zComment;          /* Comment to improve readability */
@@ -71,19 +71,6 @@ struct VdbeOp {
 #endif
 };
 typedef struct VdbeOp VdbeOp;
-
-
-/*
-** A sub-routine used to implement a trigger program.
-*/
-struct SubProgram {
-  VdbeOp *aOp;                  /* Array of opcodes for sub-program */
-  int nOp;                      /* Elements in aOp[] */
-  int nMem;                     /* Number of memory cells required */
-  int nCsr;                     /* Number of cursors required */
-  int nRef;                     /* Number of pointers to this structure */
-  void *token;                  /* id that may be used to recursive triggers */
-};
 
 /*
 ** A smaller version of VdbeOp used for the VdbeAddOpList() function because
@@ -98,7 +85,7 @@ struct VdbeOpList {
 typedef struct VdbeOpList VdbeOpList;
 
 /*
-** Allowed values of VdbeOp.p4type
+** Allowed values of VdbeOp.p3type
 */
 #define P4_NOTUSED    0   /* The P4 parameter is not used */
 #define P4_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
@@ -115,7 +102,6 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INT64    (-13) /* P4 is a 64-bit signed integer */
 #define P4_INT32    (-14) /* P4 is a 32-bit signed integer */
 #define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
-#define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 
 /* When adding a P4 argument using P4_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the
@@ -126,7 +112,6 @@ typedef struct VdbeOpList VdbeOpList;
 */
 #define P4_KEYINFO_HANDOFF (-16)
 #define P4_KEYINFO_STATIC  (-17)
-#define P4_VPOINTER (-19) /* P4 is a pointer to a store a custom value */
 
 /*
 ** The Vdbe.aColName array contains 5n Mem structures, where n is the 
@@ -171,7 +156,6 @@ int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
-int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
 void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
@@ -183,14 +167,12 @@ void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);
-void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
-void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int,int,int);
+void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
 int sqlite3VdbeCurrentAddr(Vdbe*);
 #ifdef SQLITE_DEBUG
-  int sqlite3VdbeAssertMayAbort(Vdbe *, int);
   void sqlite3VdbeTrace(Vdbe*,FILE*);
 #endif
 void sqlite3VdbeResetStepResult(Vdbe*);
@@ -201,33 +183,13 @@ void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);
 void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, int);
 void sqlite3VdbeSwap(Vdbe*,Vdbe*);
-VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
-void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
-sqlite3_value *sqlite3VdbeGetValue(Vdbe*, int, u8);
-void sqlite3VdbeSetVarmask(Vdbe*, int);
-#ifndef SQLITE_OMIT_TRACE
-  char *sqlite3VdbeExpandSql(Vdbe*, const char*);
-#endif
 
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+int sqlite3VdbeReleaseMemory(int);
+#endif
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
-/*function used to convert a normal function into a VBE function having auxiliary parameters*/
-void* sqlite3CreateVdbeFuncWithAuxData(sqlite3*, FuncDef*, void*, void*);
-/*function used to set the spatial iterator, this is already initialized*/
-void sqlite3SetVdbeSpatialIterator(Vdbe*, void*);
-/*function used to set the spatial index and index of the variable used to initialize
-** the spatial iterator. This function is needed when caller uses a varaible (parameter)
-** value which is bind later at execute time.*/
-void sqlite3SetVdbeDynSpatialIndex(Vdbe*, void*, void*);
-/*function used to disable SI optimization*/
-u8 sqlite3VdbeDisableSpatialIndex(Vdbe*, u8);
-/*function used to set table ID used in SI optimization*/
-void sqlite3SetVdbeTableInfo(Vdbe*, int);
-/*function used to set table ID used and SI in spatial joins*/
-void sqlite3SetVdbeJoinSpatialIndex(Vdbe*, void*, u32, u16, void*, u32, u16);
-/*function used to get id we found a way already to optimize the query*/
-u8 sqlite3VdbeSpatialIndexIsSet(Vdbe*);
 
 
 #ifndef NDEBUG

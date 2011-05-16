@@ -5,12 +5,10 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib510.c,v 1.10 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib510.c,v 1.5 2006-10-25 09:20:44 yangtse Exp $
  */
 
 #include "test.h"
-
-#include "memdebug.h"
 
 static const char *post[]={
   "one",
@@ -49,6 +47,7 @@ int test(char *URL)
   CURL *curl;
   CURLcode res=CURLE_OK;
   struct curl_slist *slist = NULL;
+
   struct WriteThis pooh;
   pooh.counter = 0;
 
@@ -72,40 +71,28 @@ int test(char *URL)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
 
   /* Now specify we want to POST data */
-  test_setopt(curl, CURLOPT_POST, 1L);
-
-#ifdef CURL_DOES_CONVERSIONS
-  /* Convert the POST data to ASCII */
-  test_setopt(curl, CURLOPT_TRANSFERTEXT, 1L);
-#endif
+  curl_easy_setopt(curl, CURLOPT_POST, TRUE);
 
   /* we want to use our own read function */
-  test_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+  curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
 
   /* pointer to pass to our read function */
-  test_setopt(curl, CURLOPT_INFILE, &pooh);
+  curl_easy_setopt(curl, CURLOPT_INFILE, &pooh);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(curl, CURLOPT_HEADER, TRUE);
 
   /* enforce chunked transfer by setting the header */
-  test_setopt(curl, CURLOPT_HTTPHEADER, slist);
-
-#ifdef LIB565
-  test_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-  test_setopt(curl, CURLOPT_USERPWD, "foo:bar");
-#endif
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 
   /* Perform the request, res will get the return code */
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   /* clean up the headers list */
   if(slist)

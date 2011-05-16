@@ -31,18 +31,32 @@
 #pragma warning(pop)
 #endif
 
-//
+// default implementation of visit_each
+
+namespace boost
+{
+    template<class V, class T> void visit_each(V & v, T const & t, long)
+    {
+        v(t, 0);
+    }
+}
+
+// visitor
+
+int hash = 0;
 
 struct visitor
 {
-    template<class T> void operator()( boost::reference_wrapper<T> const & r ) const
+    template<class T> void operator()(boost::reference_wrapper<T> const & r, int) const
     {
         std::cout << "Reference to " << typeid(T).name() << " @ " << &r.get() << " (with value " << r.get() << ")\n";
+        hash += r.get();
     }
 
-    template<class T> void operator()( T const & t ) const
+    template<class T> void operator()(T const &, long) const
     {
-        std::cout << "Value of type " << typeid(T).name() << " (with value " << t << ")\n";
+        std::cout << "Value of type " << typeid(T).name() << '\n';
+        ++hash;
     }
 };
 
@@ -56,10 +70,26 @@ int f(int & i, int & j, int)
 int x = 2;
 int y = 7;
 
+int detect_errors(bool x)
+{
+    if(x)
+    {
+        std::cerr << "no errors detected.\n";
+        return 0;
+    }
+    else
+    {
+        std::cerr << "test failed.\n";
+        return 1;
+    }
+}
+
 int main()
 {
     using namespace boost;
 
     visitor v;
     visit_each(v, bind<int>(bind(f, ref(x), _1, 42), ref(y)), 0);
+
+    return detect_errors(hash == 12);
 }

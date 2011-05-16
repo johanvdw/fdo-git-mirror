@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rpftocfile.cpp 17617 2009-09-07 19:14:46Z rouault $
+ * $Id: rpftocfile.cpp 14971 2008-07-19 12:57:18Z rouault $
  *
  * Project:  RPF A.TOC read Library
  * Purpose:  Module responsible for opening a RPF TOC file, populating RPFToc
@@ -49,7 +49,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rpftocfile.cpp 17617 2009-09-07 19:14:46Z rouault $");
+CPL_CVSID("$Id: rpftocfile.cpp 14971 2008-07-19 12:57:18Z rouault $");
 
 /************************************************************************/
 /*                        RPFTOCTrim()                                    */
@@ -96,21 +96,6 @@ RPFToc* RPFTOCRead(const char* pszFilename, NITFFile* psFile)
         return NULL;
     }
 
-    if (TRESize < 48)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "Not enough bytes in RPFHDR." );
-        return NULL;
-    }
-
-    int nRemainingBytes = psFile->nTREBytes - (pachTRE - psFile->pachTRE);
-    if (nRemainingBytes < 48)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                "Cannot read RPFHDR TRE. Not enough bytes");
-        return NULL;
-    }
-
     return  RPFTOCReadFromBuffer(pszFilename, psFile->fp, pachTRE);
 }
 
@@ -150,7 +135,7 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, FILE* fp, const char* tocH
     tocHeader += 2; /* skip country  */
     tocHeader += 2; /* skip release  */
     
-    memcpy(&locationSectionPhysicalLocation, tocHeader, sizeof(unsigned int));
+    locationSectionPhysicalLocation = *(unsigned int*)tocHeader;
     CPL_MSBPTR32(&locationSectionPhysicalLocation);
     
     if( VSIFSeekL( fp, locationSectionPhysicalLocation, SEEK_SET ) != 0)
@@ -424,7 +409,7 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, FILE* fp, const char* tocH
         else
         {
             /* Trick so that frames are numbered north to south */
-            frameRow = (unsigned short)((entry->nVertFrames-1) - frameRow);
+            frameRow = (entry->nVertFrames-1) - frameRow;
         }
    
         if (frameRow >= entry->nVertFrames)

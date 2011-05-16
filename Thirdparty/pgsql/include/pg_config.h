@@ -6,8 +6,8 @@
  *
  * HAVE_CBRT, HAVE_FUNCNAME_FUNC, HAVE_GETOPT, HAVE_GETOPT_H,
  * HAVE_GETOPT_LONG, HAVE_RINT, HAVE_STRINGS_H, HAVE_STRTOLL,
- * HAVE_STRTOULL, HAVE_STRUCT_OPTION, ENABLE_THREAD_SAFETY,
- * USE_INLINE, inline
+ * HAVE_STRTOULL, HAVE_STRUCT_OPTION, ENABLE_THREAD_SAFETY
+ *
  */
 
 /* Define to the type of arg 1 of 'accept' */
@@ -306,6 +306,9 @@
 /* Define to 1 if you have the `readlink' function. */
 /* #undef HAVE_READLINK */
 
+/* Define to 1 if you have the `replace_history_entry' function. */
+/* #undef HAVE_REPLACE_HISTORY_ENTRY */
+
 /* Define to 1 if you have the `rint' function. */
 /*#define HAVE_RINT 1*/
 
@@ -347,7 +350,7 @@
 /* #undef HAVE_SRANDOM */
 
 /* Define to 1 if you have the <stdint.h> header file. */
-/* #undef HAVE_STDINT_H */
+#define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -560,16 +563,16 @@
 #define PACKAGE_NAME "PostgreSQL"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "PostgreSQL 9.0rc1"
+#define PACKAGE_STRING "PostgreSQL 8.4.2"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "9.0rc1"
+#define PACKAGE_VERSION "8.4.2"
 
 /* PostgreSQL version as a string */
-#define PG_VERSION "9.0rc1"
+#define PG_VERSION "8.4.2"
 
 /* PostgreSQL version as a number */
-#define PG_VERSION_NUM 90000
+#define PG_VERSION_NUM 80402
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "postgresql"
@@ -581,28 +584,17 @@
 /* A string containing the version number, platform, and C compiler */
 #define __STRINGIFY(x) #x
 #define __STRINGIFY2(z) __STRINGIFY(z)
-#define PG_VERSION_STR "PostgreSQL 9.0rc1, compiled by Visual C++ build " __STRINGIFY2(_MSC_VER) ", 64-bit"
+#define PG_VERSION_STR "PostgreSQL 8.4.2, compiled by Visual C++ build " __STRINGIFY2(_MSC_VER) ", 32-bit"
 
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
 /* #undef PTHREAD_CREATE_JOINABLE */
 
-/* The size of `long', as computed by sizeof. */
-#define SIZEOF_LONG 4
-
-/* The size of `size_t', as computed by sizeof. */
-#ifndef _WIN64
+/* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
-#else
-#define SIZEOF_SIZE_T 8
-#endif
 
-/* The size of `void *', as computed by sizeof. */
-#ifndef _WIN64
-#define SIZEOF_VOID_P 4
-#else
-#define SIZEOF_VOID_P 8
-#endif
+/* The size of a `unsigned long', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_LONG 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -622,10 +614,6 @@
 
 /* Define to 1 to build with Bonjour support. (--with-bonjour) */
 /* #undef USE_BONJOUR */
-
-/* Define to 1 if "static inline" works without unwanted warnings from
-   compilations where static inline functions are defined but not called. */
-#define USE_INLINE 1
 
 /* Define to 1 if you want 64-bit integer timestamp and interval support.
    (--enable-integer-datetimes) */
@@ -670,11 +658,9 @@
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#define inline __inline
-#endif
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+/* #undef inline */
 
 /* Define to empty if the C compiler does not understand signed types. */
 /* #undef signed */
@@ -682,7 +668,7 @@
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
 /* #undef volatile */
-#define PG_MAJORVERSION "9.0"
+#define PG_MAJORVERSION "8.4"
 #define LOCALEDIR "/share/locale"
 /* defines added by config steps */
 #ifndef IGNORE_CONFIGURED_SETTINGS
@@ -698,9 +684,13 @@
 #define USE_FLOAT4_BYVAL 1
 #define FLOAT4PASSBYVAL true
 #define FLOAT8PASSBYVAL false
+#define HAVE_UUID_H
 #define HAVE_LIBXML2
 #define USE_LIBXML
-#define HAVE_LIBXSLT
-#define USE_LIBXSLT
-#define VAL_CONFIGURE "--enable-thread-safety --enable-integer-datetimes --enable-nls --with-ldap --with-libxml --with-libxslt --with-perl --with-python"
+#define KRB5 1
+#define HAVE_KRB5_ERROR_TEXT_DATA 1
+#define HAVE_KRB5_TICKET_ENC_PART2 1
+#define HAVE_KRB5_FREE_UNPARSED_NAME 1
+#define ENABLE_GSS 1
+#define VAL_CONFIGURE "--enable-thread-safety --enable-integer-datetimes --enable-nls --with-ldap --with-ossp-uuid --with-libxml --with-libxslt --with-krb5 --with-tcl --with-perl --with-python"
 #endif /* IGNORE_CONFIGURED_SETTINGS */

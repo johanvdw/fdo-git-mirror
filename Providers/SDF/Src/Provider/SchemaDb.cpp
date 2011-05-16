@@ -213,10 +213,6 @@ FdoFeatureSchema* SchemaDb::ReadSchema(FdoString *schemaName)
 	// Fix any missing cross-references between schema elements
 	PostReadSchema( schema );
 
-    // Set all schema elements to unchanged and generate any readonly
-    // association properties
-    schema->AcceptChanges();
-
 	// This method(SchemaDb::ReadSchema) gets call just opening the FdoIConnection.
 	// The following closes any open cursors so inserting features would work. 
 	CloseCursor();
@@ -534,17 +530,13 @@ void SchemaDb::ReadFeatureClass(REC_NO classRecno, FdoFeatureSchema* schema)
 
         switch(type)
         {
-            case FdoPropertyType_DataProperty:
-                ReadDataPropertyDefinition(rdr, pdc);
+            case FdoPropertyType_DataProperty: ReadDataPropertyDefinition(rdr, pdc);
                 break;
-            case FdoPropertyType_GeometricProperty:
-                ReadGeometricPropertyDefinition(rdr, pdc, classcaps);
+            case FdoPropertyType_GeometricProperty: ReadGeometricPropertyDefinition(rdr, pdc);
                 break;
-            case FdoPropertyType_ObjectProperty:
-                ReadObjectPropertyDefinition(rdr, pdc);
+            case FdoPropertyType_ObjectProperty: ReadObjectPropertyDefinition(rdr, pdc);
                 break;
-            case FdoPropertyType_AssociationProperty:
-                ReadAssociationPropertyDefinition(rdr, pdc);
+			case FdoPropertyType_AssociationProperty: ReadAssociationPropertyDefinition(rdr, pdc);
                 break;
             default:
                 throw FdoException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_21_UNKNOWN_PROPERTY_TYPE)));
@@ -742,10 +734,7 @@ void SchemaDb::ReadDataPropertyDefinition(BinaryReader& rdr, FdoPropertyDefiniti
     pdc->Add(dpd);
 }
 
-void SchemaDb::ReadGeometricPropertyDefinition(
-    BinaryReader& rdr,
-    FdoPropertyDefinitionCollection* pdc,
-    FdoClassCapabilities* classcaps)
+void SchemaDb::ReadGeometricPropertyDefinition(BinaryReader& rdr, FdoPropertyDefinitionCollection* pdc)
 {
     //create property
     FdoPtr<FdoGeometricPropertyDefinition> gpd = FdoGeometricPropertyDefinition::Create();
@@ -764,10 +753,6 @@ void SchemaDb::ReadGeometricPropertyDefinition(
 
     //add property to collection
     pdc->Add(gpd);
-
-    // Set vertex order and strictness rule for geometry property
-    classcaps->SetPolygonVertexOrderRule(gpd->GetName(), FdoPolygonVertexOrderRule_None);
-    classcaps->SetPolygonVertexOrderStrictness(gpd->GetName(), false);
 }
 
 void SchemaDb::ReadObjectPropertyDefinition(BinaryReader& rdr, FdoPropertyDefinitionCollection* pdc)

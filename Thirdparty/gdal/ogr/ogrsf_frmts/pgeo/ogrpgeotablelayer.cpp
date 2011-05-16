@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeotablelayer.cpp 17755 2009-10-04 21:04:10Z rouault $
+ * $Id: ogrpgeotablelayer.cpp 15796 2008-11-23 16:08:33Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoTableLayer class, access to an existing table.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_pgeo.h"
 
-CPL_CVSID("$Id: ogrpgeotablelayer.cpp 17755 2009-10-04 21:04:10Z rouault $");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 15796 2008-11-23 16:08:33Z rouault $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */
@@ -103,21 +103,18 @@ CPLErr OGRPGeoTableLayer::Initialize( const char *pszTableName,
         case SHPT_POINT:
         case SHPT_POINTM:
         case SHPT_POINTZ:
-        case SHPT_POINTZM:
             eOGRType = wkbPoint;
             break;
 
         case SHPT_ARC:
         case SHPT_ARCZ:
         case SHPT_ARCM:
-        case SHPT_ARCZM:
             eOGRType = wkbLineString;
             break;
             
         case SHPT_MULTIPOINT:
         case SHPT_MULTIPOINTZ:
         case SHPT_MULTIPOINTM:
-        case SHPT_MULTIPOINTZM:
             eOGRType = wkbMultiPoint;
             break;
 
@@ -318,7 +315,14 @@ OGRErr OGRPGeoTableLayer::SetAttributeFilter( const char *pszQuery )
 int OGRPGeoTableLayer::TestCapability( const char * pszCap )
 
 {
-    if( EQUAL(pszCap,OLCRandomRead) )
+    if( EQUAL(pszCap,OLCSequentialWrite) 
+             || EQUAL(pszCap,OLCRandomWrite) )
+        return bUpdateAccess;
+
+    else if( EQUAL(pszCap,OLCCreateField) )
+        return bUpdateAccess;
+
+    else if( EQUAL(pszCap,OLCRandomRead) )
         return TRUE;
 
     else if( EQUAL(pszCap,OLCFastFeatureCount) )

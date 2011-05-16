@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1readerp.h 16865 2009-04-27 12:49:49Z chaitanya $
+ * $Id: ili1readerp.h 15268 2008-08-31 19:03:09Z pka $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -49,7 +49,6 @@ private:
     int          nLayers;
     OGRILI1Layer **papoLayers;
     OGRILI1Layer *curLayer;
-    OGRILI1Layer *metaLayer;
     double       arcIncr;
 
 public:
@@ -60,7 +59,7 @@ public:
     int          OpenFile( const char *pszFilename );
     int          ReadModel( const char *pszModelFilename );
     int          ReadFeatures();
-    int          ReadTable(const char *layername);
+    int          ReadTable();
     void         ReadGeom(char **stgeom, OGRwkbGeometryType eType, OGRFeature *feature);
     char         **ReadParseLine();
 
@@ -70,8 +69,6 @@ public:
     OGRILI1Layer *GetLayerByName( const char* );
     int          GetLayerCount();
 
-    int          HasMultiplePointGeom(const char* layername);
-    char*        GetPointLayerName(const char* layername, char* newlayername);
     const char*  GetLayerNameString(const char* topicname, const char* tablename);
     const char*  GetLayerName(IOM_BASKET model, IOM_OBJECT table);
     void         AddCoord(OGRILI1Layer* layer, IOM_BASKET model, IOM_OBJECT modelele, IOM_OBJECT typeobj);

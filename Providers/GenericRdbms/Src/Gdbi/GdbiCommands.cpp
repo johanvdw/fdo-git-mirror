@@ -465,22 +465,8 @@ long GdbiCommands::NextRDBMSSequenceNumber( FdoString* adbSequenceName )
     gdbi_full_seq_def   *gptr = &mFeatureSeq;
     long                number = -1;
     int                 CURSOR = -1;
-    FdoStringP          sequenceName(adbSequenceName);
 
     CheckDB();
-
-#ifndef USE_NONRDBMS_HEADER
-    if (SupportsUnicode())
-    {
-        if ( ::rdbi_get_next_seqW ( m_pRdbiContext, sequenceName, &number ) != RDBI_SUCCESS )
-      		ThrowException();
-    }
-    else
-    {
-        if ( ::rdbi_get_next_seq ( m_pRdbiContext, sequenceName, &number ) != RDBI_SUCCESS )
-      		ThrowException();
-    }
-#else
 
     if ( (gptr->next < gptr->size) && (FdoCommonOSUtil::wcsicmp(adbSequenceName, gptr->seq_name) == 0) )
     {
@@ -565,7 +551,6 @@ the_exit:
 
     if( ! rc )
         ThrowException();
-#endif
 
     return number;
 }
@@ -691,18 +676,6 @@ int GdbiCommands::geom_srid_set(
 	long			srid)
 {
 	int rc = ::rdbi_geom_srid_set(m_pRdbiContext, sqlid, geom_col_name, srid);
-	if (rc == RDBI_SUCCESS)
-		return rc;
-
-	return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::geom_version_set(
-	int				sqlid,
-	char			*geom_col_name,
-	long			version)
-{
-	int rc = ::rdbi_geom_version_set(m_pRdbiContext, sqlid, geom_col_name, version);
 	if (rc == RDBI_SUCCESS)
 		return rc;
 

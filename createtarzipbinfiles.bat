@@ -28,14 +28,15 @@ SET RDBMSENABLE=yes
 SET GDALENABLE=yes
 SET KINGORACLEENABLE=yes
 SET OGRENABLE=yes
+SET POSTGISENABLE=yes
 SET SQLITEENABLE=yes
 SET MYSQLENABLE=yes
 SET ODBCENABLE=yes
 SET SQLSPATIALENABLE=yes
 SET SHOWHELP=no
 SET FDOTARZIPFOLDER=c:\OpenSource_FDO
-SET FDOBUILDNUMBER=J00X
-SET FDORELNUMBER=3.7.0
+SET FDOBUILDNUMBER=D00X
+SET FDORELNUMBER=3.5.0
 SET FDOZIPTEMP=7zTemp
 
 :study_params
@@ -76,6 +77,7 @@ if "%DEFMODIFY%"=="yes" goto stp1_get_with
     SET GDALENABLE=no
     SET KINGORACLEENABLE=no
     SET OGRENABLE=no
+    SET POSTGISENABLE=no
     SET SQLITEENABLE=no
     SET MYSQLENABLE=no
     SET ODBCENABLE=no
@@ -113,8 +115,12 @@ if not "%2"=="kingoracle" goto stp9_get_with
     SET KINGORACLEENABLE=yes
     goto next_param
 :stp9_get_with
-if not "%2"=="ogr" goto stp11_get_with
+if not "%2"=="ogr" goto stp10_get_with
     SET OGRENABLE=yes
+    goto next_param
+:stp10_get_with
+if not "%2"=="postgis" goto stp11_get_with
+    SET POSTGISENABLE=yes
     goto next_param
 :stp11_get_with
 if not "%2"=="sqlite" goto stp12_get_with
@@ -144,6 +150,7 @@ if not "%2"=="providers" goto stp16_get_with
     SET GDALENABLE=yes
     SET KINGORACLEENABLE=yes
     SET OGRENABLE=yes
+    SET POSTGISENABLE=yes
     SET SQLITEENABLE=yes
     SET MYSQLENABLE=yes
     SET ODBCENABLE=yes
@@ -161,6 +168,7 @@ if not "%2"=="all" goto custom_error
     SET GDALENABLE=yes
     SET KINGORACLEENABLE=yes
     SET OGRENABLE=yes
+    SET POSTGISENABLE=yes
     SET SQLITEENABLE=yes
     SET MYSQLENABLE=yes
     SET ODBCENABLE=yes
@@ -197,12 +205,11 @@ if "%FDOCOREENABLE%"=="no" goto start_zip_shp
    mkdir %FDOZIPTEMP%\Bin
    mkdir %FDOZIPTEMP%\Bin\com
    copy "%FDOROOT%\Bin\providers.xml" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\xerces-c_3_1.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\Xalan-C_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\XalanMessages_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\gdal17.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\xerces-c_2_5_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\Xalan-C_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\gdal16.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOCommon.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOGeometry.dll" %FDOZIPTEMP%\Bin\
@@ -365,7 +372,7 @@ if "%GDALENABLE%"=="no" goto start_zip_king_oracle
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_king_oracle
-if "%KINGORACLEENABLE%"=="no" goto start_zip_ogr
+if "%KINGORACLEENABLE%"=="no" goto start_zip_postgis
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
    copy "%FDOROOT%\Bin\KingOracleMessage.dll" %FDOZIPTEMP%\Bin\
@@ -374,6 +381,18 @@ if "%KINGORACLEENABLE%"=="no" goto start_zip_ogr
    pushd "%FDOZIPTEMP%"
    if exist "%FDOTARZIPFOLDER%\fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip" del /q /f "%FDOTARZIPFOLDER%\fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip"
    7z a -airy -bd -tzip "%FDOTARZIPFOLDER%\fdokingoracle-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip" Bin
+   popd
+   deltree /Y "%FDOZIPTEMP%"
+:start_zip_postgis
+if "%POSTGISENABLE%"=="no" goto start_zip_ogr
+   mkdir %FDOZIPTEMP%
+   mkdir %FDOZIPTEMP%\Bin
+   copy "%FDOROOT%\Bin\PostGISMessage.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\PostGISOverrides.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\PostGISProvider.dll" %FDOZIPTEMP%\Bin\
+   pushd "%FDOZIPTEMP%"
+   if exist "%FDOTARZIPFOLDER%\fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip" del /q /f "%FDOTARZIPFOLDER%\fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip"
+   7z a -airy -bd -tzip "%FDOTARZIPFOLDER%\fdopostgis-win32-%FDORELNUMBER%_%FDOBUILDNUMBER%.zip" Bin
    popd
    deltree /Y "%FDOZIPTEMP%"
 :start_zip_ogr
@@ -440,6 +459,7 @@ echo                         sqlspatial,
 echo                         gdal, 
 echo                         kingoracle, 
 echo                         ogr,
+echo                         postgis,
 echo                         sqlite
 echo BuildNumber:    -b[uild]=User-Defined build number appended to the end of the zip files
 echo ReleaseNumber:  -r[elease]=FDO build number appended to the end of the zip files

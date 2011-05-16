@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gml2ogrgeometry.cpp 18085 2009-11-23 19:02:18Z rouault $
+ * $Id: gml2ogrgeometry.cpp 14768 2008-06-25 19:37:42Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Code to translate between GML and OGR geometry forms.
@@ -44,7 +44,6 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 #include <ctype.h>
-#include "ogr_p.h"
 
 /************************************************************************/
 /*                           BareGMLElement()                           */
@@ -74,11 +73,11 @@ static const char *BareGMLElement( const char *pszInput )
 /*      after any namespace qualifiers have been stripped off.          */
 /************************************************************************/
 
-static const CPLXMLNode *FindBareXMLChild( const CPLXMLNode *psParent, 
-                                           const char *pszBareName )
+static CPLXMLNode *FindBareXMLChild( CPLXMLNode *psParent, 
+                                     const char *pszBareName )
 
 {
-    const CPLXMLNode *psCandidate = psParent->psChild;
+    CPLXMLNode *psCandidate = psParent->psChild;
 
     while( psCandidate != NULL )
     {
@@ -96,13 +95,13 @@ static const CPLXMLNode *FindBareXMLChild( const CPLXMLNode *psParent,
 /*                           GetElementText()                           */
 /************************************************************************/
 
-static const char *GetElementText( const CPLXMLNode *psElement )
+static const char *GetElementText( CPLXMLNode *psElement )
 
 {
     if( psElement == NULL )
         return NULL;
 
-    const CPLXMLNode *psChild = psElement->psChild;
+    CPLXMLNode *psChild = psElement->psChild;
 
     while( psChild != NULL )
     {
@@ -167,10 +166,10 @@ static int AddPoint( OGRGeometry *poGeometry,
 /*                        ParseGMLCoordinates()                         */
 /************************************************************************/
 
-static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeometry )
+int ParseGMLCoordinates( CPLXMLNode *psGeomNode, OGRGeometry *poGeometry )
 
 {
-    const CPLXMLNode *psCoordinates = FindBareXMLChild( psGeomNode, "coordinates" );
+    CPLXMLNode *psCoordinates = FindBareXMLChild( psGeomNode, "coordinates" );
     int iCoord = 0;
 
 /* -------------------------------------------------------------------- */
@@ -193,13 +192,13 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
             int nDimension = 2;
 
             // parse out 2 or 3 tuple. 
-            dfX = OGRFastAtof( pszCoordString );
+            dfX = atof( pszCoordString );
             while( *pszCoordString != '\0'
                    && *pszCoordString != ','
-                   && !isspace((unsigned char)*pszCoordString) )
+                   && !isspace(*pszCoordString) )
                 pszCoordString++;
 
-            if( *pszCoordString == '\0' || isspace((unsigned char)*pszCoordString) )
+            if( *pszCoordString == '\0' || isspace(*pszCoordString) )
             {
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Corrupt <coordinates> value." );
@@ -207,24 +206,24 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
             }
 
             pszCoordString++;
-            dfY = OGRFastAtof( pszCoordString );
+            dfY = atof( pszCoordString );
             while( *pszCoordString != '\0' 
                    && *pszCoordString != ','
-                   && !isspace((unsigned char)*pszCoordString) )
+                   && !isspace(*pszCoordString) )
                 pszCoordString++;
 
             if( *pszCoordString == ',' )
             {
                 pszCoordString++;
-                dfZ = OGRFastAtof( pszCoordString );
+                dfZ = atof( pszCoordString );
                 nDimension = 3;
                 while( *pszCoordString != '\0' 
                        && *pszCoordString != ','
-                       && !isspace((unsigned char)*pszCoordString) )
+                       && !isspace(*pszCoordString) )
                 pszCoordString++;
             }
 
-            while( isspace((unsigned char)*pszCoordString) )
+            while( isspace(*pszCoordString) )
                 pszCoordString++;
 
             if( !AddPoint( poGeometry, dfX, dfY, dfZ, nDimension ) )
@@ -242,9 +241,8 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
 /*      the correct parsing of gml3.1.1 geomtries such as linestring    */
 /*      defined with pos elements.                                      */
 /* -------------------------------------------------------------------- */
-    const CPLXMLNode *psPos;
+    CPLXMLNode *psPos;
     
-    int bHasFoundPosElement = FALSE;
     for( psPos = psGeomNode->psChild; 
          psPos != NULL;
          psPos = psPos->psNext )
@@ -260,15 +258,15 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
         if( CSLCount( papszTokens ) > 2 )
         {
             bSuccess = AddPoint( poGeometry, 
-                                 OGRFastAtof(papszTokens[0]), 
-                                 OGRFastAtof(papszTokens[1]),
-                                 OGRFastAtof(papszTokens[2]), 3 );
+                                 atof(papszTokens[0]), 
+                                 atof(papszTokens[1]),
+                                 atof(papszTokens[2]), 3 );
         }
         else if( CSLCount( papszTokens ) > 1 )
         {
             bSuccess = AddPoint( poGeometry, 
-                                 OGRFastAtof(papszTokens[0]), 
-                                 OGRFastAtof(papszTokens[1]),
+                                 atof(papszTokens[0]), 
+                                 atof(papszTokens[1]),
                                  0.0, 2 );
         }
         else
@@ -279,67 +277,37 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
         }
 
         CSLDestroy( papszTokens );
-        
-        if (bSuccess)
-            bHasFoundPosElement = TRUE;
-        else
-            return FALSE;
+
+        return bSuccess;
     }
-    
-    if (bHasFoundPosElement)
-        return TRUE;
     
 
 /* -------------------------------------------------------------------- */
 /*      Is this a "posList"?  GML 3 construct (SF profile).             */
 /* -------------------------------------------------------------------- */
-    const CPLXMLNode *psPosList = FindBareXMLChild( psGeomNode, "posList" );
+    CPLXMLNode *psPosList = FindBareXMLChild( psGeomNode, "posList" );
     
     if( psPosList != NULL )
     {
-        char **papszTokens;
+        char **papszTokens = CSLTokenizeStringComplex( 
+            GetElementText( psPosList ), " ,", FALSE, FALSE );
         int bSuccess = FALSE;
         int i=0, nCount=0;
-        const CPLXMLNode* psChild;
-        int nDimension = 2;
 
-        /* Try to detect the presence of an srsDimension attribute */
-        /* This attribute is only availabe for gml3.1.1 but not */
-        /* available for gml3.1 SF*/
-        psChild = psPosList->psChild;
-        while (psChild != NULL)
-        {
-            if (psChild->eType == CXT_Attribute &&
-                EQUAL(psChild->pszValue, "srsDimension"))
-            {
-                nDimension = atoi(psChild->psChild->pszValue);
-                break;
-            }
-            else if (psChild->eType != CXT_Attribute)
-            {
-                break;
-            }
-            psChild = psChild->psNext;
-        }
-
-        if (nDimension != 2 && nDimension != 3)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "srsDimension = %d not supported", nDimension);
-            return FALSE;
-        }
-
-        papszTokens = CSLTokenizeStringComplex( 
-            GetElementText( psPosList ), " ,", FALSE, FALSE );
+        /*assuming that it is a 2 dimension with x y values*/
+        /*we could also check to see if there is a count attribute and an srsDimension.
+          These attributes are only availabe for gml3.1.1 but not 
+          available for gml3.1 SF*/
 
         nCount = CSLCount( papszTokens );
-
-        if (nCount < nDimension  || (nCount % nDimension) != 0)
+       
+        if (nCount < 2  || fmod((double)nCount, 2.0) != 0)
         {
+            
             CPLError( CE_Failure, CPLE_AppDefined,
-                      "Did not get at least %d values or invalid number of \n"
+                      "Did not get at least two values or invalid number of \n"
                       "set of coordinates <gml:posList>%s</gml:posList>",
-                      nDimension, GetElementText( psPosList ) );
+                      GetElementText( psPosList ) );
         }
         else
         {
@@ -347,10 +315,10 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
             while (i<nCount)
             {
                 bSuccess = AddPoint( poGeometry, 
-                                     OGRFastAtof(papszTokens[i]), 
-                                     OGRFastAtof(papszTokens[i+1]),
-                                     (nDimension == 3) ? OGRFastAtof(papszTokens[i+2]) : 0.0, nDimension );
-                i+=nDimension;
+                                     atof(papszTokens[i]), 
+                                     atof(papszTokens[i+1]),
+                                     0.0, 2 );
+                i+=2;
             }
         }
         CSLDestroy( papszTokens );
@@ -363,7 +331,7 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
 /*      Handle form with a list of <coord> items each with an <X>,      */
 /*      and <Y> element.                                                */
 /* -------------------------------------------------------------------- */
-    const CPLXMLNode *psCoordNode;
+    CPLXMLNode *psCoordNode;
 
     for( psCoordNode = psGeomNode->psChild; 
          psCoordNode != NULL;
@@ -373,7 +341,7 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
             || !EQUAL(BareGMLElement(psCoordNode->pszValue),"coord") )
             continue;
 
-        const CPLXMLNode *psXNode, *psYNode, *psZNode;
+        CPLXMLNode *psXNode, *psYNode, *psZNode;
         double dfX, dfY, dfZ = 0.0;
         int nDimension = 2;
 
@@ -391,12 +359,12 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
             return FALSE;
         }
 
-        dfX = OGRFastAtof( GetElementText(psXNode) );
-        dfY = OGRFastAtof( GetElementText(psYNode) );
+        dfX = atof( GetElementText(psXNode) );
+        dfY = atof( GetElementText(psYNode) );
 
         if( psZNode != NULL && GetElementText(psZNode) != NULL )
         {
-            dfZ = OGRFastAtof( GetElementText(psZNode) );
+            dfZ = atof( GetElementText(psZNode) );
             nDimension = 3;
         }
 
@@ -417,7 +385,7 @@ static int ParseGMLCoordinates( const CPLXMLNode *psGeomNode, OGRGeometry *poGeo
 /*      collections.                                                    */
 /************************************************************************/
 
-static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
+static OGRGeometry *GML2OGRGeometry_XMLNode( CPLXMLNode *psNode )
 
 {
     const char *pszBaseGeometry = BareGMLElement( psNode->pszValue );
@@ -427,7 +395,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszBaseGeometry,"Polygon") )
     {
-        const CPLXMLNode *psChild;
+        CPLXMLNode *psChild;
         OGRPolygon *poPolygon = new OGRPolygon();
         OGRLinearRing *poRing;
 
@@ -578,10 +546,9 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 /* -------------------------------------------------------------------- */
 /*      MultiPolygon                                                    */
 /* -------------------------------------------------------------------- */
-    if( EQUAL(pszBaseGeometry,"MultiPolygon") ||
-        EQUAL(pszBaseGeometry,"MultiSurface") )
+    if( EQUAL(pszBaseGeometry,"MultiPolygon") )
     {
-        const CPLXMLNode *psChild;
+        CPLXMLNode *psChild;
         OGRMultiPolygon *poMPoly = new OGRMultiPolygon();
 
         // Find all inner rings 
@@ -590,8 +557,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
              psChild = psChild->psNext ) 
         {
             if( psChild->eType == CXT_Element
-                && (EQUAL(BareGMLElement(psChild->pszValue),"polygonMember") ||
-                    EQUAL(BareGMLElement(psChild->pszValue),"surfaceMember")) )
+                && EQUAL(BareGMLElement(psChild->pszValue),"polygonMember") )
             {
                 OGRPolygon *poPolygon;
 
@@ -626,7 +592,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszBaseGeometry,"MultiPoint") )
     {
-        const CPLXMLNode *psChild;
+        CPLXMLNode *psChild;
         OGRMultiPoint *poMP = new OGRMultiPoint();
 
         // collect points.
@@ -664,7 +630,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszBaseGeometry,"MultiLineString") )
     {
-        const CPLXMLNode *psChild;
+        CPLXMLNode *psChild;
         OGRMultiLineString *poMP = new OGRMultiLineString();
 
         // collect lines
@@ -701,7 +667,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszBaseGeometry,"GeometryCollection") )
     {
-        const CPLXMLNode *psChild;
+        CPLXMLNode *psChild;
         OGRGeometryCollection *poGC = new OGRGeometryCollection();
 
         // collect geoms
@@ -745,7 +711,7 @@ static OGRGeometry *GML2OGRGeometry_XMLNode( const CPLXMLNode *psNode )
 OGRGeometryH OGR_G_CreateFromGMLTree( const CPLXMLNode *psTree )
 
 {
-    return (OGRGeometryH) GML2OGRGeometry_XMLNode( psTree );
+    return (OGRGeometryH) GML2OGRGeometry_XMLNode( (CPLXMLNode *) psTree );
 }
 
 /************************************************************************/
@@ -762,7 +728,7 @@ OGRGeometryH OGR_G_CreateFromGML( const char *pszGML )
         return NULL;
     }
 
-/* ------------------------------------------------------------ -------- */
+/* -------------------------------------------------------------------- */
 /*      Try to parse the XML snippet using the MiniXML API.  If this    */
 /*      fails, we assume the minixml api has already posted a CPL       */
 /*      error, and just return NULL.                                    */

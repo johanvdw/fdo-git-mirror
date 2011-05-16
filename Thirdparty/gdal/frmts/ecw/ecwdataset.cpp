@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecwdataset.cpp 17906 2009-10-26 19:47:21Z rouault $
+ * $Id: ecwdataset.cpp 15027 2008-07-25 06:53:48Z dron $
  *
  * Project:  GDAL 
  * Purpose:  ECW (ERMapper Wavelet Compression Format) Driver
@@ -38,7 +38,7 @@
 #include "ogr_api.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id: ecwdataset.cpp 17906 2009-10-26 19:47:21Z rouault $");
+CPL_CVSID("$Id: ecwdataset.cpp 15027 2008-07-25 06:53:48Z dron $");
 
 #ifdef FRMT_ecw
 
@@ -60,8 +60,6 @@ CPLErr CPL_DLL GTIFWktFromMemBuf( int nSize, unsigned char *pabyBuffer,
 CPL_C_END
 
 void ECWInitialize( void );
-
-GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo);
 
 /************************************************************************/
 /* ==================================================================== */
@@ -109,13 +107,11 @@ class CPL_DLL ECWDataset : public GDALPamDataset
     CPLErr      LoadNextLine();
 
   public:
-		ECWDataset(int bIsJPEG2000);
+		ECWDataset();
 		~ECWDataset();
                 
-    static GDALDataset *Open( GDALOpenInfo *, int bIsJPEG2000 );
-    static int          IdentifyJPEG2000( GDALOpenInfo * poOpenInfo );
+    static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *OpenJPEG2000( GDALOpenInfo * );
-    static int          IdentifyECW( GDALOpenInfo * poOpenInfo );
     static GDALDataset *OpenECW( GDALOpenInfo * );
 
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
@@ -446,10 +442,8 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 	else
 	{
 	    // Just copy the previous line in this case
-            GDALCopyWords( (GByte *)pData + (iDstLineOff - nLineSpace),
-                            eBufType, nPixelSpace,
-                            (GByte *)pData + iDstLineOff,
-                            eBufType, nPixelSpace, nBufXSize );
+	    memcpy( (GByte *)pData + iDstLineOff,
+		    (GByte *)pData + (iDstLineOff - nLineSpace), nLineSpace );
 	}
     }
 
@@ -500,7 +494,7 @@ CPLErr ECWRasterBand::IReadBlock( int, int nBlockYOff, void * pImage )
 /*                            ECWDataset()                              */
 /************************************************************************/
 
-ECWDataset::ECWDataset(int bIsJPEG2000)
+ECWDataset::ECWDataset()
 
 {
     bUsingCustomStream = FALSE;
@@ -520,8 +514,6 @@ ECWDataset::ECWDataset(int bIsJPEG2000)
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
-    
-    poDriver = (GDALDriver*) GDALGetDriverByName( bIsJPEG2000 ? "JP2ECW" : "ECW" );
 }
 
 /************************************************************************/
@@ -961,64 +953,26 @@ CPLErr ECWDataset::IRasterIO( GDALRWFlag eRWFlag,
 }
 
 /************************************************************************/
-/*                        IdentifyJPEG2000()                            */
-/*                                                                      */
-/*          Open method that only supports JPEG2000 files.              */
+/*                            OpenJPEG2000()                            */
 /************************************************************************/
 
-int ECWDataset::IdentifyJPEG2000( GDALOpenInfo * poOpenInfo )
+GDALDataset *ECWDataset::OpenJPEG2000( GDALOpenInfo * poOpenInfo )
 
 {
     if( EQUALN(poOpenInfo->pszFilename,"J2K_SUBFILE:",12) )
-        return TRUE;
+        return Open( poOpenInfo );
 
     else if( poOpenInfo->nHeaderBytes >= 16 
         && (memcmp( poOpenInfo->pabyHeader, jpc_header, 
                     sizeof(jpc_header) ) == 0
             || memcmp( poOpenInfo->pabyHeader, jp2_header, 
                     sizeof(jp2_header) ) == 0) )
-        return TRUE;
+        return Open( poOpenInfo );
     
     else
-        return FALSE;
-}
-
-/************************************************************************/
-/*                            OpenJPEG2000()                            */
-/*                                                                      */
-/*          Open method that only supports JPEG2000 files.              */
-/************************************************************************/
-
-GDALDataset *ECWDataset::OpenJPEG2000( GDALOpenInfo * poOpenInfo )
-
-{
-    if (!IdentifyJPEG2000(poOpenInfo))
         return NULL;
-
-    return Open( poOpenInfo, TRUE );
 }
     
-/************************************************************************/
-/*                           IdentifyECW()                              */
-/*                                                                      */
-/*      Identify method that only supports ECW files.                   */
-/************************************************************************/
-
-int ECWDataset::IdentifyECW( GDALOpenInfo * poOpenInfo )
-
-{
-/* -------------------------------------------------------------------- */
-/*      This has to either be a file on disk ending in .ecw or a        */
-/*      ecwp: protocol url.                                             */
-/* -------------------------------------------------------------------- */
-    if( (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"ecw")
-         || poOpenInfo->nHeaderBytes == 0)
-        && !EQUALN(poOpenInfo->pszFilename,"ecwp:",5) )
-        return FALSE;
-
-    return TRUE;
-}
-
 /************************************************************************/
 /*                              OpenECW()                               */
 /*                                                                      */
@@ -1028,17 +982,23 @@ int ECWDataset::IdentifyECW( GDALOpenInfo * poOpenInfo )
 GDALDataset *ECWDataset::OpenECW( GDALOpenInfo * poOpenInfo )
 
 {
-    if (!IdentifyECW(poOpenInfo))
-        return NULL;
+/* -------------------------------------------------------------------- */
+/*      This has to either be a file on disk ending in .ecw or a        */
+/*      ecwp: protocol url.                                             */
+/* -------------------------------------------------------------------- */
+    if( (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"ecw")
+         || poOpenInfo->nHeaderBytes == 0)
+        && !EQUALN(poOpenInfo->pszFilename,"ecwp:",5) )
+        return( NULL );
 
-    return Open( poOpenInfo, FALSE );
+    return Open( poOpenInfo );
 }
     
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
-GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
+GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
     CNCSJP2FileView *poFileView = NULL;
@@ -1061,48 +1021,29 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
 /* -------------------------------------------------------------------- */
 /*      Handle special case of a JPEG2000 data stream in another file.  */
 /* -------------------------------------------------------------------- */
-    int bIsVirtualFile = FALSE;
-try_again:
-    if( EQUALN(poOpenInfo->pszFilename,"J2K_SUBFILE:",12) ||
-        bIsVirtualFile )
+    if( EQUALN(poOpenInfo->pszFilename,"J2K_SUBFILE:",12) )
     {
-        GIntBig            subfile_offset=-1, subfile_size=-1;
-        const char *real_filename = NULL;
+        int            subfile_offset=-1, subfile_size=-1;
+        char *real_filename = NULL;
 
-          if (EQUALN(poOpenInfo->pszFilename,"J2K_SUBFILE:",12))
+        if( sscanf( poOpenInfo->pszFilename, "J2K_SUBFILE:%d,%d", 
+                    &subfile_offset, &subfile_size ) != 2 )
           {
-            char** papszTokens = CSLTokenizeString2(poOpenInfo->pszFilename + 12, ",", 0);
-            if (CSLCount(papszTokens) >= 2)
-            {
-                subfile_offset = CPLScanUIntBig(papszTokens[0], strlen(papszTokens[0]));
-                subfile_size = CPLScanUIntBig(papszTokens[1], strlen(papszTokens[1]));
-            }
-            else
-            {
-                CPLError( CE_Failure, CPLE_OpenFailed, 
-                            "Failed to parse J2K_SUBFILE specification." );
-                CSLDestroy(papszTokens);
-                return NULL;
-            }
-            CSLDestroy(papszTokens);
-
-            real_filename = strstr(poOpenInfo->pszFilename,",");
-            if( real_filename != NULL )
-                real_filename = strstr(real_filename+1,",");
-            if( real_filename != NULL )
-                real_filename++;
-            else
-            {
-                CPLError( CE_Failure, CPLE_OpenFailed, 
-                            "Failed to parse J2K_SUBFILE specification." );
-                return NULL;
-            }
-
+              CPLError( CE_Failure, CPLE_OpenFailed, 
+                        "Failed to parse J2K_SUBFILE specification." );
+              return NULL;
           }
+
+          real_filename = (char *) strstr(poOpenInfo->pszFilename,",");
+          if( real_filename != NULL )
+              real_filename = (char *) strstr(real_filename+1,",");
+          if( real_filename != NULL )
+              real_filename++;
           else
           {
-              real_filename = poOpenInfo->pszFilename;
-              subfile_offset = 0;
+              CPLError( CE_Failure, CPLE_OpenFailed, 
+                        "Failed to parse J2K_SUBFILE specification." );
+              return NULL;
           }
 
           fpVSIL = VSIFOpenL( real_filename, "rb" );
@@ -1186,9 +1127,7 @@ try_again:
                     sizeof(jpc_header) ) == 0
             || memcmp( poOpenInfo->pabyHeader, jp2_header, 
                     sizeof(jp2_header) ) == 0) )
-    {
-        /* accept JPEG2000 files */
-    }
+        /* accept JPEG2000 files */;
     else if( (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename),"ecw")
               || poOpenInfo->nHeaderBytes == 0)
              && !EQUALN(poOpenInfo->pszFilename,"ecwp:",5) )
@@ -1206,41 +1145,18 @@ try_again:
                   poOpenInfo->pszFilename, (int) eErr );
         if( eErr != NCS_SUCCESS )
         {
-            delete poFileView;
-
-            /* If the file is not a 'real' file but recognized as a */
-            /* virtual file by the VSIL API, try again by using a */
-            /* VSIIOStream object, like in the J2K_SUBFILE case */
-            VSIStatBuf sBuf;
-            VSIStatBufL sBufL;
-            if (!bIsVirtualFile &&
-                VSIStat(poOpenInfo->pszFilename, &sBuf) != 0 &&
-                VSIStatL(poOpenInfo->pszFilename, &sBufL) == 0)
-            {
-                bIsVirtualFile = TRUE;
-                goto try_again;
-            }
-
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "%s", NCSGetErrorText(eErr) );
             return NULL;
         }
     }
 
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The DIMAP driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     ECWDataset  *poDS;
 
-    poDS = new ECWDataset(bIsJPEG2000);
+    poDS = new ECWDataset();
 
     poDS->poFileView = poFileView;
 
@@ -1322,22 +1238,25 @@ try_again:
 /* -------------------------------------------------------------------- */
 /*      Look for supporting coordinate system information.              */
 /* -------------------------------------------------------------------- */
-    GDALJP2Metadata oJP2Geo;
+    if( fpVSIL == NULL )
+    {
+        GDALJP2Metadata oJP2Geo;
 
-    if( oJP2Geo.ReadAndParse( poOpenInfo->pszFilename ) )
-    {
-        poDS->pszProjection = CPLStrdup(oJP2Geo.pszProjection);
-        poDS->bGeoTransformValid = oJP2Geo.bHaveGeoTransform;
-        memcpy( poDS->adfGeoTransform, oJP2Geo.adfGeoTransform, 
-                sizeof(double) * 6 );
-        poDS->nGCPCount = oJP2Geo.nGCPCount;
-        poDS->pasGCPList = oJP2Geo.pasGCPList;
-        oJP2Geo.pasGCPList = NULL;
-        oJP2Geo.nGCPCount = 0;
-    }
-    else
-    {
-        poDS->ECW2WKTProjection();
+        if( oJP2Geo.ReadAndParse( poOpenInfo->pszFilename ) )
+        {
+            poDS->pszProjection = CPLStrdup(oJP2Geo.pszProjection);
+            poDS->bGeoTransformValid = oJP2Geo.bHaveGeoTransform;
+            memcpy( poDS->adfGeoTransform, oJP2Geo.adfGeoTransform, 
+                    sizeof(double) * 6 );
+            poDS->nGCPCount = oJP2Geo.nGCPCount;
+            poDS->pasGCPList = oJP2Geo.pasGCPList;
+            oJP2Geo.pasGCPList = NULL;
+            oJP2Geo.nGCPCount = 0;
+        }
+        else
+        {
+            poDS->ECW2WKTProjection();
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -1360,19 +1279,7 @@ try_again:
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The ECW driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     return( poDS );
 }
 
@@ -1417,44 +1324,31 @@ const GDAL_GCP *ECWDataset::GetGCPs()
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */
-/*                                                                      */
-/*      We let PAM coordinate system override the one stored inside     */
-/*      our file.                                                       */
 /************************************************************************/
 
 const char *ECWDataset::GetProjectionRef() 
 
 {
-    const char* pszPamPrj = GDALPamDataset::GetProjectionRef();
-
-    if( pszProjection != NULL && strlen(pszPamPrj) == 0 )
-        return pszProjection;
+    if( pszProjection == NULL )
+        return GDALPamDataset::GetProjectionRef();
     else
-        return pszPamPrj;
+        return pszProjection;
 }
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
-/*                                                                      */
-/*      Only return the native geotransform if we appear to be          */
-/*      returning the native coordinate system, otherwise defer to      */
-/*      the PAM geotransform.                                           */
 /************************************************************************/
 
 CPLErr ECWDataset::GetGeoTransform( double * padfTransform )
 
 {
-    if( (GetProjectionRef() != pszProjection  
-         && strlen(GetProjectionRef()) > 0)
-        || !bGeoTransformValid )
-    {
-        return GDALPamDataset::GetGeoTransform( padfTransform );
-    }
-    else
+    if( bGeoTransformValid )
     {
         memcpy( padfTransform, adfGeoTransform, sizeof(double) * 6 );
         return( CE_None );
     }
+    else
+        return GDALPamDataset::GetGeoTransform( padfTransform );
 }
 
 /************************************************************************/
@@ -1575,9 +1469,6 @@ void ECWInitialize()
 void GDALDeregister_ECW( GDALDriver * )
 
 {
-    /* For unknown reason, this cleanup can take up to 3 seconds (see #3134). */
-    /* Not worth it */
-#ifdef notdef
     if( bNCSInitialized )
     {
         bNCSInitialized = FALSE;
@@ -1589,7 +1480,6 @@ void GDALDeregister_ECW( GDALDriver * )
         CPLDestroyMutex( hECWDatasetMutex );
         hECWDatasetMutex = NULL;
     }
-#endif
 }
 
 /************************************************************************/
@@ -1616,7 +1506,6 @@ void GDALRegister_ECW()
                                    "frmt_ecw.html" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "ecw" );
         
-        poDriver->pfnIdentify = ECWDataset::IdentifyECW;
         poDriver->pfnOpen = ECWDataset::OpenECW;
         poDriver->pfnUnloadDriver = GDALDeregister_ECW;
 #ifdef HAVE_COMPRESS
@@ -1654,14 +1543,6 @@ void GDALRegister_ECW_JP2ECW()
 }
 
 /************************************************************************/
-/*                     ECWDatasetOpenJPEG2000()                         */
-/************************************************************************/
-GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo)
-{
-    return ECWDataset::OpenJPEG2000(poOpenInfo);
-}
-
-/************************************************************************/
 /*                        GDALRegister_JP2ECW()                         */
 /************************************************************************/
 void GDALRegister_JP2ECW()
@@ -1684,7 +1565,6 @@ void GDALRegister_JP2ECW()
                                    "frmt_jp2ecw.html" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "jp2" );
         
-        poDriver->pfnIdentify = ECWDataset::IdentifyJPEG2000;
         poDriver->pfnOpen = ECWDataset::OpenJPEG2000;
 #ifdef HAVE_COMPRESS
         poDriver->pfnCreate = ECWCreateJPEG2000;

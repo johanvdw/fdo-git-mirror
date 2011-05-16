@@ -38,9 +38,6 @@
 #include <Sm/Ph/ClassWriter.h>
 #include <Utilities/SchemaMgr/Overrides/TableMappingType.h>
 
-typedef std::map<FdoStringP, FdoPolygonVertexOrderRule> PolygonVertexOrderRuleMap;
-typedef std::map<FdoStringP, FdoBoolean> PolygonVertexOrderStrictnessMap;
-
 class FdoSmLpSchemaCollection;
 
 // ClassBase is the virtual abstract base class for FdoSmLpClassDefinition and
@@ -75,20 +72,12 @@ public:
 
         const FdoLockType* GetLockTypes(FdoInt32& size) const;
 
-        PolygonVertexOrderRuleMap GetPolygonVertexOrderRule() const;
-        PolygonVertexOrderStrictnessMap GetPolygonVertexOrderStrictness() const;
-
-        PolygonVertexOrderRuleMap& GetPolygonVertexOrderRule();
-        PolygonVertexOrderStrictnessMap& GetPolygonVertexOrderStrictness();
-
     private:
         bool                    mSupportsWrite;
         bool                    mSupportsLocking;
         bool                    mSupportsLongTransactions;
         FdoLockType*            mLockTypes;
         FdoInt32                mLockTypeCount;
-        PolygonVertexOrderRuleMap mPolygonVertexOrderRuleMap;
-        PolygonVertexOrderStrictnessMap mPolygonVertexOrderStrictnessMap;
     };
 
     ~FdoSmLpClassBase(void);
@@ -271,18 +260,12 @@ public:
 	const FdoSmLpDataPropertyDefinition* RefFeatIdProperty() const;
 	FdoSmLpDataPropertyP GetFeatIdProperty();
 
-    virtual const Capabilities* GetCapabilities() const;
+    const Capabilities* GetCapabilities() const;
 
     bool GetIsDbObjectCreator() const 
     {
         return mbIsDbObjectCreator;
     }
-
-    // Returns true if classes are defined in class metadata table (f_classdefinition)
-    bool GetHasClassMetaSchema() const;
-
-    // Returns true if properties are defined in property metadata table (f_attributedefinition)
-    bool GetHasAttrMetaSchema() const;
 
     /// Convert a column name to one that is datastore-acceptable and 
     /// not already in use.

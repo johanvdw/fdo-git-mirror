@@ -33,7 +33,7 @@ public:
     /// \param
     /// dbObject [in] - Retrieve primary keys for this database object.
     ///
-    FdoSmPhRdPostGisPkeyReader(FdoSmPhOwnerP owner, FdoSmPhDbObjectP dbObject);
+    FdoSmPhRdPostGisPkeyReader(FdoSmPhMgrP mgr, FdoSmPhDbObjectP dbObject);
 
     /// Create and execute the primary key reader.
     ///
@@ -43,7 +43,7 @@ public:
     /// owner [in] - 
     ///
     /// \todo To be documented
-    FdoSmPhRdPostGisPkeyReader(FdoSmPhOwnerP owner, FdoStringsP objectNames);
+    FdoSmPhRdPostGisPkeyReader(FdoSmPhMgrP mgr, FdoSmPhOwnerP owner);
 
     // Deactivates the primary key reader.
     ~FdoSmPhRdPostGisPkeyReader();
@@ -59,10 +59,9 @@ private:
     /// dbObject [in] - 
     ///
     /// \todo To be documented.
-    FdoSmPhReaderP MakeReader(
-        FdoSmPhOwnerP owner,
-        FdoStringsP objectNames,
-        FdoSmPhRdTableJoinP join = (FdoSmPhRdTableJoin*) NULL);
+    FdoSmPhReaderP MakeReader(FdoSmPhMgrP mgr,
+        const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP dbObject);
 
     /// \todo To be documented.
     FdoSmPhDbObjectP mDbObject;

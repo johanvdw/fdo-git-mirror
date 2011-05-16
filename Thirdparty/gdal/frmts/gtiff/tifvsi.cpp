@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tifvsi.cpp 17674 2009-09-24 13:40:55Z chaitanya $
+ * $Id: tifvsi.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implement system hook functions for libtiff on top of CPL/VSI,
@@ -32,8 +32,8 @@
 /*
  * TIFF Library UNIX-specific Routines.
  */
-#include "cpl_vsi.h"
 #include "tiffio.h"
+#include "cpl_vsi.h"
 
 // We avoid including xtiffio.h since it drags in the libgeotiff version
 // of the VSI functions.

@@ -2,8 +2,8 @@
 /* Software License, Version 1.0. (See accompanying */
 /* file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#include "jam.h"
 #include "strings.h"
+#include "debug.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -16,15 +16,7 @@
 static void assert_invariants( string* self )
 {
     int i;
-
-    if ( self->value == 0 )
-    {
-        assert( self->size == 0 );
-        assert( self->capacity == 0 );
-        assert( self->opt[0] == 0 );
-        return;
-    }
-
+    
     assert( self->size < self->capacity );
     assert( ( self->capacity <= sizeof(self->opt) ) == ( self->value == self->opt ) );
     assert( strlen( self->value ) == self->size );
@@ -56,22 +48,23 @@ void string_free( string* s )
 {
     assert_invariants( s );
     if ( s->value != s->opt )
-        BJAM_FREE( s->value );
-    string_new( s );
+        free( s->value );
 }
 
 static void string_reserve_internal( string* self, size_t capacity )
 {
     if ( self->value == self->opt )
     {
-        self->value = (char*)BJAM_MALLOC_ATOMIC( capacity + JAM_STRING_MAGIC_SIZE );
+        self->value = (char*)malloc( capacity + JAM_STRING_MAGIC_SIZE );
+        if ( DEBUG_PROFILE )
+            profile_memory( capacity + JAM_STRING_MAGIC_SIZE );
         self->value[0] = 0;
         strncat( self->value, self->opt, sizeof(self->opt) );
         assert( strlen( self->value ) <= self->capacity ); /* This is a regression test */
     }
     else
     {
-        self->value = (char*)BJAM_REALLOC( self->value, capacity + JAM_STRING_MAGIC_SIZE );
+        self->value = (char*)realloc( self->value, capacity + JAM_STRING_MAGIC_SIZE );
     }
 #ifndef NDEBUG
     memcpy( self->value + capacity, self->magic, JAM_STRING_MAGIC_SIZE );
@@ -106,10 +99,10 @@ void string_append( string* self, char const* rhs )
     char* p = self->value + self->size;
     char* end = self->value + self->capacity;
     assert_invariants( self );
-
+    
     while ( *rhs && p != end)
         *p++ = *rhs++;
-
+    
     if ( p != end )
     {
         *p = 0;
@@ -127,10 +120,10 @@ void string_append_range( string* self, char const* start, char const* finish )
     char* p = self->value + self->size;
     char* end = self->value + self->capacity;
     assert_invariants( self );
-
+    
     while ( p != end && start != finish )
         *p++ = *start++;
-
+    
     if ( p != end )
     {
         *p = 0;
@@ -182,7 +175,7 @@ void string_unit_test()
     int limit = sizeof(buffer) > 254 ? 254 : sizeof(buffer);
 
     string_new(s);
-
+    
     for (i = 0; i < limit; ++i)
     {
         string_push_back( s, (char)(i + 1) );
@@ -195,7 +188,7 @@ void string_unit_test()
     }
 
     string_free(s);
-
+    
 }
 #endif
 

@@ -107,8 +107,6 @@ public:
     /// type [in] - type of column value.
 	virtual FdoStringP FormatSQLVal(FdoStringP value, FdoSmPhColType type);
 
-    virtual FdoStringP FormatOrderCol( FdoStringP colName, FdoSmPhColType colType );
-    
     /// Returns name of CURRENT_DATE function to be embedded
     /// in the SQL query string.
     ///
@@ -130,12 +128,6 @@ public:
     // MetaSchema tables. For forward datastore compatibility, the schema
     // name prefix is removed if the schema is public.
     virtual FdoStringP DbObject2MetaSchemaName( FdoStringP objectName );
-
-    // Returns the name of the default physical schema.
-    // Returns L"public".
-    virtual FdoStringP GetDefaultPhysicalSchemaName();
-
-    virtual FdoStringP ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className);
 
     /// Formats placeholder for bind parameter.
     /// PostgreSQL refers to parameters  in query $1, $2, etc.

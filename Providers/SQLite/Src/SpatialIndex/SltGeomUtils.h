@@ -176,15 +176,6 @@ struct DBounds
        
         return true; 
     }
-
-    void Expand(double val)
-    {
-        for (int i=0; i<SI_DIM; i++)
-        {
-            min[i] -= val;
-            max[i] += val;
-        }
-    }
 };
 
 ALGNW struct Bounds
@@ -470,6 +461,6 @@ int Wkb2Fgf(const unsigned char* wkb, unsigned char* fgf);
 double ComputeGeometryLength(const unsigned char* fgf, bool computeGeodetic = false);
 double ComputeGeometryArea(const unsigned char* fgf, bool computeGeodetic = false);
 
-void AddCurveExtents(int dim, double* startpoint, double* ordinates, double* ext);
+void AdjustExtentsForCurves(int dim, double* startpoint, double* ordinates, double* ext);
 
 #endif

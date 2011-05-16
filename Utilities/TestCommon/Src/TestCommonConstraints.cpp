@@ -26,7 +26,6 @@
 
 #define            SCHEMA_NAME            L"constraints"
 #define            CLASS_NAME             L"cdataclass"    // lower case to compensate for MySQl on Linux
-#define            CLASS_NAME2            L"cdataclass2"    // lower case to compensate for MySQl on Linux
 #define            CLASS_NAME_BASE        L"CDataBaseClass"
 #define            CLASS_NAME_SUB        L"CDataSubClass"
 
@@ -739,10 +738,6 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
     FdoPtr<FdoFeatureClass> pCData = FdoFeatureClass::Create( CLASS_NAME_BASE, L"Constraints" );
     pCData->SetIsAbstract(true);
 
-    // Need geometric property so that SQLite provider will remember pCData as a feature class.
-    FdoPtr<FdoGeometricPropertyDefinition> pGeomProp = FdoGeometricPropertyDefinition::Create(L"Geometry", L"");
-    FdoPropertiesP(pCData->GetProperties())->Add( pGeomProp );
-
     FdoPtr<FdoDataPropertyDefinition> pIdProp = FdoDataPropertyDefinition::Create( PROP_FEATID, L"" );
     pIdProp->SetDataType( FdoDataType_Int32 );
     pIdProp->SetNullable(false);
@@ -1120,250 +1115,214 @@ void TestCommonConstraints::CreateConstraintsSchema( Context& context )
     pCmd->SetFeatureSchema( pSchema );
     pCmd->Execute();
 
-    FdoPtr<FdoIDescribeSchema> descCmd = (FdoIDescribeSchema*) context.connection->CreateCommand( FdoCommandType_DescribeSchema );
-
-    FdoFeatureSchemasP schemas = descCmd->Execute();
-    FdoFeatureSchemaP schema2 = schemas->FindItem(pSchema->GetName());
-    CPPUNIT_ASSERT(schema2);
-
-    FdoClassesP classes = schema2->GetClasses();
-    FdoClassDefinitionP baseClass = classes->FindItem(pCData->GetName());
-    CPPUNIT_ASSERT(baseClass);
-
-    FdoFeatureClassP newClass = FdoFeatureClass::Create(CLASS_NAME2,L"");
-    newClass->SetBaseClass(baseClass);
-    newClass->SetIsAbstract(false);
-    classes->Add(newClass);
-
-    pCmd = (FdoIApplySchema*) context.connection->CreateCommand(FdoCommandType_ApplySchema);
-    pCmd->SetFeatureSchema(schema2);
-    pCmd->Execute();
-
     FdoPtr<FdoIInsert> insertCmd;
 
-    for ( int ii = 0; ii < 2; ii++ )
+    //////////////////////////////// Test UNIQUE ////////////////////////////////////////
+
+    if ( schemaCap->SupportsUniqueValueConstraints() && schemaCap->SupportsCompositeUniqueValueConstraints() )
     {
-        FdoString* className = ii ? CLASS_NAME2 : CLASS_NAME;
+        // This should succeed
+        TestCommonMiscUtil::InsertObject(
+            context.connection,
+            insertCmd,
+            GetDefaultSchemaName(),
+            CLASS_NAME,
+            PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+            PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+            PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
+            PROP_STRING_L,  FdoDataType_String, L"op'eN",
+            PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 1000,
+            PROP_STRING_R, FdoDataType_String, L"NN",
+            PROP_SINGLE_R, FdoDataType_Single, (FdoFloat) 0.000002,
+            (FdoString*) NULL
+        );
 
-        //////////////////////////////// Test UNIQUE ////////////////////////////////////////
-
-        if ( schemaCap->SupportsUniqueValueConstraints() && schemaCap->SupportsCompositeUniqueValueConstraints() )
-        {
-            // This should succeed
+        bool    uniqueSuccess1 = true;
+        try {
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
                 GetDefaultSchemaName(),
-                className,
-                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
-                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
-                PROP_STRING_L,  FdoDataType_String, L"op'eN",
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
+                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
+                PROP_STRING_L,  FdoDataType_String, L"close",
                 PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 1000,
-                PROP_STRING_R, FdoDataType_String, L"NN",
-                PROP_SINGLE_R, FdoDataType_Single, (FdoFloat) 0.000002,
+               PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 1000,
                 (FdoString*) NULL
             );
+        } catch (FdoException *ex) {
+            DBG(printf("Expected unique constraint violation exception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            uniqueSuccess1 = false;
+        }
+        CPPUNIT_ASSERT_MESSAGE("Should get unique constraint violation prop #4", uniqueSuccess1 == false );
 
-            bool    uniqueSuccess1 = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
-                    PROP_STRING_L,  FdoDataType_String, L"close",
-                    PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 1000,
-                   PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 1000,
-                    (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected unique constraint violation exception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                uniqueSuccess1 = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get unique constraint violation prop #4", uniqueSuccess1 == false );
+        // This should succeed
+        TestCommonMiscUtil::InsertObject(
+            context.connection,
+            insertCmd,
+            GetDefaultSchemaName(),
+            CLASS_NAME,
+            PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+            PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+            PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
+            PROP_STRING_L,  FdoDataType_String, L"op'eN",
+            PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
+            PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 2000,
+            PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 1000,
+            (FdoString*) NULL
+        );
 
-            // This should succeed
+        bool    uniqueSuccess2 = true;
+        try {
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
                 GetDefaultSchemaName(),
-                className,
-                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
-                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
-                PROP_STRING_L,  FdoDataType_String, L"op'eN",
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
+                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
+                PROP_STRING_L,  FdoDataType_String, L"close",
                 PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
                 PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 2000,
-                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 1000,
-                (FdoString*) NULL
+                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 2000,
+                 (FdoString*) NULL
             );
-
-            bool    uniqueSuccess2 = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 30,
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
-                    PROP_STRING_L,  FdoDataType_String, L"close",
-                    PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 1000,
-                    PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 2000,
-                    PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 2000,
-                     (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected unique constraint violationexception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                uniqueSuccess2 = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get unique constraint violation prop #[5,6]", uniqueSuccess2 == false );
+        } catch (FdoException *ex) {
+            DBG(printf("Expected unique constraint violationexception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            uniqueSuccess2 = false;
         }
+        CPPUNIT_ASSERT_MESSAGE("Should get unique constraint violation prop #[5,6]", uniqueSuccess2 == false );
+    }
 
-        //////////////////////////////// Test CHECK ////////////////////////////////////////
+    //////////////////////////////// Test CHECK ////////////////////////////////////////
 
-        if ( schemaCap->SupportsValueConstraintsList() )
-        {
-            bool    checkSuccess = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[1],
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
-                    PROP_STRING_L,  FdoDataType_String, L"op'eN",
-                    PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 3000,
-                    PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 3000,
-                    PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 3000,
-                     (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected RangeInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                checkSuccess = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #1", checkSuccess == false );
-
-            checkSuccess = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[0] - 1,
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
-                    PROP_STRING_L,  FdoDataType_String, L"op'eN",
-                    PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 4000,
-                    PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 4000,
-                    PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 4000,
-                    (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected RangeInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                checkSuccess = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #1", checkSuccess == false );
-
-
-            checkSuccess = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
-                    PROP_STRING_L,  FdoDataType_String, L"op'eN",
-                    PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 5000,
-                    PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 5000,
-                    PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 5000,
-                    (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected ListInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                checkSuccess = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #2", checkSuccess == false );
-
-            checkSuccess = true;
-            try {
-                TestCommonMiscUtil::InsertObject(
-                    context.connection,
-                    insertCmd,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, className),
-                    PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
-                    PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
-                    PROP_STRING_L,  FdoDataType_String, L"xxxxx",
-                    PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 6000,
-                    PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 6000,
-                    PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 6000,
-                    (FdoString*) NULL
-                );
-            } catch (FdoException *ex) {
-                DBG(printf("Expected ListString constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
-                ex->Release();
-                checkSuccess = false;
-            }
-            CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #3", checkSuccess == false );
-
-
+    if ( schemaCap->SupportsValueConstraintsList() )
+    {
+        bool    checkSuccess = true;
+        try {
             TestCommonMiscUtil::InsertObject(
                 context.connection,
                 insertCmd,
                 GetDefaultSchemaName(),
-                className,
-                PROP_FEATID, FdoDataType_Int32, 99999999,
-                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[1],
                 PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
                 PROP_STRING_L,  FdoDataType_String, L"op'eN",
-                PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 8000,
-                PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 8000,
-                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 8000,
+                PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 3000,
+                PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 3000,
+                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 3000,
+                 (FdoString*) NULL
+            );
+        } catch (FdoException *ex) {
+            DBG(printf("Expected RangeInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            checkSuccess = false;
+        }
+        CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #1", checkSuccess == false );
+
+        checkSuccess = true;
+        try {
+            TestCommonMiscUtil::InsertObject(
+                context.connection,
+                insertCmd,
+                GetDefaultSchemaName(),
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  INT32_RANGE[0] - 1,
+                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
+                PROP_STRING_L,  FdoDataType_String, L"op'eN",
+                PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 4000,
+                PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 4000,
+                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 4000,
                 (FdoString*) NULL
             );
-
-            UpdateAllValues( context.connection, className, 99999999);
-
-            if ( wcscmp(className, CLASS_NAME2) == 0 )
-            {
-                TestCommonMiscUtil::DeleteObjects( 
-                    context.connection,
-                    GetDefaultSchemaName(),
-                    className,
-                    NULL
-                );
-            }
-            else
-            {
-                TestCommonMiscUtil::DeleteObjects( 
-                    context.connection,
-                    GetDefaultSchemaName(),
-                    className,
-                    PROP_FEATID,
-                    FdoDataType_Int32,
-                    (FdoInt32) 99999999,
-                    NULL
-                );
-            }
+        } catch (FdoException *ex) {
+            DBG(printf("Expected RangeInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            checkSuccess = false;
         }
+        CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #1", checkSuccess == false );
+
+
+        checkSuccess = true;
+        try {
+            TestCommonMiscUtil::InsertObject(
+                context.connection,
+                insertCmd,
+                GetDefaultSchemaName(),
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 40,
+                PROP_STRING_L,  FdoDataType_String, L"op'eN",
+                PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 5000,
+                PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 5000,
+                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 5000,
+                (FdoString*) NULL
+            );
+        } catch (FdoException *ex) {
+            DBG(printf("Expected ListInt constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            checkSuccess = false;
+        }
+        CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #2", checkSuccess == false );
+
+        checkSuccess = true;
+        try {
+            TestCommonMiscUtil::InsertObject(
+                context.connection,
+                insertCmd,
+                GetDefaultSchemaName(),
+                CLASS_NAME,
+                PROP_FEATID, FdoDataType_Int32, GetNextFeatId(context.connection, CLASS_NAME),
+                PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+                PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
+                PROP_STRING_L,  FdoDataType_String, L"xxxxx",
+                PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 6000,
+                PROP_UNIQUE2_2,  FdoDataType_Int32,  (FdoInt32) 6000,
+                PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 6000,
+                (FdoString*) NULL
+            );
+        } catch (FdoException *ex) {
+            DBG(printf("Expected ListString constraint exception: %ls", (FdoString* )ex->GetExceptionMessage()));
+            ex->Release();
+            checkSuccess = false;
+        }
+        CPPUNIT_ASSERT_MESSAGE("Should get check constraint violation prop #3", checkSuccess == false );
+
+
+        TestCommonMiscUtil::InsertObject(
+            context.connection,
+            insertCmd,
+            GetDefaultSchemaName(),
+            CLASS_NAME,
+            PROP_FEATID, FdoDataType_Int32, 99999999,
+            PROP_INT32_R , FdoDataType_Int32,  (FdoInt32) 10,
+            PROP_INT32_L,  FdoDataType_Int32,  (FdoInt32) 20,
+            PROP_STRING_L,  FdoDataType_String, L"op'eN",
+            PROP_UNIQUE1,  FdoDataType_Int32,  (FdoInt32) 8000,
+            PROP_UNIQUE2_1,  FdoDataType_Int32,  (FdoInt32) 8000,
+            PROP_UNIQUE3_1,  FdoDataType_Int32,  (FdoInt32) 8000,
+            (FdoString*) NULL
+        );
+
+        UpdateAllValues( context.connection, CLASS_NAME, 99999999);
+
+        TestCommonMiscUtil::DeleteObjects( 
+            context.connection,
+            GetDefaultSchemaName(),
+            CLASS_NAME,
+            PROP_FEATID,
+            FdoDataType_Int32,
+            (FdoInt32) 99999999,
+            NULL
+        );
     }
 }
 
@@ -1774,14 +1733,12 @@ void TestCommonConstraints::DescribeConstraintsSchema( Context& context, FdoStri
 
         FdoPropertiesP    pProps = (FdoPropertyDefinitionCollection *)pClass2->GetProperties();
         for ( int i = 0; i < pProps->GetCount(); i++ ) {
-            FdoPtr<FdoPropertyDefinition>    pProp = pProps->GetItem(i);
+            FdoPtr<FdoDataPropertyDefinition>    pProp = (FdoDataPropertyDefinition *)pProps->GetItem(i);
 
-            if ((pProp == NULL) || (pProp->GetPropertyType() != FdoPropertyType_DataProperty) )
+            if (pProp == NULL )
                 continue;
 
-            FdoDataPropertyDefinition*   pDataProp = (FdoDataPropertyDefinition *)pProp.p;
-
-            FdoPtr<FdoPropertyValueConstraint>        pConstr = pDataProp->GetValueConstraint();
+            FdoPtr<FdoPropertyValueConstraint>        pConstr = pProp->GetValueConstraint();
 
             if (pConstr == NULL )
                 continue;
@@ -2126,14 +2083,12 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
     FdoPtr<FdoPropertyDefinitionCollection> pProps = pClass2->GetProperties();
 
     for ( int i = 0; i < pProps->GetCount(); i++ ) {
-        FdoPtr<FdoPropertyDefinition>    pProp = pProps->GetItem(i);
+        FdoPtr<FdoDataPropertyDefinition>    pProp = (FdoDataPropertyDefinition *)pProps->GetItem(i);
 
-        if ((pProp == NULL) || (pProp->GetPropertyType() != FdoPropertyType_DataProperty) )
+        if (pProp == NULL )
             continue;
 
-        FdoDataPropertyDefinition*   pDataProp = (FdoDataPropertyDefinition *)pProp.p;
-
-        FdoPtr<FdoPropertyValueConstraint>        pConstr = pDataProp->GetValueConstraint();
+        FdoPtr<FdoPropertyValueConstraint>        pConstr = pProp->GetValueConstraint();
 
         if (pConstr == NULL )
             continue;
@@ -2142,7 +2097,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
         {
             if ( wcscmp( pProp->GetName(), PROP_INT32_R  ) == 0) {
                 // Remove the constraint
-                pDataProp->SetValueConstraint( NULL );
+                pProp->SetValueConstraint( NULL );
 
                 pApplyCmd->Execute();
 
@@ -2174,7 +2129,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 newRangeConstr1->SetMaxInclusive(INT_MAX_INCLUSIVE);
                 FdoPtr<FdoDataValue>   val2 = FdoDataValue::Create( INT32_RANGE[1] );
                 newRangeConstr1->SetMaxValue( val2 );
-                pDataProp->SetValueConstraint(newRangeConstr1);
+                pProp->SetValueConstraint(newRangeConstr1);
 
                 bool error = false;
                 if ( context.ltMethod != 2 ) {
@@ -2192,7 +2147,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 newRangeConstr1->SetMaxInclusive(INT_MAX_INCLUSIVE);
                 val2 = FdoDataValue::Create( value + 1 ); // Note: INT_MAX_INCLUSIVE is FALSE
                 newRangeConstr1->SetMaxValue( val2 ); 
-                pDataProp->SetValueConstraint(newRangeConstr1);
+                pProp->SetValueConstraint(newRangeConstr1);
 
                 error = false;
                 try    {
@@ -2203,7 +2158,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                     DBG(printf("Expected check constraint violation exception: %ls\n", (FdoString* )ex->GetExceptionMessage()));
                     ex->Release();
                     error = true;
-                    pDataProp->SetValueConstraint( NULL );
+                    pProp->SetValueConstraint( NULL );
                 }
                 CPPUNIT_ASSERT_MESSAGE("Expected 2nd check constraint violation exception on PROPERTY_1", error == !CanRestrictCheckConstraint());
 
@@ -2254,7 +2209,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 FdoPropertyValueConstraintRange*  newRangeConstr1 =  static_cast<FdoPropertyValueConstraintRange*>((FdoPropertyValueConstraint*) pConstr);
                 FdoPtr<FdoDataValue> newValue = FdoDataValue::Create( UPD_BYTE_RANGE[1] );
                 newRangeConstr1->SetMaxValue( newValue );
-                pDataProp->SetValueConstraint(newRangeConstr1);
+                pProp->SetValueConstraint(newRangeConstr1);
 
                 pApplyCmd->Execute();
 
@@ -2287,7 +2242,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
                 FdoPtr<FdoDataValue>   newVal = FdoDataValue::Create( newValue );
 
                 pList->Add( newVal );
-                pDataProp->SetValueConstraint( pConstrList );
+                pProp->SetValueConstraint( pConstrList );
                 pApplyCmd->Execute();
 
                 // Now try to insert. It should succeed.
@@ -2331,7 +2286,7 @@ void TestCommonConstraints::UpdateCheckConstraints( Context& context )
 
                 pList->Add( newVal );
                 pList->Add( newVal2 );
-                pDataProp->SetValueConstraint( pConstrList );
+                pProp->SetValueConstraint( pConstrList );
                 bool error = false;
 
                 // Following fails because some rows have stringlist='open'

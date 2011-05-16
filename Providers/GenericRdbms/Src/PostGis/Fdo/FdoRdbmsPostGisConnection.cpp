@@ -29,7 +29,6 @@
 #include "FdoRdbmsPostGisConnectionCapabilities.h"
 #include "FdoRdbmsPostGisCommandCapabilities.h"
 #include "FdoRdbmsPostGisFilterCapabilities.h"
-#include "FdoRdbmsPostGisExpressionCapabilities.h"
 #include <Rdbms/Override/PostGis/PostGisOvPhysicalSchemaMapping.h>
 #include <DbiConnection.h>
 #include <Inc/Rdbi/proto.h>
@@ -202,33 +201,6 @@ FdoDateTime FdoRdbmsPostGisConnection::DbiToFdoTime(const char* timeStr)
         if (datePartsCount != count)
         {
             count = sscanf(timeStr,"%4d-%02d-%02d",&year, &month, &day);
-        }
-    }
-
-    fdoTime.year = static_cast<FdoInt16>(year);
-    fdoTime.month = static_cast<FdoByte>(month);
-    fdoTime.day = static_cast<FdoByte>(day);
-    fdoTime.hour = static_cast<FdoByte>(hour);
-    fdoTime.minute = static_cast<FdoByte>(minute);
-    fdoTime.seconds = static_cast<float>(seconds);
-
-    return fdoTime;
-}
-
-FdoDateTime FdoRdbmsPostGisConnection::DbiToFdoTime(const wchar_t* timeStr)
-{
-    FdoDateTime fdoTime;
-    const int datePartsCount = 6;
-    int year, month, day, hour, minute, seconds;
-    year = month = day = hour = minute = seconds = 0;
-
-    if (NULL != timeStr && '\0' != (*timeStr))
-    {
-        int count = swscanf(timeStr, L"%4d-%02d-%02d %02d:%02d:%02d",
-                    &year, &month, &day, &hour, &minute, &seconds);     
-        if (datePartsCount != count)
-        {
-            count = swscanf(timeStr, L"%4d-%02d-%02d",&year, &month, &day);
         }
     }
 
@@ -465,14 +437,3 @@ FdoIFilterCapabilities *FdoRdbmsPostGisConnection::GetFilterCapabilities()
     FDO_SAFE_ADDREF(mFilterCapabilities);
     return mFilterCapabilities;	
 }
-
-FdoIExpressionCapabilities* FdoRdbmsPostGisConnection::GetExpressionCapabilities()
-{
-    if (mExpressionCapabilities == NULL)
-        mExpressionCapabilities = new FdoRdbmsPostGisExpressionCapabilities();
-    FDO_SAFE_ADDREF(mExpressionCapabilities);
-    return mExpressionCapabilities;
-}
-
-
-

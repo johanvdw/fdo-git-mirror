@@ -16,6 +16,8 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
+** $Id: date.c,v 1.107 2009/05/03 20:23:53 drh Exp $
+**
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
 ** in Greenwich on November 24, 4714 B.C. according to the Gregorian
@@ -314,8 +316,10 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** Set the time to the current time reported by the VFS
 */
 static void setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
+  double r;
   sqlite3 *db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD);
+  sqlite3OsCurrentTime(db->pVfs, &r);
+  p->iJD = (sqlite3_int64)(r*86400000.0 + 0.5);
   p->validJD = 1;
 }
 
@@ -444,7 +448,7 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
   x.tz = 0;
   x.validJD = 0;
   computeJD(&x);
-  t = (time_t)(x.iJD/1000 - 21086676*(i64)10000);
+  t = x.iJD/1000 - 21086676*(i64)10000;
 #ifdef HAVE_LOCALTIME_R
   {
     struct tm sLocal;
@@ -456,7 +460,7 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
     y.m = sLocal.tm_min;
     y.s = sLocal.tm_sec;
   }
-#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
+#elif defined(HAVE_LOCALTIME_S)
   {
     struct tm sLocal;
     localtime_s(&sLocal, &t);
@@ -1036,15 +1040,22 @@ static void currentTimeFunc(
   time_t t;
   char *zFormat = (char *)sqlite3_user_data(context);
   sqlite3 *db;
-  sqlite3_int64 iT;
+  double rT;
   char zBuf[20];
 
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
   db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTimeInt64(db->pVfs, &iT);
-  t = iT/1000 - 10000*(sqlite3_int64)21086676;
+  sqlite3OsCurrentTime(db->pVfs, &rT);
+#ifndef SQLITE_OMIT_FLOATING_POINT
+  t = 86400.0*(rT - 2440587.5) + 0.5;
+#else
+  /* without floating point support, rT will have
+  ** already lost fractional day precision.
+  */
+  t = 86400 * (rT - 2440587) - 43200;
+#endif
 #ifdef HAVE_GMTIME_R
   {
     struct tm sNow;
@@ -1083,8 +1094,8 @@ void sqlite3RegisterDateTimeFunctions(void){
     FUNCTION(current_date,      0, 0, 0, cdateFunc     ),
 #else
     STR_FUNCTION(current_time,      0, "%H:%M:%S",          0, currentTimeFunc),
-    STR_FUNCTION(current_date,      0, "%Y-%m-%d",          0, currentTimeFunc),
-    STR_FUNCTION(current_timestamp, 0, "%Y-%m-%d %H:%M:%S", 0, currentTimeFunc),
+    STR_FUNCTION(current_timestamp, 0, "%Y-%m-%d",          0, currentTimeFunc),
+    STR_FUNCTION(current_date,      0, "%Y-%m-%d %H:%M:%S", 0, currentTimeFunc),
 #endif
   };
   int i;

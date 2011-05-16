@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_proximity.py 18306 2009-12-15 18:57:11Z rouault $
+#  $Id: gdal_proximity.py 15700 2008-11-10 15:29:13Z warmerdam $
 # 
 #  Name:     gdalproximity
 #  Project:  GDAL Python Interface
@@ -38,16 +38,16 @@ import sys
 import os.path
 
 def Usage():
-    print("""
+    print """
 gdal_proximity.py srcfile dstfile [-srcband n] [-dstband n] 
                   [-of format] [-co name=value]*
-                  [-ot Byte/Int16/Int32/Float32/etc]
+	          [-ot Byte/Int16/Int32/Float32/etc]
                   [-values n,n,n] [-distunits PIXEL/GEO]
-                  [-maxdist n] [-nodata n] [-fixed-buf-val n] [-q] """)
+                  [-maxdist n] [-nodata n] [-fixed-buf-val n]"""
     sys.exit(1)
 
 # =============================================================================
-#     Mainline
+# 	Mainline
 # =============================================================================
 
 format = 'GTiff'
@@ -109,9 +109,6 @@ while i < len(argv):
         i = i + 1
         dst_band_n = int(argv[i])
 
-    elif arg == '-q' or arg == '-quiet':
-        quiet_flag = 1
-
     elif src_filename is None:
         src_filename = argv[i]
 
@@ -127,13 +124,13 @@ if src_filename is None or dst_filename is None:
     Usage()
     
 # =============================================================================
-#    Open source file
+#	Open source file
 # =============================================================================
 
 src_ds = gdal.Open( src_filename )
     
 if src_ds is None:
-    print('Unable to open ', src_filename)
+    print 'Unable to open ', src_filename
     sys.exit(1)
 
 srcband = src_ds.GetRasterBand(src_band_n)
@@ -153,7 +150,7 @@ except:
     dst_ts = None
 
 # =============================================================================
-#     Create output file.
+# 	Create output file.
 # =============================================================================
 if dst_ds is None:
     drv = gdal.GetDriverByName(format)
@@ -167,16 +164,11 @@ if dst_ds is None:
     dstband = dst_ds.GetRasterBand(1)
 
 # =============================================================================
-#    Invoke algorithm.
+#	Invoke algorithm.
 # =============================================================================
 
-if quiet_flag:
-    prog_func = None
-else:
-    prog_func = gdal.TermProgress
-    
 gdal.ComputeProximity( srcband, dstband, options,
-                       callback = prog_func )
+                       callback = gdal.TermProgress )
     
 srcband = None
 dstband = None

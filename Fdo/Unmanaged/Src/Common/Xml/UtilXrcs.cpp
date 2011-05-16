@@ -20,21 +20,16 @@
 #include <xercesc/sax2/SAX2XMLReader.hpp>
 #include "../ConvertUTF.h"
 #include <Common/Xml/UtilXrcs.h>
-#include <xercesc/framework/MemoryManager.hpp>
 
 void FdoXmlUtilXrcs::Initialize()
 {
     // does nothing now... see TransformerXalan
 }
 
-FdoStringP FdoXmlUtilXrcs::Xrcs2Unicode( const XMLCh* chars, const XMLSize_t length )
+FdoStringP FdoXmlUtilXrcs::Xrcs2Unicode( const XMLCh* chars, const unsigned int length )
 {
     FdoStringP outString;
-    XMLSize_t localLength = length;
-
-    // If input null, just return empty string
-    if ( chars == NULL ) 
-        return outString;
+    unsigned int localLength = length;
 
 #ifdef _WIN32
 
@@ -82,26 +77,8 @@ FdoStringP FdoXmlUtilXrcs::Xrcs2Unicode( const XMLCh* chars, const XMLSize_t len
 
 XMLCh* FdoXmlUtilXrcs::Unicode2Xrcs( FdoString* chars )
 {
-#ifdef _WIN32
-    // On Windows, wchar_t is 16 bits (UTF-16), and XMLCh is 16-bits, so no conversion necessary:
-    XERCES_CPP_NAMESPACE::MemoryManager* const xercsMemoryManager = XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager;
-    XMLCh* xBuffer = NULL;
-    if (chars == NULL || chars[0] == '\0')
-    {
-        xBuffer = (XMLCh*)xercsMemoryManager->allocate(sizeof(XMLCh));
-        xBuffer[0] = 0;
-    }
-    else
-    {
-        size_t length = wcslen(chars);
-        xBuffer = (XMLCh*)xercsMemoryManager->allocate(sizeof(XMLCh) * (length + 1));
-        wcsncpy(xBuffer, chars, length);
-        xBuffer[length] = 0;
-    }
-#else
     FdoStringP tempString(chars);
-    XMLCh* xBuffer = XERCES_CPP_NAMESPACE::XMLString::transcode((const char*) tempString);
-#endif
+    XMLCh* xBuffer = XERCES_CPP_NAMESPACE::XMLString::transcode((const char*) tempString);;
 
     return xBuffer;
 }

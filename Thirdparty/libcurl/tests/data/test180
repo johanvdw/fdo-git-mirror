@@ -41,7 +41,7 @@ the
 </strip>
 <protocol>
 PUT /we/want/180 HTTP/1.0
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 Content-Length: 78
 

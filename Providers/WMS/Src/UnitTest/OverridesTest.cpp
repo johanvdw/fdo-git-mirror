@@ -57,9 +57,7 @@ OverridesTest::~OverridesTest(void)
 
 void OverridesTest::TestSetConfiguration2 ()
 {
-    bool failed = false;
-
-    FdoPtr<FdoIConnection> connection = WmsTests::GetConnection();
+	FdoPtr<FdoIConnection> connection = WmsTests::GetConnection();
 	if (connection == NULL) {
 		CPPUNIT_FAIL("FAILED - CreateConnection returned NULL\n");
 	}
@@ -124,18 +122,10 @@ void OverridesTest::TestSetConfiguration2 ()
 
 		connection->Close();
 	}
-/*
-    catch (FdoException* e) 
+	catch (FdoException* e) 
     {
         fail (e);
 	}
-*/
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 void OverridesTest::TestCreateSchemaOverrides()
@@ -526,8 +516,6 @@ void OverridesTest::TestSetConfiguration()
 
 void OverridesTest::TestSetConfiguration3()
 {
-    bool failed = false;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection();
@@ -611,18 +599,10 @@ void OverridesTest::TestSetConfiguration3()
 
         connection->Close();
     }
-/*
 	catch (FdoException* e) 
     {
         fail (e);
 	}
-*/
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 // Test configuration, which contains the new xml image format, like "image/tiff; PhotometricInterpretation=RGB"
 void OverridesTest::TestRequestSpcialImageFormat()
@@ -641,7 +621,7 @@ void OverridesTest::TestRequestSpcialImageFormat()
         connection->Open();
       
 	    FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*> (connection->CreateCommand (FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName (L"WMSLayers:Foundation BARRIERL_1M");
+        cmdSelect->SetFeatureClassName (L"WMSLayers:Foundation BARRIERL_1M"); // layer name is Foundation BARRIERL_1M
         FdoPtr<FdoIFeatureReader> featReader = cmdSelect->Execute ();
         CPPUNIT_ASSERT (featReader->ReadNext ());	    
         FdoPtr<FdoIRaster> raster = featReader->GetRaster (L"Image");

@@ -32,7 +32,9 @@ SET ARCENABLECHK=no
 SET RDBMSENABLECHK=no
 SET GDALENABLECHK=no
 SET KINGORACLEENABLECHK=no
+SET KINGSPATIALENABLECHK=no
 SET OGRENABLECHK=no
+SET POSTGISENABLECHK=no
 SET SQLITEENABLECHK=no
 
 if (%FDO_SVN_SOURCEDIR%)==() SET FDO_SVN_SOURCEDIR=trunk
@@ -72,7 +74,9 @@ if "%DEFMODIFYCHK%"=="yes" goto stp0_get_with
 	SET UTILENABLECHK=no
 	SET GDALENABLECHK=no
 	SET KINGORACLEENABLECHK=no
+	SET KINGSPATIALENABLECHK=no
 	SET OGRENABLECHK=no
+	SET POSTGISENABLECHK=no
 	SET SQLITEENABLECHK=no
 :stp0_get_with
 if not "%2"=="providers" goto stp1_get_with
@@ -94,7 +98,9 @@ if not "%2"=="all" goto stp2_get_with
 	SET RDBMSENABLECHK=no
 	SET GDALENABLECHK=no
 	SET KINGORACLEENABLECHK=no
+	SET KINGSPATIALENABLECHK=no
 	SET OGRENABLECHK=no
+	SET POSTGISENABLECHK=no
 	SET SQLITEENABLECHK=no
 	goto next_param
 :stp2_get_with
@@ -149,8 +155,16 @@ if not "%2"=="kingoracle" goto stp14_get_with
 	SET KINGORACLEENABLECHK=yes
     goto next_param
 :stp14_get_with
-if not "%2"=="ogr" goto stp17_get_with
+if not "%2"=="ogr" goto stp15_get_with
 	SET OGRENABLECHK=yes
+    goto next_param
+:stp15_get_with
+if not "%2"=="kingspatial" goto stp16_get_with
+	SET KINGSPATIALENABLECHK=yes
+    goto next_param
+:stp16_get_with
+if not "%2"=="postgis" goto stp17_get_with
+	SET POSTGISENABLECHK=yes
     goto next_param
 :stp17_get_with
 if not "%2"=="sqlite" goto custom_error
@@ -277,9 +291,21 @@ svn checkout https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/KingOracle 
 if errorlevel 1 goto error
 
 :checkout_ogr
-if "%OGRENABLECHK%"=="no" goto checkout_sqlite
+if "%OGRENABLECHK%"=="no" goto checkout_kingspatial
 echo Checking out https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/OGR
 svn checkout https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/OGR "%FDO_SVN_DESTDIR%\Providers\OGR"
+if errorlevel 1 goto error
+
+:checkout_kingspatial
+if "%KINGSPATIALENABLECHK%"=="no" goto checkout_postgis
+echo Checking out https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/KingMsSqlSpatial
+svn checkout https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/KingMsSqlSpatial "%FDO_SVN_DESTDIR%\Providers\KingMsSqlSpatial"
+if errorlevel 1 goto error
+
+:checkout_postgis
+if "%POSTGISENABLECHK%"=="no" goto checkout_sqlite
+echo Checking out https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/PostGIS
+svn checkout https://svn.osgeo.org/fdo/%FDO_SVN_SOURCEDIR%/Providers/PostGIS "%FDO_SVN_DESTDIR%\Providers\PostGIS"
 if errorlevel 1 goto error
 
 :checkout_sqlite
@@ -323,7 +349,9 @@ echo                         arcsde,
 echo                         rdbms, 
 echo                         gdal,
 echo                         kingoracle,
+echo                         kingspatial,
 echo                         ogr,
+echo                         postgis,
 echo                         sqlite
 echo User:           -u[ser]=user id
 echo Password:       -p[assword]=user password

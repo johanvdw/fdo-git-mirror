@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdatasource.cpp 17806 2009-10-13 17:27:54Z rouault $
+ * $Id: ogrcsvdatasource.cpp 15684 2008-11-03 20:37:19Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrcsvdatasource.cpp 17806 2009-10-13 17:27:54Z rouault $");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 15684 2008-11-03 20:37:19Z rouault $");
 
 /************************************************************************/
 /*                          OGRCSVDataSource()                          */
@@ -138,9 +138,6 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
         if( EQUAL(papszNames[i],".") || EQUAL(papszNames[i],"..") )
             continue;
 
-        if (EQUAL(CPLGetExtension(oSubFilename),"csvt"))
-            continue;
-
         if( VSIStatL( oSubFilename, &sStatBuf ) != 0 
             || !VSI_ISREG(sStatBuf.st_mode) 
             || !EQUAL(CPLGetExtension(oSubFilename),"csv") )
@@ -193,17 +190,7 @@ int OGRCSVDataSource::OpenTable( const char * pszFilename )
 /* -------------------------------------------------------------------- */
 /*      Read and parse a line.  Did we get multiple fields?             */
 /* -------------------------------------------------------------------- */
-
-    const char* pszLine = CPLReadLine( fp );
-    if (pszLine == NULL)
-    {
-        VSIFClose( fp );
-        return FALSE;
-    }
-    char chDelimiter = CSVDetectSeperator(pszLine);
-    VSIRewind( fp );
-
-    char **papszFields = CSVReadParseLine2( fp, chDelimiter );
+    char **papszFields = CSVReadParseLine( fp );
 						
     if( CSLCount(papszFields) < 2 )
     {
@@ -223,7 +210,7 @@ int OGRCSVDataSource::OpenTable( const char * pszFilename )
                                              sizeof(void*) * nLayers);
     
     papoLayers[nLayers-1] = 
-        new OGRCSVLayer( CPLGetBasename(pszFilename), fp, pszFilename, FALSE, bUpdate, chDelimiter );
+        new OGRCSVLayer( CPLGetBasename(pszFilename), fp, pszFilename, FALSE, bUpdate );
 
     return TRUE;
 }
@@ -239,19 +226,6 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
                                char ** papszOptions  )
 
 {
-/* -------------------------------------------------------------------- */
-/*      Verify we are in update mode.                                   */
-/* -------------------------------------------------------------------- */
-    if (!bUpdate)
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Data source %s opened read-only.\n"
-                  "New layer %s cannot be created.\n",
-                  pszName, pszLayerName );
-
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Verify that the datasource is a directory.                      */
 /* -------------------------------------------------------------------- */
@@ -301,25 +275,6 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
         return NULL;
     }
 
-
-    const char *pszDelimiter = CSLFetchNameValue( papszOptions, "SEPARATOR");
-    char chDelimiter = ',';
-    if (pszDelimiter != NULL)
-    {
-        if (EQUAL(pszDelimiter, "COMMA"))
-            chDelimiter = ',';
-        else if (EQUAL(pszDelimiter, "SEMICOLON"))
-            chDelimiter = ';';
-        else if (EQUAL(pszDelimiter, "TAB"))
-            chDelimiter = '\t';
-        else
-        {
-            CPLError( CE_Warning, CPLE_AppDefined, 
-                  "SEPARATOR=%s not understood, use one of COMMA, SEMICOLON or TAB.",
-                  pszDelimiter );
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Create a layer.                                                 */
 /* -------------------------------------------------------------------- */
@@ -327,7 +282,7 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
     papoLayers = (OGRCSVLayer **) CPLRealloc(papoLayers, 
                                              sizeof(void*) * nLayers);
     
-    papoLayers[nLayers-1] = new OGRCSVLayer( pszLayerName, fp, pszFilename, TRUE, TRUE, chDelimiter );
+    papoLayers[nLayers-1] = new OGRCSVLayer( pszLayerName, fp, pszFilename, TRUE, TRUE );
 
 /* -------------------------------------------------------------------- */
 /*      Was a partiuclar CRLF order requested?                          */
@@ -396,14 +351,6 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
         }
     }
 
-/* -------------------------------------------------------------------- */
-/*      Should we create a CSVT file ?                                  */
-/* -------------------------------------------------------------------- */
-
-    const char *pszCreateCSVT = CSLFetchNameValue( papszOptions, "CREATE_CSVT");
-    if (pszCreateCSVT)
-        papoLayers[nLayers-1]->SetCreateCSVT(CSLTestBoolean(pszCreateCSVT));
-
     return papoLayers[nLayers-1];
 }
 
@@ -415,20 +362,6 @@ OGRErr OGRCSVDataSource::DeleteLayer( int iLayer )
 
 {
     char *pszFilename;
-    char *pszFilenameCSVT;
-
-/* -------------------------------------------------------------------- */
-/*      Verify we are in update mode.                                   */
-/* -------------------------------------------------------------------- */
-    if( !bUpdate )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Data source %s opened read-only.\n"
-                  "Layer %d cannot be deleted.\n",
-                  pszName, iLayer );
-
-        return OGRERR_FAILURE;
-    }
 
     if( iLayer < 0 || iLayer >= nLayers )
     {
@@ -440,8 +373,6 @@ OGRErr OGRCSVDataSource::DeleteLayer( int iLayer )
 
     pszFilename = 
         CPLStrdup(CPLFormFilename(pszName,papoLayers[iLayer]->GetLayerDefn()->GetName(),"csv"));
-    pszFilenameCSVT = 
-        CPLStrdup(CPLFormFilename(pszName,papoLayers[iLayer]->GetLayerDefn()->GetName(),"csvt"));
 
     delete papoLayers[iLayer];
 
@@ -455,8 +386,6 @@ OGRErr OGRCSVDataSource::DeleteLayer( int iLayer )
 
     VSIUnlink( pszFilename );
     CPLFree( pszFilename );
-    VSIUnlink( pszFilenameCSVT );
-    CPLFree( pszFilenameCSVT );
 
     return OGRERR_NONE;
 }

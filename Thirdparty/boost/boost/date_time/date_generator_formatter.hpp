@@ -4,9 +4,9 @@
 /* Copyright (c) 2004 CrystalClear Software, Inc.
  * Use, modification and distribution is subject to the 
  * Boost Software License, Version 1.0. (See accompanying
- * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
+ * file LICENSE-1.0 or http://www.boost.org/LICENSE-1.0)
  * Author: Jeff Garland, Bart Garst
- * $Date: 2008-11-13 14:05:31 -0500 (Thu, 13 Nov 2008) $
+ * $Date: 2005/03/28 14:27:09 $
  */
 
 #include <iostream>
@@ -63,7 +63,6 @@ namespace date_time {
       //! Default format elements used
       date_generator_formatter()
       {
-        phrase_strings.reserve(number_of_phrase_elements);
         phrase_strings.push_back(string_type(first_string));
         phrase_strings.push_back(string_type(second_string));
         phrase_strings.push_back(string_type(third_string));
@@ -76,26 +75,25 @@ namespace date_time {
       }
 
       //! Constructor that allows for a custom set of phrase elements
-      date_generator_formatter(const string_type& first_str,
-                               const string_type& second_str,
-                               const string_type& third_str,
-                               const string_type& fourth_str,
-                               const string_type& fifth_str,
-                               const string_type& last_str,
-                               const string_type& before_str,
-                               const string_type& after_str,
-                               const string_type& of_str)
+      date_generator_formatter(const string_type& first,
+                               const string_type& second,
+                               const string_type& third,
+                               const string_type& fourth,
+                               const string_type& fifth,
+                               const string_type& last,
+                               const string_type& before,
+                               const string_type& after,
+                               const string_type& of)
       {
-        phrase_strings.reserve(number_of_phrase_elements);
-        phrase_strings.push_back(first_str);
-        phrase_strings.push_back(second_str);
-        phrase_strings.push_back(third_str);
-        phrase_strings.push_back(fourth_str);
-        phrase_strings.push_back(fifth_str);
-        phrase_strings.push_back(last_str);
-        phrase_strings.push_back(before_str);
-        phrase_strings.push_back(after_str);
-        phrase_strings.push_back(of_str);
+        phrase_strings.push_back(string_type(first_string));
+        phrase_strings.push_back(string_type(second_string));
+        phrase_strings.push_back(string_type(third_string));
+        phrase_strings.push_back(string_type(fourth_string));
+        phrase_strings.push_back(string_type(fifth_string));
+        phrase_strings.push_back(string_type(last_string));
+        phrase_strings.push_back(string_type(before_string));
+        phrase_strings.push_back(string_type(after_string));
+        phrase_strings.push_back(string_type(of_string));
       }
 
       //! Replace the set of phrase elements with those contained in new_strings
@@ -150,7 +148,7 @@ namespace date_time {
         facet.put(next, a_ios, a_fill, nkd.month());
         return next;
       }
-
+   
       //! Put a first_day_of_the_week_in_month => "first weekday of month"
       template<class facet_type>
       OutItrT put_first_kday(OutItrT next, std::ios_base& a_ios,

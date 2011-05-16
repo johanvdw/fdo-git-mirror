@@ -35,8 +35,6 @@ http://www.boost.org/LICENSE_1_0.txt)
 
     <xsl:variable name="explicit_markup" select="document( $explicit_markup_file )"/>
     <xsl:variable name="runner_id" select="test-run/@runner"/>
-    <xsl:variable name="revision" select="test-run/@revision"/>
-    <xsl:variable name="timestamp" select="test-run/@timestamp"/>
 
     <!-- runs / toolsets -->
     <xsl:variable name="run_toolsets" select="meta:test_structure( /, 'no' )"/>
@@ -101,8 +99,6 @@ http://www.boost.org/LICENSE_1_0.txt)
                     <xsl:with-param name="path" select="$variants_file_path"/>
                     <xsl:with-param name="test_logs" select="$toolset/*"/>
                     <xsl:with-param name="runner_id" select="$runner_id"/>
-                    <xsl:with-param name="revision" select="$revision"/>
-                    <xsl:with-param name="timestamp" select="$timestamp"/>
                 </xsl:call-template>
 
                 <xsl:for-each select="str:tokenize( string( ' |_release' ), '|')">
@@ -131,8 +127,6 @@ http://www.boost.org/LICENSE_1_0.txt)
                         <xsl:with-param name="path" select="$log_file_path"/>
                         <xsl:with-param name="test_log" select="$test_log"/>
                         <xsl:with-param name="runner_id" select="$runner_id"/>
-                        <xsl:with-param name="revision" select="$revision"/>
-                        <xsl:with-param name="timestamp" select="$timestamp"/>
                     </xsl:call-template>
                     
                     <xsl:for-each select="str:tokenize( string( ' |_release' ), '|')">
@@ -157,7 +151,7 @@ http://www.boost.org/LICENSE_1_0.txt)
         <xsl:param name="test_logs"/>
         <xsl:variable name="libs" select="set:distinct( $test_logs/@library )"/>
         <xsl:variable name="fragment">
-            <runner runner_id="{$test_logs[1]/../@runner}" revision="{$test_logs[1]/../@revision}" timestamp="{$test_logs[1]/../@timestamp}">
+            <runner runner_id="{$test_logs[1]/../@runner}">
                 <xsl:for-each select="$libs">
                     <xsl:variable name="library_name" select="."/>
                     <xsl:variable name="library_test_logs" select="$test_logs[@library=$library_name]"/>
@@ -227,8 +221,6 @@ http://www.boost.org/LICENSE_1_0.txt)
         <xsl:param name="path"/>
         <xsl:param name="test_logs"/>
         <xsl:param name="runner_id"/>
-        <xsl:param name="revision"/>
-        <xsl:param name="timestamp"/>
         <xsl:message>    Writing variants file <xsl:value-of select="$path"/></xsl:message>
         <exsl:document href="{$path}"
             method="html" 
@@ -238,7 +230,6 @@ http://www.boost.org/LICENSE_1_0.txt)
             
             <html>
                 <xsl:variable name="component" select="meta:output_page_header( $test_logs[1], $runner_id )"/>
-                <xsl:variable name="age" select="meta:timestamp_difference( $timestamp, $run_date )"/>
 
                 <head>
                     <link rel="stylesheet" type="text/css" href="../master.css" title="master" />
@@ -246,16 +237,12 @@ http://www.boost.org/LICENSE_1_0.txt)
                 </head>
 
                 <body>
-                    <div class="log-test-header">
+                    <div>
                         <div class="log-test-title">
                             Test output: <xsl:value-of select="$component"/>
                         </div>
-                        <div><span class="timestamp-{$age}">
-                            Rev <xsl:value-of select="$revision"/> /
-                            <xsl:value-of select="meta:format_timestamp( $timestamp )"/>
-                        </span></div>
                     </div>
-
+                    
                     <div>
                         <b>Report Time: </b> <xsl:value-of select="meta:format_timestamp( $run_date )"/>
                     </div>
@@ -288,8 +275,6 @@ http://www.boost.org/LICENSE_1_0.txt)
         <xsl:param name="path"/>
         <xsl:param name="test_log"/>
         <xsl:param name="runner_id"/>
-        <xsl:param name="revision"/>
-        <xsl:param name="timestamp"/>
         <xsl:message>    Writing log file document <xsl:value-of select="$path"/></xsl:message>
 
         <exsl:document href="{$path}" 
@@ -300,7 +285,6 @@ http://www.boost.org/LICENSE_1_0.txt)
                         
             <html>
                 <xsl:variable name="component" select="meta:output_page_header( $test_log, $runner_id )"/>
-                <xsl:variable name="age" select="meta:timestamp_difference( $timestamp, $run_date )"/>
 
                 <head>
                     <link rel="stylesheet" type="text/css" href="../master.css" title="master" />
@@ -308,16 +292,10 @@ http://www.boost.org/LICENSE_1_0.txt)
                 </head>
                 
                 <body>
-                    <div class="log-test-header">
-                        <div class="log-test-title">
-                            Test output: <xsl:value-of select="$component"/>
-                        </div>
-                        <div><span class="timestamp-{$age}">
-                            Rev <xsl:value-of select="$revision"/> /
-                            <xsl:value-of select="meta:format_timestamp( $timestamp )"/>
-                        </span></div>
+                    <div class="log-test-title">
+                        Test output: <xsl:value-of select="$component"/>
                     </div>
-
+                    
                     <div>
                         <b>Report Time: </b> <xsl:value-of select="meta:format_timestamp( $run_date )"/>
                     </div>
@@ -375,8 +353,8 @@ http://www.boost.org/LICENSE_1_0.txt)
 
 
     <xsl:template name="write_test_results_reference_file">
-        <xsl:param name="path"/>
-        <xsl:param name="log_file_path"/>
+        <xsl:param name="$path"/>
+        <xsl:param name="$log_file_path"/>
         <xsl:message>    Writing log frame document <xsl:value-of select="$path"/></xsl:message>
         <exsl:document href="{$path}"
             method="html" 

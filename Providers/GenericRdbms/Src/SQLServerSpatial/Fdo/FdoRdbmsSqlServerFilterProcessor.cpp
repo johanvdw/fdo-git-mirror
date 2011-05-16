@@ -24,9 +24,12 @@
 #include "SpatialManager/FdoRdbmsSpatialManager.h"
 #include "FdoRdbmsSqlServerConnection.h"
 #include "FdoCommonOSUtil.h"
-#include "FdoRdbmsFunctionIsValid.h"
+#include "FdoRdbmsSqlServerSpatialGeometryConverter.h"
+#include "FdoRdbmsSqlServerFunctionIsValid.h"
 #include "../SchemaMgr/Ph/SpatialIndex.h"
 #include "../SchemaMgr/Ph/Mgr.h"
+
+#define SQLSERVER_CONVERT_WKB L".STAsBinary()"
 
 // This list includes all the SQL Server aggregate functions. Not all functions are officially supported
 // but they are not being prevented either.
@@ -154,11 +157,6 @@ FdoRdbmsSqlServerFilterProcessor::~FdoRdbmsSqlServerFilterProcessor(void)
 {
 }
 
-bool FdoRdbmsSqlServerFilterProcessor::SupportsSpatialOrNonSpatialOperator()
-{
-    return true;
-}
-
 const FdoSmLpGeometricPropertyDefinition* FdoRdbmsSqlServerFilterProcessor::GetGeometricProperty( const FdoSmLpClassDefinition* currentClass, const wchar_t *geomPropName ) const
 {
     const FdoSmLpGeometricPropertyDefinition* geom = NULL;
@@ -239,6 +237,7 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
     const FdoSmLpGeometricPropertyDefinition* geomProp = GetGeometricProperty(classDefinition, FdoPtr<FdoIdentifier>(filter.GetPropertyName())->GetName());
     const FdoSmPhColumn* geomColumn = geomProp ? geomProp->RefColumn() : (const FdoSmPhColumn*) NULL;
     FdoStringP geomType = geomColumn ? geomColumn->GetTypeName() : FdoStringP(L"geometry");
+    bool geogLatLong = false;
     const FdoString* classTableName = classDefinition->GetDbObjectName();
     const FdoString* tableName = geomProp ? geomProp->GetContainingDbObjectName() : L""; // The geometry table name
     FdoStringP columnName = GetGeometryColumnNameForProperty(geomProp, true);
@@ -247,8 +246,47 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
     FdoStringP spatialClause;
     FdoPtr<FdoExpression> geomExpr = filter.GetGeometry();
     FdoGeometryValue *geom = dynamic_cast<FdoGeometryValue*>(geomExpr.p);
+    FdoByteArray            *geomfgf = NULL;
+    FdoIGeometry            *geometryObj = NULL;
 
     FdoStringP buf(L"");
+
+    if ( geom ) 
+        geomfgf = geom->GetGeometry();
+
+    if (geomfgf == NULL)
+        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_46, "No geometry value"));
+
+    // Geometry factory
+    FdoPtr<FdoFgfGeometryFactory>   gf = FdoFgfGeometryFactory::GetInstance();
+
+    geometryObj = gf->CreateGeometryFromFgf(geomfgf);
+
+    if ( geomColumn ) 
+    {
+        FdoSmPhSqsMgrP phMgr = ((FdoSmPhColumn*) geomColumn)->GetManager()->SmartCast<FdoSmPhSqsMgr>();
+        geogLatLong = phMgr->IsGeogLatLong();
+    }
+
+    // SqlServer supports only 2D
+    FdoPtr<FdoIGeometry> geom2D = geometryObj;
+    if ( ((geomType == L"geography") && geogLatLong) || (geometryObj->GetDimensionality() != FdoDimensionality_XY) )
+	{
+		FdoSpatialGeometryConverter *gc = NULL;
+        
+        if ( (geomType == L"geography" ) && geogLatLong ) 
+            gc = new FdoRdbmsSqlServerSpatialGeographyConverter();
+        else
+            gc = new FdoRdbmsSqlServerSpatialGeometryConverter();
+
+		geom2D = gc->ConvertOrdinates( geometryObj, true, FdoDimensionality_XY, 0.0, 0.0);
+        delete gc;
+	}
+
+    // When Coordinate System is geodetic, filter polygon outer ring must 
+    // be CounterClockwise, and inner rings Clockwise.
+    if ( geomType == L"geography" )
+        geom2D = FdoCommonGeometryUtil::ModifyRingOrientation( geom2D );
 
     // Delimit column name with []. Can't use " when part of function.
     buf += "[";
@@ -343,21 +381,33 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
         } // of switch Operation
     }
 
+    buf += "(";
+    buf += geomType;
+    buf += "::STGeomFromText('";
+    buf += geom2D->GetText();
+
     // Set the SRID
 	const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomProp)->GetColumn();
     FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
-    mUsedParameterValues.push_back(std::make_pair(geom, geomCol->GetSRID()));
 
-    buf += "(?)=1";
+    buf += FdoStringP::Format(L"', %ld)", geomCol->GetSRID());  
 
+    buf += ")";
+    buf += "=1";
 
 	if ( spatialOp == FdoSpatialOperations_EnvelopeIntersects)
 	{
-        mUsedParameterValues.push_back(std::make_pair(geom, geomCol->GetSRID()));
 		buf += L" AND [";
 		buf += columnName;
 		buf += "].MakeValid().STEnvelope().STIntersects";
-		buf += "(?)=1";
+		buf += "(";
+		buf += geomType;
+		buf += "::STGeomFromText('";
+		buf += geom2D->GetText();
+
+		buf += FdoStringP::Format(L"', %ld)", geomCol->GetSRID());  
+		buf += ")";
+		buf += "=1";
 
 		// store only the first spatial index name
 		if (mSpatialIndexName == L"")
@@ -446,7 +496,7 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessFunction(FdoFunction& expr)
     if (FdoCommonOSUtil::wcsicmp(funcName, FDO_FUNCTION_SPATIALEXTENTS) == 0)
         return ProcessSpatialExtentsFunction(expr);
 
-    if (FdoCommonOSUtil::wcsicmp(funcName, FDORDBMS_FUNCTION_ISVALID) == 0)
+    if (FdoCommonOSUtil::wcsicmp(funcName, FDORDBMSSQLSERVER_FUNCTION_ISVALID) == 0)
         return ProcessIsValidFunction(expr);
 
     if (FdoCommonOSUtil::wcsicmp(funcName, FDO_FUNCTION_Z) == 0)
@@ -516,6 +566,8 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialExtentsFunction (FdoFunctio
     AppendString(SQLSERVER_FUNCTION_SPATIALEXTENTS);
     AppendString(OPEN_PARENTH);
     AppendString(CLOSE_PARENTH);
+
+    AppendString(SQLSERVER_CONVERT_WKB);
 }
 
 void FdoRdbmsSqlServerFilterProcessor::ProcessIsValidFunction (FdoFunction& expr)
@@ -776,6 +828,14 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessConcatFunction(FdoFunction& expr)
     AppendString(CLOSE_PARENTH);
 }
 
+bool FdoRdbmsSqlServerFilterProcessor::IsDataValue (FdoExpression *expr)
+{
+    if (dynamic_cast<FdoDataValue *>(expr) != NULL)
+        return true;
+
+    return false;
+}
+
 //
 // Function to map an expression function name to the corresponding SQL Server
 // function name. If the name does not needs to be mapped, the provided name is
@@ -954,12 +1014,25 @@ FdoStringP FdoRdbmsSqlServerFilterProcessor::GetGeometryString( FdoString* dbCol
     wrappedName += columnName;
     wrappedName += L"]";
 
+    // Add conversion to WKB only if this is a column in a select list.
+    // For other cases (e.g. column is function argument), must not convert. 
+    if ( inSelectList ) 
+    {
+        wrappedName += FdoStringP(SQLSERVER_CONVERT_WKB);
+        
+        // Use the column name as alias 
+        wrappedName += L" as \"";
+        wrappedName += columnName;
+        wrappedName += L"\"";
+    }
+
     return wrappedName;
 }
 
 FdoStringP FdoRdbmsSqlServerFilterProcessor::GetGeometryTableString( FdoString* tableName )
 {
     FdoStringP  tableName2 = tableName;
+    // 'dbo.acdb3dpolyline.geometry.STAsBinary()' syntax is not allowed.
     // Drop the schema name.
     if ( tableName2.Contains(L".") )
         tableName2 = tableName2.Right(L".");

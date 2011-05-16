@@ -1,16 +1,16 @@
 /***************************************************************************
- *                                  _   _ ____  _
- *  Project                     ___| | | |  _ \| |
- *                             / __| | | | |_) | |
- *                            | (__| |_| |  _ <| |___
+ *                                  _   _ ____  _     
+ *  Project                     ___| | | |  _ \| |    
+ *                             / __| | | | |_) | |    
+ *                            | (__| |_| |  _ <| |___ 
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
  * are also available at http://curl.haxx.se/docs/copyright.html.
- *
+ * 
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
  * furnished to do so, under the terms of the COPYING file.
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: writeenv.c,v 1.12 2010-01-18 20:22:04 yangtse Exp $
+ * $Id: writeenv.c,v 1.9 2004/12/15 01:38:25 danf Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -30,13 +30,6 @@
 
 #ifdef __riscos__
 #include <kernel.h>
-#endif
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-#if defined(CURLDEBUG) && defined(CURLTOOLDEBUG)
-#include "memdebug.h"
 #endif
 
 static const struct
@@ -73,7 +66,9 @@ static void internalSetEnv(const char * name, char * value)
 #ifdef __riscos__
   _kernel_setenv(name, value);
 #elif defined (CURLDEBUG)
-  curl_memlog("ENV %s = %s\n", name, value);
+  extern FILE *curl_debuglogfile;
+  if (curl_debuglogfile)
+     fprintf (curl_debuglogfile, "ENV %s = %s\n", name, value);
 #endif
   return;
 }
@@ -84,7 +79,7 @@ void ourWriteEnv(CURL *curl)
   char *string, numtext[10];
   long longinfo;
   double doubleinfo;
-
+  
   for (i=0; variables[i].name; i++) {
     switch (variables[i].type) {
     case writeenv_STRING:
@@ -96,7 +91,7 @@ void ourWriteEnv(CURL *curl)
 
     case writeenv_LONG:
       if (curl_easy_getinfo(curl, variables[i].id, &longinfo) == CURLE_OK) {
-        curl_msprintf(numtext, "%5ld", longinfo);
+        sprintf(numtext, "%5ld", longinfo);
         internalSetEnv(variables[i].name, numtext);
       }
       else
@@ -104,7 +99,7 @@ void ourWriteEnv(CURL *curl)
       break;
     case writeenv_DOUBLE:
       if (curl_easy_getinfo(curl, variables[i].id, &doubleinfo) == CURLE_OK) {
-        curl_msprintf(numtext, "%6.2f", doubleinfo);
+        sprintf(numtext, "%6.2f", doubleinfo);
         internalSetEnv(variables[i].name, numtext);
       }
       else

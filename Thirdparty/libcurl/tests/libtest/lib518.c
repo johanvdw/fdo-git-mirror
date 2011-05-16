@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib518.c,v 1.37 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib518.c,v 1.31 2007-04-05 11:05:36 yangtse Exp $
  */
 
 #include "test.h"
@@ -25,8 +25,6 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-
-#include "memdebug.h"
 
 #ifndef FD_SETSIZE
 #error "this test requires FD_SETSIZE"
@@ -155,27 +153,12 @@ static int rlimit(int keep_open)
 
   if (rl.rlim_cur != rl.rlim_max) {
 
-#ifdef OPEN_MAX
-    if ((rl.rlim_cur > 0) &&
-        (rl.rlim_cur < OPEN_MAX)) {
-      fprintf(stderr, "raising soft limit up to OPEN_MAX\n");
-      rl.rlim_cur = OPEN_MAX;
-      if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
-        /* on failure don't abort just issue a warning */
-        store_errmsg("setrlimit() failed", ERRNO);
-        fprintf(stderr, "%s\n", msgbuff);
-        msgbuff[0] = '\0';
-      }
-    }
-#endif
-
     fprintf(stderr, "raising soft limit up to hard limit\n");
     rl.rlim_cur = rl.rlim_max;
     if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
-      /* on failure don't abort just issue a warning */
       store_errmsg("setrlimit() failed", ERRNO);
       fprintf(stderr, "%s\n", msgbuff);
-      msgbuff[0] = '\0';
+      return -2;
     }
 
     /* get current open file limits */
@@ -401,8 +384,7 @@ static int rlimit(int keep_open)
   for (rl.rlim_cur = 0;
        rl.rlim_cur < num_open.rlim_max;
        rl.rlim_cur++) {
-    if ((fd[rl.rlim_cur] > 0) &&
-       ((unsigned int)fd[rl.rlim_cur] > num_open.rlim_cur)) {
+    if (fd[rl.rlim_cur] > num_open.rlim_cur) {
       sprintf(strbuff, "select limit is FD_SETSIZE %d", FD_SETSIZE);
       store_errmsg(strbuff, 0);
       fprintf(stderr, "%s\n", msgbuff);
@@ -484,12 +466,10 @@ int test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_HEADER, TRUE);
 
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   close_file_descriptors();
   curl_easy_cleanup(curl);

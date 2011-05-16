@@ -7,9 +7,9 @@ FITS_OPTS	=
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(FITS_OPTS) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

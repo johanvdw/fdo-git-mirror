@@ -24,17 +24,9 @@
 #ifndef BOOST_ARRAY_HPP
 #define BOOST_ARRAY_HPP
 
-#include <boost/detail/workaround.hpp>
-
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)  
-# pragma warning(push)  
-# pragma warning(disable:4996) // 'std::equal': Function call with parameters that may be unsafe
-#endif
-
 #include <cstddef>
 #include <stdexcept>
 #include <boost/assert.hpp>
-#include <boost/swap.hpp>
 
 // Handles broken standard libraries better than <iterator>
 #include <boost/detail/iterator.hpp>
@@ -139,8 +131,7 @@ namespace boost {
 
         // swap (note: linear complexity)
         void swap (array<T,N>& y) {
-            for (size_type i = 0; i < N; ++i)
-                boost::swap(elems[i],y.elems[i]);
+            std::swap_ranges(begin(),end(),y.begin());
         }
 
         // direct access to data (read-only)
@@ -166,7 +157,7 @@ namespace boost {
         // check range (may be private because it is static)
         static void rangecheck (size_type i) {
             if (i >= size()) {
-                throw std::out_of_range("array<>: index out of range");
+                throw std::range_error("array<>: index out of range");
             }
         }
 
@@ -218,19 +209,19 @@ namespace boost {
         }
 
         // operator[]
-        reference operator[](size_type /*i*/)
+        reference operator[](size_type i)
         {
             return failed_rangecheck();
         }
 
-        const_reference operator[](size_type /*i*/) const
+        const_reference operator[](size_type i) const
         {
             return failed_rangecheck();
         }
 
         // at() with range check
-        reference at(size_type /*i*/)               {   return failed_rangecheck(); }
-        const_reference at(size_type /*i*/) const   {   return failed_rangecheck(); }
+        reference at(size_type i)               {   return failed_rangecheck(); }
+        const_reference at(size_type i) const   {   return failed_rangecheck(); }
 
         // front() and back()
         reference front()
@@ -259,7 +250,7 @@ namespace boost {
         static size_type max_size() { return 0; }
         enum { static_size = 0 };
 
-        void swap (array<T,0>& /*y*/) {
+        void swap (array<T,0>& y) {
         }
 
         // direct access to data (read-only)
@@ -280,7 +271,7 @@ namespace boost {
 
         // check range (may be private because it is static)
         static reference failed_rangecheck () {
-                std::out_of_range e("attempt to access element of an empty array");
+                std::range_error e("attempt to access element of an empty array");
                 boost::throw_exception(e);
                 //
                 // We need to return something here to keep
@@ -326,10 +317,5 @@ namespace boost {
     }
 
 } /* namespace boost */
-
-
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)  
-# pragma warning(pop)  
-#endif 
 
 #endif /*BOOST_ARRAY_HPP*/

@@ -122,19 +122,13 @@ FdoStringP FdoSmPhFkey::GetAddSql()
 
 void FdoSmPhFkey::LoadRefCand()
 {
-    FdoSmPhOwner* owner = (FdoSmPhOwner*)(GetParent()->GetParent());
     FdoSmPhOwnerP refOwner = GetManager()->FindOwner( mPkeyTableOwner, GetParent()->GetParent()->GetParent()->GetName() );
 
     if ( refOwner ) {
         refOwner->AddCandDbObject( mPkeyTableName );
         // Bulk load foreign keys for candidates.
-        refOwner->SetBulkLoadFkeys(owner->GetBulkLoadFkeys());
+        refOwner->SetBulkLoadFkeys(true);
     }
-}
-
-FdoSmPhColumnP FdoSmPhFkey::FindPkeyColumn( FdoSmPhTableP pkTable, FdoStringP columnName )
-{
-    return FdoSmPhColumnsP(mPkeyTable->GetColumns())->FindItem(columnName);
 }
 
 void FdoSmPhFkey::LoadPkeyTable()
@@ -158,7 +152,7 @@ void FdoSmPhFkey::LoadPkeyTable()
             // Find each primary key column.
             for ( i = 0; i < mPkeyColumnNames->GetCount(); i++ ) {
                 FdoStringP columnName = mPkeyColumnNames->GetString(i);
-                FdoSmPhColumnP column = FindPkeyColumn( mPkeyTable, columnName );
+                FdoSmPhColumnP column = FdoSmPhColumnsP(mPkeyTable->GetColumns())->FindItem(columnName);
 
                 if ( column ) {
                     mPkeyColumns->Add( column );

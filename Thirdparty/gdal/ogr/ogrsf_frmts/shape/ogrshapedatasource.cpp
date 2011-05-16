@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshapedatasource.cpp 17806 2009-10-13 17:27:54Z rouault $
+ * $Id: ogrshapedatasource.cpp 15328 2008-09-07 12:07:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrshapedatasource.cpp 17806 2009-10-13 17:27:54Z rouault $");
+CPL_CVSID("$Id: ogrshapedatasource.cpp 15328 2008-09-07 12:07:27Z rouault $");
 
 /************************************************************************/
 /*                         OGRShapeDataSource()                         */
@@ -73,7 +73,7 @@ int OGRShapeDataSource::Open( const char * pszNewName, int bUpdate,
                               int bTestOpen, int bSingleNewFileIn )
 
 {
-    VSIStatBufL  stat;
+    VSIStatBuf  stat;
     
     CPLAssert( nLayers == 0 );
     
@@ -96,7 +96,7 @@ int OGRShapeDataSource::Open( const char * pszNewName, int bUpdate,
 /* -------------------------------------------------------------------- */
 /*      Is the given path a directory or a regular file?                */
 /* -------------------------------------------------------------------- */
-    if( VSIStatL( pszNewName, &stat ) != 0 
+    if( CPLStat( pszNewName, &stat ) != 0 
         || (!VSI_ISDIR(stat.st_mode) && !VSI_ISREG(stat.st_mode)) )
     {
         if( !bTestOpen )
@@ -610,9 +610,9 @@ int OGRShapeDataSource::TestCapability( const char * pszCap )
 
 {
     if( EQUAL(pszCap,ODsCCreateLayer) )
-        return bDSUpdate;
+        return TRUE;
     else if( EQUAL(pszCap,ODsCDeleteLayer) )
-        return bDSUpdate;
+        return TRUE;
     else
         return FALSE;
 }
@@ -747,19 +747,6 @@ OGRErr OGRShapeDataSource::DeleteLayer( int iLayer )
 
 {
     char *pszFilename;
-
-/* -------------------------------------------------------------------- */
-/*      Verify we are in update mode.                                   */
-/* -------------------------------------------------------------------- */
-    if( !bDSUpdate )
-    {
-        CPLError( CE_Failure, CPLE_NoWriteAccess,
-                  "Data source %s opened read-only.\n"
-                  "Layer %d cannot be deleted.\n",
-                  pszName, iLayer );
-
-        return OGRERR_FAILURE;
-    }
 
     if( iLayer < 0 || iLayer >= nLayers )
     {

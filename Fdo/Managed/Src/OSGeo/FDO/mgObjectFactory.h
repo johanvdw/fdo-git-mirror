@@ -82,9 +82,6 @@ ref class LiteralValue;
 ref class LOBValue;
 ref class ValueExpression;
 ref class DataValueCollection;
-ref class JoinCriteria;
-ref class JoinCriteriaCollection;
-ref class SubSelectExpression;
 END_NAMESPACE_OSGEO_FDO_EXPRESSION
 
 BEGIN_NAMESPACE_OSGEO_FDO_FILTER
@@ -299,9 +296,6 @@ public:
     static NAMESPACE_OSGEO_FDO_EXPRESSION::LOBValue^ CreateLOBValue(System::IntPtr ptr, System::Boolean autoDispose);
     static NAMESPACE_OSGEO_FDO_EXPRESSION::ValueExpression^ CreateValueExpression(System::IntPtr ptr, System::Boolean autoDispose);
 	static NAMESPACE_OSGEO_FDO_EXPRESSION::DataValueCollection^ CreateEDataValueCollection(System::IntPtr ptr, System::Boolean autoDispose);
-    static NAMESPACE_OSGEO_FDO_EXPRESSION::JoinCriteria^ CreateJoinCriteria(System::IntPtr ptr, System::Boolean autoDispose);
-    static NAMESPACE_OSGEO_FDO_EXPRESSION::JoinCriteriaCollection^ CreateJoinCriteriaCollection(System::IntPtr ptr, System::Boolean autoDispose);
-    static NAMESPACE_OSGEO_FDO_EXPRESSION::SubSelectExpression^ CreateSubSelectExpression(System::IntPtr ptr, System::Boolean autoDispose);
 
 private:
 	ObjectFactory(){}

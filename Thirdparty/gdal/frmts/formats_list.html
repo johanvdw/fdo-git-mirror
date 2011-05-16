@@ -58,14 +58,6 @@
 </td><td> Yes
 </td></tr>
 
-<tr><td> <a href="frmt_bag.html">Bathymetry Attributed Grid (.bag)</a>
-</td><td> BAG
-</td><td> No
-</td><td> Yes
-</td><td> 2GiB
-</td><td> No, needs libhdf5
-</td></tr>
-
 <tr><td> <a href="frmt_bmp.html">Microsoft Windows Device Independent Bitmap (.bmp)</a>
 </td><td> BMP
 </td><td> Yes
@@ -210,14 +202,6 @@
 </td><td> Yes
 </td></tr>
 
-<tr><td> <a href="frmt_epsilon.html">Epsilon - Wavelet compressed images</a>
-</td><td> EPSILON
-</td><td> Yes
-</td><td> No
-</td><td> --
-</td><td> No, needs EPSILON library
-</td></tr>
-
 <tr><td> <a href="frmt_ers.html">ERMapper (.ers)</a>
 </td><td> ERS
 </td><td> Yes
@@ -266,7 +250,7 @@
 </td><td> Yes
 </td></tr>
 
-<tr><td> <a href="frmt_various.html#GenBin">Generic Binary (.hdr Labelled)</a>
+<tr><td> Generic Binary (.hdr Labelled)
 </td><td> GENBIN
 </td><td> No
 </td><td> No
@@ -380,7 +364,7 @@
 
 <tr><td> <a href="frmt_hdf5.html">Hierarchical Data Format Release 5 (HDF5)</a>
 </td><td> HDF5
-</td><td> No
+</td><td> Yes
 </td><td> Yes
 </td><td> 2GiB
 </td><td> No, needs libhdf5
@@ -510,7 +494,7 @@
 </td><td> LCP
 </td><td> No
 </td><td> Yes
-</td><td> No limits
+</td><td> 
 </td><td> Yes
 </td></tr>
 
@@ -582,7 +566,7 @@
 </td><td> NITF
 </td><td> Yes
 </td><td> Yes
-</td><td> 10GB
+</td><td> 4GB
 </td><td> Yes
 </td></tr>
 
@@ -592,22 +576,6 @@
 </td><td> Yes
 </td><td> 2GB
 </td><td> No, needs libnetcdf
-</td></tr>
-
-<tr><td> Northwood/VerticalMapper Classified Grid Format .grc/.tab
-</td><td> NWT_GRC
-</td><td> No
-</td><td> Yes
-</td><td> --
-</td><td> Yes
-</td></tr>
-
-<tr><td> Northwood/VerticalMapper Numeric Grid Format .grd/.tab
-</td><td> NWT_GRD
-</td><td> No
-</td><td> Yes
-</td><td> --
-</td><td> Yes
 </td></tr>
 
 <tr><td> <a href="frmt_ogdi.html">OGDI Bridge</a>
@@ -650,7 +618,6 @@
 </td><td> Yes
 </td></tr>
 
-<!-- Sorry PGCHIP, it was nice to meet you but WKTRaster has hopefully a better future...
 <tr><td>  <a href="http://simon.benjamin.free.fr/pgchip">Postgis CHIP raster (under development)</a>
 </td><td> PGCHIP
 </td><td> Yes
@@ -658,7 +625,6 @@
 </td><td> --
 </td><td> No, needs PostgreSQL library and Postgis headers
 </td></tr>
--->
 
 <tr><td> <a href="frmt_various.html#PNG">Portable Network Graphics (.png)</a>
 </td><td> PNG
@@ -676,28 +642,12 @@
 </td><td> Yes
 </td></tr>
 
-<tr><td> <a href="frmt_r.html">R Object Data Store</a>
-</td><td> R
-</td><td> Yes
-</td><td> No
-</td><td> --
-</td><td> Yes
-</td></tr>
-
-<tr><td> <a href="frmt_rasterlite.html">Rasterlite - Rasters in SQLite DB</a>
-</td><td> Rasterlite
-</td><td> Yes
-</td><td> Yes
-</td><td> --
-</td><td> No (needs OGR SQLite driver)
-</td></tr>
-
 <tr><td> <a href="frmt_rik.html">Swedish Grid RIK (.rik)</a>
 </td><td> RIK
 </td><td> No
 </td><td> Yes
 </td><td> 4GB
-</td><td> Yes (internal zlib is used if necessary)
+</td><td> Yes
 </td></tr>
 
 <tr><td> <a href="frmt_rmf.html">Raster Matrix Format (*.rsw, .mtw)</a>
@@ -729,14 +679,6 @@
 </td><td> Yes
 </td><td> Yes
 </td><td> No limits
-</td><td> Yes
-</td></tr>
-
-<tr><td> <a href="frmt_various.html#SAGA">SAGA GIS Binary format</a>
-</td><td> SAGA
-</td><td> Yes
-</td><td> Yes
-</td><td> --
 </td><td> Yes
 </td></tr>
 
@@ -772,14 +714,6 @@
 </td><td> Yes
 </td></tr>
 
-<tr><td> <a href="frmt_various.html#SRP">Standard Raster Product (ASRP/USRP)</a>
-</td><td> SRP
-</td><td> No
-</td><td> Yes
-</td><td> 2GB
-</td><td> Yes
-</td></tr>
-
 <tr><td> <a href="frmt_various.html#SRTMHGT">SRTM HGT Format</a>
 </td><td> SRTMHGT
 </td><td> Yes
@@ -804,14 +738,6 @@
 </td><td> No, needs Terralib
 </td></tr>
 
-<tr><td> EarthWatch/DigitalGlobe .TIL
-</td><td> TIL
-</td><td> No
-</td><td> No
-</td><td> --
-</td><td> Yes
-</td></tr>
-
 <tr><td> TerraSAR-X Product
 </td><td> TSX
 </td><td> Yes
@@ -830,7 +756,7 @@
 
 <tr><td> <a href="http://www.gdal.org/gdal_vrttut.html">GDAL Virtual (.vrt)</a>
 </td><td> VRT
-</td><td> Yes
+</td><td> No
 </td><td> Yes
 </td><td> --
 </td><td> Yes
@@ -842,14 +768,6 @@
 </td><td> Yes
 </td><td> --
 </td><td> No, needs libcurl
-</td></tr>
-
-<tr><td>  <a href="http://trac.osgeo.org/gdal/wiki/frmts_wtkraster.html">WKTRaster</a>
-</td><td> WKTRaster
-</td><td> No
-</td><td> Yes
-</td><td> --
-</td><td> No, needs PostgreSQL library
 </td></tr>
 
 <tr><td> <a href="frmt_wms.html">OGC Web Map Server</a>
@@ -885,7 +803,7 @@
 </p>
 
 <p>
-$Id: formats_list.html 18250 2009-12-10 18:58:39Z rouault $
+$Id: formats_list.html 15781 2008-11-21 18:43:16Z rouault $
 </p>
 
 </body>

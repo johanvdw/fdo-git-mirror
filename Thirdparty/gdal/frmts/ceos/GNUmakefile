@@ -6,12 +6,12 @@ OBJ	=	ceosopen.o ceosdataset.o
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-ceostest$(EXE):	ceostest.$(OBJ_EXT)
-	$(LD) $(LDFLAGS) ceostest.$(OBJ_EXT) $(CONFIG_LIBS) -o ceostest$(EXE)
+ceostest$(EXE):	ceostest.o
+	$(LD) $(LDFLAGS) ceostest.o $(CONFIG_LIBS) -o ceostest$(EXE)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

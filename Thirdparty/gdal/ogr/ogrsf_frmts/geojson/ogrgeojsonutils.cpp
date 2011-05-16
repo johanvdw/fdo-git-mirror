@@ -44,7 +44,7 @@ int GeoJSONIsObject( const char* pszText )
 /* -------------------------------------------------------------------- */
 /*      This is a primitive test, but we need to perform it fast.       */
 /* -------------------------------------------------------------------- */
-    while( *pszText != '\0' && isspace( (unsigned char)*pszText ) )
+    while( *pszText != '\0' && isspace( *pszText ) )
         pszText++;
 
     if( EQUALN( pszText, "{", 1) )
@@ -69,11 +69,7 @@ GeoJSONSourceType GeoJSONGetSourceType( const char* pszSource )
         srcType = eGeoJSONSourceService;
     }
     else if( EQUAL( CPLGetExtension( pszSource ), "geojson" )
-             || EQUAL( CPLGetExtension( pszSource ), "json" )
-             || (EQUALN( pszSource, "/vsigzip/", 9)
-                 && EQUAL( CPLGetExtension( pszSource ), "gz" ))
-             || (EQUALN( pszSource, "/vsizip/", 8)
-                 && EQUAL( CPLGetExtension( pszSource ), "zip" )))
+             || EQUAL( CPLGetExtension( pszSource ), "json" ) )
     {
         srcType = eGeoJSONSourceFile;
     }

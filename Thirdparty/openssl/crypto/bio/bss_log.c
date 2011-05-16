@@ -70,6 +70,7 @@
 
 #if defined(OPENSSL_SYS_WINCE)
 #elif defined(OPENSSL_SYS_WIN32)
+#  include <process.h>
 #elif defined(OPENSSL_SYS_VMS)
 #  include <opcdef.h>
 #  include <descrip.h>
@@ -121,6 +122,18 @@ static int MS_CALLBACK slg_free(BIO *data);
 static void xopenlog(BIO* bp, char* name, int level);
 static void xsyslog(BIO* bp, int priority, const char* string);
 static void xcloselog(BIO* bp);
+#ifdef OPENSSL_SYS_WIN32
+LONG	(WINAPI *go_for_advapi)()	= RegOpenKeyEx;
+HANDLE	(WINAPI *register_event_source)()	= NULL;
+BOOL	(WINAPI *deregister_event_source)()	= NULL;
+BOOL	(WINAPI *report_event)()	= NULL;
+#define DL_PROC(m,f)	(GetProcAddress( m, f ))
+#ifdef UNICODE
+#define DL_PROC_X(m,f) DL_PROC( m, f "W" )
+#else
+#define DL_PROC_X(m,f) DL_PROC( m, f "A" )
+#endif
+#endif
 
 static BIO_METHOD methods_slg=
 	{
@@ -162,7 +175,7 @@ static int MS_CALLBACK slg_write(BIO *b, const char *in, int inl)
 	char* buf;
 	char* pp;
 	int priority, i;
-	static const struct
+	static struct
 		{
 		int strl;
 		char str[10];
@@ -236,20 +249,35 @@ static int MS_CALLBACK slg_puts(BIO *bp, const char *str)
 
 static void xopenlog(BIO* bp, char* name, int level)
 {
-	if (GetVersion() < 0x80000000)
-		bp->ptr = RegisterEventSourceA(NULL,name);
-	else
-		bp->ptr = NULL;
+	if ( !register_event_source )
+		{
+		HANDLE	advapi;
+		if ( !(advapi = GetModuleHandle("advapi32")) )
+			return;
+		register_event_source = (HANDLE (WINAPI *)())DL_PROC_X(advapi,
+			"RegisterEventSource" );
+		deregister_event_source = (BOOL (WINAPI *)())DL_PROC(advapi,
+			"DeregisterEventSource");
+		report_event = (BOOL (WINAPI *)())DL_PROC_X(advapi,
+			"ReportEvent" );
+		if ( !(register_event_source && deregister_event_source &&
+				report_event) )
+			{
+			register_event_source = NULL;
+			deregister_event_source = NULL;
+			report_event = NULL;
+			return;
+			}
+		}
+	bp->ptr= (char *)register_event_source(NULL, name);
 }
 
 static void xsyslog(BIO *bp, int priority, const char *string)
 {
 	LPCSTR lpszStrings[2];
 	WORD evtype= EVENTLOG_ERROR_TYPE;
-	char pidbuf[DECIMAL_SIZE(DWORD)+4];
-
-	if (bp->ptr == NULL)
-		return;
+	int pid = _getpid();
+	char pidbuf[DECIMAL_SIZE(pid)+4];
 
 	switch (priority)
 		{
@@ -273,18 +301,19 @@ static void xsyslog(BIO *bp, int priority, const char *string)
 		break;
 		}
 
-	sprintf(pidbuf, "[%u] ", GetCurrentProcessId());
+	sprintf(pidbuf, "[%d] ", pid);
 	lpszStrings[0] = pidbuf;
 	lpszStrings[1] = string;
 
-	ReportEventA(bp->ptr, evtype, 0, 1024, NULL, 2, 0,
+	if(report_event && bp->ptr)
+		report_event(bp->ptr, evtype, 0, 1024, NULL, 2, 0,
 				lpszStrings, NULL);
 }
 	
 static void xcloselog(BIO* bp)
 {
-	if(bp->ptr)
-		DeregisterEventSource((HANDLE)(bp->ptr));
+	if(deregister_event_source && bp->ptr)
+		deregister_event_source((HANDLE)(bp->ptr));
 	bp->ptr= NULL;
 }
 

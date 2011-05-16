@@ -48,8 +48,7 @@ c_KgOraExpressionProcessor::c_KgOraExpressionProcessor(c_FilterStringBuffer* Str
   m_ParamNumberOffset = ParamNumberOffset;
   
   
-  m_UsedConstantSpatialExtent = false;
-    
+  
 }
 
 c_KgOraExpressionProcessor::~c_KgOraExpressionProcessor(void)
@@ -170,7 +169,6 @@ void c_KgOraExpressionProcessor::ProcessFunction(FdoFunction& expr)
       if( m_ConstantSpatialExtent.GetLength() > 0 )
       {      
         AppendString( m_ConstantSpatialExtent );      
-        m_UsedConstantSpatialExtent = true;
         return;
       }
       else
@@ -319,16 +317,6 @@ void c_KgOraExpressionProcessor::AddAsParameter(FdoDataValue& Value)
  m_ParamList.push_back( new c_KgOraSqlParamDesc(&Value) );
  
 }//end of c_KgOraExpressionProcessor::AddAsParameter
-
-FdoStringP c_KgOraExpressionProcessor::PushParameter(FdoDataValue& Value)
-{
-  long size = m_ParamList.size() + m_ParamNumberOffset;
-  size++;
-  
-  m_ParamList.push_back( new c_KgOraSqlParamDesc(&Value) );
-  return FdoStringP::Format(L":%ld",size);
-  
-}//end of c_KgOraExpressionProcessor::PushParameter
 
 void c_KgOraExpressionProcessor::ProcessBooleanValue(FdoBooleanValue& expr)
 {
@@ -706,9 +694,7 @@ void c_KgOraExpressionProcessor::ApplySqlParameters(c_Oci_Statement* OciStm,bool
     long psize = m_ParamList.size();
     for(long pind=0;pind<psize;pind++)
     {
-      FdoStringP paramname = FdoStringP::Format(L"%d",pind+1+ParamOffest);
-      //m_ParamList[pind]->ApplySqlParameter(OciStm,IsGeodeticCS,OraSrid,pind+1+ParamOffest);      
-      m_ParamList[pind]->ApplySqlParameter(OciStm,IsGeodeticCS,OraSrid,paramname);      
+      m_ParamList[pind]->ApplySqlParameter(OciStm,IsGeodeticCS,OraSrid,pind+1+ParamOffest);      
     }
   }
       

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2gmlgeometry.cpp 18025 2009-11-14 19:09:50Z rouault $
+ * $Id: ogr2gmlgeometry.cpp 12008 2007-08-30 15:44:44Z warmerdam $
  *
  * Project:  GML Translator
  * Purpose:  Code to translate OGRGeometry to GML string representation.
@@ -178,6 +178,7 @@ static int OGR2GMLGeometryAppend( OGRGeometry *poGeometry,
     // Buffer for srsName attribute (srsName="...")
     char szSrsName[30] = { 0 }; 
     int nSrsNameLength = 0;
+    OGRBoolean bAddSrsName = FALSE; 
 
     const OGRSpatialReference* poSRS = NULL;
     poSRS = poGeometry->getSpatialReference();
@@ -199,15 +200,22 @@ static int OGR2GMLGeometryAppend( OGRGeometry *poGeometry,
             if( EQUAL( pszAuthName, "EPSG" ) )
             {
                 pszAuthCode = poSRS->GetAuthorityCode( pszTarget );
-                if( NULL != pszAuthCode && strlen(pszAuthCode) < 10 )
+                if( NULL != pszAuthCode )
                 {
                     sprintf( szSrsName, " srsName=\"%s:%s\"",
                             pszAuthName, pszAuthCode );
 
-                    nSrsNameLength = strlen(szSrsName);
+                    /* Yes, attach srsName attribute per geometry. */
+                    bAddSrsName = TRUE; 
                 }
             }
         }
+    }
+
+    /* Include srsName attribute in new buffer allocation. */
+    if( bAddSrsName )
+    {
+        nSrsNameLength = strlen(szSrsName);
     }
 
 /* -------------------------------------------------------------------- */

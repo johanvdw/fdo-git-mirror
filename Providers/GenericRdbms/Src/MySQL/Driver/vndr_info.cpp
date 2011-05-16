@@ -58,8 +58,7 @@ int mysql_vndr_info (mysql_context_def *context, rdbi_vndr_info_def *vndr_info)
             p++;
             sub_version = p;
             p = strchr (p, '-');
-            if ( p ) 
-                *p = '\0';
+            *p = '\0';
             vndr_info->dbversion = atoi (major_version) * 10000 + atoi (minor_version) *100 + atoi (sub_version);
 
             /* The maximum range of DECIMAL and NUMERIC values is the same as for DOUBLE,

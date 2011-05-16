@@ -1,12 +1,12 @@
 
+
 include ../../GDALmake.opt
 include csharp.opt
 
 all: build
 
 BINDING = csharp
-include ../SWIGmake.base
-
+SWIG = swig
 SWIGARGS = -Wall -I../include -I../include/$(BINDING)
 
 LINK = $(LD_SHARED)
@@ -49,7 +49,7 @@ $(CSHARP_MODULES): lib%csharp.$(SO_EXT): %_wrap.$(OBJ_EXT)
 	$(LINK) $(LDFLAGS) $(CONFIG_LIBS) $< -o $@ $(LINK_EXTRAFLAGS)
 	rm -rf $*_csharp.dll.config
 	echo "<configuration>" >> $*_csharp.dll.config
-	echo "<dllmap dll=\""$*"_wrap\" target=\""$*csharp"\" />" >> $*_csharp.dll.config
+	echo "<dllmap dll=\""$*"_wrap\" target=\""$@"\" />" >> $*_csharp.dll.config
 	echo "</configuration>" >> $*_csharp.dll.config
 
 %.$(OBJ_EXT): %.cpp
@@ -76,7 +76,6 @@ samples:
 	$(CSC) /r:gdal_csharp.dll /r:System.Drawing.dll /out:GDALAdjustContrast.exe apps/GDALAdjustContrast.cs
 	$(CSC) /r:gdal_csharp.dll /r:System.Drawing.dll /out:GDALDatasetRasterIO.exe apps/GDALDatasetRasterIO.cs
 	$(CSC) /r:gdal_csharp.dll /out:GDALWrite.exe apps/GDALWrite.cs
-	$(CSC) /r:gdal_csharp.dll /out:GDALDatasetWrite.exe apps/GDALDatasetWrite.cs
 	$(CSC) /r:gdal_csharp.dll /out:GDALColorTable.exe apps/GDALColorTable.cs
 	$(CSC) /r:ogr_csharp.dll /out:WKT2WKB.exe apps/WKT2WKB.cs
 	$(CSC) /r:ogr_csharp.dll /out:OGRGEOS.exe apps/OGRGEOS.cs
@@ -91,7 +90,6 @@ test:
 	LC_ALL=C mono ogrinfo.exe Data/pointlayer.shp
 	LC_ALL=C mono OSRTransform.exe
 	LC_ALL=C mono GDALWrite.exe Data/sample.tif
-	LC_ALL=C mono GDALDatasetWrite.exe Data/sample1.tif
 	LC_ALL=C mono GDALCreateCopy.exe Data/sample.tif Data/sample2.tif
 	LC_ALL=C mono GDALOverviews.exe Data/sample.tif NEAREST 2 4
 	LC_ALL=C mono GDALInfo.exe Data/sample.tif

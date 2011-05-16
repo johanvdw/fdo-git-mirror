@@ -1,12 +1,11 @@
 //  Boost string_algo library predicate.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003.
-//
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003. Use, modification and
+//  distribution is subject to the Boost Software License, Version
+//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org/ for updates, documentation, and revision history.
+//  See http://www.boost.org for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_PREDICATE_DETAIL_HPP
 #define BOOST_STRING_PREDICATE_DETAIL_HPP
@@ -63,7 +62,7 @@ namespace boost {
 
                 iterator_range<ForwardIterator1T> Result
                     =last_finder( 
-                        ::boost::make_iterator_range(SubBegin, SubEnd),
+                        make_iterator_range(SubBegin, SubEnd),
                         Comp)(Begin, End);
 
                 return !Result.empty() && Result.end()==End;

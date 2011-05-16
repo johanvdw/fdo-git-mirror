@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib503.c,v 1.20 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib503.c,v 1.16 2007-03-10 00:19:05 yangtse Exp $
  */
 
 #include "test.h"
@@ -13,7 +13,6 @@
 #include <sys/types.h>
 
 #include "testutil.h"
-#include "memdebug.h"
 
 #define MAIN_LOOP_HANG_TIMEOUT     90 * 1000
 #define MULTI_PERFORM_HANG_TIMEOUT 60 * 1000
@@ -29,7 +28,7 @@
 int test(char *URL)
 {
   CURL *c;
-  CURLM *m = NULL;
+  CURLM *m;
   int res = 0;
   int running;
   char done = FALSE;
@@ -49,12 +48,12 @@ int test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(c, CURLOPT_PROXY, libtest_arg2); /* set in first.c */
-  test_setopt(c, CURLOPT_URL, URL);
-  test_setopt(c, CURLOPT_USERPWD, "test:ing");
-  test_setopt(c, CURLOPT_PROXYUSERPWD, "test:ing");
-  test_setopt(c, CURLOPT_HTTPPROXYTUNNEL, 1L);
-  test_setopt(c, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(c, CURLOPT_PROXY, arg2); /* set in first.c */
+  curl_easy_setopt(c, CURLOPT_URL, URL);
+  curl_easy_setopt(c, CURLOPT_USERPWD, "test:ing");
+  curl_easy_setopt(c, CURLOPT_PROXYUSERPWD, "test:ing");
+  curl_easy_setopt(c, CURLOPT_HTTPPROXYTUNNEL, 1);
+  curl_easy_setopt(c, CURLOPT_HEADER, 1);
 
   if ((m = curl_multi_init()) == NULL) {
     fprintf(stderr, "curl_multi_init() failed\n");
@@ -139,13 +138,9 @@ int test(char *URL)
     res = TEST_ERR_RUNS_FOREVER;
   }
 
-test_cleanup:
-
-  if(m) {
-    curl_multi_remove_handle(m, c);
-    curl_multi_cleanup(m);
-  }
+  curl_multi_remove_handle(m, c);
   curl_easy_cleanup(c);
+  curl_multi_cleanup(m);
   curl_global_cleanup();
 
   return res;

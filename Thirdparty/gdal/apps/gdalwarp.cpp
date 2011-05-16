@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarp.cpp 18576 2010-01-17 22:32:24Z rouault $
+ * $Id: gdalwarp.cpp 15772 2008-11-20 19:18:53Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Test program for high performance warper API.
@@ -33,15 +33,15 @@
 #include "ogr_spatialref.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: gdalwarp.cpp 18576 2010-01-17 22:32:24Z rouault $");
+CPL_CVSID("$Id: gdalwarp.cpp 15772 2008-11-20 19:18:53Z rouault $");
+
+//static CPLString InsertCenterLong( GDALDatasetH hDS, CPLString osWKT );
 
 static void
-LoadCutline( const char *pszCutlineDSName, const char *pszCLayer, 
+LoadCutline( GDALDatasetH hDstDS, 
+             const char *pszCutlineDSName, const char *pszCLayer, 
              const char *pszCWHERE, const char *pszCSQL, 
-             void **phCutlineRet );
-static void
-TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
-                          char ***ppapszWarpOptions, char **papszTO );
+             char ***ppapszWarpOptions );
 static GDALDatasetH 
 GDALWarpCreateOutput( char **papszSrcFiles, const char *pszFilename, 
                       const char *pszFormat, char **papszTO,
@@ -115,8 +115,7 @@ extents of output file to be created (in target SRS).</dd>
 <dt> <b>-tr</b> <em>xres yres</em>:</dt><dd> set output file resolution (in
 target georeferenced units)</dd>
 <dt> <b>-ts</b> <em>width height</em>:</dt><dd> set output file size in
-pixels and lines. If width or height is set to 0, the other dimension will be
-guessed from the computed resolution. Note that -ts cannot be used with -tr</dd>
+pixels and lines</dd>
 <dt> <b>-wo</b> <em>"NAME=VALUE"</em>:</dt><dd> Set a warp options.  The 
 GDALWarpOptions::papszWarpOptions docs show all options.  Multiple
  <b>-wo</b> options may be listed.</dd>
@@ -282,7 +281,6 @@ int main( int argc, char ** argv )
     char                **papszTO = NULL;
     char                *pszCutlineDSName = NULL;
     char                *pszCLayer = NULL, *pszCWHERE = NULL, *pszCSQL = NULL;
-    void                *hCutline = NULL;
 
     /* Check that we are running against at least GDAL 1.6 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -293,23 +291,6 @@ int main( int argc, char ** argv )
         exit(1);
     }
 
-    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
-    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
-    /* for the --format or --formats options */
-    for( i = 1; i < argc; i++ )
-    {
-        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
-        {
-            CPLSetConfigOption( argv[i+1], argv[i+2] );
-
-            i += 2;
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Register standard GDAL drivers, and process generic GDAL        */
-/*      command options.                                                */
-/* -------------------------------------------------------------------- */
     GDALAllRegister();
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
     if( argc < 1 )
@@ -339,7 +320,7 @@ int main( int argc, char ** argv )
         {
             bMulti = TRUE;
         }   
-        else if( EQUAL(argv[i],"-q") || EQUAL(argv[i],"-quiet"))
+        else if( EQUAL(argv[i],"-q") )
         {
             bQuiet = TRUE;
         }   
@@ -531,25 +512,13 @@ int main( int argc, char ** argv )
         else if( EQUAL(argv[i],"-cblend") && i < argc-1 )
         {
             papszWarpOptions = 
-                CSLSetNameValue( papszWarpOptions, 
-                                 "CUTLINE_BLEND_DIST", argv[++i] );
+                CSLSetNameValue( papszWarpOptions, "BLEND_DIST", argv[++i] );
         }
         else if( argv[i][0] == '-' )
             Usage();
 
         else 
             papszSrcFiles = CSLAddString( papszSrcFiles, argv[i] );
-    }
-/* -------------------------------------------------------------------- */
-/*      Check that incompatible options are not used                    */
-/* -------------------------------------------------------------------- */
-
-    if ((nForcePixels != 0 || nForceLines != 0) && 
-        (dfXRes != 0 && dfYRes != 0))
-    {
-        printf( "-tr and -ts options cannot be used at the same time\n");
-        Usage();
-        exit( 2 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -564,15 +533,6 @@ int main( int argc, char ** argv )
 
     if( pszDstFilename == NULL )
         Usage();
-        
-    if( bVRT && CSLCount(papszSrcFiles) > 1 )
-    {
-        fprintf(stderr, "Warning: gdalwarp -of VRT just takes into account "
-                        "the first source dataset.\nIf all source datasets "
-                        "are in the same projection, try making a mosaic of\n"
-                        "them with gdalbuildvrt, and use the resulting "
-                        "VRT file as the input of\ngdalwarp -of VRT.\n");
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Does the output dataset already exist?                          */
@@ -589,24 +549,6 @@ int main( int argc, char ** argv )
                  "should be created.  Please delete existing dataset and run again.\n",
                  pszDstFilename );
         exit( 1 );
-    }
-
-    /* Avoid overwriting an existing destination file that cannot be opened in */
-    /* update mode with a new GTiff file */
-    if ( hDstDS == NULL )
-    {
-        CPLPushErrorHandler( CPLQuietErrorHandler );
-        hDstDS = GDALOpen( pszDstFilename, GA_ReadOnly );
-        CPLPopErrorHandler();
-        
-        if (hDstDS)
-        {
-            fprintf( stderr, 
-                     "Output dataset %s exists, but cannot be opened in update mode\n",
-                     pszDstFilename );
-            GDALClose(hDstDS);
-            exit( 1 );
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -648,8 +590,8 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
     if( pszCutlineDSName != NULL )
     {
-        LoadCutline( pszCutlineDSName, pszCLayer, pszCWHERE, pszCSQL, 
-                     &hCutline );
+        LoadCutline( hDstDS, pszCutlineDSName, pszCLayer, pszCWHERE, pszCSQL, 
+                     &papszWarpOptions );
     }
 
 /* -------------------------------------------------------------------- */
@@ -898,55 +840,6 @@ int main( int argc, char ** argv )
                     psWO->padfDstNoDataReal[i] = psWO->padfDstNoDataReal[i-1];
                     psWO->padfDstNoDataImag[i] = psWO->padfDstNoDataImag[i-1];
                 }
-                
-                GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, i+1 );
-                int bClamped = FALSE, bRounded = FALSE;
-
-#define CLAMP(val,type,minval,maxval) \
-    do { if (val < minval) { bClamped = TRUE; val = minval; } \
-    else if (val > maxval) { bClamped = TRUE; val = maxval; } \
-    else if (val != (type)val) { bRounded = TRUE; val = (type)(val + 0.5); } } \
-    while(0)
-
-                switch(GDALGetRasterDataType(hBand))
-                {
-                    case GDT_Byte:
-                        CLAMP(psWO->padfDstNoDataReal[i], GByte,
-                              0.0, 255.0);
-                        break;
-                    case GDT_Int16:
-                        CLAMP(psWO->padfDstNoDataReal[i], GInt16,
-                              -32768.0, 32767.0);
-                        break;
-                    case GDT_UInt16:
-                        CLAMP(psWO->padfDstNoDataReal[i], GUInt16,
-                              0.0, 65535.0);
-                        break;
-                    case GDT_Int32:
-                        CLAMP(psWO->padfDstNoDataReal[i], GInt32,
-                              -2147483648.0, 2147483647.0);
-                        break;
-                    case GDT_UInt32:
-                        CLAMP(psWO->padfDstNoDataReal[i], GUInt32,
-                              0.0, 4294967295.0);
-                        break;
-                    default:
-                        break;
-                }
-                    
-                if (bClamped)
-                {
-                    printf( "for band %d, destination nodata value has been clamped "
-                           "to %.0f, the original value being out of range.\n",
-                           i + 1, psWO->padfDstNoDataReal[i]);
-                }
-                else if(bRounded)
-                {
-                    printf("for band %d, destination nodata value has been rounded "
-                           "to %.0f, %s being an integer datatype.\n",
-                           i + 1, psWO->padfDstNoDataReal[i],
-                           GDALGetDataTypeName(GDALGetRasterDataType(hBand)));
-                }
 
                 if( bCreateOutput )
                 {
@@ -957,17 +850,6 @@ int main( int argc, char ** argv )
             }
 
             CSLDestroy( papszTokens );
-        }
-
-/* -------------------------------------------------------------------- */
-/*      If we have a cutline, transform it into the source              */
-/*      pixel/line coordinate system and insert into warp options.      */
-/* -------------------------------------------------------------------- */
-        if( hCutline != NULL )
-        {
-            TransformCutlineToSource( hSrcDS, hCutline, 
-                                      &(psWO->papszWarpOptions), 
-                                      papszTO );
         }
 
 /* -------------------------------------------------------------------- */
@@ -1053,12 +935,6 @@ int main( int argc, char ** argv )
 
     GDALDestroyDriverManager();
     
-#ifdef OGR_ENABLED
-    if( hCutline != NULL )
-        OGR_G_DestroyGeometry( (OGRGeometryH) hCutline );
-    OGRCleanupAll();
-#endif
-
     return 0;
 }
 
@@ -1225,65 +1101,6 @@ GDALWarpCreateOutput( char **papszSrcFiles, const char *pszFilename,
             GDALClose( hSrcDS );
             return NULL;
         }
-        
-        if (CPLGetConfigOption( "CHECK_WITH_INVERT_PROJ", NULL ) == NULL)
-        {
-            double MinX = adfExtent[0];
-            double MaxX = adfExtent[2];
-            double MaxY = adfExtent[3];
-            double MinY = adfExtent[1];
-            int bSuccess = TRUE;
-            
-            /* Check that the the edges of the target image are in the validity area */
-            /* of the target projection */
-#define N_STEPS 20
-            int i,j;
-            for(i=0;i<=N_STEPS && bSuccess;i++)
-            {
-                for(j=0;j<=N_STEPS && bSuccess;j++)
-                {
-                    double dfRatioI = i * 1.0 / N_STEPS;
-                    double dfRatioJ = j * 1.0 / N_STEPS;
-                    double expected_x = (1 - dfRatioI) * MinX + dfRatioI * MaxX;
-                    double expected_y = (1 - dfRatioJ) * MinY + dfRatioJ * MaxY;
-                    double x = expected_x;
-                    double y = expected_y;
-                    double z = 0;
-                    /* Target SRS coordinates to source image pixel coordinates */
-                    if (!GDALGenImgProjTransform(hTransformArg, TRUE, 1, &x, &y, &z, &bSuccess) || !bSuccess)
-                        bSuccess = FALSE;
-                    /* Source image pixel coordinates to target SRS coordinates */
-                    if (!GDALGenImgProjTransform(hTransformArg, FALSE, 1, &x, &y, &z, &bSuccess) || !bSuccess)
-                        bSuccess = FALSE;
-                    if (fabs(x - expected_x) > (MaxX - MinX) / nThisPixels ||
-                        fabs(y - expected_y) > (MaxY - MinY) / nThisLines)
-                        bSuccess = FALSE;
-                }
-            }
-            
-            /* If not, retry with CHECK_WITH_INVERT_PROJ=TRUE that forces ogrct.cpp */
-            /* to check the consistency of each requested projection result with the */
-            /* invert projection */
-            if (!bSuccess)
-            {
-                CPLSetConfigOption( "CHECK_WITH_INVERT_PROJ", "TRUE" );
-                CPLDebug("WARP", "Recompute out extent with CHECK_WITH_INVERT_PROJ=TRUE");
-                GDALDestroyGenImgProjTransformer(hTransformArg);
-                hTransformArg = 
-                    GDALCreateGenImgProjTransformer2( hSrcDS, NULL, papszTO );
-                    
-                if( GDALSuggestedWarpOutput2( hSrcDS, 
-                                      GDALGenImgProjTransform, hTransformArg, 
-                                      adfThisGeoTransform, 
-                                      &nThisPixels, &nThisLines, 
-                                      adfExtent, 0 ) != CE_None )
-                {
-                    CPLFree( pszThisTargetSRS );
-                    GDALClose( hSrcDS );
-                    return NULL;
-                }
-            }
-        }
 
 /* -------------------------------------------------------------------- */
 /*      Expand the working bounds to include this region, ensure the    */
@@ -1346,6 +1163,7 @@ GDALWarpCreateOutput( char **papszSrcFiles, const char *pszFilename,
 /* -------------------------------------------------------------------- */
     if( dfXRes != 0.0 && dfYRes != 0.0 )
     {
+        CPLAssert( nForcePixels == 0 && nForceLines == 0 );
         if( dfMinX == 0.0 && dfMinY == 0.0 && dfMaxX == 0.0 && dfMaxY == 0.0 )
         {
             dfMinX = adfDstGeoTransform[0];
@@ -1436,13 +1254,8 @@ GDALWarpCreateOutput( char **papszSrcFiles, const char *pszFilename,
         nPixels = (int) ((dfMaxX - dfMinX + (dfXRes/2.0)) / dfXRes);
         nLines = (int) ((dfMaxY - dfMinY + (dfYRes/2.0)) / dfYRes);
 
-        dfXRes = (dfMaxX - dfMinX) / nPixels;
-        dfYRes = (dfMaxY - dfMinY) / nLines;
-
         adfDstGeoTransform[0] = dfMinX;
         adfDstGeoTransform[3] = dfMaxY;
-        adfDstGeoTransform[1] = dfXRes;
-        adfDstGeoTransform[5] = -dfYRes;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1506,31 +1319,44 @@ GDALWarpCreateOutput( char **papszSrcFiles, const char *pszFilename,
 /*      on a geotransform.                                              */
 /************************************************************************/
 
-class CutlineTransformer : public OGRCoordinateTransformation
+class GeoTransform_Transformer : public OGRCoordinateTransformation
 {
 public:
 
-    void         *hSrcImageTransformer;
+    double        adfGeoTransform[6];
 
     virtual OGRSpatialReference *GetSourceCS() { return NULL; }
     virtual OGRSpatialReference *GetTargetCS() { return NULL; }
 
     virtual int Transform( int nCount, 
                            double *x, double *y, double *z = NULL ) {
-        int nResult;
-
-        int *pabSuccess = (int *) CPLCalloc(sizeof(int),nCount);
-        nResult = TransformEx( nCount, x, y, z, pabSuccess );
-        CPLFree( pabSuccess );
-
-        return nResult;
+        return TransformEx( nCount, x, y, z, NULL );
     }
 
     virtual int TransformEx( int nCount, 
                              double *x, double *y, double *z = NULL,
                              int *pabSuccess = NULL ) {
-        return GDALGenImgProjTransform( hSrcImageTransformer, TRUE, 
-                                        nCount, x, y, z, pabSuccess );
+        int i;
+
+        for( i = 0; i < nCount; i++ )
+        {
+            double x_out, y_out;
+
+            x_out = adfGeoTransform[0] 
+                + x[i] * adfGeoTransform[1]
+                + y[i] * adfGeoTransform[2];
+            y_out = adfGeoTransform[3] 
+                + x[i] * adfGeoTransform[4]
+                + y[i] * adfGeoTransform[5];
+
+            x[i] = x_out;
+            y[i] = y_out;
+            
+            if( pabSuccess )
+                pabSuccess[i] = TRUE;
+        }
+        
+        return TRUE;
     }
 };
 
@@ -1544,9 +1370,10 @@ public:
 /************************************************************************/
 
 static void
-LoadCutline( const char *pszCutlineDSName, const char *pszCLayer, 
+LoadCutline( GDALDatasetH hDstDS, 
+             const char *pszCutlineDSName, const char *pszCLayer, 
              const char *pszCWHERE, const char *pszCSQL, 
-             void **phCutlineRet )
+             char ***ppapszWarpOptions )
 
 {
 #ifndef OGR_ENABLED
@@ -1590,6 +1417,51 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
         OGR_L_SetAttributeFilter( hLayer, pszCWHERE );
 
 /* -------------------------------------------------------------------- */
+/*      Checkout that SRS are the same.                                 */
+/* -------------------------------------------------------------------- */
+    OGRSpatialReferenceH  hDstSRS = NULL;
+
+    if( GDALGetProjectionRef( hDstDS ) != NULL )
+    {
+        char *pszProjection;
+
+        pszProjection = (char *) GDALGetProjectionRef( hDstDS );
+
+        hDstSRS = OSRNewSpatialReference(NULL);
+        if( OSRImportFromWkt( hDstSRS, &pszProjection ) != CE_None )
+        {
+            OSRDestroySpatialReference(hDstSRS);
+            hDstSRS = NULL;
+        }
+    }
+
+    OGRSpatialReferenceH hSrcSRS = OGR_L_GetSpatialRef(hLayer);
+    if( hDstSRS != NULL && hSrcSRS != NULL )
+    {
+        if( OSRIsSame(hSrcSRS, hDstSRS) == FALSE )
+        {
+            fprintf(stderr,
+                    "Warning : the output raster dataset and the input vector layer do not have the same SRS. "
+                    "Results will be probably incorrect.\n");
+        }
+    }
+    else if( hDstSRS != NULL && hSrcSRS == NULL )
+    {
+        fprintf(stderr,
+                "Warning : the output raster dataset has a SRS, but the input vector layer not. "
+                "Results may be incorrect.\n");
+    }
+    else if( hDstSRS == NULL && hLayer != NULL )
+    {
+        fprintf(stderr,
+                "Warning : the input vector layer has a SRS, but the output raster dataset not. "
+                "Results may be incorrect.\n");
+    }
+
+    if( hDstSRS != NULL )
+        OSRDestroySpatialReference(hDstSRS);
+
+/* -------------------------------------------------------------------- */
 /*      Collect the geometries from this layer, and build list of       */
 /*      burn values.                                                    */
 /* -------------------------------------------------------------------- */
@@ -1609,24 +1481,13 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
         }
         
         OGRwkbGeometryType eType = wkbFlatten(OGR_G_GetGeometryType( hGeom ));
-
-        if( eType == wkbPolygon )
-            OGR_G_AddGeometry( hMultiPolygon, hGeom );
-        else if( eType == wkbMultiPolygon )
-        {
-            int iGeom;
-
-            for( iGeom = 0; iGeom < OGR_G_GetGeometryCount( hGeom ); iGeom++ )
-            {
-                OGR_G_AddGeometry( hMultiPolygon, 
-                                   OGR_G_GetGeometryRef(hGeom,iGeom) );
-            }
-        }
-        else
+        if( eType != wkbPolygon && eType != wkbMultiPolygon )
         {
             fprintf( stderr, "ERROR: Cutline not of polygon type.\n" );
             exit( 1 );
         }
+
+        OGR_G_AddGeometry( hMultiPolygon, hGeom );
 
         OGR_F_Destroy( hFeat );
     }
@@ -1638,12 +1499,27 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Ensure the coordinate system gets set on the geometry.          */
+/*      Transform the geometry to pixel/line coordinates.               */
 /* -------------------------------------------------------------------- */
-    OGR_G_AssignSpatialReference(
-        hMultiPolygon, OGR_L_GetSpatialRef(hLayer) );
+    GeoTransform_Transformer oTransformer;
+    double adfGT[6];
 
-    *phCutlineRet = (void *) hMultiPolygon;
+    GDALGetGeoTransform( hDstDS, adfGT );
+    GDALInvGeoTransform( adfGT, oTransformer.adfGeoTransform );
+
+    OGR_G_Transform( hMultiPolygon, 
+                     (OGRCoordinateTransformationH) &oTransformer );
+
+/* -------------------------------------------------------------------- */
+/*      Convert aggregate geometry into WKT.                            */
+/* -------------------------------------------------------------------- */
+    char *pszWKT = NULL;
+
+    OGR_G_ExportToWkt( hMultiPolygon, &pszWKT );
+
+    *ppapszWarpOptions = CSLSetNameValue( *ppapszWarpOptions, 
+                                          "CUTLINE", pszWKT );
+    CPLFree( pszWKT );
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
@@ -1652,111 +1528,90 @@ LoadCutline( const char *pszCutlineDSName, const char *pszCLayer,
         OGR_DS_ReleaseResultSet( hSrcDS, hLayer );
 
     OGR_DS_Destroy( hSrcDS );
+
+    OGR_G_DestroyGeometry( hMultiPolygon );
 #endif
 }
 
 /************************************************************************/
-/*                      TransformCutlineToSource()                      */
+/*                          InsertCenterLong()                          */
+/*                                                                      */
+/*      Insert a CENTER_LONG Extension entry on a GEOGCS to indicate    */
+/*      the center longitude of the dataset for wrapping purposes.      */
 /************************************************************************/
 
-static void
-TransformCutlineToSource( GDALDatasetH hSrcDS, void *hCutline,
-                          char ***ppapszWarpOptions, char **papszTO_In )
+#ifdef notdef
 
-{
-#ifdef OGR_ENABLED
-    OGRGeometryH hMultiPolygon = OGR_G_Clone( (OGRGeometryH) hCutline );
-    char **papszTO = CSLDuplicate( papszTO_In );
+static CPLString InsertCenterLong( GDALDatasetH hDS, CPLString osWKT )
 
-/* -------------------------------------------------------------------- */
-/*      Checkout that SRS are the same.                                 */
-/* -------------------------------------------------------------------- */
-    OGRSpatialReferenceH  hRasterSRS = NULL;
-    const char *pszProjection = NULL;
-
-    if( GDALGetProjectionRef( hSrcDS ) != NULL 
-        && strlen(GDALGetProjectionRef( hSrcDS )) > 0 )
-        pszProjection = GDALGetProjectionRef( hSrcDS );
-    else if( GDALGetGCPProjection( hSrcDS ) != NULL )
-        pszProjection = GDALGetGCPProjection( hSrcDS );
-
-    if( pszProjection != NULL )
-    {
-        hRasterSRS = OSRNewSpatialReference(NULL);
-        if( OSRImportFromWkt( hRasterSRS, (char **)&pszProjection ) != CE_None )
-        {
-            OSRDestroySpatialReference(hRasterSRS);
-            hRasterSRS = NULL;
-        }
-    }
-
-    OGRSpatialReferenceH hSrcSRS = OGR_G_GetSpatialReference( hMultiPolygon );
-    if( hRasterSRS != NULL && hSrcSRS != NULL )
-    {
-        /* ok, we will reproject */
-    }
-    else if( hRasterSRS != NULL && hSrcSRS == NULL )
-    {
-        fprintf(stderr,
-                "Warning : the source raster dataset has a SRS, but the input vector layer\n"
-                "not.  Cutline results may be incorrect.\n");
-    }
-    else if( hRasterSRS == NULL && hSrcSRS != NULL )
-    {
-        fprintf(stderr,
-                "Warning : the input vector layer has a SRS, but the source raster dataset does not.\n"
-                "Cutline results may be incorrect.\n");
-    }
-
-    if( hRasterSRS != NULL )
-        OSRDestroySpatialReference(hRasterSRS);
+{								        
+    if( !EQUALN(osWKT.c_str(), "GEOGCS[", 7) )
+        return osWKT;
+    
+    if( strstr(osWKT,"EXTENSION[\"CENTER_LONG") != NULL )
+        return osWKT;
 
 /* -------------------------------------------------------------------- */
-/*      Extract the cutline SRS WKT.                                    */
+/*      For now we only do this if we have a geotransform since         */
+/*      other forms require a bunch of extra work.                      */
 /* -------------------------------------------------------------------- */
-    if( hSrcSRS != NULL )
-    {
-        char *pszCutlineSRS_WKT = NULL;
+    double   adfGeoTransform[6];
 
-        OSRExportToWkt( hSrcSRS, &pszCutlineSRS_WKT );
-        papszTO = CSLSetNameValue( papszTO, "DST_SRS", pszCutlineSRS_WKT );
-        CPLFree( pszCutlineSRS_WKT );
-    }
-    else
-    {
-        int iDstSRS = CSLFindString( papszTO, "DST_SRS" );
-        if( iDstSRS >= 0 )
-            papszTO = CSLRemoveStrings( papszTO, iDstSRS, 1, NULL );
-    }
+    if( GDALGetGeoTransform( hDS, adfGeoTransform ) != CE_None )
+        return osWKT;
 
 /* -------------------------------------------------------------------- */
-/*      Transform the geometry to pixel/line coordinates.               */
+/*      Compute min/max longitude based on testing the four corners.    */
 /* -------------------------------------------------------------------- */
-    CutlineTransformer oTransformer;
+    double dfMinLong, dfMaxLong;
+    int nXSize = GDALGetRasterXSize( hDS );
+    int nYSize = GDALGetRasterYSize( hDS );
 
-    oTransformer.hSrcImageTransformer = 
-        GDALCreateGenImgProjTransformer2( hSrcDS, NULL, papszTO );
+    dfMinLong = 
+        MIN(MIN(adfGeoTransform[0] + 0 * adfGeoTransform[1]
+                + 0 * adfGeoTransform[2],
+                adfGeoTransform[0] + nXSize * adfGeoTransform[1]
+                + 0 * adfGeoTransform[2]),
+            MIN(adfGeoTransform[0] + 0 * adfGeoTransform[1]
+                + nYSize * adfGeoTransform[2],
+                adfGeoTransform[0] + nXSize * adfGeoTransform[1]
+                + nYSize * adfGeoTransform[2]));
+    dfMaxLong = 
+        MAX(MAX(adfGeoTransform[0] + 0 * adfGeoTransform[1]
+                + 0 * adfGeoTransform[2],
+                adfGeoTransform[0] + nXSize * adfGeoTransform[1]
+                + 0 * adfGeoTransform[2]),
+            MAX(adfGeoTransform[0] + 0 * adfGeoTransform[1]
+                + nYSize * adfGeoTransform[2],
+                adfGeoTransform[0] + nXSize * adfGeoTransform[1]
+                + nYSize * adfGeoTransform[2]));
 
-    CSLDestroy( papszTO );
-
-    if( oTransformer.hSrcImageTransformer == NULL )
-        exit( 1 );
-
-    OGR_G_Transform( hMultiPolygon, 
-                     (OGRCoordinateTransformationH) &oTransformer );
-
-    GDALDestroyGenImgProjTransformer( oTransformer.hSrcImageTransformer );
+    if( dfMaxLong - dfMinLong > 360.0 )
+        return osWKT;
 
 /* -------------------------------------------------------------------- */
-/*      Convert aggregate geometry into WKT.                            */
+/*      Insert center long.                                             */
+/* -------------------------------------------------------------------- */
+    OGRSpatialReference oSRS( osWKT );
+    double dfCenterLong = (dfMaxLong + dfMinLong) / 2.0;
+    OGR_SRSNode *poExt;
+
+    poExt  = new OGR_SRSNode( "EXTENSION" );
+    poExt->AddChild( new OGR_SRSNode( "CENTER_LONG" ) );
+    poExt->AddChild( new OGR_SRSNode( CPLString().Printf("%g",dfCenterLong) ));
+    
+    oSRS.GetRoot()->AddChild( poExt->Clone() );
+    delete poExt;
+
+/* -------------------------------------------------------------------- */
+/*      Convert back to wkt.                                            */
 /* -------------------------------------------------------------------- */
     char *pszWKT = NULL;
-
-    OGR_G_ExportToWkt( hMultiPolygon, &pszWKT );
-    OGR_G_DestroyGeometry( hMultiPolygon );
-
-    *ppapszWarpOptions = CSLSetNameValue( *ppapszWarpOptions, 
-                                          "CUTLINE", pszWKT );
+    oSRS.exportToWkt( &pszWKT );
+    
+    osWKT = pszWKT;
     CPLFree( pszWKT );
-#endif
+
+    return osWKT;
 }
+#endif

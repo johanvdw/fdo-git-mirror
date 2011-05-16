@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_exceptions.i 18357 2009-12-20 23:25:36Z tamas $
+ * $Id: cpl_exceptions.i 13987 2008-03-13 05:37:03Z ajolma $
  *
  * Code for Optional Exception Handling through UseExceptions(),
  * DontUseExceptions()
@@ -61,8 +61,6 @@ void DontUseExceptions() {
     if ( eclass == CE_Failure || eclass == CE_Fatal ) {
 #if defined(SWIGPERL)
       SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-#elif defined(SWIGCSHARP)
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
 #else
       SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
 #endif

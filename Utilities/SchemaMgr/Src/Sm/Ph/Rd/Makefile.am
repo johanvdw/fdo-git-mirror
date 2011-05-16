@@ -37,13 +37,11 @@ libSmPhRd_la_SOURCES = \
   PkeyReader.cpp \
   PropertyReader.cpp \
   QueryReader.cpp \
-  Reader.cpp \
   SchemaDbObjectBinds.cpp \
   SchemaReader.cpp \
   SpatialContextGeomReader.cpp \
   SpatialContextGroupReader.cpp \
   SpatialContextReader.cpp \
-  SynonymReader.cpp \
   TableJoin.cpp \
   ViewReader.cpp 
 

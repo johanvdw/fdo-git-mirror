@@ -130,13 +130,8 @@ void ShpLpPropertyDefinition::ConvertLogicalToPhysical (int physicalColumnIndex,
     for(size_t idx = 0; idx < physicalColumnName.size(); idx++)
     {
         wchar_t ch = physicalColumnName.at(idx);
-        if ( iswcntrl(ch) || 
-            (iswspace(ch) && (ch != L' ')) || 
-            (iswpunct(ch) && (ch == L':')) || 
-            (iswpunct(ch) && (ch == L'.')))
-        {
+        if (iswcntrl(ch) || iswspace(ch) || iswpunct(ch))
             physicalColumnName[idx] = L'_';
-        }
     }
 
     // Test in advance for the field length (multibyte). 

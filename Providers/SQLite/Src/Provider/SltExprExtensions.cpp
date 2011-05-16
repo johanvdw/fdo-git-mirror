@@ -6,7 +6,6 @@
 #include "FdoCommonOSUtil.h"
 #include "StringUtil.h"
 #include "SltProvider.h"
-#include "SpatialIndexDescriptor.h"
 #include <math.h>
 #include <algorithm>
 #include <limits>       // For quiet_NaN()
@@ -27,12 +26,12 @@
 
 #define SQLITE_INFO_STRING(/*IN*/str, /*OUT*/len, /*OUT*/lenInChars, /*IN-OUT*/charsToStudy) {  \
   len = lenInChars = 0;                                                                         \
-  const unsigned char* z2 = NULL;                                                               \
-  for(z2 = (const unsigned char*)str; *z2 && charsToStudy; charsToStudy--) {                    \
+  const char* z2 = NULL;                                                                        \
+  for(z2 = str; *z2 && charsToStudy; charsToStudy--) {                                          \
       lenInChars++;                                                                             \
       SQLITE_SKIP_UTF8(z2);                                                                     \
   }                                                                                             \
-  len = (z2 - (const unsigned char*)str);                                                       \
+  len = (z2 - str);                                                                             \
 }                                                                                               \
 
 class DateTokenFormat;
@@ -1072,57 +1071,6 @@ static void numFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
     else
         sqlite3_result_int64(context, (i64)val);
 }
-// increments a column with a value and return the value based on a filter or rowid.
-static void nextvalue(sqlite3_context *context, int argc, sqlite3_value **argv)
-{
-    assert(argc != 5);
-    for (int i=0; i<argc; i++)
-    {
-        if (sqlite3_value_type(argv[i]) == SQLITE_NULL)
-        {
-            sqlite3_result_null(context);
-            return;
-        }
-    }
-    const char* table = (const char*)sqlite3_value_text(argv[0]);
-    const char* column = (const char*)sqlite3_value_text(argv[1]);
-    i64 nextValue = sqlite3_value_int64(argv[2]);
-    i64 amount = sqlite3_value_int64(argv[3]);
-    i64 rowid = -1;
-    const char* whereStr = NULL;
-    if (sqlite3_value_type(argv[4]) == SQLITE_INTEGER)
-        rowid = sqlite3_value_int64(argv[4]);
-    else
-        whereStr = (const char*)sqlite3_value_text(argv[4]);
-
-    sqlite3* db = sqlite3_context_db_handle(context);
-    StringBuffer sb;
-    sb.Append("UPDATE ", 7);
-    sb.AppendDQuoted(table);
-    sb.Append(" SET ", 4);
-    sb.AppendDQuoted(column);
-    sb.Append("=", 1);
-    sb.AppendDQuoted(column);
-    sb.Append("+", 1);
-    sb.Append((int)amount);
-    if (rowid != -1)
-    {
-        sb.Append(" WHERE rowid=", 13);
-        sb.Append((int)rowid);
-    }
-    else if (whereStr != NULL)
-    {
-        sb.Append(" WHERE ", 7);
-        sb.Append(whereStr);
-    }
-    sb.Append(";", 1);
-
-    int rc = sqlite3_exec(db, sb.Data(), NULL, NULL, NULL);
-    if (SQLITE_OK == rc)
-        sqlite3_result_int64(context, nextValue);
-    else
-        sqlite3_result_null(context);
-}
 
 //===============================================================================
 //  String operations
@@ -1201,7 +1149,7 @@ static void strFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
                 size_t sub_idx = 0; 
                 curr_char[sub_idx++] = *z2;
                 // SQLITE_SKIP_UTF8 with copy character into curr_char
-                if( ((unsigned char)*(z2++))>=0xc0 )
+                if( (*(z2++))>=0xc0 )
                 {
                     while((*z2 & 0xc0) == 0x80)
                     {
@@ -1219,7 +1167,7 @@ static void strFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
                         const char* z3 = a3+pos;
                         *(res + main_idx++) = *z3;
                         // SQLITE_SKIP_UTF8 with copy character into res
-                        if( ((unsigned char)*(z3++))>=0xc0 )
+                        if( (*(z3++))>=0xc0 )
                         {
                             while((*z3 & 0xc0) == 0x80)
                             {
@@ -1607,13 +1555,6 @@ static void spatialOpFunc(sqlite3_context *context, int argc, sqlite3_value **ar
         return;
     }
 
-    // in case we have set 1 to aux arg the we have return since function was already evaluated
-    if((int)sqlite3_get_auxdata(context, 1) == 1)
-    {
-        sqlite3_result_int(context, 1);
-        return;
-    }
-
     FdoPtr<FdoIGeometry> fg[2];
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
 
@@ -1678,24 +1619,11 @@ static void spatialOpFunc(sqlite3_context *context, int argc, sqlite3_value **ar
         return;
     }
 
-    SpatialIndexDescriptor* sidVal = static_cast<SpatialIndexDescriptor*>(sqlite3_get_auxdata(context, 0));
-
     //retrieve the spatial op
-    FdoSpatialOperations spatialOp = (FdoSpatialOperations)(0x0F&(long)sqlite3_user_data(context));
+    FdoSpatialOperations spatialOp = (FdoSpatialOperations)(long)sqlite3_user_data(context);
 
-    bool res = false;
     //call the spatial utility to eval the spatial op
-    if (sidVal != NULL && sidVal->SupportsTolerance())
-    {
-        double xyTol = sidVal->GetXYTolerance();
-        double zTol = sidVal->GetZTolerance();
-        if (zTol > 0.0)
-            res = FdoSpatialUtility::Evaluate(fg[0], spatialOp, fg[1], xyTol, zTol);
-        else
-            res = FdoSpatialUtility::Evaluate(fg[0], spatialOp, fg[1], xyTol);
-    }
-    else
-        res = FdoSpatialUtility::Evaluate(fg[0], spatialOp, fg[1]);
+    bool res = FdoSpatialUtility::Evaluate(fg[0], spatialOp, fg[1]);
 
     sqlite3_result_int(context, res ? 1 : 0);
 }
@@ -1790,7 +1718,7 @@ static void geomFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
     assert(argc == 1);
 
     //extract operation type 1 = len, 2 = area
-    long optype = (0x0F & (long)sqlite3_user_data(context));
+    long optype = (long)sqlite3_user_data(context);
 
     FdoPtr<FdoFgfGeometryFactory> gf;
     FdoPtr<FdoIGeometry> fg;
@@ -1846,8 +1774,8 @@ static void geomFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
     if (geom == NULL) // enforce a null return
         optype = 0;
 
-    
-    bool computeGeodetic = ((int)sqlite3_get_auxdata(context, 0) == 1);
+    ConnInfoDetails* infoCS = (ConnInfoDetails*)sqlite3_context_db_handle(context)->pUserArg;
+    bool computeGeodetic = (infoCS != NULL) ? infoCS->IsCoordSysLatLong() : false;
 
     switch(optype)
     {
@@ -2030,7 +1958,7 @@ void RegisterExtensions (sqlite3* db)
     static const struct {
         const char *zName;
         signed char nArg;
-        u32 argType;           /* ff: db   1: 0, 2: 1, 3: 2,...  N:  N-1. */
+        u8 argType;           /* ff: db   1: 0, 2: 1, 3: 2,...  N:  N-1. */
         u8 eTextRep;          /* 1: UTF-16.  0: UTF-8 */
         u8 needCollSeq;
         void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
@@ -2075,25 +2003,25 @@ void RegisterExtensions (sqlite3* db)
         { "monthsbetween",      2, 5,  SQLITE_UTF8,    0, dateFunc },
         
 
-        { g_spatial_op_map[FdoSpatialOperations_Contains],  2, FdoSpatialOperations_Contains|SQLITE_SPEVAL_FUNCTION,   SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Crosses],   2, FdoSpatialOperations_Crosses|SQLITE_SPEVAL_FUNCTION,    SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Disjoint],  2, FdoSpatialOperations_Disjoint|SQLITE_SPEVAL_FUNCTION,   SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Equals],    2, FdoSpatialOperations_Equals|SQLITE_SPEVAL_FUNCTION,     SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Intersects],2, FdoSpatialOperations_Intersects|SQLITE_SPEVAL_FUNCTION, SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Overlaps],  2, FdoSpatialOperations_Overlaps|SQLITE_SPEVAL_FUNCTION,   SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Touches],   2, FdoSpatialOperations_Touches|SQLITE_SPEVAL_FUNCTION,    SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Within],    2, FdoSpatialOperations_Within|SQLITE_SPEVAL_FUNCTION,     SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_CoveredBy], 2, FdoSpatialOperations_CoveredBy|SQLITE_SPEVAL_FUNCTION,  SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_Inside],    2, FdoSpatialOperations_Inside|SQLITE_SPEVAL_FUNCTION,     SQLITE_UTF8,    0, spatialOpFunc },
-        { g_spatial_op_map[FdoSpatialOperations_EnvelopeIntersects],  2, FdoSpatialOperations_EnvelopeIntersects|SQLITE_SPEVAL_FUNCTION, SQLITE_UTF8, 0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Contains],  2, FdoSpatialOperations_Contains,   SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Crosses],   2, FdoSpatialOperations_Crosses,    SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Disjoint],  2, FdoSpatialOperations_Disjoint,   SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Equals],    2, FdoSpatialOperations_Equals,     SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Intersects],2, FdoSpatialOperations_Intersects, SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Overlaps],  2, FdoSpatialOperations_Overlaps,   SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Touches],   2, FdoSpatialOperations_Touches,    SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Within],    2, FdoSpatialOperations_Within,     SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_CoveredBy], 2, FdoSpatialOperations_CoveredBy,  SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_Inside],    2, FdoSpatialOperations_Inside,     SQLITE_UTF8,    0, spatialOpFunc },
+        { g_spatial_op_map[FdoSpatialOperations_EnvelopeIntersects],  2, FdoSpatialOperations_EnvelopeIntersects, SQLITE_UTF8, 0, spatialOpFunc },
 
         { "X",                  1, 1, SQLITE_UTF8,     0, xyzmFunc },
         { "Y",                  1, 2, SQLITE_UTF8,     0, xyzmFunc },
         { "Z",                  1, 3, SQLITE_UTF8,     0, xyzmFunc },
         { "M",                  1, 4, SQLITE_UTF8,     0, xyzmFunc },
 
-        { "Length2D",           1, (SQLITE_SPCALC_FUNCTION|1), SQLITE_UTF8,     0, geomFunc },
-        { "Area2D",             1, (SQLITE_SPCALC_FUNCTION|2), SQLITE_UTF8,     0, geomFunc },
+        { "Length2D",           1, 1, SQLITE_UTF8,     0, geomFunc },
+        { "Area2D",             1, 2, SQLITE_UTF8,     0, geomFunc },
 
         { "GeomFromText",       1, 0, SQLITE_UTF8, 0, GeomFromText },
 
@@ -2109,13 +2037,12 @@ void RegisterExtensions (sqlite3* db)
         { "floattostring",      1, 1,  SQLITE_UTF8,    0, floatToStringFunc },
         { "doubletostring",     1, 1,  SQLITE_UTF8,    0, doubleToStringFunc },
         { "datetostring",       1, 1,  SQLITE_UTF8,    0, dateToStringFunc },
-        { "nextvalue",          5, 1,  SQLITE_UTF8,    0, nextvalue },
     };
    
     static const struct {
         const char *zName;
         signed char nArg;
-        u32 argType;
+        u8 argType;
         u8 needCollSeq;
         void (*xStep)(sqlite3_context*,int,sqlite3_value**);
         void (*xFinalize)(sqlite3_context*);
@@ -2131,7 +2058,7 @@ void RegisterExtensions (sqlite3* db)
     for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++)
     {
         void *pArg;
-        u32 argType = aFuncs[i].argType;
+        u8 argType = aFuncs[i].argType;
         if( argType==0xff )
         {
             pArg = db;

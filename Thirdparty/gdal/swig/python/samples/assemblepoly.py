@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: assemblepoly.py 18195 2009-12-06 20:24:39Z rouault $
+# $Id: assemblepoly.py 13090 2007-11-26 21:09:42Z hobu $
 #
 # Project:  OGR Python samples
 # Purpose:  Assemble polygon geometries from arcs fulled from an arc layer.
@@ -67,7 +67,7 @@ while feat is not None:
     geom_id = feat.GetField( geom_id_field )
     tile_ref = feat.GetField( tile_ref_field )
 
-    if tile_ref not in lines_hash:
+    if not lines_hash.has_key( tile_ref ):
         lines_hash[tile_ref] = {}
 
     sub_hash = lines_hash[tile_ref]
@@ -77,7 +77,7 @@ while feat is not None:
 
     feat = line_layer.GetNextFeature()
 
-print('Got %d lines.' % len(lines_hash))
+print 'Got %d lines.' % len(lines_hash)
 
 
 #############################################################################
@@ -93,14 +93,14 @@ while feat is not None:
 
     # If the list is in string form we need to convert it.
     if type(link_list).__name__ == 'str':
-        colon = link_list.find(':')
-        items = link_list[colon+1:-1].split( ',' )
+        colon = string.find(link_list,':')
+        items = string.split( link_list[colon+1:-1], ',' )
         link_list = []
         for item in items:
             try:
                 link_list.append(int(item))
             except:
-                print('item failed to translate: ', item)
+                print 'item failed to translate: ', item
 
     link_coll = ogr.Geometry( type = ogr.wkbGeometryCollection )
     for geom_id in link_list:
@@ -109,10 +109,10 @@ while feat is not None:
 
     try:
         poly = ogr.BuildPolygonFromEdges( link_coll )
-        print(poly.ExportToWkt())
+        print poly.ExportToWkt()
         feat.SetGeometryDirectly( poly )
     except:
-        print('BuildPolygonFromEdges failed.') 
+        print 'BuildPolygonFromEdges failed.' 
 
 # For now we don't actually write back the assembled polygons.
 #    poly_layer.SetFeature( feat )

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst.i 16513 2009-03-07 22:16:51Z rouault $
+ * $Id: gdalconst.i 14989 2008-07-21 19:37:10Z warmerdam $
  *
  * Name:     gdalconst.i
  * Project:  GDAL Python Interface
@@ -85,9 +85,6 @@
 %constant GCI_MagentaBand   = GCI_MagentaBand;
 %constant GCI_YellowBand    = GCI_YellowBand;
 %constant GCI_BlackBand     = GCI_BlackBand;
-%constant GCI_YCbCr_YBand     = GCI_YCbCr_YBand;
-%constant GCI_YCbCr_CrBand     = GCI_YCbCr_CrBand;
-%constant GCI_YCbCr_CbBand     = GCI_YCbCr_CbBand;
 
 // GDALResampleAlg
 
@@ -139,7 +136,6 @@
 
 %constant char *DCAP_CREATE     = GDAL_DCAP_CREATE;
 %constant char *DCAP_CREATECOPY = GDAL_DCAP_CREATECOPY;
-%constant char *DCAP_VIRTUALIO = GDAL_DCAP_VIRTUALIO;
 
 %constant CPLES_BackslashQuotable = CPLES_BackslashQuotable;
 %constant CPLES_XML               = CPLES_XML;

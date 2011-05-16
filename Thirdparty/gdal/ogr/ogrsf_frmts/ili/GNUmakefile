@@ -17,9 +17,7 @@ endif
 CPPFLAGS :=	-I.. -I../.. $(GDAL_INCLUDE) $(XERCES_INCLUDE) $(CPPFLAGS)
 
 
-default:	$(foreach d,$(SUBDIRS-yes),$(d)-target)	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(foreach d,$(SUBDIRS-yes),$(d)-target)	$(O_OBJ)
 
 clean: $(foreach d,$(SUBDIRS-yes),$(d)-clean)
 	rm -f *.o $(O_OBJ)
-
-$(O_OBJ):	ogr_ili1.h ogr_ili2.h iomhelper.h ili1reader.h ili1readerp.h  ili2reader.h ili2readerp.h 

@@ -17,15 +17,6 @@ namespace boost {
 
 namespace detail{
 
-#if defined( __CODEGEARC__ )
-    // wrap the impl as main trait provides additional MPL lambda support
-    template < typename T, std::size_t N >
-    struct extent_imp {
-        static const std::size_t value = __array_extent(T, N);
-    };
-
-#else
-
 template <class T, std::size_t N>
 struct extent_imp
 {
@@ -123,9 +114,7 @@ struct extent_imp<T const volatile[], 0>
 };
 #endif
 #endif
-
-#endif  // non-CodeGear implementation
-}   // ::boost::detail
+}
 
 template <class T, std::size_t N = 0>
 struct extent

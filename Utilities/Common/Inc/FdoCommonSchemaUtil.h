@@ -19,34 +19,18 @@
 #ifndef FdoCommonSchemaUtil___H
 #define FdoCommonSchemaUtil___H	1
 
-#ifdef _WIN32
-#define USE_INTERNALHASH 1
-#endif
-
 #include <Fdo/Commands/IdentifierCollection.h>
 #include <Fdo/Schema/AssociationPropertyDefinition.h>
 #include <Fdo/Schema/FeatureSchemaCollection.h>
 #include <Fdo/Schema/Class.h>
 #include <Fdo/Schema/RasterPropertyDefinition.h>
-
-#ifndef USE_INTERNALHASH
 #include <map>
 
 // A Map that will allow copied schema elements to be tracked and will 
 // prevent duplicate elements from being copied.
 typedef std::map <FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementMap;
 typedef std::pair <FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementPair;
-typedef FdoSchemaElementMap::iterator FdoSchemaElementMapIterator;
-#else
-#include <FdoCommonHash.h>
-
-// A Map that will allow copied schema elements to be tracked and will 
-// prevent duplicate elements from being copied.
-typedef FdoCommonTypes::hash<FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementMap;
-typedef FdoCommonTypes::pair<FdoSchemaElement*, FdoSchemaElement*> FdoSchemaElementPair;
-typedef FdoSchemaElementMap::iterator FdoSchemaElementMapIterator;
-#endif
-
+typedef FdoSchemaElementMap::const_iterator FdoSchemaElementMapIterator;
 
 // A context class used to assist in copying schema elemts. The contained map assists in avoiding duplicate objects being copied.
 class FdoCommonSchemaCopyContext : public FdoDisposable
@@ -222,9 +206,6 @@ protected:
     /// Deep-copy a single type of FDO property in a collection.
     static void DeepCopyFdoPropertyType(FdoPropertyDefinitionCollection *properties, FdoPropertyDefinitionCollection *newProperties, FdoPropertyType propertyType, FdoCommonSchemaCopyContext * schemaContext = NULL);
 
-    /// Deep-copy a single type of FDO base property in a collection.
-    static void DeepCopyFdoPropertyType(FdoReadOnlyPropertyDefinitionCollection *properties, FdoPropertyDefinitionCollection *newProperties, FdoPropertyType propertyType, FdoCommonSchemaCopyContext * schemaContext = NULL);
-
     /// Deep-copy FDO Data Property Definitions.
     static void DeepCopyFdoPropertyType(FdoDataPropertyDefinitionCollection *properties, FdoPropertyDefinitionCollection *newProperties, FdoCommonSchemaCopyContext * schemaContext);
 
@@ -233,12 +214,6 @@ protected:
 
     // Utility function for throwing data property default value errors.
     static void ThrowDefaultValueError(FdoString* propName, FdoDataType dataType, FdoString* defaultValue);
-
-    // Get geometry property name in the specified class
-    static FdoStringCollection* GetGeometryNames(FdoClassDefinition * classDef);
-
-    // Copy class capabilities from source to target.
-    static void CopyClassCapabilities(FdoClassCapabilities* source, FdoClassCapabilities* target, FdoStringCollection* geometryNames = NULL);
 
 };
 

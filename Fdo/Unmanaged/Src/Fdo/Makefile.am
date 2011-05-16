@@ -74,9 +74,6 @@ libFDOSrc_la_SOURCES = \
   Expression/UnaryExpression.cpp \
   Expression/DataValueCollection.cpp \
   Expression/LiteralValueCollection.cpp \
-  Expression/SubSelectExpression.cpp \
-  Expression/JoinCriteria.cpp \
-  Expression/JoinCriteriaCollection.cpp \
   Filter/BinaryLogicalOperator.cpp \
   Filter/ComparisonCondition.cpp \
   Filter/DistanceCondition.cpp \
@@ -251,7 +248,7 @@ INCLUDES = \
   -I../Nls  \
   -I../Common \
   -I../Geometry \
-  -I$(FDOTHIRDPARTY)/apache/xerces/src
+  -I$(FDOTHIRDPARTY)/apache/xml-xerces/c/src
 
 libFDOSrc_la_LDFLAGS = 
 

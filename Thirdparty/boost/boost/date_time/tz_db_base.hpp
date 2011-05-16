@@ -3,24 +3,22 @@
 
 /* Copyright (c) 2003-2005 CrystalClear Software, Inc.
  * Subject to the Boost Software License, Version 1.0. 
- * (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
+ * (See accompanying file LICENSE-1.0 or http://www.boost.org/LICENSE-1.0)
  * Author: Jeff Garland, Bart Garst
- * $Date: 2008-11-12 14:37:53 -0500 (Wed, 12 Nov 2008) $
+ * $Date: 2005/10/23 20:15:06 $
  */
 
-#include <map>
-#include <vector>
+#include "boost/shared_ptr.hpp"
+#include "boost/date_time/time_zone_names.hpp"
+#include "boost/date_time/time_zone_base.hpp"
+#include "boost/date_time/time_parsing.hpp"
+#include "boost/tokenizer.hpp"
 #include <string>
 #include <sstream>
-#include <fstream>
+#include <map>
+#include <vector>
 #include <stdexcept>
-#include <boost/tokenizer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/throw_exception.hpp>
-#include <boost/date_time/compiler_config.hpp>
-#include <boost/date_time/time_zone_names.hpp>
-#include <boost/date_time/time_zone_base.hpp>
-#include <boost/date_time/time_parsing.hpp>
+#include <fstream>
 
 namespace boost {
   namespace date_time {
@@ -160,7 +158,7 @@ namespace boost {
       typedef typename time_zone_type::base_type time_zone_base_type;
       typedef typename time_zone_type::time_duration_type time_duration_type;
       typedef time_zone_names_base<char_type> time_zone_names;
-      typedef boost::date_time::dst_adjustment_offsets<time_duration_type> dst_adjustment_offsets;
+      typedef dst_adjustment_offsets<time_duration_type> dst_adjustment_offsets;
       typedef std::basic_string<char_type> string_type;
 
       //! Constructs an empty database
@@ -175,7 +173,7 @@ namespace boost {
         
         std::ifstream ifs(pathspec.c_str());
         if(!ifs){
-          boost::throw_exception(data_not_accessible(pathspec));
+          throw data_not_accessible(pathspec);
         }
         std::getline(ifs, buff); // first line is column headings
 
@@ -185,13 +183,13 @@ namespace boost {
       }
 
       //! returns true if record successfully added to map
-      /*! Takes a region name in the form of "America/Phoenix", and a 
+      /*! Takes an id string in the form of "America/Phoenix", and a 
        * time_zone object for that region. The id string must be a unique 
        * name that does not already exist in the database. */
-      bool add_record(const string_type& region, 
+      bool add_record(const string_type& id, 
                       boost::shared_ptr<time_zone_base_type> tz)
       {
-        typename map_type::value_type p(region, tz); 
+        typename map_type::value_type p(id, tz); 
         return (m_zone_map.insert(p)).second;
       }
 
@@ -309,6 +307,7 @@ namespace boost {
        * zone_spec successfully added to database */
       bool parse_string(string_type& s)
       {
+        
         std::vector<string_type> result;
         typedef boost::token_iterator_generator<boost::escaped_list_separator<char_type>, string_type::const_iterator, string_type >::type token_iter_type;
 
@@ -327,11 +326,10 @@ namespace boost {
         //take a shot at fixing gcc 4.x error
         const unsigned int expected_fields = static_cast<unsigned int>(FIELD_COUNT);
         if (result.size() != expected_fields) { 
-          std::ostringstream msg;
+          std::stringstream msg;
           msg << "Expecting " << FIELD_COUNT << " fields, got " 
             << result.size() << " fields in line: " << s;
-          boost::throw_exception(bad_field_count(msg.str()));
-          BOOST_DATE_TIME_UNREACHABLE_EXPRESSION(return false); // should never reach
+          throw bad_field_count(msg.str());
         }
 
         // initializations

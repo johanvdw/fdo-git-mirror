@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -19,16 +19,10 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
-# $Id: ftpserver.pl,v 1.125 2010-01-20 20:42:21 yangtse Exp $
+# $Id: ftpserver.pl,v 1.81 2007-04-24 21:30:39 danf Exp $
 ###########################################################################
 
-# This is a server designed for the curl test suite.
-#
-# In December 2009 we started remaking the server to support more protocols
-# that are similar in spirit. Like POP3, IMAP and SMTP in addition to the FTP
-# it already supported since a long time. Note that it still only supports one
-# protocol per invoke. You need to start mulitple servers to support multiple
-# protocols simultaneously.
+# This is the FTP server designed for the curl test suite.
 #
 # It is meant to exercise curl, it is not meant to be a fully working
 # or even very standard compliant server.
@@ -39,156 +33,33 @@
 # All socket/network/TCP related stuff is done by the 'sockfilt' program.
 #
 
-BEGIN {
-    @INC=(@INC, $ENV{'srcdir'}, '.');
-    # sub second timestamping needs Time::HiRes
-    eval {
-        no warnings "all";
-        require Time::HiRes;
-        import  Time::HiRes qw( gettimeofday );
-    }
-}
-
 use strict;
-use warnings;
 use IPC::Open2;
+#use Time::HiRes qw( gettimeofday ); # not available in perl 5.6
 
 require "getpart.pm";
 require "ftp.pm";
 
-use serverhelp qw(
-    servername_str
-    server_pidfilename
-    server_logfilename
-    mainsockf_pidfilename
-    mainsockf_logfilename
-    datasockf_pidfilename
-    datasockf_logfilename
-    );
 
-#**********************************************************************
-# global vars...
-#
-my $verbose = 0;    # set to 1 for debugging
-my $idstr = "";     # server instance string
-my $idnum = 1;      # server instance number
-my $ipvnum = 4;     # server IPv number (4 or 6)
-my $proto = 'ftp';  # default server protocol
-my $srcdir;         # directory where ftpserver.pl is located
-my $srvrname;       # server name for presentation purposes
-my $grok_eprt;
+my $ftpdnum="";
 
-my $path   = '.';
-my $logdir = $path .'/log';
-
-#**********************************************************************
-# global vars used for server address and primary listener port
-#
-my $port = 8921;               # default primary listener port
-my $listenaddr = '127.0.0.1';  # default address for listener port
-
-#**********************************************************************
-# global vars used for file names
-#
-my $pidfile;            # server pid file name
-my $logfile;            # server log file name
-my $mainsockf_pidfile;  # pid file for primary connection sockfilt process
-my $mainsockf_logfile;  # log file for primary connection sockfilt process
-my $datasockf_pidfile;  # pid file for secondary connection sockfilt process
-my $datasockf_logfile;  # log file for secondary connection sockfilt process
-
-#**********************************************************************
-# global vars used for server logs advisor read lock handling
-#
-my $SERVERLOGS_LOCK = 'log/serverlogs.lock';
-my $serverlogslocked = 0;
-
-#**********************************************************************
-# global vars used for child processes PID tracking
-#
-my $sfpid;        # PID for primary connection sockfilt process
-my $slavepid;     # PID for secondary connection sockfilt process
-
-#**********************************************************************
-# global typeglob filehandle vars to read/write from/to sockfilters
-#
-local *SFREAD;    # used to read from primary connection
-local *SFWRITE;   # used to write to primary connection
-local *DREAD;     # used to read from secondary connection
-local *DWRITE;    # used to write to secondary connection
-
-#**********************************************************************
-# global vars which depend on server protocol selection
-#
-my %commandfunc;  # protocol command specific function callbacks
-my %displaytext;  # text returned to client before callback runs
-my @welcome;      # text returned to client upon connection
-
-#**********************************************************************
-# global vars customized for each test from the server commands file
-#
-my $ctrldelay;    # set if server should throttle ctrl stream
-my $datadelay;    # set if server should throttle data stream
-my $retrweirdo;   # set if ftp server should use RETRWEIRDO
-my $retrnosize;   # set if ftp server should use RETRNOSIZE
-my $pasvbadip;    # set if ftp server should use PASVBADIP
-my $nosave;       # set if ftp server should not save uploaded data
-my %customreply;  #
-my %customcount;  #
-my %delayreply;   #
-
-#**********************************************************************
-# global vars used for signal handling
-#
-my $got_exit_signal = 0; # set if program should finish execution ASAP
-my $exit_signal;         # first signal handled in exit_signal_handler
-
-#**********************************************************************
-# exit_signal_handler will be triggered to indicate that the program
-# should finish its execution in a controlled way as soon as possible.
-# For now, program will also terminate from within this handler.
-#
-sub exit_signal_handler {
-    my $signame = shift;
-    # For now, simply mimic old behavior.
-    killsockfilters($proto, $ipvnum, $idnum, $verbose);
-    unlink($pidfile);
-    if($serverlogslocked) {
-        $serverlogslocked = 0;
-        clear_advisor_read_lock($SERVERLOGS_LOCK);
-    }
-    exit;
-}
-
-#**********************************************************************
-# logmsg is general message logging subroutine for our test servers.
-#
+# open and close each time to allow removal at any time
 sub logmsg {
-    my $now;
-    # sub second timestamping needs Time::HiRes
-    if($Time::HiRes::VERSION) {
-        my ($seconds, $usec) = gettimeofday();
-        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-            localtime($seconds);
-        $now = sprintf("%02d:%02d:%02d.%06d ", $hour, $min, $sec, $usec);
-    }
-    else {
-        my $seconds = time();
-        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-            localtime($seconds);
-        $now = sprintf("%02d:%02d:%02d ", $hour, $min, $sec);
-    }
-    if(open(LOGFILEFH, ">>$logfile")) {
-        print LOGFILEFH $now;
-        print LOGFILEFH @_;
-        close(LOGFILEFH);
-    }
+ # if later than perl 5.6 is used
+ #   my ($seconds, $microseconds) = gettimeofday;
+    my $seconds = time();
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+        localtime($seconds);
+    open(FTPLOG, ">>log/ftpd$ftpdnum.log");
+    printf FTPLOG ("%02d:%02d:%02d ", $hour, $min, $sec);
+    print FTPLOG @_;
+    close(FTPLOG);
 }
 
 sub ftpmsg {
   # append to the server.input file
-  open(INPUT, ">>log/server$idstr.input") ||
-    logmsg "failed to open log/server$idstr.input\n";
+  open(INPUT, ">>log/server$ftpdnum.input") ||
+    logmsg "failed to open log/server$ftpdnum.input\n";
 
   print INPUT @_;
   close(INPUT);
@@ -198,6 +69,60 @@ sub ftpmsg {
   # better on windows/cygwin
 }
 
+my $verbose=0; # set to 1 for debugging
+my $pasvbadip=0;
+my $retrweirdo=0;
+my $retrnosize=0;
+my $srcdir=".";
+my $nosave=0;
+my $controldelay=0; # set to 1 to delay the control connect data sending to
+ # test that curl deals with that nicely
+my $slavepid; # for the DATA connection sockfilt slave process
+my $ipv6;
+my $ext; # append to log/pid file names
+my $grok_eprt;
+my $port = 8921; # just a default
+my $pidfile = ".ftpd.pid"; # a default, use --pidfile
+
+do {
+    if($ARGV[0] eq "-v") {
+        $verbose=1;
+    }
+    elsif($ARGV[0] eq "-s") {
+        $srcdir=$ARGV[1];
+        shift @ARGV;
+    }
+    elsif($ARGV[0] eq "--id") {
+        $ftpdnum=$ARGV[1];
+        shift @ARGV;
+    }
+    elsif($ARGV[0] eq "--pidfile") {
+        $pidfile=$ARGV[1];
+        shift @ARGV;
+    }
+    elsif($ARGV[0] eq "--ipv6") {
+        $ipv6="--ipv6";
+        $ext="ipv6";
+        $grok_eprt = 1;
+    }
+    elsif($ARGV[0] eq "--port") {
+        $port = $ARGV[1];
+        shift @ARGV;
+    }
+} while(shift @ARGV);
+
+sub catch_zap {
+    my $signame = shift;
+    print STDERR "ftpserver.pl received SIG$signame, exiting\n";
+    ftpkillslaves(1);
+    die "Somebody sent me a SIG$signame";
+}
+$SIG{INT} = \&catch_zap;
+$SIG{KILL} = \&catch_zap;
+
+my $sfpid;
+
+local(*SFREAD, *SFWRITE);
 
 sub sysread_or_die {
     my $FH     = shift;
@@ -212,60 +137,54 @@ sub sysread_or_die {
     if(not defined $result) {
         ($fcaller, $lcaller) = (caller)[1,2];
         logmsg "Failed to read input\n";
-        logmsg "Error: $srvrname server, sysread error: $!\n";
-        logmsg "Exited from sysread_or_die() at $fcaller " .
-               "line $lcaller. $srvrname server, sysread error: $!\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose);
-        unlink($pidfile);
-        if($serverlogslocked) {
-            $serverlogslocked = 0;
-            clear_advisor_read_lock($SERVERLOGS_LOCK);
-        }
-        exit;
+        logmsg "Error: ftp$ftpdnum$ext sysread error: $!\n";
+        kill(9, $sfpid);
+        waitpid($sfpid, 0);
+        die "Died in sysread_or_die() at $fcaller " .
+            "line $lcaller. ftp$ftpdnum$ext sysread error: $!\n";
     }
     elsif($result == 0) {
         ($fcaller, $lcaller) = (caller)[1,2];
         logmsg "Failed to read input\n";
-        logmsg "Error: $srvrname server, read zero\n";
-        logmsg "Exited from sysread_or_die() at $fcaller " .
-               "line $lcaller. $srvrname server, read zero\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose);
-        unlink($pidfile);
-        if($serverlogslocked) {
-            $serverlogslocked = 0;
-            clear_advisor_read_lock($SERVERLOGS_LOCK);
-        }
-        exit;
+        logmsg "Error: ftp$ftpdnum$ext read zero\n";
+        kill(9, $sfpid);
+        waitpid($sfpid, 0);
+        die "Died in sysread_or_die() at $fcaller " .
+            "line $lcaller. ftp$ftpdnum$ext read zero\n";
     }
 
     return $result;
 }
 
 sub startsf {
-    my $mainsockfcmd = "./server/sockfilt " .
-        "--ipv$ipvnum --port $port " .
-        "--pidfile \"$mainsockf_pidfile\" " .
-        "--logfile \"$mainsockf_logfile\"";
-    $sfpid = open2(*SFREAD, *SFWRITE, $mainsockfcmd);
+    my $cmd="./server/sockfilt --port $port --logfile log/sockctrl$ftpdnum$ext.log --pidfile .sockfilt$ftpdnum$ext.pid $ipv6";
+    $sfpid = open2(*SFREAD, *SFWRITE, $cmd);
 
-    print STDERR "$mainsockfcmd\n" if($verbose);
+    print STDERR "$cmd\n" if($verbose);
 
     print SFWRITE "PING\n";
     my $pong;
-    sysread_or_die(\*SFREAD, \$pong, 5);
+    sysread SFREAD, $pong, 5;
 
     if($pong !~ /^PONG/) {
-        logmsg "Failed sockfilt command: $mainsockfcmd\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose);
-        unlink($pidfile);
-        if($serverlogslocked) {
-            $serverlogslocked = 0;
-            clear_advisor_read_lock($SERVERLOGS_LOCK);
-        }
+        logmsg "Failed sockfilt command: $cmd\n";
+        kill(9, $sfpid);
+        waitpid($sfpid, 0);
         die "Failed to start sockfilt!";
     }
 }
 
+# remove the file here so that if startsf() fails, it is very noticable 
+unlink($pidfile);
+
+startsf();
+
+logmsg sprintf("FTP server listens on port IPv%d/$port\n", $ipv6?6:4);
+open(PID, ">$pidfile");
+print PID $$."\n";
+close(PID);
+
+logmsg("logged pid $$ in $pidfile\n");
 
 sub sockfilt {
     my $l;
@@ -276,20 +195,11 @@ sub sockfilt {
 }
 
 
-sub sockfiltsecondary {
-    my $l;
-    foreach $l (@_) {
-        printf DWRITE "DATA\n%04x\n", length($l);
-        print DWRITE $l;
-    }
-}
-
-
 # Send data to the client on the control stream, which happens to be plain
 # stdout.
 
 sub sendcontrol {
-    if(!$ctrldelay) {
+    if(!$controldelay) {
         # spit it all out at once
         sockfilt @_;
     }
@@ -315,375 +225,111 @@ sub sendcontrol {
 sub senddata {
     my $l;
     foreach $l (@_) {
-      if(!$datadelay) {
-        # spit it all out at once
-        sockfiltsecondary $l;
-      }
-      else {
-          # pause between each byte
-          for (split(//,$l)) {
-              sockfiltsecondary $_;
-              select(undef, undef, undef, 0.01);
-          }
-      }
+        printf DWRITE "DATA\n%04x\n", length($l);
+        print DWRITE $l;
     }
 }
 
-#**********************************************************************
-# protocolsetup initializes the 'displaytext' and 'commandfunc' hashes
-# for the given protocol. References to protocol command callbacks are
-# stored in 'commandfunc' hash, and text which will be returned to the
-# client before the command callback runs is stored in 'displaytext'.
-#
-sub protocolsetup {
-    my $proto = $_[0];
+# USER is ok in fresh state
+my %commandok = (
+                 'USER' => 'fresh|passwd',
+                 'PASS' => 'passwd',
+                 'PASV' => 'loggedin|twosock',
+                 'EPSV' => 'loggedin|twosock',
+                 'PORT' => 'loggedin|twosock',
+                 'EPRT' => 'loggedin|twosock',
+                 'TYPE' => 'loggedin|twosock',
+                 'LIST' => 'twosock',
+                 'NLST' => 'twosock',
+                 'RETR' => 'twosock',
+                 'STOR' => 'twosock',
+                 'APPE' => 'twosock',
+                 'REST' => 'twosock',
+                 'ACCT' => 'loggedin',
+                 'CWD'  => 'loggedin|twosock',
+                 'SYST' => 'loggedin',
+                 'SIZE' => 'loggedin|twosock',
+                 'PWD'  => 'loggedin|twosock',
+                 'MKD'  => 'loggedin|twosock',
+                 'QUIT'  => 'loggedin|twosock',
+                 'RNFR'  => 'loggedin|twosock',
+                 'RNTO'  => 'loggedin|twosock',
+                 'DELE' => 'loggedin|twosock',
+                 'MDTM' => 'loggedin|twosock',
+                 'NOOP' => 'loggedin|twosock',
+                 );
 
-    if($proto eq 'ftp') {
-        %commandfunc = (
-            'PORT' => \&PORT_ftp,
-            'EPRT' => \&PORT_ftp,
-            'LIST' => \&LIST_ftp,
-            'NLST' => \&NLST_ftp,
-            'PASV' => \&PASV_ftp,
-            'EPSV' => \&PASV_ftp,
-            'RETR' => \&RETR_ftp,   
-            'SIZE' => \&SIZE_ftp,
-            'REST' => \&REST_ftp,
-            'STOR' => \&STOR_ftp,
-            'APPE' => \&STOR_ftp, # append looks like upload
-            'MDTM' => \&MDTM_ftp,
-        );
-        %displaytext = (
-            'USER' => '331 We are happy you popped in!',
-            'PASS' => '230 Welcome you silly person',
-            'PORT' => '200 You said PORT - I say FINE',
-            'TYPE' => '200 I modify TYPE as you wanted',
-            'LIST' => '150 here comes a directory',
-            'NLST' => '150 here comes a directory',
-            'CWD'  => '250 CWD command successful.',
-            'SYST' => '215 UNIX Type: L8', # just fake something
-            'QUIT' => '221 bye bye baby', # just reply something
-            'PWD'  => '257 "/nowhere/anywhere" is current directory',
-            'MKD'  => '257 Created your requested directory',
-            'REST' => '350 Yeah yeah we set it there for you',
-            'DELE' => '200 OK OK OK whatever you say',
-            'RNFR' => '350 Received your order. Please provide more',
-            'RNTO' => '250 Ok, thanks. File renaming completed.',
-            'NOOP' => '200 Yes, I\'m very good at doing nothing.',
-            'PBSZ' => '500 PBSZ not implemented',
-            'PROT' => '500 PROT not implemented',
-        );
-        @welcome = (
-            '220-        _   _ ____  _     '."\r\n",
-            '220-    ___| | | |  _ \| |    '."\r\n",
-            '220-   / __| | | | |_) | |    '."\r\n",
-            '220-  | (__| |_| |  _ <| |___ '."\r\n",
-            '220    \___|\___/|_| \_\_____|'."\r\n"
-        );
-    }
-    elsif($proto eq 'pop3') {
-        %commandfunc = (
-            'RETR' => \&RETR_pop3,
-        );
-        %displaytext = (
-            'USER' => '+OK We are happy you popped in!',
-            'PASS' => '+OK Access granted',
-            'QUIT' => '+OK byebye',
-        );
-        @welcome = (
-            '        _   _ ____  _     '."\r\n",
-            '    ___| | | |  _ \| |    '."\r\n",
-            '   / __| | | | |_) | |    '."\r\n",
-            '  | (__| |_| |  _ <| |___ '."\r\n",
-            '   \___|\___/|_| \_\_____|'."\r\n",
-            '+OK cURL POP3 server ready to serve'."\r\n"
-        );
-    }
-    elsif($proto eq 'imap') {
-        %commandfunc = (
-            'FETCH'  => \&FETCH_imap,
-            'SELECT' => \&SELECT_imap,
-        );
-        %displaytext = (
-            'LOGIN'  => ' OK We are happy you popped in!',
-            'SELECT' => ' OK selection done',
-            'LOGOUT' => ' OK thanks for the fish',
-        );
-        @welcome = (
-            '        _   _ ____  _     '."\r\n",
-            '    ___| | | |  _ \| |    '."\r\n",
-            '   / __| | | | |_) | |    '."\r\n",
-            '  | (__| |_| |  _ <| |___ '."\r\n",
-            '   \___|\___/|_| \_\_____|'."\r\n",
-            '* OK cURL IMAP server ready to serve'."\r\n"
-        );
-    }
-    elsif($proto eq 'smtp') {
-        %commandfunc = (
-            'DATA' => \&DATA_smtp,
-            'RCPT' => \&RCPT_smtp,
-        );
-        %displaytext = (
-            'EHLO' => '230 We are happy you popped in!',
-            'MAIL' => '200 Note taken',
-            'RCPT' => '200 Receivers accepted',
-            'QUIT' => '200 byebye',
-        );
-        @welcome = (
-            '220-        _   _ ____  _     '."\r\n",
-            '220-    ___| | | |  _ \| |    '."\r\n",
-            '220-   / __| | | | |_) | |    '."\r\n",
-            '220-  | (__| |_| |  _ <| |___ '."\r\n",
-            '220    \___|\___/|_| \_\_____|'."\r\n"
-        );
-    }
-}
+# initially, we're in 'fresh' state
+my %statechange = ( 'USER' => 'passwd',    # USER goes to passwd state
+                    'PASS' => 'loggedin',  # PASS goes to loggedin state
+                    'PORT' => 'twosock',   # PORT goes to twosock
+                    'EPRT' => 'twosock',   # EPRT goes to twosock
+                    'PASV' => 'twosock',   # PASV goes to twosock
+                    'EPSV' => 'twosock',   # EPSV goes to twosock
+                    );
+
+# this text is shown before the function specified below is run
+my %displaytext = ('USER' => '331 We are happy you popped in!',
+                   'PASS' => '230 Welcome you silly person',
+                   'PORT' => '200 You said PORT - I say FINE',
+                   'TYPE' => '200 I modify TYPE as you wanted',
+                   'LIST' => '150 here comes a directory',
+                   'NLST' => '150 here comes a directory',
+                   'CWD'  => '250 CWD command successful.',
+                   'SYST' => '215 UNIX Type: L8', # just fake something
+                   'QUIT' => '221 bye bye baby', # just reply something
+                   'PWD'  => '257 "/nowhere/anywhere" is current directory',
+                   'MKD'  => '257 Created your requested directory',
+                   'REST' => '350 Yeah yeah we set it there for you',
+                   'DELE' => '200 OK OK OK whatever you say',
+                   'RNFR' => '350 Received your order. Please provide more',
+                   'RNTO' => '250 Ok, thanks. File renaming completed.',
+                   'NOOP' => '200 Yes, I\'m very good at doing nothing.',
+                   );
+
+# callback functions for certain commands
+my %commandfunc = ( 'PORT' => \&PORT_command,
+                    'EPRT' => \&PORT_command,
+                    'LIST' => \&LIST_command,
+                    'NLST' => \&NLST_command,
+                    'PASV' => \&PASV_command,
+                    'EPSV' => \&PASV_command,
+                    'RETR' => \&RETR_command,   
+                    'SIZE' => \&SIZE_command,
+                    'REST' => \&REST_command,
+                    'STOR' => \&STOR_command,
+                    'APPE' => \&STOR_command, # append looks like upload
+                    'MDTM' => \&MDTM_command,
+                    );
+
 
 sub close_dataconn {
     my ($closed)=@_; # non-zero if already disconnected
 
-    my $datapid = processexists($datasockf_pidfile);
-
     if(!$closed) {
         logmsg "* disconnect data connection\n";
-        if($datapid > 0) {
-            print DWRITE "DISC\n";
-            my $i;
-            sysread DREAD, $i, 5;
-        }
+        print DWRITE "DISC\n";
+        my $i;
+        sysread DREAD, $i, 5;
     }
     else {
         logmsg "data connection already disconnected\n";
     }
     logmsg "=====> Closed data connection\n";
 
-    logmsg "* quit sockfilt for data (pid $datapid)\n";
-    if($datapid > 0) {
-        print DWRITE "QUIT\n";
-        waitpid($datapid, 0);
-        unlink($datasockf_pidfile) if(-f $datasockf_pidfile);
-    }
+    logmsg "* quit sockfilt for data (pid $slavepid)\n";
+    print DWRITE "QUIT\n";
+    waitpid $slavepid, 0;
+    $slavepid=0;
 }
 
-################
-################ SMTP commands 
-################
-
-# what set by "RCPT"
-my $smtp_rcpt;
-
-sub DATA_smtp {
-    my $testno;
-
-    if($smtp_rcpt =~ /^TO:(.*)/) {
-        $testno = $1;
-    }
-    else {
-        return; # failure
-    }
-
-    if($testno eq "verifiedserver") {
-        sendcontrol "554 WE ROOLZ: $$\r\n";
-        return 0; # don't wait for data now
-    }
-    else {
-        $testno =~ s/^([0-9]*).*/$1/;
-        sendcontrol "354 Show me the mail\r\n";
-    }
-
-    logmsg "===> rcpt $testno was $smtp_rcpt\n";
-
-    my $filename = "log/upload.$testno";
-
-    logmsg "Store test number $testno in $filename\n";
-
-    open(FILE, ">$filename") ||
-        return 0; # failed to open output
-
-    my $line;
-    my $ulsize=0;
-    my $disc=0;
-    my $raw;
-    while (5 == (sysread \*SFREAD, $line, 5)) {
-        if($line eq "DATA\n") {
-            my $i;
-            my $eob;
-            sysread \*SFREAD, $i, 5;
-
-            my $size = 0;
-            if($i =~ /^([0-9a-fA-F]{4})\n/) {
-                $size = hex($1);
-            }
-
-            sysread \*SFREAD, $line, $size;
-            
-            $ulsize += $size;
-            print FILE $line if(!$nosave);
-
-            $raw .= $line;
-            if($raw =~ /\x0d\x0a\x2e\x0d\x0a/) {
-                # end of data marker!
-                $eob = 1;
-            }
-            logmsg "> Appending $size bytes to file\n";
-            if($eob) {
-                logmsg "Found SMTP EOB marker\n";
-                last;
-            }
-        }
-        elsif($line eq "DISC\n") {
-            # disconnect!
-            $disc=1;
-            last;
-        }
-        else {
-            logmsg "No support for: $line";
-            last;
-        }
-    }
-    if($nosave) {
-        print FILE "$ulsize bytes would've been stored here\n";
-    }
-    close(FILE);
-    logmsg "received $ulsize bytes upload\n";
-
-}
-
-sub RCPT_smtp {
-    my ($args) = @_;
-
-    $smtp_rcpt = $args;
-}
-
-################
-################ IMAP commands 
-################
-
-# global to allow the command functions to read it
-my $cmdid;
-
-# what was picked by SELECT
-my $selected;
-
-sub SELECT_imap {
-    my ($testno) = @_;
-    my @data;
-    my $size;
-
-    logmsg "SELECT_imap got test $testno\n";
-
-    $selected = $testno;
-
-    return 0;
-}
-
-
-sub FETCH_imap {
-     my ($testno) = @_;
-     my @data;
-     my $size;
-
-     logmsg "FETCH_imap got test $testno\n";
-
-     $testno = $selected;
-
-     if($testno =~ /^verifiedserver$/) {
-         # this is the secret command that verifies that this actually is
-         # the curl test server
-         my $response = "WE ROOLZ: $$\r\n";
-         if($verbose) {
-             print STDERR "FTPD: We returned proof we are the test server\n";
-         }
-         $data[0] = $response;
-         logmsg "return proof we are we\n";
-     }
-     else {
-         logmsg "retrieve a mail\n";
-
-         $testno =~ s/^([^0-9]*)//;
-         my $testpart = "";
-         if ($testno > 10000) {
-             $testpart = $testno % 10000;
-             $testno = int($testno / 10000);
-         }
-
-         # send mail content
-         loadtest("$srcdir/data/test$testno");
-
-         @data = getpart("reply", "data$testpart");
-     }
-
-     for (@data) {
-         $size += length($_);
-     }
-
-     sendcontrol "* FETCH starts {$size}\r\n";
-
-     for my $d (@data) {
-         sendcontrol $d;
-     }
-
-     sendcontrol "$cmdid OK FETCH completed\r\n";
-    
-     return 0;
-}
-
-################
-################ POP3 commands 
-################
-
-sub RETR_pop3 {
-     my ($testno) = @_;
-     my @data;
-
-     if($testno =~ /^verifiedserver$/) {
-         # this is the secret command that verifies that this actually is
-         # the curl test server
-         my $response = "WE ROOLZ: $$\r\n";
-         if($verbose) {
-             print STDERR "FTPD: We returned proof we are the test server\n";
-         }
-         $data[0] = $response;
-         logmsg "return proof we are we\n";
-     }
-     else {
-         logmsg "retrieve a mail\n";
-
-         $testno =~ s/^([^0-9]*)//;
-         my $testpart = "";
-         if ($testno > 10000) {
-             $testpart = $testno % 10000;
-             $testno = int($testno / 10000);
-         }
-
-         # send mail content
-         loadtest("$srcdir/data/test$testno");
-
-         @data = getpart("reply", "data$testpart");
-     }
-
-     sendcontrol "+OK Mail transfer starts\r\n";
-
-     for my $d (@data) {
-         sendcontrol $d;
-     }
-
-     # end with the magic 5-byte end of mail marker
-     sendcontrol "\r\n.\r\n";
-    
-     return 0;
-}
-
-################
-################ FTP commands 
-################
 my $rest=0;
-sub REST_ftp {
+sub REST_command {
     $rest = $_[0];
     logmsg "Set REST position to $rest\n"
 }
 
-sub LIST_ftp {
+sub LIST_command {
   #  print "150 ASCII data connection for /bin/ls (193.15.23.1,59196) (0 bytes)\r\n";
 
 # this is a built-in fake-dir ;-)
@@ -708,7 +354,7 @@ my @ftpdir=("total 20\r\n",
     return 0;
 }
 
-sub NLST_ftp {
+sub NLST_command {
     my @ftpdir=("file", "with space", "fake", "..", " ..", "funny", "README");
     logmsg "pass NLST data on data connection\n";
     for(@ftpdir) {
@@ -719,22 +365,17 @@ sub NLST_ftp {
     return 0;
 }
 
-sub MDTM_ftp {
+sub MDTM_command {
     my $testno = $_[0];
-    my $testpart = "";
-    if ($testno > 10000) {
-        $testpart = $testno % 10000;
-        $testno = int($testno / 10000);
-    }
 
     loadtest("$srcdir/data/test$testno");
 
     my @data = getpart("reply", "mdtm");
 
     my $reply = $data[0];
-    chomp $reply if($reply);
+    chomp $reply;
 
-    if($reply && ($reply =~ /^[+-]?\d+$/) && ($reply < 0)) {
+    if($reply <0) {
         sendcontrol "550 $testno: no such file.\r\n";
     }
     elsif($reply) {
@@ -746,31 +387,17 @@ sub MDTM_ftp {
     return 0;
 }
 
-sub SIZE_ftp {
+sub SIZE_command {
     my $testno = $_[0];
 
-    if($testno =~ /^verifiedserver$/) {
+    loadtest("$srcdir/data/test$testno");
+
+    if($testno eq "verifiedserver") {
         my $response = "WE ROOLZ: $$\r\n";
         my $size = length($response);
         sendcontrol "213 $size\r\n";
         return 0;
     }
-
-    if($testno =~ /(\d+)\/?$/) {
-        $testno = $1;
-    }
-    else {
-        print STDERR "SIZE_ftp: invalid test number: $testno\n";
-        return 1;
-    }
-
-    my $testpart = "";
-    if($testno > 10000) {
-        $testpart = $testno % 10000;
-        $testno = int($testno / 10000);
-    }
-
-    loadtest("$srcdir/data/test$testno");
 
     my @data = getpart("reply", "size");
 
@@ -786,7 +413,7 @@ sub SIZE_ftp {
     }
     else {
         $size=0;
-        @data = getpart("reply", "data$testpart");
+        @data = getpart("reply", "data");
         for(@data) {
             $size += length($_);
         }
@@ -800,7 +427,7 @@ sub SIZE_ftp {
     return 0;
 }
 
-sub RETR_ftp {
+sub RETR_command {
     my ($testno) = @_;
 
     if($testno =~ /^verifiedserver$/) {
@@ -819,22 +446,17 @@ sub RETR_ftp {
     }
 
     $testno =~ s/^([^0-9]*)//;
-    my $testpart = "";
-    if ($testno > 10000) {
-        $testpart = $testno % 10000;
-        $testno = int($testno / 10000);
-    }
 
     loadtest("$srcdir/data/test$testno");
 
-    my @data = getpart("reply", "data$testpart");
+    my @data = getpart("reply", "data");
 
     my $size=0;
     for(@data) {
         $size += length($_);
     }
 
-    my %hash = getpartattr("reply", "data$testpart");
+    my %hash = getpartattr("reply", "data");
 
     if($size || $hash{'sendzero'}) {
     
@@ -877,7 +499,7 @@ sub RETR_ftp {
     return 0;
 }
 
-sub STOR_ftp {
+sub STOR_command {
     my $testno=$_[0];
 
     my $filename = "log/upload.$testno";
@@ -897,11 +519,9 @@ sub STOR_ftp {
             my $i;
             sysread DREAD, $i, 5;
 
-            my $size = 0;
-            if($i =~ /^([0-9a-fA-F]{4})\n/) {
-                $size = hex($1);
-            }
+            #print STDERR "  GOT: $i";
 
+            my $size = hex($i);
             sysread DREAD, $line, $size;
             
             #print STDERR "  GOT: $size bytes\n";
@@ -930,28 +550,31 @@ sub STOR_ftp {
     return 0;
 }
 
-sub PASV_ftp {
+sub PASV_command {
     my ($arg, $cmd)=@_;
     my $pasvport;
+    my $pidf=".sockdata$ftpdnum$ext.pid";
 
-    # kill previous data connection sockfilt when alive
-    killsockfilters($proto, $ipvnum, $idnum, $verbose, 'data');
+    my $prev = checkserver($pidf);
+    if($prev > 0) {
+        print "kill existing server: $prev\n" if($verbose);
+        kill(9, $prev);
+    }
 
-    # We fire up a new sockfilt to do the data transfer for us.
-    my $datasockfcmd = "./server/sockfilt " .
-        "--ipv$ipvnum --port 0 " .
-        "--pidfile \"$datasockf_pidfile\" " .
-        "--logfile \"$datasockf_logfile\"";
-    $slavepid = open2(\*DREAD, \*DWRITE, $datasockfcmd);
+    # We fire up a new sockfilt to do the data tranfer for us.
+    $slavepid = open2(\*DREAD, \*DWRITE,
+                      "./server/sockfilt --port 0 --logfile log/sockdata$ftpdnum$ext.log --pidfile $pidf $ipv6");
 
     print DWRITE "PING\n";
     my $pong;
+
     sysread_or_die(\*DREAD, \$pong, 5);
 
     if($pong !~ /^PONG/) {
-        logmsg "failed to run sockfilt for data connection\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose, 'data');
+        kill(9, $slavepid);
+        waitpid($slavepid, 0);
         sendcontrol "500 no free ports!\r\n";
+        logmsg "failed to run sockfilt for data connection\n";
         return 0;
     }
 
@@ -967,11 +590,8 @@ sub PASV_ftp {
     # READ the response size
     sysread_or_die(\*DREAD, \$i, 5);
 
-    my $size = 0;
-    if($i =~ /^([0-9a-fA-F]{4})\n/) {
-        $size = hex($1);
-    }
-       
+    my $size = hex($i);
+        
     # READ the response data
     sysread_or_die(\*DREAD, \$i, $size);
         
@@ -985,8 +605,7 @@ sub PASV_ftp {
 
     if($cmd ne "EPSV") {
         # PASV reply
-        my $p=$listenaddr;
-        $p =~ s/\./,/g;
+        my $p="127,0,0,1";
         if($pasvbadip) {
             $p="1,2,3,4";
         }
@@ -1001,30 +620,31 @@ sub PASV_ftp {
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };
 
-        # assume swift operations unless explicitly slow
-        alarm ($datadelay?20:10);
+	# assume swift operations unless explicitly slow
+	alarm ($controldelay?20:5);
 
         # Wait for 'CNCT'
-        my $input;
+	my $input;
 
         while(sysread(DREAD, $input, 5)) {
 
-            if($input !~ /^CNCT/) {
-                # we wait for a connected client
-                logmsg "Odd, we got $input from client\n";
-                next;
-            }
-            logmsg "====> Client DATA connect\n";
-            last;
-        }
+	    if($input !~ /^CNCT/) {
+		# we wait for a connected client
+		logmsg "Odd, we got $input from client\n";
+		next;
+	    }
+	    logmsg "====> Client DATA connect\n";
+	    last;
+	}
         alarm 0;
     };
     if ($@) {
         # timed out
-        logmsg "$srvrname server timed out awaiting data connection ".
-            "on port $pasvport\n";
-        logmsg "accept failed or connection not even attempted\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose, 'data');
+
+        print DWRITE "QUIT\n";
+        waitpid $slavepid, 0;
+        logmsg "accept failed\n";
+        $slavepid=0;
         return;
     }
     else {
@@ -1036,10 +656,9 @@ sub PASV_ftp {
 
 # Support both PORT and EPRT here. Consider LPRT too.
 
-sub PORT_ftp {
+sub PORT_command {
     my ($arg, $cmd) = @_;
     my $port;
-    my $addr;
 
     # We always ignore the given IP and use localhost.
 
@@ -1050,7 +669,6 @@ sub PORT_ftp {
             return 0;
         }
         $port = ($5<<8)+$6;
-        $addr = "$1.$2.$3.$4";
     }
     # EPRT |2|::1|49706|
     elsif(($cmd eq "EPRT") && ($grok_eprt)) {
@@ -1060,7 +678,6 @@ sub PORT_ftp {
         }
         sendcontrol "200 Thanks for dropping by. We contact you later\r\n";
         $port = $3;
-        $addr = $2;
     }
     else {
         sendcontrol "500 we don't like $cmd now\r\n";
@@ -1072,22 +689,19 @@ sub PORT_ftp {
         return 1;
     }
 
-    # We fire up a new sockfilt to do the data transfer for us.
-    my $datasockfcmd = "./server/sockfilt " .
-        "--ipv$ipvnum --connect $port --addr \"$addr\" " .
-        "--pidfile \"$datasockf_pidfile\" " .
-        "--logfile \"$datasockf_logfile\"";
-    $slavepid = open2(\*DREAD, \*DWRITE, $datasockfcmd);
-
-    print STDERR "$datasockfcmd\n" if($verbose);
+    # We fire up a new sockfilt to do the data tranfer for us.
+    # FIX: make it use IPv6 if need be
+    $slavepid = open2(\*DREAD, \*DWRITE,
+                      "./server/sockfilt --connect $port --logfile log/sockdata$ftpdnum$ext.log --pidfile .sockdata$ftpdnum$ext.pid $ipv6");
 
     print DWRITE "PING\n";
     my $pong;
-    sysread_or_die(\*DREAD, \$pong, 5);
+    sysread DREAD, $pong, 5;
 
     if($pong !~ /^PONG/) {
         logmsg "Failed sockfilt for data connection\n";
-        killsockfilters($proto, $ipvnum, $idnum, $verbose, 'data');
+        kill(9, $slavepid);
+        waitpid($slavepid, 0);
     }
 
     logmsg "====> Client DATA connect to port $port\n";
@@ -1095,22 +709,20 @@ sub PORT_ftp {
     return;
 }
 
-#**********************************************************************
-# customize configures test server operation for each curl test, reading
-# configuration commands/parameters from server commands file each time
-# a new client control connection is established with the test server.
-# On success returns 1, otherwise zero.
-#
+my %customreply;
+my %customcount;
+my %delayreply;
 sub customize {
-    $ctrldelay = 0;    # default is no throttling of the ctrl stream
-    $datadelay = 0;    # default is no throttling of the data stream
-    $retrweirdo = 0;   # default is no use of RETRWEIRDO
-    $retrnosize = 0;   # default is no use of RETRNOSIZE
-    $pasvbadip = 0;    # default is no use of PASVBADIP
-    $nosave = 0;       # default is to actually save uploaded data to file
-    %customreply = (); #
-    %customcount = (); #
-    %delayreply = ();  #
+    undef %customreply;
+
+    $nosave = 0; # default is to save as normal
+    $controldelay = 0; # default is no delaying the responses
+    $retrweirdo = 0;
+    $retrnosize = 0;
+    $pasvbadip = 0;
+    $nosave = 0;
+    %customcount = ();
+    %delayreply = ();
 
     open(CUSTOM, "<log/ftpserver.cmd") ||
         return 1;
@@ -1119,7 +731,7 @@ sub customize {
 
     while(<CUSTOM>) {
         if($_ =~ /REPLY ([A-Z]+) (.*)/) {
-            $customreply{$1}=eval "qq{$2}";
+            $customreply{$1}=$2;
             logmsg "FTPD: set custom reply for $1\n";
         }
         if($_ =~ /COUNT ([A-Z]+) (.*)/) {
@@ -1133,9 +745,8 @@ sub customize {
             logmsg "FTPD: delay reply for $1 with $2 seconds\n";
         }
         elsif($_ =~ /SLOWDOWN/) {
-            $ctrldelay=1;
-            $datadelay=1;
-            logmsg "FTPD: send response with 0.01 sec delay between each byte\n";
+            $controldelay=1;
+            logmsg "FTPD: send response with 0.1 sec delay between each byte\n";
         }
         elsif($_ =~ /RETRWEIRDO/) {
             logmsg "FTPD: instructed to use RETRWEIRDO\n";
@@ -1159,144 +770,12 @@ sub customize {
     close(CUSTOM);
 }
 
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
-#---------------------------  END OF SUBS  ----------------------------
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
-
-#**********************************************************************
-# Parse command line options
-#
-# Options:
-#
-# --verbose   # verbose
-# --srcdir    # source directory
-# --id        # server instance number
-# --proto     # server protocol
-# --pidfile   # server pid file
-# --logfile   # server log file
-# --ipv4      # server IP version 4
-# --ipv6      # server IP version 6
-# --port      # server listener port
-# --addr      # server address for listener port binding
-#
-while(@ARGV) {
-    if($ARGV[0] eq '--verbose') {
-        $verbose = 1;
-    }
-    elsif($ARGV[0] eq '--srcdir') {
-        if($ARGV[1]) {
-            $srcdir = $ARGV[1];
-            shift @ARGV;
-        }
-    }
-    elsif($ARGV[0] eq '--id') {
-        if($ARGV[1] && ($ARGV[1] =~ /^(\d+)$/)) {
-            $idnum = $1 if($1 > 0);
-            shift @ARGV;
-        }
-    }
-    elsif($ARGV[0] eq '--proto') {
-        if($ARGV[1] && ($ARGV[1] =~ /^(ftp|imap|pop3|smtp)$/)) {
-            $proto = $1;
-            shift @ARGV;
-        }
-        else {
-            die "unsupported protocol $ARGV[1]";
-        }
-    }
-    elsif($ARGV[0] eq '--pidfile') {
-        if($ARGV[1]) {
-            $pidfile = $ARGV[1];
-            shift @ARGV;
-        }
-    }
-    elsif($ARGV[0] eq '--logfile') {
-        if($ARGV[1]) {
-            $logfile = $ARGV[1];
-            shift @ARGV;
-        }
-    }
-    elsif($ARGV[0] eq '--ipv4') {
-        $ipvnum = 4;
-        $listenaddr = '127.0.0.1' if($listenaddr eq '::1');
-        $grok_eprt = 0;
-    }
-    elsif($ARGV[0] eq '--ipv6') {
-        $ipvnum = 6;
-        $listenaddr = '::1' if($listenaddr eq '127.0.0.1');
-        $grok_eprt = 1;
-    }
-    elsif($ARGV[0] eq '--port') {
-        if($ARGV[1] && ($ARGV[1] =~ /^(\d+)$/)) {
-            $port = $1 if($1 > 1024);
-            shift @ARGV;
-        }
-    }
-    elsif($ARGV[0] eq '--addr') {
-        if($ARGV[1]) {
-            my $tmpstr = $ARGV[1];
-            if($tmpstr =~ /^(\d\d?\d?)\.(\d\d?\d?)\.(\d\d?\d?)\.(\d\d?\d?)$/) {
-                $listenaddr = "$1.$2.$3.$4" if($ipvnum == 4);
-            }
-            elsif($ipvnum == 6) {
-                $listenaddr = $tmpstr;
-                $listenaddr =~ s/^\[(.*)\]$/$1/;
-            }
-            shift @ARGV;
-        }
-    }
-    else {
-        print STDERR "\nWarning: ftpserver.pl unknown parameter: $ARGV[0]\n";
-    }
-    shift @ARGV;
-}
-
-#***************************************************************************
-# Initialize command line option dependant variables
-#
-
-if(!$srcdir) {
-    $srcdir = $ENV{'srcdir'} || '.';
-}
-if(!$pidfile) {
-    $pidfile = "$path/". server_pidfilename($proto, $ipvnum, $idnum);
-}
-if(!$logfile) {
-    $logfile = server_logfilename($logdir, $proto, $ipvnum, $idnum);
-}
-
-$mainsockf_pidfile = "$path/".
-    mainsockf_pidfilename($proto, $ipvnum, $idnum);
-$mainsockf_logfile =
-    mainsockf_logfilename($logdir, $proto, $ipvnum, $idnum);
-
-if($proto eq 'ftp') {
-    $datasockf_pidfile = "$path/".
-        datasockf_pidfilename($proto, $ipvnum, $idnum);
-    $datasockf_logfile =
-        datasockf_logfilename($logdir, $proto, $ipvnum, $idnum);
-}
-
-$srvrname = servername_str($proto, $ipvnum, $idnum);
-
-$idstr = "$idnum" if($idnum > 1);
-
-protocolsetup($proto);
-
-$SIG{INT} = \&exit_signal_handler;
-$SIG{TERM} = \&exit_signal_handler;
-
-startsf();
-
-logmsg sprintf("%s server listens on port IPv${ipvnum}/${port}\n", uc($proto));
-
-open(PID, ">$pidfile");
-print PID $$."\n";
-close(PID);
-
-logmsg("logged pid $$ in $pidfile\n");
+my @welcome=(
+            '220-        _   _ ____  _     '."\r\n",
+            '220-    ___| | | |  _ \| |    '."\r\n",
+            '220-   / __| | | | |_) | |    '."\r\n",
+            '220-  | (__| |_| |  _ <| |___ '."\r\n",
+            '220    \___|\___/|_| \_\_____|'."\r\n");
 
 
 while(1) {
@@ -1315,14 +794,13 @@ while(1) {
     }
     logmsg "====> Client connect\n";
 
-    set_advisor_read_lock($SERVERLOGS_LOCK);
-    $serverlogslocked = 1;
-
     # flush data:
     $| = 1;
 
-    killsockfilters($proto, $ipvnum, $idnum, $verbose, 'data');
- 
+    kill(9, $slavepid) if($slavepid);
+    waitpid($slavepid, 0) if($slavepid);
+    $slavepid=0;
+        
     &customize(); # read test control instructions
 
     sendcontrol @welcome;
@@ -1331,6 +809,7 @@ while(1) {
             print STDERR "OUT: $_";
         }
     }
+    my $state="fresh";
 
     while(1) {
         my $i;
@@ -1353,10 +832,7 @@ while(1) {
         # SIZE of data
         sysread_or_die(\*SFREAD, \$i, 5);
 
-        my $size = 0;
-        if($i =~ /^([0-9a-fA-F]{4})\n/) {
-            $size = hex($1);
-        }
+        my $size = hex($i);
 
         # data
         sysread SFREAD, $_, $size;
@@ -1366,28 +842,13 @@ while(1) {
         # Remove trailing CRLF.
         s/[\n\r]+$//;
 
-        my $FTPCMD;
-        my $FTPARG;
+        unless (m/^([A-Z]{3,4})\s?(.*)/i) {
+            sendcontrol "500 '$_': command not understood.\r\n";
+            last;
+        }
+        my $FTPCMD=$1;
+        my $FTPARG=$2;
         my $full=$_;
-        if($proto eq "imap") {
-            # IMAP is different with its identifier first on the command line
-            unless (m/^([^ ]+) ([^ ]+) (.*)/ ||
-                    m/^([^ ]+) ([^ ]+)/) {
-                sendcontrol "$1 '$_': command not understood.\r\n";
-                last;
-            }
-            $cmdid=$1; # set the global variable
-            $FTPCMD=$2;
-            $FTPARG=$3;
-        }
-        else {
-            unless (m/^([A-Z]{3,4})\s?(.*)/i) {
-                sendcontrol "500 '$_': command not understood.\r\n";
-                last;
-            }
-            $FTPCMD=$1;
-            $FTPARG=$2;
-        }
                  
         logmsg "< \"$full\"\n";
 
@@ -1395,70 +856,61 @@ while(1) {
             print STDERR "IN: $full\n";
         }
 
+        my $ok = $commandok{$FTPCMD};
+        if($ok !~ /$state/) {
+            sendcontrol "500 $FTPCMD not OK in state: $state!\r\n";
+            next;
+        }
+
+        my $newstate=$statechange{$FTPCMD};
+        if($newstate eq "") {
+            # remain in the same state
+        }
+        else {
+            
+            if($state != $newstate) {
+                logmsg "switch to state $state\n";
+            }
+            $state = $newstate;
+        }
+
         my $delay = $delayreply{$FTPCMD};
         if($delay) {
             # just go sleep this many seconds!
             logmsg("Sleep for $delay seconds\n");
-            my $twentieths = $delay * 20;
-            while($twentieths--) {
-                select(undef, undef, undef, 0.05) unless($got_exit_signal);
-            }
+            sleep($delay);
         }
 
         my $text;
         $text = $customreply{$FTPCMD};
         my $fake = $text;
-
-        if($text && ($text ne "")) {
+        if($text eq "") {
+            $text = $displaytext{$FTPCMD};
+        }
+        else {
             if($customcount{$FTPCMD} && (!--$customcount{$FTPCMD})) {
                 # used enough number of times, now blank the customreply
                 $customreply{$FTPCMD}="";
             }
         }
-        else {
-            $text = $displaytext{$FTPCMD};
-        }
-        my $check;
-        if($text && ($text ne "")) {
-            if($cmdid && ($cmdid ne "")) {
-                sendcontrol "$cmdid$text\r\n";
-            }
-            else {
-                sendcontrol "$text\r\n";
-            }
-        }
-        else {
-            $check=1; # no response yet
+        if($text) {
+            sendcontrol "$text\r\n";
         }
 
-        unless($fake && ($fake ne "")) {
+        if($fake eq "") {
             # only perform this if we're not faking a reply
+            # see if the new state is a function caller.
             my $func = $commandfunc{$FTPCMD};
             if($func) {
+                # it is!
                 &$func($FTPARG, $FTPCMD);
-                $check=0; # taken care of
             }
-        }
-
-        if($check) {
-            logmsg "$FTPCMD wasn't handled!\n";
-            sendcontrol "500 $FTPCMD is not dealt with!\r\n";
         }
             
     } # while(1)
     logmsg "====> Client disconnected\n";
-
-    if($serverlogslocked) {
-        $serverlogslocked = 0;
-        clear_advisor_read_lock($SERVERLOGS_LOCK);
-    }
 }
 
-killsockfilters($proto, $ipvnum, $idnum, $verbose);
-unlink($pidfile);
-if($serverlogslocked) {
-    $serverlogslocked = 0;
-    clear_advisor_read_lock($SERVERLOGS_LOCK);
-}
-
+print SFWRITE "QUIT\n";
+waitpid $sfpid, 0;
 exit;

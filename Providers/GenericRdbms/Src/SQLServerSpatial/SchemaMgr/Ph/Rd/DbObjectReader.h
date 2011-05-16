@@ -31,18 +31,14 @@ public:
     //      owner: get objects owned by this owner.
     //      objectName: If L"" then get all objects for the owner.
     //          Otherwise retrieve only this object.
-    //      deriveOnly: If true, retrieve only object without explicit relationship to 
-    //          their columns. For SQL Server, this means retrieve synonyms only.
     FdoSmPhRdSqsDbObjectReader(
         FdoSmPhOwnerP owner,
-        FdoStringP objectName = L"",
-        bool derivedOnly = false
+        FdoStringP objectName = L""
     );
 
     FdoSmPhRdSqsDbObjectReader(
         FdoSmPhOwnerP owner,
-        FdoStringsP objectNames,
-        bool derivedOnly = false
+        FdoStringsP objectNames
     );
 
     FdoSmPhRdSqsDbObjectReader(
@@ -64,13 +60,12 @@ protected:
     FdoSmPhReaderP MakeQueryReader(
         FdoSmPhOwnerP owner,
         FdoStringsP objectNames,
-        bool derivedOnly = false,
         FdoSmPhRdTableJoinP join = (FdoSmPhRdTableJoin*) NULL
     );
 
     // Creates a set of rows describing the fields for this
     // reader. There is one field per database object attribute.
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
+    FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
 };
 
 typedef FdoPtr<FdoSmPhRdSqsDbObjectReader> FdoSmPhRdSqsDbObjectReaderP;

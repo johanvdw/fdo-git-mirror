@@ -50,9 +50,6 @@ using namespace std;
 
 #include <wchar.h>
 
-#include <vector>
-#include <string>
-
 #include "SDF.h"
 
 // FdoCommon files

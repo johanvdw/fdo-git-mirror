@@ -919,6 +919,6 @@ int BIO_nwrite(BIO *bio, char **buf, int num)
 
 	ret = BIO_ctrl(bio, BIO_C_NWRITE, num, buf);
 	if (ret > 0)
-		bio->num_write += ret;
+		bio->num_read += ret;
 	return ret;
 	}

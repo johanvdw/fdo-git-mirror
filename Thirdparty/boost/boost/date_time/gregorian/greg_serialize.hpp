@@ -4,9 +4,9 @@
 /* Copyright (c) 2004-2005 CrystalClear Software, Inc.
  * Use, modification and distribution is subject to the 
  * Boost Software License, Version 1.0. (See accompanying
- * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
+ * file LICENSE-1.0 or http://www.boost.org/LICENSE-1.0)
  * Author: Jeff Garland, Bart Garst
- * $Date: 2008-11-12 14:37:53 -0500 (Wed, 12 Nov 2008) $
+ * $Date: 2007/03/02 02:45:57 $
  */
 
 #include "boost/date_time/gregorian/gregorian_types.hpp"
@@ -72,10 +72,10 @@ void load(Archive & ar,
   ar & make_nvp("date", ds);
   try{
     d = ::boost::gregorian::from_undelimited_string(ds);
-  }catch(bad_lexical_cast&) {
+  }catch(bad_lexical_cast be) {
     gregorian::special_values sv = gregorian::special_value_from_string(ds);
     if(sv == gregorian::not_special) {
-      throw; // no match found, rethrow original exception
+      throw(be); // no match found, rethrow original exception
     }
     else {
       d = gregorian::date(sv);

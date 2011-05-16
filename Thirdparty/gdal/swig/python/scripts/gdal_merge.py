@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: gdal_merge.py 18669 2010-01-27 02:07:32Z chaitanya $
+# $Id: gdal_merge.py 12993 2007-11-24 19:22:11Z hobu $
 #
 # Project:  InSAR Peppers
 # Purpose:  Module to extract data from many rasters into one output.
@@ -27,16 +27,12 @@
 
 try:
     from osgeo import gdal
-    gdal.TermProgress = gdal.TermProgress_nocb
 except ImportError:
     import gdal
 
 import sys
-import glob
 
-__version__ = '$id$'[5:-1]
 verbose = 0
-quiet = 0
 
 
 # =============================================================================
@@ -51,9 +47,9 @@ def raster_copy( s_fh, s_xoff, s_yoff, s_xsize, s_ysize, s_band_n,
             nodata )
 
     if verbose != 0:
-        print('Copy %d,%d,%d,%d to %d,%d,%d,%d.' \
+        print 'Copy %d,%d,%d,%d to %d,%d,%d,%d.' \
               % (s_xoff, s_yoff, s_xsize, s_ysize,
-             t_xoff, t_yoff, t_xsize, t_ysize ))
+             t_xoff, t_yoff, t_xsize, t_ysize )
 
     s_band = s_fh.GetRasterBand( s_band_n )
     t_band = t_fh.GetRasterBand( t_band_n )
@@ -76,9 +72,9 @@ def raster_copy_with_nodata( s_fh, s_xoff, s_yoff, s_xsize, s_ysize, s_band_n,
         import Numeric
     
     if verbose != 0:
-        print('Copy %d,%d,%d,%d to %d,%d,%d,%d.' \
+        print 'Copy %d,%d,%d,%d to %d,%d,%d,%d.' \
               % (s_xoff, s_yoff, s_xsize, s_ysize,
-             t_xoff, t_yoff, t_xsize, t_ysize ))
+             t_xoff, t_yoff, t_xsize, t_ysize )
 
     s_band = s_fh.GetRasterBand( s_band_n )
     t_band = t_fh.GetRasterBand( t_band_n )
@@ -150,13 +146,13 @@ class file_info:
         return 1
 
     def report( self ):
-        print('Filename: '+ self.filename)
-        print('File Size: %dx%dx%d' \
-              % (self.xsize, self.ysize, self.bands))
-        print('Pixel Size: %f x %f' \
-              % (self.geotransform[1],self.geotransform[5]))
-        print('UL:(%f,%f)   LR:(%f,%f)' \
-              % (self.ulx,self.uly,self.lrx,self.lry))
+        print 'Filename: '+ self.filename
+        print 'File Size: %dx%dx%d' \
+              % (self.xsize, self.ysize, self.bands)
+        print 'Pixel Size: %f x %f' \
+              % (self.geotransform[1],self.geotransform[5])
+        print 'UL:(%f,%f)   LR:(%f,%f)' \
+              % (self.ulx,self.uly,self.lrx,self.lry)
 
     def copy_into( self, t_fh, s_band = 1, t_band = 1, nodata_arg=None ):
         """
@@ -233,23 +229,20 @@ class file_info:
 
 # =============================================================================
 def Usage():
-    print('Usage: gdal_merge.py [-o out_filename] [-of out_format] [-co NAME=VALUE]*')
-    print('                     [-ps pixelsize_x pixelsize_y] [-separate] [-q] [-v] [-pct]')
-    print('                     [-ul_lr ulx uly lrx lry] [-n nodata_value] [-init "value [value...]"]')
-    print('                     [-ot datatype] [-createonly] input_files')
-    print('                     [--help-general]')
-    print('')
+    print 'Usage: gdal_merge.py [-o out_filename] [-of out_format] [-co NAME=VALUE]*'
+    print '                     [-ps pixelsize_x pixelsize_y] [-separate] [-v] [-pct]'
+    print '                     [-ul_lr ulx uly lrx lry] [-n nodata_value] [-init value]'
+    print '                     [-ot datatype] [-createonly] input_files'
+    print '                     [--help-general]'
+    print
 
 # =============================================================================
 #
 # Program mainline.
 #
 
-def main( argv=None ):
+if __name__ == '__main__':
 
-    global verbose, quiet
-    verbose = 0
-    quiet = 0
     names = []
     format = 'GTiff'
     out_file = 'out.tif'
@@ -260,14 +253,12 @@ def main( argv=None ):
     copy_pct = 0
     nodata = None
     create_options = []
-    pre_init = []
+    pre_init = None
     band_type = None
     createonly = 0
-    
+
     gdal.AllRegister()
-    if argv is None:
-        argv = sys.argv
-    argv = gdal.GeneralCmdLineProcessor( argv )
+    argv = gdal.GeneralCmdLineProcessor( sys.argv )
     if argv is None:
         sys.exit( 0 )
 
@@ -282,9 +273,6 @@ def main( argv=None ):
 
         elif arg == '-v':
             verbose = 1
-
-        elif arg == '-q' or arg == '-quiet':
-            quiet = 1
 
         elif arg == '-createonly':
             createonly = 1
@@ -302,14 +290,12 @@ def main( argv=None ):
             i = i + 1
             band_type = gdal.GetDataTypeByName( argv[i] )
             if band_type == gdal.GDT_Unknown:
-                print('Unknown GDAL data type: ', argv[i])
+                print 'Unknown GDAL data type: ', argv[i]
                 sys.exit( 1 )
 
         elif arg == '-init':
             i = i + 1
-            str_pre_init = argv[i].split()
-            for x in str_pre_init:
-                pre_init.append(float(x))
+            pre_init = float(argv[i])
 
         elif arg == '-n':
             i = i + 1
@@ -341,31 +327,28 @@ def main( argv=None ):
             i = i + 4
 
         elif arg[:1] == '-':
-            print('Unrecognised command option: ', arg)
+            print 'Unrecognised command option: ', arg
             Usage()
             sys.exit( 1 )
 
         else:
-            # Expand any possible wildcards from command line arguments
-            f = glob.glob( arg )
-            if len(f) == 0:
-                print('File not found: "%s"' % (str( arg )))
-            names += f # append 1 or more files
+            names.append( arg )
+            
         i = i + 1
 
     if len(names) == 0:
-        print('No input files selected.')
+        print 'No input files selected.'
         Usage()
         sys.exit( 1 )
 
     Driver = gdal.GetDriverByName(format)
     if Driver is None:
-        print('Format driver %s not found, pick a supported driver.' % format)
+        print 'Format driver %s not found, pick a supported driver.' % format
         sys.exit( 1 )
 
     DriverMD = Driver.GetMetadata()
-    if 'DCAP_CREATE' not in DriverMD:
-        print('Format driver %s does not support creation and piecewise writing.\nPlease select a format that does, such as GTiff (the default) or HFA (Erdas Imagine).' % format)
+    if not DriverMD.has_key('DCAP_CREATE'):
+        print 'Format driver %s does not support creation and piecewise writing.\nPlease select a format that does, such as GTiff (the default) or HFA (Erdas Imagine).' % format
         sys.exit( 1 )
 
     # Collect information on all the source files.
@@ -410,7 +393,7 @@ def main( argv=None ):
         t_fh = Driver.Create( out_file, xsize, ysize, bands,
                               band_type, create_options )
         if t_fh is None:
-            print('Creation failed, terminating gdal_merge.')
+            print 'Creation failed, terminating gdal_merge.'
             sys.exit( 1 )
             
         t_fh.SetGeoTransform( geotransform )
@@ -421,37 +404,22 @@ def main( argv=None ):
     else:
         if separate != 0:
             bands = len(file_infos)
-            if t_fh.RasterCount < bands :
-                print('Existing output file has less bands than the number of input files. You should delete it before. Terminating gdal_merge.')
-                sys.exit( 1 )
         else:
             bands = min(file_infos[0].bands,t_fh.RasterCount)
 
     # Do we need to pre-initialize the whole mosaic file to some value?
     if pre_init is not None:
-        if t_fh.RasterCount <= len(pre_init):
-            for i in range(t_fh.RasterCount):
-                t_fh.GetRasterBand(i+1).Fill( pre_init[i] )
-        elif len(pre_init) == 1:
-            for i in range(t_fh.RasterCount):
-                t_fh.GetRasterBand(i+1).Fill( pre_init[0] )
+        for i in range(t_fh.RasterCount):
+            t_fh.GetRasterBand(i+1).Fill( pre_init )
 
     # Copy data from source files into output file.
     t_band = 1
-
-    if quiet == 0 and verbose == 0:
-        gdal.TermProgress( 0.0 )
-    fi_processed = 0
-    
     for fi in file_infos:
         if createonly != 0:
             continue
         
         if verbose != 0:
-            print("")
-            print("Processing file %5d of %5d, %6.3f%% completed." \
-                  % (fi_processed+1,len(file_infos),
-                     fi_processed * 100.0 / len(file_infos)) )
+            print
             fi.report()
 
         if separate == 0 :
@@ -461,12 +429,5 @@ def main( argv=None ):
             fi.copy_into( t_fh, 1, t_band, nodata )
             t_band = t_band+1
             
-        fi_processed = fi_processed+1
-        if quiet == 0 and verbose == 0:
-            gdal.TermProgress( fi_processed / float(len(file_infos))  )
-    
     # Force file to be closed.
     t_fh = None
-
-if __name__ == '__main__':
-    sys.exit(main())

@@ -18,7 +18,7 @@ OBJ	=	gdalopeninfo.o gdaldrivermanager.o gdaldriver.o gdaldataset.o \
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) $(PAM_SETTING)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	$(RM) *.o
@@ -26,11 +26,11 @@ clean:
 docs:	
 	(cd ..; $(MAKE) docs)
 
-gdal_misc.$(OBJ_EXT):	gdal_misc.cpp gdal_version.h
+gdal_misc.o:	gdal_misc.cpp gdal_version.h
 
-gdaldrivermanager.$(OBJ_EXT):	gdaldrivermanager.cpp ../GDALmake.opt
+gdaldrivermanager.o:	gdaldrivermanager.cpp ../GDALmake.opt
 	$(CXX) -c $(GDAL_INCLUDE) $(CXXFLAGS) -DINST_DATA=\"$(INST_DATA)\" \
-		$< -o $@
+		$*.cpp -o $*.o
 
 install:
 	for f in *.h ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_INCLUDE) ; done

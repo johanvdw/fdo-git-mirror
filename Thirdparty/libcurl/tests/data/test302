@@ -1,14 +1,4 @@
 <testcase>
-<info>
-<keywords>
-HTTPS
-HTTP GET
-HTTP CONNECT
-HTTP proxy
-FAILURE
-</keywords>
-</info>
-
 # Client-side
 <client>
 <features>

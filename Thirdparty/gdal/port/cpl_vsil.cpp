@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil.cpp 18725 2010-02-04 21:02:19Z rouault $
+ * $Id: cpl_vsil.cpp 15344 2008-09-08 18:02:47Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation VSI*L File API and other file system access
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: cpl_vsil.cpp 18725 2010-02-04 21:02:19Z rouault $");
+CPL_CVSID("$Id: cpl_vsil.cpp 15344 2008-09-08 18:02:47Z rouault $");
 
 /************************************************************************/
 /*                             VSIReadDir()                             */
@@ -226,18 +226,6 @@ int VSIRmdir( const char * pszDirname )
 int VSIStatL( const char * pszFilename, VSIStatBufL *psStatBuf )
 
 {
-    char    szAltPath[4];
-    /* enable to work on "C:" as if it were "C:\" */
-    if( strlen(pszFilename) == 2 && pszFilename[1] == ':' )
-    {
-        szAltPath[0] = pszFilename[0];
-        szAltPath[1] = pszFilename[1];
-        szAltPath[2] = '\\';
-        szAltPath[3] = '\0';
-
-        pszFilename = szAltPath;
-    }
-
     VSIFilesystemHandler *poFSHandler = 
         VSIFileManager::GetHandler( pszFilename );
 
@@ -275,12 +263,8 @@ FILE *VSIFOpenL( const char * pszFilename, const char * pszAccess )
 {
     VSIFilesystemHandler *poFSHandler = 
         VSIFileManager::GetHandler( pszFilename );
-        
-    FILE* fp = (FILE *) poFSHandler->Open( pszFilename, pszAccess );
 
-    VSIDebug3( "VSIFOpenL(%s,%s) = %p", pszFilename, pszAccess, fp );
-        
-    return fp;
+    return (FILE *) poFSHandler->Open( pszFilename, pszAccess );
 }
 
 /************************************************************************/
@@ -306,9 +290,6 @@ int VSIFCloseL( FILE * fp )
 
 {
     VSIVirtualHandle *poFileHandle = (VSIVirtualHandle *) fp;
-    
-    VSIDebug1( "VSICloseL(%p)", fp );
-    
     int nResult = poFileHandle->Close();
     
     delete poFileHandle;
@@ -602,13 +583,11 @@ VSIFileManager *VSIFileManager::Get()
     {
         poManager = new VSIFileManager;
         VSIInstallLargeFileHandler();
-        VSIInstallSubFileHandler();
         VSIInstallMemFileHandler();
 #ifdef HAVE_LIBZ
         VSIInstallGZipFileHandler();
         VSIInstallZipFileHandler();
 #endif
-        VSIInstallStdoutHandler();
     }
     
     return poManager;

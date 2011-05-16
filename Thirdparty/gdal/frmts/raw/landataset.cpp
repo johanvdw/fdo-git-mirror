@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: landataset.cpp 17117 2009-05-25 19:26:01Z warmerdam $
+ * $Id: landataset.cpp 15813 2008-11-25 21:12:15Z warmerdam $
  *
  * Project:  eCognition
  * Purpose:  Implementation of Erdas .LAN / .GIS format.
@@ -29,9 +29,8 @@
 
 #include "rawdataset.h"
 #include "cpl_string.h"
-#include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: landataset.cpp 17117 2009-05-25 19:26:01Z warmerdam $");
+CPL_CVSID("$Id: landataset.cpp 15813 2008-11-25 21:12:15Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_LAN(void);
@@ -444,13 +443,6 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
 
     nBandCount = *((GInt16 *) (poDS->pachHeader + 8));
 
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize) ||
-        !GDALCheckBandCount(nBandCount, FALSE))
-    {
-        delete poDS;
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
@@ -471,16 +463,16 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->CheckForStatistics();
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
 /* -------------------------------------------------------------------- */
 /*      Try to interprete georeferencing.                               */
@@ -515,7 +507,7 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( nCoordSys == 0 )
     {
-        poDS->pszProjection = CPLStrdup(SRS_WKT_WGS84);
+        poDS->pszProjection = CPLStrdup("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]");
             
     }
     else if( nCoordSys == 1 )
@@ -587,31 +579,26 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
 CPLErr LANDataset::GetGeoTransform( double * padfTransform )
 
 {
-    if( adfGeoTransform[1] != 0.0 && adfGeoTransform[5] != 0.0 )
+    if( adfGeoTransform[1] == 0.0 || adfGeoTransform[5] == 0.0 )
+        return CE_Failure;
+    else
     {
         memcpy( padfTransform, adfGeoTransform, sizeof(double)*6 );
         return CE_None;
     }
-    else
-        return GDALPamDataset::GetGeoTransform( padfTransform );
 }
 
 /************************************************************************/
 /*                          GetProjectionRef()                          */
-/*                                                                      */
-/*      Use PAM coordinate system if available in preference to the     */
-/*      generally poor value derived from the file itself.              */
 /************************************************************************/
 
 const char *LANDataset::GetProjectionRef()
 
 {
-    const char* pszPamPrj = GDALPamDataset::GetProjectionRef();
-
-    if( pszProjection != NULL && strlen(pszPamPrj) == 0 )
-        return pszProjection;
+    if( pszProjection == NULL )
+        return "";
     else
-        return pszPamPrj;
+        return pszProjection;
 }
 
 /************************************************************************/

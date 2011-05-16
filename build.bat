@@ -33,6 +33,7 @@ SET ODBCENABLE=yes
 SET MYSQLENABLE=yes
 SET GDALENABLE=yes
 SET OGRENABLE=yes
+SET POSTGISENABLE=yes
 SET POSTGESQLENABLE=yes
 SET KINGORACLEENABLE=yes
 SET SQLSPATIALENABLE=yes
@@ -86,6 +87,7 @@ if "%DEFMODIFY%"=="yes" goto stp1_get_with
 	SET FDOENABLE=no
 	SET GDALENABLE=no
 	SET OGRENABLE=no
+	SET POSTGISENABLE=no
 	SET KINGORACLEENABLE=no
 	SET SQLSPATIALENABLE=no
 	SET POSTGESQLENABLE=no
@@ -122,8 +124,12 @@ if not "%2"=="gdal" goto stp9_get_with
 	SET GDALENABLE=yes
 	goto next_param
 :stp9_get_with
-if not "%2"=="ogr" goto stp11_get_with
+if not "%2"=="ogr" goto stp10_get_with
 	SET OGRENABLE=yes
+	goto next_param
+:stp10_get_with
+if not "%2"=="postgis" goto stp11_get_with
+	SET POSTGISENABLE=yes
 	goto next_param
 :stp11_get_with
 if not "%2"=="kingoracle" goto stp12_get_with
@@ -157,6 +163,7 @@ if not "%2"=="providers" goto stp17_get_with
 	SET MYSQLENABLE=yes
 	SET GDALENABLE=yes
 	SET OGRENABLE=yes
+	SET POSTGISENABLE=yes
 	SET POSTGESQLENABLE=yes
 	SET KINGORACLEENABLE=yes
 	SET SQLSPATIALENABLE=yes
@@ -174,6 +181,7 @@ if not "%2"=="all" goto custom_error
 	SET FDOENABLE=yes
 	SET GDALENABLE=yes
 	SET OGRENABLE=yes
+	SET POSTGISENABLE=yes
 	SET POSTGESQLENABLE=yes
 	SET KINGORACLEENABLE=yes
 	SET SQLSPATIALENABLE=yes
@@ -316,9 +324,17 @@ popd
 if "%FDOERROR%"=="1" goto error
 
 :rebuild_ogr
-if "%OGRENABLE%"=="no" goto rebuild_kingoracle
-if not exist Providers\OGR\build.bat goto rebuild_kingoracle
+if "%OGRENABLE%"=="no" goto rebuild_postgis
+if not exist Providers\OGR\build.bat goto rebuild_postgis
 pushd Providers\OGR
+call build.bat %PROVCALLCMDEXPLTFRM%
+popd
+if "%FDOERROR%"=="1" goto error
+
+:rebuild_postgis
+if "%POSTGISENABLE%"=="no" goto rebuild_kingoracle
+if not exist Providers\PostGIS\build.bat goto rebuild_kingoracle
+pushd Providers\PostGIS
 call build.bat %PROVCALLCMDEXPLTFRM%
 popd
 if "%FDOERROR%"=="1" goto error
@@ -415,8 +431,11 @@ echo                                mysql,
 if not exist Providers\GDAL\build.bat goto ogr_check
 echo                                gdal,
 :ogr_check
-if not exist Providers\OGR\build.bat goto kingoracle_check
+if not exist Providers\OGR\build.bat goto postgis_check
 echo                                ogr,
+:postgis_check
+if not exist Providers\PostGIS\build.bat goto kingoracle_check
+echo                                postgis,
 :kingoracle_check
 if not exist Providers\KingOracle\build.bat goto sqlspatial_check
 echo                                kingoracle,

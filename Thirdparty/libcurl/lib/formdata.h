@@ -1,5 +1,6 @@
-#ifndef HEADER_CURL_FORMDATA_H
-#define HEADER_CURL_FORMDATA_H
+#ifndef __FORMDATA_H
+#define __FORMDATA_H
+
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +8,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,16 +21,14 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: formdata.h,v 1.29 2009-09-17 14:23:27 yangtse Exp $
+ * $Id: formdata.h,v 1.26 2007-01-27 03:43:06 yangtse Exp $
  ***************************************************************************/
 
 enum formtype {
   FORM_DATA,    /* form metadata (convert to network encoding if necessary) */
   FORM_CONTENT, /* form content  (never convert) */
-  FORM_CALLBACK, /* 'line' points to the custom pointer we pass to the callback
-                  */
-  FORM_FILE     /* 'line' points to a file name we should read from
-                   to create the form data (never convert) */
+  FORM_FILE     /* 'line' points to a file name we should read from 
+                    to create the form data (never convert) */
 };
 
 /* plain and simple linked list with lines to send */
@@ -45,7 +44,6 @@ struct Form {
   size_t sent;           /* number of bytes of the current line that has
                             already been sent in a previous invoke */
   FILE *fp;              /* file to read from */
-  curl_read_callback fread_func; /* fread callback pointer */
 };
 
 /* used by FormAdd for temporary storage */
@@ -64,7 +62,6 @@ typedef struct FormInfo {
   char *showfilename; /* The file name to show. If not set, the actual
                          file name will be used */
   bool showfilename_alloc;
-  char *userp;        /* pointer for the read callback */
   struct curl_slist* contentheader;
   struct FormInfo *more;
 } FormInfo;
@@ -96,4 +93,5 @@ void Curl_formclean(struct FormData **);
 
 CURLcode Curl_formconvert(struct SessionHandle *, struct FormData *);
 
-#endif /* HEADER_CURL_FORMDATA_H */
+#endif
+

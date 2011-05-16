@@ -26,11 +26,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ****************************************************************************
- * Object Description Language (ODL) is used to encode data labels for PDS
- * and other NASA data systems. Refer to Chapter 12 of "PDS Standards
- * Reference" at http://pds.jpl.nasa.gov/tools/standards-reference.shtml for
- * further details about ODL.
  ****************************************************************************/
 
 #include "cpl_string.h" 
@@ -146,7 +141,6 @@ int NASAKeywordHandler::ReadGroup( const char *pszPathPrefix )
 /*                                                                      */
 /*      Read a name/value pair from the input stream.  Strip off        */
 /*      white space, ignore comments, split on '='.                     */
-/*      Returns TRUE on success.                                        */
 /************************************************************************/
 
 int NASAKeywordHandler::ReadPair( CPLString &osName, CPLString &osValue )
@@ -242,7 +236,6 @@ int NASAKeywordHandler::ReadPair( CPLString &osName, CPLString &osValue )
 
 /************************************************************************/
 /*                              ReadWord()                              */
-/*  Returns TRUE on success                                             */
 /************************************************************************/
 
 int NASAKeywordHandler::ReadWord( CPLString &osWord )
@@ -252,63 +245,42 @@ int NASAKeywordHandler::ReadWord( CPLString &osWord )
 
     SkipWhite();
 
-    if( !(*pszHeaderNext != '\0' 
-           && *pszHeaderNext != '=' 
-           && !isspace((unsigned char)*pszHeaderNext)) )
+    if( pszHeaderNext == '\0' )
         return FALSE;
-
-    /* Extract a text string delimited by '\"' */
-    /* Convert newlines (CR or LF) within quotes. While text strings
-       support them as per ODL, the keyword list doesn't want them */
-    if( *pszHeaderNext == '"' )
-    {
-        osWord += *(pszHeaderNext++);
-        while( *pszHeaderNext != '"' )
-        {
-            if( *pszHeaderNext == '\0' )
-                return FALSE;
-            if( *pszHeaderNext == '\n' )
-            {
-                osWord += "\\n";
-                pszHeaderNext++;
-                continue;
-            }
-            if( *pszHeaderNext == '\r' )
-            {
-                osWord += "\\r";
-                pszHeaderNext++;
-                continue;
-            }
-            osWord += *(pszHeaderNext++);
-        }
-        osWord += *(pszHeaderNext++);
-        return TRUE;
-    }
-    /* Extract a symbol string */
-    /* These are expected to not have
-       '\'' (delimiters),
-       format effectors (should fit on a single line) or
-       control characters.  */
-    if( *pszHeaderNext == '\'' )
-    {
-        osWord += *(pszHeaderNext++);
-        while( *pszHeaderNext != '\'' )
-        {
-            if( *pszHeaderNext == '\0' )
-                return FALSE;
-
-            osWord += *(pszHeaderNext++);
-        }
-        osWord += *(pszHeaderNext++);
-        return TRUE;
-    }
 
     while( *pszHeaderNext != '\0' 
            && *pszHeaderNext != '=' 
-           && !isspace((unsigned char)*pszHeaderNext) )
+           && !isspace(*pszHeaderNext) )
     {
-        osWord += *pszHeaderNext;
-        pszHeaderNext++;
+        if( *pszHeaderNext == '"' )
+        {
+            osWord += *(pszHeaderNext++);
+            while( *pszHeaderNext != '"' )
+            {
+                if( *pszHeaderNext == '\0' )
+                    return FALSE;
+
+                osWord += *(pszHeaderNext++);
+            }
+            osWord += *(pszHeaderNext++);
+        }
+        else if( *pszHeaderNext == '\'' )
+        {
+            osWord += *(pszHeaderNext++);
+            while( *pszHeaderNext != '\'' )
+            {
+                if( *pszHeaderNext == '\0' )
+                    return FALSE;
+
+                osWord += *(pszHeaderNext++);
+            }
+            osWord += *(pszHeaderNext++);
+        }
+        else
+        {
+            osWord += *pszHeaderNext;
+            pszHeaderNext++;
+        }
     }
     
     return TRUE;
@@ -316,7 +288,6 @@ int NASAKeywordHandler::ReadWord( CPLString &osWord )
 
 /************************************************************************/
 /*                             SkipWhite()                              */
-/*  Skip white spaces and C style comments                              */
 /************************************************************************/
 
 void NASAKeywordHandler::SkipWhite()
@@ -324,6 +295,13 @@ void NASAKeywordHandler::SkipWhite()
 {
     for( ; TRUE; )
     {
+        // Skip white space (newline, space, tab, etc )
+        if( isspace( *pszHeaderNext ) )
+        {
+            pszHeaderNext++; 
+            continue;
+        }
+        
         // Skip C style comments 
         if( *pszHeaderNext == '/' && pszHeaderNext[1] == '*' )
         {
@@ -341,11 +319,9 @@ void NASAKeywordHandler::SkipWhite()
         }
 
         // Skip # style comments 
-         if( (*pszHeaderNext == 10 || *pszHeaderNext == 13 ||
- 	     *pszHeaderNext == ' ' || *pszHeaderNext == '\t' )
-              && pszHeaderNext[1] == '#' )
+        if( *pszHeaderNext == '#'  )
         {
-            pszHeaderNext += 2;
+            pszHeaderNext += 1;
 
             // consume till end of line.
             while( *pszHeaderNext != '\0' 
@@ -357,13 +333,6 @@ void NASAKeywordHandler::SkipWhite()
             continue;
         }
 
-        // Skip white space (newline, space, tab, etc )
-        if( isspace( (unsigned char)*pszHeaderNext ) )
-        {
-            pszHeaderNext++; 
-            continue;
-        }
-        
         // not white space, return. 
         return;
     }

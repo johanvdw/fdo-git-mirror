@@ -30,24 +30,12 @@ class FdoWmsDelegate : public FdoOwsDelegate
 {
 protected:
     FdoWmsDelegate();
-    /// 
-    /// Create the WMS delegate with proxy server setting. By default, no proxy server is used.
-    /// 
-    FdoWmsDelegate(
-        FdoString* defaultUrl, 
-        FdoString* userName,
-        FdoString* passwd, 
-		FdoString* proxyHost = NULL, 
-		FdoString* proxyPort = NULL, 
-		FdoString* proxyUsername = NULL,
-        FdoString* proxyPassword = NULL
-        );
+    FdoWmsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);
     virtual ~FdoWmsDelegate();
     virtual void Dispose();
 
 public:
     static FdoWmsDelegate* Create(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);
-    static FdoWmsDelegate* Create(FdoString* defaultUrl, FdoString* userName, FdoString* passwd, FdoString* proxy_location, FdoString* proxy_port, FdoString* proxy_user, FdoString* proxy_password);
 
 public:
     FdoWmsServiceMetadata* GetServiceMetadata(FdoString* pVersion);
@@ -62,27 +50,7 @@ public:
 		FdoString* backgroundColor,
 		FdoString* timeDimension,
 		FdoString* elevation,
-		FdoString* version,
-		FdoString* exceptionFormat);
-
-	FdoIoStream* GetFeatureInfo(
-        FdoStringCollection* layerNames,
-        FdoStringCollection* styleNames,
-        FdoWmsBoundingBox* bbox,
-        FdoString* imgFormat,
-        FdoSize height,
-        FdoSize width,
-        FdoBoolean bTransparent,
-        FdoString* backgroundColor,
-        FdoString* timeDimension,
-        FdoString* elevation,
-        FdoString* version,
-        FdoString* exceptionFormat,
-        FdoStringCollection* queryLayerNames, 
-        FdoString* infoFormat,
-        FdoDouble i,
-        FdoDouble j,
-        FdoInt32 featureCount = 1);
+		FdoString* version);
 };
 
 typedef FdoPtr<FdoWmsDelegate> FdoWmsDelegateP;

@@ -98,7 +98,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WMSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -182,7 +182,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WMSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -264,7 +265,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WMSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -347,7 +348,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning WMSProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\WMSProvider.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 	</Configurations>
@@ -384,7 +386,7 @@
 			<File
 				RelativePath=".\FdoWmsReverseEpsgCodes.h"
 				>
-			</File>		
+			</File>
 			<File
 				RelativePath="FdoWmsUtils.cpp"
 				>
@@ -550,14 +552,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\FdoWmsGetFeatureInfo.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureInfo.h"
-				>
-			</File>
-			<File
 				RelativePath=".\FdoWmsSelectAggregatesCommand.cpp"
 				>
 			</File>
@@ -579,6 +573,50 @@
 			</File>
 			<File
 				RelativePath=".\FdoWmsSpatialExtentsAggregateReader.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="CommandsSchema"
+			>
+			<File
+				RelativePath="FdoWmsDescribeSchemaCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="FdoWmsDescribeSchemaCommand.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsDescribeSchemaMappingCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsDescribeSchemaMappingCommand.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetFeatureClassCRSNames.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetFeatureClassCRSNames.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetFeatureClassStyles.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetFeatureClassStyles.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetImageFormats.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FdoWmsGetImageFormats.h"
 				>
 			</File>
 		</Filter>
@@ -726,14 +764,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\FdoWmsGetFeatureInfoRequest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureInfoRequest.h"
-				>
-			</File>
-			<File
 				RelativePath=".\FdoWmsGetMap.cpp"
 				>
 			</File>
@@ -806,55 +836,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Inc\WMS\IGetFeatureInfo.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Inc\WMS\IGetImageFormats.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="CommandsSchema"
-			>
-			<File
-				RelativePath="FdoWmsDescribeSchemaCommand.cpp"
-				>
-			</File>
-			<File
-				RelativePath="FdoWmsDescribeSchemaCommand.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsDescribeSchemaMappingCommand.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsDescribeSchemaMappingCommand.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureClassCRSNames.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureClassCRSNames.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureClassStyles.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetFeatureClassStyles.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetImageFormats.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FdoWmsGetImageFormats.h"
 				>
 			</File>
 		</Filter>

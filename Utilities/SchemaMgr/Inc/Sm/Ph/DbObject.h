@@ -187,14 +187,6 @@ public:
     /// Returns NULL when size is 0.
 	virtual const FdoLockType* GetLockTypes(FdoInt32& size) const;
 
-    /// Get the current polygon vertex order rule. Different geometry type may have 
-    /// different polygon vertex order rule.
-    virtual FdoPolygonVertexOrderRule GetPolygonVertexOrderRule(FdoString* propName) const;
-
-    /// Get the current polygon vertex order strictness rule. Different geometry type
-    /// may have different rule.
-    virtual FdoBoolean GetPolygonVertexOrderStrictness(FdoString* propName) const;
-
     // Returns true if the given unique key has the same columns as the primary key.
     FdoBoolean IsUkeyPkey( FdoSmPhColumnsP ukeyColumns );
 
@@ -379,24 +371,8 @@ public:
     // Load this database object's indexes from the given reader
     virtual bool CacheIndexes( FdoPtr<FdoSmPhRdIndexReader> rdr );
 
-    // Returns true if this database object's columns have been cached.
-    virtual bool ColumnsLoaded();
-
     // Returns true if this database object's indexes have been cached.
     virtual bool IndexesLoaded();
-
-    // Gets the current component bulk fetch setting
-    virtual bool GetBulkFetchComponents();
-
-    // Sets component bulk loading
-    virtual void SetBulkFetchComponents(
-        bool bulkFetchComponents
-            // false: This dbObject was cached for listing purposes only. It can 
-            // be skipped when looking for candidates for lazy loading components
-            // (e.g.: indexes, base objects)
-            // true: This dbObject was cached for component retrieval as well. It is 
-            // a candidate for lazy loading components. 
-    );
 
     // Load this object's columns from the given reader
     virtual void CacheBaseObjects( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
@@ -488,29 +464,20 @@ protected:
     void LoadColumns( FdoPtr<FdoSmPhTableColumnReader> colRdr );
 
     /// Loads objects that this object is based on, if not yet loaded. 
-    virtual void LoadBaseObjects();
+    void LoadBaseObjects();
     virtual void LoadBaseObjects( FdoPtr<FdoSmPhTableComponentReader> baseObjRdr, bool isSkipAdd = false );
 
     /// Load Primary Key if not yet loaded
     void LoadPkeys();
     void LoadPkeys( FdoPtr<FdoSmPhReader> pkeyRdr, bool isSkipAdd = false );
-    
-    // Load a primary key column from a reader.
-    virtual void LoadPkeyColumn( FdoPtr<FdoSmPhReader> pkeyRdr, FdoSmPhColumnsP pkeyColumns );
 
     /// Load Indexes if not yet loaded
     bool LoadIndexes();
     bool LoadIndexes( FdoPtr<FdoSmPhTableIndexReader> indexRdr, bool isSkipAdd );
 	
-    // Load a column from a reader into an index.
-    virtual void LoadIndexColumn( FdoPtr<FdoSmPhTableIndexReader> indexRdr, FdoPtr<FdoSmPhIndex> index );
-
     /// Load Foreign Keys if not yet loaded
     void LoadFkeys();
     void LoadFkeys( FdoPtr<FdoSmPhReader> fkeyRdr, bool isSkipAdd );
-    // Load a foreign key column from a reader.
-    virtual void LoadFkeyColumn( FdoPtr<FdoSmPhReader> fkeyRdr, FdoSmPhFkeyP fkey );
-
 
     // Create new base object group reader
     virtual FdoPtr<FdoSmPhTableComponentReader> NewTableBaseReader( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
@@ -521,7 +488,7 @@ protected:
     );
 
     /// Add an index from an index reader
-    virtual FdoPtr<FdoSmPhIndex> CreateIndex(
+    FdoPtr<FdoSmPhIndex> CreateIndex(
         FdoPtr<FdoSmPhTableIndexReader> rdr
     );
 
@@ -720,8 +687,6 @@ protected:
 
     virtual void AddPkeyColumnError(FdoStringP columnName);
 
-    virtual void AddFkeyColumnCountError(FdoStringP fkeyName);
-
     virtual void AddIndexColumnError(FdoStringP columnName);
 
     FdoSmPhColumnsP mPkeyColumns;
@@ -767,8 +732,6 @@ private:
 
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesDown;
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesUp;
-
-    bool                mBulkFetchComponents;
 
     FdoLtLockModeType   mLtMode;
     FdoLtLockModeType   mLockingMode;

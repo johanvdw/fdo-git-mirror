@@ -59,12 +59,6 @@
 /* Max buffer length */
 #define ODBCDR_MAX_BUFF_SIZE	RDBI_MSG_SIZE	
 
-/* buffer size for long varchar columns */
-#define ODBCDR_LONGVARCHAR_SIZE       16000
-
-/* buffer size for long wide varchar columns */
-#define ODBCDR_WLONGVARCHAR_SIZE      32000
-
 /*
  *  Some common ODBC error codes
  * 	These need to be converted to SQL Server
@@ -118,8 +112,6 @@ typedef enum
 #define ODBCDR_DRIVER_ORACLE_DRIVERNAME_WINDOWS_MB        "SQORA32.DLL"
 #define ODBCDR_DRIVER_ORACLE_DRIVERNAME_LINUX_MB          "libsqora.so"
 #define ODBCDR_DRIVER_SQLSERVER_DRIVERNAME_MB     "SQLSRV32.DLL"
-#define ODBCDR_DRIVER_SQLSERVER_DRIVERNAME_10_MB  "SQLNCLI10.DLL"
-#define ODBCDR_DRIVER_SQLSERVER_DRIVERNAME_11_MB  "SQLNCLI11.DLL"
 #define ODBCDR_DRIVER_SYBASE_DRIVERNAME_MB        "Adaptive Server Enterprise (ANSI)"
 #define ODBCDR_DRIVER_ACCESS_DRIVERNAME_MB        "ODBCJT32.DLL"
 #define ODBCDR_DRIVER_MYSQL_DRIVERNAME_LINUX_MB   "LIBMYODBC3.SO"

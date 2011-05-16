@@ -47,7 +47,6 @@ class OGRXPlaneAPTLayer : public OGRXPlaneLayer
     /* If it has no tower, then we pick up the coordinates of the threshold of its first found runway */
     OGRFeature*         AddFeature(const char* pszAptICAO,
                                    const char* pszAptName,
-                                   int nAPTType,
                                    double dfElevation,
                                    int bHasCoordinates = FALSE,
                                    double dfLat = 0,
@@ -216,25 +215,6 @@ class OGRXPlaneRunwayLayer : public OGRXPlaneLayer
                                    int bHasDistanceRemainingSigns);
 };
 
-
-/************************************************************************/
-/*                        OGRXPlaneStopwayLayer                         */
-/************************************************************************/
-
-
-class OGRXPlaneStopwayLayer : public OGRXPlaneLayer
-{
-  public:
-                        OGRXPlaneStopwayLayer();
-
-    OGRFeature*         AddFeature(const char* pszAptICAO,
-                                   const char* pszRwyNum,
-                                   double dfLatThreshold,
-                                   double dfLonThreshold,
-                                   double dfRunwayHeading,
-                                   double dfWidth,
-                                   double dfStopwayLength);
-};
 
 /************************************************************************/
 /*                   OGRXPlaneWaterRunwayThresholdLayer                 */
@@ -545,8 +525,6 @@ enum
     APT_RUNWAY_TAXIWAY_V_810   = 10,
     APT_TOWER                  = 14,
     APT_STARTUP_LOCATION       = 15,
-    APT_SEAPLANE_HEADER        = 16,
-    APT_HELIPORT_HEADER        = 17,
     APT_LIGHT_BEACONS          = 18,
     APT_WINDSOCKS              = 19,
     APT_TAXIWAY_SIGNS          = 20,
@@ -583,7 +561,6 @@ class OGRXPlaneAptReader : public OGRXPlaneReader
     private:
         OGRXPlaneAPTLayer*                  poAPTLayer;
         OGRXPlaneRunwayLayer*               poRunwayLayer;
-        OGRXPlaneStopwayLayer*              poStopwayLayer;
         OGRXPlaneRunwayThresholdLayer*      poRunwayThresholdLayer;
         OGRXPlaneWaterRunwayLayer*          poWaterRunwayLayer;
         OGRXPlaneWaterRunwayThresholdLayer* poWaterRunwayThresholdLayer;
@@ -605,7 +582,6 @@ class OGRXPlaneAptReader : public OGRXPlaneReader
         int       bControlTower;
         CPLString osAptICAO;
         CPLString osAptName;
-        int       nAPTType;
 
         int       bTowerFound;
         double    dfLatTower, dfLonTower;
@@ -640,16 +616,11 @@ class OGRXPlaneAptReader : public OGRXPlaneReader
         int     ParsePolygonalGeometry(OGRGeometry** ppoGeom);
         int     ParseLinearGeometry(OGRMultiLineString& multilinestring, int* pbIsValid);
 
-        static void    AddBezierCurve (OGRLineString& lineString,
+        void    AddBezierCurve (OGRLineString& lineString,
                                 double dfLatA, double dfLonA,
                                 double dfCtrPtLatA, double dfCtrPtLonA,
                                 double dfSymCtrlPtLatB, double dfSymCtrlPtLonB,
                                 double dfLatB, double dfLonB);
-        static void    AddBezierCurve (OGRLineString& lineString,
-                                double dfLatA, double dfLonA,
-                                double dfCtrPtLat, double dfCtrPtLon,
-                                double dfLatB, double dfLonB);
-
     protected:
         virtual void             Read();
 

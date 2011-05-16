@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo.c 18576 2010-01-17 22:32:24Z rouault $
+ * $Id: gdalinfo.c 15032 2008-07-25 22:12:06Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to list info about a file.
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalinfo.c 18576 2010-01-17 22:32:24Z rouault $");
+CPL_CVSID("$Id: gdalinfo.c 15032 2008-07-25 22:12:06Z warmerdam $");
 
 static int 
 GDALInfoReportCorner( GDALDatasetH hDataset, 
@@ -50,7 +50,7 @@ void Usage()
 
 {
     printf( "Usage: gdalinfo [--help-general] [-mm] [-stats] [-hist] [-nogcp] [-nomd]\n"
-            "                [-norat] [-noct] [-checksum] [-mdd domain]* datasetname\n" );
+            "                [-noct] [-checksum] [-mdd domain]* datasetname\n" );
     exit( 1 );
 }
 
@@ -68,7 +68,7 @@ int main( int argc, char ** argv )
     GDALDriverH		hDriver;
     char		**papszMetadata;
     int                 bComputeMinMax = FALSE, bSample = FALSE;
-    int                 bShowGCPs = TRUE, bShowMetadata = TRUE, bShowRAT=TRUE;
+    int                 bShowGCPs = TRUE, bShowMetadata = TRUE ;
     int                 bStats = FALSE, bApproxStats = TRUE, iMDD;
     int                 bShowColorTable = TRUE, bComputeChecksum = FALSE;
     int                 bReportHistograms = FALSE;
@@ -84,20 +84,6 @@ int main( int argc, char ** argv )
         fprintf(stderr, "At least, GDAL >= 1.5.0 is required for this version of %s, "
                 "which was compiled against GDAL %s\n", argv[0], GDAL_RELEASE_NAME);
         exit(1);
-    }
-
-
-    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
-    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
-    /* for the --format or --formats options */
-    for( i = 1; i < argc; i++ )
-    {
-        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
-        {
-            CPLSetConfigOption( argv[i+1], argv[i+2] );
-
-            i += 2;
-        }
     }
 
     GDALAllRegister();
@@ -139,8 +125,6 @@ int main( int argc, char ** argv )
             bShowGCPs = FALSE;
         else if( EQUAL(argv[i], "-nomd") )
             bShowMetadata = FALSE;
-        else if( EQUAL(argv[i], "-norat") )
-            bShowRAT = FALSE;
         else if( EQUAL(argv[i], "-noct") )
             bShowColorTable = FALSE;
         else if( EQUAL(argv[i], "-mdd") && i < argc-1 )
@@ -260,29 +244,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
     if( bShowGCPs && GDALGetGCPCount( hDataset ) > 0 )
     {
-        if (GDALGetGCPProjection(hDataset) != NULL)
-        {
-            OGRSpatialReferenceH  hSRS;
-            char		      *pszProjection;
-
-            pszProjection = (char *) GDALGetGCPProjection( hDataset );
-
-            hSRS = OSRNewSpatialReference(NULL);
-            if( OSRImportFromWkt( hSRS, &pszProjection ) == CE_None )
-            {
-                char	*pszPrettyWkt = NULL;
-
-                OSRExportToPrettyWkt( hSRS, &pszPrettyWkt, FALSE );
-                printf( "GCP Projection = \n%s\n", pszPrettyWkt );
-                CPLFree( pszPrettyWkt );
-            }
-            else
-                printf( "GCP Projection = %s\n",
-                        GDALGetGCPProjection( hDataset ) );
-
-            OSRDestroySpatialReference( hSRS );
-        }
-
+        printf( "GCP Projection = %s\n", GDALGetGCPProjection(hDataset) );
         for( i = 0; i < GDALGetGCPCount(hDataset); i++ )
         {
             const GDAL_GCP	*psGCP;
@@ -300,7 +262,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Report metadata.                                                */
 /* -------------------------------------------------------------------- */
-    papszMetadata = (bShowMetadata) ? GDALGetMetadata( hDataset, NULL ) : NULL;
+    papszMetadata = GDALGetMetadata( hDataset, NULL );
     if( bShowMetadata && CSLCount(papszMetadata) > 0 )
     {
         printf( "Metadata:\n" );
@@ -310,10 +272,10 @@ int main( int argc, char ** argv )
         }
     }
 
-    for( iMDD = 0; bShowMetadata && iMDD < CSLCount(papszExtraMDDomains); iMDD++ )
+    for( iMDD = 0; iMDD < CSLCount(papszExtraMDDomains); iMDD++ )
     {
         papszMetadata = GDALGetMetadata( hDataset, papszExtraMDDomains[iMDD] );
-        if( CSLCount(papszMetadata) > 0 )
+        if( bShowMetadata && CSLCount(papszMetadata) > 0 )
         {
             printf( "Metadata (%s):\n", papszExtraMDDomains[iMDD]);
             for( i = 0; papszMetadata[i] != NULL; i++ )
@@ -326,7 +288,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Report "IMAGE_STRUCTURE" metadata.                              */
 /* -------------------------------------------------------------------- */
-    papszMetadata = (bShowMetadata) ? GDALGetMetadata( hDataset, "IMAGE_STRUCTURE" ) : NULL;
+    papszMetadata = GDALGetMetadata( hDataset, "IMAGE_STRUCTURE" );
     if( bShowMetadata && CSLCount(papszMetadata) > 0 )
     {
         printf( "Image Structure Metadata:\n" );
@@ -352,8 +314,8 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Report geolocation.                                             */
 /* -------------------------------------------------------------------- */
-    papszMetadata = (bShowMetadata) ? GDALGetMetadata( hDataset, "GEOLOCATION" ) : NULL;
-    if( bShowMetadata && CSLCount(papszMetadata) > 0 )
+    papszMetadata = GDALGetMetadata( hDataset, "GEOLOCATION" );
+    if( CSLCount(papszMetadata) > 0 )
     {
         printf( "Geolocation:\n" );
         for( i = 0; papszMetadata[i] != NULL; i++ )
@@ -365,8 +327,8 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Report RPCs                                                     */
 /* -------------------------------------------------------------------- */
-    papszMetadata = (bShowMetadata) ? GDALGetMetadata( hDataset, "RPC" ) : NULL;
-    if( bShowMetadata && CSLCount(papszMetadata) > 0 )
+    papszMetadata = GDALGetMetadata( hDataset, "RPC" );
+    if( CSLCount(papszMetadata) > 0 )
     {
         printf( "RPC Metadata:\n" );
         for( i = 0; papszMetadata[i] != NULL; i++ )
@@ -472,13 +434,9 @@ int main( int argc, char ** argv )
         
             if( bComputeMinMax )
             {
-                CPLErrorReset();
                 GDALComputeRasterMinMax( hBand, FALSE, adfCMinMax );
-                if (CPLGetLastErrorType() == CE_None)
-                {
-                  printf( "  Computed Min/Max=%.3f,%.3f", 
-                          adfCMinMax[0], adfCMinMax[1] );
-                }
+                printf( "  Computed Min/Max=%.3f,%.3f", 
+                        adfCMinMax[0], adfCMinMax[1] );
             }
 
             printf( "\n" );
@@ -643,7 +601,7 @@ int main( int argc, char ** argv )
                     GDALGetRasterOffset( hBand, &bSuccess ),
                     GDALGetRasterScale( hBand, &bSuccess ) );
 
-        papszMetadata = (bShowMetadata) ? GDALGetMetadata( hBand, NULL ) : NULL;
+        papszMetadata = GDALGetMetadata( hBand, NULL );
         if( bShowMetadata && CSLCount(papszMetadata) > 0 )
         {
             printf( "  Metadata:\n" );
@@ -653,7 +611,7 @@ int main( int argc, char ** argv )
             }
         }
 
-        papszMetadata = (bShowMetadata) ? GDALGetMetadata( hBand, "IMAGE_STRUCTURE" ) : NULL;
+        papszMetadata = GDALGetMetadata( hBand, "IMAGE_STRUCTURE" );
         if( bShowMetadata && CSLCount(papszMetadata) > 0 )
         {
             printf( "  Image Structure Metadata:\n" );
@@ -690,7 +648,7 @@ int main( int argc, char ** argv )
             }
         }
 
-        if( bShowRAT && GDALGetDefaultRAT( hBand ) != NULL )
+        if( bShowMetadata && GDALGetDefaultRAT( hBand ) != NULL )
         {
             GDALRasterAttributeTableH hRAT = GDALGetDefaultRAT( hBand );
             
@@ -774,3 +732,4 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
 
     return TRUE;
 }
+

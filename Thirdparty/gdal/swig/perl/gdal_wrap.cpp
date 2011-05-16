@@ -1519,7 +1519,6 @@ using namespace std;
 
 #include "cpl_port.h"
 #include "cpl_string.h"
-#include "cpl_multiproc.h"
 
 #include "gdal.h"
 #include "gdal_priv.h"
@@ -1689,12 +1688,15 @@ typedef void OGRLayerShadow;
 
 
   void Debug( const char *msg_class, const char *message ) {
-    CPLDebug( msg_class, "%s", message );
+    CPLDebug( msg_class, message );
+  }
+  void Error( CPLErr msg_class = CE_Failure, int err_code = 0, const char* msg = "error" ) {
+    CPLError( msg_class, err_code, msg );
   }
 
-  CPLErr PushErrorHandler( char const * pszCallbackName = NULL ) {
+  CPLErr PushErrorHandler( char const * pszCallbackName = "CPLQuietErrorHandler" ) {
     CPLErrorHandler pfnHandler = NULL;
-    if( pszCallbackName == NULL || EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
+    if( EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
       pfnHandler = CPLQuietErrorHandler;
     else if( EQUAL(pszCallbackName,"CPLDefaultErrorHandler") )
       pfnHandler = CPLDefaultErrorHandler;
@@ -1709,11 +1711,6 @@ typedef void OGRLayerShadow;
     return CE_None;
   }
 
-
-
-  void Error( CPLErr msg_class = CE_Failure, int err_code = 0, const char* msg = "error" ) {
-    CPLError( msg_class, err_code, "%s", msg );
-  }
 
 
 #include <limits.h>
@@ -1839,29 +1836,6 @@ SWIG_FromCharPtr(const char *cptr)
   return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
 }
 
-
-const char *wrapper_CPLGetConfigOption( const char * pszKey, const char * pszDefault = NULL )
-{
-    return CPLGetConfigOption( pszKey, pszDefault );
-}
-
-
-void wrapper_VSIFileFromMemBuffer( const char* pszFilename, int nBytes, const GByte *pabyData)
-{
-    GByte* pabyDataDup = (GByte*)VSIMalloc(nBytes);
-    if (pabyDataDup == NULL)
-            return;
-    memcpy(pabyDataDup, pabyData, nBytes);
-    VSIFCloseL(VSIFileFromMemBuffer(pszFilename, (GByte*) pabyDataDup, nBytes, TRUE));
-}
-
-
-
-int wrapper_HasThreadSupport()
-{
-    return strcmp(CPLGetThreadingModel(), "stub") != 0;
-}
-
 SWIGINTERN char const *GDALMajorObjectShadow_GetDescription(GDALMajorObjectShadow *self){
     return GDALGetDescription( self );
   }
@@ -1941,7 +1915,6 @@ SWIG_From_double  SWIG_PERL_DECL_ARGS_1(double value)
 }
 
 SWIGINTERN GDAL_GCP *new_GDAL_GCP(double x=0.0,double y=0.0,double z=0.0,double pixel=0.0,double line=0.0,char const *info="",char const *id=""){
-
     GDAL_GCP *self = (GDAL_GCP*) CPLMalloc( sizeof( GDAL_GCP ) );
     self->dfGCPX = x;
     self->dfGCPY = y;
@@ -1961,51 +1934,51 @@ SWIGINTERN void delete_GDAL_GCP(GDAL_GCP *self){
   }
 
 
-double GDAL_GCP_GCPX_get( GDAL_GCP *gcp ) {
-  return gcp->dfGCPX;
+double GDAL_GCP_GCPX_get( GDAL_GCP *h ) {
+  return h->dfGCPX;
 }
-void GDAL_GCP_GCPX_set( GDAL_GCP *gcp, double dfGCPX ) {
-  gcp->dfGCPX = dfGCPX;
+void GDAL_GCP_GCPX_set( GDAL_GCP *h, double val ) {
+  h->dfGCPX = val;
 }
-double GDAL_GCP_GCPY_get( GDAL_GCP *gcp ) {
-  return gcp->dfGCPY;
+double GDAL_GCP_GCPY_get( GDAL_GCP *h ) {
+  return h->dfGCPY;
 }
-void GDAL_GCP_GCPY_set( GDAL_GCP *gcp, double dfGCPY ) {
-  gcp->dfGCPY = dfGCPY;
+void GDAL_GCP_GCPY_set( GDAL_GCP *h, double val ) {
+  h->dfGCPY = val;
 }
-double GDAL_GCP_GCPZ_get( GDAL_GCP *gcp ) {
-  return gcp->dfGCPZ;
+double GDAL_GCP_GCPZ_get( GDAL_GCP *h ) {
+  return h->dfGCPZ;
 }
-void GDAL_GCP_GCPZ_set( GDAL_GCP *gcp, double dfGCPZ ) {
-  gcp->dfGCPZ = dfGCPZ;
+void GDAL_GCP_GCPZ_set( GDAL_GCP *h, double val ) {
+  h->dfGCPZ = val;
 }
-double GDAL_GCP_GCPPixel_get( GDAL_GCP *gcp ) {
-  return gcp->dfGCPPixel;
+double GDAL_GCP_GCPPixel_get( GDAL_GCP *h ) {
+  return h->dfGCPPixel;
 }
-void GDAL_GCP_GCPPixel_set( GDAL_GCP *gcp, double dfGCPPixel ) {
-  gcp->dfGCPPixel = dfGCPPixel;
+void GDAL_GCP_GCPPixel_set( GDAL_GCP *h, double val ) {
+  h->dfGCPPixel = val;
 }
-double GDAL_GCP_GCPLine_get( GDAL_GCP *gcp ) {
-  return gcp->dfGCPLine;
+double GDAL_GCP_GCPLine_get( GDAL_GCP *h ) {
+  return h->dfGCPLine;
 }
-void GDAL_GCP_GCPLine_set( GDAL_GCP *gcp, double dfGCPLine ) {
-  gcp->dfGCPLine = dfGCPLine;
+void GDAL_GCP_GCPLine_set( GDAL_GCP *h, double val ) {
+  h->dfGCPLine = val;
 }
-const char * GDAL_GCP_Info_get( GDAL_GCP *gcp ) {
-  return gcp->pszInfo;
+const char * GDAL_GCP_Info_get( GDAL_GCP *h ) {
+  return h->pszInfo;
 }
-void GDAL_GCP_Info_set( GDAL_GCP *gcp, const char * pszInfo ) {
-  if ( gcp->pszInfo ) 
-    CPLFree( gcp->pszInfo );
-  gcp->pszInfo = CPLStrdup(pszInfo);
+void GDAL_GCP_Info_set( GDAL_GCP *h, const char * val ) {
+  if ( h->pszInfo ) 
+    CPLFree( h->pszInfo );
+  h->pszInfo = CPLStrdup(val);
 }
-const char * GDAL_GCP_Id_get( GDAL_GCP *gcp ) {
-  return gcp->pszId;
+const char * GDAL_GCP_Id_get( GDAL_GCP *h ) {
+  return h->pszId;
 }
-void GDAL_GCP_Id_set( GDAL_GCP *gcp, const char * pszId ) {
-  if ( gcp->pszId ) 
-    CPLFree( gcp->pszId );
-  gcp->pszId = CPLStrdup(pszId);
+void GDAL_GCP_Id_set( GDAL_GCP *h, const char * val ) {
+  if ( h->pszId ) 
+    CPLFree( h->pszId );
+  h->pszId = CPLStrdup(val);
 }
 
 
@@ -2013,51 +1986,51 @@ void GDAL_GCP_Id_set( GDAL_GCP *gcp, const char * pszId ) {
 /* Duplicate, but transposed names for C# because 
 *  the C# module outputs backwards names
 */
-double GDAL_GCP_get_GCPX( GDAL_GCP *gcp ) {
-  return gcp->dfGCPX;
+double GDAL_GCP_get_GCPX( GDAL_GCP *h ) {
+  return h->dfGCPX;
 }
-void GDAL_GCP_set_GCPX( GDAL_GCP *gcp, double dfGCPX ) {
-  gcp->dfGCPX = dfGCPX;
+void GDAL_GCP_set_GCPX( GDAL_GCP *h, double val ) {
+  h->dfGCPX = val;
 }
-double GDAL_GCP_get_GCPY( GDAL_GCP *gcp ) {
-  return gcp->dfGCPY;
+double GDAL_GCP_get_GCPY( GDAL_GCP *h ) {
+  return h->dfGCPY;
 }
-void GDAL_GCP_set_GCPY( GDAL_GCP *gcp, double dfGCPY ) {
-  gcp->dfGCPY = dfGCPY;
+void GDAL_GCP_set_GCPY( GDAL_GCP *h, double val ) {
+  h->dfGCPY = val;
 }
-double GDAL_GCP_get_GCPZ( GDAL_GCP *gcp ) {
-  return gcp->dfGCPZ;
+double GDAL_GCP_get_GCPZ( GDAL_GCP *h ) {
+  return h->dfGCPZ;
 }
-void GDAL_GCP_set_GCPZ( GDAL_GCP *gcp, double dfGCPZ ) {
-  gcp->dfGCPZ = dfGCPZ;
+void GDAL_GCP_set_GCPZ( GDAL_GCP *h, double val ) {
+  h->dfGCPZ = val;
 }
-double GDAL_GCP_get_GCPPixel( GDAL_GCP *gcp ) {
-  return gcp->dfGCPPixel;
+double GDAL_GCP_get_GCPPixel( GDAL_GCP *h ) {
+  return h->dfGCPPixel;
 }
-void GDAL_GCP_set_GCPPixel( GDAL_GCP *gcp, double dfGCPPixel ) {
-  gcp->dfGCPPixel = dfGCPPixel;
+void GDAL_GCP_set_GCPPixel( GDAL_GCP *h, double val ) {
+  h->dfGCPPixel = val;
 }
-double GDAL_GCP_get_GCPLine( GDAL_GCP *gcp ) {
-  return gcp->dfGCPLine;
+double GDAL_GCP_get_GCPLine( GDAL_GCP *h ) {
+  return h->dfGCPLine;
 }
-void GDAL_GCP_set_GCPLine( GDAL_GCP *gcp, double dfGCPLine ) {
-  gcp->dfGCPLine = dfGCPLine;
+void GDAL_GCP_set_GCPLine( GDAL_GCP *h, double val ) {
+  h->dfGCPLine = val;
 }
-const char * GDAL_GCP_get_Info( GDAL_GCP *gcp ) {
-  return gcp->pszInfo;
+const char * GDAL_GCP_get_Info( GDAL_GCP *h ) {
+  return h->pszInfo;
 }
-void GDAL_GCP_set_Info( GDAL_GCP *gcp, const char * pszInfo ) {
-  if ( gcp->pszInfo ) 
-    CPLFree( gcp->pszInfo );
-  gcp->pszInfo = CPLStrdup(pszInfo);
+void GDAL_GCP_set_Info( GDAL_GCP *h, const char * val ) {
+  if ( h->pszInfo ) 
+    CPLFree( h->pszInfo );
+  h->pszInfo = CPLStrdup(val);
 }
-const char * GDAL_GCP_get_Id( GDAL_GCP *gcp ) {
-  return gcp->pszId;
+const char * GDAL_GCP_get_Id( GDAL_GCP *h ) {
+  return h->pszId;
 }
-void GDAL_GCP_set_Id( GDAL_GCP *gcp, const char * pszId ) {
-  if ( gcp->pszId ) 
-    CPLFree( gcp->pszId );
-  gcp->pszId = CPLStrdup(pszId);
+void GDAL_GCP_set_Id( GDAL_GCP *h, const char * val ) {
+  if ( h->pszId ) 
+    CPLFree( h->pszId );
+  h->pszId = CPLStrdup(val);
 }
 
 
@@ -2073,89 +2046,6 @@ CreateArrayFromDoubleArray( double *first, unsigned int size ) {
 }
 
 
-/* Returned size is in bytes or 0 if an error occured */
-static
-int ComputeDatasetRasterIOSize (int buf_xsize, int buf_ysize, int nPixelSize,
-                                int nBands, int* bandMap, int nBandMapArrayLength,
-                                int nPixelSpace, int nLineSpace, int nBandSpace,
-                                int bSpacingShouldBeMultipleOfPixelSize )
-{
-    const int MAX_INT = 0x7fffffff;
-    if (buf_xsize <= 0 || buf_ysize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for buffer size");
-        return 0;
-    }
-
-    if (nPixelSpace < 0 || nLineSpace < 0 || nBandSpace < 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for space arguments");
-        return 0;
-    }
-
-    if (nPixelSize == 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal value for data type");
-        return 0;
-    }
-
-    if( nPixelSpace == 0 )
-        nPixelSpace = nPixelSize;
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nPixelSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nPixelSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if( nLineSpace == 0 )
-    {
-        if (nPixelSpace > MAX_INT / buf_xsize)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-            return 0;
-        }
-        nLineSpace = nPixelSpace * buf_xsize;
-    }
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nLineSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nLineSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if( nBandSpace == 0 )
-    {
-        if (nLineSpace > MAX_INT / buf_ysize)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-            return 0;
-        }
-        nBandSpace = nLineSpace * buf_ysize;
-    }
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nBandSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nLineSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if (nBands <= 0 || (bandMap != NULL && nBands > nBandMapArrayLength))
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Invalid band count");
-        return 0;
-    }
-
-    if ((buf_ysize - 1) > MAX_INT / nLineSpace ||
-        (buf_xsize - 1) > MAX_INT / nPixelSpace ||
-        (nBands - 1) > MAX_INT / nBandSpace ||
-        (buf_ysize - 1) * nLineSpace > MAX_INT - (buf_xsize - 1) * nPixelSpace ||
-        (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace > MAX_INT - (nBands - 1) * nBandSpace ||
-        (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace + (nBands - 1) * nBandSpace > MAX_INT - nPixelSize)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-        return 0;
-    }
-
-    return (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace + (nBands - 1) * nBandSpace + nPixelSize;
-}
 
 
 static
@@ -2164,26 +2054,16 @@ CPLErr DSReadRaster_internal( GDALDatasetShadow *obj,
                             int buf_xsize, int buf_ysize,
                             GDALDataType buf_type,
                             int *buf_size, char **buf,
-                            int band_list, int *pband_list,
-                            int pixel_space, int line_space, int band_space)
+                            int band_list, int *pband_list )
 {
   CPLErr result;
-  
-  *buf_size = ComputeDatasetRasterIOSize (buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8,
-                                          band_list ? band_list : GDALGetRasterCount(obj), pband_list, band_list,
-                                          pixel_space, line_space, band_space, FALSE);
-  if (*buf_size == 0)
-  {
-      *buf = 0;
-      return CE_Failure;
-  }
-  
-  *buf = (char*) malloc( *buf_size );
+  *buf_size = (size_t)buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8) * band_list;
+  *buf = (char*) VSIMalloc3( buf_xsize, buf_ysize, (GDALGetDataTypeSize( buf_type ) / 8) * band_list );
   if (*buf)
   {
     result = GDALDatasetRasterIO(obj, GF_Read, xoff, yoff, xsize, ysize,
                                     (void*) *buf, buf_xsize, buf_ysize, buf_type,
-                                    band_list, pband_list, pixel_space, line_space, band_space );
+                                    band_list, pband_list, 0, 0, 0 );
     if ( result != CE_None ) {
         free( *buf );
         *buf = 0;
@@ -2192,7 +2072,6 @@ CPLErr DSReadRaster_internal( GDALDatasetShadow *obj,
   }
   else
   {
-    CPLError(CE_Failure, CPLE_OutOfMemory, "Not enough memory to allocate %d bytes", *buf_size);
     result = CE_Failure;
     *buf = 0;
     *buf_size = 0;
@@ -2234,9 +2113,9 @@ SWIGINTERN CPLErr GDALDatasetShadow_SetGeoTransform(GDALDatasetShadow *self,doub
     return GDALSetGeoTransform( self, argin );
   }
 SWIGINTERN int GDALDatasetShadow_BuildOverviews(GDALDatasetShadow *self,char const *resampling="NEAREST",int overviewlist=0,int *pOverviews=0,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-
+                      
     return GDALBuildOverviews(  self, 
-                                resampling ? resampling : "NEAREST", 
+                                resampling, 
                                 overviewlist, 
                                 pOverviews, 
                                 0, 
@@ -2269,8 +2148,7 @@ SWIGINTERN CPLErr GDALDatasetShadow_CreateMaskBand(GDALDatasetShadow *self,int n
 SWIGINTERN char **GDALDatasetShadow_GetFileList(GDALDatasetShadow *self){
     return GDALGetFileList( self );
   }
-SWIGINTERN CPLErr GDALDatasetShadow_WriteRaster(GDALDatasetShadow *self,int xoff,int yoff,int xsize,int ysize,int buf_len,char *buf_string,int *buf_xsize=0,int *buf_ysize=0,GDALDataType *buf_type=0,int band_list=0,int *pband_list=0,int *buf_pixel_space=0,int *buf_line_space=0,int *buf_band_space=0){
-    CPLErr eErr;
+SWIGINTERN CPLErr GDALDatasetShadow_WriteRaster(GDALDatasetShadow *self,int xoff,int yoff,int xsize,int ysize,int buf_len,char *buf_string,int *buf_xsize=0,int *buf_ysize=0,GDALDataType *buf_type=0,int band_list=0,int *pband_list=0){
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype;
@@ -2278,36 +2156,33 @@ SWIGINTERN CPLErr GDALDatasetShadow_WriteRaster(GDALDatasetShadow *self,int xoff
       ntype = (GDALDataType) *buf_type;
     } else {
       int lastband = GDALGetRasterCount( self ) - 1;
-      if (lastband < 0)
-        return CE_Failure;
       ntype = GDALGetRasterDataType( GDALGetRasterBand( self, lastband ) );
     }
-
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
-    int band_space = (buf_band_space == 0) ? 0 : *buf_band_space;
-
-    int min_buffer_size =
-      ComputeDatasetRasterIOSize (nxsize, nysize, GDALGetDataTypeSize( ntype ) / 8,
-                                  band_list ? band_list : GDALGetRasterCount(self), pband_list, band_list,
-                                  pixel_space, line_space, band_space, FALSE);
-    if (min_buffer_size == 0)
-        return CE_Failure;
-
-    if ( buf_len < min_buffer_size )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Buffer too small");
-        return CE_Failure;
+    bool myBandList = false;
+    int nBandCount;
+    int *pBandList;
+    if ( band_list != 0 ) {
+      myBandList = false;
+      nBandCount = band_list;
+      pBandList = pband_list;
     }
-  
-    eErr = GDALDatasetRasterIO( self, GF_Write, xoff, yoff, xsize, ysize,
+    else {
+      myBandList = true;
+      nBandCount = GDALGetRasterCount( self );
+      pBandList = (int*) CPLMalloc( sizeof(int) * nBandCount );
+      for( int i = 0; i< nBandCount; ++i ) {
+        pBandList[i] = i;
+      }
+    }
+    return GDALDatasetRasterIO( self, GF_Write, xoff, yoff, xsize, ysize,
                                 (void*) buf_string, nxsize, nysize, ntype,
-                                band_list, pband_list, pixel_space, line_space, band_space );
-
-    return eErr;
+                                band_list, pband_list, 0, 0, 0 );
+    if ( myBandList ) {
+       CPLFree( pBandList );
+    }
   }
-SWIGINTERN CPLErr GDALDatasetShadow_ReadRaster(GDALDatasetShadow *self,int xoff,int yoff,int xsize,int ysize,int *buf_len,char **buf,int *buf_xsize=0,int *buf_ysize=0,GDALDataType *buf_type=0,int band_list=0,int *pband_list=0,int *buf_pixel_space=0,int *buf_line_space=0,int *buf_band_space=0){
-    CPLErr eErr;
+SWIGINTERN CPLErr GDALDatasetShadow_ReadRaster(GDALDatasetShadow *self,int xoff,int yoff,int xsize,int ysize,int *buf_len,char **buf,int *buf_xsize=0,int *buf_ysize=0,GDALDataType *buf_type=0,int band_list=0,int *pband_list=0){
+
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype;
@@ -2315,22 +2190,33 @@ SWIGINTERN CPLErr GDALDatasetShadow_ReadRaster(GDALDatasetShadow *self,int xoff,
       ntype = (GDALDataType) *buf_type;
     } else {
       int lastband = GDALGetRasterCount( self ) - 1;
-      if (lastband < 0)
-        return CE_Failure;
       ntype = GDALGetRasterDataType( GDALGetRasterBand( self, lastband ) );
     }
-
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
-    int band_space = (buf_band_space == 0) ? 0 : *buf_band_space;
+    bool myBandList = false;
+    int nBandCount;
+    int *pBandList;
+    if ( band_list != 0 ) {
+      myBandList = false;
+      nBandCount = band_list;
+      pBandList = pband_list;
+    }
+    else {
+      myBandList = true;
+      nBandCount = GDALGetRasterCount( self );
+      pBandList = (int*) CPLMalloc( sizeof(int) * nBandCount );
+      for( int i = 0; i< nBandCount; ++i ) {
+        pBandList[i] = i;
+      }
+    }
                             
-    eErr = DSReadRaster_internal( self, xoff, yoff, xsize, ysize,
+    return DSReadRaster_internal( self, xoff, yoff, xsize, ysize,
                                 nxsize, nysize, ntype,
                                 buf_len, buf, 
-                                band_list, pband_list,
-                                pixel_space, line_space, band_space);
+                                nBandCount, pBandList);
+    if ( myBandList ) {
+       CPLFree( pBandList );
+    }
 
-    return eErr;
 }
 
 int GDALDatasetShadow_RasterXSize_get( GDALDatasetShadow *h ) {
@@ -2344,92 +2230,21 @@ int GDALDatasetShadow_RasterCount_get( GDALDatasetShadow *h ) {
 }
 
 
-/* Returned size is in bytes or 0 if an error occured */
-static
-int ComputeBandRasterIOSize (int buf_xsize, int buf_ysize, int nPixelSize,
-                             int nPixelSpace, int nLineSpace,
-                             int bSpacingShouldBeMultipleOfPixelSize )
-{
-    const int MAX_INT = 0x7fffffff;
-    if (buf_xsize <= 0 || buf_ysize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for buffer size");
-        return 0;
-    }
-
-    if (nPixelSpace < 0 || nLineSpace < 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal values for space arguments");
-        return 0;
-    }
-
-    if (nPixelSize == 0)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Illegal value for data type");
-        return 0;
-    }
-
-    if( nPixelSpace == 0 )
-        nPixelSpace = nPixelSize;
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nPixelSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nPixelSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if( nLineSpace == 0 )
-    {
-        if (nPixelSpace > MAX_INT / buf_xsize)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-            return 0;
-        }
-        nLineSpace = nPixelSpace * buf_xsize;
-    }
-    else if ( bSpacingShouldBeMultipleOfPixelSize && (nLineSpace % nPixelSize) != 0 )
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "nLineSpace should be a multiple of nPixelSize");
-        return 0;
-    }
-
-    if ((buf_ysize - 1) > MAX_INT / nLineSpace ||
-        (buf_xsize - 1) > MAX_INT / nPixelSpace ||
-        (buf_ysize - 1) * nLineSpace > MAX_INT - (buf_xsize - 1) * nPixelSpace ||
-        (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace > MAX_INT - nPixelSize)
-    {
-        CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-        return 0;
-    }
-
-    return (buf_ysize - 1) * nLineSpace + (buf_xsize - 1) * nPixelSpace + nPixelSize;
-}
-
-
 static
 CPLErr ReadRaster_internal( GDALRasterBandShadow *obj, 
                             int xoff, int yoff, int xsize, int ysize,
                             int buf_xsize, int buf_ysize,
                             GDALDataType buf_type,
-                            int *buf_size, char **buf,
-                            int pixel_space, int line_space)
+                            int *buf_size, char **buf )
 {
   CPLErr result;
-  
-  *buf_size = ComputeBandRasterIOSize (buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8,
-                                       pixel_space, line_space, FALSE );
-  
-  if (*buf_size == 0)
-  {
-      *buf = 0;
-      return CE_Failure;
-  }
-  
-  *buf = (char*) malloc( *buf_size );
+  *buf_size = (size_t)buf_xsize * buf_ysize * (GDALGetDataTypeSize( buf_type ) / 8);
+  *buf = (char*) VSIMalloc3( buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8 );
   if (*buf)
   {
     result =  GDALRasterIO( obj, GF_Read, xoff, yoff, xsize, ysize,
                                     (void *) *buf, buf_xsize, buf_ysize,
-                                    buf_type, pixel_space, line_space );
+                                    buf_type, 0, 0 );
     if ( result != CE_None ) {
         free( *buf );
         *buf = 0;
@@ -2438,7 +2253,6 @@ CPLErr ReadRaster_internal( GDALRasterBandShadow *obj,
   }
   else
   {
-    CPLError(CE_Failure, CPLE_OutOfMemory, "Not enough memory to allocate %d bytes", *buf_size);
     result = CE_Failure;
     *buf = 0;
     *buf_size = 0;
@@ -2451,37 +2265,21 @@ CPLErr WriteRaster_internal( GDALRasterBandShadow *obj,
                              int xoff, int yoff, int xsize, int ysize,
                              int buf_xsize, int buf_ysize,
                              GDALDataType buf_type,
-                             int buf_size, char *buffer,
-                             int pixel_space, int line_space)
+                             int buf_size, char *buffer )
 {
-    int min_buffer_size = ComputeBandRasterIOSize (buf_xsize, buf_ysize, GDALGetDataTypeSize( buf_type ) / 8,
-                                                   pixel_space, line_space, FALSE );
-    if ( min_buffer_size == 0 )
-      return CE_Failure;
-      
-    if ( buf_size < min_buffer_size ) {
-      CPLError(CE_Failure, CPLE_AppDefined, "Buffer too small");
+    if ( buf_size < buf_xsize * buf_ysize * GDALGetDataTypeSize( buf_type) /8 ) {
       return CE_Failure;
     }
 
     return GDALRasterIO( obj, GF_Write, xoff, yoff, xsize, ysize, 
-		        (void *) buffer, buf_xsize, buf_ysize, buf_type, pixel_space, line_space );
+		        (void *) buffer, buf_xsize, buf_ysize, buf_type, 0, 0 );
 }
 
-SWIGINTERN int GDALRasterBandShadow_GetBand(GDALRasterBandShadow *self){
-    return GDALGetBandNumber(self);
-  }
 SWIGINTERN void GDALRasterBandShadow_GetBlockSize(GDALRasterBandShadow *self,int *pnBlockXSize,int *pnBlockYSize){
       GDALGetBlockSize(self, pnBlockXSize, pnBlockYSize);
   }
-SWIGINTERN GDALColorInterp GDALRasterBandShadow_GetColorInterpretation(GDALRasterBandShadow *self){
-    return GDALGetRasterColorInterpretation( self );
-  }
 SWIGINTERN GDALColorInterp GDALRasterBandShadow_GetRasterColorInterpretation(GDALRasterBandShadow *self){
     return GDALGetRasterColorInterpretation( self );
-  }
-SWIGINTERN CPLErr GDALRasterBandShadow_SetColorInterpretation(GDALRasterBandShadow *self,GDALColorInterp val){
-    return GDALSetRasterColorInterpretation( self, val );
   }
 SWIGINTERN CPLErr GDALRasterBandShadow_SetRasterColorInterpretation(GDALRasterBandShadow *self,GDALColorInterp val){
     return GDALSetRasterColorInterpretation( self, val );
@@ -2491,9 +2289,6 @@ SWIGINTERN void GDALRasterBandShadow_GetNoDataValue(GDALRasterBandShadow *self,d
   }
 SWIGINTERN CPLErr GDALRasterBandShadow_SetNoDataValue(GDALRasterBandShadow *self,double d){
     return GDALSetRasterNoDataValue( self, d );
-  }
-SWIGINTERN char const *GDALRasterBandShadow_GetUnitType(GDALRasterBandShadow *self){
-      return GDALGetRasterUnitType( self );
   }
 SWIGINTERN char **GDALRasterBandShadow_GetRasterCategoryNames(GDALRasterBandShadow *self){
     return GDALGetRasterCategoryNames( self );
@@ -2516,26 +2311,6 @@ SWIGINTERN void GDALRasterBandShadow_GetScale(GDALRasterBandShadow *self,double 
 SWIGINTERN CPLErr GDALRasterBandShadow_GetStatistics(GDALRasterBandShadow *self,int approx_ok,int force,double *min,double *max,double *mean,double *stddev){
     return GDALGetRasterStatistics( self, approx_ok, force, 
 				    min, max, mean, stddev );
-  }
-
-SWIGINTERN int
-SWIG_AsVal_bool SWIG_PERL_DECL_ARGS_2(SV *obj, bool* val)
-{
-  if (obj == &PL_sv_yes) {
-    if (val) *val = true;
-    return SWIG_OK;
-  } else if (obj == &PL_sv_no) { 
-    if (val) *val = false;
-    return SWIG_OK;
-  } else {
-    if (val) *val = SvTRUE(obj) ? true: false;
-    return SWIG_AddCast(SWIG_OK);    
-  }
-  return SWIG_TypeError;
-}
-
-SWIGINTERN CPLErr GDALRasterBandShadow_ComputeStatistics(GDALRasterBandShadow *self,bool approx_ok,double *min=NULL,double *max=NULL,double *mean=NULL,double *stddev=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return GDALComputeRasterStatistics( self, approx_ok, min, max, mean, stddev, callback, callback_data );
   }
 SWIGINTERN CPLErr GDALRasterBandShadow_SetStatistics(GDALRasterBandShadow *self,double min,double max,double mean,double stddev){
     return GDALSetRasterStatistics( self, min, max, mean, stddev );
@@ -2561,25 +2336,21 @@ SWIGINTERN void GDALRasterBandShadow_ComputeBandStats(GDALRasterBandShadow *self
 SWIGINTERN CPLErr GDALRasterBandShadow_Fill(GDALRasterBandShadow *self,double real_fill,double imag_fill=0.0){
     return GDALFillRaster( self, real_fill, imag_fill );
   }
-SWIGINTERN CPLErr GDALRasterBandShadow_ReadRaster(GDALRasterBandShadow *self,int xoff,int yoff,int xsize,int ysize,int *buf_len,char **buf,int *buf_xsize=0,int *buf_ysize=0,int *buf_type=0,int *buf_pixel_space=0,int *buf_line_space=0){
+SWIGINTERN CPLErr GDALRasterBandShadow_ReadRaster(GDALRasterBandShadow *self,int xoff,int yoff,int xsize,int ysize,int *buf_len,char **buf,int *buf_xsize=0,int *buf_ysize=0,int *buf_type=0){
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype  = (buf_type==0) ? GDALGetRasterDataType(self)
                                         : (GDALDataType)*buf_type;
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
     return ReadRaster_internal( self, xoff, yoff, xsize, ysize,
-                                nxsize, nysize, ntype, buf_len, buf, pixel_space, line_space );
+                                nxsize, nysize, ntype, buf_len, buf );
   }
-SWIGINTERN CPLErr GDALRasterBandShadow_WriteRaster(GDALRasterBandShadow *self,int xoff,int yoff,int xsize,int ysize,int buf_len,char *buf_string,int *buf_xsize=0,int *buf_ysize=0,int *buf_type=0,int *buf_pixel_space=0,int *buf_line_space=0){
+SWIGINTERN CPLErr GDALRasterBandShadow_WriteRaster(GDALRasterBandShadow *self,int xoff,int yoff,int xsize,int ysize,int buf_len,char *buf_string,int *buf_xsize=0,int *buf_ysize=0,int *buf_type=0){
     int nxsize = (buf_xsize==0) ? xsize : *buf_xsize;
     int nysize = (buf_ysize==0) ? ysize : *buf_ysize;
     GDALDataType ntype  = (buf_type==0) ? GDALGetRasterDataType(self)
                                         : (GDALDataType)*buf_type;
-    int pixel_space = (buf_pixel_space == 0) ? 0 : *buf_pixel_space;
-    int line_space = (buf_line_space == 0) ? 0 : *buf_line_space;
     return WriteRaster_internal( self, xoff, yoff, xsize, ysize,
-                                 nxsize, nysize, ntype, buf_len, buf_string, pixel_space, line_space );
+                                 nxsize, nysize, ntype, buf_len, buf_string );
   }
 SWIGINTERN void GDALRasterBandShadow_FlushCache(GDALRasterBandShadow *self){
     GDALFlushRasterCache( self );
@@ -2638,22 +2409,6 @@ SWIGINTERN CPLErr GDALRasterBandShadow_SetDefaultHistogram(GDALRasterBandShadow 
     return GDALSetDefaultHistogram( self, min, max, 
     	   			    buckets_in, panHistogram_in );
 }
-SWIGINTERN bool GDALRasterBandShadow_HasArbitraryOverviews(GDALRasterBandShadow *self){
-      return (GDALHasArbitraryOverviews( self ) != 0) ? true : false;
-  }
-
-SWIGINTERNINLINE SV *
-SWIG_From_bool  SWIG_PERL_DECL_ARGS_1(bool value)
-{    
-  SV *obj = sv_newmortal();
-  if (value) {
-    sv_setsv(obj, &PL_sv_yes);
-  } else {
-    sv_setsv(obj, &PL_sv_no); 
-  }
-  return obj;
-}
-
 SWIGINTERN CPLErr GDALRasterBandShadow_ContourGenerate(GDALRasterBandShadow *self,double dfContourInterval,double dfContourBase,int nFixedLevelCount,double *padfFixedLevels,int bUseNoData,double dfNoDataValue,OGRLayerShadow *hLayer,int iIDField,int iElevField,GDALProgressFunc callback=NULL,void *callback_data=NULL){
 	return GDALContourGenerate( self, dfContourInterval, dfContourBase,
 				    nFixedLevelCount, padfFixedLevels,
@@ -2751,12 +2506,6 @@ SWIGINTERN void GDALRasterAttributeTableShadow_SetRowCount(GDALRasterAttributeTa
     }
 SWIGINTERN int GDALRasterAttributeTableShadow_CreateColumn(GDALRasterAttributeTableShadow *self,char const *pszName,GDALRATFieldType eType,GDALRATFieldUsage eUsage){
         return GDALRATCreateColumn( self, pszName, eType, eUsage );
-    }
-SWIGINTERN bool GDALRasterAttributeTableShadow_GetLinearBinning(GDALRasterAttributeTableShadow *self,double *pdfRow0Min,double *pdfBinSize){
-        return (GDALRATGetLinearBinning(self, pdfRow0Min, pdfBinSize) != 0) ? true : false;
-    }
-SWIGINTERN int GDALRasterAttributeTableShadow_SetLinearBinning(GDALRasterAttributeTableShadow *self,double dfRow0Min,double dfBinSize){
-        return GDALRATSetLinearBinning(self, dfRow0Min, dfBinSize);
     }
 SWIGINTERN int GDALRasterAttributeTableShadow_GetRowOfValue(GDALRasterAttributeTableShadow *self,double dfValue){
         return GDALRATGetRowOfValue( self, dfValue );
@@ -2917,22 +2666,6 @@ int  Polygonize( GDALRasterBandShadow *srcBand,
 }
 
 
-int  FillNodata( GDALRasterBandShadow *targetBand,
-     		 GDALRasterBandShadow *maskBand,
-                 double maxSearchDist,
-                 int smoothingIterations,
-                 char **options = NULL,
-                 GDALProgressFunc callback=NULL,
-                 void* callback_data=NULL) {
-
-    CPLErrorReset();
-
-    return GDALFillNodata( targetBand, maskBand, maxSearchDist, 
-    	   		   0, smoothingIterations, options, 
-			   callback, callback_data );
-}
-
-
 int  SieveFilter( GDALRasterBandShadow *srcBand,
      		  GDALRasterBandShadow *maskBand,
   	          GDALRasterBandShadow *dstBand,
@@ -2951,14 +2684,14 @@ int  SieveFilter( GDALRasterBandShadow *srcBand,
 
 int  RegenerateOverview( GDALRasterBandShadow *srcBand,
                           GDALRasterBandShadow *overviewBand,
-                          const char *resampling = "average",
+                          char *resampling,
                           GDALProgressFunc callback=NULL,
                           void* callback_data=NULL) {
 
     CPLErrorReset();
 
     return GDALRegenerateOverviews( srcBand, 1, &overviewBand,
-    	   			    resampling ? resampling : "average", callback, callback_data );
+    	   			    resampling, callback, callback_data );
 }
 
 
@@ -3130,7 +2863,7 @@ GDALDatasetShadow* OpenShared( char const* name, GDALAccess eAccess = GA_ReadOnl
 
 
 GDALDriverShadow *IdentifyDriver( const char *pszDatasource, 
-                                  char **papszSiblings = NULL ) {
+				  char **papszSiblings = NULL ) {
     return (GDALDriverShadow *) GDALIdentifyDriver( pszDatasource, 
 	                                            papszSiblings );
 }
@@ -3313,8 +3046,6 @@ XS(_wrap_new_SavedEnv) {
         
         
         
-        
-        
       }
       
       
@@ -3358,8 +3089,6 @@ XS(_wrap_delete_SavedEnv) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3502,8 +3231,6 @@ XS(_wrap_Debug) {
         
         
         
-        
-        
       }
       
       
@@ -3524,62 +3251,6 @@ XS(_wrap_Debug) {
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_PushErrorHandler__SWIG_0) {
-  {
-    char *arg1 = (char *) NULL ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int argvi = 0;
-    CPLErr result;
-    dXSARGS;
-    
-    if ((items < 0) || (items > 1)) {
-      SWIG_croak("Usage: PushErrorHandler(pszCallbackName);");
-    }
-    if (items > 0) {
-      res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-      if (!SWIG_IsOK(res1)) {
-        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PushErrorHandler" "', argument " "1"" of type '" "char const *""'");
-      }
-      arg1 = reinterpret_cast< char * >(buf1);
-    }
-    {
-      CPLErrorReset();
-      result = (CPLErr)PushErrorHandler((char const *)arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) CPLErr */
-    }
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -3633,8 +3304,6 @@ XS(_wrap_Error) {
         
         
         
-        
-        
       }
       
       
@@ -3657,6 +3326,60 @@ XS(_wrap_Error) {
     
     
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_PushErrorHandler__SWIG_0) {
+  {
+    char *arg1 = (char *) "CPLQuietErrorHandler" ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    CPLErr result;
+    dXSARGS;
+    
+    if ((items < 0) || (items > 1)) {
+      SWIG_croak("Usage: PushErrorHandler(pszCallbackName);");
+    }
+    if (items > 0) {
+      res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PushErrorHandler" "', argument " "1"" of type '" "char const *""'");
+      }
+      arg1 = reinterpret_cast< char * >(buf1);
+    }
+    {
+      CPLErrorReset();
+      result = (CPLErr)PushErrorHandler((char const *)arg1);
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+        
+        
+        
+      }
+      
+      
+      /* 
+          Make warnings regular Perl warnings. This duplicates the warning
+          message if DontUseExceptions() is in effect (it is not by default).
+          */
+      if ( eclass == CE_Warning ) {
+        warn( CPLGetLastErrorMsg() );
+      }
+      
+      
+    }
+    {
+      /* %typemap(out) CPLErr */
+    }
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -3690,8 +3413,6 @@ XS(_wrap_PushErrorHandler__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3796,8 +3517,6 @@ XS(_wrap_PopErrorHandler) {
         
         
         
-        
-        
       }
       
       
@@ -3833,8 +3552,6 @@ XS(_wrap_ErrorReset) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3902,8 +3619,6 @@ XS(_wrap_EscapeString) {
         
         
         
-        
-        
       }
       
       
@@ -3945,8 +3660,6 @@ XS(_wrap_GetLastErrorNo) {
         
         
         
-        
-        
       }
       
       
@@ -3983,8 +3696,6 @@ XS(_wrap_GetLastErrorType) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4029,8 +3740,6 @@ XS(_wrap_GetLastErrorMsg) {
         
         
         
-        
-        
       }
       
       
@@ -4062,7 +3771,7 @@ XS(_wrap_PushFinderLocation) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: PushFinderLocation(pszLocation);");
+      SWIG_croak("Usage: PushFinderLocation(char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -4075,8 +3784,6 @@ XS(_wrap_PushFinderLocation) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4120,8 +3827,6 @@ XS(_wrap_PopFinderLocation) {
         
         
         
-        
-        
       }
       
       
@@ -4157,8 +3862,6 @@ XS(_wrap_FinderClean) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4198,7 +3901,7 @@ XS(_wrap_FindFile) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: FindFile(pszClass,pszBasename);");
+      SWIG_croak("Usage: FindFile(char const *,char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -4216,8 +3919,6 @@ XS(_wrap_FindFile) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4257,7 +3958,7 @@ XS(_wrap_ReadDir) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: ReadDir(pszDirName);");
+      SWIG_croak("Usage: ReadDir(char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -4270,8 +3971,6 @@ XS(_wrap_ReadDir) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4326,7 +4025,7 @@ XS(_wrap_SetConfigOption) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: SetConfigOption(pszKey,pszValue);");
+      SWIG_croak("Usage: SetConfigOption(char const *,char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -4339,18 +4038,11 @@ XS(_wrap_SetConfigOption) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       CPLSetConfigOption((char const *)arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4382,7 +4074,7 @@ XS(_wrap_SetConfigOption) {
 XS(_wrap_GetConfigOption) {
   {
     char *arg1 = (char *) 0 ;
-    char *arg2 = (char *) NULL ;
+    char *arg2 = (char *) 0 ;
     int res1 ;
     char *buf1 = 0 ;
     int alloc1 = 0 ;
@@ -4393,34 +4085,25 @@ XS(_wrap_GetConfigOption) {
     char *result = 0 ;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
-      SWIG_croak("Usage: GetConfigOption(pszKey,pszDefault);");
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: GetConfigOption(char const *,char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GetConfigOption" "', argument " "1"" of type '" "char const *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
-    if (items > 1) {
-      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GetConfigOption" "', argument " "2"" of type '" "char const *""'");
-      }
-      arg2 = reinterpret_cast< char * >(buf2);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GetConfigOption" "', argument " "2"" of type '" "char const *""'");
     }
-    {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
+    arg2 = reinterpret_cast< char * >(buf2);
     {
       CPLErrorReset();
-      result = (char *)wrapper_CPLGetConfigOption((char const *)arg1,(char const *)arg2);
+      result = (char *)CPLGetConfigOption((char const *)arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4480,8 +4163,6 @@ XS(_wrap_CPLBinaryToHex) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4545,8 +4226,6 @@ XS(_wrap_CPLHexToBinary) {
         
         
         
-        
-        
       }
       
       
@@ -4567,180 +4246,6 @@ XS(_wrap_CPLHexToBinary) {
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_FileFromMemBuffer) {
-  {
-    char *arg1 = (char *) 0 ;
-    int arg2 ;
-    GByte *arg3 = (GByte *) 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    void *argp3 = 0 ;
-    int res3 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: FileFromMemBuffer(pszFilename,nBytes,pabyData);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "FileFromMemBuffer" "', argument " "1"" of type '" "char const *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "FileFromMemBuffer" "', argument " "2"" of type '" "int""'");
-    } 
-    arg2 = static_cast< int >(val2);
-    res3 = SWIG_ConvertPtr(ST(2), &argp3,SWIGTYPE_p_GByte, 0 |  0 );
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "FileFromMemBuffer" "', argument " "3"" of type '" "GByte const *""'"); 
-    }
-    arg3 = reinterpret_cast< GByte * >(argp3);
-    {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      CPLErrorReset();
-      wrapper_VSIFileFromMemBuffer((char const *)arg1,arg2,(GByte const *)arg3);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    
-    
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Unlink) {
-  {
-    char *arg1 = (char *) 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: Unlink(pszFilename);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Unlink" "', argument " "1"" of type '" "char const *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      CPLErrorReset();
-      result = (int)VSIUnlink((char const *)arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_HasThreadSupport) {
-  {
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    if ((items < 0) || (items > 0)) {
-      SWIG_croak("Usage: HasThreadSupport();");
-    }
-    {
-      CPLErrorReset();
-      result = (int)wrapper_HasThreadSupport();
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    XSRETURN(argvi);
-  fail:
     SWIG_croak_null();
   }
 }
@@ -4769,8 +4274,6 @@ XS(_wrap_MajorObject_GetDescription) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4836,8 +4339,6 @@ XS(_wrap_MajorObject_SetDescription) {
         
         
         
-        
-        
       }
       
       
@@ -4897,8 +4398,6 @@ XS(_wrap_MajorObject_GetMetadata) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4995,8 +4494,6 @@ XS(_wrap_MajorObject_SetMetadata__SWIG_0) {
         
         
         
-        
-        
       }
       
       
@@ -5075,8 +4572,6 @@ XS(_wrap_MajorObject_SetMetadata__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5255,8 +4750,6 @@ XS(_wrap_MajorObject_GetMetadataItem) {
         
         
         
-        
-        
       }
       
       
@@ -5339,8 +4832,6 @@ XS(_wrap_MajorObject_SetMetadataItem) {
         
         
         
-        
-        
       }
       
       
@@ -5398,8 +4889,6 @@ XS(_wrap_Driver_ShortName_get) {
         
         
         
-        
-        
       }
       
       
@@ -5449,8 +4938,6 @@ XS(_wrap_Driver_LongName_get) {
         
         
         
-        
-        
       }
       
       
@@ -5497,8 +4984,6 @@ XS(_wrap_Driver_HelpTopic_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5617,9 +5102,9 @@ XS(_wrap_Driver__Create) {
       }
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -5627,8 +5112,6 @@ XS(_wrap_Driver__Create) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5778,14 +5261,9 @@ XS(_wrap_Driver_CreateCopy) {
       }
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -5793,8 +5271,6 @@ XS(_wrap_Driver_CreateCopy) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5864,9 +5340,9 @@ XS(_wrap_Driver_Delete) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -5874,8 +5350,6 @@ XS(_wrap_Driver_Delete) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5940,23 +5414,11 @@ XS(_wrap_Driver_Rename) {
     }
     arg3 = reinterpret_cast< char * >(buf3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)GDALDriverShadow_Rename(arg1,(char const *)arg2,(char const *)arg3);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6013,8 +5475,6 @@ XS(_wrap_Driver_Register) {
         
         
         
-        
-        
       }
       
       
@@ -6060,8 +5520,6 @@ XS(_wrap_Driver_Deregister) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6121,8 +5579,6 @@ XS(_wrap_GCP_GCPX_set) {
         
         
         
-        
-        
       }
       
       
@@ -6171,8 +5627,6 @@ XS(_wrap_GCP_GCPX_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6232,8 +5686,6 @@ XS(_wrap_GCP_GCPY_set) {
         
         
         
-        
-        
       }
       
       
@@ -6282,8 +5734,6 @@ XS(_wrap_GCP_GCPY_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6343,8 +5793,6 @@ XS(_wrap_GCP_GCPZ_set) {
         
         
         
-        
-        
       }
       
       
@@ -6393,8 +5841,6 @@ XS(_wrap_GCP_GCPZ_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6454,8 +5900,6 @@ XS(_wrap_GCP_GCPPixel_set) {
         
         
         
-        
-        
       }
       
       
@@ -6504,8 +5948,6 @@ XS(_wrap_GCP_GCPPixel_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6565,8 +6007,6 @@ XS(_wrap_GCP_GCPLine_set) {
         
         
         
-        
-        
       }
       
       
@@ -6615,8 +6055,6 @@ XS(_wrap_GCP_GCPLine_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6677,8 +6115,6 @@ XS(_wrap_GCP_Info_set) {
         
         
         
-        
-        
       }
       
       
@@ -6727,8 +6163,6 @@ XS(_wrap_GCP_Info_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6789,8 +6223,6 @@ XS(_wrap_GCP_Id_set) {
         
         
         
-        
-        
       }
       
       
@@ -6839,8 +6271,6 @@ XS(_wrap_GCP_Id_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6957,8 +6387,6 @@ XS(_wrap_new_GCP) {
         
         
         
-        
-        
       }
       
       
@@ -7019,8 +6447,6 @@ XS(_wrap_delete_GCP) {
         
         
         
-        
-        
       }
       
       
@@ -7054,7 +6480,7 @@ XS(_wrap_GDAL_GCP_GCPX_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPX_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_GCPX_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7062,18 +6488,11 @@ XS(_wrap_GDAL_GCP_GCPX_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_GCPX_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7112,7 +6531,7 @@ XS(_wrap_GDAL_GCP_GCPX_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPX_set(gcp,dfGCPX);");
+      SWIG_croak("Usage: GDAL_GCP_GCPX_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7125,18 +6544,11 @@ XS(_wrap_GDAL_GCP_GCPX_set) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_GCPX_set(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7175,7 +6587,7 @@ XS(_wrap_GDAL_GCP_GCPY_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPY_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_GCPY_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7183,18 +6595,11 @@ XS(_wrap_GDAL_GCP_GCPY_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_GCPY_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7233,7 +6638,7 @@ XS(_wrap_GDAL_GCP_GCPY_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPY_set(gcp,dfGCPY);");
+      SWIG_croak("Usage: GDAL_GCP_GCPY_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7246,18 +6651,11 @@ XS(_wrap_GDAL_GCP_GCPY_set) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_GCPY_set(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7296,7 +6694,7 @@ XS(_wrap_GDAL_GCP_GCPZ_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPZ_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_GCPZ_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7304,18 +6702,11 @@ XS(_wrap_GDAL_GCP_GCPZ_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_GCPZ_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7354,7 +6745,7 @@ XS(_wrap_GDAL_GCP_GCPZ_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPZ_set(gcp,dfGCPZ);");
+      SWIG_croak("Usage: GDAL_GCP_GCPZ_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7367,18 +6758,11 @@ XS(_wrap_GDAL_GCP_GCPZ_set) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_GCPZ_set(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7417,7 +6801,7 @@ XS(_wrap_GDAL_GCP_GCPPixel_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPPixel_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_GCPPixel_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7425,18 +6809,11 @@ XS(_wrap_GDAL_GCP_GCPPixel_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_GCPPixel_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7475,7 +6852,7 @@ XS(_wrap_GDAL_GCP_GCPPixel_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPPixel_set(gcp,dfGCPPixel);");
+      SWIG_croak("Usage: GDAL_GCP_GCPPixel_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7488,18 +6865,11 @@ XS(_wrap_GDAL_GCP_GCPPixel_set) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_GCPPixel_set(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7538,7 +6908,7 @@ XS(_wrap_GDAL_GCP_GCPLine_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPLine_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_GCPLine_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7546,18 +6916,11 @@ XS(_wrap_GDAL_GCP_GCPLine_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_GCPLine_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7596,7 +6959,7 @@ XS(_wrap_GDAL_GCP_GCPLine_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_GCPLine_set(gcp,dfGCPLine);");
+      SWIG_croak("Usage: GDAL_GCP_GCPLine_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7609,18 +6972,11 @@ XS(_wrap_GDAL_GCP_GCPLine_set) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_GCPLine_set(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7659,7 +7015,7 @@ XS(_wrap_GDAL_GCP_Info_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_Info_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_Info_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7667,18 +7023,11 @@ XS(_wrap_GDAL_GCP_Info_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (char *)GDAL_GCP_Info_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7718,7 +7067,7 @@ XS(_wrap_GDAL_GCP_Info_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_Info_set(gcp,pszInfo);");
+      SWIG_croak("Usage: GDAL_GCP_Info_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7731,18 +7080,11 @@ XS(_wrap_GDAL_GCP_Info_set) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_Info_set(arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7781,7 +7123,7 @@ XS(_wrap_GDAL_GCP_Id_get) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_Id_get(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_Id_get(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7789,18 +7131,11 @@ XS(_wrap_GDAL_GCP_Id_get) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (char *)GDAL_GCP_Id_get(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7840,7 +7175,7 @@ XS(_wrap_GDAL_GCP_Id_set) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_Id_set(gcp,pszId);");
+      SWIG_croak("Usage: GDAL_GCP_Id_set(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7853,18 +7188,11 @@ XS(_wrap_GDAL_GCP_Id_set) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_Id_set(arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7903,7 +7231,7 @@ XS(_wrap_GDAL_GCP_get_GCPX) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_GCPX(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_GCPX(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7911,18 +7239,11 @@ XS(_wrap_GDAL_GCP_get_GCPX) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_get_GCPX(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7961,7 +7282,7 @@ XS(_wrap_GDAL_GCP_set_GCPX) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_GCPX(gcp,dfGCPX);");
+      SWIG_croak("Usage: GDAL_GCP_set_GCPX(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7974,18 +7295,11 @@ XS(_wrap_GDAL_GCP_set_GCPX) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_GCPX(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8024,7 +7338,7 @@ XS(_wrap_GDAL_GCP_get_GCPY) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_GCPY(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_GCPY(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8032,18 +7346,11 @@ XS(_wrap_GDAL_GCP_get_GCPY) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_get_GCPY(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8082,7 +7389,7 @@ XS(_wrap_GDAL_GCP_set_GCPY) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_GCPY(gcp,dfGCPY);");
+      SWIG_croak("Usage: GDAL_GCP_set_GCPY(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8095,18 +7402,11 @@ XS(_wrap_GDAL_GCP_set_GCPY) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_GCPY(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8145,7 +7445,7 @@ XS(_wrap_GDAL_GCP_get_GCPZ) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_GCPZ(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_GCPZ(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8153,18 +7453,11 @@ XS(_wrap_GDAL_GCP_get_GCPZ) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_get_GCPZ(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8203,7 +7496,7 @@ XS(_wrap_GDAL_GCP_set_GCPZ) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_GCPZ(gcp,dfGCPZ);");
+      SWIG_croak("Usage: GDAL_GCP_set_GCPZ(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8216,18 +7509,11 @@ XS(_wrap_GDAL_GCP_set_GCPZ) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_GCPZ(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8266,7 +7552,7 @@ XS(_wrap_GDAL_GCP_get_GCPPixel) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_GCPPixel(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_GCPPixel(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8274,18 +7560,11 @@ XS(_wrap_GDAL_GCP_get_GCPPixel) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_get_GCPPixel(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8324,7 +7603,7 @@ XS(_wrap_GDAL_GCP_set_GCPPixel) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_GCPPixel(gcp,dfGCPPixel);");
+      SWIG_croak("Usage: GDAL_GCP_set_GCPPixel(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8337,18 +7616,11 @@ XS(_wrap_GDAL_GCP_set_GCPPixel) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_GCPPixel(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8387,7 +7659,7 @@ XS(_wrap_GDAL_GCP_get_GCPLine) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_GCPLine(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_GCPLine(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8395,18 +7667,11 @@ XS(_wrap_GDAL_GCP_get_GCPLine) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (double)GDAL_GCP_get_GCPLine(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8445,7 +7710,7 @@ XS(_wrap_GDAL_GCP_set_GCPLine) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_GCPLine(gcp,dfGCPLine);");
+      SWIG_croak("Usage: GDAL_GCP_set_GCPLine(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8458,18 +7723,11 @@ XS(_wrap_GDAL_GCP_set_GCPLine) {
     } 
     arg2 = static_cast< double >(val2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_GCPLine(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8508,7 +7766,7 @@ XS(_wrap_GDAL_GCP_get_Info) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_Info(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_Info(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8516,18 +7774,11 @@ XS(_wrap_GDAL_GCP_get_Info) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (char *)GDAL_GCP_get_Info(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8567,7 +7818,7 @@ XS(_wrap_GDAL_GCP_set_Info) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_Info(gcp,pszInfo);");
+      SWIG_croak("Usage: GDAL_GCP_set_Info(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8580,18 +7831,11 @@ XS(_wrap_GDAL_GCP_set_Info) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_Info(arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8630,7 +7874,7 @@ XS(_wrap_GDAL_GCP_get_Id) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GDAL_GCP_get_Id(gcp);");
+      SWIG_croak("Usage: GDAL_GCP_get_Id(h);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8638,18 +7882,11 @@ XS(_wrap_GDAL_GCP_get_Id) {
     }
     arg1 = reinterpret_cast< GDAL_GCP * >(argp1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (char *)GDAL_GCP_get_Id(arg1);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8689,7 +7926,7 @@ XS(_wrap_GDAL_GCP_set_Id) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: GDAL_GCP_set_Id(gcp,pszId);");
+      SWIG_croak("Usage: GDAL_GCP_set_Id(h,val);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDAL_GCP, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -8702,18 +7939,11 @@ XS(_wrap_GDAL_GCP_set_Id) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       GDAL_GCP_set_Id(arg1,(char const *)arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8797,8 +8027,6 @@ XS(_wrap_GCPsToGeoTransform) {
         
         
         
-        
-        
       }
       
       
@@ -8877,8 +8105,6 @@ XS(_wrap_Dataset_RasterXSize_get) {
         
         
         
-        
-        
       }
       
       
@@ -8925,8 +8151,6 @@ XS(_wrap_Dataset_RasterYSize_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8979,8 +8203,6 @@ XS(_wrap_Dataset_RasterCount_get) {
         
         
         
-        
-        
       }
       
       
@@ -9026,8 +8248,6 @@ XS(_wrap_delete_Dataset) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9077,8 +8297,6 @@ XS(_wrap_Dataset__GetDriver) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9139,8 +8357,6 @@ XS(_wrap_Dataset__GetRasterBand) {
         
         
         
-        
-        
       }
       
       
@@ -9192,8 +8408,6 @@ XS(_wrap_Dataset_GetProjection) {
         
         
         
-        
-        
       }
       
       
@@ -9240,8 +8454,6 @@ XS(_wrap_Dataset_GetProjectionRef) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9303,8 +8515,6 @@ XS(_wrap_Dataset_SetProjection) {
         
         
         
-        
-        
       }
       
       
@@ -9360,8 +8570,6 @@ XS(_wrap_Dataset_GetGeoTransform) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9431,8 +8639,6 @@ XS(_wrap_Dataset_SetGeoTransform) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9547,8 +8753,6 @@ XS(_wrap_Dataset_BuildOverviews) {
         
         
         
-        
-        
       }
       
       
@@ -9612,8 +8816,6 @@ XS(_wrap_Dataset_GetGCPCount) {
         
         
         
-        
-        
       }
       
       
@@ -9660,8 +8862,6 @@ XS(_wrap_Dataset_GetGCPProjection) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9719,8 +8919,6 @@ XS(_wrap_Dataset_GetGCPs) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9821,8 +9019,6 @@ XS(_wrap_Dataset_SetGCPs) {
         
         
         
-        
-        
       }
       
       
@@ -9882,8 +9078,6 @@ XS(_wrap_Dataset_FlushCache) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9975,8 +9169,6 @@ XS(_wrap_Dataset__AddBand) {
         
         
         
-        
-        
       }
       
       
@@ -10046,8 +9238,6 @@ XS(_wrap_Dataset_CreateMaskBand) {
         
         
         
-        
-        
       }
       
       
@@ -10101,8 +9291,6 @@ XS(_wrap_Dataset_GetFileList) {
         
         
         
-        
-        
       }
       
       
@@ -10117,16 +9305,16 @@ XS(_wrap_Dataset_GetFileList) {
       
     }
     {
-      /* %typemap(out) char **CSL */
-      AV *av = (AV*)sv_2mortal((SV*)newAV());
-      if (result) {
-        int i;
-        for (i = 0; result[i]; i++) {
-          SV *s = newSVpv(result[i], 0);
+      /* %typemap(out) char **options -> ( string ) */
+      AV* av = (AV*)sv_2mortal((SV*)newAV());
+      char **stringarray = result;
+      if ( stringarray != NULL ) {
+        int n = CSLCount( stringarray );
+        for ( int i = 0; i < n; i++ ) {
+          SV *s = newSVpv(stringarray[i], strlen(*stringarray));
           if (!av_store(av, i, s))
           SvREFCNT_dec(s);
         }
-        CSLDestroy(result);
       }
       ST(argvi) = newRV_noinc((SV*)av);
       argvi++;
@@ -10154,9 +9342,6 @@ XS(_wrap_Dataset_WriteRaster) {
     GDALDataType *arg10 = (GDALDataType *) 0 ;
     int arg11 = (int) 0 ;
     int *arg12 = (int *) 0 ;
-    int *arg13 = (int *) 0 ;
-    int *arg14 = (int *) 0 ;
-    int *arg15 = (int *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
@@ -10170,15 +9355,12 @@ XS(_wrap_Dataset_WriteRaster) {
     int val8 ;
     int val9 ;
     int val10 ;
-    int val13 ;
-    int val14 ;
-    int val15 ;
     int argvi = 0;
     CPLErr result;
     dXSARGS;
     
-    if ((items < 6) || (items > 13)) {
-      SWIG_croak("Usage: Dataset_WriteRaster(self,xoff,yoff,xsize,ysize,buf_len,buf_string,buf_xsize,buf_ysize,buf_type,band_list,pband_list,buf_pixel_space,buf_line_space,buf_band_space);");
+    if ((items < 6) || (items > 10)) {
+      SWIG_croak("Usage: Dataset_WriteRaster(self,xoff,yoff,xsize,ysize,buf_len,buf_string,buf_xsize,buf_ysize,buf_type,band_list,pband_list);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALDatasetShadow, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -10268,50 +9450,12 @@ XS(_wrap_Dataset_WriteRaster) {
         }
       }
     }
-    if (items > 10) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(10)) ) {
-          arg13 = 0;
-        }
-        else {
-          val13 = SvIV(ST(10));
-          arg13 = (int *)&val13;
-        }
-      }
-    }
-    if (items > 11) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(11)) ) {
-          arg14 = 0;
-        }
-        else {
-          val14 = SvIV(ST(11));
-          arg14 = (int *)&val14;
-        }
-      }
-    }
-    if (items > 12) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(12)) ) {
-          arg15 = 0;
-        }
-        else {
-          val15 = SvIV(ST(12));
-          arg15 = (int *)&val15;
-        }
-      }
-    }
     {
       CPLErrorReset();
-      result = (CPLErr)GDALDatasetShadow_WriteRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12,arg13,arg14,arg15);
+      result = (CPLErr)GDALDatasetShadow_WriteRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10344,9 +9488,6 @@ XS(_wrap_Dataset_WriteRaster) {
       if (arg12)
       free((void*) arg12);
     }
-    
-    
-    
     XSRETURN(argvi);
   fail:
     
@@ -10362,9 +9503,6 @@ XS(_wrap_Dataset_WriteRaster) {
       if (arg12)
       free((void*) arg12);
     }
-    
-    
-    
     SWIG_croak_null();
   }
 }
@@ -10384,9 +9522,6 @@ XS(_wrap_Dataset_ReadRaster) {
     GDALDataType *arg10 = (GDALDataType *) 0 ;
     int arg11 = (int) 0 ;
     int *arg12 = (int *) 0 ;
-    int *arg13 = (int *) 0 ;
-    int *arg14 = (int *) 0 ;
-    int *arg15 = (int *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
@@ -10402,9 +9537,6 @@ XS(_wrap_Dataset_ReadRaster) {
     int val8 ;
     int val9 ;
     int val10 ;
-    int val13 ;
-    int val14 ;
-    int val15 ;
     int argvi = 0;
     CPLErr result;
     dXSARGS;
@@ -10414,8 +9546,8 @@ XS(_wrap_Dataset_ReadRaster) {
       arg6 = &nLen6;
       arg7 = &pBuf6;
     }
-    if ((items < 5) || (items > 12)) {
-      SWIG_croak("Usage: Dataset_ReadRaster(self,xoff,yoff,xsize,ysize,buf,buf_xsize,buf_ysize,buf_type,band_list,pband_list,buf_pixel_space,buf_line_space,buf_band_space);");
+    if ((items < 5) || (items > 9)) {
+      SWIG_croak("Usage: Dataset_ReadRaster(self,xoff,yoff,xsize,ysize,buf,buf_xsize,buf_ysize,buf_type,band_list,pband_list);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALDatasetShadow, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -10492,50 +9624,12 @@ XS(_wrap_Dataset_ReadRaster) {
         }
       }
     }
-    if (items > 9) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(9)) ) {
-          arg13 = 0;
-        }
-        else {
-          val13 = SvIV(ST(9));
-          arg13 = (int *)&val13;
-        }
-      }
-    }
-    if (items > 10) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(10)) ) {
-          arg14 = 0;
-        }
-        else {
-          val14 = SvIV(ST(10));
-          arg14 = (int *)&val14;
-        }
-      }
-    }
-    if (items > 11) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(11)) ) {
-          arg15 = 0;
-        }
-        else {
-          val15 = SvIV(ST(11));
-          arg15 = (int *)&val15;
-        }
-      }
-    }
     {
       CPLErrorReset();
-      result = (CPLErr)GDALDatasetShadow_ReadRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12,arg13,arg14,arg15);
+      result = (CPLErr)GDALDatasetShadow_ReadRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10579,9 +9673,6 @@ XS(_wrap_Dataset_ReadRaster) {
       if (arg12)
       free((void*) arg12);
     }
-    
-    
-    
     XSRETURN(argvi);
   fail:
     
@@ -10603,9 +9694,6 @@ XS(_wrap_Dataset_ReadRaster) {
       if (arg12)
       free((void*) arg12);
     }
-    
-    
-    
     SWIG_croak_null();
   }
 }
@@ -10634,8 +9722,6 @@ XS(_wrap_Band_XSize_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10688,8 +9774,6 @@ XS(_wrap_Band_YSize_get) {
         
         
         
-        
-        
       }
       
       
@@ -10736,59 +9820,6 @@ XS(_wrap_Band_DataType_get) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Band_GetBand) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: Band_GetBand(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_GetBand" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (int)GDALRasterBandShadow_GetBand(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10848,8 +9879,6 @@ XS(_wrap_Band_GetBlockSize) {
         
         
         
-        
-        
       }
       
       
@@ -10889,57 +9918,6 @@ XS(_wrap_Band_GetBlockSize) {
 }
 
 
-XS(_wrap_Band_GetColorInterpretation) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    GDALColorInterp result;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: Band_GetColorInterpretation(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_GetColorInterpretation" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (GDALColorInterp)GDALRasterBandShadow_GetColorInterpretation(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
 XS(_wrap_Band_GetRasterColorInterpretation) {
   {
     GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
@@ -10966,8 +9944,6 @@ XS(_wrap_Band_GetRasterColorInterpretation) {
         
         
         
-        
-        
       }
       
       
@@ -10985,69 +9961,6 @@ XS(_wrap_Band_GetRasterColorInterpretation) {
     
     XSRETURN(argvi);
   fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Band_SetColorInterpretation) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    GDALColorInterp arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int argvi = 0;
-    CPLErr result;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: Band_SetColorInterpretation(self,val);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_SetColorInterpretation" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Band_SetColorInterpretation" "', argument " "2"" of type '" "GDALColorInterp""'");
-    } 
-    arg2 = static_cast< GDALColorInterp >(val2);
-    {
-      CPLErrorReset();
-      result = (CPLErr)GDALRasterBandShadow_SetColorInterpretation(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) CPLErr */
-    }
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
     
     SWIG_croak_null();
   }
@@ -11085,8 +9998,6 @@ XS(_wrap_Band_SetRasterColorInterpretation) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11148,8 +10059,6 @@ XS(_wrap_Band_GetNoDataValue) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11217,8 +10126,6 @@ XS(_wrap_Band_SetNoDataValue) {
         
         
         
-        
-        
       }
       
       
@@ -11240,57 +10147,6 @@ XS(_wrap_Band_SetNoDataValue) {
     XSRETURN(argvi);
   fail:
     
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Band_GetUnitType) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    char *result = 0 ;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: Band_GetUnitType(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_GetUnitType" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (char *)GDALRasterBandShadow_GetUnitType(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
     
     SWIG_croak_null();
   }
@@ -11320,8 +10176,6 @@ XS(_wrap_Band_GetRasterCategoryNames) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11415,8 +10269,6 @@ XS(_wrap_Band_SetRasterCategoryNames) {
         
         
         
-        
-        
       }
       
       
@@ -11484,8 +10336,6 @@ XS(_wrap_Band_GetMinimum) {
         
         
         
-        
-        
       }
       
       
@@ -11547,8 +10397,6 @@ XS(_wrap_Band_GetMaximum) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11616,8 +10464,6 @@ XS(_wrap_Band_GetOffset) {
         
         
         
-        
-        
       }
       
       
@@ -11679,8 +10525,6 @@ XS(_wrap_Band_GetScale) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11772,8 +10616,6 @@ XS(_wrap_Band_GetStatistics) {
         
         
         
-        
-        
       }
       
       
@@ -11813,150 +10655,6 @@ XS(_wrap_Band_GetStatistics) {
     } else {
       int new_flags = SWIG_IsNewObj(res7) ? (SWIG_POINTER_OWN | 0) : 0;
       if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg7), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    
-    
-    
-    
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    
-    
-    
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Band_ComputeStatistics) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    bool arg2 ;
-    double *arg3 = (double *) NULL ;
-    double *arg4 = (double *) NULL ;
-    double *arg5 = (double *) NULL ;
-    double *arg6 = (double *) NULL ;
-    GDALProgressFunc arg7 = (GDALProgressFunc) NULL ;
-    void *arg8 = (void *) NULL ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    bool val2 ;
-    int ecode2 = 0 ;
-    double temp3 ;
-    int res3 = SWIG_TMPOBJ ;
-    double temp4 ;
-    int res4 = SWIG_TMPOBJ ;
-    double temp5 ;
-    int res5 = SWIG_TMPOBJ ;
-    double temp6 ;
-    int res6 = SWIG_TMPOBJ ;
-    int argvi = 0;
-    CPLErr result;
-    dXSARGS;
-    
-    SavedEnv saved_env;
-    saved_env.fct = NULL;
-    saved_env.data = NULL;
-    arg3 = &temp3;
-    arg4 = &temp4;
-    arg5 = &temp5;
-    arg6 = &temp6;
-    if ((items < 2) || (items > 4)) {
-      SWIG_croak("Usage: Band_ComputeStatistics(self,approx_ok,callback,callback_data);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_ComputeStatistics" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    ecode2 = SWIG_AsVal_bool SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Band_ComputeStatistics" "', argument " "2"" of type '" "bool""'");
-    } 
-    arg2 = static_cast< bool >(val2);
-    if (items > 2) {
-      {
-        /* %typemap(in) (GDALProgressFunc callback = NULL) */
-        if (SvOK(ST(2))) {
-          if (SvROK(ST(2))) {
-            if (SvTYPE(SvRV(ST(2))) != SVt_PVCV) {
-              SWIG_croak("the callback arg must be a reference to a subroutine\n");
-            } else {
-              saved_env.fct = (SV *)ST(2);
-              arg7 = &callback_d_cp_vp;
-            }
-          } else {
-            SWIG_croak("the callback arg must be a reference to a subroutine\n");
-          }
-        }
-      }
-    }
-    if (items > 3) {
-      {
-        /* %typemap(in) (void* callback_data=NULL) */
-        if (SvOK(ST(3)))
-        saved_env.data = (SV *)ST(3);
-        if (saved_env.fct)
-        arg8 = (void *)(&saved_env); /* the Perl layer must make sure that this parameter is always given */
-      }
-    }
-    {
-      CPLErrorReset();
-      result = (CPLErr)GDALRasterBandShadow_ComputeStatistics(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) IF_ERROR_RETURN_NONE (do not return the error code) */
-    }
-    if (SWIG_IsTmpObj(res3)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg3)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res3) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg3), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    if (SWIG_IsTmpObj(res4)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg4)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res4) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg4), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    if (SWIG_IsTmpObj(res5)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg5)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res5) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg5), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    if (SWIG_IsTmpObj(res6)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg6)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res6) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg6), SWIGTYPE_p_double, new_flags); argvi++  ;
     }
     
     
@@ -12037,8 +10735,6 @@ XS(_wrap_Band_SetStatistics) {
         
         
         
-        
-        
       }
       
       
@@ -12096,8 +10792,6 @@ XS(_wrap_Band_GetOverviewCount) {
         
         
         
-        
-        
       }
       
       
@@ -12152,8 +10846,6 @@ XS(_wrap_Band_GetOverview) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12256,8 +10948,6 @@ XS(_wrap_Band_Checksum) {
         
         
         
-        
-        
       }
       
       
@@ -12327,8 +11017,6 @@ XS(_wrap_Band_ComputeRasterMinMax) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12402,8 +11090,6 @@ XS(_wrap_Band_ComputeBandStats) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12483,8 +11169,6 @@ XS(_wrap_Band_Fill) {
         
         
         
-        
-        
       }
       
       
@@ -12524,8 +11208,6 @@ XS(_wrap_Band_ReadRaster) {
     int *arg8 = (int *) 0 ;
     int *arg9 = (int *) 0 ;
     int *arg10 = (int *) 0 ;
-    int *arg11 = (int *) 0 ;
-    int *arg12 = (int *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
@@ -12541,8 +11223,6 @@ XS(_wrap_Band_ReadRaster) {
     int val8 ;
     int val9 ;
     int val10 ;
-    int val11 ;
-    int val12 ;
     int argvi = 0;
     CPLErr result;
     dXSARGS;
@@ -12552,8 +11232,8 @@ XS(_wrap_Band_ReadRaster) {
       arg6 = &nLen6;
       arg7 = &pBuf6;
     }
-    if ((items < 5) || (items > 10)) {
-      SWIG_croak("Usage: Band_ReadRaster(self,xoff,yoff,xsize,ysize,buf,buf_xsize,buf_ysize,buf_type,buf_pixel_space,buf_line_space);");
+    if ((items < 5) || (items > 8)) {
+      SWIG_croak("Usage: Band_ReadRaster(self,xoff,yoff,xsize,ysize,buf,buf_xsize,buf_ysize,buf_type);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -12616,38 +11296,12 @@ XS(_wrap_Band_ReadRaster) {
         }
       }
     }
-    if (items > 8) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(8)) ) {
-          arg11 = 0;
-        }
-        else {
-          val11 = SvIV(ST(8));
-          arg11 = (int *)&val11;
-        }
-      }
-    }
-    if (items > 9) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(9)) ) {
-          arg12 = 0;
-        }
-        else {
-          val12 = SvIV(ST(9));
-          arg12 = (int *)&val12;
-        }
-      }
-    }
     {
       CPLErrorReset();
-      result = (CPLErr)GDALRasterBandShadow_ReadRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+      result = (CPLErr)GDALRasterBandShadow_ReadRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12684,8 +11338,6 @@ XS(_wrap_Band_ReadRaster) {
     
     
     
-    
-    
     XSRETURN(argvi);
   fail:
     
@@ -12699,8 +11351,6 @@ XS(_wrap_Band_ReadRaster) {
         free( *arg7 );
       }
     }
-    
-    
     
     
     
@@ -12721,8 +11371,6 @@ XS(_wrap_Band_WriteRaster) {
     int *arg8 = (int *) 0 ;
     int *arg9 = (int *) 0 ;
     int *arg10 = (int *) 0 ;
-    int *arg11 = (int *) 0 ;
-    int *arg12 = (int *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
@@ -12736,14 +11384,12 @@ XS(_wrap_Band_WriteRaster) {
     int val8 ;
     int val9 ;
     int val10 ;
-    int val11 ;
-    int val12 ;
     int argvi = 0;
     CPLErr result;
     dXSARGS;
     
-    if ((items < 6) || (items > 11)) {
-      SWIG_croak("Usage: Band_WriteRaster(self,xoff,yoff,xsize,ysize,buf_len,buf_string,buf_xsize,buf_ysize,buf_type,buf_pixel_space,buf_line_space);");
+    if ((items < 6) || (items > 9)) {
+      SWIG_croak("Usage: Band_WriteRaster(self,xoff,yoff,xsize,ysize,buf_len,buf_string,buf_xsize,buf_ysize,buf_type);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -12819,38 +11465,12 @@ XS(_wrap_Band_WriteRaster) {
         }
       }
     }
-    if (items > 9) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(9)) ) {
-          arg11 = 0;
-        }
-        else {
-          val11 = SvIV(ST(9));
-          arg11 = (int *)&val11;
-        }
-      }
-    }
-    if (items > 10) {
-      {
-        /* %typemap(in) (int *optional_int) */
-        if ( !SvOK(ST(10)) ) {
-          arg12 = 0;
-        }
-        else {
-          val12 = SvIV(ST(10));
-          arg12 = (int *)&val12;
-        }
-      }
-    }
     {
       CPLErrorReset();
-      result = (CPLErr)GDALRasterBandShadow_WriteRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
+      result = (CPLErr)GDALRasterBandShadow_WriteRaster(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12876,12 +11496,8 @@ XS(_wrap_Band_WriteRaster) {
     
     
     
-    
-    
     XSRETURN(argvi);
   fail:
-    
-    
     
     
     
@@ -12917,8 +11533,6 @@ XS(_wrap_Band_FlushCache) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -12971,8 +11585,6 @@ XS(_wrap_Band_GetRasterColorTable) {
         
         
         
-        
-        
       }
       
       
@@ -13019,8 +11631,6 @@ XS(_wrap_Band_GetColorTable) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13078,8 +11688,6 @@ XS(_wrap_Band_SetRasterColorTable) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13142,8 +11750,6 @@ XS(_wrap_Band_SetColorTable) {
         
         
         
-        
-        
       }
       
       
@@ -13192,8 +11798,6 @@ XS(_wrap_Band_GetDefaultRAT) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13254,8 +11858,6 @@ XS(_wrap_Band_SetDefaultRAT) {
         
         
         
-        
-        
       }
       
       
@@ -13307,8 +11909,6 @@ XS(_wrap_Band_GetMaskBand) {
         
         
         
-        
-        
       }
       
       
@@ -13355,8 +11955,6 @@ XS(_wrap_Band_GetMaskFlags) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13414,8 +12012,6 @@ XS(_wrap_Band_CreateMaskBand) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -13557,8 +12153,6 @@ XS(_wrap_Band__GetHistogram) {
         
         
         
-        
-        
       }
       
       
@@ -13691,8 +12285,6 @@ XS(_wrap_Band_GetDefaultHistogram) {
         
         
         
-        
-        
       }
       
       
@@ -13799,8 +12391,6 @@ XS(_wrap_Band_SetDefaultHistogram) {
         
         
         
-        
-        
       }
       
       
@@ -13833,57 +12423,6 @@ XS(_wrap_Band_SetDefaultHistogram) {
       if (arg5)
       free((void*) arg5);
     }
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_Band_HasArbitraryOverviews) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    bool result;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: Band_HasArbitraryOverviews(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_HasArbitraryOverviews" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (bool)GDALRasterBandShadow_HasArbitraryOverviews(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
-    
     SWIG_croak_null();
   }
 }
@@ -14007,8 +12546,6 @@ XS(_wrap_Band_ContourGenerate) {
         
         
         
-        
-        
       }
       
       
@@ -14082,8 +12619,6 @@ XS(_wrap_new_ColorTable) {
         
         
         
-        
-        
       }
       
       
@@ -14129,8 +12664,6 @@ XS(_wrap_delete_ColorTable) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14183,8 +12716,6 @@ XS(_wrap_ColorTable_Clone) {
         
         
         
-        
-        
       }
       
       
@@ -14234,8 +12765,6 @@ XS(_wrap_ColorTable__GetPaletteInterpretation) {
         
         
         
-        
-        
       }
       
       
@@ -14282,8 +12811,6 @@ XS(_wrap_ColorTable_GetCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14341,8 +12868,6 @@ XS(_wrap_ColorTable_GetColorEntry) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14420,8 +12945,6 @@ XS(_wrap_ColorTable_GetColorEntryAsRGB) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14515,8 +13038,6 @@ XS(_wrap_ColorTable__SetColorEntry) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14628,8 +13149,6 @@ XS(_wrap_ColorTable_CreateColorRamp) {
         
         
         
-        
-        
       }
       
       
@@ -14685,8 +13204,6 @@ XS(_wrap_new_RasterAttributeTable) {
         
         
         
-        
-        
       }
       
       
@@ -14730,8 +13247,6 @@ XS(_wrap_delete_RasterAttributeTable) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14784,8 +13299,6 @@ XS(_wrap_RasterAttributeTable_Clone) {
         
         
         
-        
-        
       }
       
       
@@ -14832,8 +13345,6 @@ XS(_wrap_RasterAttributeTable_GetColumnCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14891,8 +13402,6 @@ XS(_wrap_RasterAttributeTable_GetNameOfCol) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -14955,8 +13464,6 @@ XS(_wrap_RasterAttributeTable__GetUsageOfCol) {
         
         
         
-        
-        
       }
       
       
@@ -15013,8 +13520,6 @@ XS(_wrap_RasterAttributeTable__GetTypeOfCol) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15077,8 +13582,6 @@ XS(_wrap_RasterAttributeTable__GetColOfUsage) {
         
         
         
-        
-        
       }
       
       
@@ -15127,8 +13630,6 @@ XS(_wrap_RasterAttributeTable_GetRowCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15194,8 +13695,6 @@ XS(_wrap_RasterAttributeTable_GetValueAsString) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15268,8 +13767,6 @@ XS(_wrap_RasterAttributeTable_GetValueAsInt) {
         
         
         
-        
-        
       }
       
       
@@ -15336,8 +13833,6 @@ XS(_wrap_RasterAttributeTable_GetValueAsDouble) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15414,8 +13909,6 @@ XS(_wrap_RasterAttributeTable_SetValueAsString) {
         
         
         
-        
-        
       }
       
       
@@ -15489,8 +13982,6 @@ XS(_wrap_RasterAttributeTable_SetValueAsInt) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15572,8 +14063,6 @@ XS(_wrap_RasterAttributeTable_SetValueAsDouble) {
         
         
         
-        
-        
       }
       
       
@@ -15633,8 +14122,6 @@ XS(_wrap_RasterAttributeTable_SetRowCount) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15714,8 +14201,6 @@ XS(_wrap_RasterAttributeTable__CreateColumn) {
         
         
         
-        
-        
       }
       
       
@@ -15738,152 +14223,6 @@ XS(_wrap_RasterAttributeTable__CreateColumn) {
   fail:
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_RasterAttributeTable_GetLinearBinning) {
-  {
-    GDALRasterAttributeTableShadow *arg1 = (GDALRasterAttributeTableShadow *) 0 ;
-    double *arg2 = (double *) 0 ;
-    double *arg3 = (double *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    double temp2 ;
-    int res2 = SWIG_TMPOBJ ;
-    double temp3 ;
-    int res3 = SWIG_TMPOBJ ;
-    int argvi = 0;
-    bool result;
-    dXSARGS;
-    
-    arg2 = &temp2;
-    arg3 = &temp3;
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: RasterAttributeTable_GetLinearBinning(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterAttributeTableShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "RasterAttributeTable_GetLinearBinning" "', argument " "1"" of type '" "GDALRasterAttributeTableShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterAttributeTableShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (bool)GDALRasterAttributeTableShadow_GetLinearBinning(arg1,arg2,arg3);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
-    if (SWIG_IsTmpObj(res2)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg2)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res2) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg2), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    if (SWIG_IsTmpObj(res3)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg3)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res3) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg3), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_RasterAttributeTable_SetLinearBinning) {
-  {
-    GDALRasterAttributeTableShadow *arg1 = (GDALRasterAttributeTableShadow *) 0 ;
-    double arg2 ;
-    double arg3 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: RasterAttributeTable_SetLinearBinning(self,dfRow0Min,dfBinSize);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterAttributeTableShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "RasterAttributeTable_SetLinearBinning" "', argument " "1"" of type '" "GDALRasterAttributeTableShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterAttributeTableShadow * >(argp1);
-    ecode2 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "RasterAttributeTable_SetLinearBinning" "', argument " "2"" of type '" "double""'");
-    } 
-    arg2 = static_cast< double >(val2);
-    ecode3 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "RasterAttributeTable_SetLinearBinning" "', argument " "3"" of type '" "double""'");
-    } 
-    arg3 = static_cast< double >(val3);
-    {
-      CPLErrorReset();
-      result = (int)GDALRasterAttributeTableShadow_SetLinearBinning(arg1,arg2,arg3);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
     
     
     SWIG_croak_null();
@@ -15922,8 +14261,6 @@ XS(_wrap_RasterAttributeTable_GetRowOfValue) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -15994,8 +14331,6 @@ XS(_wrap_TermProgress_nocb) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16107,33 +14442,11 @@ XS(_wrap__ComputeMedianCutPCT) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg5) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)ComputeMedianCutPCT(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16251,38 +14564,11 @@ XS(_wrap__DitherRGB2PCT) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg4) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg5) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)DitherRGB2PCT(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16428,23 +14714,11 @@ XS(_wrap__ReprojectImage) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (CPLErr)ReprojectImage(arg1,arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7,arg8,arg9);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16571,23 +14845,11 @@ XS(_wrap__ComputeProximity) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)ComputeProximity(arg1,arg2,arg3,arg4,arg5);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16758,23 +15020,11 @@ XS(_wrap__RasterizeLayer) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg4) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)RasterizeLayer(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -16939,179 +15189,11 @@ XS(_wrap__Polygonize) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)Polygonize(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    
-    
-    
-    
-    {
-      /* %typemap(freearg) char **options */
-      if (arg5) CSLDestroy( arg5 );
-    }
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    
-    
-    {
-      /* %typemap(freearg) char **options */
-      if (arg5) CSLDestroy( arg5 );
-    }
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_FillNodata) {
-  {
-    GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-    GDALRasterBandShadow *arg2 = (GDALRasterBandShadow *) 0 ;
-    double arg3 ;
-    int arg4 ;
-    char **arg5 = (char **) NULL ;
-    GDALProgressFunc arg6 = (GDALProgressFunc) NULL ;
-    void *arg7 = (void *) NULL ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    void *argp2 = 0 ;
-    int res2 = 0 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    int val4 ;
-    int ecode4 = 0 ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    SavedEnv saved_env;
-    saved_env.fct = NULL;
-    saved_env.data = NULL;
-    if ((items < 4) || (items > 7)) {
-      SWIG_croak("Usage: FillNodata(targetBand,maskBand,maxSearchDist,smoothingIterations,options,callback,callback_data);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "FillNodata" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "FillNodata" "', argument " "2"" of type '" "GDALRasterBandShadow *""'"); 
-    }
-    arg2 = reinterpret_cast< GDALRasterBandShadow * >(argp2);
-    ecode3 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "FillNodata" "', argument " "3"" of type '" "double""'");
-    } 
-    arg3 = static_cast< double >(val3);
-    ecode4 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(3), &val4);
-    if (!SWIG_IsOK(ecode4)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "FillNodata" "', argument " "4"" of type '" "int""'");
-    } 
-    arg4 = static_cast< int >(val4);
-    if (items > 4) {
-      {
-        /* %typemap(in) char **options */
-        if (SvOK(ST(4))) {
-          if (SvROK(ST(4))) {
-            if (SvTYPE(SvRV(ST(4)))==SVt_PVAV) {
-              AV *av = (AV*)(SvRV(ST(4)));
-              for (int i = 0; i < av_len(av)+1; i++) {
-                char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
-                arg5 = CSLAddString( arg5, pszItem );
-              }
-            } else if (SvTYPE(SvRV(ST(4)))==SVt_PVHV) {
-              HV *hv = (HV*)SvRV(ST(4));
-              SV *sv;
-              char *key;
-              I32 klen;
-              arg5 = NULL;
-              hv_iterinit(hv);
-              while(sv = hv_iternextsv(hv,&key,&klen)) {
-                arg5 = CSLAddNameValue( arg5, key, SvPV_nolen(sv) );
-              }
-            } else
-            SWIG_croak("'options' is not a reference to an array or hash");
-          } else
-          SWIG_croak("'options' is not a reference");   
-        }
-      }
-    }
-    if (items > 5) {
-      {
-        /* %typemap(in) (GDALProgressFunc callback = NULL) */
-        if (SvOK(ST(5))) {
-          if (SvROK(ST(5))) {
-            if (SvTYPE(SvRV(ST(5))) != SVt_PVCV) {
-              SWIG_croak("the callback arg must be a reference to a subroutine\n");
-            } else {
-              saved_env.fct = (SV *)ST(5);
-              arg6 = &callback_d_cp_vp;
-            }
-          } else {
-            SWIG_croak("the callback arg must be a reference to a subroutine\n");
-          }
-        }
-      }
-    }
-    if (items > 6) {
-      {
-        /* %typemap(in) (void* callback_data=NULL) */
-        if (SvOK(ST(6)))
-        saved_env.data = (SV *)ST(6);
-        if (saved_env.fct)
-        arg7 = (void *)(&saved_env); /* the Perl layer must make sure that this parameter is always given */
-      }
-    }
-    {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      CPLErrorReset();
-      result = (int)FillNodata(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17266,23 +15348,11 @@ XS(_wrap__SieveFilter) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)SieveFilter(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17331,7 +15401,7 @@ XS(_wrap__RegenerateOverview) {
   {
     GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
     GDALRasterBandShadow *arg2 = (GDALRasterBandShadow *) 0 ;
-    char *arg3 = (char *) "average" ;
+    char *arg3 = (char *) 0 ;
     GDALProgressFunc arg4 = (GDALProgressFunc) NULL ;
     void *arg5 = (void *) NULL ;
     void *argp1 = 0 ;
@@ -17348,7 +15418,7 @@ XS(_wrap__RegenerateOverview) {
     SavedEnv saved_env;
     saved_env.fct = NULL;
     saved_env.data = NULL;
-    if ((items < 2) || (items > 5)) {
+    if ((items < 3) || (items > 5)) {
       SWIG_croak("Usage: _RegenerateOverview(srcBand,overviewBand,resampling,callback,callback_data);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
@@ -17361,13 +15431,11 @@ XS(_wrap__RegenerateOverview) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "_RegenerateOverview" "', argument " "2"" of type '" "GDALRasterBandShadow *""'"); 
     }
     arg2 = reinterpret_cast< GDALRasterBandShadow * >(argp2);
-    if (items > 2) {
-      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
-      if (!SWIG_IsOK(res3)) {
-        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "_RegenerateOverview" "', argument " "3"" of type '" "char const *""'");
-      }
-      arg3 = reinterpret_cast< char * >(buf3);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "_RegenerateOverview" "', argument " "3"" of type '" "char *""'");
     }
+    arg3 = reinterpret_cast< char * >(buf3);
     if (items > 3) {
       {
         /* %typemap(in) (GDALProgressFunc callback = NULL) */
@@ -17395,23 +15463,11 @@ XS(_wrap__RegenerateOverview) {
       }
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
-      result = (int)RegenerateOverview(arg1,arg2,(char const *)arg3,arg4,arg5);
+      result = (int)RegenerateOverview(arg1,arg2,arg3,arg4,arg5);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17504,18 +15560,11 @@ XS(_wrap__AutoCreateWarpedVRT) {
       arg5 = static_cast< double >(val5);
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (GDALDatasetShadow *)AutoCreateWarpedVRT(arg1,(char const *)arg2,(char const *)arg3,arg4,arg5);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17611,8 +15660,6 @@ XS(_wrap_new_Transformer) {
         
         
         
-        
-        
       }
       
       
@@ -17668,8 +15715,6 @@ XS(_wrap_delete_Transformer) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17742,8 +15787,6 @@ XS(_wrap_Transformer_TransformPoint__SWIG_0) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -17842,8 +15885,6 @@ XS(_wrap_Transformer_TransformPoint__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18086,8 +16127,6 @@ XS(_wrap_Transformer_TransformPoints) {
         
         
         
-        
-        
       }
       
       
@@ -18145,174 +16184,6 @@ XS(_wrap_Transformer_TransformPoints) {
 }
 
 
-XS(_wrap_ApplyGeoTransform) {
-  {
-    double *arg1 ;
-    double arg2 ;
-    double arg3 ;
-    double *arg4 = (double *) 0 ;
-    double *arg5 = (double *) 0 ;
-    double argin1[6] ;
-    double val2 ;
-    int ecode2 = 0 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    double temp4 ;
-    int res4 = SWIG_TMPOBJ ;
-    double temp5 ;
-    int res5 = SWIG_TMPOBJ ;
-    int argvi = 0;
-    dXSARGS;
-    
-    arg4 = &temp4;
-    arg5 = &temp5;
-    if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: ApplyGeoTransform(padfGeoTransform,dfPixel,dfLine);");
-    }
-    {
-      /* %typemap(in) (double argin1[ANY]) */
-      if (!(SvROK(ST(0)) && (SvTYPE(SvRV(ST(0)))==SVt_PVAV)))
-      SWIG_croak("expected a reference to an array");
-      arg1 = argin1;
-      AV *av = (AV*)(SvRV(ST(0)));
-      for (unsigned int i=0; i<6; i++) {
-        SV **sv = av_fetch(av, i, 0);
-        arg1[i] =  SvNV(*sv);
-      }
-    }
-    ecode2 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "ApplyGeoTransform" "', argument " "2"" of type '" "double""'");
-    } 
-    arg2 = static_cast< double >(val2);
-    ecode3 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "ApplyGeoTransform" "', argument " "3"" of type '" "double""'");
-    } 
-    arg3 = static_cast< double >(val3);
-    {
-      CPLErrorReset();
-      GDALApplyGeoTransform(arg1,arg2,arg3,arg4,arg5);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    
-    if (SWIG_IsTmpObj(res4)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg4)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res4) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg4), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    if (SWIG_IsTmpObj(res5)) {
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_From_double  SWIG_PERL_CALL_ARGS_1((*arg5)); argvi++  ;
-    } else {
-      int new_flags = SWIG_IsNewObj(res5) ? (SWIG_POINTER_OWN | 0) : 0;
-      if (argvi >= items) EXTEND(sp,1);  ST(argvi) = SWIG_NewPointerObj((void*)(arg5), SWIGTYPE_p_double, new_flags); argvi++  ;
-    }
-    
-    
-    
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_InvGeoTransform) {
-  {
-    double *arg1 ;
-    double *arg2 ;
-    double argin1[6] ;
-    double argout2[6] ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    {
-      /* %typemap(in,numinputs=0) (double argout2[ANY]) */
-      arg2 = argout2;
-    }
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: InvGeoTransform(gt_in);");
-    }
-    {
-      /* %typemap(in) (double argin1[ANY]) */
-      if (!(SvROK(ST(0)) && (SvTYPE(SvRV(ST(0)))==SVt_PVAV)))
-      SWIG_croak("expected a reference to an array");
-      arg1 = argin1;
-      AV *av = (AV*)(SvRV(ST(0)));
-      for (unsigned int i=0; i<6; i++) {
-        SV **sv = av_fetch(av, i, 0);
-        arg1[i] =  SvNV(*sv);
-      }
-    }
-    {
-      CPLErrorReset();
-      result = (int)GDALInvGeoTransform(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    {
-      /* %typemap(argout) (double argout[ANY]) */
-      ST(argvi) = CreateArrayFromDoubleArray( arg2, 6 );
-      argvi++;
-    }
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
 XS(_wrap_VersionInfo) {
   {
     char *arg1 = (char *) "VERSION_NUM" ;
@@ -18344,8 +16215,6 @@ XS(_wrap_VersionInfo) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18389,8 +16258,6 @@ XS(_wrap_AllRegister) {
         
         
         
-        
-        
       }
       
       
@@ -18426,8 +16293,6 @@ XS(_wrap_GDALDestroyDriverManager) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18467,8 +16332,6 @@ XS(_wrap_GetCacheMax) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18518,8 +16381,6 @@ XS(_wrap_SetCacheMax) {
         
         
         
-        
-        
       }
       
       
@@ -18561,8 +16422,6 @@ XS(_wrap_GetCacheUsed) {
         
         
         
-        
-        
       }
       
       
@@ -18594,7 +16453,7 @@ XS(_wrap_GetDataTypeSize) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GetDataTypeSize(eDataType);");
+      SWIG_croak("Usage: GetDataTypeSize(GDALDataType);");
     }
     ecode1 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18607,8 +16466,6 @@ XS(_wrap_GetDataTypeSize) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18645,7 +16502,7 @@ XS(_wrap_DataTypeIsComplex) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: DataTypeIsComplex(eDataType);");
+      SWIG_croak("Usage: DataTypeIsComplex(GDALDataType);");
     }
     ecode1 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18658,8 +16515,6 @@ XS(_wrap_DataTypeIsComplex) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18696,7 +16551,7 @@ XS(_wrap_GetDataTypeName) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GetDataTypeName(eDataType);");
+      SWIG_croak("Usage: GetDataTypeName(GDALDataType);");
     }
     ecode1 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18709,8 +16564,6 @@ XS(_wrap_GetDataTypeName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18748,7 +16601,7 @@ XS(_wrap_GetDataTypeByName) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GetDataTypeByName(pszDataTypeName);");
+      SWIG_croak("Usage: GetDataTypeByName(char const *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -18761,8 +16614,6 @@ XS(_wrap_GetDataTypeByName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18799,7 +16650,7 @@ XS(_wrap_GetColorInterpretationName) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GetColorInterpretationName(eColorInterp);");
+      SWIG_croak("Usage: GetColorInterpretationName(GDALColorInterp);");
     }
     ecode1 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18812,8 +16663,6 @@ XS(_wrap_GetColorInterpretationName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18850,7 +16699,7 @@ XS(_wrap_GetPaletteInterpretationName) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: GetPaletteInterpretationName(ePaletteInterp);");
+      SWIG_croak("Usage: GetPaletteInterpretationName(GDALPaletteInterp);");
     }
     ecode1 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18863,8 +16712,6 @@ XS(_wrap_GetPaletteInterpretationName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -18936,8 +16783,6 @@ XS(_wrap_DecToDMS) {
         
         
         
-        
-        
       }
       
       
@@ -18975,7 +16820,7 @@ XS(_wrap_PackedDMSToDec) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: PackedDMSToDec(dfPacked);");
+      SWIG_croak("Usage: PackedDMSToDec(double);");
     }
     ecode1 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -18988,8 +16833,6 @@ XS(_wrap_PackedDMSToDec) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19026,7 +16869,7 @@ XS(_wrap_DecToPackedDMS) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: DecToPackedDMS(dfDec);");
+      SWIG_croak("Usage: DecToPackedDMS(double);");
     }
     ecode1 = SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
     if (!SWIG_IsOK(ecode1)) {
@@ -19039,8 +16882,6 @@ XS(_wrap_DecToPackedDMS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19078,7 +16919,7 @@ XS(_wrap_ParseXMLString) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: ParseXMLString(pszXMLString);");
+      SWIG_croak("Usage: ParseXMLString(char *);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
@@ -19091,8 +16932,6 @@ XS(_wrap_ParseXMLString) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19154,8 +16993,6 @@ XS(_wrap_SerializeXMLTree) {
         
         
         
-        
-        
       }
       
       
@@ -19203,8 +17040,6 @@ XS(_wrap_GetDriverCount) {
         
         
         
-        
-        
       }
       
       
@@ -19245,9 +17080,9 @@ XS(_wrap_GetDriverByName) {
     }
     arg1 = reinterpret_cast< char * >(buf1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -19255,8 +17090,6 @@ XS(_wrap_GetDriverByName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19306,8 +17139,6 @@ XS(_wrap__GetDriver) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19363,9 +17194,9 @@ XS(_wrap__Open__SWIG_1) {
       arg2 = static_cast< GDALAccess >(val2);
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -19373,8 +17204,6 @@ XS(_wrap__Open__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19482,9 +17311,9 @@ XS(_wrap__OpenShared__SWIG_1) {
       arg2 = static_cast< GDALAccess >(val2);
     }
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -19492,8 +17321,6 @@ XS(_wrap__OpenShared__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -19628,8 +17455,6 @@ XS(_wrap_IdentifyDriver) {
         
         
         
-        
-        
       }
       
       
@@ -19661,6 +17486,106 @@ XS(_wrap_IdentifyDriver) {
 }
 
 
+XS(_wrap_GeneralCmdLineProcessor) {
+  {
+    char **arg1 = (char **) 0 ;
+    int arg2 = (int) 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    char **result = 0 ;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 2)) {
+      SWIG_croak("Usage: GeneralCmdLineProcessor(papszArgv,nOptions);");
+    }
+    {
+      /* %typemap(in) char **options */
+      if (SvOK(ST(0))) {
+        if (SvROK(ST(0))) {
+          if (SvTYPE(SvRV(ST(0)))==SVt_PVAV) {
+            AV *av = (AV*)(SvRV(ST(0)));
+            for (int i = 0; i < av_len(av)+1; i++) {
+              char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
+              arg1 = CSLAddString( arg1, pszItem );
+            }
+          } else if (SvTYPE(SvRV(ST(0)))==SVt_PVHV) {
+            HV *hv = (HV*)SvRV(ST(0));
+            SV *sv;
+            char *key;
+            I32 klen;
+            arg1 = NULL;
+            hv_iterinit(hv);
+            while(sv = hv_iternextsv(hv,&key,&klen)) {
+              arg1 = CSLAddNameValue( arg1, key, SvPV_nolen(sv) );
+            }
+          } else
+          SWIG_croak("'options' is not a reference to an array or hash");
+        } else
+        SWIG_croak("'options' is not a reference");   
+      }
+    }
+    if (items > 1) {
+      ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+      if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeneralCmdLineProcessor" "', argument " "2"" of type '" "int""'");
+      } 
+      arg2 = static_cast< int >(val2);
+    }
+    {
+      CPLErrorReset();
+      result = (char **)GeneralCmdLineProcessor(arg1,arg2);
+      CPLErr eclass = CPLGetLastErrorType();
+      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
+        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
+        
+        
+        
+      }
+      
+      
+      /* 
+          Make warnings regular Perl warnings. This duplicates the warning
+          message if DontUseExceptions() is in effect (it is not by default).
+          */
+      if ( eclass == CE_Warning ) {
+        warn( CPLGetLastErrorMsg() );
+      }
+      
+      
+    }
+    {
+      /* %typemap(out) char **options -> ( string ) */
+      AV* av = (AV*)sv_2mortal((SV*)newAV());
+      char **stringarray = result;
+      if ( stringarray != NULL ) {
+        int n = CSLCount( stringarray );
+        for ( int i = 0; i < n; i++ ) {
+          SV *s = newSVpv(stringarray[i], strlen(*stringarray));
+          if (!av_store(av, i, s))
+          SvREFCNT_dec(s);
+        }
+      }
+      ST(argvi) = newRV_noinc((SV*)av);
+      argvi++;
+    }
+    {
+      /* %typemap(freearg) char **options */
+      if (arg1) CSLDestroy( arg1 );
+    }
+    
+    XSRETURN(argvi);
+  fail:
+    {
+      /* %typemap(freearg) char **options */
+      if (arg1) CSLDestroy( arg1 );
+    }
+    
+    SWIG_croak_null();
+  }
+}
+
+
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
@@ -19672,6 +17597,12 @@ static void *_p_GDALDatasetShadowTo_p_GDALMajorObjectShadow(void *x, int *SWIGUN
 }
 static void *_p_GDALRasterBandShadowTo_p_GDALMajorObjectShadow(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((GDALMajorObjectShadow *)  ((GDALRasterBandShadow *) x));
+}
+static void *_p_GDALColorTableShadowTo_p_GDALMajorObjectShadow(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((GDALMajorObjectShadow *)  ((GDALColorTableShadow *) x));
+}
+static void *_p_GDALRasterAttributeTableShadowTo_p_GDALMajorObjectShadow(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((GDALMajorObjectShadow *)  ((GDALRasterAttributeTableShadow *) x));
 }
 static swig_type_info _swigt__p_CPLErrorHandler = {"_p_CPLErrorHandler", "CPLErrorHandler *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_CPLXMLNode = {"_p_CPLXMLNode", "CPLXMLNode *", 0, 0, (void*)0, 0};
@@ -19728,7 +17659,7 @@ static swig_cast_info _swigc__p_GDALColorEntry[] = {  {&_swigt__p_GDALColorEntry
 static swig_cast_info _swigc__p_GDALColorTableShadow[] = {  {&_swigt__p_GDALColorTableShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GDALDatasetShadow[] = {  {&_swigt__p_GDALDatasetShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GDALDriverShadow[] = {  {&_swigt__p_GDALDriverShadow, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_GDALMajorObjectShadow[] = {  {&_swigt__p_GDALMajorObjectShadow, 0, 0, 0},  {&_swigt__p_GDALDriverShadow, _p_GDALDriverShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALDatasetShadow, _p_GDALDatasetShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALRasterBandShadow, _p_GDALRasterBandShadowTo_p_GDALMajorObjectShadow, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_GDALMajorObjectShadow[] = {  {&_swigt__p_GDALMajorObjectShadow, 0, 0, 0},  {&_swigt__p_GDALDriverShadow, _p_GDALDriverShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALDatasetShadow, _p_GDALDatasetShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALRasterBandShadow, _p_GDALRasterBandShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALColorTableShadow, _p_GDALColorTableShadowTo_p_GDALMajorObjectShadow, 0, 0},  {&_swigt__p_GDALRasterAttributeTableShadow, _p_GDALRasterAttributeTableShadowTo_p_GDALMajorObjectShadow, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GDALProgressFunc[] = {  {&_swigt__p_GDALProgressFunc, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GDALRasterAttributeTableShadow[] = {  {&_swigt__p_GDALRasterAttributeTableShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GDALRasterBandShadow[] = {  {&_swigt__p_GDALRasterBandShadow, 0, 0, 0},{0, 0, 0, 0}};
@@ -19809,9 +17740,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::GetConfigOption", _wrap_GetConfigOption},
 {"Geo::GDALc::CPLBinaryToHex", _wrap_CPLBinaryToHex},
 {"Geo::GDALc::CPLHexToBinary", _wrap_CPLHexToBinary},
-{"Geo::GDALc::FileFromMemBuffer", _wrap_FileFromMemBuffer},
-{"Geo::GDALc::Unlink", _wrap_Unlink},
-{"Geo::GDALc::HasThreadSupport", _wrap_HasThreadSupport},
 {"Geo::GDALc::MajorObject_GetDescription", _wrap_MajorObject_GetDescription},
 {"Geo::GDALc::MajorObject_SetDescription", _wrap_MajorObject_SetDescription},
 {"Geo::GDALc::MajorObject_GetMetadata", _wrap_MajorObject_GetMetadata},
@@ -19897,15 +17825,11 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::Band_XSize_get", _wrap_Band_XSize_get},
 {"Geo::GDALc::Band_YSize_get", _wrap_Band_YSize_get},
 {"Geo::GDALc::Band_DataType_get", _wrap_Band_DataType_get},
-{"Geo::GDALc::Band_GetBand", _wrap_Band_GetBand},
 {"Geo::GDALc::Band_GetBlockSize", _wrap_Band_GetBlockSize},
-{"Geo::GDALc::Band_GetColorInterpretation", _wrap_Band_GetColorInterpretation},
 {"Geo::GDALc::Band_GetRasterColorInterpretation", _wrap_Band_GetRasterColorInterpretation},
-{"Geo::GDALc::Band_SetColorInterpretation", _wrap_Band_SetColorInterpretation},
 {"Geo::GDALc::Band_SetRasterColorInterpretation", _wrap_Band_SetRasterColorInterpretation},
 {"Geo::GDALc::Band_GetNoDataValue", _wrap_Band_GetNoDataValue},
 {"Geo::GDALc::Band_SetNoDataValue", _wrap_Band_SetNoDataValue},
-{"Geo::GDALc::Band_GetUnitType", _wrap_Band_GetUnitType},
 {"Geo::GDALc::Band_GetRasterCategoryNames", _wrap_Band_GetRasterCategoryNames},
 {"Geo::GDALc::Band_SetRasterCategoryNames", _wrap_Band_SetRasterCategoryNames},
 {"Geo::GDALc::Band_GetMinimum", _wrap_Band_GetMinimum},
@@ -19913,7 +17837,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::Band_GetOffset", _wrap_Band_GetOffset},
 {"Geo::GDALc::Band_GetScale", _wrap_Band_GetScale},
 {"Geo::GDALc::Band_GetStatistics", _wrap_Band_GetStatistics},
-{"Geo::GDALc::Band_ComputeStatistics", _wrap_Band_ComputeStatistics},
 {"Geo::GDALc::Band_SetStatistics", _wrap_Band_SetStatistics},
 {"Geo::GDALc::Band_GetOverviewCount", _wrap_Band_GetOverviewCount},
 {"Geo::GDALc::Band_GetOverview", _wrap_Band_GetOverview},
@@ -19936,7 +17859,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::Band__GetHistogram", _wrap_Band__GetHistogram},
 {"Geo::GDALc::Band_GetDefaultHistogram", _wrap_Band_GetDefaultHistogram},
 {"Geo::GDALc::Band_SetDefaultHistogram", _wrap_Band_SetDefaultHistogram},
-{"Geo::GDALc::Band_HasArbitraryOverviews", _wrap_Band_HasArbitraryOverviews},
 {"Geo::GDALc::Band_ContourGenerate", _wrap_Band_ContourGenerate},
 {"Geo::GDALc::new_ColorTable", _wrap_new_ColorTable},
 {"Geo::GDALc::delete_ColorTable", _wrap_delete_ColorTable},
@@ -19964,8 +17886,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::RasterAttributeTable_SetValueAsDouble", _wrap_RasterAttributeTable_SetValueAsDouble},
 {"Geo::GDALc::RasterAttributeTable_SetRowCount", _wrap_RasterAttributeTable_SetRowCount},
 {"Geo::GDALc::RasterAttributeTable__CreateColumn", _wrap_RasterAttributeTable__CreateColumn},
-{"Geo::GDALc::RasterAttributeTable_GetLinearBinning", _wrap_RasterAttributeTable_GetLinearBinning},
-{"Geo::GDALc::RasterAttributeTable_SetLinearBinning", _wrap_RasterAttributeTable_SetLinearBinning},
 {"Geo::GDALc::RasterAttributeTable_GetRowOfValue", _wrap_RasterAttributeTable_GetRowOfValue},
 {"Geo::GDALc::TermProgress_nocb", _wrap_TermProgress_nocb},
 {"Geo::GDALc::_ComputeMedianCutPCT", _wrap__ComputeMedianCutPCT},
@@ -19974,7 +17894,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::_ComputeProximity", _wrap__ComputeProximity},
 {"Geo::GDALc::_RasterizeLayer", _wrap__RasterizeLayer},
 {"Geo::GDALc::_Polygonize", _wrap__Polygonize},
-{"Geo::GDALc::FillNodata", _wrap_FillNodata},
 {"Geo::GDALc::_SieveFilter", _wrap__SieveFilter},
 {"Geo::GDALc::_RegenerateOverview", _wrap__RegenerateOverview},
 {"Geo::GDALc::_AutoCreateWarpedVRT", _wrap__AutoCreateWarpedVRT},
@@ -19982,8 +17901,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::delete_Transformer", _wrap_delete_Transformer},
 {"Geo::GDALc::Transformer_TransformPoint", _wrap_Transformer_TransformPoint},
 {"Geo::GDALc::Transformer_TransformPoints", _wrap_Transformer_TransformPoints},
-{"Geo::GDALc::ApplyGeoTransform", _wrap_ApplyGeoTransform},
-{"Geo::GDALc::InvGeoTransform", _wrap_InvGeoTransform},
 {"Geo::GDALc::VersionInfo", _wrap_VersionInfo},
 {"Geo::GDALc::AllRegister", _wrap_AllRegister},
 {"Geo::GDALc::GDALDestroyDriverManager", _wrap_GDALDestroyDriverManager},
@@ -20007,6 +17924,7 @@ static swig_command_info swig_commands[] = {
 {"Geo::GDALc::_Open", _wrap__Open},
 {"Geo::GDALc::_OpenShared", _wrap__OpenShared},
 {"Geo::GDALc::IdentifyDriver", _wrap_IdentifyDriver},
+{"Geo::GDALc::GeneralCmdLineProcessor", _wrap_GeneralCmdLineProcessor},
 {0,0}
 };
 /* -----------------------------------------------------------------------------

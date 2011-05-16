@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmtdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: gmtdataset.cpp 12890 2007-11-20 16:17:41Z warmerdam $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library for GMT Grids.
@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "netcdf.h"
 
-CPL_CVSID("$Id: gmtdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: gmtdataset.cpp 12890 2007-11-20 16:17:41Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -240,19 +240,7 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
         nc_close( cdfid );
         return NULL;
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        nc_close( cdfid );
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The GMT driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -377,17 +365,15 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      Figure out general characteristics.                             */
 /* -------------------------------------------------------------------- */
     nc_type nc_datatype;
-    GDALRasterBand *poBand;
+    GDALRasterBand *poBand = poSrcDS->GetRasterBand(1);
     int nXSize, nYSize;
 
-    if( poSrcDS->GetRasterCount() != 1 )
+    if( poSrcDS->GetRasterCount() != 1 || poBand == NULL )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Currently GMT export only supports 1 band datasets." );
         return NULL;
     }
-
-    poBand = poSrcDS->GetRasterBand(1);
 
     nXSize = poSrcDS->GetRasterXSize();
     nYSize = poSrcDS->GetRasterYSize();

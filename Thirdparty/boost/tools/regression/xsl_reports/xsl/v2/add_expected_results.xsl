@@ -23,7 +23,6 @@ http://www.boost.org/LICENSE_1_0.txt)
       
     <xsl:param name="expected_results_file"/>
     <xsl:param name="failures_markup_file"/>
-    <xsl:param name="source"/>
     <xsl:variable name="expected_results" select="document( $expected_results_file )" />
 
     <func:function name="meta:is_test_log_complete">
@@ -36,7 +35,7 @@ http://www.boost.org/LICENSE_1_0.txt)
                 </xsl:when>
                 <xsl:when test="$type='link' or $type='link_fail' or $type='' or $type='lib' or $test_log/link/@result='fail'">
                     <xsl:value-of select="count( $test_log/compile) = 1  and count( $test_log/link) = 1 and count( $test_log/run) = 0"/></xsl:when>
-                <xsl:when test="$type='run' or $type='run_fail' or $type='run_pyd' or $type='run_mpi'">
+                <xsl:when test="$type='run' or $type='run_fail' or $type='run_pyd'">
                     <xsl:value-of select="count( $test_log/compile) = 1  and count( $test_log/link)  = 1 and count($test_log/run) = 1 "/>
                 </xsl:when>
                 <xsl:otherwise> 
@@ -169,8 +168,8 @@ http://www.boost.org/LICENSE_1_0.txt)
                         <note>
                             <span class="auto-note">
                                 This test case was explicitly marked up in 
-                                <a href="http://svn.boost.org/svn/boost/{$source}/status/explicit-failures-markup.xml">
-                                    status/explicit-failures-markup.xml</a> file in the Boost SVN as "expected to fail",
+                                <a href="http://cvs.sourceforge.net/viewcvs.py/boost/boost/status/explicit-failures-markup.xml">
+                                    status/explicit-failures-markup.xml</a> file in the Boost CVS as "expected to fail",
                                 but is passing. Please consult the notes/output below for more details.
                             </span>
                         </note>
@@ -190,8 +189,8 @@ http://www.boost.org/LICENSE_1_0.txt)
                                 <note>
                                     <span class="auto-note">
                                         This failure was explicitly marked as expected in 
-                                        <a href="http://svn.boost.org/svn/boost/{$source}/status/explicit-failures-markup.xml">
-                                            status/explicit-failures-markup.xml</a> file in the Boost SVN. 
+                                        <a href="http://cvs.sourceforge.net/viewcvs.py/boost/boost/status/explicit-failures-markup.xml">
+                                            status/explicit-failures-markup.xml</a> file in the Boost CVS. 
                                         Please contact the library author(s)/maintainer(s) for the explanation of this markup.
                                     </span>
                                 </note>

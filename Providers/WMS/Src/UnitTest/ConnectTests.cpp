@@ -86,17 +86,7 @@ void ConnectTests::TestConnection6 ()
 
 void ConnectTests::TestConnection7 ()
 {
-    bool failed = false;
-
-    try {
-        TestConnection(L"FeatureServer=http://maps1.intergraph.com/wms/world/request.asp");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://maps1.intergraph.com/wms/world/request.asp");
 }
 
 // the following sites sometimes response very slow and they are 
@@ -109,12 +99,6 @@ void ConnectTests::TestConnectionTimeout ()
     TestConnection(L"FeatureServer=http://gis2.gov.ns.ca/servlet/com.esri.wms.Esrimap?");
 }
 
-void ConnectTests::TestConnectionWithProxy()
-{    
-    TestConnection(L"FeatureServer=http://www.terraservice.net/ogccapabilities.ashx;ProxyServerName=10.148.203.106;ProxyServerPort=8088;ProxyServerUsername=u;ProxyServerPassword=p");
-    TestConnection(L"FeatureServer=http://wms.jpl.nasa.gov/wms.cgi;ProxyServerName=shacng7380p51;ProxyServerPort=8088;ProxyServerUsername=u;ProxyServerPassword=p");
-}
-
 void ConnectTests::TestConnection8 ()
 {
     TestConnection(L"FeatureServer=http://atlas.walis.wa.gov.au/servlet/com.esri.wms.Esrimap", true);
@@ -122,34 +106,12 @@ void ConnectTests::TestConnection8 ()
 
 void ConnectTests::TestConnection9 ()
 {
-    bool failed = false;
-    
-    try 
-	{
-        TestConnection(L"FeatureServer=http://www.dottedeyes.com/wms");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://www.dottedeyes.com/wms");
 }
 
 void ConnectTests::TestConnection10 ()
 {
-    bool failed = false;
-    
-    try 
-	{
-        TestConnection(L"FeatureServer=http://data.mapguide.com/mapguide/mapagent/mapagent.fcgi");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://data.mapguide.com/mapguide/mapagent/mapagent.fcgi");
 }
 
 void ConnectTests::TestConnection11 ()
@@ -164,17 +126,7 @@ void ConnectTests::TestConnection12 ()
 
 void ConnectTests::TestConnection13 ()
 {
-    bool failed = false;
-
-    try {
-        TestConnection(L"FeatureServer=http://www.mapguide.com/mapguide/mapagent/mapagent.fcgi");
-    }
-    catch ( ... )
-    {
-        failed = true;
-    }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
+    TestConnection(L"FeatureServer=http://www.mapguide.com/mapguide/mapagent/mapagent.fcgi");
 }
 
 void ConnectTests::TestConnection14 ()

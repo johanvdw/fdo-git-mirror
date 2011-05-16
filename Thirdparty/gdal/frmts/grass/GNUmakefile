@@ -10,15 +10,15 @@ else
 OBJ	=	grass57dataset.o
 endif
 
-CPPFLAGS	:=	 -DGRASS_GISBASE=\"$(GRASS_GISBASE)\" $(GRASS_INCLUDE) $(GDAL_INCLUDE) $(CPPFLAGS)
+CPPFLAGS	:=	$(GRASS_INCLUDE) $(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ) $(OBJ)
 	rm -f *~
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 dist:
 	cp -r pkg gdal-grass-$(GDAL_VER)

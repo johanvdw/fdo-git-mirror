@@ -24,5 +24,8 @@
 #include "CommonNamespace.h"
 #include "CommonUtilities.h"
 
+#using <mscorlib.dll>
+#using <System.dll>
+
 using namespace System;
 using namespace System::Collections;

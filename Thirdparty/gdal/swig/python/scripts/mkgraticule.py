@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: mkgraticule.py 18216 2009-12-08 19:13:48Z rouault $
+# $Id: mkgraticule.py 13002 2007-11-24 19:49:55Z hobu $
 #
 # Project:  OGR Python samples
 # Purpose:  Produce a graticule (grid) dataset.
@@ -49,7 +49,7 @@ def float_range(*args):
     elif (len(args) == 3):
         (start, stop, step) = args
     else:
-        raise TypeError("float_range needs 1-3 float arguments")
+        raise TypeError, "float_range needs 1-3 float arguments"
 
     the_range = []
     steps = (stop-start)/step
@@ -63,9 +63,9 @@ def float_range(*args):
 
 #############################################################################
 def Usage():
-    print ('Usage: mkgraticule [-connected] [-s stepsize] [-substep substepsize]')
-    print ('         [-t_srs srs] [-range xmin ymin xmax ymax] outfile')
-    print('')
+    print 'Usage: mkgraticule [-connected] [-s stepsize] [-substep substepsize]'
+    print '         [-t_srs srs] [-range xmin ymin xmax ymax] outfile'
+    print
     sys.exit(1)
 
 #############################################################################

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: iom_p.h 17910 2009-10-27 02:07:33Z chaitanya $
+ * $Id: iom_p.h 12582 2007-10-29 09:38:21Z pka $
  *
  * Project:  iom - The INTERLIS Object Model
  * Purpose:  For more information, please see <http://iom.sourceforge.net>
@@ -540,23 +540,17 @@ public:
 
 public:
 	// SAX handler
-#if XERCES_VERSION_MAJOR >= 3
-	void  characters (const XMLCh *const chars, const XMLSize_t length); // xerces 3
-	// void  ignorableWhitespace (const XMLCh *const chars, const XMLSize_t length); // xerces 3
-#else
-	void  characters (const XMLCh *const chars, const unsigned int length); // xerces 2
-	// void  ignorableWhitespace (const XMLCh *const chars, const unsigned int length); // xerces 2
-#endif
+	void  characters (const XMLCh *const chars, const unsigned int length);
 	// void  startDocument ();
 	// void  endDocument ();
 	void  startElement (const XMLCh *const uri, const XMLCh *const localname, const XMLCh *const qname, const Attributes &attrs);
 	void  endElement (const XMLCh *const uri, const XMLCh *const localname, const XMLCh *const qname);
+	// void  ignorableWhitespace (const XMLCh *const chars, const unsigned int length);
 	// void  processingInstruction (const XMLCh *const target, const XMLCh *const data); 
 	void  setDocumentLocator (const Locator *const locator);
 	// void  startPrefixMapping (const XMLCh *const prefix, const XMLCh *const uri);
 	// void  endPrefixMapping (const XMLCh *const prefix);
 	// void  skippedEntity (const XMLCh *const name);
-        void startEntity (const XMLCh *const name);
  
 
     void warning(const SAXParseException& exc);
@@ -575,7 +569,6 @@ private:
 	XMLBuffer propertyValue;
 	IomBasket dataContainer; 
 	IomObject object;
-        int m_nEntityCounter;
 	std::stack<class Element> objStack;
 	std::stack<int> stateStack;
 	void pushReturnState(int returnState);

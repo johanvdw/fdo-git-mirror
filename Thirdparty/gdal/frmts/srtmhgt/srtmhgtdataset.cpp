@@ -1,11 +1,11 @@
 /******************************************************************************
- * $Id: srtmhgtdataset.cpp 18117 2009-11-27 19:42:29Z rouault $
+ * $Id: srtmhgtdataset.cpp 15212 2008-08-25 19:03:53Z rouault $
  *
  * Project:  SRTM HGT Driver
  * Purpose:  SRTM HGT File Read Support.
- *           http://dds.cr.usgs.gov/srtm/version2_1/Documentation/SRTM_Topo.pdf
+ *           ftp://e0srp01u.ecs.nasa.gov/srtm/version2/Documentation/SRTM_Topo.pdf
  *           http://www2.jpl.nasa.gov/srtm/faq.html
- *           http://dds.cr.usgs.gov/srtm/version2_1
+ *           ftp://e0srp01u.ecs.nasa.gov/srtm/version2
  * Authors:  Michael Mazzella, Even Rouault
  *
  ******************************************************************************
@@ -37,7 +37,7 @@
 
 #define SRTMHG_NODATA_VALUE -32768
 
-CPL_CVSID("$Id: srtmhgtdataset.cpp 18117 2009-11-27 19:42:29Z rouault $");
+CPL_CVSID("$Id: srtmhgtdataset.cpp 15212 2008-08-25 19:03:53Z rouault $");
 
 CPL_C_START
 void	GDALRegister_SRTMHGT(void);
@@ -251,7 +251,7 @@ CPLErr SRTMHGTDataset::GetGeoTransform(double * padfTransform)
 const char *SRTMHGTDataset::GetProjectionRef()
 
 {
-    return( SRS_WKT_WGS84 );
+    return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]" );
 }
 
 /************************************************************************/
@@ -358,8 +358,6 @@ GDALDataset* SRTMHGTDataset::Open(GDALOpenInfo* poOpenInfo)
   poDS->adfGeoTransform[4] = 0.0000000000;
   poDS->adfGeoTransform[5] = -1.0 / (numPixels-1);
 
-  poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
-  
 /* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
@@ -367,15 +365,15 @@ GDALDataset* SRTMHGTDataset::Open(GDALOpenInfo* poOpenInfo)
   poDS->SetBand(1, tmpBand);
 
 /* -------------------------------------------------------------------- */
+/*      Support overviews.                                              */
+/* -------------------------------------------------------------------- */
+  poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
   poDS->SetDescription(poOpenInfo->pszFilename);
   poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Support overviews.                                              */
-/* -------------------------------------------------------------------- */
-  poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
   return poDS;
 }
@@ -399,18 +397,10 @@ GDALDataset * SRTMHGTDataset::CreateCopy( const char * pszFilename, GDALDataset 
 /* -------------------------------------------------------------------- */
 /*      Some some rudimentary checks                                    */
 /* -------------------------------------------------------------------- */
-    if (nBands == 0)
+    if( nBands != 1)
     {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "SRTMHGT driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-    else if (nBands != 1)
-    {
-        CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
+        CPLError( CE_Warning, CPLE_AppDefined, 
                   "SRTMHGT driver only uses the first band of the dataset.\n");
-        if (bStrict)
-            return NULL;
     }
 
 /* -------------------------------------------------------------------- */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ersdataset.cpp 17867 2009-10-21 21:04:49Z rouault $
+ * $Id: ehdrdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of .ers driver.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ershdrnode.h"
 
-CPL_CVSID("$Id: ersdataset.cpp 17867 2009-10-21 21:04:49Z rouault $");
+CPL_CVSID("$Id: ehdrdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -309,12 +309,10 @@ CPLErr ERSDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
 const char *ERSDataset::GetProjectionRef()
 
 {
-    // try xml first
-    const char* pszPrj = GDALPamDataset::GetProjectionRef();
-    if(pszPrj && strlen(pszPrj) > 0)
-        return pszPrj;
+    if (pszProjection && strlen(pszProjection) > 0)
+        return pszProjection;
 
-    return pszProjection;
+    return GDALPamDataset::GetProjectionRef();
 }
 
 /************************************************************************/
@@ -638,7 +636,6 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
     if( !poHeader->ParseChildren( fpERS ) )
     {
         delete poHeader;
-        VSIFCloseL( fpERS );
         return NULL;
     }
 
@@ -676,13 +673,6 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
     int nBands = atoi(poHeader->Find( "RasterInfo.NrOfBands" ));
     poDS->nRasterXSize = atoi(poHeader->Find( "RasterInfo.NrOfCellsPerLine" ));
     poDS->nRasterYSize = atoi(poHeader->Find( "RasterInfo.NrOfLines" ));
-    
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize) ||
-        !GDALCheckBandCount(nBands, FALSE))
-    {
-        delete poDS;
-        return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*     Get the HeaderOffset if it exists in the header                  */
@@ -756,7 +746,7 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
     if( EQUAL(poHeader->Find("DataSetType",""),"Translated") )
     {
         poDS->poDepFile = (GDALDataset *) 
-            GDALOpenShared( osDataFilePath, poOpenInfo->eAccess );
+            GDALOpenShared( osDataFile, poOpenInfo->eAccess );
 
         if( poDS->poDepFile != NULL 
             && poDS->poDepFile->GetRasterCount() >= nBands )
@@ -801,10 +791,6 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
                                        iWordSize,
                                        iWordSize * nBands * poDS->nRasterXSize,
                                        eType, bNative, TRUE ));
-                if( EQUAL(osCellType,"Signed8BitInteger") )
-                    poDS->GetRasterBand(iBand+1)->
-                        SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", 
-                                         "IMAGE_STRUCTURE" );
             }
         }
     }
@@ -878,7 +864,7 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
             poHeader->Find( "RasterInfo.CellInfo.Ydimension", "" ));
     }
     else if( poHeader->Find( "RasterInfo.RegistrationCoord.Latitude", NULL )
-             && poHeader->Find( "RasterInfo.CellInfo.Xdimension", NULL ) )
+        && poHeader->Find( "RasterInfo.CellInfo.Xdimension", NULL ) )
     {
         poDS->bGotTransform = TRUE;
         poDS->adfGeoTransform[0] = ERSDMS2Dec( 
@@ -987,34 +973,15 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->ReadGCPs();
 
 /* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
-    
-    // if no SR in xml, try aux
-    const char* pszPrj = poDS->GDALPamDataset::GetProjectionRef();
-    if( !pszPrj || strlen(pszPrj) == 0 )
-    {
-        // try aux
-        GDALDataset* poAuxDS = GDALFindAssociatedAuxFile( poOpenInfo->pszFilename, GA_ReadOnly, poDS );
-        if( poAuxDS )
-        {
-            pszPrj = poAuxDS->GetProjectionRef();
-            if( pszPrj && strlen(pszPrj) > 0 )
-            {
-                CPLFree( poDS->pszProjection );
-                poDS->pszProjection = CPLStrdup(pszPrj);
-            }
-
-            GDALClose( poAuxDS );
-        }
-    }
-/* -------------------------------------------------------------------- */
 /*      Check for overviews.                                            */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
+/* -------------------------------------------------------------------- */
+/*      Initialize any PAM information.                                 */
+/* -------------------------------------------------------------------- */
+    poDS->TryLoadXML();
+    
     return( poDS );
 }
 
@@ -1030,13 +997,6 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Verify settings.                                                */
 /* -------------------------------------------------------------------- */
-    if (nBands <= 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "ERS driver does not support %d bands.\n", nBands);
-        return NULL;
-    }
-
     if( eType != GDT_Byte && eType != GDT_Int16 && eType != GDT_UInt16
         && eType != GDT_Int32 && eType != GDT_UInt32
         && eType != GDT_Float32 && eType != GDT_Float64 )
@@ -1089,15 +1049,6 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Handling for signed eight bit data.                             */
-/* -------------------------------------------------------------------- */
-    const char *pszPixelType = CSLFetchNameValue( papszOptions, "PIXELTYPE" );
-    if( pszPixelType 
-        && EQUAL(pszPixelType,"SIGNEDBYTE") 
-        && eType == GDT_Byte )
-        pszCellType = "Signed8BitInteger";
-
-/* -------------------------------------------------------------------- */
 /*      Write binary file.                                              */
 /* -------------------------------------------------------------------- */
     GUIntBig nSize;
@@ -1121,7 +1072,6 @@ GDALDataset *ERSDataset::Create( const char * pszFilename,
         CPLError( CE_Failure, CPLE_FileIO, 
                   "Failed to write %s:\n%s", 
                   osBinFile.c_str(), VSIStrerror( errno ) );
-        VSIFCloseL( fpBin );
         return NULL;
     }
     VSIFCloseL( fpBin );
@@ -1197,7 +1147,6 @@ void GDALRegister_ERS()
 
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>"
-"   <Option name='PIXELTYPE' type='string' description='By setting this to SIGNEDBYTE, a new Byte file can be forced to be written as signed byte'/>"
 "</CreationOptionList>" );
 
         poDriver->pfnOpen = ERSDataset::Open;

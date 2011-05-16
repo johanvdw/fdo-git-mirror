@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,15 +18,15 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: hostares.c,v 1.57 2010-01-26 22:59:43 bagder Exp $
+ * $Id: hostares.c,v 1.32 2007-06-11 13:35:33 bagder Exp $
  ***************************************************************************/
 
 #include "setup.h"
 
 #include <string.h>
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
+#ifdef NEED_MALLOC_H
+#include <malloc.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -46,10 +46,14 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>     /* for the close() proto */
 #endif
-#ifdef __VMS
+#ifdef  VMS
 #include <in.h>
 #include <inet.h>
 #include <stdlib.h>
+#endif
+
+#ifdef HAVE_SETJMP_H
+#include <setjmp.h>
 #endif
 
 #ifdef HAVE_PROCESS_H
@@ -69,15 +73,18 @@
 #include "strerror.h"
 #include "url.h"
 #include "multiif.h"
-#include "inet_pton.h"
 #include "connect.h"
 #include "select.h"
-#include "progress.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
 
-#include "curl_memory.h"
+#if defined(HAVE_INET_NTOA_R) && !defined(HAVE_INET_NTOA_R_DECL)
+#include "inet_ntoa_r.h"
+#endif
+
+#include "memory.h"
+
 /* The last #include file should be: */
 #include "memdebug.h"
 
@@ -102,8 +109,7 @@ int Curl_resolv_getsock(struct connectdata *conn,
 
 {
   struct timeval maxtime;
-  struct timeval timebuf;
-  struct timeval *timeout;
+  struct timeval timeout;
   int max = ares_getsock(conn->data->state.areschannel,
                          (int *)socks, numsocks);
 
@@ -111,16 +117,16 @@ int Curl_resolv_getsock(struct connectdata *conn,
   maxtime.tv_sec = CURL_TIMEOUT_RESOLVE;
   maxtime.tv_usec = 0;
 
-  timeout = ares_timeout(conn->data->state.areschannel, &maxtime, &timebuf);
+  ares_timeout(conn->data->state.areschannel, &maxtime, &timeout);
 
   Curl_expire(conn->data,
-              (timeout->tv_sec * 1000) + (timeout->tv_usec/1000));
+              (timeout.tv_sec * 1000) + (timeout.tv_usec/1000) );
 
   return max;
 }
 
 /*
- * waitperform()
+ * ares_waitperform()
  *
  * 1) Ask ares what sockets it currently plays with, then
  * 2) wait for the timeout period to check for action on ares' sockets.
@@ -129,34 +135,37 @@ int Curl_resolv_getsock(struct connectdata *conn,
  * return number of sockets it worked on
  */
 
-static int waitperform(struct connectdata *conn, int timeout_ms)
+static int ares_waitperform(struct connectdata *conn, int timeout_ms)
 {
   struct SessionHandle *data = conn->data;
   int nfds;
   int bitmask;
   int socks[ARES_GETSOCK_MAXNUM];
   struct pollfd pfd[ARES_GETSOCK_MAXNUM];
+  int m;
   int i;
-  int num = 0;
+  int num;
 
   bitmask = ares_getsock(data->state.areschannel, socks, ARES_GETSOCK_MAXNUM);
 
   for(i=0; i < ARES_GETSOCK_MAXNUM; i++) {
     pfd[i].events = 0;
-    pfd[i].revents = 0;
+    m=0;
     if(ARES_GETSOCK_READABLE(bitmask, i)) {
       pfd[i].fd = socks[i];
       pfd[i].events |= POLLRDNORM|POLLIN;
+      m=1;
     }
     if(ARES_GETSOCK_WRITABLE(bitmask, i)) {
       pfd[i].fd = socks[i];
       pfd[i].events |= POLLWRNORM|POLLOUT;
+      m=1;
     }
-    if(pfd[i].events != 0)
-      num++;
-    else
+    pfd[i].revents=0;
+    if(!m)
       break;
   }
+  num = i;
 
   if(num)
     nfds = Curl_poll(pfd, num, timeout_ms);
@@ -193,7 +202,7 @@ CURLcode Curl_is_resolved(struct connectdata *conn,
 
   *dns = NULL;
 
-  waitperform(conn, 0);
+  ares_waitperform(conn, 0);
 
   if(conn->async.done) {
     /* we're done, kill the ares handle */
@@ -223,7 +232,6 @@ CURLcode Curl_wait_for_resolv(struct connectdata *conn,
   CURLcode rc=CURLE_OK;
   struct SessionHandle *data = conn->data;
   long timeout;
-  struct timeval now = Curl_tvnow();
 
   /* now, see if there's a connect timeout or a regular timeout to
      use instead of the default one */
@@ -235,41 +243,25 @@ CURLcode Curl_wait_for_resolv(struct connectdata *conn,
     timeout = CURL_TIMEOUT_RESOLVE * 1000; /* default name resolve timeout */
 
   /* Wait for the name resolve query to complete. */
-  while(1) {
+  while (1) {
     struct timeval *tvp, tv, store;
+    struct timeval now = Curl_tvnow();
     long timediff;
-    int itimeout;
-    int timeout_ms;
 
-    itimeout = (timeout > (long)INT_MAX) ? INT_MAX : (int)timeout;
-
-    store.tv_sec = itimeout/1000;
-    store.tv_usec = (itimeout%1000)*1000;
+    store.tv_sec = (int)timeout/1000;
+    store.tv_usec = (timeout%1000)*1000;
 
     tvp = ares_timeout(data->state.areschannel, &store, &tv);
 
-    /* use the timeout period ares returned to us above if less than one
-       second is left, otherwise just use 1000ms to make sure the progress
-       callback gets called frequent enough */
-    if(!tvp->tv_sec)
-      timeout_ms = tvp->tv_usec/1000;
-    else
-      timeout_ms = 1000;
-
-    waitperform(conn, timeout_ms);
+    /* use the timeout period ares returned to us above */
+    ares_waitperform(conn, tv.tv_sec * 1000 + tv.tv_usec/1000);
 
     if(conn->async.done)
       break;
 
-    if(Curl_pgrsUpdate(conn)) {
-      rc = CURLE_ABORTED_BY_CALLBACK;
-      timeout = -1; /* trigger the cancel below */
-    }
-    else {
-      timediff = Curl_tvdiff(Curl_tvnow(), now); /* spent time */
-      timeout -= timediff?timediff:1; /* always deduct at least 1 */
-    }
-    if(timeout < 0) {
+    timediff = Curl_tvdiff(Curl_tvnow(), now); /* spent time */
+    timeout -= timediff?timediff:1; /* always deduct at least 1 */
+    if (timeout < 0) {
       /* our timeout, so we cancel the ares operation */
       ares_cancel(data->state.areschannel);
       break;
@@ -285,26 +277,13 @@ CURLcode Curl_wait_for_resolv(struct connectdata *conn,
   if(!conn->async.dns) {
     /* a name was not resolved */
     if((timeout < 0) || (conn->async.status == ARES_ETIMEOUT)) {
-      if (conn->bits.httpproxy) {
-        failf(data, "Resolving proxy timed out: %s", conn->proxy.dispname);
-        rc = CURLE_COULDNT_RESOLVE_PROXY;
-      }
-      else {
-        failf(data, "Resolving host timed out: %s", conn->host.dispname);
-        rc = CURLE_COULDNT_RESOLVE_HOST;
-      }
+      failf(data, "Resolving host timed out: %s", conn->host.dispname);
+      rc = CURLE_OPERATION_TIMEDOUT;
     }
     else if(conn->async.done) {
-      if (conn->bits.httpproxy) {
-        failf(data, "Could not resolve proxy: %s (%s)", conn->proxy.dispname,
-              ares_strerror(conn->async.status));
-        rc = CURLE_COULDNT_RESOLVE_PROXY;
-      }
-      else {
-        failf(data, "Could not resolve host: %s (%s)", conn->host.dispname,
-              ares_strerror(conn->async.status));
-        rc = CURLE_COULDNT_RESOLVE_HOST;
-      }
+      failf(data, "Could not resolve host: %s (%s)", conn->host.dispname,
+            ares_strerror(conn->async.status));
+      rc = CURLE_COULDNT_RESOLVE_HOST;
     }
     else
       rc = CURLE_OPERATION_TIMEDOUT;
@@ -315,32 +294,6 @@ CURLcode Curl_wait_for_resolv(struct connectdata *conn,
   }
 
   return rc;
-}
-
-/*
- * ares_query_completed_cb() is the callback that ares will call when
- * the host query initiated by ares_gethostbyname() from Curl_getaddrinfo(),
- * when using ares, is completed either successfully or with failure.
- */
-static void ares_query_completed_cb(void *arg,  /* (struct connectdata *) */
-                                    int status,
-#ifdef HAVE_CARES_CALLBACK_TIMEOUTS
-                                    int timeouts,
-#endif
-                                    struct hostent *hostent)
-{
-  struct connectdata *conn = (struct connectdata *)arg;
-  struct Curl_addrinfo * ai = NULL;
-
-#ifdef HAVE_CARES_CALLBACK_TIMEOUTS
-  (void)timeouts; /* ignored */
-#endif
-
-  if (status == CURL_ASYNC_SUCCESS) {
-    ai = Curl_he2ai(hostent, conn->async.port);
-  }
-
-  (void)Curl_addrinfo_callback(arg, status, ai);
 }
 
 /*
@@ -358,43 +311,14 @@ Curl_addrinfo *Curl_getaddrinfo(struct connectdata *conn,
 {
   char *bufp;
   struct SessionHandle *data = conn->data;
-  struct in_addr in;
-  int family = PF_INET;
-#ifdef ENABLE_IPV6 /* CURLRES_IPV6 */
-  struct in6_addr in6;
-#endif /* CURLRES_IPV6 */
+  in_addr_t in = inet_addr(hostname);
 
-  *waitp = 0; /* default to synchronous response */
+  *waitp = FALSE;
 
-  /* First check if this is an IPv4 address string */
-  if(Curl_inet_pton(AF_INET, hostname, &in) > 0) {
+  if (in != CURL_INADDR_NONE) {
     /* This is a dotted IP address 123.123.123.123-style */
-    return Curl_ip2addr(AF_INET, &in, hostname, port);
+    return Curl_ip2addr(in, hostname, port);
   }
-
-#ifdef ENABLE_IPV6 /* CURLRES_IPV6 */
-  /* Otherwise, check if this is an IPv6 address string */
-  if (Curl_inet_pton (AF_INET6, hostname, &in6) > 0) {
-    /* This must be an IPv6 address literal.  */
-    return Curl_ip2addr(AF_INET6, &in6, hostname, port);
-  }
-
-  switch(data->set.ip_version) {
-  default:
-#if ARES_VERSION >= 0x010601
-    family = PF_UNSPEC; /* supported by c-ares since 1.6.1, so for older
-                           c-ares versions this just falls through and defaults
-                           to PF_INET */
-    break;
-#endif
-  case CURL_IPRESOLVE_V4:
-    family = PF_INET;
-    break;
-  case CURL_IPRESOLVE_V6:
-    family = PF_INET6;
-    break;
-  }
-#endif /* CURLRES_IPV6 */
 
   bufp = strdup(hostname);
 
@@ -407,10 +331,10 @@ Curl_addrinfo *Curl_getaddrinfo(struct connectdata *conn,
     conn->async.dns = NULL;   /* clear */
 
     /* areschannel is already setup in the Curl_open() function */
-    ares_gethostbyname(data->state.areschannel, hostname, family,
-                       (ares_host_callback)ares_query_completed_cb, conn);
+    ares_gethostbyname(data->state.areschannel, hostname, PF_INET,
+                       (ares_host_callback)Curl_addrinfo4_callback, conn);
 
-    *waitp = 1; /* expect asynchronous response */
+    *waitp = TRUE; /* please wait for the response */
   }
   return NULL; /* no struct yet */
 }

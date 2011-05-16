@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrasslayer.cpp 17122 2009-05-25 20:48:40Z rouault $
+ * $Id: ogrgrasslayer.cpp 15235 2008-08-27 19:44:56Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSLayer class.
@@ -31,7 +31,7 @@
 #include "ogrgrass.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgrasslayer.cpp 17122 2009-05-25 20:48:40Z rouault $");
+CPL_CVSID("$Id: ogrgrasslayer.cpp 15235 2008-08-27 19:44:56Z rouault $");
 
 /************************************************************************/
 /*                           OGRGRASSLayer()                            */
@@ -98,26 +98,19 @@ OGRGRASSLayer::OGRGRASSLayer( int layerIndex,  struct Map_info * map )
 	types |= type;
         CPLDebug ( "GRASS", "type = %d types = %d", type, types );
     }
-    
-    OGRwkbGeometryType eGeomType = wkbUnknown;
     if ( types == GV_LINE || types == GV_BOUNDARY || types == GV_LINES ) 
     {
-        eGeomType = wkbLineString;
+        poFeatureDefn->SetGeomType ( wkbLineString );
     } 
     else if ( types == GV_POINT )
     {
-        eGeomType = wkbPoint;
+	poFeatureDefn->SetGeomType ( wkbPoint );
     }
     else if ( types == GV_AREA )
     {
         CPLDebug ( "GRASS", "set wkbPolygon" );
-        eGeomType = wkbPolygon;
+	poFeatureDefn->SetGeomType ( wkbPolygon );
     }
-
-    if (Vect_is_3d(poMap))
-        poFeatureDefn->SetGeomType ( (OGRwkbGeometryType)(eGeomType | wkb25DBit) );
-    else
-        poFeatureDefn->SetGeomType ( eGeomType );
 
     // Get attributes definition
     poDbString = (dbString*) CPLMalloc ( sizeof(dbString) );
@@ -867,16 +860,12 @@ OGRGeometry *OGRGRASSLayer::GetFeatureGeometry ( long nFeatureId, int *cat )
     //CPLDebug ( "GRASS", "cat = %d type = %d id = %d", *cat, type, id );
 
     OGRGeometry *poOGR = NULL;
-    int bIs3D = Vect_is_3d(poMap);
 
     switch ( type ) {
 	case GV_POINT:
         {
 	    Vect_read_line ( poMap, poPoints, poCats, id);
-            if (bIs3D)
-                poOGR = new OGRPoint( poPoints->x[0], poPoints->y[0], poPoints->z[0] );
-            else
-                poOGR = new OGRPoint( poPoints->x[0], poPoints->y[0] );
+	    poOGR = new OGRPoint( poPoints->x[0], poPoints->y[0], poPoints->z[0] );
         }
         break;
 	    
@@ -885,12 +874,8 @@ OGRGeometry *OGRGRASSLayer::GetFeatureGeometry ( long nFeatureId, int *cat )
         {
 	    Vect_read_line ( poMap, poPoints, poCats, id);
 	    OGRLineString *poOGRLine = new OGRLineString();
-            if (bIs3D)
-                poOGRLine->setPoints( poPoints->n_points, 
-                                      poPoints->x, poPoints->y, poPoints->z );
-            else
-                poOGRLine->setPoints( poPoints->n_points, 
-                                      poPoints->x, poPoints->y );
+            poOGRLine->setPoints( poPoints->n_points, 
+		                  poPoints->x, poPoints->y, poPoints->z );
 
             poOGR = poOGRLine;
         }
@@ -905,12 +890,8 @@ OGRGeometry *OGRGRASSLayer::GetFeatureGeometry ( long nFeatureId, int *cat )
 
 	    OGRLinearRing       *poRing;
 	    poRing = new OGRLinearRing();
-            if (bIs3D)
-                poRing->setPoints( poPoints->n_points,
-                                poPoints->x, poPoints->y, poPoints->z );
-            else
-                poRing->setPoints( poPoints->n_points,
-                                poPoints->x, poPoints->y ); 
+	    poRing->setPoints( poPoints->n_points,
+		               poPoints->x, poPoints->y, poPoints->z ); 
 
 	    poOGRPoly->addRingDirectly( poRing );
 
@@ -921,12 +902,8 @@ OGRGeometry *OGRGRASSLayer::GetFeatureGeometry ( long nFeatureId, int *cat )
 		Vect_get_isle_points ( poMap, isle, poPoints );
 
 		poRing = new OGRLinearRing();
-                if (bIs3D)
-                    poRing->setPoints( poPoints->n_points,
-                                    poPoints->x, poPoints->y, poPoints->z );
-                else
-                    poRing->setPoints( poPoints->n_points,
-                                    poPoints->x, poPoints->y );
+		poRing->setPoints( poPoints->n_points,
+				   poPoints->x, poPoints->y, poPoints->z ); 
 
 		poOGRPoly->addRingDirectly( poRing );
 	    }

@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <time.h>
 
@@ -54,7 +53,7 @@ main(void)
     char nline[256];
 
     curl_easy_setopt(curl, CURLOPT_URL, "http://www.google.com/"); /* google.com sets "PREF" cookie */
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, ""); /* just to start the cookie engine */
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
@@ -75,7 +74,7 @@ main(void)
 #define snprintf _snprintf
 #endif
     /* Netscape format cookie */
-    snprintf(nline, sizeof(nline), "%s\t%s\t%s\t%s\t%lu\t%s\t%s",
+    snprintf(nline, 256, "%s\t%s\t%s\t%s\t%u\t%s\t%s",
       ".google.com", "TRUE", "/", "FALSE", time(NULL) + 31337, "PREF", "hello google, i like you very much!");
     res = curl_easy_setopt(curl, CURLOPT_COOKIELIST, nline);
     if (res != CURLE_OK) {
@@ -84,7 +83,7 @@ main(void)
     }
 
     /* HTTP-header style cookie */
-    snprintf(nline, sizeof(nline),
+    snprintf(nline, 256,
       "Set-Cookie: OLD_PREF=3d141414bf4209321; "
       "expires=Sun, 17-Jan-2038 19:14:07 GMT; path=/; domain=.google.com");
     res = curl_easy_setopt(curl, CURLOPT_COOKIELIST, nline);

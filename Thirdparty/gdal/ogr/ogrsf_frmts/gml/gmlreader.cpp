@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.cpp 18190 2009-12-06 05:25:31Z chaitanya $
+ * $Id: gmlreader.cpp 15773 2008-11-20 20:17:16Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader class.
@@ -47,10 +47,10 @@ IGMLReader::~IGMLReader()
 
 /************************************************************************/
 /* ==================================================================== */
-/*                  No XERCES or EXPAT Library                          */
+/*                  No XERCES Library                                   */
 /* ==================================================================== */
 /************************************************************************/
-#if HAVE_XERCES == 0 && !defined(HAVE_EXPAT)
+#if HAVE_XERCES == 0
 
 /************************************************************************/
 /*                          CreateGMLReader()                           */
@@ -60,17 +60,17 @@ IGMLReader *CreateGMLReader()
 
 {
     CPLError( CE_Failure, CPLE_AppDefined,
-              "Unable to create Xerces C++ or Expat based GML reader, Xerces or Expat support\n"
+              "Unable to create Xerces C++ based GML reader, Xerces support\n"
               "not configured into GDAL/OGR." );
     return NULL;
 }
 
 /************************************************************************/
 /* ==================================================================== */
-/*                  With XERCES or EXPAT Library                        */
+/*                  With XERCES Library                                 */
 /* ==================================================================== */
 /************************************************************************/
-#else /* HAVE_XERCES == 1 or HAVE_EXPAT */
+#else /* HAVE_XERCES == 1 */
 
 #include "gmlreaderp.h"
 #include "cpl_conv.h"
@@ -85,9 +85,6 @@ IGMLReader *CreateGMLReader()
     return new GMLReader();
 }
 
-int GMLReader::m_bXercesInitialized = FALSE;
-int GMLReader::m_nInstanceCount = 0;
-
 /************************************************************************/
 /*                             GMLReader()                              */
 /************************************************************************/
@@ -95,30 +92,19 @@ int GMLReader::m_nInstanceCount = 0;
 GMLReader::GMLReader()
 
 {
-    m_nInstanceCount++;
     m_nClassCount = 0;
     m_papoClass = NULL;
 
     m_bClassListLocked = FALSE;
 
     m_poGMLHandler = NULL;
-#if HAVE_XERCES == 1
     m_poSAXReader = NULL;
-    m_poCompleteFeature = NULL;
-#else
-    oParser = NULL;
-    ppoFeatureTab = NULL;
-    nFeatureTabIndex = 0;
-    nFeatureTabLength = 0;
-    fpGML = NULL;
-#endif
     m_bReadStarted = FALSE;
     
     m_poState = NULL;
+    m_poCompleteFeature = NULL;
 
     m_pszFilename = NULL;
-
-    m_bStopParsing = FALSE;
 }
 
 /************************************************************************/
@@ -133,21 +119,6 @@ GMLReader::~GMLReader()
     CPLFree( m_pszFilename );
 
     CleanupParser();
-
-    --m_nInstanceCount;
-#if HAVE_XERCES == 1
-    if( m_nInstanceCount == 0 && m_bXercesInitialized )
-    {
-        XMLPlatformUtils::Terminate();
-        m_bXercesInitialized = FALSE;
-    }
-#endif
-
-#ifdef HAVE_EXPAT
-    if (fpGML)
-        VSIFCloseL(fpGML);
-    fpGML = NULL;
-#endif
 }
 
 /************************************************************************/
@@ -161,26 +132,6 @@ void GMLReader::SetSourceFile( const char *pszFilename )
     m_pszFilename = CPLStrdup( pszFilename );
 }
 
-#ifdef HAVE_EXPAT
-
-static void XMLCALL startElementCbk(void *pUserData, const char *pszName,
-                                    const char **ppszAttr)
-{
-    ((GMLHandler*)pUserData)->startElement(pszName, ppszAttr);
-}
-
-static void XMLCALL endElementCbk(void *pUserData, const char *pszName)
-{
-    ((GMLHandler*)pUserData)->endElement(pszName);
-}
-
-static void XMLCALL dataHandlerCbk(void *pUserData, const char *data, int nLen)
-{
-    ((GMLHandler*)pUserData)->dataHandler(data, nLen);
-}
-
-#endif
-
 /************************************************************************/
 /*                            SetupParser()                             */
 /************************************************************************/
@@ -188,9 +139,9 @@ static void XMLCALL dataHandlerCbk(void *pUserData, const char *data, int nLen)
 int GMLReader::SetupParser()
 
 {
-#if HAVE_XERCES == 1
+    static int bXercesInitialized = FALSE;
 
-    if( !m_bXercesInitialized )
+    if( !bXercesInitialized )
     {
         try
         {
@@ -204,7 +155,7 @@ int GMLReader::SetupParser()
                       tr_strdup(toCatch.getMessage()) );
             return FALSE;
         }
-        m_bXercesInitialized = TRUE;
+        bXercesInitialized = TRUE;
     }
 
     // Cleanup any old parser.
@@ -212,13 +163,10 @@ int GMLReader::SetupParser()
         CleanupParser();
 
     // Create and initialize parser.
-    XMLCh* xmlUriValid = NULL;
-    XMLCh* xmlUriNS = NULL;
-
     try{
         m_poSAXReader = XMLReaderFactory::createXMLReader();
     
-        m_poGMLHandler = new GMLXercesHandler( this );
+        m_poGMLHandler = new GMLHandler( this );
 
         m_poSAXReader->setContentHandler( m_poGMLHandler );
         m_poSAXReader->setErrorHandler( m_poGMLHandler );
@@ -226,12 +174,11 @@ int GMLReader::SetupParser()
         m_poSAXReader->setEntityResolver( m_poGMLHandler );
         m_poSAXReader->setDTDHandler( m_poGMLHandler );
 
-        xmlUriValid = XMLString::transcode("http://xml.org/sax/features/validation");
-        xmlUriNS = XMLString::transcode("http://xml.org/sax/features/namespaces");
-
 #if (OGR_GML_VALIDATION)
-        m_poSAXReader->setFeature( xmlUriValid, true);
-        m_poSAXReader->setFeature( xmlUriNS, true);
+        m_poSAXReader->setFeature(
+            XMLString::transcode("http://xml.org/sax/features/validation"), true);
+        m_poSAXReader->setFeature(
+            XMLString::transcode("http://xml.org/sax/features/namespaces"), true);
 
         m_poSAXReader->setFeature( XMLUni::fgSAX2CoreNameSpaces, true );
         m_poSAXReader->setFeature( XMLUni::fgXercesSchema, true );
@@ -248,33 +195,13 @@ int GMLReader::SetupParser()
 #endif
 
 #endif
-        XMLString::release( &xmlUriValid );
-        XMLString::release( &xmlUriNS );
     }
     catch (...)
     {
-        XMLString::release( &xmlUriValid );
-        XMLString::release( &xmlUriNS );
-
         CPLError( CE_Warning, CPLE_AppDefined,
                   "Exception initializing Xerces based GML reader.\n" );
         return FALSE;
     }
-#else
-    // Cleanup any old parser.
-    if( oParser != NULL )
-        CleanupParser();
-
-    oParser = OGRCreateExpatXMLParser();
-    m_poGMLHandler = new GMLExpatHandler( this, oParser );
-
-    XML_SetElementHandler(oParser, ::startElementCbk, ::endElementCbk);
-    XML_SetCharacterDataHandler(oParser, ::dataHandlerCbk);
-    XML_SetUserData(oParser, m_poGMLHandler);
-
-    if (fpGML != NULL)
-        VSIFSeekL( fpGML, 0, SEEK_SET );
-#endif
 
     m_bReadStarted = FALSE;
 
@@ -291,34 +218,14 @@ int GMLReader::SetupParser()
 void GMLReader::CleanupParser()
 
 {
-#if HAVE_XERCES == 1
     if( m_poSAXReader == NULL )
         return;
-#else
-    if (oParser == NULL )
-        return;
-#endif
 
     while( m_poState )
         PopState();
 
-#if HAVE_XERCES == 1
     delete m_poSAXReader;
     m_poSAXReader = NULL;
-#else
-    if (oParser)
-        XML_ParserFree(oParser);
-    oParser = NULL;
-
-    int i;
-    for(i=nFeatureTabIndex;i<nFeatureTabLength;i++)
-        delete ppoFeatureTab[i];
-    CPLFree(ppoFeatureTab);
-    nFeatureTabIndex = 0;
-    nFeatureTabLength = 0;
-    ppoFeatureTab = NULL;
-
-#endif
 
     delete m_poGMLHandler;
     m_poGMLHandler = NULL;
@@ -330,7 +237,6 @@ void GMLReader::CleanupParser()
 /*                            NextFeature()                             */
 /************************************************************************/
 
-#if HAVE_XERCES == 1
 GMLFeature *GMLReader::NextFeature()
 
 {
@@ -349,7 +255,6 @@ GMLFeature *GMLReader::NextFeature()
         }
 
         while( m_poCompleteFeature == NULL 
-               && !m_bStopParsing
                && m_poSAXReader->parseNext( m_oToFill ) ) {}
 
         poReturn = m_poCompleteFeature;
@@ -358,82 +263,13 @@ GMLFeature *GMLReader::NextFeature()
     }
     catch (const XMLException& toCatch)
     {
-        char *pszErrorMessage = tr_strdup( toCatch.getMessage() );
         CPLDebug( "GML", 
                   "Error during NextFeature()! Message:\n%s", 
-                  pszErrorMessage );
-        CPLFree(pszErrorMessage);
-        m_bStopParsing = TRUE;
-    }
-    catch (const SAXException& toCatch)
-    {
-        char *pszErrorMessage = tr_strdup( toCatch.getMessage() );
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", pszErrorMessage);
-        CPLFree(pszErrorMessage);
-        m_bStopParsing = TRUE;
+                  tr_strdup( toCatch.getMessage() ) );
     }
 
     return poReturn;
 }
-#else
-GMLFeature *GMLReader::NextFeature()
-
-{
-    if (!m_bReadStarted)
-    {
-        if (oParser == NULL)
-            SetupParser();
-
-        if (fpGML == NULL)
-            fpGML = VSIFOpenL(m_pszFilename, "rt");
-
-        m_bReadStarted = TRUE;
-    }
-
-    if (fpGML == NULL || m_bStopParsing)
-        return NULL;
-
-    if (nFeatureTabIndex < nFeatureTabLength)
-    {
-        return ppoFeatureTab[nFeatureTabIndex++];
-    }
-
-    if (VSIFEofL(fpGML))
-        return NULL;
-
-    char aBuf[BUFSIZ];
-
-    CPLFree(ppoFeatureTab);
-    ppoFeatureTab = NULL;
-    nFeatureTabLength = 0;
-    nFeatureTabIndex = 0;
-
-    int nDone;
-    do
-    {
-        m_poGMLHandler->ResetDataHandlerCounter();
-
-        unsigned int nLen =
-                (unsigned int)VSIFReadL( aBuf, 1, sizeof(aBuf), fpGML );
-        nDone = VSIFEofL(fpGML);
-        if (XML_Parse(oParser, aBuf, nLen, nDone) == XML_STATUS_ERROR)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "XML parsing of GML file failed : %s "
-                     "at line %d, column %d",
-                     XML_ErrorString(XML_GetErrorCode(oParser)),
-                     (int)XML_GetCurrentLineNumber(oParser),
-                     (int)XML_GetCurrentColumnNumber(oParser));
-            m_bStopParsing = TRUE;
-        }
-        if (!m_bStopParsing)
-            m_bStopParsing = m_poGMLHandler->HasStoppedParsing();
-
-    } while (!nDone && !m_bStopParsing && nFeatureTabLength == 0);
-
-    return (nFeatureTabLength) ? ppoFeatureTab[nFeatureTabIndex++] : NULL;
-}
-#endif
 
 /************************************************************************/
 /*                            PushFeature()                             */
@@ -446,7 +282,7 @@ GMLFeature *GMLReader::NextFeature()
 /************************************************************************/
 
 void GMLReader::PushFeature( const char *pszElement, 
-                             const char *pszFID )
+                             const Attributes &attrs )
 
 {
     int iClass;
@@ -478,9 +314,16 @@ void GMLReader::PushFeature( const char *pszElement,
 /*      if available.                                                   */
 /* -------------------------------------------------------------------- */
     GMLFeature *poFeature = new GMLFeature( GetClass( iClass ) );
-    if( pszFID != NULL )
+    int nFIDIndex;
+    XMLCh   anFID[100];
+
+    tr_strcpy( anFID, "fid" );
+    nFIDIndex = attrs.getIndex( anFID );
+    if( nFIDIndex != -1 )
     {
+        char *pszFID = tr_strdup( attrs.getValue( nFIDIndex ) );
         poFeature->SetFID( pszFID );
+        CPLFree( pszFID );
     }
 
 /* -------------------------------------------------------------------- */
@@ -508,8 +351,7 @@ int GMLReader::IsFeatureElement( const char *pszElement )
     const char *pszLast = m_poState->GetLastComponent();
     int        nLen = strlen(pszLast);
 
-    if( nLen < 6 || !(EQUAL(pszLast+nLen-6,"member") ||
-                      EQUAL(pszLast+nLen-7,"members")) )
+    if( nLen < 6 || !EQUAL(pszLast+nLen-6,"member") )
         return FALSE;
 
     // If the class list isn't locked, any element that is a featureMember
@@ -561,24 +403,11 @@ void GMLReader::PopState()
 {
     if( m_poState != NULL )
     {
-#if HAVE_XERCES == 1
         if( m_poState->m_poFeature != NULL && m_poCompleteFeature == NULL )
         {
             m_poCompleteFeature = m_poState->m_poFeature;
             m_poState->m_poFeature = NULL;
         }
-#else
-        if ( m_poState->m_poFeature != NULL )
-        {
-            ppoFeatureTab = (GMLFeature**)
-                    CPLRealloc(ppoFeatureTab,
-                                sizeof(GMLFeature*) * (nFeatureTabLength + 1));
-            ppoFeatureTab[nFeatureTabLength] = m_poState->m_poFeature;
-            nFeatureTabLength++;
-
-            m_poState->m_poFeature = NULL;
-        }
-#endif
 
         GMLReadState *poParent;
 
@@ -977,5 +806,5 @@ void GMLReader::ResetReading()
     CleanupParser();
 }
 
-#endif /* HAVE_XERCES == 1 or HAVE_EXPAT */
+#endif /* HAVE_XERCES == 1 */
 

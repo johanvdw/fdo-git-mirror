@@ -40,10 +40,6 @@ private:
 public:
 
      ~GdbiStatement(void);
-     int GetQueryId();
-
-     GdbiCommands* GetGdbiCommands() { return m_pGdbiCommands; }
-
     //
     // Bind overrides
     int Bind( int parmIndex, int size, const char* szValue, GDBI_NI_TYPE *nullInd = NULL);
@@ -61,6 +57,8 @@ public:
     int Bind( int parmIndex, FdoInt64 *i64Value, GDBI_NI_TYPE *nullInd = NULL );
 
     int Bind( int parmIndex, FdoIGeometry* gValue, GDBI_NI_TYPE *nullInd = NULL );
+
+    int Bind( int parmIndex, FdoDateTime *dValue, GDBI_NI_TYPE *nullInd = NULL );
 
     int Bind(
         int parmIndex,       /* column/expression position               */
@@ -95,10 +93,6 @@ public:
 	int geom_srid_set(
 			int				parmIndex,
 			long			srid );
-
-	int geom_version_set(
-			int				parmIndex,
-			long			version );
 
     char * GetGeomInfoFromFgf( long srid, FdoByteArray * fgf );
 

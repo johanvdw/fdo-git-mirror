@@ -20,7 +20,6 @@
 #include "Owner.h"
 #include "Table.h"
 #include "View.h"
-#include "Synonym.h"
 #include "Mgr.h"
 #include "Rd/DbObjectReader.h"
 #include "Rd/BaseObjectReader.h"
@@ -29,7 +28,6 @@
 #include "Rd/FkeyReader.h"
 #include "Rd/IndexReader.h"
 #include "Rd/PkeyReader.h"
-#include "Rd/SynonymReader.h"
 #include "Rd/SpatialContextReader.h"
 #include "Rd/CoordSysReader.h"
 #include "Rd/DbSchemaReader.h"
@@ -232,16 +230,6 @@ FdoSmPhDbObjectP FdoSmPhSqsOwner::NewView(
     return new FdoSmPhSqsView(viewName, rootDatabase, rootOwner, rootObjectName, this, elementState, reader);
 }
 
-FdoSmPhDbObjectP FdoSmPhSqsOwner::NewSynonym(
-    FdoStringP synonymName,
-    FdoSmPhDbObjectP rootObject,
-    FdoSchemaElementState elementState,
-    FdoSmPhRdDbObjectReader* reader
-)
-{
-    return new FdoSmPhSqsSynonym(synonymName, rootObject, this, elementState, reader);
-}
-
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoStringP dbObject) const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
@@ -254,20 +242,6 @@ FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoString
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
     return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringP objectName ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectName, true  );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames, true );
 }
 
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoSmPhRdTableJoinP join ) const
@@ -283,14 +257,6 @@ FdoPtr<FdoSmPhRdBaseObjectReader> FdoSmPhSqsOwner::CreateBaseObjectReader() cons
 
     return new FdoSmPhRdSqsBaseObjectReader( FDO_SAFE_ADDREF(pOwner) );
 }
-
-FdoPtr<FdoSmPhRdBaseObjectReader> FdoSmPhSqsOwner::CreateBaseObjectReader(FdoStringsP objectNames) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsBaseObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
-
 
 FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhSqsOwner::CreateConstraintReader( FdoStringP constraintName) const
 {
@@ -324,40 +290,14 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader() const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
-    return new FdoSmPhRdSqsFkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdSqsFkeyReader* reader = NULL;
-    reader = new FdoSmPhRdSqsFkeyReader(
-        thisOwner,
-        objectNames
-        );
-
-    return reader;
+    return new FdoSmPhRdSqsFkeyReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhSqsOwner::CreateIndexReader() const
 {
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
+    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
-    return new FdoSmPhRdSqsIndexReader( thisOwner );
-}
-
-FdoPtr<FdoSmPhRdIndexReader> FdoSmPhSqsOwner::CreateIndexReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    return new FdoSmPhRdSqsIndexReader(thisOwner, objectNames);
+    return new FdoSmPhRdSqsIndexReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhSqsOwner::CreatePkeyReader() const
@@ -365,21 +305,6 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhSqsOwner::CreatePkeyReader() const
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
     return new FdoSmPhRdSqsPkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhSqsOwner::CreatePkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdSqsPkeyReader* reader = NULL;
-    reader = new FdoSmPhRdSqsPkeyReader(
-        thisOwner,
-        objectNames
-        );
-
-    return reader;
 }
 
 FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhSqsOwner::CreatePkeyReader( FdoPtr<FdoSmPhRdTableJoin> join ) const
@@ -410,27 +335,6 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhSqsOwner::CreateColumnReader( FdoSmPhRdTabl
     return new FdoSmPhRdSqsColumnReader( FDO_SAFE_ADDREF(pOwner), join );
 }
 
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader() const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringP synonymName) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymName );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringsP synonymNames) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymNames );
-}
-
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader()
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this) );
@@ -439,11 +343,6 @@ FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextRea
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringP dbObjectName )
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), dbObjectName );
-}
-
-FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringsP objectNames )
-{
-    return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), objectNames );
 }
 
 FdoSmPhRdCoordSysReaderP FdoSmPhSqsOwner::CreateCoordSysReader( FdoInt64 srid ) const
@@ -463,7 +362,6 @@ FdoSmPhRdCoordSysReaderP FdoSmPhSqsOwner::CreateCoordSysReader( FdoStringP csNam
 bool FdoSmPhSqsOwner::Add()
 {
     FdoSmPhSqsMgrP mgr = GetManager()->SmartCast<FdoSmPhSqsMgr>();
-    FdoSmPhDatabase* pDatabase = (FdoSmPhDatabase*)GetParent();
     GdbiConnection* gdbiConn = mgr->GetGdbiConnection();
     GdbiCommands* gdbiCommands = gdbiConn->GetCommands();
 	bool		  autoCmtChanged = false;
@@ -481,31 +379,28 @@ bool FdoSmPhSqsOwner::Add()
     gdbiCommands->tran_end( "SmPreCreateDatabase" );
 
 	int autoCmtMode = gdbiCommands->autocommit_mode();
-	if (autoCmtMode == 0) //SQL_AUTOCOMMIT_OFF
+	if (autoCmtMode == 1) //SQL_AUTOCOMMIT_ON 
 	{
-        // we need it SQL_AUTOCOMMIT_ON with the new driver
-        gdbiCommands->autocommit_on();
+		gdbiCommands->autocommit_off();
 		autoCmtChanged = true;
 	}
     // Wrap the database create in a transaction.
     gdbiCommands->tran_begin( "SmCreateDatabase" );
     try {
-        gdbiConn->ExecuteNonQuery((FdoString*) sqlStmt, true);
+        gdbiConn->ExecuteNonQuery( (FdoString*) sqlStmt );
     }
     catch ( ... ) {
         try {
             gdbiCommands->tran_end( "SmCreateDatabase" );
 			if (autoCmtChanged)
-				gdbiCommands->autocommit_off();
+				gdbiCommands->autocommit_on();
         }
-        catch (FdoException *ex) { ex->Release(); }
-        catch ( ... ) {}            
-
+        catch ( ... ) {        
+        }
+    
         throw;
     }
     gdbiCommands->tran_end( "SmCreateDatabase" );
-    if (autoCmtChanged)
-	    gdbiCommands->autocommit_off();
 
     if ( GetHasMetaSchema() ) {
         FdoStringsP keywords = FdoStringCollection::Create();
@@ -533,8 +428,6 @@ bool FdoSmPhSqsOwner::Add()
                 
                 if ( prevOwner )
                     prevOwner->SetCurrent();
-                else
-                    pDatabase->UnsetCurrentOwner();
             }
             catch (...) {
             }
@@ -552,8 +445,6 @@ bool FdoSmPhSqsOwner::Add()
                 
         if ( prevOwner && FdoStringP(prevOwner->GetName()).GetLength() != 0)
             prevOwner->SetCurrent();
-        else
-            pDatabase->UnsetCurrentOwner();
 
         //TODO: spatial handling?
     }

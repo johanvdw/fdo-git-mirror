@@ -22,7 +22,6 @@
 #include "local.h"
 
 #define POSTGIS_TEMPLATE_DBNAME "template_postgis"
-#define POSTGIS_DEFAULT_DBNAME "postgres"
 
 /**
  * Open connection with PostGIS data store.

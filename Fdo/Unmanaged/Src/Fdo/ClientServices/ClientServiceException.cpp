@@ -1,5 +1,5 @@
 /***************************************************************************
-* 
+ * 
 * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
@@ -16,6 +16,10 @@
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * 
  ***************************************************************************/
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN	// Exclude rarely-used stuff from Windows headers
+#include <windows.h>
+#endif
 
 #include <Fdo/ClientServices/ClientServiceException.h>
 
@@ -24,12 +28,12 @@ FdoClientServiceException* FdoClientServiceException::Create()
 	return new FdoClientServiceException();
 }
 
-FdoClientServiceException* FdoClientServiceException::Create(FdoString* message)
+FdoClientServiceException* FdoClientServiceException::Create(const wchar_t* message)
 {
 	return new FdoClientServiceException(message);
 }
 
-FdoClientServiceException* FdoClientServiceException::Create(FdoString* message, FdoInt64 nativeErrorCode)
+FdoClientServiceException* FdoClientServiceException::Create(const wchar_t* message, FdoInt64 nativeErrorCode)
 {
     return new FdoClientServiceException(message, nativeErrorCode);
 }
@@ -39,12 +43,12 @@ FdoClientServiceException::FdoClientServiceException() :
 {
 }
 
-FdoClientServiceException::FdoClientServiceException(FdoString* message) :
+FdoClientServiceException::FdoClientServiceException(const wchar_t* message) :
     FdoException (message)
 {
 }
 
-FdoClientServiceException::FdoClientServiceException(FdoString* message, FdoInt64 nativeErrorCode) :
+FdoClientServiceException::FdoClientServiceException(const wchar_t* message, FdoInt64 nativeErrorCode) :
 FdoException (message, NULL, nativeErrorCode)
 {
 }
@@ -58,7 +62,7 @@ void FdoClientServiceException::Dispose()
     delete this;
 }
 
-FdoString* FdoClientServiceException::ToString()
+const wchar_t* FdoClientServiceException::ToString()
 {
     return m_message;
 }

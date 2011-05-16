@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: 10-at-a-time.c,v 1.9 2008-09-22 17:27:24 danf Exp $
+ * $Id: 10-at-a-time.c,v 1.4 2007-06-27 21:35:17 bagder Exp $
  *
  * Example application source code using the multi interface to download many
  * files, but with a capped maximum amount of simultaneous transfers.
@@ -16,9 +16,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef WIN32
-#  include <unistd.h>
-#endif
+#include <unistd.h>
 #include <curl/multi.h>
 
 static const char *urls[] = {
@@ -76,7 +74,7 @@ static const char *urls[] = {
 #define MAX 10 /* number of simultaneous transfers */
 #define CNT sizeof(urls)/sizeof(char*) /* total number of transfers to do */
 
-static size_t cb(char *d, size_t n, size_t l, void *p)
+static int cb(char *d, size_t n, size_t l, void *p)
 {
   /* take care of the data here, ignored in this example */
   (void)d;
@@ -89,10 +87,10 @@ static void init(CURLM *cm, int i)
   CURL *eh = curl_easy_init();
 
   curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, cb);
-  curl_easy_setopt(eh, CURLOPT_HEADER, 0L);
+  curl_easy_setopt(eh, CURLOPT_HEADER, 0);
   curl_easy_setopt(eh, CURLOPT_URL, urls[i]);
   curl_easy_setopt(eh, CURLOPT_PRIVATE, urls[i]);
-  curl_easy_setopt(eh, CURLOPT_VERBOSE, 0L);
+  curl_easy_setopt(eh, CURLOPT_VERBOSE, 0);
 
   curl_multi_add_handle(cm, eh);
 }
@@ -113,7 +111,7 @@ int main(void)
 
   /* we can optionally limit the total amount of connections this multi handle
      uses */
-  curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, (long)MAX);
+  curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, MAX);
 
   for (C = 0; C < MAX; ++C) {
     init(cm, C);
@@ -140,11 +138,7 @@ int main(void)
         L = 100;
 
       if (M == -1) {
-#ifdef WIN32
-        Sleep(L);
-#else
         sleep(L / 1000);
-#endif
       } else {
         T.tv_sec = L/1000;
         T.tv_usec = (L%1000)*1000;

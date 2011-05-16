@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2006, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: speedcheck.c,v 1.24 2010-01-28 15:34:18 yangtse Exp $
+ * $Id: speedcheck.c,v 1.22 2006-10-17 09:05:44 bagder Exp $
  ***************************************************************************/
 
 #include "setup.h"
@@ -54,10 +54,10 @@ CURLcode Curl_speedcheck(struct SessionHandle *data,
       /* we have been this slow for long enough, now die */
       failf(data,
             "Operation too slow. "
-            "Less than %ld bytes/sec transfered the last %ld seconds",
+            "Less than %d bytes/sec transfered the last %d seconds",
             data->set.low_speed_limit,
             data->set.low_speed_time);
-      return CURLE_OPERATION_TIMEDOUT;
+      return CURLE_OPERATION_TIMEOUTED;
     }
     Curl_expire(data, howlong);
   }

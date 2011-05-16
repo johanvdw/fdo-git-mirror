@@ -5,12 +5,10 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib516.c,v 1.6 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib516.c,v 1.3 2006-10-25 09:20:44 yangtse Exp $
  */
 
 #include "test.h"
-
-#include "memdebug.h"
 
 int test(char *URL)
 {
@@ -29,15 +27,13 @@ int test(char *URL)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_HTTPPOST, NULL);
-  test_setopt(curl, CURLOPT_VERBOSE, 1L); /* show verbose for debug */
-  test_setopt(curl, CURLOPT_HEADER, 1L); /* include header */
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_HTTPPOST, NULL);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1); /* show verbose for debug */
+  curl_easy_setopt(curl, CURLOPT_HEADER, 1); /* include header */
 
   /* Now, we should be making a zero byte POST request */
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   /* always cleanup */
   curl_easy_cleanup(curl);

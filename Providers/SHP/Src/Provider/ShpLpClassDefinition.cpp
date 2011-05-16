@@ -152,10 +152,6 @@ void ShpLpClassDefinition::ConvertPhysicalToLogical(
             FdoFeatureClass *logicalFeatureClass = static_cast<FdoFeatureClass*>(m_logicalClassDefinition.p);
             logicalFeatureClass->SetGeometryProperty(logicalGeomProp);
         }
-
-        // Set vertex order and strictness rule for geometry property
-        classCapabilities->SetPolygonVertexOrderRule(logicalGeomProp->GetName(), FdoPolygonVertexOrderRule_CW);
-        classCapabilities->SetPolygonVertexOrderStrictness(logicalGeomProp->GetName(), true);
     }
 
     // Create & add the identity property (always exactly one identity property):
@@ -236,13 +232,6 @@ void ShpLpClassDefinition::ConvertLogicalToPhysical(
     if ((NULL == logicalClassName) || (0 == wcslen (logicalClassName)))
         throw FdoException::Create (NlsMsgGet(SHP_CLASS_NAME_INVALID, "The class name '%1$s' is invalid.", logicalClassName));
 
-    // Set the correct class capabilities. Users may pass a class definition with wrong class capabilities
-    FdoPtr<FdoClassCapabilities> classCapabilities = FdoClassCapabilities::Create(*logicalClass.p);
-    classCapabilities->SetSupportsLocking(false);
-    classCapabilities->SetSupportsLongTransactions(false);
-    classCapabilities->SetSupportsWrite(true);
-    logicalClass->SetCapabilities(classCapabilities);
-
     // Validate the logical class
     /////////////////////////////
 
@@ -257,12 +246,7 @@ void ShpLpClassDefinition::ConvertLogicalToPhysical(
             if (geometry != NULL)
                 throw FdoException::Create (NlsMsgGet(SHP_SCHEMA_EXCESSIVE_GEOMETRY, "The class '%1$ls' contains more than one geometry property.", logicalClassName));
             else
-            {
                 geometry = static_cast<FdoGeometricPropertyDefinition*>(FDO_SAFE_ADDREF (logicalProperty.p));
-                // Set vertex order and strictness rule for geometry property
-                classCapabilities->SetPolygonVertexOrderRule(logicalProperty->GetName(), FdoPolygonVertexOrderRule_CW);
-                classCapabilities->SetPolygonVertexOrderStrictness(logicalProperty->GetName(), true);
-            }
     }
 
     // Validate that there is exactly one identity property of type int64:

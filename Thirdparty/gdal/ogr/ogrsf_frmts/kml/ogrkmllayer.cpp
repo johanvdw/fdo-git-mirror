@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrkmllayer.cpp 16908 2009-05-02 14:53:26Z rouault $
+ * $Id: ogrkmllayer.cpp 15811 2008-11-25 20:30:23Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLLayer class.
@@ -32,9 +32,8 @@
 #include "ogr_api.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
-#include "ogr_p.h"
 
-/* Function utility to dump OGRGeometry to KML text. */
+/* Function utility to dump OGRGeoemtry to KML text. */
 char *OGR_G_ExportToKML( OGRGeometryH hGeometry, const char* pszAltitudeMode );
 
 /************************************************************************/
@@ -53,29 +52,26 @@ OGRKMLLayer::OGRKMLLayer( const char * pszName,
     {
         poSRS_ = new OGRSpatialReference(NULL);   
         poSRS_->SetWellKnownGeogCS( "WGS84" );
-        if (!poSRS_->IsSame(poSRSIn))
+        poCT_ = OGRCreateCoordinateTransformation( poSRSIn, poSRS_ );
+        if( poCT_ == NULL && poDSIn->IsFirstCTError() )
         {
-            poCT_ = OGRCreateCoordinateTransformation( poSRSIn, poSRS_ );
-            if( poCT_ == NULL && poDSIn->IsFirstCTError() )
-            {
-                /* If we can't create a transformation, issue a warning - but continue the transformation*/
-                char *pszWKT = NULL;
+            /* If we can't create a transformation, issue a warning - but continue the transformation*/
+            char *pszWKT = NULL;
+		
+            poSRSIn->exportToPrettyWkt( &pszWKT, FALSE );
 
-                poSRSIn->exportToPrettyWkt( &pszWKT, FALSE );
+            CPLError( CE_Warning, CPLE_AppDefined,
+                      "Failed to create coordinate transformation between the\n"
+                      "input coordinate system and WGS84.  This may be because they\n"
+                      "are not transformable, or because projection services\n"
+                      "(PROJ.4 DLL/.so) could not be loaded.\n" 
+                      "KML geometries may not render correctly.\n"
+                      "This message will not be issued any more. \n"
+                      "\nSource:\n%s\n", 
+                      pszWKT );
 
-                CPLError( CE_Warning, CPLE_AppDefined,
-                        "Failed to create coordinate transformation between the\n"
-                        "input coordinate system and WGS84.  This may be because they\n"
-                        "are not transformable, or because projection services\n"
-                        "(PROJ.4 DLL/.so) could not be loaded.\n" 
-                        "KML geometries may not render correctly.\n"
-                        "This message will not be issued any more. \n"
-                        "\nSource:\n%s\n", 
-                        pszWKT );
-
-                CPLFree( pszWKT );
-                poDSIn->IssuedFirstCTError(); 
-            }
+            CPLFree( pszWKT );
+            poDSIn->IssuedFirstCTError(); 
         }
     }
     else
@@ -85,9 +81,7 @@ OGRKMLLayer::OGRKMLLayer( const char * pszName,
 
     iNextKMLId_ = 0;
     nTotalKMLCount_ = -1;
-    nLastAsked = -1;
-    nLastCount = -1;
-
+    
     poDS_ = poDSIn;
     
     poFeatureDefn_ = new OGRFeatureDefn( pszName );
@@ -140,8 +134,6 @@ OGRFeatureDefn* OGRKMLLayer::GetLayerDefn()
 void OGRKMLLayer::ResetReading()
 {
     iNextKMLId_ = 0;    
-    nLastAsked = -1;
-    nLastCount = -1;
 }
 
 /************************************************************************/
@@ -156,13 +148,15 @@ OGRFeature *OGRKMLLayer::GetNextFeature()
     /* -------------------------------------------------------------------- */
     /*      Loop till we find a feature matching our criteria.              */
     /* -------------------------------------------------------------------- */
-    KML *poKMLFile = poDS_->GetKMLFile();
-    poKMLFile->selectLayer(nLayerNumber_);
-
     while(TRUE)
     {
+        unsigned short nCount = 0;
+        unsigned short nCount2 = 0;
+        KML *poKMLFile = poDS_->GetKMLFile();
+        poKMLFile->selectLayer(nLayerNumber_);
+    
         Feature *poFeatureKML = NULL;
-        poFeatureKML = poKMLFile->getFeature(iNextKMLId_++, nLastAsked, nLastCount);
+        poFeatureKML = poKMLFile->getFeature(iNextKMLId_++);
     
         if(poFeatureKML == NULL)
             return NULL;
@@ -171,10 +165,45 @@ OGRFeature *OGRKMLLayer::GetNextFeature()
     
         OGRFeature *poFeature = new OGRFeature( poFeatureDefn_ );
         
-        if(poFeatureKML->poGeom)
+        // Handle a Point
+        if(poFeatureKML->eType == Point)
         {
-            poFeature->SetGeometryDirectly(poFeatureKML->poGeom);
-            poFeatureKML->poGeom = NULL;
+            poFeature->SetGeometryDirectly(
+                    new OGRPoint( (*poFeatureKML->pvpsCoordinates)[0]->dfLongitude, (*poFeatureKML->pvpsCoordinates)[0]->dfLatitude, (*poFeatureKML->pvpsCoordinates)[0]->dfAltitude)
+                    );
+        }
+        // Handle a LineString
+        else if(poFeatureKML->eType == LineString)
+        {
+            OGRLineString *poLS = new OGRLineString();
+            for(nCount = 0; nCount < poFeatureKML->pvpsCoordinates->size(); nCount++)
+            {
+                poLS->addPoint( (*poFeatureKML->pvpsCoordinates)[nCount]->dfLongitude, (*poFeatureKML->pvpsCoordinates)[nCount]->dfLatitude, (*poFeatureKML->pvpsCoordinates)[nCount]->dfAltitude );
+            }
+            poFeature->SetGeometryDirectly(poLS);
+        }
+        // Handle a Polygon
+        else if(poFeatureKML->eType == Polygon)
+        {
+            OGRPolygon *poPG = new OGRPolygon();
+            OGRLinearRing *poLR = new OGRLinearRing();
+            for(nCount = 0; nCount < poFeatureKML->pvpsCoordinates->size(); nCount++)
+            {
+                poLR->addPoint( (*poFeatureKML->pvpsCoordinates)[nCount]->dfLongitude, (*poFeatureKML->pvpsCoordinates)[nCount]->dfLatitude, (*poFeatureKML->pvpsCoordinates)[nCount]->dfAltitude );
+            }
+            poPG->addRingDirectly(poLR);
+            for(nCount = 0; nCount < poFeatureKML->pvpsCoordinatesExtra->size(); nCount++)
+            {
+                poLR = new OGRLinearRing();
+                for(nCount2 = 0; nCount2 < (*poFeatureKML->pvpsCoordinatesExtra)[nCount]->size(); nCount2++)
+                {
+                    poLR->addPoint( (*(*poFeatureKML->pvpsCoordinatesExtra)[nCount])[nCount2]->dfLongitude, 
+                        (*(*poFeatureKML->pvpsCoordinatesExtra)[nCount])[nCount2]->dfLatitude, 
+                        (*(*poFeatureKML->pvpsCoordinatesExtra)[nCount])[nCount2]->dfAltitude );
+                }
+                poPG->addRingDirectly(poLR);
+            }
+            poFeature->SetGeometryDirectly(poPG);
         }
     
         // Add fields
@@ -183,6 +212,23 @@ OGRFeature *OGRKMLLayer::GetNextFeature()
         poFeature->SetFID( iNextKMLId_ - 1 );
     
         // Clean up
+        for(nCount = 0; nCount < poFeatureKML->pvpsCoordinates->size(); nCount++)
+        {
+            delete (*poFeatureKML->pvpsCoordinates)[nCount];
+        }
+    
+        if(poFeatureKML->pvpsCoordinatesExtra != NULL)
+        {
+            for(nCount = 0; nCount < poFeatureKML->pvpsCoordinatesExtra->size(); nCount++)
+            {
+                for(nCount2 = 0; nCount2 < (*poFeatureKML->pvpsCoordinatesExtra)[nCount]->size(); nCount2++)
+                    delete (*(*poFeatureKML->pvpsCoordinatesExtra)[nCount])[nCount2];
+                delete (*poFeatureKML->pvpsCoordinatesExtra)[nCount];
+            }
+            delete poFeatureKML->pvpsCoordinatesExtra;
+        }
+    
+        delete poFeatureKML->pvpsCoordinates;
         delete poFeatureKML;
     
         if( poFeature->GetGeometryRef() != NULL && poSRS_ != NULL)
@@ -229,6 +275,30 @@ int OGRKMLLayer::GetFeatureCount( int bForce )
 #endif
 
     return nCount;
+}
+
+/************************************************************************/
+/*                             GetExtent()                              */
+/************************************************************************/
+
+OGRErr OGRKMLLayer::GetExtent(OGREnvelope *psExtent, int bForce )
+{
+#ifdef HAVE_EXPAT
+    CPLAssert( NULL != psExtent );
+
+    KML *poKMLFile = poDS_->GetKMLFile();
+    if( NULL != poKMLFile )
+    {
+        poKMLFile->selectLayer(nLayerNumber_);
+        if( poKMLFile->getExtents( psExtent->MinX, psExtent->MaxX,
+                                   psExtent->MinY, psExtent->MaxY ) )
+        {
+            return OGRERR_NONE;
+        }
+    }
+#endif
+
+    return OGRERR_FAILURE;
 }
 
 /************************************************************************/
@@ -325,7 +395,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
                 while( *pszRaw == ' ' )
                     pszRaw++;
 
-                char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
+                char *pszEscaped = CPLEscapeString( pszRaw, -1, CPLES_XML );
 
                 VSIFPrintf( fp, "\t<name>%s</name>\n", pszEscaped);
                 CPLFree( pszEscaped );
@@ -346,23 +416,12 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
                 while( *pszRaw == ' ' )
                     pszRaw++;
 
-                char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
+                char *pszEscaped = CPLEscapeString( pszRaw, -1, CPLES_XML );
 
                 VSIFPrintf( fp, "\t<description>%s</description>\n", pszEscaped);
                 CPLFree( pszEscaped );
             }
         }
-    }
-
-    OGRwkbGeometryType eGeomType = wkbFlatten(poFeatureDefn_->GetGeomType());
-    if ( wkbPolygon == eGeomType
-         || wkbMultiPolygon == eGeomType
-         || wkbLineString == eGeomType
-         || wkbMultiLineString == eGeomType )
-    {
-        //If we're dealing with a polygon, add a line style that will stand out a bit
-        VSIFPrintf( fp, "  <Style><LineStyle><color>ff0000ff</color></LineStyle>");
-        VSIFPrintf( fp, "  <PolyStyle><fill>0</fill></PolyStyle></Style>\n" );
     }
 
     int bHasFoundOtherField = FALSE;
@@ -384,7 +443,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
             while( *pszRaw == ' ' )
                 pszRaw++;
 
-            char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
+            char *pszEscaped = CPLEscapeString( pszRaw, -1, CPLES_XML );
 
             VSIFPrintf( fp, "\t\t<SimpleData name=\"%s\">%s</SimpleData>\n", 
                         poField->GetNameRef(), pszEscaped);
@@ -433,6 +492,16 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
         }
     }
     
+    if ( wkbPolygon == poFeatureDefn_->GetGeomType()
+         || wkbMultiPolygon == poFeatureDefn_->GetGeomType()
+         || wkbLineString == poFeatureDefn_->GetGeomType()
+         || wkbMultiLineString == poFeatureDefn_->GetGeomType() )
+    {
+        //If we're dealing with a polygon, add a line style that will stand out a bit
+        VSIFPrintf( fp, "  <Style><LineStyle><color>ff0000ff</color></LineStyle>");
+        VSIFPrintf( fp, "  <PolyStyle><fill>0</fill></PolyStyle></Style>\n" );
+    }
+
     VSIFPrintf( fp, "  </Placemark>\n" );
     nWroteFeatureCount_++;
     return OGRERR_NONE;
@@ -451,6 +520,14 @@ int OGRKMLLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap, OLCCreateField) )
     {
         return bWriter_ && iNextKMLId_ == 0;
+    }
+    else if( EQUAL(pszCap, OLCFastGetExtent) )
+    {
+//        double  dfXMin, dfXMax, dfYMin, dfYMax;
+//        if( poFClass == NULL )
+            return FALSE;
+
+//        return poFClass->GetExtents( &dfXMin, &dfXMax, &dfYMin, &dfYMax );
     }
     else if( EQUAL(pszCap,OLCFastFeatureCount) )
     {

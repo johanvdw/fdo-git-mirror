@@ -1,4 +1,4 @@
-/* curl_config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
 /* Name of this package! */
 #undef PACKAGE
 
@@ -32,6 +32,9 @@
 /* Define if you have the gethostbyname_r() function with 6 arguments */
 #undef HAVE_GETHOSTBYNAME_R_6
 
+/* Define if you have the inet_ntoa_r function declared. */
+#undef HAVE_INET_NTOA_R_DECL
+
 /* Define if you need the _REENTRANT define for some functions */
 #undef NEED_REENTRANT
 
@@ -41,17 +44,20 @@
 /* Define if you want to enable IPv6 support */
 #undef ENABLE_IPV6
 
-/* Define if struct sockaddr_in6 has the sin6_scope_id member */
-#define HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID 1
-
 /* Define this to 'int' if ssize_t is not an available typedefed type */
 #undef ssize_t
+
+/* Define this to 'int' if socklen_t is not an available typedefed type */
+#undef socklen_t
 
 /* Define this as a suitable file to read random data from */
 #undef RANDOM_FILE
 
 /* Define this to your Entropy Gathering Daemon socket pathname */
 #undef EGD_SOCKET
+
+/* Set to explicitly specify we don't want to use thread-safe functions */
+#define DISABLED_THREADSAFE
 
 /* Define if you want to enable IPv6 support */
 #undef ENABLE_IPV6
@@ -70,6 +76,12 @@
 
 /* Define if you have the <des.h> header file. */
 #undef HAVE_DES_H
+
+/* Define if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define if you have the `dlopen' function. */
+#undef HAVE_DLOPEN
 
 /* Define if you have the <err.h> header file. */
 #undef HAVE_ERR_H
@@ -119,6 +131,12 @@
 /* Define if you have the `inet_addr' function. */
 #undef HAVE_INET_ADDR
 
+/* Define if you have the `inet_ntoa' function. */
+#undef HAVE_INET_NTOA
+
+/* Define if you have the `inet_ntoa_r' function. */
+#undef HAVE_INET_NTOA_R
+
 /* Define if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H
 
@@ -133,6 +151,9 @@
 
 /* Define if you have the `crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
+
+/* Define if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
 
 /* Define if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
@@ -363,11 +384,16 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
 
+/* type to use in place of socklen_t if not defined */
+#undef socklen_t
+
 /* Define to `int' if <sys/types.h> does not define. */
 #undef ssize_t
 
-/* Define if you have the ioctl function. */
-#define HAVE_IOCTL
+/* this is a quick hack.  I hope it's correct. */
+#define ifr_dstaddr ifr_addr
 
-/* Define if you have a working ioctl FIONBIO function. */
-#define HAVE_IOCTL_FIONBIO
+#define IOCTL_3_ARGS
+
+#define HAVE_FIONBIO
+

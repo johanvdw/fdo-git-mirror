@@ -1,4 +1,4 @@
-/* $Id: tif_dirinfo.c,v 1.106 2009-11-30 18:19:16 fwarmerdam Exp $ */
+/* $Id: tif_dirinfo.c,v 1.103 2008/05/26 15:17:09 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -112,7 +112,7 @@ tiffFields[] = {
 	{ TIFFTAG_YCBCRCOEFFICIENTS, 3, 3, TIFF_RATIONAL, 0, TIFF_SETGET_C0_FLOAT, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 0, 0, "YCbCrCoefficients", NULL },
 	{ TIFFTAG_YCBCRSUBSAMPLING, 2, 2, TIFF_SHORT, 0, TIFF_SETGET_UINT16_PAIR, TIFF_SETGET_UNDEFINED, FIELD_YCBCRSUBSAMPLING, 0, 0, "YCbCrSubsampling", NULL },
 	{ TIFFTAG_YCBCRPOSITIONING, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_YCBCRPOSITIONING, 0, 0, "YCbCrPositioning", NULL },
-	{ TIFFTAG_REFERENCEBLACKWHITE, 6, 6, TIFF_RATIONAL, 0, TIFF_SETGET_C0_FLOAT, TIFF_SETGET_UNDEFINED, FIELD_REFBLACKWHITE, 1, 0, "ReferenceBlackWhite", NULL },
+	{ TIFFTAG_REFERENCEBLACKWHITE, 6, 6, TIFF_RATIONAL, 0, TIFF_SETGET_C0_FLOAT, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, "ReferenceBlackWhite", NULL },
 	{ TIFFTAG_XMLPACKET, -3, -3, TIFF_BYTE, 0, TIFF_SETGET_C32_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 0, 1, "XMLPacket", NULL },
 	/* begin SGI tags */
 	{ TIFFTAG_MATTEING, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_EXTRASAMPLES, 0, 0, "Matteing", NULL },
@@ -257,25 +257,6 @@ static TIFFFieldArray
 tiffFieldArray = { tfiatImage, 0, TIFFArrayCount(tiffFields), tiffFields };
 static TIFFFieldArray
 exifFieldArray = { tfiatExif, 0, TIFFArrayCount(exifFields), exifFields };
-
-/*
- *  We have our own local lfind() equivelent to avoid subtle differences
- *  in types passed to lfind() on different systems. 
- */
-
-static void *
-td_lfind(const void *key, const void *base, size_t *nmemb, size_t size,
-         int(*compar)(const void *, const void *))
-{
-    char *element, *end;
-
-    end = (char *)base + *nmemb * size;
-    for (element = (char *)base; element < end; element += size)
-        if (!compar(element, key))		/* key found */
-            return element;
-
-    return NULL;
-}
 
 const TIFFFieldArray*
 _TIFFGetFields(void)
@@ -523,10 +504,9 @@ _TIFFFindFieldByName(TIFF* tif, const char *field_name, TIFFDataType dt)
 	key.field_name = (char *)field_name;
 	key.field_type = dt;
 
-	ret = (const TIFFField **) 
-            td_lfind(&pkey, tif->tif_fields, &tif->tif_nfields,
-                     sizeof(TIFFField *), tagNameCompare);
-
+	ret = (const TIFFField **) lfind(&pkey, tif->tif_fields,
+					 &tif->tif_nfields,
+					 sizeof(TIFFField *), tagNameCompare);
 	return tif->tif_foundfield = (ret ? *ret : NULL);
 }
 
@@ -920,14 +900,12 @@ TIFFFindFieldInfoByName(TIFF* tif, const char *field_name, TIFFDataType dt)
 	key.field_name = (char *)field_name;
 	key.field_type = dt;
 
-	ret = (const TIFFFieldInfo **) 
-            td_lfind(&pkey, tif->tif_fields, &tif->tif_nfields,
-                     sizeof(TIFFFieldInfo *), tagNameCompare );
+	ret = (const TIFFFieldInfo **) lfind(&pkey,
+					     tif->tif_fields,
+					     &tif->tif_nfields,
+					     sizeof(TIFFFieldInfo *),
+					     tagNameCompare);
 	return tif->tif_foundfield = (ret ? *ret : NULL);
-#else
-        (void) tif;
-        (void) field_name;
-        (void) dt;
 #endif
 	return NULL;
 }
@@ -959,10 +937,6 @@ TIFFFindFieldInfo(TIFF* tif, uint32 tag, TIFFDataType dt)
 					       sizeof(TIFFFieldInfo *),
 					       tagCompare);
 	return tif->tif_foundfield = (ret ? *ret : NULL);
-#else
-        (void) tif;
-        (void) tag;
-        (void) dt;
 #endif
 	return NULL;
 }

@@ -6,12 +6,12 @@ OBJ	=	ersdataset.o ershdrnode.o
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) -I../raw $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 $(O_OBJ):	../raw/rawdataset.h
 

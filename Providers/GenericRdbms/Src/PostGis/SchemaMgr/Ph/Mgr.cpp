@@ -190,26 +190,6 @@ FdoStringP FdoSmPhPostGisMgr::DbObject2MetaSchemaName( FdoStringP objectName )
     return objectName;
 }
 
-FdoStringP FdoSmPhPostGisMgr::GetDefaultPhysicalSchemaName()
-{
-    return L"public";
-}
-
-FdoStringP FdoSmPhPostGisMgr::ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className)
-{
-    // Qualify default db object name by schema
-
-    FdoSmPhOwnerP owner = GetOwner();
-    bool hasMetaSchema = owner ? owner->GetHasMetaSchema() : false;
-
-    if ( hasMetaSchema || (schemaName == L"") ) 
-        // Use default schema when not specified or there is a metaschema.
-        return GetDefaultPhysicalSchemaName() + L"." + className;
-
-    // Otherwise, default user is the feature schema name.
-    return schemaName + L"." + className;
-}
-
 FdoStringP FdoSmPhPostGisMgr::FormatDefaultedField(FdoStringP fieldName,
     FdoStringP colName,
     FdoStringP defaultValue,
@@ -258,17 +238,6 @@ FdoStringP FdoSmPhPostGisMgr::FormatSQLVal(FdoStringP value,
 	return sqlString;
 }
 
-FdoStringP FdoSmPhPostGisMgr::FormatOrderCol( FdoStringP colName, FdoSmPhColType colType )
-{
-    FdoStringP fmtName = colName;
-
-    if ( colType == FdoSmPhColType_String )
-        // force binary collation to get case-insensitive order
-        fmtName = FormatCollateColumnSql(colName);
-
-	return fmtName;
-}
-
 FdoStringP FdoSmPhPostGisMgr::FormatCurrentDateField()
 {
     return (L"CURRENT_DATE");
@@ -309,9 +278,11 @@ FdoSize FdoSmPhPostGisMgr::ColNameMaxLen()
 
 FdoSmPhPostGisMgr::ReservedWordsMap::ReservedWordsMap()
 {
+    // TODO: mloskot - Review this list for PgSQL.
+
     // The following are reserved words specific to PostgreSQL/PostGIS.
     // Base constructor adds general reserved words to this list.
-
+    
     Insert(L"bigint"); 
     Insert(L"binary"); 
     Insert(L"blob"); 
@@ -325,6 +296,7 @@ FdoSmPhPostGisMgr::ReservedWordsMap::ReservedWordsMap()
     Insert(L"mediumtext"); 
     Insert(L"single"); 
     Insert(L"smallint"); 
+    Insert(L"text"); 
     Insert(L"time"); 
     Insert(L"timestamp"); 
     Insert(L"tinyint"); 
@@ -332,8 +304,6 @@ FdoSmPhPostGisMgr::ReservedWordsMap::ReservedWordsMap()
     Insert(L"varbinary"); 
     Insert(L"year"); 
     Insert(L"number"); 
-    Insert(L"xmin"); 
-    Insert(L"xmax"); 
 }
 
 FdoSmPhPostGisMgr::ReservedWordsMap::~ReservedWordsMap()

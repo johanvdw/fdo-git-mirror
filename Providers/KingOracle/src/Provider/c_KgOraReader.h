@@ -187,7 +187,7 @@ template <class FDO_READER> class c_KgOraReader : public FDO_READER
     /// \return
     /// Returns a pointer to the byte array in AGF format.
     /// 
-    virtual const FdoByte * GetGeometry(FdoString* propertyName, FdoInt32 * count);
+    FDOKGORA_API virtual const FdoByte * GetGeometry(FdoString* propertyName, FdoInt32 * count);
 
     /// \brief
     /// Gets the geometry value of the specified property as a byte array in 
@@ -200,7 +200,7 @@ template <class FDO_READER> class c_KgOraReader : public FDO_READER
     /// \return
     /// Returns the byte array in AGF format.
     /// 
-    virtual FdoByteArray* GetGeometry(FdoString* propertyName);
+    FDOKGORA_API virtual FdoByteArray* GetGeometry(FdoString* propertyName);
 
    
 
@@ -529,34 +529,6 @@ template <class FDO_READER> FdoString* c_KgOraReader<FDO_READER>::GetString(FdoS
 
 template <class FDO_READER> FdoLOBValue* c_KgOraReader<FDO_READER>::GetLOB(FdoString* propertyName)
 {
-  int oraind = PropNameToColumnNumber(propertyName); 
-  if( m_OciStatement && (oraind >= 1) )
-  {
-    FdoBLOBValue* blobval;
-    unsigned long size = m_OciStatement->GetLongRawLength(oraind); 
-    
-    if( m_OciStatement->IsColumnBlob(oraind) || m_OciStatement->IsColumnClob(oraind) )
-    {
-      if( m_OciStatement->IsColumnClob(oraind) ) size = size * 2; // 2 bytes per character
-      
-      FdoPtr<FdoByteArray> barray = FdoByteArray::Create(size+2);
-      FdoByteArray::SetSize(barray,size);
-      long count = barray->GetCount();
-      
-      m_OciStatement->GetLobData(oraind,size,barray->GetData());
-      blobval = FdoBLOBValue::Create( barray);
-    }
-    else
-    {
-      unsigned char* ptr = m_OciStatement->GetLongRaw(oraind); 
-
-      FdoPtr<FdoByteArray> barray = FdoByteArray::Create(ptr,size);
-      blobval = FdoBLOBValue::Create( barray);
-    }
-    
-    
-    return blobval;
-  }
     return NULL;
 }
 
@@ -564,6 +536,19 @@ template <class FDO_READER> FdoIStreamReader* c_KgOraReader<FDO_READER>::GetLOBS
 {
     return NULL;
 }
+
+
+template <class FDO_READER> FdoByteArray* c_KgOraReader<FDO_READER>::GetGeometry(FdoString* propertyName)
+{
+    int len = 0;
+    const void* ptr = GetGeometry(propertyName, &len);
+    
+    if( len > 0 )
+      return FdoByteArray::Create((const FdoByte*)ptr, len);
+    else
+      throw FdoException::Create(L"c_KgOraReader::GetGeometry Invalid Geometry !");
+}
+
 
 
 
@@ -637,17 +622,6 @@ template <class FDO_READER> const FdoByte* c_KgOraReader<FDO_READER>::GetGeometr
   
   
   return (const unsigned char*)m_SdoAgfConv.GetBuff();
-}
-
-template <class FDO_READER> FdoByteArray* c_KgOraReader<FDO_READER>::GetGeometry(FdoString* propertyName)
-{
-  int len = 0;
-  const void* ptr = GetGeometry(propertyName, &len);
-
-  if( len > 0 )
-    return FdoByteArray::Create((const FdoByte*)ptr, len);
-  else
-    throw FdoException::Create(L"c_KgOraReader::GetGeometry Invalid Geometry !");
 }
 
 /*

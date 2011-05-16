@@ -422,6 +422,12 @@ void FdoCommonSchemaUtil::DeepCopyFdoClassDefinitionDetails(FdoClassDefinition *
     // Retrieve the classes and collection objects from the source and destination classes 
     // that will be used to hold the properties being queried and maniplulated 
 
+    FdoClassDefinitionP baseClass = sourceClass->GetBaseClass();
+    if (baseClass != NULL) {
+        FdoClassDefinitionP newBaseClass = FdoCommonSchemaUtil::DeepCopyFdoClassDefinition(baseClass, localSchemaContext);
+        copyClass->SetBaseClass(newBaseClass);
+    }
+
     FdoPtr<FdoReadOnlyPropertyDefinitionCollection> baseProperties = sourceClass->GetBaseProperties();
     if (baseProperties == NULL) {
         throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_4_UNREADY)));
@@ -452,9 +458,27 @@ void FdoCommonSchemaUtil::DeepCopyFdoClassDefinitionDetails(FdoClassDefinition *
         throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_4_UNREADY)));
     }
 
-    // Copy all simple properties first, before any recursive processing is done. This ensures
-    // that at least the non-inherited properties will be in place if this class is recursively
-    // revisited.
+    // Copy all of the base properties first. NOTE: There still is an open question on 
+    // whether the properties should be copied in a certain order to allow reference matching...
+    for (FdoInt32 i=0;  i<baseProperties->GetCount(); i++) {
+        FdoPtr<FdoSchemaElement> schemaElement = baseProperties->GetItem(i);
+        if (schemaElement == NULL) {
+            throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_4_UNREADY)));
+        }
+
+        FdoPropertyDefinition* property = dynamic_cast<FdoPropertyDefinition *>(schemaElement.p);
+        if (property == NULL) {
+            throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_4_UNREADY)));
+        }
+
+        if (FdoCommonSchemaUtil::ClassPropertyShouldBeCopied(property, localSchemaContext)) {
+            FdoPtr<FdoPropertyDefinition> newBaseProperty = DeepCopyFdoPropertyDefinition(property, localSchemaContext);
+            newBaseProperties->Add(newBaseProperty);
+        }
+    }
+
+    // Set the base properties on the new class.
+    copyClass->SetBaseProperties(newBaseProperties);
 
     // Copy the class identity 'Data' Properties from the source to destination property collection.
     FdoCommonSchemaUtil::DeepCopyFdoPropertyType(identityProperties, newProperties, localSchemaContext);
@@ -465,29 +489,10 @@ void FdoCommonSchemaUtil::DeepCopyFdoClassDefinitionDetails(FdoClassDefinition *
     // Copy the source identifier properties to the copy identifier property collection
     FdoCommonSchemaUtil::CopyFdoNamedDataProperties(identityProperties, newProperties, NULL, newIdentityProperties,localSchemaContext);
 
-    // Copy the rest of the simple class properties. 
+    // Copy the rest of the class properties. NOTE: Object an Association properties depend on data properties so we have to copy
+    // these after the data and identity properties have been copied.
     FdoCommonSchemaUtil::DeepCopyFdoPropertyType(properties, newProperties, FdoPropertyType_GeometricProperty, localSchemaContext);
     FdoCommonSchemaUtil::DeepCopyFdoPropertyType(properties, newProperties, FdoPropertyType_RasterProperty, localSchemaContext);
-    
-    // Copy the base class
-    FdoClassDefinitionP baseClass = sourceClass->GetBaseClass();
-    if (baseClass != NULL) {
-        FdoClassDefinitionP newBaseClass = FdoCommonSchemaUtil::DeepCopyFdoClassDefinition(baseClass, localSchemaContext);
-        copyClass->SetBaseClass(newBaseClass);
-    }
-
-    // Copy all of the simple base properties 
-    FdoCommonSchemaUtil::DeepCopyFdoPropertyType(baseProperties, newBaseProperties, FdoPropertyType_DataProperty, localSchemaContext);
-    FdoCommonSchemaUtil::DeepCopyFdoPropertyType(baseProperties, newBaseProperties, FdoPropertyType_GeometricProperty, localSchemaContext);
-    FdoCommonSchemaUtil::DeepCopyFdoPropertyType(baseProperties, newBaseProperties, FdoPropertyType_RasterProperty, localSchemaContext);
-
-    // Set the base properties on the new class.
-    copyClass->SetBaseProperties(newBaseProperties);
-
-    // Copy the Object and Association properties last, since they lead to recursive processing.
-    FdoCommonSchemaUtil::DeepCopyFdoPropertyType(baseProperties, newBaseProperties, FdoPropertyType_ObjectProperty, localSchemaContext);
-    FdoCommonSchemaUtil::DeepCopyFdoPropertyType(baseProperties, newBaseProperties, FdoPropertyType_AssociationProperty, localSchemaContext);
-    
     FdoCommonSchemaUtil::DeepCopyFdoPropertyType(properties, newProperties, FdoPropertyType_ObjectProperty, localSchemaContext);
     FdoCommonSchemaUtil::DeepCopyFdoPropertyType(properties, newProperties, FdoPropertyType_AssociationProperty, localSchemaContext);
 
@@ -568,15 +573,20 @@ void FdoCommonSchemaUtil::DeepCopyFdoClassCapabilitiesAndConstraints(FdoClassDef
             throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));
         }
 
-        FdoPtr<FdoStringCollection> geomtryNames = GetGeometryNames(sourceClass);
-        CopyClassCapabilities(sourceCapabilities, newCapabilities, geomtryNames);
-
         FdoBoolean readOnlyClassCapabilitiesEnabled = localSchemaContext->ReadOnlyClassCapabilitiesEnabled();
         if (readOnlyClassCapabilitiesEnabled) {
             newCapabilities->SetSupportsLocking(false);
             newCapabilities->SetLockTypes(NULL, 0);
             newCapabilities->SetSupportsLongTransactions(false);
             newCapabilities->SetSupportsWrite(false);
+        }
+        else {
+            newCapabilities->SetSupportsLocking(sourceCapabilities->SupportsLocking());
+            FdoInt32 lockTypeCount = 0;
+            FdoLockType *lockTypes = sourceCapabilities->GetLockTypes(lockTypeCount);
+            newCapabilities->SetLockTypes(lockTypes, lockTypeCount);
+            newCapabilities->SetSupportsLongTransactions(sourceCapabilities->SupportsLongTransactions());
+            newCapabilities->SetSupportsWrite(sourceCapabilities->SupportsWrite());
         }
 
         copyClass->SetCapabilities(newCapabilities);
@@ -637,29 +647,6 @@ void FdoCommonSchemaUtil::DeepCopyFdoPropertyType(FdoPropertyDefinitionCollectio
                     FdoPtr<FdoPropertyDefinition> newProperty = DeepCopyFdoPropertyDefinition(property.p, schemaContext);
                     newProperties->Add(newProperty);
                 }
-            }
-        }
-    }
-}
-
-void FdoCommonSchemaUtil::DeepCopyFdoPropertyType(FdoReadOnlyPropertyDefinitionCollection *properties, FdoPropertyDefinitionCollection *newProperties, FdoPropertyType propertyType, FdoCommonSchemaCopyContext * schemaContext)
-{
-    if (properties == NULL || newProperties == NULL) {
-        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_INVALID_INPUT_ON_CLASS_FUNCTION),
-                                                               L"FdoCommonSchemaCopyContext::DeepCopyFdoPropertyType",
-                                                               L"baseProperties/newBaseProperties"));
-    }
-
-    for (FdoInt32 j=0; j<properties->GetCount(); j++) {
-        FdoPtr<FdoPropertyDefinition> prop = properties->GetItem(j);
-        if (prop == NULL) {
-            throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_4_UNREADY)));
-        }
-
-        if (prop->GetPropertyType() == propertyType) {
-            if (FdoCommonSchemaUtil::ClassPropertyShouldBeCopied(prop, schemaContext)) {
-                FdoPtr<FdoPropertyDefinition> newProperty = DeepCopyFdoPropertyDefinition(prop, schemaContext);
-                newProperties->Add(newProperty);
             }
         }
     }
@@ -1586,62 +1573,5 @@ void FdoCommonSchemaUtil::ThrowDefaultValueError( FdoString* propName, FdoDataTy
                 FdoCommonMiscUtil::FdoDataTypeToString(dataType)
             )
         );
-    }
-}
-
-FdoStringCollection* FdoCommonSchemaUtil::GetGeometryNames(FdoClassDefinition * classDef)
-{
-    FdoStringCollection* geometryNames = FdoStringCollection::Create();
-    
-    if(classDef == NULL)
-        return geometryNames;
-
-    FdoInt32 idx;
-    FdoPtr<FdoClassDefinition> temp = classDef;
-    FDO_SAFE_ADDREF(classDef);
-
-    for (; temp != NULL ; temp = temp->GetBaseClass ())
-    {
-        FdoPtr<FdoPropertyDefinitionCollection> propdsc = temp->GetProperties ();
-        for (idx = 0; idx < propdsc->GetCount(); idx ++) {
-            FdoPtr<FdoPropertyDefinition> prop = propdsc->GetItem(idx);
-            if (prop->GetPropertyType () == FdoPropertyType_GeometricProperty)
-                geometryNames->Add(prop->GetName ());
-        }
-    }
-
-    return geometryNames;
-}
-
-void FdoCommonSchemaUtil::CopyClassCapabilities(
-    FdoClassCapabilities* source, 
-    FdoClassCapabilities* target,
-    FdoStringCollection* geometryNames)
-{
-    if (NULL == source || NULL == target)
-        return;
-
-    target->SetSupportsLocking(source->SupportsLocking());
-    FdoInt32 lockTypeCount = 0;
-    FdoLockType *lockTypes = source->GetLockTypes(lockTypeCount);
-    target->SetLockTypes(lockTypes, lockTypeCount);
-    target->SetSupportsLongTransactions(source->SupportsLongTransactions());
-    target->SetSupportsWrite(source->SupportsWrite());
-
-    if (NULL != geometryNames)
-    {
-        for (FdoInt32 i = 0; i < geometryNames->GetCount(); ++i)
-        {
-            try
-            {
-                FdoString* name = geometryNames->GetString(i);
-                target->SetPolygonVertexOrderRule(name, source->GetPolygonVertexOrderRule(name));
-                target->SetPolygonVertexOrderStrictness(name, source->GetPolygonVertexOrderStrictness(name));
-            }
-            catch(FdoException* pException)
-            {
-                FDO_SAFE_RELEASE(pException);
-            }
-        }
     }
 }

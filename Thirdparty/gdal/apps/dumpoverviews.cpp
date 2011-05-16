@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: dumpoverviews.cpp 17797 2009-10-12 15:23:05Z jorgearevalo $
+ * $Id: dumpoverviews.cpp 11991 2007-08-29 12:56:59Z warmerdam $
  *
  * Project:  GDAL Utilities
  * Purpose:  Dump overviews to external files.
@@ -32,7 +32,7 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dumpoverviews.cpp 17797 2009-10-12 15:23:05Z jorgearevalo $");
+CPL_CVSID("$Id: dumpoverviews.cpp 11991 2007-08-29 12:56:59Z warmerdam $");
 
 static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hBand,
                       const char *pszName );
@@ -136,7 +136,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
             CPLString osFilename;
             osFilename.Printf( "%s_%d_%d.tif",
-                               CPLGetBasename(pszSrcFilename),
+                               CPLGetBasename(pszSrcFilename), 
                                iBand+1, iOverview );
             DumpBand( hSrcDS, hSrcOver, osFilename );
         }
@@ -148,7 +148,7 @@ int main( int argc, char ** argv )
         {
             CPLString osFilename;
             osFilename.Printf( "%s_%d_mask.tif",
-                               CPLGetBasename(pszSrcFilename),
+                               CPLGetBasename(pszSrcFilename), 
                                iBand+1 );
             DumpBand( hSrcDS, GDALGetMaskBand(hBaseBand), osFilename );
         }
@@ -158,8 +158,6 @@ int main( int argc, char ** argv )
 
     CSLDestroy( argv );
     GDALDestroyDriverManager();
-    
-    return 0;
 }
 
 /************************************************************************/

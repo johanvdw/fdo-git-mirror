@@ -28,7 +28,6 @@
 #include "Rd/PkeyReader.h"
 #include "Rd/DbSchemaReader.h"
 #include "Rd/SpatialContextReader.h"
-#include <Sm/Ph/Rd/QueryReader.h>
 #include "Inc/Rdbi/proto.h"
 
 //
@@ -84,35 +83,6 @@ FdoStringP FdoSmPhPostGisOwner::GetKeyColumnUsageTable() const
     return mKeyColumnUsageTable;
 }
 
-bool FdoSmPhPostGisOwner::IsDbObjectNameReserved( FdoStringP objectName )
-{
-    bool isReserved = FdoSmPhGrdOwner::IsDbObjectNameReserved( objectName );
-
-    // The PostGIS DbObjectReader does not currently pick up indexes so
-    // they are not cached in the owner's DbObject list and are thus not picked
-    // up by base IsDbObjectNameReserved.
-
-    // Do extra check against pg_class table to ensure objectName not currently
-    // used by an index.
-
-    if ( !isReserved ) {
-        FdoStringP sqlString = FdoStringP::Format(
-            L"select 1 from pg_catalog.pg_class C, pg_catalog.pg_namespace N "
-            L"where C.relnamespace = N.oid and upper(N.nspname || '.' || C.relname) = %ls", 
-            (FdoString*) GetManager()->FormatSQLVal(objectName.Upper(), FdoSmPhColType_String)
-        );
-
-        FdoSmPhRowP row = new FdoSmPhRow( GetManager(), L"GetObjectExists" );
-
-        FdoSmPhRdQueryReaderP reader = GetManager()->CreateQueryReader( row, sqlString );
-
-        isReserved = reader->ReadNext();
-    }
-
-    return isReserved;
-}
-
-
 void FdoSmPhPostGisOwner::SetCurrent()
 {
     FdoStringP name(GetName());
@@ -165,19 +135,6 @@ FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhPostGisOwner::CreateDbObjectReader(
 }
 
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhPostGisOwner::CreateDbObjectReader(
-    FdoStringsP objectNames) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisDbObjectReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisDbObjectReader(thisOwner, objectNames);
-    
-    return reader;
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhPostGisOwner::CreateDbObjectReader(
     FdoSmPhRdTableJoinP join) const
 {
     FdoSmPhPostGisOwner* thisOwner = NULL;
@@ -195,13 +152,6 @@ FdoPtr<FdoSmPhRdBaseObjectReader> FdoSmPhPostGisOwner::CreateBaseObjectReader() 
     FdoSmPhPostGisOwner* pOwner = (FdoSmPhPostGisOwner*) this;
 
     return new FdoSmPhRdPostGisBaseObjectReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdBaseObjectReader> FdoSmPhPostGisOwner::CreateBaseObjectReader(FdoStringsP objectNames) const
-{
-    FdoSmPhPostGisOwner* pOwner = (FdoSmPhPostGisOwner*) this;
-
-    return new FdoSmPhRdPostGisBaseObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
 }
 
 FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhPostGisOwner::CreateConstraintReader(
@@ -232,20 +182,6 @@ FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhPostGisOwner::CreateConstraintReader(
     return reader;
 }
 
-FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhPostGisOwner::CreateConstraintReader( FdoStringsP objectNames, FdoStringP constraintType ) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisConstraintReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisConstraintReader(thisOwner,
-        objectNames, constraintType);
-
-    return reader;
-}
-
-
 FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhPostGisOwner::CreateConstraintReader(
     FdoSmPhRdTableJoinP join,
     FdoStringP constraintType) const
@@ -268,22 +204,8 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhPostGisOwner::CreateFkeyReader() const
     FDO_SAFE_ADDREF(thisOwner);
 
     FdoSmPhRdPostGisFkeyReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisFkeyReader(thisOwner, (FdoSmPhDbObject*) NULL);
-
-    return reader;
-}
-
-FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhPostGisOwner::CreateFkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisFkeyReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisFkeyReader(
-        thisOwner,
-        objectNames
-        );
+    reader = new FdoSmPhRdPostGisFkeyReader(thisOwner->GetManager(),
+        thisOwner);
 
     return reader;
 }
@@ -295,19 +217,8 @@ FdoPtr<FdoSmPhRdIndexReader> FdoSmPhPostGisOwner::CreateIndexReader() const
     FDO_SAFE_ADDREF(thisOwner);
 
     FdoSmPhRdPostGisIndexReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisIndexReader(thisOwner, (FdoSmPhDbObject*) NULL);
-
-    return reader;
-}
-
-FdoPtr<FdoSmPhRdIndexReader> FdoSmPhPostGisOwner::CreateIndexReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisIndexReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisIndexReader(thisOwner, objectNames);
+    reader = new FdoSmPhRdPostGisIndexReader(thisOwner->GetManager(),
+        thisOwner);
 
     return reader;
 }
@@ -319,22 +230,8 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhPostGisOwner::CreatePkeyReader() const
     FDO_SAFE_ADDREF(thisOwner);
 
     FdoSmPhRdPostGisPkeyReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisPkeyReader(thisOwner, (FdoSmPhDbObject*) NULL);
-
-    return reader;
-}
-
-FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhPostGisOwner::CreatePkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisPkeyReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisPkeyReader(
-        thisOwner,
-        objectNames
-        );
+    reader = new FdoSmPhRdPostGisPkeyReader(thisOwner->GetManager(),
+        thisOwner);
 
     return reader;
 }
@@ -346,19 +243,7 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhPostGisOwner::CreateColumnReader() const
     FDO_SAFE_ADDREF(thisOwner);
 
     FdoSmPhRdPostGisColumnReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisColumnReader(thisOwner, (FdoSmPhDbObject*) NULL);
-
-    return reader;
-}
-
-FdoPtr<FdoSmPhRdColumnReader> FdoSmPhPostGisOwner::CreateColumnReader(FdoStringsP objectNames) const
-{
-    FdoSmPhPostGisOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhPostGisOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdPostGisColumnReader* reader = NULL;
-    reader = new FdoSmPhRdPostGisColumnReader(thisOwner, objectNames);
+    reader = new FdoSmPhRdPostGisColumnReader(thisOwner, NULL);
 
     return reader;
 }
@@ -423,34 +308,6 @@ bool FdoSmPhPostGisOwner::Add()
      L"CREATE DATABASE %ls TEMPLATE template_postgis ENCODING 'UTF8'", static_cast<FdoString*>(GetDbName()));
    
     gdbiConn->ExecuteNonQuery(static_cast<const char*>(sqlStmt), true);
-
-    // Put datastore description into the database comments. 
-    // While listing datastores, it is not easy to look into each 
-    // database to find out if it has metaschema, and to extract the
-    // description. Putting description in the database comments makes
-    // it more readily available in this case.
-    //
-    // Another benefit is that descriptions, for datastores without metaschema,
-    // can be persisted.
-
-    FdoStringP description;
-
-    // Encode whether the datastore has metaschema into the description.
-    if ( GetHasMetaSchema() )
-        description = FdoStringP(L"FDO Enabled: ") + GetDescription();
-    else
-        description = GetDescription();
-
-    if ( description != L"" ) 
-    {
-        sqlStmt = FdoStringP::Format(
-            L"comment on database \"%ls\" is %ls",
-            GetName(),
-            (FdoString*) mgr->FormatSQLVal(description, FdoSmPhColType_String)
-        );
-      
-        gdbiConn->ExecuteNonQuery( (const char*) sqlStmt );
-    }
 
     if (GetHasMetaSchema())
     {
@@ -528,8 +385,8 @@ void FdoSmPhPostGisOwner::AddMetaSchema( FdoStringsP keywords, bool IsSystem)
 		CreateMetaClass();
 
         FdoStringP sqlStmt = FdoStringP::Format(
-            L"update f_schemainfo set description = %ls where schemaname = '%ls'",
-            (FdoString*) mgr->FormatSQLVal(GetDescription(), FdoSmPhColType_String),
+            L"update f_schemainfo set description = '%ls' where upper(schemaname) = '%ls'",
+            GetDescription(),
             (FdoString*) FdoStringP(GetName()).Upper()
         );
   

@@ -39,7 +39,6 @@
         </xsl:call-template>
       </xsl:with-param>
       <xsl:with-param name="synopsis">
-        <xsl:call-template name="header-link"/>
         <xsl:call-template name="global-synopsis-impl">
           <xsl:with-param name="link-type" select="'none'" />
         </xsl:call-template>
@@ -69,8 +68,9 @@
     <xsl:text>;</xsl:text>
   </xsl:template>
   <xsl:template match="data-member" mode="generate.id">
-    <xsl:call-template name="fully-qualified-id">
+    <xsl:call-template name="fully-qualified-name">
       <xsl:with-param name="node" select="."/>
+      <xsl:with-param name="separator" select="'.'"/>
     </xsl:call-template>
   </xsl:template>
 </xsl:stylesheet>

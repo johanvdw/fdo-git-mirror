@@ -24,6 +24,7 @@
 #include "StringUtil.h"
 
 class SltConnection;
+class SpatialIterator;
 class RowidIterator;
 class SltIdReader;
 
@@ -53,13 +54,6 @@ struct StringRec
 	}
 };
 
-enum ReaderCloseType
-{
-    ReaderCloseType_None,        // no close
-    ReaderCloseType_CloseDb,     // close statement and database 
-    ReaderCloseType_CloseStmtOnly // close statement only
-};
-
 //feature reader -- returned when executing a select command
 class SltReader :   public FdoIScrollableFeatureReader, 
                     public FdoIDataReader, 
@@ -72,19 +66,18 @@ class SltReader :   public FdoIScrollableFeatureReader,
 
         SltReader(  SltConnection*              connection, 
                     sqlite3_stmt*               stmt,
-                    ReaderCloseType closeDB,
+                    bool closeDB,
                     FdoClassDefinition* cls,
                     FdoParameterValueCollection*  parmValues);
 
 		SltReader(  SltConnection*              connection, 
                     FdoIdentifierCollection*    props, 
                     const char*                 fcname, 
-                    const char*                 strWhere, 
+                    const char*                 where, 
+                    SpatialIterator*            si,
                     bool                        useFastStepping,
                     RowidIterator*              ri,
-                    FdoParameterValueCollection*  parmValues,
-                    const char*                 strOrderBy = "",
-                    FdoIdentifier* alias = NULL);
+                    FdoParameterValueCollection*  parmValues);
 
         virtual ~SltReader();
 
@@ -203,12 +196,12 @@ protected:
 
     protected:
 
-        void DelayedInit(FdoIdentifierCollection* props, const char* fcname, const char* strWhere, const char* strOrderBy = "", bool addPkOnly = false, FdoIdentifier* alias = NULL);
+        void DelayedInit(FdoIdentifierCollection* props, const char* fcname, const char* where, bool addPkOnly = false);
 
     private:
-        bool ReadNextOnView();
-        int GenerateUniqueName(const wchar_t* pname, FdoPropertyDefinition* prop, FdoPropertyDefinitionCollection* pcol);
+
         void ValidateIndex(sqlite3_stmt *pStmt, int index);
+        const char* DecodeTableName(const char* name);
         std::wstring ExtractExpression(const wchar_t* exp, const wchar_t* propName);
 		void InitPropIndex(sqlite3_stmt* pStmt);
         int AddColumnToQuery(const wchar_t* name);
@@ -231,8 +224,7 @@ protected:
         SltConnection* m_connection;
         
 		StringRec* m_sprops; //cache of unicode string values of columns in the current row
-        int m_nMaxProps; //maximum number of columns that are currently queried
-        int m_nTotalProps; //number of properties in the feature class (total that can be queried after Requery())
+        int m_nMaxProps; //maximum number of columns that could be returned
 		
         int             m_eGeomFormat; //indicates encoding of geometry
         unsigned char*  m_wkbBuffer; //geometry conversion buffer
@@ -241,10 +233,8 @@ protected:
         StringBuffer  m_sql;  //the SQL query corresponding to this reader
         sqlite3_stmt* m_pStmt; //the SQL statement corresponding to this reader
         int m_closeOpcode; //we need this to cleanly exit the SQL engine after messing with its bytecodes
-        ReaderCloseType m_closeDB;  //indicates the statement is based on a memory backed temporary database that we should close when done
+        bool m_closeDB; //indicates the statement is based on a memory backed temporary database that we should close when done
         bool m_useFastStepping;
-        bool m_isViewSelect;
-        bool m_canAddSelectProps;
 
         //things cached/precomputed for speed
         FdoClassDefinition*         m_class;
@@ -262,6 +252,10 @@ protected:
         StringList m_reissueProps;
         StringBuffer m_fromwhere;
 
+        //stuff related to spatial filters
+        SpatialIterator*    m_si;
+        int                 m_siEnd;
+        sqlite3_int64       m_curfid;
         // kept here only for special cases when provider needs it alive
         // due some optimizations to avoid copying a geometry
         FdoFilter*          m_filter;
@@ -270,8 +264,6 @@ protected:
 protected:
         //stuff related to scrollable readers
         RowidIterator*      m_ri;
-        int                 m_siEnd;
-        sqlite3_int64       m_curfid;
 };
 
 

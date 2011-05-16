@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalnodatamaskband.cpp 17757 2009-10-05 17:06:20Z rouault $
+ * $Id: gdalnodatamaskband.cpp 15126 2008-08-09 00:42:39Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALNoDataMaskBand, a class implementing all
@@ -30,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalnodatamaskband.cpp 17757 2009-10-05 17:06:20Z rouault $");
+CPL_CVSID("$Id: gdalnodatamaskband.cpp 15126 2008-08-09 00:42:39Z warmerdam $");
 
 /************************************************************************/
 /*                        GDALNoDataMaskBand()                          */
@@ -87,8 +87,6 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
 
       case GDT_Int16:
       case GDT_Int32:
-      case GDT_CInt16:
-      case GDT_CInt32:
         eWrkDT = GDT_Int32;
         break;
 

@@ -68,17 +68,12 @@ FdoStringP FdoSmPhRdPostGisSpatialContextReader::GetGeomColumnName()
 
 bool FdoSmPhRdPostGisSpatialContextReader::GetHasElevation()
 {
-    // Has elevation if 4D or if 3D and no measure dimension.
-	return (mDimension > 3) || ((mDimension == 3) && !GetHasMeasure());
+	return (mDimension > 2);
 }
 
 bool FdoSmPhRdPostGisSpatialContextReader::GetHasMeasure()
 {
-    FdoStringP geomType = FdoSmPhReader::GetString(L"", L"geomtype");
-    FdoStringP lastChar = geomType.Mid( geomType.GetLength() - 1, 1 );
-
-    // Has measure if 4D or if 3D and geometry type is one of the XYM types.
-	return (mDimension > 3) || ((mDimension == 3) && (lastChar == L"M"));
+	return (mDimension > 3);
 }
 
 FdoInt32 FdoSmPhRdPostGisSpatialContextReader::GetGeometryType()
@@ -156,7 +151,7 @@ bool FdoSmPhRdPostGisSpatialContextReader::ReadNext()
 		mSrid = FdoSmPhReader::GetInt64(L"", L"srid");
 		mGeomTableName = FdoSmPhReader::GetString(L"", L"geomtablename");
 		mGeomColumnName = FdoSmPhReader::GetString(L"", L"geomcolumnname");
-        mWKT = FdoSmPhReader::GetString(L"", L"wktext");
+		mWKT = FdoSmPhReader::GetString(L"", L"wktext");
 		mDimension = FdoSmPhReader::GetLong(L"", L"dimension");
 
 /* TODO - Decide if always should set csname to srid
@@ -167,14 +162,11 @@ bool FdoSmPhRdPostGisSpatialContextReader::ReadNext()
             mCSname = L"";
         }
 */
-        mCSname = FdoSmPhReader::GetString(L"", L"srid");
+        mCSname = FdoCommonStringUtil::Int64ToString(mSrid);
 
-        if (mCSname != L"")
-            mCSname = FdoSmPhReader::GetString(L"", L"authname") + L":" + FdoSmPhReader::GetString(L"", L"srid");
-
-        double xmin = -2000000;
-        double xmax = 2000000;
-        double ymin = -2000000;
+		double xmin = -2000000;
+		double xmax = 2000000;
+		double ymin = -2000000;
 		double ymax = 2000000;
 
 		FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
@@ -186,24 +178,6 @@ bool FdoSmPhRdPostGisSpatialContextReader::ReadNext()
 		// Tolerances
 		mTolXY	= 0.0001;
         mTolZ = 0.0001;
-
-        // Ignore any axis assignments in the WKT. This is done by caching the 
-        // coordinate system info (CacheCoordinateSystem also removes any axis 
-        // assignments from the WKT). This means that the provider publishes all
-        // coordinate systems as X is East and Y is North, even if the WKT from
-        // spatial_ref_sys says otherwise. However, this is consistent with how
-        // PostGIS itself handles these coordinate systems, which is always as 
-        // X-East Y-North.
-
-        FdoSmPhCoordinateSystemP coordSys = mOwner->FindCoordinateSystem(mCSname);
-
-        if ( !coordSys )
-        {
-            coordSys = new FdoSmPhCoordinateSystem(GetManager(), mCSname, L"", mSrid, mWKT);
-            mOwner->CacheCoordinateSystem(coordSys);
-        }
-
-        mWKT = coordSys->GetWkt();
 	}
 
     return(ret);
@@ -218,8 +192,6 @@ FdoSmPhReaderP FdoSmPhRdPostGisSpatialContextReader::MakeQueryReader( FdoSmPhOwn
 
     FdoSmPhPostGisMgrP   pgMgr = mgr->SmartCast<FdoSmPhPostGisMgr>();
     
-    mOwner = owner;
-
     // Create binds for object names
     FdoSmPhRdSchemaDbObjectBindsP binds = new FdoSmPhRdSchemaDbObjectBinds(
         mgr,
@@ -236,7 +208,6 @@ FdoSmPhReaderP FdoSmPhRdPostGisSpatialContextReader::MakeQueryReader( FdoSmPhOwn
     // Generate sql statement if not already done
     sqlString = FdoStringP::Format(
           L"select b.srid, a.f_table_schema||'.'||a.f_table_name as geomtablename, a.f_geometry_column as geomcolumnname, \n"
-          L" b.auth_name as authname, \n"
 		  L" b.srtext as wktext, \n"
 		  L" a.coord_dimension as dimension,\n"
 		  L" a.type as geomtype\n"
@@ -289,12 +260,6 @@ FdoSmPhRowsP FdoSmPhRdPostGisSpatialContextReader::MakeRows( FdoSmPhMgrP mgr)
 
     pField = new FdoSmPhField(
         row, 
-        L"authname",
-        row->CreateColumnChar(L"authname",true, 32)
-    );
-
-    pField = new FdoSmPhField(
-        row, 
         L"wktext",
         row->CreateColumnChar(L"wktext",true, 2048)
     );
@@ -313,5 +278,6 @@ FdoSmPhRowsP FdoSmPhRdPostGisSpatialContextReader::MakeRows( FdoSmPhMgrP mgr)
 
     return( rows);
 }
+
 
 

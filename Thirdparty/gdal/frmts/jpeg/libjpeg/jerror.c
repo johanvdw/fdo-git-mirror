@@ -45,10 +45,6 @@
 #define jpeg_std_message_table	jMsgTable
 #endif
 
-#ifdef NEED_12_BIT_NAMES
-#define jpeg_std_message_table	jpeg_std_message_table_12
-#endif
-
 #define JMESSAGE(code,string)	string ,
 
 const char * const jpeg_std_message_table[] = {

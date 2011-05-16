@@ -18,13 +18,14 @@
  * 
  */
 
-#include <Sm/Ph/Rd/Reader.h>
+#include <Sm/Ph/Mgr.h>
+#include <Sm/Ph/Reader.h>
 
 // This abstract class a primary key. It retrieves one row per primaryKey-column
 // combination. Each provider must provide its own implementing class.
 
 
-class FdoSmPhRdPkeyReader : public FdoSmPhRdReader
+class FdoSmPhRdPkeyReader : public FdoSmPhReader
 {
 protected:
     //Unused constructor needed only to build on Linux
@@ -47,7 +48,7 @@ protected:
     /// Creates a set of rows describing the fields for this
     /// reader. There is one field per primary key and primary key column 
     /// attribute.
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
+    FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
 
 };
 

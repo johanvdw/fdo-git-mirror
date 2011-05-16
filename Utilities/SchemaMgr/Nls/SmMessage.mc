@@ -1141,11 +1141,6 @@ SymbolicName=FDOSM_382
 Language=English
 Association property '%1$ls' is missing the associated class
 .
-MessageId=2607
-SymbolicName=FDOSM_383
-Language=English
-Foreign key '%ls' has different number of columns and related columns.
-.
 MessageId=2615
 SymbolicName=FDOSM_391
 Language=English
@@ -1240,39 +1235,4 @@ MessageId=2649
 SymbolicName=FDOSM_425
 Language=English
 Cannot add schema %1$ls to database; it has the same name as the system schema
-.
-MessageId=2650
-SymbolicName=FDOSM_426
-Language=English
-Error creating synonym '%1$ls': referenced database object not specified.
-.
-MessageId=2651
-SymbolicName=FDOSM_427
-Language=English
-Error loading synonym '%1$ls': cannot change referenced database object.
-.
-MessageId=2652
-SymbolicName=FDOSM_428
-Language=English
-Cannot create synonym %1$ls.%2$ls, an object of that name already exists.
-.
-MessageId=2253
-SymbolicName=FDOSM_429
-Language=English
-Cannot apply class definition '%1$ls' to datastore '%2$ls'; datastore has no class metadata tables (f_classdefinition, f_classtype)
-.
-MessageId=2254
-SymbolicName=FDOSM_430
-Language=English
-Cannot apply property definition '%1$ls' to datastore '%2$ls'; datastore has no property metadata table (f_attributedefinition)
-.
-MessageId=2255
-SymbolicName=FDOSM_431
-Language=English
-Cannot apply association property definition '%1$ls' to datastore '%2$ls'; datastore has no association property metadata table (f_associationdefinition)
-.
-MessageId=2256
-SymbolicName=FDOSM_432
-Language=English
-Cannot apply association property definition '%1$ls' to datastore '%2$ls'; datastore has no association property metadata table (f_associationdefinition)
 .

@@ -11,8 +11,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <string>
-#include <list>
 #include <boost/filesystem/path.hpp>
 #include <boost/version.hpp>
 #include "bcp.hpp"
@@ -34,17 +32,15 @@ void show_usage()
       "   bcp [options] module-list output-path\n"
       "\n"
       "Options:\n"
-      "   --boost=path     sets the location of the boost tree to path\n"
-      "   --scan           treat the module list as a list of (possibly non-boost)\n" 
-      "                    files to scan for boost dependencies\n"
-      "   --svn            only copy files under cvs version control\n"
-      "   --unix-lines     make sure that all copied files use Unix style line endings\n"
-      "   --namespace=name rename the boost namespace to name (also changes library names).\n"
-      "   --namespace-alias Makes namespace boost an alias of the namespace set with --namespace.\n"
+      "   --boost=path   sets the location of the boost tree to path\n"
+      "   --scan         treat the module list as a list of (possibly non-boost)\n" 
+      "                  files to scan for boost dependencies\n"
+      "   --cvs          only copy files under cvs version control\n"
+      "   --unix-lines   make sure that all copied files use Unix style line endings\n"
       "\n"
-      "module-list:         a list of boost files or library names to copy\n"
-      "html-file:           the name of a html file to which the report will be written\n"
-      "output-path:         the path to which files will be copied\n";
+      "module-list:      a list of boost files or library names to copy\n"
+      "html-file:        the name of a html file to which the report will be written\n"
+      "output-path:      the path to which files will be copied\n";
 }
 
 bool filesystem_name_check( const std::string & name )
@@ -66,7 +62,6 @@ int cpp_main(int argc, char* argv[])
    //
    if(argc < 2)
    {
-      std::cout << "Error: insufficient arguments, don't know what to do." << std::endl;
       show_usage();
       return 0;
    }
@@ -79,7 +74,6 @@ int cpp_main(int argc, char* argv[])
    // object what ir needs to do:
    //
    bool list_mode = false;
-   std::list<const char*> positional_args;
    for(int i = 1; i < argc; ++i)
    {
       if(0 == std::strcmp("-h", argv[i])
@@ -113,10 +107,6 @@ int cpp_main(int argc, char* argv[])
       {
          papp->enable_cvs_mode();
       }
-      else if(0 == std::strcmp("--svn", argv[i]))
-      {
-         papp->enable_svn_mode();
-      }
       else if(0 == std::strcmp("--scan", argv[i]))
       {
          papp->enable_scan_mode();
@@ -137,40 +127,18 @@ int cpp_main(int argc, char* argv[])
       {
          papp->set_boost_path(argv[i] + 8);
       }
-      else if(0 == std::strncmp("--namespace=", argv[i], 12))
-      {
-         papp->set_namespace(argv[i] + 12);
-      }
-      else if(0 == std::strncmp("--namespace-alias", argv[i], 17))
-      {
-         papp->set_namespace_alias(true);
-      }
-      else if(0 == std::strncmp("--list-namespaces", argv[i], 17))
-      {
-         list_mode = true;
-         papp->set_namespace_list(true);
-      }
       else if(argv[i][0] == '-')
       {
-         std::cout << "Error: Unknown argument " << argv[i] << std::endl;
          show_usage();
          return 1;
       }
       else
       {
-         positional_args.push_back(argv[i]);
+         if(!list_mode && (i == argc - 1))
+            papp->set_destination(argv[i]);
+         else
+            papp->add_module(argv[i]);
       }
-   }
-   //
-   // Handle positional args last:
-   //
-   for(std::list<const char*>::const_iterator i = positional_args.begin();
-      i != positional_args.end(); ++i)
-   {
-      if(!list_mode && (i == --positional_args.end()))
-         papp->set_destination(*i);
-      else
-         papp->add_module(*i);
    }
    //
    // run the application object:

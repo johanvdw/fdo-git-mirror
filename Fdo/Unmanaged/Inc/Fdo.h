@@ -26,7 +26,6 @@
 #endif
 #endif
 #include <FdoStd.h>
-#include <FdoCommon.h>
 #include <FdoGeometry.h>
 
 ////////////////////////////////////////////////////////////////
@@ -194,10 +193,6 @@
 #include <Fdo/Expression/UnaryExpression.h>
 #include <Fdo/Expression/UnaryOperations.h>
 #include <Fdo/Expression/ValueExpression.h>
-#include <Fdo/Expression/ExpressionItemType.h>
-#include <Fdo/Expression/JoinCriteria.h>
-#include <Fdo/Expression/JoinCriteriaCollection.h>
-#include <Fdo/Expression/SubSelectExpression.h>
 
 ////////////////////////////////////////////////////////////////
 // Filter
@@ -272,7 +267,6 @@
 #include <Fdo/Schema/Topology.h>
 #include <Fdo/Schema/UniqueConstraint.h>
 #include <Fdo/Schema/UniqueConstraintCollection.h>
-#include <Fdo/Schema/PolygonVertexOrderRule.h>
 #include <Fdo/Schema/PropertyValueConstraint.h>
 #include <Fdo/Schema/PropertyValueConstraintList.h>
 #include <Fdo/Schema/PropertyValueConstraintRange.h>
@@ -327,8 +321,6 @@
 #include <Fdo/Xml/SpatialContextReader.h>
 #include <Fdo/Xml/SpatialContextSerializer.h>
 #include <Fdo/Xml/SpatialContextWriter.h>
-#include <Fdo/Xml/GmlVersion.h>
-
 
 #endif
 

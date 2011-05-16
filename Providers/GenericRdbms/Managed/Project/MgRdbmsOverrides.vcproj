@@ -100,7 +100,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MgFdoRdbmsOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -186,7 +186,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MgFdoRdbmsOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -269,7 +270,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MgFdoRdbmsOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -354,7 +355,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning MgFdoRdbmsOverrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.Rdbms.Overrides.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 	</Configurations>

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gsbgdataset.cpp 16431 2009-03-01 11:51:14Z rouault $
+ * $Id: gsbgdataset.cpp 15620 2008-10-26 16:16:38Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software Binary Grid Format.
@@ -60,7 +60,7 @@
 # define SHRT_MAX 32767
 #endif /* SHRT_MAX */
 
-CPL_CVSID("$Id: gsbgdataset.cpp 16431 2009-03-01 11:51:14Z rouault $");
+CPL_CVSID("$Id: gsbgdataset.cpp 15620 2008-10-26 16:16:38Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GSBG(void);
@@ -577,12 +577,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     poDS->nRasterYSize = CPL_LSBWORD16( nTemp );
 
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
-    {
-        delete poDS;
-        return NULL;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
@@ -943,14 +937,7 @@ GDALDataset *GSBGDataset::CreateCopy( const char *pszFilename,
     if( pfnProgress == NULL )
 	pfnProgress = GDALDummyProgress;
 
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "GSBG driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-    else if (nBands > 1)
+    if( poSrcDS->GetRasterCount() > 1 )
     {
 	if( bStrict )
 	{

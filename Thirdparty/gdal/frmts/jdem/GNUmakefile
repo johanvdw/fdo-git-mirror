@@ -5,9 +5,9 @@ OBJ	=	jdemdataset.o
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

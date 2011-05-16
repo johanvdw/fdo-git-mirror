@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 17629 2009-09-10 14:51:45Z chaitanya $
+ * $Id: gmlreader.h 15595 2008-10-24 20:12:38Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -52,7 +52,6 @@ class CPL_DLL GMLPropertyDefn
     char             *m_pszName;
     GMLPropertyType   m_eType;
     int               m_nWidth;
-    int               m_nPrecision;
     char             *m_pszSrcElement;
 
 public:
@@ -66,8 +65,6 @@ public:
     void        SetType( GMLPropertyType eType ) { m_eType = eType; }
     void        SetWidth( int nWidth) { m_nWidth = nWidth; }
     int         GetWidth() { return m_nWidth; }
-    void        SetPrecision( int nPrecision) { m_nPrecision = nPrecision; }
-    int         GetPrecision() { return m_nPrecision; }
     void        SetSrcElement( const char *pszSrcElement );
     const char *GetSrcElement() { return m_pszSrcElement; }
 
@@ -153,9 +150,6 @@ class CPL_DLL GMLFeature
 
     char            *m_pszGeometry;
 
-    // string list of named non-schema properties - used by NAS driver.
-    char           **m_papszOBProperties; 
-    
 public:
                     GMLFeature( GMLFeatureClass * );
                    ~GMLFeature();
@@ -177,11 +171,6 @@ public:
     void             SetFID( const char *pszFID );
 
     void             Dump( FILE *fp );
-
-    // Out of Band property handling - special stuff like relations for NAS.
-    void             AddOBProperty( const char *pszName, const char *pszValue );
-    const char      *GetOBProperty( const char *pszName );
-    char           **GetOBProperties();
 };
 
 /************************************************************************/
@@ -213,8 +202,6 @@ public:
     virtual int  ParseXSD( const char *pszFile ) = 0;
 
     virtual int PrescanForSchema( int bGetExtents = TRUE ) = 0;
-
-    virtual int HasStoppedParsing() = 0;
 };
 
 IGMLReader *CreateGMLReader();

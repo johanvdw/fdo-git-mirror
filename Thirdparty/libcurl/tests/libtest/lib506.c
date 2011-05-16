@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib506.c,v 1.24 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib506.c,v 1.14 2007-02-04 12:12:02 giva Exp $
  */
 
 #include "test.h"
@@ -13,13 +13,18 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include <curl/mprintf.h>
+#include <mprintf.h>
 
-#include "memdebug.h"
-
-static const char *HOSTHEADER = "Host: www.host.foo.com";
-static const char *JAR = "log/jar506";
+const char *HOSTHEADER = "Host: www.host.foo.com";
+const char *JAR = "log/jar506";
 #define THREADS 2
+
+void lock(CURL *handle, curl_lock_data data, curl_lock_access access,
+          void *useptr );
+void unlock(CURL *handle, curl_lock_data data, void *useptr );
+struct curl_slist *sethost(struct curl_slist *headers);
+void *fire(void *ptr);
+char *suburl(const char *base, int i);
 
 /* struct containing data of a thread */
 struct Tdata {
@@ -33,14 +38,14 @@ struct userdata {
 };
 
 /* lock callback */
-static void my_lock(CURL *handle, curl_lock_data data, curl_lock_access laccess,
+void lock(CURL *handle, curl_lock_data data, curl_lock_access access,
           void *useptr )
 {
   const char *what;
   struct userdata *user = (struct userdata *)useptr;
 
   (void)handle;
-  (void)laccess;
+  (void)access;
 
   switch ( data ) {
     case CURL_LOCK_DATA_SHARE:
@@ -56,12 +61,12 @@ static void my_lock(CURL *handle, curl_lock_data data, curl_lock_access laccess,
       fprintf(stderr, "lock: no such data: %d\n", (int)data);
       return;
   }
-  printf("lock:   %-6s [%s]: %d\n", what, user->text, user->counter);
+  printf("lock:   %-6s <%s>: %d\n", what, user->text, user->counter);
   user->counter++;
 }
 
 /* unlock callback */
-static void my_unlock(CURL *handle, curl_lock_data data, void *useptr )
+void unlock(CURL *handle, curl_lock_data data, void *useptr )
 {
   const char *what;
   struct userdata *user = (struct userdata *)useptr;
@@ -80,13 +85,13 @@ static void my_unlock(CURL *handle, curl_lock_data data, void *useptr )
       fprintf(stderr, "unlock: no such data: %d\n", (int)data);
       return;
   }
-  printf("unlock: %-6s [%s]: %d\n", what, user->text, user->counter);
+  printf("unlock: %-6s <%s>: %d\n", what, user->text, user->counter);
   user->counter++;
 }
 
 
 /* build host entry */
-static struct curl_slist *sethost(struct curl_slist *headers)
+struct curl_slist *sethost(struct curl_slist *headers)
 {
   (void)headers;
   return curl_slist_append(NULL, HOSTHEADER );
@@ -94,7 +99,7 @@ static struct curl_slist *sethost(struct curl_slist *headers)
 
 
 /* the dummy thread function */
-static void *fire(void *ptr)
+void *fire(void *ptr)
 {
   CURLcode code;
   struct curl_slist *headers;
@@ -108,11 +113,11 @@ static void *fire(void *ptr)
   }
 
   headers = sethost(NULL);
-  curl_easy_setopt(curl, CURLOPT_VERBOSE,    1L);
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-  curl_easy_setopt(curl, CURLOPT_URL,        tdata->url);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE,    1);
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, (void*)headers);
+  curl_easy_setopt(curl, CURLOPT_URL,        (void*)tdata->url);
   printf( "CURLOPT_SHARE\n" );
-  curl_easy_setopt(curl, CURLOPT_SHARE, tdata->share);
+  curl_easy_setopt(curl, CURLOPT_SHARE, (void*)tdata->share);
 
   printf( "PERFORM\n" );
   code = curl_easy_perform(curl);
@@ -130,9 +135,9 @@ static void *fire(void *ptr)
 
 
 /* build request url */
-static char *suburl(const char *base, int i)
+char *suburl(const char *base, int i)
 {
-  return curl_maprintf("%s%.4d", base, i);
+  return curl_maprintf("%s000%c", base, 48+i);
 }
 
 
@@ -168,11 +173,11 @@ int test(char *URL)
 
   if ( CURLSHE_OK == scode ) {
     printf( "CURLSHOPT_LOCKFUNC\n" );
-    scode = curl_share_setopt( share, CURLSHOPT_LOCKFUNC, my_lock);
+    scode = curl_share_setopt( share, CURLSHOPT_LOCKFUNC, lock);
   }
   if ( CURLSHE_OK == scode ) {
     printf( "CURLSHOPT_UNLOCKFUNC\n" );
-    scode = curl_share_setopt( share, CURLSHOPT_UNLOCKFUNC, my_unlock);
+    scode = curl_share_setopt( share, CURLSHOPT_UNLOCKFUNC, unlock);
   }
   if ( CURLSHE_OK == scode ) {
     printf( "CURLSHOPT_USERDATA\n" );
@@ -224,12 +229,12 @@ int test(char *URL)
 
   url = suburl( URL, i );
   headers = sethost( NULL );
-  test_setopt( curl, CURLOPT_HTTPHEADER, headers );
-  test_setopt( curl, CURLOPT_URL,        url );
+  curl_easy_setopt( curl, CURLOPT_HTTPHEADER, (void*)headers );
+  curl_easy_setopt( curl, CURLOPT_URL,        url );
   printf( "CURLOPT_SHARE\n" );
-  test_setopt( curl, CURLOPT_SHARE,      share );
+  curl_easy_setopt( curl, CURLOPT_SHARE,      share );
   printf( "CURLOPT_COOKIEJAR\n" );
-  test_setopt( curl, CURLOPT_COOKIEJAR,  JAR );
+  curl_easy_setopt( curl, CURLOPT_COOKIEJAR,  JAR );
 
   printf( "PERFORM\n" );
   curl_easy_perform( curl );
@@ -244,8 +249,6 @@ int test(char *URL)
   } else {
     printf( "SHARE_CLEANUP failed, correct\n" );
   }
-
-test_cleanup:
 
   /* clean up last handle */
   printf( "CLEANUP\n" );

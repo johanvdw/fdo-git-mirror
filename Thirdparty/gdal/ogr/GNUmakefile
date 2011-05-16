@@ -15,15 +15,11 @@ ifeq ($(OGR_ENABLED),yes)
 CXXFLAGS 	:=	-DHAVE_MITAB $(CXXFLAGS)
 endif
 
-ifeq ($(HAVE_EXPAT),yes)
-CPPFLAGS 	:=	-DHAVE_EXPAT $(EXPAT_INCLUDE) $(CPPFLAGS)
-endif
-
 CPPFLAGS	:=	-Iogrsf_frmts -I. $(GDAL_INCLUDE) $(PROJ_INCLUDE) $(PROJ_FLAGS) $(CPPFLAGS)
 
 default:	lib
 
-all:	lib
+all:	sublibs apps test_ogrsf$(EXE) 
 
 clean:
 	rm -f html/*
@@ -33,7 +29,7 @@ clean:
 very-clean: clean
 	rm -rf html rtf
 
-lib:	sublibs $(OBJ:.o=.$(OBJ_EXT))
+lib:	sublibs $(OBJ)
 
 $(OBJ): ogr_feature.h ogr_geometry.h
 
@@ -68,11 +64,9 @@ $(GDAL_SLIB):
 	(cd ..; $(MAKE) check-lib)
 
 web-update:	docs
-	$(INSTALL_DIR) $(INST_HTML)/ogr
-	cp html/* $(INST_HTML)/ogr
-	cp ogrsf_frmts/*/drv_*.html $(INST_HTML)/ogr
-	cp ogrsf_frmts/ogr_formats.html $(INST_HTML)/ogr
-	cp ../doc/ogr/*.gif $(INST_HTML)/ogr
+	cp html/* /u/www/projects/opengis/ogrhtml
+	cp ogrsf_frmts/*/drv_*.html /u/www/projects/opengis/ogrhtml
+	cp ogrsf_frmts/ogr_formats.html /u/www/projects/opengis/ogrhtml
 
 install:
 	for f in $(INST_H_FILES) ; \

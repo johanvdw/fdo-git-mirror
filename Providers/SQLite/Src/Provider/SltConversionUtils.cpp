@@ -77,68 +77,6 @@ int StringContains(const char* str, const char* val)
     return -1;
 }
 
-// returns a table name been able to process formats like: 
-// name, "name", main."name", main.name, "main"."name"
-std::string GetTableNameToken(const char* str)
-{
-    const char* strTmp = str;
-    while (*strTmp == ' ' && *strTmp != '\0') strTmp++;
-    str = strTmp;
-    bool startDq = false;
-    while(*strTmp != '\0')
-    {
-        if (*strTmp == '\"')
-            startDq = !startDq;
-        if (*strTmp == ' ' && !startDq)
-            break;        
-        strTmp++;
-    }
-    if (str == strTmp)
-        return std::string("");
-    if (StringStartsWith(str, "main."))
-        str = str + 5;
-    else if (StringStartsWith(str, "\"main\"."))
-        str = str + 7;
-    if (*str == '\"')
-    {
-        return std::string(str+1, (int)(strTmp-str-2));
-    }
-    else
-    {
-        std::string ret(str, (int)(strTmp-str));
-        if (ret.size() && ret[ret.size()-1] == ';')
-            ret.resize(ret.size()-1);
-        return ret;
-    }
-}
-
-// skips a predefined token whihc cannot contain space character
-const char* SkipTokenString(const char* str)
-{
-    const char* strTmp = str;
-    while (*strTmp == ' ' && *strTmp != '\0') strTmp++;
-    while(*strTmp != '\0' && *strTmp != ' ') strTmp++;
-    return strTmp;
-}
-
-bool StringStartsWith(const char* str, const char* val, const char** lastPos)
-{
-    assert( str!=NULL );
-    const char* strTmp = str;
-    while (*strTmp == ' ' && *strTmp != '\0') strTmp++;
-    const char* valTmp = val;
-    while(sqlite3UpperToLower[*strTmp++] == sqlite3UpperToLower[*valTmp++])
-    {
-        if (*valTmp == '\0')
-        {
-            if (lastPos != NULL)
-                *lastPos = strTmp;
-            return true;
-        }
-    }
-    return false;
-}
-
 FdoDateTime DateFromString(const wchar_t* val, bool excOnErr)
 {
     assert( val!=NULL );
@@ -268,7 +206,7 @@ void DateToString(FdoDateTime* dt, char* s, int nBytes, bool useFdoStyle)
         if (useFdoStyle)
             _snprintf(s, nBytes, "%02d:%02d:%02g", dt->hour, dt->minute, dt->seconds);
         else 
-            _snprintf(s, nBytes, "%02d:%02d:%06.3f", dt->hour, dt->minute, dt->seconds);
+            _snprintf(s, nBytes, "%02d:%02d:%s%0.3f", dt->hour, dt->minute, (dt->seconds >10.0)?"":"0",dt->seconds);
 
         EnsureNoIsLocalIndep(s);
     }
@@ -277,7 +215,7 @@ void DateToString(FdoDateTime* dt, char* s, int nBytes, bool useFdoStyle)
         if (useFdoStyle)
             _snprintf(s, nBytes, "%04d-%02d-%02d %02d:%02d:%02g", dt->year, dt->month, dt->day, dt->hour, dt->minute, dt->seconds);
         else
-            _snprintf(s, nBytes, "%04d-%02d-%02dT%02d:%02d:%06.3f", dt->year, dt->month, dt->day, dt->hour, dt->minute, dt->seconds);
+            _snprintf(s, nBytes, "%04d-%02d-%02dT%02d:%02d:%s%0.3f", dt->year, dt->month, dt->day, dt->hour, dt->minute, (dt->seconds >10.0)?"":"0",dt->seconds);
         
         EnsureNoIsLocalIndep(s);
     }
@@ -579,35 +517,4 @@ wchar_t* EnsureNoIsLocalIndep(wchar_t* str)
             *strtmp = L'.';
     }
     return str;
-}
-
-const char* ExtractDbName(const char* v, int& stStr, int& lenStr)
-{
-    const char* tmp = v;
-    stStr = lenStr = 0;
-    while (*tmp == '\"') tmp++;
-    bool dqPr = ((int)(tmp-v) % 2) != 0;
-    stStr = (int)dqPr;
-    do
-    {
-        tmp++;
-        if (!dqPr && (*tmp == '.' || *tmp == '\0'))
-        {
-            lenStr = (int)(tmp-v);
-            return (*tmp == '.') ? tmp+1 : NULL;
-        }
-        if (dqPr && *tmp == '\"')
-        {
-            const char* t = tmp;
-            while (*t == '\"') t++;
-            if (((int)(t-tmp) % 2) != 0)
-            {
-                lenStr = (int)(t-v)-stStr-1;
-                return (*t == '\0') ? NULL : t+1;
-            }
-            tmp = t;
-        }
-        
-    }while(*tmp != '\0');
-    return NULL;
 }

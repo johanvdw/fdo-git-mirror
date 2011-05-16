@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_contour.cpp 18356 2009-12-20 22:28:34Z rouault $
+ * $Id: gdal_contour.cpp 14818 2008-07-05 10:15:08Z rouault $
  *
  * Project:  Contour Generator
  * Purpose:  Contour Generator mainline.
@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 18356 2009-12-20 22:28:34Z rouault $");
+CPL_CVSID("$Id: gdal_contour.cpp 14818 2008-07-05 10:15:08Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -47,7 +47,7 @@ static void Usage()
         "Usage: gdal_contour [-b <band>] [-a <attribute_name>] [-3d] [-inodata]\n"
         "                    [-snodata n] [-f <formatname>] [-i <interval>]\n"
         "                    [-off <offset>] [-fl <level> <level>...]\n" 
-        "                    [-nln <outlayername>] [-q]\n"
+        "                    [-nln <outlayername>]\n"
         "                    <src_filename> <dst_filename>\n" );
     exit( 1 );
 }
@@ -70,8 +70,6 @@ int main( int argc, char ** argv )
     double adfFixedLevels[1000];
     int    nFixedLevelCount = 0;
     const char *pszNewLayerName = "contour";
-    int bQuiet = FALSE;
-    GDALProgressFunc pfnProgress = NULL;
 
     /* Check that we are running against at least GDAL 1.4 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -115,8 +113,7 @@ int main( int argc, char ** argv )
             while( i < argc-1 
                    && nFixedLevelCount 
                              < (int)(sizeof(adfFixedLevels)/sizeof(double))
-                   && (atof(argv[i+1]) != 0 || EQUAL(argv[i+1],"0"))
-                   && !EQUAL(argv[i+1], "-3d"))
+                   && (atof(argv[i+1]) != 0 || EQUAL(argv[i+1],"0")) )
                 adfFixedLevels[nFixedLevelCount++] = atof(argv[++i]);
         }
         else if( EQUAL(argv[i],"-b") && i < argc-1 )
@@ -144,10 +141,6 @@ int main( int argc, char ** argv )
         {
             bIgnoreNoData = TRUE;
         }
-        else if ( EQUAL(argv[i],"-q") || EQUAL(argv[i],"-quiet") )
-        {
-            bQuiet = TRUE;
-        }
         else if( pszSrcFilename == NULL )
         {
             pszSrcFilename = argv[i];
@@ -165,21 +158,6 @@ int main( int argc, char ** argv )
         Usage();
     }
 
-    if (pszSrcFilename == NULL)
-    {
-        fprintf(stderr, "Missing source filename.\n");
-        Usage();
-    }
-
-    if (pszDstFilename == NULL)
-    {
-        fprintf(stderr, "Missing destination filename.\n");
-        Usage();
-    }
-    
-    if (!bQuiet)
-        pfnProgress = GDALTermProgress;
-
 /* -------------------------------------------------------------------- */
 /*      Open source raster file.                                        */
 /* -------------------------------------------------------------------- */
@@ -195,7 +173,6 @@ int main( int argc, char ** argv )
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Band %d does not exist on dataset.", 
                   nBandIn );
-        exit(2);
     }
 
     if( !bNoDataSet && !bIgnoreNoData )
@@ -206,7 +183,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
     OGRSpatialReferenceH hSRS = NULL;
 
-    const char *pszWKT = GDALGetProjectionRef( hSrcDS );
+    const char *pszWKT = GDALGetProjectionRef( hBand );
 
     if( pszWKT != NULL && strlen(pszWKT) != 0 )
         hSRS = OSRNewSpatialReference( pszWKT );
@@ -218,6 +195,7 @@ int main( int argc, char ** argv )
     OGRSFDriverH hDriver = OGRGetDriverByName( pszFormat );
     OGRFieldDefnH hFld;
     OGRLayerH hLayer;
+    int nElevField = -1;
 
     if( hDriver == NULL )
     {
@@ -248,6 +226,7 @@ int main( int argc, char ** argv )
         OGR_Fld_SetPrecision( hFld, 3 );
         OGR_L_CreateField( hLayer, hFld, FALSE );
         OGR_Fld_Destroy( hFld );
+        nElevField = 1;
     }
 
 /* -------------------------------------------------------------------- */
@@ -256,20 +235,13 @@ int main( int argc, char ** argv )
     CPLErr eErr;
     
     eErr = GDALContourGenerate( hBand, dfInterval, dfOffset, 
-                         nFixedLevelCount, adfFixedLevels,
-                         bNoDataSet, dfNoData, hLayer, 
-                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), 
-                                               "ID" ), 
-                         (pszElevAttrib == NULL) ? -1 :
-                                 OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), 
-                                                       pszElevAttrib ), 
-                         pfnProgress, NULL );
+                                nFixedLevelCount, adfFixedLevels,
+                                bNoDataSet, dfNoData, 
+                                hLayer, 0, nElevField,
+                                GDALTermProgress, NULL );
 
     OGR_DS_Destroy( hDS );
     GDALClose( hSrcDS );
-
-    if (hSRS)
-        OSRDestroySpatialReference( hSRS );
 
     CSLDestroy( argv );
     GDALDestroyDriverManager();

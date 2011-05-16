@@ -122,7 +122,7 @@ sc_5</gml:srsName>
 1001.000000 1002.000000</gml:pos>
 </gml:boundingBox>
 </gml:validArea>
-<gml:baseCRS xlink:href="http://fdo.osgeo.org/schemas/feature/crs/#_x31-000"/>
+<gml:baseCRS xlink:href="http://fdo.osgeo.org/schemas/feature/crs/#-x31-000"/>
 <gml:definedByConversion xlink:href="http://fdo.osgeo.org/coord_conversions#identity"/>
 <gml:derivedCRSType codeSpace="http://fdo.osgeo.org/crs_types">
 geographic</gml:derivedCRSType>
@@ -147,7 +147,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -182,7 +182,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -212,7 +212,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -242,7 +242,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -272,7 +272,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -302,7 +302,7 @@ geographic</gml:derivedCRSType>
 <xs:sequence>
 <xs:element name="id">
 <xs:simpleType>
-<xs:restriction base="xs:int"/>
+<xs:restriction base="fdo:int32"/>
 </xs:simpleType>
 <xs:annotation>
 <xs:documentation/>
@@ -323,9 +323,9 @@ geographic</gml:derivedCRSType>
 <xs:documentation/>
 </xs:annotation>
 </xs:schema>
-<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/SQLServerSpatialProvider" textInRow="NotInRow" provider="OSGeo.SQLServerSpatial.3.7" name="dbo">
+<SchemaMapping xmlns:rdb="http://fdordbms.osgeo.org/schemas" xmlns="http://www.autodesk.com/isd/fdo/SQLServerSpatialProvider" textInRow="NotInRow" provider="OSGeo.SQLServerSpatial.3.5" name="dbo">
 <complexType name="table1Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table1" name="dbo.table1"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table1" name="dbo.table1"/>
 <element name="id">
 <Column name="id"/>
 </element>
@@ -337,7 +337,7 @@ geographic</gml:derivedCRSType>
 </element>
 </complexType>
 <complexType name="table2Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table2" name="dbo.table2"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table2" name="dbo.table2"/>
 <element name="id">
 <Column name="id"/>
 </element>
@@ -346,7 +346,7 @@ geographic</gml:derivedCRSType>
 </element>
 </complexType>
 <complexType name="table3Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table3" name="dbo.table3"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table3" name="dbo.table3"/>
 <element name="id">
 <Column name="id"/>
 </element>
@@ -355,7 +355,7 @@ geographic</gml:derivedCRSType>
 </element>
 </complexType>
 <complexType name="table4Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table4" name="dbo.table4"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table4" name="dbo.table4"/>
 <element name="id">
 <Column name="id"/>
 </element>
@@ -364,7 +364,7 @@ geographic</gml:derivedCRSType>
 </element>
 </complexType>
 <complexType name="table5Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table5" name="dbo.table5"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table5" name="dbo.table5"/>
 <element name="id">
 <Column name="id"/>
 </element>
@@ -373,7 +373,7 @@ geographic</gml:derivedCRSType>
 </element>
 </complexType>
 <complexType name="table6Type" identityIsGloballyUnique="false" identitySeed="0" identityIncrement="0" identityPropertyName="">
-<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_table6" name="dbo.table6"/>
+<Table tableFilegroup="PRIMARY" textInRow="NotInRow" pkeyName="pk_dbo_table6" name="dbo.table6"/>
 <element name="id">
 <Column name="id"/>
 </element>

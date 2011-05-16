@@ -35,23 +35,6 @@ BEGIN_NAMESPACE_OSGEO_SPATIAL
 
 /// \ingroup (OSGeoFDOSpatial)
 /// \brief
-/// PolygonVertexOrderAction is an enumeration of the action taken 
-/// when copying polygon from a source provider to a target provider.
-///
-public enum class PolygonVertexOrderAction
-{
-    /// No processing.
-    PolygonVertexOrderAction_None = FdoPolygonVertexOrderAction_None,
-
-    /// Reverse polygon vertex.
-    PolygonVertexOrderAction_Reverse = FdoPolygonVertexOrderAction_Reverse,
-
-    /// Check polygon vertex order and fix it if necessary.
-    PolygonVertexOrderAction_CheckAndFix = FdoPolygonVertexOrderAction_CheckAndReverse
-};
-
-/// \ingroup (OSGeoFDOSpatial)
-/// \brief
 /// A Spatial utility class.
 public ref class SpatialUtility sealed
 {
@@ -121,50 +104,6 @@ public:
 	static System::Boolean Evaluate(NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g1, NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations op, NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g2);
 
     /// \brief
-    /// Evaluates if two FDO geometric objects spatially interact with each other based on a user supplied spatial operator.
-    /// For example: Contains, Crosses, Disjoint, Equals, Intersects, Overlaps, Touches, Within, CoveredBy, Inside, EnvelopeIntersects.
-    /// 
-    /// \param g1 
-    /// Input Left hand Geometry to Evaluate
-    /// \param op 
-    /// Input The spatial operation to apply to the left and right hand geometries 
-    /// \param g2 
-    /// Input Right hand Geometry to Evaluate
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// 
-    /// \return
-    /// Returns The tesselated Geometry.
-    /// 
-	static System::Boolean Evaluate(NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g1, NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations op, NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g2, double toleranceXY);
-
-        /// \brief
-    /// Evaluates if two FDO geometric objects spatially interact with each other based on a user supplied spatial operator.
-    /// For example: Contains, Crosses, Disjoint, Equals, Intersects, Overlaps, Touches, Within, CoveredBy, Inside, EnvelopeIntersects.
-    /// 
-    /// \param g1 
-    /// Input Left hand Geometry to Evaluate
-    /// \param op 
-    /// Input The spatial operation to apply to the left and right hand geometries 
-    /// \param g2 
-    /// Input Right hand Geometry to Evaluate
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// \param toleranceZ
-    /// Input tolerance to used to compare Z coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// 
-    /// \return
-    /// Returns The tesselated Geometry.
-    /// 
-	static System::Boolean Evaluate(NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g1, NAMESPACE_OSGEO_FDO_FILTER::SpatialOperations op, NAMESPACE_OSGEO_GEOMETRY::IGeometry^ g2, double toleranceXY, double toleranceZ);
-
-    /// \brief
     /// Tesselates a curve geometry into a set of line strings that approximate the curve geometry.
     /// 
     /// \param curve 
@@ -229,28 +168,6 @@ public:
 	static System::Boolean PointInRing( NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ ring, System::Double coordinateX, System::Double coordinateY, System::Boolean% isOnBoundary);
 
     /// \brief
-    /// 
-    /// Tests whether a point is within a ring or not.
-    /// 
-    /// \param ring 
-    /// Input Ring to test
-    /// \param coordinateX 
-    /// Input X ordinate.
-    /// \param coordinateY 
-    /// Input Y ordinate.
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// \param isOnBoundary 
-    /// Output Specifies if the specified point is on the boundary of the ring.
-    /// 
-    /// \return
-    /// Returns TRUE if the point is within ring or on its boundary, FALSE otherwise.
-    /// 
-    static System::Boolean PointInRing( NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ ring, System::Double coordinateX, System::Double coordinateY, double toleranceXY, System::Boolean% isOnBoundary);
-
-    /// \brief
     /// Tests whether a point is within a ring or not.
     /// 
     /// \param ring 
@@ -264,26 +181,6 @@ public:
     /// Returns TRUE if the point is within ring or on its boundary, FALSE otherwise.
     /// 
     static System::Boolean PointInRing( NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ ring, System::Double coordinateX, System::Double coordinateY);
-
-    /// \brief
-    /// 
-    /// Tests whether a point is within a ring or not.
-    /// 
-    /// \param ring 
-    /// Input Ring to test
-    /// \param coordinateX 
-    /// Input X ordinate.
-    /// \param coordinateY 
-    /// Input Y ordinate.
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// 
-    /// \return
-    /// Returns TRUE if the point is within ring or on its boundary, FALSE otherwise.
-    /// 
-    static System::Boolean PointInRing( NAMESPACE_OSGEO_GEOMETRY::ILinearRing^ ring, System::Double coordinateX, System::Double coordinateY, double toleranceXY);
 
     /// \brief
     /// Tests whether a point is within a polygon (including its islands) or not.
@@ -313,30 +210,6 @@ public:
     /// Input X ordinate.
     /// \param coordinateY 
     /// Input Y ordinate.
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// \param isOnExtBoundary 
-    /// Output Specifies if the specified point is on the exterior boundary of the polygon.
-    /// \param isOnInBoundary 
-    /// Output Specifies if the specified point is on the interior boundary of the polygon.
-    /// 
-    /// 
-    /// \return
-    /// Returns TRUE if the point is within polygon or on its boundary, FALSE otherwise.
-    /// 
-    static System::Boolean PointInPolygon(NAMESPACE_OSGEO_GEOMETRY::IPolygon^ polygon, System::Double coordinateX, System::Double coordinateY, double toleranceXY, System::Boolean% isOnExtBoundary, System::Boolean% isOnInBoundary);
-
-    /// \brief
-    /// Tests whether a point is within a polygon (including its islands) or not.
-    /// 
-    /// \param polygon 
-    /// Input Polygon to test
-    /// \param coordinateX 
-    /// Input X ordinate.
-    /// \param coordinateY 
-    /// Input Y ordinate.
     /// \param isOnExtBoundary 
     /// Output Specifies if the specified point is on the exterior boundary of the polygon.
     /// 
@@ -354,51 +227,11 @@ public:
     /// Input X ordinate.
     /// \param coordinateY 
     /// Input Y ordinate.
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// \param isOnExtBoundary 
-    /// Output Specifies if the specified point is on the exterior boundary of the polygon.
-    /// 
-    /// \return
-    /// Returns TRUE if the point is within polygon or on its boundary, FALSE otherwise.
-    /// 
-    static System::Boolean PointInPolygon(NAMESPACE_OSGEO_GEOMETRY::IPolygon^ polygon, System::Double coordinateX, System::Double coordinateY, double toleranceXY, System::Boolean% isOnExtBoundary);
-
-    /// \brief
-    /// Tests whether a point is within a polygon (including its islands) or not.
-    /// 
-    /// \param polygon 
-    /// Input Polygon to test
-    /// \param coordinateX 
-    /// Input X ordinate.
-    /// \param coordinateY 
-    /// Input Y ordinate.
     /// 
     /// \return
     /// Returns TRUE if the point is within polygon or on its boundary, FALSE otherwise.
     /// 
     static System::Boolean PointInPolygon(NAMESPACE_OSGEO_GEOMETRY::IPolygon^ polygon, System::Double coordinateX, System::Double coordinateY);
-
-    /// \brief
-    /// Tests whether a point is within a polygon (including its islands) or not.
-    /// 
-    /// \param polygon 
-    /// Input Polygon to test
-    /// \param coordinateX 
-    /// Input X ordinate.
-    /// \param coordinateY 
-    /// Input Y ordinate.
-    /// \param toleranceXY 
-    /// Input tolerance to used to compare XY coordinates
-    /// Default tolerance used is 1e-10. Valid range is >0
-    /// If an invalid value is provided, the default then will be used
-    /// 
-    /// \return
-    /// Returns TRUE if the point is within polygon or on its boundary, FALSE otherwise.
-    /// 
-    static System::Boolean PointInPolygon(NAMESPACE_OSGEO_GEOMETRY::IPolygon^ polygon, System::Double coordinateX, System::Double coordinateY, double toleranceXY);
 
     /// \brief
     /// Computes the area of a ring.
@@ -456,62 +289,6 @@ public:
     /// Returns Flag indicating whether the arc has collinear points.
     /// 
 	static System::Boolean IsCircularArcValid( NAMESPACE_OSGEO_GEOMETRY::ICircularArcSegment^ arc, System::Double tolerance );
-
-    /// \brief
-    /// Checks whether the vertex order of the input polygon follows the specified
-    /// vertex order rule. If not, fix it.
-    ///
-    /// \param geometry
-    /// Input the polygon geometry to be fixed. It can be a polygon, multipolygon,
-    /// curvepolygon, or multicurvepolygon.
-    ///
-    /// \return
-    /// Returns the modified polygon.  
-    ///
-    static NAMESPACE_OSGEO_GEOMETRY::IGeometry^ FixPolygonVertexOrder ( NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry, NAMESPACE_OSGEO_FDO_SCHEMA::PolygonVertexOrderRule vertexOrderRule );
-
-    /// \brief
-    /// Reverses the vertex order of the input polygon.
-    ///
-    /// \param geometry
-    /// Input the polygon geometry to be reversed. It can be a polygon, multipolygon,
-    /// curvepolygon, or multicurvepolygon.
-    ///
-    /// \return
-    /// Returns the modified polygon. 
-    ///
-    static NAMESPACE_OSGEO_GEOMETRY::IGeometry^ ReversePolygonVertexOrder ( NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry );
-
-    /// \brief
-    /// Gets the vertex order of the input polygon.
-    ///
-    /// \param geometry
-    /// Input geometry to be checked. It can be a polygon, multipolygon,
-    /// curvepolygon, or multicurvepolygon.
-    /// \return
-    /// Returns the vertex order of the input polygon.
-    /// 
-    static NAMESPACE_OSGEO_FDO_SCHEMA::PolygonVertexOrderRule CheckPolygonVertexOrder( NAMESPACE_OSGEO_GEOMETRY::IGeometry^ geometry);
-
-    /// \brief
-    /// Given the vertex order and strictness rule of the source and the target,
-    /// get the action taken when copying polygon from a source provider to 
-    /// a target provider.
-    ///
-    /// \param sourceVertexOrderRule
-    /// Input the vertex order rule of the source.
-    /// \param sourceStrictnessRule
-    /// Input the vertex order strictness rule of the source.
-    /// \param targetVertexOrderRule
-    /// Input the vertex order rule of the target.
-    /// \param targetStrictnessRule
-    /// Input the vertex order strictness rule of the target.
-    /// 
-    /// \return
-    /// Returns the action taken when copying polygon from a source provider 
-    /// to a target provider.
-    /// 
-    static PolygonVertexOrderAction GetPolygonVertexOrderAction( NAMESPACE_OSGEO_FDO_SCHEMA::PolygonVertexOrderRule sourceVertexOrderRule, System::Boolean sourceStrictnessRule, NAMESPACE_OSGEO_FDO_SCHEMA::PolygonVertexOrderRule targetVertexOrderRule, System::Boolean targetStrictnessRule );
 
 private:
 	SpatialUtility(){}

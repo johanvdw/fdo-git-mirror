@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: parsexsd.cpp 17629 2009-09-10 14:51:45Z chaitanya $
+ * $Id: parsexsd.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader::ParseXSD() method.
@@ -30,7 +30,7 @@
 #include "gmlreader.h"
 #include "cpl_error.h"
 
-#if HAVE_XERCES != 0 || defined(HAVE_EXPAT)
+#if HAVE_XERCES != 0
 
 #include "gmlreaderp.h"
 #include "cpl_conv.h"
@@ -136,11 +136,8 @@ int GMLReader::ParseXSD( const char *pszFile )
         const char *pszType;
 
         pszType = CPLGetXMLValue( psThis, "type", NULL );
-        if( strstr( pszType, ":" ) != NULL )
-            pszType = strstr( pszType, ":" ) + 1; 
         if( pszType == NULL || !EQUALN(pszType,pszName,strlen(pszName)) 
-            || !(EQUAL(pszType+strlen(pszName),"_Type") ||
-                    EQUAL(pszType+strlen(pszName),"Type")) )
+            || !EQUAL(pszType+strlen(pszName),"_Type") )
         {
             bIsLevel0 = FALSE;
             break;
@@ -207,40 +204,16 @@ int GMLReader::ParseXSD( const char *pszFile )
                 StripNS( CPLGetXMLValue( psAttrDef, 
                                          "simpleType.restriction.base", "" ));
 
-            if( EQUAL(pszBase,"decimal") )
-            {
+            if( EQUAL(pszBase,"decimal")
+                || EQUAL(pszBase,"float") 
+                || EQUAL(pszBase,"double") )
                 poProp->SetType( GMLPT_Real );
-                const char *pszWidth = 
-                    CPLGetXMLValue( psAttrDef, 
-                              "simpleType.restriction.totalDigits.value", "0" );
-                const char *pszPrecision = 
-                    CPLGetXMLValue( psAttrDef, 
-                              "simpleType.restriction.fractionDigits.value", "0" );
-                poProp->SetWidth( atoi(pszWidth) );
-                poProp->SetPrecision( atoi(pszPrecision) );
-            }
             
-            else if( EQUAL(pszBase,"float") 
-                     || EQUAL(pszBase,"double") )
-                poProp->SetType( GMLPT_Real );
-
             else if( EQUAL(pszBase,"integer") )
-            {
                 poProp->SetType( GMLPT_Integer );
-                const char *pszWidth = 
-                    CPLGetXMLValue( psAttrDef, 
-                              "simpleType.restriction.totalDigits.value", "0" );
-                poProp->SetWidth( atoi(pszWidth) );
-            }
 
             else if( EQUAL(pszBase,"string") )
-            {
                 poProp->SetType( GMLPT_String );
-                const char *pszWidth = 
-                    CPLGetXMLValue( psAttrDef, 
-                              "simpleType.restriction.maxLength.value", "0" );
-                poProp->SetWidth( atoi(pszWidth) );
-            }
 
             else
                 poProp->SetType( GMLPT_Untyped );
@@ -267,5 +240,5 @@ int GMLReader::ParseXSD( const char *pszFile )
         return FALSE;
 }
 
-#endif /* HAVE_XERCES == 1  || defined(HAVE_EXPAT) */
+#endif /* HAVE_XERCES == 1 */
 

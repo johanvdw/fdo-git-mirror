@@ -19,7 +19,6 @@ namespace boost
   {
     const int m_linked_to = 1;
     const int m_present = 2;
-    const int m_nounlinked_errors = 4;
 
     class link_check : public hypertext_inspector
     {
@@ -31,13 +30,12 @@ namespace boost
       typedef std::map< string, int > m_path_map;
       m_path_map m_paths; // first() is relative initial_path()
 
-      void do_url( const string & url, const string & library_name,
-        const path & full_source_path, bool no_link_errors,
-        bool allow_external_links );
+      void do_url( const string & url,
+        const string & library_name, const path & full_source_path );
     public:
 
       link_check();
-      virtual const char * name() const { return "*LINK*"; }
+      virtual const char * name() const { return "*A*"; }
       virtual const char * desc() const { return "invalid bookmarks, invalid urls, broken links, unlinked files"; }
 
       virtual void inspect(
@@ -53,10 +51,10 @@ namespace boost
 
       virtual ~link_check()
         {
-          std::cout << "  " << m_bookmark_errors << " bookmarks with invalid characters" << line_break();
-          std::cout << "  " << m_invalid_errors << " invalid urls" << line_break();
-          std::cout << "  " << m_broken_errors << " broken links" << line_break();
-          std::cout << "  " << m_unlinked_errors << " unlinked files" << line_break();
+          std::cout << "  " << m_bookmark_errors << " bookmarks with invalid characters\n";
+          std::cout << "  " << m_invalid_errors << " invalid urls\n";
+          std::cout << "  " << m_broken_errors << " broken links\n";
+          std::cout << "  " << m_unlinked_errors << " unlinked files\n";
         }
     };
   }

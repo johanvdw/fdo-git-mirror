@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr.cpp 18750 2010-02-06 19:02:30Z rouault $
+ * $Id: ogr2ogr.cpp 15473 2008-10-07 20:59:24Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for translating between formats.
@@ -32,96 +32,10 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "ogr_api.h"
-#include "gdal.h"
 
-CPL_CVSID("$Id: ogr2ogr.cpp 18750 2010-02-06 19:02:30Z rouault $");
+CPL_CVSID("$Id: ogr2ogr.cpp 15473 2008-10-07 20:59:24Z warmerdam $");
 
 static void Usage();
-
-static int IsNumber(const char* pszStr)
-{
-    if (*pszStr == '-' || *pszStr == '+')
-        pszStr ++;
-    if (*pszStr == '.')
-        pszStr ++;
-    return (*pszStr >= '0' && *pszStr <= '9');
-}
-
-static OGRGeometry* LoadGeometry( const char* pszDS,
-                                  const char* pszSQL,
-                                  const char* pszLyr,
-                                  const char* pszWhere)
-{
-    OGRDataSource       *poDS;
-    OGRLayer            *poLyr;
-    OGRFeature          *poFeat;
-    OGRGeometry         *poGeom = NULL;
-        
-    poDS = OGRSFDriverRegistrar::Open( pszDS, FALSE );
-    if (poDS == NULL)
-        return NULL;
-
-    if (pszSQL != NULL)
-        poLyr = poDS->ExecuteSQL( pszSQL, NULL, NULL ); 
-    else if (pszLyr != NULL)
-        poLyr = poDS->GetLayerByName(pszLyr);
-    else
-        poLyr = poDS->GetLayer(0);
-        
-    if (poLyr == NULL)
-    {
-        fprintf( stderr, "Failed to identify source layer from datasource.\n" );
-        OGRDataSource::DestroyDataSource(poDS);
-        return NULL;
-    }
-    
-    if (pszWhere)
-        poLyr->SetAttributeFilter(pszWhere);
-        
-    while ((poFeat = poLyr->GetNextFeature()) != NULL)
-    {
-        OGRGeometry* poSrcGeom = poFeat->GetGeometryRef();
-        if (poSrcGeom)
-        {
-            OGRwkbGeometryType eType = wkbFlatten( poSrcGeom->getGeometryType() );
-            
-            if (poGeom == NULL)
-                poGeom = OGRGeometryFactory::createGeometry( wkbMultiPolygon );
-
-            if( eType == wkbPolygon )
-                ((OGRGeometryCollection*)poGeom)->addGeometry( poSrcGeom );
-            else if( eType == wkbMultiPolygon )
-            {
-                int iGeom;
-                int nGeomCount = OGR_G_GetGeometryCount( (OGRGeometryH)poSrcGeom );
-
-                for( iGeom = 0; iGeom < nGeomCount; iGeom++ )
-                {
-                    ((OGRGeometryCollection*)poGeom)->addGeometry(
-                                ((OGRGeometryCollection*)poSrcGeom)->getGeometryRef(iGeom) );
-                }
-            }
-            else
-            {
-                fprintf( stderr, "ERROR: Geometry not of polygon type.\n" );
-                OGRGeometryFactory::destroyGeometry(poGeom);
-                OGRFeature::DestroyFeature(poFeat);
-                if( pszSQL != NULL )
-                    poDS->ReleaseResultSet( poLyr );
-                OGRDataSource::DestroyDataSource(poDS);
-                return NULL;
-            }
-        }
-    
-        OGRFeature::DestroyFeature(poFeat);
-    }
-    
-    if( pszSQL != NULL )
-        poDS->ReleaseResultSet( poLyr );
-    OGRDataSource::DestroyDataSource(poDS);
-    
-    return poGeom;
-}
 
 static int TranslateLayer( OGRDataSource *poSrcDS, 
                            OGRLayer * poSrcLayer,
@@ -134,14 +48,7 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
                            char **papszSelFields,
                            int bAppend, int eGType,
                            int bOverwrite,
-                           double dfMaxSegmentLength,
-                           char** papszFieldTypesToString,
-                           long nCountLayerFeatures,
-                           int bWrapDateline,
-                           OGRGeometry* poClipSrc,
-                           OGRGeometry *poClipDst,
-                           GDALProgressFunc pfnProgress,
-                           void *pProgressArg);
+                           double dfMaxSegmentLength);
 
 static int bSkipFailures = FALSE;
 static int nGroupTransactions = 200;
@@ -172,25 +79,8 @@ int main( int nArgc, char ** papszArgv )
     const char  *pszSelect;
     char        **papszSelFields = NULL;
     const char  *pszSQLStatement = NULL;
-    const char  *pszDialect = NULL;
     int         eGType = -2;
     double       dfMaxSegmentLength = 0;
-    char        **papszFieldTypesToString = NULL;
-    int          bDisplayProgress = FALSE;
-    GDALProgressFunc pfnProgress = NULL;
-    void        *pProgressArg = NULL;
-    int          bWrapDateline = FALSE;
-    int          bClipSrc = FALSE;
-    OGRGeometry* poClipSrc = NULL;
-    const char  *pszClipSrcDS = NULL;
-    const char  *pszClipSrcSQL = NULL;
-    const char  *pszClipSrcLayer = NULL;
-    const char  *pszClipSrcWhere = NULL;
-    OGRGeometry *poClipDst = NULL;
-    const char  *pszClipDstDS = NULL;
-    const char  *pszClipDstSQL = NULL;
-    const char  *pszClipDstLayer = NULL;
-    const char  *pszClipDstWhere = NULL;
 
     /* Check strict compilation and runtime library version as we use C++ API */
     if (! GDAL_CHECK_VERSION(papszArgv[0]))
@@ -240,12 +130,10 @@ int main( int nArgc, char ** papszArgv )
         else if( EQUAL(papszArgv[iArg],"-append") )
         {
             bAppend = TRUE;
-            bUpdate = TRUE;
         }
         else if( EQUAL(papszArgv[iArg],"-overwrite") )
         {
             bOverwrite = TRUE;
-            bUpdate = TRUE;
         }
         else if( EQUAL(papszArgv[iArg],"-update") )
         {
@@ -258,10 +146,6 @@ int main( int nArgc, char ** papszArgv )
         else if( EQUAL(papszArgv[iArg],"-sql") && papszArgv[iArg+1] != NULL )
         {
             pszSQLStatement = papszArgv[++iArg];
-        }
-        else if( EQUAL(papszArgv[iArg],"-dialect") && papszArgv[iArg+1] != NULL )
-        {
-            pszDialect = papszArgv[++iArg];
         }
         else if( EQUAL(papszArgv[iArg],"-nln") && iArg < nArgc-1 )
         {
@@ -361,158 +245,6 @@ int main( int nArgc, char ** papszArgv )
         {
             dfMaxSegmentLength = atof(papszArgv[++iArg]);
         }
-        else if( EQUAL(papszArgv[iArg],"-fieldTypeToString") && iArg < nArgc-1 )
-        {
-            papszFieldTypesToString =
-                    CSLTokenizeStringComplex(papszArgv[++iArg], " ,", 
-                                             FALSE, FALSE );
-            char** iter = papszFieldTypesToString;
-            while(*iter)
-            {
-                if (EQUAL(*iter, "Integer") ||
-                    EQUAL(*iter, "Real") ||
-                    EQUAL(*iter, "String") ||
-                    EQUAL(*iter, "Date") ||
-                    EQUAL(*iter, "Time") ||
-                    EQUAL(*iter, "DateTime") ||
-                    EQUAL(*iter, "Binary") ||
-                    EQUAL(*iter, "IntegerList") ||
-                    EQUAL(*iter, "RealList") ||
-                    EQUAL(*iter, "StringList"))
-                {
-                    /* Do nothing */
-                }
-                else if (EQUAL(*iter, "All"))
-                {
-                    CSLDestroy(papszFieldTypesToString);
-                    papszFieldTypesToString = NULL;
-                    papszFieldTypesToString = CSLAddString(papszFieldTypesToString, "All");
-                    break;
-                }
-                else
-                {
-                    fprintf(stderr, "Unhandled type for fieldtypeasstring option : %s\n",
-                            *iter);
-                    Usage();
-                }
-                iter ++;
-            }
-        }
-        else if( EQUAL(papszArgv[iArg],"-progress") )
-        {
-            bDisplayProgress = TRUE;
-        }
-        else if( EQUAL(papszArgv[iArg],"-wrapdateline") )
-        {
-            bWrapDateline = TRUE;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipsrc") && iArg < nArgc-1 )
-        {
-            bClipSrc = TRUE;
-            if ( IsNumber(papszArgv[iArg+1])
-                 && papszArgv[iArg+2] != NULL 
-                 && papszArgv[iArg+3] != NULL 
-                 && papszArgv[iArg+4] != NULL)
-            {
-                OGRLinearRing  oRing;
-
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+2]) );
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+4]) );
-                oRing.addPoint( atof(papszArgv[iArg+3]), atof(papszArgv[iArg+4]) );
-                oRing.addPoint( atof(papszArgv[iArg+3]), atof(papszArgv[iArg+2]) );
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+2]) );
-
-                poClipSrc = new OGRPolygon();
-                ((OGRPolygon *) poClipSrc)->addRing( &oRing );
-                iArg += 4;
-            }
-            else if (EQUALN(papszArgv[iArg+1], "POLYGON", 7) ||
-                     EQUALN(papszArgv[iArg+1], "MULTIPOLYGON", 12))
-            {
-                OGRGeometryFactory::createFromWkt(&papszArgv[iArg+1], NULL, &poClipSrc);
-                if (poClipSrc == NULL)
-                {
-                    fprintf( stderr, "FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
-                    Usage();
-                }
-                iArg ++;
-            }
-            else if (EQUAL(papszArgv[iArg+1], "spat_extent") )
-            {
-                iArg ++;
-            }
-            else
-            {
-                pszClipSrcDS = papszArgv[iArg+1];
-                iArg ++;
-            }
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipsrcsql") && iArg < nArgc-1 )
-        {
-            pszClipSrcSQL = papszArgv[iArg+1];
-            iArg ++;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipsrclayer") && iArg < nArgc-1 )
-        {
-            pszClipSrcLayer = papszArgv[iArg+1];
-            iArg ++;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipsrcwhere") && iArg < nArgc-1 )
-        {
-            pszClipSrcWhere = papszArgv[iArg+1];
-            iArg ++;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipdst") && iArg < nArgc-1 )
-        {
-            if ( IsNumber(papszArgv[iArg+1])
-                 && papszArgv[iArg+2] != NULL 
-                 && papszArgv[iArg+3] != NULL 
-                 && papszArgv[iArg+4] != NULL)
-            {
-                OGRLinearRing  oRing;
-
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+2]) );
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+4]) );
-                oRing.addPoint( atof(papszArgv[iArg+3]), atof(papszArgv[iArg+4]) );
-                oRing.addPoint( atof(papszArgv[iArg+3]), atof(papszArgv[iArg+2]) );
-                oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+2]) );
-
-                poClipDst = new OGRPolygon();
-                ((OGRPolygon *) poClipDst)->addRing( &oRing );
-                iArg += 4;
-            }
-            else if (EQUALN(papszArgv[iArg+1], "POLYGON", 7) ||
-                     EQUALN(papszArgv[iArg+1], "MULTIPOLYGON", 12))
-            {
-                OGRGeometryFactory::createFromWkt(&papszArgv[iArg+1], NULL, &poClipDst);
-                if (poClipDst == NULL)
-                {
-                    fprintf( stderr, "FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
-                    Usage();
-                }
-                iArg ++;
-            }
-            else
-            {
-                pszClipDstDS = papszArgv[iArg+1];
-                iArg ++;
-            }
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipdstsql") && iArg < nArgc-1 )
-        {
-            pszClipDstSQL = papszArgv[iArg+1];
-            iArg ++;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipdstlayer") && iArg < nArgc-1 )
-        {
-            pszClipDstLayer = papszArgv[iArg+1];
-            iArg ++;
-        }
-        else if( EQUAL(papszArgv[iArg],"-clipdstwhere") && iArg < nArgc-1 )
-        {
-            pszClipDstWhere = papszArgv[iArg+1];
-            iArg ++;
-        }
         else if( papszArgv[iArg][0] == '-' )
         {
             Usage();
@@ -527,38 +259,7 @@ int main( int nArgc, char ** papszArgv )
 
     if( pszDataSource == NULL )
         Usage();
-        
-    if( bClipSrc && pszClipSrcDS != NULL)
-    {
-        poClipSrc = LoadGeometry(pszClipSrcDS, pszClipSrcSQL, pszClipSrcLayer, pszClipSrcWhere);
-        if (poClipSrc == NULL)
-        {
-            fprintf( stderr, "FAILURE: cannot load source clip geometry\n\n" );
-            Usage();
-        }
-    }
-    else if( bClipSrc && poClipSrc == NULL )
-    {
-        if (poSpatialFilter)
-            poClipSrc = poSpatialFilter->clone();
-        if (poClipSrc == NULL)
-        {
-            fprintf( stderr, "FAILURE: -clipsrc must be used with -spat option or a\n"
-                             "bounding box, WKT string or datasource must be specified\n\n");
-            Usage();
-        }
-    }
-    
-    if( pszClipDstDS != NULL)
-    {
-        poClipDst = LoadGeometry(pszClipDstDS, pszClipDstSQL, pszClipDstLayer, pszClipDstWhere);
-        if (poClipDst == NULL)
-        {
-            fprintf( stderr, "FAILURE: cannot load dest clip geometry\n\n" );
-            Usage();
-        }
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Open data source.                                               */
 /* -------------------------------------------------------------------- */
@@ -699,30 +400,14 @@ int main( int nArgc, char ** papszArgv )
             fprintf( stderr,  "layer names ignored in combination with -sql.\n" );
         
         poResultSet = poDS->ExecuteSQL( pszSQLStatement, poSpatialFilter, 
-                                        pszDialect );
+                                        NULL );
 
         if( poResultSet != NULL )
         {
-            long nCountLayerFeatures = 0;
-            if (bDisplayProgress)
-            {
-                if (!poResultSet->TestCapability(OLCFastFeatureCount))
-                {
-                    fprintf( stderr, "Progress turned off as fast feature count is not available.\n");
-                    bDisplayProgress = FALSE;
-                }
-                else
-                {
-                    nCountLayerFeatures = poResultSet->GetFeatureCount();
-                    pfnProgress = GDALTermProgress;
-                }
-            }
-
             if( !TranslateLayer( poDS, poResultSet, poODS, papszLCO, 
                                  pszNewLayerName, bTransform, poOutputSRS,
                                  poSourceSRS, papszSelFields, bAppend, eGType,
-                                 bOverwrite, dfMaxSegmentLength, papszFieldTypesToString,
-                                 nCountLayerFeatures, bWrapDateline, poClipSrc, poClipDst, pfnProgress, pProgressArg))
+                                 bOverwrite, dfMaxSegmentLength ))
             {
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Terminating translation prematurely after failed\n"
@@ -734,157 +419,61 @@ int main( int nArgc, char ** papszArgv )
         }
     }
 
-    else
-    {
-        int nLayerCount = 0;
-        OGRLayer** papoLayers = NULL;
-
 /* -------------------------------------------------------------------- */
 /*      Process each data source layer.                                 */
 /* -------------------------------------------------------------------- */
-        if ( CSLCount(papszLayers) == 0)
+    for( int iLayer = 0; 
+         pszSQLStatement == NULL && iLayer < poDS->GetLayerCount(); 
+         iLayer++ )
+    {
+        OGRLayer        *poLayer = poDS->GetLayer(iLayer);
+
+        if( poLayer == NULL )
         {
-            nLayerCount = poDS->GetLayerCount();
-            papoLayers = (OGRLayer**)CPLMalloc(sizeof(OGRLayer*) * nLayerCount);
-
-            for( int iLayer = 0; 
-                 iLayer < nLayerCount; 
-                 iLayer++ )
-            {
-                OGRLayer        *poLayer = poDS->GetLayer(iLayer);
-
-                if( poLayer == NULL )
-                {
-                    fprintf( stderr, "FAILURE: Couldn't fetch advertised layer %d!\n",
-                            iLayer );
-                    exit( 1 );
-                }
-
-                papoLayers[iLayer] = poLayer;
-            }
-        }
-/* -------------------------------------------------------------------- */
-/*      Process specified data source layers.                           */
-/* -------------------------------------------------------------------- */
-        else
-        {
-            nLayerCount = CSLCount(papszLayers);
-            papoLayers = (OGRLayer**)CPLMalloc(sizeof(OGRLayer*) * nLayerCount);
-
-            for( int iLayer = 0; 
-                papszLayers[iLayer] != NULL; 
-                iLayer++ )
-            {
-                OGRLayer        *poLayer = poDS->GetLayerByName(papszLayers[iLayer]);
-
-                if( poLayer == NULL )
-                {
-                    fprintf( stderr, "FAILURE: Couldn't fetch requested layer '%s'!\n",
-                             papszLayers[iLayer] );
-                    if (!bSkipFailures)
-                        exit( 1 );
-                }
-
-                papoLayers[iLayer] = poLayer;
-            }
+            fprintf( stderr, "FAILURE: Couldn't fetch advertised layer %d!\n",
+                    iLayer );
+            exit( 1 );
         }
 
-        long* panLayerCountFeatures = (long*) CPLMalloc(sizeof(long) * nLayerCount);
-        long nCountLayersFeatures = 0;
-        long nAccCountFeatures = 0;
-        int iLayer;
-
-        /* First pass to apply filters and count all features if necessary */
-        for( iLayer = 0; 
-            iLayer < nLayerCount; 
-            iLayer++ )
+        if( CSLCount(papszLayers) == 0
+            || CSLFindString( papszLayers,
+                              poLayer->GetLayerDefn()->GetName() ) != -1 )
         {
-            OGRLayer        *poLayer = papoLayers[iLayer];
-            if (poLayer == NULL)
-                continue;
-
             if( pszWHERE != NULL )
                 poLayer->SetAttributeFilter( pszWHERE );
-
+            
             if( poSpatialFilter != NULL )
                 poLayer->SetSpatialFilter( poSpatialFilter );
-
-            if (bDisplayProgress)
-            {
-                if (!poLayer->TestCapability(OLCFastFeatureCount))
-                {
-                    fprintf( stderr, "Progress turned off as fast feature count is not available.\n");
-                    bDisplayProgress = FALSE;
-                }
-                else
-                {
-                    panLayerCountFeatures[iLayer] = poLayer->GetFeatureCount();
-                    nCountLayersFeatures += panLayerCountFeatures[iLayer];
-                }
-            }
-        }
-
-        /* Second pass to do the real job */
-        for( iLayer = 0; 
-            iLayer < nLayerCount; 
-            iLayer++ )
-        {
-            OGRLayer        *poLayer = papoLayers[iLayer];
-            if (poLayer == NULL)
-                continue;
-
-            if (bDisplayProgress)
-            {
-                pfnProgress = GDALScaledProgress;
-                pProgressArg = 
-                    GDALCreateScaledProgress(nAccCountFeatures * 1.0 / nCountLayersFeatures,
-                                            (nAccCountFeatures + panLayerCountFeatures[iLayer]) * 1.0 / nCountLayersFeatures,
-                                            GDALTermProgress,
-                                            NULL);
-            }
-
-            nAccCountFeatures += panLayerCountFeatures[iLayer];
-
+            
             if( !TranslateLayer( poDS, poLayer, poODS, papszLCO, 
-                                pszNewLayerName, bTransform, poOutputSRS,
-                                poSourceSRS, papszSelFields, bAppend, eGType,
-                                bOverwrite, dfMaxSegmentLength, papszFieldTypesToString,
-                                panLayerCountFeatures[iLayer], bWrapDateline, poClipSrc, poClipDst, pfnProgress, pProgressArg) 
+                                 pszNewLayerName, bTransform, poOutputSRS,
+                                 poSourceSRS, papszSelFields, bAppend, eGType,
+                                 bOverwrite, dfMaxSegmentLength ) 
                 && !bSkipFailures )
             {
                 CPLError( CE_Failure, CPLE_AppDefined, 
-                        "Terminating translation prematurely after failed\n"
-                        "translation of layer %s (use -skipfailures to skip errors)\n", 
-                        poLayer->GetLayerDefn()->GetName() );
+                          "Terminating translation prematurely after failed\n"
+                          "translation of layer %s (use -skipfailures to skip errors)\n", 
+                          poLayer->GetLayerDefn()->GetName() );
 
                 exit( 1 );
             }
-
-            if (bDisplayProgress)
-                GDALDestroyScaledProgress(pProgressArg);
         }
-
-        CPLFree(panLayerCountFeatures);
-        CPLFree(papoLayers);
     }
 
 /* -------------------------------------------------------------------- */
 /*      Close down.                                                     */
 /* -------------------------------------------------------------------- */
-    OGRSpatialReference::DestroySpatialReference(poOutputSRS);
-    OGRSpatialReference::DestroySpatialReference(poSourceSRS);
-    OGRDataSource::DestroyDataSource(poODS);
-    OGRDataSource::DestroyDataSource(poDS);
-    OGRGeometryFactory::destroyGeometry(poSpatialFilter);
-    OGRGeometryFactory::destroyGeometry(poClipSrc);
-    OGRGeometryFactory::destroyGeometry(poClipDst);
+    delete poOutputSRS;
+    delete poSourceSRS;
+    delete poODS;
+    delete poDS;
 
     CSLDestroy(papszSelFields);
     CSLDestroy( papszArgv );
     CSLDestroy( papszLayers );
     CSLDestroy( papszDSCO );
     CSLDestroy( papszLCO );
-    CSLDestroy( papszFieldTypesToString );
 
     OGRCleanupAll();
 
@@ -906,18 +495,11 @@ static void Usage()
 
     printf( "Usage: ogr2ogr [--help-general] [-skipfailures] [-append] [-update] [-gt n]\n"
             "               [-select field_list] [-where restricted_where] \n"
-            "               [-progress] [-sql <sql statement>] [-dialect dialect]\n" 
-            "               [-preserve_fid] [-fid FID]\n"
-            "               [-spat xmin ymin xmax ymax] [-wrapdateline]\n"
-            "               [-clipsrc [xmin ymin xmax ymax]|WKT|datasource|spat_extent] \n"
-            "               [-clipsrcsql sql_statement] [-clipsrclayer layer] \n"
-            "               [-clipsrcwhere expression]\n"
-            "               [-clipdst [xmin ymin xmax ymax]|WKT|datasource]\n"
-            "               [-clipdstsql sql_statement] [-clipdstlayer layer] \n"
-            "               [-clipdstwhere expression]\n"
+            "               [-sql <sql statement>] \n" 
+            "               [-spat xmin ymin xmax ymax] [-preserve_fid] [-fid FID]\n"
             "               [-a_srs srs_def] [-t_srs srs_def] [-s_srs srs_def]\n"
             "               [-f format_name] [-overwrite] [[-dsco NAME=VALUE] ...]\n"
-            "               [-segmentize max_dist] [-fieldTypeToString All|(type1[,type2]*)]\n"
+            "               [-segmentize max_dist]\n"
             "               dst_datasource_name src_datasource_name\n"
             "               [-lco NAME=VALUE] [-nln name] [-nlt type] [layer [layer ...]]\n"
             "\n"
@@ -934,15 +516,10 @@ static void Usage()
     printf( " -append: Append to existing layer instead of creating new if it exists\n"
             " -overwrite: delete the output layer and recreate it empty\n"
             " -update: Open existing output datasource in update mode\n"
-            " -progress: Display progress on terminal. Only works if input layers have the \n"
-            "                                          \"fast feature count\" capability\n"
             " -select field_list: Comma-delimited list of fields from input layer to\n"
             "                     copy to the new layer (defaults to all)\n" 
             " -where restricted_where: Attribute query (like SQL WHERE)\n" 
-            " -wrapdateline: split geometries crossing the dateline meridian\n"
-            "                (long. = +/- 180deg)\n" 
             " -sql statement: Execute given SQL statement and save result.\n"
-            " -dialect value: select a dialect, usually OGRSQL to avoid native sql.\n"
             " -skipfailures: skip features or layers that fail to convert\n"
             " -gt n: group n features per transaction (default 200)\n"
             " -spat xmin ymin xmax ymax: spatial query extents\n"
@@ -954,11 +531,7 @@ static void Usage()
             " -nlt type: Force a geometry type for new layer.  One of NONE, GEOMETRY,\n"
             "      POINT, LINESTRING, POLYGON, GEOMETRYCOLLECTION, MULTIPOINT,\n"
             "      MULTIPOLYGON, or MULTILINESTRING.  Add \"25D\" for 3D layers.\n"
-            "      Default is type of source layer.\n"
-            " -fieldTypeToString type1,...: Converts fields of specified types to\n"
-            "      fields of type string in the new layer. Valid types are : Integer,\n"
-            "      Real, String, Date, Time, DateTime, Binary, IntegerList, RealList,\n"
-            "      StringList. Special value All will convert all fields to strings.\n");
+            "      Default is type of source layer.\n" );
 
     printf(" -a_srs srs_def: Assign an output SRS\n"
            " -t_srs srs_def: Reproject/transform to this SRS on output\n"
@@ -985,23 +558,14 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
                            OGRSpatialReference *poSourceSRS,
                            char **papszSelFields,
                            int bAppend, int eGType, int bOverwrite,
-                           double dfMaxSegmentLength,
-                           char** papszFieldTypesToString,
-                           long nCountLayerFeatures,
-                           int bWrapDateline,
-                           OGRGeometry* poClipSrc,
-                           OGRGeometry *poClipDst,
-                           GDALProgressFunc pfnProgress,
-                           void *pProgressArg)
+                           double dfMaxSegmentLength)
 
 {
     OGRLayer    *poDstLayer;
-    OGRFeatureDefn *poSrcFDefn;
-    OGRFeatureDefn *poDstFDefn = NULL;
+    OGRFeatureDefn *poFDefn;
+    OGRErr      eErr;
     int         bForceToPolygon = FALSE;
     int         bForceToMultiPolygon = FALSE;
-    
-    char**      papszTransformOptions = NULL;
 
     if( pszNewLayerName == NULL )
         pszNewLayerName = poSrcLayer->GetLayerDefn()->GetName();
@@ -1050,23 +614,10 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
         }
     }
     
-    if (bWrapDateline)
-    {
-        if (poCT != NULL && poOutputSRS->IsGeographic())
-        {
-            papszTransformOptions =
-                CSLAddString(papszTransformOptions, "WRAPDATELINE=YES");
-        }
-        else
-        {
-            fprintf(stderr, "-wrapdateline option only works when reprojecting to a geographic SRS\n");
-        }
-    }
-    
 /* -------------------------------------------------------------------- */
 /*      Get other info.                                                 */
 /* -------------------------------------------------------------------- */
-    poSrcFDefn = poSrcLayer->GetLayerDefn();
+    poFDefn = poSrcLayer->GetLayerDefn();
     
     if( poOutputSRS == NULL )
         poOutputSRS = poSrcLayer->GetSpatialRef();
@@ -1111,7 +662,7 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
     if( poDstLayer == NULL )
     {
         if( eGType == -2 )
-            eGType = poSrcFDefn->GetGeomType();
+            eGType = poFDefn->GetGeomType();
 
         if( !poDstDS->TestCapability( ODsCCreateLayer ) )
         {
@@ -1158,154 +709,35 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
 /*      the selected fields, and in the order that they were            */
 /*      selected.                                                       */
 /* -------------------------------------------------------------------- */
-    int         nSrcFieldCount = poSrcFDefn->GetFieldCount();
-    int         iField, *panMap;
-
-    // Initialize the index-to-index map to -1's
-    panMap = (int *) VSIMalloc( sizeof(int) * nSrcFieldCount );
-    for( iField=0; iField < nSrcFieldCount; iField++)
-        panMap[iField] = -1;
-        
-    /* Caution : at the time of writing, the MapInfo driver */
-    /* returns NULL until a field has been added */
-    poDstFDefn = poDstLayer->GetLayerDefn();
+    int         iField;
 
     if (papszSelFields && !bAppend )
     {
-        int  nDstFieldCount = 0;
-        if (poDstFDefn)
-            nDstFieldCount = poDstFDefn->GetFieldCount();
         for( iField=0; papszSelFields[iField] != NULL; iField++)
         {
-            int iSrcField = poSrcFDefn->GetFieldIndex(papszSelFields[iField]);
+            int iSrcField = poFDefn->GetFieldIndex(papszSelFields[iField]);
             if (iSrcField >= 0)
-            {
-                OGRFieldDefn* poSrcFieldDefn = poSrcFDefn->GetFieldDefn(iSrcField);
-                OGRFieldDefn oFieldDefn( poSrcFieldDefn );
-
-                if (papszFieldTypesToString != NULL &&
-                    (CSLFindString(papszFieldTypesToString, "All") != -1 ||
-                     CSLFindString(papszFieldTypesToString,
-                                   OGRFieldDefn::GetFieldTypeName(poSrcFieldDefn->GetType())) != -1))
-                {
-                    oFieldDefn.SetType(OFTString);
-                }
-                
-                /* The field may have been already created at layer creation */
-                int iDstField = -1;
-                if (poDstFDefn)
-                    iDstField = poDstFDefn->GetFieldIndex(oFieldDefn.GetNameRef());
-                if (iDstField >= 0)
-                {
-                    panMap[iSrcField] = iDstField;
-                }
-                else if (poDstLayer->CreateField( &oFieldDefn ) == OGRERR_NONE)
-                {
-                    /* now that we've created a field, GetLayerDefn() won't return NULL */
-                    if (poDstFDefn == NULL)
-                        poDstFDefn = poDstLayer->GetLayerDefn();
-
-                    /* Sanity check : if it fails, the driver is buggy */
-                    if (poDstFDefn != NULL &&
-                        poDstFDefn->GetFieldCount() != nDstFieldCount + 1)
-                    {
-                        CPLError(CE_Warning, CPLE_AppDefined,
-                                 "The output driver has claimed to have added the %s field, but it did not!",
-                                 oFieldDefn.GetNameRef() );
-                    }
-                    else
-                    {
-                        panMap[iSrcField] = nDstFieldCount;
-                        nDstFieldCount ++;
-                    }
-                }
-            }
+                poDstLayer->CreateField( poFDefn->GetFieldDefn(iSrcField) );
             else
             {
                 fprintf( stderr, "Field '%s' not found in source layer.\n", 
                         papszSelFields[iField] );
                 if( !bSkipFailures )
-                {
-                    VSIFree(panMap);
                     return FALSE;
-                }
             }
         }
     }
     else if( !bAppend )
     {
-        int nDstFieldCount = 0;
-        if (poDstFDefn)
-            nDstFieldCount = poDstFDefn->GetFieldCount();
-        for( iField = 0; iField < nSrcFieldCount; iField++ )
-        {
-            OGRFieldDefn* poSrcFieldDefn = poSrcFDefn->GetFieldDefn(iField);
-            OGRFieldDefn oFieldDefn( poSrcFieldDefn );
-
-            if (papszFieldTypesToString != NULL &&
-                (CSLFindString(papszFieldTypesToString, "All") != -1 ||
-                 CSLFindString(papszFieldTypesToString,
-                               OGRFieldDefn::GetFieldTypeName(poSrcFieldDefn->GetType())) != -1))
-            {
-                oFieldDefn.SetType(OFTString);
-            }
-
-            /* The field may have been already created at layer creation */
-            int iDstField = -1;
-            if (poDstFDefn)
-                 iDstField = poDstFDefn->GetFieldIndex(oFieldDefn.GetNameRef());
-            if (iDstField >= 0)
-            {
-                panMap[iField] = iDstField;
-            }
-            else if (poDstLayer->CreateField( &oFieldDefn ) == OGRERR_NONE)
-            {
-                /* now that we've created a field, GetLayerDefn() won't return NULL */
-                if (poDstFDefn == NULL)
-                    poDstFDefn = poDstLayer->GetLayerDefn();
-
-                /* Sanity check : if it fails, the driver is buggy */
-                if (poDstFDefn != NULL &&
-                    poDstFDefn->GetFieldCount() != nDstFieldCount + 1)
-                {
-                    CPLError(CE_Warning, CPLE_AppDefined,
-                             "The output driver has claimed to have added the %s field, but it did not!",
-                             oFieldDefn.GetNameRef() );
-                }
-                else
-                {
-                    panMap[iField] = nDstFieldCount;
-                    nDstFieldCount ++;
-                }
-            }
-        }
+        for( iField = 0; iField < poFDefn->GetFieldCount(); iField++ )
+            poDstLayer->CreateField( poFDefn->GetFieldDefn(iField) );
     }
-    else
-    {
-        /* For an existing layer, build the map by fetching the index in the destination */
-        /* layer for each source field */
-        if (poDstFDefn == NULL)
-        {
-            fprintf( stderr, "poDstFDefn == NULL.\n" );
-            VSIFree(panMap);
-            return FALSE;
-        }
-        
-        for( iField = 0; iField < nSrcFieldCount; iField++ )
-        {
-            OGRFieldDefn* poSrcFieldDefn = poSrcFDefn->GetFieldDefn(iField);
-            int iDstField = poDstFDefn->GetFieldIndex(poSrcFieldDefn->GetNameRef());
-            if (iDstField >= 0)
-                panMap[iField] = iDstField;
-        }
-    }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Transfer features.                                              */
 /* -------------------------------------------------------------------- */
     OGRFeature  *poFeature;
     int         nFeaturesInTransaction = 0;
-    long        nCount = 0;
     
     poSrcLayer->ResetReading();
 
@@ -1340,97 +772,60 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
         CPLErrorReset();
         poDstFeature = OGRFeature::CreateFeature( poDstLayer->GetLayerDefn() );
 
-        if( poDstFeature->SetFrom( poFeature, panMap, TRUE ) != OGRERR_NONE )
+        if( poDstFeature->SetFrom( poFeature, TRUE ) != OGRERR_NONE )
         {
             if( nGroupTransactions )
                 poDstLayer->CommitTransaction();
             
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Unable to translate feature %ld from layer %s.\n",
-                      poFeature->GetFID(), poSrcFDefn->GetName() );
+                      poFeature->GetFID(), poFDefn->GetName() );
             
             OGRFeature::DestroyFeature( poFeature );
             OGRFeature::DestroyFeature( poDstFeature );
-            VSIFree(panMap);
             return FALSE;
         }
 
         if( bPreserveFID )
             poDstFeature->SetFID( poFeature->GetFID() );
 
-        OGRGeometry* poDstGeometry = poDstFeature->GetGeometryRef();
-        if (poDstGeometry != NULL)
+        if (poDstFeature->GetGeometryRef() != NULL && dfMaxSegmentLength > 0)
+            poDstFeature->GetGeometryRef()->segmentize(dfMaxSegmentLength);
+
+        if( poCT && poDstFeature->GetGeometryRef() != NULL )
         {
-            if (dfMaxSegmentLength > 0)
-                poDstGeometry->segmentize(dfMaxSegmentLength);
-                
-            if (poClipSrc)
+            eErr = poDstFeature->GetGeometryRef()->transform( poCT );
+            if( eErr != OGRERR_NONE )
             {
-                OGRGeometry* poClipped = poDstGeometry->Intersection(poClipSrc);
-                if (poClipped == NULL || poClipped->IsEmpty())
+                if( nGroupTransactions )
+                    poDstLayer->CommitTransaction();
+
+                fprintf( stderr, "Failed to reproject feature %d (geometry probably out of source or destination SRS).\n", 
+                        (int) poFeature->GetFID() );
+                if( !bSkipFailures )
                 {
-                    OGRGeometryFactory::destroyGeometry(poClipped);
-                    goto end_loop;
+                    OGRFeature::DestroyFeature( poFeature );
+                    OGRFeature::DestroyFeature( poDstFeature );
+                    return FALSE;
                 }
-                poDstFeature->SetGeometryDirectly(poClipped);
-                poDstGeometry = poClipped;
-            }
-
-            if( poCT )
-            {
-                OGRGeometry* poReprojectedGeom =
-                    OGRGeometryFactory::transformWithOptions(poDstGeometry, poCT, papszTransformOptions);
-                if( poReprojectedGeom == NULL )
-                {
-                    if( nGroupTransactions )
-                        poDstLayer->CommitTransaction();
-
-                    fprintf( stderr, "Failed to reproject feature %d (geometry probably out of source or destination SRS).\n", 
-                            (int) poFeature->GetFID() );
-                    if( !bSkipFailures )
-                    {
-                        OGRFeature::DestroyFeature( poFeature );
-                        OGRFeature::DestroyFeature( poDstFeature );
-                        VSIFree(panMap);
-                        return FALSE;
-                    }
-                }
-                
-                poDstFeature->SetGeometryDirectly(poReprojectedGeom);
-                poDstGeometry = poReprojectedGeom;
-            }
-            else if (poOutputSRS != NULL)
-            {
-                poDstGeometry->assignSpatialReference(poOutputSRS);
-            }
-            
-            if (poClipDst)
-            {
-                OGRGeometry* poClipped = poDstGeometry->Intersection(poClipDst);
-                if (poClipped == NULL || poClipped->IsEmpty())
-                {
-                    OGRGeometryFactory::destroyGeometry(poClipped);
-                    goto end_loop;
-                }
-                
-                poDstFeature->SetGeometryDirectly(poClipped);
-                poDstGeometry = poClipped;
-            }
-
-            if( bForceToPolygon )
-            {
-                poDstFeature->SetGeometryDirectly( 
-                    OGRGeometryFactory::forceToPolygon(
-                        poDstFeature->StealGeometry() ) );
-            }
-
-            if( bForceToMultiPolygon )
-            {
-                poDstFeature->SetGeometryDirectly( 
-                    OGRGeometryFactory::forceToMultiPolygon(
-                        poDstFeature->StealGeometry() ) );
             }
         }
+
+        if( poDstFeature->GetGeometryRef() != NULL && bForceToPolygon )
+        {
+            poDstFeature->SetGeometryDirectly( 
+                OGRGeometryFactory::forceToPolygon(
+                    poDstFeature->StealGeometry() ) );
+        }
+                    
+        if( poDstFeature->GetGeometryRef() != NULL && bForceToMultiPolygon )
+        {
+            poDstFeature->SetGeometryDirectly( 
+                OGRGeometryFactory::forceToMultiPolygon(
+                    poDstFeature->StealGeometry() ) );
+        }
+                    
+        OGRFeature::DestroyFeature( poFeature );
 
         CPLErrorReset();
         if( poDstLayer->CreateFeature( poDstFeature ) != OGRERR_NONE 
@@ -1439,20 +834,11 @@ static int TranslateLayer( OGRDataSource *poSrcDS,
             if( nGroupTransactions )
                 poDstLayer->RollbackTransaction();
 
-            OGRFeature::DestroyFeature( poFeature );
             OGRFeature::DestroyFeature( poDstFeature );
-            VSIFree(panMap);
             return FALSE;
         }
 
-end_loop:
-        OGRFeature::DestroyFeature( poFeature );
         OGRFeature::DestroyFeature( poDstFeature );
-
-        /* Report progress */
-        nCount ++;
-        if (pfnProgress)
-            pfnProgress(nCount * 1.0 / nCountLayerFeatures, "", pProgressArg);
     }
 
     if( nGroupTransactions )
@@ -1461,9 +847,7 @@ end_loop:
 /* -------------------------------------------------------------------- */
 /*      Cleaning                                                        */
 /* -------------------------------------------------------------------- */
-    OGRCoordinateTransformation::DestroyCT(poCT);
-    
-    VSIFree(panMap);
+    delete poCT;
 
     return TRUE;
 }

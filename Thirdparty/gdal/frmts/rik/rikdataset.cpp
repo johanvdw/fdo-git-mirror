@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rikdataset.cpp 18348 2009-12-19 14:32:39Z rouault $
+ * $Id: rikdataset.cpp 14052 2008-03-21 12:09:12Z dron $
  *
  * Project:  RIK Reader
  * Purpose:  All code for RIK Reader
@@ -31,7 +31,7 @@
 #include <zlib.h>
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: rikdataset.cpp 18348 2009-12-19 14:32:39Z rouault $");
+CPL_CVSID("$Id: rikdataset.cpp 14052 2008-03-21 12:09:12Z dron $");
 
 CPL_C_START
 void	GDALRegister_RIK(void);
@@ -375,10 +375,9 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         GByte character[8192]; // only need LZW_CODES for size.
 
         int i;
-        GByte j;
 
-        for( j = 0; j < LZW_CLEAR; j++ )
-            character[j] = j;
+        for( i = 0; i < LZW_CLEAR; i++ )
+            character[i] = i;
         for( i = 0; i < LZW_CODES; i++ )
             prefix[i] = LZW_NO_SUCH_CODE;
 
@@ -395,9 +394,9 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         code = GetNextLZWCode( codeBits, blockData, filePos,
                                fileAlign, bitsTaken );
 
-        OutputPixel( (GByte)code, pImage, poRDS->nBlockXSize,
+        OutputPixel( code, pImage, poRDS->nBlockXSize,
                      lineBreak, imageLine, imagePos );
-        lastOutput = (GByte)code;
+        lastOutput = code;
 
         while( imageLine >= 0 &&
                (imageLine || imagePos < poRDS->nBlockXSize - 1) &&
@@ -444,9 +443,9 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                     throw "Clear Error";
                 }
 
-                OutputPixel( (GByte)code, pImage, poRDS->nBlockXSize,
+                OutputPixel( code, pImage, poRDS->nBlockXSize,
                              lineBreak, imageLine, imagePos );
-                lastOutput = (GByte)code;
+                lastOutput = code;
             }
             else
             {
@@ -479,7 +478,7 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                     stack[stackPtr++] = character[decodeCode];
                     decodeCode = prefix[decodeCode];
                 }
-                stack[stackPtr++] = (GByte)decodeCode;
+                stack[stackPtr++] = decodeCode;
 
                 if( i == LZW_CODES || decodeCode >= LZW_NO_SUCH_CODE )
                 {
@@ -521,12 +520,12 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         {
 #if RIK_ALLOW_BLOCK_ERRORS
                 CPLDebug( "RIK",
-                          "LZW Decompress Failed: %s\n"
+                          "LZW Decompress Failed\n"
                           " blocks: %d\n"
                           " blockindex: %d\n"
                           " blockoffset: %X\n"
                           " blocksize: %d\n",
-                          errStr, blocks, nBlockIndex,
+                          blocks, nBlockIndex,
                           nBlockOffset, nBlockSize );
                 break;
 #else
@@ -605,7 +604,6 @@ RIKDataset::~RIKDataset()
     CPLFree( pOffsets );
     if( fp != NULL )
         VSIFClose( fp );
-    delete poColorTable;
 }
 
 /************************************************************************/
@@ -691,12 +689,6 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
     if( nameLength > sizeof(name) - 1 )
     {
         return NULL;
-    }
-
-    if( !rik3header )
-    {
-        if( nameLength == 0 || nameLength != strlen(name) )
-            return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1131,19 +1123,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The RIK driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     return( poDS );
 }
 

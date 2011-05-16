@@ -98,9 +98,6 @@ FdoSmPhCharacterSetP FdoSmPhMySqlDbObject::GetCharacterSet()
     FdoSmPhCharacterSetP characterSet;
     FdoSmPhMySqlOwner* pOwner = (FdoSmPhMySqlOwner*)(FdoSmSchemaElement*)(GetParent());
 
-    if ( !pOwner )
-        return NULL;
-
     if ( mCollationName != L"" ) {
         // Object has collation so retrieve it.
         FdoSmPhDatabase* pDatabase = (FdoSmPhDatabase*)(FdoSmSchemaElement*)(pOwner->GetParent());
@@ -387,17 +384,7 @@ FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnUnknown(
     FdoSmPhRdColumnReader* colRdr
 )
 {
-    return new FdoSmPhMySqlColumnUnknown(
-        columnName, 
-        colRdr ? colRdr->GetString(L"", L"type_string").Upper() : typeName, 
-        elementState, 
-        this, 
-        bNullable, 
-        length, 
-        scale, 
-        rootColumnName, 
-        colRdr
-    );
+    return new FdoSmPhMySqlColumnUnknown(columnName, typeName, elementState, this, bNullable, length, scale, rootColumnName, colRdr);
 }
 
 FdoSmPhColumnP FdoSmPhMySqlDbObject::NewColumnDbObject(
@@ -443,34 +430,28 @@ FdoSmPhIndexP FdoSmPhMySqlDbObject::NewSpatialIndex(
 
 FdoPtr<FdoSmPhRdColumnReader> FdoSmPhMySqlDbObject::CreateColumnReader()
 {
-    FdoSmPhDbObject* pDbObject = (FdoSmPhDbObject*)(this);
-    FdoSmPhOwner* thisOwner = (FdoSmPhOwner*)(this->GetParent());
-
-    return new FdoSmPhRdMySqlColumnReader( FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pDbObject) );
+    return new FdoSmPhRdMySqlColumnReader( GetManager(), FDO_SAFE_ADDREF(this) );
 }
 
 FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhMySqlDbObject::CreatePkeyReader() const
 {
     FdoSmPhMySqlDbObject* pDbObject = (FdoSmPhMySqlDbObject*) this;
-    FdoSmPhOwner* thisOwner = (FdoSmPhOwner*)(this->GetParent());
 
-    return new FdoSmPhRdMySqlPkeyReader( FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pDbObject) );
+    return new FdoSmPhRdMySqlPkeyReader( FDO_SAFE_ADDREF(pDbObject) );
 }
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhMySqlDbObject::CreateIndexReader() const
 {
     FdoSmPhMySqlDbObject* pTable = (FdoSmPhMySqlDbObject*) this;
-    FdoSmPhOwner* thisOwner = (FdoSmPhOwner*)(this->GetParent());
 
-    return new FdoSmPhRdMySqlIndexReader( FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pTable) );
+    return new FdoSmPhRdMySqlIndexReader( pTable->GetManager(), FDO_SAFE_ADDREF(pTable) );
 }
 
 FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhMySqlDbObject::CreateFkeyReader() const
 {
     FdoSmPhMySqlDbObject* pDbObject = (FdoSmPhMySqlDbObject*) this;
-    FdoSmPhOwner* thisOwner = (FdoSmPhOwner*)(this->GetParent());
 
-    return new FdoSmPhRdMySqlFkeyReader(  FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pDbObject) );
+    return new FdoSmPhRdMySqlFkeyReader( pDbObject->GetManager(), FDO_SAFE_ADDREF(pDbObject) );
 }
 
 MySQLOvStorageEngineType FdoSmPhMySqlDbObject::StorageEngineStringToEnum(FdoString* storageEngine)

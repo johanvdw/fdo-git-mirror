@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -197,7 +197,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -290,7 +291,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -384,7 +385,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -473,7 +475,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -563,7 +565,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -655,7 +658,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -748,7 +751,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -838,7 +842,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -929,7 +933,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 		<Configuration
@@ -1022,7 +1027,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -1116,7 +1121,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning ArcSDEProvider92.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.5.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\ArcSDEProvider92.dll"
+				ExcludedFromBuild="true"
 			/>
 		</Configuration>
 	</Configurations>
@@ -1687,19 +1693,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ArcSDEGetClassNamesCommand.cpp"
+				RelativePath="ArcSDEGetClassNamesCommand.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ArcSDEGetClassNamesCommand.h"
+				RelativePath="ArcSDEGetClassNamesCommand.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ArcSDEGetSchemaNamesCommand.cpp"
+				RelativePath="ArcSDEGetSchemaNamesCommand.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ArcSDEGetSchemaNamesCommand.h"
+				RelativePath="ArcSDEGetSchemaNamesCommand.h"
 				>
 			</File>
 			<File

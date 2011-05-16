@@ -247,69 +247,6 @@ void GmlTest::testNestedCollection()
 
 
 
-
-void GmlTest::testGML3SimpleGeometry()
-{
-	// without schemas 
-    {
-	FdoXmlReaderP fileReader = FdoXmlReader::Create(L"gml3_simple_geometry.xml");
-	CPPUNIT_ASSERT(fileReader != NULL);
-	
-	FdoPtr<FdoXmlFeatureFlags> featureFlag = FdoXmlFeatureFlags::Create();
-	featureFlag->SetGmlVersion(FdoGmlVersion_311);
-
-	FdoXmlFeatureReaderP featureReader = FdoXmlFeatureReader::Create(fileReader, featureFlag);
-	CPPUNIT_ASSERT(featureReader != NULL);
-
-	int count = 0;
-	while(featureReader->ReadNext())
-	{
-		count ++;
-
-		FdoStringP name = featureReader->GetString(L"geographicIdentifier");
-		CPPUNIT_ASSERT(name != NULL);
-
-		testGeometryProperty(featureReader, L"gml/pointProperty");
-		testGeometryProperty(featureReader, L"gml/curveProperty");
-	}
-	CPPUNIT_ASSERT(count == 2);
-	}
-
-	// with schemas
-    {
-	FdoXmlReaderP fileReader = FdoXmlReader::Create(L"gml3_simple_geometry.xml");
-	CPPUNIT_ASSERT(fileReader != NULL);
-
-    FdoPtr<FdoFeatureSchemaCollection> schemas = FdoFeatureSchemaCollection::Create(NULL);
-    FdoPtr<FdoXmlFlags> flags = FdoXmlFlags::Create(L"fdo.osgeo.org/schemas/feature", FdoXmlFlags::ErrorLevel_VeryLow);
-    schemas->ReadXml(L"gml3_simple_geometry_schema.xml", flags);
-	FdoPtr<FdoPhysicalSchemaMappingCollection> schemaMappings = schemas->GetXmlSchemaMappings();
-	FdoPtr<FdoXmlFeatureFlags> featureFlags = FdoXmlFeatureFlags::Create(L"fdo.osgeo.org/schemas/feature", FdoXmlFlags::ErrorLevel_VeryLow);
-	featureFlags->SetSchemaMappings(schemaMappings);
-
-		
-	FdoXmlFeatureReaderP featureReader = FdoXmlFeatureReader::Create(fileReader, featureFlags);
-	CPPUNIT_ASSERT(featureReader != NULL);
-    featureReader->SetFeatureSchemas(schemas);
-
-
-	int count = 0;
-	while(featureReader->ReadNext())
-	{
-		count ++;
-
-		FdoStringP name = featureReader->GetString(L"geographicIdentifier");
-		CPPUNIT_ASSERT(name != NULL);
-
-		testGeometryProperty(featureReader, L"gml/pointProperty");
-		testGeometryProperty(featureReader, L"gml/curveProperty");
-	}
-
-	CPPUNIT_ASSERT(count == 2);
-    }
-}
-
-
 void GmlTest::testSimpleGeometry()
 {
     // without schemas
@@ -493,67 +430,6 @@ void GmlTest::testMultiGeometry()
 
 	CPPUNIT_ASSERT(count == 2);
     }
-}
-void GmlTest::testGML3MultiGeometry()
-{
-    // without schemas
-    {
-	FdoXmlReaderP fileReader = FdoXmlReader::Create(L"gml3_multi_geometry.xml");
-	CPPUNIT_ASSERT(fileReader != NULL);
-
-	FdoPtr<FdoXmlFeatureFlags> featureFlag = FdoXmlFeatureFlags::Create();
-	featureFlag->SetGmlVersion(FdoGmlVersion_311);
-		
-	FdoXmlFeatureReaderP featureReader = FdoXmlFeatureReader::Create(fileReader, featureFlag);
-	CPPUNIT_ASSERT(featureReader != NULL);
-    
-	int count = 0;
-	while(featureReader->ReadNext())
-	{
-		count ++;
-
-		FdoStringP name = featureReader->GetString(L"geographicIdentifier");
-		CPPUNIT_ASSERT(name != NULL);
-
-		testGeometryProperty(featureReader, L"gml/pointArrayProperty");
-		testGeometryProperty(featureReader, L"gml/curveArrayProperty");
-	}
-
-	CPPUNIT_ASSERT(count == 2);
-    }
-
-    // with schemas
-    {
-	FdoXmlReaderP fileReader = FdoXmlReader::Create(L"gml3_multi_geometry.xml");
-	CPPUNIT_ASSERT(fileReader != NULL);
-
-    FdoPtr<FdoFeatureSchemaCollection> schemas = FdoFeatureSchemaCollection::Create(NULL);
-    FdoPtr<FdoXmlFlags> flags = FdoXmlFlags::Create(L"fdo.osgeo.org/schemas/feature", FdoXmlFlags::ErrorLevel_VeryLow);
-    schemas->ReadXml(L"gml3_multi_geometry_schema.xml", flags);
-	FdoPtr<FdoPhysicalSchemaMappingCollection> schemaMappings = schemas->GetXmlSchemaMappings();
-	FdoPtr<FdoXmlFeatureFlags> featureFlags = FdoXmlFeatureFlags::Create(L"fdo.osgeo.org/schemas/feature", FdoXmlFlags::ErrorLevel_VeryLow);
-	featureFlags->SetSchemaMappings(schemaMappings);
-
-		
-	FdoXmlFeatureReaderP featureReader = FdoXmlFeatureReader::Create(fileReader, featureFlags);
-	CPPUNIT_ASSERT(featureReader != NULL);
-    featureReader->SetFeatureSchemas(schemas);
-    
-	int count = 0;
-	while(featureReader->ReadNext())
-	{
-		count ++;
-
-		FdoStringP name = featureReader->GetString(L"geographicIdentifier");
-		CPPUNIT_ASSERT(name != NULL);
-
-		testGeometryProperty(featureReader, L"gml/pointArrayProperty");
-		testGeometryProperty(featureReader, L"gml/curveArrayProperty");
-	}
-
-	CPPUNIT_ASSERT(count == 2);
-    }
-
 }
 
 
@@ -807,15 +683,6 @@ void GmlTest::testBLOBHex()
 	CPPUNIT_ASSERT(count == 1);
 }
 
-void GmlTest::testLargeGeoms()
-{
-    try {
-        roundTrip( L"hawaii_in.xml", L"hawaii_schema.xml", L"hawaii_out.xml" );
-    }
-    catch ( FdoException* e ) {
-		UnitTestUtil::FailOnException( e );
-    }
-}
 void GmlTest::testGeometryProperty(FdoXmlFeatureReader* featureReader, FdoString* propName)
 {
     FdoInt32 baCount = 0;
@@ -831,31 +698,7 @@ void GmlTest::testGeometryProperty(FdoXmlFeatureReader* featureReader, FdoString
     CPPUNIT_ASSERT(baPtr = arrayPtr);
 }
 
-void GmlTest::roundTrip(FdoString* GMLFileIn, FdoString* SchemaFile, FdoString* GMLFileOut )
-{
-    {
-        FdoPtr<FdoXmlFeatureFlags> flags = FdoXmlFeatureFlags::Create(L"fdo.osgeo.org/schemas/feature", FdoXmlFlags::ErrorLevel_VeryLow);
 
-        FdoFeatureSchemasP schemas = FdoFeatureSchemaCollection::Create(NULL);
-        schemas->ReadXml(SchemaFile, flags );
-
-        FdoPtr<FdoXmlReader> xmlRdr = FdoXmlReader::Create(GMLFileIn);
-        FdoPtr<FdoXmlFeatureReader> ftRdr = FdoXmlFeatureReader::Create(xmlRdr, flags);
-        ftRdr->SetFeatureSchemas(schemas);
-
-        flags->SetDefaultNamespace(L"http://fdo.osgeo.org/schemas/feature/Default");
-        flags->SetDefaultNamespacePrefix(L"df");
-        flags->SetCollectionName(L"FeatureCollection");
-        flags->SetCollectionUri(L"http://www.opengis.net/wfs");
-
-        FdoPtr<FdoXmlWriter> xmlWtr = FdoXmlWriter::Create(GMLFileOut,false, FdoXmlWriter::LineFormat_Indent);
-        FdoPtr<FdoXmlFeatureWriter> ftWtr = FdoXmlFeatureWriter::Create(xmlWtr, flags);
-
-        FdoXmlFeatureSerializer::XmlSerialize(ftRdr, ftWtr, flags);
-    }
-
-    UnitTestUtil::CheckOutput( (const char*)FdoStringP(GMLFileIn), (const char*)FdoStringP(GMLFileOut) );
-}
 
 
 

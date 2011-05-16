@@ -131,28 +131,17 @@ void FdoSchemaXmlContext::AddElementMapping (
         elemMappings->Add( elemMapping );
     }
     else {
-        // The schema for the WFS at http://giswebservices.massgis.state.ma.us/geoserver/wfs 
-        // has a duplicated xs:element. Allow this schema to be read by suppressing this
-        // error when the error level is VeryLow (perform best-effort schema read).
-        bool isError = true;
-        FdoXmlFlagsP flags = GetFlags();
-
-        if ( flags && (flags->GetErrorLevel() == FdoXmlFlags::ErrorLevel_VeryLow) ) 
-            isError = false;
-
-        if ( isError ) {
-            AddError( 
-                FdoSchemaExceptionP(
-                    FdoSchemaException::Create(
-                        FdoException::NLSGetMessage(
-                            FDO_NLSID(SCHEMA_60_MULTIELEMMAPPING),
-                            elementSchema, 
-                            elementName
-                        )
+        AddError( 
+            FdoSchemaExceptionP(
+                FdoSchemaException::Create(
+                    FdoException::NLSGetMessage(
+                        FDO_NLSID(SCHEMA_60_MULTIELEMMAPPING),
+                        elementSchema, 
+                        elementName
                     )
                 )
-            );
-        }
+            )
+        );
     }
 }
 
@@ -252,8 +241,6 @@ FdoClassDefinition* FdoSchemaXmlContext::CreateClass(
     FdoString* className, 
     FdoXmlAttributeCollection* atts )
 {
-    FdoXmlFlagsP flags = GetFlags();
-
     // Get the root class (the most specific ancestor class not in the XML
     // file ).
     FdoXmlAttributeP rootSchemaAtt = atts->FindItem( L"rootSchema" );
@@ -263,18 +250,16 @@ FdoClassDefinition* FdoSchemaXmlContext::CreateClass(
     // without base class will have its type resolved by now
 
     if ( (rootSchemaAtt == NULL) || (rootClassAtt == NULL) ) {
-        if ( !flags || (flags->GetErrorLevel() != FdoXmlFlags::ErrorLevel_VeryLow) ) {
-            AddError( 
-                FdoSchemaExceptionP(
-                    FdoSchemaException::Create(
-                        FdoException::NLSGetMessage(
-                            FDO_NLSID(SCHEMA_35_NOCLASSTYPE),
-                            (FdoString*) FdoStringP::Format( L"%ls:%ls", schemaName, className )
-                        )
+        AddError( 
+            FdoSchemaExceptionP(
+                FdoSchemaException::Create(
+                    FdoException::NLSGetMessage(
+                        FDO_NLSID(SCHEMA_35_NOCLASSTYPE),
+                        (FdoString*) FdoStringP::Format( L"%ls:%ls", schemaName, className )
                     )
                 )
-            );
-        }
+            )
+        );
 
         return(NULL);
     }
@@ -288,21 +273,19 @@ FdoClassDefinition* FdoSchemaXmlContext::CreateClass(
     FdoClassDefinitionP rootClass = GetMergeContext()->FindClass( schemas, rootSchemaName, rootClassName );
 
     if ( rootClass == NULL ) {
-        if ( !flags || (flags->GetErrorLevel() != FdoXmlFlags::ErrorLevel_VeryLow) ) {
-            // Not there so log an error and give up
-            AddError( 
-                FdoSchemaExceptionP(
-                    FdoSchemaException::Create(
-                        FdoException::NLSGetMessage(
-                            FDO_NLSID(SCHEMA_26_BASECLASSREF),
-                            (FdoString*) rootSchemaName, 
-                            (FdoString*) rootClassName, 
-                            (FdoString*) FdoStringP::Format( L"%ls:%ls", schemaName, className )
-                        )
+        // Not there so log an error and give up
+        AddError( 
+            FdoSchemaExceptionP(
+                FdoSchemaException::Create(
+                    FdoException::NLSGetMessage(
+                        FDO_NLSID(SCHEMA_26_BASECLASSREF),
+                        (FdoString*) rootSchemaName, 
+                        (FdoString*) rootClassName, 
+                        (FdoString*) FdoStringP::Format( L"%ls:%ls", schemaName, className )
                     )
                 )
-            );
-        }
+            )
+        );
 
         return(NULL);
     }

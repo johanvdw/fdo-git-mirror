@@ -132,19 +132,14 @@ FdoBoolean FdoXmlReaderXrcs::Parse(
                 PopSaxHandler();
             SetSaxContext(NULL);
 
-            // FDO_33_XMLPARSEERROR represents resource string "XML Document parse error at line %1$d column %2$d: %3$ls".
-            // It uses "%d" to format line and column number. However, ex.getLineNumber() and ex.getColumnNumber() return
-            // unsigned int64 number. So we need to conver them to unsigned int32 otherwise it may result in crash when
-            // calling method FdoException::NLSGetMessage.
-            unsigned int line = static_cast<unsigned int>(ex.getLineNumber());
-            unsigned int col = static_cast<unsigned int>(ex.getColumnNumber());
-            FdoStringP errMessage = FdoXmlUtilXrcs::Xrcs2Unicode(ex.getMessage());
             throw FdoXmlException::Create(
                 FdoException::NLSGetMessage(
                     FDO_NLSID(FDO_33_XMLPARSEERROR),
-                    line,
-                    col,
-                    (FdoString*)errMessage));
+                    ex.getLineNumber(), 
+                    ex.getColumnNumber(), 
+                    (FdoString*) FdoXmlUtilXrcs::Xrcs2Unicode(ex.getMessage())
+                )
+            );
         }
         catch ( ... ) {
             if ( saxHandler ) 
@@ -186,19 +181,9 @@ FdoStringP FdoXmlReaderXrcs::DecodeName ( FdoStringP name )
         // The following does 2 things:
         //    checks if the token matches the encoding pattern (a hex number).
         //    if it does, convert the hex pattern to a wide character.
-        if ( (!prevDecode) && (swscanf( (const FdoString*) pattern, L"x%xx", &xChar ) > 0)) {
+        if ( (!prevDecode) && (swscanf( (const FdoString*) pattern, L"x%xx", &xChar ) > 0) && (xChar > 0) ) {
             // it matches, append the converted character to the output string.
-            // Discard character 0. It was prepended to prevent decoding "_x%x-" patterns that
-            // are actually part of the name rather than an encoded character
-            if ( xChar != 0 ) 
-                outName += FdoStringP::Format( L"%c", xChar );
-            prevDecode = true;
-        }
-        else if ( (i == 0) && (swscanf( (const FdoString*) pattern, L"_x%xx", &xChar ) > 0)) {
-            // it matches the encoding pattern for a 1st character, 
-            // append the converted character to the output string.
-            if ( xChar != 0 ) 
-                outName += FdoStringP::Format( L"%c", xChar );
+            outName += FdoStringP::Format( L"%c", xChar );
             prevDecode = true;
         }
         else {
@@ -246,8 +231,8 @@ void  FdoXmlReaderXrcs::startElement (
         mFdoAttrs = FdoXmlAttributeCollection::Create();
     }
 
-    XMLSize_t i;
-    XMLSize_t attrCount = attrs.getLength();
+    unsigned int i;
+    unsigned int attrCount = attrs.getLength();
 
     // Convert each Xerces XML attribute to a FDO XML attribute.
     for ( i = 0; i < attrCount; i++ ) {
@@ -392,7 +377,7 @@ void  FdoXmlReaderXrcs::endPrefixMapping (
     );
 }
 
-void  FdoXmlReaderXrcs::characters (const XMLCh *const chars, const XMLSize_t length)
+void  FdoXmlReaderXrcs::characters (const XMLCh *const chars, const unsigned int length)
 {
 
     // Call our element content handler.
@@ -410,17 +395,17 @@ FdoXmlReaderXrcs::InputStream::InputStream( FdoIoStream* stream )
     mStream = stream;
 }
 
-XMLFilePos FdoXmlReaderXrcs::InputStream::curPos()  const
+unsigned int FdoXmlReaderXrcs::InputStream::curPos()  const
 {
-    return( (XMLFilePos) mStream->GetIndex() );
+    return( (unsigned int) mStream->GetIndex() );
 }
 
-XMLSize_t FdoXmlReaderXrcs::InputStream::readBytes( 
+unsigned int FdoXmlReaderXrcs::InputStream::readBytes( 
     XMLByte *const  toFill,  
-    const XMLSize_t  maxToRead 
+    const unsigned int  maxToRead 
 )
 {
-    return (XMLSize_t)(( mStream->Read( toFill, maxToRead ) ));
+    return (unsigned int)(( mStream->Read( toFill, maxToRead ) ));
 }
 
 

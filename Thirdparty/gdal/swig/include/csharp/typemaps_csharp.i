@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_csharp.i 18358 2009-12-21 00:10:55Z tamas $
+ * $Id: typemaps_csharp.i 14938 2008-07-16 11:19:27Z tamas $
  *
  * Name:     typemaps_csharp.i
  * Project:  GDAL CSharp Interface
@@ -101,28 +101,6 @@ OGRErrMessages( int rc ) {
 
 OPTIONAL_POD(int, int);
 
-
-/***************************************************
- * Typemaps for  (retStringAndCPLFree*)
- ***************************************************/
-%inline %{
-    typedef char retStringAndCPLFree;
-%}
- 
-%typemap(out) (retStringAndCPLFree*)
-%{ 
-    /* %typemap(out) (retStringAndCPLFree*) */
-    if($1)
-    {
-        $result = SWIG_csharp_string_callback((const char *)$1);
-        CPLFree($1);
-    }
-    else
-    {
-        $result = NULL;
-    }
-%}
-
 /*
  * Typemap for GIntBig (int64)
  */
@@ -211,36 +189,6 @@ OPTIONAL_POD(int, int);
         return ret;
 }
 
-%typemap(imtype, out="IntPtr") int *intList "int[]"
-%typemap(cstype) int *intList %{int[]%}
-%typemap(in) int *intList %{ $1 = ($1_ltype)$input; %}
-%typemap(out) int *intList %{ $result = $1; %}
-%typemap(csout, excode=SWIGEXCODE) int *intList {
-        /* %typemap(csout) int *intList */
-        IntPtr cPtr = $imcall;
-        int[] ret = new int[count];
-        if (count > 0) {       
-	        System.Runtime.InteropServices.Marshal.Copy(cPtr, ret, 0, count);
-        }
-        $excode
-        return ret;
-}
-
-%typemap(imtype, out="IntPtr") double *doubleList "double[]"
-%typemap(cstype) double *doubleList %{double[]%}
-%typemap(in) double *doubleList %{ $1 = ($1_ltype)$input; %}
-%typemap(out) double *doubleList %{ $result = $1; %}
-%typemap(csout, excode=SWIGEXCODE) double *doubleList {
-        /* %typemap(csout) int *intList */
-        IntPtr cPtr = $imcall;
-        double[] ret = new double[count];
-        if (count > 0) {       
-	        System.Runtime.InteropServices.Marshal.Copy(cPtr, ret, 0, count);
-        }
-        $excode
-        return ret;
-}
-
 /*
  * Typemap for char **argout. 
  */
@@ -253,7 +201,7 @@ OPTIONAL_POD(int, int);
   /* %typemap(in) (char **argout) */
 	$1 = ($1_ltype)$input;
 }
-%typemap(argout) (char **argout)
+%typemap(argout) (char **argout), (char **username), (char **usrname), (char **type)
 {
   /* %typemap(argout) (char **argout) */
   char* temp_string;
@@ -261,11 +209,6 @@ OPTIONAL_POD(int, int);
   if (*$1)
 		free(*$1);
   *$1 = temp_string;
-}
-%typemap(argout) (char **staticstring), (char **username), (char **usrname), (char **type)
-{
-  /* %typemap(argout) (char **staticstring) */
-  *$1 = SWIG_csharp_string_callback(*$1);
 }
 
 /*
@@ -399,11 +342,11 @@ OPTIONAL_POD(int, int);
  * Typemap for out double.
  */
 
-%typemap(imtype) (double *OUTPUT), (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out double"
-%typemap(cstype) (double *OUTPUT), (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out double"
-%typemap(csin) (double *OUTPUT), (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out $csinput"
+%typemap(imtype) (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out double"
+%typemap(cstype) (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out double"
+%typemap(csin) (double *val), (double *min), (double *max), (double *mean), (double *stddev) "out $csinput"
 
-%typemap(in) (double *OUTPUT), (double *val), (double *min), (double *max), (double *mean), (double *stddev)
+%typemap(in) (double *val), (double *min), (double *max), (double *mean), (double *stddev)
 {
   /* %typemap(in) (double *val) */
   $1 = ($1_ltype)$input;
@@ -480,13 +423,3 @@ OPTIONAL_POD(int, int);
        CSLDestroy((char**)buffer_ptr);
     }
 %}
-
-/******************************************************************************
- * ErrorHandler callback support                                              *
- *****************************************************************************/
-%pragma(csharp) modulecode="public delegate void GDALErrorHandlerDelegate(int eclass, int code, IntPtr msg);"
-%typemap(imtype) (CPLErrorHandler)  "$module.GDALErrorHandlerDelegate"
-%typemap(cstype) (CPLErrorHandler) "$module.GDALErrorHandlerDelegate"
-%typemap(csin) (CPLErrorHandler)  "$csinput"
-%typemap(in) (CPLErrorHandler) %{ $1 = ($1_ltype)$input; %}
-

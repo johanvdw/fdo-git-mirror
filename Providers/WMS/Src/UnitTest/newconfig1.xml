@@ -479,7 +479,7 @@
         <Time />
         <Elevation />
         <SpatialContext>EPSG:4326</SpatialContext>
-        <Layer name="WMS_Schema:FOUNDATION COASTL_1M" />
+        <Layer name="WMS_Schema:Foundation COASTL_1M" />
       </RasterDefinition>
     </complexType>
   </SchemaMapping>

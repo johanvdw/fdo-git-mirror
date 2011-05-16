@@ -132,12 +132,6 @@ FdoSmPhRowsP FdoSmPhRdOwnerReader::MakeRows( FdoSmPhMgrP mgr)
         row->CreateColumnDbObject(L"name",false)
     );
 
-    pField = new FdoSmPhField(
-        row, 
-        L"description",
-        row->CreateColumnChar(L"description",true, 4096)
-    );
-
     return( rows);
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldriver.cpp 18348 2009-12-19 14:32:39Z rouault $
+ * $Id: gdaldriver.cpp 15685 2008-11-04 21:15:58Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriver class (and C wrappers)
@@ -29,7 +29,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdaldriver.cpp 18348 2009-12-19 14:32:39Z rouault $");
+CPL_CVSID("$Id: gdaldriver.cpp 15685 2008-11-04 21:15:58Z rouault $");
 
 /************************************************************************/
 /*                             GDALDriver()                             */
@@ -65,7 +65,7 @@ GDALDriver::~GDALDriver()
 /************************************************************************/
 
 /**
- * \brief Destroy a GDALDriver.
+ * Destroy a GDALDriver.
  * 
  * This is roughly equivelent to deleting the driver, but is guaranteed
  * to take place in the GDAL heap.  It is important this that function
@@ -87,7 +87,7 @@ void CPL_STDCALL GDALDestroyDriver( GDALDriverH hDriver )
 /************************************************************************/
 
 /**
- * \brief Create a new dataset with this driver.
+ * Create a new dataset with this driver.
  *
  * What argument values are legal for particular drivers is driver specific,
  * and there is no way to query in advance to establish legal values.
@@ -95,11 +95,6 @@ void CPL_STDCALL GDALDestroyDriver( GDALDriverH hDriver )
  * That function will try to validate the creation option list passed to the driver
  * with the GDALValidateCreationOptions() method. This check can be disabled
  * by defining the configuration option GDAL_VALIDATE_CREATION_OPTIONS=NO.
- *
- * After you have finished working with the returned dataset, it is <b>required</b>
- * to close it with GDALClose(). This does not only close the file handle, but
- * also ensures that all the data and metadata has been written to the dataset
- * (GDALFlushCache() is not sufficient for that purpose).
  *
  * Equivelent of the C function GDALCreate().
  * 
@@ -134,15 +129,6 @@ GDALDataset * GDALDriver::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Do some rudimentary argument checking.                          */
 /* -------------------------------------------------------------------- */
-    if (nBands < 0)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Attempt to create dataset with %d bands is illegal,"
-                  "Must be >= 0.",
-                  nBands );
-        return NULL;
-    }
-
     if( nXSize < 1 || nYSize < 1 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -192,8 +178,6 @@ GDALDataset * GDALDriver::Create( const char * pszFilename,
 /************************************************************************/
 
 /**
- * \brief Create a new dataset with this driver.
- *
  * @see GDALDriver::Create()
  */
 
@@ -273,15 +257,11 @@ CPLErr GDALDriver::DefaultCopyMasks( GDALDataset *poSrcDS,
 {
     CPLErr eErr = CE_None;	
 
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-        return CE_None;
-
 /* -------------------------------------------------------------------- */
 /*      Try to copy mask if it seems appropriate.                       */
 /* -------------------------------------------------------------------- */
     for( int iBand = 0; 
-         eErr == CE_None && iBand < nBands; 
+         eErr == CE_None && iBand < poSrcDS->GetRasterCount(); 
          iBand++ )
     {
         GDALRasterBand *poSrcBand = poSrcDS->GetRasterBand( iBand+1 );
@@ -343,79 +323,25 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
     
     CPLErrorReset();
 
+/* -------------------------------------------------------------------- */
+/*      Create destination dataset.                                     */
+/* -------------------------------------------------------------------- */
+    GDALDataset  *poDstDS;
+    int          nXSize = poSrcDS->GetRasterXSize();
+    int          nYSize = poSrcDS->GetRasterYSize();
+    GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
+    CPLErr       eErr = CE_None;
+
+    CPLDebug( "GDAL", "Using default GDALDriver::CreateCopy implementation." );
+
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
     {
         CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
         return NULL;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Validate that we can create the output as requested.            */
-/* -------------------------------------------------------------------- */
-    int          nXSize = poSrcDS->GetRasterXSize();
-    int          nYSize = poSrcDS->GetRasterYSize();
-    int          nBands = poSrcDS->GetRasterCount();
-
-    CPLDebug( "GDAL", "Using default GDALDriver::CreateCopy implementation." );
-
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "GDALDriver::DefaultCreateCopy does not support zero band" );
-        return NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Propogate some specific structural metadata as options if it    */
-/*      appears to be supported by the target driver and the caller     */
-/*      didn't provide values.                                          */
-/* -------------------------------------------------------------------- */
-    char **papszCreateOptions = CSLDuplicate( papszOptions );
-    int  iOptItem;
-    static const char *apszOptItems[] = {
-        "NBITS", "IMAGE_STRUCTURE",
-        "PIXELTYPE", "IMAGE_STRUCTURE", 
-        NULL };
-
-    for( iOptItem = 0; apszOptItems[iOptItem] != NULL; iOptItem += 2 )
-    {
-        // does the source have this metadata item on the first band?
-        const char *pszValue = 
-            poSrcDS->GetRasterBand(1)->GetMetadataItem( 
-                apszOptItems[iOptItem], apszOptItems[iOptItem+1] );
-
-        if( pszValue == NULL )
-            continue;
-
-        // do not override provided value.
-        if( CSLFetchNameValue( papszCreateOptions, pszValue ) != NULL )
-            continue;
-
-        // Does this appear to be a supported creation option on this driver?
-        const char *pszOptionList =
-            GetMetadataItem( GDAL_DMD_CREATIONDATATYPES );
-
-        if( pszOptionList == NULL 
-            || strstr(pszOptionList,apszOptItems[iOptItem]) != NULL )
-            continue;
-
-        papszCreateOptions = CSLSetNameValue( papszCreateOptions,
-                                              apszOptItems[iOptItem], 
-                                              pszValue );
-    }
-    
-/* -------------------------------------------------------------------- */
-/*      Create destination dataset.                                     */
-/* -------------------------------------------------------------------- */
-    GDALDataset  *poDstDS;
-    GDALDataType eType;
-    CPLErr       eErr = CE_None;
-
-    eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
     poDstDS = Create( pszFilename, nXSize, nYSize, 
-                      nBands, eType, papszCreateOptions );
-                      
-    CSLDestroy(papszCreateOptions);
+                      poSrcDS->GetRasterCount(), eType, papszOptions );
 
     if( poDstDS == NULL )
         return NULL;
@@ -464,8 +390,7 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Copy metadata.                                                  */
 /* -------------------------------------------------------------------- */
-    if( poSrcDS->GetMetadata() != NULL )
-        poDstDS->SetMetadata( poSrcDS->GetMetadata() );
+    poDstDS->SetMetadata( poSrcDS->GetMetadata() );
 
 /* -------------------------------------------------------------------- */
 /*      Copy transportable special domain metadata (RPCs).  It would    */
@@ -479,7 +404,7 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
 /*      Loop copying bands.                                             */
 /* -------------------------------------------------------------------- */
     for( int iBand = 0; 
-         eErr == CE_None && iBand < nBands; 
+         eErr == CE_None && iBand < poSrcDS->GetRasterCount(); 
          iBand++ )
     {
         GDALRasterBand *poSrcBand = poSrcDS->GetRasterBand( iBand+1 );
@@ -507,8 +432,7 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
         if( strlen(poSrcBand->GetDescription()) > 0 )
             poDstBand->SetDescription( poSrcBand->GetDescription() );
 
-        if( CSLCount(poSrcBand->GetMetadata()) > 0 )
-            poDstBand->SetMetadata( poSrcBand->GetMetadata() );
+        poDstBand->SetMetadata( poSrcBand->GetMetadata() );
 
         dfValue = poSrcBand->GetOffset( &bSuccess );
         if( bSuccess && dfValue != 0.0 )
@@ -576,7 +500,7 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
 /************************************************************************/
 
 /**
- * \brief Create a copy of a dataset.
+ * Create a copy of a dataset.
  *
  * This method will attempt to create a copy of a raster dataset with the
  * indicated filename, and in this drivers format.  Band number, size, 
@@ -597,11 +521,6 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
  * That function will try to validate the creation option list passed to the driver
  * with the GDALValidateCreationOptions() method. This check can be disabled
  * by defining the configuration option GDAL_VALIDATE_CREATION_OPTIONS=NO.
- *
- * After you have finished working with the returned dataset, it is <b>required</b>
- * to close it with GDALClose(). This does not only close the file handle, but
- * also ensures that all the data and metadata has been written to the dataset
- * (GDALFlushCache() is not sufficient for that purpose).
  *
  * @param pszFilename the name for the new dataset. 
  * @param poSrcDS the dataset being duplicated. 
@@ -671,8 +590,6 @@ GDALDataset *GDALDriver::CreateCopy( const char * pszFilename,
 /************************************************************************/
 
 /**
- * \brief Create a copy of a dataset.
- *
  * @see GDALDriver::CreateCopy()
  */
 
@@ -697,7 +614,7 @@ GDALDatasetH CPL_STDCALL GDALCreateCopy( GDALDriverH hDriver,
 /************************************************************************/
 
 /**
- * \brief Delete dataset if found.
+ * Delete dataset if found.
  *
  * This is a helper method primarily used by Create() and
  * CreateCopy() to predelete any dataset of the name soon to be
@@ -731,7 +648,7 @@ CPLErr GDALDriver::QuietDelete( const char *pszName )
 /************************************************************************/
 
 /**
- * \brief Delete named dataset.
+ * Delete named dataset.
  *
  * The driver will attempt to delete the named dataset in a driver specific
  * fashion.  Full featured drivers will delete all associated files,
@@ -810,8 +727,6 @@ CPLErr GDALDriver::Delete( const char * pszFilename )
 /************************************************************************/
 
 /**
- * \brief Delete named dataset.
- *
  * @see GDALDriver::Delete()
  */
 
@@ -837,7 +752,7 @@ CPLErr CPL_STDCALL GDALDeleteDataset( GDALDriverH hDriver, const char * pszFilen
 /************************************************************************/
 
 /**
- * \brief Rename a dataset.
+ * Rename a dataset.
  *
  * Rename a dataset. This may including moving the dataset to a new directory
  * or even a new filesystem.  
@@ -921,8 +836,6 @@ CPLErr GDALDriver::Rename( const char * pszNewName, const char *pszOldName )
 /************************************************************************/
 
 /**
- * \brief Rename a dataset.
- *
  * @see GDALDriver::Rename()
  */
 
@@ -950,7 +863,7 @@ CPLErr CPL_STDCALL GDALRenameDataset( GDALDriverH hDriver,
 /************************************************************************/
 
 /**
- * \brief Copy the files of a dataset.
+ * Copy the files of a dataset.
  *
  * Copy all the files associated with a dataset.
  *
@@ -1030,8 +943,6 @@ CPLErr GDALDriver::CopyFiles( const char * pszNewName, const char *pszOldName )
 /************************************************************************/
 
 /**
- * \brief Copy the files of a dataset.
- *
  * @see GDALDriver::CopyFiles()
  */
 
@@ -1059,9 +970,9 @@ CPLErr CPL_STDCALL GDALCopyDatasetFiles( GDALDriverH hDriver,
 /************************************************************************/
 
 /**
- * \brief Return the short name of a driver
+ * Return the short name of a driver
  *
- * This is the string that can be
+ * Return the short name of a the driver. This is the string that can be
  * passed to the GDALGetDriverByName() function.
  *
  * For the GeoTIFF driver, this is "GTiff"
@@ -1084,7 +995,9 @@ const char * CPL_STDCALL GDALGetDriverShortName( GDALDriverH hDriver )
 /************************************************************************/
 
 /**
- * \brief Return the long name of a driver
+ * Return the long name of a driver
+ *
+ * Return the long name of a the driver.
  *
  * For the GeoTIFF driver, this is "GeoTIFF"
  *
@@ -1112,9 +1025,10 @@ const char * CPL_STDCALL GDALGetDriverLongName( GDALDriverH hDriver )
 /************************************************************************/
 
 /**
- * \brief Return the URL to the help that describes the driver
+ * Return the URL to the help that describes the driver
  *
- * That URL is relative to the GDAL documentation directory.
+ * Return the URL to the help that describes the driver. That URL is
+ * relative to the GDAL documentation directory.
  *
  * For the GeoTIFF driver, this is "frmt_gtiff.html"
  *
@@ -1136,7 +1050,7 @@ const char * CPL_STDCALL GDALGetDriverHelpTopic( GDALDriverH hDriver )
 /************************************************************************/
 
 /**
- * \brief Return the list of creation options of the driver
+ * Return the list of creation options of the driver
  *
  * Return the list of creation options of the driver used by Create() and
  * CreateCopy() as an XML string
@@ -1166,7 +1080,7 @@ const char * CPL_STDCALL GDALGetDriverCreationOptionList( GDALDriverH hDriver )
 /************************************************************************/
 
 /**
- * \brief Validate the list of creation options that are handled by a driver
+ * Validate the list of creation options that are handled by a driver
  *
  * This is a helper method primarily used by Create() and
  * CreateCopy() to validate that the passed in list of creation options
@@ -1389,7 +1303,7 @@ int CPL_STDCALL GDALValidateCreationOptions( GDALDriverH hDriver,
 /************************************************************************/
 
 /**
- * \brief Identify the driver that can open a raster file.
+ * Identify the driver that can open a raster file.
  *
  * This function will try to identify the driver that can open the passed file
  * name by invoking the Identify method of each registered GDALDriver in turn. 

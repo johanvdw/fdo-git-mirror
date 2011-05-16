@@ -5,7 +5,6 @@ HTTP
 HTTP PUT
 </keywords>
 </info>
-
 # Server-side
 <reply>
 <data>
@@ -27,11 +26,11 @@ http
 HTTP PUT from stdin with wrong content-length
 </name>
  <command>
-http://%HOSTIP:%HTTPPORT/bzz/60 -T - -H "Content-Length: 1"
+http://%HOSTIP:%HTTPPORT/bzz/60 -T - -H "Content-Length: 1" < log/60.txt
 </command>
-<stdin>
+<file name="log/60.txt">
 more than one byte
-</stdin>
+</file>
 </client>
 
 # Verify data after the test has been "shot"
@@ -41,7 +40,7 @@ more than one byte
 </strip>
 <protocol>
 PUT /bzz/60 HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
+Host: 127.0.0.1:%HTTPPORT
 Accept: */*
 Transfer-Encoding: chunked
 Content-Length: 1

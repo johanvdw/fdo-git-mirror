@@ -382,14 +382,13 @@ void FdoSmPhTable::CommitCConstraints(bool isBeforeParent)
                 // Constraints are created along with table, so skip adding constraint
                 // if table was new.
             	if ( GetCommitState() != FdoSchemaElementState_Added ) {
-                    FdoStringP checkClause = GetAddCkeySql(pCheck);
 				    FdoStringP ckeySql = FdoStringP::Format( 
 							    L"CHECK (%ls)",
-							    (FdoString *)checkClause
+							    (FdoString *)pCheck->GetClause()
 				    );
 
 				    if ( !AddConstraint( ckeySql ) ) {
-					    AddCkeyError(checkClause);
+					    AddCkeyError(pCheck->GetClause());
 
 					    // This will trigger error reporting
 					    if (GetElementState() == FdoSchemaElementState_Unchanged )
@@ -615,7 +614,7 @@ FdoStringP FdoSmPhTable::GetAddCkeysSql()
 
 		FdoStringP ckeySql = FdoStringP::Format( 
 			L"CHECK (%ls)",
-			(FdoString*) GetAddCkeySql(elem)
+			(FdoString*) elem->GetClause()
 		);
 
 		ckeyCollSql += ckeySql;	
@@ -634,13 +633,8 @@ FdoStringP FdoSmPhTable::GetAddCkeySql(int uCollNum)
     return FdoStringP::Format( 
 		L"alter table %ls add CHECK (%ls)", 
 		(FdoString*) GetDDLQName(),
-		(FdoString*) GetAddCkeySql(elem)
+		(FdoString*) elem->GetClause()
 	);
-}
-
-FdoStringP FdoSmPhTable::GetAddCkeySql(FdoSmPhCheckConstraint* ckey)
-{
-    return ckey->GetClause();
 }
 
 FdoStringP FdoSmPhTable::GetConstraintDDLName( FdoStringP constraintName ) const
@@ -669,6 +663,7 @@ void FdoSmPhTable::LoadUkeys()
     }
 }
 
+
 void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
 {
     FdoStringP		 ukeyNameCurr;
@@ -678,6 +673,17 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
     while (ukeyRdr->ReadNext() ) {
 
         FdoStringP ukeyName			= ukeyRdr->GetString(L"", L"constraint_name");
+        FdoStringP columnName		= ukeyRdr->GetString(L"", L"column_name");
+
+		FdoSmPhColumnsP ukeyColumns = GetColumns();
+        FdoSmPhColumnP ukeyColumn = ukeyColumns->FindItem( columnName );
+
+        // Unique Key column must be in this table.
+        if ( ukeyColumn == NULL ) {
+		    if ( GetElementState() != FdoSchemaElementState_Deleted )
+		        AddUkeyColumnError( columnName );
+        }
+
 		// The subcollection is identified by the common ukeyName.
 		// The columns will be grouped this way.
 		if ( ukeyName != ukeyNameCurr ) {
@@ -688,10 +694,11 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
    			ukeysCurr = new FdoSmPhColumnCollection( ukeyName );
 		}		
 		
-        if ( ukeysCurr ) {
-            if ( !LoadUkeyColumn(ukeyRdr, ukeysCurr) )
-                ukeysCurr = NULL;
-        }
+        if ( ukeyColumn && ukeysCurr ) 
+            ukeysCurr->Add( ukeyColumn );
+        else
+            // Skip the entire unique constraint if any of its columns are missing
+            ukeysCurr = NULL;
 
         ukeyNameCurr = ukeyName;		
     }
@@ -701,25 +708,6 @@ void FdoSmPhTable::LoadUkeys( FdoSmPhReaderP ukeyRdr, bool isSkipAdd  )
 		mUkeysCollection->Add( ukeysCurr );
 }
 
-bool FdoSmPhTable::LoadUkeyColumn( FdoSmPhReaderP ukeyRdr, FdoSmPhColumnsP ukey  )
-{
-    FdoStringP columnName		= ukeyRdr->GetString(L"", L"column_name");
-
-	FdoSmPhColumnsP ukeyColumns = GetColumns();
-    FdoSmPhColumnP ukeyColumn = ukeyColumns->FindItem( columnName );
-
-    // Unique Key column must be in this table.
-    if ( ukeyColumn == NULL ) {
-	    if ( GetElementState() != FdoSchemaElementState_Deleted )
-	        AddUkeyColumnError( columnName );
-
-        return false;
-    }
-
-    ukey->Add( ukeyColumn );
-
-    return true;
-}
 
 void FdoSmPhTable::LoadCkeys()
 {

@@ -33,7 +33,6 @@
 #include "ogrsf_frmts.h"
 
 class OGRXPlaneReader;
-class OGRXPlaneDataSource;
 
 /************************************************************************/
 /*                             OGRXPlaneLayer                           */
@@ -43,14 +42,9 @@ class OGRXPlaneLayer : public OGRLayer
 {
   private:
     int                nFID;
-    int                nFeatureArraySize;
-    int                nFeatureArrayMaxSize;
-    int                nFeatureArrayIndex;
-    
+    int                nCurrentID;
     OGRFeature**       papoFeatures;
     OGRSpatialReference *poSRS;
-    
-    OGRXPlaneDataSource* poDS;
 
   protected:
     OGRXPlaneReader*   poReader;
@@ -61,21 +55,18 @@ class OGRXPlaneLayer : public OGRLayer
 
   public:
     virtual                   ~OGRXPlaneLayer();
-    
-    void                      SetDataSource(OGRXPlaneDataSource* poDS);
 
     void                      SetReader(OGRXPlaneReader* poReader);
-    int                       IsEmpty() { return nFeatureArraySize == 0; }
+    int                       IsEmpty() { return nFID == 0; }
     void                      AutoAdjustColumnsWidth();
 
     virtual void              ResetReading();
     virtual OGRFeature *      GetNextFeature();
     virtual OGRFeature *      GetFeature( long nFID );
-    virtual OGRErr            SetNextByIndex( long nIndex );
     virtual int               GetFeatureCount( int bForce = TRUE );
     virtual OGRSpatialReference * GetSpatialRef() { return poSRS; }
 
-    virtual OGRFeatureDefn *  GetLayerDefn();
+    virtual OGRFeatureDefn *  GetLayerDefn() { return poFeatureDefn; }
     virtual int               TestCapability( const char * pszCap );
 };
 
@@ -93,7 +84,6 @@ class OGRXPlaneDataSource : public OGRDataSource
 
     OGRXPlaneReader*    poReader;
     int                 bReadWholeFile;
-    int                 bWholeFiledReadingDone;
 
     void                Reset();
 
@@ -110,8 +100,6 @@ class OGRXPlaneDataSource : public OGRDataSource
     virtual const char* GetName() { return pszName; }
 
     virtual int         TestCapability( const char * pszCap );
-    
-    void                ReadWholeFileIfNecessary();
 };
 
 /************************************************************************/

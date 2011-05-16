@@ -71,8 +71,6 @@ void OpenSSL_add_all_ciphers(void)
 	EVP_add_cipher(EVP_des_cfb8());
 	EVP_add_cipher(EVP_des_ede_cfb());
 	EVP_add_cipher(EVP_des_ede3_cfb());
-	EVP_add_cipher(EVP_des_ede3_cfb1());
-	EVP_add_cipher(EVP_des_ede3_cfb8());
 
 	EVP_add_cipher(EVP_des_ofb());
 	EVP_add_cipher(EVP_des_ede_ofb());
@@ -107,15 +105,6 @@ void OpenSSL_add_all_ciphers(void)
 	EVP_add_cipher(EVP_idea_cbc());
 	EVP_add_cipher_alias(SN_idea_cbc,"IDEA");
 	EVP_add_cipher_alias(SN_idea_cbc,"idea");
-#endif
-
-#ifndef OPENSSL_NO_SEED
-	EVP_add_cipher(EVP_seed_ecb());
-	EVP_add_cipher(EVP_seed_cfb());
-	EVP_add_cipher(EVP_seed_ofb());
-	EVP_add_cipher(EVP_seed_cbc());
-	EVP_add_cipher_alias(SN_seed_cbc,"SEED");
-	EVP_add_cipher_alias(SN_seed_cbc,"seed");
 #endif
 
 #ifndef OPENSSL_NO_RC2
@@ -221,4 +210,7 @@ void OpenSSL_add_all_ciphers(void)
 	EVP_add_cipher_alias(SN_camellia_256_cbc,"CAMELLIA256");
 	EVP_add_cipher_alias(SN_camellia_256_cbc,"camellia256");
 #endif
+
+	PKCS12_PBE_add();
+	PKCS5_PBE_add();
 	}

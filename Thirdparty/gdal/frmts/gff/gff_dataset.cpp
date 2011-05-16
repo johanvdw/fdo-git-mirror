@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gff_dataset.cpp 18244 2009-12-10 17:08:59Z warmerdam $
+ * $Id: gff_dataset.cpp 14978 2008-07-19 16:43:41Z rouault $
  *
  * Project:  Ground-based SAR Applitcations Testbed File Format driver
  * Purpose:  Support in GDAL for Sandia National Laboratory's GFF format
@@ -29,13 +29,12 @@
  ****************************************************************************/
 
 #include "gdal_priv.h"
-#include "gdal_pam.h"
 #include "cpl_port.h"
 #include "cpl_conv.h"
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gff_dataset.cpp 18244 2009-12-10 17:08:59Z warmerdam $");
+CPL_CVSID("$Id: gff_dataset.cpp 14978 2008-07-19 16:43:41Z rouault $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *
@@ -43,27 +42,27 @@ CPL_CVSID("$Id: gff_dataset.cpp 18244 2009-12-10 17:08:59Z warmerdam $");
 
 class GFFRasterBand;
 
-class GFFDataset : public GDALPamDataset 
+class GFFDataset : public GDALDataset 
 {
     friend class GFFRasterBand;
     FILE *fp;
     GDALDataType eDataType;
     unsigned int nEndianess;
     /* Some relevant headers */
-    unsigned short nVersionMajor;
-    unsigned short nVersionMinor;
-    unsigned int nLength;
+    unsigned int nVersionMajor;
+    unsigned int nVersionMinor;
+    unsigned long nLength;
     char *pszCreator;
     /* I am taking this at face value (are they freakin' insane?) */
     float fBPP;
     unsigned int nBPP;
 
     /* Good information to know */
-    unsigned int nFrameCnt;
-    unsigned int nImageType;
-    unsigned int nRowMajor;
-    unsigned int nRgCnt;
-    unsigned int nAzCnt;
+    unsigned long nFrameCnt;
+    unsigned long nImageType;
+    unsigned long nRowMajor;
+    unsigned long nRgCnt;
+    unsigned long nAzCnt;
     long nScaleExponent;
     long nScaleMantissa;
     long nOffsetExponent;
@@ -84,14 +83,14 @@ GFFDataset::GFFDataset()
 GFFDataset::~GFFDataset()
 {
     if (fp != NULL)
-        VSIFCloseL(fp);
+        VSIFClose(fp);
 }
 
 /*********************************************************************
  * Declaration and implementation of the GFFRasterBand Class         *
  *********************************************************************/
 
-class GFFRasterBand : public GDALPamRasterBand {
+class GFFRasterBand : public GDALRasterBand {
     long nRasterBandMemory;
     int nSampleSize;
 public:
@@ -142,23 +141,10 @@ CPLErr GFFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     GFFDataset *poGDS = (GFFDataset *)poDS;
     long nOffset = poGDS->nLength;
 
-    VSIFSeekL(poGDS->fp, nOffset + (poGDS->GetRasterXSize() * nBlockYOff * (nSampleSize)),SEEK_SET);
+    VSIFSeek(poGDS->fp, nOffset + (poGDS->GetRasterXSize() * nBlockYOff * (nSampleSize)),SEEK_SET);
 
     /* Ingest entire range line */
-    if (VSIFReadL(pImage,nRasterBandMemory,1,poGDS->fp) != 1)
-        return CE_Failure;
-
-#if defined(CPL_MSB)
-    if( GDALDataTypeIsComplex( eDataType ) )
-    {
-        int nWordSize;
-
-        nWordSize = GDALGetDataTypeSize(eDataType)/16;
-        GDALSwapWords( pImage, nWordSize, nBlockXSize, 2*nWordSize );
-        GDALSwapWords( ((GByte *) pImage)+nWordSize, 
-                        nWordSize, nBlockXSize, 2*nWordSize );
-    }
-#endif
+    VSIFRead(pImage,nRasterBandMemory,1,poGDS->fp);
 
     return CE_None;
 	
@@ -175,7 +161,7 @@ CPLErr GFFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /************************************************************************/
 int GFFDataset::Identify( GDALOpenInfo *poOpenInfo )
 {
-    if(poOpenInfo->nHeaderBytes < 7) 
+    if(poOpenInfo->fp == NULL || poOpenInfo->nHeaderBytes < 7) 
         return 0;
 
     if (EQUALN((char *)poOpenInfo->pabyHeader,"GSATIMG",7)) 
@@ -190,56 +176,32 @@ int GFFDataset::Identify( GDALOpenInfo *poOpenInfo )
 
 GDALDataset *GFFDataset::Open( GDALOpenInfo *poOpenInfo ) 
 {
-    unsigned short nCreatorLength = 0;
+    unsigned int nCreatorLength = 0;
 
     /* Check that the dataset is indeed a GSAT File Format (GFF) file */
     if (!GFFDataset::Identify(poOpenInfo)) 
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The GFF driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     GFFDataset *poDS;
     poDS = new GFFDataset();
-
-    poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, "r" );
-    if( poDS->fp == NULL )
-    {
-        delete poDS;
-        return NULL;
-    }
+    /* Steal the file pointer */
+    poDS->fp = poOpenInfo->fp;
+    poOpenInfo->fp = NULL;
 
     /* Check the endianess of the file */
-    VSIFSeekL(poDS->fp,54,SEEK_SET);
-    VSIFReadL(&(poDS->nEndianess),2,1,poDS->fp);
+    VSIFSeek(poDS->fp,54,SEEK_SET);
+    VSIFRead(&(poDS->nEndianess),2,1,poDS->fp);
 
-#if defined(CPL_LSB)
-    int bSwap = 0;
-#else
-    int bSwap = 1;
-#endif
-
-    VSIFSeekL(poDS->fp,8,SEEK_SET);
-    VSIFReadL(&poDS->nVersionMinor,2,1,poDS->fp);
-    if (bSwap) CPL_SWAP16PTR(&poDS->nVersionMinor);
-    VSIFReadL(&poDS->nVersionMajor,2,1,poDS->fp);
-    if (bSwap) CPL_SWAP16PTR(&poDS->nVersionMajor);
-    VSIFReadL(&poDS->nLength,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nLength);
-    VSIFReadL(&nCreatorLength,2,1,poDS->fp);
-    if (bSwap) CPL_SWAP16PTR(&nCreatorLength);
+    VSIFSeek(poDS->fp,8,SEEK_SET);
+    VSIFRead(&poDS->nVersionMinor,2,1,poDS->fp);
+    VSIFRead(&poDS->nVersionMajor,2,1,poDS->fp);
+    VSIFRead(&poDS->nLength,4,1,poDS->fp);
+    VSIFRead(&nCreatorLength,2,1,poDS->fp);
     /* Hack for now... I should properly load the date metadata, for
      * example
      */
-    VSIFSeekL(poDS->fp,56,SEEK_SET);
+    VSIFSeek(poDS->fp,56,SEEK_SET);
 
     /* By looking at the Matlab code, one should write something like the following test */
     /* but the results don't seem to be the ones really expected */
@@ -251,19 +213,13 @@ GDALDataset *GFFDataset::Open( GDALOpenInfo *poOpenInfo )
     }
     else*/
     {
-        VSIFReadL(&poDS->nBPP,4,1,poDS->fp);
-        if (bSwap) CPL_SWAP32PTR(&poDS->nBPP);
+        VSIFRead(&poDS->nBPP,4,1,poDS->fp);
     }
-    VSIFReadL(&poDS->nFrameCnt,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nFrameCnt);
-    VSIFReadL(&poDS->nImageType,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nImageType);
-    VSIFReadL(&poDS->nRowMajor,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nRowMajor);
-    VSIFReadL(&poDS->nRgCnt,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nRgCnt);
-    VSIFReadL(&poDS->nAzCnt,4,1,poDS->fp);
-    if (bSwap) CPL_SWAP32PTR(&poDS->nAzCnt);
+    VSIFRead(&poDS->nFrameCnt,4,1,poDS->fp);
+    VSIFRead(&poDS->nImageType,4,1,poDS->fp);
+    VSIFRead(&poDS->nRowMajor,4,1,poDS->fp);
+    VSIFRead(&poDS->nRgCnt,4,1,poDS->fp);
+    VSIFRead(&poDS->nAzCnt,4,1,poDS->fp);
 
     /* We now have enough information to determine the number format */
     switch (poDS->nImageType) {
@@ -283,8 +239,7 @@ GDALDataset *GFFDataset::Open( GDALOpenInfo *poOpenInfo )
         break;
 
       default:
-        CPLError(CE_Failure, CPLE_AppDefined, "Unknown image type found!");
-        delete poDS;
+        printf("Unknown image type found! ABORT!\n");
         return NULL;
     }
 
@@ -303,26 +258,7 @@ GDALDataset *GFFDataset::Open( GDALOpenInfo *poOpenInfo )
         poDS->nRasterYSize = poDS->nRgCnt;
     }
 
-    if (poDS->nRasterXSize <= 0 || poDS->nRasterYSize <= 0)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Invalid raster dimensions : %d x %d",
-                 poDS->nRasterXSize, poDS->nRasterYSize);
-        delete poDS;
-        return NULL;
-    }
-
     poDS->SetBand(1, new GFFRasterBand(poDS, 1, poDS->eDataType));
-
-/* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Support overviews.                                              */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return poDS;
 }
@@ -341,7 +277,6 @@ void GDALRegister_GFF(void)
                                   "Ground-based SAR Applications Testbed File Format (.gff)");
         poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "frmt_various.html#GFF");
         poDriver->SetMetadataItem(GDAL_DMD_EXTENSION, "gff");
-        poDriver->SetMetadataItem(GDAL_DCAP_VIRTUALIO, "YES");
         poDriver->pfnOpen = GFFDataset::Open;
         GetGDALDriverManager()->RegisterDriver(poDriver);
     }

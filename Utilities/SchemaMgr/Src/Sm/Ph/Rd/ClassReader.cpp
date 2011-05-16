@@ -62,7 +62,7 @@ FdoSmPhRdClassReader::FdoSmPhRdClassReader(
         if( ((const wchar_t*)className)[0] != '\0' )
         {
             // Reading a single class. Assume class table has same name.
-            pObject = mOwner->FindDbObject( mgr->ClassName2DbObjectName(schemaName, className) );
+            pObject = mOwner->FindDbObject( className );
             if ( pObject ) {
                 mDbObjects = new FdoSmPhDbObjectCollection(NULL);
                 mDbObjects->Add( pObject );
@@ -93,21 +93,6 @@ FdoSmPhRdClassReader::FdoSmPhRdClassReader(
 
 FdoSmPhRdClassReader::~FdoSmPhRdClassReader(void)
 {
-}
-
-FdoStringP FdoSmPhRdClassReader::GetSchemaName()
-{
-    return mSchemaName;
-}
-
-FdoSmPhDbObjectP FdoSmPhRdClassReader::GetCurrDbObject()
-{
-    FdoSmPhDbObjectP dbObject;
-
-    if ( (mCurrDbObject) >= 0 && (mCurrDbObject < mDbObjects->GetCount()) ) 
-        dbObject = mDbObjects->GetItem(mCurrDbObject);
-
-    return dbObject;
 }
 
 bool FdoSmPhRdClassReader::ReadNext()
@@ -193,10 +178,6 @@ bool FdoSmPhRdClassReader::ReadNext()
                             pField->SetFieldValue( geomPropName );
                         else
                             pField->SetFieldValue( L"" );
-
-                        // By default, no inheritance when no metaschema.
-                        pField = pFields->GetItem(L"parentclassname");
-                        pField->SetFieldValue( L"" );
                     }
 
                     // 2nd row has class type.

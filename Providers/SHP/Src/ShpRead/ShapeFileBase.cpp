@@ -167,28 +167,18 @@ void ShapeFileBase::GetFileHeaderDetails ()
     m_nFileVersion = shpHeader.nFileVersion;
 
     if(m_nFileVersion == nSHP_FILE_VERSION)
-    {    
-        // shpHeader.nFileLength may be incorrect. Get the file size for future sanity checks.
-        FdoInt64    nFileSize;
-        GetFileSize64 (nFileSize);
-        m_nFileSize = (ULONG)nFileSize;
-
+    {
         m_nFileLength = shpHeader.nFileLength = SWAPLONG(shpHeader.nFileLength);
         m_nFileShapeType = (eShapeTypes)shpHeader.nFileShapeType;
 
         m_dXMin = shpHeader.cXMin;
         m_dYMin = shpHeader.cYMin;
-
-        bool  hasShapes = (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize);
-        
-        if (hasShapes) // only check if there are shapes
+        if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
             CheckBoundingBox(m_dXMin, m_dYMin, eMinXMinY);
-
         m_dXMax = shpHeader.cXMax;
         m_dYMax = shpHeader.cYMax;
-        if (hasShapes) // only check if there are shapes
+        if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
             CheckBoundingBox(m_dXMax, m_dYMax, eMaxXMaxY);
-
         // Initialize
         m_dZMin = shpHeader.cZMin;
         m_dZMax = shpHeader.cZMax;
@@ -209,12 +199,8 @@ void ShapeFileBase::GetFileHeaderDetails ()
                 CheckBoundingBox(m_dZMin, m_dZMax, eMinZMaxZ);
 #endif
             // In the SHP specification there is a note about the M bounding box: if M values are not used
-            // then Mmin and Mmax are 0.0. Also if the file has records and M bounding box is unspecified 
-            // (non-standard but possible).
-            bool isMBoxUnpecified = ((m_dMMin == 0.0) && (m_dMMax == 0.0)) || 
-                                     (hasShapes && (m_dMMin <= fNO_DATA) && (m_dMMax <= fNO_DATA)); 
-            m_bMDataPresent = false;
-            if ( !isMBoxUnpecified )
+            // then Mmin and Mmax are 0.0. In such situation, m_bMdataPresent should not be set to true. 
+            if ((m_dMMin != 0.0) && (m_dMMax != 0.0))
             {
                 m_bMDataPresent = true;
 #if 0
@@ -222,7 +208,9 @@ void ShapeFileBase::GetFileHeaderDetails ()
                 if (m_nFileLength * WORD_SIZE_IN_BYTES > SHPHeaderSize) // only check if there are shapes
                     CheckBoundingBox(m_dMMin, m_dMMax, eMinMMaxM);
 #endif
-            }                
+            }
+            else
+                m_bMDataPresent = false;
         }
         if ((m_nFileShapeType == ePointMShape) ||
             (m_nFileShapeType == ePolylineMShape) ||

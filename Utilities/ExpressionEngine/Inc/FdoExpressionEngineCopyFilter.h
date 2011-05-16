@@ -130,8 +130,6 @@ public: // Required by Fdo interfaces
 
     EXPRESSIONENGINE_API virtual void ProcessComputedIdentifier(FdoComputedIdentifier& expr);
 
-    EXPRESSIONENGINE_API virtual void ProcessSubSelectExpression(FdoSubSelectExpression& expr);
-
 	EXPRESSIONENGINE_API FdoExpression*	GetExpression();
 
 	EXPRESSIONENGINE_API FdoFilter*	GetFilter();

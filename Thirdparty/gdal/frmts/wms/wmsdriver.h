@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id: wmsdriver.h 18020 2009-11-14 14:33:20Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -39,11 +38,9 @@ void URLAppend(CPLString *url, const CPLString &s);
 CPLString BufferToVSIFile(GByte *buffer, size_t size);
 CPLErr MakeDirs(const char *path);
 int StrToBool(const char *p);
-int URLSearchAndReplace (CPLString *base, const char *search, const char *fmt, ...);
 
 /* Convert a.b.c.d to a * 0x1000000 + b * 0x10000 + c * 0x100 + d */
 int VersionStringToInt(const char *version);
-
 
 class GDALWMSImageRequestInfo {
 public:
@@ -58,7 +55,6 @@ public:
     double m_x1, m_y1;
     int m_sx, m_sy;
     int m_tx, m_ty, m_tlevel;
-    enum { BOTTOM = -1, DEFAULT = 0, TOP = 1 } m_y_origin;
 };
 
 class GDALWMSTiledImageRequestInfo {
@@ -223,6 +219,7 @@ protected:
     int m_overview_count;
     GDALDataType m_data_type;
     int m_block_size_x, m_block_size_y;
+    int m_bands_count;
     GDALWMSRasterIOHint m_hint;
     int m_use_advise_read;
     int m_verify_advise_read;

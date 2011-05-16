@@ -94,8 +94,6 @@ public:
 
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoStringP dbObject = L"") const;
 
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoStringsP dbObjects) const;
-
     // Create a reader to get all database objects for this join.
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoSmPhRdTableJoinP join ) const;
 
@@ -103,27 +101,17 @@ public:
 
 	virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( FdoStringP tableName, FdoStringP constraintType) const;
 
-	virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( FdoStringsP tableNames, FdoStringP constraintType) const;
-
     virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( FdoSmPhRdTableJoinP join, FdoStringP constraintType) const;
 
     virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader() const;
 
-    virtual FdoPtr<FdoSmPhRdFkeyReader> CreateFkeyReader(  FdoStringsP objectNames ) const;
-
     virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader() const;
 
-    virtual FdoPtr<FdoSmPhRdIndexReader> CreateIndexReader( FdoStringsP objectNames ) const;
-
     virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader() const;
-
-    virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader(  FdoStringsP objectNames ) const;
 
     virtual FdoPtr<FdoSmPhRdPkeyReader> CreatePkeyReader( FdoPtr<FdoSmPhRdTableJoin> join ) const;
 
     virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader() const;
-
-    virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader(FdoStringsP objectNames) const;
 
     virtual FdoPtr<FdoSmPhRdColumnReader> CreateColumnReader( FdoSmPhRdTableJoinP join ) const;
 
@@ -164,8 +152,6 @@ private:
     void DropTempTable( FdoStringP tableName );
     // Generate next unique number for temporary table name.
     FdoInt32 NextTempTableNum();
-	// Check if the server has a higher version than 5.5.0, including 5.5.0.
-	FdoBoolean IsHigherVersionThan550();
 
     FdoStringP mCharacterSetName;
 

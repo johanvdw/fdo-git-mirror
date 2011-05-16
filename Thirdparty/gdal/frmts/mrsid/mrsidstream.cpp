@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mrsidstream.cpp 16078 2009-01-14 05:43:02Z warmerdam $
+ * $Id: mrsidstream.cpp 13849 2008-02-23 12:03:49Z rouault $
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Input/output stream wrapper for usage with LizardTech's
@@ -31,7 +31,7 @@
 #include "cpl_error.h"
 #include "mrsidstream.h"
 
-CPL_CVSID("$Id: mrsidstream.cpp 16078 2009-01-14 05:43:02Z warmerdam $");
+CPL_CVSID("$Id: mrsidstream.cpp 13849 2008-02-23 12:03:49Z rouault $");
 
 LT_USE_NAMESPACE(LizardTech)
 
@@ -41,8 +41,7 @@ LT_USE_NAMESPACE(LizardTech)
 /* ==================================================================== */
 /************************************************************************/
 
-LTIVSIStream::LTIVSIStream() : poFileHandle(NULL), nError(0), pnRefCount(NULL), 
-bIsOpen(FALSE)
+LTIVSIStream::LTIVSIStream() : poFileHandle(NULL), nError(0), pnRefCount(NULL)
 {
 }
 
@@ -73,7 +72,6 @@ LT_STATUS LTIVSIStream::initialize( const char *pszFilename,
 {
     CPLAssert(poFileHandle == NULL);
 
-    errno = 0;
     poFileHandle = (VSIVirtualHandle *)VSIFOpenL( pszFilename, pszAccess );
     if (poFileHandle)
     {
@@ -111,7 +109,6 @@ bool LTIVSIStream::isEOF()
 {
     CPLAssert(poFileHandle);
 
-    errno = 0;
     bool    bIsEOF = (0 != poFileHandle->Eof());
     nError = errno;
 
@@ -124,7 +121,7 @@ bool LTIVSIStream::isEOF()
 
 bool LTIVSIStream::isOpen()
 {
-    return  poFileHandle != NULL && bIsOpen;
+    return  poFileHandle != NULL ;
 }
 
 /************************************************************************/
@@ -133,7 +130,6 @@ bool LTIVSIStream::isOpen()
 
 LT_STATUS LTIVSIStream::open()
 {
-    bIsOpen = poFileHandle != NULL;
     return poFileHandle ? LT_STS_Success : LT_STS_Failure;
 }
 
@@ -145,8 +141,6 @@ LT_STATUS LTIVSIStream::close()
 {
     CPLAssert(poFileHandle);
 
-    bIsOpen = FALSE;
-    errno = 0;
     if ( poFileHandle->Seek( 0, SEEK_SET ) == 0 )
         return LT_STS_Success;
     else
@@ -164,7 +158,6 @@ lt_uint32 LTIVSIStream::read( lt_uint8 *pDest, lt_uint32 nBytes )
 {
     CPLAssert(poFileHandle);
 
-    errno = 0;
     lt_uint32   nBytesRead =
         (lt_uint32)poFileHandle->Read( pDest, 1, nBytes );
     nError = errno;
@@ -180,7 +173,6 @@ lt_uint32 LTIVSIStream::write( const lt_uint8 *pSrc, lt_uint32 nBytes )
 {
     CPLAssert(poFileHandle);
 
-    errno = 0;
     lt_uint32   nBytesWritten =
         (lt_uint32)poFileHandle->Write( pSrc, 1, nBytes );
     nError = errno;
@@ -204,15 +196,8 @@ LT_STATUS LTIVSIStream::seek( lt_int64 nOffset, LTIOSeekDir nOrigin )
             break;
       
         case (LTIO_SEEK_DIR_CUR):
-        {
             nWhence =  SEEK_CUR;
-            if( nOffset < 0 )
-            {
-                nWhence = SEEK_SET;
-                nOffset += (lt_int64)poFileHandle->Tell();
-            }
             break;
-        }
       
         case (LTIO_SEEK_DIR_END):
             nWhence = SEEK_END;
@@ -239,7 +224,6 @@ lt_int64 LTIVSIStream::tell()
 {
     CPLAssert(poFileHandle);
 
-    errno = 0;
     lt_int64    nPos = (lt_int64)poFileHandle->Tell();
     nError = errno;
 

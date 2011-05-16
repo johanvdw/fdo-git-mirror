@@ -145,16 +145,17 @@ MySqlConnectionUtil::~MySqlConnectionUtil(void)
 	FdoStringP pTypeName = L"MySql";
 	pTypeName += m_IdTest;
 	FdoString* pTypeNamecst = pTypeName;
-	FdoPtr<FdoStringCollection> files = FdoStringCollection::Create();
+	std::vector<std::wstring> files;
 	FdoCommonFile::GetAllFiles (L"", files);
 	size_t lng = pTypeName.GetLength();
-    size_t count = files->GetCount ();
+	size_t count = files.size();
 	for (size_t i = 0; i < count; i++)
 	{
-		FdoStringP name = files->GetString(i);
-		if (lng < name.GetLength())
+		const wchar_t* name;
+		if (lng < files[i].length())
 		{
-			if (0 == memcmp((FdoString*)name, pTypeNamecst, lng*sizeof(wchar_t)))
+			name = files[i].c_str ();
+			if (0 == memcmp(name, pTypeNamecst, lng*sizeof(wchar_t)))
 				FdoCommonFile::Delete (name, true);
 		}
 	}
@@ -187,9 +188,6 @@ void MySqlConnectionUtil::SetProvider( const char *providerName )
 		
 		pValue = m_SetupValues->GetPropertyValue( L"password" );
         FdoCommonOSUtil::setenv( "password", pValue);
-
-		pValue = m_SetupValues->GetPropertyValue( L"datastore" );
-        FdoCommonOSUtil::setenv( "datastore", pValue);
     } 
     else
     {

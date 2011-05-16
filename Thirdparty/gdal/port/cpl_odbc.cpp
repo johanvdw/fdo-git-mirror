@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.cpp 18585 2010-01-19 15:22:48Z warmerdam $
+ * $Id: cpl_odbc.cpp 15782 2008-11-21 22:04:29Z rouault $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -35,7 +35,7 @@
 
 #ifndef WIN32CE /* ODBC is not supported on Windows CE. */
 
-CPL_CVSID("$Id: cpl_odbc.cpp 18585 2010-01-19 15:22:48Z warmerdam $");
+CPL_CVSID("$Id: cpl_odbc.cpp 15782 2008-11-21 22:04:29Z rouault $");
 
 #ifndef SQLColumns_TABLE_CAT 
 #define SQLColumns_TABLE_CAT 1
@@ -430,13 +430,13 @@ int CPLODBCStatement::CollectResultsInfo()
 /* -------------------------------------------------------------------- */
     m_papszColNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_papszColValues = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
-    m_panColValueLengths = (_SQLLEN *) CPLCalloc(sizeof(_SQLLEN),(m_nColCount+1));
+    m_panColValueLengths = (_SQLLEN *) CPLCalloc(sizeof(int),(m_nColCount+1));
 
-    m_panColType = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
+    m_panColType = (short *) CPLCalloc(sizeof(short),m_nColCount);
     m_papszColTypeNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_panColSize = (_SQLULEN *) CPLCalloc(sizeof(_SQLULEN),m_nColCount);
-    m_panColPrecision = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
-    m_panColNullable = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
+    m_panColPrecision = (short *) CPLCalloc(sizeof(short),m_nColCount);
+    m_panColNullable = (short *) CPLCalloc(sizeof(short),m_nColCount);
 
 /* -------------------------------------------------------------------- */
 /*      Fetch column descriptions.                                      */
@@ -766,7 +766,7 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
                     return FALSE;
                 }
 
-                if( cbDataLen >= (int) (sizeof(szWrkData) - 1)
+                if( cbDataLen > (int) (sizeof(szWrkData) - 1)
                     || cbDataLen == SQL_NO_TOTAL )
                 {
                     nChunkLen = sizeof(szWrkData)-1;
@@ -1238,11 +1238,11 @@ int CPLODBCStatement::GetColumns( const char *pszTable,
     m_papszColNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_papszColValues = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
 
-    m_panColType = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
+    m_panColType = (short *) CPLCalloc(sizeof(short),m_nColCount);
     m_papszColTypeNames = (char **) CPLCalloc(sizeof(char *),(m_nColCount+1));
     m_panColSize = (_SQLULEN *) CPLCalloc(sizeof(_SQLULEN),m_nColCount);
-    m_panColPrecision = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
-    m_panColNullable = (SQLSMALLINT *) CPLCalloc(sizeof(SQLSMALLINT),m_nColCount);
+    m_panColPrecision = (short *) CPLCalloc(sizeof(short),m_nColCount);
+    m_panColNullable = (short *) CPLCalloc(sizeof(short),m_nColCount);
 
 /* -------------------------------------------------------------------- */
 /*      Establish columns to use for key information.                   */

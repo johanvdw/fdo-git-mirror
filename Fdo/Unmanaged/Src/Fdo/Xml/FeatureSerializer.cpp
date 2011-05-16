@@ -128,8 +128,6 @@ void _writeFeature(FdoString* featureName, FdoIFeatureReader* reader, FdoXmlFeat
     FdoPtr<FdoClassDefinition> oldClassDef = writer->GetClassDefinition();
     writer->SetClassDefinition(classDef);
 
-	writer->ClearProperties();
-
     FdoPtr<FdoReadOnlyPropertyDefinitionCollection> baseProps = classDef->GetBaseProperties();
     FdoInt32 count = baseProps->GetCount();
     for (int i = 0; i < count; i++) {
@@ -140,7 +138,6 @@ void _writeFeature(FdoString* featureName, FdoIFeatureReader* reader, FdoXmlFeat
 
     FdoPtr<FdoPropertyDefinitionCollection> props = classDef->GetProperties();
     count = props->GetCount();
-
     for (int i = 0; i < count; i++) {
         FdoPtr<FdoPropertyDefinition> prop = props->GetItem(i);
         _writeProperty(prop, reader, writer, flags);
@@ -202,26 +199,7 @@ void FdoXmlFeatureSerializer::XmlSerialize(
         }
 
         // default namespace
-        ns = FdoXml::mXmlnsPref;
-		FdoStringP prefix = flags->GetDefaultNamespacePrefix();
-        if (prefix != NULL)
-		{
-			ns += L":";
-			ns += prefix;
-		}
-		else
-		{
-			FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
-			FdoPtr<FdoFeatureSchema>   schema = classDef->GetFeatureSchema();
-			if (schema != NULL)
-			{
-				FdoStringP schemaName = _writer->EncodeName(schema->GetName());
-				ns += L":";
-				ns += schemaName;
-			}
-		}
-
-        _writer->WriteAttribute(ns, flags->GetDefaultNamespace());
+        _writer->WriteAttribute(FdoXml::mXmlnsPref, flags->GetDefaultNamespace());
 
         // Write the attribute "schemaLocation"
         if (flags != NULL) {

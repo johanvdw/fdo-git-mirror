@@ -10,7 +10,7 @@ INCLUDES=
 CFLAG=-g
 AR=		ar r
 
-RC4_ENC=rc4_enc.o rc4_skey.o
+RC4_ENC=rc4_enc.o
 
 CFLAGS= $(INCLUDES) $(CFLAG)
 ASFLAGS= $(INCLUDES) $(ASFLAG)
@@ -22,7 +22,7 @@ APPS=
 
 LIB=$(TOP)/libcrypto.a
 LIBSRC=rc4_skey.c rc4_enc.c
-LIBOBJ=$(RC4_ENC)
+LIBOBJ=rc4_skey.o $(RC4_ENC)
 
 SRC= $(LIBSRC)
 
@@ -41,22 +41,22 @@ lib:	$(LIBOBJ)
 	$(RANLIB) $(LIB) || echo Never mind.
 	@touch lib
 
-rc4-586.s:	asm/rc4-586.pl ../perlasm/x86asm.pl
-	$(PERL) asm/rc4-586.pl $(PERLASM_SCHEME) $(CFLAGS) > $@
+# ELF
+rx86-elf.s: asm/rc4-586.pl ../perlasm/x86asm.pl
+	(cd asm; $(PERL) rc4-586.pl elf $(CFLAGS) > ../$@)
+# COFF
+rx86-cof.s: asm/rc4-586.pl ../perlasm/x86asm.pl
+	(cd asm; $(PERL) rc4-586.pl coff $(CFLAGS) > ../$@)
+# a.out
+rx86-out.s: asm/rc4-586.pl ../perlasm/x86asm.pl
+	(cd asm; $(PERL) rc4-586.pl a.out $(CFLAGS) > ../$@)
 
-rc4-x86_64.s: asm/rc4-x86_64.pl
-	$(PERL) asm/rc4-x86_64.pl $(PERLASM_SCHEME) > $@
+rc4-x86_64.s: asm/rc4-x86_64.pl;	$(PERL) asm/rc4-x86_64.pl $@
 
-rc4-ia64.S: asm/rc4-ia64.pl
-	$(PERL) asm/rc4-ia64.pl $(CFLAGS) > $@
-
-rc4-s390x.s:	asm/rc4-s390x.pl
-	$(PERL) asm/rc4-s390x.pl > $@
-
-rc4-ia64.s: rc4-ia64.S
+rc4-ia64.s: asm/rc4-ia64.S
 	@case `awk '/^#define RC4_INT/{print$$NF}' $(TOP)/include/openssl/opensslconf.h` in \
-	int)	set -x; $(CC) $(CFLAGS) -DSZ=4 -E rc4-ia64.S > $@ ;; \
-	char)	set -x; $(CC) $(CFLAGS) -DSZ=1 -E rc4-ia64.S > $@ ;; \
+	int)	set -x; $(CC) $(CFLAGS) -DSZ=4 -E asm/rc4-ia64.S > $@ ;; \
+	char)	set -x; $(CC) $(CFLAGS) -DSZ=1 -E asm/rc4-ia64.S > $@ ;; \
 	*)	exit 1 ;; \
 	esac
 

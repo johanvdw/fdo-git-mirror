@@ -104,23 +104,8 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
     int  bindIndex = 1;
     int  bindIndexRet = 0;
     count = propValCollection->GetCount();
-
-    // Get how many geometry properties in the feature class.
-    const FdoSmLpPropertyDefinitionCollection * propertiesFromClassDef = classDefinition->RefProperties();
-    int iTotalCount = propertiesFromClassDef->GetCount();
-    int iGeomCount = 0;
-    for(int k = 0; k<iTotalCount; k++)
-    {
-        const FdoSmLpPropertyDefinition *propertyDefinition = propertiesFromClassDef->RefItem(k);
-        if(NULL != propertyDefinition)
-        {
-            if(FdoPropertyType_GeometricProperty == propertyDefinition->GetPropertyType())
-			    iGeomCount++;
-		}
-    }
-
 	if( spatialManager != NULL )
-		count += FIXED_NUM_SI_COLUMNS * iGeomCount ; // Geometry property may require up to 2 extra columns
+		count += FIXED_NUM_SI_COLUMNS; // Geometry property may require up to 2 extra columns
 	
     values = new FdoRdbmsPvcBindDef[count];
     for (i=0; i<count; i++)
@@ -712,18 +697,13 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 
                             statement->Bind(bindIndex++, (FdoIGeometry*)&values[index].value.strvalue, values[index].null_ind );
 
-                            // The geom may be null for the feature with multiple geometries, but we still need to create the
-                            // spatial index and bind them correctly.
-							// if( geom != NULL )
+							if( geom != NULL )
 							{
 								// Set SRID for the geometry column
 								const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomPropDef)->GetColumn();
 								FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
 								if (geomCol)
-                                {
 									statement->geom_srid_set(bindIndex-1, (long)geomCol->GetSRID());
-                                    statement->geom_version_set(bindIndex-1, mFdoConnection->GetSpatialGeometryVersion());
-                                }
 								FdoStringsP geomSiKeys;
 								
 								const FdoSmPhColumn *columnSi1 = geomPropDef->RefColumnSi1();
@@ -954,12 +934,6 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 				((values[i].type != FdoRdbmsDataType_Geometry) && 
 				(values[i].type != FdoDataType_BLOB)))
                 delete[] (char*)values[i].value.strvalue;
-
-            if ( values[i].type == FdoRdbmsDataType_Geometry )
-            {
-                FdoIGeometry* disp = (FdoIGeometry*)(values[i].value.strvalue);
-                FDO_SAFE_RELEASE( disp );
-            }
         }
         delete[] values;
 

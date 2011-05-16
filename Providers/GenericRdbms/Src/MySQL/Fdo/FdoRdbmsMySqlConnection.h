@@ -30,6 +30,8 @@ private:
     FdoRdbmsMySqlFilterProcessor *mFilterProcessor;
 
     FdoIConnectionInfo          *mConnectionInfo;
+	void						logOpen(char access);
+	void						delOpen();
 
 protected:
     virtual ~FdoRdbmsMySqlConnection ();
@@ -72,7 +74,6 @@ public:
     //
     // Converts a MySql string date of a specific format to a FdoDateTime (time_t) format.
     virtual FdoDateTime  DbiToFdoTime( const char* time );
-    virtual FdoDateTime  DbiToFdoTime( const wchar_t* time );
 
     //
     // Convert time_t( FdoDateTime ) to a MySql string date of the form.
@@ -80,6 +81,7 @@ public:
     virtual const char* FdoToDbiTime( FdoDateTime  time );
 
 	virtual FdoConnectionState Open ();
+	virtual void Close();
 
     // Creates a Long Transaction Manager and its corresponding Long Transaction
     // Manager Service.

@@ -1,5 +1,5 @@
 
-GDAL_OBJ	=	nitfdataset.obj rpftocdataset.obj nitfwritejpeg.obj nitfwritejpeg_12.obj
+GDAL_OBJ	=	nitfdataset.obj rpftocdataset.obj
 NITFLIB_OBJ	=	nitffile.obj nitfimage.obj mgrs.obj nitfaridpcm.obj \
 			nitfbilevel.obj rpftocfile.obj
 
@@ -17,11 +17,7 @@ JPEG_FLAGS =	-I..\jpeg\libjpeg -DJPEG_SUPPORTED
 !ENDIF
 !ENDIF
 
-!IFDEF JPEG12_SUPPORTED
-JPEG12_FLAGS =  -DJPEG_DUAL_MODE_8_12
-!ENDIF
- 	
-EXTRAFLAGS = -I..\gtiff\libtiff -I..\vrt $(JPEG_FLAGS) $(JPEG12_FLAGS)
+EXTRAFLAGS = -I..\gtiff\libtiff -I..\vrt $(JPEG_FLAGS)
 
 default:	$(OBJ)
 	xcopy /D  /Y *.obj ..\o

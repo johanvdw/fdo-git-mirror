@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: vec_tr_spat.py 18195 2009-12-06 20:24:39Z rouault $
+# $Id: vec_tr_spat.py 13109 2007-11-26 21:26:42Z hobu $
 #
 # Project:  OGR Python samples
 # Purpose:  Apply a transformation to all OGR geometries.
@@ -40,8 +40,8 @@ import sys
 
 #############################################################################
 def Usage():
-    print('Usage: vec_tr_spat.py [-spat xmin ymin xmax ymax] infile outfile [layer]')
-    print('')
+    print 'Usage: vec_tr_spat.py [-spat xmin ymin xmax ymax] infile outfile [layer]'
+    print
     sys.exit(1)
 
 #############################################################################
@@ -63,16 +63,16 @@ while i < len(sys.argv):
         i = i + 4
         
     elif infile is None:
-        infile = arg
+	infile = arg
 
     elif outfile is None:
-        outfile = arg
+	outfile = arg
 
     elif layer_name is None:
         layer_name = arg
 
     else:
-        Usage()
+	Usage()
 
     i = i + 1
 

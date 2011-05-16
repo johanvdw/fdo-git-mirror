@@ -105,14 +105,11 @@ odbcdr_rdbi_init(
 		methods->run_sqlW           = (int (*)(void*, const wchar_t*,int,int*))odbcdr_run_sqlW;
         methods->get_gen_id         = (int (*)(void*, const char*,int*))odbcdr_get_gen_id;
         methods->get_gen_idW        = (int (*)(void*, const wchar_t*,int*))odbcdr_get_gen_idW;
-        methods->get_next_seq       = NULL;
-        methods->get_next_seqW      = NULL;
 	    methods->get_msg	        = (void (*)(void*, char*))odbcdr_get_msg;
 	    methods->get_msgW	        = (void (*)(void*, wchar_t*))odbcdr_get_msgW;
 	    methods->vndr_name	        = (char*(*)(void*))odbcdr_vndr_name;
 	    methods->vndr_nameW	        = (wchar_t*(*)(void*))odbcdr_vndr_nameW;
         methods->geom_srid_set      = (int  (*)(void*,char*,char*,long))odbcdr_geom_srid_set;
-        methods->geom_version_set   = (int  (*)(void*,char*,char*,long))odbcdr_geom_version_set;
 
         methods->close_cursor       = (int (*)(void*, char*))odbcdr_close_cursor;
 	    methods->disconnect         = (int (*)(void*, char**))odbcdr_disconnect;

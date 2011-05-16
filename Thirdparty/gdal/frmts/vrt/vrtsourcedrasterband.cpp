@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtsourcedrasterband.cpp 17852 2009-10-18 11:15:09Z rouault $
+ * $Id: vrtsourcedrasterband.cpp 14998 2008-07-22 21:18:04Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSourcedRasterBand
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtsourcedrasterband.cpp 17852 2009-10-18 11:15:09Z rouault $");
+CPL_CVSID("$Id: vrtsourcedrasterband.cpp 14998 2008-07-22 21:18:04Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -94,7 +94,6 @@ void VRTSourcedRasterBand::Initialize( int nXSize, int nYSize )
     nSources = 0;
     papoSources = NULL;
     bEqualAreas = FALSE;
-    bAlreadyInIRasterIO = FALSE;
 }
 
 /************************************************************************/
@@ -123,23 +122,12 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 
 {
     int         iSource;
-    CPLErr      eErr = CE_None;
+    CPLErr      eErr = CE_Failure;
 
     if( eRWFlag == GF_Write )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Writing through VRTSourcedRasterBand is not supported." );
-        return CE_Failure;
-    }
-    
-    /* When using GDALProxyPoolDataset for sources, the recusion will not be */
-    /* detected at VRT opening but when doing RasterIO. As the proxy pool will */
-    /* return the already opened dataset, we can just test a member variable. */
-    if ( bAlreadyInIRasterIO )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "VRTSourcedRasterBand::IRasterIO() called recursively on the same band. "
-                  "It looks like the VRT is referencing itself." );
         return CE_Failure;
     }
 
@@ -149,20 +137,7 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 /* -------------------------------------------------------------------- */
     if ( nPixelSpace == GDALGetDataTypeSize(eBufType)/8 &&
          (!bNoDataValueSet || dfNoDataValue == 0) )
-    {
-        if (nLineSpace == nBufXSize * nPixelSpace)
-        {
-             memset( pData, 0, nBufYSize * nLineSpace );
-        }
-        else
-        {
-            int    iLine;
-            for( iLine = 0; iLine < nBufYSize; iLine++ )
-            {
-                memset( ((GByte*)pData) + iLine * nLineSpace, 0, nBufXSize * nPixelSpace );
-            }
-        }
-    }
+        memset( pData, 0, nBufXSize * nBufYSize * nPixelSpace );
     else if ( !bEqualAreas || bNoDataValueSet )
     {
         double dfWriteValue = 0.0;
@@ -192,21 +167,17 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                               eBufType, nPixelSpace, nLineSpace ) == CE_None )
             return CE_None;
     }
-    
-    bAlreadyInIRasterIO = TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      Overlay each source in turn over top this.                      */
 /* -------------------------------------------------------------------- */
-    for( iSource = 0; eErr == CE_None && iSource < nSources; iSource++ )
+    for( iSource = 0; iSource < nSources; iSource++ )
     {
         eErr = 
             papoSources[iSource]->RasterIO( nXOff, nYOff, nXSize, nYSize, 
                                             pData, nBufXSize, nBufYSize, 
                                             eBufType, nPixelSpace, nLineSpace);
     }
-    
-    bAlreadyInIRasterIO = FALSE;
     
     return eErr;
 }
@@ -327,11 +298,15 @@ CPLErr VRTSourcedRasterBand::XMLInit( CPLXMLNode * psTree,
 /* -------------------------------------------------------------------- */
 /*      Done.                                                           */
 /* -------------------------------------------------------------------- */
-    if( nSources == 0 )
-        CPLDebug( "VRT", "No valid sources found for band in VRT file:\n%s",
+    if( nSources > 0 )
+        return CE_None;
+    else
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "No valid sources found for band in VRT file:\n%s",
                   pszVRTPath );
-
-    return CE_None;
+        return CE_Failure;
+    }
 }
 
 /************************************************************************/
@@ -678,41 +653,6 @@ CPLErr VRTSourcedRasterBand::SetMetadataItem( const char *pszName,
         else
             return CE_Failure;
     }
-    else if( pszDomain != NULL
-        && EQUAL(pszDomain,"vrt_sources") )
-    {
-        int iSource;
-        if (sscanf(pszName, "source_%d", &iSource) != 1 || iSource < 0 ||
-            iSource >= nSources)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "%s metadata item name is not recognized. "
-                     "Should be between source_0 and source_%d",
-                     pszName, nSources - 1);
-            return CE_Failure;
-        }
-
-        VRTDriver *poDriver = (VRTDriver *) GDALGetDriverByName( "VRT" );
-
-        CPLXMLNode *psTree = CPLParseXMLString( pszValue );
-        VRTSource *poSource;
-        
-        if( psTree == NULL )
-            return CE_Failure;
-        
-        poSource = poDriver->ParseSource( psTree, NULL );
-        CPLDestroyXMLNode( psTree );
-        
-        if( poSource != NULL )
-        {
-            delete papoSources[iSource];
-            papoSources[iSource] = poSource;
-            ((VRTDataset *)poDS)->SetNeedsFlush();
-            return CE_None;
-        }
-        else
-            return CE_Failure;
-    }
     else
         return VRTRasterBand::SetMetadataItem( pszName, pszValue, pszDomain );
 }
@@ -769,16 +709,3 @@ CPLErr VRTSourcedRasterBand::SetMetadata( char **papszNewMD, const char *pszDoma
         return VRTRasterBand::SetMetadata( papszNewMD, pszDomain );
 }
 
-/************************************************************************/
-/*                             GetFileList()                            */
-/************************************************************************/
-
-void VRTSourcedRasterBand::GetFileList(char*** ppapszFileList, int *pnSize,
-                                       int *pnMaxSize, CPLHashSet* hSetFiles)
-{
-    for( int i = 0; i < nSources; i++ )
-    {
-        papoSources[i]->GetFileList(ppapszFileList, pnSize,
-                                    pnMaxSize, hSetFiles);
-    }
-}

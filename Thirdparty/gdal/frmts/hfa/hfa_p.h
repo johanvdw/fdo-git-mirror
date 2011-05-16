@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_p.h 17710 2009-09-29 14:02:33Z warmerdam $
+ * $Id: hfa_p.h 15768 2008-11-20 05:17:40Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Private class declarations for the HFA classes used to read
@@ -108,8 +108,6 @@ int HFACreateSpillStack( HFAInfo_t *, int nXSize, int nYSize, int nLayers,
 
 const char ** GetHFAAuxMetaDataList();
 
-double *HFAReadBFUniqueBins( HFAEntry *poBinFunc, int nPCTColors );
-
 #define HFA_PRIVATE
 
 #include "hfa.h"
@@ -169,11 +167,10 @@ class HFABand
     int         bNoDataSet;
     double      dfNoData;
 
-    int         bOverviewsPending;
     int		nOverviews;
     HFABand     **papoOverviews;
     
-    CPLErr	GetRasterBlock( int nXBlock, int nYBlock, void * pData, int nDataSize );
+    CPLErr	GetRasterBlock( int nXBlock, int nYBlock, void * pData );
     CPLErr	SetRasterBlock( int nXBlock, int nYBlock, void * pData );
     
     const char * GetBandName();
@@ -186,9 +183,6 @@ class HFABand
     CPLErr	SetPCT( int, double *, double *, double *, double * );
 
     int         CreateOverview( int nOverviewLevel );
-    CPLErr      CleanOverviews();
-
-    CPLErr      LoadOverviews();
 };
 
 
@@ -243,15 +237,12 @@ public:
                           
     virtual     ~HFAEntry();                
 
-    CPLErr      RemoveAndDestroy();
-
     GUInt32	GetFilePos() { return nFilePos; }
 
     const char	*GetName() { return szName; }
     void SetName( const char *pszNodeName );
     
     const char  *GetType() { return szType; }
-    HFAType     *GetTypeObject();
 
     GByte      *GetData() { LoadData(); return pabyData; }
     GUInt32	GetDataPos() { return nDataPos; }
@@ -379,9 +370,6 @@ class HFADictionary
     int		nTypes;
     int         nTypesMax;
     HFAType	**papoTypes;
-
-    CPLString   osDictionaryText;
-    int         bDictionaryTextDirty;
     
                 HFADictionary( const char *pszDict );
                 ~HFADictionary();

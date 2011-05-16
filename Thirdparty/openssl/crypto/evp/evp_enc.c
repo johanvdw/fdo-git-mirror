@@ -279,12 +279,7 @@ int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
 	{
 	int i,j,bl;
 
-	if (inl <= 0)
-		{
-		*outl = 0;
-		return inl == 0;
-		}
-
+	OPENSSL_assert(inl > 0);
 	if(ctx->buf_len == 0 && (inl&(ctx->block_mask)) == 0)
 		{
 		if(ctx->cipher->do_cipher(ctx,out,in,inl))
@@ -386,10 +381,10 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
 	int fix_len;
 	unsigned int b;
 
-	if (inl <= 0)
+	if (inl == 0)
 		{
-		*outl = 0;
-		return inl == 0;
+		*outl=0;
+		return 1;
 		}
 
 	if (ctx->flags & EVP_CIPH_NO_PADDING)
@@ -563,41 +558,6 @@ int EVP_CIPHER_CTX_rand_key(EVP_CIPHER_CTX *ctx, unsigned char *key)
 		return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_RAND_KEY, 0, key);
 	if (RAND_bytes(key, ctx->key_len) <= 0)
 		return 0;
-	return 1;
-	}
-
-int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in)
-	{
-	if ((in == NULL) || (in->cipher == NULL))
-		{
-		EVPerr(EVP_F_EVP_CIPHER_CTX_COPY,EVP_R_INPUT_NOT_INITIALIZED);
-		return 0;
-		}
-#ifndef OPENSSL_NO_ENGINE
-	/* Make sure it's safe to copy a cipher context using an ENGINE */
-	if (in->engine && !ENGINE_init(in->engine))
-		{
-		EVPerr(EVP_F_EVP_CIPHER_CTX_COPY,ERR_R_ENGINE_LIB);
-		return 0;
-		}
-#endif
-
-	EVP_CIPHER_CTX_cleanup(out);
-	memcpy(out,in,sizeof *out);
-
-	if (in->cipher_data && in->cipher->ctx_size)
-		{
-		out->cipher_data=OPENSSL_malloc(in->cipher->ctx_size);
-		if (!out->cipher_data)
-			{
-			EVPerr(EVP_F_EVP_CIPHER_CTX_COPY,ERR_R_MALLOC_FAILURE);
-			return 0;
-			}
-		memcpy(out->cipher_data,in->cipher_data,in->cipher->ctx_size);
-		}
-
-	if (in->cipher->flags & EVP_CIPH_CUSTOM_COPY)
-		return in->cipher->ctrl((EVP_CIPHER_CTX *)in, EVP_CTRL_COPY, 0, out);
 	return 1;
 	}
 

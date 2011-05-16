@@ -1,12 +1,4 @@
 <testcase>
-<info>
-<keywords>
-HTTPS
-HTTP GET
-HTTP Basic auth
-</keywords>
-</info>
-
 #
 # Server-side
 <reply>
@@ -46,7 +38,7 @@ HTTPS GET with user and password
 <protocol>
 GET /301 HTTP/1.1
 Authorization: Basic ZmFrZTp1c2Vy
-Host: %HOSTIP:%HTTPSPORT
+Host: 127.0.0.1:%HTTPSPORT
 Accept: */*
 
 </protocol>

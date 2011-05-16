@@ -89,9 +89,8 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhPostGisTable::CreatePkeyReader() const
 
     // Create primary key reader
     FdoSmPhRdPostGisPkeyReader* reader = NULL;
-    FdoSmPhOwnerP owner = FDO_SAFE_ADDREF(static_cast<FdoSmPhOwner*>(const_cast<FdoSmSchemaElement*>(GetParent())));
     reader = new FdoSmPhRdPostGisPkeyReader(
-        owner, thisTable);
+        thisTable->GetManager(), thisTable);
     
     return reader;
 }
@@ -105,9 +104,8 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhPostGisTable::CreateFkeyReader() const
 
     // Create foreign key reader
     FdoSmPhRdPostGisFkeyReader* reader = NULL;
-    FdoSmPhOwnerP owner = FDO_SAFE_ADDREF(static_cast<FdoSmPhOwner*>(const_cast<FdoSmSchemaElement*>(GetParent())));
     reader = new FdoSmPhRdPostGisFkeyReader(
-        owner, thisTable);
+        thisTable->GetManager(), thisTable);
 
     return reader;
 }
@@ -208,7 +206,7 @@ bool FdoSmPhPostGisTable::AddColumn( FdoSmPhColumnP column )
 {
     bool ret = true;
 
-    FdoSmPhColumnP baseColumn = dynamic_cast<FdoSmPhPostGisColumn*>(column.p)->GetBaseColumn();
+    FdoSmPhColumnP baseColumn = column->SmartCast<FdoSmPhPostGisColumn>()->GetBaseColumn();
 
     if ( (!baseColumn) || (baseColumn->GetElementState() == FdoSchemaElementState_Deleted) ) {
         FdoSmPhPostGisColumnGeomP columnGeom = column->SmartCast<FdoSmPhPostGisColumnGeom>();
@@ -234,8 +232,7 @@ bool FdoSmPhPostGisTable::DeleteColumn( FdoSmPhColumnP column )
     // dropped when the base column is dropped.
     // However, other types of inherited columns do not go away unless 
     // explicitly dropped.
-
-    if ( !dynamic_cast<FdoSmPhPostGisColumn*>(column.p)->GetBaseColumn() || !dynamic_cast<FdoSmPhPostGisColumnGeom*>(column.p) ) 
+    if ( !column->SmartCast<FdoSmPhPostGisColumn>()->GetBaseColumn() || !column->SmartCast<FdoSmPhPostGisColumnGeom>() ) 
         ret = FdoSmPhGrdTable::DeleteColumn( column );
 
     return ret;
@@ -339,68 +336,3 @@ FdoStringP FdoSmPhPostGisTable::GetCkeyClause( FdoStringP columnName, FdoDataPro
 
 	return ckey;
 }
-
-void FdoSmPhPostGisTable::LoadCkeys( FdoSmPhReaderP ckeyRdr, bool isSkipAdd )
-{
-    FdoSmPhCheckConstraintP  ckeyCurr;
-
-    // read each check constraint column.
-    while (ckeyRdr && ckeyRdr->ReadNext() ) {
-
-        FdoStringP ckeyName			= ckeyRdr->GetString(L"", L"constraint_name");
-        FdoStringP columnName		= ckeyRdr->GetString(L"", L"column_name");
-    	FdoStringP clause			= ckeyRdr->GetString(L"", L"check_clause");
-
-		if ( clause == L"" || clause.Contains(L"NOT NULL"))
-			continue;
-
-        if ( isSkipAdd ) 
-            continue;
-
-        // PostGis constraint reader gets column_name as a 1-based column position.
-        FdoInt32 columnPosition = columnName.ToLong();
-        // Get the column based on this position
-        FdoSmPhColumnP ckeyColumn = Position2Column(columnPosition);
-
-        // Check column must be in this table.
-    	if ( ckeyColumn == NULL ) {
-		    if ( GetElementState() != FdoSchemaElementState_Deleted )
-		        AddCkeyColumnError( columnName );
-		}
-        else {
-            ckeyCurr = new FdoSmPhCheckConstraint( ckeyName, ckeyColumn->GetName(), clause );
-            this->AddCkeyCol( ckeyCurr );
-        }
-	}
-}
-
-bool FdoSmPhPostGisTable::LoadUkeyColumn( FdoSmPhReaderP ukeyRdr, FdoSmPhColumnsP ukey  )
-{
-    // PostGis unique key reader sets column_name to a list of 1-based positions (1 per
-    // unique key column,
-    FdoStringP columnName		= ukeyRdr->GetString(L"", L"column_name");
-    // Parse out enclosing {}
-    columnName                  = columnName.Mid( 1, columnName.GetLength() - 2 );
-    // Positions are comma separated
-    FdoStringsP columnPositions = FdoStringCollection::Create( columnName, L"," );
-
-    for ( FdoInt32 ix = 0; ix < columnPositions->GetCount(); ix++ ) {
-        FdoStringP columnPositionStr = columnPositions->GetString( ix );
-        FdoInt32 columnPosition = columnPositionStr.ToLong();
-
-        FdoSmPhColumnP ukeyColumn = Position2Column(columnPosition);;
-        
-        // Unique Key column must be in this table.
-        if ( ukeyColumn == NULL ) {
-	        if ( GetElementState() != FdoSchemaElementState_Deleted )
-	            AddUkeyColumnError( columnName );
-
-            return false;
-        }
-
-        ukey->Add( ukeyColumn );
-    }
-
-    return true;
-}
-

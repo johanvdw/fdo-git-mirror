@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: subfile_source.h 17244 2009-06-16 16:22:47Z warmerdam $
+ * $Id: subfile_source.h 13918 2008-03-03 21:05:51Z warmerdam $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements read-only virtual io on a subregion of a file.
@@ -52,21 +52,14 @@ class subfile_source : public kdu_compressed_source {
 
           if( EQUALN( fname, "J2K_SUBFILE:",12) )
           {
-              char** papszTokens = CSLTokenizeString2(fname + 12, ",", 0);
-              if (CSLCount(papszTokens) >= 2)
-              {
-                  subfile_offset = CPLScanUIntBig(papszTokens[0], strlen(papszTokens[0]));
-                  subfile_size = CPLScanUIntBig(papszTokens[1], strlen(papszTokens[1]));
-              }
-              else
+              if( sscanf( fname, "J2K_SUBFILE:%d,%d", 
+                          &subfile_offset, &subfile_size ) != 2 )
               {
                   kdu_error e;
                   
                   e << "Corrupt subfile definition:" << fname;
                   return;
               }
-              CSLDestroy(papszTokens);
-
               real_filename = strstr(fname,",");
               if( real_filename != NULL )
                   real_filename = strstr(real_filename+1,",");

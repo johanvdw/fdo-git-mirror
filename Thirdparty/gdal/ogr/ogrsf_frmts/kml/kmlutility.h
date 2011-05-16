@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlutility.h 16908 2009-05-02 14:53:26Z rouault $
+ * $Id: kmlutility.h 12870 2007-11-19 22:52:30Z mloskot $
  *
  * Project:  KML Driver
  * Purpose:  KML driver utilities
@@ -31,11 +31,10 @@
 
 #include <string>
 #include <vector>
-#include "ogr_geometry.h"
 
 enum Nodetype
 {
-    Unknown, Empty, Mixed, Point, LineString, Polygon, Rest, MultiGeometry, MultiPoint, MultiLineString, MultiPolygon
+    Unknown, Empty, Mixed, Point, LineString, Polygon, Rest
 };
 
 struct Attribute
@@ -49,10 +48,9 @@ struct Coordinate
     double dfLongitude;
     double dfLatitude;
     double dfAltitude;
-    int    bHasZ;
 
     Coordinate()
-        : dfLongitude(0), dfLatitude(0), dfAltitude(0), bHasZ(FALSE)
+        : dfLongitude(0), dfLatitude(0), dfAltitude(0)
     {}
 };
 
@@ -61,18 +59,25 @@ struct Feature
     Nodetype eType;
     std::string sName;
     std::string sDescription;
-    OGRGeometry* poGeom;
+    std::vector<Coordinate*>* pvpsCoordinates;
+    std::vector< std::vector<Coordinate*>* >* pvpsCoordinatesExtra;
 
     Feature()
-        : eType(Unknown), poGeom(NULL)
+        : eType(Unknown), pvpsCoordinates(NULL), pvpsCoordinatesExtra(NULL)
     {}
-    
-    ~Feature()
-    {
-        delete poGeom;
-    }
 };
 
+struct Extent
+{
+    double dfX1;
+    double dfX2;
+    double dfY1;
+    double dfY2;
+
+    Extent()
+        : dfX1(0), dfX2(0), dfY1(0), dfY2(0)
+    {}
+};
 
 #endif /* OGR_KMLUTILITY_H_INCLUDED */
 

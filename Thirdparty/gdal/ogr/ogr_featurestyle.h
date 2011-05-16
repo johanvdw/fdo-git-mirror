@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_featurestyle.h 16763 2009-04-14 09:57:15Z chaitanya $
+ * $Id: ogr_featurestyle.h 15073 2008-07-29 17:33:13Z dmorissette $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Define of Feature Representation
@@ -36,11 +36,6 @@
 
 class OGRFeature;
 
-/**
- * \file ogr_featurestyle.h
- *
- * Simple feature style classes.
- */
 
 /*
  * All OGRStyleTool param lists are defined in ogr_core.h.
@@ -75,16 +70,13 @@ typedef struct ogr_style_value
 
 //Everytime a pszStyleString gived in parameter is NULL, 
 //    the StyleString defined in the Mgr will be use.
-/**
- * This class represents a style table
- */
+
 class CPL_DLL OGRStyleTable
 {
   private:
     char **m_papszStyleTable;
 
     CPLString osLastRequestedStyleName;
-    int iNextStyle;
 
   public:
     OGRStyleTable();
@@ -101,17 +93,11 @@ class CPL_DLL OGRStyleTable
     void  Print(FILE *fpOut);
     void  Clear();
     OGRStyleTable   *Clone();
-    void ResetStyleStringReading();
-    const char *GetNextStyle();
-    const char *GetLastStyleName();
 };
 
 
 class OGRStyleTool;
 
-/**
- * This class represents a style manager
- */
 class CPL_DLL OGRStyleMgr
 {
   private:
@@ -153,9 +139,6 @@ class CPL_DLL OGRStyleMgr
 
 };
 
-/**
- * This class represents a style tool
- */
 class CPL_DLL OGRStyleTool
 {
   private:
@@ -236,9 +219,6 @@ for Each style tools.*/
 
 };
 
-/**
- * This class represents a style pen
- */
 class CPL_DLL OGRStylePen : public OGRStyleTool
 {
   private:
@@ -284,9 +264,6 @@ class CPL_DLL OGRStylePen : public OGRStyleTool
     const char *GetStyleString();
 };
 
-/**
- * This class represents a style brush
- */
 class CPL_DLL OGRStyleBrush : public OGRStyleTool
 {
   private:
@@ -331,9 +308,6 @@ class CPL_DLL OGRStyleBrush : public OGRStyleTool
      const char *GetStyleString();
 };
 
-/**
- * This class represents a style symbol
- */
 class CPL_DLL OGRStyleSymbol : public OGRStyleTool
 {
   private:
@@ -389,9 +363,6 @@ class CPL_DLL OGRStyleSymbol : public OGRStyleTool
      const char *GetStyleString();
 };
 
-/**
- * This class represents a style label
- */
 class CPL_DLL OGRStyleLabel : public OGRStyleTool
 {
   private:

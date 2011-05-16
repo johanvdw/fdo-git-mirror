@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbctablelayer.cpp 17870 2009-10-22 04:47:29Z warmerdam $
+ * $Id: ogrodbctablelayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCTableLayer class, access to an existing table.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id: ogrodbctablelayer.cpp 17870 2009-10-22 04:47:29Z warmerdam $");
+CPL_CVSID("$Id: ogrodbctablelayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 /************************************************************************/
 /*                          OGRODBCTableLayer()                         */
 /************************************************************************/
@@ -50,9 +50,6 @@ OGRODBCTableLayer::OGRODBCTableLayer( OGRODBCDataSource *poDSIn )
     nSRSId = -1;
 
     poFeatureDefn = NULL;
-    
-    pszTableName = NULL;
-    pszSchemaName = NULL;
 }
 
 /************************************************************************/
@@ -62,9 +59,6 @@ OGRODBCTableLayer::OGRODBCTableLayer( OGRODBCDataSource *poDSIn )
 OGRODBCTableLayer::~OGRODBCTableLayer()
 
 {
-    CPLFree( pszTableName );
-    CPLFree( pszSchemaName );
-
     CPLFree( pszQuery );
     ClearStatement();
 }
@@ -73,7 +67,7 @@ OGRODBCTableLayer::~OGRODBCTableLayer()
 /*                             Initialize()                             */
 /************************************************************************/
 
-CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName, 
+CPLErr OGRODBCTableLayer::Initialize( const char *pszTableName, 
                                       const char *pszGeomCol )
 
 {
@@ -83,29 +77,11 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
     pszFIDColumn = NULL;
 
 /* -------------------------------------------------------------------- */
-/*      Parse out schema name if present in layer.  We assume a         */
-/*      schema is provided if there is a dot in the name, and that      */
-/*      it is in the form <schema>.<tablename>                          */
-/* -------------------------------------------------------------------- */
-    const char *pszDot = strstr(pszLayerName,".");
-    if( pszDot != NULL )
-    {
-        pszTableName = CPLStrdup(pszDot + 1);
-        pszSchemaName = CPLStrdup(pszLayerName);
-        pszSchemaName[pszDot - pszLayerName] = '\0';
-    }
-    else
-    {
-        pszTableName = CPLStrdup(pszLayerName);
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Do we have a simple primary key?                                */
 /* -------------------------------------------------------------------- */
     CPLODBCStatement oGetKey( poSession );
     
-    if( oGetKey.GetPrimaryKeys( pszTableName, NULL, pszSchemaName ) 
-        && oGetKey.Fetch() )
+    if( oGetKey.GetPrimaryKeys( pszTableName ) && oGetKey.Fetch() )
     {
         pszFIDColumn = CPLStrdup(oGetKey.GetColData( 3 ));
         
@@ -134,10 +110,10 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
     CPLODBCStatement oGetCol( poSession );
     CPLErr eErr;
 
-    if( !oGetCol.GetColumns( pszTableName, NULL, pszSchemaName ) )
+    if( !oGetCol.GetColumns( pszTableName ) )
         return CE_Failure;
 
-    eErr = BuildFeatureDefn( pszLayerName, &oGetCol );
+    eErr = BuildFeatureDefn( pszTableName, &oGetCol );
     if( eErr != CE_None )
         return eErr;
 
@@ -145,7 +121,7 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "No column definitions found for table '%s', layer not usable.", 
-                  pszLayerName );
+                  pszTableName );
         return CE_Failure;
     }
 
@@ -159,7 +135,7 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
     {
         bHaveSpatialExtents = TRUE;
         CPLDebug( "OGR_ODBC", "Table %s has geometry extent fields.",
-                  pszLayerName );
+                  pszTableName );
     }
         
 /* -------------------------------------------------------------------- */
@@ -327,9 +303,13 @@ OGRErr OGRODBCTableLayer::SetAttributeFilter( const char *pszQuery )
 int OGRODBCTableLayer::TestCapability( const char * pszCap )
 
 {
-    if( EQUAL(pszCap,OLCRandomRead) )
-        return TRUE;
-        
+    if( EQUAL(pszCap,OLCSequentialWrite) 
+             || EQUAL(pszCap,OLCRandomWrite) )
+        return bUpdateAccess;
+
+    else if( EQUAL(pszCap,OLCCreateField) )
+        return bUpdateAccess;
+
     else 
         return OGRODBCLayer::TestCapability( pszCap );
 }

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_win32.cpp 17269 2009-06-20 03:42:47Z warmerdam $
+ * $Id: cpl_vsil_win32.cpp 15219 2008-08-25 20:38:56Z mloskot $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Win32.
@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_win32.cpp 17269 2009-06-20 03:42:47Z warmerdam $");
+CPL_CVSID("$Id: cpl_vsil_win32.cpp 15219 2008-08-25 20:38:56Z mloskot $");
 
 #if defined(WIN32)
 
@@ -450,7 +450,7 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
 
 {
     struct _finddata_t c_file;
-    intptr_t hFile;
+    long    hFile;
     char    *pszFileSpec, **papszDir = NULL;
 
     if (strlen(pszPath) == 0)

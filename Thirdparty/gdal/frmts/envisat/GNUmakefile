@@ -7,20 +7,20 @@ XTRA_OPT =	-I../raw
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(XTRA_OPT) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o
 
-all:	$(OBJ:.o=.$(OBJ_EXT))
+all:	$(OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 $(O_OBJ):	../raw/rawdataset.h
 
-envisat_dump:	envisat_dump.$(OBJ_EXT) EnvisatFile.$(OBJ_EXT)
-	$(CC) $(CFLAGS) envisat_dump.$(OBJ_EXT) EnvisatFile.$(OBJ_EXT) $(GDAL_LIB) -ldl -lm -o envisat_dump
+envisat_dump:	envisat_dump.o EnvisatFile.o
+	$(CC) $(CFLAGS) envisat_dump.o EnvisatFile.o $(GDAL_LIB) -ldl -lm -o envisat_dump
 
-dumpgeo:	dumpgeo.$(OBJ_EXT) EnvisatFile.$(OBJ_EXT)
-	$(CC) $(CFLAGS) dumpgeo.$(OBJ_EXT) EnvisatFile.$(OBJ_EXT) $(GDAL_LIB) -ldl -lm -o dumpgeo
+dumpgeo:	dumpgeo.o EnvisatFile.o
+	$(CC) $(CFLAGS) dumpgeo.o EnvisatFile.o $(GDAL_LIB) -ldl -lm -o dumpgeo
 

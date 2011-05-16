@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgresultlayer.cpp 18655 2010-01-24 19:42:09Z rouault $
+ * $Id: ogrpgresultlayer.cpp 15721 2008-11-12 16:42:55Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGResultLayer class, access the resultset from
@@ -32,7 +32,7 @@
 #include "ogr_pg.h"
 #include "ogrpgutility.h"
 
-CPL_CVSID("$Id: ogrpgresultlayer.cpp 18655 2010-01-24 19:42:09Z rouault $");
+CPL_CVSID("$Id: ogrpgresultlayer.cpp 15721 2008-11-12 16:42:55Z rouault $");
 
 
 /************************************************************************/
@@ -48,6 +48,9 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
     iNextShapeId = 0;
 
     pszRawStatement = CPLStrdup(pszRawQueryIn);
+
+    /* Eventually we may need to make these a unique name */
+    pszCursorName = "OGRPGResultLayerReader";
 
     osWHERE = "";
 
@@ -66,6 +69,8 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         osGetSRID += pszRawStatement;
         osGetSRID += ") AS ogrpggetsrid LIMIT 1";
 
+        CPLDebug("PG", "PQexec(%s)\n", osGetSRID.c_str());
+
         PGresult* hSRSIdResult = PQexec(poDS->GetPGConn(), osGetSRID );
 
         if( hSRSIdResult && PQresultStatus(hSRSIdResult) == PGRES_TUPLES_OK)
@@ -80,11 +85,6 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
         }
 
         OGRPGClearResult(hSRSIdResult);
-    }
-    else if (bHasPostGISGeography)
-    {
-        // FIXME? But for the moment, PostGIS 1.5 only handles SRID:4326.
-        nSRSId = 4326;
     }
 
     /* Now set the cursor that will fetch the first rows */
@@ -137,22 +137,15 @@ OGRFeatureDefn *OGRPGResultLayer::ReadResultDefinition(PGresult *hInitialResultI
             continue;
         }
         else if( nTypeOID == poDS->GetGeometryOID()  ||
-                 nTypeOID == poDS->GetGeographyOID()  ||
-                 EQUAL(oField.GetNameRef(),"ST_AsText") ||
-                 EQUAL(oField.GetNameRef(),"ST_AsBinary") ||
-                 EQUAL(oField.GetNameRef(),"AsBinary") ||
                  EQUAL(oField.GetNameRef(),"asEWKT") ||
                  EQUAL(oField.GetNameRef(),"asText") )
         {
-            if (bHasPostGISGeometry || bHasPostGISGeography )
+            if (bHasPostGISGeometry)
             {
                 CPLError(CE_Warning, CPLE_AppDefined,
                          "More than one geometry column was found in the result of the SQL request. Only last one will be used");
             }
-            if (nTypeOID == poDS->GetGeographyOID())
-                bHasPostGISGeography = TRUE;
-            else
-                bHasPostGISGeometry = TRUE;
+            bHasPostGISGeometry = TRUE;
             CPLFree(pszGeomColumn);
             pszGeomColumn = CPLStrdup(oField.GetNameRef());
             continue;
@@ -175,15 +168,7 @@ OGRFeatureDefn *OGRPGResultLayer::ReadResultDefinition(PGresult *hInitialResultI
                  nTypeOID == VARCHAROID )
         {
             oField.SetType( OFTString );
-
-            /* See http://www.mail-archive.com/pgsql-hackers@postgresql.org/msg57726.html */
-            /* nTypmod = width + 4 */
-            int nTypmod = PQfmod(hResult, iRawField);
-            if (nTypmod >= 4 && (nTypeOID == BPCHAROID ||
-                               nTypeOID == VARCHAROID ) )
-            {
-                oField.SetWidth( nTypmod - 4);
-            }
+            oField.SetWidth( PQfsize(hResult, iRawField) );
         }
         else if( nTypeOID == BOOLOID )
         {
@@ -205,33 +190,10 @@ OGRFeatureDefn *OGRPGResultLayer::ReadResultDefinition(PGresult *hInitialResultI
             oField.SetType( OFTInteger );
         }
         else if( nTypeOID == FLOAT4OID ||
-                 nTypeOID == FLOAT8OID )
+                 nTypeOID == FLOAT8OID ||
+                 nTypeOID == NUMERICOID )
         {
             oField.SetType( OFTReal );
-        }
-        else if( nTypeOID == NUMERICOID )
-        {
-            /* See http://www.mail-archive.com/pgsql-hackers@postgresql.org/msg57726.html */
-            /* typmod = (width << 16) + precision + 4 */
-            int nTypmod = PQfmod(hResult, iRawField);
-            if (nTypmod >= 4)
-            {
-                int nWidth = (nTypmod - 4) >> 16;
-                int nPrecision = (nTypmod - 4) & 0xFFFF;
-                if (nWidth <= 10 && nPrecision == 0)
-                {
-                    oField.SetType( OFTInteger );
-                    oField.SetWidth( nWidth );
-                }
-                else
-                {
-                    oField.SetType( OFTReal );
-                    oField.SetWidth( nWidth );
-                    oField.SetPrecision( nPrecision );
-                }
-            }
-            else
-                oField.SetType( OFTReal );
         }
         else if ( nTypeOID == INT4ARRAYOID )
         {
@@ -329,6 +291,9 @@ int OGRPGResultLayer::GetFeatureCount( int bForce )
         "SELECT count(*) FROM (%s) AS ogrpgcount",
         pszQueryStatement );
 
+    CPLDebug( "PG", "PQexec(%s)\n",
+              osCommand.c_str() );
+
     hResult = PQexec(hPGConn, osCommand);
     if( hResult != NULL && PQresultStatus(hResult) == PGRES_TUPLES_OK )
         nCount = atoi(PQgetvalue(hResult,0,0));
@@ -347,17 +312,13 @@ int OGRPGResultLayer::GetFeatureCount( int bForce )
 int OGRPGResultLayer::TestCapability( const char * pszCap )
 
 {
-    if( EQUAL(pszCap,OLCFastFeatureCount) ||
-        EQUAL(pszCap,OLCFastSetNextByIndex) )
+    if( EQUAL(pszCap,OLCFastFeatureCount) )
         return (m_poFilterGeom == NULL || 
-                ((bHasPostGISGeometry || bHasPostGISGeography) && nSRSId != -2)) && m_poAttrQuery == NULL;
+                (bHasPostGISGeometry && nSRSId != -2)) && m_poAttrQuery == NULL;
 
-    else if( EQUAL(pszCap,OLCFastSpatialFilter) )
-        return ((bHasPostGISGeometry || bHasPostGISGeography) && nSRSId != -2) && m_poAttrQuery == NULL;
-
-    else if( EQUAL(pszCap,OLCFastGetExtent) )
+    else if( EQUAL(pszCap,OLCFastSpatialFilter) || EQUAL(pszCap,OLCFastGetExtent) )
         return (bHasPostGISGeometry && nSRSId != -2) && m_poAttrQuery == NULL;
-        
+
     else if( EQUAL(pszCap,OLCStringsAsUTF8) )
         return TRUE;
 
@@ -383,7 +344,7 @@ OGRFeature *OGRPGResultLayer::GetNextFeature()
             return NULL;
 
         if( (m_poFilterGeom == NULL
-            || ((bHasPostGISGeometry || bHasPostGISGeography) && nSRSId != -2)
+            || (bHasPostGISGeometry && nSRSId != -2)
             || FilterGeometry( poFeature->GetGeometryRef() ) )
             && (m_poAttrQuery == NULL
                 || m_poAttrQuery->Evaluate( poFeature )) )
@@ -402,14 +363,14 @@ void OGRPGResultLayer::SetSpatialFilter( OGRGeometry * poGeomIn )
 {
     if( InstallFilter( poGeomIn ) )
     {
-        if ((bHasPostGISGeometry || bHasPostGISGeography) && nSRSId != -2)
+        if (bHasPostGISGeometry && nSRSId != -2)
         {
             if( m_poFilterGeom != NULL)
             {
                 OGREnvelope  sEnvelope;
 
                 m_poFilterGeom->getEnvelope( &sEnvelope );
-                osWHERE.Printf("WHERE \"%s\" && SetSRID('BOX3D(%.12f %.12f, %.12f %.12f)'::box3d,%d) ",
+                osWHERE.Printf("WHERE %s && SetSRID('BOX3D(%.12f %.12f, %.12f %.12f)'::box3d,%d) ",
                             pszGeomColumn,
                             sEnvelope.MinX, sEnvelope.MinY,
                             sEnvelope.MaxX, sEnvelope.MaxY,
@@ -432,8 +393,7 @@ void OGRPGResultLayer::SetSpatialFilter( OGRGeometry * poGeomIn )
 /*                             GetExtent()                              */
 /*                                                                      */
 /*      For PostGIS use internal Extend(geometry) function              */
-/*      in other cases we use standard OGRLayer::GetExtent()            */
-/************************************************************************/
+/*      in other cases we use standard OGRLayer::GetExtent()            */ /************************************************************************/
 
 OGRErr OGRPGResultLayer::GetExtent( OGREnvelope *psExtent, int bForce )
 {
@@ -445,12 +405,6 @@ OGRErr OGRPGResultLayer::GetExtent( OGREnvelope *psExtent, int bForce )
         osCommand.Printf( "SELECT Extent(\"%s\") FROM (%s) AS ogrpgextent", 
                          pszGeomColumn, pszRawStatement );
     }
-    else if ( bHasPostGISGeography )
-    {
-        /* Probably not very efficient, but more efficient than client-side implementation */
-        osCommand.Printf( "SELECT Extent(ST_GeomFromWKB(ST_AsBinary(\"%s\"))) FROM (%s) AS ogrpgextent", 
-                          pszGeomColumn, pszRawStatement );
-    }
-    
+
     return RunGetExtentRequest(psExtent, bForce, osCommand);
 }

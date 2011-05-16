@@ -140,7 +140,7 @@ void SqlServerFdoUpdateTest::UpdateNonDbo()
 
 FdoString* SqlServerFdoUpdateTest::NoMetaSuffix()
 {
-    static FdoString* noMetaSuffix = L"_no met\x00e4\x00e4\x00e4\x00e4";
+    static FdoString* noMetaSuffix = L"_no_met\x00e4\x00e4\x00e4\x00e4";
 
     return noMetaSuffix;
 }
@@ -416,25 +416,6 @@ void SqlServerFdoUpdateTest::UpdateSpecific()
         SelectSpecificAll( connection, phMgr, table_id_geom );
 	    SelectSpecificSpatial( connection, phMgr, table_id_geom );
 	    SelectGeogSpatialError( connection, phMgr, table_id_geom );
-
-	    FdoPtr<FdoIDescribeSchema>  pDescCmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
-        FdoPtr<FdoStringCollection> classNames = FdoStringCollection::Create();
-        classNames->Add(table_id_geom);
-        pDescCmd->SetClassNames(classNames);
-	    FdoFeatureSchemasP pSchemas = pDescCmd->Execute();
-        FdoFeatureSchemaP pSchema = pSchemas->GetItem( 0 );
-        FdoClassDefinitionP pClass = FdoClassesP( pSchema->GetClasses() )->GetItem( table_id_geom );
-        FdoClassCapabilitiesP cc = pClass->GetCapabilities();
-        FdoPtr<FdoPropertyDefinitionCollection> props = pClass->GetProperties();
-        for ( FdoInt32 i = 0; i < props->GetCount(); i++ )
-        {
-            FdoPtr<FdoPropertyDefinition> prop = props->GetItem(i);
-            if (prop->GetPropertyType() == FdoPropertyType_GeometricProperty)
-            {
-                CPPUNIT_ASSERT( cc->GetPolygonVertexOrderRule(prop->GetName()) == FdoPolygonVertexOrderRule_CCW );
-                CPPUNIT_ASSERT( cc->GetPolygonVertexOrderStrictness(prop->GetName()) );
-            }
-        }
 
         connection->Close ();
 

@@ -18,7 +18,6 @@
 #define FDORDBMSPOSTGISFILTERPROCESSOR_H
 
 #include "../../Fdo/Filter/FdoRdbmsFilterProcessor.h"
-#include "FdoRdbmsFunctionIsValid.h"
 
 static wchar_t* PostGisSupportedFunctions[] = {
 
@@ -61,9 +60,7 @@ static wchar_t* PostGisSupportedFunctions[] = {
     FDO_FUNCTION_LOG,
     FDO_FUNCTION_MOD,       
     //FDO_FUNCTION_POWER,                                  
-    //FDO_FUNCTION_REMAINDER, The remainder calculation includes a rounding operation that
-    //                        differs from the usual rounding function in that if the fractional
-    //                        part is exactly 0.5 then the number is rounded down.
+    FDO_FUNCTION_REMAINDER,  
     //FDO_FUNCTION_SIN,        
     //FDO_FUNCTION_SQRT,       
     //FDO_FUNCTION_TAN,        
@@ -97,8 +94,7 @@ static wchar_t* PostGisSupportedFunctions[] = {
     //FDO_FUNCTION_X,         
     //FDO_FUNCTION_Y,         
     //FDO_FUNCTION_Z,         
-    //FDO_FUNCTION_M,  
-    FDORDBMS_FUNCTION_ISVALID,
+    //FDO_FUNCTION_M,         
     NULL
 };
 
@@ -126,8 +122,6 @@ public:
 
     /// Destructor.
     ~FdoRdbmsPostGisFilterProcessor();
-
-    virtual bool SupportsSpatialOrNonSpatialOperator();
 
 protected:
 

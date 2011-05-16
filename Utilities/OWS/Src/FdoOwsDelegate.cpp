@@ -22,7 +22,6 @@
 #include <OWS/FdoOwsResponse.h>
 #include <OWS/FdoOwsRequest.h>
 #include <OWS/FdoOwsRequestMetadata.h>
-#include <OWS/FdoOwsOperationsMetadata.h>
 #include <OWS/FdoOwsDelegate.h>
 #include "FdoOwsUrlResolver.h"
 #include "FdoOwsHttpHandler.h"
@@ -32,8 +31,8 @@ FdoOwsDelegate::FdoOwsDelegate()
 {
 }
 
-FdoOwsDelegate::FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd, FdoString* proxyHost, FdoString* proxyPort, FdoString* proxyUser, FdoString* proxyPassword) : 
-	m_defaultUrl(defaultUrl), m_userName(userName), m_passwd(passwd), m_proxyHost(proxyHost), m_proxyPort(proxyPort), m_proxyUser(proxyUser), m_proxyPassword(proxyPassword)
+FdoOwsDelegate::FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd) : m_defaultUrl(defaultUrl),
+                                    m_userName(userName), m_passwd(passwd)
 {
 }
 
@@ -46,11 +45,6 @@ void FdoOwsDelegate::SetRequestMetadatas(FdoOwsRequestMetadataCollection* reques
     m_requestMetadatas = FDO_SAFE_ADDREF(requestMetadatas);
 }
 
-void FdoOwsDelegate::SetOperationMetadatas(FdoOwsOperationCollection* operationMetadatas)
-{
-	m_operationMetadatas = FDO_SAFE_ADDREF(operationMetadatas);
-}
-
 FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
 {
     bool bGet = true;
@@ -59,15 +53,10 @@ FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
     FdoStringP url = m_defaultUrl;
 
     // If possible, try and resolve the URL address
-    if (m_requestMetadatas != NULL || m_operationMetadatas != NULL)
+    if (m_requestMetadatas != NULL)
     {
         if (m_urlResolver == NULL)
-		{
-			if (m_requestMetadatas != NULL)
-	            m_urlResolver = FdoOwsUrlResolver::Create(m_requestMetadatas);
-			else if (m_operationMetadatas != NULL)
-				m_urlResolver = FdoOwsUrlResolver::Create(m_operationMetadatas);
-		}
+            m_urlResolver = FdoOwsUrlResolver::Create(m_requestMetadatas);
         FdoStringP rv = m_urlResolver->GetUrl(bGet, request->GetRequest ());
         if (rv != NULL)
             url = rv;
@@ -147,12 +136,7 @@ FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
     const char* mbUserName = m_userName;
     const char* mbPasswd = m_passwd;
 
-    const char* mbProxyHost = m_proxyHost;
-    const char* mbProxyPort = m_proxyPort;
-    const char* mbProxyUserName = m_proxyUser;
-    const char* mbProxyPassword = m_proxyPassword;
-
-    FdoPtr<FdoOwsHttpHandler> httpHandler = FdoOwsHttpHandler::Create(mbUrl, bGet, mbRequestString, mbUserName, mbPasswd, mbProxyHost, mbProxyPort, mbProxyUserName, mbProxyPassword);
+    FdoPtr<FdoOwsHttpHandler> httpHandler = FdoOwsHttpHandler::Create(mbUrl, bGet, mbRequestString, mbUserName, mbPasswd);
         
     // Here we use 2 mins as the default value for "connection" timeout.
     httpHandler->SetConnectionTimeout (60 * 2);
@@ -185,3 +169,9 @@ FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
     // return Ows response
     return FdoOwsResponse::Create(mimeType, stream); 
 }
+
+
+
+
+
+

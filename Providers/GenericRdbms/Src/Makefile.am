@@ -45,7 +45,7 @@ libFdoPostgreSQL_la_LIBADD =  \
   Fdo/libFdoRdbms.la   \
   Rdbi/librdbi.la  \
   PostGis/Driver/libpostgisdr.la   \
-  Gdbi/libGdbi.la  \
+  PostGis/Custom/Gdbi/libGdbiCustom.la  \
   LongTransactionManager/libLTManager.la  \
   LockManager/libLockManager.la  \
   Util/libutil.la  \
@@ -88,7 +88,7 @@ libFdoMySQL_la_LIBADD =  \
   -lxalan-c \
   -lxalanMsg \
   -lxerces-c \
-  -lmysql \
+  -lmysqlclient \
   -lz \
   MySQL/libFdoRdbmsMySQL.la  \
   Fdo/libFdoRdbms.la   \

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_priv.h 18501 2010-01-09 18:43:12Z mloskot $
+ * $Id: gdal_priv.h 15038 2008-07-26 11:46:05Z rouault $
  *
  * Name:     gdal_priv.h
  * Project:  GDAL Core
@@ -153,13 +153,6 @@ class CPL_DLL GDALDefaultOverviews
     // find our way back to get overview masks.
     GDALDataset *poBaseDS;
 
-    // Stuff for deferred initialize/overviewscans...
-    bool        bCheckedForOverviews;
-    void        OverviewScan();
-    char       *pszInitName;
-    int         bInitNameIsOVR;
-    char      **papszInitSiblingFiles;
-
   public:
                GDALDefaultOverviews();
                ~GDALDefaultOverviews();
@@ -168,7 +161,7 @@ class CPL_DLL GDALDefaultOverviews
                            char **papszSiblingFiles = NULL,
                            int bNameIsOVR = FALSE );
 
-    int        IsInitialized();
+    int        IsInitialized() { return poDS != NULL && strlen(osOvrFilename) > 0; }
 
     // Overview Related
 
@@ -182,15 +175,6 @@ class CPL_DLL GDALDefaultOverviews
                                GDALProgressFunc pfnProgress,
                                void *pProgressData );
 
-    CPLErr     BuildOverviewsSubDataset( const char * pszPhysicalFile,
-                                         const char * pszResampling, 
-                                         int nOverviews, int * panOverviewList,
-                                         int nBands, int * panBandList,
-                                         GDALProgressFunc pfnProgress,
-                                         void *pProgressData );
-
-    CPLErr     CleanOverviews();
-
     // Mask Related
 
     CPLErr     CreateMaskBand( int nFlags, int nBand = -1 );
@@ -199,7 +183,7 @@ class CPL_DLL GDALDefaultOverviews
 
     int        HaveMaskFile( char **papszSiblings = NULL, 
                              const char *pszBasename = NULL );
-
+    
 };
 
 /* ******************************************************************** */
@@ -309,8 +293,6 @@ class CPL_DLL GDALDataset : public GDALMajorObject
 /*                           GDALRasterBlock                            */
 /* ******************************************************************** */
 
-//! A single raster block in the block cache.
-
 class CPL_DLL GDALRasterBlock
 {
     GDALDataType        eType;
@@ -335,9 +317,9 @@ class CPL_DLL GDALRasterBlock
                 GDALRasterBlock( GDALRasterBand *, int, int );
     virtual     ~GDALRasterBlock();
 
-    CPLErr      Internalize( void );
-    void        Touch( void );      
-    void        MarkDirty( void );  
+    CPLErr      Internalize( void );    /* make copy of data */
+    void        Touch( void );          /* update age */
+    void        MarkDirty( void );      /* data has been modified since read */
     void        MarkClean( void );
     void        AddLock( void ) { nLockCount++; }
     void        DropLock( void ) { nLockCount--; }
@@ -355,8 +337,6 @@ class CPL_DLL GDALRasterBlock
 
     void        *GetDataRef( void ) { return pData; }
 
-    /// @brief Accessor to source GDALRasterBand object.
-    /// @return source raster band of the raster block.
     GDALRasterBand *GetBand() { return poBand; }
 
     static int  FlushCacheBlock();
@@ -784,10 +764,7 @@ GDALDefaultBuildOverviews( GDALDataset *hSrcDS, const char * pszBasename,
                            int nBands, int * panBandList,
                            GDALProgressFunc pfnProgress, void * pProgressData);
                            
-int CPL_DLL GDALBandGetBestOverviewLevel(GDALRasterBand* poBand,
-                                         int &nXOff, int &nYOff,
-                                         int &nXSize, int &nYSize,
-                                         int nBufXSize, int nBufYSize);
+
 
 int CPL_DLL GDALOvLevelAdjust( int nOvLevel, int nXSize );
 
@@ -803,14 +780,7 @@ CPLErr CPL_DLL GDALParseGMLCoverage( CPLXMLNode *psTree,
                                      int *pnXSize, int *pnYSize,
                                      double *padfGeoTransform,
                                      char **ppszProjection );
-
-/* ==================================================================== */
-/*  Infrastructure to check that dataset characteristics are valid      */
-/* ==================================================================== */
-
-int CPL_DLL GDALCheckDatasetDimensions( int nXSize, int nYSize );
-int CPL_DLL GDALCheckBandCount( int nBands, int bIsZeroAllowed );
-
+                                  
 CPL_C_END
 
 #endif /* ndef GDAL_PRIV_H_INCLUDED */

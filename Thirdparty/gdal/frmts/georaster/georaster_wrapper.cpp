@@ -29,6 +29,7 @@
  *****************************************************************************/
 
 #include "georaster_priv.h"
+#include <zlib.h>
 
 //  ---------------------------------------------------------------------------
 //                                                           GeoRasterWrapper()
@@ -37,8 +38,6 @@
 GeoRasterWrapper::GeoRasterWrapper()
 {
     pszTable            = NULL;
-    pszSchema           = NULL;
-    pszOwner            = NULL;
     pszColumn           = NULL;
     pszDataTable        = NULL;
     nRasterId           = -1;
@@ -54,7 +53,7 @@ GeoRasterWrapper::GeoRasterWrapper()
     nTotalRowBlocks     = 0;
     nTotalBandBlocks    = 0;
     nCellSizeBits       = 0;
-    nGDALCellBytes      = 0;
+    nCellSizeGDAL       = 0;
     dfXCoefficient[0]   = 1.0;
     dfXCoefficient[1]   = 0.0;
     dfXCoefficient[2]   = 0.0;
@@ -62,11 +61,9 @@ GeoRasterWrapper::GeoRasterWrapper()
     dfYCoefficient[1]   = 1.0;
     dfYCoefficient[2]   = 0.0;
     pszCellDepth        = NULL;
-    pszCompressionType  = CPLStrdup( "NONE" );
-    nCompressQuality    = 75;
+    pszCompressionType  = NULL;
     pahLocator          = NULL;
     pabyBlockBuf        = NULL;
-    pabyBlockBuf2       = NULL;
     bIsReferenced       = false;
     poStmtRead          = NULL;
     poStmtWrite         = NULL;
@@ -77,18 +74,14 @@ GeoRasterWrapper::GeoRasterWrapper()
     szInterleaving[2]   = 'Q';
     szInterleaving[3]   = '\0';
     bIOInitialized      = false;
+    bBlobInitialized    = false;
     bFlushMetadata      = false;
+    bFlushBuffer        = false;
     nSRID               = -1;
     bRDTRIDOnly         = false;
+    bPackingOrCompress  = 0;
     nPyramidMaxLevel    = 0;
     nBlockCount         = 0;
-    bOrderlyAccess      = false;
-    nGDALBlockBytes     = 0;
-    sDInfo.global_state = 0;
-    sCInfo.global_state = 0;
-    bHasBitmapMask      = false;
-    eModelCoordLocation = MCL_DEFAULT;
-    eForceCoordLocation = MCL_DEFAULT;
 }
 
 //  ---------------------------------------------------------------------------
@@ -100,30 +93,16 @@ GeoRasterWrapper::~GeoRasterWrapper()
     FlushMetadata();
 
     CPLFree( pszTable );
-    CPLFree( pszSchema );
-    CPLFree( pszOwner );
     CPLFree( pszColumn );
     CPLFree( pszDataTable );
     CPLFree( pszWhere );
     CPLFree( pszCellDepth );
     CPLFree( pszCompressionType );
     CPLFree( pabyBlockBuf );
-    CPLFree( pabyBlockBuf2 );
     delete poStmtRead;
     delete poStmtWrite;
     CPLDestroyXMLNode( phMetadata );
     OWStatement::Free( pahLocator, nBlockCount );
-    CPLFree( pahLocator );
-
-    if( sDInfo.global_state )
-    {
-        jpeg_destroy_decompress( &sDInfo );
-    }
-
-    if( sCInfo.global_state )
-    {
-        jpeg_destroy_compress( &sCInfo );
-    }
 }
 
 //  ---------------------------------------------------------------------------
@@ -165,7 +144,7 @@ char** GeoRasterWrapper::ParseIdentificator( const char* pszStringID )
     // Assume a default database
     // --------------------------------------------------------------------
 
-    if( CSLCount( papszParam ) == 2 )
+    if( CSLCount( papszParam ) == 2 ) 
     {
         papszParam = CSLAddString( papszParam, "" );
     }
@@ -211,7 +190,7 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
                                                    papszParam[1],
                                                    papszParam[2] );
 
-    if( ! poGRW->poConnection->Succeeded() )
+    if( ! poGRW->poConnection->Succed() )
     {
         CSLDestroy( papszParam );
         delete poGRW;
@@ -219,47 +198,10 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
     }
 
     //  -------------------------------------------------------------------
-    //  Extract schema name
-    //  -------------------------------------------------------------------
-
-    if( nArgc > 3 )
-    {
-        char** papszSchema = CSLTokenizeString2( papszParam[3], ".",
-                                CSLT_HONOURSTRINGS | CSLT_ALLOWEMPTYTOKENS );
-
-        if( CSLCount( papszSchema ) == 2 )
-        {
-            poGRW->pszOwner  = CPLStrdup( papszSchema[0] );
-            poGRW->pszSchema = CPLStrdup( CPLSPrintf( "%s.", poGRW->pszOwner ) );
-
-            papszParam = CSLRemoveStrings( papszParam, 3, 1, NULL );
-
-            if( ! EQUAL( papszSchema[1], "" ) )
-            {
-                papszParam = CSLInsertString( papszParam, 3, papszSchema[1] );
-            }
-
-            nArgc = CSLCount( papszParam );
-        }
-        else
-        {
-            poGRW->pszSchema = CPLStrdup( "" );
-            poGRW->pszOwner  = CPLStrdup( poGRW->poConnection->GetUser() );
-        }
-        
-        CSLDestroy( papszSchema );
-    }
-    else
-    {
-        poGRW->pszSchema = CPLStrdup( "" );
-        poGRW->pszOwner  = CPLStrdup( poGRW->poConnection->GetUser() );
-    }
-
-    //  -------------------------------------------------------------------
     //  Assign parameters from Identification string
     //  -------------------------------------------------------------------
 
-    switch( nArgc )
+    switch( nArgc ) 
     {
     case 6 :
         poGRW->pszTable       = CPLStrdup( papszParam[3] );
@@ -297,19 +239,17 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
     {
         OWStatement* poStmt = NULL;
 
-        char  szOwner[OWNAME];
         char  szTable[OWNAME];
         char  szColumn[OWNAME];
 
         poStmt = poGRW->poConnection->CreateStatement(
-            "SELECT OWNER, TABLE_NAME, COLUMN_NAME\n"
-            "FROM   ALL_SDO_GEOR_SYSDATA\n"
+            "SELECT TABLE_NAME, COLUMN_NAME\n"
+            "FROM   USER_SDO_GEOR_SYSDATA\n"
             "WHERE  RDT_TABLE_NAME = UPPER(:1) AND RASTER_ID = :2 " );
 
-        poStmt->Bind( poGRW->pszDataTable );
+        poStmt->Bind( poGRW->pszDataTable ); 
         poStmt->Bind( &poGRW->nRasterId );
 
-        poStmt->Define( szOwner );
         poStmt->Define( szTable );
         poStmt->Define( szColumn );
 
@@ -327,13 +267,6 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
         //  Borrow the first Table/Column found as a reference
         //  ---------------------------------------------------------------
 
-        CPLFree( poGRW->pszSchema );
-        CPLFree( poGRW->pszOwner );
-        CPLFree( poGRW->pszTable );
-        CPLFree( poGRW->pszColumn );
-
-        poGRW->pszSchema  = CPLStrdup( CPLSPrintf( "%s.", szOwner ) );
-        poGRW->pszOwner   = CPLStrdup( szOwner );
         poGRW->pszTable   = CPLStrdup( szTable );
         poGRW->pszColumn  = CPLStrdup( szColumn );
 
@@ -341,11 +274,11 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
         //  Make a where clause based on RTD and RID
         //  ---------------------------------------------------------------
 
-        poGRW->pszWhere= CPLStrdup( CPLSPrintf(
+        poGRW->pszWhere= CPLStrdup( CPLSPrintf( 
             "T.%s.RasterDataTable = UPPER('%s') AND T.%s.RasterId = %d",
-            poGRW->pszColumn,
-            poGRW->pszDataTable,
-            poGRW->pszColumn,
+            poGRW->pszColumn, 
+            poGRW->pszDataTable, 
+            poGRW->pszColumn, 
             poGRW->nRasterId ) );
     }
 
@@ -359,15 +292,14 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
     char szDataTable[OWNAME];
     int  nRasterId;
 
-    poStmt = poGRW->poConnection->CreateStatement( CPLSPrintf(
+    poStmt = poGRW->poConnection->CreateStatement( CPLSPrintf( 
         "SELECT T.%s.RASTERDATATABLE,\n"
         "       T.%s.RASTERID,\n"
         "       T.%s.METADATA.getClobVal()\n"
-        "FROM   %s%s T\n"
-        "WHERE  %s",
-        poGRW->pszColumn, poGRW->pszColumn, poGRW->pszColumn,
-        poGRW->pszSchema, poGRW->pszTable,
-        poGRW->pszWhere ) );
+        "FROM   %s T\n"
+        "WHERE  %s", 
+        poGRW->pszColumn, poGRW->pszColumn, poGRW->pszColumn, 
+        poGRW->pszTable, poGRW->pszWhere ) );
 
     poStmt->Define( szDataTable );
     poStmt->Define( &nRasterId );
@@ -400,7 +332,7 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
 
     char* pszXML = NULL;
 
-    pszXML = poStmt->ReadCLob( phLocator );
+    pszXML = poStmt->ReadClob( phLocator );
 
     if( pszXML )
     {
@@ -409,6 +341,7 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId )
         //  -----------------------------------------------------------
 
         poGRW->phMetadata = CPLParseXMLString( pszXML );
+
         poGRW->GetRasterInfo();
     }
     else
@@ -485,7 +418,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         }
         else
         {
-            strcpy( szValues, CPLStrdup(
+            strcpy( szValues, CPLStrdup( 
                 "VALUES (SDO_GEOR.INIT(NULL,NULL))" ) );
         }
     }
@@ -557,10 +490,11 @@ bool GeoRasterWrapper::Create( char* pszDescription,
                 "cellDepth=%s "
                 "interleaving=%s "
                 "pyramid=FALSE "
-                "compression=NONE ",
+                "compression=%s ",
                 nColumnBlockSize, nRowBlockSize,
                 pszCellDepth,
-                szInterleaving ) );
+                szInterleaving,
+                pszCompressionType ) );
         }
         else
         {
@@ -569,10 +503,11 @@ bool GeoRasterWrapper::Create( char* pszDescription,
                 "cellDepth=%s "
                 "interleaving=%s "
                 "pyramid=FALSE "
-                "compression=NONE ",
+                "compression=%s ",
                 nColumnBlockSize, nRowBlockSize, nBandBlockSize,
                 pszCellDepth,
-                szInterleaving ) );
+                szInterleaving,
+                pszCompressionType ) );
         }
     }
     else
@@ -587,7 +522,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
                 "interleaving=%s "
                 "compression=%s "
                 "'",
-                nRasterRows, nRasterColumns,
+                nRasterRows, nRasterColumns, 
                 nColumnBlockSize, nRowBlockSize,
                 pszCellDepth,
                 szInterleaving,
@@ -603,7 +538,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
                 "interleaving=%s "
                 "compression=%s "
                 "'",
-                nRasterRows, nRasterColumns, nRasterBands,
+                nRasterRows, nRasterColumns, nRasterBands, 
                 nColumnBlockSize, nRowBlockSize, nBandBlockSize,
                 pszCellDepth,
                 szInterleaving,
@@ -632,24 +567,19 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             "DECLARE\n"
             "  TAB VARCHAR2(68)  := UPPER(:1);\n"
             "  COL VARCHAR2(68)  := UPPER(:2);\n"
-            "  OWN VARCHAR2(68)  := UPPER(:3);\n"
             "  CNT NUMBER        := 0;\n"
             "BEGIN\n"
-            "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ALL_TABLES\n"
-            "    WHERE TABLE_NAME = :1 AND OWNER = UPPER(:2)'\n"
-            "      INTO CNT USING TAB, OWN;\n"
+            "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM USER_TABLES\n"
+            "    WHERE TABLE_NAME = :1 ' INTO CNT USING TAB;\n"
             "\n"
             "  IF CNT = 0 THEN\n"
-            "    EXECUTE IMMEDIATE 'CREATE TABLE %s%s %s';\n"
+            "    EXECUTE IMMEDIATE 'CREATE TABLE '||TAB||' %s';\n"
             "    SDO_GEOR_UTL.createDMLTrigger( TAB,  COL );\n"
             "  END IF;\n"
-            "END;", 
-            pszSchema, pszTable,
-            szDescription ) );
+            "END;", szDescription ) );
 
         poStmt->Bind( pszTable );
         poStmt->Bind( pszColumn );
-        poStmt->Bind( pszOwner );
 
         if( ! poStmt->Execute() )
         {
@@ -662,22 +592,22 @@ bool GeoRasterWrapper::Create( char* pszDescription,
     }
 
     //  -----------------------------------------------------------
-    //  Prepare UPDATE or INSERT comand
+    //  Perare UPDATE or INSERT comand
     //  -----------------------------------------------------------
 
     char szCommand[OWTEXT];
 
     if( bUpdate )
     {
-        strcpy( szCommand, CPLSPrintf(
-            "UPDATE %s%s T SET %s = GR1 WHERE %s RETURNING %s INTO GR1;",
-            pszSchema, pszTable, pszColumn, pszWhere, pszColumn ) );
+        strcpy( szCommand, CPLSPrintf( 
+            "UPDATE %s T SET %s = GR1 WHERE %s RETURNING %s INTO GR1;",
+            pszTable, pszColumn, pszWhere, pszColumn ) );
     }
     else
     {
         strcpy( szCommand, CPLSPrintf(
-            "INSERT INTO %s%s %s RETURNING %s INTO GR1;",
-            pszSchema, pszTable, szInsert, pszColumn ) );
+            "INSERT INTO %s %s RETURNING %s INTO GR1;",
+            pszTable, szInsert, pszColumn ) );
     }
 
     //  -----------------------------------------------------------
@@ -693,7 +623,6 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             "DECLARE\n"
             "  TAB  VARCHAR2(68)    := UPPER(:1);\n"
             "  COL  VARCHAR2(68)    := UPPER(:2);\n"
-            "  OWN  VARCHAR2(68)    := UPPER(:3);\n"
             "  CNT  NUMBER          := 0;\n"
             "  GR1  SDO_GEORASTER   := NULL;\n"
             "BEGIN\n"
@@ -707,45 +636,39 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             "  SELECT GR1.RASTERDATATABLE INTO :rdt FROM DUAL;\n"
             "  SELECT GR1.RASTERID        INTO :rid FROM DUAL;\n"
             "\n"
-            "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ALL_OBJECT_TABLES\n"
-            "    WHERE TABLE_NAME = :1 AND OWNER = UPPER(:2)'\n"
-            "      INTO CNT USING :rdt, OWN;\n"
+            "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM USER_OBJECT_TABLES\n"
+            "    WHERE TABLE_NAME = :1' INTO CNT USING :rdt;\n"
             "\n"
             "  IF CNT = 0 THEN\n"
-            "    EXECUTE IMMEDIATE 'CREATE TABLE %s'||:rdt||' OF MDSYS.SDO_RASTER\n"
+            "    EXECUTE IMMEDIATE 'CREATE TABLE '||:rdt||' OF MDSYS.SDO_RASTER\n"
             "      (PRIMARY KEY (RASTERID, PYRAMIDLEVEL, BANDBLOCKNUMBER,\n"
             "      ROWBLOCKNUMBER, COLUMNBLOCKNUMBER))\n"
             "      LOB(RASTERBLOCK) STORE AS (NOCACHE NOLOGGING)';\n"
             "  END IF;\n"
             "\n"
             "  SDO_GEOR.createTemplate(GR1, %s, null, 'TRUE');\n"
-            "\n"
-            "  UPDATE %s%s T SET %s = GR1 WHERE"
+            "  UPDATE %s T SET %s = GR1 WHERE"
             " T.%s.RasterDataTable = :rdt AND"
             " T.%s.RasterId = :rid;\n"
             "END;\n",
             szCreateBlank,
             szCommand,
-            pszSchema,
             szFormat,
-            pszSchema, pszTable, pszColumn, pszColumn, pszColumn  ) );
+            pszTable, pszColumn, pszColumn, pszColumn  ) );
 
         poStmt->Bind( pszTable );
         poStmt->Bind( pszColumn );
-        poStmt->Bind( pszOwner );
         poStmt->BindName( (char*) ":rdt", szBindRDT );
         poStmt->BindName( (char*) ":rid", &nBindRID );
 
         if( ! poStmt->Execute() )
         {
             delete poStmt;
-            CPLError( CE_Failure, CPLE_AppDefined,
+            CPLError( CE_Failure, CPLE_AppDefined, 
                 "Failure to initialize GeoRaster" );
             return false;
         }
-
         CPLFree( pszDataTable );
-
         pszDataTable = CPLStrdup( szBindRDT );
         nRasterId    = nBindRID;
 
@@ -765,7 +688,6 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         "  BB   NUMBER          := :3;\n"
         "  RB   NUMBER          := :4;\n"
         "  CB   NUMBER          := :5;\n"
-        "  OWN  VARCHAR2(68)    := UPPER(:6);\n"
         "  X    NUMBER          := 0;\n"
         "  Y    NUMBER          := 0;\n"
         "  CNT  NUMBER          := 0;\n"
@@ -783,31 +705,30 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         "  SELECT GR1.RASTERDATATABLE INTO :rdt FROM DUAL;\n"
         "  SELECT GR1.RASTERID        INTO :rid FROM DUAL;\n"
         "\n"
-        "  SELECT %s INTO GR2 FROM %s%s T WHERE"
+        "  SELECT %s INTO GR2 FROM %s T WHERE"
         " T.%s.RasterDataTable = :rdt AND"
         " T.%s.RasterId = :rid FOR UPDATE;\n"
-        "  SELECT %s INTO GR1 FROM %s%s T WHERE"
+        "  SELECT %s INTO GR1 FROM %s T WHERE"
         " T.%s.RasterDataTable = :rdt AND"
         " T.%s.RasterId = :rid;\n"
         "  SDO_GEOR.changeFormatCopy(GR1, '%s', GR2);\n"
-        "  UPDATE %s%s T SET %s = GR2     WHERE"
+        "  UPDATE %s T SET %s = GR2     WHERE"
         " T.%s.RasterDataTable = :rdt AND"
         " T.%s.RasterId = :rid;\n"
         "\n"
-        "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ALL_OBJECT_TABLES\n"
-        "    WHERE TABLE_NAME = :1 AND OWNER = UPPER(:2)'\n"
-        "      INTO CNT USING :rdt, OWN;\n"
+        "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM USER_OBJECT_TABLES\n"
+        "    WHERE TABLE_NAME = :1' INTO CNT USING :rdt;\n"
         "\n"
         "  IF CNT = 0 THEN\n"
-        "    EXECUTE IMMEDIATE 'CREATE TABLE %s'||:rdt||' OF MDSYS.SDO_RASTER\n"
+        "    EXECUTE IMMEDIATE 'CREATE TABLE '||:rdt||' OF MDSYS.SDO_RASTER\n"
         "      (PRIMARY KEY (RASTERID, PYRAMIDLEVEL, BANDBLOCKNUMBER,\n"
         "      ROWBLOCKNUMBER, COLUMNBLOCKNUMBER))\n"
         "      LOB(RASTERBLOCK) STORE AS (NOCACHE NOLOGGING)';\n"
         "  ELSE\n"
-        "    EXECUTE IMMEDIATE 'DELETE FROM %s'||:rdt||' WHERE RASTERID ='||:rid||' ';\n"
+        "    EXECUTE IMMEDIATE 'DELETE FROM '||:rdt||' WHERE RASTERID ='||:rid||' ';\n" 
         "  END IF;\n"
         "\n"
-        "  STM := 'INSERT INTO %s'||:rdt||' VALUES (:1,0,:2-1,:3-1,:4-1,\n"
+        "  STM := 'INSERT INTO '||:rdt||' VALUES (:1,0,:2-1,:3-1,:4-1,\n"
         "    SDO_GEOMETRY(2003, NULL, NULL, SDO_ELEM_INFO_ARRAY(1, 1003, 3),\n"
         "    SDO_ORDINATE_ARRAY(:5,:6,:7-1,:8-1)), EMPTY_BLOB() )';\n\n"
         "  FOR b IN 1..BB LOOP\n"
@@ -824,24 +745,22 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         "END;",
         szCreateBlank,
         szCommand,
-        pszColumn, pszSchema, pszTable, pszColumn, pszColumn,
-        pszColumn, pszSchema, pszTable, pszColumn, pszColumn, szFormat,
-        pszSchema, pszTable, pszColumn, pszColumn, pszColumn,
-        pszSchema, pszSchema, pszSchema ) );
+        pszColumn, pszTable, pszColumn, pszColumn,
+        pszColumn, pszTable, pszColumn, pszColumn, szFormat,
+        pszTable, pszColumn, pszColumn, pszColumn  ) );
 
     poStmt->Bind( &nColumnBlockSize );
     poStmt->Bind( &nRowBlockSize );
     poStmt->Bind( &nTotalBandBlocks );
     poStmt->Bind( &nTotalRowBlocks );
     poStmt->Bind( &nTotalColumnBlocks );
-    poStmt->Bind( pszOwner );
     poStmt->BindName( (char*) ":rdt", szBindRDT );
     poStmt->BindName( (char*) ":rid", &nBindRID );
 
     if( ! poStmt->Execute() )
     {
         delete poStmt;
-        CPLError( CE_Failure, CPLE_AppDefined,
+        CPLError( CE_Failure, CPLE_AppDefined, 
             "Failure to initialize GeoRaster" );
         return false;
     }
@@ -857,58 +776,13 @@ bool GeoRasterWrapper::Create( char* pszDescription,
 }
 
 //  ---------------------------------------------------------------------------
-//                                                          PrepareToOverwrite()
-//  ---------------------------------------------------------------------------
-
-void GeoRasterWrapper::PrepareToOverwrite( void )
-{
-    nTotalColumnBlocks  = 0;
-    nTotalRowBlocks     = 0;
-    nTotalBandBlocks    = 0;
-    if( sscanf( pszCellDepth, "%dBIT", &nCellSizeBits ) )
-    {
-        nGDALCellBytes   = GDALGetDataTypeSize(
-                          OWGetDataType( pszCellDepth ) ) / 8;
-    }
-    else
-    {
-        nGDALCellBytes   = 1;
-    }
-    dfXCoefficient[0]   = 1.0;
-    dfXCoefficient[1]   = 0.0;
-    dfXCoefficient[2]   = 0.0;
-    dfYCoefficient[0]   = 0.0;
-    dfYCoefficient[1]   = 1.0;
-    dfYCoefficient[2]   = 0.0;
-    pszCompressionType  = CPLStrdup( "NONE" );
-    nCompressQuality    = 75;
-    bIsReferenced       = false;
-    nCurrentBlock       = -1;
-    nCurrentLevel       = -1;
-    szInterleaving[0]   = 'B';
-    szInterleaving[1]   = 'S';
-    szInterleaving[2]   = 'Q';
-    szInterleaving[3]   = '\0';
-    bIOInitialized      = false;
-    bFlushMetadata      = false;
-    nSRID               = -1;
-    nPyramidMaxLevel    = 0;
-    nBlockCount         = 0;
-    bOrderlyAccess      = true;
-    sDInfo.global_state = 0;
-    sCInfo.global_state = 0;
-    bHasBitmapMask      = false;
-    eModelCoordLocation = MCL_DEFAULT;
-}
-
-//  ---------------------------------------------------------------------------
 //                                                                     Delete()
 //  ---------------------------------------------------------------------------
 
 bool GeoRasterWrapper::Delete( void )
 {
     OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
-      "UPDATE %s T SET %s = NULL WHERE %s\n", pszTable, pszColumn, pszWhere ) );
+      "UPDATE %s SET %s = NULL WHERE %s\n", pszTable, pszColumn, pszWhere ) );
 
     bool bReturn = poStmt->Execute();
 
@@ -921,49 +795,18 @@ bool GeoRasterWrapper::Delete( void )
 //                                                            SetGeoReference()
 //  ---------------------------------------------------------------------------
 
-void GeoRasterWrapper::SetGeoReference( int nSRIDIn )
+bool GeoRasterWrapper::SetGeoReference( int nSRIDIn )
 {
     if( nSRIDIn == 0 )
     {
-        nSRIDIn = UNKNOWN_CRS;
+        return false;
     }
 
     nSRID = nSRIDIn;
 
-    bIsReferenced = true;
-
     bFlushMetadata = true;
-}
 
-//  ---------------------------------------------------------------------------
-//                                                             SetCompression()
-//  ---------------------------------------------------------------------------
-
-void GeoRasterWrapper::SetCompression( const char* pszType, int nQuality )
-{
-    pszCompressionType = CPLStrdup( pszType );
-    nCompressQuality = nQuality;
-
-    CPLXMLNode* psRInfo = CPLGetXMLNode( phMetadata, "rasterInfo" );
-    CPLXMLNode* psNode = CPLGetXMLNode( psRInfo, "compression" );
-
-    if( psNode )
-    {
-        CPLRemoveXMLChild( psRInfo, psNode );
-        CPLDestroyXMLNode( psNode );
-    }
-
-    psNode = CPLCreateXMLNode( psRInfo, CXT_Element, "compression" );
-
-    CPLCreateXMLElementAndValue( psNode, "type", pszCompressionType );
-
-    if( EQUALN( pszCompressionType, "JPEG", 4 ) )
-    {
-        CPLCreateXMLElementAndValue( psNode, "quality",
-            CPLSPrintf( "%d", nCompressQuality ) );
-    }
-
-    bFlushMetadata = true;
+    return true;
 }
 
 //  ---------------------------------------------------------------------------
@@ -1044,11 +887,11 @@ void GeoRasterWrapper::GetRasterInfo( void )
         nRasterBands = 1;
     }
 
-    //  -------------------------------------------------------------------
+    //  ------------------------------------------------------------------- 
     //  Get Interleaving mode
-    //  -------------------------------------------------------------------
+    //  ------------------------------------------------------------------- 
 
-    strncpy( szInterleaving, CPLGetXMLValue( phMetadata,
+    strncpy( szInterleaving, CPLGetXMLValue( phMetadata, 
                             "rasterInfo.interleaving", "BSQ" ), 4 );
 
     //  -------------------------------------------------------------------
@@ -1085,25 +928,37 @@ void GeoRasterWrapper::GetRasterInfo( void )
     pszCellDepth        = CPLStrdup( CPLGetXMLValue( phMetadata,
                             "rasterInfo.cellDepth", "8BIT_U" ) );
 
-    if( sscanf( pszCellDepth, "%dBIT", &nCellSizeBits ) )
+    sscanf( pszCellDepth, "%dBIT", &nCellSizeBits );
+
+    GDALDataType eType  = OWGetDataType( pszCellDepth );
+
+    nCellSizeGDAL       = GDALGetDataTypeSize( eType ) / 8;
+
+    //  -------------------------------------------------------------------
+    //  Get compression type
+    //  -------------------------------------------------------------------
+
+    if( EQUAL( pszCellDepth, "1BIT" ) ||
+        EQUAL( pszCellDepth, "2BIT" ) ||
+        EQUAL( pszCellDepth, "4BIT" ) )
     {
-        nGDALCellBytes   = GDALGetDataTypeSize(
-                          OWGetDataType( pszCellDepth ) ) / 8;
-    }
-    else
-    {
-        nGDALCellBytes   = 1;
+        bPackingOrCompress = true;
     }
 
     pszCompressionType  = CPLStrdup( CPLGetXMLValue( phMetadata,
                             "rasterInfo.compression.type", "NONE" ) );
 
-    if( EQUALN( pszCompressionType, "JPEG", 4 ) )
+    if( EQUAL( pszCompressionType, "JPEG-B" ) )
     {
-        nCompressQuality = atoi( CPLGetXMLValue( phMetadata,
-                            "rasterInfo.compression.quality", "75" ) );
-
-        strcpy( szInterleaving, "BIP" );
+        bPackingOrCompress = true;
+    }
+    else if ( EQUAL( pszCompressionType, "JPEG-F" ) )
+    {
+        bPackingOrCompress = true;
+    }
+    else if ( EQUAL( pszCompressionType, "DEFLATE" ) )
+    {
+        bPackingOrCompress = true;
     }
 
     //  -------------------------------------------------------------------
@@ -1125,7 +980,7 @@ void GeoRasterWrapper::GetRasterInfo( void )
 
     char szPyramidType[OWCODE];
 
-    strcpy( szPyramidType, CPLGetXMLValue( phMetadata,
+    strcpy( szPyramidType, CPLGetXMLValue( phMetadata, 
                             "rasterInfo.pyramid.type", "None" ) );
 
     if( EQUAL( szPyramidType, "DECREASE" ) )
@@ -1134,35 +989,15 @@ void GeoRasterWrapper::GetRasterInfo( void )
                             "rasterInfo.pyramid.maxLevel", "0" ) );
     }
 
-    //  -------------------------------------------------------------------
+    //  ------------------------------------------------------------------- 
     //  Prepare to get Extents
-    //  -------------------------------------------------------------------
-
-    char szModelCoord[OWCODE];
-
-    strcpy( szModelCoord, CPLGetXMLValue( phMetadata,
-        "spatialReferenceInfo.modelCoordinateLocation", "UPPERLEFT" ) );
-
-    if( EQUAL( szModelCoord, "CENTER") )
-    {
-        eModelCoordLocation    = MCL_CENTER;
-    }
-    else
-    {
-        eModelCoordLocation    = MCL_UPPERLEFT;
-    }
+    //  ------------------------------------------------------------------- 
 
     bIsReferenced       = EQUAL( "TRUE", CPLGetXMLValue( phMetadata,
                             "spatialReferenceInfo.isReferenced", "FALSE" ) );
 
     nSRID               = atoi( CPLGetXMLValue( phMetadata,
                             "spatialReferenceInfo.SRID", "0" ) );
-
-    if( nSRID == 0 ||
-        nSRID == UNKNOWN_CRS )
-    {
-        bIsReferenced   = false;
-    }
 }
 
 //  ---------------------------------------------------------------------------
@@ -1177,40 +1012,20 @@ bool GeoRasterWrapper::GetImageExtent( double *padfTransform )
     sdo_geometry*   poLowerLeft   = NULL;
     sdo_geometry*   poLowerRight  = NULL;
 
-    if( eModelCoordLocation == MCL_UPPERLEFT )
-    {
-        poStmt = poConnection->CreateStatement( CPLSPrintf(
-            "SELECT\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d))\n"
-            "FROM  %s%s T\n"
-            "WHERE %s",
-                pszColumn, 0, 0,
-                pszColumn, 0, nRasterColumns,
-                pszColumn, nRasterRows, 0,
-                pszColumn, nRasterRows, nRasterColumns,
-                pszSchema, pszTable,
-                pszWhere ) );
-    }
-    else
-    {
-        poStmt = poConnection->CreateStatement( CPLSPrintf(
-            "SELECT\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%.1f, %.1f)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%.1f, %.1f)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%.1f, %.1f)),\n"
-            "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%.1f, %.1f))\n"
-            "FROM  %s%s T\n"
-            "WHERE %s",
-                pszColumn, -0.5, -0.5,
-                pszColumn, -0.5, (nRasterColumns - 0.5),
-                pszColumn, (nRasterRows - 0.5), -0.5,
-                pszColumn, (nRasterRows - 0.5), (nRasterColumns - 0.5),
-                pszSchema, pszTable,
-                pszWhere ) );
-    }
+    poStmt = poConnection->CreateStatement( CPLSPrintf(
+        "SELECT\n"
+        "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
+        "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
+        "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d)),\n"
+        "  SDO_GEOR.getModelCoordinate(%s, 0, SDO_NUMBER_ARRAY(%d, %d))\n"
+        "FROM  %s T\n"
+        "WHERE %s",
+        pszColumn, 0,            0,
+        pszColumn, 0,            nRasterColumns,
+        pszColumn, nRasterRows,  0, 
+        pszColumn, nRasterRows,  nRasterColumns,
+        pszTable,
+        pszWhere ) );
 
     poStmt->Define( &poUpperLeft );
     poStmt->Define( &poLowerLeft );
@@ -1246,19 +1061,12 @@ bool GeoRasterWrapper::GetImageExtent( double *padfTransform )
     }
 
     padfTransform[0] = dfULx;
-    padfTransform[1] = ( dfLRx - dfULx ) / (double) nRasterColumns;
+    padfTransform[1] = ( dfLRx - dfULx ) / nRasterColumns;
     padfTransform[2] = dfRotation;
 
     padfTransform[3] = dfULy;
     padfTransform[4] = -dfRotation;
-    padfTransform[5] = ( dfLRy - dfULy ) / (double) nRasterRows;
-
-    dfXCoefficient[0] = padfTransform[1];
-    dfXCoefficient[1] = padfTransform[2];
-    dfXCoefficient[2] = padfTransform[0];
-    dfYCoefficient[0] = padfTransform[4];
-    dfYCoefficient[1] = padfTransform[5];
-    dfYCoefficient[2] = padfTransform[3];
+    padfTransform[5] = ( dfLRy - dfULy ) / nRasterRows;
 
     return true;
 }
@@ -1384,7 +1192,7 @@ void GeoRasterWrapper::InitializeLayersNode()
         {
             psSLayer = CPLCreateXMLNode( pslInfo, CXT_Element, "subLayer" );
 
-            CPLCreateXMLElementAndValue( psSLayer, "layerNumber",
+            CPLCreateXMLElementAndValue( psSLayer, "layerNumber", 
                 CPLSPrintf( "%d", n + 1 ) );
 
             CPLCreateXMLElementAndValue( psSLayer, "layerDimensionOrdinate",
@@ -1483,25 +1291,7 @@ void GeoRasterWrapper::SetColorMap( int nBand, GDALColorTable* poCT )
 
         int iColor = 0;
 
-        int nCount = 0;
-
-        switch( nCellSizeBits )
-        {
-            case 1 :
-                nCount = 2;
-                break;
-            case 2 :
-                nCount = 4;
-                break;
-            case 4:
-                nCount = 16;
-                break;
-            default:
-                nCount = poCT->GetColorEntryCount();
-        }
-
-
-        for( iColor = 0; iColor < nCount; iColor++ )
+        for( iColor = 0; iColor < poCT->GetColorEntryCount(); iColor++ )
         {
             poCT->GetColorEntryAsRGB( iColor, &oEntry );
 
@@ -1525,69 +1315,34 @@ void GeoRasterWrapper::SetColorMap( int nBand, GDALColorTable* poCT )
 bool GeoRasterWrapper::InitializeIO( int nLevel, bool bUpdate )
 {
     // --------------------------------------------------------------------
-    // Free previous LOB locator list
-    // --------------------------------------------------------------------
-
-    if( pahLocator && nBlockCount )
-    {
-        OWStatement::Free( pahLocator, nBlockCount );
-    }
-    CPLFree( pahLocator );
-    CPLFree( pabyBlockBuf );
-    CPLFree( pabyBlockBuf2 );
-    delete poStmtRead;
-    delete poStmtWrite;
-
-    // --------------------------------------------------------------------
-    // Restore the level 0 dimensions from metadata info
-    // --------------------------------------------------------------------
-
-    nRowBlockSize       = atoi( CPLGetXMLValue( phMetadata,
-                            "rasterInfo.blocking.rowBlockSize", "0" ) );
-
-    nColumnBlockSize    = atoi( CPLGetXMLValue( phMetadata,
-                            "rasterInfo.blocking.columnBlockSize", "0" ) );
-
-    nTotalColumnBlocks  = atoi( CPLGetXMLValue( phMetadata,
-                            "rasterInfo.blocking.totalColumnBlocks","0") );
-
-    nTotalRowBlocks     = atoi( CPLGetXMLValue( phMetadata,
-                            "rasterInfo.blocking.totalRowBlocks", "0" ) );
-
-    // --------------------------------------------------------------------
     // Calculate the actual size of a lower resolution block
     // --------------------------------------------------------------------
 
     if( nLevel )
     {
+        nTotalColumnBlocks  = atoi( CPLGetXMLValue( phMetadata,
+                                "rasterInfo.blocking.totalColumnBlocks","0") );
+        nTotalRowBlocks     = atoi( CPLGetXMLValue( phMetadata,
+                                "rasterInfo.blocking.totalRowBlocks", "0" ) );
 
-        // ----------------------------------------------------------------
-        // Recalculate block size
-        // ----------------------------------------------------------------
+        double dfScale      = pow( (double) 2.0, (double) nLevel );
 
-        double dfScale = pow( (double) 2.0, (double) nLevel );
+        int nPyramidRows         = (int) ceil( (double) ( nRasterRows / dfScale ) );
+        int nPyramidColumns      = (int) ceil( (double) ( nRasterColumns / dfScale ) );
+        int nHalfBlockRows       = (int) ceil( (double) ( nRowBlockSize / 2 ) );
+        int nHalfBlockColumns    = (int) ceil( (double) ( nColumnBlockSize / 2 ) );
 
-        int nXSize  = (int) floor( (double) nRasterColumns   / dfScale );
-        int nYSize  = (int) floor( (double) nRasterRows      / dfScale );
-        int nXBlock = (int) floor( (double) nColumnBlockSize / 2.0 );
-        int nYBlock = (int) floor( (double) nRowBlockSize    / 2.0 );
+        // There is problably a easier way to do that math ...
 
-        if( nXSize <= nXBlock && nYSize <= nYBlock )
+        if( nPyramidRows    <= nHalfBlockRows ||
+            nPyramidColumns <= nHalfBlockColumns )
         {
-            nColumnBlockSize  = nXSize;
-            nRowBlockSize     = nYSize;
+            nColumnBlockSize    = nPyramidColumns;
+            nRowBlockSize       = nPyramidRows;
         }
 
-        // ----------------------------------------------------------------
-        // Recalculate blocks quantity
-        // ----------------------------------------------------------------
-
-        nTotalColumnBlocks  = (int) ceil( (double) nTotalColumnBlocks / dfScale );
-        nTotalRowBlocks     = (int) ceil( (double) nTotalRowBlocks / dfScale );
-
-        nTotalColumnBlocks  = (int) MAX( 1, nTotalColumnBlocks );
-        nTotalRowBlocks     = (int) MAX( 1, nTotalRowBlocks );
-
+        nTotalColumnBlocks  = (int) ceil( (double) ( nTotalColumnBlocks / dfScale ) );
+        nTotalRowBlocks     = (int) ceil( (double) ( nTotalRowBlocks / dfScale ) );
     }
 
     // --------------------------------------------------------------------
@@ -1599,45 +1354,28 @@ bool GeoRasterWrapper::InitializeIO( int nLevel, bool bUpdate )
     nBlockBytes     = nColumnBlockSize   * nRowBlockSize   * nBandBlockSize *
                       nCellSizeBits / 8;
 
-    nGDALBlockBytes = nColumnBlockSize   * nRowBlockSize   * nGDALCellBytes;
+    nBlockBytesGDAL = nColumnBlockSize   * nRowBlockSize   * nCellSizeGDAL;
 
     // --------------------------------------------------------------------
     // Allocate buffer for one raster block
     // --------------------------------------------------------------------
 
-    int nMaxBufferSize = MAX( nBlockBytes, nGDALBlockBytes );
-
-    pabyBlockBuf = (GByte*) VSIMalloc( sizeof(GByte) * nMaxBufferSize );
+    pabyBlockBuf    = (GByte*) VSIMalloc( nBlockBytes );
 
     if ( pabyBlockBuf == NULL )
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                "InitializeIO - Block Buffer" );
         return false;
-    }
-
-    if( bUpdate && ! EQUAL( pszCompressionType, "None") )
-    {
-        pabyBlockBuf2 = (GByte*) VSIMalloc( sizeof(GByte) * nMaxBufferSize );
-
-        if ( pabyBlockBuf2 == NULL )
-        {
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                    "InitializeIO - Block Buffer 2" );
-            return false;
-        }
     }
 
     // --------------------------------------------------------------------
     // Allocate array of LOB Locators
     // --------------------------------------------------------------------
 
-    pahLocator = (OCILobLocator**) VSIMalloc( sizeof(void*) * nBlockCount );
+    pahLocator = (OCILobLocator**) VSIMalloc( sizeof(OCILobLocator*) 
+               * nBlockCount );
 
     if ( pahLocator == NULL )
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                "InitializeIO - LobLocator Array" );
         return false;
     }
 
@@ -1645,23 +1383,23 @@ bool GeoRasterWrapper::InitializeIO( int nLevel, bool bUpdate )
     //  Issue a statement to load the locators
     //  --------------------------------------------------------------------
 
-    const char* pszUpdate = "";
+    const char* pszUpdate = "\0";
+    OWStatement* poStmt = NULL;
 
     if( bUpdate )
     {
-        pszUpdate = CPLStrdup( "\nFOR UPDATE" );
+        pszUpdate = "\nFOR UPDATE";
     }
 
-    OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
+    poStmt = poConnection->CreateStatement( CPLSPrintf(
         "SELECT RASTERBLOCK\n"
-        "FROM   %s%s\n"
+        "FROM   %s\n"
         "WHERE  RASTERID = :1 AND\n"
         "       PYRAMIDLEVEL = :3\n"
         "ORDER BY\n"
         "       BANDBLOCKNUMBER ASC,\n"
         "       ROWBLOCKNUMBER ASC,\n"
         "       COLUMNBLOCKNUMBER ASC%s",
-        pszSchema,
         pszDataTable,
         pszUpdate ) );
 
@@ -1706,7 +1444,7 @@ bool GeoRasterWrapper::GetDataBlock( int nBand,
     if( bIOInitialized == false || nCurrentLevel != nLevel )
     {
         InitializeIO( nLevel );
-
+        CPLDebug("GEOR","Pyramid level (%d)", nLevel);
         nCurrentLevel = nLevel;
         nCurrentBlock = -1;
     }
@@ -1719,85 +1457,62 @@ bool GeoRasterWrapper::GetDataBlock( int nBand,
     if( nCurrentBlock != nBlock )
     {
         nCurrentBlock = nBlock;
-
         nBytesRead = poStmtRead->ReadBlob( pahLocator[nBlock],
                                            pabyBlockBuf,
                                            nBlockBytes );
         if( nBytesRead == 0 )
         {
-            memset( pData, 0, nGDALBlockBytes );
-
-            return true;
+                return false;
         }
+    }
 
-        if( nBytesRead < nBlockBytes && EQUAL( pszCompressionType, "NONE") )
+    if( bPackingOrCompress )
+    {
+        //  ---------------------------------------------------------------
+        //  Unpack NBits
+        //  ---------------------------------------------------------------
+
+        if( EQUAL( pszCellDepth, "1BIT" ) ||
+            EQUAL( pszCellDepth, "2BIT" ) ||
+            EQUAL( pszCellDepth, "4BIT" ) )
         {
-            CPLDebug("GEOR", "BLOB size (%ld) is smaller than expected (%ld) !",
-                nBytesRead,  nBlockBytes );
-
-            memset( pData, 0, nGDALBlockBytes );
-
-            return true;
+            UnpackNBits( pabyBlockBuf );
         }
-
-        if( nBytesRead > nBlockBytes )
-        {
-            CPLDebug("GEOR", "BLOB size (%ld) is bigger than expected (%ld) !",
-                nBytesRead,  nBlockBytes );
-
-            memset( pData, 0, nGDALBlockBytes );
-
-            return true;
-        }
-
-#ifndef CPL_MSB
-        if( nCellSizeBits > 8 )
-        {
-            int nWordSize  = nCellSizeBits / 8;
-            int nWordCount = nColumnBlockSize * nRowBlockSize * nBandBlockSize;
-            GDALSwapWords( pabyBlockBuf, nWordSize, nWordCount, nWordSize );
-        }
-#endif
 
         //  ----------------------------------------------------------------
         //  Uncompress
         //  ----------------------------------------------------------------
 
-        if( EQUALN( pszCompressionType, "JPEG", 4 ) )
+        if( EQUAL( pszCompressionType, "JPEG-B" ) )
+        {
+            UncompressJpeg( nBytesRead );
+        }
+        else if ( EQUAL( pszCompressionType, "JPEG-F" ) )
         {
             UncompressJpeg( nBytesRead );
         }
         else if ( EQUAL( pszCompressionType, "DEFLATE" ) )
         {
-            UncompressDeflate( nBytesRead );
-        }
-
-        //  ----------------------------------------------------------------
-        //  Unpack NBits
-        //  ----------------------------------------------------------------
-
-        if( nCellSizeBits < 8 || nLevel == DEFAULT_BMP_MASK )
-        {
-            UnpackNBits( pabyBlockBuf );
+            UncompressDeflate( nBlockBytes, nBytesRead );
         }
     }
 
     //  --------------------------------------------------------------------
-    //  Uninterleaving
+    //  Uninterleave it if necessary
     //  --------------------------------------------------------------------
 
     int nStart = ( nBand - 1 ) % nBandBlockSize;
 
-    if( EQUAL( szInterleaving, "BSQ" ) || nBandBlockSize == 1 )
+    if( EQUAL( szInterleaving, "BSQ" ) )
     {
-        nStart *= nGDALBlockBytes;
+        nStart *= nBlockBytesGDAL;
 
-        memcpy( pData, &pabyBlockBuf[nStart], nGDALBlockBytes );
+        memcpy( pData, &pabyBlockBuf[nStart], nBlockBytesGDAL );
     }
     else
     {
-        int nIncr   = nBandBlockSize * nGDALCellBytes;
-        int nSize   = nGDALCellBytes;
+        int nIncr   = nBandBlockSize * nCellSizeGDAL;
+        int nSize   = nCellSizeGDAL;
 
         if( EQUAL( szInterleaving, "BIL" ) )
         {
@@ -1807,21 +1522,16 @@ bool GeoRasterWrapper::GetDataBlock( int nBand,
         }
 
         GByte* pabyData = (GByte*) pData;
-
         unsigned long ii = 0;
-        unsigned long jj = nStart * nGDALCellBytes;
-
-        for( ii = 0; ii < nGDALBlockBytes; ii += nSize, jj += nIncr )
+        unsigned long jj = nStart;
+        for( ii = 0; ii < nBlockBytesGDAL;
+             ii += ( nCellSizeGDAL * nSize ),
+             jj += nIncr )
         {
             memcpy( &pabyData[ii], &pabyBlockBuf[jj], nSize );
         }
     }
-/*
-    CPLDebug( "GEOR",
-      "nBlock, nBand, nLevel, nXOffset, nYOffset, nColumnBlockSize, nRowBlockSize = "
-      "%d, %d, %d, %d, %d, %d, %d",
-       nBlock, nBand, nLevel, nXOffset, nYOffset, nColumnBlockSize, nRowBlockSize );
-*/
+
     return true;
 }
 
@@ -1835,91 +1545,48 @@ bool GeoRasterWrapper::SetDataBlock( int nBand,
                                      int nYOffset,
                                      void* pData )
 {
-#ifndef CPL_MSB
-    if( nCellSizeBits > 8 )
-    {
-        int nWordSize  = nCellSizeBits / 8;
-        int nWordCount = nColumnBlockSize * nRowBlockSize;
-        GDALSwapWords( pData, nWordSize, nWordCount, nWordSize );
-    }
-#endif
-
     if( bIOInitialized == false || nCurrentLevel != nLevel )
     {
         InitializeIO( nLevel, true );
 
         nCurrentLevel = nLevel;
-        nCurrentBlock = -1;
     }
 
     int nBlock = CALCULATEBLOCK( nBand, nXOffset, nYOffset, nBandBlockSize,
                                  nTotalColumnBlocks, nTotalRowBlocks );
 
+    GByte *pabyOutBuf = (GByte *) pData;
+
     //  --------------------------------------------------------------------
-    //  Read interleaved block
+    //  Pack NBits
     //  --------------------------------------------------------------------
 
-    unsigned long nBytesRead = 0;
-
-    if( bOrderlyAccess == false &&
-        nBandBlockSize > 1 &&
-        nCurrentBlock != nBlock )
+    if( bPackingOrCompress )
     {
-        CPLDebug( "GEOR", "Reloading block %d", nBlock );
-
-        nBytesRead = poStmtWrite->ReadBlob( pahLocator[nBlock],
-                                            pabyBlockBuf,
-                                            nBlockBytes );
-        if( nBytesRead == 0 )
+        if( EQUAL( pszCellDepth, "1BIT" ) ||
+            EQUAL( pszCellDepth, "2BIT" ) ||
+            EQUAL( pszCellDepth, "4BIT" ) )
         {
-            memset( pabyBlockBuf, 0, nBlockBytes );
-        }
-        else
-        {
-            //  ------------------------------------------------------------
-            //  Unpack NBits
-            //  ------------------------------------------------------------
-
-            if( nCellSizeBits < 8 || nLevel == DEFAULT_BMP_MASK )
-            {
-                UnpackNBits( pabyBlockBuf );
-            }
-
-            //  ------------------------------------------------------------
-            //  Uncompress
-            //  ------------------------------------------------------------
-
-            if( EQUALN( pszCompressionType, "JPEG", 4 ) )
-            {
-                UncompressJpeg( nBytesRead );
-            }
-            else if ( EQUAL( pszCompressionType, "DEFLATE" ) )
-            {
-                UncompressDeflate( nBytesRead );
-            }
+            PackNBits( pabyBlockBuf, pData );
         }
     }
 
-    GByte *pabyInBuf = (GByte *) pData;
-
-    nCurrentBlock = nBlock;
-
     //  --------------------------------------------------------------------
-    //  Interleave
+    //  Interleave it if necessary
     //  --------------------------------------------------------------------
 
     int nStart = ( nBand - 1 ) % nBandBlockSize;
 
-    if( EQUAL( szInterleaving, "BSQ" ) || nBandBlockSize == 1 )
+    if( EQUAL( szInterleaving, "BSQ" ) )
     {
-        nStart *= nGDALBlockBytes;
+        nStart *= nBlockBytesGDAL;
 
-        memcpy( &pabyBlockBuf[nStart], pabyInBuf, nGDALBlockBytes );
+        memcpy( &pabyBlockBuf[nStart], pabyOutBuf, nBlockBytesGDAL );
     }
     else
     {
-        int nIncr   = nBandBlockSize * nGDALCellBytes;
-        int nSize   = nGDALCellBytes;
+        int nIncr   = nBandBlockSize * nCellSizeGDAL;
+        int nSize   = nCellSizeGDAL;
 
         if( EQUAL( szInterleaving, "BIL" ) )
         {
@@ -1929,57 +1596,38 @@ bool GeoRasterWrapper::SetDataBlock( int nBand,
         }
 
         unsigned long ii = 0;
-        unsigned long jj = nStart * nGDALCellBytes;
-
-        for( ii = 0; ii < nGDALBlockBytes; ii += nSize, jj += nIncr )
+        unsigned long jj = nStart;
+        for( ii = 0; ii < nBlockBytesGDAL;
+             ii += ( nCellSizeGDAL * nSize ),
+             jj += nIncr )
         {
-            memcpy( &pabyBlockBuf[jj], &pabyInBuf[ii], nSize );
+            memcpy( &pabyBlockBuf[jj], &pabyOutBuf[ii], nSize );
         }
     }
 
     //  --------------------------------------------------------------------
-    //  Compress ( from pabyBlockBuf to pabyBlockBuf2 )
+    //  Compress
     //  --------------------------------------------------------------------
 
-    GByte* pabyOutBuf = (GByte *) pabyBlockBuf;
-
-    unsigned long nWriteBytes = nBlockBytes;
-
-    if( ! EQUAL( pszCompressionType, "None" ) )
+    if( bPackingOrCompress )
     {
-        if( EQUALN( pszCompressionType, "JPEG", 4 ) )
+        if( EQUAL( pszCompressionType, "JPEG-B" ) )
         {
-            nWriteBytes = CompressJpeg();
+            CompressJpeg();
+        }
+        else if ( EQUAL( pszCompressionType, "JPEG-F" ) )
+        {
+            CompressJpeg();
         }
         else if ( EQUAL( pszCompressionType, "DEFLATE" ) )
         {
-            nWriteBytes = CompressDeflate();
+            CompressDeflate( pData );
         }
-
-        pabyOutBuf = pabyBlockBuf2;
     }
 
-    //  --------------------------------------------------------------------
-    //  Pack bits ( inside pabyOutBuf )
-    //  --------------------------------------------------------------------
-
-    if( nCellSizeBits < 8 || nLevel == DEFAULT_BMP_MASK )
-    {
-        PackNBits( pabyOutBuf );
-    }
-
-    //  --------------------------------------------------------------------
-    //  Write BLOB
-    //  --------------------------------------------------------------------
-/*
-    CPLDebug( "GEOR",
-      "nBlock, nBand, nLevel, nXOffset, nYOffset, nColumnBlockSize, nRowBlockSize = "
-      "%d, %d, %d, %d, %d, %d, %d",
-       nBlock, nBand, nLevel, nXOffset, nYOffset, nColumnBlockSize, nRowBlockSize );
-*/
     if( ! poStmtWrite->WriteBlob( pahLocator[nBlock],
-                                  pabyOutBuf,
-                                  nWriteBytes ) )
+                                  pabyBlockBuf,
+                                  nBlockBytes ) )
     {
         return false;
     }
@@ -2179,52 +1827,27 @@ bool GeoRasterWrapper::FlushMetadata()
     CPLCreateXMLElementAndValue( psOInfo, "defaultBlue",   pszBlue );
 
     //  --------------------------------------------------------------------
-    //  Update BitmapMask info
-    //  --------------------------------------------------------------------
-
-    if( bHasBitmapMask )
-    {
-        CPLXMLNode* psLayers = CPLGetXMLNode( phMetadata, "layerInfo" );
-
-        if( psLayers )
-        {
-            CPLCreateXMLElementAndValue( psLayers, "bitmapMask", "true" );
-        }
-    }
-
-    //  --------------------------------------------------------------------
     //  Update the Metadata directly from the XML text
     //  --------------------------------------------------------------------
 
-    double dfXCoef[3], dfYCoef[3];
+    int nModelCoordinateLocation = 0;
 
-    int eModel = eForceCoordLocation;
-
-    dfXCoef[0] = dfXCoefficient[0];
-    dfXCoef[1] = dfXCoefficient[1];
-    dfXCoef[2] = dfXCoefficient[2];
-
-    dfYCoef[0] = dfYCoefficient[0];
-    dfYCoef[1] = dfYCoefficient[1];
-    dfYCoef[2] = dfYCoefficient[2];
-
-    if( eModel == MCL_CENTER )
+    if( ! OW_DEFAULT_CENTER )
     {
-        dfXCoef[2] += ( dfXCoef[0] / 2.0 );
-        dfYCoef[2] += ( dfYCoef[1] / 2.0 );
+        nModelCoordinateLocation = 1;
     }
 
-    CPLString osStatemtn = "";
+    char* pszXML = CPLSerializeXMLTree( phMetadata );
 
-    osStatemtn.Printf(
+    OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
         "DECLARE\n"
         "  GR1  sdo_georaster;\n"
         "  SRID number;\n"
         "BEGIN\n"
         "\n"
-        "  SELECT %s INTO GR1 FROM %s%s T WHERE %s FOR UPDATE;\n"
+        "  SELECT %s INTO GR1 FROM %s T WHERE %s FOR UPDATE;\n"
         "\n"
-        "  GR1.metadata := XMLTYPE('%s');\n"
+        "  GR1.metadata := XMLTYPE(:1);\n"
         "\n"
         "  SRID := :2;\n"
         "  IF SRID = 0 THEN\n"
@@ -2234,38 +1857,34 @@ bool GeoRasterWrapper::FlushMetadata()
         "  SDO_GEOR.georeference( GR1, SRID, :3,"
            " SDO_NUMBER_ARRAY(:4, :5, :6), SDO_NUMBER_ARRAY(:7, :8, :9));\n"
         "\n"
-        "  IF SRID = %d THEN\n"
-        "    GR1.spatialExtent := NULL;\n"
-        "  ELSE\n"
-        "    GR1.spatialExtent := SDO_GEOR.generateSpatialExtent( GR1 );\n"
-        "  END IF;\n"
+        "  GR1.spatialExtent := SDO_GEOR.generateSpatialExtent( GR1, NULL );\n"
         "\n"
-        "  UPDATE %s%s T SET %s = GR1 WHERE %s;\n"
+        "  UPDATE %s T SET %s = GR1 WHERE %s;\n"
         "\n"
         "  COMMIT;\n"
-        "END;",
-        pszColumn, pszSchema, pszTable, pszWhere,
-        CPLSerializeXMLTree( phMetadata ),
-        UNKNOWN_CRS,
-        UNKNOWN_CRS,
-        pszSchema, pszTable, pszColumn, pszWhere );
+        "END;", 
+        pszColumn, pszTable, pszWhere,
+        UNKNOW_CRS,
+        pszTable, pszColumn, pszWhere ) );
 
-    OWStatement* poStmt = poConnection->CreateStatement( osStatemtn.c_str() );
-
+    poStmt->Bind( pszXML, strlen( pszXML ) + 1);
     poStmt->Bind( &nSRID );
-    poStmt->Bind( &eModel );
-    poStmt->Bind( &dfXCoef[0] );
-    poStmt->Bind( &dfXCoef[1] );
-    poStmt->Bind( &dfXCoef[2] );
-    poStmt->Bind( &dfYCoef[0] );
-    poStmt->Bind( &dfYCoef[1] );
-    poStmt->Bind( &dfYCoef[2] );
+    poStmt->Bind( &nModelCoordinateLocation );
+    poStmt->Bind( &dfXCoefficient[0] );
+    poStmt->Bind( &dfXCoefficient[1] );
+    poStmt->Bind( &dfXCoefficient[2] );
+    poStmt->Bind( &dfYCoefficient[0] );
+    poStmt->Bind( &dfYCoefficient[1] );
+    poStmt->Bind( &dfYCoefficient[2] );
 
     if( ! poStmt->Execute() )
     {
+        CPLFree( pszXML );
         delete poStmt;
         return false;
     }
+
+    CPLFree( pszXML );
 
     delete poStmt;
 
@@ -2280,8 +1899,6 @@ bool GeoRasterWrapper::GeneratePyramid( int nLevels,
                                         const char* pszResampling,
                                         bool bNodata )
 {
-    (void) bNodata;
-
     OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
         "DECLARE\n"
         "  gr sdo_georaster;\n"
@@ -2308,107 +1925,43 @@ bool GeoRasterWrapper::GeneratePyramid( int nLevels,
 }
 
 //  ---------------------------------------------------------------------------
-//                                                           CreateBitmapMask()
-//  ---------------------------------------------------------------------------
-
-bool GeoRasterWrapper::InitializePyramidLevel( int nLevel,
-                                               int nBlockColumns,
-                                               int nBlockRows,
-                                               int nColumnBlocks,
-                                               int nRowBlocks,
-                                               int nBandBlocks )
-{
-    //  -----------------------------------------------------------
-    //  Create rows for the bitmap mask
-    //  -----------------------------------------------------------
-
-    OWStatement* poStmt = NULL;
-
-    poStmt = poConnection->CreateStatement(
-        "DECLARE\n"
-        "  W    NUMBER          := :1;\n"
-        "  H    NUMBER          := :2;\n"
-        "  BB   NUMBER          := :3;\n"
-        "  RB   NUMBER          := :4;\n"
-        "  CB   NUMBER          := :5;\n"
-        "  X    NUMBER          := 0;\n"
-        "  Y    NUMBER          := 0;\n"
-        "  STM  VARCHAR2(1024)  := '';\n"
-        "BEGIN\n"
-        "\n"
-        "  EXECUTE IMMEDIATE 'DELETE FROM '||:rdt||' \n"
-        "    WHERE RASTERID = '||:rid||' AND PYRAMIDLEVEL = '||:lev||' ';\n"
-        "\n"
-        "  STM := 'INSERT INTO '||:rdt||' VALUES (:1, :lev, :2-1, :3-1, :4-1 ,\n"
-        "    SDO_GEOMETRY(2003, NULL, NULL, SDO_ELEM_INFO_ARRAY(1, 1003, 3),\n"
-        "    SDO_ORDINATE_ARRAY(:5, :6, :7-1, :8-1)), EMPTY_BLOB() )';\n"
-        "\n"
-        "  FOR b IN 1..BB LOOP\n"
-        "    Y := 0;\n"
-        "    FOR r IN 1..RB LOOP\n"
-        "      X := 0;\n"
-        "      FOR c IN 1..CB LOOP\n"
-        "        EXECUTE IMMEDIATE STM USING :rid, b, r, c, Y, X, (Y+H), (X+W);\n"
-        "        X := X + W;\n"
-        "      END LOOP;\n"
-        "      Y := Y + H;\n"
-        "    END LOOP;\n"
-        "  END LOOP;\n"
-        "END;" );
-
-    poStmt->Bind( &nBlockColumns );
-    poStmt->Bind( &nBlockRows );
-    poStmt->Bind( &nBandBlocks );
-    poStmt->Bind( &nRowBlocks );
-    poStmt->Bind( &nColumnBlocks );
-    poStmt->BindName( (char*) ":rdt", pszDataTable );
-    poStmt->BindName( (char*) ":rid", &nRasterId );
-    poStmt->BindName( (char*) ":lev", &nLevel );
-
-    if( ! poStmt->Execute() )
-    {
-        delete poStmt;
-        CPLError( CE_Failure, CPLE_AppDefined,
-            "Failure to initialize Level %d", nLevel );
-        return false;
-    }
-
-    return true;
-}
-
-//  ---------------------------------------------------------------------------
-//                                                                UnpackNBits()
+//                                                            UnpackNBits()
 //  ---------------------------------------------------------------------------
 
 void GeoRasterWrapper::UnpackNBits( GByte* pabyData )
 {
-    int nPixCount = nColumnBlockSize * nRowBlockSize * nBandBlockSize;
+    int nPixCount =  nColumnBlockSize * nRowBlockSize;
 
     if( EQUAL( pszCellDepth, "4BIT" ) )
     {
-        for( int ii = nPixCount - 2; ii >= 0; ii -= 2 )
+        int  ii = 0;
+        for( ii = nPixCount; ii >= 0; ii -= 2 )
         {
-            int k = ii >> 1;
-            pabyData[ii+1] = (pabyData[k]     ) & 0xf;
-            pabyData[ii]   = (pabyData[k] >> 4) & 0xf;
+            int k = ii>>1;
+            pabyData[ii+1] = (pabyData[k]>>4) & 0xf;
+            pabyData[ii]   = (pabyData[k]) & 0xf;
         }
     }
-    else if( EQUAL( pszCellDepth, "2BIT" ) )
+
+    if( EQUAL( pszCellDepth, "2BIT" ) )
     {
-        for( int ii = nPixCount - 4; ii >= 0; ii -= 4 )
+        int  ii = 0;
+        for( ii = nPixCount; ii >= 0; ii -= 4 )
         {
-            int k = ii >> 2;
-            pabyData[ii+3] = (pabyData[k]     ) & 0x3;
-            pabyData[ii+2] = (pabyData[k] >> 2) & 0x3;
-            pabyData[ii+1] = (pabyData[k] >> 4) & 0x3;
-            pabyData[ii]   = (pabyData[k] >> 6) & 0x3;
+            int k = ii>>2;
+            pabyData[ii+3] = (pabyData[k]>>6) & 0x3;
+            pabyData[ii+2] = (pabyData[k]>>4) & 0x3;
+            pabyData[ii+1] = (pabyData[k]>>2) & 0x3;
+            pabyData[ii]   = (pabyData[k]) & 0x3;
         }
     }
-    else
+
+    if( EQUAL( pszCellDepth, "1BIT" ) )
     {
-        for( int ii = nPixCount - 1; ii >= 0; ii-- )
+        int  ii = 0;
+        for( ii = nPixCount; ii >= 0; ii-- )
         {
-            if( ( pabyData[ii>>3] & ( 128 >> (ii & 0x7) ) ) )
+            if( ( pabyData[ii>>3] & ( 1 << (ii & 0x7) ) ) )
                 pabyData[ii] = 1;
             else
                 pabyData[ii] = 0;
@@ -2420,384 +1973,149 @@ void GeoRasterWrapper::UnpackNBits( GByte* pabyData )
 //                                                                  PackNBits()
 //  ---------------------------------------------------------------------------
 
-void GeoRasterWrapper::PackNBits( GByte* pabyData )
+void GeoRasterWrapper::PackNBits( GByte* pabyOutBuf, void* pData )
 {
-    int nPixCount = nBandBlockSize * nRowBlockSize * nColumnBlockSize;
-
-    GByte* pabyBuffer = (GByte*) VSIMalloc( nPixCount * sizeof(GByte*) );
-
-    if( pabyBuffer == NULL )
+    if( EQUAL( pszCellDepth, "1BIT" ) ||
+        EQUAL( pszCellDepth, "2BIT" ) ||
+        EQUAL( pszCellDepth, "4BIT" ) )
     {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "PackNBits" );
-        return;
-    }
+        int nPixCount =  nColumnBlockSize * nRowBlockSize;
+        pabyOutBuf = (GByte *) VSIMalloc( nColumnBlockSize * nRowBlockSize );
 
-    if( nCellSizeBits == 4 )
-    {
-        for( int ii = 0; ii < nPixCount - 1; ii += 2 )
+        if (pabyOutBuf == NULL)
         {
-            int k = ii >> 1;
-            pabyBuffer[k] =
-                  ((((GByte *) pabyData)[ii+1] & 0xf)     )
-                | ((((GByte *) pabyData)[ii]   & 0xf) << 4);
+            return;
+        }
+
+        if( EQUAL( pszCellDepth, "1BIT" ) )
+        {
+            for( int ii = 0; ii < nPixCount - 7; ii += 8 )
+            {
+                int k = ii>>3;
+                pabyOutBuf[k] = 
+                    (((GByte *) pData)[ii] & 0x1)
+                    | ((((GByte *) pData)[ii+1]&0x1) << 1)
+                    | ((((GByte *) pData)[ii+2]&0x1) << 2)
+                    | ((((GByte *) pData)[ii+3]&0x1) << 3)
+                    | ((((GByte *) pData)[ii+4]&0x1) << 4)
+                    | ((((GByte *) pData)[ii+5]&0x1) << 5)
+                    | ((((GByte *) pData)[ii+6]&0x1) << 6)
+                    | ((((GByte *) pData)[ii+7]&0x1) << 7);
+            }
+        }
+        else if( EQUAL( pszCellDepth, "2BIT" ) )
+        {
+            for( int ii = 0; ii < nPixCount - 3; ii += 4 )
+            {
+                int k = ii>>2;
+                pabyOutBuf[k] = 
+                    (((GByte *) pData)[ii] & 0x3)
+                    | ((((GByte *) pData)[ii+1]&0x3) << 2)
+                    | ((((GByte *) pData)[ii+2]&0x3) << 4)
+                    | ((((GByte *) pData)[ii+3]&0x3) << 6);
+            }
+        }
+        else if( EQUAL( pszCellDepth, "4BIT" ) )
+        {
+            for( int ii = 0; ii < nPixCount - 1; ii += 2 )
+            {
+                int k = ii>>1;
+                pabyOutBuf[k] = 
+                    (((GByte *) pData)[ii] & 0xf)
+                    | ((((GByte *) pData)[ii+1]&0xf) << 4);
+            }
         }
     }
-    else if( nCellSizeBits == 2 )
-    {
-        for( int ii = 0; ii < nPixCount - 3; ii += 4 )
-        {
-            int k = ii >> 2;
-            pabyBuffer[k] =
-                  ((((GByte *) pabyData)[ii+3] & 0x3)     )
-                | ((((GByte *) pabyData)[ii+2] & 0x3) << 2)
-                | ((((GByte *) pabyData)[ii+1] & 0x3) << 4)
-                | ((((GByte *) pabyData)[ii]   & 0x3) << 6);
-        }
-    }
-    else
-    {
-        for( int ii = 0; ii < nPixCount - 7; ii += 8 )
-        {
-            int k = ii >> 3;
-            pabyBuffer[k] =
-                  ((((GByte *) pabyData)[ii+7] & 0x1)     )
-                | ((((GByte *) pabyData)[ii+6] & 0x1) << 1)
-                | ((((GByte *) pabyData)[ii+5] & 0x1) << 2)
-                | ((((GByte *) pabyData)[ii+4] & 0x1) << 3)
-                | ((((GByte *) pabyData)[ii+3] & 0x1) << 4)
-                | ((((GByte *) pabyData)[ii+2] & 0x1) << 5)
-                | ((((GByte *) pabyData)[ii+1] & 0x1) << 6)
-                | ((((GByte *) pabyData)[ii]   & 0x1) << 7);
-        }
-    }
-
-    memcpy( pabyData, pabyBuffer, nPixCount );
-
-    CPLFree( pabyBuffer );
 }
 
 //  ---------------------------------------------------------------------------
 //                                                             UncompressJpeg()
 //  ---------------------------------------------------------------------------
 
-const static int K2Chrominance[64] =
-{
-    17, 18, 24, 47, 99, 99, 99, 99,
-    18, 21, 26, 66, 99, 99, 99, 99,
-    24, 26, 56, 99, 99, 99, 99, 99,
-    47, 66, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99
-};
-
-static const int AC_BITS[16] =
-{
-    0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 119
-};
-
-static const int AC_HUFFVAL[256] =
-{
-      0,   1,   2,   3,  17,   4,   5,  33,  49,   6,  18,
-     65,  81,   7,  97, 113,  19,  34,  50, 129,   8,  20,
-     66, 145, 161, 177, 193,   9,  35,  51,  82, 240,  21,
-     98, 114, 209,  10,  22,  36,  52, 225,  37, 241,  23,
-     24,  25,  26,  38,  39,  40,  41,  42,  53,  54,  55,
-     56,  57,  58,  67,  68,  69,  70,  71,  72,  73,  74,
-     83,  84,  85,  86,  87,  88,  89,  90,  99, 100, 101,
-    102, 103, 104, 105, 106, 115, 116, 117, 118, 119, 120,
-    121, 122, 130, 131, 132, 133, 134, 135, 136, 137, 138,
-    146, 147, 148, 149, 150, 151, 152, 153, 154, 162, 163,
-    164, 165, 166, 167, 168, 169, 170, 178, 179, 180, 181,
-    182, 183, 184, 185, 186, 194, 195, 196, 197, 198, 199,
-    200, 201, 202, 210, 211, 212, 213, 214, 215, 216, 217,
-    218, 226, 227, 228, 229, 230, 231, 232, 233, 234, 242,
-    243, 244, 245, 246, 247, 248, 249, 250
-};
-
-static const int DC_BITS[16] =
-{
-    0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
-};
-
-static const int DC_HUFFVAL[256] =
-{
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
-};
-
-/***
- *
- * Load the tables based on the Java's JAI default values.
- *
- * JPEGQTable.K2Chrominance.getScaledInstance()
- * JPEGHuffmanTable.StdACChrominance
- * JPEGHuffmanTable.StdDCChrominance
- *
- ***/
-
-void JPEG_LoadTables( JQUANT_TBL* hquant_tbl_ptr,
-                      JHUFF_TBL* huff_ac_ptr,
-                      JHUFF_TBL* huff_dc_ptr,
-                      unsigned int nQuality )
-{
-    int i = 0;
-    float fscale_factor;
-
-    //  --------------------------------------------------------------------
-    //  Scale Quantization table based on quality
-    //  --------------------------------------------------------------------
-
-    fscale_factor = (float) jpeg_quality_scaling( nQuality ) / (float) 100.0;
-
-    for ( i = 0; i < 64; i++ )
-    {
-        UINT16 temp = (UINT16) floor( K2Chrominance[i] * fscale_factor + 0.5 );
-        if ( temp <= 0 )
-            temp = 1;
-        if ( temp > 255 )
-            temp = 255;
-        hquant_tbl_ptr->quantval[i] = (UINT16) temp;
-    }
-
-    //  --------------------------------------------------------------------
-    //  Load AC huffman table
-    //  --------------------------------------------------------------------
-
-    for ( i = 1; i <= 16; i++ )
-    {
-        /* counts[i] is number of Huffman codes of length i bits, i=1..16 */
-        huff_ac_ptr->bits[i] = (UINT8) AC_BITS[i-1];
-    }
-
-    for ( i = 0; i < 256; i++ )
-    {
-        /* symbols[] is the list of Huffman symbols, in code-length order */
-        huff_ac_ptr->huffval[i] = (UINT8) AC_HUFFVAL[i];
-    }
-
-    //  --------------------------------------------------------------------
-    //  Load DC huffman table
-    //  --------------------------------------------------------------------
-
-    for ( i = 1; i <= 16; i++ )
-    {
-        /* counts[i] is number of Huffman codes of length i bits, i=1..16 */
-        huff_dc_ptr->bits[i] = (UINT8) DC_BITS[i-1];
-    }
-
-    for ( i = 0; i < 256; i++ )
-    {
-        /* symbols[] is the list of Huffman symbols, in code-length order */
-        huff_dc_ptr->huffval[i] = (UINT8) DC_HUFFVAL[i];
-    }
-}
-
 void GeoRasterWrapper::UncompressJpeg( unsigned long nInSize )
 {
-    //  --------------------------------------------------------------------
-    //  Load JPEG in a virtual file
-    //  --------------------------------------------------------------------
+    const char* pszFname = CPLSPrintf( "/vsimem/jpeg_%p.virtual", pabyBlockBuf );
 
-    const char* pszMemFile = CPLSPrintf( "/vsimem/geor_%p.jpg", pabyBlockBuf );
+    // Write jpeg file in memory
 
-    FILE *fpImage = VSIFOpenL( pszMemFile, "wb" );
-    VSIFWriteL( pabyBlockBuf, nInSize, 1, fpImage );
-    VSIFCloseL( fpImage );
+    FILE *fp = VSIFOpenL( pszFname, "w+" );
+    VSIFWriteL( pabyBlockBuf, 1, nInSize, fp );
+    VSIFCloseL( fp );
 
-    fpImage = VSIFOpenL( pszMemFile, "rb" );
+    // Read all jpeg at once
 
-    //  --------------------------------------------------------------------
-    //  Initialize decompressor
-    //  --------------------------------------------------------------------
+    GDALDatasetH hDS = GDALOpen( pszFname, GA_ReadOnly );
 
-    if( ! sDInfo.global_state )
-    {
-        sDInfo.err = jpeg_std_error( &sJErr );
-        jpeg_create_decompress( &sDInfo );
+    GDALDatasetRasterIO( hDS, GF_Read, 0, 0,
+        nColumnBlockSize, nRowBlockSize, pabyBlockBuf,
+        nColumnBlockSize, nRowBlockSize, GDT_Byte, nBandBlockSize, NULL, 0, 0, 0 );
 
-        // -----------------------------------------------------------------
-        // Load table for abbreviated JPEG-B
-        // -----------------------------------------------------------------
+    GDALClose( hDS );
 
-        int nComponentsToLoad = -1; /* doesn't load any table */
-
-        if( EQUAL( pszCompressionType, "JPEG-B") )
-        {
-            nComponentsToLoad = nBandBlockSize;
-        }
-
-        for( int n = 0; n < nComponentsToLoad; n++ )
-        {
-            sDInfo.quant_tbl_ptrs[n] =
-                jpeg_alloc_quant_table( (j_common_ptr) &sDInfo );
-            sDInfo.ac_huff_tbl_ptrs[n] =
-                jpeg_alloc_huff_table( (j_common_ptr) &sDInfo );
-            sDInfo.dc_huff_tbl_ptrs[n] =
-                jpeg_alloc_huff_table( (j_common_ptr) &sDInfo );
-            
-            JPEG_LoadTables( sDInfo.quant_tbl_ptrs[n],
-                             sDInfo.ac_huff_tbl_ptrs[n],
-                             sDInfo.dc_huff_tbl_ptrs[n],
-                             nCompressQuality );
-        }
-
-    }
-
-    jpeg_vsiio_src( &sDInfo, fpImage );
-    jpeg_read_header( &sDInfo, TRUE );
-
-    sDInfo.out_color_space = ( nBandBlockSize == 1 ? JCS_GRAYSCALE : JCS_RGB );
-
-    jpeg_start_decompress( &sDInfo );
-
-    GByte* pabyScanline = pabyBlockBuf;
-
-    for( int iLine = 0; iLine < nRowBlockSize; iLine++ )
-    {
-        JSAMPLE* ppSamples = (JSAMPLE*) pabyScanline;
-        jpeg_read_scanlines( &sDInfo, &ppSamples, 1 );
-        pabyScanline += ( nColumnBlockSize * nBandBlockSize );
-    }
-
-    jpeg_finish_decompress( &sDInfo );
-
-    VSIFCloseL( fpImage );
-
-    VSIUnlink( pszMemFile );
+    VSIUnlink( pszFname );
 }
 
 //  ---------------------------------------------------------------------------
 //                                                               CompressJpeg()
 //  ---------------------------------------------------------------------------
 
-unsigned long GeoRasterWrapper::CompressJpeg( void )
+void GeoRasterWrapper::CompressJpeg()
 {
-    //  --------------------------------------------------------------------
-    //  Load JPEG in a virtual file
-    //  --------------------------------------------------------------------
+    // Create a GDAL MEM driver identification string
 
-    const char* pszMemFile = CPLSPrintf( "/vsimem/geor_%p.jpg", pabyBlockBuf );
+    const char* pszFname1 = CPLSPrintf(
+        "MEM:::DATAPOINTER=%p,PIXELS=%d,LINES=%d,"
+        "BANDS=%d,DATATYPE=%s,PIXELOFFSET=%d,LINEOFFSET=%d,BANDOFFSET=%d",
+        pabyBlockBuf, nColumnBlockSize, nRowBlockSize, nBandBlockSize, "Byte", 1,
+        nRowBlockSize, 1 );
 
-    FILE *fpImage = VSIFOpenL( pszMemFile, "wb" );
+    // Open buffer as an in-memory dataset
 
-    bool write_all_tables = TRUE;
+    GDALDatasetH hDS1 = GDALOpen( pszFname1, GA_ReadOnly );
 
-    if( EQUAL( pszCompressionType, "JPEG-B") )
-    {
-        write_all_tables = FALSE;
-    }
+    // CreateCopy it to a JPEG file in memory
 
-    //  --------------------------------------------------------------------
-    //  Initialize compressor
-    //  --------------------------------------------------------------------
+    const char* pszFname2 = CPLSPrintf( "/vsimem/jpeg_%p.virtual", pabyBlockBuf );
 
-    if( ! sCInfo.global_state )
-    {
-        sCInfo.err = jpeg_std_error( &sJErr );
-        jpeg_create_compress( &sCInfo );
+    GDALDriverH hDR1 = GDALGetDriverByName( "JPEG" );
 
-        jpeg_vsiio_dest( &sCInfo, fpImage );
-        
-        sCInfo.image_width = nColumnBlockSize;
-        sCInfo.image_height = nRowBlockSize;
-        sCInfo.input_components = nBandBlockSize;
-        sCInfo.in_color_space = (nBandBlockSize == 1 ? JCS_GRAYSCALE : JCS_RGB);
-        jpeg_set_defaults( &sCInfo );
-        sCInfo.JFIF_major_version = 1;
-        sCInfo.JFIF_minor_version = 2;
-        jpeg_set_quality( &sCInfo, nCompressQuality, TRUE );
+    GDALDatasetH hDS2 = GDALCreateCopy( hDR1, pszFname2, hDS1,
+        false, NULL, NULL, NULL );
 
-        // -----------------------------------------------------------------
-        // Load table for abbreviated JPEG-B
-        // -----------------------------------------------------------------
+    GDALClose( hDS1 );
 
-        int nComponentsToLoad = -1; /* doesn't load any table */
+    GDALClose( hDS2 );
 
-        if( EQUAL( pszCompressionType, "JPEG-B") )
-        {
-            nComponentsToLoad = nBandBlockSize;
-        }
+    // Copy the memory file to the main buffer
 
-        for( int n = 0; n < nComponentsToLoad; n++ )
-        {
-            sCInfo.quant_tbl_ptrs[n] =
-                jpeg_alloc_quant_table( (j_common_ptr) &sCInfo );
-            sCInfo.ac_huff_tbl_ptrs[n] =
-                jpeg_alloc_huff_table( (j_common_ptr) &sCInfo );
-            sCInfo.dc_huff_tbl_ptrs[n] =
-                jpeg_alloc_huff_table( (j_common_ptr) &sCInfo );
+    FILE *fp = VSIFOpenL( pszFname2, "r+" );
+    VSIFReadL( pabyBlockBuf, 1, nBlockBytes, fp );
+    VSIFCloseL( fp );
 
-            JPEG_LoadTables( sCInfo.quant_tbl_ptrs[n],
-                             sCInfo.ac_huff_tbl_ptrs[n],
-                             sCInfo.dc_huff_tbl_ptrs[n],
-                             nCompressQuality );
-        }
-    }
-    else
-    {
-        jpeg_vsiio_dest( &sCInfo, fpImage );
-    }
-    
-    jpeg_suppress_tables( &sCInfo, ! write_all_tables );
-    jpeg_start_compress( &sCInfo, write_all_tables );
-    
-    GByte* pabyScanline = pabyBlockBuf;
-
-    for( int iLine = 0; iLine < nRowBlockSize; iLine++ )
-    {
-        JSAMPLE* ppSamples = (JSAMPLE*) pabyScanline;
-        jpeg_write_scanlines( &sCInfo, &ppSamples, 1 );
-        pabyScanline += ( nColumnBlockSize * nBandBlockSize );
-    }
-
-    jpeg_finish_compress( &sCInfo );
-
-    VSIFCloseL( fpImage );
-
-    fpImage = VSIFOpenL( pszMemFile, "rb" );
-    unsigned long nSize = VSIFReadL( pabyBlockBuf2, 1, nBlockBytes, fpImage );
-    VSIFCloseL( fpImage );
-
-    VSIUnlink( pszMemFile );
-
-    return nSize;
+    VSIUnlink( pszFname2 );
 }
+
 
 //  ---------------------------------------------------------------------------
 //                                                          UncompressDeflate()
 //  ---------------------------------------------------------------------------
 
-bool GeoRasterWrapper::UncompressDeflate( unsigned long nBufferSize )
+bool GeoRasterWrapper::UncompressDeflate( unsigned long nDestLen,
+                                          unsigned long nSourceLen )
 {
-    GByte* pabyBuf = (GByte*) VSIMalloc( nBufferSize );
+    GByte* pabyBuf = (GByte*) CPLMalloc( nSourceLen );
 
-    if( pabyBuf == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "UncompressDeflate" );
-        return false;
-    }
-
-    memcpy( pabyBuf, pabyBlockBuf, nBufferSize );
+    memcpy( pabyBuf, pabyBlockBuf, nSourceLen );
 
     // Call ZLib uncompress
 
-    unsigned long nDestLen = nBlockBytes;
-
-    int nRet = uncompress( pabyBlockBuf, &nDestLen, pabyBuf, nBufferSize );
+    int nRet = uncompress( pabyBlockBuf, &nDestLen, pabyBuf, nSourceLen );
 
     CPLFree( pabyBuf );
 
     if( nRet != Z_OK )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "ZLib return code (%d)", nRet );
-        return false;
-    }
-
-    if( nDestLen != nBlockBytes )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-            "ZLib decompressed buffer size (%ld) expected (%ld)", nDestLen, nBlockBytes );
         return false;
     }
 
@@ -2808,31 +2126,25 @@ bool GeoRasterWrapper::UncompressDeflate( unsigned long nBufferSize )
 //                                                            CompressDeflate()
 //  ---------------------------------------------------------------------------
 
-unsigned long GeoRasterWrapper::CompressDeflate( void )
+bool GeoRasterWrapper::CompressDeflate( void* pData )
 {
-    unsigned long nLen = ((unsigned long)(nBlockBytes * 1.1)) + 12;
+    unsigned long nLen = (nBlockBytes * 1.1) + 12;
 
-    GByte* pabyBuf = (GByte*) VSIMalloc( nBlockBytes );
-
-    if( pabyBuf == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "CompressDeflate" );
-        return 0;
-    }
+    GByte* pabyBuf = (GByte*) CPLMalloc( nLen );
 
     memcpy( pabyBuf, pabyBlockBuf, nBlockBytes );
 
     // Call ZLib compress
 
-    int nRet = compress( pabyBlockBuf2, &nLen, pabyBuf, nBlockBytes );
+    int nRet = compress( pabyBlockBuf, &nLen, (GByte*) pData, nBlockBytes );
 
     CPLFree( pabyBuf );
 
     if( nRet != Z_OK )
     {
         CPLError( CE_Failure, CPLE_AppDefined, "ZLib return code (%d)", nRet );
-        return 0;
+        return false;
     }
 
-    return nLen;
+    return true;
 }

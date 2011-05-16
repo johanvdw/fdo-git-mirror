@@ -1546,8 +1546,6 @@ typedef void OSRSpatialReferenceShadow;
 typedef void OSRCoordinateTransformationShadow;
 #endif
 
-typedef char retStringAndCPLFree;
-
 
 
 void VeryQuiteErrorHandler(CPLErr eclass, int code, const char *msg ) {
@@ -1711,9 +1709,6 @@ SWIGINTERN int OSRSpatialReferenceShadow_IsProjected(OSRSpatialReferenceShadow *
   }
 SWIGINTERN int OSRSpatialReferenceShadow_IsLocal(OSRSpatialReferenceShadow *self){
     return OSRIsLocal(self);
-  }
-SWIGINTERN int OSRSpatialReferenceShadow_EPSGTreatsAsLatLong(OSRSpatialReferenceShadow *self){
-    return OSREPSGTreatsAsLatLong(self);
   }
 
 #include <limits.h>
@@ -2074,7 +2069,6 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_CopyGeogCSFrom(OSRSpatialReferenceSh
     return OSRCopyGeogCSFrom( self, rhs );
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_SetTOWGS84(OSRSpatialReferenceShadow *self,double p1,double p2,double p3,double p4=0.0,double p5=0.0,double p6=0.0,double p7=0.0){
-
     return OSRSetTOWGS84( self, p1, p2, p3, p4, p5, p6, p7 );
   }
 
@@ -2117,9 +2111,6 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromESRI(OSRSpatialReferenceSh
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromEPSG(OSRSpatialReferenceShadow *self,int arg){
     return OSRImportFromEPSG(self, arg);
   }
-SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromEPSGA(OSRSpatialReferenceShadow *self,int arg){
-    return OSRImportFromEPSGA(self, arg);
-  }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromPCI(OSRSpatialReferenceShadow *self,char const *proj,char const *units="METRE",double argin[17]=0){
     return OSRImportFromPCI( self, proj, units, argin );
   }
@@ -2128,9 +2119,6 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromUSGS(OSRSpatialReferenceSh
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromXML(OSRSpatialReferenceShadow *self,char const *xmlString){
     return OSRImportFromXML( self, xmlString );
-  }
-SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromMICoordSys(OSRSpatialReferenceShadow *self,char const *pszCoordSys){
-    return OSRImportFromMICoordSys( self, pszCoordSys );
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToWkt(OSRSpatialReferenceShadow *self,char **argout){
     return OSRExportToWkt( self, argout );
@@ -2150,14 +2138,8 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToUSGS(OSRSpatialReferenceShad
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToXML(OSRSpatialReferenceShadow *self,char **argout,char const *dialect=""){
     return OSRExportToXML( self, argout, dialect );
   }
-SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToMICoordSys(OSRSpatialReferenceShadow *self,char **argout){
-    return OSRExportToMICoordSys( self, argout );
-  }
 SWIGINTERN OSRSpatialReferenceShadow *OSRSpatialReferenceShadow_CloneGeogCS(OSRSpatialReferenceShadow *self){
     return (OSRSpatialReferenceShadow*) OSRCloneGeogCS(self);
-  }
-SWIGINTERN OSRSpatialReferenceShadow *OSRSpatialReferenceShadow_Clone(OSRSpatialReferenceShadow *self){
-    return (OSRSpatialReferenceShadow*) OSRClone(self);
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_Validate(OSRSpatialReferenceShadow *self){
     return OSRValidate(self);
@@ -2284,9 +2266,9 @@ XS(_wrap_GetWellKnownGeogCSAsWKT) {
     }
     arg1 = reinterpret_cast< char * >(buf1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2294,8 +2276,6 @@ XS(_wrap_GetWellKnownGeogCSAsWKT) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2371,9 +2351,9 @@ XS(_wrap_GetUserInputAsWKT) {
     }
     arg1 = reinterpret_cast< char * >(buf1);
     {
-      if (!arg1) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg1)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2381,8 +2361,6 @@ XS(_wrap_GetUserInputAsWKT) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2448,8 +2426,6 @@ XS(_wrap_GetProjectionMethods) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2523,8 +2499,6 @@ XS(_wrap_GetProjectionMethodParameterList) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2630,8 +2604,6 @@ XS(_wrap_GetProjectionMethodParamInfo) {
         
         
         
-        
-        
       }
       
       
@@ -2712,8 +2684,6 @@ XS(_wrap_new_SpatialReference) {
         
         
         
-        
-        
       }
       
       
@@ -2759,8 +2729,6 @@ XS(_wrap_delete_SpatialReference) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2810,8 +2778,6 @@ XS(_wrap_SpatialReference___str__) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2865,18 +2831,11 @@ XS(_wrap_SpatialReference_IsSame) {
     }
     arg2 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)OSRSpatialReferenceShadow_IsSame(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2931,18 +2890,11 @@ XS(_wrap_SpatialReference_IsSameGeogCS) {
     }
     arg2 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (int)OSRSpatialReferenceShadow_IsSameGeogCS(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -2997,8 +2949,6 @@ XS(_wrap_SpatialReference_IsGeographic) {
         
         
         
-        
-        
       }
       
       
@@ -3048,8 +2998,6 @@ XS(_wrap_SpatialReference_IsProjected) {
         
         
         
-        
-        
       }
       
       
@@ -3096,59 +3044,6 @@ XS(_wrap_SpatialReference_IsLocal) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_EPSGTreatsAsLatLong) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    int result;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: SpatialReference_EPSGTreatsAsLatLong(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_EPSGTreatsAsLatLong" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (int)OSRSpatialReferenceShadow_EPSGTreatsAsLatLong(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3227,8 +3122,6 @@ XS(_wrap_SpatialReference_SetAuthority) {
         
         
         
-        
-        
       }
       
       
@@ -3302,9 +3195,9 @@ XS(_wrap_SpatialReference_GetAttrValue) {
       arg3 = static_cast< int >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3312,8 +3205,6 @@ XS(_wrap_SpatialReference_GetAttrValue) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3380,9 +3271,9 @@ XS(_wrap_SpatialReference_SetAttrValue) {
     }
     arg3 = reinterpret_cast< char * >(buf3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3390,8 +3281,6 @@ XS(_wrap_SpatialReference_SetAttrValue) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3464,9 +3353,9 @@ XS(_wrap_SpatialReference_SetAngularUnits) {
     } 
     arg3 = static_cast< double >(val3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3474,8 +3363,6 @@ XS(_wrap_SpatialReference_SetAngularUnits) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3539,8 +3426,6 @@ XS(_wrap_SpatialReference_GetAngularUnits) {
         
         
         
-        
-        
       }
       
       
@@ -3599,9 +3484,9 @@ XS(_wrap_SpatialReference_SetLinearUnits) {
     } 
     arg3 = static_cast< double >(val3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3609,8 +3494,6 @@ XS(_wrap_SpatialReference_SetLinearUnits) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3683,9 +3566,9 @@ XS(_wrap_SpatialReference_SetLinearUnitsAndUpdateParameters) {
     } 
     arg3 = static_cast< double >(val3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -3693,8 +3576,6 @@ XS(_wrap_SpatialReference_SetLinearUnitsAndUpdateParameters) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3758,8 +3639,6 @@ XS(_wrap_SpatialReference_GetLinearUnits) {
         
         
         
-        
-        
       }
       
       
@@ -3806,8 +3685,6 @@ XS(_wrap_SpatialReference_GetLinearUnitsName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3869,8 +3746,6 @@ XS(_wrap_SpatialReference_GetAuthorityCode) {
         
         
         
-        
-        
       }
       
       
@@ -3928,8 +3803,6 @@ XS(_wrap_SpatialReference_GetAuthorityName) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -3999,8 +3872,6 @@ XS(_wrap_SpatialReference_SetUTM) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4103,8 +3974,6 @@ XS(_wrap_SpatialReference_SetStatePlane) {
         
         
         
-        
-        
       }
       
       
@@ -4166,8 +4035,6 @@ XS(_wrap_SpatialReference_AutoIdentifyEPSG) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4233,8 +4100,6 @@ XS(_wrap_SpatialReference_SetProjection) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4305,9 +4170,9 @@ XS(_wrap_SpatialReference_SetProjParm) {
     } 
     arg3 = static_cast< double >(val3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4315,8 +4180,6 @@ XS(_wrap_SpatialReference_SetProjParm) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4391,9 +4254,9 @@ XS(_wrap_SpatialReference_GetProjParm) {
       arg3 = static_cast< double >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4401,8 +4264,6 @@ XS(_wrap_SpatialReference_GetProjParm) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4468,9 +4329,9 @@ XS(_wrap_SpatialReference_SetNormProjParm) {
     } 
     arg3 = static_cast< double >(val3);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4478,8 +4339,6 @@ XS(_wrap_SpatialReference_SetNormProjParm) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4554,9 +4413,9 @@ XS(_wrap_SpatialReference_GetNormProjParm) {
       arg3 = static_cast< double >(val3);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -4564,8 +4423,6 @@ XS(_wrap_SpatialReference_GetNormProjParm) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4670,8 +4527,6 @@ XS(_wrap_SpatialReference_SetACEA) {
         
         
         
-        
-        
       }
       
       
@@ -4772,8 +4627,6 @@ XS(_wrap_SpatialReference_SetAE) {
         
         
         
-        
-        
       }
       
       
@@ -4867,8 +4720,6 @@ XS(_wrap_SpatialReference_SetBonne) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -4968,8 +4819,6 @@ XS(_wrap_SpatialReference_SetCEA) {
         
         
         
-        
-        
       }
       
       
@@ -5063,8 +4912,6 @@ XS(_wrap_SpatialReference_SetCS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5180,8 +5027,6 @@ XS(_wrap_SpatialReference_SetEC) {
         
         
         
-        
-        
       }
       
       
@@ -5274,8 +5119,6 @@ XS(_wrap_SpatialReference_SetEckertIV) {
         
         
         
-        
-        
       }
       
       
@@ -5359,8 +5202,6 @@ XS(_wrap_SpatialReference_SetEckertVI) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5455,8 +5296,6 @@ XS(_wrap_SpatialReference_SetEquirectangular) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5561,8 +5400,6 @@ XS(_wrap_SpatialReference_SetEquirectangular2) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5672,8 +5509,6 @@ XS(_wrap_SpatialReference_SetGaussSchreiberTMercator) {
         
         
         
-        
-        
       }
       
       
@@ -5764,8 +5599,6 @@ XS(_wrap_SpatialReference_SetGS) {
         
         
         
-        
-        
       }
       
       
@@ -5849,8 +5682,6 @@ XS(_wrap_SpatialReference_SetGH) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -5948,8 +5779,6 @@ XS(_wrap_SpatialReference_SetGEOS) {
         
         
         
-        
-        
       }
       
       
@@ -6043,8 +5872,6 @@ XS(_wrap_SpatialReference_SetGnomonic) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6165,8 +5992,6 @@ XS(_wrap_SpatialReference_SetHOM) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6304,8 +6129,6 @@ XS(_wrap_SpatialReference_SetHOM2PNO) {
         
         
         
-        
-        
       }
       
       
@@ -6434,8 +6257,6 @@ XS(_wrap_SpatialReference_SetKrovak) {
         
         
         
-        
-        
       }
       
       
@@ -6535,8 +6356,6 @@ XS(_wrap_SpatialReference_SetLAEA) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6652,8 +6471,6 @@ XS(_wrap_SpatialReference_SetLCC) {
         
         
         
-        
-        
       }
       
       
@@ -6759,8 +6576,6 @@ XS(_wrap_SpatialReference_SetLCC1SP) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -6878,8 +6693,6 @@ XS(_wrap_SpatialReference_SetLCCB) {
         
         
         
-        
-        
       }
       
       
@@ -6977,8 +6790,6 @@ XS(_wrap_SpatialReference_SetMC) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7086,8 +6897,6 @@ XS(_wrap_SpatialReference_SetMercator) {
         
         
         
-        
-        
       }
       
       
@@ -7175,8 +6984,6 @@ XS(_wrap_SpatialReference_SetMollweide) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7271,8 +7078,6 @@ XS(_wrap_SpatialReference_SetNZMG) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7380,8 +7185,6 @@ XS(_wrap_SpatialReference_SetOS) {
         
         
         
-        
-        
       }
       
       
@@ -7480,8 +7283,6 @@ XS(_wrap_SpatialReference_SetOrthographic) {
         
         
         
-        
-        
       }
       
       
@@ -7575,8 +7376,6 @@ XS(_wrap_SpatialReference_SetPolyconic) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7684,8 +7483,6 @@ XS(_wrap_SpatialReference_SetPS) {
         
         
         
-        
-        
       }
       
       
@@ -7776,8 +7573,6 @@ XS(_wrap_SpatialReference_SetRobinson) {
         
         
         
-        
-        
       }
       
       
@@ -7861,8 +7656,6 @@ XS(_wrap_SpatialReference_SetSinusoidal) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -7968,8 +7761,6 @@ XS(_wrap_SpatialReference_SetStereographic) {
         
         
         
-        
-        
       }
       
       
@@ -8065,8 +7856,6 @@ XS(_wrap_SpatialReference_SetSOC) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8171,8 +7960,6 @@ XS(_wrap_SpatialReference_SetTM) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8291,8 +8078,6 @@ XS(_wrap_SpatialReference_SetTMVariant) {
         
         
         
-        
-        
       }
       
       
@@ -8390,8 +8175,6 @@ XS(_wrap_SpatialReference_SetTMG) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8499,8 +8282,6 @@ XS(_wrap_SpatialReference_SetTMSO) {
         
         
         
-        
-        
       }
       
       
@@ -8591,8 +8372,6 @@ XS(_wrap_SpatialReference_SetVDG) {
         
         
         
-        
-        
       }
       
       
@@ -8656,9 +8435,9 @@ XS(_wrap_SpatialReference_SetWellKnownGeogCS) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -8666,8 +8445,6 @@ XS(_wrap_SpatialReference_SetWellKnownGeogCS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8730,9 +8507,9 @@ XS(_wrap_SpatialReference_SetFromUserInput) {
     }
     arg2 = reinterpret_cast< char * >(buf2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -8740,8 +8517,6 @@ XS(_wrap_SpatialReference_SetFromUserInput) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8803,18 +8578,11 @@ XS(_wrap_SpatialReference_CopyGeogCSFrom) {
     }
     arg2 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp2);
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
       CPLErrorReset();
       result = (OGRErr)OSRSpatialReferenceShadow_CopyGeogCSFrom(arg1,arg2);
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -8940,8 +8708,6 @@ XS(_wrap_SpatialReference_SetTOWGS84) {
         
         
         
-        
-        
       }
       
       
@@ -9018,8 +8784,6 @@ XS(_wrap_SpatialReference_GetTOWGS84) {
         
         
         
-        
-        
       }
       
       
@@ -9089,8 +8853,6 @@ XS(_wrap_SpatialReference_SetLocalCS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9237,8 +8999,6 @@ XS(_wrap_SpatialReference_SetGeogCS) {
         
         
         
-        
-        
       }
       
       
@@ -9316,9 +9076,9 @@ XS(_wrap_SpatialReference_SetProjCS) {
       arg2 = reinterpret_cast< char * >(buf2);
     }
     {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
+      /* %typemap(check) (const char *name) */
+      if (!arg2)
+      SWIG_croak("The name must not be undefined");
     }
     {
       CPLErrorReset();
@@ -9326,8 +9086,6 @@ XS(_wrap_SpatialReference_SetProjCS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9393,8 +9151,6 @@ XS(_wrap_SpatialReference_ImportFromWkt) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9465,8 +9221,6 @@ XS(_wrap_SpatialReference_ImportFromProj4) {
         
         
         
-        
-        
       }
       
       
@@ -9531,8 +9285,6 @@ XS(_wrap_SpatialReference_ImportFromUrl) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9621,8 +9373,6 @@ XS(_wrap_SpatialReference_ImportFromESRI) {
         
         
         
-        
-        
       }
       
       
@@ -9692,76 +9442,6 @@ XS(_wrap_SpatialReference_ImportFromEPSG) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) OGRErr */
-      if ( result != 0 ) {
-        const char *err = CPLGetLastErrorMsg();
-        if (err and *err) SWIG_croak(err); /* this is usually better */
-        SWIG_croak( OGRErrMessages(result) );
-      }
-    }
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_ImportFromEPSGA) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    int arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int argvi = 0;
-    OGRErr result;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: SpatialReference_ImportFromEPSGA(self,arg);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_ImportFromEPSGA" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "SpatialReference_ImportFromEPSGA" "', argument " "2"" of type '" "int""'");
-    } 
-    arg2 = static_cast< int >(val2);
-    {
-      CPLErrorReset();
-      result = (OGRErr)OSRSpatialReferenceShadow_ImportFromEPSGA(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9855,8 +9535,6 @@ XS(_wrap_SpatialReference_ImportFromPCI) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -9965,8 +9643,6 @@ XS(_wrap_SpatialReference_ImportFromUSGS) {
         
         
         
-        
-        
       }
       
       
@@ -10040,77 +9716,6 @@ XS(_wrap_SpatialReference_ImportFromXML) {
         
         
         
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) OGRErr */
-      if ( result != 0 ) {
-        const char *err = CPLGetLastErrorMsg();
-        if (err and *err) SWIG_croak(err); /* this is usually better */
-        SWIG_croak( OGRErrMessages(result) );
-      }
-    }
-    
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    XSRETURN(argvi);
-  fail:
-    
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_ImportFromMICoordSys) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    char *arg2 = (char *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int res2 ;
-    char *buf2 = 0 ;
-    int alloc2 = 0 ;
-    int argvi = 0;
-    OGRErr result;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: SpatialReference_ImportFromMICoordSys(self,pszCoordSys);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_ImportFromMICoordSys" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_ImportFromMICoordSys" "', argument " "2"" of type '" "char const *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
-    {
-      CPLErrorReset();
-      result = (OGRErr)OSRSpatialReferenceShadow_ImportFromMICoordSys(arg1,(char const *)arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
       }
       
       
@@ -10172,8 +9777,6 @@ XS(_wrap_SpatialReference_ExportToWkt) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10266,8 +9869,6 @@ XS(_wrap_SpatialReference_ExportToPrettyWkt) {
         
         
         
-        
-        
       }
       
       
@@ -10346,8 +9947,6 @@ XS(_wrap_SpatialReference_ExportToProj4) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10439,8 +10038,6 @@ XS(_wrap_SpatialReference_ExportToPCI) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10565,8 +10162,6 @@ XS(_wrap_SpatialReference_ExportToUSGS) {
         
         
         
-        
-        
       }
       
       
@@ -10677,8 +10272,6 @@ XS(_wrap_SpatialReference_ExportToXML) {
         
         
         
-        
-        
       }
       
       
@@ -10723,87 +10316,6 @@ XS(_wrap_SpatialReference_ExportToXML) {
       CPLFree( *arg2 );
     }
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_ExportToMICoordSys) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    char **arg2 = (char **) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    char *argout2 = 0 ;
-    int argvi = 0;
-    OGRErr result;
-    dXSARGS;
-    
-    {
-      /* %typemap(in,numinputs=0) (char **argout2) */
-      arg2 = &argout2;
-    }
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: SpatialReference_ExportToMICoordSys(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_ExportToMICoordSys" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (OGRErr)OSRSpatialReferenceShadow_ExportToMICoordSys(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) OGRErr */
-      if ( result != 0 ) {
-        const char *err = CPLGetLastErrorMsg();
-        if (err and *err) SWIG_croak(err); /* this is usually better */
-        SWIG_croak( OGRErrMessages(result) );
-      }
-    }
-    {
-      /* %typemap(argout) (char **argout) */
-      ST(argvi) = sv_newmortal();
-      if ( arg2 )
-      sv_setpv(ST(argvi), *arg2);
-      argvi++;
-    }
-    
-    {
-      /* %typemap(freearg) (char **argout) */
-      if ( *arg2 )
-      CPLFree( *arg2 );
-    }
-    XSRETURN(argvi);
-  fail:
-    
-    {
-      /* %typemap(freearg) (char **argout) */
-      if ( *arg2 )
-      CPLFree( *arg2 );
-    }
     SWIG_croak_null();
   }
 }
@@ -10832,59 +10344,6 @@ XS(_wrap_SpatialReference_CloneGeogCS) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg() );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OSRSpatialReferenceShadow, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-    
-    XSRETURN(argvi);
-  fail:
-    
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_Clone) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int argvi = 0;
-    OSRSpatialReferenceShadow *result = 0 ;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: SpatialReference_Clone(self);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_Clone" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    {
-      CPLErrorReset();
-      result = (OSRSpatialReferenceShadow *)OSRSpatialReferenceShadow_Clone(arg1);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10934,8 +10393,6 @@ XS(_wrap_SpatialReference_Validate) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -10995,8 +10452,6 @@ XS(_wrap_SpatialReference_StripCTParms) {
         
         
         
-        
-        
       }
       
       
@@ -11050,8 +10505,6 @@ XS(_wrap_SpatialReference_FixupOrdering) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11111,8 +10564,6 @@ XS(_wrap_SpatialReference_Fixup) {
         
         
         
-        
-        
       }
       
       
@@ -11169,8 +10620,6 @@ XS(_wrap_SpatialReference_MorphToESRI) {
         
         
         
-        
-        
       }
       
       
@@ -11224,8 +10673,6 @@ XS(_wrap_SpatialReference_MorphFromESRI) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11293,8 +10740,6 @@ XS(_wrap_new_CoordinateTransformation) {
         
         
         
-        
-        
       }
       
       
@@ -11347,8 +10792,6 @@ XS(_wrap_delete_CoordinateTransformation) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11417,8 +10860,6 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_0) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11511,8 +10952,6 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_1) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
         SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
         
         
         
@@ -11721,8 +11160,6 @@ XS(_wrap_CoordinateTransformation_TransformPoints) {
         
         
         
-        
-        
       }
       
       
@@ -11847,7 +11284,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::OSRc::SpatialReference_IsGeographic", _wrap_SpatialReference_IsGeographic},
 {"Geo::OSRc::SpatialReference_IsProjected", _wrap_SpatialReference_IsProjected},
 {"Geo::OSRc::SpatialReference_IsLocal", _wrap_SpatialReference_IsLocal},
-{"Geo::OSRc::SpatialReference_EPSGTreatsAsLatLong", _wrap_SpatialReference_EPSGTreatsAsLatLong},
 {"Geo::OSRc::SpatialReference_SetAuthority", _wrap_SpatialReference_SetAuthority},
 {"Geo::OSRc::SpatialReference_GetAttrValue", _wrap_SpatialReference_GetAttrValue},
 {"Geo::OSRc::SpatialReference_SetAttrValue", _wrap_SpatialReference_SetAttrValue},
@@ -11919,20 +11355,16 @@ static swig_command_info swig_commands[] = {
 {"Geo::OSRc::SpatialReference_ImportFromUrl", _wrap_SpatialReference_ImportFromUrl},
 {"Geo::OSRc::SpatialReference_ImportFromESRI", _wrap_SpatialReference_ImportFromESRI},
 {"Geo::OSRc::SpatialReference_ImportFromEPSG", _wrap_SpatialReference_ImportFromEPSG},
-{"Geo::OSRc::SpatialReference_ImportFromEPSGA", _wrap_SpatialReference_ImportFromEPSGA},
 {"Geo::OSRc::SpatialReference_ImportFromPCI", _wrap_SpatialReference_ImportFromPCI},
 {"Geo::OSRc::SpatialReference_ImportFromUSGS", _wrap_SpatialReference_ImportFromUSGS},
 {"Geo::OSRc::SpatialReference_ImportFromXML", _wrap_SpatialReference_ImportFromXML},
-{"Geo::OSRc::SpatialReference_ImportFromMICoordSys", _wrap_SpatialReference_ImportFromMICoordSys},
 {"Geo::OSRc::SpatialReference_ExportToWkt", _wrap_SpatialReference_ExportToWkt},
 {"Geo::OSRc::SpatialReference_ExportToPrettyWkt", _wrap_SpatialReference_ExportToPrettyWkt},
 {"Geo::OSRc::SpatialReference_ExportToProj4", _wrap_SpatialReference_ExportToProj4},
 {"Geo::OSRc::SpatialReference_ExportToPCI", _wrap_SpatialReference_ExportToPCI},
 {"Geo::OSRc::SpatialReference_ExportToUSGS", _wrap_SpatialReference_ExportToUSGS},
 {"Geo::OSRc::SpatialReference_ExportToXML", _wrap_SpatialReference_ExportToXML},
-{"Geo::OSRc::SpatialReference_ExportToMICoordSys", _wrap_SpatialReference_ExportToMICoordSys},
 {"Geo::OSRc::SpatialReference_CloneGeogCS", _wrap_SpatialReference_CloneGeogCS},
-{"Geo::OSRc::SpatialReference_Clone", _wrap_SpatialReference_Clone},
 {"Geo::OSRc::SpatialReference_Validate", _wrap_SpatialReference_Validate},
 {"Geo::OSRc::SpatialReference_StripCTParms", _wrap_SpatialReference_StripCTParms},
 {"Geo::OSRc::SpatialReference_FixupOrdering", _wrap_SpatialReference_FixupOrdering},
@@ -12238,553 +11670,423 @@ XS(SWIG_init) {
   }
   
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_WKT_WGS84", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]]"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ALBERS_CONIC_EQUAL_AREA", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Albers_Conic_Equal_Area"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_ALBERS_CONIC_EQUAL_AREA));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_AZIMUTHAL_EQUIDISTANT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Azimuthal_Equidistant"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_AZIMUTHAL_EQUIDISTANT));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_CASSINI_SOLDNER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Cassini_Soldner"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_CASSINI_SOLDNER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_CYLINDRICAL_EQUAL_AREA", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Cylindrical_Equal_Area"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_BONNE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Bonne"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_I", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_I"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_II", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_II"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_III", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_III"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_CYLINDRICAL_EQUAL_AREA));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_IV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_IV"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_V", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_V"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_ECKERT_IV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ECKERT_VI", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Eckert_VI"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_ECKERT_VI));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_EQUIDISTANT_CONIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Equidistant_Conic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_EQUIDISTANT_CONIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_EQUIRECTANGULAR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Equirectangular"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_EQUIRECTANGULAR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GALL_STEREOGRAPHIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Gall_Stereographic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_GALL_STEREOGRAPHIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GAUSSSCHREIBERTMERCATOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Gauss_Schreiber_Transverse_Mercator"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GEOSTATIONARY_SATELLITE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Geostationary_Satellite"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GOODE_HOMOLOSINE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Goode_Homolosine"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_GAUSSSCHREIBERTMERCATOR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GNOMONIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Gnomonic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_GNOMONIC));
+    SvREADONLY_on(sv);
+  } while(0) /*@SWIG@*/;
+  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GOODE_HOMOLOSINE", TRUE | 0x2 | GV_ADDMULTI);
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_GOODE_HOMOLOSINE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_HOTINE_OBLIQUE_MERCATOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Hotine_Oblique_Mercator"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_HOTINE_OBLIQUE_MERCATOR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Hotine_Oblique_Mercator_Two_Point_Natural_Origin"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_LABORDE_OBLIQUE_MERCATOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Laborde_Oblique_Mercator"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_LABORDE_OBLIQUE_MERCATOR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Lambert_Conformal_Conic_1SP"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Lambert_Conformal_Conic_2SP"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP_BELGIUM", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Lambert_Conformal_Conic_2SP_Belgium"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP_BELGIUM));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_LAMBERT_AZIMUTHAL_EQUAL_AREA", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Lambert_Azimuthal_Equal_Area"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_LAMBERT_AZIMUTHAL_EQUAL_AREA));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_MERCATOR_1SP", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Mercator_1SP"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_MERCATOR_1SP));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_MERCATOR_2SP", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Mercator_2SP"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_MERCATOR_2SP));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_MILLER_CYLINDRICAL", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Miller_Cylindrical"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_MILLER_CYLINDRICAL));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_MOLLWEIDE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Mollweide"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_MOLLWEIDE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_NEW_ZEALAND_MAP_GRID", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("New_Zealand_Map_Grid"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_NEW_ZEALAND_MAP_GRID));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_OBLIQUE_STEREOGRAPHIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Oblique_Stereographic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_OBLIQUE_STEREOGRAPHIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ORTHOGRAPHIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Orthographic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_ORTHOGRAPHIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_POLAR_STEREOGRAPHIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Polar_Stereographic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_POLAR_STEREOGRAPHIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_POLYCONIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Polyconic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_POLYCONIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_ROBINSON", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Robinson"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_ROBINSON));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_SINUSOIDAL", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Sinusoidal"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_SINUSOIDAL));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_STEREOGRAPHIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Stereographic"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_STEREOGRAPHIC));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_SWISS_OBLIQUE_CYLINDRICAL", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Swiss_Oblique_Cylindrical"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_SWISS_OBLIQUE_CYLINDRICAL));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_South_Orientated"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_MI_21", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_MapInfo_21"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR_SOUTH_ORIENTED));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_MI_22", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_MapInfo_22"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR_MI_22));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_MI_23", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_MapInfo_23"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR_MI_23));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_MI_24", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_MapInfo_24"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR_MI_24));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TRANSVERSE_MERCATOR_MI_25", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Transverse_Mercator_MapInfo_25"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TRANSVERSE_MERCATOR_MI_25));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TUNISIA_MINING_GRID", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Tunisia_Mining_Grid"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_TWO_POINT_EQUIDISTANT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Two_Point_Equidistant"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_TUNISIA_MINING_GRID));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_VANDERGRINTEN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("VanDerGrinten"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_VANDERGRINTEN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_KROVAK", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Krovak"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_IMW_POLYCONIC", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("International_Map_of_the_World_Polyconic"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_I", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_I"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_II", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_II"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_III", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_III"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_IV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_IV"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_V", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_V"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_VI", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_VI"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_WAGNER_VII", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Wagner_VII"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PT_KROVAK));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_CENTRAL_MERIDIAN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("central_meridian"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_CENTRAL_MERIDIAN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_SCALE_FACTOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("scale_factor"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_SCALE_FACTOR));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_STANDARD_PARALLEL_1", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("standard_parallel_1"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_STANDARD_PARALLEL_1));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_STANDARD_PARALLEL_2", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("standard_parallel_2"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_STANDARD_PARALLEL_2));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_PSEUDO_STD_PARALLEL_1", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("pseudo_standard_parallel_1"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_PSEUDO_STD_PARALLEL_1));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_CENTER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("longitude_of_center"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LONGITUDE_OF_CENTER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_CENTER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("latitude_of_center"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LATITUDE_OF_CENTER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_ORIGIN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("longitude_of_origin"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LONGITUDE_OF_ORIGIN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_ORIGIN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("latitude_of_origin"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LATITUDE_OF_ORIGIN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_FALSE_EASTING", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("false_easting"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_FALSE_EASTING));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_FALSE_NORTHING", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("false_northing"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_FALSE_NORTHING));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_AZIMUTH", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("azimuth"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_AZIMUTH));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_POINT_1", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("longitude_of_point_1"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LONGITUDE_OF_POINT_1));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_POINT_1", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("latitude_of_point_1"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LATITUDE_OF_POINT_1));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_POINT_2", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("longitude_of_point_2"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LONGITUDE_OF_POINT_2));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_POINT_2", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("latitude_of_point_2"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LATITUDE_OF_POINT_2));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_POINT_3", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("longitude_of_point_3"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LONGITUDE_OF_POINT_3));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_POINT_3", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("latitude_of_point_3"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LATITUDE_OF_POINT_3));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_RECTIFIED_GRID_ANGLE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("rectified_grid_angle"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_RECTIFIED_GRID_ANGLE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LANDSAT_NUMBER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("landsat_number"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_LANDSAT_NUMBER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_PATH_NUMBER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("path_number"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_PATH_NUMBER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_PERSPECTIVE_POINT_HEIGHT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("perspective_point_height"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_SATELLITE_HEIGHT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("satellite_height"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_PERSPECTIVE_POINT_HEIGHT));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_FIPSZONE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("fipszone"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_FIPSZONE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_ZONE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("zone"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_1ST_POINT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Latitude_Of_1st_Point"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_1ST_POINT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Longitude_Of_1st_Point"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LATITUDE_OF_2ND_POINT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Latitude_Of_2nd_Point"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PP_LONGITUDE_OF_2ND_POINT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Longitude_Of_2nd_Point"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_PP_ZONE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_METER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Meter"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_METER));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_FOOT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Foot (International)"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_FOOT));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_FOOT_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("0.3048"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_FOOT_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_US_FOOT", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Foot_US"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_US_FOOT));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_US_FOOT_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("0.3048006096012192"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_US_FOOT_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_NAUTICAL_MILE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Nautical Mile"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_NAUTICAL_MILE));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_NAUTICAL_MILE_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("1852.0"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_NAUTICAL_MILE_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_LINK", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Link"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_LINK));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_LINK_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("0.20116684023368047"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_LINK_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_CHAIN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Chain"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_CHAIN));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_CHAIN_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("20.116684023368047"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_CHAIN_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_ROD", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Rod"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_ROD));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_UL_ROD_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("5.02921005842012"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_UA_DEGREE", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("degree"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_UA_DEGREE_CONV", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("0.0174532925199433"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_UA_RADIAN", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("radian"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PM_GREENWICH", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Greenwich"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_UL_ROD_CONV));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_DN_NAD27", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("North_American_Datum_1927"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_DN_NAD27));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_DN_NAD83", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("North_American_Datum_1983"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_DN_NAD83));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_DN_WGS72", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("WGS_1972"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_DN_WGS72));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_DN_WGS84", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("WGS_1984"));
+    sv_setsv(sv, SWIG_FromCharPtr(SRS_DN_WGS84));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_WGS84_SEMIMAJOR", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_double  SWIG_PERL_CALL_ARGS_1(static_cast< double >(6378137.0)));
+    sv_setsv(sv, SWIG_From_double  SWIG_PERL_CALL_ARGS_1(static_cast< double >(SRS_WGS84_SEMIMAJOR)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_WGS84_INVFLATTENING", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_double  SWIG_PERL_CALL_ARGS_1(static_cast< double >(298.257223563)));
+    sv_setsv(sv, SWIG_From_double  SWIG_PERL_CALL_ARGS_1(static_cast< double >(SRS_WGS84_INVFLATTENING)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   SWIG_TypeClientData(SWIGTYPE_p_OSRSpatialReferenceShadow, (void*) "Geo::OSR::SpatialReference");

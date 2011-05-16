@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: pct2rgb.py 18194 2009-12-06 20:07:45Z rouault $
+#  $Id: pct2rgb.py 13087 2007-11-26 20:56:29Z hobu $
 # 
 #  Name:     pct2rgb
 #  Project:  GDAL Python Interface
@@ -46,7 +46,7 @@ import sys
 import os.path
 
 def Usage():
-    print('Usage: pct2rgb.py [-of format] [-b <band>] source_file dest_file')
+    print 'Usage: pct2rgb.py [-of format] [-b <band>] source_file dest_file'
     sys.exit(1)
 
 # =============================================================================
@@ -99,7 +99,7 @@ if dst_filename is None:
 
 src_ds = gdal.Open( src_filename )
 if src_ds is None:
-    print('Unable to open ', src_filename)
+    print 'Unable to open ', src_filename
     sys.exit(1)
 
 src_band = src_ds.GetRasterBand(band_number)
@@ -109,7 +109,7 @@ src_band = src_ds.GetRasterBand(band_number)
 
 dst_driver = gdal.GetDriverByName(format)
 if dst_driver is None:
-    print('"%s" driver not registered.' % format)
+    print '"%s" driver not registered.' % format
     sys.exit(1)
 
 # ----------------------------------------------------------------------------
@@ -147,8 +147,6 @@ tif_ds = gtiff_driver.Create( tif_filename,
 
 tif_ds.SetProjection( src_ds.GetProjection() )
 tif_ds.SetGeoTransform( src_ds.GetGeoTransform() )
-if src_ds.GetGCPCount() > 0:
-    tif_ds.SetGCPs( src_ds.GetGCPs(), src_ds.GetGCPProjection() )
 
 # ----------------------------------------------------------------------------
 # Do the processing one scanline at a time. 
@@ -171,7 +169,7 @@ tif_ds = None
 # ----------------------------------------------------------------------------
 # Translate intermediate file to output format if desired format is not TIFF.
 
-if tif_filename != dst_filename:
+if tif_filename <> dst_filename:
     tif_ds = gdal.Open( tif_filename )
     dst_driver.CreateCopy( dst_filename, tif_ds )
     tif_ds = None

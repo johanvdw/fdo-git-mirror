@@ -30,10 +30,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug stage --with-date_time --with-program_options --with-thread"
-				ReBuildCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug clean --with-date_time --with-program_options --with-thread&#x0D;&#x0A;bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug stage --with-date_time --with-program_options --with-thread"
-				CleanCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug clean --with-date_time --with-program_options --with-thread"
-				Output="boost_1_42_0"
+				BuildCommandLine="bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug stage --with-date_time --with-program_options --with-thread"
+				ReBuildCommandLine="bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug clean&#x0D;&#x0A;bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug stage --with-date_time --with-program_options --with-thread"
+				CleanCommandLine="bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi --stagedir=stage/win32/debug clean&#x0D;&#x0A;"
+				Output="boost_1_34_1"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -54,9 +54,9 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug stage --with-date_time --with-program_options --with-thread"
-				ReBuildCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug clean --with-date_time --with-program_options --with-thread&#x0D;&#x0A;bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug stage --with-date_time --with-program_options --with-thread"
-				CleanCommandLine="bjam toolset=msvc-9.0 variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug clean --with-date_time --with-program_options --with-thread&#x0D;&#x0A;"
-				Output="boost_1_42_0"
+				ReBuildCommandLine="bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug clean&#x0D;&#x0A;bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug stage"
+				CleanCommandLine="bjam toolset=msvc variant=debug link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/debug clean&#x0D;&#x0A;"
+				Output="boost_1_34_1"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -76,10 +76,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release stage --with-date_time --with-program_options --with-thread&#x0D;&#x0A;"
-				ReBuildCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release clean --with-date_time --with-program_options --with-thread&#x0D;&#x0A;bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release stage --with-date_time --with-program_options --with-thread"
-				CleanCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release clean --with-date_time --with-program_options --with-thread"
-				Output="boost_1_42_0"
+				BuildCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release stage --with-date_time --with-program_options --with-thread&#x0D;&#x0A;"
+				ReBuildCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release clean&#x0D;&#x0A;bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release stage --with-date_time --with-program_options --with-thread"
+				CleanCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi --stagedir=stage/win32/release clean"
+				Output="boost_1_34_1"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -99,10 +99,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release stage --with-date_time --with-program_options --with-thread&#x0D;&#x0A;"
-				ReBuildCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release clean --with-date_time --with-program_options --with-thread&#x0D;&#x0A;bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release stage --with-date_time --with-program_options --with-thread"
-				CleanCommandLine="bjam toolset=msvc-9.0 variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release clean --with-date_time --with-program_options --with-thread"
-				Output="boost_1_42_0"
+				BuildCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release stage&#x0D;&#x0A;"
+				ReBuildCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release clean&#x0D;&#x0A;bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release stage"
+				CleanCommandLine="bjam toolset=msvc variant=release link=shared runtime-link=shared threading=multi address-model=64 --stagedir=stage/win64/release clean"
+				Output="boost_1_34_1"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""

@@ -38,234 +38,189 @@ class FdoParse; static int fdo_expression_yygrowstack(FdoParse *pParse);
 #define FdoToken_TIME 261
 #define FdoToken_TIMESTAMP 262
 #define FdoToken_GEOMFROMTEXT 263
-#define FdoToken_JOINNONE 264
-#define FdoToken_JOININNER 265
-#define FdoToken_JOINRIGHTOUTER 266
-#define FdoToken_JOINLEFTOUTER 267
-#define FdoToken_JOINFULLOUTER 268
-#define FdoToken_JOINCROSS 269
-#define FdoToken_AND 270
-#define FdoToken_OR 271
-#define FdoToken_NOT 272
-#define FdoToken_LIKE 273
-#define FdoToken_IN 274
-#define FdoToken_SELECT 275
-#define FdoToken_JOIN 276
-#define FdoToken_BEYOND 277
-#define FdoToken_WITHINDISTANCE 278
-#define FdoToken_CONTAINS 279
-#define FdoToken_COVEREDBY 280
-#define FdoToken_CROSSES 281
-#define FdoToken_DISJOINT 282
-#define FdoToken_ENVELOPEINTERSECTS 283
-#define FdoToken_EQUALS 284
-#define FdoToken_INTERSECTS 285
-#define FdoToken_INSIDE 286
-#define FdoToken_OVERLAPS 287
-#define FdoToken_TOUCHES 288
-#define FdoToken_WITHIN 289
-#define FdoToken_RELATE 290
-#define FdoToken_IDENTIFIER 291
-#define FdoToken_PARAMETER 292
-#define FdoToken_STRING 293
-#define FdoToken_INTEGER 294
-#define FdoToken_INT64 295
-#define FdoToken_INTHEX 296
-#define FdoToken_INTBIN 297
-#define FdoToken_DOUBLE 298
-#define FdoToken_DATETIME 299
-#define FdoToken_BLOB 300
-#define FdoToken_CLOB 301
-#define FdoToken_Add 302
-#define FdoToken_Subtract 303
-#define FdoToken_Multiply 304
-#define FdoToken_Divide 305
-#define FdoToken_Negate 306
-#define FdoToken_EQ 307
-#define FdoToken_NE 308
-#define FdoToken_GT 309
-#define FdoToken_GE 310
-#define FdoToken_LT 311
-#define FdoToken_LE 312
-#define FdoToken_LeftParenthesis 313
-#define FdoToken_RightParenthesis 314
-#define FdoToken_Comma 315
-#define FdoToken_Dot 316
-#define FdoToken_Colon 317
-#define FdoToken_AS 318
-#define FdoToken_BETWEEN 319
+#define FdoToken_AND 264
+#define FdoToken_OR 265
+#define FdoToken_NOT 266
+#define FdoToken_LIKE 267
+#define FdoToken_IN 268
+#define FdoToken_BEYOND 269
+#define FdoToken_WITHINDISTANCE 270
+#define FdoToken_CONTAINS 271
+#define FdoToken_COVEREDBY 272
+#define FdoToken_CROSSES 273
+#define FdoToken_DISJOINT 274
+#define FdoToken_ENVELOPEINTERSECTS 275
+#define FdoToken_EQUALS 276
+#define FdoToken_INTERSECTS 277
+#define FdoToken_INSIDE 278
+#define FdoToken_OVERLAPS 279
+#define FdoToken_TOUCHES 280
+#define FdoToken_WITHIN 281
+#define FdoToken_RELATE 282
+#define FdoToken_IDENTIFIER 283
+#define FdoToken_PARAMETER 284
+#define FdoToken_STRING 285
+#define FdoToken_INTEGER 286
+#define FdoToken_INT64 287
+#define FdoToken_INTHEX 288
+#define FdoToken_INTBIN 289
+#define FdoToken_DOUBLE 290
+#define FdoToken_DATETIME 291
+#define FdoToken_BLOB 292
+#define FdoToken_CLOB 293
+#define FdoToken_Add 294
+#define FdoToken_Subtract 295
+#define FdoToken_Multiply 296
+#define FdoToken_Divide 297
+#define FdoToken_Negate 298
+#define FdoToken_EQ 299
+#define FdoToken_NE 300
+#define FdoToken_GT 301
+#define FdoToken_GE 302
+#define FdoToken_LT 303
+#define FdoToken_LE 304
+#define FdoToken_LeftParenthesis 305
+#define FdoToken_RightParenthesis 306
+#define FdoToken_Comma 307
+#define FdoToken_Dot 308
+#define FdoToken_Colon 309
+#define FdoToken_AS 310
+#define FdoToken_BETWEEN 311
 const short fdo_expression_yylhs[] = {                                        -1,
     0,    0,    3,    3,    3,    3,    3,    3,    3,    1,
     1,    1,    1,    2,    2,    2,    2,    2,    2,    2,
-    2,    2,    2,    2,   21,   21,   20,   22,   23,   24,
-   25,   19,   26,    6,   11,   11,   12,   12,   12,   12,
-   12,   17,   17,   17,   17,    5,    5,   10,   10,   10,
-   10,    9,    9,    9,    9,    4,    4,    4,    7,    8,
-   13,   13,   14,   14,   15,   15,   16,   18,   18,   18,
-   18,   18,   18,
+    2,    2,    2,    2,   15,   15,   14,   16,   17,   18,
+   19,   13,   20,    5,    8,    8,    4,    4,    4,    6,
+    7,    9,    9,   10,   10,   11,   11,   12,
 };
 const short fdo_expression_yylen[] = {                                         2,
     1,    1,    3,    1,    1,    1,    1,    1,    1,    3,
     3,    3,    3,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-    1,    1,    1,    4,    5,    3,    5,    3,    1,    5,
-    3,    6,    8,    6,    8,    1,    3,    6,    8,    8,
-   10,    5,    3,    5,    3,    0,    1,    3,    4,    1,
-    1,    1,    1,    1,    1,    2,    2,    1,    1,    1,
-    1,    1,    1,
+    1,    1,    1,    4,    5,    3,    0,    1,    3,    4,
+    1,    1,    1,    1,    1,    1,    2,    2,
 };
 const short fdo_expression_yydefred[] = {                                      0,
-    2,   24,   25,   26,    0,    0,   60,   65,   27,   28,
-   29,   30,   31,   32,   33,   22,   23,    0,    0,    0,
-    0,    5,   64,    0,    6,   63,    0,    9,    0,    8,
-   61,   62,    4,   16,   21,   14,   17,   18,   19,   20,
-   15,    0,    0,    0,   66,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,   53,    0,    0,   55,   59,    0,    0,    0,
-   34,    0,    0,    0,    0,    0,   52,   54,    0,    0,
-    0,    0,    0,   48,    0,    0,    0,    0,   38,    0,
-    0,   46,    0,    0,    0,    0,   50,    0,   49,    0,
-    0,   37,    0,    0,    0,   47,    0,    0,    0,    0,
-    0,   51,    0,   36,   68,   69,   70,   71,   72,   73,
-    0,    0,    0,   42,    0,   44,    0,   35,    0,    0,
-   43,   45,
+    2,   24,   25,   26,    0,   41,   46,   27,   28,   29,
+   30,   31,   32,   33,   22,   23,    0,    0,    0,    0,
+    5,   45,    0,    6,   44,    0,    9,    8,   42,   43,
+    4,   16,   21,   14,   17,   18,   19,   20,   15,    0,
+    0,   47,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,   36,    0,    0,   40,    0,
+   34,    0,   35,    0,
 };
-const short fdo_expression_yydgoto[] = {                                      21,
-   22,   23,   24,   65,   91,   25,   26,   27,   28,   29,
-  105,   76,   30,   31,   32,   33,   92,  121,   34,   35,
-   36,   37,   38,   39,   40,   41,
+const short fdo_expression_yydgoto[] = {                                      20,
+   21,   22,   23,   58,   24,   25,   26,   27,   28,   29,
+   30,   31,   32,   33,   34,   35,   36,   37,   38,   39,
 };
-const short fdo_expression_yysindex[] = {                                    -38,
-    0,    0,    0,    0,  -30,  -17,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,   71, -287,   71,
-    0,    0,    0, -277,    0,    0,   -9,    0, -279,    0,
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0, -249, -243, -262,    0,  -22,  -34,   71,   71,   71,
-   71, -243,   71, -243,   19,   23, -247, -242, -271, -271,
- -262, -262,    0, -277,  -24,    0,    0,   98, -243, -243,
-    0,   71,   71, -267,  -40,   -1,    0,    0, -277,   33,
-   65, -243, -243,    0, -272, -240, -230,    0,    0,   53,
-   11,    0,   17, -243, -243,  -26,    0, -163,    0, -163,
-    0,    0, -243,  -41,   70,    0,   51,   92, -243, -167,
- -167,    0, -184,    0,    0,    0,    0,    0,    0,    0,
-   77,   78, -243,    0, -158,    0, -158,    0,   95,   96,
-    0,    0,
+const short fdo_expression_yysindex[] = {                                    -40,
+    0,    0,    0,    0,  -28,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,   63, -275,   63,    0,
+    0,    0, -269,    0,    0,  -17,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0, -250,
+ -273,    0,  -35,   63,   63,   63,   63, -245,   63,   -2,
+ -270, -289, -289, -273, -273,    0, -269,  -30,    0, -245,
+    0,   63,    0, -269,
 };
 const short fdo_expression_yyrindex[] = {                                      0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,  139,    0,    0,    1,    0,    0,    0,
+    0,    0,   43,    0,    0,    1,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    5,    0,    0,    0,    0,    0,    0,
-    0,    0,   79,    0,    0,    0,    9,    0,   22,   24,
-   13,   18,    0,   84,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,  -12,    0,    0,    0,   85,    0,
- -222,    0,    0,    0,    0, -218,    0,  -33,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-  -29,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,
+    5,    0,    0,    0,    0,    0,    0,    0,  -25,    0,
+    9,   22,   24,   13,   18,    0,  -24,    0,    0,    0,
+    0,    0,    0,   -8,
 };
 const short fdo_expression_yygindex[] = {                                      0,
-    0,    0,   59,    0,   40,    0,    0,   21,    0,   -4,
-    0,    0,    0,    0,    0,    0,   43,   31,    0,  -55,
-    0,    0,    0,    0,    0,    0,
+    0,    0,  -15,    0,    0,    0,  -45,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
 };
-#define FDO_EXPRESSION_YYTABLESIZE 415
-const short fdo_expression_yytable[] = {                                      53,
-    7,   20,  110,   90,   67,   45,   58,   41,    3,   42,
-   41,   40,   12,  103,   40,   47,   71,   13,   57,   72,
-    9,   10,   43,   11,   48,   49,   50,   51,   39,   93,
-   53,   39,   50,   51,   48,   49,   50,   51,   54,   84,
-   52,    7,   85,   55,    7,   67,   52,    7,   67,    3,
-   82,   97,    3,   12,   98,   52,   12,   99,   13,   67,
-  100,   13,   10,   56,   11,   10,   68,   11,   47,  129,
-   69,  130,   63,   86,   66,   70,   44,   94,   46,    7,
-    7,    7,    7,    3,    3,    3,    3,   95,   75,   77,
-   78,  112,   96,   81,   98,    7,  115,  116,  117,  118,
-  119,  120,   88,   89,   53,   87,   59,   60,   61,   62,
-   20,   64,   90,  111,  101,  102,  104,  124,  126,   56,
-  125,  127,   56,  108,   57,   58,   74,   57,   58,  114,
-   79,   80,  113,  123,    9,  131,  132,   73,    1,  107,
-  106,  122,    0,  128,    0,    0,    0,    0,    0,    0,
+#define FDO_EXPRESSION_YYTABLESIZE 372
+const short fdo_expression_yytable[] = {                                      19,
+    7,   41,   56,   43,   48,   51,   46,   47,    3,   42,
+   61,   40,   12,   62,   63,   37,   38,   13,   37,   38,
+   48,   10,   49,   11,   44,   45,   46,   47,   52,   53,
+   54,   55,   39,   57,   50,   39,   48,    6,   59,   60,
+   48,    7,    1,    0,    7,   48,   64,    0,   48,    3,
+    0,    0,    3,   12,    0,    0,   12,    0,   13,    0,
+    0,   13,   10,    0,   11,   10,    0,   11,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,   19,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,    1,    2,    3,
-    4,    0,    0,    0,    5,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    6,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-    0,    0,    7,    8,    9,   10,   11,   12,   13,   14,
-   15,   16,   17,    0,    7,    0,    0,   18,   53,   53,
-   53,   53,   52,   52,   52,   52,  109,   83,   19,   48,
-   49,   50,   51,   54,   53,    0,    0,    0,   52,    7,
-    7,    7,    7,    0,    0,   52,    0,    0,    0,    0,
-    0,    0,    7,    7,    7,    7,   67,   67,   67,   67,
-    3,    3,    3,    3,   12,   12,   12,   12,    7,   13,
-   13,   13,   13,   10,   10,   11,   11,    2,    3,    4,
-    0,    0,    0,    5,   48,   49,   50,   51,    0,    0,
-    0,    0,    0,    0,    0,    6,    0,    0,    0,    0,
-   52,    0,    0,    0,    2,    3,    4,    0,    0,    0,
-    5,    7,    8,    9,   10,   11,   12,   13,   14,   15,
-   16,   17,    6,    0,    0,    0,   18,    0,    0,    0,
-    0,    0,    0,    0,    0,    0,    0,   19,    7,    8,
-    9,   10,   11,   12,   13,   14,   15,   16,   17,    0,
-    0,    0,    0,   18,    0,    0,    0,    0,    0,    0,
-    0,    0,    0,    0,   19,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    1,    2,    3,    4,    0,
+    0,    0,    5,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    6,    7,    8,    9,   10,   11,   12,   13,
+   14,   15,   16,    0,    0,    0,    0,   17,   44,   45,
+   46,   47,    0,    0,    0,    0,    0,    0,   18,    0,
+    0,    0,    0,    0,   48,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    7,    7,    7,    7,   48,   48,
+   48,   48,    3,    3,    3,    3,   12,   12,   12,   12,
+    7,   13,   13,   13,   13,   10,   10,   11,   11,    2,
+    3,    4,    0,    0,    0,    5,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,    0,    6,    7,    8,    9,   10,
+   11,   12,   13,   14,   15,   16,    0,    0,    0,    0,
+   17,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+    0,   18,
 };
 const short fdo_expression_yycheck[] = {                                      40,
-    0,   40,   44,  276,    0,  293,   41,   41,    0,   40,
-   44,   41,    0,   40,   44,   20,   41,    0,   41,   44,
-  293,    0,   40,    0,  302,  303,  304,  305,   41,   85,
-   40,   44,  304,  305,  302,  303,  304,  305,  318,   41,
-  318,   41,   44,  293,   44,   41,  318,  291,   44,   41,
-  318,   41,   44,   41,   44,  318,   44,   41,   41,   41,
-   44,   44,   41,   43,   41,   44,   44,   44,   73,  125,
-  318,  127,   52,   41,   54,  318,   18,  318,   20,  302,
-  303,  304,  305,  302,  303,  304,  305,  318,   68,   69,
-   70,   41,   40,   73,   44,  318,  264,  265,  266,  267,
-  268,  269,   82,   83,   40,   41,   48,   49,   50,   51,
-   40,   53,  276,   44,   94,   95,   96,   41,   41,   41,
-   44,   44,   44,  103,   41,   41,   68,   44,   44,  109,
-   72,   73,   41,  318,  293,   41,   41,   40,    0,  100,
-   98,  111,   -1,  123,   -1,   -1,   -1,   -1,   -1,   -1,
+    0,   17,   48,   19,    0,   41,  296,  297,    0,  285,
+   41,   40,    0,   44,   60,   41,   41,    0,   44,   44,
+  310,    0,   40,    0,  294,  295,  296,  297,   44,   45,
+   46,   47,   41,   49,  285,   44,  310,  283,   41,  310,
+  310,   41,    0,   -1,   44,   41,   62,   -1,   44,   41,
+   -1,   -1,   44,   41,   -1,   -1,   44,   -1,   41,   -1,
+   -1,   44,   41,   -1,   41,   44,   -1,   44,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   40,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-   -1,   -1,   -1,   -1,   -1,   -1,   -1,  256,  257,  258,
-  259,   -1,   -1,   -1,  263,   -1,   -1,   -1,   -1,   -1,
-   -1,   -1,   -1,   -1,   -1,   -1,  275,   -1,   -1,   -1,
    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-   -1,   -1,  291,  292,  293,  294,  295,  296,  297,  298,
-  299,  300,  301,   -1,  291,   -1,   -1,  306,  302,  303,
-  304,  305,  302,  303,  304,  305,  318,  318,  317,  302,
-  303,  304,  305,  318,  318,   -1,   -1,   -1,  318,  302,
-  303,  304,  305,   -1,   -1,  318,   -1,   -1,   -1,   -1,
-   -1,   -1,  302,  303,  304,  305,  302,  303,  304,  305,
-  302,  303,  304,  305,  302,  303,  304,  305,  318,  302,
-  303,  304,  305,  302,  303,  302,  303,  257,  258,  259,
-   -1,   -1,   -1,  263,  302,  303,  304,  305,   -1,   -1,
-   -1,   -1,   -1,   -1,   -1,  275,   -1,   -1,   -1,   -1,
-  318,   -1,   -1,   -1,  257,  258,  259,   -1,   -1,   -1,
-  263,  291,  292,  293,  294,  295,  296,  297,  298,  299,
-  300,  301,  275,   -1,   -1,   -1,  306,   -1,   -1,   -1,
-   -1,   -1,   -1,   -1,   -1,   -1,   -1,  317,  291,  292,
-  293,  294,  295,  296,  297,  298,  299,  300,  301,   -1,
-   -1,   -1,   -1,  306,   -1,   -1,   -1,   -1,   -1,   -1,
-   -1,   -1,   -1,   -1,  317,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,  256,  257,  258,  259,   -1,
+   -1,   -1,  263,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,  283,  284,  285,  286,  287,  288,  289,  290,
+  291,  292,  293,   -1,   -1,   -1,   -1,  298,  294,  295,
+  296,  297,   -1,   -1,   -1,   -1,   -1,   -1,  309,   -1,
+   -1,   -1,   -1,   -1,  310,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,  294,  295,  296,  297,  294,  295,
+  296,  297,  294,  295,  296,  297,  294,  295,  296,  297,
+  310,  294,  295,  296,  297,  294,  295,  294,  295,  257,
+  258,  259,   -1,   -1,   -1,  263,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,   -1,   -1,   -1,   -1,  283,  284,  285,  286,  287,
+  288,  289,  290,  291,  292,  293,   -1,   -1,   -1,   -1,
+  298,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+   -1,  309,
 };
-#define FDO_EXPRESSION_YYFINAL 21
+#define FDO_EXPRESSION_YYFINAL 20
 #ifndef FDO_EXPRESSION_YYDEBUG
 #define FDO_EXPRESSION_YYDEBUG 0
 #endif
-#define FDO_EXPRESSION_YYMAXTOKEN 319
+#define FDO_EXPRESSION_YYMAXTOKEN 311
 #if FDO_EXPRESSION_YYDEBUG
 const char * const fdo_expression_yyname[] = {
 "end-of-file",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -276,22 +231,19 @@ const char * const fdo_expression_yyname[] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"FdoToken_NULL",
 "FdoToken_TRUE","FdoToken_FALSE","FdoToken_DATE","FdoToken_TIME",
-"FdoToken_TIMESTAMP","FdoToken_GEOMFROMTEXT","FdoToken_JOINNONE",
-"FdoToken_JOININNER","FdoToken_JOINRIGHTOUTER","FdoToken_JOINLEFTOUTER",
-"FdoToken_JOINFULLOUTER","FdoToken_JOINCROSS","FdoToken_AND","FdoToken_OR",
-"FdoToken_NOT","FdoToken_LIKE","FdoToken_IN","FdoToken_SELECT","FdoToken_JOIN",
-"FdoToken_BEYOND","FdoToken_WITHINDISTANCE","FdoToken_CONTAINS",
-"FdoToken_COVEREDBY","FdoToken_CROSSES","FdoToken_DISJOINT",
-"FdoToken_ENVELOPEINTERSECTS","FdoToken_EQUALS","FdoToken_INTERSECTS",
-"FdoToken_INSIDE","FdoToken_OVERLAPS","FdoToken_TOUCHES","FdoToken_WITHIN",
-"FdoToken_RELATE","FdoToken_IDENTIFIER","FdoToken_PARAMETER","FdoToken_STRING",
-"FdoToken_INTEGER","FdoToken_INT64","FdoToken_INTHEX","FdoToken_INTBIN",
-"FdoToken_DOUBLE","FdoToken_DATETIME","FdoToken_BLOB","FdoToken_CLOB",
-"FdoToken_Add","FdoToken_Subtract","FdoToken_Multiply","FdoToken_Divide",
-"FdoToken_Negate","FdoToken_EQ","FdoToken_NE","FdoToken_GT","FdoToken_GE",
-"FdoToken_LT","FdoToken_LE","FdoToken_LeftParenthesis",
-"FdoToken_RightParenthesis","FdoToken_Comma","FdoToken_Dot","FdoToken_Colon",
-"FdoToken_AS","FdoToken_BETWEEN",
+"FdoToken_TIMESTAMP","FdoToken_GEOMFROMTEXT","FdoToken_AND","FdoToken_OR",
+"FdoToken_NOT","FdoToken_LIKE","FdoToken_IN","FdoToken_BEYOND",
+"FdoToken_WITHINDISTANCE","FdoToken_CONTAINS","FdoToken_COVEREDBY",
+"FdoToken_CROSSES","FdoToken_DISJOINT","FdoToken_ENVELOPEINTERSECTS",
+"FdoToken_EQUALS","FdoToken_INTERSECTS","FdoToken_INSIDE","FdoToken_OVERLAPS",
+"FdoToken_TOUCHES","FdoToken_WITHIN","FdoToken_RELATE","FdoToken_IDENTIFIER",
+"FdoToken_PARAMETER","FdoToken_STRING","FdoToken_INTEGER","FdoToken_INT64",
+"FdoToken_INTHEX","FdoToken_INTBIN","FdoToken_DOUBLE","FdoToken_DATETIME",
+"FdoToken_BLOB","FdoToken_CLOB","FdoToken_Add","FdoToken_Subtract",
+"FdoToken_Multiply","FdoToken_Divide","FdoToken_Negate","FdoToken_EQ",
+"FdoToken_NE","FdoToken_GT","FdoToken_GE","FdoToken_LT","FdoToken_LE",
+"FdoToken_LeftParenthesis","FdoToken_RightParenthesis","FdoToken_Comma",
+"FdoToken_Dot","FdoToken_Colon","FdoToken_AS","FdoToken_BETWEEN",
 };
 const char * const fdo_expression_yyrule[] = {
 "$accept : fdo",
@@ -329,27 +281,8 @@ const char * const fdo_expression_yyrule[] = {
 "double : FdoToken_DOUBLE",
 "datetime : FdoToken_DATETIME",
 "Function : Identifier '(' ExpressionCollection ')'",
-"ComputedIdentifierOnly : '(' Identifier ')' FdoToken_AS Identifier",
-"ComputedIdentifierOnly : Identifier FdoToken_AS Identifier",
-"ComputedIdentifier3 : '(' Identifier ')' FdoToken_AS Identifier",
-"ComputedIdentifier3 : Identifier FdoToken_AS Identifier",
-"ComputedIdentifier3 : Identifier",
-"ComputedIdentifier3 : '(' Expression ')' FdoToken_AS Identifier",
-"ComputedIdentifier3 : Expression FdoToken_AS Identifier",
-"JoinCriteria : FdoToken_JOIN '(' Identifier ',' JoinOperations ')'",
-"JoinCriteria : FdoToken_JOIN '(' Identifier ',' JoinOperations ',' string ')'",
-"JoinCriteria : FdoToken_JOIN '(' ComputedIdentifierOnly ',' JoinOperations ')'",
-"JoinCriteria : FdoToken_JOIN '(' ComputedIdentifierOnly ',' JoinOperations ',' string ')'",
-"JoinCriteriaCollection : JoinCriteria",
-"JoinCriteriaCollection : JoinCriteriaCollection ',' JoinCriteria",
-"SubSelectExpression : FdoToken_SELECT '(' Identifier ',' ComputedIdentifier3 ')'",
-"SubSelectExpression : FdoToken_SELECT '(' Identifier ',' ComputedIdentifier3 ',' string ')'",
-"SubSelectExpression : FdoToken_SELECT '(' Identifier ',' ComputedIdentifier3 ',' JoinCriteriaCollection ')'",
-"SubSelectExpression : FdoToken_SELECT '(' Identifier ',' ComputedIdentifier3 ',' string ',' JoinCriteriaCollection ')'",
 "ComputedIdentifier : '(' Expression ')' FdoToken_AS Identifier",
 "ComputedIdentifier : Expression FdoToken_AS Identifier",
-"ComputedIdentifier : '(' SubSelectExpression ')' FdoToken_AS Identifier",
-"ComputedIdentifier : SubSelectExpression FdoToken_AS Identifier",
 "ExpressionCollection :",
 "ExpressionCollection : Expression",
 "ExpressionCollection : ExpressionCollection ',' Expression",
@@ -362,12 +295,6 @@ const char * const fdo_expression_yyrule[] = {
 "Parameter : FdoToken_PARAMETER",
 "Parameter : FdoToken_Colon FdoToken_STRING",
 "UnaryExpression : FdoToken_Negate Expression",
-"JoinOperations : FdoToken_JOINNONE",
-"JoinOperations : FdoToken_JOININNER",
-"JoinOperations : FdoToken_JOINRIGHTOUTER",
-"JoinOperations : FdoToken_JOINLEFTOUTER",
-"JoinOperations : FdoToken_JOINFULLOUTER",
-"JoinOperations : FdoToken_JOINCROSS",
 };
 #endif
 #if FDO_EXPRESSION_YYDEBUG
@@ -385,7 +312,7 @@ const char * const fdo_expression_yyrule[] = {
 #endif
 #endif
 #define FDO_EXPRESSION_YYINITSTACKSIZE 200
-#line 294 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 230 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 ///////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
@@ -443,8 +370,7 @@ static void  print_current_token()
 	printf( "***  current token is %d (%s)  ***\n", pParse->fdo_expression_yychar, token_name );
 #endif
 }
-
-#line 460 "yyExpression.cpp"
+#line 386 "yyExpression.cpp"
 /* allocate initial stack or double stack size, up to FDO_EXPRESSION_YYMAXDEPTH */
 static int fdo_expression_yygrowstack(FdoParse *pParse)
 {
@@ -640,298 +566,198 @@ fdo_expression_yyreduce:
     switch (fdo_expression_yyn)
     {
 case 1:
-#line 114 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 110 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->SetRoot(Node_Copy(L"Expression", pParse->fdo_expression_yyvsp[0].m_node));	FDO_EXPRESSION_YYACCEPT;}
 break;
 case 2:
-#line 115 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 111 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {Node_Trace(L"ERROR!");	pParse->SetRoot((FdoIDisposable*)NULL);	FDO_EXPRESSION_YYABORT;}
 break;
 case 3:
-#line 119 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 115 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"(Expression)", pParse->fdo_expression_yyvsp[-1].m_node);}
 break;
 case 4:
-#line 120 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 116 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"UnaryExpression", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 5:
-#line 121 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 117 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"BinaryExpression", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 6:
-#line 122 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 118 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"Function", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 7:
-#line 123 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 119 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"Identifier", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 8:
-#line 124 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 120 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"ValueExpression", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 9:
-#line 125 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 121 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"ComputedIdentifier", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 10:
-#line 129 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 125 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"Add", FdoBinaryExpression::Create((FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node, FdoBinaryOperations_Add, (FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node));}
 break;
 case 11:
-#line 130 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 126 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"Subtract", FdoBinaryExpression::Create((FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node, FdoBinaryOperations_Subtract, (FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node));}
 break;
 case 12:
-#line 131 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 127 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"Multiply", FdoBinaryExpression::Create((FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node, FdoBinaryOperations_Multiply, (FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node));}
 break;
 case 13:
-#line 132 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 128 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"Divide", FdoBinaryExpression::Create((FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node, FdoBinaryOperations_Divide, (FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node));}
 break;
 case 14:
-#line 137 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 133 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"boolean", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 15:
-#line 139 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 135 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"datetime", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 16:
-#line 142 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 138 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"double", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 17:
-#line 144 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 140 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"integer", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 18:
-#line 146 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 142 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"int64", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 19:
-#line 148 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 144 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"inthex", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 20:
-#line 150 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 146 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"intbin", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 21:
-#line 152 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 148 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"string", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
 case 22:
-#line 154 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 150 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"TODO:BLOB", NULL);}
 break;
 case 23:
-#line 156 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 152 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"TODO:CLOB", NULL);}
 break;
 case 24:
-#line 158 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 154 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"NULL", FdoDataValue::Create(FdoDataType_Boolean));}
 break;
 case 25:
-#line 162 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 158 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"TRUE", FdoBooleanValue::Create(true));}
 break;
 case 26:
-#line 163 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 159 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"FALSE", FdoBooleanValue::Create(false));}
 break;
 case 27:
-#line 166 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"STRING", FdoStringValue::Create(pParse->fdo_expression_yyvsp[0].m_string));}
+#line 162 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+{pParse->fdo_expression_yyval.m_node=Node_Add(L"STRING", FdoDataValue::Create(pParse->fdo_expression_yyvsp[0].m_string));}
 break;
 case 28:
-#line 169 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 165 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"INTEGER", FdoInt32Value::Create(pParse->fdo_expression_yyvsp[0].m_integer));}
 break;
 case 29:
-#line 172 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 168 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"INT64", FdoInt64Value::Create(pParse->fdo_expression_yyvsp[0].m_int64));}
 break;
 case 30:
-#line 175 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 171 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"INTHEX", FdoIntHexValue::Create(pParse->fdo_expression_yyvsp[0].m_int64));}
 break;
 case 31:
-#line 178 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 174 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"INTBIN", FdoIntBinValue::Create(pParse->fdo_expression_yyvsp[0].m_int64));}
 break;
 case 32:
-#line 181 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 177 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"DOUBLE", FdoDoubleValue::Create(pParse->fdo_expression_yyvsp[0].m_double));}
 break;
 case 33:
-#line 184 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 180 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"DateTime", FdoDataValue::Create(pParse->fdo_expression_yyvsp[0].m_datetime));}
 break;
 case 34:
-#line 189 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 185 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"ExpressionCollection", FdoFunction::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node)->GetName(), (FdoExpressionCollection*)pParse->fdo_expression_yyvsp[-1].m_node));}
 break;
 case 35:
-#line 194 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
+#line 189 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
 break;
 case 36:
-#line 196 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
+#line 190 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
 break;
 case 37:
-#line 201 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
-break;
-case 38:
-#line 203 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
-break;
-case 39:
-#line 205 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"IDENTIFIER", FdoIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName()));}
-break;
-case 40:
-#line 207 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
-break;
-case 41:
-#line 209 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node = Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
-break;
-case 42:
-#line 214 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"JoinCriteria", FdoJoinCriteria::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node, (FdoJoinType)pParse->fdo_expression_yyvsp[-1].m_id));}
-break;
-case 43:
-#line 216 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"JoinCriteria", FdoJoinCriteria::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node, (FdoJoinType)pParse->fdo_expression_yyvsp[-3].m_id, FdoPtr<FdoFilter>(FdoFilter::Parse(((FdoStringValue*)pParse->fdo_expression_yyvsp[-1].m_node)->GetString()))));}
-break;
-case 44:
-#line 218 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"JoinCriteria", FdoJoinCriteria::Create(((FdoComputedIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node)->GetName(), FdoPtr<FdoIdentifier>(static_cast<FdoIdentifier*>(((FdoComputedIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node)->GetExpression())), (FdoJoinType)pParse->fdo_expression_yyvsp[-1].m_id));}
-break;
-case 45:
-#line 220 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"JoinCriteria", FdoJoinCriteria::Create(((FdoComputedIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node)->GetName(), FdoPtr<FdoIdentifier>(static_cast<FdoIdentifier*>(((FdoComputedIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node)->GetExpression())), (FdoJoinType)pParse->fdo_expression_yyvsp[-3].m_id, FdoPtr<FdoFilter>(FdoFilter::Parse(((FdoStringValue*)pParse->fdo_expression_yyvsp[-1].m_node)->GetString()))));}
-break;
-case 46:
-#line 225 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=pParse->AddNodeToDelete(FdoJoinCriteriaCollection::Create()); ((FdoJoinCriteriaCollection*)pParse->fdo_expression_yyval.m_node)->Add((FdoJoinCriteria*)pParse->fdo_expression_yyvsp[0].m_node); Node_Trace(L"JoinCriteria 1");}
-break;
-case 47:
-#line 227 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{((FdoJoinCriteriaCollection*)pParse->fdo_expression_yyval.m_node)->Add((FdoJoinCriteria*)pParse->fdo_expression_yyvsp[0].m_node); Node_Trace(L"JoinCriteria n");}
-break;
-case 48:
-#line 232 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"SubSelectExpression", FdoSubSelectExpression::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node, (FdoIdentifier*)pParse->fdo_expression_yyvsp[-1].m_node));}
-break;
-case 49:
-#line 234 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"SubSelectExpression", FdoSubSelectExpression::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node, (FdoIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node, FdoPtr<FdoFilter>(FdoFilter::Parse(((FdoStringValue*)pParse->fdo_expression_yyvsp[-1].m_node)->GetString()))));}
-break;
-case 50:
-#line 236 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"SubSelectExpression", FdoSubSelectExpression::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node, (FdoIdentifier*)pParse->fdo_expression_yyvsp[-3].m_node, (FdoJoinCriteriaCollection*)pParse->fdo_expression_yyvsp[-1].m_node));}
-break;
-case 51:
-#line 238 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"SubSelectExpression", FdoSubSelectExpression::Create((FdoIdentifier*)pParse->fdo_expression_yyvsp[-7].m_node, (FdoIdentifier*)pParse->fdo_expression_yyvsp[-5].m_node, FdoPtr<FdoFilter>(FdoFilter::Parse(((FdoStringValue*)pParse->fdo_expression_yyvsp[-3].m_node)->GetString())), (FdoJoinCriteriaCollection*)pParse->fdo_expression_yyvsp[-1].m_node));}
-break;
-case 52:
-#line 242 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
-break;
-case 53:
-#line 243 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
-break;
-case 54:
-#line 244 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-3].m_node));}
-break;
-case 55:
-#line 245 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_node=Node_Add(L"ComputedIdentifier", FdoComputedIdentifier::Create(((FdoIdentifier*)pParse->fdo_expression_yyvsp[0].m_node)->GetName(), (FdoExpression*)pParse->fdo_expression_yyvsp[-2].m_node));}
-break;
-case 56:
-#line 248 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+#line 193 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=pParse->AddNodeToDelete(FdoExpressionCollection::Create());}
 break;
-case 57:
-#line 249 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 38:
+#line 194 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=pParse->AddNodeToDelete(FdoExpressionCollection::Create()); ((FdoExpressionCollection*)pParse->fdo_expression_yyval.m_node)->Add((FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node); Node_Trace(L"Expression Arg 1,");}
 break;
-case 58:
-#line 250 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 39:
+#line 195 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {((FdoExpressionCollection*)pParse->fdo_expression_yyval.m_node)->Add((FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node); Node_Trace(L"Expression Arg N,");}
 break;
-case 59:
-#line 255 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 40:
+#line 200 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Add(L"GeomFromText('FGFT')", pParse->FgftToGeometryValue(pParse->fdo_expression_yyvsp[-1].m_string));}
 break;
-case 60:
-#line 260 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 41:
+#line 205 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node = Node_Add(L"IDENTIFIER", FdoIdentifier::Create(pParse->fdo_expression_yyvsp[0].m_string));}
 break;
-case 61:
-#line 264 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 42:
+#line 209 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"LiteralValue", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
-case 62:
-#line 265 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 43:
+#line 210 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"Parameter", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
-case 63:
-#line 269 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 44:
+#line 214 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"GeometryValue", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
-case 64:
-#line 270 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 45:
+#line 215 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node=Node_Copy(L"DataValue", pParse->fdo_expression_yyvsp[0].m_node);}
 break;
-case 65:
-#line 275 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 46:
+#line 220 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node = Node_Add(L"PARAMETER", FdoParameter::Create(pParse->fdo_expression_yyvsp[0].m_string));}
 break;
-case 66:
-#line 277 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 47:
+#line 222 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node = Node_Add(L":Parameter", FdoParameter::Create(pParse->fdo_expression_yyvsp[0].m_string));}
 break;
-case 67:
-#line 281 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
+case 48:
+#line 226 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
 {pParse->fdo_expression_yyval.m_node = Node_Add(L"UnaryExpression", FdoUnaryExpression::Create(FdoUnaryOperations_Negate, (FdoExpression*)pParse->fdo_expression_yyvsp[0].m_node));}
 break;
-case 68:
-#line 285 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_None; Node_Trace(L"NONE");}
-break;
-case 69:
-#line 286 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_Inner; Node_Trace(L"INNER");}
-break;
-case 70:
-#line 287 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_RightOuter; Node_Trace(L"RIGHTOUTER");}
-break;
-case 71:
-#line 288 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_LeftOuter; Node_Trace(L"LEFTOUTER");}
-break;
-case 72:
-#line 289 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_FullOuter; Node_Trace(L"FULLOUTER");}
-break;
-case 73:
-#line 290 "Fdo/Unmanaged/Src/Fdo/Parse/yyExpression.y"
-{pParse->fdo_expression_yyval.m_id=FdoJoinType_Cross; Node_Trace(L"CROSS");}
-break;
-#line 947 "yyExpression.cpp"
+#line 773 "yyExpression.cpp"
     }
     pParse->fdo_expression_yyssp -= fdo_expression_yym;
     fdo_expression_yystate = *pParse->fdo_expression_yyssp;

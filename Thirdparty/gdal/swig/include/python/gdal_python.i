@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_python.i 18192 2009-12-06 19:41:32Z rouault $
+ * $Id: gdal_python.i 14814 2008-07-05 02:53:39Z warmerdam $
  *
  * python specific code for gdal bindings.
  */
@@ -15,27 +15,12 @@
 %}
 
 %pythoncode %{
-
-  
-  have_warned = 0
-  def deprecation_warn( module ):
-    global have_warned
-
-    if have_warned == 1:
-        return
-
-    have_warned = 1
-
-    from warnings import warn
-    warn('%s.py was placed in a namespace, it is now available as osgeo.%s' % (module,module),
-         DeprecationWarning)
-         
-         
   from gdalconst import *
   import gdalconst
 
 
   import sys
+  have_warned = 0
   byteorders = {"little": "<",
                 "big": ">"}
   array_modes = { gdalconst.GDT_Int16:    ("%si2" % byteorders[sys.byteorder]),
@@ -49,6 +34,19 @@
                   gdalconst.GDT_Byte:     ("%st8" % byteorders[sys.byteorder]),
   }
 
+  
+  def deprecation_warn( module ):
+    global have_warned
+
+    if have_warned == 1:
+        return
+
+    have_warned = 1
+
+    from warnings import warn
+    warn('%s.py was placed in a namespace, it is now available as osgeo.%s' % (module,module),
+         DeprecationWarning)
+
   def RGBFile2PCTFile( src_filename, dst_filename ):
     src_ds = Open(src_filename)
     if src_ds is None or src_ds == 'NULL':
@@ -59,7 +57,7 @@
                                src_ds.GetRasterBand(2),
                                src_ds.GetRasterBand(3),
                                256, ct )
-    if err != 0:
+    if err <> 0:
         return err
 
     gtiff_driver = GetDriverByName('GTiff')
@@ -84,7 +82,6 @@
 
 
 %include "python_exceptions.i"
-%include "python_strings.i"
 
 %extend GDAL_GCP {
 %pythoncode {
@@ -134,14 +131,13 @@
 
 %extend GDALDatasetShadow {
 %pythoncode {
-    def ReadAsArray(self, xoff=0, yoff=0, xsize=None, ysize=None, buf_obj=None ):
+    def ReadAsArray(self, xoff=0, yoff=0, xsize=None, ysize=None ):
         import gdalnumeric
-        return gdalnumeric.DatasetReadAsArray( self, xoff, yoff, xsize, ysize, buf_obj )
+        return gdalnumeric.DatasetReadAsArray( self, xoff, yoff, xsize, ysize )
     def WriteRaster(self, xoff, yoff, xsize, ysize,
                     buf_string,
                     buf_xsize = None, buf_ysize = None, buf_type = None,
-                    band_list = None,
-                    buf_pixel_space = None, buf_line_space = None, buf_band_space = None ):
+                    band_list = None ):
 
         if buf_xsize is None:
             buf_xsize = xsize;
@@ -152,15 +148,17 @@
         if buf_type is None:
             buf_type = self.GetRasterBand(1).DataType
 
-        return _gdal.Dataset_WriteRaster(self,
+        if len(buf_string) < buf_xsize * buf_ysize * len(band_list) \
+           * (_gdal.GetDataTypeSize(buf_type) / 8):
+            raise ValueError, "raster buffer too small in WriteRaster"
+        else:    
+            return _gdal.Dataset_WriteRaster(self,
                  xoff, yoff, xsize, ysize,
-                buf_string, buf_xsize, buf_ysize, buf_type, band_list,
-                buf_pixel_space, buf_line_space, buf_band_space )
+                buf_string, buf_xsize, buf_ysize, buf_type, band_list )
 
     def ReadRaster(self, xoff, yoff, xsize, ysize,
                    buf_xsize = None, buf_ysize = None, buf_type = None,
-                   band_list = None,
-                   buf_pixel_space = None, buf_line_space = None, buf_band_space = None ):
+                   band_list = None ):
 
         if band_list is None:
             band_list = range(1,self.RasterCount+1)
@@ -173,7 +171,7 @@
             buf_type = self.GetRasterBand(1).DataType;
         return _gdal.Dataset_ReadRaster(self, xoff, yoff, xsize, ysize,
                                            buf_xsize, buf_ysize, buf_type,
-                                           band_list, buf_pixel_space, buf_line_space, buf_band_space )
+                                           band_list)
 
     def GetSubDatasets(self):
         sd_list = []

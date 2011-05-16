@@ -131,7 +131,6 @@ typedef struct rdbi_methods_def {
     int  (*set_schemaW)(void*,const wchar_t*);
     int  (*vndr_info)(void*, rdbi_vndr_info_def *);
     int  (*geom_srid_set)(void*,char*,char*,long);
-    int  (*geom_version_set)(void*,char*,char*,long);
     int  (*geom_dimens_set)(void*,char*,int);
     int  (*get_geoms_ext)( void *, char *, char *,  pIGeometry_def *);
     int  (*lob_create_ref)(void*,char*,void**);
@@ -146,8 +145,6 @@ typedef struct rdbi_methods_def {
 	int  (*run_sqlW)(void*,const wchar_t*,int,int*);
     int  (*get_gen_id)(void*,const char*,int*);
     int  (*get_gen_idW)(void*,const wchar_t*,int*);
-    int  (*get_next_seq)(void*,const char*,long*);
-    int  (*get_next_seqW)(void*,const wchar_t*,long*);
 	int  (*autocommit_on)(void*);
 	int  (*autocommit_off)(void*);
 	int  (*autocommit_mode)(void*);

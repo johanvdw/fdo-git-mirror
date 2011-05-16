@@ -163,15 +163,23 @@ int postgis_execute (
                                     break;
                                 default:
                                     if (postgis_get_geometry_oid(postgis) == curs->binds[i].buffer_type) {
+                                        int count = 0;
                                         //TODO - handle 3D geometries
-                                        FdoPtr<FdoByteArray> ewkbBytes = ExtendedWkbFromGeometry( (*(void**)(curs->binds[i].buffer)), curs->srids[i]);
-                                        int count = ewkbBytes->GetCount();
-                                        FdoByte* ewkb = ewkbBytes->GetData();
+                                        char* wkb = WkbFromGeometry( (*(void**)(curs->binds[i].buffer)), &count);
+                                        if ( curs->srids[i] > 0 ) 
+                                            *((int*)&wkb[5]) |= 0x20000000; // Add hasSRID flag.
                                         buf = (char*)malloc((count * 2) + 10);
                                         int j;
                                         char* p = buf;
-                                        for ( j = 0; j < count; j++ ) {
-                                            sprintf( p, "%02X", (unsigned char)(ewkb[j]) );
+                                        for ( j = 4; j < count; j++ ) {
+                                            if ( (j == 9) && (curs->srids[i] > 0) ) {
+                                                unsigned char * sc = (unsigned char*) &(curs->srids[i]);
+                                                for ( int k = 0; k < 4; k++ ) {
+                                                    sprintf( p, "%02X", sc[k] );
+                                                    p += 2;
+                                                }
+                                            }
+                                            sprintf( p, "%02X", (unsigned char)(wkb[j]) );
                                             p += 2;
                                         }
                                     }
@@ -209,15 +217,8 @@ int postgis_execute (
                 }
                 else
                 {
-                    if (NULL != rows_processed)
-                    {
-                        if (PGRES_TUPLES_OK == PQresultStatus(curs->stmt_result))
-                            // # of rows retrieved by executing select command.
-                            *rows_processed = PQntuples(curs->stmt_result);
-                        else if (PGRES_COMMAND_OK == PQresultStatus(curs->stmt_result))
-                            // # of rows affected by update or delete command.
-                            *rows_processed = strtol(PQcmdTuples(curs->stmt_result),NULL,10);
-                    }
+                    if (NULL != rows_processed && PGRES_TUPLES_OK == PQresultStatus(curs->stmt_result))
+                        *rows_processed = PQntuples(curs->stmt_result);
                 }
 
                 /*

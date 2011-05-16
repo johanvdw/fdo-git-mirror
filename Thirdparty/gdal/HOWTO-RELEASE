@@ -1,42 +1,14 @@
 	Notes on Preparing a GDAL Source Release
 	========================================
 
-
-Prerequisites:
-
-1) Check that the release is ready to go as far as ABI (binary compatibility)
-   is concerned. This can be checked by comparing the installed headers of the
-   candidate release with the installed headers of the previous release 
-   (diff -ur $(OLD_INSTALL_DIR)/include $(NEW_INSTALL_DIR)/include). The API
-   is defined as all functions and classes exported by the CPL_DLL keyword.
-
-  - For major and minor releases, there must be no function signature change
-    for the C API. Only new functions are allowed.
-
-  - For major releases, the allowed changes in C++ API should (or must?) be 
-    such that user calling C++ code can still compile against new headers 
-    without modification (existing methods can become virtual, default 
-    arguments can be added, new methods or members can be added)
-
-  - For minor releases (1.6.1 versus 1.6.0), the C++ ABI stability must be
-    preserved : no method signature change, no addition of virtual methods, no
-    new members. Only non-virtual methods can be added.
-
-Process :
-
-1) a) Regenerate configure using autogen.sh and commit if changed.
-   b) Regenerate swig generated files for python bindings and commit if changed.
-
-   There is often a reference system on which this should be done (ie. Frank's
-   dev workstation) to avoid unnecessary churn from different autoconf or swig
+1) Regenerate configure using autogen.sh and commit if changed.  There
+   is often a reference system on which this should be done (ie. Frank's
+   dev workstation) to avoid unnecessary churn from different autoconf
    versions.
 
 2) Update the release date, and number information in gcore/gdal_version.h.
 
-3) Update the VERSION file. Update ./swig/python/setup.py version information. 
-   Update ./swig/include/perl/gdal_perl.i $VERSION string to current version.
-
-3.5) For major releases update the VERSION macro in nmake.opt (for 1.6, 1.7etc)
+3) Update the VERSION file. Update ./swig/python/setup.py version information.
 
 4) Update LIBGDAL_CURRENT/REVISION/AGE macros in GDALmake.opt.in.
    - For a release with no interface changes just bump REVISION. 
@@ -47,8 +19,6 @@ Process :
    trunk or the stable branch can be helpful.
 
     http://trac.osgeo.org/gdal/log/branches/1.4
-
-  - commit new version to NEWS file.
 
 6) Update the GDAL http://trac.osgeo.org/gdal/wiki/DownloadSource topic to 
    refer to the latest available source. 
@@ -82,17 +52,7 @@ Process :
  % ./gdalhtmlupdate.sh
  % zip -r /osgeo/download/gdal/gdal150doc.zip gdal-web/*.* gdal-web/ogr
 
-11) Create a snapshot of autotest suite:
-
-  svn export http://svn.osgeo.org/gdal/branches/1.6/autotest gdalautotest-1.6.0
-  tar czvf gdalautotest-1.6.0.tar.gz gdalautotest-1.6.0
-  zip -r gdalautotest-1.6.0.zip gdalautotest-1.6.0
-
-11.5) If changes have been made in the frmts/grass or ogr/ogrsf_frmts/grass dir,
-      generate an up-to-date gdal-grass snapshot (let's not forget do it for GDAL 1.7.0 !):
-
-  % cd frmts/grass
-  % make dist
+11) Create a snapshot of gdalautotest (make sure it doesn't include .svn's)
 
 12) Publish the resulting files in download.osgeo.org/gdal.
 

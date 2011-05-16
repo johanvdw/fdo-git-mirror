@@ -40,25 +40,7 @@ FdoString* NlsMsgGet(int msg_num, char* default_msg, char* file, int line, ...);
 // Bounding Box helper functions
 void _calcLayerBoundingBox (FdoWmsLayer* layer, FdoString* srsName, FdoWmsBoundingBox* bbox);
 void _calcLayersBoundingBox (FdoWmsLayerCollection* layers, FdoString* srsName, FdoWmsBoundingBox* bbox);
-FdoBoolean _reverseCheck(FdoStringP epsgName);
+FdoBoolean _reverseCheck(FdoStringP epsgName); 
 
-FdoStringP _encodeGetMapURL(
-                            FdoStringCollection* layerNames,
-                            FdoStringCollection* styleNames,
-                            FdoStringP  srsName,
-                            FdoStringP  imageFormat,
-                            FdoDouble maxX,
-                            FdoDouble minX,
-                            FdoDouble maxY,
-                            FdoDouble minY,
-                            FdoSize height,
-                            FdoSize width,
-                            FdoBoolean transparent,
-                            FdoStringP backgroundColor,
-                            FdoStringP timeDimension,
-                            FdoStringP elevation,
-                            FdoStringP exceptionFormat,
-                            FdoStringP version
-                            );
 
 #endif // FDOWMSUTILS_H

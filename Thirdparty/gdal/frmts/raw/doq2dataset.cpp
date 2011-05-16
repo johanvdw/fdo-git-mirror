@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: doq2dataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: doq2dataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  USGS DOQ Driver (Second Generation Format)
  * Purpose:  Implementation of DOQ2Dataset
@@ -30,7 +30,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: doq2dataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: doq2dataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_DOQ2(void);
@@ -179,7 +179,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
             break;
         }
         
-        if( EQUAL(papszTokens[0],"SAMPLES_AND_LINES") && CSLCount(papszTokens) >= 3 )
+        if( EQUAL(papszTokens[0],"SAMPLES_AND_LINES") )
         {
             nWidth = atoi(papszTokens[1]);
             nHeight = atoi(papszTokens[2]);
@@ -188,7 +188,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         {
             nSkipBytes = atoi(papszTokens[1]);
         }
-        else if( EQUAL(papszTokens[0],"XY_ORIGIN") && CSLCount(papszTokens) >= 3 )
+        else if( EQUAL(papszTokens[0],"XY_ORIGIN") )
         {
             dfULXMap = atof(papszTokens[1]);
             dfULYMap = atof(papszTokens[2]);
@@ -280,21 +280,23 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         else
         {
             /* we want to generically capture all the other metadata */
-            CPLString osMetaDataValue;
+        
+            char szMetaDataValue[81];
             int  iToken;
 
+            szMetaDataValue[0] = '\0';
             for( iToken = 1; papszTokens[iToken] != NULL; iToken++ )
             {
                 if( EQUAL(papszTokens[iToken],"*") )
                     continue;
 
                 if( iToken > 1 )
-                    osMetaDataValue += " " ;
-                osMetaDataValue += papszTokens[iToken];
+                    strcat( szMetaDataValue, " " );
+                strcat( szMetaDataValue, papszTokens[iToken] );
             }
             papszMetadata = CSLAddNameValue( papszMetadata, 
                                              papszTokens[0], 
-                                             osMetaDataValue );
+                                             szMetaDataValue );
         }
 	
         CSLDestroy( papszTokens );
@@ -328,17 +330,6 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
     
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CSLDestroy( papszMetadata );
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The DOQ2 driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
@@ -401,15 +392,15 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
     if ( pszState) CPLFree( pszState );
 
 /* -------------------------------------------------------------------- */
+/*      Check for overviews.                                            */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
+
+/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for overviews.                                            */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename );
 
     return( poDS );
 }

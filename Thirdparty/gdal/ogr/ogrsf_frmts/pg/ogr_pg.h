@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pg.h 17984 2009-11-10 11:42:01Z rouault $
+ * $Id: ogr_pg.h 15753 2008-11-17 22:04:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL driver.
@@ -34,10 +34,6 @@
 #include "libpq-fe.h"
 #include "cpl_string.h"
 
-#ifdef DEBUG
-PGresult *OGRPG_PQexec_dbg(PGconn *conn, const char *query);
-#define PQexec OGRPG_PQexec_dbg
-#endif
 
 /* These are the OIDs for some builtin types, as returned by PQftype(). */
 /* They were copied from pg_type.h in src/include/catalog/pg_type.h */
@@ -106,7 +102,7 @@ class OGRPGLayer : public OGRLayer
 
     char               *pszQueryStatement;
 
-    char               *pszCursorName;
+    const char         *pszCursorName;
     PGresult           *hCursorResult;
     int                 bCursorActive;
 
@@ -115,14 +111,12 @@ class OGRPGLayer : public OGRLayer
     int                 bHasWkb;
     int                 bWkbAsOid;
     int                 bHasPostGISGeometry;
-    int                 bHasPostGISGeography;
     char                *pszGeomColumn;
 
     int                 bHasFid;
     char                *pszFIDColumn;
 
     int                 bCanUseBinaryCursor;
-    int                *panMapFieldNameToIndex;
 
     int                 ParsePGDate( const char *, OGRField * );
 
@@ -130,7 +124,6 @@ class OGRPGLayer : public OGRLayer
 
     OGRErr              RunGetExtentRequest( OGREnvelope *psExtent, int bForce,
                                              CPLString osCommand);
-    void                CreateMapFromFieldNameToIndex();
 
   public:
                         OGRPGLayer();
@@ -149,8 +142,6 @@ class OGRPGLayer : public OGRLayer
     virtual const char *GetFIDColumn();
     virtual const char *GetGeometryColumn();
 
-    virtual OGRErr      SetNextByIndex( long nIndex );
-
     /* custom methods */
     virtual OGRFeature *RecordToFeature( int iRecord );
     virtual OGRFeature *GetNextRawFeature();
@@ -165,14 +156,13 @@ class OGRPGTableLayer : public OGRPGLayer
 {
     int                 bUpdateAccess;
 
-    OGRFeatureDefn     *ReadTableDefinition(CPLString& osCurrentSchema,
-                                            const char * pszTableName,
+    OGRFeatureDefn     *ReadTableDefinition(const char * pszTableName,
                                             const char * pszSchemaName,
                                             const char * pszGeomColumnIn,
                                             int bAdvertizeGeomColumn);
 
     void                BuildWhere(void);
-    CPLString           BuildFields(void);
+    char               *BuildFields(void);
     void                BuildFullQueryStatement(void);
 
     char               *pszTableName;
@@ -192,17 +182,9 @@ class OGRPGTableLayer : public OGRPGLayer
 
     OGRErr		CreateFeatureViaCopy( OGRFeature *poFeature );
     OGRErr		CreateFeatureViaInsert( OGRFeature *poFeature );
-    CPLString           BuildCopyFields(void);
-
-    void                AppendFieldValue(PGconn *hPGConn, CPLString& osCommand,
-                                         OGRFeature* poFeature, int i);
-                  
-    int                 bHasWarnedIncompatibleGeom;
-    void                CheckGeomTypeCompatibility(OGRGeometry* poGeom);
-    
+    char                *BuildCopyFields(void);
 public:
                         OGRPGTableLayer( OGRPGDataSource *,
-                                         CPLString& osCurrentSchema,
                                          const char * pszTableName,
                                          const char * pszSchemaName,
                                          const char * pszGeomColumnIn,
@@ -298,7 +280,6 @@ class OGRPGDataSource : public OGRDataSource
 
     int                 bDSUpdate;
     int                 bHavePostGIS;
-    int                 bHaveGeography;
 
     int                 nSoftTransactionLevel;
 
@@ -307,7 +288,6 @@ class OGRPGDataSource : public OGRDataSource
     int                 DeleteLayer( int iLayer );
 
     Oid                 nGeometryOID;
-    Oid                 nGeographyOID;
 
     // We maintain a list of known SRID to reduce the number of trips to
     // the database to get SRSes.
@@ -318,8 +298,6 @@ class OGRPGDataSource : public OGRDataSource
     OGRPGTableLayer     *poLayerInCopyMode;
 
     void                OGRPGDecodeVersionString(PGver* psVersion, char* pszVer);
-
-    CPLString           GetCurrentSchema();
 
   public:
     PGver               sPostgreSQLVersion;
@@ -339,11 +317,8 @@ class OGRPGDataSource : public OGRDataSource
     OGRErr              InitializeMetadataTables();
 
     int                 Open( const char *, int bUpdate, int bTestOpen );
-    int                 OpenTable( CPLString& osCurrentSchema,
-                                   const char * pszTableName,
-                                   const char * pszSchemaName,
-                                   const char * pszGeomColumnIn,
-                                   int bUpdate, int bTestOpen,
+    int                 OpenTable( const char * pszTableName, const char * pszSchemaName,
+                                   const char * pszGeomColumnIn, int bUpdate, int bTestOpen,
                                    int bAdvertizeGeomColumn );
 
     const char          *GetName() { return pszName; }
@@ -365,7 +340,6 @@ class OGRPGDataSource : public OGRDataSource
     OGRErr              FlushSoftTransaction();
 
     Oid                 GetGeometryOID() { return nGeometryOID; }
-    Oid                 GetGeographyOID() { return nGeographyOID; }
 
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                     OGRGeometry *poSpatialFilter,

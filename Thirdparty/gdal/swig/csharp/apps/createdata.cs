@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: createdata.cs 18217 2009-12-08 19:49:17Z rouault $
+ * $Id: createdata.cs 15475 2008-10-07 21:40:20Z tamas $
  *
  * Name:     createdata.cs
  * Project:  GDAL CSharp Interface
@@ -130,10 +130,10 @@ class CreateData {
 			System.Environment.Exit(-1);
 		}
 
-		fdefn = new FieldDefn( "DbleField", FieldType.OFTReal );
+		fdefn = new FieldDefn( "DoubleField", FieldType.OFTReal );
 		if( layer.CreateField( fdefn, 1 ) != 0 )
 		{
-			Console.WriteLine("Creating DbleField field failed.");
+			Console.WriteLine("Creating DoubleField field failed.");
 			System.Environment.Exit(-1);
 		}
 
@@ -151,7 +151,7 @@ class CreateData {
         Feature feature = new Feature( layer.GetLayerDefn() );
         feature.SetField( "Name", "value" );
 		feature.SetField( "IntField", (int)123 );
-		feature.SetField( "DbleField", (double)12.345 );
+		feature.SetField( "DoubleField", (double)12.345 );
 		feature.SetField( "DateField", 2007, 3, 15, 18, 24, 30, 0 );
 
         Geometry geom = Geometry.CreateFromWkt("POINT(47.0 19.2)");

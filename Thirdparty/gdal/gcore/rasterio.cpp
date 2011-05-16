@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterio.cpp 18744 2010-02-05 23:06:16Z pvachon $
+ * $Id: rasterio.cpp 15667 2008-10-31 20:20:55Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Contains default implementation of GDALRasterBand::IRasterIO()
@@ -30,18 +30,7 @@
 
 #include "gdal_priv.h"
 
-
-#if !(defined(_MSC_VER) && _MSC_VER <= 1200)
-#include <stdexcept>
-#include <limits>
-
-// For now, work around MSVC++ 6.0's broken template support. If this value
-// is not defined, the old GDALCopyWords implementation is used.
-#define USE_NEW_COPYWORDS 1
-#endif
-
-
-CPL_CVSID("$Id: rasterio.cpp 18744 2010-02-05 23:06:16Z pvachon $");
+CPL_CVSID("$Id: rasterio.cpp 15667 2008-10-31 20:20:55Z rouault $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */
@@ -101,9 +90,9 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                 if( poBlock == NULL )
                 {
                     CPLError( CE_Failure, CPLE_AppDefined,
-            "GetBlockRef failed at X block offset %d, "
+			"GetBlockRef failed at X block offset %d, "
                         "Y block offset %d", 0, nLBlockY );
-            return( CE_Failure );
+		    return( CE_Failure );
                 }
 
                 if( eRWFlag == GF_Write )
@@ -229,7 +218,7 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                 if( !poBlock )
                 {
                     CPLError( CE_Failure, CPLE_AppDefined,
-            "GetBlockRef failed at X block offset %d, "
+			"GetBlockRef failed at X block offset %d, "
                         "Y block offset %d", nLBlockX, nLBlockY );
                     return( CE_Failure );
                 }
@@ -499,8 +488,7 @@ void CPL_STDCALL GDALSwapWords( void *pData, int nWordSize, int nWordCount,
                                 int nWordSkip )
 
 {
-    if (nWordCount > 0)
-        VALIDATE_POINTER0( pData , "GDALSwapWords" );
+    VALIDATE_POINTER0( pData, "GDALSwapWords" );
 
     int         i;
     GByte       *pabyData = (GByte *) pData;
@@ -573,556 +561,6 @@ void CPL_STDCALL GDALSwapWords( void *pData, int nWordSize, int nWordCount,
     }
 }
 
-#ifdef USE_NEW_COPYWORDS
-// Place the new GDALCopyWords helpers in an anonymous namespace
-namespace {
-/************************************************************************/
-/*                          GetDataLimits()                             */
-/************************************************************************/
-/**
- * Compute the limits of values that can be placed in Tout in terms of
- * Tin. Usually used for output clamping, when the output data type's
- * limits are stable relative to the input type (i.e. no roundoff error).
- *
- * @param tMaxValue the returned maximum value
- * @param tMinValue the returned minimum value
- */
-
-template <class Tin, class Tout>
-inline void GetDataLimits(Tin &tMaxValue, Tin &tMinValue)
-{
-    tMaxValue = std::numeric_limits<Tin>::max();
-    tMinValue = std::numeric_limits<Tin>::min();
-
-    // Compute the actual minimum value of Tout in terms of Tin.
-    if (std::numeric_limits<Tout>::is_signed && std::numeric_limits<Tout>::is_integer)
-    {
-        // the minimum value is less than zero
-        if (std::numeric_limits<Tout>::digits < std::numeric_limits<Tin>::digits ||
-			!std::numeric_limits<Tin>::is_integer)
-        {
-            // Tout is smaller than Tin, so we need to clamp values in input
-            // to the range of Tout's min/max values
-            if (std::numeric_limits<Tin>::is_signed)
-            {
-                tMinValue = static_cast<Tin>(std::numeric_limits<Tout>::min());
-            }
-            tMaxValue = static_cast<Tin>(std::numeric_limits<Tout>::max());
-        }
-    }
-    else if (std::numeric_limits<Tout>::is_integer)
-    {
-        // the output is unsigned, so we just need to determine the max
-        if (std::numeric_limits<Tout>::digits <= std::numeric_limits<Tin>::digits)
-        {
-            // Tout is smaller than Tin, so we need to clamp the input values
-            // to the range of Tout's max
-            tMaxValue = static_cast<Tin>(std::numeric_limits<Tout>::max());
-        }
-        tMinValue = 0;
-    }
-
-}
-
-/************************************************************************/
-/*                            ClampValue()                                */
-/************************************************************************/
-/**
- * Clamp values of type T to a specified range
- *
- * @param tValue the value
- * @param tMax the max value
- * @param tMin the min value
- */
-template <class T>
-inline T ClampValue(const T tValue, const T tMax, const T tMin)
-{
-    return tValue > tMax ? tMax :
-           tValue < tMin ? tMin : tValue;
-}
-
-/************************************************************************/
-/*                            CopyWord()                                */
-/************************************************************************/
-/**
- * Copy a single word, optionally rounding if appropriate (i.e. going
- * from the float to the integer case). Note that this is the function
- * you should specialize if you're adding a new data type.
- *
- * @param tValueIn value of type Tin; the input value to be converted
- * @param tValueOut value of type Tout; the output value
- */
-
-template <class Tin, class Tout>
-inline void CopyWord(const Tin tValueIn, Tout &tValueOut)
-{
-    Tin tMaxVal, tMinVal;
-    GetDataLimits<Tin, Tout>(tMaxVal, tMinVal);
-    tValueOut = static_cast<Tout>(ClampValue(tValueIn, tMaxVal, tMinVal));
-}
-
-template <class Tin>
-inline void CopyWord(const Tin tValueIn, float &fValueOut)
-{
-    fValueOut = tValueIn;
-}
-
-template <class Tin>
-inline void CopyWord(const Tin tValueIn, double &dfValueOut)
-{
-    dfValueOut = tValueIn;
-}
-
-inline void CopyWord(const double dfValueIn, double &dfValueOut)
-{
-    dfValueOut = dfValueIn;
-}
-
-inline void CopyWord(const float fValueIn, float &fValueOut)
-{
-    fValueOut = fValueIn;
-}
-
-inline void CopyWord(const float fValueIn, double &dfValueOut)
-{
-    dfValueOut = fValueIn;
-}
-
-inline void CopyWord(const double dfValueIn, float &fValueOut)
-{
-    fValueOut = static_cast<float>(dfValueIn);
-}
-
-template <class Tout>
-inline void CopyWord(const float fValueIn, Tout &tValueOut)
-{
-    float fMaxVal, fMinVal;
-    GetDataLimits<float, Tout>(fMaxVal, fMinVal);
-    tValueOut = static_cast<Tout>(
-        ClampValue(fValueIn + 0.5f, fMaxVal, fMinVal));
-}
-
-template <class Tout>
-inline void CopyWord(const double dfValueIn, Tout &tValueOut)
-{
-    double dfMaxVal, dfMinVal;
-    GetDataLimits<double, Tout>(dfMaxVal, dfMinVal);
-    tValueOut = static_cast<Tout>(
-        ClampValue(dfValueIn + 0.5, dfMaxVal, dfMinVal));
-}
-
-inline void CopyWord(const double dfValueIn, int &nValueOut)
-{
-    double dfMaxVal, dfMinVal;
-    GetDataLimits<double, int>(dfMaxVal, dfMinVal);
-    double dfValue = dfValueIn >= 0.0 ? dfValueIn + 0.5 :
-        dfValueIn - 0.5;
-    nValueOut = static_cast<int>(
-        ClampValue(dfValue, dfMaxVal, dfMinVal));
-}
-
-inline void CopyWord(const float fValueIn, short &nValueOut)
-{
-    float fMaxVal, fMinVal;
-    GetDataLimits<float, short>(fMaxVal, fMinVal);
-    float fValue = fValueIn >= 0.0f ? fValueIn + 0.5f :
-        fValueIn - 0.5f;
-    nValueOut = static_cast<short>(
-        ClampValue(fValue, fMaxVal, fMinVal));
-}
-
-inline void CopyWord(const double dfValueIn, short &nValueOut)
-{
-    double dfMaxVal, dfMinVal;
-    GetDataLimits<double, short>(dfMaxVal, dfMinVal);
-    double dfValue = dfValueIn > 0.0 ? dfValueIn + 0.5 :
-        dfValueIn - 0.5;
-    nValueOut = static_cast<short>(
-        ClampValue(dfValue, dfMaxVal, dfMinVal));
-}
-
-// Roundoff occurs for Float32 -> int32 for max/min. Overload CopyWord
-// specifically for this case.
-inline void CopyWord(const float fValueIn, int &nValueOut)
-{
-    if (fValueIn >= static_cast<float>(std::numeric_limits<int>::max()))
-    {
-        nValueOut = std::numeric_limits<int>::max();
-    }
-    else if (fValueIn <= static_cast<float>(std::numeric_limits<int>::min()))
-    {
-        nValueOut = std::numeric_limits<int>::min();
-    }
-    else
-    {
-        nValueOut = static_cast<int>(fValueIn > 0.0f ? 
-            fValueIn + 0.5f : fValueIn - 0.5f);
-    }
-}
-
-// Roundoff occurs for Float32 -> uint32 for max. Overload CopyWord
-// specifically for this case.
-inline void CopyWord(const float fValueIn, unsigned int &nValueOut)
-{
-    if (fValueIn >= static_cast<float>(std::numeric_limits<unsigned int>::max()))
-    {
-        nValueOut = std::numeric_limits<unsigned int>::max();
-    }
-    else if (fValueIn <= static_cast<float>(std::numeric_limits<unsigned int>::min()))
-    {
-        nValueOut = std::numeric_limits<unsigned int>::min();
-    }
-    else
-    {
-        nValueOut = static_cast<unsigned int>(fValueIn + 0.5f);
-    }
-}
-
-/************************************************************************/
-/*                           GDALCopyWordsT()                           */
-/************************************************************************/
-/**
- * Template function, used to copy data from pSrcData into buffer
- * pDstData, with stride nSrcPixelOffset in the source data and
- * stride nDstPixelOffset in the destination data. This template can
- * deal with the case where the input data type is real or complex and
- * the output is real.
- *
- * @param pSrcData the source data buffer
- * @param nSrcPixelOffset the stride, in the buffer pSrcData for pixels
- *                      of interest.
- * @param pDstData the destination buffer.
- * @param nDstPixelOffset the stride in the buffer pDstData for pixels of
- *                      interest.
- * @param nWordCount the total number of pixel words to copy
- *
- * @code
- * // Assume an input buffer of type GUInt16 named pBufferIn 
- * GByte *pBufferOut = new GByte[numBytesOut];
- * GDALCopyWordsT<GUInt16, GByte>(pSrcData, 2, pDstData, 1, numBytesOut);
- * @code
- * @note
- * This is a private function, and should not be exposed outside of rasterio.cpp.
- * External users should call the GDALCopyWords driver function.
- * @note
- */
-
-template <class Tin, class Tout>
-static void GDALCopyWordsT(const Tin* const pSrcData, int nSrcPixelOffset,
-                           Tout* const pDstData, int nDstPixelOffset,
-                           int nWordCount)
-{
-    std::ptrdiff_t nDstOffset = 0;
-
-    const char* const pSrcDataPtr = reinterpret_cast<const char*>(pSrcData);
-    char* const pDstDataPtr = reinterpret_cast<char*>(pDstData);
-    for (std::ptrdiff_t n = 0; n < nWordCount; n++)
-    {
-        const Tin tValue = *reinterpret_cast<const Tin*>(pSrcDataPtr + (n * nSrcPixelOffset));
-        Tout* const pOutPixel = reinterpret_cast<Tout*>(pDstDataPtr + nDstOffset);
-
-        CopyWord(tValue, *pOutPixel);
-
-        nDstOffset += nDstPixelOffset;
-    }
-}
-
-/************************************************************************/
-/*                   GDALCopyWordsComplexT()                            */
-/************************************************************************/
-/**
- * Template function, used to copy data from pSrcData into buffer
- * pDstData, with stride nSrcPixelOffset in the source data and
- * stride nDstPixelOffset in the destination data. Deals with the 
- * complex case, where input is complex and output is complex.
- *
- * @param pSrcData the source data buffer
- * @param nSrcPixelOffset the stride, in the buffer pSrcData for pixels
- *                      of interest.
- * @param pDstData the destination buffer.
- * @param nDstPixelOffset the stride in the buffer pDstData for pixels of
- *                      interest.
- * @param nWordCount the total number of pixel words to copy
- *
- */
-template <class Tin, class Tout>
-inline void GDALCopyWordsComplexT(const Tin* const pSrcData, int nSrcPixelOffset,
-                                  Tout* const pDstData, int nDstPixelOffset,
-                                  int nWordCount)
-{
-    std::ptrdiff_t nDstOffset = 0;
-    const char* const pSrcDataPtr = reinterpret_cast<const char*>(pSrcData);
-    char* const pDstDataPtr = reinterpret_cast<char*>(pDstData);
-
-    // Determine the minimum and maximum value we can have based
-    // on the constraints of Tin and Tout.
-    Tin tMaxValue, tMinValue;
-    GetDataLimits<Tin, Tout>(tMaxValue, tMinValue);
-
-    for (std::ptrdiff_t n = 0; n < nWordCount; n++)
-    {
-        const Tin* const pPixelIn = reinterpret_cast<const Tin*>(pSrcDataPtr + n * nSrcPixelOffset);
-        Tout* const pPixelOut = reinterpret_cast<Tout*>(pDstDataPtr + nDstOffset);
-
-        CopyWord(pPixelIn[0], pPixelOut[0]);
-        CopyWord(pPixelIn[1], pPixelOut[1]);
-
-        nDstOffset += nDstPixelOffset;
-    }
-}
-
-/************************************************************************/
-/*                   GDALCopyWordsComplexOutT()                         */
-/************************************************************************/
-/**
- * Template function, used to copy data from pSrcData into buffer
- * pDstData, with stride nSrcPixelOffset in the source data and
- * stride nDstPixelOffset in the destination data. Deals with the 
- * case where the value is real coming in, but complex going out.
- *
- * @param pSrcData the source data buffer
- * @param nSrcPixelOffset the stride, in the buffer pSrcData for pixels
- *                      of interest, in bytes.
- * @param pDstData the destination buffer.
- * @param nDstPixelOffset the stride in the buffer pDstData for pixels of
- *                      interest, in bytes.
- * @param nWordCount the total number of pixel words to copy
- *
- */
-template <class Tin, class Tout>
-inline void GDALCopyWordsComplexOutT(const Tin* const pSrcData, int nSrcPixelOffset,
-                                     Tout* const pDstData, int nDstPixelOffset,
-                                     int nWordCount)
-{
-    std::ptrdiff_t nDstOffset = 0;
-
-    const Tout tOutZero = static_cast<Tout>(0);
-
-    const char* const pSrcDataPtr = reinterpret_cast<const char*>(pSrcData);
-    char* const pDstDataPtr = reinterpret_cast<char*>(pDstData);
-
-    for (std::ptrdiff_t n = 0; n < nWordCount; n++)
-    {
-        const Tin tValue = *reinterpret_cast<const Tin* const>(pSrcDataPtr + n * nSrcPixelOffset);
-        Tout* const pPixelOut = reinterpret_cast<Tout*>(pDstDataPtr + nDstOffset);
-        CopyWord(tValue, *pPixelOut);
-
-        pPixelOut[1] = tOutZero;
-
-        nDstOffset += nDstPixelOffset;
-    }
-}
-
-/************************************************************************/
-/*                           GDALCopyWordsFromT()                       */
-/************************************************************************/
-/**
- * Template driver function. Given the input type T, call the appropriate
- * GDALCopyWordsT function template for the desired output type. You should
- * never call this function directly (call GDALCopyWords instead).
- *
- * @param pSrcData source data buffer
- * @param nSrcPixelOffset pixel stride in input buffer, in pixel words
- * @param bInComplex input is complex
- * @param pDstData destination data buffer
- * @param eDstType destination data type
- * @param nDstPixelOffset pixel stride in output buffer, in pixel words
- * @param nWordCount number of pixel words to be copied
- */
-template <class T>
-inline void GDALCopyWordsFromT(const T* const pSrcData, int nSrcPixelOffset, bool bInComplex,
-                               void *pDstData, GDALDataType eDstType, int nDstPixelOffset,
-                               int nWordCount)
-{
-    switch (eDstType)
-    {
-    case GDT_Byte:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<unsigned char*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_UInt16:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<unsigned short*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_Int16:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<short*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_UInt32:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<unsigned int*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_Int32:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<int*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_Float32:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<float*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_Float64:
-        GDALCopyWordsT(pSrcData, nSrcPixelOffset,
-                       static_cast<double*>(pDstData), nDstPixelOffset,
-                       nWordCount);
-        break;
-    case GDT_CInt16:
-        if (bInComplex)
-        {
-            GDALCopyWordsComplexT(pSrcData, nSrcPixelOffset,
-                                  static_cast<short *>(pDstData), nDstPixelOffset,
-                                  nWordCount);
-        }
-        else // input is not complex, so we need to promote to a complex buffer
-        {
-            GDALCopyWordsComplexOutT(pSrcData, nSrcPixelOffset,
-                                     static_cast<short *>(pDstData), nDstPixelOffset,
-                                     nWordCount);
-        }
-        break;
-    case GDT_CInt32:
-        if (bInComplex)
-        {
-            GDALCopyWordsComplexT(pSrcData, nSrcPixelOffset,
-                                  static_cast<int *>(pDstData), nDstPixelOffset,
-                                  nWordCount);
-        }
-        else // input is not complex, so we need to promote to a complex buffer
-        {
-            GDALCopyWordsComplexOutT(pSrcData, nSrcPixelOffset,
-                                     static_cast<int *>(pDstData), nDstPixelOffset,
-                                     nWordCount);
-        }
-        break;
-    case GDT_CFloat32:
-        if (bInComplex)
-        {
-            GDALCopyWordsComplexT(pSrcData, nSrcPixelOffset,
-                                  static_cast<float *>(pDstData), nDstPixelOffset,
-                                  nWordCount);
-        }
-        else // input is not complex, so we need to promote to a complex buffer
-        {
-            GDALCopyWordsComplexOutT(pSrcData, nSrcPixelOffset,
-                                     static_cast<float *>(pDstData), nDstPixelOffset,
-                                     nWordCount);
-        }
-        break;
-    case GDT_CFloat64:
-        if (bInComplex)
-        {
-            GDALCopyWordsComplexT(pSrcData, nSrcPixelOffset,
-                                  static_cast<double *>(pDstData), nDstPixelOffset,
-                                  nWordCount);
-        }
-        else // input is not complex, so we need to promote to a complex buffer
-        {
-            GDALCopyWordsComplexOutT(pSrcData, nSrcPixelOffset,
-                                     static_cast<double *>(pDstData), nDstPixelOffset,
-                                     nWordCount);
-        }
-        break;
-    case GDT_Unknown:
-    default:
-        CPLAssert(FALSE);
-    }
-}
-
-} // end anonymous namespace
-#endif
-
-/************************************************************************/
-/*                          GDALReplicateWord()                         */
-/************************************************************************/
-
-void GDALReplicateWord(void *pSrcData, GDALDataType eSrcType,
-                       void *pDstData, GDALDataType eDstType, int nDstPixelOffset,
-                       int nWordCount)
-{
-/* ----------------------------------------------------------------------- */
-/* Special case when the source data is always the same value              */
-/* (for VRTSourcedRasterBand::IRasterIO and VRTDerivedRasterBand::IRasterIO*/
-/*  for example)                                                           */
-/* ----------------------------------------------------------------------- */
-    /* Let the general translation case do the necessary conversions */
-    /* on the first destination element */
-    GDALCopyWords(pSrcData, eSrcType, 0,
-                  pDstData, eDstType, nDstPixelOffset,
-                  1 );
-
-    /* Now copy the first element to the nWordCount - 1 following destination */
-    /* elements */
-    nWordCount--;
-    GByte *pabyDstWord = ((GByte *)pDstData) + nDstPixelOffset;
-
-    switch (eDstType)
-    {
-        case GDT_Byte:
-        {
-            if (nDstPixelOffset == 1)
-            {
-                memset(pabyDstWord, *(GByte*)pDstData, nWordCount - 1);
-            }
-            else
-            {
-                GByte valSet = *(GByte*)pDstData;
-                while(nWordCount--)
-                {
-                    *pabyDstWord = valSet;
-                    pabyDstWord += nDstPixelOffset;
-                }
-            }
-            break;
-        }
-
-#define CASE_DUPLICATE_SIMPLE(enum_type, c_type) \
-        case enum_type:\
-        { \
-            c_type valSet = *(c_type*)pDstData; \
-            while(nWordCount--) \
-            { \
-                *(c_type*)pabyDstWord = valSet; \
-                pabyDstWord += nDstPixelOffset; \
-            } \
-            break; \
-        }
-
-        CASE_DUPLICATE_SIMPLE(GDT_UInt16, GUInt16)
-        CASE_DUPLICATE_SIMPLE(GDT_Int16,  GInt16)
-        CASE_DUPLICATE_SIMPLE(GDT_UInt32, GUInt32)
-        CASE_DUPLICATE_SIMPLE(GDT_Int32,  GInt32)
-        CASE_DUPLICATE_SIMPLE(GDT_Float32,float)
-        CASE_DUPLICATE_SIMPLE(GDT_Float64,double)
-
-#define CASE_DUPLICATE_COMPLEX(enum_type, c_type) \
-        case enum_type:\
-        { \
-            c_type valSet1 = ((c_type*)pDstData)[0]; \
-            c_type valSet2 = ((c_type*)pDstData)[1]; \
-            while(nWordCount--) \
-            { \
-                ((c_type*)pabyDstWord)[0] = valSet1; \
-                ((c_type*)pabyDstWord)[1] = valSet2; \
-                pabyDstWord += nDstPixelOffset; \
-            } \
-            break; \
-        }
-
-        CASE_DUPLICATE_COMPLEX(GDT_CInt16, GInt16)
-        CASE_DUPLICATE_COMPLEX(GDT_CInt32, GInt32)
-        CASE_DUPLICATE_COMPLEX(GDT_CFloat32, float)
-        CASE_DUPLICATE_COMPLEX(GDT_CFloat64, double)
-
-        default:
-            CPLAssert( FALSE );
-    }
-}
-
 /************************************************************************/
 /*                           GDALCopyWords()                            */
 /************************************************************************/
@@ -1146,119 +584,17 @@ void GDALReplicateWord(void *pSrcData, GDALDataType eSrcType,
  * on word boundaries.  It is assumed that all values are in native machine
  * byte order. 
  *
- * @param pSrcData Pointer to source data to be converted.
- * @param eSrcType the source data type (see GDALDataType enum)
- * @param nSrcPixelOffset Source pixel offset, in bytes
- * @param pDstData Pointer to buffer where destination data should go
- * @param eDstType the destination data type (see GDALDataType enum)
- * @param nDstPixelOffset Destination pixel offset, in bytes
- * @param nWordCount number of words to be copied
+ * @param pSrcData 
  *
  * 
- * @note 
- * When adding a new data type to GDAL, you must do the following to
- * support it properly within the GDALCopyWords function:
- * 1. Add the data type to the switch on eSrcType in GDALCopyWords.
- *    This should invoke the appropriate GDALCopyWordsFromT wrapper.
- * 2. Add the data type to the switch on eDstType in GDALCopyWordsFromT.
- *    This should call the appropriate GDALCopyWordsT template.
- * 3. If appropriate, overload the appropriate CopyWord template in the
- *    above namespace. This will ensure that any conversion issues are
- *    handled (cases like the float -> int32 case, where the min/max)
- *    values are subject to roundoff error.
- */
+ */ 
 
-void CPL_STDCALL
+void CPL_STDCALL 
 GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
                void * pDstData, GDALDataType eDstType, int nDstPixelOffset,
                int nWordCount )
 
 {
-    // Deal with the case where we're replicating a single word into the
-    // provided buffer
-    if (nSrcPixelOffset == 0 && nWordCount > 1)
-    {
-        GDALReplicateWord(pSrcData, eSrcType, pDstData, eDstType, nDstPixelOffset, nWordCount);
-        return;
-    }
-
-#ifdef USE_NEW_COPYWORDS
-
-    int nSrcDataTypeSize = GDALGetDataTypeSize(eSrcType) / 8;
-    // Let memcpy() handle the case where we're copying a packed buffer
-    // of pixels.
-    if (eSrcType == eDstType && nSrcPixelOffset == nDstPixelOffset &&
-        nSrcPixelOffset == nSrcDataTypeSize)
-    {
-        memcpy(pDstData, pSrcData, nWordCount * nSrcDataTypeSize);
-        return;
-    }
-
-    // Handle the more general case -- deals with conversion of data types
-    // directly.
-    switch (eSrcType)
-    {
-    case GDT_Byte:
-        GDALCopyWordsFromT<unsigned char>(static_cast<unsigned char *>(pSrcData), nSrcPixelOffset, false,
-                                 pDstData, eDstType, nDstPixelOffset,
-                                 nWordCount);
-        break;
-    case GDT_UInt16:
-        GDALCopyWordsFromT<unsigned short>(static_cast<unsigned short *>(pSrcData), nSrcPixelOffset, false,
-                                           pDstData, eDstType, nDstPixelOffset,
-                                           nWordCount);
-        break;
-    case GDT_Int16:
-        GDALCopyWordsFromT<short>(static_cast<short *>(pSrcData), nSrcPixelOffset, false,
-                                  pDstData, eDstType, nDstPixelOffset,
-                                  nWordCount);
-        break;
-    case GDT_UInt32:
-        GDALCopyWordsFromT<unsigned int>(static_cast<unsigned int *>(pSrcData), nSrcPixelOffset, false,
-                                         pDstData, eDstType, nDstPixelOffset,
-                                         nWordCount);
-        break;
-    case GDT_Int32:
-        GDALCopyWordsFromT<int>(static_cast<int *>(pSrcData), nSrcPixelOffset, false,
-                                pDstData, eDstType, nDstPixelOffset,
-                                nWordCount);
-        break;
-    case GDT_Float32:
-        GDALCopyWordsFromT<float>(static_cast<float *>(pSrcData), nSrcPixelOffset, false,
-                                  pDstData, eDstType, nDstPixelOffset,
-                                  nWordCount);
-        break;
-    case GDT_Float64:
-        GDALCopyWordsFromT<double>(static_cast<double *>(pSrcData), nSrcPixelOffset, false,
-                                   pDstData, eDstType, nDstPixelOffset,
-                                   nWordCount);
-        break;
-    case GDT_CInt16:
-        GDALCopyWordsFromT<short>(static_cast<short *>(pSrcData), nSrcPixelOffset, true,
-                                 pDstData, eDstType, nDstPixelOffset,
-                                 nWordCount);
-        break;
-    case GDT_CInt32:
-        GDALCopyWordsFromT<int>(static_cast<int *>(pSrcData), nSrcPixelOffset, true,
-                                 pDstData, eDstType, nDstPixelOffset,
-                                 nWordCount);
-        break;
-    case GDT_CFloat32:
-        GDALCopyWordsFromT<float>(static_cast<float *>(pSrcData), nSrcPixelOffset, true,
-                                 pDstData, eDstType, nDstPixelOffset,
-                                 nWordCount);
-        break;
-    case GDT_CFloat64:
-        GDALCopyWordsFromT<double>(static_cast<double *>(pSrcData), nSrcPixelOffset, true,
-                                 pDstData, eDstType, nDstPixelOffset,
-                                 nWordCount);
-        break;
-    case GDT_Unknown:
-    default:
-        CPLAssert(FALSE);
-    }
-
-#else // undefined USE_NEW_COPYWORDS
 /* -------------------------------------------------------------------- */
 /*      Special case when no data type translation is required.         */
 /* -------------------------------------------------------------------- */
@@ -1274,12 +610,12 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
             return;
         }
 
-        GByte *pabySrc = (GByte *) pSrcData;
-        GByte *pabyDst = (GByte *) pDstData;
-
-        // Moving single bytes.
+        // Moving single bytes, avoid any possible memcpy() overhead.
         if( nWordSize == 1 )
         {
+            GByte *pabySrc = (GByte *) pSrcData;
+            GByte *pabyDst = (GByte *) pDstData;
+
             if (nWordCount > 100)
             {
 /* ==================================================================== */
@@ -1345,50 +681,98 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
                 pabyDst += nDstPixelOffset;
                 pabySrc += nSrcPixelOffset;
             }
+            return;
         }
-        else if (nWordSize == 2)
+
+        // source or destination is not contiguous
+        for( i = 0; i < nWordCount; i++ )
         {
-            for( i = nWordCount; i != 0; i-- )
+            memcpy( ((GByte *)pDstData) + i * nDstPixelOffset,
+                    ((GByte *)pSrcData) + i * nSrcPixelOffset,
+                    nWordSize );
+        }
+
+        return;
+    }
+
+/* ----------------------------------------------------------------------- */
+/* Special case when the source data is always the same value              */
+/* (for VRTSourcedRasterBand::IRasterIO and VRTDerivedRasterBand::IRasterIO*/
+/*  for example)                                                           */
+/* ----------------------------------------------------------------------- */
+    if (nSrcPixelOffset == 0 && nWordCount > 1)
+    {
+        /* Let the general translation case do the necessary conversions */
+        /* on the first destination element */
+        GDALCopyWords(pSrcData, eSrcType, nSrcPixelOffset,
+                      pDstData, eDstType, nDstPixelOffset,
+                      1 );
+
+        /* Now copy the first element to the nWordCount - 1 following destination */
+        /* elements */
+        nWordCount--;
+        GByte *pabyDstWord = ((GByte *)pDstData) + nDstPixelOffset;
+
+        switch (eDstType)
+        {
+            case GDT_Byte:
             {
-                *(short*)pabyDst = *(short*)pabySrc;
-                pabyDst += nDstPixelOffset;
-                pabySrc += nSrcPixelOffset;
+                if (nDstPixelOffset == 1)
+                {
+                    memset(pabyDstWord, *(GByte*)pDstData, nWordCount - 1);
+                }
+                else
+                {
+                    GByte valSet = *(GByte*)pDstData;
+                    while(nWordCount--)
+                    {
+                        *pabyDstWord = valSet;
+                        pabyDstWord += nDstPixelOffset;
+                    }
+                }
+                break;
             }
-        }
-        else if (nWordSize == 4)
-        {
-            for( i = nWordCount; i != 0; i-- )
-            {
-                *(int*)pabyDst = *(int*)pabySrc;
-                pabyDst += nDstPixelOffset;
-                pabySrc += nSrcPixelOffset;
+
+#define CASE_DUPLICATE_SIMPLE(enum_type, c_type) \
+            case enum_type:\
+            { \
+                c_type valSet = *(c_type*)pDstData; \
+                while(nWordCount--) \
+                { \
+                    *(c_type*)pabyDstWord = valSet; \
+                    pabyDstWord += nDstPixelOffset; \
+                } \
+                break; \
             }
-        }
-        else if (nWordSize == 8)
-        {
-            for( i = nWordCount; i != 0; i-- )
-            {
-                ((int*)pabyDst)[0] = ((int*)pabySrc)[0];
-                ((int*)pabyDst)[1] = ((int*)pabySrc)[1];
-                pabyDst += nDstPixelOffset;
-                pabySrc += nSrcPixelOffset;
+
+            CASE_DUPLICATE_SIMPLE(GDT_UInt16, GUInt16)
+            CASE_DUPLICATE_SIMPLE(GDT_Int16,  GInt16)
+            CASE_DUPLICATE_SIMPLE(GDT_UInt32, GUInt32)
+            CASE_DUPLICATE_SIMPLE(GDT_Int32,  GInt32)
+            CASE_DUPLICATE_SIMPLE(GDT_Float32,float)
+            CASE_DUPLICATE_SIMPLE(GDT_Float64,double)
+
+#define CASE_DUPLICATE_COMPLEX(enum_type, c_type) \
+            case enum_type:\
+            { \
+                c_type valSet1 = ((c_type*)pDstData)[0]; \
+                c_type valSet2 = ((c_type*)pDstData)[1]; \
+                while(nWordCount--) \
+                { \
+                    ((c_type*)pabyDstWord)[0] = valSet1; \
+                    ((c_type*)pabyDstWord)[1] = valSet2; \
+                    pabyDstWord += nDstPixelOffset; \
+                } \
+                break; \
             }
-        }
-        else if (nWordSize == 16)
-        {
-            for( i = nWordCount; i != 0; i-- )
-            {
-                ((int*)pabyDst)[0] = ((int*)pabySrc)[0];
-                ((int*)pabyDst)[1] = ((int*)pabySrc)[1];
-                ((int*)pabyDst)[2] = ((int*)pabySrc)[2];
-                ((int*)pabyDst)[3] = ((int*)pabySrc)[3];
-                pabyDst += nDstPixelOffset;
-                pabySrc += nSrcPixelOffset;
-            }
-        }
-        else
-        {
-            CPLAssert(FALSE);
+
+            CASE_DUPLICATE_COMPLEX(GDT_CInt16, GInt16)
+            CASE_DUPLICATE_COMPLEX(GDT_CInt32, GInt32)
+            CASE_DUPLICATE_COMPLEX(GDT_CFloat32, float)
+            CASE_DUPLICATE_COMPLEX(GDT_CFloat64, double)
+
+            default:
+                CPLAssert( FALSE );
         }
 
         return;
@@ -1619,6 +1003,8 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
                     GByte byVal;
                     if( nVal > 255 )
                         byVal = 255;
+                    else if (nVal < 0)
+                        byVal = 0;
                     else
                         byVal = nVal;
                     *static_cast<GByte *>(pDstWord) = byVal;
@@ -1887,8 +1273,8 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
               
               dfPixelValue += 0.5;
 
-              if( dfPixelValue < -2147483648.0 )
-                  nVal = INT_MIN;
+              if( dfPixelValue < -2147483647.0 )
+                  nVal = -2147483647;
               else if( dfPixelValue > 2147483647 )
                   nVal = 2147483647;
               else
@@ -1942,8 +1328,8 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
               dfPixelValue += 0.5;
               dfPixelValueI += 0.5;
 
-              if( dfPixelValue < -2147483648.0 )
-                  nVal = INT_MIN;
+              if( dfPixelValue < -2147483647.0 )
+                  nVal = -2147483647;
               else if( dfPixelValue > 2147483647 )
                   nVal = 2147483647;
               else
@@ -1951,8 +1337,8 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
 
               panDstWord[0] = nVal;
 
-              if( dfPixelValueI < -2147483648.0 )
-                  nVal = INT_MIN;
+              if( dfPixelValueI < -2147483647.0 )
+                  nVal = -2147483647;
               else if( dfPixelValueI > 2147483647 )
                   nVal = 2147483647;
               else
@@ -1982,7 +1368,6 @@ GDALCopyWords( void * pSrcData, GDALDataType eSrcType, int nSrcPixelOffset,
             CPLAssert( FALSE );
         }
     } /* next iWord */
-#endif // defined USE_NEW_COPYWORDS
 }
 
 /************************************************************************/
@@ -2051,109 +1436,6 @@ void GDALCopyBits( const GByte *pabySrcData, int nSrcOffset, int nSrcStep,
 }
 
 /************************************************************************/
-/*                    GDALGetBestOverviewLevel()                        */
-/*                                                                      */
-/* Returns the best overview level to satisfy the query or -1 if none   */
-/* Also updates nXOff, nYOff, nXSize, nYSize when returning a valid     */
-/* overview level                                                       */
-/************************************************************************/
-
-int GDALBandGetBestOverviewLevel(GDALRasterBand* poBand,
-                                 int &nXOff, int &nYOff,
-                                 int &nXSize, int &nYSize,
-                                 int nBufXSize, int nBufYSize)
-{
-    double dfDesiredResolution;
-/* -------------------------------------------------------------------- */
-/*      Compute the desired resolution.  The resolution is              */
-/*      based on the least reduced axis, and represents the number      */
-/*      of source pixels to one destination pixel.                      */
-/* -------------------------------------------------------------------- */
-    if( (nXSize / (double) nBufXSize) < (nYSize / (double) nBufYSize ) 
-        || nBufYSize == 1 )
-        dfDesiredResolution = nXSize / (double) nBufXSize;
-    else
-        dfDesiredResolution = nYSize / (double) nBufYSize;
-
-/* -------------------------------------------------------------------- */
-/*      Find the overview level that largest resolution value (most     */
-/*      downsampled) that is still less than (or only a little more)    */
-/*      downsampled than the request.                                   */
-/* -------------------------------------------------------------------- */
-    int nOverviewCount = poBand->GetOverviewCount();
-    GDALRasterBand* poBestOverview = NULL;
-    double dfBestResolution = 0;
-    int nBestOverviewLevel = -1;
-    
-    for( int iOverview = 0; iOverview < nOverviewCount; iOverview++ )
-    {
-        GDALRasterBand  *poOverview = poBand->GetOverview( iOverview );
-        double          dfResolution;
-
-        // What resolution is this?
-        if( (poBand->GetXSize() / (double) poOverview->GetXSize())
-            < (poBand->GetYSize() / (double) poOverview->GetYSize()) )
-            dfResolution = 
-                poBand->GetXSize() / (double) poOverview->GetXSize();
-        else
-            dfResolution = 
-                poBand->GetYSize() / (double) poOverview->GetYSize();
-
-        // Is it nearly the requested resolution and better (lower) than
-        // the current best resolution?
-        if( dfResolution >= dfDesiredResolution * 1.2 
-            || dfResolution <= dfBestResolution )
-            continue;
-
-        // Ignore AVERAGE_BIT2GRAYSCALE overviews for RasterIO purposes.
-        const char *pszResampling = 
-            poOverview->GetMetadataItem( "RESAMPLING" );
-
-        if( pszResampling != NULL && EQUALN(pszResampling,"AVERAGE_BIT2",12))
-            continue;
-
-        // OK, this is our new best overview.
-        poBestOverview = poOverview;
-        nBestOverviewLevel = iOverview;
-        dfBestResolution = dfResolution;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      If we didn't find an overview that helps us, just return        */
-/*      indicating failure and the full resolution image will be used.  */
-/* -------------------------------------------------------------------- */
-    if( nBestOverviewLevel < 0 )
-        return -1;
-
-/* -------------------------------------------------------------------- */
-/*      Recompute the source window in terms of the selected            */
-/*      overview.                                                       */
-/* -------------------------------------------------------------------- */
-    int         nOXOff, nOYOff, nOXSize, nOYSize;
-    double      dfXRes, dfYRes;
-    
-    dfXRes = poBand->GetXSize() / (double) poBestOverview->GetXSize();
-    dfYRes = poBand->GetYSize() / (double) poBestOverview->GetYSize();
-
-    nOXOff = MIN(poBestOverview->GetXSize()-1,(int) (nXOff/dfXRes+0.5));
-    nOYOff = MIN(poBestOverview->GetYSize()-1,(int) (nYOff/dfYRes+0.5));
-    nOXSize = MAX(1,(int) (nXSize/dfXRes + 0.5));
-    nOYSize = MAX(1,(int) (nYSize/dfYRes + 0.5));
-    if( nOXOff + nOXSize > poBestOverview->GetXSize() )
-        nOXSize = poBestOverview->GetXSize() - nOXOff;
-    if( nOYOff + nOYSize > poBestOverview->GetYSize() )
-        nOYSize = poBestOverview->GetYSize() - nOYOff;
-        
-    nXOff = nOXOff;
-    nYOff = nOYOff;
-    nXSize = nOXSize;
-    nYSize = nOYSize;
-    
-    return nBestOverviewLevel;
-}
-
-
-/************************************************************************/
 /*                          OverviewRasterIO()                          */
 /*                                                                      */
 /*      Special work function to utilize available overviews to         */
@@ -2170,99 +1452,90 @@ CPLErr GDALRasterBand::OverviewRasterIO( GDALRWFlag eRWFlag,
 
 
 {
-    int         nOverview;
+    GDALRasterBand      *poBestOverview = NULL;
+    int                 nOverviewCount = GetOverviewCount();
+    double              dfDesiredResolution, dfBestResolution = 1.0;
 
-    nOverview =
-        GDALBandGetBestOverviewLevel(this, nXOff, nYOff, nXSize, nYSize,
-                                     nBufXSize, nBufYSize);
-    if (nOverview < 0)
+/* -------------------------------------------------------------------- */
+/*      Find the Compute the desired resolution.  The resolution is     */
+/*      based on the least reduced axis, and represents the number      */
+/*      of source pixels to one destination pixel.                      */
+/* -------------------------------------------------------------------- */
+    if( (nXSize / (double) nBufXSize) < (nYSize / (double) nBufYSize ) 
+        || nBufYSize == 1 )
+        dfDesiredResolution = nXSize / (double) nBufXSize;
+    else
+        dfDesiredResolution = nYSize / (double) nBufYSize;
+
+/* -------------------------------------------------------------------- */
+/*      Find the overview level that largest resolution value (most     */
+/*      downsampled) that is still less than (or only a little more)    */
+/*      downsampled than the request.                                   */
+/* -------------------------------------------------------------------- */
+    for( int iOverview = 0; iOverview < nOverviewCount; iOverview++ )
+    {
+        GDALRasterBand  *poOverview = GetOverview( iOverview );
+        double          dfResolution;
+
+        // What resolution is this?
+        if( (GetXSize() / (double) poOverview->GetXSize())
+            < (GetYSize() / (double) poOverview->GetYSize()) )
+            dfResolution = 
+                GetXSize() / (double) poOverview->GetXSize();
+        else
+            dfResolution = 
+                GetYSize() / (double) poOverview->GetYSize();
+
+        // Is it nearly the requested resolution and better (lower) than
+        // the current best resolution?
+        if( dfResolution >= dfDesiredResolution * 1.2 
+            || dfResolution <= dfBestResolution )
+            continue;
+
+        // Ignore AVERAGE_BIT2GRAYSCALE overviews for RasterIO purposes.
+        const char *pszResampling = 
+            poOverview->GetMetadataItem( "RESAMPLING" );
+
+        if( pszResampling != NULL && EQUALN(pszResampling,"AVERAGE_BIT2",12))
+            continue;
+
+        // OK, this is our new best overview.
+        poBestOverview = poOverview;
+        dfBestResolution = dfResolution;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      If we didn't find an overview that helps us, just return        */
+/*      indicating failure and the full resolution image will be used.  */
+/* -------------------------------------------------------------------- */
+    if( poBestOverview == NULL )
         return CE_Failure;
-        
+
+/* -------------------------------------------------------------------- */
+/*      Recompute the source window in terms of the selected            */
+/*      overview.                                                       */
+/* -------------------------------------------------------------------- */
+    int         nOXOff, nOYOff, nOXSize, nOYSize;
+    double      dfXRes, dfYRes;
+    
+    dfXRes = GetXSize() / (double) poBestOverview->GetXSize();
+    dfYRes = GetYSize() / (double) poBestOverview->GetYSize();
+
+    nOXOff = MIN(poBestOverview->GetXSize()-1,(int) (nXOff/dfXRes+0.5));
+    nOYOff = MIN(poBestOverview->GetYSize()-1,(int) (nYOff/dfYRes+0.5));
+    nOXSize = MAX(1,(int) (nXSize/dfXRes + 0.5));
+    nOYSize = MAX(1,(int) (nYSize/dfYRes + 0.5));
+    if( nOXOff + nOXSize > poBestOverview->GetXSize() )
+        nOXSize = poBestOverview->GetXSize() - nOXOff;
+    if( nOYOff + nOYSize > poBestOverview->GetYSize() )
+        nOYSize = poBestOverview->GetYSize() - nOYOff;
+
 /* -------------------------------------------------------------------- */
 /*      Recast the call in terms of the new raster layer.               */
 /* -------------------------------------------------------------------- */
-    GDALRasterBand* poOverviewBand = GetOverview(nOverview);
-    return poOverviewBand->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
+    return poBestOverview->RasterIO( eRWFlag, nOXOff, nOYOff, nOXSize, nOYSize,
                                      pData, nBufXSize, nBufYSize, eBufType,
                                      nPixelSpace, nLineSpace );
-}
-
-/************************************************************************/
-/*                        GetBestOverviewLevel()                        */
-/*                                                                      */
-/* Returns the best overview level to satisfy the query or -1 if none   */
-/* Also updates nXOff, nYOff, nXSize, nYSize when returning a valid     */
-/* overview level                                                       */
-/************************************************************************/
-
-static
-int GDALDatasetGetBestOverviewLevel(GDALDataset* poDS,
-                                    int &nXOff, int &nYOff,
-                                    int &nXSize, int &nYSize,
-                                    int nBufXSize, int nBufYSize,
-                                    int nBandCount, int *panBandMap)
-{
-    int iBand, iOverview;
-    int nOverviewCount = 0;
-    GDALRasterBand *poFirstBand = NULL;
-    
-    if (nBandCount == 0)
-        return -1;
-    
-/* -------------------------------------------------------------------- */
-/* Check that all bands have the same number of overviews and           */
-/* that they have all the same size and block dimensions                */
-/* -------------------------------------------------------------------- */
-    for( iBand = 0; iBand < nBandCount; iBand++ )
-    {
-        GDALRasterBand *poBand = poDS->GetRasterBand( panBandMap[iBand] );
-        if (iBand == 0)
-        {
-            poFirstBand = poBand;
-            nOverviewCount = poBand->GetOverviewCount();
-        }
-        else if (nOverviewCount != poBand->GetOverviewCount())
-        {
-            CPLDebug( "GDAL", 
-                      "GDALDataset::GetBestOverviewLevel() ... "
-                      "mismatched overview count, use std method." );
-            return -1;
-        }
-        else
-        {
-            for(iOverview = 0; iOverview < nOverviewCount; iOverview++)
-            {
-                GDALRasterBand* poOvrBand =
-                    poBand->GetOverview(iOverview);
-                GDALRasterBand* poOvrFirstBand =
-                    poFirstBand->GetOverview(iOverview);
-                if ( poOvrFirstBand->GetXSize() != poOvrBand->GetXSize() ||
-                     poOvrFirstBand->GetYSize() != poOvrBand->GetYSize() )
-                {
-                    CPLDebug( "GDAL", 
-                              "GDALDataset::GetBestOverviewLevel() ... "
-                              "mismatched overview sizes, use std method." );
-                    return -1;
-                }
-                int nBlockXSizeFirst=0, nBlockYSizeFirst=0;
-                int nBlockXSizeCurrent=0, nBlockYSizeCurrent=0;
-                poOvrFirstBand->GetBlockSize(&nBlockXSizeFirst, &nBlockYSizeFirst);
-                poOvrBand->GetBlockSize(&nBlockXSizeCurrent, &nBlockYSizeCurrent);
-                if (nBlockXSizeFirst != nBlockXSizeCurrent ||
-                    nBlockYSizeFirst != nBlockYSizeCurrent)
-                {
-                    CPLDebug( "GDAL", 
-                          "GDALDataset::GetBestOverviewLevel() ... "
-                          "mismatched block sizes, use std method." );
-                    return -1;
-                }
-            }
-        }
-    }
- 
-    return GDALBandGetBestOverviewLevel(poFirstBand,
-                                        nXOff, nYOff, nXSize, nYSize,
-                                        nBufXSize, nBufYSize);
 }
 
 /************************************************************************/
@@ -2287,9 +1560,10 @@ int GDALDatasetGetBestOverviewLevel(GDALDataset* poDS,
 /*      currently take advantage of some special cases addressed in     */
 /*      GDALRasterBand::IRasterIO(), so it is likely best to only       */
 /*      call it when you know it will help.  That is in cases where     */
-/*      data is at 1:1 to the buffer, and you know the driver is        */
+/*      data is at 1:1 to the buffer, you don't want to take            */
+/*      advantage of overviews, and you know the driver is              */
 /*      implementing interleaved IO efficiently on a block by block     */
-/*      basis. Overviews will be used when possible.                    */
+/*      basis.                                                          */
 /************************************************************************/
 
 CPLErr 
@@ -2302,14 +1576,12 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
     
 {
     GByte      **papabySrcBlock = NULL;
-    GDALRasterBlock *poBlock = NULL;
-    GDALRasterBlock **papoBlocks = NULL;
+    GDALRasterBlock *poBlock;
+    GDALRasterBlock **papoBlocks;
     int         nLBlockX=-1, nLBlockY=-1, iBufYOff, iBufXOff, iSrcY, iBand;
     int         nBlockXSize=1, nBlockYSize=1;
     CPLErr      eErr = CE_None;
     GDALDataType eDataType = GDT_Byte;
-
-    CPLAssert( NULL != pData );
 
 /* -------------------------------------------------------------------- */
 /*      Ensure that all bands share a common block size and data type.  */
@@ -2415,19 +1687,6 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
 
         return CE_None;
     }
-    
-    /* Below code is not compatible with that case. It would need a complete */
-    /* separate code like done in GDALRasterBand::IRasterIO. */
-    if (eRWFlag == GF_Write && (nBufXSize < nXSize || nBufYSize < nYSize))
-    {
-        return GDALDataset::IRasterIO( eRWFlag, 
-                                       nXOff, nYOff, nXSize, nYSize, 
-                                       pData, nBufXSize, nBufYSize, 
-                                       eBufType, 
-                                       nBandCount, panBandMap,
-                                       nPixelSpace, nLineSpace, 
-                                       nBandSpace );
-    }
 
 /* ==================================================================== */
 /*      Loop reading required source blocks to satisfy output           */
@@ -2438,19 +1697,6 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
 
     papabySrcBlock = (GByte **) CPLCalloc(sizeof(GByte*),nBandCount);
     papoBlocks = (GDALRasterBlock **) CPLCalloc(sizeof(void*),nBandCount);
-    
-/* -------------------------------------------------------------------- */
-/*      Select an overview level if appropriate.                        */
-/* -------------------------------------------------------------------- */
-    int nOverviewLevel = GDALDatasetGetBestOverviewLevel (this,
-                                               nXOff, nYOff, nXSize, nYSize,
-                                               nBufXSize, nBufYSize,
-                                               nBandCount, panBandMap);
-    if (nOverviewLevel >= 0)
-    {
-        GetRasterBand(panBandMap[0])->GetOverview(nOverviewLevel)->
-                                GetBlockSize( &nBlockXSize, &nBlockYSize );
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Compute stepping increment.                                     */
@@ -2501,8 +1747,6 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
                 for( iBand = 0; iBand < nBandCount; iBand++ )
                 {
                     GDALRasterBand *poBand = GetRasterBand( panBandMap[iBand]);
-                    if (nOverviewLevel >= 0)
-                        poBand = poBand->GetOverview(nOverviewLevel);
                     poBlock = poBand->GetLockedBlockRef( nLBlockX, nLBlockY, 
                                                          bJustInitialize );
                     if( poBlock == NULL )
@@ -2592,7 +1836,7 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
 /************************************************************************/
 
 /**
- * \brief Copy all dataset raster data.
+ * Copy all dataset raster data.
  *
  * This function copies the complete raster contents of one dataset to 
  * another similarly configured dataset.  The source and destination 

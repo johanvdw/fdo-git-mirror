@@ -44,8 +44,6 @@ class SQLCmdTest : public CppUnit::TestCase
     CPPUNIT_TEST( TestErrorMessageSimpleBind );
 
     CPPUNIT_TEST( TestSelectWithTrans );
-    
-    CPPUNIT_TEST( TestSelectWithIdtNames );    
 
     CPPUNIT_TEST_SUITE_END();
 
@@ -70,8 +68,6 @@ public:
     void TestErrorMessageSimpleBind();
 
     void TestSelectWithTrans();
-    
-    void TestSelectWithIdtNames();
 };
 
 #endif	//SQLCmdTest_H

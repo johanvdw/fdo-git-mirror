@@ -160,9 +160,9 @@ goto study_params
 
 :start_build
 if ("%FDOTHIRDPARTY%")==("") SET FDOTHIRDPARTY=%cd%
-if ("%XALANROOT%")==("") SET XALANROOT=%cd%\apache\xalan
-if ("%XERCESCROOT%")==("") SET XERCESCROOT=%cd%\apache\xerces
-if ("%NLSDIR%")==("") SET NLSDIR=%cd%\apache\xalan\Src\xalanc\NLS
+if ("%XALANROOT%")==("") SET XALANROOT=%cd%\apache\xml-xalan\c
+if ("%XERCESCROOT%")==("") SET XERCESCROOT=%cd%\apache\xml-xerces\c
+if ("%NLSDIR%")==("") SET NLSDIR=%cd%\apache\xml-xalan\c\Src\xalanc\NLS
 
 if "%PLATFORMTHR%"=="Win32" SET INTERMEDIATEDIR=Win32
 if "%PLATFORMTHR%"=="x64" SET INTERMEDIATEDIR=Win64
@@ -184,40 +184,38 @@ if "%ALLENABLETHR%"=="no" goto rebuild_fdo
 if "%TYPEACTIONTHR%"=="install" goto install_all_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty files
-msbuild Thirdparty_fdo%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild Thirdparty_fdo.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild Thirdparty_sdf%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild Thirdparty_sdf.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
-if "%FDOERROR%"=="1" goto error
-msbuild openssl\openssl%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
-SET FDOERROR=%errorlevel%
-if "%FDOERROR%"=="1" goto error
-msbuild libcurl\lib\curllib%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
-SET FDOERROR=%errorlevel%
-if "%FDOERROR%"=="1" goto error
-msbuild boost\boost%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
-SET FDOERROR=%errorlevel%
-if "%FDOERROR%"=="1" goto error
-msbuild gdal\gdal%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
-SET FDOERROR=%errorlevel%
-if "%FDOERROR%"=="1" goto error
 
+if "%FDOERROR%"=="1" goto error
+msbuild openssl\openssl.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+SET FDOERROR=%errorlevel%
+if "%FDOERROR%"=="1" goto error
+msbuild libcurl\lib\curllib.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+SET FDOERROR=%errorlevel%
+if "%FDOERROR%"=="1" goto error
+msbuild boost\boost.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+SET FDOERROR=%errorlevel%
+msbuild gdal\gdal.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+SET FDOERROR=%errorlevel%
+if "%FDOERROR%"=="1" goto error
 if not exist util\UpdateVersion\bin mkdir util\UpdateVersion\bin
 copy /y util\UpdateVersion\build\UpdateVersion.exe util\UpdateVersion\bin
-
 if "%TYPEACTIONTHR%"=="build" goto rebuild_fdo
 if "%TYPEACTIONTHR%"=="clean" goto rebuild_fdo
 
 rem # Install all Thirdparty Files
 :install_all_files
 echo copy %TYPEBUILDTHR% Thirdparty files
-copy /y "apache\xalan\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\Xalan-C_1_11%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
-copy /y "apache\xalan\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\XalanMessages_1_11%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
-copy /y "apache\xerces\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\xerces-c_3_1%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
-copy /y "gdal\bin\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\gdal17.dll" "%FDOBINPATHTHR%"
-copy /y "boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
-copy /y "boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_date_time-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xalan\c\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\Xalan-C_1_7_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xalan\c\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\XalanMessages_1_7_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xerces\c\Build\%INTERMEDIATEDIR%\vc9\%TYPEBUILDTHR%\xerces-c_2_5_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "gdal\bin\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\gdal16.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_date_time-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
 
 rem # Build FDO API Thirdparty Files
 :rebuild_fdo
@@ -225,22 +223,20 @@ if "%FDOENABLETHR%"=="no" goto rebuild_sdf
 if "%TYPEACTIONTHR%"=="install" goto install_fdo_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty FDO files
-msbuild Thirdparty_fdo%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild Thirdparty_fdo.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-
 if not exist util\UpdateVersion\bin mkdir util\UpdateVersion\bin
 copy /y util\UpdateVersion\build\UpdateVersion.exe util\UpdateVersion\bin
-
 if "%TYPEACTIONTHR%"=="build" goto rebuild_sdf
 if "%TYPEACTIONTHR%"=="clean" goto rebuild_sdf
 
 rem # Install FDO API Thirdparty Files
 :install_fdo_files
 echo copy %TYPEBUILDTHR% Thirdparty files
-copy /y "apache\xalan\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\Xalan-C_1_11%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
-copy /y "apache\xalan\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\XalanMessages_1_11_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
-copy /y "apache\xerces\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\xerces-c_3_1%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xalan\c\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\Xalan-C_1_7_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xalan\c\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\XalanMessages_1_7_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
+copy /y "apache\xml-xerces\c\Build\%PLATFORMTHR%\vc9\%PLATFORMTHR%\xerces-c_2_5_0%TYPEBUILDTHREX%.dll" "%FDOBINPATHTHR%"
 
 rem # Build SDF Provider Thirdparty Files
 :rebuild_sdf
@@ -248,8 +244,7 @@ if "%SDFENABLETHR%"=="no" goto rebuild_wfs
 if "%TYPEACTIONTHR%"=="install" goto rebuild_wfs
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty SDF files
-msbuild Thirdparty_sdf%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
-
+msbuild Thirdparty_sdf.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
 
@@ -259,23 +254,23 @@ if "%WFSENABLETHR%"=="no" goto rebuild_wms
 if "%TYPEACTIONTHR%"=="install" goto install_wfs_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty WFS files
-msbuild openssl\openssl%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild openssl\openssl.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild libcurl\lib\curllib%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild libcurl\lib\curllib.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild boost\boost%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+if not "%PLATFORMTHR%"=="Win32" goto rebuild_wms
+msbuild boost\boost.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-
 if "%TYPEACTIONTHR%"=="build" goto rebuild_wms
 if "%TYPEACTIONTHR%"=="clean" goto rebuild_wms
 
 rem # Install WFS Provider Thirdparty Files
 :install_wfs_files
 echo copy %TYPEBUILDTHR% Thirdparty WFS files
-copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
 rem # End WFS part #
 
 rem # Build WMS Provider Thirdparty Files
@@ -284,27 +279,27 @@ if "%WMSENABLETHR%"=="no" goto rebuild_gdal
 if "%TYPEACTIONTHR%"=="install" goto install_wms_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty WMS files
-msbuild openssl\openssl%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild openssl\openssl.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild libcurl\lib\curllib%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild libcurl\lib\curllib.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild gdal\gdal%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild gdal\gdal.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-msbuild boost\boost%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+if not "%PLATFORMTHR%"=="Win32" goto rebuild_gdal
+msbuild boost\boost.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-
 if "%TYPEACTIONTHR%"=="build" goto end
 if "%TYPEACTIONTHR%"=="clean" goto end
 
 rem # Install WMS Provider Thirdparty Files
 :install_wms_files
 echo copy %TYPEBUILDTHR% Thirdparty WMS files
-copy /y "gdal\bin\Win32\%TYPEBUILDTHR%\gdal17.dll" "%FDOBINPATHTHR%"
-copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
+copy /y "gdal\bin\Win32\%TYPEBUILDTHR%\gdal16.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
 rem # End WMS part #
 
 rem # Build GDAL Provider Thirdparty Files
@@ -313,29 +308,28 @@ if "%GDALENABLETHR%"=="no" goto rebuild_postgis
 if "%TYPEACTIONTHR%"=="install" goto install_gdal_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty GDAL files
-msbuild gdal\gdal%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild gdal\gdal.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-
 if "%TYPEACTIONTHR%"=="build" goto end
 if "%TYPEACTIONTHR%"=="clean" goto end
 
 rem # Install GDAL Provider Thirdparty Files
 :install_gdal_files
 echo copy %TYPEBUILDTHR% Thirdparty GDAL files
-copy /y "gdal\bin\Win32\%TYPEBUILDTHR%\gdal17.dll" "%FDOBINPATHTHR%"
+copy /y "gdal\bin\Win32\%TYPEBUILDTHR%\gdal16.dll" "%FDOBINPATHTHR%"
 rem # End GDAL part #
 
 rem # Build PostGIS Provider Thirdparty Files
 :rebuild_postgis
 if "%POSTGISENABLETHR%"=="no" goto end
+if not "%PLATFORMTHR%"=="Win32" goto end
 if "%TYPEACTIONTHR%"=="install" goto install_postgis_files
 
 echo %MSACTIONTHR% %TYPEBUILDTHR% Thirdparty PostGIS dlls
-msbuild boost\boost%VCBEXTENSION%.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
+msbuild boost\boost.sln /t:%MSACTIONTHR% /p:Configuration=%TYPEBUILDTHR% /p:Platform=%PLATFORMTHR% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
-
 if "%TYPEACTIONTHR%"=="build" goto end
 if "%TYPEACTIONTHR%"=="clean" goto end
 
@@ -343,8 +337,8 @@ rem # Install PostGIS Provider Thirdparty Files
 :install_postgis_files
 
 echo copy %TYPEBUILDTHR% Thirdparty PostGIS dlls
-copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
-copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_date_time-vc90-mt%TYPEBUILDTHRPATH%-1_42.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_thread-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
+copy /y "boost\stage\%PLATFORMTHR%\%TYPEBUILDTHR%\lib\boost_date_time-vc90-mt%TYPEBUILDTHRPATH%-1_34_1.dll" "%FDOBINPATHTHR%"
 rem # End PostGIS part 
 
 :end

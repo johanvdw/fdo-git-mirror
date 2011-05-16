@@ -1,9 +1,8 @@
 $! TESTENC.COM  --  Test encoding and decoding
 $
 $	__arch := VAX
-$	if f$getsyi("cpu") .ge. 128 then -
-	   __arch = f$edit( f$getsyi( "ARCH_NAME"), "UPCASE")
-$	if __arch .eqs. "" then __arch := UNK
+$	if f$getsyi("cpu") .ge. 128 then __arch := AXP
+$	exe_dir := sys$disk:[-.'__arch'.exe.apps]
 $
 $	testsrc := makefile.
 $	test := p.txt

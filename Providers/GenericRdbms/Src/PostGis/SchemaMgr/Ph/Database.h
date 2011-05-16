@@ -47,11 +47,8 @@ public:
 
 protected:
 
-    virtual FdoSmPhOwnerP NewOwner(
-        FdoStringP owner, 
-        bool hasMetaSchema,
-        FdoSchemaElementState state,
-        FdoSmPhRdOwnerReader* reader = NULL);
+    virtual FdoSmPhOwnerP NewOwner(FdoStringP owner, bool hasMetaSchema,
+        FdoSchemaElementState state);
 
     /// \todo To be documented.
     virtual bool Add();

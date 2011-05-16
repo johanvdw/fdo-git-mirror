@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Driver.i 16509 2009-03-07 21:06:14Z rouault $
+ * $Id: Driver.i 13083 2007-11-26 20:48:04Z hobu $
  *
  * Name:     Driver.i
  * Project:  GDAL Python Interface
@@ -34,7 +34,6 @@
 *
 *************************************************************************/
 
-%include constraints.i
 
 %rename (Driver) GDALDriverShadow;
 
@@ -51,12 +50,8 @@ public:
   char const *HelpTopic;
 %mutable;
 
-%apply Pointer NONNULL { const char *name, const char* newName, const char* oldName, GDALDatasetShadow* src };
-
 %newobject Create;
-#ifndef SWIGJAVA
 %feature( "kwargs" ) Create;
-#endif
   GDALDatasetShadow *Create(    const char *name, 
                                 int xsize, 
                                 int ysize, 
@@ -75,11 +70,7 @@ public:
   }
 
 %newobject CreateCopy;
-#ifndef SWIGJAVA
-#ifndef SWIGJAVA
 %feature( "kwargs" ) CreateCopy;
-#endif
-#endif
   GDALDatasetShadow *CreateCopy(    const char *name, 
                                     GDALDatasetShadow* src, 
                                     int strict = 1, 
@@ -112,10 +103,9 @@ public:
   void Deregister() {
     GDALDeregisterDriver( self );
   }
+
 }
 };
-
-%clear const char *name, const char* newName, const char* oldName, GDALDatasetShadow* src;
 
 %{
 char const *GDALDriverShadow_ShortName_get( GDALDriverShadow *h ) {

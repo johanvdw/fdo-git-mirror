@@ -44,19 +44,24 @@ FdoStringP FdoSmPhPostGisView::GetRootNameSql()
     FdoStringP rootOwner = this->GetRootOwner();
     FdoStringP rootObject = this->GetRootObjectName();
 
-    if ((rootDatabase != L"") || (rootOwner != GetParent()->GetName()))
+    if (rootDatabase != L"")
     {
         throw FdoSchemaException::Create(NlsMsgGet4(FDORDBMS_148,
                 "Cannot create view on %1$ls.%2$ls.%3$ls; %4$ls "
                 "Provider does not support views on objects on "
-                "other databases.",
+                "other database servers.",
                 static_cast<FdoString*>(rootDatabase),
                 static_cast<FdoString*>(rootOwner),
                 static_cast<FdoString*>(rootObject),
                 "PostGIS"));
     }
 
-    FdoStringP rootName = FdoStringP(L"\"") + rootObject.Replace( L".", L"\".\"" ) + L"\"";
+    FdoStringP rootName = FdoStringP::Format(
+        L"%ls%ls%ls\"%ls\"",
+        ((rootOwner == L"") ? L"" : L"\""),
+        static_cast<FdoString*>(rootOwner),
+        ((rootOwner == L"") ? L"" : L"\"."),
+        static_cast<FdoString*>(rootObject));
 
     return rootName;
 }

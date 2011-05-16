@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_spatialref.h 18490 2010-01-09 05:44:49Z warmerdam $
+ * $Id: ogr_spatialref.h 15742 2008-11-15 22:56:31Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating spatial reference systems in a
@@ -144,8 +144,6 @@ class CPL_DLL OGRSpatialReference
                 OGRSpatialReference(const char * = NULL);
                 
     virtual    ~OGRSpatialReference();
-    
-    static void DestroySpatialReference(OGRSpatialReference* poSRS);
                 
     OGRSpatialReference &operator=(const OGRSpatialReference&);
 
@@ -179,7 +177,6 @@ class CPL_DLL OGRSpatialReference
                                 double *padfPrjParams,
                                 long iDatum, int bAnglesInPackedDMSFormat = TRUE );
     OGRErr      importFromPanorama( long, long, long, double* );
-    OGRErr      importFromOzi( const char *, const char *, const char * );
     OGRErr      importFromWMSAUTO( const char *pszAutoDef );
     OGRErr      importFromXML( const char * );
     OGRErr      importFromDict( const char *pszDict, const char *pszCode );
@@ -194,7 +191,6 @@ class CPL_DLL OGRSpatialReference
 
     OGRErr      Validate();
     OGRErr      StripCTParms( OGR_SRSNode * = NULL );
-    OGRErr      StripVertical();
     OGRErr      FixupOrdering();
     OGRErr      Fixup();
 
@@ -504,20 +500,15 @@ class CPL_DLL OGRSpatialReference
 /************************************************************************/
 
 /**
- * Interface for transforming between coordinate systems.
+ * Object for transforming between coordinate systems.
  *
- * Currently, the only implementation within OGR is OGRProj4CT, which
- * requires the PROJ.4 library to be available at run-time.
- *
- * Also, see OGRCreateCoordinateTransformation() for creating transformations.
+ * Also, see OGRCreateSpatialReference() for creating transformations.
  */
  
 class CPL_DLL OGRCoordinateTransformation
 {
 public:
     virtual ~OGRCoordinateTransformation() {}
-    
-    static void DestroyCT(OGRCoordinateTransformation* poCT);
 
     // From CT_CoordinateTransformation
 

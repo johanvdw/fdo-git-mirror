@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarpkernel.cpp 18012 2009-11-13 06:20:52Z warmerdam $
+ * $Id: gdalwarpkernel.cpp 15820 2008-11-27 17:00:06Z warmerdam $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpKernel class.  Implements the actual
@@ -32,7 +32,7 @@
 #include "gdalwarper.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalwarpkernel.cpp 18012 2009-11-13 06:20:52Z warmerdam $");
+CPL_CVSID("$Id: gdalwarpkernel.cpp 15820 2008-11-27 17:00:06Z warmerdam $");
 
 static const int anGWKFilterRadius[] =
 {
@@ -534,20 +534,17 @@ CPLErr GDALWarpKernel::PerformWarp()
     if( (eErr = Validate()) != CE_None )
         return eErr;
 
-    // See #2445 and #3079
-    if (nSrcXSize <= 0 || nSrcYSize <= 0)
-    {
-        pfnProgress( dfProgressBase + dfProgressScale,
-                      "", pProgress );
-        return CE_None;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Pre-calculate resampling scales and window sizes for filtering. */
 /* -------------------------------------------------------------------- */
 
-    dfXScale = (double)nDstXSize / nSrcXSize;
-    dfYScale = (double)nDstYSize / nSrcYSize;
+    if( nSrcXSize > 0 && nSrcYSize > 0 )  // #2445
+    {
+        dfXScale = (double)nDstXSize / nSrcXSize;
+        dfYScale = (double)nDstYSize / nSrcYSize;
+    }
+    else 
+        dfXScale = dfYScale = 1.0;
 
     dfXFilter = anGWKFilterRadius[eResample];
     dfYFilter = anGWKFilterRadius[eResample];
@@ -824,45 +821,52 @@ static int GWKSetPixelValue( GDALWarpKernel *poWK, int iBand,
 
 /* -------------------------------------------------------------------- */
 /*      Actually apply the destination value.                           */
-/*                                                                      */
-/*      Avoid using the destination nodata value for integer datatypes  */
-/*      if by chance it is equal to the computed pixel value.           */
 /* -------------------------------------------------------------------- */
-
-#define CLAMP(type,minval,maxval) \
-    do { \
-    if (dfReal < minval) ((type *) pabyDst)[iDstOffset] = (type)minval; \
-    else if (dfReal > maxval) ((type *) pabyDst)[iDstOffset] = (type)maxval; \
-    else ((type *) pabyDst)[iDstOffset] = (minval < 0) ? (type)floor(dfReal + 0.5) : (type)(dfReal + 0.5);  \
-    if (poWK->padfDstNoDataReal != NULL && \
-        poWK->padfDstNoDataReal[iBand] == (double)((type *) pabyDst)[iDstOffset]) \
-    { \
-        if (((type *) pabyDst)[iDstOffset] == minval)  \
-            ((type *) pabyDst)[iDstOffset] = minval + 1; \
-        else \
-            ((type *) pabyDst)[iDstOffset] --; \
-    } } while(0)
-
     switch( poWK->eWorkingDataType )
     {
       case GDT_Byte:
-        CLAMP(GByte, 0.0, 255.0);
+        if( dfReal < 0.0 )
+            pabyDst[iDstOffset] = 0;
+        else if( dfReal > 255.0 )
+            pabyDst[iDstOffset] = 255;
+        else
+            pabyDst[iDstOffset] = (GByte) (dfReal+0.5);
         break;
 
       case GDT_Int16:
-        CLAMP(GInt16, -32768.0, 32767.0);
+        if( dfReal < -32768 )
+            ((GInt16 *) pabyDst)[iDstOffset] = -32768;
+        else if( dfReal > 32767 )
+            ((GInt16 *) pabyDst)[iDstOffset] = 32767;
+        else
+            ((GInt16 *) pabyDst)[iDstOffset] = (GInt16) floor(dfReal+0.5);
         break;
 
       case GDT_UInt16:
-        CLAMP(GUInt16, 0.0, 65535.0);
+        if( dfReal < 0 )
+            ((GUInt16 *) pabyDst)[iDstOffset] = 0;
+        else if( dfReal > 65535 )
+            ((GUInt16 *) pabyDst)[iDstOffset] = 65535;
+        else
+            ((GUInt16 *) pabyDst)[iDstOffset] = (GUInt16) (dfReal+0.5);
         break;
 
       case GDT_UInt32:
-        CLAMP(GUInt32, 0.0, 4294967295.0);
+        if( dfReal < 0 )
+            ((GUInt32 *) pabyDst)[iDstOffset] = 0;
+        else if( dfReal > 4294967295.0 )
+            ((GUInt32 *) pabyDst)[iDstOffset] = (GUInt32) 4294967295.0;
+        else
+            ((GUInt32 *) pabyDst)[iDstOffset] = (GUInt32) (dfReal+0.5);
         break;
 
       case GDT_Int32:
-        CLAMP(GInt32, -2147483648.0, 2147483647.0);
+        if( dfReal < -2147483648.0 )
+            ((GInt32 *) pabyDst)[iDstOffset] = 0;
+        else if( dfReal > 2147483647.0 )
+            ((GInt32 *) pabyDst)[iDstOffset] = 2147483647;
+        else
+            ((GInt32 *) pabyDst)[iDstOffset] = (GInt32) floor(dfReal+0.5);
         break;
 
       case GDT_Float32:
@@ -2035,7 +2039,7 @@ static int GWKResample( GDALWarpKernel *poWK, int iBand,
             nXMin = nXMin - iRowOffset;
             iRowOffset = 0;
         }
-        if ( iRowOffset + nXDist >= nSrcXSize*nSrcYSize )
+        else if ( iRowOffset + nXDist >= nSrcXSize*nSrcYSize )
         {
             nXMax = nSrcXSize*nSrcYSize - iRowOffset + nXMin - 1;
             nXMax -= (nXMax-nXMin+1) % 2;
@@ -2393,13 +2397,21 @@ static CPLErr GWKGeneralCase( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize
+                || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
+
+/* -------------------------------------------------------------------- */
+/*      Don't generate output pixels for which the destination valid    */
+/*      mask exists and is already set.                                 */
+/* -------------------------------------------------------------------- */
+            iDstOffset = iDstX + iDstY * nDstXSize;
+            if( poWK->panDstValid != NULL
+                && (poWK->panDstValid[iDstOffset>>5]
+                    & (0x01 << (iDstOffset & 0x1f))) )
+                continue;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply transparent/invalid source pixels to the    */
@@ -2430,7 +2442,6 @@ static CPLErr GWKGeneralCase( GDALWarpKernel *poWK )
             int iBand;
             int bHasFoundDensity = FALSE;
             
-            iDstOffset = iDstX + iDstY * nDstXSize;
             for( iBand = 0; iBand < poWK->nBands; iBand++ )
             {
                 double dfBandDensity = 0.0;
@@ -2619,10 +2630,7 @@ static CPLErr GWKNearestNoMasksByte( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -2754,10 +2762,7 @@ static CPLErr GWKBilinearNoMasksByte( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -2891,10 +2896,7 @@ static CPLErr GWKCubicNoMasksByte( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3031,10 +3033,7 @@ static CPLErr GWKCubicSplineNoMasksByte( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3172,13 +3171,23 @@ static CPLErr GWKNearestByte( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
+
+/* -------------------------------------------------------------------- */
+/*      Don't generate output pixels for which the destination valid    */
+/*      mask exists and is already set.                                 */
+/*                                                                      */
+/*      -- NFW -- FIXME: I think this test is in error.  We should,     */
+/*      generally, be pasteing over existing valid data.                */
+/* -------------------------------------------------------------------- */
+            iDstOffset = iDstX + iDstY * nDstXSize;
+            if( poWK->panDstValid != NULL
+                && (poWK->panDstValid[iDstOffset>>5]
+                    & (0x01 << (iDstOffset & 0x1f))) )
+                continue;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply invalid source pixels to the dest.          */
@@ -3204,8 +3213,6 @@ static CPLErr GWKNearestByte( GDALWarpKernel *poWK )
 /*      Loop processing each band.                                      */
 /* ==================================================================== */
             int iBand;
-
-            iDstOffset = iDstX + iDstY * nDstXSize;
 
             for( iBand = 0; iBand < poWK->nBands; iBand++ )
             {
@@ -3364,10 +3371,7 @@ static CPLErr GWKNearestNoMasksShort( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3498,10 +3502,7 @@ static CPLErr GWKBilinearNoMasksShort( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3637,10 +3638,7 @@ static CPLErr GWKCubicNoMasksShort( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3780,10 +3778,7 @@ static CPLErr GWKCubicSplineNoMasksShort( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -3923,13 +3918,20 @@ static CPLErr GWKNearestShort( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
+
+/* -------------------------------------------------------------------- */
+/*      Don't generate output pixels for which the destination valid    */
+/*      mask exists and is already set.                                 */
+/* -------------------------------------------------------------------- */
+            iDstOffset = iDstX + iDstY * nDstXSize;
+            if( poWK->panDstValid != NULL
+                && (poWK->panDstValid[iDstOffset>>5]
+                    & (0x01 << (iDstOffset & 0x1f))) )
+                continue;
 
 /* -------------------------------------------------------------------- */
 /*      Don't generate output pixels for which the source valid         */
@@ -3956,7 +3958,6 @@ static CPLErr GWKNearestShort( GDALWarpKernel *poWK )
 /*      Loop processing each band.                                      */
 /* ==================================================================== */
             int iBand;
-            iDstOffset = iDstX + iDstY * nDstXSize;
 
             for( iBand = 0; iBand < poWK->nBands; iBand++ )
             {
@@ -4114,10 +4115,7 @@ static CPLErr GWKNearestNoMasksFloat( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
@@ -4250,13 +4248,20 @@ static CPLErr GWKNearestFloat( GDALWarpKernel *poWK )
             iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
             iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
 
-            // If operating outside natural projection area, padfX/Y can be
-            // a very huge positive number, that becomes -2147483648 in the
-            // int trucation. So it is necessary to test now for non negativeness.
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+            if( iSrcX >= nSrcXSize || iSrcY >= nSrcYSize )
                 continue;
 
             iSrcOffset = iSrcX + iSrcY * nSrcXSize;
+
+/* -------------------------------------------------------------------- */
+/*      Don't generate output pixels for which the destination valid    */
+/*      mask exists and is already set.                                 */
+/* -------------------------------------------------------------------- */
+            iDstOffset = iDstX + iDstY * nDstXSize;
+            if( poWK->panDstValid != NULL
+                && (poWK->panDstValid[iDstOffset>>5]
+                    & (0x01 << (iDstOffset & 0x1f))) )
+                continue;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply invalid source pixels to the dest.          */
@@ -4282,8 +4287,6 @@ static CPLErr GWKNearestFloat( GDALWarpKernel *poWK )
 /*      Loop processing each band.                                      */
 /* ==================================================================== */
             int iBand;
-
-            iDstOffset = iDstX + iDstY * nDstXSize;
 
             for( iBand = 0; iBand < poWK->nBands; iBand++ )
             {

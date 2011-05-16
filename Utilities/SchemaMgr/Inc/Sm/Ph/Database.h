@@ -161,8 +161,7 @@ protected:
     virtual FdoSmPhOwnerP NewOwner(
         FdoStringP owner,
         bool hasMetaSchema,
-   		FdoSchemaElementState elementState = FdoSchemaElementState_Added,
-        FdoSmPhRdOwnerReader* reader = NULL
+   		FdoSchemaElementState elementState = FdoSchemaElementState_Added
     ) = 0;
 
     // Instantiate a character set.

@@ -118,7 +118,7 @@ if exist "%SDEHOME%\bin\sde.dll" SET SDEVER_ARCUNITTEST=92
 if exist "%SDEHOME%\bin\sde91.dll" SET SDEVER_ARCUNITTEST=91
 
 if exist "%FDOTHIRDPARTY%\ESRI\ArcSDEClient91\Windows\bin\sde91.dll" SET ARCSDEVERSIONACTIVE=%ARCSDEVERSIONACTIVE%1
-if exist "%SDEHOME%\bin\sde.dll" SET ARCSDEVERSIONACTIVE=%ARCSDEVERSIONACTIVE%2
+if exist "%FDOTHIRDPARTY%\ESRI\ArcSDEClient92\Windows\bin\sde.dll" SET ARCSDEVERSIONACTIVE=%ARCSDEVERSIONACTIVE%2
 
 if "%ARCSDEVERSIONACTIVE%"=="9" SET ARCSDEVERSIONACTIVE=%TYPEBUILD%%SDEVER_ARCUNITTEST%Only
 if "%ARCSDEVERSIONACTIVE%"=="912" SET ARCSDEVERSIONACTIVE=%TYPEBUILD%
@@ -133,14 +133,14 @@ if "%TYPEACTION%"=="clean" SET MSACTION=Clean
 if "%TYPEACTION%"=="install" goto install_files_ArcSDE
 
 echo %MSACTION% %TYPEBUILD% ArcSDE provider dlls
-SET FDOACTIVEBUILD=%cd%\Src\ArcSDE%VCBEXTENSION%
+SET FDOACTIVEBUILD=%cd%\Src\ArcSDE
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
 
-msbuild ArcSDE%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%ARCSDEVERSIONACTIVE% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
+msbuild ArcSDE_temp.sln /t:%MSACTION% /p:Configuration=%ARCSDEVERSIONACTIVE% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
 
 SET FDOERROR=%errorlevel%
-if exist ArcSDE%VCBEXTENSION%_temp.sln del /Q /F ArcSDE%VCBEXTENSION%_temp.sln
+if exist ArcSDE_temp.sln del /Q /F ArcSDE_temp.sln
 popd
 if "%FDOERROR%"=="1" goto error
 if "%TYPEACTION%"=="clean" goto end

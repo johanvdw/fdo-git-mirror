@@ -11,12 +11,12 @@ OBJ	=	rawdataset.o ehdrdataset.o pauxdataset.o doq1dataset.o \
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 $(OBJ) $(O_OBJ):	rawdataset.h
 

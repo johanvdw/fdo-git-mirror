@@ -25,7 +25,7 @@ FdoSmPhRdDbObjectReader::FdoSmPhRdDbObjectReader(
     FdoSmPhOwnerP owner,
     FdoStringP objectName
 ) :
-	FdoSmPhRdReader(reader),
+	FdoSmPhReader(reader),
     mOwner(owner),
     mObjectName(objectName)
 {
@@ -37,7 +37,7 @@ FdoSmPhRdDbObjectReader::FdoSmPhRdDbObjectReader(
     FdoSmPhOwnerP       owner,
     FdoStringP          objectName
 ) :
-	FdoSmPhRdReader(mgr, rows),
+	FdoSmPhReader(mgr, rows),
     mOwner(owner),
     mObjectName(objectName)
 {

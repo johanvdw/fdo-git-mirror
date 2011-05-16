@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrasterband.cpp 18561 2010-01-15 17:23:13Z chaitanya $
+ * $Id: vrtrasterband.cpp 15300 2008-09-04 20:20:49Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRasterBand
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtrasterband.cpp 18561 2010-01-15 17:23:13Z chaitanya $");
+CPL_CVSID("$Id: vrtrasterband.cpp 15300 2008-09-04 20:20:49Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -68,7 +68,6 @@ void VRTRasterBand::Initialize( int nXSize, int nYSize )
     nBlockYSize = MIN(128,nYSize);
 
     bNoDataValueSet = FALSE;
-    bHideNoDataValue = FALSE;
     dfNoDataValue = -10000.0;
     poColorTable = NULL;
     eColorInterp = GCI_Undefined;
@@ -94,8 +93,6 @@ VRTRasterBand::~VRTRasterBand()
         delete poColorTable;
 
     CSLDestroy( papszCategoryNames );
-    if( psSavedHistograms != NULL )
-        CPLDestroyXMLNode( psSavedHistograms );
 }
 
 /************************************************************************/
@@ -153,13 +150,7 @@ CPLErr VRTRasterBand::SetMetadataItem( const char *pszName,
 {
     ((VRTDataset *) poDS)->SetNeedsFlush();
 
-    if( EQUAL(pszName,"HideNoDataValue") )
-    {
-        bHideNoDataValue = CSLTestBoolean( pszValue );
-        return CE_None;
-    }
-    else
-        return GDALRasterBand::SetMetadataItem( pszName, pszValue, pszDomain );
+    return GDALRasterBand::SetMetadataItem( pszName, pszValue, pszDomain );
 }
 
 /************************************************************************/
@@ -294,7 +285,16 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
     const char *pszDataType = CPLGetXMLValue( psTree, "dataType", NULL);
     if( pszDataType != NULL )
     {
-        eDataType = GDALGetDataTypeByName(pszDataType);
+        for( int iType = 0; iType < GDT_TypeCount; iType++ )
+        {
+            const char *pszThisName = GDALGetDataTypeName((GDALDataType)iType);
+
+            if( pszThisName != NULL && EQUAL(pszDataType,pszThisName) )
+            {
+                eDataType = (GDALDataType) iType;
+                break;
+            }
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -310,9 +310,6 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
     if( CPLGetXMLValue( psTree, "NoDataValue", NULL ) != NULL )
         SetNoDataValue( atof(CPLGetXMLValue( psTree, "NoDataValue", "0" )) );
 
-    if( CPLGetXMLValue( psTree, "HideNoDataValue", NULL ) != NULL )
-        bHideNoDataValue = CSLTestBoolean( CPLGetXMLValue( psTree, "HideNoDataValue", "0" ) );
-
     SetUnitType( CPLGetXMLValue( psTree, "UnitType", NULL ) );
 
     SetOffset( atof(CPLGetXMLValue( psTree, "Offset", "0.0" )) );
@@ -321,7 +318,19 @@ CPLErr VRTRasterBand::XMLInit( CPLXMLNode * psTree,
     if( CPLGetXMLValue( psTree, "ColorInterp", NULL ) != NULL )
     {
         const char *pszInterp = CPLGetXMLValue( psTree, "ColorInterp", NULL );
-        SetColorInterpretation(GDALGetColorInterpretationByName(pszInterp));
+        int        iInterp;
+        
+        for( iInterp = 0; iInterp < 13; iInterp++ )
+        {
+            const char *pszCandidate 
+                = GDALGetColorInterpretationName( (GDALColorInterp) iInterp );
+
+            if( pszCandidate != NULL && EQUAL(pszCandidate,pszInterp) )
+            {
+                SetColorInterpretation( (GDALColorInterp) iInterp );
+                break;
+            }
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -421,10 +430,6 @@ CPLXMLNode *VRTRasterBand::SerializeToXML( const char *pszVRTPath )
         CPLSetXMLValue( psTree, "NoDataValue", 
                         CPLSPrintf( "%.14E", dfNoDataValue ) );
 
-    if( bHideNoDataValue )
-        CPLSetXMLValue( psTree, "HideNoDataValue", 
-                        CPLSPrintf( "%d", bHideNoDataValue ) );
-
     if( pszUnitType != NULL )
         CPLSetXMLValue( psTree, "UnitType", pszUnitType );
 
@@ -511,7 +516,7 @@ double VRTRasterBand::GetNoDataValue( int *pbSuccess )
 
 {
     if( pbSuccess )
-        *pbSuccess = bNoDataValueSet && !bHideNoDataValue;
+        *pbSuccess = bNoDataValueSet;
 
     return dfNoDataValue;
 }
@@ -727,13 +732,4 @@ VRTRasterBand::GetDefaultHistogram( double *pdfMin, double *pdfMax,
     return GDALRasterBand::GetDefaultHistogram( pdfMin, pdfMax, pnBuckets, 
                                                 ppanHistogram, bForce, 
                                                 pfnProgress,pProgressData);
-}
-
-/************************************************************************/
-/*                             GetFileList()                            */
-/************************************************************************/
-
-void VRTRasterBand::GetFileList(char*** ppapszFileList, int *pnSize,
-                                int *pnMaxSize, CPLHashSet* hSetFiles)
-{
 }

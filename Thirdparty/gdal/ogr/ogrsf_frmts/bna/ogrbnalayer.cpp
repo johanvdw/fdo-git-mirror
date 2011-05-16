@@ -266,7 +266,7 @@ OGRErr OGRBNALayer::CreateFeature( OGRFeature *poFeature )
     char eol[3];
     const char* partialEol = (poDS->GetMultiLine()) ? eol : poDS->GetCoordinateSeparator();
 
-    if (poGeom == NULL || poGeom->IsEmpty() )
+    if (poGeom == NULL)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "OGR BNA driver cannot write features with empty geometries.");
@@ -317,11 +317,6 @@ OGRErr OGRBNALayer::CreateFeature( OGRFeature *poFeature )
         {
             OGRPolygon* polygon = (OGRPolygon*)poGeom;
             OGRLinearRing* ring = polygon->getExteriorRing();
-            if (ring == NULL)
-            {
-                return OGRERR_FAILURE;
-            }
-            
             double firstX = ring->getX(0);
             double firstY = ring->getY(0);
             int nBNAPoints = ring->getNumPoints();
@@ -397,7 +392,7 @@ OGRErr OGRBNALayer::CreateFeature( OGRFeature *poFeature )
                 {
                     ring = polygon->getInteriorRing(i);
                     n = ring->getNumPoints();
-                    for(j=0;j<n;j++)
+                    for(j=0;i<n;i++)
                     {
                         VSIFPrintf( fp, formatCoordinates,
                                     ((nbPair % nbPairPerLine) == 0) ? partialEol : " ", ring->getX(j), ring->getY(j));
@@ -423,9 +418,6 @@ OGRErr OGRBNALayer::CreateFeature( OGRFeature *poFeature )
             {
                 OGRPolygon* polygon = (OGRPolygon*)multipolygon->getGeometryRef(i);
                 OGRLinearRing* ring = polygon->getExteriorRing();
-                if (ring == NULL)
-                    continue;
-
                 if (nBNAPoints)
                     nBNAPoints ++;
                 else
@@ -452,9 +444,6 @@ OGRErr OGRBNALayer::CreateFeature( OGRFeature *poFeature )
             {
                 OGRPolygon* polygon = (OGRPolygon*)multipolygon->getGeometryRef(i);
                 OGRLinearRing* ring = polygon->getExteriorRing();
-                if (ring == NULL)
-                    continue;
-
                 n = ring->getNumPoints();
                 int nInteriorRings = polygon->getNumInteriorRings();
                 for(j=0;j<n;j++)

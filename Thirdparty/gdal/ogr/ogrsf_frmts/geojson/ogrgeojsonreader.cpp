@@ -30,7 +30,6 @@
 #include "ogrgeojsonutils.h"
 #include "ogr_geojson.h"
 #include <jsonc/json.h> // JSON-C
-#include <jsonc/json_object_private.h> // json_object_iter, complete type required
 #include <ogr_api.h>
 
 /************************************************************************/
@@ -763,7 +762,6 @@ OGRGeometry* OGRGeoJSONReadGeometry( json_object* poObj )
         OGRSpatialReference* poSRS = OGRGeoJSONReadSpatialReference(poObj);
         if (poSRS != NULL) {
             poGeometry->assignSpatialReference(poSRS);
-            poSRS->Release();
         }
     }
     return poGeometry;

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib533.c,v 1.17 2010-02-05 18:07:20 yangtse Exp $
+ * $Id: lib533.c,v 1.14 2007-03-10 00:19:05 yangtse Exp $
  */
 
 /* used for test case 533, 534 and 535 */
@@ -17,7 +17,6 @@
 #include <fcntl.h>
 
 #include "testutil.h"
-#include "memdebug.h"
 
 #define MAIN_LOOP_HANG_TIMEOUT     90 * 1000
 #define MULTI_PERFORM_HANG_TIMEOUT 60 * 1000
@@ -28,7 +27,7 @@ int test(char *URL)
   CURL *curl;
   int running;
   char done=FALSE;
-  CURLM *m = NULL;
+  CURLM *m;
   int current=0;
   struct timeval ml_start;
   struct timeval mp_start;
@@ -46,9 +45,9 @@ int test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_VERBOSE, 1);
-  test_setopt(curl, CURLOPT_FAILONERROR, 1);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 
   if ((m = curl_multi_init()) == NULL) {
     fprintf(stderr, "curl_multi_init() failed\n");
@@ -103,9 +102,9 @@ int test(char *URL)
           /* make us re-use the same handle all the time, and try resetting
              the handle first too */
           curl_easy_reset(curl);
-          test_setopt(curl, CURLOPT_URL, libtest_arg2);
-          test_setopt(curl, CURLOPT_VERBOSE, 1);
-          test_setopt(curl, CURLOPT_FAILONERROR, 1);
+          curl_easy_setopt(curl, CURLOPT_URL, arg2);
+          curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+          curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 
           /* re-add it */
           res = (int)curl_multi_add_handle(m, curl);
@@ -156,11 +155,8 @@ int test(char *URL)
     res = TEST_ERR_RUNS_FOREVER;
   }
 
-test_cleanup:
-
   curl_easy_cleanup(curl);
-  if(m)
-    curl_multi_cleanup(m);
+  curl_multi_cleanup(m);
   curl_global_cleanup();
 
   return res;

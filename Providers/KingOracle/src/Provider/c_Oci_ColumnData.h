@@ -59,8 +59,8 @@ public:
   void* GetDataIndDefineBuffer();
   
   int GetDataDefineType();
-  long GetDataDefineSize();
-
+  int GetDataDefineSize();
+  
   OCIType* GetDataOciType() { return m_OciType; }
   
   
@@ -85,9 +85,6 @@ public:
   unsigned char* GetLongRaw();
   long GetLongRawLength();
   void* GetDataRealLengthBuffer();
-  void GetLobData(unsigned long& BuffSize,void* BuffPtr);
-  bool IsClob();
-  bool IsBlob();
 protected:
   int m_CurrentRow;
   sb2* m_CurrentPtr_ScalarInd;
@@ -97,13 +94,9 @@ protected:
 
   int m_ColumnNumber;
   int m_OciDataType;
-  long m_ColSize;
+  int m_ColSize;
   
   int m_DataArraySize;
-  
-  unsigned char* m_LobBuff; // when data type is Lob it is used to allocate memory to get data from loblocator
-                            // it is valid only for one GetLongRaw ( next GetLongRaw will deallocate previous one)
-  unsigned long m_LobBuffSize; // how much was allocated                            
   
   e_OciDataBufferType m_DataBufferType;
   
@@ -114,7 +107,6 @@ protected:
     OCINumber* m_DataNumber;
     
     OCIDate* m_DataDateTime;
-    OCILobLocator** m_DataLobLocator;
     
     //wchar_t** m_DataStringPtrArray;
     wchar_t* m_DataStringPtr;

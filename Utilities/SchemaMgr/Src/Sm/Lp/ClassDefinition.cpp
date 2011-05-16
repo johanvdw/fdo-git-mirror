@@ -474,20 +474,6 @@ const FdoSmLpClassBase::Capabilities* FdoSmLpClassBase::GetCapabilities() const
     return mCapabilities;
 }
 
-bool FdoSmLpClassBase::GetHasClassMetaSchema() const
-{
-    FdoSmPhOwnerP owner = ((FdoSmLpSchema*)RefLogicalPhysicalSchema())->GetPhysicalSchema()->FindOwner();
-
-    return owner ? owner->GetHasClassMetaSchema() : false;
-}
-
-bool FdoSmLpClassBase::GetHasAttrMetaSchema() const
-{
-    FdoSmPhOwnerP owner = ((FdoSmLpSchema*)RefLogicalPhysicalSchema())->GetPhysicalSchema()->FindOwner();
-
-    return owner ? owner->GetHasAttrMetaSchema() : false;
-}
-
 FdoStringP FdoSmLpClassBase::UniqueColumnName( 
     FdoSmPhDbObjectP dbObject, 
     const FdoSmLpPropertyDefinition* pProp, 
@@ -570,7 +556,7 @@ void FdoSmLpClassBase::Update(
 
 	int i;
 
-    bool hasMetaSchema = GetHasClassMetaSchema();
+    bool hasMetaSchema = GetHasMetaSchema();
 
 	// Find the lowest base class. The lowest base class defines the identity 
 	// properties, if any.
@@ -795,7 +781,7 @@ void FdoSmLpClassBase::SynchPhysical(bool bRollbackOnly)
 				if ( !mPhDbObject ) {
 
                     // Class has id but no table. If table exists, attach to it.
-                    if ( GetHasClassMetaSchema() )
+                    if ( GetHasMetaSchema() )
     					mPhDbObject = pPhysical->FindDbObject(mDbObjectName);
                     else
     					mPhDbObject = pPhysical->FindDbObject(mDbObjectName, mOwner);
@@ -895,58 +881,41 @@ void FdoSmLpClassBase::SetElementState(FdoSchemaElementState elementState)
 
 void FdoSmLpClassBase::Commit( bool fromParent )
 {
-    FdoSmPhOwnerP owner = GetLogicalPhysicalSchema()->GetPhysicalSchema()->FindOwner();
+	FdoSmPhMgrP pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
+    FdoSmPhClassWriterP pWriter;
 
-    // Cannot commit metadata when metadata table not present. 
-    if ( owner->GetHasClassMetaSchema() ) 
-    {
-        FdoSmPhMgrP pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
-        FdoSmPhClassWriterP pWriter;
+	switch ( GetElementState() ) {
+  	case FdoSchemaElementState_Added:
+        pWriter = GetPhysicalAddWriter();
+        pWriter->Add();
+		mId = pWriter->GetId();
 
-	    switch ( GetElementState() ) {
-  	    case FdoSchemaElementState_Added:
-            pWriter = GetPhysicalAddWriter();
-            pWriter->Add();
-		    mId = pWriter->GetId();
+		break;
 
-		    break;
+	case FdoSchemaElementState_Deleted:
+        pWriter = pPhysical->GetClassWriter();
+        pWriter->Delete( GetParent()->GetName(), GetName(), GetId() );
 
-	    case FdoSchemaElementState_Deleted:
-            pWriter = pPhysical->GetClassWriter();
-            pWriter->Delete( GetParent()->GetName(), GetName(), GetId() );
+		break;
 
-		    break;
+	case FdoSchemaElementState_Modified:
+        pWriter = GetPhysicalModifyWriter();
+        pWriter->Modify( GetParent()->GetName(), GetName(), GetId() );
 
-	    case FdoSchemaElementState_Modified:
-            pWriter = GetPhysicalModifyWriter();
-            pWriter->Modify( GetParent()->GetName(), GetName(), GetId() );
+        break;
+	}
 
-            break;
-	    }
-
-	    // Commit all the properties.
-	    if ( mProperties ) {
-		    for ( int i = 0; i < mProperties->GetCount(); i++ ) 
-			    FdoSmLpPropertyP(mProperties->GetItem(i))->Commit( fromParent );
-	    }
-    }
-    else
-    {
-        if ( !GetLogicalPhysicalSchema()->GetSchemas()->CanApplySchemaWithoutMetaSchema() ) 
-        {
-            // Error - provider does not support applying class definitions
-            // without writing metadata.
-            throw FdoSchemaException::Create(
-                FdoSmError::NLSGetMessage(
-                    FDO_NLSID(FDOSM_429),
-			        GetQName(),
-		            owner->GetName()
-		        )
-            );
-        }
-    }
- 
-    // Commit Schema Attribute Dictionary
+	// Commit all the properties.
+	if ( mProperties ) {
+		for ( int i = 0; i < mProperties->GetCount(); i++ ) 
+			FdoSmLpPropertyP(mProperties->GetItem(i))->Commit( fromParent );
+	}
+/* TODO
+    // Commit all indexes.
+	for ( int i = 0; i < mIndexes.GetCount(); i++ ) 
+		mIndexes.GetItem(i)->Commit( fromParent );
+*/
+	// Commit Schema Attribute Dictionary
 	CommitSAD(FdoSmPhMgr::ClassType);
 }
 
@@ -1511,7 +1480,7 @@ void FdoSmLpClassBase::SetOwner( FdoString* owner )
 void FdoSmLpClassBase::SetDbObjectName( FdoStringP objectName )
 {
     FdoSmPhMgrP pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
-    bool hasMetaSchema = GetHasClassMetaSchema();
+    bool hasMetaSchema = GetHasMetaSchema();
 
     if ( mOwner.GetLength() > 0 ) {
         // Owner specified, table is foreign.
@@ -1565,9 +1534,7 @@ void FdoSmLpClassBase::SetDbObjectName( FdoStringP objectName )
 
 FdoStringP FdoSmLpClassBase::DefaultDbObjectName()
 {
-    FdoSmPhMgrP pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
-
-    return pPhysical->ClassName2DbObjectName(GetLogicalPhysicalSchema()->GetName(), GetName());
+    return GetName();
 }
 
 void FdoSmLpClassBase::Finalize()
@@ -1629,7 +1596,7 @@ void FdoSmLpClassBase::Finalize()
 							// Error if base class has different class type.
                             // Error not reported if datastore has no metaschema since class types
                             // can flip on next DescribeSchema.
-							if ( GetHasClassMetaSchema() && (mBaseClass->GetClassType() != GetClassType()) ) 
+							if ( GetHasMetaSchema() && (mBaseClass->GetClassType() != GetClassType()) ) 
 								AddBaseClassTypeError(mBaseClass);
 						}
 					}
@@ -1652,10 +1619,7 @@ void FdoSmLpClassBase::Finalize()
 
 		// If this class has no base or source class then get the base properties for it's
 		// class type from the properties of its MetaClass.
-        // Do not inherit MetaClass (system) properties when there is no
-        // attribute metadata table. In this case, there are no system 
-        // properties.
-		if ( (!pBaseClass) && !(mSrcClass) && GetHasAttrMetaSchema() ) 
+		if ( (!pBaseClass) && !(mSrcClass) ) 
 			pBaseClass = RefMetaClass();
 
 		if ( pBaseClass ) {
@@ -2347,7 +2311,7 @@ void FdoSmLpClassBase::FinalizePhDbObject()
                 // specified through an override. 
                 FdoSmPhDbObjectP dbObject;
 
-                if (GetHasClassMetaSchema())
+                if (GetHasMetaSchema())
                     dbObject = pPhysical->FindDbObject( mDbObjectName, L"", L"", false );
                 else
                     dbObject = pPhysical->FindDbObject( mDbObjectName, mOwner, L"", false );
@@ -2568,7 +2532,7 @@ FdoSmLpDbObjectP FdoSmLpClassBase::FinalizeNewDbObject(
 			// Get the primary key table and Finalize it.
             FdoSmPhMgrP      pPhysical = GetLogicalPhysicalSchema()->GetPhysicalSchema();
             FdoSmPhDbObjectP pDepDbObject;
-            if (GetHasClassMetaSchema())
+            if (GetHasMetaSchema())
 			    pDepDbObject = pPhysical->FindDbObject( pDep->GetPkTableName() );
             else
 			    pDepDbObject = pPhysical->FindDbObject( pDep->GetPkTableName(), mOwner );
@@ -3439,20 +3403,6 @@ FdoSmLpClassBase::Capabilities::Capabilities(
                 memcpy( mLockTypes, lockTypes, mLockTypeCount*sizeof(FdoLockType) );
             }
             mSupportsWrite = pPhDbObject->GetSupportsWrite();
-
-            // Set polygon vertex order and strictness rule
-            const FdoSmLpPropertyDefinitionCollection* pLpPropDefColl = pClass->RefProperties();
-            for (int iProp=0; iProp < pLpPropDefColl->GetCount(); iProp++)
-            {
-                const FdoSmLpSimplePropertyDefinition* pLpPropDef = dynamic_cast<const FdoSmLpSimplePropertyDefinition*>(pLpPropDefColl->RefItem(iProp));
-                if (NULL != pLpPropDef && pLpPropDef->GetPropertyType() == FdoPropertyType_GeometricProperty)
-                {
-                    FdoString* propName = pLpPropDef->GetName();
-                    FdoString* columnName = (wcslen(pLpPropDef->GetRootColumnName()) > 0) ? pLpPropDef->GetRootColumnName() : pLpPropDef->GetColumnName();
-                    mPolygonVertexOrderRuleMap[propName] = pPhDbObject->GetPolygonVertexOrderRule(columnName);
-                    mPolygonVertexOrderStrictnessMap[propName] = pPhDbObject->GetPolygonVertexOrderStrictness(columnName);
-                }
-            }
         }
     }
 }
@@ -3481,27 +3431,7 @@ bool FdoSmLpClassBase::Capabilities::SupportsLongTransactions() const
 const FdoLockType* FdoSmLpClassBase::Capabilities::GetLockTypes(FdoInt32& size) const
 {
     size = mLockTypeCount;
-    return mLockTypes;
-}
-
-PolygonVertexOrderRuleMap FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderRule() const
-{
-    return mPolygonVertexOrderRuleMap;
-}
-
-PolygonVertexOrderStrictnessMap FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderStrictness() const
-{
-    return mPolygonVertexOrderStrictnessMap;
-}
-
-PolygonVertexOrderRuleMap& FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderRule()
-{
-    return mPolygonVertexOrderRuleMap;
-}
-
-PolygonVertexOrderStrictnessMap& FdoSmLpClassBase::Capabilities::GetPolygonVertexOrderStrictness()
-{
-    return mPolygonVertexOrderStrictnessMap;
+	return mLockTypes;
 }
 
 FdoSmLpClassDefinition::FdoSmLpClassDefinition(FdoSmPhClassReaderP classReader, FdoSmLpSchemaElement* parent) : 

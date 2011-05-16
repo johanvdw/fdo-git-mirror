@@ -18,9 +18,10 @@ CPPFLAGS := -I. -I.. -I../.. -I$(GDAL_ROOT)/port -I$(GDAL_ROOT)/gcore -I$(GDAL_R
 
 #CFLAGS	:=	$(filter-out -Wall,$(CFLAGS))
 
-default:	$(O_OBJ:.o=.$(OBJ_EXT))
+default:	$(O_OBJ)
 
 clean:
 	rm -f *.o kmlview $(O_OBJ)
 
-$(O_OBJ):	kml.h kmlnode.h kmlutility.h kmlvector.h ogr_kml.h
+
+

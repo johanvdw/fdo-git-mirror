@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.h 17512 2009-08-03 20:12:58Z rouault $
+ * $Id: kmlnode.h 12873 2007-11-20 00:50:47Z mloskot $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -54,7 +54,7 @@ public:
     Nodetype getType() const;
     
     void setName(std::string const& name);
-    const std::string& getName() const;
+    std::string getName() const;
     
     void setLevel(std::size_t level);
     std::size_t getLevel() const;
@@ -78,15 +78,15 @@ public:
     void setLayerNumber(int nNum);
     int getLayerNumber() const;
 
+    KMLNode* getLayer(int);
+
     std::string getNameElement() const;
     std::string getDescriptionElement() const;
 
-    std::size_t getNumFeatures();
-    Feature* getFeature(std::size_t nNum, int& nLastAsked, int &nLastCount);
-    
-    OGRGeometry* getGeometry(Nodetype eType = Unknown);
+    std::size_t getNumFeatures() const;
+    Feature* getFeature(std::size_t nNum);
 
-    int is25D() { return b25D_; }
+    Extent const* getExtents() const;
 
 private:
 
@@ -104,10 +104,11 @@ private:
     std::string sName_;
 
     Nodetype eType_;
-    int b25D_;
 
     int nLayerNumber_;
-    int nNumFeatures_;
+    Extent *psExtent_;
+    
+    void calcExtent(KML* poKML);
 };
 
 #endif /* KMLNODE_H_INCLUDED */

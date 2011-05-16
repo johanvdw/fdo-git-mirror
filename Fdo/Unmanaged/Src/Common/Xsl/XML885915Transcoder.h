@@ -79,8 +79,8 @@ public :
     // -----------------------------------------------------------------------
     XML885915Transcoder
     (
-        const XMLCh* const		encodingName
-        , const XMLSize_t		blockSize
+        const   XMLCh* const    encodingName
+        , const unsigned int    blockSize
         , XERCES_CPP_NAMESPACE::MemoryManager* const manager = XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager
     );
 
@@ -90,30 +90,30 @@ public :
     // -----------------------------------------------------------------------
     //  Implementation of the XMLTranscoder interface
     // -----------------------------------------------------------------------
-    virtual XMLSize_t transcodeFrom
+    virtual unsigned int transcodeFrom
     (
         const   XMLByte* const          srcData
-        , const XMLSize_t               srcCount
+        , const unsigned int            srcCount
         ,       XMLCh* const            toFill
-        , const XMLSize_t               maxChars
-        ,       XMLSize_t&              bytesEaten
+        , const unsigned int            maxChars
+        ,       unsigned int&           bytesEaten
         ,       unsigned char* const    charSizes
     );
 
-    virtual XMLSize_t transcodeTo
+    virtual unsigned int transcodeTo
     (
         const   XMLCh* const    srcData
-        , const XMLSize_t       srcCount
+        , const unsigned int    srcCount
         ,       XMLByte* const  toFill
-        , const XMLSize_t       maxBytes
-        ,       XMLSize_t&      charsEaten
+        , const unsigned int    maxBytes
+        ,       unsigned int&   charsEaten
         , const UnRepOpts       options
     );
 
     virtual bool canTranscodeTo
     (
         const   unsigned int    toCheck
-    );
+    )   const;
 
 
 private :

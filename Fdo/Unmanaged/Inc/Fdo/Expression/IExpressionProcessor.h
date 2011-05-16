@@ -43,7 +43,6 @@
 #include <Fdo/Expression/BLOBValue.h>
 #include <Fdo/Expression/CLOBValue.h>
 #include <Fdo/Expression/GeometryValue.h>
-#include <Fdo/Expression/SubSelectExpression.h>
 
 /// \brief
 /// The FdoIExpressionProcessor interface can be used to process the nodes in an
@@ -265,17 +264,6 @@ public:
     /// Returns nothing
     /// 
     virtual void ProcessGeometryValue(FdoGeometryValue& expr) = 0;
-    
-    /// \brief
-    /// Processes the FdoSubSelectExpression passed in as an argument.
-    /// 
-    /// \param expr 
-    /// Input sub-select expression value
-    /// 
-    /// \return
-    /// Returns nothing
-    /// 
-    virtual void ProcessSubSelectExpression(FdoSubSelectExpression&) {}
 };
 #endif
 

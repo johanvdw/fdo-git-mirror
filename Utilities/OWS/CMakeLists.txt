@@ -30,8 +30,6 @@ set( FdoOwsSrc_SRCS
     Src/FdoOwsGeographicBoundingBox.cpp
     Src/FdoOwsGeographicBoundingBoxCollection.cpp
     Src/FdoOwsOgcGeometrySerializer.cpp
-	Src/FdoOwsOperationsMetadata.cpp
-	Src/FdoOwsServiceProvider.cpp
 )
 
 

@@ -26,7 +26,6 @@
 #include "FdoWfsServiceMetadata.h"
 #include <OWS/FdoOwsCapabilities.h>
 #include <OWS/FdoOwsRequestMetadata.h>
-#include <OWS/FdoOwsOperationsMetadata.h>
 #include "FdoWfsOgcFilterCapabilities.h"
 #include "FdoWfsFeatureTypeList.h"
 #include "FdoWfsFeatureType.h"
@@ -198,11 +197,6 @@ FdoConnectionState FdoWfsConnection::Open ()
     FdoStringP mFeatureServer = dictionary->GetProperty (FdoWfsGlobals::FeatureServer);
     FdoStringP mUserName = dictionary->GetProperty (FdoWfsGlobals::Username);
     FdoStringP mPassword = dictionary->GetProperty (FdoWfsGlobals::Password);
-
-    FdoStringP proxyHost = dictionary->GetProperty (FdoWfsGlobals::ProxyServer);
-    FdoStringP proxyPort = dictionary->GetProperty (FdoWfsGlobals::ProxyPort);
-    FdoStringP proxyUser = dictionary->GetProperty (FdoWfsGlobals::ProxyUsername);
-    FdoStringP proxyPassword = dictionary->GetProperty (FdoWfsGlobals::ProxyPassword);
     
     if (0 == mFeatureServer.GetLength()) 
     {
@@ -218,27 +212,15 @@ FdoConnectionState FdoWfsConnection::Open ()
     if (parser.HasInvalidProperties(dictionary))
         throw FdoException::Create (NlsMsgGet(WFS_INVALID_CONNECTION_PROPERTY_NAME, "Invalid connection property name '%1$ls'", parser.GetFirstInvalidPropertyName (dictionary)));
 
-	// get the version parameter in the request string if set
-	FdoStringP version = _getRequestWFSVersion(mFeatureServer);
-
     // set up the WFS delegate
-    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword, proxyHost, proxyPort, proxyUser, proxyPassword);
+    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword);
 
     // try to get the service metadata
-    mServiceMetadata = mDelegate->GetCapabilities(version);
-
-	if (wcscmp(GetVersion(),FdoWfsGlobals::WfsVersion) == 0)
-	{
-		FdoPtr<FdoOwsRequestMetadataCollection> requestMetadatas = 
-			FdoPtr<FdoOwsCapabilities>(mServiceMetadata->GetCapabilities())->GetRequestMetadatas();
-		mDelegate->SetRequestMetadatas(requestMetadatas);
-	}
-	else // in 1.1.0 and later version, we assume it uses OperationsMetadata defined in OWS
-	{
-		FdoPtr<FdoOwsOperationCollection> operationMetadatas = 
-			FdoPtr<FdoOwsOperationsMetadata>(mServiceMetadata->GetOperationsMetadata())->GetOperations();
-		mDelegate->SetOperationMetadatas(operationMetadatas);
-	}
+    mServiceMetadata = mDelegate->GetCapabilities();
+    FdoPtr<FdoOwsRequestMetadataCollection> requestMetadatas = 
+        FdoPtr<FdoOwsCapabilities>(mServiceMetadata->GetCapabilities())->GetRequestMetadatas();
+    mDelegate->SetRequestMetadatas(requestMetadatas);
+    
 
     return (GetConnectionState ());
 }
@@ -326,12 +308,8 @@ FdoBoolean FdoWfsConnection::IsSchemaLoadedFromServer()
 FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
 {
     if (mSchemas == NULL) {
-
-		//get wfs version
-		FdoStringP version = this->GetVersion();
-
         // First get the raw schemas from the schema document from the server
-        mSchemas = mDelegate->DescribeFeatureType(NULL,version);
+        mSchemas = mDelegate->DescribeFeatureType(NULL);
 
         // And then we have to make some adjustments to the raw schemas
         // to make the schema more user friendly.
@@ -540,14 +518,6 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
                             FdoStringP pChoiceName = element->GetChoiceName();
                             if (pChoiceName.GetLength() != 0)
                                 cntGeometricProperties++;
-                            
-                            // Remove the associated spatial context name.
-                            // When connecting to a MapGuide server, issuing the DescribeFeatureType command ,
-                            // the returned XML document will contain "fdo:srsName" attribute that at last will
-                            // be converted as the spatial context name of the geometry. This is invalid. we should 
-                            // clear the spatial context name to ignore the extended attribute.
-                            FdoGeometricPropertyDefinition* geomProp = (FdoGeometricPropertyDefinition*)prop.p;
-                            geomProp->SetSpatialContextAssociation(L"");
                         }
                     }
                 } // end of for each property
@@ -632,17 +602,6 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
                     classCaps->SetSupportsLocking(false);
                     classCaps->SetSupportsLongTransactions(false);
                     classCaps->SetSupportsWrite(false);
-
-                    FdoPtr<FdoPropertyDefinitionCollection> props = classDef->GetProperties();
-                    for (int k = props->GetCount() - 1; k >= 0; k--)
-                    {
-                        FdoPtr<FdoPropertyDefinition> prop = props->GetItem(k);
-                        if (prop->GetPropertyType() == FdoPropertyType_GeometricProperty)
-                        {
-                            classCaps->SetPolygonVertexOrderRule(prop->GetName(), FdoPolygonVertexOrderRule_CCW);
-                            classCaps->SetPolygonVertexOrderStrictness(prop->GetName(), false);
-                        }
-                    }
                     
                     // Set the class capabilities
                     classDef->SetCapabilities(classCaps);
@@ -689,14 +648,6 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
             }
         }// end of for each schema
     }
-
-    // Apply the changes on these schemas.
-    for (FdoInt32 i = 0; i < mSchemas->GetCount(); ++i)
-    {
-        FdoPtr<FdoFeatureSchema> schema = mSchemas->GetItem(i);
-        schema->AcceptChanges();
-    }
-
     return FDO_SAFE_ADDREF(mSchemas.p);
 }
 
@@ -720,46 +671,5 @@ void FdoWfsConnection::_setClassDescription (FdoClassDefinition* clsdef)
             clsdef->SetDescription (abstraction);
         }
     }
-}
-
-FdoString* FdoWfsConnection::GetVersion()
-{
-	FdoPtr<FdoWfsServiceMetadata> meta = this->GetServiceMetadata();
-	return meta->GetVersion();
-}
-
-FdoStringP FdoWfsConnection::_getRequestWFSVersion(FdoString* str)
-{
-    FdoStringP retStr;
-    wchar_t tmpBuf[21];
-    FdoString* version = L"version=";
-    if (str == NULL)
-        return retStr;
-    int idx = 0, idxVers = 0, idxResPos = -1;
-    while(*(str+idx) != L'\0' && *(version+idxVers) != L'\0')
-    {
-        if (towlower(*(str+idx)) == *(version+idxVers))
-        {
-            idxResPos = (idxResPos == -1) ? idx : idxResPos;
-            idxVers++;
-        }
-        else
-        {
-            idxVers = 0;
-            idx = (idxResPos != -1) ? idxResPos : idx;
-            idxResPos = -1;
-        }
-        idx++;
-    }
-    if (idxResPos == -1)
-        return retStr;
-
-    idx = idxResPos+8;
-    while (*(str+idx) != L'\0' && *(str+idx) != L'&') idx++;
-    int szcopy = (20 < idx-idxResPos-8) ? (20) : (idx-idxResPos-8);
-    wcsncpy(tmpBuf, str+idxResPos+8, szcopy );
-    tmpBuf[szcopy] = L'\0';
-    retStr = tmpBuf;
-    return retStr;
 }
 

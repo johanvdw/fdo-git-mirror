@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cpp 18306 2009-12-15 18:57:11Z rouault $
+ * $Id: ogrinfo.cpp 14818 2008-07-05 10:15:08Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -27,14 +27,13 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "ogr_api.h"
 #include "ogrsf_frmts.h"
 #include "ogr_p.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrinfo.cpp 18306 2009-12-15 18:57:11Z rouault $");
+CPL_CVSID("$Id: ogrinfo.cpp 14818 2008-07-05 10:15:08Z rouault $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -87,7 +86,7 @@ int main( int nArgc, char ** papszArgv )
         }
         else if( EQUAL(papszArgv[iArg],"-ro") )
             bReadOnly = TRUE;
-        else if( EQUAL(papszArgv[iArg],"-q") || EQUAL(papszArgv[iArg],"-quiet"))
+        else if( EQUAL(papszArgv[iArg],"-q") )
             bVerbose = FALSE;
         else if( EQUAL(papszArgv[iArg],"-fid") && iArg < nArgc-1 )
             nFetchFID = atoi(papszArgv[++iArg]);
@@ -243,65 +242,41 @@ int main( int nArgc, char ** papszArgv )
         }
     }
 
+/* -------------------------------------------------------------------- */
+/*      Process each data source layer.                                 */
+/* -------------------------------------------------------------------- */
     CPLDebug( "OGR", "GetLayerCount() = %d\n", poDS->GetLayerCount() );
 
     for( int iRepeat = 0; iRepeat < nRepeatCount; iRepeat++ )
     {
-        if ( CSLCount(papszLayers) == 0 )
+        for( int iLayer = 0; iLayer < poDS->GetLayerCount(); iLayer++ )
         {
-/* -------------------------------------------------------------------- */ 
-/*      Process each data source layer.                                 */ 
-/* -------------------------------------------------------------------- */ 
-            for( int iLayer = 0; iLayer < poDS->GetLayerCount(); iLayer++ )
+            OGRLayer        *poLayer = poDS->GetLayer(iLayer);
+
+            if( poLayer == NULL )
             {
-                OGRLayer        *poLayer = poDS->GetLayer(iLayer);
-
-                if( poLayer == NULL )
-                {
-                    printf( "FAILURE: Couldn't fetch advertised layer %d!\n",
-                            iLayer );
-                    exit( 1 );
-                }
-
-                if (!bAllLayers)
-                {
-                    printf( "%d: %s",
-                            iLayer+1,
-                            poLayer->GetLayerDefn()->GetName() );
-
-                    if( poLayer->GetLayerDefn()->GetGeomType() != wkbUnknown )
-                        printf( " (%s)", 
-                                OGRGeometryTypeToName( 
-                                    poLayer->GetLayerDefn()->GetGeomType() ) );
-
-                    printf( "\n" );
-                }
-                else
-                {
-                    if( iRepeat != 0 )
-                        poLayer->ResetReading();
-
-                    ReportOnLayer( poLayer, pszWHERE, poSpatialFilter );
-                }
+                printf( "FAILURE: Couldn't fetch advertised layer %d!\n",
+                        iLayer );
+                exit( 1 );
             }
-        }
-        else
-        {
-/* -------------------------------------------------------------------- */ 
-/*      Process specified data source layers.                           */ 
-/* -------------------------------------------------------------------- */ 
-            char** papszIter = papszLayers;
-            for( ; *papszIter != NULL; papszIter++ )
+
+            if( CSLCount(papszLayers) == 0 && !bAllLayers )
             {
-                OGRLayer        *poLayer = poDS->GetLayerByName(*papszIter);
+                printf( "%d: %s",
+                        iLayer+1,
+                        poLayer->GetLayerDefn()->GetName() );
 
-                if( poLayer == NULL )
-                {
-                    printf( "FAILURE: Couldn't fetch requested layer %s!\n",
-                            *papszIter );
-                    exit( 1 );
-                }
+                if( poLayer->GetLayerDefn()->GetGeomType() != wkbUnknown )
+                    printf( " (%s)", 
+                            OGRGeometryTypeToName( 
+                                poLayer->GetLayerDefn()->GetGeomType() ) );
 
+                printf( "\n" );
+            }
+            else if( bAllLayers 
+                     || CSLFindString( papszLayers,
+                                   poLayer->GetLayerDefn()->GetName() ) != -1 )
+            {
                 if( iRepeat != 0 )
                     poLayer->ResetReading();
 
@@ -316,11 +291,16 @@ int main( int nArgc, char ** papszArgv )
     CSLDestroy( papszArgv );
     CSLDestroy( papszLayers );
     CSLDestroy( papszOptions );
-    OGRDataSource::DestroyDataSource( poDS );
+    delete poDS;
     if (poSpatialFilter)
-        OGRGeometryFactory::destroyGeometry( poSpatialFilter );
+        delete poSpatialFilter;
 
-    OGRCleanupAll();
+    delete OGRSFDriverRegistrar::GetRegistrar();
+    OSRCleanup();
+    CPLFinderClean();
+    VSICleanupFileManager();
+    CPLFreeConfig();
+    CPLCleanupTLS();
 
     return 0;
 }
@@ -422,7 +402,7 @@ static void ReportOnLayer( OGRLayer * poLayer, const char *pszWHERE,
         while( (poFeature = poLayer->GetNextFeature()) != NULL )
         {
             poFeature->DumpReadable( NULL, papszOptions );
-            OGRFeature::DestroyFeature( poFeature );
+            delete poFeature;
         }
     }
     else if( nFetchFID != OGRNullFID )
@@ -436,7 +416,7 @@ static void ReportOnLayer( OGRLayer * poLayer, const char *pszWHERE,
         else
         {
             poFeature->DumpReadable( NULL, papszOptions );
-            OGRFeature::DestroyFeature( poFeature );
+            delete poFeature;
         }
     }
 }

@@ -53,8 +53,7 @@ protected:
   int m_ParamCount; 
   
   std::vector<c_KgOraSqlParamDesc*> m_ParamList; // how many parameters was created inside string ( geometry + parameters expressions)
-  bool m_UsedConstantSpatialExtent;
-
+  
   public:
 
     /// \brief
@@ -271,15 +270,10 @@ protected:
 public:
   //const std::vector<c_KgOraSqlParamDesc*> GetParamList() const { return m_ParamList; }
   void SetConstantSpatialExtent(const wchar_t* ConstantSpatialExtent);
-  bool GetUsedConstantSpatialExtent() { return m_UsedConstantSpatialExtent; }
     
   void SetParamNumberOffset(int ParamNumOffset) { m_ParamNumberOffset=ParamNumOffset; }
   void ApplySqlParameters(c_Oci_Statement* OciStm,bool IsGeodeticCS,long OraSrid,int ParamOffest=0);
   int GetSqlParametersCount();
-  
-  // adds parameter into list of parameters to be applied
-  // and returns string to be used for that parameter in SQL, example return: ":1" or ":5" etc..
-  FdoStringP PushParameter(FdoDataValue& Value);
   
 protected:
   
@@ -287,7 +281,6 @@ protected:
   void ProcessExpresion( FdoExpression* Expr);
   void AppendString(const wchar_t *Str);
   void PrependString(const wchar_t *Str);
-  
 };
 
 #endif

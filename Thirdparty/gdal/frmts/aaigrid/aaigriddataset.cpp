@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aaigriddataset.cpp 17974 2009-11-07 16:46:40Z chaitanya $
+ * $Id: aaigriddataset.cpp 14724 2008-06-18 20:20:38Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.
@@ -33,13 +33,13 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: aaigriddataset.cpp 17974 2009-11-07 16:46:40Z chaitanya $");
+CPL_CVSID("$Id: aaigriddataset.cpp 14724 2008-06-18 20:20:38Z rouault $");
 
 CPL_C_START
 void    GDALRegister_AAIGrid(void);
 CPL_C_END
 
-static CPLString OSR_GDS( char **papszNV, const char * pszField, 
+static const char*OSR_GDS( char **papszNV, const char * pszField, 
                            const char *pszDefaultValue );
 
 /************************************************************************/
@@ -191,9 +191,9 @@ CPLErr AAIGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         /* suck up any pre-white space. */
         do {
             chNext = poODS->Getc();
-        } while( isspace( (unsigned char)chNext ) );
+        } while( isspace( chNext ) );
 
-        while( chNext != '\0' && !isspace((unsigned char)chNext)  )
+        while( !isspace(chNext)  )
         {
             if( iTokenChar == sizeof(szToken)-2 )
             {
@@ -207,9 +207,7 @@ CPLErr AAIGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             chNext = poODS->Getc();
         }
 
-        if( chNext == '\0' &&
-            (iPixel != poODS->nRasterXSize - 1 ||
-            nBlockYOff != poODS->nRasterYSize - 1) )
+        if( chNext == '\0' )
         {
             CPLError( CE_Failure, CPLE_FileIO, 
                       "File short, can't read line %d.",
@@ -348,10 +346,8 @@ char AAIGDataset::Getc()
         return achReadBuf[nOffsetInBuffer++];
 
     nBufferOffset = VSIFTellL( fp );
-    int nRead = VSIFReadL( achReadBuf, 1, sizeof(achReadBuf), fp );
-    unsigned int i;
-    for(i=nRead;i<sizeof(achReadBuf);i++)
-        achReadBuf[i] = '\0';
+    if( VSIFReadL( achReadBuf, 1, sizeof(achReadBuf), fp ) < 1 )
+        return EOF;
 
     nOffsetInBuffer = 0;
 
@@ -405,7 +401,6 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
     papszTokens =  
         CSLTokenizeString2( (const char *) poOpenInfo->pabyHeader,
                                   " \n\r\t", 0 );
-    int nTokens = CSLCount(papszTokens);
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -420,39 +415,25 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
     double dfCellDX = 0;
     double dfCellDY = 0;
 
-    if ( (i = CSLFindString( papszTokens, "ncols" )) < 0 ||
-         i + 1 >= nTokens)
+    if ( (i = CSLFindString( papszTokens, "ncols" )) < 0 )
     {
         CSLDestroy( papszTokens );
-        delete poDS;
         return NULL;
     }
     poDS->nRasterXSize = atoi(papszTokens[i + 1]);
-    if ( (i = CSLFindString( papszTokens, "nrows" )) < 0 ||
-         i + 1 >= nTokens)
+    if ( (i = CSLFindString( papszTokens, "nrows" )) < 0 )
     {
         CSLDestroy( papszTokens );
-        delete poDS;
         return NULL;
     }
     poDS->nRasterYSize = atoi(papszTokens[i + 1]);
-
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
-    {
-        delete poDS;
-        return NULL;
-    }
-
     if ( (i = CSLFindString( papszTokens, "cellsize" )) < 0 )
     {
         int iDX, iDY;
         if( (iDX = CSLFindString(papszTokens,"dx")) < 0 
-            || (iDY = CSLFindString(papszTokens,"dy")) < 0
-            || iDX+1 >= nTokens
-            || iDY+1 >= nTokens)
+            || (iDY = CSLFindString(papszTokens,"dy")) < 0 )
         {
             CSLDestroy( papszTokens );
-            delete poDS;
             return NULL;
         }
 
@@ -460,19 +441,10 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         dfCellDY = atof( papszTokens[iDY+1] );
     }    
     else
-    {
-        if (i + 1 >= nTokens)
-        {
-            CSLDestroy( papszTokens );
-            delete poDS;
-            return NULL;
-        }
         dfCellDX = dfCellDY = atof( papszTokens[i + 1] );
-    }
 
     if ((i = CSLFindString( papszTokens, "xllcorner" )) >= 0 &&
-        (j = CSLFindString( papszTokens, "yllcorner" )) >= 0 &&
-        i + 1 < nTokens && j + 1 < nTokens)
+        (j = CSLFindString( papszTokens, "yllcorner" )) >= 0 )
     {
         poDS->adfGeoTransform[0] = atof( papszTokens[i + 1] );
         poDS->adfGeoTransform[1] = dfCellDX;
@@ -483,8 +455,7 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->adfGeoTransform[5] = - dfCellDY;
     }
     else if ((i = CSLFindString( papszTokens, "xllcenter" )) >= 0 &&
-             (j = CSLFindString( papszTokens, "yllcenter" )) >= 0  &&
-             i + 1 < nTokens && j + 1 < nTokens)
+             (j = CSLFindString( papszTokens, "yllcenter" )) >= 0 )
     {
         poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
 
@@ -507,8 +478,7 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->adfGeoTransform[5] = - dfCellDY;
     }
 
-    if( (i = CSLFindString( papszTokens, "NODATA_value" )) >= 0 &&
-        i + 1 < nTokens)
+    if( (i = CSLFindString( papszTokens, "NODATA_value" )) >= 0 )
     {
         const char* pszNoData = papszTokens[i + 1];
 
@@ -532,7 +502,6 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "VSIFOpenL(%s) failed unexpectedly.", 
                   poOpenInfo->pszFilename );
-        delete poDS;
         return NULL;
     } 
 
@@ -547,18 +516,13 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "Couldn't find data values in ASCII Grid file.\n" );
-            delete poDS;
-            return NULL;
+            return NULL;                        
         }
         
         if( poOpenInfo->pabyHeader[i-1] == '\n' 
-            || poOpenInfo->pabyHeader[i-2] == '\n' 
-            || poOpenInfo->pabyHeader[i-1] == '\r' 
-            || poOpenInfo->pabyHeader[i-2] == '\r' )
+            || poOpenInfo->pabyHeader[i-2] == '\n' )
         {
-            if( !isalpha(poOpenInfo->pabyHeader[i]) 
-                && poOpenInfo->pabyHeader[i] != '\n' 
-                && poOpenInfo->pabyHeader[i] != '\r')
+            if( !isalpha(poOpenInfo->pabyHeader[i]) )
             {
                 nStartOfData = i;
 
@@ -943,7 +907,7 @@ AAIGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*                              OSR_GDS()                               */
 /************************************************************************/
 
-static CPLString OSR_GDS( char **papszNV, const char * pszField, 
+static const char*OSR_GDS( char **papszNV, const char * pszField, 
                            const char *pszDefaultValue )
 
 {
@@ -961,18 +925,18 @@ static CPLString OSR_GDS( char **papszNV, const char * pszField,
         return pszDefaultValue;
     else
     {
-        CPLString osResult;
+        static char     szResult[80];
         char    **papszTokens;
         
         papszTokens = CSLTokenizeString(papszNV[iLine]);
 
         if( CSLCount(papszTokens) > 1 )
-            osResult = papszTokens[1];
+            strncpy( szResult, papszTokens[1], sizeof(szResult));
         else
-            osResult = pszDefaultValue;
+            strncpy( szResult, pszDefaultValue, sizeof(szResult));
         
         CSLDestroy( papszTokens );
-        return osResult;
+        return szResult;
     }
 }
 

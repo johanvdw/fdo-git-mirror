@@ -88,13 +88,7 @@ libSqlite3Engine_la_SOURCES = \
   vdbemem.c \
   vtab.c \
   walker.c \
-  where.c \
-  vdbetrace.c \
-  ctime.c \
-  fkey.c \
-  fts3_snippet.c \
-  fts3_write.c \
-  wal.c
+  where.c
 
 noinst_HEADERS = $(libSqlite3Engine_la_SOURCES) \
   btree.h \
@@ -120,8 +114,6 @@ noinst_HEADERS = $(libSqlite3Engine_la_SOURCES) \
   sqliteInt.h \
   sqliteLimit.h \
   vdbe.h \
-  fts3Int.h \
-  wal.h \
   vdbeInt.h
 
 INCLUDES = \
@@ -130,7 +122,7 @@ INCLUDES = \
 
 libSqlite3Engine_la_LDFLAGS =
 
-CFLAGS = @CXXFLAGS_SQLITE@ -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_OMIT_TRACE -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_OMIT_AUTHORIZATION -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHEXXX -DSQLITE_THREADSAFE=2 -DSQLITE_ENABLE_RTREE -DSQLITE_CORE -DSQLITE_SOUNDEX
+CFLAGS = @CXXFLAGS_SQLITE@ -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_OMIT_TRACE -DSQLITE_OMIT_EXPLAIN -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_OMIT_AUTHORIZATION -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHEXXX -DSQLITE_THREADSAFE=2 -DSQLITE_ENABLE_RTREE -DSQLITE_CORE -DSQLITE_SOUNDEX
 ##To be consistent with internal build, force the compiler to be g++. 
 CC = gcc
 

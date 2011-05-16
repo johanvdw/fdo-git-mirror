@@ -28,15 +28,15 @@ SET RDBMSENABLE=yes
 SET GDALENABLE=yes
 SET KINGORACLEENABLE=yes
 SET OGRENABLE=yes
-SET POSTGRESQLENABLE=yes
+SET POSTGISENABLE=yes
 SET SQLITEENABLE=yes
 SET MYSQLENABLE=yes
 SET ODBCENABLE=yes
 SET SQLSPATIALENABLE=yes
 SET SHOWHELP=no
 SET FDOTARZIPFOLDER=c:\OpenSource_FDO
-SET FDOBUILDNUMBER=FXXX
-SET FDORELNUMBER=3.7.0
+SET FDOBUILDNUMBER=DXXX
+SET FDORELNUMBER=3.5.0
 SET FDOZIPTEMP=7zTemp
 SET FILEPPLATFORMPREFIX=Win32
 
@@ -81,7 +81,7 @@ if "%DEFMODIFY%"=="yes" goto stp1_get_with
     SET GDALENABLE=no
     SET KINGORACLEENABLE=no
     SET OGRENABLE=no
-    SET POSTGRESQLENABLE=no
+    SET POSTGISENABLE=no
     SET SQLITEENABLE=no
     SET MYSQLENABLE=no
     SET ODBCENABLE=no
@@ -119,8 +119,12 @@ if not "%2"=="kingoracle" goto stp9_get_with
     SET KINGORACLEENABLE=yes
     goto next_param
 :stp9_get_with
-if not "%2"=="ogr" goto stp11_get_with
+if not "%2"=="ogr" goto stp10_get_with
     SET OGRENABLE=yes
+    goto next_param
+:stp10_get_with
+if not "%2"=="postgis" goto stp11_get_with
+    SET POSTGISENABLE=yes
     goto next_param
 :stp11_get_with
 if not "%2"=="sqlite" goto stp12_get_with
@@ -139,15 +143,7 @@ if not "%2"=="sqlspatial" goto stp15_get_with
     SET SQLSPATIALENABLE=yes
     goto next_param
 :stp15_get_with
-if not "%2"=="arcsde" goto stp16_get_with
-    SET ARCSDEENABLE=yes
-    goto next_param
-:stp16_get_with
-if not "%2"=="postgresql" goto stp17_get_with
-    SET POSTGRESQLENABLE=yes
-    goto next_param
-:stp17_get_with
-if not "%2"=="providers" goto stp18_get_with
+if not "%2"=="providers" goto stp16_get_with
     SET FDOCOREENABLE=no
     SET SHPENABLE=yes
     SET SDFENABLE=yes
@@ -158,13 +154,13 @@ if not "%2"=="providers" goto stp18_get_with
     SET GDALENABLE=yes
     SET KINGORACLEENABLE=yes
     SET OGRENABLE=yes
-    SET POSTGRESQLENABLE=yes
+    SET POSTGISENABLE=yes
     SET SQLITEENABLE=yes
     SET MYSQLENABLE=yes
     SET ODBCENABLE=yes
     SET SQLSPATIALENABLE=yes
     goto next_param
-:stp18_get_with
+:stp16_get_with
 if not "%2"=="all" goto custom_error
     SET FDOCOREENABLE=yes
     SET SHPENABLE=yes
@@ -176,7 +172,7 @@ if not "%2"=="all" goto custom_error
     SET GDALENABLE=yes
     SET KINGORACLEENABLE=yes
     SET OGRENABLE=yes
-    SET POSTGRESQLENABLE=yes
+    SET POSTGISENABLE=yes
     SET SQLITEENABLE=yes
     SET MYSQLENABLE=yes
     SET ODBCENABLE=yes
@@ -219,16 +215,17 @@ if "%TYPEPLATFORM%"=="x64" SET FILEPPLATFORMPREFIX=win64
 
 :start_zip_fdo
 if "%FDOCOREENABLE%"=="no" goto start_zip_shp
+   rmdir /s /q "%FDOZIPTEMP%"
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
    mkdir %FDOZIPTEMP%\Bin\com
    copy "%FDOROOT%\Bin\providers.xml" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\xerces-c_3_1.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\Xalan-C_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\XalanMessages_1_11.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\gdal17.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\xerces-c_2_5_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\Xalan-C_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\XalanMessages_1_7_0.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_date_time-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\boost_thread-vc90-mt-1_34_1.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\gdal16.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOCommon.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOGeometry.dll" %FDOZIPTEMP%\Bin\
@@ -330,6 +327,9 @@ if "%ARCSDEENABLE%"=="no" goto start_zip_rdbms
 if "%RDBMSENABLE%"=="no" goto start_zip_mysql
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
+   mkdir %FDOZIPTEMP%\Bin\com
+   copy "%FDOROOT%\Bin\com\postgis_fdo_sys.sql" %FDOZIPTEMP%\Bin\com
+   copy "%FDOROOT%\Bin\com\postgis_fdo_sys_idx.sql" %FDOZIPTEMP%\Bin\com
    copy "%FDOROOT%\Bin\RdbmsMsg.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\SmMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\RdbmsOverrides.dll" %FDOZIPTEMP%\Bin\
@@ -392,7 +392,7 @@ if "%ODBCENABLE%"=="no" goto start_zip_sqlspatial
    popd
    rmdir /s /q "%FDOZIPTEMP%"
 :start_zip_sqlspatial
-if "%SQLSPATIALENABLE%"=="no" goto start_zip_postgresql
+if "%SQLSPATIALENABLE%"=="no" goto start_zip_gdal
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
    copy "%FDOROOT%\Bin\RdbmsMsg.dll" %FDOZIPTEMP%\Bin\
@@ -408,23 +408,6 @@ if "%SQLSPATIALENABLE%"=="no" goto start_zip_postgresql
    tar -cf "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
    gzip -9 "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
    cp "fdosqlspatial-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
-   popd
-   rmdir /s /q "%FDOZIPTEMP%"
-:start_zip_postgresql
-if "%POSTGRESQLENABLE%"=="no" goto start_zip_gdal
-   mkdir %FDOZIPTEMP%
-   mkdir %FDOZIPTEMP%\Bin
-   copy "%FDOROOT%\Bin\RdbmsMsg.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\SmMessage.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\RdbmsOverrides.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\PostgreSQLOverrides.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\PostgreSQLProvider.dll" %FDOZIPTEMP%\Bin\
-   pushd "%FDOZIPTEMP%"
-   if exist "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   if exist "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
-   tar -cf "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
-   gzip -9 "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
-   cp "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    rmdir /s /q "%FDOZIPTEMP%"
 :start_zip_gdal
@@ -443,7 +426,7 @@ if "%GDALENABLE%"=="no" goto start_zip_king_oracle
    popd
    rmdir /s /q "%FDOZIPTEMP%"
 :start_zip_king_oracle
-if "%KINGORACLEENABLE%"=="no" goto start_zip_ogr
+if "%KINGORACLEENABLE%"=="no" goto start_zip_postgis
    mkdir %FDOZIPTEMP%
    mkdir %FDOZIPTEMP%\Bin
    copy "%FDOROOT%\Bin\KingOracleMessage.dll" %FDOZIPTEMP%\Bin\
@@ -455,6 +438,39 @@ if "%KINGORACLEENABLE%"=="no" goto start_zip_ogr
    tar -cf "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
    gzip -9 "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
    cp "fdokingoracle-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   popd
+   rmdir /s /q "%FDOZIPTEMP%"
+:start_zip_postgis
+if "%POSTGISENABLE%"=="no" goto start_zip_ogr
+   mkdir %FDOZIPTEMP%
+   mkdir %FDOZIPTEMP%\Bin
+   copy "%FDOROOT%\Bin\PostGISMessage.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\PostGISOverrides.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\PostGISProvider.dll" %FDOZIPTEMP%\Bin\
+   pushd "%FDOZIPTEMP%"
+   if exist "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdopostgis-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
+   popd
+   rmdir /s /q "%FDOZIPTEMP%"
+   mkdir %FDOZIPTEMP%
+   mkdir %FDOZIPTEMP%\Bin
+   mkdir %FDOZIPTEMP%\Bin\com
+   copy "%FDOROOT%\Bin\com\postgis_fdo_sys.sql" %FDOZIPTEMP%\Bin\com
+   copy "%FDOROOT%\Bin\com\postgis_fdo_sys_idx.sql" %FDOZIPTEMP%\Bin\com
+   copy "%FDOROOT%\Bin\PostgreSQLOverrides.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\PostgreSQLProvider.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\RdbmsMsg.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\RdbmsOverrides.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\SmMessage.dll" %FDOZIPTEMP%\Bin\
+   pushd "%FDOZIPTEMP%"
+   if exist "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" del /q /f "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   if exist "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" del /q /f "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz"
+   tar -cf "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar" Bin
+   gzip -9 "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar"
+   cp "fdopostgresql-%FILEPPLATFORMPREFIX%-%FDORELNUMBER%_%FDOBUILDNUMBER%.tar.gz" "%FDOTARZIPFOLDER%"\
    popd
    rmdir /s /q "%FDOZIPTEMP%"
 :start_zip_ogr
@@ -501,7 +517,7 @@ echo NOTE: To use the createtarzipbinfiles script, download and install the
 echo       GnuWin32 command-line and Windows shell utilities for manipulating 
 echo       tar archives. 
 echo *
-echo Example: createtarzipbinfiles.bat -i=C:\G029 -o=C:\G029 -b=J001 -r=3.7.0
+echo Example: createtarzipbinfiles.bat -i=C:\G029 -o=C:\G029 -b=D001 -r=3.5.0
 echo *
 echo createtarzipbinfiles.bat [-h] 
 echo                          [-i=InFolder] 
@@ -529,8 +545,8 @@ echo                         sqlspatial,
 echo                         gdal, 
 echo                         kingoracle, 
 echo                         ogr,
-echo                         sqlite,
-echo                         postgresql
+echo                         postgis,
+echo                         sqlite
 echo PlatformType:   -p[latform]=Win32(default), x64
 echo BuildNumber:    -b[uild]=User-Defined build number appended to the end of the .tar.gz files
 echo ReleaseNumber:  -r[elease]=FDO build number appended to the end of the .tar.gz files

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsurface.cpp 16574 2009-03-14 13:09:10Z rouault $
+ * $Id: ogrsurface.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSurface class.
@@ -33,7 +33,7 @@
 /**
  * \fn double OGRSurface::get_Area() const;
  *
- * \brief Get the area of the surface object.
+ * Get the area of the surface object.
  *
  * For polygons the area is computed as the area of the outer ring less
  * the area of all internal rings. 
@@ -47,8 +47,7 @@
 /**
  * \fn OGRErr OGRSurface::Centroid( OGRPoint * poPoint ) const;
  *
- * \brief Compute and return centroid of surface.
- * The centroid is not necessarily
+ * Compute and return centroid of surface.  The centroid is not necessarily
  * within the geometry.  
  *
  * This method relates to the SFCOM ISurface::get_Centroid() method.
@@ -63,7 +62,7 @@
 /**
  * \fn OGRErr OGRSurface::PointOnSurface( OGRPoint * poPoint ) const;
  *
- * \brief This method relates to the SFCOM ISurface::get_PointOnSurface() method.
+ * This method relates to the SFCOM ISurface::get_PointOnSurface() method.
  *
  * NOTE: Only implemented when GEOS included in build.
  *

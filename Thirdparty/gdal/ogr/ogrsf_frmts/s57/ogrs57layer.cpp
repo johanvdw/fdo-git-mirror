@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57layer.cpp 17953 2009-11-02 21:13:56Z rouault $
+ * $Id: ogrs57layer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57Layer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrs57layer.cpp 17953 2009-11-02 21:13:56Z rouault $");
+CPL_CVSID("$Id: ogrs57layer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRS57Layer()                             */
@@ -202,11 +202,7 @@ int OGRS57Layer::TestCapability( const char * pszCap )
         return FALSE;
 
     else if( EQUAL(pszCap,OLCFastFeatureCount) )
-        return !(m_poFilterGeom != NULL || m_poAttrQuery != NULL 
-                 || nFeatureCount == -1 ||
-                 ( EQUAL(poFeatureDefn->GetName(), "SOUNDG") &&
-                   poDS->GetModule(0) != NULL &&
-                   (poDS->GetModule(0)->GetOptionFlags() & S57M_SPLIT_MULTIPOINT)));
+        return TRUE;
 
     else if( EQUAL(pszCap,OLCFastGetExtent) )
     {
@@ -247,7 +243,8 @@ OGRErr OGRS57Layer::GetExtent( OGREnvelope *psExtent, int bForce )
 int OGRS57Layer::GetFeatureCount (int bForce)
 {
     
-    if( !TestCapability(OLCFastFeatureCount) )
+    if( m_poFilterGeom != NULL || m_poAttrQuery != NULL 
+        || nFeatureCount == -1 )
         return OGRLayer::GetFeatureCount( bForce );
     else
         return nFeatureCount;

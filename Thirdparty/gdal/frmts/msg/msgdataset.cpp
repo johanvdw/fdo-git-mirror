@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msgdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: msgdataset.cpp 15064 2008-07-28 19:10:23Z mloskot $
  *
  * Project:  MSG Driver
  * Purpose:  GDALDataset driver for MSG translator for read support.
@@ -293,18 +293,6 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )
     for( int iBand = 0; iBand < poDS->nBands; iBand++ )
     {
         poDS->SetBand( iBand+1, new MSGRasterBand( poDS, iBand+1 ) );
-    }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The MSG driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
     }
     
     return( poDS );

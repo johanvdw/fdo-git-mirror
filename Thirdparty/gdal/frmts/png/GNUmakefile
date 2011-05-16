@@ -1,4 +1,4 @@
-# $Id: GNUmakefile 16755 2009-04-09 20:38:33Z chaitanya $
+# $Id: GNUmakefile 10656 2007-01-19 01:31:01Z mloskot $
 #
 # Makefile to build libpng using GNU Make and GCC.
 #
@@ -31,20 +31,18 @@ else
 OBJ	=	pngdataset.o
 endif
 
-ifeq ($(LIBZ_SETTING),internal) 
 XTRA_OPT	:=	$(XTRA_OPT) -I../zlib
-endif
 
 CPPFLAGS	:=	$(XTRA_OPT) $(GDAL_INCLUDE) $(CPPFLAGS)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o libpng/*.o $(O_OBJ)
 
-../o/%.$(OBJ_EXT):	libpng/%.c
+../o/%.o:	libpng/%.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-all:	$(OBJ:.o=.$(OBJ_EXT))
+all:	$(OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)

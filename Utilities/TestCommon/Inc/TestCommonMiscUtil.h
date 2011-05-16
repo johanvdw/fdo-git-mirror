@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2004-2006  Autodesk, Inc.
+ * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -13,8 +13,14 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with this library; if not, write to the Free Software
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*
-*/
+ * Revision Control Modification History
+ *
+ *         $Id: //providers_reliant/FdoCommon/inc/FdoCommonNlsUtil.h#1 $
+ *     $Author: lee $
+ *   $DateTime: 2006/02/24 15:47:54 $
+ *     $Change: 11018 $
+ * 
+ */
 
 #ifndef TESTCOMMONMISCUTIL___H
 #define TESTCOMMONMISCUTIL___H	1
@@ -23,82 +29,7 @@
 #pragma once
 #endif
 
-namespace FdoCommonUtilTypes
-{
-    template<class T1, class T2> struct pair
-    {
-        pair()
-            : first(T1()), second(T2())
-        {}
-        pair(const T1& val1, const T2& val2)
-            : first(val1), second(val2)
-	    {}
-        T1 first;
-        T2 second;
-    };
-    template <class T> class vector
-    {
-    private:
-        size_t m_size;
-        size_t m_capacity;
-        T* m_objects;
-    private:
-        void resize()
-        {
-            size_t oldCap = m_capacity;
-            m_capacity = (m_capacity == 0) ? 8 : (size_t)(m_capacity * 1.4);
-            T* objects = new T[m_capacity];
-            for (size_t i = 0; i < m_capacity; i++)
-            {
-                if (i < oldCap)
-                    objects[i] = m_objects[i];
-                else
-                    objects[i] = T();
-            }
-            delete[] m_objects;
-            m_objects = objects;
-        }
-    public:
-        vector()
-        {
-            m_size = m_capacity = 0;
-            m_objects = NULL;
-        }
-        ~vector()
-        {
-            delete[] m_objects;
-        }
-        size_t size() { return m_size; }
-        void push_back(const T& val)
-        {
-            if ((m_size+1) >= m_capacity)
-                resize();
-            m_objects[m_size] = val;
-            m_size++;
-        }
-	    T& operator[](size_t pos)
-        {
-            if (pos < m_size)
-                return m_objects[pos];
-            throw FdoException::Create(L"Index out of bounds!");
-        }
-        T& at(size_t pos)
-        {
-            if (pos < m_size)
-                return m_objects[pos];
-            throw FdoException::Create(L"Index out of bounds!");
-        }
-        void clear()
-        {
-            m_size = 0;
-        }
-        void pop_back()
-        {
-            if (m_size > 0)
-                m_size--;
-        }
-    };
-};
+
 //
 // Misc commonly-used utility functions:
 void TestCommonFail (FdoException* ge);
@@ -174,8 +105,6 @@ public:
     // check that 2 doubles are roughly equal:
     static bool FuzzyEqual (const double d1, const double d2);
 
-    // Trim trailing blanks from a string.
-    static FdoStringP Trim( FdoStringP in );
 
 protected:
 

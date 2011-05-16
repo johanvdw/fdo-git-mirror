@@ -416,12 +416,6 @@ int rdbi_geom_srid_set (
 		char *col_name,
         long srid );
 
-int rdbi_geom_version_set (
-        rdbi_context_def *context,
-        int sqlid,
-		char *col_name,
-        long version );
-
 int rdbi_geom_dimens_set (
         rdbi_context_def *context,
         int sqlid,
@@ -493,17 +487,6 @@ int rdbi_get_gen_idW(
         rdbi_context_def  *context,
 	    const wchar_t *table_name,
 	    int  *id
-	    );
-
-int rdbi_get_next_seq(
-        rdbi_context_def  *context,
-	    const char *sequence_name,
-	    long  *id
-	    );
-int rdbi_get_next_seqW(
-        rdbi_context_def  *context,
-	    const wchar_t *sequence_name,
-	    long  *id
 	    );
 
 int rdbi_set_schema (rdbi_context_def *context, const char *schema_name);

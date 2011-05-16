@@ -20,7 +20,6 @@
 #include "OdbcFdoUpdateTest.h"
 #include "UnitTestUtil.h"
 #include "OdbcBaseSetup.h"
-#include "OdbcConnectionUtil.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( OdbcOracleFdoUpdateTest );
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( OdbcOracleFdoUpdateTest, "FdoUpdateTest");
@@ -113,7 +112,7 @@ void OdbcBaseFdoUpdateTest::updateCities()
         FdoPtr<FdoDataValue> dataValue;
         FdoPtr<FdoPropertyValue> propertyValue;
 
-        dataValue = FdoDataValue::Create(L"Nepean");
+        dataValue = FdoDataValue::Create(L"Carleton");
         propertyValue = AddNewProperty( propertyValues, mSetup.GetPropertyNameCitiesName());
         propertyValue->SetValue(dataValue);
 
@@ -148,7 +147,7 @@ void OdbcBaseFdoUpdateTest::updateCities()
         filter = FdoComparisonCondition::Create(
             FdoPtr<FdoIdentifier>(FdoIdentifier::Create(mSetup.GetPropertyNameCitiesName()) ),
             FdoComparisonOperations_EqualTo,
-            FdoPtr<FdoDataValue>(FdoDataValue::Create(L"Nepean") ) );
+            FdoPtr<FdoDataValue>(FdoDataValue::Create(L"Carleton") ) );
 
         updateCommand->SetFilter(filter);
 
@@ -605,14 +604,6 @@ void OdbcExcelFdoUpdateTest::updateTable1()
     {
         TestCommonFail (ex);
     }
-}
-
-extern OdbcConnectionUtil pOdbcConnectionUtil;
-FdoString* OdbcExcelFdoUpdateTest::GetConnectString() 
-{
-    FdoStringP path = pOdbcConnectionUtil.GetTestDataPath();
-    m_connectStringExcelUpdate = FdoStringP::Format(L"ConnectionString=\"Driver={%ls};Dbq=%ls/MsTest.xls;ReadOnly=False\"", pOdbcConnectionUtil.GetExcelODBCDriverName(), (FdoString*)path);
-    return m_connectStringExcelUpdate;
 }
 
 #endif

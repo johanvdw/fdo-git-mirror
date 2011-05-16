@@ -8,7 +8,7 @@
  * newstr.h - string manipulation routines
  */
 
-char * copystr ( char * );
-void   freestr ( char * );
-char * newstr  ( char * );
-void   str_done();
+char *newstr( char *string );
+char *copystr( char *s );
+void freestr( char *s );
+void donestr();

@@ -43,12 +43,12 @@
 
 <!-- used for looking assocation property references -->
 <xsl:key name="assocKey" match="AssociationProperty" use="concat(@associatedClassSchema,concat(':',@associatedClass))" />
-<xsl:variable name="g_associationProperties" select="//AssociationProperty"/>
+<xsl:key name="classKey" match="Schema/node()" use="concat(../@name,':',@name)" />
 
 <!-- Determine whether using GML 2 or 3 feature property type. Assumes GML 2 if GML 3 type not defined -->
 <xsl:variable name="g_featurePropertyType">
 	<xsl:choose>
-		<xsl:when test="//Schema/node()[concat(../@name,':',@name)='gml:FeaturePropertyType']">
+		<xsl:when test="key('classKey','gml:FeaturePropertyType')">
 			<xsl:value-of select="'gml:FeaturePropertyType'"/>
 		</xsl:when>
 		<xsl:otherwise>
@@ -60,21 +60,15 @@
 <!-- Convert a Feature Schema to GML -->
 <xsl:template match="Schema">
 	<xsl:variable name="myUri" >
-	    <xsl:call-template name="choose_targetNamespace">
-            <xsl:with-param name="schema" select="@name"/>
-            <xsl:with-param name="custom_targetNamespace" select="@targetNamespace"/>
+	    <xsl:call-template name="schema_to_uri">
+	        <xsl:with-param name="schema" select="@name"/>
 	    </xsl:call-template>
 	</xsl:variable>
 	<xsl:element name="xs:schema" namespace="{$myUri}" >
 		<!-- Write out the namespace and targetNamespace attributes -->
 		<xsl:variable name="myns" >
 		    <xsl:call-template name="schema_to_prefix">
-                <xsl:with-param name="schema">
-                    <xsl:call-template name="choose_schemaPrefix">
-                        <xsl:with-param name="schema" select="@name" />
-                        <xsl:with-param name="prefix" select="@prefix" />
-                    </xsl:call-template>
-                </xsl:with-param>
+		        <xsl:with-param name="schema" select="@name"/>
 		    </xsl:call-template>
 		</xsl:variable>
 		<xsl:attribute name="targetNamespace" >
@@ -147,10 +141,9 @@
     <xsl:choose>
 	<xsl:when test="@name='AbstractFeature'">
 		<xsl:variable name="myUri" >
-            <xsl:call-template name="choose_targetNamespace">
-                <xsl:with-param name="schema" select="../@name"/>
-                <xsl:with-param name="custom_targetNamespace" select="../@targetNamespace"/>
-            </xsl:call-template>
+		    <xsl:call-template name="schema_to_uri">
+		        <xsl:with-param name="schema" select="../@name"/>
+		    </xsl:call-template>
 		</xsl:variable>
 		<xsl:choose>
 			<xsl:when test="$myUri='http://www.opengis.net/gml'">
@@ -804,9 +797,9 @@
 				</xsl:call-template>
 			</xsl:when>
 			<xsl:when test="@dataType = 'byte'" >
-                <xsl:call-template name="dataproperty_other" >
-                    <xsl:with-param name="gmlType" >xs:unsignedByte</xsl:with-param>
-                </xsl:call-template>
+				<xsl:call-template name="dataproperty_other" >
+					<xsl:with-param name="gmlType" >fdo:byte</xsl:with-param>
+				</xsl:call-template>
 			</xsl:when>
 			<xsl:when test="@dataType = 'datetime'" >
 				<xsl:call-template name="dataproperty_other" >
@@ -820,17 +813,17 @@
 			</xsl:when>
 			<xsl:when test="@dataType = 'int16'" >
 				<xsl:call-template name="dataproperty_other" >
-					<xsl:with-param name="gmlType" >xs:short</xsl:with-param>
+					<xsl:with-param name="gmlType" >fdo:int16</xsl:with-param>
 				</xsl:call-template>
 			</xsl:when>
 			<xsl:when test="@dataType = 'int32'" >
 				<xsl:call-template name="dataproperty_other" >
-					<xsl:with-param name="gmlType" >xs:int</xsl:with-param>
+					<xsl:with-param name="gmlType" >fdo:int32</xsl:with-param>
 				</xsl:call-template>
 			</xsl:when>
 			<xsl:when test="@dataType = 'int64'" >
 				<xsl:call-template name="dataproperty_other" >
-					<xsl:with-param name="gmlType" >xs:long</xsl:with-param>
+					<xsl:with-param name="gmlType" >fdo:int64</xsl:with-param>
 				</xsl:call-template>
 			</xsl:when>
 			<xsl:when test="@dataType = 'single'" >
@@ -878,12 +871,7 @@
 		<xsl:call-template name="element_attributes" />
 		<xsl:attribute name="type" >
             <xsl:call-template name="class_to_type">
-                <xsl:with-param name="schema">
-                    <xsl:call-template name="choose_schemaPrefix">
-                        <xsl:with-param name="schema" select="@classSchema" />
-                        <xsl:with-param name="prefix" select="//Schema[@name=@classSchema]/@prefix" />
-                    </xsl:call-template>
-                </xsl:with-param>
+                <xsl:with-param name="schema" select="@classSchema"/>
                 <xsl:with-param name="class" select="@class"/>
             </xsl:call-template>
 		</xsl:attribute>
@@ -1063,20 +1051,14 @@
     
 	<xsl:variable name="prefix" >
 	    <xsl:call-template name="schema_to_prefix">
-            <xsl:with-param name="schema">
-                <xsl:call-template name="choose_schemaPrefix">
-                    <xsl:with-param name="schema" select="$schema" />
-                    <xsl:with-param name="prefix" select="//Schema[@name=$schema]/@prefix" />
-                </xsl:call-template>
-            </xsl:with-param>
+	        <xsl:with-param name="schema" select="$schema"/>
 	    </xsl:call-template>
 	</xsl:variable>
 
-    <xsl:variable name="uri" >
-        <xsl:call-template name="choose_targetNamespace">
-            <xsl:with-param name="schema" select="$schema"/>
-            <xsl:with-param name="custom_targetNamespace" select="//Schema[@name=$schema]/@targetNamespace"/>
-        </xsl:call-template>
+	<xsl:variable name="uri" >
+	    <xsl:call-template name="schema_to_uri">
+	        <xsl:with-param name="schema" select="$schema"/>
+	    </xsl:call-template>
 	</xsl:variable>
 
     <xsl:attribute name="{concat('xmlns:',$prefix)}" >
@@ -1097,12 +1079,7 @@
 		<!-- TODO: support type with implicit schema -->
 		<xsl:attribute name="type" >
 		    <xsl:call-template name="class_to_type">
-                <xsl:with-param name="schema">
-                    <xsl:call-template name="choose_schemaPrefix">
-                        <xsl:with-param name="schema" select="ancestor::Schema/@name" />
-                        <xsl:with-param name="prefix" select="ancestor::Schema/@prefix" />
-                    </xsl:call-template>
-                </xsl:with-param>
+		        <xsl:with-param name="schema" select="ancestor::Schema/@name"/>
 		        <xsl:with-param name="class" select="@name"/>
 		    </xsl:call-template>
 		</xsl:attribute>
@@ -1182,20 +1159,19 @@
   		 properties are explicit, the already generated xs:key links the association
   		 property to its associated class.
   		-->
-  		<xsl:if test="not (count($g_associationProperties) = 0)">
-  		   <xsl:for-each select="key('assocKey',concat($elemSchema,':',@name))" >
-  		      <!-- Skip if schema for this element and the association property are 
-  		       not the same. When they are different, a separate external element is generated.
-  		      -->
-                  <xsl:if test="IdentityProperties and ($elemSchema = ancestor::Schema/@name)">
-                    <!-- Skip association properties with implicit identity properties, these
-                     are already linked through this element's xs:key
+  		<xsl:for-each select="key('assocKey',concat($elemSchema,':',@name))" >
+  		    <!-- Skip if schema for this element and the association property are 
+  		     not the same. When they are different, a separate external element is generated.
+  		    -->
+            <xsl:if test="IdentityProperties and ($elemSchema = ancestor::Schema/@name)">
+                <!-- Skip association properties with implicit identity properties, these
+                 are already linked through this element's xs:key
+                -->
+                <xsl:if test="not(IdentityProperties/@default)">
+                    <!-- Generate the xs:unique that will link the association property to 
+                     its associated class. This xs:unique is referenced by the association 
+                     property's xs:keyref.
                     -->
-                    <xsl:if test="not(IdentityProperties/@default)">
-                      <!-- Generate the xs:unique that will link the association property to 
-                       its associated class. This xs:unique is referenced by the association 
-                       property's xs:keyref.
-                      -->
 			        <xsl:element name="xs:key" >
   				        <xsl:attribute name="name" >
   			                <xsl:call-template name="assoc_property_key">
@@ -1217,8 +1193,7 @@
 			        </xsl:element>
                 </xsl:if>
             </xsl:if>
-         </xsl:for-each>
-	</xsl:if>
+        </xsl:for-each>
 
     <!-- Write the unique Constraints -->
     <xsl:for-each select="./UniqueConstraints/UniqueConstraint">
@@ -1255,12 +1230,7 @@
 		    <!-- TODO: support type with implicit schema -->
 		    <xsl:attribute name="type" >
                 <xsl:call-template name="class_to_type">
-                    <xsl:with-param name="schema">
-                        <xsl:call-template name="choose_schemaPrefix">
-                            <xsl:with-param name="schema" select="ancestor::Schema/@name" />
-                            <xsl:with-param name="prefix" select="ancestor::Schema/@prefix" />
-                        </xsl:call-template>
-                    </xsl:with-param>
+                    <xsl:with-param name="schema" select="ancestor::Schema/@name"/>
                     <xsl:with-param name="class" select="@name"/>
                 </xsl:call-template>
 		    </xsl:attribute>
@@ -1646,12 +1616,7 @@
         <!-- The type is the node class -->
 	    <xsl:attribute name="type" >
 	        <xsl:call-template name="class_to_type">
-                <xsl:with-param name="schema">
-                    <xsl:call-template name="choose_schemaPrefix">
-                        <xsl:with-param name="schema" select="@associatedClassSchema" />
-                        <xsl:with-param name="prefix" select="//Schema[@name=@associatedClassSchema]/@prefix" />
-                    </xsl:call-template>
-                </xsl:with-param>
+	            <xsl:with-param name="schema" select="@associatedClassSchema"/>
 	            <xsl:with-param name="class" select="@associatedClass"/>
 	        </xsl:call-template>
 	    </xsl:attribute>
@@ -1700,12 +1665,7 @@
 		        </xsl:attribute>
 		        <xsl:attribute name="type" >
 		            <xsl:call-template name="class_to_type">
-                        <xsl:with-param name="schema">
-                            <xsl:call-template name="choose_schemaPrefix">
-                                <xsl:with-param name="schema" select="@associatedClassSchema" />
-                                <xsl:with-param name="prefix" select="//Schema[@name=@associatedClassSchema]/@prefix" />
-                            </xsl:call-template>
-                        </xsl:with-param>
+		                <xsl:with-param name="schema" select="@associatedClassSchema"/>
 		                <xsl:with-param name="class" select="@associatedClass"/>
 		            </xsl:call-template>
 		        </xsl:attribute>
@@ -1863,13 +1823,11 @@
 	<xsl:element name="xs:simpleType">
 		<xsl:element name="xs:restriction">
 		    <xsl:attribute name="base">xs:string</xsl:attribute>
-            <xsl:if test="@length and @length != ''">
-                <xsl:element name="xs:maxLength">
-                    <xsl:attribute name="value" >
-                        <xsl:value-of select="@length" />
-                    </xsl:attribute>
-                </xsl:element>
-            </xsl:if>
+			<xsl:element name="xs:maxLength">
+				<xsl:attribute name="value" >
+					<xsl:value-of select="@length" />
+				</xsl:attribute>
+			</xsl:element>
       <xsl:apply-templates select="Constraint" />
 		</xsl:element>
 	</xsl:element>
@@ -1912,16 +1870,16 @@
 
 <!-- For other types of data properties, just set the type -->
 <xsl:template name="dataproperty_other">
-    <xsl:param name="gmlType" />
-    <xsl:element name="xs:simpleType">
-        <xsl:element name="xs:restriction">
-            <xsl:attribute name="base">
-                <xsl:value-of select="$gmlType" />
-            </xsl:attribute>
-            <xsl:apply-templates select="Constraint" />
-        </xsl:element>
+	<xsl:param name="gmlType" />
+  <xsl:element name="xs:simpleType">
+    <xsl:element name="xs:restriction">
+      <xsl:attribute name="base">
+        <xsl:value-of select="$gmlType" />
+      </xsl:attribute>
+      <xsl:apply-templates select="Constraint" />
     </xsl:element>
-    <xsl:call-template name="element_subelements" />
+  </xsl:element>
+	<xsl:call-template name="element_subelements" />
 </xsl:template>
 
 <!-- For the dataproperty's list and range restriction  -->
@@ -2159,12 +2117,7 @@
 -->  
 <xsl:template name="base_class_to_type">
     <xsl:call-template name="class_to_type">
-        <xsl:with-param name="schema">
-            <xsl:call-template name="choose_schemaPrefix">
-                <xsl:with-param name="schema" select="@baseSchema" />
-                <xsl:with-param name="prefix" select="//Schema[@name=@baseSchema]/@prefix" />
-            </xsl:call-template>
-        </xsl:with-param>
+        <xsl:with-param name="schema" select="@baseSchema"/>
         <xsl:with-param name="class" select="@baseClass"/>
     </xsl:call-template>
 </xsl:template>
@@ -2251,36 +2204,6 @@
     </xsl:choose>
 </xsl:template>
 
-<!-- Choose FDO Schema target namespace prefix.-->
-<xsl:template name="choose_schemaPrefix">
-    <xsl:param name="schema"/>
-    <xsl:param name="prefix"/>
-        <xsl:choose>
-            <xsl:when test="$prefix | $prefix !=''">
-                <xsl:value-of select="$prefix"/>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:value-of select="$schema"/>
-            </xsl:otherwise>
-        </xsl:choose>
-</xsl:template>
-
-<!-- Choose FDO Schema target namespace.-->
-<xsl:template name="choose_targetNamespace">
-    <xsl:param name="schema"/>
-    <xsl:param name="custom_targetNamespace"/>
-    <xsl:choose>
-        <xsl:when test="$custom_targetNamespace | $custom_targetNamespace !=''">
-            <xsl:value-of select="$custom_targetNamespace"/>
-        </xsl:when>
-        <xsl:otherwise>
-            <xsl:call-template name="schema_to_uri">
-                <xsl:with-param name="schema" select="$schema"/>
-            </xsl:call-template>
-        </xsl:otherwise>
-    </xsl:choose>
-</xsl:template>
-
 </stylesheet>
 
-
+  

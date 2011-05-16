@@ -426,13 +426,6 @@ void SQLCmdTest::TestSelectWithTrans()
         
         FdoPtr<FdoISQLDataReader> rdr = selectCmd->ExecuteReader();
         FdoIDataReader* reader = dynamic_cast<FdoIDataReader*>(rdr.p);
-
-        if (reader == NULL)
-        {
-            // This should not happen but it’s happening on RH 5
-            printf( "Known issue: dynamic_cast to FdoIDataReader* failed\n" );
-            return;
-        }
         
         if ( reader->ReadNext() )
         {
@@ -447,8 +440,6 @@ void SQLCmdTest::TestSelectWithTrans()
             // Rollback with readers opened and transaction opened during opened reader will not work
             tr1->Commit();
         }
-
-        rdr->Close();
 
         // test if we can open a new transaction
         FdoPtr<FdoITransaction> tr2 = conn->BeginTransaction();
@@ -466,36 +457,4 @@ void SQLCmdTest::TestSelectWithTrans()
    		CPPUNIT_FAIL ("caught unexpected exception");
    	}
 	printf( "Done\n" );
-}
-
-void SQLCmdTest::TestSelectWithIdtNames()
-{
-    FdoPtr<FdoIConnection> conn;
-
-    try
-    {
-        if (FdoCommonFile::FileExists(SC_TEST_FILE))
-            FdoCommonFile::Delete(SC_TEST_FILE, true);
-        FdoCommonFile::Copy(SOURCE_FILE, SC_TEST_FILE);
-
-        conn = UnitTestUtil::OpenConnection( SC_TEST_FILE, false, false );
-
-        FdoPtr<FdoISQLCommand> sqlCmd = static_cast<FdoISQLCommand*>(conn->CreateCommand(FdoCommandType_SQLCommand));
-        sqlCmd->SetSQLStatement(L"select FeatId ID, Name Name1, 'test' Name1, FeatId*33, FeatId*33, FeatId*33 from DaKlass;");
-
-        FdoPtr<FdoISQLDataReader> rdr = sqlCmd->ExecuteReader();
-        bool val = rdr->ReadNext();
-        FdoPropertyType pt = rdr->GetPropertyType(L"ID");
-        pt = rdr->GetPropertyType(L"Name1");
-        pt = rdr->GetPropertyType(L"Name1$1");
-        pt = rdr->GetPropertyType(L"FeatId*33");
-        pt = rdr->GetPropertyType(L"FeatId*33$1");
-        pt = rdr->GetPropertyType(L"FeatId*33$2");
-	}
-	catch(FdoException *exp )
-	{
-		UnitTestUtil::PrintException( exp, stdout, false);
-        FDO_SAFE_RELEASE(exp);
-        CPPUNIT_FAIL("TestBindBasicTypes failed");
-	}
 }

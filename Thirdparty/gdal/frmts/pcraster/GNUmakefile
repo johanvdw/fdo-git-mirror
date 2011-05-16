@@ -10,16 +10,16 @@ endif
 
 OBJ += pcrasterdataset.o pcrastermisc.o pcrasterrasterband.o pcrasterutil.o
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o libcsf/*.o $(O_OBJ)
 	rm -fR html
 
-../o/%.$(OBJ_EXT): libcsf/%.c
+../o/%.o: libcsf/%.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 docs:
 	doxygen doxygen.cfg

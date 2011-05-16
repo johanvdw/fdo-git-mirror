@@ -27,18 +27,45 @@ class FdoSmPhRdPostGisIndexReader : public FdoSmPhRdIndexReader
 public:
 
     /// Create and execute the index reader.
-    FdoSmPhRdPostGisIndexReader(FdoSmPhOwnerP owner, FdoSmPhDbObjectP dbObject);
+    ///
+    /// \param
+    /// mgr [in] - pointer to instance of Physical Schema Manager.
+    /// \param
+    /// dbObject [in] - Retrieve indexes for this database object.
+    ///
+    FdoSmPhRdPostGisIndexReader(FdoSmPhMgrP mgr, FdoSmPhDbObjectP dbObject);
 
     /// Create and execute the index reader.
-    FdoSmPhRdPostGisIndexReader(FdoSmPhOwnerP owner, FdoStringsP objectNames);
+    ///
+    /// \param
+    /// mgr [in] - pointer to instance of Physical Schema Manager.
+    /// \param
+    /// owner [in] - 
+    ///
+    /// \todo To be documented
+    FdoSmPhRdPostGisIndexReader(FdoSmPhMgrP mgr, FdoSmPhOwnerP owner);
 
     /// Destructor deactivates the index reader.
     ~FdoSmPhRdPostGisIndexReader();
 
 private:
 
-    FdoSmPhReaderP MakeReader(FdoSmPhOwnerP owner,
-        FdoStringsP objectNames);
+    /// \todo To be documented.
+    /// 
+    /// \param
+    /// mgr [in] - pointer to instance of Physical Schema Manager.
+    /// \param
+    /// owner [in] - 
+    /// \param
+    /// dbObject [in] - 
+    ///
+    FdoSmPhReaderP MakeReader(FdoSmPhMgrP mgr,
+        const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP dbObject);
+
+    /// \todo To be documented.
+    FdoSmPhDbObjectP mDbObject;
+
 };
 
 #endif // FDORDBMSPHRDPOSTGISINDEXREADER_H

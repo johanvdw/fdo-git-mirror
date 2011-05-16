@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ColorTable.i 16504 2009-03-07 20:01:35Z rouault $
+ * $Id: ColorTable.i 11505 2007-05-13 17:25:26Z tamas $
  *
  * Name:     ColorTable.i
  * Project:  GDAL Python Interface
@@ -35,7 +35,7 @@
 //************************************************************************
 %rename (ColorTable) GDALColorTableShadow;
 
-class GDALColorTableShadow {
+class GDALColorTableShadow : public GDALMajorObjectShadow {
 private:
   GDALColorTableShadow();
 
@@ -43,9 +43,7 @@ public:
 
 %extend {
 
-#ifndef SWIGJAVA
     %feature("kwargs") GDALColorTableShadow;
-#endif
     GDALColorTableShadow(GDALPaletteInterp palette = GPI_RGB ) {
         return (GDALColorTableShadow*) GDALCreateColorTable(palette);
     }
@@ -76,12 +74,10 @@ public:
     GDALColorEntry* GetColorEntry (int entry) {
         return (GDALColorEntry*) GDALGetColorEntry(self, entry);
     }
-
-#if !defined(SWIGJAVA)
+    
     int GetColorEntryAsRGB(int entry, GDALColorEntry* centry) {
         return GDALGetColorEntryAsRGB(self, entry, centry);
     }
-#endif
 
     void SetColorEntry( int entry, const GDALColorEntry* centry) {
         GDALSetColorEntry(self, entry, centry);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ecwcreatecopy.cpp 17906 2009-10-26 19:47:21Z rouault $
+ * $Id: ecwcreatecopy.cpp 15484 2008-10-08 16:45:31Z warmerdam $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  ECW CreateCopy method implementation.
@@ -35,7 +35,7 @@
 #include "jp2userbox.h"
 #include "gdaljp2metadata.h"
 
-CPL_CVSID("$Id: ecwcreatecopy.cpp 17906 2009-10-26 19:47:21Z rouault $");
+CPL_CVSID("$Id: ecwcreatecopy.cpp 15484 2008-10-08 16:45:31Z warmerdam $");
 
 CPL_C_START
 CPLErr CPL_DLL GTIFMemBufFromWkt( const char *pszWKT, 
@@ -45,8 +45,6 @@ CPLErr CPL_DLL GTIFMemBufFromWkt( const char *pszWKT,
 CPL_C_END
 
 void ECWInitialize( void );
-
-GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo);
 
 #if defined(FRMT_ecw) && defined(HAVE_COMPRESS)
 
@@ -950,14 +948,6 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int  nBands = poSrcDS->GetRasterCount();
     int  nXSize = poSrcDS->GetRasterXSize();
     int  nYSize = poSrcDS->GetRasterYSize();
-
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "ECW driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
     GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
 
     const char *pszWKT = poSrcDS->GetProjectionRef();
@@ -1025,16 +1015,11 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxilary pam information.         */
 /* -------------------------------------------------------------------- */
-    GDALOpenInfo oOpenInfo(pszFilename, GA_ReadOnly);
-    GDALPamDataset *poDS;
-    
-    if (bIsJPEG2000)
-        poDS = (GDALPamDataset*) ECWDatasetOpenJPEG2000(&oOpenInfo);
-    else
-        poDS = (GDALPamDataset*) GDALOpen(pszFilename, GA_ReadOnly);
+    GDALDataset *poDS = (GDALDataset *) 
+        GDALOpen( pszFilename, GA_ReadOnly );
 
     if( poDS )
-        poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
+        ((GDALPamDataset *) poDS)->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
 
     return poDS;
 }
@@ -1049,14 +1034,6 @@ ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS,
                   GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "ECW driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
     if( !EQUAL(CPLGetExtension(pszFilename),"ecw") )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
@@ -1113,14 +1090,6 @@ ECWCreateCopyJPEG2000( const char * pszFilename, GDALDataset *poSrcDS,
                        GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
-    int nBands = poSrcDS->GetRasterCount();
-    if (nBands == 0)
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "JP2ECW driver does not support source dataset with zero band.\n");
-        return NULL;
-    }
-
     if( EQUAL(CPLGetExtension(pszFilename),"ecw") )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 

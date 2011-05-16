@@ -28,7 +28,6 @@
 /// standard collection access for all collection classes.
 template <class OBJ, class EXC> class FdoCollection : public FdoIDisposable
 {
-template <class OBJ2, class EXC2> friend class FdoNamedCollection;
 protected:
     static const FdoInt32 INIT_CAPACITY = 10;
 
@@ -189,11 +188,11 @@ public:
                 break;
         }
 
+        FDO_SAFE_RELEASE(m_list[i]);
+
         if (i == m_size)
             throw EXC::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_6_OBJECTNOTFOUND)));
         
-        FDO_SAFE_RELEASE(m_list[i]);
-
         while (i < m_size - 1) 
         {
             m_list[i] = m_list[i+1];

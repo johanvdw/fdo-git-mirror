@@ -79,25 +79,22 @@ double* FdoXmlCoordinateGroup::GetDoubleArray()
 	return m_doubleArray;
 }
 
-// Helper function to convert a wide character string into a double.
-// It is called in a loop so it needs to be a function (rather than a macro), to avoid
-// a stack overflow.
-// The intermediate multibyte (mb) is allocated on the stack, and a function return
-// is needed to free each mb before the next one is allocated.
+// Helper macro to convert a wide character string into a multibyte string, allocating space on the stack
 #ifndef _WIN32
-static double  fdo_wtof(FdoString* w)
-{
-    const wchar_t* p = (w);
-    size_t i = wcslen(p);
-    i++;
-    char* mb = (char*)alloca(i * 6);
-    i = wcstombs (mb, p, i);
-    if (0 > i)
-        mb = NULL;
-    if (NULL == mb) throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));
-    return atof(mb);
+#ifndef wide_to_multibyte 
+#define wide_to_multibyte(mb,w)\
+{\
+	const wchar_t* p = (w);\
+	size_t i = wcslen(p);\
+	i++;\
+	mb = (char*)alloca(i * 6);\
+	i = wcstombs (mb, p, i);\
+	if (0 > i)\
+		mb = NULL;\
+	if (NULL == mb) throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));\
 }
 
+#endif
 #endif//_WIN32
 
 ///////////////////////////////////////////////////////////////
@@ -148,7 +145,9 @@ void FdoXmlCoordinateGroup::parseCoordinates(FdoString* value)
 #ifdef _WIN32
 			double value = _wtof(startPos);
 #else
-            double value = fdo_wtof(startPos);
+            char* mb;
+            wide_to_multibyte(mb, startPos);
+            double value = atof(mb);
 #endif
             *const_cast<wchar_t*>(endPos) = backup;
 			m_coordinates.push_back(value);          

@@ -456,6 +456,14 @@ void FdoRdbmsMySqlFilterProcessor::ProcessTrimFunction( FdoFunction& expr)
     AppendString( " )" );
 }
 
+bool FdoRdbmsMySqlFilterProcessor::IsDataValue (FdoExpression *expr)
+{
+    if (dynamic_cast<FdoDataValue *>(expr) != NULL)
+        return true;
+
+    return false;
+}
+
 void FdoRdbmsMySqlFilterProcessor::ProcessFunctionName (FdoFunction &expr)
 {
     FdoRdbmsFilterProcessor::ProcessFunctionName(expr);

@@ -78,7 +78,7 @@ OGRGeoJSONLayer::~OGRGeoJSONLayer()
     FILE* fp = poDS_->GetOutputFile();
     if( NULL != fp )
     {
-        VSIFPrintfL( fp, "\n]\n}\n" );
+        VSIFPrintf( fp, "\n]\n}\n" );
     }
 
     std::for_each(seqFeatures_.begin(), seqFeatures_.end(),
@@ -285,9 +285,9 @@ OGRErr OGRGeoJSONLayer::CreateFeature( OGRFeature* poFeature )
     if( nOutCounter_ > 0 )
     {
         /* Separate "Feature" entries in "FeatureCollection" object. */
-        VSIFPrintfL( fp, ",\n" );
+        VSIFPrintf( fp, ",\n" );
     }
-    VSIFPrintfL( fp, "%s\n", json_object_to_json_string( poObj ) );
+    VSIFPrintf( fp, "%s\n", json_object_to_json_string( poObj ) );
 
     json_object_put( poObj );
 

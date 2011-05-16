@@ -43,11 +43,6 @@ FdoSmPhRdSqsSpatialContextReader::FdoSmPhRdSqsSpatialContextReader( FdoSmPhOwner
 	SetSubReader( MakeQueryReader(owner, objectNames) );
 }
 
-FdoSmPhRdSqsSpatialContextReader::FdoSmPhRdSqsSpatialContextReader( FdoSmPhOwnerP owner, FdoStringsP objectNames )
-{
-	SetSubReader( MakeQueryReader(owner, objectNames) );
-}
-
 FdoSmPhRdSqsSpatialContextReader::~FdoSmPhRdSqsSpatialContextReader(void)
 {
 }
@@ -287,13 +282,13 @@ FdoSmPhReaderP FdoSmPhRdSqsSpatialContextReader::MakeQueryReader( FdoSmPhOwnerP 
                     L"  LEFT OUTER JOIN %ls.sys.indexes g ON ( a.object_id = g.object_id and d.index_id = g.index_id ) \n"
                     L" where (f.name in ( 'geometry','geography' ) or e.object_id is not null) %ls %ls\n"
                     L" order by c.name collate latin1_general_bin asc, a.name collate latin1_general_bin asc, b.column_id asc",
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
                 (qualification == L"") ? L"" : L" and ",
                 (FdoString *)qualification
               );
@@ -302,37 +297,8 @@ FdoSmPhReaderP FdoSmPhRdSqsSpatialContextReader::MakeQueryReader( FdoSmPhOwnerP 
         FdoSmPhRowsP rows = MakeRows( mgr );
         FdoSmPhRowP row = rows->GetItem(0);
 
-        try 
-        {
-            reader = new FdoSmPhRdGrdQueryReader(row, sqlString, mgr, binds->GetBinds() );
-        }
-        catch (FdoException* ex )
-        {
-            // Reading spatial contexts is often the first spatial type operation the 
-            // provider tries. Check if server version is older than 10.0. If it is 
-            // then the spatial context read failed because the server is too old. 
-            FdoException* ex2 = ex;
+        reader = new FdoSmPhRdGrdQueryReader(row, sqlString, mgr, binds->GetBinds() );
 
-            FdoVectorP verTokens = FdoVector::Create( pMgr->GetDbVersion(), L"." );
-            FdoVectorP minSupported = FdoVector::Create();
-            minSupported->Add( 10 );
-            minSupported->Add( 0 );
-            minSupported->Add( 0 );
-
-            if ( verTokens < minSupported )
-            {
-                ex2 = FdoConnectionException::Create(
-                    NlsMsgGet(
-                        FDORDBMS_546, 
-                        "OSGeo.SQLServerSpatial provider cannot perform spatial handling on server with version older than 10.0."
-                    )
-                );
-
-                ex2->SetCause(ex);
-            }
-
-            throw ex2;
-        }
 //        mgr->SetStaticReader( readerName, reader );
     }
     else {

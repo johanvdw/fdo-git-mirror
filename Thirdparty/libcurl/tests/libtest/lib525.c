@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib525.c,v 1.20 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib525.c,v 1.16 2007-03-10 00:19:05 yangtse Exp $
  */
 
 #include "test.h"
@@ -15,7 +15,6 @@
 #include <fcntl.h>
 
 #include "testutil.h"
-#include "memdebug.h"
 
 #define MAIN_LOOP_HANG_TIMEOUT     90 * 1000
 #define MULTI_PERFORM_HANG_TIMEOUT 60 * 1000
@@ -30,31 +29,31 @@ int test(char *URL)
   struct_stat file_info;
   int running;
   char done=FALSE;
-  CURLM *m = NULL;
+  CURLM *m;
   struct timeval ml_start;
   struct timeval mp_start;
   char ml_timedout = FALSE;
   char mp_timedout = FALSE;
 
-  if (!libtest_arg2) {
+  if (!arg2) {
     fprintf(stderr, "Usage: lib525 [url] [uploadfile]\n");
     return -1;
   }
 
   /* get the file size of the local file */
-  hd = open(libtest_arg2, O_RDONLY) ;
+  hd = open(arg2, O_RDONLY) ;
   fstat(hd, &file_info);
   close(hd) ;
 
   /* get a FILE * of the same file, could also be made with
      fdopen() from the previous descriptor, but hey this is just
      an example! */
-  hd_src = fopen(libtest_arg2, "rb");
+  hd_src = fopen(arg2, "rb");
   if(NULL == hd_src) {
     error = ERRNO;
     fprintf(stderr, "fopen() failed with error: %d %s\n",
             error, strerror(error));
-    fprintf(stderr, "Error opening file: %s\n", libtest_arg2);
+    fprintf(stderr, "Error opening file: %s\n", arg2);
     return TEST_ERR_MAJOR_BAD;
   }
 
@@ -72,19 +71,19 @@ int test(char *URL)
   }
 
   /* enable uploading */
-  test_setopt(curl, CURLOPT_UPLOAD, 1L);
+  curl_easy_setopt(curl, CURLOPT_UPLOAD, TRUE) ;
 
   /* specify target */
-  test_setopt(curl,CURLOPT_URL, URL);
+  curl_easy_setopt(curl,CURLOPT_URL, URL);
 
   /* go verbose */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
   /* use active FTP */
-  test_setopt(curl, CURLOPT_FTPPORT, "-");
+  curl_easy_setopt(curl, CURLOPT_FTPPORT, "-");
 
   /* now specify which file to upload */
-  test_setopt(curl, CURLOPT_READDATA, hd_src);
+  curl_easy_setopt(curl, CURLOPT_READDATA, hd_src);
 
   /* NOTE: if you want this code to work on Windows with libcurl as a DLL, you
      MUST also provide a read callback with CURLOPT_READFUNCTION. Failing to
@@ -95,7 +94,7 @@ int test(char *URL)
      option you MUST make sure that the type of the passed-in argument is a
      curl_off_t. If you use CURLOPT_INFILESIZE (without _LARGE) you must
      make sure that to pass in a type 'long' argument. */
-  test_setopt(curl, CURLOPT_INFILESIZE_LARGE,
+  curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
                    (curl_off_t)file_info.st_size);
 
   if ((m = curl_multi_init()) == NULL) {
@@ -183,22 +182,16 @@ int test(char *URL)
     res = TEST_ERR_RUNS_FOREVER;
   }
 
-test_cleanup:
-
 #ifdef LIB529
   /* test 529 */
-  if(m) {
-    curl_multi_remove_handle(m, curl);
-    curl_multi_cleanup(m);
-  }
+  curl_multi_remove_handle(m, curl);
+  curl_multi_cleanup(m);
   curl_easy_cleanup(curl);
 #else
   /* test 525 */
-  if(m)
-    curl_multi_remove_handle(m, curl);
+  curl_multi_remove_handle(m, curl);
   curl_easy_cleanup(curl);
-  if(m)
-    curl_multi_cleanup(m);
+  curl_multi_cleanup(m);
 #endif
 
   fclose(hd_src); /* close the local file */

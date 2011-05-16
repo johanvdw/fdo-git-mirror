@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testepsg.cpp 18108 2009-11-26 19:35:30Z rouault $
+ * $Id: testepsg.cpp 12413 2007-10-14 01:44:01Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Test mainline for translating EPSG definitions into WKT.
@@ -147,7 +147,7 @@ int main( int nArgc, char ** papszArgv )
                 printf( "Old Style WKT[%s] = %s\n", 
                         papszArgv[i], pszWKT );
                 CPLFree( pszWKT );
-                OGRSpatialReference::DestroySpatialReference( poSRS2 );
+                delete poSRS2;
 
                 poSRS2 = oSRS.Clone();
                 poSRS2->morphToESRI();
@@ -155,7 +155,7 @@ int main( int nArgc, char ** papszArgv )
                 printf( "ESRI'ified WKT[%s] = \n%s\n", 
                         papszArgv[i], pszWKT );
                 CPLFree( pszWKT );
-                OGRSpatialReference::DestroySpatialReference( poSRS2 );
+                delete poSRS2;
 
                 oSRS.exportToProj4( &pszWKT );
                 printf( "PROJ.4 rendering of [%s] = %s\n", 
@@ -186,6 +186,4 @@ int main( int nArgc, char ** papszArgv )
     CSLDestroy( papszArgv );
     OSRCleanup();
     CPLFinderClean();
-    
-    return 0;
 }

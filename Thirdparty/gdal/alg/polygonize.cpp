@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: polygonize.cpp 18523 2010-01-11 18:12:25Z mloskot $
+ *
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include <vector>
 
-CPL_CVSID("$Id: polygonize.cpp 18523 2010-01-11 18:12:25Z mloskot $");
+CPL_CVSID("$Id: polygonize.cpp 15701 2008-11-10 15:40:02Z warmerdam $");
 
 #define GP_NODATA_MARKER -51502112
 
@@ -175,8 +175,7 @@ void RPolygon::Merge( int iBaseString, int iSrcString, int iDirection )
     if( iSrcString < ((int) aanXY.size())-1 )
         aanXY[iSrcString] = aanXY[aanXY.size()-1];
 
-    size_t nSize = aanXY.size(); 
-    aanXY.resize(nSize-1);
+    aanXY.resize(aanXY.size()-1);
 }
 
 /************************************************************************/
@@ -240,9 +239,8 @@ void RPolygon::AddSegment( int x1, int y1, int x2, int y2 )
 /* -------------------------------------------------------------------- */
 /*      Create a new string.                                            */
 /* -------------------------------------------------------------------- */
-    size_t nSize = aanXY.size();
-    aanXY.resize(nSize + 1);
-    std::vector<int> &anString = aanXY[nSize];
+    aanXY.resize(aanXY.size() + 1);
+    std::vector<int> &anString = aanXY[aanXY.size()-1];
 
     anString.push_back( x1 );
     anString.push_back( y1 );
@@ -407,12 +405,14 @@ EmitPolygonToLayer( OGRLayerH hOutLayer, int iPixValField,
 /************************************************************************/
 
 static CPLErr 
-GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXSize, 
+GPMaskImageData( GDALRasterBandH hMaskBand, int iY, int nXSize, 
                  GInt32 *panImageLine )
 
 {
+    GByte *pabyMaskLine;
     CPLErr eErr;
 
+    pabyMaskLine = (GByte *) CPLMalloc(nXSize);
     eErr = GDALRasterIO( hMaskBand, GF_Read, 0, iY, nXSize, 1, 
                          pabyMaskLine, nXSize, 1, GDT_Byte, 0, 0 );
     if( eErr == CE_None )
@@ -424,6 +424,8 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXS
                 panImageLine[i] = GP_NODATA_MARKER;
         }
     }
+
+    CPLFree( pabyMaskLine );
 
     return eErr;
 }
@@ -491,9 +493,6 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
                 void * pProgressArg )
 
 {
-    VALIDATE_POINTER1( hSrcBand, "GDALPolygonize", CE_Failure );
-    VALIDATE_POINTER1( hOutLayer, "GDALPolygonize", CE_Failure );
-
     if( pfnProgress == NULL )
         pfnProgress = GDALDummyProgress;
 
@@ -514,24 +513,10 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
     CPLErr eErr = CE_None;
     int nXSize = GDALGetRasterBandXSize( hSrcBand );
     int nYSize = GDALGetRasterBandYSize( hSrcBand );
-    GInt32 *panLastLineVal = (GInt32 *) VSIMalloc2(sizeof(GInt32),nXSize + 2);
-    GInt32 *panThisLineVal = (GInt32 *) VSIMalloc2(sizeof(GInt32),nXSize + 2);
-    GInt32 *panLastLineId =  (GInt32 *) VSIMalloc2(sizeof(GInt32),nXSize + 2);
-    GInt32 *panThisLineId =  (GInt32 *) VSIMalloc2(sizeof(GInt32),nXSize + 2);
-    GByte *pabyMaskLine = (hMaskBand != NULL) ? (GByte *) VSIMalloc(nXSize) : NULL;
-    if (panLastLineVal == NULL || panThisLineVal == NULL ||
-        panLastLineId == NULL || panThisLineId == NULL ||
-        (hMaskBand != NULL && pabyMaskLine == NULL))
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Could not allocate enough memory for temporary buffers");
-        CPLFree( panThisLineId );
-        CPLFree( panLastLineId );
-        CPLFree( panThisLineVal );
-        CPLFree( panLastLineVal );
-        CPLFree( pabyMaskLine );
-        return CE_Failure;
-    }
+    GInt32 *panLastLineVal = (GInt32 *) CPLMalloc(4 * nXSize + 8);
+    GInt32 *panThisLineVal = (GInt32 *) CPLMalloc(4 * nXSize + 8);
+    GInt32 *panLastLineId =  (GInt32 *) CPLMalloc(4 * nXSize + 8);
+    GInt32 *panThisLineId =  (GInt32 *) CPLMalloc(4 * nXSize + 8);
 
 /* -------------------------------------------------------------------- */
 /*      Get the geotransform, if there is one, so we can convert the    */
@@ -559,7 +544,7 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
             panThisLineVal, nXSize, 1, GDT_Int32, 0, 0 );
         
         if( eErr == CE_None && hMaskBand != NULL )
-            eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize, panThisLineVal );
+            eErr = GPMaskImageData( hMaskBand, iY, nXSize, panThisLineVal );
 
         if( iY == 0 )
             oFirstEnum.ProcessLine( 
@@ -634,7 +619,7 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
                                  panThisLineVal, nXSize, 1, GDT_Int32, 0, 0 );
 
             if( eErr == CE_None && hMaskBand != NULL )
-                eErr = GPMaskImageData( hMaskBand, pabyMaskLine, iY, nXSize, panThisLineVal );
+                eErr = GPMaskImageData( hMaskBand, iY, nXSize, panThisLineVal );
         }
 
         if( eErr != CE_None )
@@ -745,7 +730,6 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
     CPLFree( panLastLineId );
     CPLFree( panThisLineVal );
     CPLFree( panLastLineVal );
-    CPLFree( pabyMaskLine );
     CPLFree( papoPoly );
 
     return eErr;

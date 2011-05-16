@@ -30,6 +30,7 @@ class SqlServerFdoAdvancedSelectTest : public FdoAdvancedSelectTest
     void  set_provider();
 
 protected:
+    void isValidTest();
 };
 
 #endif // SQLSERVER_ADVANCEDSELECTTEST_H

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_http.h 17130 2009-05-26 19:10:30Z rouault $
+ * $Id: cpl_http.h 11767 2007-07-23 16:58:20Z hobu $
  *
  * Project:  Common Portability Library
  * Purpose:  Function wrapper for libcurl HTTP access.
@@ -34,34 +34,26 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 
-/**
- * \file cpl_http.h
- *
- * Interface for downloading HTTP, FTP documents
- */
-
 CPL_C_START
 
-/*! Describe a part of a multipart message */
 typedef struct {
-    /*! NULL terminated array of headers */ char **papszHeaders;
+    char **papszHeaders;
     
-    /*! Buffer with data of the part     */ GByte *pabyData;
-    /*! Buffer length                    */ int    nDataLen;
+    GByte *pabyData;
+    int    nDataLen;
 } CPLMimePart;
 
-/*! Describe the result of a CPLHTTPFetch() call */
 typedef struct {
-    /*! HTTP status code : 200=success, value < 0 if request failed */ int     nStatus;
-    /*! Content-Type of the response */                                char    *pszContentType;
-    /*! Error message from curl, or NULL */                            char    *pszErrBuf;
+    int     nStatus;            /* 200=success, value < 0 if request failed */
+    char    *pszContentType;    /* Content-Type of the response */
+    char    *pszErrBuf;         /* Buffer where curl can write errors */
 
-    /*! Length of the pabyData buffer */                               int     nDataLen;
-                                                                       int     nDataAlloc;
-    /*! Buffer with downloaded data */                                 GByte   *pabyData;
+    int     nDataLen;
+    int     nDataAlloc;
+    GByte   *pabyData;
 
-    /*! Number of parts in a multipart message */                      int     nMimePartCount;
-    /*! Array of parts (resolved by CPLHTTPParseMultipartMime()) */    CPLMimePart *pasMimePart;
+    int     nMimePartCount;
+    CPLMimePart *pasMimePart;
 } CPLHTTPResult;
 
 int CPL_DLL   CPLHTTPEnabled( void );

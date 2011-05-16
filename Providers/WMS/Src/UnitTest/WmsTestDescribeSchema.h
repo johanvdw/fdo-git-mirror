@@ -28,11 +28,10 @@
 class WmsTestDescribeSchema : public WmsTests
 {
 	CPPUNIT_TEST_SUITE (WmsTestDescribeSchema);
-//#ifdef _FDO_RUN_INTERNAL_TEST
-	CPPUNIT_TEST (testServer1);      //Todo: might need to replace server
-	CPPUNIT_TEST (testInheritance1); //Todo: might need to replace server
-//#endif
-
+#ifdef _FDO_RUN_INTERNAL_TEST
+	CPPUNIT_TEST (testServer1);
+	CPPUNIT_TEST (testInheritance1);
+#endif
 	CPPUNIT_TEST (testServer2);
 	// This server cannot connect any more
     //CPPUNIT_TEST (testServer3);

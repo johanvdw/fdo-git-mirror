@@ -35,9 +35,7 @@ libFdoOwsSrc_la_SOURCES = \
   FdoOwsOgcFilterSerializer.cpp \
   FdoOwsGeographicBoundingBox.cpp \
   FdoOwsGeographicBoundingBoxCollection.cpp \
-  FdoOwsOgcGeometrySerializer.cpp  \
-  FdoOwsServiceProvider.cpp \
-  FdoOwsOperationsMetadata.cpp
+  FdoOwsOgcGeometrySerializer.cpp 
 
 noinst_HEADERS = $(libFdoOwsSrc_la_SOURCES) \
   FdoOwsExceptionReport.h \

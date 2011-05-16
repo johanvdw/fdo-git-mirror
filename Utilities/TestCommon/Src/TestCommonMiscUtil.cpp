@@ -1,5 +1,5 @@
 /*
-* 
+ * 
 * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
@@ -15,7 +15,14 @@
 * License along with this library; if not, write to the Free Software
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * 
-*/
+ * Revision Control Modification History
+ *
+ *         $Id: //providers_reliant/TestCommon/src/TestCommonMiscUtil.cpp#1 $
+ *     $Author: dalcoup $
+ *   $DateTime: 2006/09/25 15:47:54 $
+ *     $Change: 11018 $
+ *
+ */
 
 #include "stdafx.h"
 #include "TestCommonMiscUtil.h"
@@ -413,18 +420,5 @@ FdoClassDefinition* TestCommonMiscUtil::DescribeClass( FdoIConnection* fdoConn, 
     }
 
     return classDef;
-}
-
-FdoStringP TestCommonMiscUtil::Trim( FdoStringP in )
-{
-    FdoStringP out = in;
-    wchar_t* outStr = (wchar_t*) (FdoString*) out;
-
-    int posn;
-    for ( posn = (wcslen(outStr) - 1); (posn >= 0) && (outStr[posn] == ' '); posn-- );
-
-    out = out.Mid(0, posn + 1);
-
-    return out;
 }
 

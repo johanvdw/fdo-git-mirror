@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grass57dataset.cpp 18537 2010-01-12 15:05:51Z rblazek $
+ * $Id: grass57dataset.cpp 15584 2008-10-23 14:53:15Z warmerdam $
  *
  * Project:  GRASS Driver
  * Purpose:  Implement GRASS raster read/write support
@@ -56,7 +56,7 @@ char *GPJ_grass_to_wkt(struct Key_Value *proj_info,
 
 #define GRASS_MAX_COLORS 100000  // what is the right value
 
-CPL_CVSID("$Id: grass57dataset.cpp 18537 2010-01-12 15:05:51Z rblazek $");
+CPL_CVSID("$Id: grass57dataset.cpp 15584 2008-10-23 14:53:15Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_GRASS(void);
@@ -790,7 +790,7 @@ bool GRASSDataset::SplitPath( char *path, char **gisdbase, char **location,
 /*                                Open()                                */
 /************************************************************************/
 
-#if (GRASS_VERSION_MAJOR  >= 6 && GRASS_VERSION_MINOR  >= 3) || GRASS_VERSION_MAJOR  >= 7
+#if GRASS_VERSION_MAJOR  >= 6 && GRASS_VERSION_MINOR  >= 3
 typedef int (*GrassErrorHandler)(const char *, int);
 #else
 typedef int (*GrassErrorHandler)(char *, int);
@@ -803,6 +803,8 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
     char	*pszMapset = NULL, *pszElem = NULL, *pszName = NULL;
     char        **papszCells = NULL;
     char        **papszMapsets = NULL;
+    static char fake_gisbase[50];
+    static bool hasGisbase;
 
 /* -------------------------------------------------------------------- */
 /*      Does this even look like a grass file path?                     */
@@ -823,20 +825,15 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
     // Set error function
     G_set_error_routine ( (GrassErrorHandler) Grass2CPLErrorHook );
     
-
-    // GISBASE is path to the directory where GRASS is installed,
+    
     if ( !getenv( "GISBASE" ) ) {
-        static char* gisbaseEnv = NULL;
-        const char *gisbase = GRASS_GISBASE;
-        CPLError( CE_Warning, CPLE_AppDefined, "GRASS warning: GISBASE "
-                "enviroment variable was not set, using:\n%s", gisbase );
-        char buf[2000];
-        snprintf ( buf, sizeof(buf), "GISBASE=%s", gisbase );
-        buf[sizeof(buf)-1] = '\0';
-
-        CPLFree(gisbaseEnv);
-        gisbaseEnv = CPLStrdup ( buf );
-        putenv( gisbaseEnv );
+	// we are outside a GRASS session
+	// TODO: use function instead of hardcoded path
+	sprintf(fake_gisbase, "GISBASE=/usr/local/share/gdal/grass/" );	
+        putenv( fake_gisbase );
+	hasGisbase = false;
+    } else {
+	hasGisbase = true;
     }
 
     if ( !SplitPath( poOpenInfo->pszFilename, &pszGisdb, &pszLoc, &pszMapset,
@@ -943,11 +940,13 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     struct Key_Value *projinfo, *projunits;
 
-    projinfo = G_get_projinfo();
-    projunits = G_get_projunits();
-    poDS->pszProjection = GPJ_grass_to_wkt ( projinfo, projunits, 0, 0);
-    if (projinfo) G_free_key_value(projinfo);
-    if (projunits) G_free_key_value(projunits);
+    if ( hasGisbase ) {
+	projinfo = G_get_projinfo();
+	projunits = G_get_projunits();
+        poDS->pszProjection = GPJ_grass_to_wkt ( projinfo, projunits, 0, 0);
+        G_free_key_value(projinfo);
+        G_free_key_value(projunits);
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
@@ -969,19 +968,7 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
 
     CSLDestroy(papszCells);
     CSLDestroy(papszMapsets);
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        delete poDS;
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The GRASS driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     return poDS;
 }
 

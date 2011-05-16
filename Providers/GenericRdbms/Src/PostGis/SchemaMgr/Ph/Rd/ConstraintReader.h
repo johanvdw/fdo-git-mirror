@@ -42,12 +42,6 @@ public:
     FdoSmPhRdPostGisConstraintReader(FdoSmPhOwnerP owner, FdoStringP tableName,
         FdoStringP constraintType);
 
-    FdoSmPhRdPostGisConstraintReader(
-        FdoSmPhOwnerP owner,
-		FdoStringsP tableNames,
-        FdoStringP constraintType
-    );
-
     /// \todo To be documented.
     FdoSmPhRdPostGisConstraintReader(FdoSmPhOwnerP owner,
         FdoSmPhRdTableJoinP join,
@@ -59,16 +53,13 @@ public:
     /// \todo To be documented.
     ~FdoSmPhRdPostGisConstraintReader();
 
-protected:
-    virtual FdoSmPhRowsP MakeRows( FdoSmPhMgrP mgr );
-    
 private:
 
     /// \todo To be documented.
     FdoSmPhReaderP MakeReader(FdoSmPhOwnerP owner, FdoStringP constraintName);
 
     /// \todo To be documented.
-    FdoSmPhReaderP MakeReader(FdoSmPhOwnerP owner, FdoStringsP tableNames,
+    FdoSmPhReaderP MakeReader(FdoSmPhOwnerP owner, FdoStringP	tableName,
         FdoSmPhRdTableJoinP join,
         FdoStringP constraintType);
 

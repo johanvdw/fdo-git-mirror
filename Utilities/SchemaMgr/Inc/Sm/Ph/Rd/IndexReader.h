@@ -18,13 +18,13 @@
  * 
  */
 
-#include <Sm/Ph/Rd/Reader.h>
+#include <Sm/Ph/Reader.h>
 #include <Sm/Ph/Index.h>
 
 // This abstract class reads indexes. It retrieves one row per index-column
 // combination. Each provider must provide its own implementing class.
 
-class FdoSmPhRdIndexReader : public FdoSmPhRdReader
+class FdoSmPhRdIndexReader : public FdoSmPhReader
 {
 public:
     /// Returns the type of the current index (Scalar or Spatial)

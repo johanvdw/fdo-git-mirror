@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,7 +18,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: urlglob.c,v 1.55 2009-11-18 10:33:55 yangtse Exp $
+ * $Id: urlglob.c,v 1.47 2007-03-15 22:05:01 bagder Exp $
  ***************************************************************************/
 
 /* client-local setup.h */
@@ -34,7 +34,6 @@
 #include <curl/mprintf.h>
 
 #include "urlglob.h"
-#include "os-specific.h"
 
 #if defined(CURLDEBUG) && defined(CURLTOOLDEBUG)
 #include "memdebug.h"
@@ -71,7 +70,6 @@ static GlobCode glob_set(URLGlob *glob, char *pattern,
   pat->type = UPTSet;
   pat->content.Set.size = 0;
   pat->content.Set.ptr_s = 0;
-  /* FIXME: Here's a nasty zero size malloc */
   pat->content.Set.elements = (char**)malloc(0);
   ++glob->size;
 
@@ -81,13 +79,13 @@ static GlobCode glob_set(URLGlob *glob, char *pattern,
     switch (*pattern) {
     case '\0':                  /* URL ended while set was still open */
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "unmatched brace at pos %zu\n", pos);
+               "unmatched brace at pos %d\n", (int)pos);
       return GLOB_ERROR;
 
     case '{':
     case '[':                   /* no nested expressions at this time */
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "nested braces not supported at pos %zu\n", pos);
+               "nested braces not supported at pos %d\n", (int)pos);
       return GLOB_ERROR;
 
     case ',':
@@ -124,7 +122,7 @@ static GlobCode glob_set(URLGlob *glob, char *pattern,
 
     case ']':                           /* illegal closing bracket */
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "illegal pattern at pos %zu\n", pos);
+               "illegal pattern at pos %d\n", (int)pos);
       return GLOB_ERROR;
 
     case '\\':                          /* escaped character, skip '\' */
@@ -143,7 +141,7 @@ static GlobCode glob_set(URLGlob *glob, char *pattern,
       if(skip) {
         if (*(buf+1) == '\0') {           /* but no escaping of '\0'! */
           snprintf(glob->errormsg, sizeof(glob->errormsg),
-                   "illegal pattern at pos %zu\n", pos);
+                   "illegal pattern at pos %d\n", (int)pos);
           return GLOB_ERROR;
         }
         ++pattern;
@@ -188,14 +186,14 @@ static GlobCode glob_range(URLGlob *glob, char *pattern,
     if ((rc < 3) || (min_c >= max_c) || ((max_c - min_c) > ('z' - 'a'))) {
       /* the pattern is not well-formed */
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "error: bad range specification after pos %zu\n", pos);
+               "errpr: bad range specification after pos %d\n", pos);
       return GLOB_ERROR;
     }
 
     /* check the (first) separating character */
     if((sep != ']') && (sep != ':')) {
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "error: unsupported character (%c) after range at pos %zu\n",
+               "error: unsupported character (%c) after range at pos %d\n",
                sep, pos);
       return GLOB_ERROR;
     }
@@ -219,7 +217,7 @@ static GlobCode glob_range(URLGlob *glob, char *pattern,
     if ((rc < 2) || (min_n > max_n)) {
       /* the pattern is not well-formed */
       snprintf(glob->errormsg, sizeof(glob->errormsg),
-               "error: bad range specification after pos %zu\n", pos);
+               "error: bad range specification after pos %d\n", pos);
       return GLOB_ERROR;
     }
     pat->content.NumRange.ptr_n =  pat->content.NumRange.min_n = min_n;
@@ -241,7 +239,7 @@ static GlobCode glob_range(URLGlob *glob, char *pattern,
   }
   else {
     snprintf(glob->errormsg, sizeof(glob->errormsg),
-             "illegal character in range specification at pos %zu\n", pos);
+             "illegal character in range specification at pos %d\n", pos);
     return GLOB_ERROR;
   }
 
@@ -337,13 +335,13 @@ int glob_url(URLGlob** glob, char* url, int *urlnum, FILE *error)
    */
   URLGlob *glob_expand;
   int amount;
-  char *glob_buffer = malloc(strlen(url)+1);
+  char *glob_buffer=(char *)malloc(strlen(url)+1);
 
   *glob = NULL;
   if(NULL == glob_buffer)
     return CURLE_OUT_OF_MEMORY;
 
-  glob_expand = calloc(1, sizeof(URLGlob));
+  glob_expand = (URLGlob*)calloc(sizeof(URLGlob), 1);
   if(NULL == glob_expand) {
     free(glob_buffer);
     return CURLE_OUT_OF_MEMORY;
@@ -497,8 +495,7 @@ char *glob_match_url(char *filename, URLGlob *glob)
    * be longer than the URL we use. We allocate a good start size, then
    * we need to realloc in case of need.
    */
-  allocsize=strlen(filename)+1; /* make it at least one byte to store the
-                                   trailing zero */
+  allocsize=strlen(filename);
   target = malloc(allocsize);
   if(NULL == target)
     return NULL; /* major failure */
@@ -550,10 +547,8 @@ char *glob_match_url(char *filename, URLGlob *glob)
     }
     if(appendlen + stringlen >= allocsize) {
       char *newstr;
-      /* we append a single byte to allow for the trailing byte to be appended
-         at the end of this function outside the while() loop */
       allocsize = (appendlen + stringlen)*2;
-      newstr=realloc(target, allocsize + 1);
+      newstr=realloc(target, allocsize);
       if(NULL ==newstr) {
         free(target);
         return NULL;

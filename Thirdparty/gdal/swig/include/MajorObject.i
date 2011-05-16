@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: MajorObject.i 16504 2009-03-07 20:01:35Z rouault $
+ * $Id: MajorObject.i 14105 2008-03-28 20:56:24Z tamas $
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  SWIG Definitions for GDALMajorObject.
@@ -68,20 +68,11 @@ public:
 /*
  * SetMetadata methods
  */
- 
-#ifdef SWIGJAVA
-%apply (char **options) { char ** papszMetadata };
-  CPLErr SetMetadata( char ** papszMetadata, const char * pszDomain = "" ) {
-    return GDALSetMetadata( self, papszMetadata, pszDomain );
-  }
-%clear char **papszMetadata;
-#else
 %apply (char **dict) { char ** papszMetadata };
   CPLErr SetMetadata( char ** papszMetadata, const char * pszDomain = "" ) {
     return GDALSetMetadata( self, papszMetadata, pszDomain );
   }
 %clear char **papszMetadata;
-#endif
 
   CPLErr SetMetadata( char * pszMetadataString , const char *pszDomain = "" ) {
     char *tmpList[2];

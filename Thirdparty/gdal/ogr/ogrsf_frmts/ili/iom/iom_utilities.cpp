@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: iom_utilities.cpp 16745 2009-04-07 20:26:08Z warmerdam $
+ * $Id: iom_utilities.cpp 15858 2008-11-30 09:59:17Z rouault $
  *
  * Project:  iom - The INTERLIS Object Model
  * Purpose:  For more information, please see <http://iom.sourceforge.net>
@@ -46,13 +46,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(__MSVCRT__) || defined(_MSC_VER)
+#ifdef _MSC_VER
 #define stat _stat
 #else
 #include <unistd.h>
 #endif
 
-#if !defined(__MSVCRT__) && !defined(_MSC_VER)
+#ifndef _MSC_VER
 
 #include <stdlib.h>
 #include <string.h>

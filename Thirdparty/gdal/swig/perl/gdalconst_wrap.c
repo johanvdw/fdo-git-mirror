@@ -2014,21 +2014,6 @@ XS(SWIG_init) {
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "GCI_YCbCr_YBand", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(GCI_YCbCr_YBand)));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "GCI_YCbCr_CrBand", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(GCI_YCbCr_CrBand)));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "GCI_YCbCr_CbBand", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(GCI_YCbCr_CbBand)));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "GRA_NearestNeighbour", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1((int)(GRA_NearestNeighbour)));
     SvREADONLY_on(sv);
@@ -2211,11 +2196,6 @@ XS(SWIG_init) {
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "DCAP_CREATECOPY", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_FromCharPtr(GDAL_DCAP_CREATECOPY));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "DCAP_VIRTUALIO", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr(GDAL_DCAP_VIRTUALIO));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/local/share/swig/1.3.36/perl5/perltypemaps.swg,64,%set_constant@*/ do {

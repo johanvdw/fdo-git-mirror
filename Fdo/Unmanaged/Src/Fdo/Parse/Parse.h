@@ -55,7 +55,6 @@ typedef uint32_t         FdoUInt32;
 #include <Fdo/Expression/IntBinValue.h>
 #include <Fdo/Expression/ComputedIdentifier.h>
 #include <Fdo/Commands/IdentifierCollection.h>
-#include <Fdo/Expression/SubSelectExpression.h>
 
 #include <Fdo/Filter/BinaryLogicalOperator.h>
 #include <Fdo/Filter/ComparisonCondition.h>

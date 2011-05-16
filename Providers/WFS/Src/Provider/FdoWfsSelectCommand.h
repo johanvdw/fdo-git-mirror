@@ -32,7 +32,6 @@ protected:
     FdoLockType mType;
     FdoLockStrategy mStrategy;
     FdoPtr<FdoIdentifierCollection> mPropertiesToSelect;
-    volatile bool mCancelCommand;
 
 protected:
     FdoWfsSelectCommand (FdoWfsConnection* connection);
@@ -104,19 +103,6 @@ public:
     /// <summary>Gets the ordering option.</summary>
     /// <returns>Returns the ordering option.</returns> 
     virtual FdoOrderingOption GetOrderingOption( ){ return (FdoOrderingOption)0; }
-
-    /// <summary>
-    /// Attempts to cancel command execution. Cancel may be called on a separate
-    /// thread after the commands Execute method has been called and before 
-    /// Execute has returned.
-    /// </summary>
-    /// <returns>Returns nothing.</returns>
-    virtual void Cancel();
-
-    /// <summary>
-    /// Checks whether command execution is canceled.
-    /// <returns>Returns true if command execution is canceled.</returns>
-    virtual bool IsCanceled();
 };
 
 #endif // FDOWFSSELECTCOMMAND_H

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbcdatasource.cpp 17870 2009-10-22 04:47:29Z warmerdam $
+ * $Id: ogrodbcdatasource.cpp 11839 2007-08-03 17:45:30Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrodbcdatasource.cpp 17870 2009-10-22 04:47:29Z warmerdam $");
+CPL_CVSID("$Id: ogrodbcdatasource.cpp 11839 2007-08-03 17:45:30Z warmerdam $");
 /************************************************************************/
 /*                         OGRODBCDataSource()                          */
 /************************************************************************/
@@ -98,20 +98,8 @@ int OGRODBCDataSource::Open( const char * pszNewName, int bUpdate,
     if ( (pszDelimiter = strrchr( pszWrkName, ':' )) != NULL )
     {
         char *pszOBracket = strchr( pszDelimiter + 1, '(' );
-
-        if( strchr(pszDelimiter,'\\') != NULL
-            || strchr(pszDelimiter,'/') != NULL )
-        {
-            /*
-            ** if there are special tokens then this isn't really
-            ** the srs table name, so avoid further processing.
-            */
-        }
-        else if( pszOBracket == NULL )
-        {
+        if( pszOBracket == NULL )
             pszSRSTableName = CPLStrdup( pszDelimiter + 1 );
-            *pszDelimiter = '\0';
-        }
         else
         {
             char *pszCBracket = strchr( pszOBracket, ')' );
@@ -128,9 +116,8 @@ int OGRODBCDataSource::Open( const char * pszNewName, int bUpdate,
             *pszOBracket = '\0';
             pszSRSTableName = CPLStrdup( pszDelimiter + 1 );
             pszSRTextCol = CPLStrdup( pszOBracket + 1 );
-
-            *pszDelimiter = '\0';
         }
+        *pszDelimiter = '\0';
     }
 
 /* -------------------------------------------------------------------- */
@@ -265,19 +252,8 @@ int OGRODBCDataSource::Open( const char * pszNewName, int bUpdate,
         {
             while( oTableList.Fetch() )
             {
-                const char *pszSchema = oTableList.GetColData(1);
-                CPLString osLayerName;
-
-                if( pszSchema != NULL && strlen(pszSchema) > 0 )
-                {
-                    osLayerName = pszSchema;
-                    osLayerName += ".";
-                }
-
-                osLayerName += oTableList.GetColData(2);
-
-                papszTables = CSLAddString( papszTables, osLayerName );
-
+                papszTables = 
+                    CSLAddString( papszTables, oTableList.GetColData(2) );
                 papszGeomCol = CSLAddString(papszGeomCol,"");
             }
         }
@@ -411,7 +387,10 @@ int OGRODBCDataSource::OpenTable( const char *pszNewName,
 int OGRODBCDataSource::TestCapability( const char * pszCap )
 
 {
-    return FALSE;
+    if( EQUAL(pszCap,ODsCCreateLayer) )
+        return TRUE;
+    else
+        return FALSE;
 }
 
 /************************************************************************/

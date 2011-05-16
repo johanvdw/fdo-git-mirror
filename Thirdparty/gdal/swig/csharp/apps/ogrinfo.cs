@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cs 16310 2009-02-13 11:05:46Z tamas $
+ * $Id: ogrinfo.cs 15475 2008-10-07 21:40:20Z tamas $
  *
  * Name:     ogrinfo.cs
  * Project:  GDAL CSharp Interface
@@ -171,39 +171,7 @@ class OGRInfo {
 				fdef.GetFieldTypeName(fdef.GetFieldType()) + ") = ");
 
 			if( feat.IsFieldSet( iField ) )
-            {
-                if (fdef.GetFieldType() == FieldType.OFTStringList)
-                {
-                    string[] sList = feat.GetFieldAsStringList(iField);
-                    foreach (string s in sList)
-                    {
-                        Console.Write("\"" + s + "\" ");
-                    }
-                    Console.WriteLine();
-                }
-                else if (fdef.GetFieldType() == FieldType.OFTIntegerList)
-                {
-                    int count;
-                    int[] iList = feat.GetFieldAsIntegerList(iField, out count);
-                    for (int i = 0; i < count; i++)
-                    {
-                        Console.Write(iList[i] + " ");
-                    }
-                    Console.WriteLine();
-                }
-                else if (fdef.GetFieldType() == FieldType.OFTRealList)
-                {
-                    int count;
-                    double[] iList = feat.GetFieldAsDoubleList(iField, out count);
-                    for (int i = 0; i < count; i++)
-                    {
-                        Console.Write(iList[i].ToString() + " ");
-                    }
-                    Console.WriteLine();
-                }
-                else
-                    Console.WriteLine(feat.GetFieldAsString(iField));
-            }
+				Console.WriteLine( feat.GetFieldAsString( iField ) );
 			else
 				Console.WriteLine( "(null)" );
             

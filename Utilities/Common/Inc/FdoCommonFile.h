@@ -28,6 +28,8 @@
 #define ABSOLUTE_NAME_START 1
 #endif
 
+#include <vector>
+
 class FdoException;
 
 class FdoCommonFile
@@ -44,7 +46,7 @@ class FdoCommonFile
 public:
 
     /// relative file positions for SetFilePointer()
-    enum FilePos
+    typedef enum FilePos
     {
         FILE_POS_BEGIN   = FILE_BEGIN,
         FILE_POS_CURRENT = FILE_CURRENT,
@@ -60,7 +62,7 @@ public:
 public:
 
     /// relative file positions for SetFilePointer()
-    enum FilePos
+    typedef enum FilePos
     {
         FILE_POS_BEGIN   = SEEK_SET,
         FILE_POS_CURRENT = SEEK_CUR,
@@ -70,7 +72,7 @@ public:
 #endif // _WIN32
 
     /// file open/creation flags
-    enum OpenFlags
+    typedef enum OpenFlags
     {
         IDF_OPEN_READ     = 0x01,
         IDF_OPEN_UPDATE   = 0x02,
@@ -81,7 +83,7 @@ public:
     };
 
     /// error codes from OpenFile
-    enum ErrorCode
+    typedef enum ErrorCode
     {
         ERROR_NONE = 0,
         FAILED_TO_OPEN_FILE = -1,
@@ -509,7 +511,7 @@ public:
     /// \param files 
     /// The list of files to fill with names.
     /// 
-    static void GetAllFiles (const wchar_t* path, FdoStringCollection* files);
+    static void GetAllFiles (const wchar_t* path, std::vector<std::wstring>& files);
 
     /// \brief
     /// Make the specified directory.

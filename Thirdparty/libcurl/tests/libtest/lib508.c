@@ -5,12 +5,10 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib508.c,v 1.10 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib508.c,v 1.5 2006-10-25 09:20:44 yangtse Exp $
  */
 
 #include "test.h"
-
-#include "memdebug.h"
 
 static char data[]="this is what we post to the silly web server\n";
 
@@ -33,7 +31,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
     return 1;                        /* we return 1 byte at a time! */
   }
 
-  return 0;                         /* no more data left to deliver */
+  return -1;                         /* no more data left to deliver */
 }
 
 int test(char *URL)
@@ -58,35 +56,28 @@ int test(char *URL)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  curl_easy_setopt(curl, CURLOPT_URL, URL);
 
   /* Now specify we want to POST data */
-  test_setopt(curl, CURLOPT_POST, 1L);
-
-#ifdef CURL_DOES_CONVERSIONS
-  /* Convert the POST data to ASCII */
-  test_setopt(curl, CURLOPT_TRANSFERTEXT, 1L);
-#endif
+  curl_easy_setopt(curl, CURLOPT_POST, TRUE);
 
   /* Set the expected POST size */
-  test_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)pooh.sizeleft);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)pooh.sizeleft);
 
   /* we want to use our own read function */
-  test_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+  curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
 
   /* pointer to pass to our read function */
-  test_setopt(curl, CURLOPT_INFILE, &pooh);
+  curl_easy_setopt(curl, CURLOPT_INFILE, &pooh);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(curl, CURLOPT_HEADER, TRUE);
 
   /* Perform the request, res will get the return code */
   res = curl_easy_perform(curl);
-
-test_cleanup:
 
   /* always cleanup */
   curl_easy_cleanup(curl);

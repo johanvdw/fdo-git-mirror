@@ -94,7 +94,6 @@
 #include <sqlucode.h>
 #endif
 
-#define SQL_SS_LENGTH_UNLIMITED 0
 #include <limits.h>
 
 int odbcdr_bind(
@@ -171,19 +170,8 @@ int odbcdr_bind(
 		)
 	{
 		debug3 ("\nError=%d in SQLDescribeParam() for '%s', type=%d. Assuming type = SQL_CHAR, length = 100\n", rc, name, sql_type );
-        switch (odbcdr_datatype)
-        {
-        case SQL_C_WCHAR:
-    		sql_type = SQL_WVARCHAR;
-            break;
-        case SQL_C_CHAR:
-    		sql_type = SQL_VARCHAR;
-            break;
-        default:
-    		// most SQL types can be converted to SQL_CHAR
-            sql_type = SQL_CHAR;
-            break;
-        }
+		// most SQL types can be converted to SQL_CHAR
+		sql_type = SQL_CHAR;
 		col_size = 100;
 		decimal_digits = 0;
 	}
@@ -228,11 +216,11 @@ int odbcdr_bind(
 						(SQLUSMALLINT)bindnum,
 						SQL_PARAM_INPUT,
 						(SQLSMALLINT) SQL_C_BINARY, 
-						SQL_VARBINARY,
-						(SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,  
+						SQL_LONGVARBINARY,
+						(SQLUINTEGER) address,  
 						(SQLSMALLINT) 0,
-						(SQLPOINTER) address,
-						(SQLINTEGER) SQL_SS_LENGTH_UNLIMITED, 
+						(SQLPOINTER) bindnum,
+						(SQLINTEGER) 0, 
 						&c->lenDataParam);
 
         if ( rc != SQL_SUCCESS_WITH_INFO ) {

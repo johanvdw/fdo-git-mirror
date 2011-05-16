@@ -129,24 +129,6 @@ FdoStringP FdoSmPhSqsDbObject::GetBestClassName() const
     return objName.Replace(L":",L"_").Replace(L".",L"_");
 }
 
-FdoBoolean FdoSmPhSqsDbObject::GetPolygonVertexOrderStrictness(FdoString* propName) const
-{
-    const FdoSmPhColumnCollection* columns = RefColumns();
-    const FdoSmPhColumn* column = columns->RefItem(propName);
-    if ( NULL != column && FdoSmPhColType_Geom == column->GetType())
-    {
-        // SQL Server 2008 Spatial has two data types that support geometry. 
-        // They are Geometry and Geography. Both of these support polygons 
-        // but the Geography type has a constraint that the vertex order 
-        // around loops must be counterclockwise for outer loops and clockwise 
-        // for inner loops. Polygons that fail this test will be rejected. 
-        FdoStringP typeName = column->GetTypeName();
-        if (typeName == L"geography")
-            return true;
-    }
-    return false;
-}
-
 void FdoSmPhSqsDbObject::ActivateOwnerAndExecute( FdoStringP sqlStmt )
 {
     FdoSmPhSqsOwner*        objOwner       = static_cast<FdoSmPhSqsOwner*>((FdoSmPhSchemaElement*) GetParent());
@@ -380,17 +362,15 @@ FdoPtr<FdoSmPhRdPkeyReader> FdoSmPhSqsDbObject::CreatePkeyReader() const
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhSqsDbObject::CreateIndexReader() const
 {
-    FdoSmPhSqsDbObject* pDbObject = (FdoSmPhSqsDbObject*)(this);
-    FdoSmPhSqsOwner* thisOwner = (FdoSmPhSqsOwner*)(this->GetParent());
+    FdoSmPhSqsDbObject* pDbObject = (FdoSmPhSqsDbObject*) this;
 
-    return new FdoSmPhRdSqsIndexReader( FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pDbObject) );
+    return new FdoSmPhRdSqsIndexReader( pDbObject->GetManager(), FDO_SAFE_ADDREF(pDbObject) );
 }
 
 FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsDbObject::CreateFkeyReader() const
 {
     FdoSmPhSqsDbObject* pDbObject = (FdoSmPhSqsDbObject*) this;
-    FdoSmPhSqsOwner* thisOwner = (FdoSmPhSqsOwner*)(this->GetParent());
 
-    return new FdoSmPhRdSqsFkeyReader( FDO_SAFE_ADDREF(thisOwner), FDO_SAFE_ADDREF(pDbObject) );
+    return new FdoSmPhRdSqsFkeyReader( pDbObject->GetManager(), FDO_SAFE_ADDREF(pDbObject) );
 }
 

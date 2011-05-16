@@ -23,7 +23,7 @@
 
 
 FdoSmPhPostGisSpatialContextGroupWriter::FdoSmPhPostGisSpatialContextGroupWriter(FdoSmPhMgrP mgr) : 
-	FdoSmPhGrdSpatialContextGroupWriter(mgr)
+	FdoSmPhGrdSpatialContextGroupWriter()
 {
     this->SetSubWriter( MakeWriter(mgr) );
 }

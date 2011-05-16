@@ -108,7 +108,6 @@ public:
     /// @return FdoDateTime instance with converted date and time.
     ///
     virtual FdoDateTime DbiToFdoTime(const char* time);
-    virtual FdoDateTime DbiToFdoTime(const wchar_t* time);
 
     /// Convert time_t (FdoDateTime) to string in PostGIS
     /// specific date format.
@@ -177,8 +176,6 @@ public:
     /// capabilities.
     ///
 	virtual FdoIFilterCapabilities* GetFilterCapabilities();
-
-    virtual FdoIExpressionCapabilities* GetExpressionCapabilities();
 
 protected:
 

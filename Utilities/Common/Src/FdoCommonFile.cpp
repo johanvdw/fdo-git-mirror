@@ -19,6 +19,7 @@
 
 #include "stdafx.h"
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 #include <sys/stat.h>
 #ifdef _WIN32
@@ -623,16 +624,9 @@ bool FdoCommonFile::FileExists (const wchar_t* filePath)
     wcscpy (path, filePath);
     if (0 < length)
     {
-        // trim off trailing slash unless it is a share
-        // On network shares use a path in the form of the following: "\\server\service\*". 
-        // (see ::FindFirstFile() usage at http://msdn.microsoft.com/en-us/library/aa364418(VS.85).aspx)
+        // trim off trailing slash
         if (FILE_PATH_DELIMITER == path[length - 1])
-        {
-            if (!IsAbsolutePath(path))
-                path[--length] = L'\0';
-            else
-                wcscat (path, L"*");
-        }
+            path[--length] = L'\0';
         else if (FILE_PATH_DELIMITER2 == path[length - 1])
             path[--length] = L'\0';
     }
@@ -872,7 +866,7 @@ bool FdoCommonFile::GetTempFile (wchar_t** name, const wchar_t* path)
 
 #ifdef _WIN32
 #include <io.h>
-void FdoCommonFile::GetAllFiles (const wchar_t* path, FdoStringCollection* files)
+void FdoCommonFile::GetAllFiles (const wchar_t* path, std::vector<std::wstring>& files)
 {
     size_t length;
     wchar_t* pattern;
@@ -893,7 +887,7 @@ void FdoCommonFile::GetAllFiles (const wchar_t* path, FdoStringCollection* files
     {
         do 
             if (0 != file.size)
-                files->Add (file.name);
+                files.push_back (file.name);
         while (0 == _wfindnext (handle, &file));
         _findclose (handle);
     }
@@ -903,14 +897,14 @@ void FdoCommonFile::GetAllFiles (const wchar_t* path, FdoStringCollection* files
 #include <sys/stat.h> 
 #include <unistd.h> 
 #include <dirent.h>
-void append_file (FdoStringCollection* files, char* name)
+void append_file (std::vector<std::wstring>& files, char* name)
 {
     wchar_t* _name;
 
     conv_utf8_to_wide (_name, name);
-    files->Add (_name);
+    files.push_back (_name);
 }
-void FdoCommonFile::GetAllFiles (const wchar_t* path, FdoStringCollection* files)
+void FdoCommonFile::GetAllFiles (const wchar_t* path, std::vector<std::wstring>& files)
 {
     char* _path;
     struct dirent* dptr;

@@ -124,12 +124,6 @@ CPLErr COSARRasterBand::IReadBlock(int nBlockXOff, int nBlockYOff,
         ((GUInt32 *)pImage)[i] = 0;
     }
 
-    /* properly account for validity mask */ 
-    if (nRSFV > 1)
-    {
-        VSIFSeek(pCDS->fp,(this->nRTNB*(nBlockYOff+4)+(nRSFV+1)*4), SEEK_SET);
-    }
-
     /* Read the valid samples: */
     VSIFRead(((char *)pImage)+((nRSFV - 1)*4),1,((nRSLV-1)*4)-((nRSFV-1)*4),pCDS->fp);
 
@@ -156,17 +150,7 @@ GDALDataset *COSARDataset::Open( GDALOpenInfo * pOpenInfo ) {
     if (!EQUALN((char *)pOpenInfo->pabyHeader+MAGIC1_OFFSET, "CSAR",4)) 
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( pOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The COSAR driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
-    
+
     /* this is a cosar dataset */
     COSARDataset *pDS;
     pDS = new COSARDataset();

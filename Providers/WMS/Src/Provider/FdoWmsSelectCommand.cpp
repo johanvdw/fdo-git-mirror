@@ -342,44 +342,12 @@ FdoIFeatureReader* FdoWmsSelectCommand::Execute ()
 
 	// Verify the styles and layers have the same size
 	if (styleNames->GetCount () > 0 && styleNames->GetCount () != layerNames->GetCount ())
-			throw FdoException::Create (NlsMsgGet (FDOWMS_12004_STYLES_LAYERS_NOT_PAIRED, "The specified WMS layer styles and layers aren't one-to-one paired."));
+			throw FdoException::Create (NlsMsgGet (FDOWMS_12004_STYLES_LAYERS_NOT_CORRESPONDING, "The WMS styles and layers are not corresponding."));
 
 	// Get the WMS version
 	FdoStringP wmsVersion = metadata->GetVersion ();
-
-	// Get the exception format
-    // Some WMS servers do not correctly default to
-    // using the xml service exception report.
-	//
-	// Some servers may not support xml format, in this case
-	// use the first format specified in its capability document 
-	FdoString* exceptionFormat;
-    if (wmsVersion == FdoWmsXmlGlobals::WmsVersion)
-        exceptionFormat = FdoWmsXmlGlobals::ExceptionType130;
-    else
-        exceptionFormat = FdoWmsXmlGlobals::ExceptionType;
-
-	FdoPtr<FdoStringCollection> formats = capa->GetExceptionFormats();
-
-	if ((formats->GetCount())>0 && formats->IndexOf (exceptionFormat) == -1 ) // not found the default xml format? use the first one in request
-		exceptionFormat = formats->GetString(0);
-
     // Retrieve the raster stream through the WMS GetMap Request
-	FdoPtr<FdoIoStream> stream = wmsDelegate->GetMap (layerNames, styleNames, bbox, imageFormat, height, width, bTransparent, bgColor, timeDimension, elevation, wmsVersion,exceptionFormat);
-    //
-    // Cache the GetMap paremeters for further GetFeatureInfo
-    mConnection->SetGetMapParametersCache(
-        layerNames,
-        styleNames,
-        bbox,
-        imageFormat,
-        height,
-        width,
-        bTransparent,
-        bgColor,
-        timeDimension,
-        elevation,
-        exceptionFormat);
+	FdoPtr<FdoIoStream> stream = wmsDelegate->GetMap (layerNames, styleNames, bbox, imageFormat, height, width, bTransparent, bgColor, timeDimension, elevation, wmsVersion);
 
 	// Create a FeatureReader on the stream and return it to the user
     FdoPtr<FdoWmsFeatureReader> ret;
@@ -805,12 +773,8 @@ FdoWmsDelegate* FdoWmsSelectCommand::_getWmsDelegate ()
 
     FdoStringP user = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyUsername);
     FdoStringP password = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyPassword);
-    FdoStringP proxy_location = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyProxyServer);
-    FdoStringP proxy_port = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyProxyPort);
-    FdoStringP proxy_user = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyProxyUsername);
-    FdoStringP proxy_password = dictionary->GetProperty (FdoWmsGlobals::ConnectionPropertyProxyPassword);
 
-    FdoPtr<FdoWmsDelegate> ret = FdoWmsDelegate::Create(location, user, password, proxy_location, proxy_port, proxy_user, proxy_password);
+    FdoPtr<FdoWmsDelegate> ret = FdoWmsDelegate::Create(location, user, password);
     FdoPtr<FdoWmsServiceMetadata> svcMetadata = mConnection->GetWmsServiceMetadata ();
     FdoPtr<FdoOwsCapabilities> capa = svcMetadata->GetCapabilities ();
     FdoPtr<FdoOwsRequestMetadataCollection> reqMetadatas = capa->GetRequestMetadatas ();

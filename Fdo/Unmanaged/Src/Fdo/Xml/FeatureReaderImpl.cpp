@@ -84,8 +84,6 @@ FdoXmlFeatureReaderImpl * FdoXmlFeatureReaderImpl::Create(FdoXmlReader* reader, 
 
 bool FdoXmlFeatureReaderImpl::ReadNext() 
 {
-    m_classDefinition = NULL;
-
 	m_curFeatureIndex ++;
 
 	if(m_incrementalParsing && m_depth == 0){
@@ -128,7 +126,7 @@ void FdoXmlFeatureReaderImpl::SetFeatureSchemas(FdoFeatureSchemaCollection* sche
 //FdoIFeatureReader overrides
 FdoClassDefinition* FdoXmlFeatureReaderImpl::GetClassDefinition()
 {
-	return FDO_SAFE_ADDREF(m_classDefinition.p);
+	return NULL;
 }
 
 FdoInt32 FdoXmlFeatureReaderImpl::GetDepth()
@@ -414,10 +412,8 @@ FdoBoolean FdoXmlFeatureReaderImpl::FeatureCollectionEnd(FdoXmlFeatureContext*)
 }
 
 //Feature
-FdoXmlFeatureHandler* FdoXmlFeatureReaderImpl::FeatureStart(FdoXmlFeatureContext*,FdoClassDefinition* classDef)
+FdoXmlFeatureHandler* FdoXmlFeatureReaderImpl::FeatureStart(FdoXmlFeatureContext*,FdoClassDefinition*)
 {
-    m_classDefinition = FDO_SAFE_ADDREF(classDef);
-
 	//the first feature handler event determings whether it is a feature or a feature collection
 	if(m_featureReaderType == FeatureReaderType_Unknown)
 		m_featureReaderType = FeatureReaderType_Feature;

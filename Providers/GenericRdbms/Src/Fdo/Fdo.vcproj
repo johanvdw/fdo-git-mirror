@@ -593,10 +593,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.cpp"
-					>
-				</File>
-				<File
 					RelativePath="Other\FdoRdbmsSQLCommand.cpp"
 					>
 				</File>
@@ -636,10 +632,6 @@
 					RelativePath="Filter\FdoRdbmsFilterUtil.cpp"
 					>
 				</File>
-				<File
-					RelativePath=".\Filter\FdoRdbmsFunctionIsValid.cpp"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="DataStore"
@@ -656,10 +648,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.cpp"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.cpp"
 					>
@@ -962,10 +950,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.h"
-					>
-				</File>
-				<File
 					RelativePath="Other\FdoRdbmsSQLCommand.h"
 					>
 				</File>
@@ -1009,10 +993,6 @@
 					RelativePath="Filter\FdoRdbmsFilterUtil.h"
 					>
 				</File>
-				<File
-					RelativePath=".\Filter\FdoRdbmsFunctionIsValid.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="DataStore"
@@ -1037,10 +1017,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.h"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.h"
 					>

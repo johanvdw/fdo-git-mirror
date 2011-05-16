@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfdataset.h 18153 2009-12-02 04:28:55Z warmerdam $
+ * $Id: netcdfdataset.h 15690 2008-11-06 22:51:54Z dnadeau $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -135,13 +135,11 @@ class netCDFRasterBand;
 
 class netCDFDataset : public GDALPamDataset
 {
-    CPLString    osSubdatasetName;
-    int          bTreatAsSubdataset;
-
     double      adfGeoTransform[6];
     char        **papszSubDatasets;
     char        **papszGeolocation;
-    CPLString    osFilename;
+    char        **papszName;
+    char        *pszFilename;
     int          *panBandDimPos;         // X, Y, Z postion in array
     int          *panBandZLev;
     char         *pszProjection;
@@ -155,10 +153,11 @@ class netCDFDataset : public GDALPamDataset
     int           cdfid;
     char         **papszMetadata;
     char          papszDimName[NC_MAX_NAME][1024];
+    char          papszDimXName[1024];
+    char          papszDimYName[1024];
     int          *paDimIds;
     size_t        xdim, ydim;
     int           nDimXid, nDimYid;
-    bool          bBottomUp;
 
 		netCDFDataset( );
 		~netCDFDataset( );

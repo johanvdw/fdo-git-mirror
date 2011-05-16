@@ -5,13 +5,12 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: lib502.c,v 1.9 2010-02-05 18:07:19 yangtse Exp $
+ * $Id: lib502.c,v 1.7 2007-03-10 00:19:05 yangtse Exp $
  */
 
 #include "test.h"
 
 #include "testutil.h"
-#include "memdebug.h"
 
 #define MAIN_LOOP_HANG_TIMEOUT     90 * 1000
 #define MULTI_PERFORM_HANG_TIMEOUT 60 * 1000
@@ -23,7 +22,7 @@
 int test(char *URL)
 {
   CURL *c;
-  CURLM *m = NULL;
+  CURLM *m;
   int res = 0;
   int running=1;
   struct timeval mp_start;
@@ -40,7 +39,7 @@ int test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(c, CURLOPT_URL, URL);
+  curl_easy_setopt(c, CURLOPT_URL, URL);
 
   if ((m = curl_multi_init()) == NULL) {
     fprintf(stderr, "curl_multi_init() failed\n");
@@ -81,13 +80,9 @@ int test(char *URL)
     res = TEST_ERR_RUNS_FOREVER;
   }
 
-test_cleanup:
-
-  if(m) {
-    curl_multi_remove_handle(m, c);
-    curl_multi_cleanup(m);
-  }
+  curl_multi_remove_handle(m, c);
   curl_easy_cleanup(c);
+  curl_multi_cleanup(m);
   curl_global_cleanup();
 
   return res;

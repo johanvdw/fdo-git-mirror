@@ -16,13 +16,13 @@ include(CPack)
 # Set FDO version macros
 
 set ( FDO_VERSION_MAJOR 3 )
-set ( FDO_VERSION_MINOR 6 )
+set ( FDO_VERSION_MINOR 5 )
 set ( FDO_VERSION_RELEASE 0 )
 set ( FDO_VERSION "${FDO_VERSION_MAJOR}.${FDO_VERSION_MINOR}.${FDO_VERSION_RELEASE}" )
 set ( FDO_DISTRIBUTION_TEXT "Self compiled sources" CACHE STRING "Indicate compilation origin" )
 
 
-# Override install directory to match what the automake build does (/usr/local, rather than /usr/local/lib)
+# Override install directory to match what the automake build does (/use/local, rather than /usr/local/lib)
 set( INSTALL_PREFIX "/usr/local/fdo-${FDO_VERSION}" )
 
 
@@ -41,7 +41,6 @@ endif (CMAKE_SYSTEM_NAME MATCHES Linux)
 
 if( CMAKE_COMPILER_IS_GNUCXX )
 	add_definitions( -D__USE_GNU -Wno-deprecated )
-	set ( CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed -Wl,--no-undefined -lc ${CMAKE_SHARED_LINKER_FLAGS}")
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
 find_package( FDOThirdparty REQUIRED )
@@ -57,7 +56,7 @@ add_subdirectory( Utilities )
 # Providers compiled internally are optional and is not added if
 # Providers directory not exists
 # Correct syntax is: -DWITH_<provider>
-# Ex. -DWITH_GDAL
+# Ex. -DWITH_POSTGIS -DWITH_GDAL
 macro_optional_add_subdirectory( Providers )
 
 install(FILES providers.xml DESTINATION ${LIB_INSTALL_DIR} )

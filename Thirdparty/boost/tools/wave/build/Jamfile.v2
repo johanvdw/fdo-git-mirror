@@ -4,28 +4,26 @@
 #
 # http://www.boost.org/
 #
-# Copyright (c) 2001-2010 Hartmut Kaiser. Distributed under the Boost
+# Copyright (c) 2001-2007 Hartmut Kaiser. Distributed under the Boost
 # Software License, Version 1.0. (See accompanying file
 # LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 project
-    : requirements
-      <toolset>msvc:<define>_SCL_SECURE_NO_DEPRECATE
-      <toolset>msvc:<define>_CRT_SECURE_NO_DEPRECATE
+    :
+    requirements
+#    <link>static
+#    <runtime-link>static
+#    <threading>single
     ;
 
 exe wave
     :
     ../cpp.cpp 
-    /boost//wave
-    /boost//program_options
-    /boost//filesystem
-    /boost//serialization
-    /boost//system
-    /boost//thread
-    /boost//date_time
+    /boost/wave//boost_wave
+    /boost/program_options//boost_program_options
+    /boost/filesystem//boost_filesystem
+    /boost/serialization//boost_serialization
     :
-    <threading>multi
 #   <debug-symbols>on
     :
     release

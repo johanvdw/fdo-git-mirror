@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mrsidstream.h 16078 2009-01-14 05:43:02Z warmerdam $
+ * $Id: mrsidstream.h 13848 2008-02-23 11:50:48Z rouault $
  *
  * Project:  Multi-resolution Seamless Image Database (MrSID)
  * Purpose:  Input/output stream wrapper for usage with LizardTech's
@@ -67,7 +67,6 @@ class LTIVSIStream : public LTIOStreamInf
     VSIVirtualHandle    *poFileHandle;
     int                 nError;
     int                 *pnRefCount;
-    int                 bIsOpen;
 };
 
 #endif /* MRSIDSTREAM_H_INCLUDED */

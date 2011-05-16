@@ -25,11 +25,10 @@ FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
     FdoSmPhOwnerP owner,
     FdoStringP constraintName
 ) :
-    FdoSmPhRdConstraintReader(),
+    FdoSmPhRdConstraintReader(MakeReader(owner,constraintName)),
     mConstraintName(constraintName),
     mOwner(owner)
 {
-    SetSubReader(MakeReader(owner,constraintName));
 }
 
 FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
@@ -37,42 +36,11 @@ FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
 	FdoStringP tableName,
     FdoStringP constraintType
 ) :
-    FdoSmPhRdConstraintReader(),
+    FdoSmPhRdConstraintReader(MakeReader(owner,tableName,(FdoSmPhRdTableJoin*) NULL,constraintType)),
     mConstraintName(constraintType),
 	mTableName(tableName),
     mOwner(owner)
 {
-    FdoStringsP tableNames = FdoStringCollection::Create();
-    if ( tableName != L"" ) 
-        tableNames->Add(tableName);
-
-    SetSubReader(
-        MakeReader(
-            owner,
-            tableNames,
-            (FdoSmPhRdTableJoin*) NULL,
-            constraintType
-        )
-    );
-}
-
-FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
-    FdoSmPhOwnerP owner,
-	FdoStringsP tableNames,
-    FdoStringP constraintType
-) :
-    FdoSmPhRdConstraintReader(),
-    mConstraintName(constraintType),
-    mOwner(owner)
-{
-    SetSubReader(
-        MakeReader(
-            owner,
-            tableNames,
-            (FdoSmPhRdTableJoin*) NULL,
-            constraintType
-        )
-    );
 }
 
 FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
@@ -80,15 +48,10 @@ FdoSmPhRdMySqlConstraintReader::FdoSmPhRdMySqlConstraintReader(
     FdoSmPhRdTableJoinP join,
     FdoStringP constraintType
 ) :
-    FdoSmPhRdConstraintReader(),
+    FdoSmPhRdConstraintReader(MakeReader(owner,L"",join,constraintType)),
     mConstraintName(constraintType.Upper()),
     mOwner(owner)
 {
-    FdoStringsP tableNames = FdoStringCollection::Create();
-
-    SetSubReader(
-        MakeReader(owner,tableNames,join,constraintType)
-    );
 }
 
 FdoSmPhRdMySqlConstraintReader::~FdoSmPhRdMySqlConstraintReader(void)
@@ -176,12 +139,11 @@ FdoSmPhReaderP FdoSmPhRdMySqlConstraintReader::MakeReader(
 
 FdoSmPhReaderP FdoSmPhRdMySqlConstraintReader::MakeReader(
     FdoSmPhOwnerP owner,
-	FdoStringsP	tableNames,
+	FdoStringP	tableName,
     FdoSmPhRdTableJoinP join,
     FdoStringP constraintType
 )
 {
-    FdoSmPhMgrP mgr = owner->GetManager();
     FdoSmPhMySqlOwnerP mqlOwner = owner->SmartCast<FdoSmPhMySqlOwner>();
 
 	// MySql doesn't support CHECK()...
@@ -190,34 +152,93 @@ FdoSmPhReaderP FdoSmPhRdMySqlConstraintReader::MakeReader(
 
     FdoStringP ownerName = owner->GetName();
  
+    // If joining to another table, generated from sub-clause for table.
+    FdoStringP joinFrom;
+    if ( (join != NULL) && (tableName == L"") ) 
+        joinFrom = FdoStringP::Format( L"  , %ls\n", (FdoString*) join->GetFrom() );
+
+    FdoStringP qualification;
+
+    if ( tableName != L"" ) {
+        // Selecting single object, qualify by this object.
+        qualification = L"  and tc.table_name collate utf8_bin = ?\n";
+    } 
+    else {
+        if ( join != NULL )
+            // Otherwise, if joining to another table, generated join clause.
+            qualification = FdoStringP::Format( L"  and (%ls)\n", (FdoString*) join->GetWhere(L"tc.table_name") );
+    }
+
     FdoStringP sqlString = FdoStringP::Format(
       L"select %ls tc.constraint_name as constraint_name,\n"
       L" tc.table_name as table_name,\n"
       L" kcu.column_name as column_name\n"
-      L" from %ls tc, %ls kcu $(JOIN_FROM)\n"
+      L" from %ls tc, %ls kcu%ls\n"
       L" where (tc.constraint_schema collate utf8_bin = kcu.constraint_schema\n"
       L"     and tc.constraint_name collate utf8_bin = kcu.constraint_name\n"
       L"     and tc.table_schema collate utf8_bin = kcu.table_schema\n"
       L"     and tc.table_name collate utf8_bin = kcu.table_name\n"
-      L"     $(AND) $(QUALIFICATION)\n"
+      L"     and tc.table_schema collate utf8_bin = ?\n"
+      L"     %ls\n"
       L"     and tc.constraint_type = 'UNIQUE')\n"
       L" order by tc.table_name collate utf8_bin , tc.constraint_name collate utf8_bin",
       join ? L"distinct" : L"",
       (FdoString*) mqlOwner->GetTableConstraintsTable(),
-      (FdoString*) mqlOwner->GetKeyColumnUsageTable()
+      (FdoString*) mqlOwner->GetKeyColumnUsageTable(),
+      (FdoString*) joinFrom,
+      (FdoString*) qualification
     );
 
-    FdoSmPhReaderP reader = FdoSmPhRdConstraintReader::MakeQueryReader(
-        L"",
-        mgr,
-        sqlString,
-        L"tc.table_schema collate utf8_bin",
-        L"tc.table_name collate utf8_bin",
-        ownerName,
-        tableNames,
-        join
+    // Create a field object for each field in the select list.
+    FdoSmPhRowsP rows = new FdoSmPhRowCollection();
+
+    // Single row, no joins
+    FdoSmPhRowP row = new FdoSmPhRow( owner->GetManager(), L"ConstraintColumns", (FdoSmPhDbObject*) NULL  );
+    rows->Add(row);
+    
+    // Each field adds itself to the row.
+    FdoSmPhFieldP field = new FdoSmPhField(
+        row, 
+        L"constraint_name",
+        row->CreateColumnDbObject(L"constraint_name",false)
     );
 
-    return reader;
+    field = new FdoSmPhField(
+        row, 
+        L"table_name",
+        row->CreateColumnDbObject(L"table_name",false)
+    );
+
+    field = new FdoSmPhField(
+        row, 
+        L"column_name",
+        row->CreateColumnDbObject(L"column_name",false)
+    );
+
+    // Create the bind variables
+    FdoSmPhRowP binds = new FdoSmPhRow( owner->GetManager(), L"Binds" );
+
+    field = new FdoSmPhField(
+        binds,
+        L"table_schema",
+        binds->CreateColumnDbObject(L"table_schema",false)
+    );
+
+    field->SetFieldValue(ownerName);
+
+    if ( tableName != L"" ) {
+        field = new FdoSmPhField(
+            binds,
+            L"table_name",
+            binds->CreateColumnDbObject(L"table_name",false)
+        );
+
+        field->SetFieldValue(tableName);
+    }
+
+//TODO: cache this query to make full use of the binds.
+    FdoSmPhRdGrdQueryReader* reader =
+        new FdoSmPhRdGrdQueryReader( FdoSmPhRowP(rows->GetItem(0)), sqlString, owner->GetManager(), binds );
+
+    return( reader );
 }
-

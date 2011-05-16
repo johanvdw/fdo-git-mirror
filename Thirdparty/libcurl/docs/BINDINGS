@@ -32,7 +32,7 @@ C
 C++
 
   Written by Jean-Philippe Barrette-LaPierre
-  http://curlpp.org/
+  http://rrette.com/curlpp.html
 
 Ch
 
@@ -54,41 +54,25 @@ Dylan
   Written by Chris Double
   http://dylanlibs.sourceforge.net/
 
-Eiffel
-  Written by Eiffel Software
-  http://curl.haxx.se/libcurl/eiffel/
-
 Euphoria
 
   Written by Ray Smith
   http://rays-web.com/eulibcurl.htm
 
-Falcon
-
-  http://www.falconpl.org/index.ftd?page_id=prjs&prj_id=curl
-
 Ferite
-
   Written by Paul Querna
   http://www.ferite.org/
 
 Gambas
-
   http://gambas.sourceforge.net
 
 glib/GTK+
-
   Written by Richard Atterer
   http://atterer.net/glibcurl/
 
-Haskell
-
-  Written by Galois, Inc
-  http://hackage.haskell.org/cgi-bin/hackage-scripts/package/curl
-
 Java
 
-  Maintained by [blank]
+  Maintained by Vic Hanson
   http://curl.haxx.se/libcurl/java/
 
 Lisp
@@ -98,11 +82,8 @@ Lisp
 
 Lua
 
-  luacurl by Alexander Marinov
+  LuaCURL Written by Alexander Marinov
   http://luacurl.luaforge.net/
-
-  Lua-cURL by Jürgen Hötzel
-  http://luaforge.net/projects/lua-curl/
 
 Mono
 
@@ -111,7 +92,7 @@ Mono
 
 .NET
 
-  libcurl-net by Jeffrey Phillips
+  libcurl-net Written by Jeffrey Phillips
   http://sourceforge.net/projects/libcurl-net/
 
 Object-Pascal
@@ -146,12 +127,12 @@ PostgreSQL
 
 Python
 
-  PycURL by Kjetil Jacobsen
+  PycURL is written by Kjetil Jacobsen
   http://pycurl.sourceforge.net/
 
 R
 
-  RCurl by Duncan Temple Lang
+  RCurl is written by Duncan Temple Lang
   http://www.omegahat.org/RCurl/
 
 Rexx
@@ -159,59 +140,40 @@ Rexx
   Written Mark Hessling
   http://rexxcurl.sourceforge.net/
 
-RPG
-
-  Support for ILE/RPG on OS/400 is included in source distribution
-  http://curl.haxx.se/libcurl/
-  See packages/OS400/README.OS400 and packages/OS400/curl.inc.in
-
 Ruby
 
-  curb - written by Ross Bamford
+  Written by Ross Bamford
   http://curb.rubyforge.org/
-
-  ruby-curl-multi - written by Kristjan Petursson and Keith Rarick
-  http://curl-multi.rubyforge.org/
 
 Scheme
 
-  Bigloo binding by Kirill Lisovsky
+  Bigloo binding written by Kirill Lisovsky
   http://curl.haxx.se/libcurl/scheme/
 
 S-Lang
 
-  S-Lang binding by John E Davis
+  S-Lang binding written by John E Davis
   http://www.jedsoft.org/slang/modules/curl.html
 
 Smalltalk
 
-  Smalltalk binding by Danil Osipchuk
+  Smalltalk binding written by Danil Osipchuk
   http://www.squeaksource.com/CurlPlugin/
-
-SP-Forth
-
-  SP-Forth binding by ygrek
-  http://www.forth.org.ru/~ac/lib/lin/curl/
 
 SPL
 
-  SPL binding by Clifford Wolf
+  SPL binding written by Clifford Wolf
   http://www.clifford.at/spl/
 
 Tcl
 
-  Tclcurl by Andrés García
+  Tclcurl is written by Andrés García
   http://personal1.iddeo.es/andresgarci/tclcurl/english/docs.html
 
 Visual Basic
 
-  libcurl-vb by Jeffrey Phillips
+  libcurl-vb is written by Jeffrey Phillips
   http://sourceforge.net/projects/libcurl-vb/
-
-Visual Foxpro
-
-  by Carlos Alloatti
-  http://www.ctl32.com.ar/libcurl.asp
 
 Q
   The libcurl module is part of the default install

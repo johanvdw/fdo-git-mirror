@@ -5,9 +5,6 @@
 # http://www.initd.org/tracker/psycopg/browser/psycopg2/trunk/setup.py
 # Howard Butler hobu.inc@gmail.com
 
-
-gdal_version = '1.7.1'
-
 import sys
 import os
 import string
@@ -53,15 +50,17 @@ try:
     # check version
     numpy_major = numpy.__version__.split('.')[0]
     if int(numpy_major) < 1:
-        print("numpy version must be > 1.0.0")
+        print "numpy version must be > 1.0.0"
         HAVE_NUMPY = False
     else:
-#        print ('numpy include', get_numpy_include())
+        print 'numpy include', get_numpy_include()
         if get_numpy_include() =='.':
-            print("numpy headers were not found!  Array support will not be enabled")
+            print "numpy headers were not found!  Array support will not be enabled"
             HAVE_NUMPY=False
 except ImportError:
     pass
+
+
 
 try:
     from setuptools import setup
@@ -75,26 +74,17 @@ from distutils.command.build_ext import build_ext
 from distutils.ccompiler import get_default_compiler
 from distutils.sysconfig import get_python_inc
 
-def get_gdal_config(option, gdal_config='gdal-config'):
-    
-    command = gdal_config + " --%s" % option
-    try:
-        import subprocess
-        command, args = command.split()[0], command.split()[1]
-        p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
-        r = p.stdout.readline().decode('ascii').strip()
-        p.stdout.close()
-        p.wait()
 
-    except ImportError:
-        
-        import popen2
-        
-        p = popen2.popen3(command)
-        r = p[0].readline().strip()
-        if not r:
-            raise Warning(p[2].readline())
-    
+import popen2
+
+
+def get_gdal_config(option, gdal_config='gdal-config'):
+
+    command = gdal_config + " --%s" % option
+    p = popen2.popen3(command)
+    r = p[0].readline().strip()
+    if not r:
+        raise Warning(p[2].readline())
     return r
     
 class gdal_ext(build_ext):
@@ -141,10 +131,14 @@ class gdal_ext(build_ext):
             self.library_dirs.append(os.path.join(self.gdaldir,'lib'))
             self.include_dirs.append(os.path.join(self.gdaldir,'include'))
         except:
-            print ('Could not run gdal-config!!!!')
+            print 'Could not run gdal-config!!!!'
+
+gdal_version = '1.6.0'
 
 extra_link_args = []
 extra_compile_args = []
+# might need to tweak for Python 2.4 on OSX to be these
+#extra_compile_args = ['-g', '-arch', 'i386', '-isysroot','/']
 
 gdal_module = Extension('osgeo._gdal',
                         sources=['extensions/gdal_wrap.cpp'],
@@ -168,7 +162,7 @@ ogr_module = Extension('osgeo._ogr',
 
 
 array_module = Extension('osgeo._gdal_array',
-                    sources=['extensions/gdal_array_wrap.cpp'],
+                    sources=['extensions/_gdal_array.cpp'],
                     extra_compile_args = extra_compile_args,
                     extra_link_args = extra_link_args)
 
@@ -188,7 +182,7 @@ if HAVE_NUMPY:
 
 packages = ["osgeo",]
 
-readme = str(open('README.txt','rb').read())
+readme = file('README.txt','rb').read()
 
 name = 'GDAL'
 version = gdal_version
@@ -201,7 +195,7 @@ license = "MIT"
 url="http://www.gdal.org"
 
 classifiers = [
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
@@ -240,6 +234,7 @@ if HAVE_SETUPTOOLS:
            data_files = data_files,
            zip_safe = False,
            exclude_package_data = exclude_package_data,
+#           install_requires =['numpy>=1.0.0'],
            cmdclass={'build_ext':gdal_ext},
            ext_modules = ext_modules )
 else:

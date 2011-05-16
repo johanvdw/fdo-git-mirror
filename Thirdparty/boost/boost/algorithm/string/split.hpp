@@ -1,12 +1,11 @@
 //  Boost string_algo library split.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2006.
-//
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2006. Use, modification and
+//  distribution is subject to the Boost Software License, Version
+//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org/ for updates, documentation, and revision history.
+//  See http://www.boost.org for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_SPLIT_HPP
 #define BOOST_STRING_SPLIT_HPP
@@ -64,10 +63,10 @@ namespace boost {
             Range1T& Input,
             const Range2T& Search)
         {
-            return ::boost::algorithm::iter_find(
+            return iter_find(
                 Result,
                 Input,
-                ::boost::algorithm::first_finder(Search) );        
+                first_finder(Search) );        
         }
 
         //! Find all algorithm ( case insensitive ) 
@@ -100,10 +99,10 @@ namespace boost {
             const Range2T& Search,
             const std::locale& Loc=std::locale() )
         {
-            return ::boost::algorithm::iter_find(
+            return iter_find(
                 Result,
                 Input,
-                ::boost::algorithm::first_finder(Search, is_iequal(Loc) ) );        
+                first_finder(Search, is_iequal(Loc) ) );        
         }
 
 
@@ -143,10 +142,10 @@ namespace boost {
             PredicateT Pred,
             token_compress_mode_type eCompress=token_compress_off )
         {
-            return ::boost::algorithm::iter_split(
+            return iter_split(
                 Result,
                 Input,
-                ::boost::algorithm::token_finder( Pred, eCompress ) );         
+                token_finder( Pred, eCompress ) );         
         }
 
     } // namespace algorithm

@@ -45,51 +45,47 @@ int postgis_disconnect(postgis_context_def *context)
         for(int i = 0; i<2; i++ )
         {
             index = conn_ids[i];
+            conn  = context->postgis_connections[index];
 
-            if ( index >= 0 ) 
+            if (NULL != conn)
             {
-                conn  = context->postgis_connections[index];
+                /*
+                 * If connection attempts occurred, conn is ALWAYS
+                 * returned as NOT NULL from libpq connecting functions.
+                 */
 
-                if (NULL != conn)
+                if (CONNECTION_OK == PQstatus(conn))
                 {
-                    /*
-                     * If connection attempts occurred, conn is ALWAYS
-                     * returned as NOT NULL from libpq connecting functions.
-                     */
+                    /* Close 1st connection. */
+                    PQfinish(conn);
+                    conn = NULL;
 
-                    if (CONNECTION_OK == PQstatus(conn))
-                    {
-                        /* Close 1st connection. */
-                        PQfinish(conn);
-                        conn = NULL;
+                    /* Remove 1st connection from sockets table. */
+                    context->postgis_connections[index] = NULL;
+                    context->postgis_connect_count--;
 
-                        /* Remove 1st connection from sockets table. */
-                        context->postgis_connections[index] = NULL;
-                        context->postgis_connect_count--;
-
-                        ret = RDBI_SUCCESS;
-                    }
-                    else
-                    {
-                        PQfinish(conn); /* In case of connection attempt failed. */
-                        conn = NULL;
-                    
-                        ret = RDBI_NOT_CONNECTED;
-                    }
+                    ret = RDBI_SUCCESS;
                 }
                 else
                 {
-                    /*
-                     * NEVER SHOULD GET HERE
-                     *
-                     * If current connection is present in current context
-                     * but the connection pointer is NULL, this situation likely
-                     * means there is a serious BUG.
-                     */
-                    assert(false);
-
-                    return RDBI_GENERIC_ERROR;
+                    PQfinish(conn); /* In case of connection attempt failed. */
+                    conn = NULL;
+                    
+                    ret = RDBI_NOT_CONNECTED;
                 }
+            }
+            else
+            {
+                /*
+                 * NEVER SHOULD GET HERE
+                 *
+                 * If current connection is present in current context
+                 * but the connection pointer is NULL, this situation likely
+                 * means there is a serious BUG.
+                 */
+                assert(false);
+
+                return RDBI_GENERIC_ERROR;
             }
         }
     }

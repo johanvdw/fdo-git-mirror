@@ -27,15 +27,13 @@
 pushd . >& /dev/null
 cd apache
 echo Building apche
-chmod a+x ./build2.sh
-sudo -E sh ./build2.sh
+./build
 popd >& /dev/null
 
 pushd . >& /dev/null
 cd linux/cppunit
 echo Building linux/cppunit
-chmod a+x ./build
-sudo -E sh ./build
+./build
 popd >& /dev/null
 
 
@@ -44,7 +42,7 @@ pushd . >& /dev/null
 cd Sqlite3.3.13
 echo Building Sqlite3.3.13
 cd Src
-sudo -E make
+make
 popd >& /dev/null
 
 
@@ -54,7 +52,7 @@ cd boost
 echo Building boost
 cd tools/jam/src
 chmod a+x ./build.sh
-sudo -E sh ./build.sh
+./build.sh
 cd ../../../
 ./tools/jam/src/bin.linuxx86/bjam toolset=gcc variant=release threading=multi link=static --layout=system stage
 popd >& /dev/null
@@ -63,8 +61,8 @@ pushd . >& /dev/null
 cd libcurl
 echo Building libcurl
 chmod a+x ./configure
-./configure --without-libidn --disable-ldap
-sudo -E make
+./configure --without-libidn
+make
 mkdir -p lib/linux
 rm -f ./lib/linux/*.*
 cp -f ./lib/.libs/libcurl.a ./lib/linux
@@ -77,7 +75,7 @@ mkdir -p lib/linux
 rm -f ./lib/linux/*.*
 chmod a+x ./config
 ./config
-sudo -E make
+make
 mv -f ./libssl.a ./lib/linux/libssl.a
 mv -f ./libcrypto.a ./lib/linux/libcrypto.a
 popd >& /dev/null
@@ -93,7 +91,7 @@ if test "$FDOGDAL" == "$FDOTHIRDPARTY/gdal"; then
     rm -f lib/*.libgdal.a    
     rm -f lib/*.libgdal.so    
     rm -f lib/*.libgdal.so.1    
-    rm -f lib/*.libgdal.so.1.14.1   
+    rm -f lib/*.libgdal.so.1.13.0   
     rm -f include/*
     chmod a+x ./configure
     echo Build GDAL library with the following settings:
@@ -106,13 +104,12 @@ if test "$FDOGDAL" == "$FDOTHIRDPARTY/gdal"; then
     echo     python support      - no
     echo     OGR support         - yes
     echo     postgreSQL support  - no
-    echo     odbc support        - no
-    ./configure --with-gif=internal --with-jpeg=internal --with-png=internal --with-libtiff=internal --with-geotiff=internal --with-pg=no --with-python=no --with-libz=internal --with-odbc=no
-    sudo -E make
+    ./configure --with-gif=internal --with-jpeg=internal --with-png=internal --with-libtiff=internal --with-geotiff=internal --with-pg=no --with-python=no --with-libz=internal
+    make
     cp -f .libs/libgdal.a lib/
     cp -f .libs/libgdal.so lib/
     cp -f .libs/libgdal.so.1 lib/
-    cp -f .libs/libgdal.so.1.14.1 lib/
+    cp -f .libs/libgdal.so.1.13.0 lib/
     cp -f port/*.h include/
     cp -f gcore/*.h include/
     cp -f alg/*.h include/

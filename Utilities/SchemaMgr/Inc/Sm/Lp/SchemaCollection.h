@@ -23,7 +23,6 @@
 #include <Sm/Lp/Schema.h>
 #include <Sm/NamedCollection.h>
 #include <Sm/Lp/SpatialContextMgr.h>
-#include <Sm/Lp/QClassCollection.h>
 
 class FdoSmLpObjectPropertyDefinition;
 class FdoSmLpAssociationPropertyDefinition;
@@ -235,32 +234,31 @@ private:
         }
     };
 
-    class ClassCollection : public FdoSmLpQClassCollection
+    class ClassCollection : public FdoSmNamedCollection<FdoSmLpClassDefinition>
     {
     public:
-        ClassCollection():FdoSmLpQClassCollection() {;}
+        ClassCollection():FdoSmNamedCollection<FdoSmLpClassDefinition>() {;}
 
         virtual void Dispose() {delete this; }
 
         void AddReference(const FdoSmLpClassDefinition* pClassDef)
         {
-            FdoSmLpQClassDefinitionP obj = FindItem(pClassDef->GetQName());
-            if (!obj)
-                AddClassDefinition((FdoSmLpClassDefinition*)pClassDef);
+            if (!Contains(pClassDef))
+                Add((FdoSmLpClassDefinition*)pClassDef);
         }
 
         void Merge(ClassCollection& x)
         {
             for (int i = 0; i < x.GetCount(); i++)
             {
-                FdoPtr<FdoSmLpQClassDefinition> pItem = x.GetItem(i);
+                FdoPtr<FdoSmLpClassDefinition> pItem = x.GetItem(i);
 
                 // see if this item is already in this collection
                 bool bFound = false;
                 for (int j = 0; j < GetCount(); j++)
                 {
-                    FdoPtr<FdoSmLpQClassDefinition> pCurrItem = GetItem(j);
-                    if ( (FdoSmLpClassDefinition*) pCurrItem->RefClassDefinition() == (FdoSmLpClassDefinition*) pItem->RefClassDefinition() )
+                    FdoPtr<FdoSmLpClassDefinition> pCurrItem = GetItem(j);
+                    if ( (FdoSmLpClassDefinition*) pCurrItem == (FdoSmLpClassDefinition*) pItem )
                     {
                         bFound = true;
                         break;

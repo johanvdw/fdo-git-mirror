@@ -82,11 +82,6 @@ public:
     }
 	virtual FdoInt64 GetSRID();
 
-    virtual FdoInt64 GetDbBinarySize()
-    {
-        return 12;
-    }
-
 protected:
     long m_FdoGeomType;
     long m_FdoGeometryType;

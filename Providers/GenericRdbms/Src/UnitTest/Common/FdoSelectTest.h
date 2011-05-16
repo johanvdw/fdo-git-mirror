@@ -35,7 +35,6 @@ class FdoSelectTest : public CppUnit::TestCase
   CPPUNIT_TEST( spatial_query_defect792377 );
   CPPUNIT_TEST( spatial_query_defect813611 );
   CPPUNIT_TEST( spatial_query_defect880310 );
-  CPPUNIT_TEST( spatial_or_attribute_query );
   CPPUNIT_TEST(feature_object_query);
   CPPUNIT_TEST(feature_select_obj_distinct);
   CPPUNIT_TEST(feature_geom_query);
@@ -59,7 +58,6 @@ public:
     virtual void spatial_query_defect792377();
     virtual void spatial_query_defect813611();
     virtual void spatial_query_defect880310();
-    virtual void spatial_or_attribute_query ();
     virtual void feature_object_query();
 
     virtual void feature_subset_query ();
@@ -90,13 +88,12 @@ protected:
 
 	static FdoFilter* CreateFilter();
 
+private:
+
     void read_feature_data( FdoIFeatureReader *myReader, bool subset = false );
     void read_non_feature_data( FdoIFeatureReader *myReader, bool subset = false );
     void read_feature_data2( FdoIFeatureReader *myReader );
 
-    virtual bool spatial_or_attribute_query_should_fail () {return true;}
-
-private:
     wchar_t mSuffix[12];
 };
 

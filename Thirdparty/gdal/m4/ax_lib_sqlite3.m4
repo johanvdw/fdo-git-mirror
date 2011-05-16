@@ -1,4 +1,4 @@
-dnl $Id: ax_lib_sqlite3.m4 18516 2010-01-10 23:10:19Z rouault $
+dnl $Id: ax_lib_sqlite3.m4 15336 2008-09-08 07:23:17Z dron $
 dnl
 dnl @synopsis AX_LIB_SQLITE3([MINIMUM-VERSION])
 dnl 
@@ -24,10 +24,10 @@ dnl
 dnl @category InstalledPackages
 dnl @category Cxx
 dnl @author Mateusz Loskot <mateusz@loskot.net>
-dnl @version $Date: 2010-01-10 15:10:19 -0800 (Sun, 10 Jan 2010) $
+dnl @version $Date: 2008-09-08 00:23:17 -0700 (Mon, 08 Sep 2008) $
 dnl @license AllPermissive
 dnl
-dnl $Id: ax_lib_sqlite3.m4 18516 2010-01-10 23:10:19Z rouault $
+dnl $Id: ax_lib_sqlite3.m4 15336 2008-09-08 07:23:17Z dron $
 dnl
 AC_DEFUN([AX_LIB_SQLITE3],
 [
@@ -81,8 +81,8 @@ AC_DEFUN([AX_LIB_SQLITE3],
                 if test -f "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header" \
                     && test -r "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header"; then
                     ac_sqlite3_path=$ac_sqlite3_path_tmp
-                    ac_sqlite3_ldflags="-L$ac_sqlite3_path_tmp/lib"
-                    ac_sqlite3_cppflags="-I$ac_sqlite3_path_tmp/include"
+                    ac_sqlite3_ldflags="-I$ac_sqlite3_path_tmp/include"
+                    ac_sqlite3_cppflags="-L$ac_sqlite3_path_tmp/lib"
                     break;
                 fi
             done

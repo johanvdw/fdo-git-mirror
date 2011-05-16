@@ -1685,11 +1685,6 @@ void FdoExpressionFunctionTest::TestSpatialExtents ()
             max_z = envelope->GetMaxZ();
 
         }  //  if (dimensionality == 3) ...
-        else
-        {
-            min_z = GetNaNOrdinate();
-            max_z = GetNaNOrdinate();
-        }
 
       }  //  while (feature_reader->ReadNext()) ...
 
@@ -13103,7 +13098,7 @@ void FdoExpressionFunctionTest::TestLengthFunction ()
       func_call   = L"(Length(str2_val) as cmp_id)";
       data_reader = ExecuteSelectCommand(
                                         L"exfct_c1", filter, true, func_call);
-      CheckReader64(data_reader, true, 9, 18);
+      CheckReader(data_reader, true, 9, 18);
       printf(" >>> Test succeeded \n");
 
     }  //  try ...
@@ -13144,7 +13139,7 @@ void FdoExpressionFunctionTest::TestLengthFunction ()
       func_call   = L"(LeNgTh(str2_val) as cmp_id)";
       data_reader = ExecuteSelectCommand(
                                         L"exfct_c1", filter, true, func_call);
-      CheckReader64(data_reader, true, 9, 18);
+      CheckReader(data_reader, true, 9, 18);
       printf(" >>> Test succeeded \n");
 
     }  //  try ...
@@ -15424,7 +15419,7 @@ void FdoExpressionFunctionTest::ExecuteTestExtractFunction (
     catch (FdoException *exp) {
 
       exp_err_msg = GetExpectedErrorMessage(EXTRACT_TEST_CASE_CODE_1);
-      ret_err_msg = TestCommonMiscUtil::Trim(exp->GetExceptionMessage());
+      ret_err_msg = exp->GetExceptionMessage();
       if (IsExpectedErrorMessage(exp_err_msg,
                                  ret_err_msg,
                                  EXTRACT_TEST_CASE_CODE_1)) {
@@ -15840,7 +15835,7 @@ void FdoExpressionFunctionTest::ExecuteTestExtractToDoubleFunction (
     catch (FdoException *exp) {
 
       exp_err_msg = GetExpectedErrorMessage(EXTRACTTODOUBLE_TEST_CASE_CODE_1);
-      ret_err_msg = TestCommonMiscUtil::Trim(exp->GetExceptionMessage());
+      ret_err_msg = exp->GetExceptionMessage();
       if (IsExpectedErrorMessage(exp_err_msg,
                                  ret_err_msg,
                                  EXTRACTTODOUBLE_TEST_CASE_CODE_1)) {
@@ -16257,7 +16252,7 @@ void FdoExpressionFunctionTest::ExecuteTestExtractToIntFunction (
     catch (FdoException *exp) {
 
       exp_err_msg = GetExpectedErrorMessage(EXTRACTTOINT_TEST_CASE_CODE_1);
-      ret_err_msg = TestCommonMiscUtil::Trim(exp->GetExceptionMessage());
+      ret_err_msg = exp->GetExceptionMessage();
       if (IsExpectedErrorMessage(exp_err_msg,
                                  ret_err_msg,
                                  EXTRACTTOINT_TEST_CASE_CODE_1)) {
@@ -17778,15 +17773,15 @@ FdoStringP FdoExpressionFunctionTest::GetExpectedErrorMessage (
     switch (test_case_id) {
 
       case EXTRACT_TEST_CASE_CODE_1:
-        exp_err_message = L"One or more arguments for function 'Extract' did not match the expected argument types.";
+        exp_err_message = L"One or more arguments for function 'Extract' did not match the expected argument types. ";
         break;
 
       case EXTRACTTODOUBLE_TEST_CASE_CODE_1:
-        exp_err_message = L"One or more arguments for function 'ExtractToDouble' did not match the expected argument types.";
+        exp_err_message = L"One or more arguments for function 'ExtractToDouble' did not match the expected argument types. ";
         break;
 
       case EXTRACTTOINT_TEST_CASE_CODE_1:
-        exp_err_message = L"One or more arguments for function 'ExtractToInt' did not match the expected argument types.";
+        exp_err_message = L"One or more arguments for function 'ExtractToInt' did not match the expected argument types. ";
         break;
 
       default:

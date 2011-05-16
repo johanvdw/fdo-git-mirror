@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: reader.cpp 17910 2009-10-27 02:07:33Z chaitanya $
+ * $Id: reader.cpp 14993 2008-07-22 18:40:40Z mloskot $
  *
  * Project:  iom - The INTERLIS Object Model
  * Purpose:  For more information, please see <http://iom.sourceforge.net>
@@ -59,7 +59,6 @@ int iom_file::readHeader(const char *model)
 	// use scanner that performs well-formedness checking only.
 	parser->setProperty(XMLUni::fgXercesScannerName,(void *)XMLUni::fgWFXMLScanner);
     parser->setContentHandler(handler);
-    parser->setEntityResolver(handler);
     parser->setErrorHandler(handler);
 	return readLoop(filename);
 }
@@ -81,13 +80,6 @@ int iom_file::readLoop(const char *filename)
 		parser->parseReset(token);
 	}
 	catch (const XMLException& toCatch)
-    {
-            char* message = XMLString::transcode(toCatch.getMessage());
-			iom_issueerr(message);
-            XMLString::release(&message);
-            return IOM_ERR_XMLPARSER;
-    }
-    catch (const SAXException& toCatch)
     {
             char* message = XMLString::transcode(toCatch.getMessage());
 			iom_issueerr(message);
@@ -210,7 +202,6 @@ ParserHandler::ParserHandler(struct iom_file *inputfile,const char* model1)
 	,state(BEFORE_TRANSFER)
 	,dataContainer(0)
 	,object(0)
-	,m_nEntityCounter(0)
 {
 	//  setupTag2MetaobjMapping();
 }
@@ -248,22 +239,12 @@ bool xisTopicDef(int tag)
 	return false;
 }
 
-void ParserHandler::startEntity (const XMLCh *const name)
-{
-    m_nEntityCounter ++;
-    if (m_nEntityCounter > 1000)
-    {
-        throw SAXNotSupportedException ("File probably corrupted (million laugh pattern)");
-    }
-}
-
 void  ParserHandler::startElement (const XMLCh *const uri
 									, const XMLCh *const localname
 									, const XMLCh *const qname
 									, const Attributes &attrs)
 {
     	level++;
-        m_nEntityCounter = 0;
     	if(skip>0){
     		skip++;
     		return;
@@ -639,7 +620,6 @@ void  ParserHandler::endElement (const XMLCh *const uri
 								  , const XMLCh *const qname)
 {
     	level--;
-        m_nEntityCounter = 0;
 		if(skip>0){
 			skip--;
 			return;
@@ -762,7 +742,7 @@ void  ParserHandler::endElement (const XMLCh *const uri
 					// ref (refattr)
 					// ref (role)
 					// ref (embedded assoc) without assocattrs
-					object=dbgnew struct iom_object();
+					object=dbgnew iom_object();
 				}else{
 					// ref (embedded assoc) with assocattrs
 				}
@@ -834,40 +814,19 @@ void  ParserHandler::endElement (const XMLCh *const uri
 }
 
 
-#if XERCES_VERSION_MAJOR >= 3
-/************************************************************************/
-/*                     characters() (xerces 3 version)                  */
-/************************************************************************/
 
-void ParserHandler::characters( const XMLCh* const chars,
-                                const XMLSize_t length )
+void ParserHandler::characters(  const   XMLCh* const    chars
+								    , const unsigned int    length)
 {
-    if(   state==ST_BEFORE_CHARACTERS
-       || state==CV_C1
-       || state==CV_C2
-       || state==CV_C3 )
-    {
-        propertyValue.append(chars,length);
-    }
+	if(state==ST_BEFORE_CHARACTERS
+			|| state==CV_C1
+			|| state==CV_C2
+			|| state==CV_C3
+			){
+		propertyValue.append(chars,length);
+	}
 }
 
-#else
-/************************************************************************/
-/*                     characters() (xerces 2 version)                  */
-/************************************************************************/
-
-void ParserHandler::characters( const XMLCh* const chars,
-                                const unsigned int length )
-{
-    if(   state==ST_BEFORE_CHARACTERS
-       || state==CV_C1
-       || state==CV_C2
-       || state==CV_C3 )
-    {
-        propertyValue.append(chars,length);
-    }
-}
-#endif
 
 void ParserHandler::error(const SAXParseException& e)
 {

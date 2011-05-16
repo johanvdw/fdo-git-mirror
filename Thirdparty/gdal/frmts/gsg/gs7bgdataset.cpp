@@ -1,5 +1,5 @@
 /****************************************************************************
- * $Id: gs7bgdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: gs7bgdataset.cpp 13592 2008-01-24 22:50:53Z warmerdam $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software Surfer 7 Binary Grid Format.
@@ -59,7 +59,7 @@
 # define SHRT_MAX 32767
 #endif /* SHRT_MAX */
 
-CPL_CVSID("$Id: gs7bgdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: gs7bgdataset.cpp 13592 2008-01-24 22:50:53Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_GS7BG(void);
@@ -220,17 +220,7 @@ GDALDataset *GS7BGDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         return NULL;
     }
-    
-/* -------------------------------------------------------------------- */
-/*      Confirm the requested access is supported.                      */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->eAccess == GA_Update )
-    {
-        CPLError( CE_Failure, CPLE_NotSupported, 
-                  "The GS7BG driver does not support update access to existing"
-                  " datasets.\n" );
-        return NULL;
-    }
+
     /* ------------------------------------------------------------------- */
     /*      Create a corresponding GDALDataset.                            */
     /* ------------------------------------------------------------------- */
@@ -306,11 +296,10 @@ GDALDataset *GS7BGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     CPL_LSBPTR32( &nVersion );
 
-    if(nVersion != 1 && nVersion != 2)
+    if(nVersion != 1)
     {
         delete poDS;
-        CPLError( CE_Failure, CPLE_FileIO, 
-                  "Incorrect file version (%d).", nVersion );
+        CPLError( CE_Failure, CPLE_FileIO, "Incorrect file version.\n" );
         return NULL;
     }
 
@@ -374,12 +363,6 @@ GDALDataset *GS7BGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     CPL_LSBPTR32( &nCols );
     poDS->nRasterXSize = nCols;
-
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
-    {
-        delete poDS;
-        return NULL;
-    }
 
     /* --------------------------------------------------------------------*/
     /*      Create band information objects.                               */

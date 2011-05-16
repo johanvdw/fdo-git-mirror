@@ -244,7 +244,7 @@ bad:
 				" the ec parameters are encoded\n");
 		BIO_printf(bio_err, "                 in the asn1 der "
 				"encoding\n");
-		BIO_printf(bio_err, "                 possible values:"
+		BIO_printf(bio_err, "                 possilbe values:"
 				" named_curve (default)\n");
 		BIO_printf(bio_err,"                                  "
 				"explicit\n");
@@ -400,10 +400,4 @@ end:
 	apps_shutdown();
 	OPENSSL_EXIT(ret);
 }
-#else /* !OPENSSL_NO_EC */
-
-# if PEDANTIC
-static void *dummy=&dummy;
-# endif
-
 #endif

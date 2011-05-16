@@ -15,5 +15,4 @@ fi
 
 rm -f aclocal.m4 config.* configure install-sh \
 	missing mkinstalldirs stamp-h.* Makefile.in \
-	ltconfig ltmain.sh depcomp
-rm -rf autom4te.cache
+	ltconfig ltmain.sh

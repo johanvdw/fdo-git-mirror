@@ -1,5 +1,5 @@
 /* rsa_pss.c */
-/* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
+/* Written by Dr Stephen N Henson (shenson@bigfoot.com) for the OpenSSL
  * project 2005.
  */
 /* ====================================================================
@@ -82,8 +82,6 @@ int RSA_verify_PKCS1_PSS(RSA *rsa, const unsigned char *mHash,
 	unsigned char H_[EVP_MAX_MD_SIZE];
 
 	hLen = EVP_MD_size(Hash);
-	if (hLen < 0)
-		goto err;
 	/*
 	 * Negative sLen has special meanings:
 	 *	-1	sLen == hLen
@@ -128,8 +126,7 @@ int RSA_verify_PKCS1_PSS(RSA *rsa, const unsigned char *mHash,
 		RSAerr(RSA_F_RSA_VERIFY_PKCS1_PSS, ERR_R_MALLOC_FAILURE);
 		goto err;
 		}
-	if (PKCS1_MGF1(DB, maskedDBLen, H, hLen, Hash) < 0)
-		goto err;
+	PKCS1_MGF1(DB, maskedDBLen, H, hLen, Hash);
 	for (i = 0; i < maskedDBLen; i++)
 		DB[i] ^= EM[i];
 	if (MSBits)
@@ -180,8 +177,6 @@ int RSA_padding_add_PKCS1_PSS(RSA *rsa, unsigned char *EM,
 	EVP_MD_CTX ctx;
 
 	hLen = EVP_MD_size(Hash);
-	if (hLen < 0)
-		goto err;
 	/*
 	 * Negative sLen has special meanings:
 	 *	-1	sLen == hLen
@@ -222,7 +217,7 @@ int RSA_padding_add_PKCS1_PSS(RSA *rsa, unsigned char *EM,
 		   		ERR_R_MALLOC_FAILURE);
 			goto err;
 			}
-		if (RAND_bytes(salt, sLen) <= 0)
+		if (!RAND_bytes(salt, sLen))
 			goto err;
 		}
 	maskedDBLen = emLen - hLen - 1;
@@ -237,8 +232,7 @@ int RSA_padding_add_PKCS1_PSS(RSA *rsa, unsigned char *EM,
 	EVP_MD_CTX_cleanup(&ctx);
 
 	/* Generate dbMask in place then perform XOR on it */
-	if (PKCS1_MGF1(EM, maskedDBLen, H, hLen, Hash))
-		goto err;
+	PKCS1_MGF1(EM, maskedDBLen, H, hLen, Hash);
 
 	p = EM;
 

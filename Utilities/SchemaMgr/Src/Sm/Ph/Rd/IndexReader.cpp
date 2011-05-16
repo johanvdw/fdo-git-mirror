@@ -22,7 +22,7 @@
 FdoSmPhRdIndexReader::FdoSmPhRdIndexReader(
     FdoSmPhReaderP reader
 ) :
-	FdoSmPhRdReader(reader)
+	FdoSmPhReader(reader)
 {
 }
 
@@ -31,7 +31,7 @@ FdoSmPhRdIndexReader::FdoSmPhRdIndexReader(
     FdoSmPhMgrP         mgr,
     FdoSmPhRowsP        rows
 ) :
-	FdoSmPhRdReader(mgr, rows)
+	FdoSmPhReader(mgr, rows)
 {
 }
 

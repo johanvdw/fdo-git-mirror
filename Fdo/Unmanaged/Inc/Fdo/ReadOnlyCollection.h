@@ -99,7 +99,7 @@ public:
                 return pitem;
             FDO_SAFE_RELEASE(pitem);
         }
-        throw EXC::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_38_ITEMNOTFOUND), name));
+        throw EXC::Create(FdoException::NLSGetMessage(FDO_NLSID(SCHEMA_5_INVALIDELEMENTNAME)));
 	}
 
     /// \brief

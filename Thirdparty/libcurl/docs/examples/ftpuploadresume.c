@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * $Id: ftpuploadresume.c,v 1.5 2008-08-31 12:12:35 yangtse Exp $
+ * $Id: ftpuploadresume.c,v 1.1 2006-05-11 22:24:44 bagder Exp $
  *
  * Upload to FTP, resuming failed transfers
  *
@@ -21,15 +21,10 @@
 
 #include <curl/curl.h>
 
-#if defined(_MSC_VER) && (_MSC_VER < 1300)
-#  error _snscanf requires MSVC 7.0 or later.
-#endif
 
 /* The MinGW headers are missing a few Win32 function definitions,
    you shouldn't need this if you use VC++ */
-#ifdef __MINGW32__
 int __cdecl _snscanf(const char * input, size_t length, const char * format, ...);
-#endif
 
 
 /* parse headers for Content-Length */
@@ -80,7 +75,7 @@ int upload(CURL *curlhandle, const char * remotepath, const char * localpath,
 		return 0;
 	}
 
-	curl_easy_setopt(curlhandle, CURLOPT_UPLOAD, 1L);
+	curl_easy_setopt(curlhandle, CURLOPT_UPLOAD, TRUE);
 
 	curl_easy_setopt(curlhandle, CURLOPT_URL, remotepath);
 
@@ -96,9 +91,9 @@ int upload(CURL *curlhandle, const char * remotepath, const char * localpath,
 	curl_easy_setopt(curlhandle, CURLOPT_READDATA, f);
 
 	curl_easy_setopt(curlhandle, CURLOPT_FTPPORT, "-"); /* disable passive mode */
-	curl_easy_setopt(curlhandle, CURLOPT_FTP_CREATE_MISSING_DIRS, 1L);
+	curl_easy_setopt(curlhandle, CURLOPT_FTP_CREATE_MISSING_DIRS, TRUE);
 
-	curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, 1L);
+	curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, TRUE);
 
 	for (c = 0; (r != CURLE_OK) && (c < tries); c++) {
 		/* are we resuming? */
@@ -113,22 +108,22 @@ int upload(CURL *curlhandle, const char * remotepath, const char * localpath,
 			 * because HEADER will dump the headers to stdout
 			 * without it.
 			 */
-			curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 1L);
-			curl_easy_setopt(curlhandle, CURLOPT_HEADER, 1L);
+			curl_easy_setopt(curlhandle, CURLOPT_NOBODY, TRUE);
+			curl_easy_setopt(curlhandle, CURLOPT_HEADER, TRUE);
 
 			r = curl_easy_perform(curlhandle);
 			if (r != CURLE_OK)
 				continue;
 
-			curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 0L);
-			curl_easy_setopt(curlhandle, CURLOPT_HEADER, 0L);
+			curl_easy_setopt(curlhandle, CURLOPT_NOBODY, FALSE);
+			curl_easy_setopt(curlhandle, CURLOPT_HEADER, FALSE);
 
 			fseek(f, uploaded_len, SEEK_SET);
 
-			curl_easy_setopt(curlhandle, CURLOPT_APPEND, 1L);
+			curl_easy_setopt(curlhandle, CURLOPT_FTPAPPEND, TRUE);
 		}
 		else { /* no */
-			curl_easy_setopt(curlhandle, CURLOPT_APPEND, 0L);
+			curl_easy_setopt(curlhandle, CURLOPT_FTPAPPEND, FALSE);
 		}
 
 		r = curl_easy_perform(curlhandle);

@@ -27,33 +27,24 @@ FdoSmPhRdSqsColumnReader::FdoSmPhRdSqsColumnReader(
     FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
-    FdoSmPhRdColumnReader((FdoSmPhReader*) NULL, dbObject)
+    FdoSmPhRdColumnReader(MakeQueryReader(mgr, (const FdoSmPhOwner*)(dbObject->GetParent()), DbObject2Objects(dbObject)), dbObject)
 {
-    SetSubReader(
-        MakeQueryReader(mgr, (const FdoSmPhOwner*)(dbObject->GetParent()), DbObject2Objects(dbObject))
-    );
 }
 
 FdoSmPhRdSqsColumnReader::FdoSmPhRdSqsColumnReader(
     FdoSmPhOwnerP owner,
     FdoStringsP objectNames
 ) :
-    FdoSmPhRdColumnReader()
+    FdoSmPhRdColumnReader(MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, objectNames), (FdoSmPhDbObject*)NULL)
 {
-    SetSubReader(
-        MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, objectNames)
-    );
 }
 
 FdoSmPhRdSqsColumnReader::FdoSmPhRdSqsColumnReader(
     FdoSmPhOwnerP owner,
     FdoSmPhRdTableJoinP join
 ) :
-    FdoSmPhRdColumnReader()
+    FdoSmPhRdColumnReader(MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, DbObject2Objects((FdoSmPhDbObject*)NULL), join), (FdoSmPhDbObject*)NULL)
 {
-    SetSubReader(
-        MakeQueryReader(owner->GetManager(), (FdoSmPhOwner*)owner, DbObject2Objects((FdoSmPhDbObject*)NULL), join)
-    );
 }
 
 FdoSmPhRdSqsColumnReader::~FdoSmPhRdSqsColumnReader(void)
@@ -230,12 +221,12 @@ FdoSmPhReaderP FdoSmPhRdSqsColumnReader::MakeQueryReader (
                     L" %ls %ls\n"
                     L" order by d.name collate latin1_general_bin asc, a.name collate latin1_general_bin asc, b.column_id asc",
                  join ? L"distinct" : L"",
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
-                (FdoString*)(owner->GetDbName()),
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
+                (FdoString *)ownerName,
                 (FdoString *)joinFrom,
-                (FdoString*)(owner->GetDbName()),
+                (FdoString *)ownerName,
                 (qualification == L"") ? L"" : L"where",
                 (FdoString *)qualification
               );
@@ -300,3 +291,11 @@ FdoSmPhColType FdoSmPhRdSqsColumnReader::GetType()
     return mColType;
 }
 
+FdoStringsP FdoSmPhRdSqsColumnReader::DbObject2Objects( FdoSmPhDbObjectP dbObject )
+{
+    FdoStringsP tableNames = FdoStringCollection::Create();
+    if ( dbObject ) 
+        tableNames->Add( dbObject->GetName() );
+
+    return tableNames;
+}

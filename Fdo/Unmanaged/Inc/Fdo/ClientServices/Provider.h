@@ -1,5 +1,6 @@
 #ifndef _FDOPROVIDER_H_
 #define _FDOPROVIDER_H_
+/***************************************************************************
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -18,16 +19,20 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+ *
+ ***************************************************************************/
+
 #ifdef _WIN32
 #pragma once
 #endif
 
 // Include definitions
+#include <string>
 #include <FdoStd.h>
+#include <Fdo/ClientServices/ClientServices.h>
 
 /// \brief
 /// Provides information about a feature provider, including name, description, library, and version information.
-///
 class FdoProvider : public FdoIDisposable
 {
     /// Instances of interface FdoProviderRegistry/FdoRegistryUtility/FdoProviderCollection 
@@ -39,30 +44,29 @@ class FdoProvider : public FdoIDisposable
 /// \cond DOXYGEN-IGNORE
 protected:
     /// Constructs a default instance of a FdoProvider.
+
 	FdoProvider();
 
-    /// Constructs a fully formed provider entry
-    FdoProvider(FdoString* name, 
-                FdoString* displayName, 
-                FdoString* description, 
-                FdoString* version, 
-                FdoString* fdoVersion, 
-                FdoString* libraryPath,
+    FdoProvider(const wchar_t* name, 
+                const wchar_t* displayName, 
+                const wchar_t* description, 
+                const wchar_t* version, 
+                const wchar_t* fdoVersion, 
+                const wchar_t* libraryPath,
                 bool managed);
 
     /// Default destructor for FdoProvider.
     virtual ~FdoProvider();
 
-    // Dispose the object, freeing any allocated memory
     virtual void Dispose();
 
     /// Sets the values of the provider.
-    virtual void Set(FdoString* name, 
-                     FdoString* displayName, 
-                     FdoString* description, 
-                     FdoString* version, 
-                     FdoString* fdoVersion, 
-                     FdoString* libraryPath,
+    virtual void Set(const wchar_t* name, 
+                     const wchar_t* displayName, 
+                     const wchar_t* description, 
+                     const wchar_t* version, 
+                     const wchar_t* fdoVersion, 
+                     const wchar_t* libraryPath,
                      bool managed);
 /// \endcond
 public:
@@ -74,7 +78,7 @@ public:
     /// Returns the name as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetName() const;
+    FDO_API virtual const wchar_t* GetName() const;
 
     /// \brief
     /// Gets a user friendly display name of the feature provider.
@@ -83,7 +87,7 @@ public:
     /// Returns the display name as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetDisplayName() const;
+    FDO_API virtual const wchar_t* GetDisplayName() const;
     
     /// \brief
     /// Gets a brief description of the feature provider.
@@ -92,7 +96,7 @@ public:
     /// Returns the description as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetDescription() const;
+    FDO_API virtual const wchar_t* GetDescription() const;
     
     /// \brief
     /// Gets the version of the feature provider. The version number string has the form 
@@ -102,7 +106,7 @@ public:
     /// Returns the version as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetVersion() const;
+    FDO_API virtual const wchar_t* GetVersion() const;
 
     /// \brief
     /// Gets the version of the feature data objects specification the feature provider conforms to. 
@@ -112,7 +116,7 @@ public:
     /// Returns the Feature Data Objects version as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetFeatureDataObjectsVersion() const;
+    FDO_API virtual const wchar_t* GetFeatureDataObjectsVersion() const;
 
     /// \brief
     /// Gets the FULL library path + library name of the provider. 
@@ -121,7 +125,7 @@ public:
     /// Returns the library path as a constant wchar_t*.
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
-    FDO_API virtual FdoString* GetLibraryPath() const;
+    FDO_API virtual const wchar_t* GetLibraryPath() const;
 
     /// \brief
     /// Gets a boolean flag indicating if the provider is a managed or unmanaged provider. 
@@ -134,12 +138,12 @@ public:
 
 private:
     /// private data holding the data used to construct the object
-    FdoStringP m_name;
-    FdoStringP m_displayName;
-    FdoStringP m_description;
-    FdoStringP m_version;
-    FdoStringP m_fdoVersion;
-    FdoStringP m_libraryPath;
+    std::wstring m_name;
+    std::wstring m_displayName;
+    std::wstring m_description;
+    std::wstring m_version;
+    std::wstring m_fdoVersion;
+    std::wstring m_libraryPath;
     bool m_isManaged;
 };
 #endif

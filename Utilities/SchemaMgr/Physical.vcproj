@@ -364,11 +364,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\Sm\Ph\ColumnList.cpp"
+				RelativePath=".\Src\Sm\Ph\ColumnList.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Src\Sm\Ph\ColumnList.cpp"
+				RelativePath=".\src\Sm\Ph\ColumnList.cpp"
 				>
 			</File>
 			<File
@@ -574,14 +574,6 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\Src\Sm\Ph\Synonym.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Sm\Ph\SynonymBaseLoader.cpp"
-				>
 			</File>
 			<File
 				RelativePath="Src\Sm\Ph\Table.cpp"
@@ -839,42 +831,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\Src\Sm\Ph\Rd\Reader.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath=".\Src\Sm\Ph\Rd\SchemaDbObjectBinds.cpp"
 					>
 				</File>
@@ -1033,10 +989,6 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\Src\Sm\Ph\Rd\SynonymReader.cpp"
-					>
 				</File>
 				<File
 					RelativePath=".\src\Sm\Ph\Rd\TableJoin.cpp"
@@ -1939,14 +1891,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Inc\Sm\Ph\Synonym.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Inc\Sm\Ph\SynonymBaseLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="Inc\Sm\Ph\Table.h"
 				>
 			</File>
@@ -2042,10 +1986,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\Reader.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Inc\Sm\Ph\Rd\SchemaDbObjectBinds.h"
 					>
 				</File>
@@ -2063,10 +2003,6 @@
 				</File>
 				<File
 					RelativePath=".\Inc\Sm\Ph\Rd\SpatialContextReader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\SynonymReader.h"
 					>
 				</File>
 				<File

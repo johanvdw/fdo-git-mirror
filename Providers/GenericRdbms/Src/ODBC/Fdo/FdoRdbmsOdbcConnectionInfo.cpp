@@ -267,7 +267,6 @@ static FdoStringP GetRegistryValue(HKEY hkey, const char * name)
 #define DRIVER_NAME_SQLSERVER     L"SQLSRV32.DLL"
 #define DRIVER_NAME_MYSQL_WINDOWS L"MYODBC3.DLL"
 #define DRIVER_NAME_MS_ACCESS     L"ODBCJT32.DLL"
-#define DRIVER_NAME_MS_ACCESS2010 L"ACEODBC.DLL"
 
 #define FILE_NAME_EXTENSION_ASC   L".ASC"
 #define FILE_NAME_EXTENSION_CSV   L".CSV"
@@ -308,8 +307,7 @@ void FdoRdbmsOdbcConnectionInfo::SetProviderDataFromDsn()
         (driver.Contains(DRIVER_NAME_MYSQL_WINDOWS))    )
         mProviderType = FdoProviderDatastoreType_DatabaseServer;
 
-    if (driver.Contains(DRIVER_NAME_MS_ACCESS) ||
-		driver.Contains(DRIVER_NAME_MS_ACCESS2010))
+    if (driver.Contains(DRIVER_NAME_MS_ACCESS))
     {
         mProviderType = FdoProviderDatastoreType_File;
         if (mDependentFiles == NULL)
@@ -328,7 +326,7 @@ void FdoRdbmsOdbcConnectionInfo::SetProviderDataFromDsn()
             mDependentFiles->Add(dbqReference);
         else
         {
-            FdoPtr<FdoStringCollection> allFiles = FdoStringCollection::Create();
+            std::vector<std::wstring> allFiles;
             FdoStringP pathInfo = GetRegistryValue(hkey, KEYNAME_DEFDIR_TEXT);
             if ((pathInfo != NULL) && (pathInfo.GetLength() > 0))
             {
@@ -337,10 +335,10 @@ void FdoRdbmsOdbcConnectionInfo::SetProviderDataFromDsn()
                 // The previous function returns all files in the named path.
                 // The following loop filters out the text files and adds
                 // those to the list of dependent files.
-                size_t allFilesCount = allFiles->GetCount();
+                size_t allFilesCount = allFiles.size();
                 for (size_t i = 0; i < allFilesCount; i++)
                 {
-                    FdoStringP fileName = allFiles->GetString(i);
+                    FdoStringP fileName = allFiles[i].c_str();
                     FdoStringP tmpFileName = fileName.Upper();
                     if ((tmpFileName.Contains(FILE_NAME_EXTENSION_ASC)) ||
                         (tmpFileName.Contains(FILE_NAME_EXTENSION_CSV)) ||
@@ -409,8 +407,8 @@ void FdoRdbmsOdbcConnectionInfo::ParseConnectionString(FdoStringP connectionStri
 
 #define DRIVER_TAG_NAME          L"DRIVER"
 
-#define ACCESS_DRIVER_TAG_ID     L"(*.MDB"
-#define EXCEL_DRIVER_TAG_ID      L"(*.XLS"
+#define ACCESS_DRIVER_TAG_ID     L"(*.MDB)"
+#define EXCEL_DRIVER_TAG_ID      L"(*.XLS)"
 #define MYSQL_DRIVER_TAG_ID      L"MYSQL ODBC"
 #define ORACLE_DRIVER_TAG_ID     L"ORACLE"
 #define SQLSERVER_DRIVER_TAG_ID  L"SQL SERVER"
@@ -480,4 +478,5 @@ void FdoRdbmsOdbcConnectionInfo::SetDependentFiles()
         }
     }
 }
+
 

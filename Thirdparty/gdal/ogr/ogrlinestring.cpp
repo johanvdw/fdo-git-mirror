@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinestring.cpp 17792 2009-10-11 17:44:13Z rouault $
+ * $Id: ogrlinestring.cpp 14883 2008-07-10 21:03:05Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLineString geometry class.
@@ -31,14 +31,14 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrlinestring.cpp 17792 2009-10-11 17:44:13Z rouault $");
+CPL_CVSID("$Id: ogrlinestring.cpp 14883 2008-07-10 21:03:05Z rouault $");
 
 /************************************************************************/
 /*                           OGRLineString()                            */
 /************************************************************************/
 
 /**
- * \brief Create an empty line string.
+ * Create an empty line string.
  */
 
 OGRLineString::OGRLineString()
@@ -197,7 +197,7 @@ void OGRLineString::Make3D()
 /************************************************************************/
 
 /**
- * \brief Fetch a point in line string.
+ * Fetch a point in line string.
  *
  * This method relates to the SFCOM ILineString::get_Point() method.
  *
@@ -222,7 +222,7 @@ void    OGRLineString::getPoint( int i, OGRPoint * poPoint ) const
 /**
  * \fn int OGRLineString::getNumPoints() const;
  *
- * \brief Fetch vertex count.
+ * Fetch vertex count.
  *
  * Returns the number of vertices in the line string.  
  *
@@ -232,7 +232,7 @@ void    OGRLineString::getPoint( int i, OGRPoint * poPoint ) const
 /**
  * \fn double OGRLineString::getX( int iVertex ) const;
  *
- * \brief Get X at vertex.
+ * Get X at vertex.
  *
  * Returns the X value at the indicated vertex.   If iVertex is out of range a
  * crash may occur, no internal range checking is performed.
@@ -245,7 +245,7 @@ void    OGRLineString::getPoint( int i, OGRPoint * poPoint ) const
 /**
  * \fn double OGRLineString::getY( int iVertex ) const;
  *
- * \brief Get Y at vertex.
+ * Get Y at vertex.
  *
  * Returns the Y value at the indicated vertex.   If iVertex is out of range a
  * crash may occur, no internal range checking is performed.
@@ -260,7 +260,7 @@ void    OGRLineString::getPoint( int i, OGRPoint * poPoint ) const
 /************************************************************************/
 
 /**
- * \brief Get Z at vertex.
+ * Get Z at vertex.
  *
  * Returns the Z (elevation) value at the indicated vertex.  If no Z
  * value is available, 0.0 is returned.  If iVertex is out of range a
@@ -286,7 +286,7 @@ double OGRLineString::getZ( int iVertex ) const
 /************************************************************************/
 
 /**
- * \brief Set number of points in geometry.
+ * Set number of points in geometry.
  *
  * This method primary exists to preset the number of points in a linestring
  * geometry before setPoint() is used to assign them to avoid reallocating
@@ -339,7 +339,7 @@ void OGRLineString::setNumPoints( int nNewPointCount )
 /************************************************************************/
 
 /**
- * \brief Set the location of a vertex in line string.
+ * Set the location of a vertex in line string.
  *
  * If iPoint is larger than the number of necessary the number of existing
  * points in the line string, the point count will be increased to
@@ -362,7 +362,7 @@ void OGRLineString::setPoint( int iPoint, OGRPoint * poPoint )
 /************************************************************************/
 
 /**
- * \brief Set the location of a vertex in line string.
+ * Set the location of a vertex in line string.
  *
  * If iPoint is larger than the number of necessary the number of existing
  * points in the line string, the point count will be increased to
@@ -414,7 +414,7 @@ void OGRLineString::setPoint( int iPoint, double xIn, double yIn )
 /************************************************************************/
 
 /**
- * \brief Add a point to a line string.
+ * Add a point to a line string.
  *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
@@ -435,7 +435,7 @@ void OGRLineString::addPoint( OGRPoint * poPoint )
 /************************************************************************/
 
 /**
- * \brief Add a point to a line string.
+ * Add a point to a line string.
  *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
@@ -464,7 +464,7 @@ void OGRLineString::addPoint( double x, double y )
 /************************************************************************/
 
 /**
- * \brief Assign all points in a line string.
+ * Assign all points in a line string.
  *
  * This method clears any existing points assigned to this line string,
  * and assigns a whole new set.  It is the most efficient way of assigning
@@ -503,7 +503,7 @@ void OGRLineString::setPoints( int nPointsIn, OGRRawPoint * paoPointsIn,
 /************************************************************************/
 
 /**
- * \brief Assign all points in a line string.
+ * Assign all points in a line string.
  *
  * This method clear any existing points assigned to this line string,
  * and assigns a whole new set.
@@ -551,7 +551,7 @@ void OGRLineString::setPoints( int nPointsIn, double * padfX, double * padfY,
 /************************************************************************/
 
 /**
- * \brief Returns all points of line string.
+ * Returns all points of line string.
  *
  * This method copies all points into user list. This list must be at
  * least sizeof(OGRRawPoint) * OGRGeometry::getNumPoints() byte in size.
@@ -588,7 +588,7 @@ void OGRLineString::getPoints( OGRRawPoint * paoPointsOut, double * padfZ ) cons
 /************************************************************************/
 
 /**
- * \brief Add a segment of another linestring to this one.
+ * Add a segment of another linestring to this one.
  *
  * Adds the request range of vertices to the end of this line string
  * in an efficient manner.  If the nStartVertex is larger than the
@@ -690,8 +690,7 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
 /*      Get the byte order byte.                                        */
 /* -------------------------------------------------------------------- */
     eByteOrder = DB2_V72_FIX_BYTE_ORDER((OGRwkbByteOrder) *pabyData);
-    if (!( eByteOrder == wkbXDR || eByteOrder == wkbNDR ))
-        return OGRERR_CORRUPT_DATA;
+    assert( eByteOrder == wkbXDR || eByteOrder == wkbNDR );
 
 /* -------------------------------------------------------------------- */
 /*      Get the geometry feature type.  For now we assume that          */
@@ -700,6 +699,7 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
 /* -------------------------------------------------------------------- */
     OGRwkbGeometryType eGeometryType;
     int bIs3D = FALSE;
+    int nBytesAvailable = nSize;
 
     if( eByteOrder == wkbNDR )
     {
@@ -712,8 +712,7 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
         bIs3D = pabyData[1] & 0x80 || pabyData[3] & 0x80;
     }
 
-    if( eGeometryType != wkbLineString )
-        return OGRERR_CORRUPT_DATA;
+    CPLAssert( eGeometryType == wkbLineString );
 
 /* -------------------------------------------------------------------- */
 /*      Get the vertex count.                                           */
@@ -730,11 +729,9 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
      * 16 or 24 - size of point structure
      */
     int nPointSize = (bIs3D ? 24 : 16);
-    if (nNewNumPoints < 0 || nNewNumPoints > INT_MAX / nPointSize)
-        return OGRERR_CORRUPT_DATA;
     int nBufferMinSize = nPointSize * nNewNumPoints;
 
-    if( nSize != -1 && nBufferMinSize > nSize-9 )
+    if( nBufferMinSize > nBytesAvailable && nBytesAvailable > 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Length of input WKB is too small" );
@@ -752,18 +749,42 @@ OGRErr OGRLineString::importFromWkb( unsigned char * pabyData,
 /*      Get the vertex.                                                 */
 /* -------------------------------------------------------------------- */
     int i = 0;
+    int nBytesToCopy = 0;
     
     if( bIs3D )
     {
         for( i = 0; i < nPointCount; i++ )
         {
+            nBytesToCopy = 24;
+
+            if( nBytesToCopy > nBytesAvailable && nBytesAvailable > 0 )
+            {
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "WKB buffer with OGRLineString points is too small! \
+                          \n\tWKB stream may be corrupted or it is EWKB stream which is not supported");
+                return OGRERR_NOT_ENOUGH_DATA;
+            }
+            if ( nBytesAvailable > 0 )
+                nBytesAvailable -= nBytesToCopy;
+
             memcpy( paoPoints + i, pabyData + 9 + i*24, 16 );
             memcpy( padfZ + i, pabyData + 9 + 16 + i*24, 8 );
         }
     }
     else
     {
-        memcpy( paoPoints, pabyData + 9, 16 * nPointCount );
+        nBytesToCopy = 16 * nPointCount;
+
+        if( nBytesToCopy > nBytesAvailable && nBytesAvailable > 0 )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "WKB buffer with OGRLineString points is too small! \
+                      \n\tWKB stream may be corrupted or it is EWKB stream which is not supported");
+            return OGRERR_NOT_ENOUGH_DATA;
+        }
+
+
+        memcpy( paoPoints, pabyData + 9, nBytesToCopy );
     }
     
 /* -------------------------------------------------------------------- */
@@ -1216,8 +1237,7 @@ OGRErr OGRLineString::transform( OGRCoordinateTransformation *poCT )
     }
     else
     {
-        setPoints( nPointCount, xyz, xyz+nPointCount,
-                   ( padfZ ) ? xyz+nPointCount*2 : NULL);
+        setPoints( nPointCount, xyz, xyz+nPointCount, xyz+nPointCount*2 );
         CPLFree( xyz );
 
         assignSpatialReference( poCT->GetTargetCS() );

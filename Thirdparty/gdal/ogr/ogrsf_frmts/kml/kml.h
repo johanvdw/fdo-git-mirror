@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.h 17734 2009-10-03 09:48:01Z rouault $
+ * $Id: kml.h 15804 2008-11-23 21:37:47Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -29,22 +29,23 @@
 #ifndef OGR_KML_KML_H_INCLUDED
 #define OGR_KML_KML_H_INCLUDED
 
-#include "ogr_expat.h"
+#include <expat.h>
 // std
 #include <iostream>
 #include <string>
 #include <vector>
 
-/* Workaround VC6 bug */
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-namespace std
-{
-  typedef ::size_t size_t;
-}
-#endif
-
 #include "cpl_port.h"
 #include "kmlutility.h"
+
+/* Compatibility stuff for expat >=1.95.0 and < 1.95.7 */
+#ifndef XMLCALL
+#define XMLCALL
+#endif
+#ifndef XML_STATUS_OK
+#define XML_STATUS_OK    1
+#define XML_STATUS_ERROR 0
+#endif
 
 class KMLNode;
 
@@ -77,12 +78,12 @@ public:
 	void classifyNodes();
 	void eliminateEmpty();
 	int getNumLayers() const;
-    bool selectLayer(int);
+    bool selectLayer(unsigned short);
     std::string getCurrentName() const;
     Nodetype getCurrentType() const;
-    int is25D() const;
-    int getNumFeatures();
-    Feature* getFeature(std::size_t nNum, int& nLastAsked, int &nLastCount);
+    int getNumFeatures() const;
+    Feature* getFeature(std::size_t nNum) const;
+    bool getExtents(double& pdfXMin, double& pdfXMax, double& pdfYMin, double& pdfYMax) const;
 
 protected:
 	void checkValidity();
@@ -90,14 +91,12 @@ protected:
 	static void XMLCALL startElement(void *, const char *, const char **);
 	static void XMLCALL startElementValidate(void *, const char *, const char **);
 	static void XMLCALL dataHandler(void *, const char *, int);
-        static void XMLCALL dataHandlerValidate(void *, const char *, int);
 	static void XMLCALL endElement(void *, const char *);
 
 	// trunk of KMLnodes
 	KMLNode* poTrunk_;
 	// number of layers;
-	int nNumLayers_;
-        KMLNode** papoLayers_;
+	short nNumLayers_;
 
 private:
 	// depth of the DOM
@@ -112,10 +111,6 @@ private:
 	std::string sError_;
 	// current KMLNode
 	KMLNode *poCurrent_;
-        
-        XML_Parser oCurrentParser;
-        int nDataHandlerCounter;
-        int nWithoutEventCounter;
 };
 
 #endif /* OGR_KML_KML_H_INCLUDED */

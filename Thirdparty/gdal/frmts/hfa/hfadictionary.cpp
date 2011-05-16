@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfadictionary.cpp 18184 2009-12-05 04:17:34Z warmerdam $
+ * $Id: hfadictionary.cpp 13343 2007-12-15 05:11:11Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFADictionary class for managing the
@@ -32,7 +32,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: hfadictionary.cpp 18184 2009-12-05 04:17:34Z warmerdam $");
+CPL_CVSID("$Id: hfadictionary.cpp 13343 2007-12-15 05:11:11Z warmerdam $");
 
 static const char *apszDefDefn[] = {
 
@@ -63,21 +63,6 @@ static const char *apszDefDefn[] = {
     "Eimg_NonInitializedValue", 
     "{1:*bvalueBD,}Eimg_NonInitializedValue",
 
-    "Eprj_MapProjection842",
-    "{1:x{1:x{0:pcstring,}Emif_String,type,1:x{0:pcstring,}Emif_String,MIFDictionary,0:pCMIFObject,}Emif_MIFObject,projection,1:x{0:pcstring,}Emif_String,title,}Eprj_MapProjection842",
-
-    "Emif_MIFObject",
-    "{1:x{0:pcstring,}Emif_String,type,1:x{0:pcstring,}Emif_String,MIFDictionary,0:pCMIFObject,}Emif_MIFObject",
-
-    "Eprj_ProParameters",
-    "{1:e2:EPRJ_INTERNAL,EPRJ_EXTERNAL,proType,1:lproNumber,0:pcproExeName,0:pcproName,1:lproZone,0:pdproParams,1:*oEprj_Spheroid,proSpheroid,}Eprj_ProParameters",
-    
-    "Eprj_Datum",
-    "{0:pcdatumname,1:e3:EPRJ_DATUM_PARAMETRIC,EPRJ_DATUM_GRID,EPRJ_DATUM_REGRESSION,type,0:pdparams,0:pcgridname,}Eprj_Datum",
-
-    "Eprj_Spheroid",
-    "{0:pcsphereName,1:da,1:db,1:deSquared,1:dradius,}Eprj_Spheroid",
-
     NULL,
     NULL };
     
@@ -103,9 +88,6 @@ HFADictionary::HFADictionary( const char * pszString )
     nTypesMax = 0;
     papoTypes = NULL;
 
-    osDictionaryText = pszString;
-    bDictionaryTextDirty = FALSE;
-
 /* -------------------------------------------------------------------- */
 /*      Read all the types.                                             */
 /* -------------------------------------------------------------------- */
@@ -120,6 +102,23 @@ HFADictionary::HFADictionary( const char * pszString )
             AddType( poNewType );
         else
             delete poNewType;
+    }
+
+
+/* -------------------------------------------------------------------- */
+/*      Provide hardcoded values for some definitions that are          */
+/*      sometimes missing from the data dictionary for unknown          */
+/*      reasons.                                                        */
+/* -------------------------------------------------------------------- */
+    for( i = 0; apszDefDefn[i] != NULL; i += 2 )
+    {
+        if( FindType( apszDefDefn[i] ) == NULL )
+        {
+            HFAType *poNewType = new HFAType();
+
+            poNewType->Initialize( apszDefDefn[i+1] );
+            AddType( poNewType );
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -176,31 +175,6 @@ HFAType * HFADictionary::FindType( const char * pszName )
     {
         if( strcmp(pszName,papoTypes[i]->pszTypeName) == 0 )
             return( papoTypes[i] );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Check if this is a type have other knowledge of.  If so, add    */
-/*      it to the dictionary now.  I'm not sure how some files end      */
-/*      up being distributed using types not in the dictionary.         */
-/* -------------------------------------------------------------------- */
-    for( i = 0; apszDefDefn[i] != NULL; i += 2 )
-    {
-        if( strcmp( pszName, apszDefDefn[i] ) == 0 )
-        {
-            HFAType *poNewType = new HFAType();
-
-            poNewType->Initialize( apszDefDefn[i+1] );
-            AddType( poNewType );
-            poNewType->CompleteDefn( this );
-
-            osDictionaryText.erase( osDictionaryText.size() - 1, 1 );
-            osDictionaryText += apszDefDefn[i+1];
-            osDictionaryText += ",.";
-
-            bDictionaryTextDirty = TRUE;
-
-            return poNewType;
-        }
     }
 
     return NULL;

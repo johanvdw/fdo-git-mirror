@@ -15,60 +15,14 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
-
 #include "stdafx.h"
 #include <Util/FdoExpressionEngineUtilDataReader.h>
+#include <FdoCommonBinaryReader.h>
+#include <FdoCommonBinaryWriter.h>
+#include <FdoCommonPropertyIndex.h>
 #include <FdoExpressionEngine.h>
-
-
-class my_hash_compare
-{	// traits class for hash containers
-private:
-    std::less< FdoByteArray* > comp;	// the comparator object
-
-public:
-	enum
-	{	// parameters for hash table
-		bucket_size = 4,	// 0 < bucket_size
-		min_buckets = 8
-    };	// min_buckets = 2 ^^ N, 0 < N
-
-    my_hash_compare()
-		: comp()
-	{	// construct with default comparator
-	}
-
-	my_hash_compare(std::less< FdoByteArray* > _Pred)
-		: comp(_Pred)
-	{	// construct with _Pred comparator
-	}
-
-	bool operator()(FdoByteArray * const _Keyval1, FdoByteArray * const _Keyval2) const;
-
-	size_t operator()(FdoByteArray * const key) const;
-
-	size_t hashvalue(FdoByteArray * const key) const;
-};
-
-
-#ifdef _WIN32
-typedef stdext::hash_map<FdoByteArray*, FdoByteArray*, my_hash_compare >                    HASHMAP;
-#else // _WIN32
-typedef stdext::hash_map<FdoByteArray*, FdoByteArray*, my_hash_compare, my_hash_compare >   HASHMAP;
-#endif // _WIN32
-typedef std::pair<FdoByteArray*, FdoByteArray*>                                             HASHMAP_PAIR;
-typedef HASHMAP::iterator                                                                   HASHMAP_ITER;
-
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-
-
-class FdoResultsStack
-{
-public:
-    std::vector<void*> m_results;
-};
-
+#include <FdoCommonMiscUtil.h>
+#include <algorithm>
 
 // hash _Keyval to size_t value
 size_t my_hash_compare::operator()(FdoByteArray * const key) const
@@ -142,9 +96,7 @@ bool my_hash_compare::operator()(FdoByteArray * const bytearray1, FdoByteArray *
 
 FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunctionDefinitionCollection *functions, FdoIFeatureReader* reader, FdoClassDefinition* originalClassDef, FdoIdentifierCollection* selectedIds, bool bDistinct, FdoIdentifierCollection* orderingIds, FdoOrderingOption eOrderingOption, FdoIdentifierCollection* ids, FdoPtr<FdoArray<FdoFunction*> > aggrIdents )
 {
-    m_resultsStack = new FdoResultsStack();
-    
-    m_resultsStack->m_results.clear();
+    m_results.clear();
     m_resultsIndex = -1;
     m_orderbyIds = FDO_SAFE_ADDREF(orderingIds);
     m_orderbyOption = eOrderingOption;
@@ -160,29 +112,25 @@ FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunction
         //properties which are relevant to the select aggregates.
         //In our subset this means computed identifiers containing
         //functions like min, max, sum, avg, count.
-        // Keep this pointer since m_propIndex is built using hard copy 
-        // pointers to the property names and the class is a deep copy class
-        m_usedClass = GetAggregateClassDef(originalClassDef, selectedIds);
-        m_propIndex = new FdoCommonPropertyIndex(m_usedClass, 0);
+        FdoPtr<FdoClassDefinition> aggrClass = GetAggregateClassDef(originalClassDef, selectedIds);
+        m_propIndex = new FdoCommonPropertyIndex(aggrClass, 0);
 
         //compute aggregate values
-        RunAggregateQuery(reader, originalClassDef, selectedIds, m_usedClass, aggrIdents);
+        RunAggregateQuery(reader, originalClassDef, selectedIds, aggrClass, aggrIdents);
     }
     else
     {
 
         //get the updated class definition. It should only contain
         //properties which are relevant to the select distinct
-        // Keep this pointer since m_propIndex is built using hard copy 
-        // pointers to the property names and the class is a deep copy class
-        m_usedClass = reader->GetClassDefinition();
+        FdoPtr<FdoClassDefinition> readerClass = reader->GetClassDefinition();
 
         //Now create a temporary FdoCommonPropertyIndex structure corresponding to that class.
         //Normally we do not use temporary FdoCommonPropertyIndex structures since they are
         //used for serialization of real properties (not computed) but in this case we are going
         //to be serializing computed properties in the process of determining distinct so it's ok.
         //Use 0 as feature class ID, since this is not a fully defined class definition.
-        m_propIndex = new FdoCommonPropertyIndex(m_usedClass, 0, ids);
+        m_propIndex = new FdoCommonPropertyIndex(readerClass, 0, ids);
 
         // Dump the results into m_results:
         FdoPtr<FdoCommonBinaryWriter> wrt = new FdoCommonBinaryWriter(256);
@@ -190,7 +138,7 @@ FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunction
         {
             // Serialize the row:
             wrt->Reset();
-            wrt->WritePropertyValues(m_usedClass, m_propIndex, reader);
+            wrt->WritePropertyValues(readerClass, m_propIndex, reader);
 
             // Convert the binary writer to FdoByteArray:
             int dataLen = wrt->GetDataLen();
@@ -199,7 +147,7 @@ FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunction
             delete[] data;  //TODO: avoid copying bytes to FdoByteArray
 
             // Insert FdoByteArray into m_results:
-            m_resultsStack->m_results.push_back(FDO_SAFE_ADDREF(bytes.p));
+            m_results.push_back(FDO_SAFE_ADDREF(bytes.p));
         }
     }
 
@@ -233,11 +181,7 @@ FdoExpressionEngineUtilDataReader::~FdoExpressionEngineUtilDataReader()
     FDO_SAFE_RELEASE(m_binReader);
     FDO_SAFE_RELEASE(m_orderbyBinReader1);
     FDO_SAFE_RELEASE(m_orderbyBinReader2);
-
     Close();
-
-    if (m_resultsStack)
-        delete m_resultsStack;
 }
 
 void FdoExpressionEngineUtilDataReader::Dispose()
@@ -542,12 +486,12 @@ FdoIRaster* FdoExpressionEngineUtilDataReader::GetRaster(FdoInt32 index)
 
 void FdoExpressionEngineUtilDataReader::Close()
 {
-    for (FdoInt32 i=0; i<(FdoInt32)m_resultsStack->m_results.size(); i++)
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
     {
-        FdoByteArray *bytes = (FdoByteArray*)m_resultsStack->m_results.at(i);
+        FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
         FDO_SAFE_RELEASE(bytes);
     }
-    m_resultsStack->m_results.clear();
+    m_results.clear();
 }
 
 
@@ -792,7 +736,7 @@ void FdoExpressionEngineUtilDataReader::RunAggregateQuery(FdoIFeatureReader* rdr
 
         // Store the results in m_results:
         FdoByteArray* bytes = FdoByteArray::Create(wrt->GetData(), wrt->GetDataLen());  // NO RELEASE OF bytes ON PURPOSE!
-        m_resultsStack->m_results.push_back(bytes);
+        m_results.push_back(bytes);
     }
 }
 
@@ -804,22 +748,22 @@ void FdoExpressionEngineUtilDataReader::PerformDistinct()
     //Dump m_results to a hashmap, to weed out duplicate rows:
     HASHMAP hashmap;
     hashmap.clear();
-    for (FdoInt32 i=0; i<(FdoInt32)m_resultsStack->m_results.size(); i++)
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
     {
-        FdoByteArray *bytes = (FdoByteArray*)m_resultsStack->m_results.at(i);
+        FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
 
-        std::pair <HASHMAP_ITER, bool> testresult = hashmap.insert(HASHMAP_PAIR(bytes, (FdoByteArray *)NULL));
+        std::pair <HASHMAP_ITER, bool> testresult = hashmap.insert(HASHMAP_PAIR(bytes, NULL));
         // Do a release ONLY if its not been inserted into the hashmap:
         if (!testresult.second)
             FDO_SAFE_RELEASE(bytes);
     }
 
     // Dump hashmap back into m_results:
-    m_resultsStack->m_results.clear();
+    m_results.clear();
     for (HASHMAP_ITER iter = hashmap.begin(); iter != hashmap.end(); iter++)
     {
         FdoByteArray* array = (FdoByteArray*)iter->first;
-        m_resultsStack->m_results.push_back(array);
+        m_results.push_back(array);
     }
 }
 
@@ -999,9 +943,9 @@ void FdoExpressionEngineUtilDataReader::PerformOrderBy()
     //Dump the results to a vector that contains context information required for sorting:
     std::vector<orderby_context> orderedResults;
     orderedResults.clear();
-    for (FdoInt32 i=0; i<(FdoInt32)m_resultsStack->m_results.size(); i++)
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
     {
-        FdoByteArray* bytes = (FdoByteArray*)m_resultsStack->m_results.at(i);
+        FdoByteArray* bytes = (FdoByteArray*)m_results.at(i);
         orderby_context context(this, bytes);
         orderedResults.push_back(context);
     }
@@ -1012,7 +956,7 @@ void FdoExpressionEngineUtilDataReader::PerformOrderBy()
     // Dump the results back into m_results:
     for (FdoInt32 i=0; i<(FdoInt32)orderedResults.size(); i++)
     {
-        m_resultsStack->m_results[i] = orderedResults.at(i).rowData;
+        m_results[i] = orderedResults.at(i).rowData;
     }
 }
 
@@ -1022,12 +966,12 @@ bool FdoExpressionEngineUtilDataReader::ReadNext()
 {
     m_resultsIndex++;
 
-    if (m_resultsIndex >= (FdoInt32)m_resultsStack->m_results.size())
+    if (m_resultsIndex >= (FdoInt32)m_results.size())
         return false;
     else
     {
         // Read next record:
-        const FdoByteArray* byteArray = (FdoByteArray*)m_resultsStack->m_results.at(m_resultsIndex);
+        const FdoByteArray* byteArray = (FdoByteArray*)m_results.at(m_resultsIndex);
         m_binReader->Reset((unsigned char*)byteArray->GetData(), byteArray->GetCount());
 
         return true;

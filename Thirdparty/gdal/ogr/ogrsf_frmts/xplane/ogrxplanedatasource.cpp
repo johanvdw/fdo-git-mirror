@@ -30,7 +30,7 @@
 #include "ogr_xplane.h"
 #include "ogr_xplane_reader.h"
 
-CPL_CVSID("$Id: ogrxplanedatasource.cpp 18548 2010-01-14 22:01:35Z rouault $");
+CPL_CVSID("$Id: ogrxplanedatasource.cpp 14977 2008-07-19 13:17:25Z rouault $");
 
 /************************************************************************/
 /*                          OGRXPlaneDataSource()                          */
@@ -44,7 +44,6 @@ OGRXPlaneDataSource::OGRXPlaneDataSource()
     nLayers = 0;
     poReader = NULL;
     bReadWholeFile = TRUE;
-    bWholeFiledReadingDone = FALSE;
 }
 
 /************************************************************************/
@@ -98,8 +97,6 @@ OGRLayer *OGRXPlaneDataSource::GetLayer( int iLayer )
 
 void OGRXPlaneDataSource::RegisterLayer(OGRXPlaneLayer* poLayer)
 {
-    poLayer->SetDataSource(this);
-
     papoLayers = (OGRXPlaneLayer**) CPLRealloc(papoLayers,
                                     (nLayers + 1) * sizeof(OGRXPlaneLayer*));
     papoLayers[nLayers++] = poLayer;
@@ -117,8 +114,7 @@ int OGRXPlaneDataSource::Open( const char * pszFilename, int bReadWholeFile )
     this->bReadWholeFile = bReadWholeFile;
 
     const char* pszShortFilename = CPLGetFilename(pszFilename);
-    if (EQUAL(pszShortFilename, "nav.dat") ||
-        EQUAL(pszShortFilename, "earth_nav.dat"))
+    if (EQUAL(pszShortFilename, "nav.dat"))
     {
         poReader = OGRXPlaneCreateNavFileReader(this);
     }
@@ -126,13 +122,11 @@ int OGRXPlaneDataSource::Open( const char * pszFilename, int bReadWholeFile )
     {
         poReader = OGRXPlaneCreateAptFileReader(this);
     }
-    else if (EQUAL(pszShortFilename, "fix.dat") ||
-             EQUAL(pszShortFilename, "earth_fix.dat"))
+    else if (EQUAL(pszShortFilename, "fix.dat"))
     {
         poReader = OGRXPlaneCreateFixFileReader(this);
     }
-    else if (EQUAL(pszShortFilename, "awy.dat") ||
-             EQUAL(pszShortFilename, "earth_awy.dat"))
+    else if (EQUAL(pszShortFilename, "awy.dat"))
     {
         poReader = OGRXPlaneCreateAwyFileReader(this);
     }
@@ -147,7 +141,13 @@ int OGRXPlaneDataSource::Open( const char * pszFilename, int bReadWholeFile )
     {
         pszName = CPLStrdup(pszFilename);
 
-        if ( !bReadWholeFile )
+        if (bReadWholeFile)
+        {
+            poReader->ReadWholeFile();
+            for( int i = 0; i < nLayers; i++ )
+                papoLayers[i]->AutoAdjustColumnsWidth();
+        }
+        else
         {
             for( int i = 0; i < nLayers; i++ )
                 papoLayers[i]->SetReader(poReader->CloneForLayer(papoLayers[i]));
@@ -168,19 +168,4 @@ int OGRXPlaneDataSource::TestCapability( const char * pszCap )
 
 {
     return FALSE;
-}
-
-/************************************************************************/
-/*                     ReadWholeFileIfNecessary()                       */
-/************************************************************************/
-
-void OGRXPlaneDataSource::ReadWholeFileIfNecessary()
-{
-    if (bReadWholeFile && !bWholeFiledReadingDone)
-    {
-        poReader->ReadWholeFile();
-        for( int i = 0; i < nLayers; i++ )
-            papoLayers[i]->AutoAdjustColumnsWidth();
-        bWholeFiledReadingDone = TRUE;
-    }
 }

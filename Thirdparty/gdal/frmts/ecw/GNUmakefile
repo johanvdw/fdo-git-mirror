@@ -6,12 +6,12 @@ OBJ	=	ecwdataset.o ecwcreatecopy.o jp2userbox.o
 CPPFLAGS	:=	$(GDAL_INCLUDE) -DFRMT_ecw $(CPPFLAGS) $(EXTRA_CFLAGS)
 PLUGIN_SO =	gdal_ECW_JP2ECW.so
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o $(O_OBJ) *.so
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
 
 plugin: $(PLUGIN_SO)
 

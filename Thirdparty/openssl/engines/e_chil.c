@@ -1,6 +1,6 @@
 /* crypto/engine/e_chil.c -*- mode: C; c-file-style: "eay" -*- */
 /* Written by Richard Levitte (richard@levitte.org), Geoff Thorpe
- * (geoff@geoffthorpe.net) and Dr Stephen N Henson (steve@openssl.org)
+ * (geoff@geoffthorpe.net) and Dr Stephen N Henson (shenson@bigfoot.com)
  * for the OpenSSL project 2000.
  */
 /* ====================================================================
@@ -164,11 +164,11 @@ static const ENGINE_CMD_DEFN hwcrhk_cmd_defns[] = {
 		ENGINE_CMD_FLAG_STRING},
 	{HWCRHK_CMD_FORK_CHECK,
 		"FORK_CHECK",
-		"Turns fork() checking on (non-zero) or off (zero)",
+		"Turns fork() checking on or off (boolean)",
 		ENGINE_CMD_FLAG_NUMERIC},
 	{HWCRHK_CMD_THREAD_LOCKING,
 		"THREAD_LOCKING",
-		"Turns thread-safe locking on (zero) or off (non-zero)",
+		"Turns thread-safe locking on or off (boolean)",
 		ENGINE_CMD_FLAG_NUMERIC},
 	{HWCRHK_CMD_SET_USER_INTERFACE,
 		"SET_USER_INTERFACE",
@@ -232,6 +232,7 @@ static RAND_METHOD hwcrhk_rand =
 /* Constants used when creating the ENGINE */
 static const char *engine_hwcrhk_id = "chil";
 static const char *engine_hwcrhk_name = "CHIL hardware engine support";
+
 #ifndef OPENSSL_NO_DYNAMIC_ENGINE 
 /* Compatibility hack, the dynamic library uses this form in the path */
 static const char *engine_hwcrhk_id_alt = "ncipher";
@@ -588,6 +589,12 @@ static int hwcrhk_init(ENGINE *e)
 			hwcrhk_globals.mutex_release = hwcrhk_mutex_unlock;
 			hwcrhk_globals.mutex_destroy = hwcrhk_mutex_destroy;
 			}
+		else if (CRYPTO_get_locking_callback() != NULL)
+			{
+			HWCRHKerr(HWCRHK_F_HWCRHK_INIT,HWCRHK_R_LOCKING_MISSING);
+			ERR_add_error_data(1,"You HAVE to add dynamic locking callbacks via CRYPTO_set_dynlock_{create,lock,destroy}_callback()");
+			goto err;
+			}
 		}
 
 	/* Try and get a context - if not, we may have a DSO but no
@@ -846,6 +853,8 @@ static EVP_PKEY *hwcrhk_load_privkey(ENGINE *eng, const char *key_id,
 
 	return res;
  err:
+	if (res)
+		EVP_PKEY_free(res);
 #ifndef OPENSSL_NO_RSA
 	if (rtmp)
 		RSA_free(rtmp);
@@ -1201,11 +1210,6 @@ static int hwcrhk_get_pass(const char *prompt_info,
 	pem_password_cb *callback = NULL;
 	void *callback_data = NULL;
         UI_METHOD *ui_method = NULL;
-	/* Despite what the documentation says prompt_info can be
-	 * an empty string.
-	 */
-	if (prompt_info && !*prompt_info)
-		prompt_info = NULL;
 
         if (cactx)
                 {
@@ -1307,14 +1311,10 @@ static int hwcrhk_insert_card(const char *prompt_info,
 		{
 		char answer;
 		char buf[BUFSIZ];
-		/* Despite what the documentation says wrong_info can be
-	 	 * an empty string.
-		 */
-		if (wrong_info && *wrong_info)
+
+		if (wrong_info)
 			BIO_snprintf(buf, sizeof(buf)-1,
 				"Current card: \"%s\"\n", wrong_info);
-		else
-			buf[0] = 0;
 		ok = UI_dup_info_string(ui, buf);
 		if (ok >= 0 && prompt_info)
 			{

@@ -32,6 +32,7 @@
 #define FDORDBMSODBCFILTER_DATETIME_SUFFIX             L"'}"
 
 class FdoRdbmsSqlServerFilterProcessor;
+class FdoRdbmsSqlServerSpatialGeographyConverter;
 
 class FdoRdbmsSqlServerConnection: public FdoRdbmsConnection
 {
@@ -40,18 +41,19 @@ private:
 
     FdoIConnectionInfo          *mConnectionInfo;
 
+    FdoRdbmsSqlServerSpatialGeographyConverter
+                                *mGeographyConverter;
+
     bool                        mIsGeogLatLongSet;
     bool                        mIsGeogLatLong;
-    long                        mGeomVersion;
+
+	void						logOpen(char access);
+	void						delOpen();
+
 
 protected:
     virtual ~FdoRdbmsSqlServerConnection ();
     FdoRdbmsSqlServerConnection ();
-
-    // Checks if SQL Server version is 8 or earlier and 
-    // throws an exception if it is. The SQLServerSpatial provider
-    // relies on some sys views introduced in version 9.
-    void CheckForUnsupportedVersion();
 
     // Checks for FDO-style geometries. If any are present, an
     // exception is thrown. These geometries are created by the SqlServer
@@ -104,12 +106,6 @@ public:
     virtual FdoDateTime  DbiToFdoTime( const char* time );
 
     //
-    // Converts a SqlServer string date of a specific format to a FdoDateTime (time_t) format.
-    virtual FdoDateTime  DbiToFdoTime( const wchar_t* time );
-
-    virtual long GetSpatialGeometryVersion() { return mGeomVersion; }
-
-    //
     // Convert time_t( FdoDateTime ) to a SqlServer string date of the form.
     // It return a statically allocated storage that can be overwritten by subsequent call to this or other methods.
     virtual const char* FdoToDbiTime( FdoDateTime  time );
@@ -154,8 +150,6 @@ public:
     // Returns true if SQL Server handles geographic column coordinates in Latitude first order.
     // True only for beta versions of SQL Server 2008
     bool IsGeogLatLong();
-    
-    virtual FdoInt32 ExecuteDdlNonQuery(FdoString* sql);
 };
 
 

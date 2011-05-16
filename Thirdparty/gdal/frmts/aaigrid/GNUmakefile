@@ -5,11 +5,11 @@ OBJ	=	aaigriddataset.o
 
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS) $(XTRA_OPT)
 
-default:	$(OBJ:.o=.$(OBJ_EXT))
+default:	$(OBJ)
 
 clean:
 	rm -f *.o
 
-all:	$(OBJ:.o=.$(OBJ_EXT))
+all:	$(OBJ)
 
-install-obj:	$(O_OBJ:.o=.$(OBJ_EXT))
+install-obj:	$(O_OBJ)
