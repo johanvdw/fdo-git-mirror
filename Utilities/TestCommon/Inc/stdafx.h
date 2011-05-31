@@ -36,6 +36,7 @@
 
 #endif
 
+
 #ifdef _DEBUG
     #ifdef _WIN32
 #ifndef ASSERT
@@ -57,6 +58,20 @@
 #endif
 #endif
 
+
+
+//defines that helps us use hash_map (and similar STL classes) in the same way 
+//under Linux and Windows.
+#ifdef WIN32
+#include <hash_map>
+#include <functional>
+#else
+#include <ext/hash_map>
+#include <ext/functional>
+namespace stdext = ::__gnu_cxx;
+using namespace std;
+#endif
+
 #ifdef _WIN32
 #include <io.h>
 #include <stddef.h>
@@ -64,8 +79,12 @@
 #include <sys/time.h>
 #endif
 
+#include <cstring>
+#include <cstdio>
 #include <math.h>
 
+#include <FdoStd.h>
+#include <Fdo/Expression/DataValueCollection.h>
 #include <Fdo.h>
 
 #include <FdoCommonMiscUtil.h>

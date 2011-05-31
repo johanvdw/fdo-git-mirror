@@ -15,7 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
-#pragma once
+
 #include "SltGeomUtils.h"
 #include "vectormf.h"
 
@@ -131,4 +131,43 @@ private:
     //on a 16 byte boundary
     char _barr[sizeof(Bounds)*2]; 
     Bounds* _b;
+};
+
+class SpatialIteratorStep
+{
+public:
+    SpatialIteratorStep(SpatialIterator* siit)
+    {
+        m_siit = siit;
+        m_curfid = 0; //position prior to first record
+        m_siEnd = -1;
+    }
+    ~SpatialIteratorStep()
+    {
+        delete m_siit;
+    }
+    FdoInt64 ReadNext()
+    {
+        m_curfid++;
+        if (m_curfid >= m_siEnd)
+        {
+            int start;
+            //spatial reader is done, so we are done
+            if (m_siit == NULL || !m_siit->NextRange(start, m_siEnd))
+                return -1;
+            m_curfid = (FdoInt64)(start ? start : 1); //make sure we skip fid=0, which is not valid
+        }
+        return (*m_siit)[(int)m_curfid];
+    }
+    void Reset()
+    {
+        m_curfid = 0; //position prior to first record
+        m_siEnd = -1;
+        if (m_siit != NULL)
+            m_siit->Reset();
+    }
+private:
+    int m_curfid;
+    int m_siEnd;
+    SpatialIterator* m_siit;
 };

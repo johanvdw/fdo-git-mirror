@@ -33,6 +33,5 @@ protected:
     ~FdoRdbmsSqlServerCommandCapabilities(void);
 public:
 	virtual int* GetCommands(int& size);
-    virtual bool SupportsParameters() { return true; }
 };
 #endif

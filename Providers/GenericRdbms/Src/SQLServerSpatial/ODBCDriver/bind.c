@@ -94,7 +94,6 @@
 #include <sqlucode.h>
 #endif
 
-#define SQL_SS_LENGTH_UNLIMITED 0
 #include <limits.h>
 
 int odbcdr_bind(
@@ -228,11 +227,11 @@ int odbcdr_bind(
 						(SQLUSMALLINT)bindnum,
 						SQL_PARAM_INPUT,
 						(SQLSMALLINT) SQL_C_BINARY, 
-						SQL_VARBINARY,
-						(SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,  
+						SQL_LONGVARBINARY,
+						(SQLUINTEGER) address,  
 						(SQLSMALLINT) 0,
-						(SQLPOINTER) address,
-						(SQLINTEGER) SQL_SS_LENGTH_UNLIMITED, 
+						(SQLPOINTER) bindnum,
+						(SQLINTEGER) 0, 
 						&c->lenDataParam);
 
         if ( rc != SQL_SUCCESS_WITH_INFO ) {

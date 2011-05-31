@@ -171,8 +171,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Ph\Rd\SynonymReader.cpp" />
-    <ClCompile Include="Ph\Synonym.cpp" />
     <ClCompile Include="SchemaManager.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -262,8 +260,6 @@
     <ClCompile Include="Ph\Rd\SpatialContextReader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Ph\Rd\SynonymReader.h" />
-    <ClInclude Include="Ph\Synonym.h" />
     <ClInclude Include="SchemaManager.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Lp\AssociationPropertyDefinition.h" />

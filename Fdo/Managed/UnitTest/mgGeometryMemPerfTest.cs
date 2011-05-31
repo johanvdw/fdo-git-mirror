@@ -252,7 +252,7 @@ namespace Fdo_Test
             {
                 for (int i = 0;  i < numPositions;  i++)
                 {
-                    IDirectPosition pos = geometry[i];
+                    IDirectPosition pos = geometry.get_Item(i);
                 }
             }
             return numPositions;

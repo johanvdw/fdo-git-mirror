@@ -26,9 +26,8 @@ class RowidIterator;
 class SltExtendedSelect;
 struct NameOrderingPair;
 class StringBuffer;
+class SpatialIndexDescriptor;
 struct DBounds;
-
-#include "SpatialIndexDescriptor.h"
 
 // on read connection only the provider can open (internal) transactions
 enum SQLiteActiveTransactionType
@@ -62,7 +61,6 @@ struct QueryCacheRec
     sqlite3_stmt* stmt;
     bool inUse;
 };
-
 typedef std::vector<QueryCacheRec> QueryCacheRecList;
 typedef std::map<char*, QueryCacheRecList, string_less> QueryCache;
 
@@ -238,6 +236,7 @@ public:
     void                ApplySchema            (FdoFeatureSchema* schema, bool ignoreStates);
 
     sqlite3*        GetDbConnection() { return m_dbWrite; }
+    SpatialIndex*   GetSpatialIndex(const char* table);
     bool            GetExtents(const wchar_t* fcname, double ext[4]);
     SltMetadata*    GetMetadata(const char* table);
     SltReader*      CheckForSpatialExtents(FdoIdentifierCollection* props, FdoFeatureClass* fc, FdoFilter* filter, FdoParameterValueCollection*  parmValues);
@@ -265,14 +264,9 @@ public:
     bool AddSupportForTolerance();
     void FreeCachedSchema ();
     void ClearClassFromCachedSchema(const char* table, bool fullDrop);
-    FdoStringCollection* GetDbClasses();
-    static bool IsMetadataTable(const char* table);
-    bool CanUseFdoMetadata() {return m_bUseFdoMetadata && m_bHasFdoMetadata;};
-    bool NeedsMetadataLoaded(const char* table);
-    void AddMetadata(const char* table, SltMetadata* md);
-    SltMetadata* FindMetadata(const char* table);
 
 private :
+
     void AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_t* fcname);
     void AddDataCol(FdoDataPropertyDefinition* dpd, const wchar_t* fcname);
     void AddClassToSchema(FdoClassCollection* classes, FdoClassDefinition* fc);

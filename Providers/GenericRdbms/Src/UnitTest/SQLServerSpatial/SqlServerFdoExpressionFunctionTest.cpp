@@ -19,8 +19,6 @@
 #include "Pch.h"
 #include "SqlServerFdoExpressionFunctionTest.h"
 #include "UnitTestUtil.h"
-#include <limits>       // For quiet_NaN()
-using namespace std;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SqlServerFdoExpressionFunctionTest);
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(SqlServerFdoExpressionFunctionTest, "FdoExpressionFunctionTest");
@@ -1554,7 +1552,3 @@ void SqlServerFdoExpressionFunctionTest::CheckReaderGeometryAndCount (
 
 }  //  CheckReaderGeometry ()
 
-double SqlServerFdoExpressionFunctionTest::GetNullOrdinate()
-{
-    return numeric_limits<double>::quiet_NaN();
-}

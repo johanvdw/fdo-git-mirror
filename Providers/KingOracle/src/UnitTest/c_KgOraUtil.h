@@ -16,7 +16,6 @@ public:
   static FdoIConnection* OpentConnection(wchar_t* ConnString);
   static FdoIConnection* OpenNanaimoConnection_10_2();
   static FdoIConnection* OpenUnitTestConn_10_2_SDE();
-  static FdoIConnection* OpenUnitTestConnection_Elektro();
 };
 
 #endif

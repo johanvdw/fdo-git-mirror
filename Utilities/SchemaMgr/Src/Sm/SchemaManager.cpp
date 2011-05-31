@@ -350,7 +350,7 @@ void FdoSchemaManager::CreateSpatialContext(
     FdoSmPhOwnerP owner = physMgr->FindOwner();
 
     if ( owner && !GetLogicalPhysicalSchemas()->CanApplySchemaWithoutMetaSchema() ) {
-        if ( !owner->GetHasSCMetaSchema() )
+        if ( !owner->GetHasMetaSchema() )
             throw FdoSchemaException::Create(
                 FdoSmError::NLSGetMessage(
                     FDO_NLSID(FDOSM_32),
@@ -663,13 +663,10 @@ FdoFeatureSchemasP FdoSchemaManager::GetFdoSchemasEx( FdoStringP schemaName, Fdo
     try
     {
         FdoSmPhOwnerP owner = GetPhysicalSchema()->GetOwner();
-        if ( (!owner) || !(owner->GetHasAttrMetaSchema()) ) {
+        if ( (!owner) || !(owner->GetHasMetaSchema()) ) {
             // When no metaschema, need to bulk load pkeys (for identity properties)
+            // and fkeys (for association properties).
             owner->SetBulkLoadPkeys(true);
-        }
-
-        if ( (!owner) || !(owner->GetHasAssocMetaSchema()) ) {
-            // When no metaschema, need to bulk load fkeys (for association properties).
             owner->SetBulkLoadFkeys(true);
         }
 

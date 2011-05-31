@@ -20,7 +20,6 @@
 #define SLTQUERYTRANSLATOR_H
 
 #include "StringUtil.h"
-#include <SpatialIndex/SltGeomUtils.h>
 
 typedef std::vector<__int64> recno_list;
 
@@ -341,6 +340,7 @@ protected:
     FdoPtr<FdoClassDefinition>      m_fc;
     FdoPtr<FdoIdentifierCollection> m_props;
     StringBuffer m_expr;
+    StringBuffer m_sb;
     bool m_avoidExp;
     char m_useConv[256];
 };

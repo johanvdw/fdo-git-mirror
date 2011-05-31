@@ -2,7 +2,6 @@ include_directories( BEFORE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set( FdoRdbms_Other_STAT_SRCS
    FdoRdbmsBLOBStreamReader.cpp
-   FdoRdbmsSimpleBLOBStreamReader.cpp
    FdoRdbmsPrimaryKey.cpp
    FdoRdbmsException.cpp
    FdoRdbmsSQLCommand.cpp

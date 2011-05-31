@@ -33,7 +33,6 @@ libSmPhGrd_la_SOURCES = \
   Owner.cpp \
   SpatialContextGroupWriter.cpp \
   SpatialContextWriter.cpp \
-  Synonym.cpp \
   Table.cpp \
   View.cpp
 
@@ -47,7 +46,6 @@ noinst_HEADERS = $(libSmPhGrd_la_SOURCES) \
   Owner.h \
   SpatialContextGroupWriter.h \
   SpatialContextWriter.h \
-  Synonym.h \
   Table.h \
   View.h
 

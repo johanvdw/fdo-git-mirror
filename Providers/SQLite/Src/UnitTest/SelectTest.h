@@ -63,8 +63,6 @@ class SelectTest : public CppUnit::TestCase
     CPPUNIT_TEST(TestOverlaps);
     CPPUNIT_TEST(TestTouches);
     CPPUNIT_TEST(TestCachedStmWithRollback);
-    CPPUNIT_TEST(TestSelSubSelectType1);
-    CPPUNIT_TEST(TestSelSubSelectType2);
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -114,8 +112,6 @@ public:
     void TestOverlaps ();
     void TestTouches ();
     void TestCachedStmWithRollback ();
-    void TestSelSubSelectType1 ();
-    void TestSelSubSelectType2 ();
 };
 
 #endif

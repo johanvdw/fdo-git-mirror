@@ -34,9 +34,8 @@ enum FdoWmsCommandType{
 
     /// Represents the GetImageFormats command.
     FdoWmsCommandType_GetImageFormats =  FdoCommandType_FirstProviderCommand + WMS_FIRST_PROVIDER_COMMAND,
-    FdoWmsCommandType_GetFeatureClassStyles,
-    FdoWmsCommandType_GetFeatureClassCRSNames,
-    FdoWmsCommandType_GetFeatureInfo
+	FdoWmsCommandType_GetFeatureClassStyles,
+    FdoWmsCommandType_GetFeatureClassCRSNames
 };
 
 #endif

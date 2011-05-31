@@ -98,10 +98,6 @@
 *																		*
 ************************************************************************/
 
-// CLR UDT
-#define SQL_SS_UDT -151
-#define SQL_SS_XML -152
-
 int local_odbcdr_desc_slct(
     odbcdr_context_def *context,
 	char *cursor,		/* RDBI work area 				*/
@@ -170,13 +166,13 @@ int local_odbcdr_desc_slct(
                 *binary_size = (int) odbc_precision + 1;
             } else {
                 *rdbi_type	= RDBI_FIXED_CHAR;
-                *binary_size = (int) (odbc_precision!=0?odbc_precision:ODBCDR_LONGVARCHAR_SIZE);
+                *binary_size = (int) odbc_precision;
             }
 
             break;
 		case SQL_WCHAR :
             *rdbi_type	= RDBI_WSTRING;
-            *binary_size = (int) (odbc_precision!=0?odbc_precision:ODBCDR_WLONGVARCHAR_SIZE);
+            *binary_size = (int) odbc_precision;
             break;
         case SQL_BIT:
             /* Handle much like a CHAR. */
@@ -185,12 +181,9 @@ int local_odbcdr_desc_slct(
             break;
 		case SQL_WVARCHAR:  // ex: INFORMATION_SCHEAMA.SCHEMATA.SCHEMA_NAME
 			*rdbi_type	= RDBI_WSTRING;
-			*binary_size = (int) (odbc_precision!=0?odbc_precision:ODBCDR_WLONGVARCHAR_SIZE);
+			*binary_size = (int) odbc_precision;
 			break;
 		case SQL_VARCHAR :
-			*rdbi_type	= RDBI_STRING;
-            *binary_size = (int) (odbc_precision!=0?odbc_precision:ODBCDR_LONGVARCHAR_SIZE);
-			break;
 		case SQL_GUID :
 			*rdbi_type	= RDBI_STRING;
 			*binary_size = (int) odbc_precision;
@@ -268,18 +261,9 @@ int local_odbcdr_desc_slct(
 			*rdbi_type	= RDBI_STRING;
 			*binary_size = (int) odbc_precision+1;
             break;
-        case SQL_SS_UDT: // CLR UDT geometry/geography
+        case SQL_LONGVARBINARY:
 			*rdbi_type = RDBI_GEOMETRY;
 			*binary_size = sizeof(void*);
-            break;
-        case SQL_SS_XML:
-        case SQL_BINARY:
-        case SQL_VARBINARY:
-        case SQL_LONGVARBINARY:
-			*rdbi_type = RDBI_BLOB;
-            // for now just we can bind only blobs with size ODBCDR_WLONGVARCHAR_SIZE
-            // later we can add the support for dynamic fetch using a FdoByteArray
-			*binary_size = (int) (odbc_precision!=0?odbc_precision:ODBCDR_WLONGVARCHAR_SIZE);
             break;
 		default:
             // ODBC doesn't return an error. This is better than a generic error.

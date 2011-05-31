@@ -251,11 +251,6 @@ public:
 			int				sqlid,
 			char			*geom_col_name,
 			long			srid );
-
-	int geom_version_set(
-			int				sqlid,
-			char			*geom_col_name,
-			long			version );
 };
 
 #endif // _GDBICOMMANDS_

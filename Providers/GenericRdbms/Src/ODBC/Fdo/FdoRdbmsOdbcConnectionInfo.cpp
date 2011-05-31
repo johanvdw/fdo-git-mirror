@@ -328,7 +328,7 @@ void FdoRdbmsOdbcConnectionInfo::SetProviderDataFromDsn()
             mDependentFiles->Add(dbqReference);
         else
         {
-            FdoPtr<FdoStringCollection> allFiles = FdoStringCollection::Create();
+            std::vector<std::wstring> allFiles;
             FdoStringP pathInfo = GetRegistryValue(hkey, KEYNAME_DEFDIR_TEXT);
             if ((pathInfo != NULL) && (pathInfo.GetLength() > 0))
             {
@@ -337,10 +337,10 @@ void FdoRdbmsOdbcConnectionInfo::SetProviderDataFromDsn()
                 // The previous function returns all files in the named path.
                 // The following loop filters out the text files and adds
                 // those to the list of dependent files.
-                size_t allFilesCount = allFiles->GetCount();
+                size_t allFilesCount = allFiles.size();
                 for (size_t i = 0; i < allFilesCount; i++)
                 {
-                    FdoStringP fileName = allFiles->GetString(i);
+                    FdoStringP fileName = allFiles[i].c_str();
                     FdoStringP tmpFileName = fileName.Upper();
                     if ((tmpFileName.Contains(FILE_NAME_EXTENSION_ASC)) ||
                         (tmpFileName.Contains(FILE_NAME_EXTENSION_CSV)) ||
