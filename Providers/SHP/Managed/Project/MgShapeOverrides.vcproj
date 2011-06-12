@@ -46,7 +46,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(FDO)\Unmanaged\Inc;$(FDO)\Managed\Src;$(FDO)\Managed\Src\OSGeo;..\..\Inc;..\..\Inc\SHP\Override;..\Src\OSGeo"
 				AdditionalUsingDirectories="&quot;$(FDO)\Managed\bin\Win32\Debug&quot;"
@@ -99,7 +98,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning OSGeo.FDO.Providers.SHP.Overrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -130,7 +129,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(FDO)\Unmanaged\Inc;$(FDO)\Managed\Src;$(FDO)\Managed\Src\OSGeo;..\..\Inc;..\..\Inc\SHP\Override;..\Src\OSGeo"
 				AdditionalUsingDirectories="&quot;$(FDO)\Managed\bin\Win64\Debug&quot;"
@@ -183,7 +181,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning OSGeo.FDO.Providers.SHP.Overrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -214,7 +212,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(FDO)\Unmanaged\Inc;$(FDO)\Managed\Src;$(FDO)\Managed\Src\OSGeo;..\..\Inc;..\..\Inc\SHP\Override;..\Src\OSGeo"
 				AdditionalUsingDirectories="$(FDO)\Managed\bin\Win32\Release"
@@ -266,7 +263,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning OSGeo.FDO.Providers.SHP.Overrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -298,7 +295,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(FDO)\Unmanaged\Inc;$(FDO)\Managed\Src;$(FDO)\Managed\Src\OSGeo;..\..\Inc;..\..\Inc\SHP\Override;..\Src\OSGeo"
 				AdditionalUsingDirectories="&quot;$(FDO)\Managed\bin\Win64\Release&quot;"
@@ -350,7 +346,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning OSGeo.FDO.Providers.SHP.Overrides.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;$(FDO)\Managed\Fdo.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\OSGeo.FDO.Providers.SHP.Overrides.dll"
 			/>
 		</Configuration>
 	</Configurations>

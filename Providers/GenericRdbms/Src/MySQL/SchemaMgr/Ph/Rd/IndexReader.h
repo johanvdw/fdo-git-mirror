@@ -35,16 +35,12 @@ public:
     //      mgr: Physical Schema Manager
     //      dbObject: Retrieve indexes for this database object.
     FdoSmPhRdMySqlIndexReader(
-        FdoSmPhOwnerP owner,
+        FdoSmPhMgrP mgr,
         FdoSmPhDbObjectP    dbObject
     );
 
     FdoSmPhRdMySqlIndexReader(
-        FdoSmPhOwnerP owner,
-        FdoStringsP objectNames
-    );
-
-    FdoSmPhRdMySqlIndexReader(
+        FdoSmPhMgrP mgr,
         FdoSmPhOwnerP    owner
     );
 
@@ -54,8 +50,9 @@ public:
 private:
 
     FdoSmPhReaderP MakeReader(
-        FdoSmPhOwnerP owner,
-        FdoStringsP objectNames
+        FdoSmPhMgrP mgr,
+        const FdoSmPhOwner* owner,
+        FdoSmPhDbObjectP    dbObject
     );
 
     FdoSmPhDbObjectP mDbObject;

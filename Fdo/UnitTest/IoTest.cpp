@@ -46,12 +46,11 @@ void FdoIoTest::setUp()
 {
     // Create a file used for various file tests.
     FILE* fp = fopen( "testFile.txt", "w" );
-    fclose(fp);
-    fp = NULL;
+    FdoIoFileStreamP fileStream = FdoIoFileStream::Create( fp );
 
-    FdoIoFileStreamP fileStream = FdoIoFileStream::Create( L"testFile.txt", L"w" );
     fileStream->Write( (FdoByte*) "test file contents", 18 );
     fileStream = NULL;
+    fclose(fp);
 }
 
 void FdoIoTest::testStreams()
@@ -377,8 +376,6 @@ void FdoIoTest::testFileWrite()
 
 void FdoIoTest::testFileContext()
 {
-    // TODO: Function execution commented out. Fix FILE* issues.
-
     try {
         // Create a stream with no contextual support
         FdoIoFileStreamP fileStream = FdoIoFileStream::Create( stdin );
@@ -535,8 +532,6 @@ void FdoIoTest::testFileCapabilities()
         FDO_CPPUNIT_ASSERT( fileStream->CanRead() == true );
         FDO_CPPUNIT_ASSERT( fileStream->CanWrite() == true );
         FDO_CPPUNIT_ASSERT( fileStream->HasContext() == true );
- 
-/* TODO : Fix FILE* issues.
 
         FILE* fp = fopen( "testFile.txt", "r" );
         fileStream = FdoIoFileStream::Create( fp );
@@ -559,8 +554,6 @@ void FdoIoTest::testFileCapabilities()
         FDO_CPPUNIT_ASSERT( fileStream->CanRead() == false );
         FDO_CPPUNIT_ASSERT( fileStream->CanWrite() == true );
         CheckContext( fileStream, stderr );
-*/
-
     }
     catch ( FdoException* e ) {
 		UnitTestUtil::FailOnException( e );

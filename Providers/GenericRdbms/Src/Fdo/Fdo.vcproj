@@ -593,10 +593,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.cpp"
-					>
-				</File>
-				<File
 					RelativePath="Other\FdoRdbmsSQLCommand.cpp"
 					>
 				</File>
@@ -656,10 +652,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.cpp"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.cpp"
 					>
@@ -962,10 +954,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.h"
-					>
-				</File>
-				<File
 					RelativePath="Other\FdoRdbmsSQLCommand.h"
 					>
 				</File>
@@ -1037,10 +1025,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.h"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.h"
 					>

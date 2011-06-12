@@ -184,8 +184,7 @@ public:
         int   datatype,     /* A data type from Inc/rdbi.h              */
         int   size,         /* binary size                              */
         char *address,      /* data address                             */
-        GDBI_NI_TYPE *null_ind,
-        int typeBind = 1
+        GDBI_NI_TYPE *null_ind
     );
 
     int tran_begin( char    *tran_id );
@@ -252,11 +251,6 @@ public:
 			int				sqlid,
 			char			*geom_col_name,
 			long			srid );
-
-	int geom_version_set(
-			int				sqlid,
-			char			*geom_col_name,
-			long			version );
 };
 
 #endif // _GDBICOMMANDS_

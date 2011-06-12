@@ -47,8 +47,7 @@ int rdbi_bind(
         int datatype,
         int size,
         char *address,
-        void *null_ind,
-        int typeBind
+        void *null_ind
         );
 int rdbi_break(
         rdbi_context_def *context
@@ -195,9 +194,6 @@ int rdbi_get_info(
         int *exists
         );
 void rdbi_get_msg(
-        rdbi_context_def *context
-        );
-long rdbi_get_server_rc(
         rdbi_context_def *context
         );
 int rdbi_get_size(
@@ -419,12 +415,6 @@ int rdbi_geom_srid_set (
         int sqlid,
 		char *col_name,
         long srid );
-
-int rdbi_geom_version_set (
-        rdbi_context_def *context,
-        int sqlid,
-		char *col_name,
-        long version );
 
 int rdbi_geom_dimens_set (
         rdbi_context_def *context,

@@ -131,13 +131,12 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>inc;$(FDO)\Unmanaged\inc;$(FDO)\Unmanaged\Src\common;$(FDOUTILITIES)\Common\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;EXPRESSIONENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win32\Debug mkdir Lib\Win32\Debug
@@ -154,7 +153,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
@@ -168,7 +167,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win32\Debug mkdir Lib\Win32\Debug
@@ -185,7 +183,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -196,13 +194,12 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>inc;$(FDO)\Unmanaged\inc;$(FDO)\Unmanaged\Src\common;$(FDOUTILITIES)\Common\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN64_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;EXPRESSIONENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win64\Debug mkdir Lib\Win64\Debug
@@ -219,7 +216,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
@@ -236,7 +233,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win64\Debug mkdir Lib\Win64\Debug
@@ -254,7 +250,7 @@
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -266,7 +262,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win32\Release mkdir Lib\Win32\Release
@@ -283,7 +278,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -298,7 +293,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist Lib\Win64\Release mkdir Lib\Win64\Release
@@ -315,7 +309,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)ExpressionEngine.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

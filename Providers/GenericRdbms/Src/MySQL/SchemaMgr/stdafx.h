@@ -27,7 +27,6 @@
 #include <windows.h>
 #endif
 
-#include <vector>
 #include <cstring>
 #include <stdio.h>
 #include <Fdo.h>

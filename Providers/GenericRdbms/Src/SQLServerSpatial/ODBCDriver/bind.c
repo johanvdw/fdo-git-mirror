@@ -28,7 +28,6 @@
 *   int          size;                                                  *
 *   char        *address;                                               *
 *   short       *null_ind;                                              *
-*   int         typeBind;                                              *
 *                                                                       *
 * Description                                                           *
 *       Bind  a  ":n"  variable to a given address, data type and       *
@@ -72,9 +71,6 @@
 *       NULL).  If this pointer is itself NULL, the variable will       *
 *       be presumed to be always not NULL.                              *
 *                                                                       *
-*   typeBind:   input                                                   *
-*       Input=1; Output=4; InputOutput=2; Return=5                      *
-*                                                                       *
 * Function Value                                                        *
 *       An RDBI status integer.   Good  is  RDBI_SUCCESS  (ie 0).       *
 *       See inc/rdbi.h.  If the bound variable cannot be found in       *
@@ -98,7 +94,6 @@
 #include <sqlucode.h>
 #endif
 
-#define SQL_SS_LENGTH_UNLIMITED 0
 #include <limits.h>
 
 int odbcdr_bind(
@@ -108,8 +103,7 @@ int odbcdr_bind(
 	int 	 datatype,
 	int 	 size,
 	char	*address,
-	SQLLEN	*null_ind,
-    int      typeBind
+	SQLLEN	*null_ind
 	)
 {
 	odbcdr_cursor_def	*c;
@@ -201,7 +195,7 @@ int odbcdr_bind(
 		ODBCDR_ODBC_ERR( SQLBindParameter(
 						c->hStmt,
 						(SQLUSMALLINT) bindnum,
-                        typeBind,
+						SQL_PARAM_INPUT,
 						(SQLSMALLINT) odbcdr_datatype,
 						(SQLSMALLINT) sql_type,
 						(SQLUINTEGER) col_size,
@@ -233,11 +227,11 @@ int odbcdr_bind(
 						(SQLUSMALLINT)bindnum,
 						SQL_PARAM_INPUT,
 						(SQLSMALLINT) SQL_C_BINARY, 
-						SQL_VARBINARY,
-						(SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,  
+						SQL_LONGVARBINARY,
+						(SQLUINTEGER) address,  
 						(SQLSMALLINT) 0,
-						(SQLPOINTER) address,
-						(SQLINTEGER) SQL_SS_LENGTH_UNLIMITED, 
+						(SQLPOINTER) bindnum,
+						(SQLINTEGER) 0, 
 						&c->lenDataParam);
 
         if ( rc != SQL_SUCCESS_WITH_INFO ) {

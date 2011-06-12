@@ -693,7 +693,11 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
                             FdoIGeometry        *geom = NULL;
                             if ( ba )
                             {
-                                geom = gf->CreateGeometryFromFgf(ba);
+                                geom = mFdoConnection->TransformGeometry( 
+                                    FdoPtr<FdoIGeometry>(gf->CreateGeometryFromFgf(ba)), 
+                                    geomPropDef, 
+                                    false 
+                                );
 
                                 // Validate the input geometry
                                 mConnection->GetSchemaUtil()->CheckGeomPropOrdDimensionality( classDefinition, name, geom );
@@ -716,10 +720,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 								const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomPropDef)->GetColumn();
 								FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
 								if (geomCol)
-                                {
 									statement->geom_srid_set(bindIndex-1, (long)geomCol->GetSRID());
-                                    statement->geom_version_set(bindIndex-1, mFdoConnection->GetSpatialGeometryVersion());
-                                }
 								FdoStringsP geomSiKeys;
 								
 								const FdoSmPhColumn *columnSi1 = geomPropDef->RefColumnSi1();
@@ -953,7 +954,7 @@ long FdoRdbmsPvcUpdateHandler::Execute( const FdoSmLpClassDefinition *classDefin
 
             if ( values[i].type == FdoRdbmsDataType_Geometry )
             {
-                FdoIGeometry* disp = (FdoIGeometry*)(values[i].value.strvalue);
+                FdoIDisposable* disp = (FdoIDisposable*)(values[i].value.strvalue);
                 FDO_SAFE_RELEASE( disp );
             }
         }

@@ -24,10 +24,7 @@
 
 #ifdef _WIN32
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
-#include <float.h>
-#include <crtdbg.h>
+#define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers
 
 #ifndef _UNICODE
 #define _UNICODE

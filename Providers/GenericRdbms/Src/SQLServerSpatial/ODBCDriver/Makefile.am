@@ -39,7 +39,6 @@ execute_direct.c \
 fetch.c \
 fre_cursor.c \
 geom.c \
-blob.c \
 get_con_var.c \
 get_curr_conn.c \
 get_cursor.c \

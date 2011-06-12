@@ -44,6 +44,7 @@ public:
     FDOOWS_API void SetRequest (FdoString* request);
     FDOOWS_API FdoString* GetRequest ();
 
+protected:
     FDOOWS_API static FdoStringP UrlEscape(FdoString* urlPart);
 
 };

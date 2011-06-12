@@ -34,8 +34,7 @@ int postgis_bind (
     int   datatype,
     int   size,
     char *address,
-    char *null_ind,
-    int typeBind)
+    char *null_ind)
 {
     PGconn* postgis = NULL;
     postgis_cursor_def* curs = NULL;

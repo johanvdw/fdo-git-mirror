@@ -53,12 +53,6 @@ public:
 
     virtual void Rollback();
 
-    virtual FdoString* AddSavePoint(FdoString* suggestName);
-
-    virtual void ReleaseSavePoint(FdoString* savePointName);
-
-    virtual void Rollback(FdoString* savePointName);
-
     virtual void Dispose();
 
   private:

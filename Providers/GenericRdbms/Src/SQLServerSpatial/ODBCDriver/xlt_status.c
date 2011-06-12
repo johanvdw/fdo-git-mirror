@@ -133,7 +133,6 @@ static int get_error_from_diag_rec(
 	SDWORD  	SS_Severity = 0;
 	SQLINTEGER	Rownumber = 0;
 	SQLINTEGER  Colnumber = 0;
-    SQLCHAR     errSet = 0;
     szSqlState[0] = L'\0';
     szErrorMsg[0] = L'\0';
 
@@ -179,10 +178,6 @@ static int get_error_from_diag_rec(
 					SQL_DIAG_SS_SEVERITY, &SS_Severity,
 					SQL_IS_INTEGER,NULL);
 #endif
-
-            if (!errSet)
-                context->odbcdr_last_server_rc = pfNativeError;
-            errSet = 1;
 
 			switch( pfNativeError ) {
 				case 208 :
@@ -267,7 +262,6 @@ static void save_err_msg(
 	SQLSMALLINT	plm_cbSS_Procname, plm_cbSS_Srvname;
 	SQLCHAR   	plm_SS_Procname[555];
 	SQLCHAR   	plm_SS_Srvname[555];
-    SQLCHAR     errSet = 0;
     plm_szSqlState[0] = '\0';
     plm_szSqlState[0] = '\0';
 
@@ -325,10 +319,7 @@ static void save_err_msg(
                 (plm_pfNativeError == 5703)	) {	// Change language setting error code
 					break;// out of while loop, do not display error messages
 			} else {
-                
-                if (!errSet)
-                    context->odbcdr_last_server_rc = plm_pfNativeError;
-                errSet = 1;
+				
 				// Save the message.
 				strcpy( context->odbcdr_last_err_msg, (char*)plm_szErrorMsg );
 
@@ -373,7 +364,6 @@ static void save_err_msgW(
 	SQLSMALLINT	plm_cbSS_Procname, plm_cbSS_Srvname;
 	SQLWCHAR   	plm_SS_Procname[555];
 	SQLWCHAR   	plm_SS_Srvname[555];
-    SQLCHAR     errSet = 0;
     plm_szSqlState[0] = L'\0';
     plm_szErrorMsg[0] = L'\0';
 
@@ -432,10 +422,6 @@ static void save_err_msgW(
 					break;// out of while loop, do not display error messages
 			} else {
 				
-                if (!errSet)
-                    context->odbcdr_last_server_rc = plm_pfNativeError;
-                errSet = 1;
-
 				// Save the message.
 				wcscpy( context->odbcdr_last_err_msgW, (wchar_t*)plm_szErrorMsg );
 

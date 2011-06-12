@@ -28,6 +28,8 @@
 #define ABSOLUTE_NAME_START 1
 #endif
 
+#include <vector>
+
 class FdoException;
 
 class FdoCommonFile
@@ -509,7 +511,7 @@ public:
     /// \param files 
     /// The list of files to fill with names.
     /// 
-    static void GetAllFiles (const wchar_t* path, FdoStringCollection* files);
+    static void GetAllFiles (const wchar_t* path, std::vector<std::wstring>& files);
 
     /// \brief
     /// Make the specified directory.

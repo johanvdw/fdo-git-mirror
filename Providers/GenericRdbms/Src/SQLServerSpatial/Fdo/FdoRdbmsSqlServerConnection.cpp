@@ -38,6 +38,7 @@
 #include "FdoRdbmsSqlServerConnectionCapabilities.h"
 #include "FdoRdbmsSqlServerGeometryCapabilities.h"
 #include "FdoRdbmsSqlServerOptimizedAggregateReader.h"
+#include "FdoRdbmsSqlServerSpatialGeometryConverter.h"
 
 #include "DbiConnection.h"
 #include "Rdbms/FdoRdbmsCommandType.h"
@@ -53,7 +54,7 @@ wchar_t* getComDir (); // in SqlServer.cpp
 FdoRdbmsSqlServerConnection::FdoRdbmsSqlServerConnection():
 mFilterProcessor( NULL ),
 mConnectionInfo(NULL),
-mGeomVersion(1)
+mGeographyConverter(NULL)
 {
 }
 
@@ -61,6 +62,9 @@ FdoRdbmsSqlServerConnection::~FdoRdbmsSqlServerConnection ()
 {
     if( mFilterProcessor )
         delete mFilterProcessor;
+
+    if( mGeographyConverter )
+        delete mGeographyConverter;
 
     FDO_SAFE_RELEASE(mConnectionInfo);
 }
@@ -74,7 +78,10 @@ FdoRdbmsSqlServerConnection* FdoRdbmsSqlServerConnection::Create()
 
 FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
 {
-    FdoICommand* ret = NULL;
+    FdoICommand* ret;
+
+	FdoPtr<FdoICommandCapabilities> cmdCapabilities = GetCommandCapabilities();
+
     switch (commandType)
     {
         case FdoCommandType_CreateDataStore:
@@ -89,30 +96,21 @@ FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
              ret = new FdoRdbmsSqlServerDeleteCommand (this);
              break;
 
-        case FdoCommandType_Select:
-        case FdoCommandType_SelectAggregates:
-        case FdoCommandType_Insert:
-        case FdoCommandType_Update:
-        case FdoCommandType_DescribeSchema:
-        case FdoCommandType_ApplySchema:
-        case FdoCommandType_DestroySchema:
-        case FdoCommandType_DescribeSchemaMapping:
-        case FdoCommandType_ActivateSpatialContext:
-        case FdoCommandType_CreateSpatialContext:
-        case FdoCommandType_DestroySpatialContext:
-        case FdoCommandType_GetSpatialContexts:
-        case FdoCommandType_ListDataStores:
-        case FdoCommandType_SQLCommand:
-        case FdoCommandType_GetSchemaNames:
-        case FdoCommandType_GetClassNames:
-            ret = FdoRdbmsConnection::CreateCommand(commandType);
-            break;
         case FdoRdbmsCommandType_CreateSpatialIndex:
         case FdoRdbmsCommandType_DestroySpatialIndex:
         case FdoRdbmsCommandType_GetSpatialIndexes:
-        default:
-            throw FdoConnectionException::Create(NlsMsgGet(FDORDBMS_10, "Command not supported"));
-            break;
+			throw FdoConnectionException::Create(NlsMsgGet(FDORDBMS_10, "Command not supported"));
+			break;
+
+		 default:
+			 int size;
+			 FdoInt32 *cmds = cmdCapabilities->GetCommands( size );
+			 for(int i=0; i<size; i++ )
+			 {
+				 if( cmds[i] == commandType )
+					 return FdoRdbmsConnection::CreateCommand( commandType );
+			 }
+             return FdoRdbmsConnection::CreateCommand( -1/*undefined*/ );
     }
     return (ret);
 }
@@ -122,7 +120,6 @@ FdoRdbmsFilterProcessor* FdoRdbmsSqlServerConnection::GetFilterProcessor()
     if( mFilterProcessor == NULL )
         mFilterProcessor = new FdoRdbmsSqlServerFilterProcessor( this );
 
-    mFilterProcessor->Reset();
     return FDO_SAFE_ADDREF(mFilterProcessor);
 }
 
@@ -139,9 +136,6 @@ FdoIGeometryCapabilities* FdoRdbmsSqlServerConnection::GetGeometryCapabilities()
 {
     if( mGeometryCapabilities == NULL )
         mGeometryCapabilities = new FdoRdbmsSqlServerGeometryCapabilities();
-
-    FdoRdbmsSqlServerGeometryCapabilities* sc = (FdoRdbmsSqlServerGeometryCapabilities*)mGeometryCapabilities;
-    sc->SetGeomVersion(this->mGeomVersion);
 
     return FDO_SAFE_ADDREF(mGeometryCapabilities);
 }
@@ -197,29 +191,6 @@ FdoDateTime  FdoRdbmsSqlServerConnection::DbiToFdoTime( const char* timeStr )
         int count = sscanf(timeStr,"%4d-%02d-%02d %02d:%02d:%02d", &year, &month, &day, &hour, &minute, &seconds);     
         if( count != 6 )
             count = sscanf(timeStr,"%4d-%02d-%02d",&year, &month, &day);
-    }
-    fdoTime.year = (FdoInt16)year;
-    fdoTime.month = (FdoByte)month;
-    fdoTime.day = (FdoByte)day;
-    fdoTime.hour = (FdoByte)hour;
-    fdoTime.minute = (FdoByte)minute;
-    fdoTime.seconds = (float)seconds;
-    return fdoTime;
-}
-
- //
-// Converts a SqlServer string date of a specific format to a FdoDateTime (time_t) format.
-FdoDateTime  FdoRdbmsSqlServerConnection::DbiToFdoTime( const wchar_t* timeStr )
-{
-    FdoDateTime fdoTime;
-    int year, month, day, hour, minute, seconds;
-    year = month = day = hour = minute = seconds = 0;
-
-    if( timeStr != NULL && *timeStr != '\0' )
-    {
-        int count = swscanf(timeStr, L"%4d-%02d-%02d %02d:%02d:%02d", &year, &month, &day, &hour, &minute, &seconds);     
-        if( count != 6 )
-            count = swscanf(timeStr, L"%4d-%02d-%02d",&year, &month, &day);
     }
     fdoTime.year = (FdoInt16)year;
     fdoTime.month = (FdoByte)month;
@@ -406,9 +377,6 @@ void FdoRdbmsSqlServerConnection::CheckForUnsupportedVersion()
     minSupported->Add( 0 );
     minSupported->Add( 0 );
 
-    if (verTokens->GetValue(0) >= 11)
-        mGeomVersion = 2;
-
     if ( verTokens < minSupported )
     {
         throw FdoConnectionException::Create(
@@ -429,7 +397,7 @@ void FdoRdbmsSqlServerConnection::CheckForFdoGeometries()
     // assume these can be opened by this provider. 
     // Also skip check if the Schema Manager can't find the datastore (owner == NULL).
     // This case will be trapped later on and an exception thrown.
-    if ( !owner || !owner->GetHasAttrMetaSchema() ) 
+    if ( !owner || !owner->GetHasMetaSchema() ) 
         return;
 
     // Geometric properties have numeric attributetype. Following query find
@@ -438,7 +406,7 @@ void FdoRdbmsSqlServerConnection::CheckForFdoGeometries()
 	FdoStringP sqlStmt = L"select top 1 tablename from f_attributedefinition where lower(columntype) = 'image' and isnumeric(attributetype) = 1";
 
 	GdbiConnection* gdbiConn = phMgr->GetGdbiConnection();
-  	GdbiQueryResult *gdbiResult = gdbiConn->ExecuteQuery((const wchar_t*)sqlStmt);
+	GdbiQueryResult *gdbiResult = gdbiConn->ExecuteQuery((const wchar_t*)sqlStmt);
 
 	if (gdbiResult->ReadNext())
 	{
@@ -472,13 +440,13 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
         
         // Supported parameters identify datastore, userid and password.
 		// We'll generate an odbc connection string in this format:
-		//  "DRIVER={SQL Server Native Client 10.0};MARS_Connection=yes;SERVER=seconds;UID=username;PWD=passwd;" 
+		//  "DRIVER={SQL Server};SERVER=seconds;UID=username;PWD=passwd;" 
 		// If the UID and PWD parameters are not specified, the trusted connection 
 		// (windows authentication) is assumed.
         FdoStringP dataSource = dict->GetProperty(FDO_RDBMS_CONNECTION_SERVICE);
         if (dataSource != NULL && dataSource.GetLength() > 0)
         {
-            newCs = L"DRIVER={SQL Server Native Client 10.0};MARS_Connection=yes;SERVER=";
+            newCs = L"DRIVER={SQL Server}; SERVER=";
             newCs += dataSource;
 			FdoStringP user = dict->GetProperty(FDO_RDBMS_CONNECTION_USERNAME);
 			if (user.GetLength() > 0)
@@ -492,8 +460,6 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
 					newCs += passwd;
 				}
 			}
-            else
-                newCs += L";Trusted_Connection=yes";
         }
     }
 
@@ -599,13 +565,94 @@ FdoRdbmsFeatureReader *FdoRdbmsSqlServerConnection::GetOptimizedAggregateReader(
 
 FdoStringP FdoRdbmsSqlServerConnection::GetBindString( int n, const FdoSmLpPropertyDefinition* prop )
 { 
+    bool isGeom = false;
+    FdoInt64 srid = 0;
     FdoStringP bindStr(L"?", true);
+
+    const FdoSmLpGeometricPropertyDefinition* geomProp =
+        FdoSmLpGeometricPropertyDefinition::Cast(prop);
+
+    if ( geomProp ) 
+    {
+        FdoStringP geomType(L"geometry", true);
+
+        // For geometric properties, convert from WKB and add SRID.
+
+        FdoStringP scName = geomProp->GetSpatialContextAssociation();
+
+        FdoSchemaManagerP schemaMgr = this->GetSchemaManager();
+
+        // First, get SRID. Try column first.
+
+        FdoSmPhColumnP column = ((FdoSmLpGeometricPropertyDefinition*) geomProp)->GetColumn();
+    
+        if ( column ) 
+        {
+            FdoSmPhColumnGeomP geomColumn = column->SmartCast<FdoSmPhColumnGeom>();
+
+            if ( geomColumn ) 
+            {
+                srid = geomColumn->GetSRID();
+                // Also find out if geometry or geography column
+                geomType = geomColumn->GetTypeName();
+            }
+        }
+
+        // If Associated Spatial Context can be reached, get SRID from it
+        // instead
+
+        FdoSmLpSpatialContextMgrP scMgr = schemaMgr->GetLpSpatialContextMgr();
+        FdoSmLpSpatialContextP sc = scMgr->FindSpatialContext(scName);
+
+        if ( sc )
+        {
+            srid = sc->GetSrid();
+        }
+
+        bindStr = FdoStringP::Format( L"%ls::STGeomFromWKB(?, %ls)", (FdoString*) geomType, (FdoString*) FdoCommonStringUtil::Int64ToString(srid) );    
+    }
+
     return bindStr; 
 }
 
 bool  FdoRdbmsSqlServerConnection::BindGeometriesLast() 
 { 
     return true; 
+}
+
+FdoIGeometry* FdoRdbmsSqlServerConnection::TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo )
+{
+    FdoStringP geomType;
+    bool       geogLatLong = false;
+
+    if ( !IsGeogLatLong() )
+        // No special transformation for geometry columns
+        return FdoRdbmsConnection::TransformGeometry( geom, prop, toFdo );
+
+    //TODO: check performance impact of looking up geomType for each geometry value and
+    //optimize if necessary.
+    FdoSmPhColumnP column = ((FdoSmLpGeometricPropertyDefinition*) prop)->GetColumn();
+    
+    if ( column ) 
+    {
+        FdoSmPhColumnGeomP geomColumn = column->SmartCast<FdoSmPhColumnGeom>();
+
+        if ( geomColumn ) 
+        {
+            geomType = geomColumn->GetTypeName();
+        }
+    }
+
+    if ( geomType != L"geography" )
+        // No special transformation for geometry columns
+        return FdoRdbmsConnection::TransformGeometry( geom, prop, toFdo );
+
+
+    if ( !mGeographyConverter )
+        mGeographyConverter = new FdoRdbmsSqlServerSpatialGeographyConverter();
+
+    // For geography columns, flip the X and Y.
+    return mGeographyConverter->ConvertOrdinates( geom );
 }
 
 bool FdoRdbmsSqlServerConnection::IsGeogLatLong()
@@ -618,46 +665,4 @@ bool FdoRdbmsSqlServerConnection::IsGeogLatLong()
     }
 
     return mIsGeogLatLong;
-}
-
-FdoInt32 FdoRdbmsSqlServerConnection::ExecuteDdlNonQuery(FdoString* sql)
-{
-    GdbiConnection* gdbiConn = GetDbiConnection()->GetGdbiConnection();
-    GdbiCommands* gdbiCommands = gdbiConn->GetCommands();
-    bool autoCmtChanged = false;
-    FdoInt32 retVal = 0;
-
-    // Open and close a dummy transaction to force a commit before creating the database.
-    gdbiCommands->tran_begin ("SmPreChangeDatabase");
-    gdbiCommands->tran_end ("SmPreChangeDatabase");
-
-    int autoCmtMode = gdbiCommands->autocommit_mode();
-    if (autoCmtMode == 0) //SQL_AUTOCOMMIT_OFF
-    {
-        // we need it SQL_AUTOCOMMIT_ON with the new driver
-        gdbiCommands->autocommit_on();
-        autoCmtChanged = true;
-    }
-    // Wrap the database create in a transaction.
-    gdbiCommands->tran_begin ("SmPreChangeDatabase");
-    try
-    {
-        retVal = gdbiConn->ExecuteNonQuery(sql, true);
-    }
-    catch ( ... )
-    {
-        try
-        {
-            gdbiCommands->tran_end ("SmPreChangeDatabase");
-	        if (autoCmtChanged)
-		        gdbiCommands->autocommit_off();
-        }
-        catch (FdoException *ex) { ex->Release(); }
-        catch ( ... ) {}            
-        throw;
-    }
-    gdbiCommands->tran_end ("SmPreChangeDatabase");
-    if (autoCmtChanged)
-        gdbiCommands->autocommit_off();
-    return retVal;
 }

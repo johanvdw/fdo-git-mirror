@@ -32,6 +32,7 @@
 #define FDORDBMSODBCFILTER_DATETIME_SUFFIX             L"'}"
 
 class FdoRdbmsSqlServerFilterProcessor;
+class FdoRdbmsSqlServerSpatialGeographyConverter;
 
 class FdoRdbmsSqlServerConnection: public FdoRdbmsConnection
 {
@@ -40,9 +41,11 @@ private:
 
     FdoIConnectionInfo          *mConnectionInfo;
 
+    FdoRdbmsSqlServerSpatialGeographyConverter
+                                *mGeographyConverter;
+
     bool                        mIsGeogLatLongSet;
     bool                        mIsGeogLatLong;
-    long                        mGeomVersion;
 
 protected:
     virtual ~FdoRdbmsSqlServerConnection ();
@@ -104,12 +107,6 @@ public:
     virtual FdoDateTime  DbiToFdoTime( const char* time );
 
     //
-    // Converts a SqlServer string date of a specific format to a FdoDateTime (time_t) format.
-    virtual FdoDateTime  DbiToFdoTime( const wchar_t* time );
-
-    virtual long GetSpatialGeometryVersion() { return mGeomVersion; }
-
-    //
     // Convert time_t( FdoDateTime ) to a SqlServer string date of the form.
     // It return a statically allocated storage that can be overwritten by subsequent call to this or other methods.
     virtual const char* FdoToDbiTime( FdoDateTime  time );
@@ -139,14 +136,21 @@ public:
     // Workaround for SqlServer spatial bug: on Insert the geometries need to be bound last.
     virtual bool  BindGeometriesLast();
 
+    // This function exchanges the X and Y coordinates of the given geometry if 
+    // the column is a geography column. SQLServer returns geometries for 
+    // geography columns with X being Latitude and Y Longitude. FDO expects
+    // the reverse.
+    // TransformGeometry is called when ever geometries are sent or retrieved
+    // to or from the RDBMS.
+    virtual FdoIGeometry* TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo );
+
+
     //Count() and SpatialExtents()
     virtual FdoRdbmsFeatureReader *GetOptimizedAggregateReader(const FdoSmLpClassDefinition* classDef, aggr_list *selAggrList, FdoFilter* filter = NULL);
 
     // Returns true if SQL Server handles geographic column coordinates in Latitude first order.
     // True only for beta versions of SQL Server 2008
     bool IsGeogLatLong();
-    
-    virtual FdoInt32 ExecuteDdlNonQuery(FdoString* sql);
 };
 
 

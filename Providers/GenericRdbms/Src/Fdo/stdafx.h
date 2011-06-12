@@ -29,7 +29,6 @@
 #endif // _WIN32
 
 // System includes
-#include <vector>
 #include <cstring>
 
 // Base FDO headers

@@ -84,11 +84,10 @@ typedef struct rdbi_methods_def {
     int  (*execute)(void*,char*,int,int,int*);
     int  (*exec_coc)(void*);
     int  (*define)(void*,char*,char*,int,int,char*,void*);
-    int  (*bind)(void*,char*,char*,int,int,char*,void*,int);
+    int  (*bind)(void*,char*,char*,int,int,char*,void*);
     int  (*fetch)(void*,char*,int,int,int,int*);
     void  (*get_msg)(void*,char*);
     void  (*get_msgW)(void*,wchar_t*);
-    long  (*get_server_rc)(void*);
     int  (*alcnullind)(void*,int,char**);
     void  (*set_null)(void*,void*,int,int);
     void  (*set_nnull)(void*,void*,int,int);
@@ -132,7 +131,6 @@ typedef struct rdbi_methods_def {
     int  (*set_schemaW)(void*,const wchar_t*);
     int  (*vndr_info)(void*, rdbi_vndr_info_def *);
     int  (*geom_srid_set)(void*,char*,char*,long);
-    int  (*geom_version_set)(void*,char*,char*,long);
     int  (*geom_dimens_set)(void*,char*,int);
     int  (*get_geoms_ext)( void *, char *, char *,  pIGeometry_def *);
     int  (*lob_create_ref)(void*,char*,void**);

@@ -62,7 +62,7 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
     size_t length;
     wchar_t* name;
     wchar_t* dir;
-    FdoPtr<FdoStringCollection> files = FdoStringCollection::Create();
+    std::vector<std::wstring> files;
     int count;
     wchar_t* p;
     size_t base_length;
@@ -101,9 +101,10 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
             dir[1] = FILE_PATH_DELIMITER;
             dir[2] = L'\0';
         }
+
         // scan the directory and match extensions
         FdoCommonFile::GetAllFiles (dir, files);
-        count = (int)files->GetCount ();
+	    count = (int)files.size ();
         base_length = wcslen (mBaseName);
         shp_file = NULL;
         dbf_file = NULL;
@@ -118,7 +119,7 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
             size_t length;
             std::wstring path;
             
-            name = files->GetString(i);;
+            name = files[i].c_str ();
             length = wcslen (name);
             if      (match (name, length, mBaseName, base_length, SHP_EXTENSION, ELEMENTS(SHP_EXTENSION) - 1))
             {

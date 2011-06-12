@@ -204,11 +204,6 @@ public:
     virtual FdoDateTime  DbiToFdoTime( const char* time ) = 0;
 
     //
-    // Converts a dbi string date of a specific format to a FdoDateTime (time_t) format.
-    // The string format have to be of the form: "YYYY-MM-DD-HH24-MI-SS"
-    virtual FdoDateTime  DbiToFdoTime( const wchar_t* time ) = 0;
-
-    //
     // Convert time_t( FdoDateTime ) to char of the form: "YYYY-MM-DD-HH24-MI-SS", See ORACLE_DATE_FORMAT define
     // It return a statically allocated storage that can be overwritten by subsequent call to this or other methods.
     virtual const char* FdoToDbiTime( FdoDateTime  time ) = 0;
@@ -247,6 +242,18 @@ public:
         bool& unsupportedTypeExp
     );
 
+    // Perform any required geometry transformations when sending or retrieving geometries to or from the RDBMS.
+    // The default implementation does not modify the geometry.
+    //
+    // geom - the geometry to transform
+    // prop - corresponding geometric property
+    // toFDO -
+    //      true: transforming from RDBMS to FDO format
+    //      false: transforming from FDO to RDBMS format
+    //
+    // Returns the transformed geometry.
+    virtual FdoIGeometry* TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo );
+
     // Binds a geometry value to a variable in a query's where clause. 
     // Allows spatial conditions to be specified by bind variables.
     //
@@ -270,8 +277,6 @@ public:
         FdoRdbmsFilterProcessor::BoundGeometry* geom,
         int bindIndex
     );
-
-    virtual long GetSpatialGeometryVersion() { return 0x00; }
 
     // Frees a bind value previously returned by BindSpatialGeometry().
     // Providers that support bounding spatial condition geometries
@@ -310,7 +315,6 @@ public:
 
     virtual void Flush() {}
 
-    virtual FdoInt32 ExecuteDdlNonQuery(FdoString* sql);
 protected:
     //Instantiates the right Schema Manager for this connection's provider.
     virtual FdoSchemaManagerP NewSchemaManager(
