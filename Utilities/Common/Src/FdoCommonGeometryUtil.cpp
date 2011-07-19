@@ -552,10 +552,20 @@ bool FdoCommonGeometryUtil::IsPolygonCompatible(FdoIPolygon *polygon)
 //
 
 // detemines the number of ordinates in a particular dimensionality coordinate
-#define FDODIM2NCOORDS(x) (x + 2 - x/2)
 inline FdoInt32 FdoCommonGeometryUtil::DimensionalityToNumOrdinates(FdoInt32 dimensionality)
 {
-    return FDODIM2NCOORDS(dimensionality);
+    FdoInt32 value = 0;
+
+    if ( dimensionality == FdoDimensionality_XY )
+        value = 2;
+    else if ( dimensionality == ( FdoDimensionality_XY | FdoDimensionality_Z ) )
+        value = 3;
+    else if ( dimensionality == ( FdoDimensionality_XY | FdoDimensionality_M ) )
+        value = 3;
+    else if ( dimensionality == ( FdoDimensionality_XY | FdoDimensionality_Z | FdoDimensionality_M ) )
+        value = 4;
+
+    return value;
 }
 
 // Determines if orientation is clockwise or counterclockwise

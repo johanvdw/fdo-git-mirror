@@ -43,8 +43,7 @@ FdoRdbmsFilterProcessor::FdoRdbmsFilterProcessor():
  mUseTableAliases( true ),
  mUseNesting( true ),
  mUseGrouping( false ),
- mAddNegationBracket( false ),
- mContainsCustomObjects (false)
+ mAddNegationBracket( false )
 {
 
 }
@@ -60,8 +59,7 @@ FdoRdbmsFilterProcessor::FdoRdbmsFilterProcessor(FdoRdbmsConnection *connection)
  mUseTableAliases( true ),
  mUseNesting( true ),
  mUseGrouping( false ),
- mAddNegationBracket( false ),
- mContainsCustomObjects (false)
+ mAddNegationBracket( false )
 {
 
 }
@@ -163,14 +161,9 @@ void FdoRdbmsFilterProcessor::PrependString(const char *str)
 // Add a string to the end of the buffer
 void FdoRdbmsFilterProcessor::AppendString(const wchar_t *str)
 {
-    AppendString(str, wcslen( str ));
-}
-
-void FdoRdbmsFilterProcessor::AppendString(const wchar_t *str, size_t len)
-{
-    ReallocBuffer( len + 1, true );
+    ReallocBuffer( wcslen( str ) + 1, true );
     wcscpy( &mSqlFilterText[mNextTxtIndex], str );
-    mNextTxtIndex += len;
+    mNextTxtIndex += wcslen( str );
 }
 
 //
@@ -311,7 +304,6 @@ const wchar_t * FdoRdbmsFilterProcessor::PropertyNameToColumnName( const wchar_t
 
         case FdoPropertyType_ObjectProperty:
             {
-                mContainsCustomObjects = true;
                 const FdoSmLpObjectPropertyDefinition* objProp =
                             static_cast<const FdoSmLpObjectPropertyDefinition*>(propertyDefinition);
 
@@ -335,7 +327,6 @@ const wchar_t * FdoRdbmsFilterProcessor::PropertyNameToColumnName( const wchar_t
 
         case FdoPropertyType_GeometricProperty:
             {
-                mContainsCustomObjects = true;
                 const FdoSmLpGeometricPropertyDefinition* geomProp =
                             static_cast<const FdoSmLpGeometricPropertyDefinition*>(propertyDefinition);
 
@@ -373,7 +364,7 @@ void FdoRdbmsFilterProcessor::ProcessAggregateFunction (FdoFunction& expr)
 {
     // Append the function name and the opening bracket.
     ProcessFunctionName(expr);
-	AppendString (L"( ", 2);
+	AppendString( "( " );
 
     // Process the arguments. This is where the special processing is required as
     // it is required to have the parameters listed sequentially without a comma
@@ -389,7 +380,7 @@ void FdoRdbmsFilterProcessor::ProcessAggregateFunction (FdoFunction& expr)
             {
                 FdoStringValue *stringValue = static_cast<FdoStringValue *>(dataValue);
                 AppendString(stringValue->GetString());
-                AppendString(L" ", 1);
+                AppendString(L" ");	
             }
             else
                 throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_29, "Unsupported FDO type in expression"));
@@ -397,7 +388,7 @@ void FdoRdbmsFilterProcessor::ProcessAggregateFunction (FdoFunction& expr)
         else
             HandleExpr(exp);
 	}
-    AppendString(L" )", 2);
+    AppendString(" )");
 }
 
 void FdoRdbmsFilterProcessor::ProcessBinaryExpression(FdoBinaryExpression& expr)
@@ -408,26 +399,26 @@ void FdoRdbmsFilterProcessor::ProcessBinaryExpression(FdoBinaryExpression& expr)
         throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_252, "%1$ls is missing the left expression", L"FdoBinaryExpression" ));
     if( rgtExpr == NULL )
         throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_253, "%1$ls is missing the right expression", L"FdoBinaryExpression" ));
-    AppendString (OPEN_PARENTH, 3);
+    AppendString( OPEN_PARENTH );
     HandleExpr( lftExpr );
     switch( expr.GetOperation() )
     {
-        case FdoBinaryOperations_Add: AppendString( ARITHMETIC_PLUS, 3 );
+        case FdoBinaryOperations_Add: AppendString( ARITHMETIC_PLUS );
             break;
-        case FdoBinaryOperations_Subtract: AppendString( ARITHMETIC_MINUS, 3 );
-            break;
-
-        case FdoBinaryOperations_Multiply: AppendString( ARITHMETIC_MULT, 3 );
+        case FdoBinaryOperations_Subtract: AppendString( ARITHMETIC_MINUS );
             break;
 
-        case FdoBinaryOperations_Divide: AppendString( ARITHMETIC_DIV, 3 );
+        case FdoBinaryOperations_Multiply: AppendString( ARITHMETIC_MULT );
+            break;
+
+        case FdoBinaryOperations_Divide: AppendString( ARITHMETIC_DIV );
             break;
 
         default:
             throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_63, FILTER_ERROR));
     }
     HandleExpr( rgtExpr );
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString( CLOSE_PARENTH );
 }
 
 void FdoRdbmsFilterProcessor::ProcessUnaryExpression(FdoUnaryExpression& expr)
@@ -438,9 +429,9 @@ void FdoRdbmsFilterProcessor::ProcessUnaryExpression(FdoUnaryExpression& expr)
 
     if( expr.GetOperation() == FdoUnaryOperations_Negate )
     {
-        AppendString (L" ( - ( ", 7);
+        AppendString( L" ( - ( " );
         HandleExpr( uniExpr );
-        AppendString (L" ) ) ", 5);
+        AppendString( L" ) ) ");
     }
     else
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_257, "FdoUnaryExpression supports only the negate operation" ));
@@ -449,18 +440,18 @@ void FdoRdbmsFilterProcessor::ProcessUnaryExpression(FdoUnaryExpression& expr)
 void FdoRdbmsFilterProcessor::ProcessFunction(FdoFunction& expr)
 {
     ProcessFunctionName(expr);
-    //AppendString (OPEN_PARENTH, 3); // MySql tripped on the leading space 
-	AppendString (L"( ", 2); 
+    //AppendString( OPEN_PARENTH ); // MySql tripped on the leading space 
+	AppendString(L"( "); 
     FdoPtr<FdoExpressionCollection> exprCol = expr.GetArguments();
     for(int i=0; i<exprCol->GetCount(); i++ )
     {
         if( i!= 0 )
-            AppendString (L", ", 2);
+            AppendString( L", " );
 
         FdoPtr<FdoExpression>exp = exprCol->GetItem( i );
         HandleExpr( exp );
     }
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString( CLOSE_PARENTH );
 }
 
 
@@ -476,9 +467,9 @@ void FdoRdbmsFilterProcessor::ProcessComputedIdentifier(FdoComputedIdentifier& e
     if( pExpr == NULL )
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_256, "FdoComputedIdentifier is missing the expression"));
 
-    AppendString (OPEN_PARENTH, 3);
+    AppendString( OPEN_PARENTH );
     HandleExpr( pExpr );
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString( CLOSE_PARENTH );
 }
 
 void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOuterJoin, bool inSelectList )
@@ -509,7 +500,6 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
             {
                 case FdoPropertyType_ObjectProperty:
                     {
-                    mContainsCustomObjects = true;
                     objProp = static_cast<const FdoSmLpObjectPropertyDefinition*>(propertyDefinition);
 
                     // If one of the object properties is of collection type, then we may need to add a distinct key word to the select.
@@ -566,7 +556,6 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
                 case FdoPropertyType_AssociationProperty:
                     {
                     assocProp = static_cast<const FdoSmLpAssociationPropertyDefinition*>(propertyDefinition);
-                    mContainsCustomObjects = true;
 
 
                     FdoStringP pkTable = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
@@ -608,7 +597,6 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
 
         case FdoPropertyType_ObjectProperty:
             {
-                mContainsCustomObjects = true;
                 const FdoSmLpObjectPropertyDefinition* objProp =
                             static_cast<const FdoSmLpObjectPropertyDefinition*>(propertyDefinition);
                 AppendObjectProperty( currentClass, objProp, useOuterJoin, inSelectList ); 
@@ -625,7 +613,6 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
 
         case FdoPropertyType_AssociationProperty:
             {
-                mContainsCustomObjects = true;
                 const FdoSmLpAssociationPropertyDefinition* assocProp =
                             static_cast<const FdoSmLpAssociationPropertyDefinition*>(propertyDefinition);
                 AppendAssociationProperty( currentClass, assocProp, useOuterJoin, inSelectList ); 
@@ -638,115 +625,81 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
 
 void FdoRdbmsFilterProcessor::ProcessParameter( FdoParameter& expr )
 {
-    AppendString (L"?", 1);
-    
-    FdoPtr<FdoParameterValue> pVal = (mParams == NULL) ? NULL : mParams->FindItem(expr.GetName());
-    if( pVal == NULL )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_103, "Invalid parameter"));
-    FdoPtr<FdoLiteralValue> lv = pVal->GetValue();
-    mUsedParameterValues.push_back(std::make_pair(lv.p, 0));
+    AppendString( L":" );
+    AppendString( PropertyNameToColumnName( expr.GetName() ) );
 }
 
 void FdoRdbmsFilterProcessor::ProcessBooleanValue(FdoBooleanValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        if( expr.GetBoolean() )
-            AppendString (L"1", 1);  // Database bool true
-        else
-            AppendString (L"0", 1);  // Database bool false
-    }
+    if( expr.GetBoolean() )
+        AppendString( L"1" );  // Database bool true
     else
-        AppendString (L"null", 4);
+        AppendString( L"0" );  // Database bool false
 }
 
 void FdoRdbmsFilterProcessor::ProcessByteValue(FdoByteValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        swprintf(mConvBuffer, MEM_BLOCK_ALLOC_SIZE, L"%d", (int)expr.GetByte());
-        AppendString(mConvBuffer);
-    }
-    else
-        AppendString (L"null", 4);
+    wchar_t   val[2];
+    val[0] = expr.GetByte();
+    val[1] = '\0';
+    AppendString( L"'" );
+    AppendString( val );
+    AppendString( L"'" );
 }
 
 void FdoRdbmsFilterProcessor::ProcessDateTimeValue(FdoDateTimeValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        AppendString (L"'", 1);
-        AppendString (mFdoConnection->FdoToDbiTime( expr.GetDateTime() ));
-        AppendString (L"'", 1);
-    }
-    else
-        AppendString (L"null", 4);
+    AppendString( L"'" );
+    AppendString( mFdoConnection->FdoToDbiTime( expr.GetDateTime() ) );
+    AppendString( L"'" );
 }
 
 void FdoRdbmsFilterProcessor::ProcessDoubleValue(FdoDoubleValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        swprintf(mConvBuffer, MEM_BLOCK_ALLOC_SIZE, L"%.16g",expr.GetDouble());
-        AppendString (mConvBuffer);
-    }
-    else
-        AppendString (L"null", 4);
+    char    tmpValue[124];
+    sprintf(tmpValue,"%.16g",expr.GetDouble());
+    AppendString( tmpValue );
 }
 
 void FdoRdbmsFilterProcessor::ProcessDecimalValue(FdoDecimalValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        // since we use double for a decimal we should use %.16g and not %.8f
-        // in case this will generate issues we can change it back to %.8f
-        swprintf(mConvBuffer, MEM_BLOCK_ALLOC_SIZE, L"%.16g",expr.GetDecimal());
-        AppendString (mConvBuffer);
-    }
-    else
-        AppendString (L"null", 4);
+    char    tmpValue[124];
+    sprintf(tmpValue,"%.8f",expr.GetDecimal());
+    AppendString( tmpValue );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInt16Value(FdoInt16Value& expr)
 {
-    if (!expr.IsNull())
-        AppendString( FdoCommonOSUtil::itow( (int)expr.GetInt16(),mConvBuffer, MEM_BLOCK_ALLOC_SIZE) );
-    else
-        AppendString (L"null", 4);
+    char    tmpValue[124];
+    AppendString( FdoCommonOSUtil::itoa( (int)expr.GetInt16(),tmpValue) );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInt32Value(FdoInt32Value& expr)
 {
-    if (!expr.IsNull())
-        AppendString( FdoCommonOSUtil::itow( (int)expr.GetInt32(),mConvBuffer, MEM_BLOCK_ALLOC_SIZE) );
-    else
-        AppendString (L"null", 4);
+    char    tmpValue[124];
+    AppendString( FdoCommonOSUtil::itoa( (int)expr.GetInt32(),tmpValue) );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInt64Value(FdoInt64Value& expr)
 {
-    if (!expr.IsNull())
-    {
+    char    tmpValue[124];
+
 #ifdef _WIN32
-        _i64tow_s(expr.GetInt64(), mConvBuffer, MEM_BLOCK_ALLOC_SIZE, 10);
+	strncpy( tmpValue, _i64toa( (FdoInt64)(dynamic_cast<FdoInt64Value&>(expr)).GetInt64(),tmpValue, 10 ), 123 );
+	tmpValue[123]='\0';
 #else
-        swprintf(mConvBuffer, MEM_BLOCK_ALLOC_SIZE, L"%lld", (long long int)expr.GetInt64());
+
+	sprintf(tmpValue, "%lld", (FdoInt64)(dynamic_cast<FdoInt64Value&>(expr)).GetInt64());
 #endif
-        AppendString (mConvBuffer);
-    }
-    else
-        AppendString (L"null", 4);
+    AppendString(tmpValue);
+
 }
 
 void FdoRdbmsFilterProcessor::ProcessSingleValue(FdoSingleValue& expr)
 {
-    if (!expr.IsNull())
-    {
-        swprintf(mConvBuffer, MEM_BLOCK_ALLOC_SIZE, L"%.8f",expr.GetSingle());
-        AppendString (mConvBuffer);
-    }
-    else
-        AppendString (L"null", 4);
+    char    tmpValue[124];
+    sprintf(tmpValue,"%.8f",expr.GetSingle());
+    AppendString( tmpValue );
 }
 
 void FdoRdbmsFilterProcessor::ProcessStringValue(FdoStringValue& expr)
@@ -788,28 +741,28 @@ void FdoRdbmsFilterProcessor::ProcessBinaryLogicalOperator(FdoBinaryLogicalOpera
     const FdoSmLpDataPropertyDefinitionCollection *properties = classDefinition->RefIdentityProperties();
 
     if (mUseNesting)
-        AppendString (OPEN_PARENTH, 3);
+        AppendString(OPEN_PARENTH);
     if( filter.GetOperation() == FdoBinaryLogicalOperations_And )
     {
         useGrouping  = mUseGrouping;
         mUseGrouping = false;
         if (useGrouping)
-            AppendString (OPEN_PARENTH, 3);
+            AppendString(OPEN_PARENTH);
         HandleFilter( leftOperand );
         if (useGrouping)
-            AppendString (CLOSE_PARENTH, 3);
+            AppendString(CLOSE_PARENTH);
         AppendString( LOGICAL_AND );
         if (useGrouping)
-            AppendString (OPEN_PARENTH, 3);
+            AppendString(OPEN_PARENTH);
         HandleFilter( rightOperand );
         if (useGrouping)
-            AppendString (CLOSE_PARENTH, 3);
+            AppendString(CLOSE_PARENTH);
     }
     else
     {
         mProcessingOrOperator = true;
         HandleFilter( leftOperand );
-        AppendString (LOGICAL_OR, 4);
+        AppendString( LOGICAL_OR );
         HandleFilter( rightOperand );
 		FdoSpatialCondition* leftSpCond = dynamic_cast<FdoSpatialCondition*>(leftOperand.p);
         FdoSpatialCondition* rightSpCond = dynamic_cast<FdoSpatialCondition*>(rightOperand.p);
@@ -821,7 +774,7 @@ void FdoRdbmsFilterProcessor::ProcessBinaryLogicalOperator(FdoBinaryLogicalOpera
     }
 
     if (mUseNesting)
-        AppendString (CLOSE_PARENTH, 3);
+        AppendString(CLOSE_PARENTH);
 
   	// Save 
 	mFilterLogicalOps.push_back( filter.GetOperation() );
@@ -836,37 +789,37 @@ void FdoRdbmsFilterProcessor::ProcessComparisonCondition(FdoComparisonCondition&
     if( rtExp == NULL )
         throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_253, "%1$ls is missing the right expression", L"FdoComparisonCondition" ));
 
-    AppendString (OPEN_PARENTH, 3);
+    AppendString( OPEN_PARENTH );
     HandleExpr( lfExp );
 
     switch ( filter.GetOperation() )
     {
-        case FdoComparisonOperations_EqualTo: AppendString (EQUAL_OP, 3);
+        case FdoComparisonOperations_EqualTo: AppendString( EQUAL_OP );
             break;
 
-        case FdoComparisonOperations_NotEqualTo: AppendString (NOT_EQUAL_OP, 4);
+        case FdoComparisonOperations_NotEqualTo: AppendString( NOT_EQUAL_OP );
             break;
 
-        case FdoComparisonOperations_GreaterThan: AppendString (GREATER_THAN_OP, 3);
+        case FdoComparisonOperations_GreaterThan: AppendString( GREATER_THAN_OP );
             break;
 
-        case FdoComparisonOperations_GreaterThanOrEqualTo: AppendString (GREATER_OR_EQUAL_OP, 4);
+        case FdoComparisonOperations_GreaterThanOrEqualTo: AppendString( GREATER_OR_EQUAL_OP );
             break;
 
-        case FdoComparisonOperations_LessThan: AppendString (LESS_THAN_OP, 3);
+        case FdoComparisonOperations_LessThan: AppendString( LESS_THAN_OP );
             break;
 
-        case FdoComparisonOperations_LessThanOrEqualTo: AppendString (LESS_OR_EQUAL_OP, 4);
+        case FdoComparisonOperations_LessThanOrEqualTo: AppendString( LESS_OR_EQUAL_OP );
             break;
 
-        case FdoComparisonOperations_Like: AppendString (LIKE_OP, 6);
+        case FdoComparisonOperations_Like: AppendString( LIKE_OP );
             break;
         default:
             throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_63, FILTER_ERROR));
             break;
     }
     HandleExpr( rtExp );
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString( CLOSE_PARENTH );
 }
 
 void FdoRdbmsFilterProcessor::ProcessInCondition(FdoInCondition& filter)
@@ -881,20 +834,20 @@ void FdoRdbmsFilterProcessor::ProcessInCondition(FdoInCondition& filter)
     if( expressions == NULL || expressions->GetCount() <= 0 )
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_249, "FdoInCondition has an empty value list"));
 
-    AppendString (OPEN_PARENTH, 3);
+    AppendString(OPEN_PARENTH);
     ProcessIdentifier( *id );
-    AppendString (L" IN ", 4);
-    AppendString (OPEN_PARENTH, 3);
+    AppendString( L" IN " );
+    AppendString(OPEN_PARENTH);
     for(i=0; i < expressions->GetCount()-1; i++ )
     {
         exp = expressions->GetItem(i);
         HandleExpr( exp );
-        AppendString (L",", 1);
+        AppendString( L"," );
     }
     exp = expressions->GetItem( i );
     HandleExpr(exp);
-    AppendString (CLOSE_PARENTH, 3);
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString(CLOSE_PARENTH);
+    AppendString(CLOSE_PARENTH);
 }
 
 void FdoRdbmsFilterProcessor::ProcessNullCondition(FdoNullCondition& filter)
@@ -903,10 +856,10 @@ void FdoRdbmsFilterProcessor::ProcessNullCondition(FdoNullCondition& filter)
     if( id == NULL )
         throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_248, "%1$ls is missing the property name", L"FdoNullCondition"));
 
-    AppendString (OPEN_PARENTH, 3);
+    AppendString(OPEN_PARENTH);
     ProcessIdentifier( *id );
-    AppendString(L" IS NULL ", 9);
-    AppendString (CLOSE_PARENTH, 3);
+    AppendString( L" IS NULL ");
+    AppendString(CLOSE_PARENTH);
 }
 
 void FdoRdbmsFilterProcessor::ProcessUnaryLogicalOperator(FdoUnaryLogicalOperator& filter)
@@ -915,20 +868,20 @@ void FdoRdbmsFilterProcessor::ProcessUnaryLogicalOperator(FdoUnaryLogicalOperato
     if( unaryOp == NULL )
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_250, "FdoUnaryLogicalOperator is missing the operand" ));
 
-    AppendString (OPEN_PARENTH, 3);
+    AppendString(OPEN_PARENTH);
     if ( filter.GetOperation() == FdoUnaryLogicalOperations_Not )
     {
-        AppendString (LOGICAL_NOT, 5);
+        AppendString( LOGICAL_NOT );
     }
     else
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_251, "FdoUnaryLogicalOperator supports only the 'Not' operation"));
 
     if (mAddNegationBracket)
-        AppendString (OPEN_PARENTH, 3);
+        AppendString(OPEN_PARENTH);
     HandleFilter( unaryOp );
     if (mAddNegationBracket)
-        AppendString (CLOSE_PARENTH, 3);
-    AppendString (CLOSE_PARENTH, 3);
+        AppendString(CLOSE_PARENTH);
+    AppendString(CLOSE_PARENTH);
 
 	// Disallow NOT with the spatial filter
     FdoSpatialCondition* spCond = dynamic_cast<FdoSpatialCondition*>(unaryOp.p);
@@ -944,7 +897,6 @@ bool FdoRdbmsFilterProcessor::CanOptimizeRelationQuery( const FdoSmLpClassDefini
 {
     if( propertyDefinition->GetPropertyType() == FdoPropertyType_AssociationProperty )
     {
-        mContainsCustomObjects = true;
         const FdoSmLpAssociationPropertyDefinition* assocProp = (const FdoSmLpAssociationPropertyDefinition*) propertyDefinition;
 
         // If this is not a read-only association and if reverse multiplicity is set to m, then multiple raws can be returned and as a result a dedicated secondary query is issued
@@ -1055,7 +1007,6 @@ void FdoRdbmsFilterProcessor::FollowRelation( FdoStringP    &relationColumns, co
     }
     if ( propertyDefinition->GetPropertyType() == FdoPropertyType_ObjectProperty )
     {
-        mContainsCustomObjects = true;
         const FdoSmLpObjectPropertyDefinition* objProp = (const FdoSmLpObjectPropertyDefinition*) propertyDefinition;
         if( objProp->GetObjectType() != FdoObjectType_Value )
             return;
@@ -1068,17 +1019,17 @@ void FdoRdbmsFilterProcessor::AppendOrderBy( FdoRdbmsFilterUtilConstrainDef *fil
     if( filterConstraint == NULL || filterConstraint->orderByProperties == NULL || filterConstraint->orderByProperties->GetCount() == 0 )
         return;
 
-    AppendString (L" ORDER BY ", 10);
+    AppendString( L" ORDER BY " );
     for(int i=0; i<filterConstraint->orderByProperties->GetCount(); i++ )
     {
         if( i != 0 )
-            AppendString (L", ", 2);
+            AppendString( L", " );
         FdoPtr<FdoIdentifier>ident = filterConstraint->orderByProperties->GetItem( i );
         ProcessIdentifier( *ident, true, false );
         if( filterConstraint->orderingOption == FdoOrderingOption_Descending )
-            AppendString (L" DESC ", 6);
+            AppendString( L" DESC " );
         else
-            AppendString (L" ASC ", 5);
+            AppendString( L" ASC " );
     }
 }
 
@@ -1086,7 +1037,7 @@ void FdoRdbmsFilterProcessor::AppendDataProperty( const FdoSmLpClassDefinition* 
 {               
     FdoStringP tableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
     AppendString(  GetTableAlias( tableName ) );
-    AppendString (L".", 1);
+    AppendString( L"." );
     AppendString( (FdoString*)(mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetColumnSqlName(dataProp)) );
 }
 
@@ -1111,7 +1062,7 @@ void FdoRdbmsFilterProcessor::AppendObjectProperty( const FdoSmLpClassDefinition
 
     FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
     AppendString( GetTableAlias( sqlTableName ) );
-    AppendString (L".", 1);
+    AppendString( L"." );
     AppendString( (FdoString*)(pkCols->RefItem(0)->GetName()) );
 }
 
@@ -1130,17 +1081,17 @@ void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinit
         if (NULL == columnX || NULL == columnY)
             throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
         AppendString( tableAlias );
-        AppendString (L".", 1);
+        AppendString( L"." );
         AppendString( (FdoString*)(columnX->GetDbName()) );
-        AppendString (L",", 1);
+        AppendString( L"," );
         AppendString( tableAlias );
-        AppendString (L".", 1);
+        AppendString( L"." );
         AppendString( (FdoString*)(columnY->GetDbName()) );
         if (NULL != columnZ)
         {
-            AppendString (L",", 1);
+            AppendString( L"," );
             AppendString( tableAlias );
-            AppendString (L".", 1);
+            AppendString( L"." );
             AppendString( (FdoString*)(columnZ->GetDbName()) );
         }
     }
@@ -1152,7 +1103,7 @@ void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinit
         FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
         FdoString * tableAlias = GetTableAlias( sqlTableName );
         AppendString( tableAlias );
-        AppendString (L".", 1);
+        AppendString( L"." );
         
         FdoStringP  colName = GetGeometryString( (FdoString*)(column->GetDbName()), inSelectList );
         AppendString( (FdoString*)colName );
@@ -1170,11 +1121,11 @@ void FdoRdbmsFilterProcessor::AppendGroupBy( FdoRdbmsFilterUtilConstrainDef *fil
     if( filterConstraint == NULL || filterConstraint->groupByProperties == NULL || filterConstraint->groupByProperties->GetCount() == 0  )
         return;
 
-    AppendString (L" GROUP BY ", 10);
+    AppendString( L" GROUP BY " );
     for(int i=0; i<filterConstraint->groupByProperties->GetCount(); i++ )
     {
         if( i != 0 )
-            AppendString (L", ", 2);
+            AppendString( L", " );
         FdoPtr<FdoIdentifier>ident = filterConstraint->groupByProperties->GetItem( i );
         ProcessIdentifier( *ident, true, false );
     }
@@ -1434,8 +1385,8 @@ bool FdoRdbmsFilterProcessor::ContainsAggregateFunctions( FdoIdentifierCollectio
     FindAggregate  finder(this);
     for( int i=0; i<identifiers->GetCount(); i++ )
     {
-        FdoPtr<FdoIdentifier> prop = identifiers->GetItem(i);
-        prop->Process( &finder );
+        FdoPtr<FdoIdentifier>property = identifiers->GetItem(i);
+        property->Process( &finder );
         if( finder.foundAggregate )
             return true;
     }
@@ -1470,7 +1421,7 @@ void FdoRdbmsFilterProcessor::PrependTables()
     }
 }
 
-void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* prop, bool scanForTableOnly, bool inSelectList )
+void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* property, bool scanForTableOnly, bool inSelectList )
 {
     // If it's a computed identifier, then we dump the translated content in the from clause.
     // There may be alot of weird and wonderfull stuff in that expression that does not make sense. We'll leave it
@@ -1486,12 +1437,14 @@ void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* prop, bool scanFor
 
     mNextTxtIndex = mSqlTextSize = mFirstTxtIndex = 0;
     mSqlFilterText = NULL;
-    
-    if(FdoExpressionItemType_ComputedIdentifier == prop->GetExpressionType())
-        ProcessComputedIdentifier( *((FdoComputedIdentifier*)prop) );
+    if( dynamic_cast<FdoComputedIdentifier *>( property ) != NULL )
+    {
+        ProcessComputedIdentifier( *((FdoComputedIdentifier*)property) );
+    }
     else
-        ProcessIdentifier( *prop, false, inSelectList );
-
+    {
+        ProcessIdentifier( *property, false, inSelectList );
+    }
     wchar_t* compIdentPseudoCol = &mSqlFilterText[mFirstTxtIndex];
     wchar_t* tmp = mSqlFilterText;
 
@@ -1506,11 +1459,11 @@ void FdoRdbmsFilterProcessor::PrependProperty( FdoIdentifier* prop, bool scanFor
     // to prepend those columns.
     if( ! scanForTableOnly )
     {
-        if(FdoExpressionItemType_ComputedIdentifier == prop->GetExpressionType())
+        if( dynamic_cast<FdoComputedIdentifier *>( property ) != NULL )
         {
             // Add the pseudo column for the computed identifier expression.
             FdoRdbmsSchemaUtil * pUtil = mDbiConnection->GetSchemaUtil();
-            PrependString( (const char *)pUtil->GetAliasSqlName(pUtil->MakeDBValidName(prop->GetName())) );
+            PrependString( (const char *)pUtil->GetAliasSqlName(pUtil->MakeDBValidName(property->GetName())) );
             PrependString( L" AS " );
         }
         PrependString( compIdentPseudoCol );
@@ -1688,8 +1641,8 @@ bool FdoRdbmsFilterProcessor::IsValidExpression( FdoIdentifierCollection *identi
     UsesNativeExpressionFunctions finder(this);
     for( int i=0; i<identifiers->GetCount(); i++ )
     {
-        FdoPtr<FdoIdentifier> prop = identifiers->GetItem(i);
-        prop->Process( &finder );
+        FdoPtr<FdoIdentifier>property = identifiers->GetItem(i);
+        property->Process( &finder );
         if( finder.foundNotNativeSupportedFunction )
             return false;
     }
@@ -1802,7 +1755,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
         {
             if( properties->RefItem(i)->GetPropertyType() == FdoPropertyType_AssociationProperty )
             {
-                mContainsCustomObjects = true;
                 if( CanOptimizeRelationQuery( mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName), properties->RefItem(i)) )
                     FollowRelation( relationColumns, properties->RefItem(i), selectedProperties);
             }
@@ -1828,12 +1780,10 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
         if( identColArray[j] == NULL )
             continue;
 
-        int cntIdp = identColArray[j]->GetCount();
-        for (int i = cntIdp-1; i >= 0; i--)
+        for (int i=0; i<identColArray[j]->GetCount(); i++)
         {
             FdoPtr<FdoExpression> pExpr = identColArray[j]->GetItem(i);
-            FdoExpressionItemType idfType = pExpr->GetExpressionType();
-            if (FdoExpressionItemType_Identifier != idfType && FdoExpressionItemType_ComputedIdentifier != idfType)
+            if (dynamic_cast<FdoIdentifier*>(pExpr.p) == NULL )
                 throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_30, "Unknown expression"));
             PrependProperty( (FdoIdentifier*)pExpr.p, true );
         }
@@ -1856,7 +1806,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
             wcslen( tabRelation.pk_ColumnName ) != 0 &&
             wcslen( tabRelation.pk_TableName )  != 0 )
         {
-            mContainsCustomObjects = true;
             if( index == 0 || wcscmp(lasTabRelation.fk_TableName, tabRelation.fk_TableName) || wcscmp(lasTabRelation.pk_TableName, tabRelation.pk_TableName) )
             {
                 if( tabRelation.useOuterJoin )
@@ -1915,7 +1864,6 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
 		    GetLtTableExpression( mClassArray[index], ltWhereCondition, ltTableExp, callerFdoCommand );
 		    if( ((const wchar_t*)ltWhereCondition)[0] != '\0' )
 		    {
-                mContainsCustomObjects = true;
 			    PrependString ( (const wchar_t*)ltWhereCondition );
 			    PrependString (L" ON ");
 			    PrependString ( (const wchar_t*)ltTableExp);
@@ -1952,6 +1900,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
     // If this filter applies to a concrete feature class(i.e. all the returned objects are instances of the same class), then we are
     // going to select all the attributes and geometry(for draw) using a single select. Othewise we need to defer selecting the properties
     // untill we know the class of the returned feature.(See the feature reader ReadNext method where this optimization is used.)
+    bool bForDraw = true;
     first = true;
     bool useAggregateFunctions = ContainsAggregateFunctions( selectedProperties );
 
@@ -2011,7 +1960,9 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
         }
         else
         {
-            int cntProps = selectedProperties->GetCount();
+            bool *bExist = new bool[identProperties->GetCount()];// Keeps track of all the identify properties.
+                                                            // Set to true if the property exist in the select list.
+
             const wchar_t* featIdColName = NULL;
             bool isFeatIdOnlyQuery = false;
             if ( isFeatureClass )
@@ -2023,20 +1974,33 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                     featIdColName = pFeatIdProp->RefColumn()->GetName();
                 }
             }
-            if (featIdColName)
+
+            for (int i=0; i<identProperties->GetCount(); i++)
+                bExist[i] = false;
+
+            bForDraw = false;
+            for (int i=0; i<selectedProperties->GetCount() && !(useAggregateFunctions && mRequiresDistinct); i++)
             {
-                for (int i = 0; i < cntProps; i++)
+                FdoPtr<FdoIdentifier> property = selectedProperties->GetItem(i);
+                if (first == false)
                 {
-                    FdoPtr<FdoIdentifier> prop = selectedProperties->GetItem(i);
-                    if (prop->GetExpressionType() != FdoExpressionItemType_Identifier)
-                        continue;
-                    if(FdoCommonOSUtil::wcsicmp (featIdColName, prop->GetName()) == 0)
+                    PrependString( L"," );
+                }
+                PrependProperty( property, false, true );
+
+                first = false;
+                for (j=0; j<identProperties->GetCount(); j++)
+                {
+                    if (FdoCommonOSUtil::wcsicmp(identProperties->RefItem(j)->GetName(), property->GetName()) == 0)
                     {
-                        isFeatIdOnlyQuery = true;
+                        bExist[j] = true;
                         break;
                     }
                 }
+                if( featIdColName && FdoCommonOSUtil::wcsicmp( featIdColName, property->GetName() ) == 0 )
+                    isFeatIdOnlyQuery = true;
             }
+
             // explictly add the identity columns that were not in the select list
             // If the query is only selecting featid column, then we do not add the rest of the
             // identity columns as this is a query used by internal component that only expect
@@ -2049,23 +2013,11 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
             {
                 FdoStringP sqlTableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName));
                 const  wchar_t* table = GetTableAlias(sqlTableName);
-                for (j = 0; j < identProperties->GetCount(); j++)
+                for (j=0; j<identProperties->GetCount(); j++)
                 {
-                    bool foundId = false;
-                    for (int i = 0; i < cntProps; i++)
+                    if (bExist[j] == false)
                     {
-                        FdoPtr<FdoIdentifier> prop = selectedProperties->GetItem(i);
-                        if (prop->GetExpressionType() != FdoExpressionItemType_Identifier)
-                            continue;
-                        if (FdoCommonOSUtil::wcsicmp(identProperties->RefItem(j)->GetName(), prop->GetName()) == 0)
-                        {
-                            foundId = true;
-                            break;
-                        }
-                    }
-                    if (!foundId)
-                    {
-                        if (!first)
+                        if (first == false)
                             PrependString( L"," );
                         const FdoSmLpDataPropertyDefinition *idProperty = identProperties->RefItem(j);
                         const FdoSmPhColumn *column = idProperty->RefColumn();
@@ -2077,19 +2029,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                 }
             }
 
-            if (!(useAggregateFunctions && mRequiresDistinct))
-            {
-                for (int i = cntProps-1; i >= 0; i--)
-                {
-                    FdoPtr<FdoIdentifier> prop = selectedProperties->GetItem(i);
-                    if (first == false)
-                    {
-                        PrependString( L"," );
-                    }
-                    PrependProperty( prop, false, true );
-                    first = false;
-                }
-            }
+            delete [] bExist;
         }
         //
         // We need to add the order by and group by columns if they are not already in the select list
@@ -2109,14 +2049,14 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
         {
             for (int i=0; i<orderOrGroupByList->GetCount(); i++)
             {
-                FdoPtr<FdoIdentifier> prop = orderOrGroupByList->GetItem(i);
+                FdoPtr<FdoIdentifier> property = orderOrGroupByList->GetItem(i);
                 // Make sure this property was not already added by the user select list.
                 if ( selectedProperties != NULL )
                 {
                     for (j=0; j<selectedProperties->GetCount(); j++)
                     {
                         FdoPtr<FdoIdentifier> selectprop = selectedProperties->GetItem(j);
-                        if (FdoCommonOSUtil::wcsicmp(selectprop->GetName(), prop->GetName()) == 0)
+                        if (FdoCommonOSUtil::wcsicmp(selectprop->GetName(), property->GetName()) == 0)
                         {
                             break;
                         }
@@ -2128,7 +2068,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                         // May be it's an identity property which would be added too
                         for (j=0; j<identProperties->GetCount();    j++)
                         {
-                            if (FdoCommonOSUtil::wcsicmp(identProperties->RefItem(j)->GetName(), prop->GetName())    == 0)
+                            if (FdoCommonOSUtil::wcsicmp(identProperties->RefItem(j)->GetName(), property->GetName())    == 0)
                             {
                                 break;
                             }
@@ -2140,14 +2080,14 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                 else
                 {
                     // If this is a class property, then it's already covered by the table.* case
-                    if (wcschr((wchar_t *)prop->GetText(), L'.') == NULL)
+                    if (wcschr((wchar_t *)property->GetText(), L'.') == NULL)
                         continue;
                 }
                 if (first == false)
                 {
                     PrependString( L"," );
                 }
-                PrependProperty( prop );
+                PrependProperty( property );
                 first = false;
             }
         }
@@ -2184,30 +2124,29 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
 			mClassArray.clear();
             // First pass build the table dependancies
             AddNewTableRelation( L"",L"", mDbiConnection->GetTable( mCurrentClassName ),L"NotUsed");
-            int cntProp = selectedProperties->GetCount();
-            for (int i = cntProp-1; i >= 0; i--)
+            for (int i=0; i<selectedProperties->GetCount(); i++)
             {
-                FdoPtr<FdoIdentifier> prop = selectedProperties->GetItem(i);
-                PrependProperty( prop, true );
+                FdoPtr<FdoIdentifier> property = selectedProperties->GetItem(i);
+                PrependProperty( property, true );
             }
             // Add the table list
             PrependTables();
             PrependString ( L" FROM " );
             first = true;
             // And finaly add the aggregate functions
-            for (int i = cntProp-1; i >= 0; i--)
+            for (int i=0; i<selectedProperties->GetCount(); i++)
             {
-                FdoPtr<FdoIdentifier> prop = selectedProperties->GetItem(i);
+                FdoPtr<FdoIdentifier> property = selectedProperties->GetItem(i);
 
                 if (first == false)
                 {
                     PrependString(L",");
                 }
-                PrependProperty( prop, false, true );
+                PrependProperty( property, false, true );
 
                 first = false;
             }
-            AppendString (L")", 1);
+            AppendString( L")" );
         }
     }
 
@@ -2241,7 +2180,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                     bool added = false;
                     if( !( filterConstraint->orderByProperties != NULL  && filterConstraint->orderByProperties->GetCount() != 0) )
                     {
-                        AppendString (L" ORDER BY ", 10);
+                        AppendString( L" order by " );
                     }
                     else
                     {
@@ -2256,15 +2195,15 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter                  
                             }
                         }
                         if( ! added )
-                            AppendString (L", ", 2);
+                            AppendString( L", " );
                     }
                     if( ! added )
                     {
                         AppendString( (FdoString*)(columnName) );
-                        AppendString (L" ", 1);
+                        AppendString( L" ");
                         if (objProp->GetOrderType() == FdoOrderType_Descending)
                         {
-                            AppendString (L"DESC ", 5);
+                            AppendString( L"desc ");
                         }
                     }
                 }
@@ -2301,7 +2240,7 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
 
     // Generate the select-statement that selects the data to be used to create the
     // reader handed over to the Expression Engine.
-    AppendString (L"SELECT ", 7);
+    AppendString( L"SELECT " );
 
     FdoInt32 i;
     FdoStringsP all = FdoStringCollection::Create();
@@ -2353,10 +2292,10 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
     if (all->GetCount() > 0)
         AppendString( (FdoString *)all->ToString() );
     else
-        AppendString (L" * ", 3);
+        AppendString( L" * ");
 
     FdoStringP tableName = mDbiConnection->GetSchemaUtil()->GetDbObjectSqlName(classDefinition);
-    AppendString (L" FROM ", 6);
+    AppendString( L" FROM " );
     AppendString( (FdoString *)tableName );
 
     if( filter != NULL )
@@ -2364,10 +2303,10 @@ const wchar_t* FdoRdbmsFilterProcessor::FilterToSql( FdoFilter     *filter,
         FdoString * tableAlias = GetTableAlias( tableName );
         if (wcscmp(tableAlias, tableName) != 0)
         {
-            AppendString (L" ", 1);
+            AppendString(  L" " );
             AppendString(  GetTableAlias( tableName ) );
         }
-        AppendString (L" WHERE ", 7);
+        AppendString( L" WHERE " );
         HandleFilter( filter );
     }
 
@@ -2400,8 +2339,7 @@ void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString
 	    const FdoSmPhColumnCollection* columns = dbObject->RefColumns();
         bool    first = true;
 
-        int colCnt = columns->GetCount();
-        for (int i = colCnt-1; i >= 0 ; i--)
+        for (int i = 0; i < columns->GetCount(); i++)
         {
 		    const FdoSmPhColumn* column = columns->RefItem(i);
 		    FdoStringP colNameTmp = column->GetName();
@@ -2424,7 +2362,11 @@ void FdoRdbmsFilterProcessor::PrependSelectStar( FdoStringP tableName, FdoString
                     PrependString( (FdoString*)colName );
                 }
                 else
-                    PrependString((FdoString*)phMgr->GetSQLObjectName(colName));
+                {
+                    PrependString(L"\"");
+                    PrependString(colName);
+                    PrependString(L"\"");
+                }
 
                 PrependString(L".");
 
@@ -2473,6 +2415,9 @@ FdoRdbmsFilterProcessor::BoundGeometry::~BoundGeometry(void)
 
 bool FdoRdbmsFilterProcessor::IsDataValue (FdoExpression *expr)
 {
-    return (FdoExpressionItemType_DataValue == expr->GetExpressionType());
+    if (dynamic_cast<FdoDataValue *>(expr) != NULL)
+        return true;
+
+    return false;
 }
 

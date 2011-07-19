@@ -67,7 +67,6 @@ librdbi_la_SOURCES = \
   tran_end.c \
   tran_getid.c \
   tran_rolbk.c \
-  tran_sp.c \
   users_.c \
   usr_exists.c \
   version.c \

@@ -63,9 +63,7 @@ libWMSProviderSrc_la_SOURCES = \
   FdoWmsSpatialExtentsAggregateReader.cpp \
   FdoWmsGetFeatureClassCRSNames.cpp \
   FdoWmsGetFeatureClassStyles.cpp \
-  FdoWmsGetImageFormats.cpp \
-  FdoWmsGetFeatureInfo.cpp \
-  FdoWmsGetFeatureInfoRequest.cpp 
+  FdoWmsGetImageFormats.cpp 
 
 noinst_HEADERS = $(libWMSProviderSrc_la_SOURCES) \
   FdoWmsActivateSpatialContextCommand.h \
@@ -119,9 +117,7 @@ noinst_HEADERS = $(libWMSProviderSrc_la_SOURCES) \
   FdoWmsSelectAggregatesCommand.h \
   FdoWmsGetFeatureClassCRSNames.h \
   FdoWmsGetFeatureClassStyles.h \
-  FdoWmsGetImageFormats.h \
-  FdoWmsGetFeatureInfo.h \
-  FdoWmsGetFeatureInfoRequest.h 
+  FdoWmsGetImageFormats.h 
 
 libWMSProviderSrc_la_LDFLAGS =
 

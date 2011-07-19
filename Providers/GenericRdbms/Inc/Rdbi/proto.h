@@ -47,8 +47,7 @@ int rdbi_bind(
         int datatype,
         int size,
         char *address,
-        void *null_ind,
-        int typeBind
+        void *null_ind
         );
 int rdbi_break(
         rdbi_context_def *context
@@ -195,9 +194,6 @@ int rdbi_get_info(
         int *exists
         );
 void rdbi_get_msg(
-        rdbi_context_def *context
-        );
-long rdbi_get_server_rc(
         rdbi_context_def *context
         );
 int rdbi_get_size(
@@ -420,12 +416,6 @@ int rdbi_geom_srid_set (
 		char *col_name,
         long srid );
 
-int rdbi_geom_version_set (
-        rdbi_context_def *context,
-        int sqlid,
-		char *col_name,
-        long version );
-
 int rdbi_geom_dimens_set (
         rdbi_context_def *context,
         int sqlid,
@@ -522,10 +512,5 @@ int rdbi_autocommit_off (rdbi_context_def *context);
 int rdbi_autocommit_mode (rdbi_context_def *context);
 int rdbi_free_all(rdbi_context_def *context);
 
-int rdbi_tran_sp(rdbi_context_def *context, int action, const char* sp_name);
-int rdbi_tran_spW(rdbi_context_def *context, int action, const wchar_t* sp_name);
-
-int rdbi_tran_sp_exists(rdbi_context_def *context, const char* sp_name);
-int rdbi_tran_sp_existsW(rdbi_context_def *context, const wchar_t* sp_name);
 #endif /* INC_RDBI_PROTO_H */
 

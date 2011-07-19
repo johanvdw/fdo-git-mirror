@@ -87,8 +87,6 @@ libSmPhysical_la_SOURCES = \
   SpatialContextWriter.cpp \
   SpatialIndex.cpp \
   stdafx.cpp \
-  Synonym.cpp \
-  SynonymBaseLoader.cpp \
   Table.cpp \
   TableComponentReader.cpp \
   TableMergeReader.cpp \

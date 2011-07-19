@@ -47,5 +47,3 @@ public:                                                                      \
     }                                                                        \
     virtual FdoInt32            GetRefCount()       { return m_refCount; }   \
 private:                        int m_refCount;
-
-typedef std::vector<std::string> SltStringList;

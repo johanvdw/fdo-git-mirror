@@ -47,7 +47,6 @@ set( CommonUnitTests_STAT_SRCS
 	FdoSchemaTest.cpp
 	FdoSelectTest.cpp
 	FdoSqlCmdTest.cpp
-	FdoTransactionTest.cpp
 	FdoUpdateTest.cpp
 	GeometryTests.cpp
 	MessageTest.cpp

@@ -48,9 +48,6 @@ public:
     // Returns true if the feature provider supports transactions.
     virtual bool SupportsTransactions();
 
-    // Returns true if the feature provider supports save point.
-    virtual bool SupportsSavePoint();
-
     // Returns true if the feature provider supports long transactions.
     virtual bool SupportsLongTransactions();
 

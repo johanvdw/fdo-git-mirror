@@ -26,7 +26,6 @@
 // FdoRdbmsSelectCommand
 #include "FdoRdbmsSelectCommand.h"
 #include "FdoRdbmsFeatureReader.h"
-#include "FdoRdbmsSimpleFeatureReader.h"
 #include "FdoRdbmsFeatureSubsetReader.h"
 #include "LockUtility.h"
 #include "FdoRdbmsFilterProcessor.h"
@@ -37,7 +36,6 @@
 #include "Util/FdoExpressionEngineUtilFeatureReader.h"
 #include <Functions/Geometry/FdoFunctionLength2D.h>
 #include <Functions/Geometry/FdoFunctionArea2D.h>
-#include "Fdo/Pvc/FdoRdbmsPropBindHelper.h"
 
 #define SELECT_CLEANUP \
         if ( qid != -1) {\
@@ -46,12 +44,14 @@
         } catch( ... ) { qid = -1; } \
         }
 
+
+
 FdoRdbmsSelectCommand::FdoRdbmsSelectCommand (): mConnection( NULL ), mIdentifiers(NULL),
   mGroupingCol(NULL),
   mGroupingFilter(NULL),
   mOrderingIdentifiers(NULL),
-  mBindParamsHelper(NULL),
-  mHasObjectProps(false)
+  mBoundGeometries(NULL),
+  mBoundGeometryCount(0)
 {
   mLockType           = FdoLockType_Exclusive;
   mLockStrategy       = FdoLockStrategy_Partial;
@@ -67,8 +67,8 @@ FdoRdbmsSelectCommand::FdoRdbmsSelectCommand (FdoIConnection *connection) :
     mGroupingCol(NULL),
     mGroupingFilter(NULL),
     mOrderingIdentifiers(NULL),
-    mBindParamsHelper(NULL),
-    mHasObjectProps(false)
+    mBoundGeometries(NULL),
+    mBoundGeometryCount(0)
 {
   mConn = static_cast<FdoRdbmsConnection*>(connection);
   if( mConn )
@@ -87,7 +87,7 @@ FdoRdbmsSelectCommand::~FdoRdbmsSelectCommand()
     FDO_SAFE_RELEASE(mGroupingFilter);
     FDO_SAFE_RELEASE(mGroupingCol);
     FDO_SAFE_RELEASE(mOrderingIdentifiers);
-    delete mBindParamsHelper;
+    FreeBoundSpatialGeoms();
 }
 
 FdoIFeatureReader *FdoRdbmsSelectCommand::Execute( bool distinct, FdoInt16 callerId  )
@@ -98,22 +98,16 @@ FdoIFeatureReader *FdoRdbmsSelectCommand::Execute( bool distinct, FdoInt16 calle
 
     int                 qid = -1;
     bool                res = false;
-    bool delStatement = true;
-    GdbiStatement* statement = NULL;
     const FdoSmLpClassDefinition *classDefinition = mConnection->GetSchemaUtil()->GetClass(this->GetClassNameRef()->GetText());
 
     bool isFeatureClass = ( classDefinition != NULL &&  classDefinition->GetClassType() == FdoClassType_FeatureClass );
     bool isForUpdate = HasLobProperty( classDefinition );
-
-    bool doNotUseSimpleSelect = mHasObjectProps && (mIdentifiers == NULL || mIdentifiers->GetCount() == 0);
 
     if( mConnection == NULL )
         throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_13, "Connection not established"));
     try
     {
         FdoPtr<FdoRdbmsFilterProcessor>flterProcessor = mFdoConnection->GetFilterProcessor();
-        FdoPtr<FdoParameterValueCollection> params = GetParameterValues();
-        flterProcessor->SetParameterValues(params);
 
         FdoRdbmsFilterUtilConstrainDef filterConstrain;
         filterConstrain.distinct = distinct;
@@ -152,7 +146,7 @@ FdoIFeatureReader *FdoRdbmsSelectCommand::Execute( bool distinct, FdoInt16 calle
                                                  this->GetClassNameRef()->GetText() );
 
             GdbiQueryResult *queryRslt = mConnection->GetGdbiConnection()->ExecuteQuery( sqlStatement );
-            FdoPtr<FdoIFeatureReader> featureReader = new FdoRdbmsFeatureReader( mFdoConnection,
+            FdoPtr<FdoIFeatureReader> featureReader = new FdoRdbmsFeatureReader( FdoPtr<FdoIConnection>(GetConnection()),
                                                                                  queryRslt,
                                                                                  isFeatureClass,
                                                                                  classDefinition,
@@ -175,7 +169,7 @@ FdoIFeatureReader *FdoRdbmsSelectCommand::Execute( bool distinct, FdoInt16 calle
 
 			FdoExpressionEngineFunctionCollection *userDefinedFunctions = GetUserDefinedFunctions( schemas->GetSpatialContextMgr()->GetSpatialContexts(), classDef );
 
-			return FdoExpressionEngineUtilFeatureReader::Create(
+			return new FdoExpressionEngineUtilFeatureReader(
                                                         classDef,
                                                         featureReader, 
                                                         this->GetFilterRef(),
@@ -256,63 +250,36 @@ FdoIFeatureReader *FdoRdbmsSelectCommand::Execute( bool distinct, FdoInt16 calle
             }
         }
 
-        statement = mConnection->GetGdbiConnection()->Prepare( sqlString );
+        GdbiStatement* statement = mConnection->GetGdbiConnection()->Prepare( sqlString );
 
-        std::vector< std::pair< FdoLiteralValue*, FdoInt64 > >* paramsUsed = flterProcessor->GetUsedParameterValues();
-
-        if (((paramsUsed != NULL) ? paramsUsed->size() : 0) != 0)
-        {
-            if (mBindParamsHelper == NULL)
-                mBindParamsHelper = new FdoRdbmsPropBindHelper(mConn);
-
-            mBindParamsHelper->BindParameters(statement, paramsUsed);
-        }
+        BindSpatialGeoms( statement, boundGeometries );
 
         GdbiQueryResult *queryRslt = statement->ExecuteQuery();
 
         delete statement;
 
-        if (mBindParamsHelper != NULL)
-            mBindParamsHelper->Clear();
-
-        // statement will be deleted in the reader.
-        delStatement = false;
-
-        // For now only SQL Spatial Server supports SupportsSimpleReader, later (after we add some unit tests) we can extend it to other providers
-        if (!flterProcessor->ContainsCustomObjects() && flterProcessor->SupportsSimpleReader() && geometricConditions == NULL && callerId == (FdoInt16)FdoCommandType_Select && !doNotUseSimpleSelect)
-        {
-            return new FdoRdbmsSimpleFeatureReader(mFdoConnection, queryRslt, isFeatureClass, classDefinition, NULL, mIdentifiers);
-        }
+        if (( mIdentifiers && mIdentifiers->GetCount() > 0) )
+            return new FdoRdbmsFeatureSubsetReader( FdoPtr<FdoIConnection>(GetConnection()), queryRslt, isFeatureClass, classDefinition, NULL, mIdentifiers, geometricConditions, logicalOps );
         else
-        {
-            if (( mIdentifiers && mIdentifiers->GetCount() > 0))
-                return new FdoRdbmsFeatureSubsetReader (mFdoConnection, queryRslt, isFeatureClass, classDefinition, NULL, mIdentifiers, geometricConditions, logicalOps );
-            else
-                return new FdoRdbmsFeatureReader (mFdoConnection, queryRslt, isFeatureClass, classDefinition, NULL, NULL, 0, geometricConditions, logicalOps ); // The feature reader should free the queryRslt
-        }
+            return new FdoRdbmsFeatureReader( FdoPtr<FdoIConnection>(GetConnection()), queryRslt, isFeatureClass, classDefinition, NULL, NULL, 0, geometricConditions, logicalOps ); // The feature reader should free the queryRslt
+
     }
 
     catch (FdoCommandException *ex)
     {
-        if (delStatement)
-            delete statement;
         ex;
         SELECT_CLEANUP;
         throw;
     }
     catch (FdoException *ex)
     {
-        if (delStatement)
-            delete statement;
         SELECT_CLEANUP;
         // Wrap in FdoPtr to remove original reference to original exception
-        throw FdoCommandException::Create(ex->GetExceptionMessage(), FdoPtr<FdoException>(ex), ex->GetNativeErrorCode());
+        throw FdoCommandException::Create(ex->GetExceptionMessage(), FdoPtr<FdoException>(ex));
     }
 
     catch ( ... )
     {
-        if (delStatement)
-            delete statement;
         SELECT_CLEANUP;
         throw;
     }
@@ -498,13 +465,9 @@ bool FdoRdbmsSelectCommand::HasLobProperty( const FdoSmLpClassDefinition *classD
     bool    forUpdate = false;
     const   FdoSmLpPropertyDefinitionCollection *propertyDefinitions = classDefinition->RefProperties();
 
-    mHasObjectProps = false;
     for ( int i = 0; i < propertyDefinitions->GetCount(); i++ )
     {
         const FdoSmLpPropertyDefinition *propertyDefinition = propertyDefinitions->RefItem(i);
-        if (FdoPropertyType_AssociationProperty == propertyDefinition->GetPropertyType() || 
-            FdoPropertyType_ObjectProperty == propertyDefinition->GetPropertyType())
-            mHasObjectProps = true;
 
         const FdoSmLpDataPropertyDefinition* dataProp =
                     dynamic_cast<const FdoSmLpDataPropertyDefinition*>(propertyDefinition);
@@ -632,3 +595,38 @@ FdoRdbmsFeatureReader *FdoRdbmsSelectCommand::GetOptimizedFeatureReader( const F
 
     return reader;
 }
+
+void  FdoRdbmsSelectCommand::BindSpatialGeoms( GdbiStatement* statement, FdoRdbmsFilterProcessor::BoundGeometryCollection* geometries )
+{
+    if ( geometries->GetCount() > 0 )
+    {
+        FdoInt32 idx;
+
+        FreeBoundSpatialGeoms();
+
+        mBoundGeometryCount = geometries->GetCount();
+        mBoundGeometries = new void*[mBoundGeometryCount];
+
+        for ( idx = 0; idx < mBoundGeometryCount; idx++ ) 
+        {
+            FdoPtr<FdoRdbmsFilterProcessor::BoundGeometry> boundGeometry = geometries->GetItem(idx);
+            mBoundGeometries[idx] = NULL;   // in case BindSpatialGeometry throws an exception.
+            mBoundGeometries[idx] = mFdoConnection->BindSpatialGeometry( statement, boundGeometry, idx + 1 ); 
+        }
+    }
+}
+
+void  FdoRdbmsSelectCommand::FreeBoundSpatialGeoms()
+{
+    FdoInt32 idx;
+
+    if ( mBoundGeometries )
+    {
+        for ( idx = 0; idx < mBoundGeometryCount; idx++ ) 
+            mFdoConnection->BindSpatialGeometryFree( mBoundGeometries[idx] );
+
+        delete[] mBoundGeometries;
+        mBoundGeometryCount = 0;
+        mBoundGeometries = NULL;
+    }
+ }

@@ -47,7 +47,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\Unmanaged\Inc;..\Src;..\Src\OSGeo;..\Src\OSGeo\FDO"
 				AdditionalUsingDirectories="$(OutDir)"
@@ -105,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -137,7 +136,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\Unmanaged\Inc;..\Src;..\Src\OSGeo;..\Src\OSGeo\FDO"
 				AdditionalUsingDirectories="$(OutDir)"
@@ -195,7 +193,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -226,7 +224,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				AdditionalIncludeDirectories="..\..\Unmanaged\Inc;..\Src;..\Src\OSGeo;..\Src\OSGeo\FDO"
 				AdditionalUsingDirectories="$(OutDir)"
@@ -279,7 +276,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -311,7 +308,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				AdditionalIncludeDirectories="..\..\Unmanaged\Inc;..\Src;..\Src\OSGeo;..\Src\OSGeo\FDO"
 				AdditionalUsingDirectories="$(OutDir)"
@@ -364,7 +360,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.6.0.0%FDO_VERSION%&quot; -v&quot;..\Managed\Fdo.version&quot; $(OutDir)\OSGeo.FDO.dll"
 			/>
 		</Configuration>
 	</Configurations>
@@ -673,7 +669,7 @@
 					<File
 						RelativePath="..\Src\OSGeo\FDO\Xml\mgXmlGmlVersion.h"
 						>
-					</File>
+					</File>	
 					<File
 						RelativePath="..\Src\OSGeo\FDO\Xml\mgXmlNameCollectionHandler.cpp"
 						>
@@ -2039,10 +2035,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\Src\OSGeo\FDO\Expression\mgExpressionItemType.h"
-						>
-					</File>
-					<File
 						RelativePath="..\Src\OSGeo\FDO\Expression\mgExpressionType.h"
 						>
 					</File>
@@ -2104,6 +2096,10 @@
 					</File>
 					<File
 						RelativePath="..\Src\OSGeo\FDO\Expression\mgInt64Value.h"
+						>
+					</File>
+					<File
+						RelativePath="..\Src\OSGeo\FDO\Expression\mgExpressionItemType.h"
 						>
 					</File>
 					<File

@@ -51,7 +51,6 @@ FdoSchemaRollbackTest.cpp \
 FdoSchemaTest.cpp \
 FdoSelectTest.cpp \
 FdoSqlCmdTest.cpp \
-FdoTransactionTest.cpp \
 FdoUpdateTest.cpp \
 GeometryTests.cpp \
 MessageTest.cpp \
@@ -90,7 +89,6 @@ FdoSchemaRollbackTest.h \
 FdoSchemaTest.h \
 FdoSelectTest.h \
 FdoSqlCmdTest.h \
-FdoTransactionTest.h \
 FdoUpdateTest.h \
 GeometryTests.h \
 MessageTest.h \

@@ -295,7 +295,7 @@ FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
     catch (FdoException *ex)
     {
         INSERT_CLEANUP;
-        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
         ex->Release();
         throw exp;
 
@@ -364,7 +364,7 @@ FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
 						    if (idDataValue->GetDataType() == FdoDataType_DateTime)
 							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime((static_cast<FdoDateTimeValue*>(idDataValue))->GetDateTime());
 						    else
-							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime(mFdoConnection->DbiToFdoTime(stringValue));
+							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime(mFdoConnection->DbiToFdoTime(mConnection->GetUtility()->UnicodeToUtf8(stringValue)));
 						    newIdProp->SetValue(newValue);
 						    break;
 

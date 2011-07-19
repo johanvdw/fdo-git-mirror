@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -199,7 +199,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -259,7 +259,6 @@
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\Lib\Win32\Release;&quot;$(FDO)\Unmanaged\Lib\Win32\Release&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win32\Release&quot;"
-				IgnoreDefaultLibraryNames="LIBCMT"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/PostgreSQLProvider.pdb"
@@ -292,7 +291,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -354,7 +353,6 @@
 				OutputFile="$(OutDir)/PostgreSQLProvider.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\Lib\Win64\Release;&quot;$(FDO)\Unmanaged\Lib\Win64\Release&quot;;&quot;$(FDOPOSTGRESQL)\lib\ms\Win64&quot;;&quot;$(FDOTHIRDPARTY)\pgsql\lib\ms\Win64&quot;;&quot;$(FDOUTILITIES)\SchemaMgr\Lib\Win64\Release&quot;"
-				IgnoreDefaultLibraryNames="LIBCMT"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/PostgreSQLProvider.pdb"
@@ -387,7 +385,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning PostgreSQLProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\PostgreSQLProvider.dll"
 			/>
 		</Configuration>
 	</Configurations>

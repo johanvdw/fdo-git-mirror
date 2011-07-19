@@ -25,8 +25,8 @@
 #include <limits>       // For quiet_NaN()
 using namespace std;
 
-typedef FdoCommonUtilTypes::pair< FdoSpatialOperations, FdoSpatialOperations > TestOperationsPair;
-typedef FdoCommonUtilTypes::pair< int, TestOperationsPair > TestIdxOperationsPair;
+typedef std::pair< FdoSpatialOperations, FdoSpatialOperations > TestOperationsPair;
+typedef std::pair< int, TestOperationsPair > TestIdxOperationsPair;
 
 
 // ----------------------------------------------------------------------------
@@ -229,7 +229,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -242,9 +241,7 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
-
 
       error_found = true;
 
@@ -256,7 +253,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -269,7 +265,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -282,7 +277,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -295,7 +289,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -308,7 +301,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -328,7 +320,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -341,7 +332,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -354,7 +344,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -367,7 +356,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -380,7 +368,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -393,7 +380,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -406,7 +392,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -426,7 +411,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -439,7 +423,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -452,7 +435,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -465,7 +447,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -478,7 +459,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -491,7 +471,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -511,7 +490,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -524,7 +502,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -537,7 +514,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -550,7 +526,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -563,7 +538,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -576,7 +550,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -589,7 +562,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -602,7 +574,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -615,7 +586,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -628,7 +598,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -641,7 +610,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -654,7 +622,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -667,7 +634,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -680,7 +646,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -693,7 +658,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -713,7 +677,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -726,7 +689,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -739,7 +701,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -752,7 +713,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -765,7 +725,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -785,7 +744,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -798,7 +756,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -811,7 +768,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -824,7 +780,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -837,7 +792,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -850,7 +804,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -863,7 +816,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -876,7 +828,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -889,7 +840,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -902,7 +852,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -915,7 +864,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -928,7 +876,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -941,7 +888,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -956,7 +902,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -969,7 +914,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -989,7 +933,6 @@ void TestCommonExpressionFunction::RunAllExpFctTests ()
 
     }  //  try ...
 
-    catch ( FdoException* exc ) { printf ("Exception: %ls\n", exc->GetExceptionMessage()); exc->Release(); error_found = true; }
     catch ( ... ) {
 
       error_found = true;
@@ -1734,8 +1677,8 @@ void TestCommonExpressionFunction::CheckReader64 (
 
     bool     is_valid_result = false;
 
-    FdoInt32 data_count  = 0,
-             id_prop_val = 0;
+    FdoInt32 data_count    = 0,
+             id_prop_val;
 
     FdoInt64 tmp_val,
              cmp_id_val;
@@ -1857,8 +1800,8 @@ void TestCommonExpressionFunction::CheckReaderByte (
 
     FdoByte  cmp_id_val;
 
-    FdoInt32 data_count  = 0,
-             id_prop_val = 0;
+    FdoInt32 data_count    = 0,
+             id_prop_val;
 
     // Navigate through the reader and perform the necessary checks.
 
@@ -1915,8 +1858,8 @@ void TestCommonExpressionFunction::CheckReaderDt (
 
     bool        is_valid_result = false;
 
-    FdoInt32    data_count  = 0,
-                id_prop_val = 0;
+    FdoInt32    data_count      = 0,
+                id_prop_val;
 
     FdoDateTime cmp_id_val;
 
@@ -2011,8 +1954,8 @@ void TestCommonExpressionFunction::CheckReaderDt (
 
     bool        is_valid_result = false;
 
-    FdoInt32    data_count  = 0,
-                id_prop_val = 0;
+    FdoInt32    data_count      = 0,
+                id_prop_val;
 
     FdoDateTime cmp_id_val;
 
@@ -2171,8 +2114,8 @@ void TestCommonExpressionFunction::CheckReaderSgl (
 
     bool     is_valid_result = false;
 
-    FdoInt32 data_count  = 0,
-             id_prop_val = 0;
+    FdoInt32 data_count    = 0,
+             id_prop_val;
 
     FdoFloat tmp_val,
              cmp_id_val;
@@ -2394,9 +2337,9 @@ bool TestCommonExpressionFunction::EvaluateResults (
 {
 
     bool retVal = true;
-    FdoCommonUtilTypes::vector<int> idxResultOpt;
-    FdoCommonUtilTypes::vector<int> idxResultNoOpt;
-    FdoCommonUtilTypes::vector< FdoCommonUtilTypes::pair< int, FdoCommonUtilTypes::pair< FdoSpatialOperations, FdoSpatialOperations > > > operResult;
+    std::vector<int> idxResultOpt;
+    std::vector<int> idxResultNoOpt;
+    std::vector< std::pair< int, std::pair< FdoSpatialOperations, FdoSpatialOperations > > > operResult;
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance ();
 
     while(result->ReadNext())
@@ -2433,8 +2376,8 @@ bool TestCommonExpressionFunction::EvaluateResults (
     if (idxResultOpt.size() != idxResultNoOpt.size())
         retVal = false;
     
-    FdoCommonUtilTypes::vector<int>* op1 = &idxResultOpt;
-    FdoCommonUtilTypes::vector<int>* op2 = &idxResultNoOpt;
+    std::vector<int>* op1 = &idxResultOpt;
+    std::vector<int>* op2 = &idxResultNoOpt;
     if (idxResultOpt.size() == 0) {
 
         op1 = &idxResultNoOpt;
@@ -2852,6 +2795,6 @@ double TestCommonExpressionFunction::GetNaNOrdinate()
 
 bool TestCommonExpressionFunction::IsNullOrdinate( double ordinate)
 {
-    return (ordinate == GetNullOrdinate()) || (ordinate != ordinate);
+    return (ordinate == TestCommonExpressionFunction::GetNullOrdinate()) || (ordinate != ordinate);
 }
 

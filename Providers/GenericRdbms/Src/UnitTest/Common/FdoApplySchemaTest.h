@@ -116,9 +116,6 @@ protected:
         FdoFeatureSchemaCollection* pSchemas2
     );
 
-    void DescribePartialMetaSchema(
-    );
-
     void CreateOverrideValueProperty( 
         FdoClassDefinition* pClass,
         FdoStringP suffix,
@@ -193,10 +190,6 @@ protected:
 
     virtual bool SupportsCrossDatastoreDependencies() {return true;};
 
-    virtual bool SupportsPartialMetaSchema() {return true;};
-
-    virtual bool HasPhysicalSpatialContexts() {return true;};
-
     virtual bool DelayNLSSchema() {return true;};
 
     virtual FdoStringP SchemaTestErrFile( int fileNum, bool isMaster );
@@ -232,9 +225,9 @@ protected:
     void InsertObject( FdoIConnection* connection, bool conditional, FdoStringP schemaName, FdoString* className, ... );
     void DeleteObjects( FdoIConnection* connection, FdoStringP schemaName, FdoStringP className );
 
-    void _logicalPhysicalBend( FdoString* inFile, FdoString* outFile, FdoStringP providerName, int hybridLevel );
+    void _logicalPhysicalBend( FdoString* inFile, FdoString* outFile, FdoStringP providerName );
     void _logicalPhysicalFormat( FdoString* inFile, FdoString* outFile, FdoStringP providerName );
-    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile, int hybridLevel = 0 );
+    virtual FdoStringP LogicalPhysicalBend( FdoString* inFile );
     virtual FdoStringP LogicalPhysicalFormat( FdoString* inFile );
 
     FdoPtr<FdoFeatureSchema> GetDefaultSchema( FdoIConnection* connection );

@@ -48,13 +48,13 @@ int SqlServerStaticConnection::do_rdbi_connect (rdbi_context_def* rdbi_context, 
     FdoStringP connectString;
 
     if ( username.GetLength() > 0 ) 
-        connectString = FdoStringP::Format(L"DRIVER={SQL Server Native Client 10.0};MARS_Connection=yes;SERVER=%ls; UID=%ls; PWD=%ls", 
+        connectString = FdoStringP::Format(L"DRIVER={SQL Server}; SERVER=%ls; UID=%ls; PWD=%ls", 
             (FdoString*)pService,
             (FdoString*)username,
             (FdoString*)password
         );
     else
-        connectString = FdoStringP::Format(L"DRIVER={SQL Server Native Client 10.0};Trusted_Connection=yes;MARS_Connection=yes;SERVER=%ls", (FdoString*)pService);
+        connectString = FdoStringP::Format(L"DRIVER={SQL Server}; SERVER=%ls", (FdoString*)pService);
 
     if (rdbi_context->dispatch.capabilities.supports_unicode == 1)
     {
@@ -179,16 +179,17 @@ SqlServerConnectionUtil::~SqlServerConnectionUtil(void)
 	FdoStringP pTypeName = L"SQLServerSpatial";
 	pTypeName += m_IdTest;
 	FdoString* pTypeNamecst = pTypeName;
-	FdoPtr<FdoStringCollection> files = FdoStringCollection::Create();
+	std::vector<std::wstring> files;
 	FdoCommonFile::GetAllFiles (L"", files);
 	size_t lng = pTypeName.GetLength();
-	size_t count = files->GetCount ();
+	size_t count = files.size();
 	for (size_t i = 0; i < count; i++)
 	{
-		FdoStringP name = files->GetString(i);
-		if (lng < name.GetLength())
+		const wchar_t* name;
+		if (lng < files[i].length())
 		{
-			if (0 == memcmp((FdoString*)name, pTypeNamecst, lng*sizeof(wchar_t)))
+			name = files[i].c_str ();
+			if (0 == memcmp(name, pTypeNamecst, lng*sizeof(wchar_t)))
 				FdoCommonFile::Delete (name, true);
 		}
 	}

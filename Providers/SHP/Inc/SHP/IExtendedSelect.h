@@ -17,6 +17,7 @@
 #ifndef SHPIEXTENDEDSELECT_H
 #define SHPIEXTENDEDSELECT_H
 
+#include "FdoStd.h"
 #include "Fdo.h"
 #include "SHP/IScrollableFeatureReader.h"
 #include "SHP/ShpCompareHandler.h"
@@ -32,6 +33,7 @@ public:
 	using FdoIExtendedSelect::ExecuteScrollable;
 	using FdoIExtendedSelect::GetOrderingOption;
 	using FdoIExtendedSelect::SetOrderingOption;
+
 
 	/// <summary>Set the compare handler. This method is used to override the default Shp compare handler.</summary>
     /// <param name="handler">The compare handle that should be derived from the ShpCompareHandler class.</param> 

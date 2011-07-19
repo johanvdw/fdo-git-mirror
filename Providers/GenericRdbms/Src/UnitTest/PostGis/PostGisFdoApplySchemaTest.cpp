@@ -159,11 +159,11 @@ bool PostGisFdoApplySchemaTest::CanCreateSchemaWithoutMetaSchema()
     return true;
 }
 
-FdoStringP PostGisFdoApplySchemaTest::LogicalPhysicalBend( FdoString* inFile, int hybridLevel )
+FdoStringP PostGisFdoApplySchemaTest::LogicalPhysicalBend( FdoString* inFile )
 {
     FdoStringP outFile = UnitTestUtil::GetOutputFileName( inFile );
 
-    _logicalPhysicalBend( inFile, outFile, L"PostGIS", hybridLevel );
+    _logicalPhysicalBend( inFile, outFile, L"PostGIS" );
 
     return outFile;
 }

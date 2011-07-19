@@ -184,8 +184,7 @@ public:
         int   datatype,     /* A data type from Inc/rdbi.h              */
         int   size,         /* binary size                              */
         char *address,      /* data address                             */
-        GDBI_NI_TYPE *null_ind,
-        int typeBind = 1
+        GDBI_NI_TYPE *null_ind
     );
 
     int tran_begin( char    *tran_id );
@@ -193,11 +192,6 @@ public:
     int tran_end( char    *tran_id );
 
     int tran_rolbk( );
-
-    int sp_add(FdoStringP sp);
-    int sp_rollback(FdoStringP sp);
-    int sp_release(FdoStringP sp);
-    bool sp_exists(FdoStringP sp);
 
 	int	autocommit_on();
 	int autocommit_off();
@@ -257,11 +251,6 @@ public:
 			int				sqlid,
 			char			*geom_col_name,
 			long			srid );
-
-	int geom_version_set(
-			int				sqlid,
-			char			*geom_col_name,
-			long			version );
 };
 
 #endif // _GDBICOMMANDS_

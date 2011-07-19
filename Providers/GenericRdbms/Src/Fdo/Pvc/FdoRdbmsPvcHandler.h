@@ -40,7 +40,6 @@ typedef struct {
         GDBI_NI_TYPE	 *null_ind;
         wchar_t			 propertyName[GDBI_SCHEMA_ELEMENT_NAME_SIZE];
         FdoIStreamReader *reader;
-        FdoByteArray     *barray;
         int				 pos;
 } FdoRdbmsPvcBindDef;
 

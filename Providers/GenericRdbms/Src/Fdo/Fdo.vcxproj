@@ -226,7 +226,6 @@
     <ClCompile Include="FeatureCommands\FdoRdbmsDeleteCommand.cpp" />
     <ClCompile Include="FeatureCommands\FdoRdbmsFeatureInfoReader.cpp" />
     <ClCompile Include="FeatureCommands\FdoRdbmsFeatureReader.cpp" />
-    <ClCompile Include="FeatureCommands\FdoRdbmsSimpleFeatureReader.cpp" />
     <ClCompile Include="FeatureCommands\FdoRdbmsFeatureSubsetReader.cpp" />
     <ClCompile Include="FeatureCommands\FdoRdbmsInsertCommand.cpp" />
     <ClCompile Include="FeatureCommands\FdoRdbmsSelectAggregates.cpp" />
@@ -238,7 +237,6 @@
     <ClCompile Include="SpatialContext\FdoRdbmsGetSpatialContexts.cpp" />
     <ClCompile Include="SpatialContext\FdoRdbmsSpatialContextReader.cpp" />
     <ClCompile Include="Other\FdoRdbmsBLOBStreamReader.cpp" />
-    <ClCompile Include="Other\FdoRdbmsSimpleBLOBStreamReader.cpp" />
     <ClCompile Include="Other\FdoRdbmsException.cpp" />
     <ClCompile Include="Other\FdoRdbmsFeatureTransaction.cpp" />
     <ClCompile Include="Other\FdoRdbmsLobUtility.cpp" />
@@ -254,7 +252,6 @@
     <ClCompile Include="Filter\FdoRdbmsFilterUtil.cpp" />
     <ClCompile Include="DataStore\FdoRdbmsDataStoreReader.cpp" />
     <ClCompile Include="DataStore\FdoRdbmsGetDataStores.cpp" />
-    <ClCompile Include="Pvc\FdoRdbmsPropBindHelper.cpp" />
     <ClCompile Include="Pvc\FdoRdbmsPvcHandler.cpp" />
     <ClCompile Include="Pvc\FdoRdbmsPvcInsertHandler.cpp" />
     <ClCompile Include="Pvc\FdoRdbmsPvcOperation.cpp" />
@@ -305,7 +302,6 @@
     <ClInclude Include="FeatureCommands\FdoRdbmsFeatureCommand.h" />
     <ClInclude Include="FeatureCommands\FdoRdbmsFeatureInfoReader.h" />
     <ClInclude Include="FeatureCommands\FdoRdbmsFeatureReader.h" />
-    <ClInclude Include="FeatureCommands\FdoRdbmsSimpleFeatureReader.h" />
     <ClInclude Include="FeatureCommands\FdoRdbmsFeatureSubsetReader.h" />
     <ClInclude Include="FeatureCommands\FdoRdbmsInsertCommand.h" />
     <ClInclude Include="FeatureCommands\FdoRdbmsSelectAggregates.h" />
@@ -319,7 +315,6 @@
     <ClInclude Include="Other\Collection.h" />
     <ClInclude Include="Other\Disposable.h" />
     <ClInclude Include="Other\FdoRdbms.h" />
-    <ClInclude Include="Other\FdoRdbmsSimpleBLOBStreamReader.h" />
     <ClInclude Include="Other\FdoRdbmsBLOBStreamReader.h" />
     <ClInclude Include="Other\FdoRdbmsException.h" />
     <ClInclude Include="Other\FdoRdbmsFeatureTransaction.h" />
@@ -339,7 +334,6 @@
     <ClInclude Include="DataStore\FdoRdbmsDataStoreReader.h" />
     <ClInclude Include="DataStore\FdoRdbmsDeleteDataStore.h" />
     <ClInclude Include="DataStore\FdoRdbmsGetDataStores.h" />
-    <ClInclude Include="Pvc\FdoRdbmsPropBindHelper.h" />
     <ClInclude Include="Pvc\FdoRdbmsPvcHandler.h" />
     <ClInclude Include="Pvc\FdoRdbmsPvcInsertHandler.h" />
     <ClInclude Include="Pvc\FdoRdbmsPvcOperation.h" />

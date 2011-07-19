@@ -59,11 +59,6 @@ bool FdoRfpConnectionCapabilities::SupportsTransactions()
 	return false;
 }
 
-bool FdoRfpConnectionCapabilities::SupportsSavePoint()
-{
-	return false;
-}
-
 bool FdoRfpConnectionCapabilities::SupportsLongTransactions()
 {
 	return false;

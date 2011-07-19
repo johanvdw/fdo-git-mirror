@@ -163,7 +163,7 @@ FdoILockedObjectReader *FdoRdbmsGetLockedObjects::Execute ()
     catch (FdoException *ex) {
 
       FreeMemory();
-      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 

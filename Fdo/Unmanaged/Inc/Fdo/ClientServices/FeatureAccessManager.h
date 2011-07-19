@@ -1,5 +1,6 @@
 #ifndef _FDOFEATUREACCESSMANAGER_H_
 #define _FDOFEATUREACCESSMANAGER_H_
+/***************************************************************************
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -18,22 +19,24 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+ *
+ ***************************************************************************/
 #ifdef _WIN32
 #pragma once
 #endif
 
 // Include Definitions
 #include <Fdo/IProviderRegistry.h>
-#include <Fdo/IConnectionManager.h>
+#include <Fdo/ClientServices/ClientServices.h>
 
 // Forward Declare References
 class FdoConnectionManager;
 class FdoProviderRegistry;
+class IConnectionManager;
 
 /// \brief
 /// The FeatureAccessManager class manages a registry of feature providers stored in the registry
-/// and provides support for dynamic discovery and binding to registered feature providers.
-///
+/// and provides support for dynamic discovery and binding to registered feature providers
 class FdoFeatureAccessManager
 {
 public:
@@ -54,11 +57,9 @@ public:
     /// Throws an instance of FdoClientServicesException * if an error occurs.
     /// 
 	FDO_API static IProviderRegistry* GetProviderRegistry();
-
 /// \cond DOXYGEN-IGNORE
     static void Reset();
 /// \endcond
-
 private:
     /// Static FdoConnectionManager
     static FdoConnectionManager * m_connectionManager;

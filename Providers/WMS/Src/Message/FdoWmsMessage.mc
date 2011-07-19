@@ -263,26 +263,6 @@ Language=English
 '%1$ls': Cannot find raster property for unspecified class (NULL).
 .
 MessageId=3008
-SymbolicName=FDOWMS_CONNECTION_PROPERTY_PROXYSERVER
-Language=English
-ProxyServerName
-.
-MessageId=3009
-SymbolicName=FDOWMS_CONNECTION_PROPERTY_PROXYUSERNAME
-Language=English
-ProxyServerUsername
-.
-MessageId=3010
-SymbolicName=FDOWMS_CONNECTION_PROPERTY_PROXYPASSWORD
-Language=English
-ProxyServerPassword
-.
-MessageId=3011
-SymbolicName=FDOWMS_CONNECTION_PROPERTY_PROXYPORT
-Language=English
-ProxyServerPort
-.
-MessageId=3012
 SymbolicName=FDOWMS_VERSION_NOT_SUPPORTED
 Language=English
 The WMS version '%1$ls' is not supported.
@@ -586,9 +566,9 @@ Language=English
 The spatial context '%1$ls' is not supported by the layer '%2$ls'.
 .
 MessageId=12004
-SymbolicName=FDOWMS_12004_STYLES_LAYERS_NOT_PAIRED
+SymbolicName=FDOWMS_12004_STYLES_LAYERS_NOT_CORRESPONDING
 Language=English
-The specified WMS layer styles and layers aren't one-to-one paired.
+The WMS styles and layers are not corresponding.
 .
 MessageId=12005
 SymbolicName=FDOWMS_12005_GETMAP_NOT_SUPPORTED
@@ -599,11 +579,6 @@ MessageId=12006
 SymbolicName=FDOWMS_12006_NO_DATA_RETURNED
 Language=English
 The WMS Server returned no data from the GetMap request.
-.
-MessageId=12007
-SymbolicName=FDOWMS_12006_GETFEATUREINFO_NOT_SUPPORTED
-Language=English
-The WMS GetFeatureInfo request is not supported.
 .
 
 ;//************************************************************************************

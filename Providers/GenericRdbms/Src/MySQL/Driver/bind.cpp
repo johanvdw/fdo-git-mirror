@@ -28,8 +28,7 @@ int mysql_bind (
     int datatype,
     int size,
     char *address,
-    my_bool *null_ind,
-    int      typeBind)
+    my_bool *null_ind)
 {
     MYSQL *mysql;
     mysql_cursor_def *curs;

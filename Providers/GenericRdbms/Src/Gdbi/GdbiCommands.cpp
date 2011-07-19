@@ -51,12 +51,10 @@ void GdbiCommands::CheckDB()
 
 void GdbiCommands::ThrowException()
 {
-    long serverRc = ::rdbi_get_server_rc (m_pRdbiContext);
-
     if( m_pRdbiContext->last_error_msg == NULL )
         ::rdbi_get_msg (m_pRdbiContext);
     
-    throw GdbiException::Create( m_pRdbiContext->last_error_msg, (!serverRc) ? m_pRdbiContext->rdbi_last_status : serverRc);
+    throw GdbiException::Create( m_pRdbiContext->last_error_msg, m_pRdbiContext->rdbi_last_status);
 }
 
 int GdbiCommands::err_stat()
@@ -158,8 +156,7 @@ int GdbiCommands::bind(
     int   datatype,     /* A data type from Inc/rdbi.h              */
     int   size,         /* binary size                              */
     char *address,      /* data address                             */
-    GDBI_NI_TYPE *null_ind,
-    int typeBind
+    GDBI_NI_TYPE *null_ind
     )
 {
 	int   loc_datatype = datatype;
@@ -173,7 +170,7 @@ int GdbiCommands::bind(
 		throw new GdbiException(L"Cannot bind widechar strings; target RDBMS does not support widechar strings");
 	}
 
-    if( ::rdbi_bind(m_pRdbiContext, cursorId, name, loc_datatype,  loc_size, loc_address, (void *)null_ind, typeBind) == RDBI_SUCCESS )
+    if( ::rdbi_bind(m_pRdbiContext, cursorId, name, loc_datatype,  loc_size, loc_address, (void *)null_ind) == RDBI_SUCCESS )
         return RDBI_SUCCESS;
 
     ThrowException();
@@ -632,72 +629,12 @@ int GdbiCommands::lob_read_next(int sqlid, void *lob_ref, int rdbi_lob_type, uns
 
 	return RDBI_GENERIC_ERROR;
 }
-
-int GdbiCommands::sp_add(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_ADD, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_ADD, sp);
-
-    if(rc == RDBI_SUCCESS)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::sp_rollback(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_RB, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_RB, sp);
-
-    if(rc == RDBI_SUCCESS)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::sp_release(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_RL, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_RL, sp);
-
-    if(rc == RDBI_SUCCESS || rc == RDBI_SP_NOT_SUPPORTED)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-bool GdbiCommands::sp_exists(FdoStringP sp)
-{
-	if(SupportsUnicode())
-        return ::rdbi_tran_sp_existsW (m_pRdbiContext, sp) ? true: false;
-	else
-        return ::rdbi_tran_sp_exists (m_pRdbiContext, sp) ? true: false;
-}
-
 int GdbiCommands::autocommit_on()
 {
 	int rc = ::rdbi_autocommit_on(m_pRdbiContext);
 
 	return rc;
 }
-
 int GdbiCommands::autocommit_off()
 {
 	int rc = ::rdbi_autocommit_off(m_pRdbiContext);
@@ -754,18 +691,6 @@ int GdbiCommands::geom_srid_set(
 	long			srid)
 {
 	int rc = ::rdbi_geom_srid_set(m_pRdbiContext, sqlid, geom_col_name, srid);
-	if (rc == RDBI_SUCCESS)
-		return rc;
-
-	return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::geom_version_set(
-	int				sqlid,
-	char			*geom_col_name,
-	long			version)
-{
-	int rc = ::rdbi_geom_version_set(m_pRdbiContext, sqlid, geom_col_name, version);
 	if (rc == RDBI_SUCCESS)
 		return rc;
 

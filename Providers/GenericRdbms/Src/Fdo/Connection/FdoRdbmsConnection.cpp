@@ -96,8 +96,7 @@ FdoRdbmsConnection::FdoRdbmsConnection() :
 	mTransactionStarted(false),
     mUserNum(-1),
     mUserSessionId(-1),
-	mLongTransactionManager(NULL),
-    mEnforceClearSchAtFlush(false)
+	mLongTransactionManager(NULL)
 {
      mDbiConnection = new DbiConnection( );
 }
@@ -173,7 +172,6 @@ void FdoRdbmsConnection::SetConfiguration(FdoIoStream* configStream)
 
 void FdoRdbmsConnection::Close ()
 {
-    mEnforceClearSchAtFlush = false;
     if( mDbiConnection != NULL && mState != FdoConnectionState_Closed)
     {
         mState = FdoConnectionState_Closed;
@@ -891,7 +889,11 @@ FdoByteArray* FdoRdbmsConnection::GetGeometryValue(
 
     query->GetBinaryValue( columnName, sizeof(FdoIGeometry *), (char*)&geom, &isNull, NULL);
 
-    pgeom = FDO_SAFE_ADDREF(geom);
+    pgeom = TransformGeometry( 
+        geom, 
+        pGeometricProperty, 
+        true 
+    );
 
     if ( pgeom && pgeom->GetDerivedType() != FdoGeometryType_None )
         isSupportedType = true;
@@ -922,6 +924,11 @@ FdoByteArray* FdoRdbmsConnection::GetGeometryValue(
     }
 
     return byteArray;
+}
+
+FdoIGeometry* FdoRdbmsConnection::TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo )
+{
+    return FDO_SAFE_ADDREF(geom);
 }
 
 void* FdoRdbmsConnection::BindSpatialGeometry( 
@@ -1011,9 +1018,4 @@ void FdoRdbmsConnection::SetDefaultActiveSpatialContextName()
 bool FdoRdbmsConnection::NeedsSecondaryFiltering( FdoRdbmsSpatialSecondaryFilter* filter )
 {
 	return ( filter->GetOperation() != FdoSpatialOperations_EnvelopeIntersects );
-}
-
-FdoInt32 FdoRdbmsConnection::ExecuteDdlNonQuery(FdoString* sql)
-{
-    return GetDbiConnection()->GetGdbiConnection()->ExecuteNonQuery(sql);
 }

@@ -43,11 +43,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;..\"
+				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
@@ -103,7 +102,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLiteProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -131,11 +130,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;..\"
+				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_WIN64;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -188,7 +186,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLiteProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -216,13 +214,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;..\"
+				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -280,7 +277,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLiteProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -309,13 +306,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;;..\"
+				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\sqlite;&quot;$(FDOUTILITIES)\Common\inc&quot;;..\SpatialIndex;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_WIN64;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -373,7 +369,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SQLiteProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SQLiteProvider.dll"
 			/>
 		</Configuration>
 	</Configurations>
@@ -502,10 +498,6 @@
 		</File>
 		<File
 			RelativePath=".\SltSpatialContextReader.h"
-			>
-		</File>
-		<File
-			RelativePath=".\SltTransaction.cpp"
 			>
 		</File>
 		<File

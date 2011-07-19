@@ -777,7 +777,11 @@ void FdoRdbmsPvcInsertHandler::SetBindValues(const FdoSmLpClassDefinition *class
                     FdoIGeometry *newGeomValue = NULL;
                     if ( ba )
                     {
-                        newGeomValue = gf->CreateGeometryFromFgf(ba);
+                        newGeomValue = mFdoConnection->TransformGeometry( 
+                            FdoPtr<FdoIGeometry>(gf->CreateGeometryFromFgf(ba)), 
+                            geomPropDef, 
+                            false 
+                        );
 
                         mConnection->GetSchemaUtil()->CheckGeomPropOrdDimensionality( classDefinition, name, newGeomValue );
                         mConnection->GetSchemaUtil()->CheckGeomPropShapeType( classDefinition, name, newGeomValue );
@@ -1181,7 +1185,6 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                 bind[bind_no].type = dataType;
                 bind[bind_no].len = 64;     // Set the length to be 64
                 bind[bind_no].reader = NULL;
-                bind[bind_no].barray = NULL;
                 bind[bind_no].value.strvalue = NULL;
 				bind[bind_no].valueNeedsFree = false;
 
@@ -1266,10 +1269,7 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
 						const FdoSmPhColumnP gColumn = ((FdoSmLpSimplePropertyDefinition*)geomProp)->GetColumn();
 						FdoSmPhColumnGeomP geomCol = gColumn.p->SmartCast<FdoSmPhColumnGeom>();
 						if (geomCol)
-                        {
 							mConnection->GetGdbiCommands()->geom_srid_set(gid, temp, (long)geomCol->GetSRID());
-                            mConnection->GetGdbiCommands()->geom_version_set(gid, temp, mFdoConnection->GetSpatialGeometryVersion());
-                        }
                     }
                     break;
                 case FdoSmOvGeometricColumnType_Double:
@@ -1288,7 +1288,6 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                             bind[bind_no].type = FdoDataType_Double;
                             bind[bind_no].len = 64;     // Set the length to be 64
                             bind[bind_no].reader = NULL;
-                            bind[bind_no].barray = NULL;
                             sprintf(temp, "%d", bind_no+1); // Parm name are one based
 					        int rdbi_type = RDBI_STRING;
 					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
@@ -1305,7 +1304,6 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                             bind[bind_no].type = FdoDataType_Double;
                             bind[bind_no].len = 64;     // Set the length to be 64
                             bind[bind_no].reader = NULL;
-                            bind[bind_no].barray = NULL;
                             sprintf(temp, "%d", bind_no+1); // Parm name are one based
 					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
 					        bind[bind_no].valueNeedsFree = true;
@@ -1323,7 +1321,6 @@ void FdoRdbmsPvcInsertHandler::SetBindVariables(const FdoSmLpClassDefinition *cu
                                 bind[bind_no].type = FdoDataType_Double;
                                 bind[bind_no].len = 64;     // Set the length to be 64
                                 bind[bind_no].reader = NULL;
-                                bind[bind_no].barray = NULL;
                                 sprintf(temp, "%d", bind_no+1); // Parm name are one based
     					        bind[bind_no].value.strvalue = new char[bind[bind_no].len];
 					            bind[bind_no].valueNeedsFree = true;
