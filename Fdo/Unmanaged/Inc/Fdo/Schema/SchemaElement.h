@@ -53,16 +53,15 @@ class FdoSchemaElement :
 /// \cond DOXYGEN-IGNORE
 protected:
     /// Constructs a default instance of an FdoSchemaElement.
-    FDO_API FdoSchemaElement();
+    FdoSchemaElement();
 
     /// Constructs an instance of an FdoSchemaElement using the specified arguments.
-    FDO_API FdoSchemaElement(FdoString* name, FdoString* description);
+    FdoSchemaElement(FdoString* name, FdoString* description);
 
-    /// Destruct this object
-    FDO_API virtual ~FdoSchemaElement();
+    virtual ~FdoSchemaElement();
 
     /// Write this element to XML.
-    FDO_API virtual void _writeXml( FdoSchemaXmlContext* pContext );
+    virtual void _writeXml( FdoSchemaXmlContext* pContext );
 /// \endcond
 
 public:
@@ -141,6 +140,7 @@ public:
         return true;
     }
 
+
     /// \brief
     /// Gets the description of the schema object.
     /// 
@@ -176,17 +176,18 @@ public:
     // Public non-API functions for XML and Schema Modification support
 
     // Update a schema element from the given element.
-    FDO_API virtual void Set( FdoSchemaElement* pElement, FdoSchemaMergeContext* pContext );
+    virtual void Set( FdoSchemaElement* pElement, FdoSchemaMergeContext* pContext );
 
     // Checks referenced elements and adds errors if any are deleted. 
+    // Does nothing.
     // Sub-classes must override this function if specific references need to be checked.
-    FDO_API virtual void CheckReferences( FdoSchemaMergeContext* pContext );
+    virtual void CheckReferences( FdoSchemaMergeContext* pContext );
 
     /// Initialize this property from its XML attributes
-    FDO_API virtual void InitFromXml(FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
+    virtual void InitFromXml(FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
 
     /// Handle the start of a sub-element
-    FDO_API virtual FdoXmlSaxHandler* XmlStartElement(
+    virtual FdoXmlSaxHandler* XmlStartElement(
         FdoXmlSaxContext* context, 
         FdoString* uri, 
         FdoString* name, 
@@ -195,7 +196,7 @@ public:
     );
 
     /// Handle the end of a sub-element
-    FDO_API virtual FdoBoolean XmlEndElement(
+    virtual FdoBoolean XmlEndElement(
         FdoXmlSaxContext* context, 
         FdoString* uri, 
         FdoString* name, 
@@ -205,24 +206,24 @@ public:
 protected:
     /// Sets the parent of this SchemaObject. Can only be called from within the
     /// Schema package.
-    FDO_API virtual void SetParent(FdoSchemaElement* value);
+    virtual void SetParent(FdoSchemaElement* value);
 
     /// Sets the current state of the schema element. This is a package private
     /// method that can only be called from within the Schema package.
-    FDO_API void SetElementState(FdoSchemaElementState value);
+    void SetElementState(FdoSchemaElementState value);
 
     /// Notification method called whenever a property of this element is removed
-    FDO_API virtual void PropertyRemoved(const FdoPropertyDefinition* property);
+    virtual void PropertyRemoved(const FdoPropertyDefinition* property);
 
     /// Is this a property of this element?
-    FDO_API virtual bool IsProperty(const FdoPropertyDefinition* property);
+    virtual bool IsProperty(const FdoPropertyDefinition* property);
 
     /// Does this element have a base class?
-    FDO_API virtual bool IsSubClass();
+    virtual bool IsSubClass();
 
     /// Throws an exception if the given name is not a valid 
     /// schema element name.
-    FDO_API void VldName( FdoString* name );
+    void VldName( FdoString* name );
 
 private:
     FdoSchemaElement*               m_parent;
@@ -241,12 +242,11 @@ private:
 
 protected:
     /// FdoFeatureSchema::RejectChanges() support
-    FDO_API virtual void    _StartChanges();
-    FDO_API virtual void    _BeginChangeProcessing();
-    FDO_API virtual void    _AcceptChanges();
-    FDO_API virtual void    _RejectChanges();
-    FDO_API virtual void    _EndChangeProcessing();
-
+    virtual void    _StartChanges();
+    virtual void    _BeginChangeProcessing();
+    virtual void    _AcceptChanges();
+    virtual void    _RejectChanges();
+    virtual void    _EndChangeProcessing();
     unsigned int                    m_changeInfoState;
     FdoSchemaElement*               m_parentCHANGED;
     wchar_t*                        m_nameCHANGED;
@@ -269,8 +269,8 @@ protected:
     /// format before it is read.
     FdoPtr<FdoSchemaXmlError>     m_XmlErrorHandler;
 /// \endcond
-};
 
+};
 /// \ingroup (typedefs)
 /// \brief
 /// FdoSchemaElementP is a FdoPtr on FdoSchemaElement, provided for convenience.

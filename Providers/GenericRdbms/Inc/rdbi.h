@@ -71,11 +71,6 @@
 #define RDBI_VA_ALLNAMES (RDBI_VA_BNDNAMES|RDBI_VA_DEFNAMES)
 #define RDBI_VA_ALLNULLS (RDBI_VA_BNDNULLS|RDBI_VA_DEFNULLS)
 
-/* save point operation constants */
-#define RDBI_SP_ADD      1
-#define RDBI_SP_RB       2
-#define RDBI_SP_RL       3
-#define RDBI_SP_NOT_SUPPORTED          4 /* Save Point: some save optin options like release save point not supported */
 
 /* rdbi internal data types :   */
 
@@ -96,9 +91,6 @@
 #define RDBI_WSTRING    77714   /* null-terminated wide string          */
 #define RDBI_LONGLONG   77715
 #define RDBI_BOOLEAN    77716   /* Value storage handled like RDBI_CHAR; must be '1' or '0' */
-#define RDBI_BLOB_ULEN  77720   /* Blob with unknown size */
-#define RDBI_WSTRING_ULEN 77721   /* String with unknown size */
-#define RDBI_STRING_ULEN  77722   /* String with unknown size */
 
 
 /* rdbi rdbms data types */
@@ -234,6 +226,8 @@
 #define RDBI_NOT_VALID_USER_IN_DATABASE			 88879  /* SQL Server: user does not have dbase access */
 
 #define RDBI_INSUFFICIENT_PRIVS                  88880  /* SQL Server: user has insufficient privileges */
+
+
 
 #endif
 

@@ -1,5 +1,5 @@
 /***************************************************************************
-* 
+ * 
 * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
@@ -16,33 +16,27 @@
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * 
  ***************************************************************************/
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN	// Exclude rarely-used stuff from Windows headers
+#include <windows.h>
+#endif
 
-#include <vector>
 #include <Fdo/ClientServices/Provider.h>
 #include <Fdo/ClientServices/ProviderCollection.h>
 #include <Fdo/ClientServices/ClientServiceException.h>
 
-// Create a class to hide the use of std::vector
-class FdoProviderVectorArray 
-{
-public:
-    std::vector<FdoProvider*> m_array;
-};
-
 // Constructs a default instance of a FdoProviderCollection.
 FdoProviderCollection::FdoProviderCollection()
 {
-    m_providers = new FdoProviderVectorArray();
 }
 
 // Default destructor for FdoProviderCollection.
 FdoProviderCollection::~FdoProviderCollection()
 {
-    for (int i=0; i<(int)m_providers->m_array.size(); i++) {
-        FDO_SAFE_RELEASE(m_providers->m_array.at(i));
+    for (int i=0; i<(int)m_providers.size(); i++) {
+        FDO_SAFE_RELEASE(m_providers.at(i));
     }
-    m_providers->m_array.clear();
-    delete m_providers;
+    m_providers.clear();
 }
 
 void FdoProviderCollection::Dispose()
@@ -53,21 +47,21 @@ void FdoProviderCollection::Dispose()
 // Gets the number of items in the collection
 int FdoProviderCollection::GetCount() const
 {
-    return (int)m_providers->m_array.size();
+    return (int)m_providers.size();
 }
 
 // Gets the item in the collection at the specified index. 
 // Throws an invalid argument exception if the index is out of range
 FdoProvider * const FdoProviderCollection::GetItem(int index) const
 {
-    if (index < 0 || index >= (int)m_providers->m_array.size()) {
+    if (index < 0 || index >= (int)m_providers.size()) {
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_2_EMPTYINPUTPARAMETER)));
     }
-    return FDO_SAFE_ADDREF(m_providers->m_array.at(index));
+    return FDO_SAFE_ADDREF(m_providers.at(index));
 }
 
 // Returns true if the collection contains the specified item, false otherwise
-bool FdoProviderCollection::Contains(FdoString* name) const
+bool FdoProviderCollection::Contains(const wchar_t* name) const
 {
     bool bStatus = false;
     
@@ -75,13 +69,13 @@ bool FdoProviderCollection::Contains(FdoString* name) const
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_1_NULLINPUTPOINTER)));
     }
 
-    for (int i = 0; i < (int)m_providers->m_array.size(); i++) {
-        FdoProvider * provider = m_providers->m_array.at(i);
+    for (int i = 0; i < (int)m_providers.size(); i++) {
+        FdoProvider * provider = m_providers.at(i);
         if (provider == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
 
-        FdoString* providerName = provider->GetName();
+        const wchar_t* providerName = provider->GetName();
         if (providerName == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
@@ -99,7 +93,7 @@ bool FdoProviderCollection::Contains(FdoString* name) const
 }
 
 // Returns the index of the specified item in the collection or -1 if the item does not exist
-int FdoProviderCollection::IndexOf(FdoString* name) const
+int FdoProviderCollection::IndexOf(const wchar_t* name) const
 {
     int iVal = -1;
     
@@ -107,13 +101,13 @@ int FdoProviderCollection::IndexOf(FdoString* name) const
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_1_NULLINPUTPOINTER)));
     }
 
-    for (int i = 0; i < (int)m_providers->m_array.size(); i++) {
-        FdoProvider * provider = m_providers->m_array.at(i);
+    for (int i = 0; i < (int)m_providers.size(); i++) {
+        FdoProvider * provider = m_providers.at(i);
         if (provider == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
 
-        FdoString* providerName = provider->GetName();
+        const wchar_t* providerName = provider->GetName();
         if (providerName == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
@@ -146,7 +140,7 @@ void FdoProviderCollection::Add(FdoProvider* provider)
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_6_INVALIDINPUTPARAMETER)));
     }
 
-    m_providers->m_array.push_back(FDO_SAFE_ADDREF(provider));
+    m_providers.push_back(FDO_SAFE_ADDREF(provider));
 
     return;
 }
@@ -154,7 +148,7 @@ void FdoProviderCollection::Add(FdoProvider* provider)
 // Removes a provider from the collection. The allocated provider is freed. removing a provider from the 
 // collection only removes the item from the buffered vector contained in the collection. The provider is not 
 // removed from the persistant data store. 
-void FdoProviderCollection::Remove(FdoString* name)
+void FdoProviderCollection::Remove(const wchar_t* name)
 {
     bool bStatus = false;
     
@@ -162,13 +156,13 @@ void FdoProviderCollection::Remove(FdoString* name)
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_1_NULLINPUTPOINTER)));
     }
 
-    for (std::vector<FdoProvider*>::iterator it = m_providers->m_array.begin(); it != m_providers->m_array.end(); it++) {
+    for (std::vector<FdoProvider*>::iterator it = m_providers.begin(); it != m_providers.end(); it++) {
         FdoProvider * provider = (*it);
         if (provider == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
 
-        FdoString* providerName = provider->GetName();
+        const wchar_t* providerName = provider->GetName();
         if (providerName == NULL) {
             throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_3_NULLPOINTER)));
         }
@@ -179,7 +173,7 @@ void FdoProviderCollection::Remove(FdoString* name)
         if (wcscasecmp(name, providerName) == 0) {
 #endif
             FDO_SAFE_RELEASE(provider);
-            m_providers->m_array.erase(it);
+            m_providers.erase(it);
             bStatus = true;
             break;
         }

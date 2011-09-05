@@ -576,14 +576,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\Src\Sm\Ph\Synonym.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Sm\Ph\SynonymBaseLoader.cpp"
-				>
-			</File>
-			<File
 				RelativePath="Src\Sm\Ph\Table.cpp"
 				>
 			</File>
@@ -1035,19 +1027,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\Src\Sm\Ph\Rd\SynonymReader.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\Sm\Ph\Rd\TableJoin.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\Src\Sm\Ph\Rd\ViewReader.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\Sm\Ph\Rd\ViewRelObjectReader.cpp"
 					>
 				</File>
 			</Filter>
@@ -1943,14 +1927,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Inc\Sm\Ph\Synonym.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Inc\Sm\Ph\SynonymBaseLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="Inc\Sm\Ph\Table.h"
 				>
 			</File>
@@ -2070,19 +2046,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\SynonymReader.h"
-					>
-				</File>
-				<File
 					RelativePath=".\inc\Sm\Ph\Rd\TableJoin.h"
 					>
 				</File>
 				<File
 					RelativePath=".\Inc\Sm\Ph\Rd\ViewReader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Inc\Sm\Ph\Rd\ViewRelObjectReader.h"
 					>
 				</File>
 			</Filter>

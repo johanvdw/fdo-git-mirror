@@ -18,12 +18,12 @@
 #include <Fdo/Schema/DataPropertyDefinitionCollection.h>
 
 // Constructs an instance of a DataPropertyDefinitionCollection using the specified argument.
-FdoDataPropertyDefinitionCollection* FdoDataPropertyDefinitionCollection::Create(FdoSchemaElement* parent)
+FDO_API FdoDataPropertyDefinitionCollection* FdoDataPropertyDefinitionCollection::Create(FdoSchemaElement* parent)
 {
     return new FdoDataPropertyDefinitionCollection(parent);
 }
 
-void FdoDataPropertyDefinitionCollection::SetItem(FdoInt32 index, FdoDataPropertyDefinition* value)
+FDO_API void FdoDataPropertyDefinitionCollection::SetItem(FdoInt32 index, FdoDataPropertyDefinition* value)
 {
     // verify the Obj is already in the parent's Property collection
     if (!(m_changeInfoState & CHANGEINFO_PROCESSING) && // don't verify during Accept/RejectChanges()
@@ -33,7 +33,7 @@ void FdoDataPropertyDefinitionCollection::SetItem(FdoInt32 index, FdoDataPropert
     FdoSchemaCollection<FdoDataPropertyDefinition>::SetItem(index, value);
 }
 
-FdoInt32 FdoDataPropertyDefinitionCollection::Add(FdoDataPropertyDefinition* value)
+FDO_API FdoInt32 FdoDataPropertyDefinitionCollection::Add(FdoDataPropertyDefinition* value)
 {
     // verify the Obj is already in the parent's Property collection
     if (!(m_changeInfoState & CHANGEINFO_PROCESSING) && // don't verify during Accept/RejectChanges()
@@ -50,7 +50,7 @@ FdoInt32 FdoDataPropertyDefinitionCollection::Add(FdoDataPropertyDefinition* val
     return FdoSchemaCollection<FdoDataPropertyDefinition>::Add(value);
 }
 
-void FdoDataPropertyDefinitionCollection::Insert(FdoInt32 index, FdoDataPropertyDefinition* value)
+FDO_API void FdoDataPropertyDefinitionCollection::Insert(FdoInt32 index, FdoDataPropertyDefinition* value)
 {
     // verify the Obj is already in the parent's Property collection
     if (!(m_changeInfoState & CHANGEINFO_PROCESSING) && // don't verify during Accept/RejectChanges()

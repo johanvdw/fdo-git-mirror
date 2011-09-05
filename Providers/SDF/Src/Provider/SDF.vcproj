@@ -44,17 +44,16 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\Utils\;&quot;$(FDO)\Unmanaged\src\NLS&quot;;..\..\Inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\SQLiteInterface&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SDF_EXPORTS;GISSPATIAL_STATIC;_CRT_SECURE_NO_DEPRECATE"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				StructMemberAlignment="4"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="1"
 				ProgramDataBaseFileName="$(IntDir)/SDFProvider.pdb"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -106,7 +105,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SDFProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -135,17 +134,16 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(FDO)\Unmanaged\inc&quot;;..\Utils\;&quot;$(FDO)\Unmanaged\src\NLS&quot;;..\..\Inc;&quot;$(FDOUTILITIES)\Common\inc&quot;;&quot;$(FDOUTILITIES)\SQLiteInterface&quot;;&quot;$(FDOUTILITIES)\ExpressionEngine\inc&quot;"
 				PreprocessorDefinitions="WIN32;_WIN64;_DEBUG;_WINDOWS;_USRDLL;SDF_EXPORTS;GISSPATIAL_STATIC;_CRT_SECURE_NO_DEPRECATE"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				StructMemberAlignment="4"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="1"
 				ProgramDataBaseFileName="$(IntDir)/SDFProvider.pdb"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -197,7 +195,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SDFProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -225,7 +223,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
@@ -239,7 +236,7 @@
 				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="1"
 				ProgramDataBaseFileName="$(IntDir)/SDFProvider.pdb"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -292,7 +289,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SDFProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -321,7 +318,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
@@ -335,7 +331,7 @@
 				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="1"
 				ProgramDataBaseFileName="$(IntDir)/SDFProvider.pdb"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -388,7 +384,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning SDFProvider.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.7.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v&quot;..\..\SubDoc\Providers.version&quot; -f&quot;3.6.0.0%PROVIDERS_VERSION%&quot; $(OutDir)\SDFProvider.dll"
 			/>
 		</Configuration>
 	</Configurations>
@@ -846,38 +842,6 @@
 		<File
 			RelativePath="SDF.cpp"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					UsePrecompiledHeader="1"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|x64"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					UsePrecompiledHeader="1"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					UsePrecompiledHeader="1"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|x64"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					UsePrecompiledHeader="1"
-				/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="SDF.h"

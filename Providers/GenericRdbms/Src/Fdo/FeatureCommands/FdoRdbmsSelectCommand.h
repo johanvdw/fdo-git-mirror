@@ -27,7 +27,6 @@
 #include <FdoExpressionEngineFunctionCollection.h>
 
 class FeatureSet;
-class FdoRdbmsPropBindHelper;
 
 class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
 {
@@ -39,7 +38,6 @@ class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
       FdoIConnection *mIConnection;
       FdoRdbmsConnection *mConn;
       FdoIdentifierCollection *mIdentifiers;
-      FdoJoinCriteriaCollection* mJoinCriteria;
 
       FdoLockType                mLockType;
       FdoLockStrategy            mLockStrategy;
@@ -50,10 +48,9 @@ class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
       FdoFilter                  *mGroupingFilter;
 
       FdoIdentifierCollection*   mGroupingCol;
-      FdoRdbmsPropBindHelper*    mBindParamsHelper;
-      bool                       mHasObjectProps;
-      FdoIdentifier*             mAliasName;
-      std::map<std::wstring, FdoOrderingOption> mOrderingOptions;
+
+      void**                     mBoundGeometries;
+      FdoInt32                   mBoundGeometryCount;
 
       //
       // Prevent the use of the copy constructor by definning it and not implemeting it.
@@ -86,6 +83,13 @@ class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
 	  // Internal method added in support for processing spatial conditions.
 	  void CheckSpatialFilters( FdoRdbmsSecondarySpatialFilterCollection * geometricConditions, vector<int> *logicalOps );
 
+      // Binds spatial condition geometries to the query statement
+      // (if provider supports bound spatial condition geometries)
+      void  BindSpatialGeoms( GdbiStatement* statement, FdoRdbmsFilterProcessor::BoundGeometryCollection* geometries );
+
+      // Frees all bound spatial condition geometries.
+      void  FreeBoundSpatialGeoms();
+
   protected:
       // Internal method in support for select command 
       virtual FdoRdbmsFeatureReader *GetOptimizedFeatureReader( const FdoSmLpClassDefinition *classDefinition );
@@ -105,6 +109,7 @@ class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
 
       // Internal method added in support for the select aggregates command
       FdoIdentifierCollection* GetGrouping();
+
 
   public:
 
@@ -170,36 +175,6 @@ class FdoRdbmsSelectCommand : public FdoRdbmsFeatureCommand<FdoISelect>
     /// <summary>Gets the ordering option.</summary>
     /// <returns>Returns the ordering option.</returns>
     virtual FdoOrderingOption GetOrderingOption( ){ return mOrderingOption; }
-
-    virtual void SetOrderingOption(FdoString* propertyName, FdoOrderingOption option);
-
-    virtual FdoOrderingOption GetOrderingOption(FdoString* propertyName);
-
-    virtual void ClearOrderingOptions() ;
-
-    virtual FdoString* GetAlias() { return (mAliasName != NULL) ? mAliasName->GetName() : NULL; }
-
-    virtual void SetAlias(FdoString* alias)
-    {
-        if (alias != NULL && *alias != '\0')
-        {
-            if (mAliasName == NULL)
-                mAliasName = FdoIdentifier::Create(alias);
-            else
-                mAliasName->SetText(alias);
-        }
-        else
-        {
-            FDO_SAFE_RELEASE(mAliasName);
-        }
-    }
-    virtual FdoJoinCriteriaCollection* GetJoinCriteria()
-    {
-        if (mJoinCriteria == NULL)
-            mJoinCriteria = FdoJoinCriteriaCollection::Create();
-
-        return FDO_SAFE_ADDREF(mJoinCriteria);
-    }
 };
 
 #endif // FDORDBMSSELECTCOMMAND_H

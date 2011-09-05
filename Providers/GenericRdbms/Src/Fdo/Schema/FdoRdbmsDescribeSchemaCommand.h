@@ -24,7 +24,6 @@
 #include "FdoRdbmsCommand.h"
 #include "FdoRdbmsConnection.h"
 
-class FdoRdbmsSimpleFeatureReader;
 // The DescribeSchema command describes the feature schemas available
 // from the connection. The describe schema command can describe a
 // single schema or all schemas available from the connection. The
@@ -34,7 +33,6 @@ class FdoRdbmsDescribeSchemaCommand : public FdoRdbmsCommand<FdoIDescribeSchema>
 {
     friend class FdoRdbmsConnection;
     friend class FdoRdbmsFeatureReader;
-    friend class FdoRdbmsSimpleFeatureReader;
 
 private:
     //

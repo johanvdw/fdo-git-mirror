@@ -98,18 +98,18 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <ProgramDataBaseFileName>$(IntDir)SQLiteProvider.pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist ..\..\Lib\Win32\Debug mkdir ..\..\Lib\Win32\Debug</Command>
@@ -127,7 +127,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning SQLiteProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -136,15 +136,15 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN64;_DEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <ProgramDataBaseFileName>$(IntDir)SQLiteProvider.pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist ..\..\Lib\Win64\Debug mkdir ..\..\Lib\Win64\Debug</Command>
@@ -162,7 +162,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning SQLiteProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -172,16 +172,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <ProgramDataBaseFileName>$(IntDir)SQLiteProvider.pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist ..\..\Lib\Win32\Release mkdir ..\..\Lib\Win32\Release</Command>
@@ -201,7 +201,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning SQLiteProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -214,16 +214,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(FDO)\Unmanaged\inc;..\sqlite;$(FDOUTILITIES)\Common\inc;..\SpatialIndex;$(FDOUTILITIES)\ExpressionEngine\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN64;NDEBUG;_WINDOWS;_USRDLL;SLT_EXPORTS;_CRT_SECURE_NO_WARNINGS;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <ProgramDataBaseFileName>$(IntDir)SQLiteProvider.pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <PreLinkEvent>
       <Command>if not exist ..\..\Lib\Win64\Release mkdir ..\..\Lib\Win64\Release</Command>
@@ -243,7 +243,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Versioning SQLiteProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\SubDoc\Providers.version" -f"3.5.0.0%PROVIDERS_VERSION%" $(OutDir)SQLiteProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -283,7 +283,6 @@
     <ClCompile Include="SltReader.cpp" />
     <ClCompile Include="SltBLOBStreamReader.cpp" />
     <ClCompile Include="SltSpatialContextReader.cpp" />
-    <ClCompile Include="SltTransaction.cpp" />
     <ClCompile Include="SpatialIndexDescriptor.cpp" />
     <ClCompile Include="SQLiteSchemaMergeContext.cpp" />
   </ItemGroup>

@@ -60,10 +60,13 @@ NAMESPACE_OSGEO_COMMON::StringCollection^ NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::I
 
 System::Void NAMESPACE_OSGEO_FDO_COMMANDS_SCHEMA::IDescribeSchemaImp::ClassNames::set(NAMESPACE_OSGEO_COMMON::StringCollection^ value)
 {
-    FdoStringCollection* classNames;
+    FdoStringCollection* classNames = FdoStringCollection::Create();
 
-    EXCEPTION_HANDLER(classNames = (value == nullptr) ? nullptr : static_cast<FdoStringCollection*>(value->UnmanagedObject.ToPointer()))
-
+    for (int i = 0; i < value->Count; i++)
+    {
+        FdoStringP className = StringToUni(value[i]->String);
+        classNames->Add(className);
+    }
     EXCEPTION_HANDLER(GetImpObj()->SetClassNames(classNames))
 }
 

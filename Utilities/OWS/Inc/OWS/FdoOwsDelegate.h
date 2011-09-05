@@ -36,24 +36,11 @@ private:
     FdoStringP m_defaultUrl;
     FdoStringP m_userName;
     FdoStringP m_passwd;
-    FdoStringP m_proxyHost;
-    FdoStringP m_proxyPort;
-    FdoStringP m_proxyUser;
-    FdoStringP m_proxyPassword;
-    FdoInt32 m_timeout;
     FdoPtr<FdoOwsUrlResolver> m_urlResolver;
 
 protected:
     FDOOWS_API FdoOwsDelegate();
-	FDOOWS_API FdoOwsDelegate(
-        FdoString* defaultUrl, 
-        FdoString* userName, 
-        FdoString* passwd, 
-        FdoString* proxyHost = NULL,
-        FdoString* proxyPort = NULL,
-        FdoString* proxyUser = NULL,
-        FdoString* proxyPassword = NULL
-        );
+	FDOOWS_API FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);	
     FDOOWS_API virtual ~FdoOwsDelegate();
 	FDOOWS_API virtual void Dispose() { delete this; }
 
@@ -64,12 +51,10 @@ public:
     FDOOWS_API FdoString* GetUrl() const { return m_defaultUrl; }
     FDOOWS_API FdoString* GetUserName() const { return m_userName; }
     FDOOWS_API FdoString* GetPassword() const { return m_passwd; }
-    FDOOWS_API FdoInt32 GetTimeout() const { return m_timeout; }
 
     FDOOWS_API void SetUrl(FdoString* url) { m_defaultUrl = url; }
     FDOOWS_API void SetUserName(FdoString* userName) { m_userName = userName; }
     FDOOWS_API void SetPassword(FdoString* passwd) { m_passwd = passwd; }
-    FDOOWS_API void SetTimeout(FdoInt32 timeout) { m_timeout = timeout; }
 
     FDOOWS_API FdoOwsResponse* Invoke(FdoOwsRequest* request);
 };

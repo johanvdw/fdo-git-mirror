@@ -10,16 +10,12 @@
 #define _WIN32_WINNT 0x0501	// Change this to the appropriate value to target other versions of Windows.
 #endif		
 
+
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 #include <windows.h>
+#include <float.h>
 #include <crtdbg.h>
-
-#else
-
-#include <wctype.h>
-#include <malloc.h>
-#include <stdio.h>
 
 #endif
 
@@ -27,6 +23,7 @@
 #   define LLONG_MAX    9223372036854775807LL
 #   define LLONG_MIN    (-LLONG_MAX - 1LL)
 #endif
+
 
 #ifdef _DEBUG
     #ifdef _WIN32
@@ -49,29 +46,23 @@
 #endif
 #endif
 
-#include <vector>
-#include <algorithm>
 
-#ifdef _WIN32
+
+//defines that helps us use hash_map (and similar STL classes) in the same way 
+//under Linux and Windows.
+#ifdef WIN32
 #include <hash_map>
+#include <functional>
 #else
 #include <ext/hash_map>
+#include <ext/functional>
 namespace stdext = ::__gnu_cxx;
 using namespace std;
 #endif
 
-#include <float.h>
-#include <math.h>
-
+#include <cstring>
+#include <FdoStd.h>
 #include <Fdo.h>
-#include <FdoCommonStringUtil.h>
-#include <FdoCommonOSUtil.h>
-#include <FdoCommonMiscUtil.h>
-#include <FdoCommonThreadMutex.h>
-#include <FdoCommonSchemaUtil.h>
-#include <FdoCommonBinaryReader.h>
-#include <FdoCommonBinaryWriter.h>
-#include <FdoCommonPropertyIndex.h>
 
 #ifndef _WIN32
 #define fdofdo_cat "FdoMessage.cat"

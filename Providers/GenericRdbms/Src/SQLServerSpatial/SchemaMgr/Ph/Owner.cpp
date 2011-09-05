@@ -20,34 +20,19 @@
 #include "Owner.h"
 #include "Table.h"
 #include "View.h"
-#include "Synonym.h"
 #include "Mgr.h"
 #include "Rd/DbObjectReader.h"
 #include "Rd/BaseObjectReader.h"
-#include "Rd/ViewRelObjectReader.h"
 #include "Rd/ColumnReader.h"
 #include "Rd/ConstraintReader.h"
 #include "Rd/FkeyReader.h"
 #include "Rd/IndexReader.h"
 #include "Rd/PkeyReader.h"
-#include "Rd/SynonymReader.h"
 #include "Rd/SpatialContextReader.h"
 #include "Rd/CoordSysReader.h"
 #include "Rd/DbSchemaReader.h"
 #include "Rdbi/proto.h"
 #include <FdoCommonStringUtil.h>
-
-#define cd_f_spatialcontext         0x01
-#define cd_f_classdefinition        0x02
-#define cd_f_attributedefinition    0x04
-#define cd_f_associationdefinition  0x08
-#define cd_f_attributedependencies  0x10
-#define cd_f_sad                    0x20
-#define cd_f_schemaoptions          0x40
-#define cd_f_options                0x80
-#define cd_f_schemainfo             0x100
-#define cd_f_spatialcontextgeom     0x200
-#define cd_f_spatialcontextgroup    0x400
 
 struct odbcdr_context_def;
 
@@ -66,9 +51,6 @@ FdoSmPhSqsOwner::FdoSmPhSqsOwner(
 ) :
     FdoSmPhGrdOwner(name, hasMetaSchema, pDatabase, elementState)
 {
-    mFdoMetadataLoaded = false;
-    mIsRdbObjNameAscii7 = -1;
-    mTableFlags = 0x00;
 }
 
 FdoSmPhSqsOwner::~FdoSmPhSqsOwner(void)
@@ -87,170 +69,6 @@ FdoSmPhSqsSchemasP FdoSmPhSqsOwner::GetSchemas()
     LoadSchemas();
 
     return mSchemas;
-}
-
-// here we could run "select T.TABLE_NAME table_name from [SqlServerAuthDocument].INFORMATION_SCHEMA.TABLES T where T.TABLE_SCHEMA = 'dbo' AND T.TABLE_NAME LIKE 'f_%'"
-// however since we are interested into just a few tables lets use IN() for now
-void FdoSmPhSqsOwner::LoadFdoMetadata()
-{
-    mFdoMetadataLoaded = false;
-    mTableFlags = 0x00;
-    GdbiConnection* connection = ((FdoSmPhGrdMgr*)(FdoSmPhMgr*)GetManager())->GetGdbiConnection();
-    GdbiCommands* commands = connection->GetCommands();
-
-    GdbiStatement* query = NULL;
-    GdbiQueryResult* results = NULL;
-    try
-    {
-        std::wstring sql(L"select T.TABLE_NAME table_name from ");
-        sql.append(GetDbName());
-        sql.append(L".INFORMATION_SCHEMA.TABLES T where T.TABLE_SCHEMA='dbo' AND T.TABLE_NAME IN('f_spatialcontext', 'f_classdefinition', 'f_attributedefinition', 'f_associationdefinition', 'f_attributedependencies', 'f_sad', 'f_schemaoptions', 'f_options', 'f_schemainfo', 'f_spatialcontextgeom', 'f_spatialcontextgroup')");
-
-        GdbiStatement* query = connection->Prepare ((wchar_t*)sql.c_str());
-        GdbiQueryResult* results = query->ExecuteQuery();
-        while (results->ReadNext())
-        {
-            bool isNULL = false;
-            FdoString* tName = results->GetString(1, &isNULL, NULL);
-            if (!(isNULL || tName == NULL || *tName == '\0'))
-            {
-                // in case we will add more f_* values we should use a std::map to search the values.
-                // avoid wcscmp in case value was already found
-                if ((mTableFlags&cd_f_spatialcontext) == 0 && wcscmp(tName, L"f_spatialcontext") == 0)
-                    mTableFlags = mTableFlags | cd_f_spatialcontext;
-                else if ((mTableFlags&cd_f_schemainfo) == 0 && wcscmp(tName, L"f_schemainfo") == 0)
-                    mTableFlags = mTableFlags | cd_f_schemainfo;
-                else if ((mTableFlags&cd_f_classdefinition) == 0 && wcscmp(tName, L"f_classdefinition") == 0)
-                    mTableFlags = mTableFlags | cd_f_classdefinition;
-                else if ((mTableFlags&cd_f_attributedefinition) == 0 && wcscmp(tName, L"f_attributedefinition") == 0)
-                    mTableFlags = mTableFlags | cd_f_attributedefinition;
-                else if ((mTableFlags&cd_f_schemaoptions) == 0 && wcscmp(tName, L"f_schemaoptions") == 0)
-                    mTableFlags = mTableFlags | cd_f_schemaoptions;
-                if ((mTableFlags&cd_f_spatialcontextgeom) == 0 && wcscmp(tName, L"f_spatialcontextgeom") == 0)
-                    mTableFlags = mTableFlags | cd_f_spatialcontextgeom;
-                if ((mTableFlags&cd_f_spatialcontextgroup) == 0 && wcscmp(tName, L"f_spatialcontextgroup") == 0)
-                    mTableFlags = mTableFlags | cd_f_spatialcontextgroup;
-                else if ((mTableFlags&cd_f_associationdefinition) == 0 && wcscmp(tName, L"f_associationdefinition") == 0)
-                    mTableFlags = mTableFlags | cd_f_associationdefinition;
-                else if ((mTableFlags&cd_f_attributedependencies) == 0 && wcscmp(tName, L"f_attributedependencies") == 0)
-                    mTableFlags = mTableFlags | cd_f_attributedependencies;
-                else if ((mTableFlags&cd_f_sad) == 0 && wcscmp(tName, L"f_sad") == 0)
-                    mTableFlags = mTableFlags | cd_f_sad;
-                else if ((mTableFlags&cd_f_options) == 0 && wcscmp(tName, L"f_options") == 0)
-                    mTableFlags = mTableFlags | cd_f_options;
-            }
-        }
-        mFdoMetadataLoaded = true;
-    }
-    catch(FdoException* exc)
-    {
-        exc->Release();
-        mFdoMetadataLoaded = false;
-        mTableFlags = 0x00;
-    }
-    if ( results )
-        delete results;
-
-    if ( query )
-        delete query;
-}
-
-bool FdoSmPhSqsOwner::GetHasSCMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_spatialcontext) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasClassMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_classdefinition) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasAttrMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_attributedefinition) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasAssocMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_associationdefinition) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasObPropMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_attributedependencies) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasSADMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_sad) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasSCOptionMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_schemaoptions) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasOptionMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_options) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasSCInfoMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_schemainfo) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasSCGeomInfoMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_spatialcontextgeom) != 0);
-}
-
-bool FdoSmPhSqsOwner::GetHasSCGroupInfoMetaSchema()
-{
-    if (!mFdoMetadataLoaded)
-        LoadFdoMetadata();
-    return GetHasMetaSchema() && ((mTableFlags&cd_f_spatialcontextgroup) != 0);
-}
-
-bool FdoSmPhSqsOwner::IsRdbObjNameAscii7()
-{
-    if (mIsRdbObjNameAscii7 == -1)
-    {
-        mIsRdbObjNameAscii7 = 0;
-        FdoSmPhDbObjectP dbObject = FindDbObject( L"dbo.f_classdefinition" );
-        if (dbObject)
-        {
-            FdoSmPhColumnP column = dbObject->GetColumns()->FindItem( L"classname" );
-            
-            if ( column && column->GetTypeName().ICompare(L"varchar") == 0 )
-            // Most Schema Manager queries are ordered on string columns. When these
-            // are varchar, it is difficult to pick a collation that returns rows
-            // in a predictable order, when the columns contain non-ASCII7 data.
-            // Therefore, stick to ASCII7 database element names for these datastores.
-            mIsRdbObjNameAscii7 = 1;
-        }
-    }
-    return (mIsRdbObjNameAscii7 == 1);
 }
 
 FdoSmPhCoordinateSystemP FdoSmPhSqsOwner::FindCoordinateSystem( FdoInt64 srid )
@@ -412,16 +230,6 @@ FdoSmPhDbObjectP FdoSmPhSqsOwner::NewView(
     return new FdoSmPhSqsView(viewName, rootDatabase, rootOwner, rootObjectName, this, elementState, reader);
 }
 
-FdoSmPhDbObjectP FdoSmPhSqsOwner::NewSynonym(
-    FdoStringP synonymName,
-    FdoSmPhDbObjectP rootObject,
-    FdoSchemaElementState elementState,
-    FdoSmPhRdDbObjectReader* reader
-)
-{
-    return new FdoSmPhSqsSynonym(synonymName, rootObject, this, elementState, reader);
-}
-
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoStringP dbObject) const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
@@ -434,20 +242,6 @@ FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoString
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
     return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringP objectName ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectName, true  );
-}
-
-FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDerivedObjectReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsDbObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames, true );
 }
 
 FdoPtr<FdoSmPhRdDbObjectReader> FdoSmPhSqsOwner::CreateDbObjectReader( FdoSmPhRdTableJoinP join ) const
@@ -471,12 +265,6 @@ FdoPtr<FdoSmPhRdBaseObjectReader> FdoSmPhSqsOwner::CreateBaseObjectReader(FdoStr
     return new FdoSmPhRdSqsBaseObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
 }
 
-FdoPtr<FdoSmPhRdViewRelationsObjectReader> FdoSmPhSqsOwner::CreateViewRelationsObjectReader( FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqlViewRelationsObjectReader( FDO_SAFE_ADDREF(pOwner), objectNames );
-}
 
 FdoPtr<FdoSmPhRdConstraintReader> FdoSmPhSqsOwner::CreateConstraintReader( FdoStringP constraintName) const
 {
@@ -510,22 +298,7 @@ FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader() const
 {
     FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
 
-    return new FdoSmPhRdSqsFkeyReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdFkeyReader> FdoSmPhSqsOwner::CreateFkeyReader(  FdoStringsP objectNames ) const
-{
-    FdoSmPhSqsOwner* thisOwner = NULL;
-    thisOwner = const_cast<FdoSmPhSqsOwner*>(this);
-    FDO_SAFE_ADDREF(thisOwner);
-
-    FdoSmPhRdSqsFkeyReader* reader = NULL;
-    reader = new FdoSmPhRdSqsFkeyReader(
-        thisOwner,
-        objectNames
-        );
-
-    return reader;
+    return new FdoSmPhRdSqsFkeyReader( pOwner->GetManager(), FDO_SAFE_ADDREF(pOwner) );
 }
 
 FdoPtr<FdoSmPhRdIndexReader> FdoSmPhSqsOwner::CreateIndexReader() const
@@ -596,27 +369,6 @@ FdoPtr<FdoSmPhRdColumnReader> FdoSmPhSqsOwner::CreateColumnReader( FdoSmPhRdTabl
     return new FdoSmPhRdSqsColumnReader( FDO_SAFE_ADDREF(pOwner), join );
 }
 
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader() const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner) );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringP synonymName) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymName );
-}
-
-FdoPtr<FdoSmPhRdSynonymReader> FdoSmPhSqsOwner::CreateSynonymReader( FdoStringsP synonymNames) const
-{
-    FdoSmPhSqsOwner* pOwner = (FdoSmPhSqsOwner*) this;
-
-    return new FdoSmPhRdSqsSynonymReader( FDO_SAFE_ADDREF(pOwner), synonymNames );
-}
-
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader()
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this) );
@@ -625,11 +377,6 @@ FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextRea
 FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringP dbObjectName )
 {
     return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), dbObjectName );
-}
-
-FdoPtr<FdoSmPhRdSpatialContextReader> FdoSmPhSqsOwner::CreateRdSpatialContextReader( FdoStringsP objectNames )
-{
-    return new FdoSmPhRdSqsSpatialContextReader(FDO_SAFE_ADDREF(this), objectNames );
 }
 
 FdoSmPhRdCoordSysReaderP FdoSmPhSqsOwner::CreateCoordSysReader( FdoInt64 srid ) const
@@ -667,31 +414,28 @@ bool FdoSmPhSqsOwner::Add()
     gdbiCommands->tran_end( "SmPreCreateDatabase" );
 
 	int autoCmtMode = gdbiCommands->autocommit_mode();
-	if (autoCmtMode == 0) //SQL_AUTOCOMMIT_OFF
+	if (autoCmtMode == 1) //SQL_AUTOCOMMIT_ON 
 	{
-        // we need it SQL_AUTOCOMMIT_ON with the new driver
-        gdbiCommands->autocommit_on();
+		gdbiCommands->autocommit_off();
 		autoCmtChanged = true;
 	}
     // Wrap the database create in a transaction.
     gdbiCommands->tran_begin( "SmCreateDatabase" );
     try {
-        gdbiConn->ExecuteNonQuery((FdoString*) sqlStmt, true);
+        gdbiConn->ExecuteNonQuery( (FdoString*) sqlStmt );
     }
     catch ( ... ) {
         try {
             gdbiCommands->tran_end( "SmCreateDatabase" );
 			if (autoCmtChanged)
-				gdbiCommands->autocommit_off();
+				gdbiCommands->autocommit_on();
         }
-        catch (FdoException *ex) { ex->Release(); }
-        catch ( ... ) {}            
-
+        catch ( ... ) {        
+        }
+    
         throw;
     }
     gdbiCommands->tran_end( "SmCreateDatabase" );
-    if (autoCmtChanged)
-	    gdbiCommands->autocommit_off();
 
     if ( GetHasMetaSchema() ) {
         FdoStringsP keywords = FdoStringCollection::Create();
@@ -900,9 +644,34 @@ void FdoSmPhSqsOwner::CreateMetaClass()
 			L"SYSTEM_USER,%ls,0,0)",
 			(FdoString *) GetManager()->FormatSQLVal(NlsMsgGet(FDORDBMS_503, "Bounding box for the feature"), FdoSmPhColType_String));
 	gdbiConn->ExecuteNonQuery( (const char*) sql_stmt);
+}
 
-    mFdoMetadataLoaded = false;
-    mTableFlags = 0x00;
+void FdoSmPhSqsOwner::LoadSpatialContexts( FdoStringP dbObjectName )
+{
+    bool loadFkeys = GetBulkLoadFkeys();
+
+    // Temporary Hack: In SQLServerSpatial, loading spatial contexts triggers object
+    // loads when a spatial context is associated with a geometry column in a view.
+    // The base table for each view is also loaded, which brings in foreign keys
+    // if foreign key bulk loading is turned on.
+    // If Foreign Keys are also loaded, this can be expensive. For now, turn off
+    // foreign key loading and reset it after spatial contexts have been loaded.
+    //
+    // The next step will be to tune foreign key retrieval enough to make this 
+    // hack unnecessary.
+
+    try
+    {
+        SetBulkLoadFkeys(false);
+        FdoSmPhOwner::LoadSpatialContexts(dbObjectName);
+    }
+    catch ( ... )
+    {
+        SetBulkLoadFkeys(loadFkeys);
+        throw;
+    }
+
+    SetBulkLoadFkeys(loadFkeys);
 }
 
 void FdoSmPhSqsOwner::LoadSchemas()

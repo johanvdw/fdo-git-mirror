@@ -39,25 +39,7 @@ NAMESPACE_OSGEO_FDO_EXPRESSION::BooleanValue::BooleanValue() : DataValue(IntPtr:
 
 NAMESPACE_OSGEO_FDO_EXPRESSION::BooleanValue::BooleanValue(System::Boolean value) : DataValue(IntPtr::Zero, false)
 {
-
-    EXCEPTION_HANDLER(Attach(IntPtr(FdoBooleanValue::Create(value)), true))
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::BooleanValue::BooleanValue(
-    DataValue^ src, 
-    System::Boolean nullIfIncompatible,
-    System::Boolean shift,
-    System::Boolean truncate
-) : DataValue(IntPtr::Zero, false)
-{
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoBooleanValue::Create(src->GetImpObj(), nullIfIncompatible, shift, truncate)), true))
-}
-
-NAMESPACE_OSGEO_FDO_EXPRESSION::BooleanValue::BooleanValue(
-    DataValue^ src
-) : DataValue(IntPtr::Zero, false)
-{
-	EXCEPTION_HANDLER(Attach(IntPtr(FdoBooleanValue::Create(src->GetImpObj())), true))
+	EXCEPTION_HANDLER(Attach(IntPtr(FdoBooleanValue::Create(value)), true))
 }
 
 FdoBooleanValue* NAMESPACE_OSGEO_FDO_EXPRESSION::BooleanValue::GetImpObj()

@@ -321,11 +321,7 @@ FdoClassDefinition* FdoSmLpSchemaCollection::ConvertClassDefinition(const FdoSmL
     FdoClassDefinition* pFdoClassDef = (FdoClassDefinition*) mMappingClass.Map(pLpClassDef);
 
     if (!aReferenced.classes.ContainsClassDefinition(pLpClassDef))
-        aReferenced.classes.AddReference((FdoSmLpClassDefinition*)pLpClassDef);
-
-    FdoSmLpClassBase* pcls =  static_cast<FdoSmLpClassBase*>((FdoSmLpClassDefinition*)pLpClassDef);
-    FdoSmPhDbObjectP dbObj = pcls->FindPhDbObject();
-    FdoSmPhDbObjType type = dbObj ? dbObj->GetType() : FdoSmPhDbObjType_Unknown;
+        aReferenced.classes   .AddReference((FdoSmLpClassDefinition*)pLpClassDef);
 
     if (!pFdoClassDef)
     {
@@ -351,8 +347,6 @@ FdoClassDefinition* FdoSmLpSchemaCollection::ConvertClassDefinition(const FdoSmL
                 pFdoFeatureClass->SetGeometryProperty(pGeomProp);
                 pGeomProp->Release();
             }
-            if (type == FdoSmPhDbObjType_View)
-                pFdoFeatureClass->SetIsComputed(true);
 
             pFdoClassDef = pFdoFeatureClass;
             break;
@@ -593,13 +587,10 @@ FdoDataPropertyDefinition* FdoSmLpSchemaCollection::ConvertDataPropertyDefinitio
     FdoDataPropertyDefinition*  pFdoDataPropDef = (FdoDataPropertyDefinition*) mMappingPropDef.Map(pLpDataPropDef);
     if (!pFdoDataPropDef)
     {
-        const FdoSmLpSimplePropertyDefinition* pLpSimplePropDef = FdoSmLpSimplePropertyDefinition::Cast(pLpDataPropDef);
-        FdoSmPhColumnP column = ((FdoSmLpSimplePropertyDefinition*)pLpSimplePropDef)->GetColumn();
-
         pFdoDataPropDef = FdoDataPropertyDefinition::Create(pLpDataPropDef->GetName(), pLpDataPropDef->GetDescription());
 
         pFdoDataPropDef->SetDataType(pLpDataPropDef->GetDataType());
-        pFdoDataPropDef->SetReadOnly(pLpDataPropDef->GetReadOnly() || (column ? column->GetReadOnly() : false));
+        pFdoDataPropDef->SetReadOnly(pLpDataPropDef->GetReadOnly());
         pFdoDataPropDef->SetLength(pLpDataPropDef->GetLength());
         pFdoDataPropDef->SetPrecision(pLpDataPropDef->GetPrecision());
         pFdoDataPropDef->SetScale(pLpDataPropDef->GetScale());
@@ -671,9 +662,6 @@ FdoGeometricPropertyDefinition* FdoSmLpSchemaCollection::ConvertGeometricPropert
 
     if (!pFdoGeomPropDef)
     {
-        const FdoSmLpSimplePropertyDefinition* pLpSimplePropDef = FdoSmLpSimplePropertyDefinition::Cast(pLpGeomPropDef);
-        FdoSmPhColumnP column = ((FdoSmLpSimplePropertyDefinition*)pLpSimplePropDef)->GetColumn();
-
         pFdoGeomPropDef = FdoGeometricPropertyDefinition::Create(pLpGeomPropDef->GetName(), pLpGeomPropDef->GetDescription());
 
         pFdoGeomPropDef->SetGeometryTypes(pLpGeomPropDef->GetGeometryTypes());
@@ -684,7 +672,7 @@ FdoGeometricPropertyDefinition* FdoSmLpSchemaCollection::ConvertGeometricPropert
         FdoCommonGeometryUtil::GeometryTypesToArray( pLpGeomPropDef->GetSpecificGeometryTypes(), geomTypes, geomTypeCount );
         pFdoGeomPropDef->SetSpecificGeometryTypes( geomTypes, geomTypeCount );
 
-        pFdoGeomPropDef->SetReadOnly(pLpGeomPropDef->GetReadOnly() || (column ? column->GetReadOnly() : false));
+        pFdoGeomPropDef->SetReadOnly(pLpGeomPropDef->GetReadOnly());
         pFdoGeomPropDef->SetHasMeasure(pLpGeomPropDef->GetHasMeasure());
         pFdoGeomPropDef->SetHasElevation(pLpGeomPropDef->GetHasElevation());
         pFdoGeomPropDef->SetSpatialContextAssociation(pLpGeomPropDef->GetSpatialContextAssociation());
@@ -1122,7 +1110,7 @@ FdoStringCollection* FdoSmLpSchemaCollection::GetClassNames(FdoStringP schemaNam
         }
         else
         {
-            if (pOwner->GetHasClassMetaSchema())
+            if (pOwner->GetHasMetaSchema())
             {
                 // Inner reader is a FdoSmPhMtClassReader.
                 bProcessFromRdClassReader = false;
@@ -1170,7 +1158,17 @@ FdoStringCollection* FdoSmLpSchemaCollection::GetClassNames(FdoStringP schemaNam
             }
         }
         else
-            pLpSchema->GetFdoSmLpClassNames(featureClasses);
+        {
+            const FdoSmLpClassCollection* pLpClassDefColl = pLpSchema->RefClasses();
+            
+            for (FdoInt32 index = 0; index < pLpClassDefColl->GetCount(); index++)
+            {
+                const FdoSmLpClassDefinition* pLpClassDefinition = (FdoSmLpClassDefinition*)pLpClassDefColl->RefItem(index);
+                FdoStringP qname = pLpClassDefinition->GetQName();
+                featureClasses->Add(qname);
+            }
+        }
+
     }
 
     /////////////////////////////////////////////

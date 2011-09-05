@@ -277,8 +277,6 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
     
     GeomSqlColumnIndex=-1;
     
-    bool is_specialcase_constantextent = false;
-    
     if( m_PropertyNames && (m_PropertyNames->GetCount() > 0))
     {
       c_FilterStringBuffer strbuff;
@@ -289,7 +287,7 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
       // If I use really SDO_AGGR_MBR than it is slow
       // Because of that I will check and if it is that case I will not use SDO_AGGR_MBR but
       // will use SDO_ROOT_MBR returned from spatial index METADATA table ( in DescribeSchema )
-      if( !phys_class->GetIsSdeClass() && (m_PropertyNames->GetCount() == 1) && ( m_Filter.p== NULL) && ((m_Grouping.p==NULL) || (m_Grouping->GetCount()==0))  )
+      if( ( m_Filter.p== NULL) && ((m_Grouping.p==NULL) || (m_Grouping->GetCount()==0))  )
       {
         expproc.SetConstantSpatialExtent(phys_class->GetSdoRootMBR());
       }
@@ -337,14 +335,8 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
           }
         }
         
-        // standard case: It is not SDE class 
+        // standard case: It is not SDE class and Spatial Context
         ident->Process(&expproc);
-        
-        if( expproc.GetUsedConstantSpatialExtent() )
-        {
-          is_specialcase_constantextent = true;
-        }
-        
         SqlColumns->Add(ident->GetName());
         if( ind > 0 )
         {
@@ -463,14 +455,10 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
         // OSMASTERMAP.MMY_AREA.SHAPE
     
       FdoStringP sbuff;
-      
-     
-      
       if( GetDistinct() )
         sbuff = FdoStringP::Format(L"SELECT DISTINCT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
       else
-         sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);        
-      
+        sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
       sqlstr = (FdoString*)sbuff;
       
       // add select for table for spatial index
@@ -523,17 +511,11 @@ std::wstring c_KgOraSelectAggregates::CreateSqlString(c_KgOraFilterProcessor& Fi
     else
     {    
       FdoStringP sbuff;
-      if( is_specialcase_constantextent )
-      {
-        sbuff = FdoStringP::Format(L"SELECT %s FROM %s ",(const wchar_t*)sql_select_columns_part,L"dual");        
-      }
+      if( GetDistinct() ) 
+        sbuff = FdoStringP::Format(L"SELECT DISTINCT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
       else
-      {
-        if( GetDistinct() ) 
-          sbuff = FdoStringP::Format(L"SELECT DISTINCT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
-        else
-          sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
-      }
+        sbuff = FdoStringP::Format(L"SELECT %s FROM %s %s",(const wchar_t*)sql_select_columns_part,(const wchar_t*)fultablename,(const wchar_t*)table_alias);
+      
             
       sqlstr = (FdoString*)sbuff;
       if( filtertext && *filtertext )

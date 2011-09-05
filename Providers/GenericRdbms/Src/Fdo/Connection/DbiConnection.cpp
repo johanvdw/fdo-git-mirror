@@ -38,9 +38,9 @@ static void ThrowUnknownError()
     throw FdoRdbmsException::Create(NlsMsgGet(FDORDBMS_55, "Unknown dbi error"));
 }
 
-static void ThrowLastError (wchar_t* err_msg, long serverRc)
+static void ThrowLastError (wchar_t* err_msg)
 {
-	throw FdoRdbmsException::Create(err_msg, NULL, serverRc);
+	throw FdoRdbmsException::Create(err_msg);
 }
 
 #define  SWITCH_CONTEXT   {\
@@ -57,7 +57,7 @@ static void ThrowLastError (wchar_t* err_msg, long serverRc)
     { \
         ThrowUnknownError(); \
     } else \
-        throw FdoRdbmsException::Create( mContext->last_error_msg, NULL, ::rdbi_get_server_rc (mContext)); \
+        throw FdoRdbmsException::Create( mContext->last_error_msg ); \
     }
 
 static void ThrowNotSupportedError()
@@ -169,12 +169,11 @@ FdoConnectionState DbiConnection::Open (
             else
             {
 				wchar_t	err_msg[RDBI_MSG_SIZE+1];
-                ::rdbi_get_msg( mContext );
-                long serverRc = ::rdbi_get_server_rc (mContext);
+                rdbi_get_msg( mContext );
 				wcsncpy(err_msg, mContext->last_error_msg, RDBI_MSG_SIZE);
 				err_msg[RDBI_MSG_SIZE] = '\0';
                 Close();
-				ThrowLastError(err_msg, serverRc);
+				ThrowLastError(err_msg);
             }
         }
         if (this->mGdbiConnection != NULL)
@@ -788,11 +787,10 @@ void DbiConnection::SetActiveSchema(const wchar_t * schemaName)
         {
 			wchar_t	err_msg[RDBI_MSG_SIZE+1];
             rdbi_get_msg( mContext );
-            long serverRc = ::rdbi_get_server_rc (mContext);
 			wcsncpy(err_msg, mContext->last_error_msg, RDBI_MSG_SIZE);
 			err_msg[RDBI_MSG_SIZE] = '\0';
             Close();
-			ThrowLastError(err_msg, serverRc);
+			ThrowLastError(err_msg);
         }
     }
 }
@@ -900,7 +898,6 @@ int DbiConnection::dbi_version_commit(char *lt_names,
                                       int  len,
                                       int  conflict_flag,
                                       char *tran_id,
-                                      bool keep_version,
                                       int  *err_code)
 {
     INVOKE_DBI_FUNC( dbi_version_commit( mContext,
@@ -908,7 +905,6 @@ int DbiConnection::dbi_version_commit(char *lt_names,
                                          len,
                                          conflict_flag,
                                          tran_id,
-                                         keep_version,
                                          err_code ));
 }
 
@@ -945,7 +941,6 @@ int DbiConnection::dbi_version_rollback (char *lt_names,
                                          int  len,
                                          int  conflict_flag,
                                          char *tran_id,
-                                         bool keep_version,
                                          int  *err_code)
 {
     INVOKE_DBI_FUNC( dbi_version_rollback ( mContext,
@@ -953,7 +948,6 @@ int DbiConnection::dbi_version_rollback (char *lt_names,
                                             len,
                                             conflict_flag,
                                             tran_id,
-                                            keep_version,
                                             err_code ));
 }
 

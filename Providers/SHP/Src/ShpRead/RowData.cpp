@@ -216,45 +216,6 @@ void RowData::SetData (int index, bool bIsNull, double value)
     }
 }
 
-/// <summary>Sets the int64 data.</summary>
-/// <param name="index">Input the column index of the data to set.</param> 
-/// <param name="value">Input the value for the column.</param> 
-/// <returns>Returns nothing.</returns> 
-void RowData::SetData (int index, bool bIsNull, FdoInt64 value)
-{
-    char buffer[50];
-    int width;
-    char* raw;
-    size_t length;
-
-    if (kColumnDecimalType != mColumnInfo->GetColumnTypeAt (index))
-        throw FdoException::Create (NlsMsgGet(SHP_ILLEGAL_COLUMN_ASSIGNMENT, "Illegal column assignment."));
-    width = mColumnInfo->GetColumnWidthAt (index);
-    raw = ((char*)mBuffer) + mColumnInfo->GetColumnOffsetAt (index);
-
-    if (bIsNull)
-        memset (raw, ' ', width);
-    else
-    {
-        sprintf (buffer, "%lld", value);
-        length = strlen (buffer);
-
-        if (length > (unsigned int)width)
-        {
-            wchar_t* wBuffer = NULL;
-            multibyte_to_wide(wBuffer, buffer);
-            throw FdoException::Create(NlsMsgGet(SHP_VALUE_TOO_WIDE_FOR_COLUMN, "The value '%1$ls' is too wide for column '%2$ls'.",
-                wBuffer, mColumnInfo->GetColumnNameAt(index)));
-        }
-
-        // all fields are space padded
-        memset (raw, ' ', width-length);
-
-        // right justify
-        strncpy ((char*)(raw + width - length), buffer, length);
-    }
-}
-
 /// <summary>Sets the string data.</summary>
 /// <param name="index">Input the column index of the data to set.</param> 
 /// <param name="value">Input the value for the column.</param> 
@@ -364,14 +325,9 @@ void RowData::SetData (int index, bool bIsNull, bool value)
 /// <param name="index">Input the column index of the data to get.</param> 
 /// <param name="type">The column type for the column.</param> 
 /// <returns>Returns nothing.</returns> 
-#ifdef _WIN32
-void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, ULONG codepage)
-#else
-void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, const char* codepage)
-#endif
+void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, WCHAR* codepage)
 {
     int width;
-	int scale;
     int offset;
     char* raw;
     char temp;
@@ -380,7 +336,6 @@ void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, const c
     char c;
 
     width = mColumnInfo->GetColumnWidthAt (index);
-	scale = mColumnInfo->GetColumnScaleAt(index);
     offset = mColumnInfo->GetColumnOffsetAt (index);
     raw = &((char*)mBuffer)[offset];
     temp = *(raw + width);
@@ -396,7 +351,13 @@ void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, const c
             {
                 *p = '\0';
 
-                multibyte_to_wide_cpg (str, raw, codepage);
+                ShapeCPG    *cpg = new ShapeCPG();
+#ifdef _WIN32
+                multibyte_to_wide_cpg (str, raw, cpg->ConvertCodePageWin(codepage));
+#else
+                multibyte_to_wide_cpg (str, raw, cpg->ConvertCodePageLinux(codepage));
+#endif
+                delete cpg;
 
                 *p = szSPACE;
                 wcscpy (mStrings[index], str);
@@ -409,30 +370,9 @@ void RowData::GetData (ColumnData* data, int index, eDBFColumnType type, const c
             while (iswspace (*(p - 1)) && ((p - 1) >= raw))
                 p--;
             data->bIsNull = (p==raw);
-			data->bIsInt = true;
-
             if (!data->bIsNull)
 			{
-				// Special handling for Int64. 
-				if (scale == 0 && (width > DEFAULT_INT32_COL_LENGTH && width <= DEFAULT_INT64_COL_LENGTH))
-				{
-#ifdef _WIN32
-					data->value.nData = _atoi64((const char*)raw);
-#else
-					data->value.nData = atoll((const char*)raw);
-#endif
-					break;  // no extra processing required
-				}
-				else if (scale == 0)
-                {
-					data->value.nData = atoi((const char*)raw);
-                    break;  // no extra processing required
-                }
-                else
-				{
-                    data->value.dData = atof((const char*)raw);
-					data->bIsInt = false;
-				}
+                data->value.dData = atof((const char*)raw);
 
                 // A) In case the number is in scientific format (containing 'E' or 'e') no extra processing
                 // is required.

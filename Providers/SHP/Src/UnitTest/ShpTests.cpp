@@ -257,7 +257,7 @@ FdoExpression* ShpTests::ParseByDataType(const wchar_t* data, FdoDataType dataTy
             {
                 FdoInt32Value* value = dynamic_cast<FdoInt32Value*>(expr.p);
                 if (value==NULL)  throw FdoException::Create(L"Wrong data type!");
-				expr = FdoInt16Value::Create((FdoInt16)value->GetInt32());
+                expr = FdoInt16Value::Create((FdoInt16)value->GetInt32());
             }
         }
         break;
@@ -288,13 +288,10 @@ FdoExpression* ShpTests::ParseByDataType(const wchar_t* data, FdoDataType dataTy
             }
             else
             {
-                FdoInt64Value* value = dynamic_cast<FdoInt64Value*>(expr.p);
-                if (value==NULL)  
-				{
-					FdoInt32Value* value = dynamic_cast<FdoInt32Value*>(expr.p);
-					if (value==NULL) throw FdoException::Create(L"Wrong data type!");
-					expr = FdoInt64Value::Create((FdoInt64)value->GetInt32());
-				}
+                //TODO: validate this code; I'm not sure if the parse handles int64 properly (returned as a double??)
+                FdoInt32Value* value = dynamic_cast<FdoInt32Value*>(expr.p);
+                if (value==NULL)  throw FdoException::Create(L"Wrong data type!");
+                expr = FdoInt64Value::Create((FdoInt64)value->GetInt32());
             }
         }
         break;

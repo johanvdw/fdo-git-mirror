@@ -729,10 +729,6 @@
 				>
 			</File>
 			<File
-				RelativePath="tran_sp.c"
-				>
-			</File>
-			<File
 				RelativePath=".\users_.c"
 				>
 			</File>

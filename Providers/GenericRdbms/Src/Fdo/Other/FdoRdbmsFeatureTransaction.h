@@ -53,19 +53,12 @@ public:
 
     virtual void Rollback();
 
-    virtual FdoString* AddSavePoint(FdoString* suggestName);
-
-    virtual void ReleaseSavePoint(FdoString* savePointName);
-
-    virtual void Rollback(FdoString* savePointName);
-
     virtual void Dispose();
 
   private:
       char mTransactionName[32];
       DbiConnection* mConnection;
       int mTransactionStarted;
-      FdoStringsP m_savepoints;
       FdoRdbmsConnection* mFdoConnection;
 };
 

@@ -37,8 +37,7 @@ int postgis_bind (
     int   datatype,
     int   size,
     char *address,
-    char *null_ind,
-    int typeBind);
+    char *null_ind);
 
 #endif /* POSTGIS_BIND_H */
 

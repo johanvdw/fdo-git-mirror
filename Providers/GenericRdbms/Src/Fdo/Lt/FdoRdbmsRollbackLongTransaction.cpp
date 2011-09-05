@@ -55,7 +55,6 @@ FdoRdbmsRollbackLongTransaction::FdoRdbmsRollbackLongTransaction ()
 
     // Initialize the class variables.
 
-    lt_keep_long_transaction = false;
     SetToZero();
 
 }  //  FdoRdbmsRollbackLongTransaction ()
@@ -77,7 +76,6 @@ FdoRdbmsRollbackLongTransaction::FdoRdbmsRollbackLongTransaction (
 
     // Initialize the class variables.
 
-    lt_keep_long_transaction = false;
     SetToZero();
 
 }  //  FdoRdbmsRollbackLongTransaction ()
@@ -179,31 +177,6 @@ void FdoRdbmsRollbackLongTransaction::SetName (FdoString *value)
 
 }  //  SetName ()
 
-FdoBoolean FdoRdbmsRollbackLongTransaction::GetKeepLongTransaction ()
-
-// +---------------------------------------------------------------------------
-// | The function indicates whether to keep the long transaction after it is rollbacked.
-// | Returns true if keeping the long transaction after it is rollbacked.
-// | Returns false if removing the long transaction after it is rollbacked.
-// | Default value for KeepLongTransaction is false.
-// +---------------------------------------------------------------------------
-
-{
-    return lt_keep_long_transaction;
-}  //  GetKeepLongTransaction ()
-
-
-void FdoRdbmsRollbackLongTransaction::SetKeepLongTransaction (FdoBoolean value)
-
-// +---------------------------------------------------------------------------
-// | Sets whether to keep the long transaction after it is rollbacked.
-// | Default value for KeepLongTransaction is false.
-// +---------------------------------------------------------------------------
-
-{
-    lt_keep_long_transaction = value;
-}  //  SetKeepLongTransaction ()
-
 FdoILockConflictReader 
                     *FdoRdbmsRollbackLongTransaction::GetLockConflictReader ()
 
@@ -295,7 +268,6 @@ void FdoRdbmsRollbackLongTransaction::Execute ()
       lt_manager->Rollback(((uses_active_lt_constant) 
                                 ? active_lt_info->GetName()
                                 : lt_name),
-                           lt_keep_long_transaction,
                            &lt_lk_cfl_reader,
                            &lock_conflicts_found);
 
@@ -342,7 +314,7 @@ void FdoRdbmsRollbackLongTransaction::Execute ()
 
       if (lt_manager != NULL) lt_manager = NULL;
 
-      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 
