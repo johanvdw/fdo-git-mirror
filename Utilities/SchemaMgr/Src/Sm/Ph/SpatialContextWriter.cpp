@@ -110,16 +110,14 @@ void FdoSmPhSpatialContextWriter::Delete( FdoInt64 scId )
 
 FdoSmPhRowP FdoSmPhSpatialContextWriter::MakeRow( FdoSmPhMgrP mgr )
 {
-    FdoSmPhOwnerP owner = mgr->GetOwner();
+    bool hasMs = FdoSmPhOwnerP(mgr->GetOwner())->GetHasMetaSchema();
+    FdoStringP scDefTable = mgr->GetDcDbObjectName(L"f_spatialcontext");
 
-    FdoSmPhRowP row;
-    if (owner->GetHasSCMetaSchema())
-    {
-        FdoStringP scDefTable = mgr->GetDcDbObjectName(L"f_spatialcontext");
-        row = new FdoSmPhRow (mgr, L"f_spatialcontext", mgr->FindDbObject(scDefTable));
-    }
-    else
-        row = new FdoSmPhRow (mgr, L"f_spatialcontext", FdoSmPhDbObjectP());
+    FdoSmPhRowP row = new FdoSmPhRow( 
+        mgr, 
+        L"f_spatialcontext", 
+        hasMs ? mgr->FindDbObject(scDefTable) : FdoSmPhDbObjectP() 
+    );
 
     // Each field adds itself to the row
     FdoSmPhFieldP field = new FdoSmPhField( row, L"scid" );

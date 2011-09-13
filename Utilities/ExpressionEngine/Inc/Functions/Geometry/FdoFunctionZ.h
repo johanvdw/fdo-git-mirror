@@ -19,6 +19,7 @@
 #ifndef FDOFUNCTIONZ_H
 #define FDOFUNCTIONZ_H
 
+#include <FdoExpressionEngine.h>
 #include <FdoExpressionEngineINonAggregateFunction.h>
 
 

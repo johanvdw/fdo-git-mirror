@@ -28,7 +28,6 @@
 *   int          size;                                                  *
 *   char        *address;                                               *
 *   short       *null_ind;                                              *
-*   int         typeBind;                                              *
 *                                                                       *
 * Description                                                           *
 *       Bind  a  ":n"  variable to a given address, data type and       *
@@ -72,9 +71,6 @@
 *       NULL).  If this pointer is itself NULL, the variable will       *
 *       be presumed to be always not NULL.                              *
 *                                                                       *
-*   typeBind:   input                                                   *
-*       Input=1; Output=4; InputOutput=2; Return=5                      *
-*                                                                       *
 * Function Value                                                        *
 *       An RDBI status integer.   Good  is  RDBI_SUCCESS  (ie 0).       *
 *       See inc/rdbi.h.  If the bound variable cannot be found in       *
@@ -98,11 +94,7 @@
 #include <sqlucode.h>
 #endif
 
-#define SQL_SS_LENGTH_UNLIMITED 0
 #include <limits.h>
-#define SQL_SS_VARIANT -150
-#define SQL_SS_UDT -151
-#define SQL_SS_XML -152
 
 int odbcdr_bind(
     odbcdr_context_def *context,
@@ -111,8 +103,7 @@ int odbcdr_bind(
 	int 	 datatype,
 	int 	 size,
 	char	*address,
-	SQLLEN	*null_ind,
-    int      typeBind
+	SQLLEN	*null_ind
 	)
 {
 	odbcdr_cursor_def	*c;
@@ -125,7 +116,7 @@ int odbcdr_bind(
 	SQLULEN    			col_size;
 	SQLSMALLINT			decimal_digits;
 	SQLSMALLINT			nullable; 
-    SQLLEN*             nullid;
+
 	SQLRETURN			rc;
 
 	debug_on5("odbcdr_bind", "c:%#x name: %s type: %d address: 0x%lx size: %d",
@@ -175,9 +166,6 @@ int odbcdr_bind(
             (sql_type != SQL_WLONGVARCHAR) &&
             (sql_type != SQL_BINARY) &&
             (sql_type != SQL_VARBINARY) &&
-            (sql_type != SQL_SS_UDT) &&
-            (sql_type != SQL_SS_VARIANT) &&
-            (sql_type != SQL_SS_XML) &&
             (sql_type != SQL_LONGVARBINARY))
 		)
 	{
@@ -204,40 +192,20 @@ int odbcdr_bind(
 	*/
     if ( datatype != RDBI_GEOMETRY )
     {
-        if (datatype != RDBI_BLOB)
-        {
-		    ODBCDR_ODBC_ERR( SQLBindParameter(
-						    c->hStmt,
-						    (SQLUSMALLINT) bindnum,
-                            typeBind,
-						    (SQLSMALLINT) odbcdr_datatype,
-						    (SQLSMALLINT) sql_type,
-						    (SQLUINTEGER) col_size,
-						    (SQLSMALLINT) decimal_digits,
-						    (SQLPOINTER) address,
-						    (SQLINTEGER) size,      // buffer size
-						    (SQLLEN *) null_ind),   // length indicator 
-					    SQL_HANDLE_STMT,c->hStmt,
-					    "SQLBindParameter",	"bind" );
-        }
-        else
-        {
-            c->lenDataParam = size;
-            nullid = (size > 0) ? &c->lenDataParam : null_ind;
-		    ODBCDR_ODBC_ERR( SQLBindParameter(
-						    c->hStmt,
-						    (SQLUSMALLINT) bindnum,
-                            SQL_PARAM_INPUT,
-						    (SQLSMALLINT) SQL_C_BINARY,
-						    (SQLSMALLINT) SQL_VARBINARY,
-						    (SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,
-						    (SQLSMALLINT) 0,
-						    (SQLPOINTER)  address,
-						    (SQLINTEGER)  SQL_SS_LENGTH_UNLIMITED,      // buffer size
-						    (SQLLEN *)    nullid),   // length indicator 
-					    SQL_HANDLE_STMT,c->hStmt,
-					    "SQLBindParameter",	"bind" );
-        }
+		ODBCDR_ODBC_ERR( SQLBindParameter(
+						c->hStmt,
+						(SQLUSMALLINT) bindnum,
+						SQL_PARAM_INPUT,
+						(SQLSMALLINT) odbcdr_datatype,
+						(SQLSMALLINT) sql_type,
+						(SQLUINTEGER) col_size,
+						(SQLSMALLINT) decimal_digits,
+						(SQLPOINTER) address,
+						(SQLINTEGER) size,      // buffer size
+						(SQLLEN *) null_ind),   // length indicator 
+					SQL_HANDLE_STMT,c->hStmt,
+					"SQLBindParameter",	"bind" );
+	
     } else {
 
         ODBCDR_RDBI_ERR( odbcdr_geom_bindColumn( context, c, bindnum, address ) );
@@ -259,11 +227,11 @@ int odbcdr_bind(
 						(SQLUSMALLINT)bindnum,
 						SQL_PARAM_INPUT,
 						(SQLSMALLINT) SQL_C_BINARY, 
-						SQL_VARBINARY,
-						(SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,  
+						SQL_LONGVARBINARY,
+						(SQLUINTEGER) address,  
 						(SQLSMALLINT) 0,
-						(SQLPOINTER) address,
-						(SQLINTEGER) SQL_SS_LENGTH_UNLIMITED, 
+						(SQLPOINTER) bindnum,
+						(SQLINTEGER) 0, 
 						&c->lenDataParam);
 
         if ( rc != SQL_SUCCESS_WITH_INFO ) {

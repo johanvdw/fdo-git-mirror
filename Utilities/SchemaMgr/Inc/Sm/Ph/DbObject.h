@@ -48,7 +48,7 @@ class FdoSmPhRdFkeyReader;
 class FdoSmPhTableIndexReader;
 class FdoSmPhTableComponentReader;
 class FdoSmPhTableDependencyReader;
-class FdoSmPhRdViewRelationsObjectReader;
+
 // some constants
 
 enum FdoLtLockModeType	{
@@ -136,8 +136,6 @@ public:
     {
         return GetParent()->GetParent()->GetName();
     }
-
-    virtual FdoSmPhDbObjType GetType() = 0;
 
     /// Returns all base objects for this object. A base object is a object from which
     /// this object is derived (e.g. a view can be based on one or more tables or other views)
@@ -387,24 +385,8 @@ public:
     // Returns true if this database object's indexes have been cached.
     virtual bool IndexesLoaded();
 
-    // Gets the current component bulk fetch setting
-    virtual bool GetBulkFetchComponents();
-
-    // Sets component bulk loading
-    virtual void SetBulkFetchComponents(
-        bool bulkFetchComponents
-            // false: This dbObject was cached for listing purposes only. It can 
-            // be skipped when looking for candidates for lazy loading components
-            // (e.g.: indexes, base objects)
-            // true: This dbObject was cached for component retrieval as well. It is 
-            // a candidate for lazy loading components. 
-    );
-
     // Load this object's columns from the given reader
     virtual void CacheBaseObjects( FdoPtr<FdoSmPhRdBaseObjectReader> rdr );
-
-    // Load this object's (view) columns relations from the given reader
-    virtual void CacheViewRelationObjects( FdoPtr<FdoSmPhRdViewRelationsObjectReader> rdr);
 
     // Load this object's primary key from the given reader
     virtual void CachePkeys( FdoPtr<FdoSmPhRdPkeyReader> rdr );
@@ -493,7 +475,7 @@ protected:
     void LoadColumns( FdoPtr<FdoSmPhTableColumnReader> colRdr );
 
     /// Loads objects that this object is based on, if not yet loaded. 
-    virtual void LoadBaseObjects();
+    void LoadBaseObjects();
     virtual void LoadBaseObjects( FdoPtr<FdoSmPhTableComponentReader> baseObjRdr, bool isSkipAdd = false );
 
     /// Load Primary Key if not yet loaded
@@ -772,8 +754,6 @@ private:
 
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesDown;
 	FdoPtr<FdoSmPhDependencyCollection> mDependenciesUp;
-
-    bool                mBulkFetchComponents;
 
     FdoLtLockModeType   mLtMode;
     FdoLtLockModeType   mLockingMode;

@@ -16964,10 +16964,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
     // Navigate through the reader and perform the necessary checks.
 
     printf(" >>> Cross check result \n");
-    if (expected_cmp_id_value.year >= 0 && expected_cmp_id_value.year < 50)
-      expected_cmp_id_value.year += 2000;
-    else if (expected_cmp_id_value.year > 50 && expected_cmp_id_value.year < 100)
-      expected_cmp_id_value.year += 1900;
 
     while (data_reader->ReadNext()) {
 
@@ -16976,11 +16972,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
       if (include_id_check)
           id_prop_val = data_reader->GetInt32(L"id");
       cmp_id_val  = data_reader->GetDateTime(L"cmp_id");
-
-      if (cmp_id_val.year >= 0 && cmp_id_val.year < 50)
-          cmp_id_val.year += 2000;
-      else if (cmp_id_val.year > 50 && cmp_id_val.year < 100)
-          cmp_id_val.year += 1900;
 
       if (!is_extract_request)
           is_valid_result =
@@ -17069,10 +17060,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
     // Navigate through the reader and perform the necessary checks.
 
     printf(" >>> Cross check result \n");
-    if (expected_cmp_id_value.year >= 0 && expected_cmp_id_value.year < 50)
-      expected_cmp_id_value.year += 2000;
-    else if (expected_cmp_id_value.year > 50 && expected_cmp_id_value.year < 100)
-      expected_cmp_id_value.year += 1900;
 
     while (data_reader->ReadNext()) {
 
@@ -17080,12 +17067,7 @@ void FdoExpressionFunctionTest::CheckReaderDt (
 
       if (include_id_check)
           id_prop_val = data_reader->GetInt32(L"id");
-      cmp_id_val = data_reader->GetDateTime(L"cmp_id");
-
-      if (cmp_id_val.year >= 0 && cmp_id_val.year < 50)
-          cmp_id_val.year += 2000;
-      else if (cmp_id_val.year > 50 && cmp_id_val.year < 100)
-          cmp_id_val.year += 1900;
+      cmp_id_val  = data_reader->GetDateTime(L"cmp_id");
 
       if (!is_extract_request)
           is_valid_result =
@@ -17475,11 +17457,10 @@ void FdoExpressionFunctionTest::CheckReaderString (
       cmp_id_val  = (data_reader->IsNull(L"cmp_id"))
                   ? NULL
                   : data_reader->GetString(L"cmp_id");
-      // we can relax the "rule" here since for certain providers might be hard to
-      // return NULL when server returns empty string
+
       is_valid_result =
         ((id_prop_val == expected_id_value) &&
-         (((cmp_id_val == NULL || *cmp_id_val == '\0') && (expected_cmp_id_value == NULL || *expected_cmp_id_value == '\0')) ||
+         (((cmp_id_val == NULL) && (expected_cmp_id_value == NULL)) ||
           ((cmp_id_val != NULL) && (expected_cmp_id_value != NULL) &&
                          (wcscmp(cmp_id_val, expected_cmp_id_value) == 0))));
       if (!is_valid_result)
@@ -17589,8 +17570,6 @@ FdoIFeatureReader *FdoExpressionFunctionTest::ExecuteSelectCommand (
     if (filter != NULL)
         select_cmd->SetFilter(filter);
     id_col = select_cmd->GetPropertyNames();
-    id_prop = FdoIdentifier::Create(L"featid");
-    id_col->Add(id_prop);
     if (inc_id_prop) {
 
         id_prop = FdoIdentifier::Create(L"id");
@@ -18020,7 +17999,7 @@ void FdoExpressionFunctionTest::AddFeature (
       else {
 
         data_value     = FdoDataValue::Create(index);
-        property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"featid");
+        property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"xid");
         property_value->SetValue(data_value);
         FDO_SAFE_RELEASE(property_value);
         FDO_SAFE_RELEASE(data_value);
@@ -18272,7 +18251,7 @@ FdoClass *FdoExpressionFunctionTest::CreateFdoClass (FdoString *class_name)
       data_property_definitions = the_class->GetProperties();
       id_property_definitions   = the_class->GetIdentityProperties();
 
-      data_property_definition = CreateDataProperty(L"featid",
+      data_property_definition = CreateDataProperty(L"xid",
                                                     FdoDataType_Int32,
                                                     0,
                                                     0,

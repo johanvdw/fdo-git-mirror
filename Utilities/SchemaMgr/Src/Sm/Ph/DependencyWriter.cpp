@@ -136,16 +136,9 @@ void FdoSmPhDependencyWriter::Delete( FdoStringP pkTableName, FdoStringP fkTable
 
 FdoSmPhRowP FdoSmPhDependencyWriter::MakeRow( FdoSmPhMgrP mgr )
 {
-    FdoSmPhOwnerP owner = mgr->GetOwner();
+    FdoStringP depDefTable = mgr->GetDcDbObjectName(L"f_attributedependencies");
 
-    FdoSmPhRowP row;
-    if (owner && owner->GetHasObPropMetaSchema())
-    {
-        FdoStringP depDefTable = mgr->GetDcDbObjectName(L"f_attributedependencies");
-        row = new FdoSmPhRow (mgr, L"f_attributedependencies", mgr->FindDbObject(depDefTable));
-    }
-    else
-        row = new FdoSmPhRow (mgr, L"f_attributedependencies", FdoSmPhDbObjectP());
+    FdoSmPhRowP row = new FdoSmPhRow( mgr, L"f_attributedependencies", mgr->FindDbObject(depDefTable) );
 
     // Each field adds itself to the row
     FdoSmPhFieldP field = new FdoSmPhField( row, L"pktablename" );

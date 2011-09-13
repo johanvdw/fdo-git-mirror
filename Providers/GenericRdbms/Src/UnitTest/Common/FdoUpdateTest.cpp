@@ -248,12 +248,6 @@ void FdoUpdateTest::MainFdoUpdateTest (FdoIConnection* Conn)
             // The number of rows varies, depending on the order of tests.
             CPPUNIT_ASSERT_MESSAGE ("Update failed to update 10 records", rows_count>=10);
         }
-        catch (FdoException *ex)
-        {
-            if (connection)
-                connection->Close ();
-            TestCommonFail(ex);
-        }
         catch (...)
         {
             if (connection)
@@ -434,6 +428,8 @@ void FdoUpdateTest::UpdateNonFeatureClass()
         updateCommand->Execute();
 
         featureTransaction->Commit();
+
+        connection->Close();
     }
     catch (FdoException *ex)
     {
@@ -537,6 +533,8 @@ void FdoUpdateTest::FdoUpdateTestTypes ()
         updateCommand->Execute();
 
         featureTransaction->Commit();
+
+        connection->Close();
     }
     catch (FdoCommandException *ex)
     {
@@ -853,6 +851,7 @@ void FdoUpdateTest::UpdateFeatureWithMultiGeometries()
         }
         CPPUNIT_ASSERT( rowCount == 3 );
         rdr->Close();
+        connection->Close();
     }
     catch (FdoException *ex)
     {

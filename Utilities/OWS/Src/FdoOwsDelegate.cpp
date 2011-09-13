@@ -28,13 +28,12 @@
 #include "FdoOwsHttpHandler.h"
 #include "FdoOwsExceptionReport.h"
 
-FdoOwsDelegate::FdoOwsDelegate() : 
-    m_timeout(120)
+FdoOwsDelegate::FdoOwsDelegate()
 {
 }
 
-FdoOwsDelegate::FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd, FdoString* proxyHost, FdoString* proxyPort, FdoString* proxyUser, FdoString* proxyPassword) : 
-	m_defaultUrl(defaultUrl), m_userName(userName), m_passwd(passwd), m_proxyHost(proxyHost), m_proxyPort(proxyPort), m_proxyUser(proxyUser), m_proxyPassword(proxyPassword), m_timeout(120)
+FdoOwsDelegate::FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd) : m_defaultUrl(defaultUrl),
+                                    m_userName(userName), m_passwd(passwd)
 {
 }
 
@@ -148,16 +147,10 @@ FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
     const char* mbUserName = m_userName;
     const char* mbPasswd = m_passwd;
 
-    const char* mbProxyHost = m_proxyHost;
-    const char* mbProxyPort = m_proxyPort;
-    const char* mbProxyUserName = m_proxyUser;
-    const char* mbProxyPassword = m_proxyPassword;
-
-    FdoPtr<FdoOwsHttpHandler> httpHandler = FdoOwsHttpHandler::Create(mbUrl, bGet, mbRequestString, mbUserName, mbPasswd, mbProxyHost, mbProxyPort, mbProxyUserName, mbProxyPassword);
+    FdoPtr<FdoOwsHttpHandler> httpHandler = FdoOwsHttpHandler::Create(mbUrl, bGet, mbRequestString, mbUserName, mbPasswd);
         
-    // Here we use connection timeout as the value for "connection" timeout.
-    // By default it's 120.
-    httpHandler->SetConnectionTimeout (m_timeout);
+    // Here we use 2 mins as the default value for "connection" timeout.
+    httpHandler->SetConnectionTimeout (60 * 2);
 
     // The Perform call won't return util beginning receiving http content.
     // If there are any connection related problems, exceptions
@@ -187,3 +180,9 @@ FdoOwsResponse* FdoOwsDelegate::Invoke(FdoOwsRequest* request)
     // return Ows response
     return FdoOwsResponse::Create(mimeType, stream); 
 }
+
+
+
+
+
+

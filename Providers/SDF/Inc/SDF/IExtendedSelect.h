@@ -17,6 +17,7 @@
 #ifndef _SdfIExtendedSelect_H_
 #define _SdfIExtendedSelect_H_
 
+#include "FdoStd.h"
 #include "Fdo.h"
 #include "SDF/IScrollableFeatureReader.h"
 #include "SDF/SdfCompareHandler.h"

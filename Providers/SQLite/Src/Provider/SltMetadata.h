@@ -56,7 +56,6 @@ public:
     bool IsView() { return m_bIsView; }
     bool IsMultipleSelectSrcView() { return m_bIsMSelectView; }    
 
-    static void BuildMetadataInfo(SltConnection* conn, SltStringList* lst = NULL);
 private:
     class SQLiteExpression
     {
@@ -70,10 +69,10 @@ private:
             op = pOp;
         }
     };
-    static bool ExtractConstraints(Expr* node, std::vector<SQLiteExpression>& result);
-    static void GenerateConstraint(FdoDataPropertyDefinition* prop, SQLiteExpression& operation);
+    bool ExtractConstraints(Expr* node, std::vector<SQLiteExpression>& result);
+    void GenerateConstraint(FdoDataPropertyDefinition* prop, SQLiteExpression& operation);
 
-    void ProcessViewProperties(Table* pTable, sqlite3_stmt** pstmtView);
+    void ProcessViewProperties(Table* pTable);
     void FindSpatialContextName(int srid, std::wstring& ret);
     // returns true in case extra checking needs to be done
     bool ExtractViewDetailsInfo(StlMapNamesList& sources, StlMapPropNamesList& properties, StlMapNamesList& expressions, Table* pTable);

@@ -24,7 +24,6 @@
 #include <Rdbms/Override/SQLServerSpatial/SqlServerOvPhysicalSchemaMapping.h>
 #include <Rdbms/Override/SQLServerSpatial/SqlServerOvTextInRowOption.h>
 #include <Sm/Ph/Rd/QueryReader.h>
-#include "Owner.h"
 
 FdoSmPhSqsMgr::SqsStringMap FdoSmPhSqsMgr::mSqsReservedDbObjectNames;
 
@@ -57,14 +56,17 @@ FdoStringP FdoSmPhSqsMgr::GetDbVersion()
 		    autoCmtChanged = true;
 	    }
 
-        mDbVersion = L"0.0";
+        mDbVersion = L"Unknown - 0.0";
         try {
             FdoSmPhRowP row = new FdoSmPhRow( FDO_SAFE_ADDREF(this), L"sp_ver" );
-            FdoSmPhFieldP field = new FdoSmPhField( row, L"av", row->CreateColumnChar(L"av", false, 50) );
-            FdoPtr<FdoSmPhRdQueryReader> rdr = CreateQueryReader( row, L"SELECT convert(nvarchar, SERVERPROPERTY('productversion')) as av" );
+            FdoSmPhFieldP field = new FdoSmPhField( row, L"attribute_value", row->CreateColumnChar(L"attribute_value", false, 50) );
+            FdoPtr<FdoSmPhRdQueryReader> rdr = CreateQueryReader( row, L"exec sp_server_info @attribute_id=2" );
 
+            // TODO: ReadNext() generates a "function sequence error" on Sql Server 2000. Need to 
+            // investigate why this happens. It might be due to another select being open.
+            // When this happens, version 0.0 (unknown) is returned. 
             if ( rdr->ReadNext() ) {
-                mDbVersion = rdr->GetString( L"", L"av" );
+                mDbVersion = rdr->GetString( L"", L"attribute_value" );
             }
         }
         catch ( FdoException* ex ) {
@@ -77,8 +79,10 @@ FdoStringP FdoSmPhSqsMgr::GetDbVersion()
 		    gdbiCommands->autocommit_on();
 
     }
+ 
+    FdoStringP retVersion = mDbVersion.Right( L"- " ).Left( L" " );
 
-    return mDbVersion;
+    return retVersion;
 }
 
 FdoSmPhMgr::CoordinateSystemMatchLevel FdoSmPhSqsMgr::GetCoordinateSystemMatchLevel()
@@ -88,7 +92,7 @@ FdoSmPhMgr::CoordinateSystemMatchLevel FdoSmPhSqsMgr::GetCoordinateSystemMatchLe
     CoordinateSystemMatchLevel level = CoordinateSystemMatchLevel_Lax;
     FdoSmPhOwnerP owner = FindOwner();
 
-    if ( (!owner) || !(owner->GetHasSCMetaSchema()) ) 
+    if ( (!owner) || !(owner->GetHasMetaSchema()) ) 
         // When no MetaSchema, there is no place to put WKT when spatial context
         // coordinate system not valid for SQL Server. Therefore, reject any
         // spatial contexts with these coordinate systems.
@@ -267,8 +271,8 @@ FdoStringP FdoSmPhSqsMgr::FormatSQLVal( FdoStringP value, FdoSmPhColType valueTy
 FdoPtr<FdoDataValue> FdoSmPhSqsMgr::ParseSQLVal( FdoStringP stringValue )
 {
     FdoDateTime dt;
-    size_t start = 0;
-    size_t length = stringValue.GetLength();
+    int start = 0;
+    int length = stringValue.GetLength();
 
     // Numeric default values can be enclosed in (()). Remove these brackets
     if ( (wcsncmp(stringValue, L"((", 2) == 0) &&
@@ -380,11 +384,23 @@ bool FdoSmPhSqsMgr::IsRdbObjNameAscii7()
     // by FDO 3.3 and after.
 
     FdoSmPhOwnerP owner = this->GetOwner();
-    if ( (!owner) || (!owner->GetHasClassMetaSchema()) ) 
+    if ( (!owner) || (!owner->GetHasMetaSchema()) ) 
         return false;
 
-    FdoSmPhSqsOwner* pSqlOwner = static_cast<FdoSmPhSqsOwner*>(owner.p);
-    return (pSqlOwner == NULL) ? false : pSqlOwner->IsRdbObjNameAscii7();
+    FdoSmPhDbObjectP dbObject = owner->FindDbObject( L"dbo.f_classdefinition" );
+    if ( !dbObject ) 
+        return false;
+
+    FdoSmPhColumnP column = dbObject->GetColumns()->FindItem( L"classname" );
+
+    if ( column && column->GetTypeName().ICompare(L"varchar") == 0 )
+        // Most Schema Manager queries are ordered on string columns. When these
+        // are varchar, it is difficult to pick a collation that returns rows
+        // in a predictable order, when the columns contain non-ASCII7 data.
+        // Therefore, stick to ASCII7 database element names for these datastores.
+        return true;
+
+    return false;
 }
 
 FdoSize FdoSmPhSqsMgr::DbObjectNameMaxLen()
@@ -513,7 +529,7 @@ FdoSmPhSqsMgr::SqsStringMap::SqsStringMap()
 FdoStringP FdoSmPhSqsMgr::ClassName2DbObjectName(FdoStringP schemaName, FdoStringP className)
 {
     FdoSmPhOwnerP pOwner = GetOwner();
-    bool hasMetaSchema = pOwner ? pOwner->GetHasClassMetaSchema() : false;
+    bool hasMetaSchema = pOwner ? pOwner->GetHasMetaSchema() : false;
 
     // Qualify default db object name by user.
 

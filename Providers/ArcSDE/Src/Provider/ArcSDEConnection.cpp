@@ -37,20 +37,19 @@ class TableRegistry
 public:
 	//
 	// Constructor.
-	TableRegistry(SE_REGINFO* registration, const CHAR* qTableName)
+	TableRegistry(SE_REGINFO* registration, CHAR* qTableName)
 	{
 		this->registration = registration;
-    this->m_qualified_table_name = new CHAR[SE_QUALIFIED_TABLE_NAME+1];
-    sde_strcpy(sde_pus2wc(this->m_qualified_table_name), sde_pus2wc(qTableName));
+		qualified_table_name = qTableName;
 	}
 
 	// Deconstructor. 
 	~ TableRegistry()
 	{
-		if (m_qualified_table_name != NULL)
-			delete [] m_qualified_table_name;
+		if (qualified_table_name != NULL)
+			delete [] qualified_table_name;
 
-		m_qualified_table_name = NULL;
+		qualified_table_name = NULL;
 	}
 
 	// Return the registry info pointer.
@@ -59,14 +58,14 @@ public:
 		return registration;
 	}
 
-	const CHAR* GetQualifiedTableName()
+	CHAR* GetQualifiedTableName()
 	{
-		return m_qualified_table_name;
+		return qualified_table_name;
 	}
 
 private:
 	SE_REGINFO* registration;
-	CHAR* m_qualified_table_name;
+	CHAR* qualified_table_name;
 };
 
 ArcSDEConnection::ArcSDEConnection (void) :
@@ -88,6 +87,20 @@ ArcSDEConnection::ArcSDEConnection (void) :
     mCachedSpatialRefList(NULL),
     mCachedSpatialRefSRIDList(NULL),
     mCachedSpatialRefListCount(0),
+	mGeomBuffer_ordinates(NULL),
+	mGeomBuffer_ordinates_cursize(0),
+    mGeomBuffer_part_offsets(NULL),
+	mGeomBuffer_part_offsets_cursize(0),
+    mGeomBuffer_subpart_offsets(NULL),
+	mGeomBuffer_subpart_offsets_cursize(0),
+    mGeomBuffer_offsets(NULL),
+	mGeomBuffer_offsets_cursize(0),
+    mGeomBuffer_pointsXY(NULL),
+	mGeomBuffer_pointsXY_cursize(0),
+    mGeomBuffer_pointsZ(NULL),
+	mGeomBuffer_pointsZ_cursize(0),
+    mGeomBuffer_pointsM(NULL),
+	mGeomBuffer_pointsM_cursize(0),
     mGeomFactory(NULL),
 	m_uuidGeneratorCreated(false),
 	mIsSchemaClassNameCached(false)
@@ -123,8 +136,21 @@ ArcSDEConnection::~ArcSDEConnection (void)
     // Free up geometry-conversion buffers;
     // NOTE: we don't need to free up these buffers on Close() since they are not database-specific:
     FDO_SAFE_RELEASE(mGeomFactory);
+	if (mGeomBuffer_part_offsets != NULL)
+        free(mGeomBuffer_part_offsets);
+    if (mGeomBuffer_subpart_offsets != NULL)
+        free(mGeomBuffer_subpart_offsets);
+	if (mGeomBuffer_offsets != NULL)
+        free(mGeomBuffer_offsets);
+    if (mGeomBuffer_pointsXY != NULL)
+        free(mGeomBuffer_pointsXY);
+    if (mGeomBuffer_pointsZ != NULL)
+        free(mGeomBuffer_pointsZ);
+    if (mGeomBuffer_pointsM != NULL)
+        free(mGeomBuffer_pointsM);
 	if (m_uuidGeneratorCreated)
 		SE_uuidgenerator_free(m_uuidGenerator);
+
 }
 
 // <summary>Dispose this object.</summary>
@@ -876,7 +902,7 @@ void ArcSDEConnection::GetRegisteredTableNames()
 	GetArcSDERegistrationList(&registrations, &count);
 	for (LONG i = 0; i < count; ++i)
 	{
-    CHAR qualified_table_name[SE_QUALIFIED_TABLE_NAME+1];
+		CHAR *qualified_table_name = new CHAR[SE_QUALIFIED_TABLE_NAME+1];
 		CHAR owner[SE_MAX_OWNER_LEN+1];
 		CHAR table_name[SE_MAX_TABLE_LEN];
 		CHAR database_name[SE_MAX_DATABASE_LEN+1];
@@ -1011,7 +1037,7 @@ CHAR* ArcSDEConnection::GetCachedSDEQualifiedTableName(FdoStringP featureClassNa
 	{
 		TableRegistry* tableRegistry = iter->second;
 		if (tableRegistry != NULL)
-			return (CHAR*)tableRegistry->GetQualifiedTableName();
+			return tableRegistry->GetQualifiedTableName();
 	}
 
 	return NULL;	
@@ -1849,10 +1875,8 @@ void ArcSDEConnection::DecacheSpatialContexts()
         {
             for (int i=0; i<mCachedSpatialRefListCount; i++)
                 SE_spatialrefinfo_free(mCachedSpatialRefList[i]);
-            if(mCachedSpatialRefList)
-              delete[] mCachedSpatialRefList;
-            if(mCachedSpatialRefSRIDList)
-              delete[] mCachedSpatialRefSRIDList;
+            delete[] mCachedSpatialRefList;
+            delete[] mCachedSpatialRefSRIDList;
         }
         else
         {

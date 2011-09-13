@@ -67,11 +67,7 @@ void ShpLpPropertyDefinition::ConvertPhysicalToLogical(FdoPropertyDefinition* co
     m_logicalProperty = FdoDataPropertyDefinition::Create(logicalPropertyName, logicalPropertyDescription);
 
     // Set misc stuff:
-	eDBFColumnType colType = info->GetColumnTypeAt(m_physicalColumnIndex);
-	int colWidth = info->GetColumnWidthAt(m_physicalColumnIndex);
-    int colScale = info->GetColumnScaleAt(m_physicalColumnIndex);
-
-    FdoDataType data_type = ShpSchemaUtilities::DbfTypeToFdoType(colType, colWidth, colScale);
+    FdoDataType data_type = ShpSchemaUtilities::DbfTypeToFdoType(info->GetColumnTypeAt(m_physicalColumnIndex));
     m_logicalProperty->SetDataType(data_type);
     m_logicalProperty->SetReadOnly(false);
     m_logicalProperty->SetNullable(true);
@@ -81,13 +77,15 @@ void ShpLpPropertyDefinition::ConvertPhysicalToLogical(FdoPropertyDefinition* co
     if (data_type == FdoDataType_String)
         m_logicalProperty->SetLength(info->GetColumnWidthAt(m_physicalColumnIndex));
 
-    // Set precision/scale (Only applies to Decimal properties or original Decimal properties converted
-	// to Integer types - see RFC 55)
-    if (data_type == FdoDataType_Decimal || colType == kColumnDecimalType)
+    // Set precision/scale (Only applies to Decimal properties):
+    if (data_type == FdoDataType_Decimal)
     {
+        int colWidth = info->GetColumnWidthAt(m_physicalColumnIndex);
+        int colScale = info->GetColumnScaleAt(m_physicalColumnIndex);
         m_logicalProperty->SetPrecision(colWidth);
         m_logicalProperty->SetScale(colScale);
     }
+
 
     // Add the logical property to its parent:
     FdoPtr<FdoClassDefinition> logicalClass = m_parentLpClass->GetLogicalClass();
@@ -204,18 +202,6 @@ void ShpLpPropertyDefinition::ConvertLogicalToPhysical (int physicalColumnIndex,
 
     // Convert logical data type to physical column type, and validate it:
     logicalPropertyType = m_logicalProperty->GetDataType ();
-
-	// Reset the precision to distinguish between IntXX types and IntXX types from Decimals
-	if (logicalPropertyType != FdoDataType_Decimal)
-	{
-		int colWidth = m_logicalProperty->GetPrecision();
-
-		if (colWidth == DEFAULT_INT16_COL_LENGTH || colWidth == DEFAULT_INT32_COL_LENGTH || colWidth == DEFAULT_INT64_COL_LENGTH )
-		{
-			m_logicalProperty->SetPrecision(0);
-		}
-	}
-
     physicalColumnType = ShpSchemaUtilities::FdoTypeToDbfType (logicalPropertyType);
     if (kColumnUnsupportedType == physicalColumnType)
         throw FdoException::Create (NlsMsgGet(SHP_UNSUPPORTED_DATATYPE, "The '%1$ls' data type is not supported by Shp.", FdoCommonMiscUtil::FdoDataTypeToString (logicalPropertyType)));
@@ -229,22 +215,10 @@ void ShpLpPropertyDefinition::ConvertLogicalToPhysical (int physicalColumnIndex,
                 info->SetColumnScale (physicalColumnIndex, m_logicalProperty->GetScale());
                 info->SetColumnWidth (physicalColumnIndex, m_logicalProperty->GetPrecision());
             }
-            else  // logicalPropertyType==FdoDataType_Int16, Int32 or Int64
+            else  // logicalPropertyType==FdoDataType_Int32
             {
                 info->SetColumnScale (physicalColumnIndex, 0);
-				int colWidth = m_logicalProperty->GetPrecision();
-
-				if (colWidth == 0)
-				{
-					// If not set then use defaults
-					if (logicalPropertyType == FdoDataType_Int16)
-						colWidth = DEFAULT_INT16_COL_LENGTH;
-					else if (logicalPropertyType == FdoDataType_Int32)
-						colWidth = DEFAULT_INT32_COL_LENGTH;
-					else if (logicalPropertyType == FdoDataType_Int64)
-						colWidth = DEFAULT_INT64_COL_LENGTH;
-				}
-                info->SetColumnWidth (physicalColumnIndex, colWidth);
+                info->SetColumnWidth (physicalColumnIndex, DEFAULT_INT_COL_LENGTH);
             }
             break;
         case kColumnCharType:

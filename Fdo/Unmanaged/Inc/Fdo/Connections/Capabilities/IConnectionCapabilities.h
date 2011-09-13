@@ -88,14 +88,6 @@ public:
     FDO_API virtual bool SupportsTransactions() = 0;
 
     /// \brief
-    /// Returns whether the feature provider supports save point.
-    /// 
-    /// \return
-    /// Returns true if the feature provider supports save point.
-    /// 
-    FDO_API virtual bool SupportsSavePoint() = 0;
-
-    /// \brief
     /// Determines true if the feature provider supports long transactions.
     /// 
     /// \return

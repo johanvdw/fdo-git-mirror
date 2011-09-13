@@ -537,18 +537,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleFeatureReader.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleInsertCommand.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleUpdateCommand.cpp"
-					>
-				</File>
-				<File
 					RelativePath="FeatureCommands\FdoRdbmsUpdateCommand.cpp"
 					>
 				</File>
@@ -602,10 +590,6 @@
 				</File>
 				<File
 					RelativePath=".\Other\FdoRdbmsPrimaryKeyColumn.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.cpp"
 					>
 				</File>
 				<File
@@ -668,10 +652,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.cpp"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.cpp"
 					>
@@ -906,18 +886,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleFeatureReader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleInsertCommand.h"
-					>
-				</File>
-				<File
-					RelativePath=".\FeatureCommands\FdoRdbmsSimpleUpdateCommand.h"
-					>
-				</File>
-				<File
 					RelativePath="FeatureCommands\FdoRdbmsUpdateCommand.h"
 					>
 				</File>
@@ -983,14 +951,6 @@
 				</File>
 				<File
 					RelativePath=".\Other\FdoRdbmsPrimaryKeyColumn.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Other\FdoRdbmsSimpleBLOBStreamReader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Other\FdoRdbmsSQLBuilder.h"
 					>
 				</File>
 				<File
@@ -1065,10 +1025,6 @@
 			<Filter
 				Name="Pvc"
 				>
-				<File
-					RelativePath=".\Pvc\FdoRdbmsPropBindHelper.h"
-					>
-				</File>
 				<File
 					RelativePath=".\Pvc\FdoRdbmsPvcHandler.h"
 					>

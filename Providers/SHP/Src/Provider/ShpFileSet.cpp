@@ -62,7 +62,7 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
     size_t length;
     wchar_t* name;
     wchar_t* dir;
-    FdoPtr<FdoStringCollection> files = FdoStringCollection::Create();
+    std::vector<std::wstring> files;
     int count;
     wchar_t* p;
     size_t base_length;
@@ -104,7 +104,7 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
 
         // scan the directory and match extensions
         FdoCommonFile::GetAllFiles (dir, files);
-        count = (int)files->GetCount ();
+	    count = (int)files.size ();
         base_length = wcslen (mBaseName);
         shp_file = NULL;
         dbf_file = NULL;
@@ -119,7 +119,7 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
             size_t length;
             std::wstring path;
             
-            name = files->GetString(i);;
+            name = files[i].c_str ();
             length = wcslen (name);
             if      (match (name, length, mBaseName, base_length, SHP_EXTENSION, ELEMENTS(SHP_EXTENSION) - 1))
             {
@@ -954,15 +954,11 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
     FdoPtr<FdoValueExpression> expression;
     bool assigned;
     eDBFColumnType type;
-    int scale;
-	int width;
     FdoGeometryValue* geometry;
     FdoStringValue* string;
     FdoDecimalValue* decimal;
     FdoDoubleValue* dbl;
-    FdoInt16Value* int16;
-	FdoInt32Value* int32;
-	FdoInt64Value* int64;
+    FdoInt32Value* int32;
     FdoDateTimeValue* datetime;
     FdoDateTime _datetime;
     Date date;
@@ -1003,14 +999,12 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
                         if (0 == wcscmp (column, info->GetColumnNameAt (j)))
                         {
                             type = info->GetColumnTypeAt (j);
-							width = info->GetColumnWidthAt (j);
-                            scale = info->GetColumnScaleAt (j);
                             switch (type)
                             {
                                 case kColumnCharType:
                                     string = dynamic_cast<FdoStringValue*>(expression.p);
                                     if ((string == NULL) && (expression != NULL))
-                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnCharType, width, scale))));
+                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnCharType))));
                                     if ((string == NULL) || string->IsNull())
                                         row->SetData (j, true,  (wchar_t*)NULL);
                                     else
@@ -1026,28 +1020,18 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
                                     break;
 
                                 case kColumnDecimalType:
-                                    // NOTE: this could either be a decimal, double or an integer value
+                                    // NOTE: this could either be a decimal, double or int32 value
                                     decimal = dynamic_cast<FdoDecimalValue*>(expression.p);
                                     dbl = dynamic_cast<FdoDoubleValue*>(expression.p);
-                                    int16 = dynamic_cast<FdoInt16Value*>(expression.p);
-									int32 = dynamic_cast<FdoInt32Value*>(expression.p);
-									int64 = dynamic_cast<FdoInt64Value*>(expression.p);
+                                    int32 = dynamic_cast<FdoInt32Value*>(expression.p);
 
-                                    if ((decimal == NULL) && (int16 == NULL) && (int32 == NULL) && (int64 == NULL) && (dbl == NULL) && (expression != NULL))
-                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnDecimalType, width, scale))));
+                                    if ((decimal == NULL) && (int32 == NULL) && (dbl == NULL) && (expression != NULL))
+                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnDecimalType))));
 
-                                    if ( ((int16 == NULL) || (int16->IsNull())) && 
-										((int32 == NULL) || (int32->IsNull())) && 
-										((int64 == NULL) || (int64->IsNull())) && 
-										((decimal == NULL) || (decimal->IsNull())) && 
-										((dbl == NULL) || (dbl->IsNull())) )
+                                    if ( ((int32 == NULL) || (int32->IsNull())) && ((decimal == NULL) || (decimal->IsNull())) && ((dbl == NULL) || (dbl->IsNull())) )
                                         row->SetData (j, true, 0.0);
-									else if (int16 != NULL)
-                                        row->SetData (j, false, (double)int16->GetInt16 ());
                                     else if (int32 != NULL)
                                         row->SetData (j, false, (double)int32->GetInt32 ());
-									else if (int64 != NULL)
-                                        row->SetData (j, false, int64->GetInt64 ());
                                     else if (decimal != NULL)
                                         row->SetData (j, false, decimal->GetDecimal ());
                                     else if (dbl != NULL)
@@ -1057,7 +1041,7 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
                                 case kColumnDateType:
                                     datetime = dynamic_cast<FdoDateTimeValue*>(expression.p);
                                     if ((datetime == NULL) && (expression != NULL))
-                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnDateType, width, scale))));
+                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnDateType))));
                                     if ((datetime == NULL) || datetime->IsNull())
                                         row->SetData(j, true, Date());
                                     else
@@ -1073,7 +1057,7 @@ void ShpFileSet::PutData (ShpConnection* connection, FdoString* class_name, FdoP
                                 case kColumnLogicalType:
                                     boolean = dynamic_cast<FdoBooleanValue*>(expression.p);
                                     if ((boolean == NULL) && (expression != NULL))
-                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnLogicalType, width, scale))));
+                                        throw FdoException::Create (NlsMsgGet(SHP_INVALID_DATA_TYPE, "The value for property '%1$ls' is not '%2$ls'.", name, FdoCommonMiscUtil::FdoDataTypeToString (ShpSchemaUtilities::DbfTypeToFdoType (kColumnLogicalType))));
                                     if ((boolean == NULL) || boolean->IsNull())
                                         row->SetData (j, true, false);
                                     else

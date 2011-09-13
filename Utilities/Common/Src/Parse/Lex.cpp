@@ -19,7 +19,6 @@
 #include <math.h>	// for pow()
 #include <limits.h>	// LONG_MAX and LONG_MIN
 #include <time.h>
-#include <string.h>
 #include <wctype.h>
 #include <StringUtility.h>
 #include <Fdo/Expression/StringValue.h>

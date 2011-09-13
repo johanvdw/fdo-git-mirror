@@ -274,11 +274,8 @@ void FdoRdbmsLobUtility::InsertStreamedLobs(   DbiConnection *connection,
             connection->dbi_lob_destroy_ref( qid, lobRef );
             boundProp.value.strvalue = NULL;
 
-            FDO_SAFE_RELEASE(boundProp.reader);
+            FDO_SAFE_RELEASE(boundProp.reader );
             boundProp.reader = NULL;
-
-            FDO_SAFE_RELEASE(boundProp.barray);
-            boundProp.barray = NULL;
         }
 
         if ( qid != -1 )
@@ -320,8 +317,6 @@ void FdoRdbmsLobUtility::FreeLobLocators( DbiConnection *connection, FdoRdbmsPvc
 
             boundProp.value.strvalue = NULL;
             boundProp.reader = NULL;
-            FDO_SAFE_RELEASE(boundProp.barray);
-            boundProp.barray = NULL;
         }
     }
     catch (...)

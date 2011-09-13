@@ -66,14 +66,6 @@ protected:
     FdoStringP      mLogicalIdentityPropertyName;
     FdoStringP      mLogicalGeometryPropertyName;
 	int				mMaxNumObjects;		
-
-#ifdef _WIN32
-    ULONG           mCodePage;
-#else
-    const char*     mCodePage;
-#endif
-
-    FdoPtr<ShpLpClassDefinition> mLpClass; //cached LP class
            
     // Query optimizer 
     bool            mFirstRead;         // 1st ReadNext()  
@@ -110,8 +102,8 @@ public:
         FDO_SAFE_ADDREF (filter);
 
         // Determine the physical FileSet to use:
-        mLpClass = ShpSchemaUtilities::GetLpClassDefinition(connection, className);
-        mFileSet = mLpClass->GetPhysicalFileSet();
+        FdoPtr<ShpLpClassDefinition> shpLpClassDef = ShpSchemaUtilities::GetLpClassDefinition(connection, className);
+        mFileSet = shpLpClassDef->GetPhysicalFileSet();
 
         // Determine the name of the singleton identity property and singleton geometry property:
         FdoPtr<FdoClassDefinition> classDef = ShpSchemaUtilities::GetLogicalClassDefinition(mConnection, mClassName, NULL);
@@ -141,23 +133,6 @@ public:
             mSelected = FDO_SAFE_ADDREF (selected);
 
         mFilterExecutor = ShpQueryOptimizer::Create (this, selected );
-
-
-		// Get the code page from LDID. If not valid try the .CPG file.
-		FdoStringP  codePage = L"";
-		if(mFileSet->GetCpgFile())
-			codePage = mFileSet->GetCpgFile()->GetCodePage();
-
-		if (codePage == L"")
-			codePage = mFileSet->GetDbfFile()->GetCodePage();
-
-        //Cache the OS-specific code page ID
-        ShapeCPG cpg;
-#ifdef _WIN32
-        mCodePage = cpg.ConvertCodePageWin((WCHAR*)(FdoString*)codePage);
-#else
-        mCodePage = cpg.ConvertCodePageLinux((WCHAR*)(FdoString*)codePage);
-#endif
     }
 
     virtual ~ShpReader (void)
@@ -189,10 +164,7 @@ public:
         int count;
         eDBFColumnType type;
 
-        FdoPtr<ShpLpPropertyDefinitionCollection> lpProperties = mLpClass->GetLpProperties();
-        FdoPtr<ShpLpPropertyDefinition> lpProperty = lpProperties->GetItem(propertyName);
-        columnName = lpProperty->GetPhysicalColumnName();
-
+        columnName = ShpSchemaUtilities::GetPhysicalColumnName (mConnection, mClassName, propertyName);
         info = mData->GetColumnInfo ();
         count = info->GetNumColumns ();
         type = kColumnUnsupportedType;
@@ -203,7 +175,15 @@ public:
                 type = info->GetColumnTypeAt (i);
                 if (type == column_type)
 				{
-					mData->GetData (data, i, type, mCodePage);
+					// Get the code page from LDID. If not valid try the .CPG file.
+					FdoStringP  codePage = L"";
+					if(mFileSet->GetCpgFile())
+						codePage = mFileSet->GetCpgFile()->GetCodePage();
+
+					if (codePage == L"")
+						codePage = mFileSet->GetDbfFile()->GetCodePage();
+
+					mData->GetData (data, i, type, (WCHAR*)(FdoString *)codePage);
 				}
                 else
                     throw FdoException::Create (NlsMsgGet(SHP_VALUE_TYPE_MISMATCH, "Value type to insert, update or retrieve doesn't match the type (%1$ls) of property '%2$ls'.", ColumnTypeToString (type), propertyName));
@@ -382,7 +362,7 @@ public:
             if (coldata.bIsNull)
                 throw FdoException::Create(NlsMsgGet(SHP_READER_PROPERTY_NULL, "The property '%1$ls' is NULL.", identifier));
             else
-                ret = coldata.bIsInt ? (double)coldata.value.nData : coldata.value.dData;
+                ret = coldata.value.dData;
         }
 
         return (ret);
@@ -397,7 +377,6 @@ public:
     {
         FdoPtr<FdoIdentifier> id;
         FdoComputedIdentifier* computed;
-		FdoInt16 ret;
 
         id = validate (identifier);
         computed = (id == NULL) ? NULL : dynamic_cast<FdoComputedIdentifier*>(id.p);
@@ -418,17 +397,8 @@ public:
             throw FdoException::Create (NlsMsgGet(SHP_INVALID_LITERAL_TYPE, "Invalid literal type '%1$d'.", results->GetLiteralValueType()));
         }
         else
-		{
-            ColumnData coldata;
-            GetData (&coldata, identifier, kColumnDecimalType, L"FdoInt16");
-            if (coldata.bIsNull)
-                throw FdoException::Create(NlsMsgGet(SHP_READER_PROPERTY_NULL, "The property '%1$ls' is NULL.", identifier));
-            else
-                ret = coldata.bIsInt ? (FdoInt16)coldata.value.nData : (FdoInt16)coldata.value.dData;
-		}
-
-		return (ret);
-	}
+            throw FdoException::Create (NlsMsgGet(SHP_UNSUPPORTED_DATATYPE, "The '%1$ls' data type is not supported by Shp.", L"Int16"));
+    }
 
     /// <summary>Gets the 32-bit integer value of the specified property. No conversion is
     /// performed, thus the property must be FdoDataType_Int32 or an exception
@@ -476,7 +446,7 @@ public:
                 if (coldata.bIsNull)
                     throw FdoException::Create(NlsMsgGet(SHP_READER_PROPERTY_NULL, "The property '%1$ls' is NULL.", identifier));
                 else
-                    ret = coldata.bIsInt ? (FdoInt32)coldata.value.nData : (FdoInt32)coldata.value.dData;
+                    ret = (FdoInt32)coldata.value.dData;
             }
         }
 
@@ -492,7 +462,6 @@ public:
     {
         FdoPtr<FdoIdentifier> id;
         FdoComputedIdentifier* computed;
-		FdoInt64 ret;
 
         id = validate (identifier);
         computed = (id == NULL) ? NULL : dynamic_cast<FdoComputedIdentifier*>(id.p);
@@ -513,16 +482,8 @@ public:
             throw FdoException::Create (NlsMsgGet(SHP_INVALID_LITERAL_TYPE, "Invalid literal type '%1$d'.", results->GetLiteralValueType()));
         }
         else
-		{
-            ColumnData coldata;
-            GetData (&coldata, identifier, kColumnDecimalType, L"FdoInt64");
-            if (coldata.bIsNull)
-                throw FdoException::Create(NlsMsgGet(SHP_READER_PROPERTY_NULL, "The property '%1$ls' is NULL.", identifier));
-            else
-                ret = coldata.bIsInt ? (FdoInt64)coldata.value.nData : (FdoInt64)coldata.value.dData;
-		}
+            throw FdoException::Create (NlsMsgGet(SHP_UNSUPPORTED_DATATYPE, "The '%1$ls' data type is not supported by Shp.", L"Int64"));
 
-		return (ret);
     }
 
     /// <summary>Gets the Single floating point value of the specified property. No
@@ -677,10 +638,7 @@ public:
             // if it's anything else, need to explicitly check:
             else
             {
-                FdoPtr<ShpLpPropertyDefinitionCollection> lpProperties = mLpClass->GetLpProperties();
-                FdoPtr<ShpLpPropertyDefinition> lpProperty = lpProperties->GetItem(propertyName);
-                FdoString* columnName = lpProperty->GetPhysicalColumnName();
-
+                FdoString* columnName = ShpSchemaUtilities::GetPhysicalColumnName(mConnection, mClassName, propertyName);
                 ret = true;
                 for (int i = 0; ret && (i < count); i++)
                 {

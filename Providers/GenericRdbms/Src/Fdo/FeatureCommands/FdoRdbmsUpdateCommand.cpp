@@ -33,7 +33,7 @@
 #endif
 #include "../../Gdbi/GdbiStatement.h"
 
-static char* TRANSACTION_NAME = "TrUpdCmd";
+static char* TRANSACTION_NAME = "FdoRdbmsUpdateCommand::Execute";
 
 #define UPDATE_CLEANUP \
             if( innerSelect ) {\
@@ -99,11 +99,6 @@ FdoRdbmsUpdateCommand::~FdoRdbmsUpdateCommand()
 
 	if( mPvcProcessor )
 		delete mPvcProcessor;
-}
-
-FdoRdbmsUpdateCommand* FdoRdbmsUpdateCommand::Create (FdoIConnection *connection)
-{
-    return new FdoRdbmsUpdateCommand(connection);
 }
 
 FdoInt32 FdoRdbmsUpdateCommand::Execute ()
@@ -323,15 +318,15 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
                 mPropertyValues->Remove( propVal );
         }
     }
-    catch (FdoCommandException * ce)
+    catch (FdoCommandException *)
     {
         UPDATE_CLEANUP;
-        throw ce;
+        throw;
     }
     catch (FdoException *ex)
     {
         UPDATE_CLEANUP;
-        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
         ex->Release();
         throw exp;
     }

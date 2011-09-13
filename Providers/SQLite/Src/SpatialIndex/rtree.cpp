@@ -19,15 +19,12 @@
 #include "stdafx.h"
 #include "rtree.h"
 
-#include <assert.h>
-#include <math.h>
-
 #if _WIN32
 //for file-backed node storage option
 #include "MappedFile.h"
 #endif
 
-namespace fdo {
+namespace bvh {
 
 //\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 //\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
@@ -121,7 +118,7 @@ namespace fdo {
                 }
                 else
                 {
-                    _freenodes = (fdo::id_t)oldsz;
+                    _freenodes = oldsz;
                 }
 
                 id_t i = _freenodes;
@@ -296,8 +293,8 @@ typedef MappedFile<fill, 16384> node_mf_t;
                 
                 for (size_t i=0; i<oldsz; i++)
                 {
-                    new_mf_node((fdo::id_t)i);
-                    node* n = get_mf_node((fdo::id_t)i, _mfnodes);
+                    new_mf_node(i);
+                    node* n = get_mf_node(i, _mfnodes);
                     *n = _nodes[i];
                 }
 
@@ -390,15 +387,6 @@ typedef MappedFile<fill, 16384> node_mf_t;
         _root_level = 0;
     }
 
-    rtree::rtree(const wchar_t* name)
-    {
-        _offset[0] = _offset[1] = 0;
-        _nodes = new node_mgr;
-        _root = _nodes->new_node();
-        _root_level = 0;
-    }
-
-
     rtree::~rtree()
     {
         delete _nodes;
@@ -445,13 +433,11 @@ typedef MappedFile<fill, 16384> node_mf_t;
 
     void rtree::insert(const box& b, int level, id_t id)
     {
-        stk_entry* node_stack = (stk_entry*)alloca(sizeof(stk_entry) * (_root_level + 2));
+        stk_entry node_stack[MAX_DEPTH];
         stk_entry* top = node_stack;
         node_mgr* nodes = _nodes;
         id_t curnode = _root;
-#if USE_SSE
         box4_soa bwide(b);
-#endif
         int curlevel = 0;
 
         //assumes that the root node is not empty
@@ -466,11 +452,7 @@ typedef MappedFile<fill, 16384> node_mf_t;
                 break;
             }
 
-#if USE_SSE
             int i = n->pick_child(bwide);
-#else
-            int i = n->pick_child(b);
-#endif
             
             top->inode = curnode;
             top->child = i;
@@ -479,7 +461,7 @@ typedef MappedFile<fill, 16384> node_mf_t;
 
             curnode = n->children[i];
         }
-        assert(curlevel<_root_level+2);
+
 
         //At this point, curnode/n contains the node where we want to
         //insert the new item and the stack contains the path we took
@@ -559,16 +541,16 @@ typedef MappedFile<fill, 16384> node_mf_t;
 
             //update the root pointer
             _root = newroot;
-            _root_level++;
         }
     }
    
+
+
 
     //picks the best child to traverse when inserting
     //a new box -- using a surface area heuristic.
     //The heuristic is to pick the child which will result in 
     //smallest insrease in total area. (see Guttman 1984).
-#if USE_SSE
     int node4::pick_child(const box4_soa& bnew) const
     {
         const box4_soa& b = child_bounds;
@@ -615,6 +597,110 @@ typedef MappedFile<fill, 16384> node_mf_t;
     }
 
 
+/*
+    //picks the best child to traverse when inserting
+    //a new box -- using a surface area heuristic.
+    //The heuristic is to pick the child which will result in 
+    //smallest insrease in total area. (see Guttman 1984).
+    int node_generic_mul4::pick_child(const box4_soa& bnew) const
+    {
+        vec area_before[MAX_BRANCH/4];
+        vec area_after[MAX_BRANCH/4];
+        vec area_increase[MAX_BRANCH/4];
+
+        __m128 sign_bit_killer = _mm_load_ps((float*)make_positive);
+        char limit = MAX_BRANCH/4;
+
+        for (int i=0; i<MAX_BRANCH/4; i++)
+        {
+            if (children[i*4] == NULL_ID)
+            {
+                limit = i;
+                break;
+            }
+
+            const box4_soa& b = child_bounds[i];
+
+            //find the areas of the children
+            area_before[i].xmm = _mm_mul_ps(_mm_sub_ps(b.maxx, b.minx), 
+                                     _mm_sub_ps(b.maxy, b.miny));      
+
+            //add the new box to each child
+            __m128 tot_minx = _mm_min_ps(b.minx, bnew.minx);
+            __m128 tot_miny = _mm_min_ps(b.miny, bnew.miny);
+            __m128 tot_maxx = _mm_max_ps(b.maxx, bnew.maxx);
+            __m128 tot_maxy = _mm_max_ps(b.maxy, bnew.maxy);
+
+            //find the resulting areas
+            area_after[i].xmm = _mm_mul_ps(_mm_sub_ps(tot_maxx, tot_minx), 
+                                    _mm_sub_ps(tot_maxy, tot_miny));      
+
+            //compute area increase (after - before)
+            area_increase[i].xmm = _mm_sub_ps(area_after[i], area_before[i]);
+
+            //Remove the sign bit of the area_increase values --
+            //this has the effect of converting -Inf increase resulting
+            //from empty children to +Inf, which makes them easier to weed out
+            //later when looking for the minimum increase in area
+            area_increase[i].xmm = _mm_and_ps(area_increase[i].xmm, sign_bit_killer);
+        }
+
+        //Find the child which resulted in smallest area increase -- first, do one
+        //pass using SIMD instructions to narrow down the choice to 4 items (one in each SSE register slot)
+        //then pick the best of the four remaining using regular scalar code, similar
+        //to the node4 implementation above.
+        //Note that in the 4-wide part we skip one part of the algorithm, which
+        //does a tie-breaker in case of equal areas (see scalar part for details).
+        static const int ALGNW array_indices[] ALGNL = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+        veci best_index_4;
+        best_index_4.xmm = _mm_load_si128((__m128i*)&array_indices[0]);
+        vec best_incr_4 = area_increase[0];
+        vec best_area_4 = area_before[0];
+        
+        for (int i=1; i<limit; i++)
+        {
+            __m128i cur_index_4 = _mm_load_si128((__m128i*)&array_indices[i*4]);
+            
+            //area_increase[i] < best_increase ?
+            __m128 area_cmp = _mm_cmplt_ps(area_increase[i], best_incr_4);
+            
+            //best_increase = (area_increase[i] < best_increase) ? area_increase[i] : best_increase;
+            best_incr_4 = _mm_or_ps(
+                              _mm_and_ps(area_cmp, area_increase[i]),
+                              _mm_andnot_ps(area_cmp, best_incr_4));
+
+            //best_area = (area_increase[i] < best_increase) ? area_before[i] : best_area;
+            best_area_4 = _mm_or_ps(
+                              _mm_and_ps(area_cmp, area_before[i]),
+                              _mm_andnot_ps(area_cmp, best_area_4));
+            
+            //best_index = (area_increase[i] < best_increase) ? cur_index : best_index;
+            best_index_4 = _mm_or_si128(
+                              _mm_and_si128(_mm_castps_si128(area_cmp), cur_index_4),
+                              _mm_andnot_si128(_mm_castps_si128(area_cmp), best_index_4));
+        }
+
+        //The scalar part -- checking the remaining SSE vector horizontally
+        int best = 0;
+        float best_incr = best_incr_4.v[0];
+        float best_area = best_area_4.v[0];
+        for (int i=1; i<4; i++)
+        {
+            float area_incr = best_incr_4.v[i];
+
+            if (    area_incr < best_incr 
+                || (area_incr == best_incr && (best_area_4.v[i] < best_area) )) //tie-breaker in case areas are equal
+            {
+                best = best_index_4.v[i];
+                best_incr = area_incr;
+                best_area = best_area_4.v[i];
+            }
+        }
+
+        return best;
+    }
+*/
+    //Slightly slower, more comprehensible version of the function above.
     int node_generic_mul4::pick_child(const box4_soa& bnew) const
     {
         vec area_before[MAX_BRANCH/4];
@@ -676,111 +762,7 @@ typedef MappedFile<fill, 16384> node_mf_t;
 
         return best;
     }
-#else
 
-    int node4::pick_child(const box& bnew) const
-    {
-        const box4_soa& b = child_bounds;
-        vec area_before;
-        vec area_after;
-        vec area_increase;
-
-        for (int i=0; i<4; i++)
-        {
-            area_before.v[i] = (b.maxx.v[i] - b.minx.v[i]) * (b.maxy.v[i] - b.miny.v[i]);
-            
-            box total;
-            total.minx = min(b.minx.v[i], bnew.minx);
-            total.miny = min(b.miny.v[i], bnew.miny);
-            total.maxx = max(b.maxx.v[i], bnew.maxx);
-            total.maxy = max(b.maxy.v[i], bnew.maxy);
-
-            area_after.v[i] = total.area();
-
-            area_increase.v[i] = area_after.v[i] - area_before.v[i];
-        }
-
-        //now pick the child which results in smallest increase in area
-        int best = 0;
-        float best_incr = area_increase.v[0];
-        float best_area = area_before.v[0];
-        for (int i=1; i<MAX_BRANCH; i++)
-        {
-            if (area_increase.v[i] < 0) //equivalent to children[i] == NULL_ID
-                break;
-            if (    area_increase.v[i] < best_incr 
-                || (area_increase.v[i] == best_incr && area_before.v[i] < best_area) )
-            {
-                best = i;
-                best_incr = area_increase.v[i];
-                best_area = area_before.v[i];
-            }
-        }
-
-        return best;
-    }
-
-
-    int node_generic_mul4::pick_child(const box& bnew) const
-    {
-        vec area_before[MAX_BRANCH/4];
-        vec area_after[MAX_BRANCH/4];
-        vec area_increase[MAX_BRANCH/4];
-
-        int limit = MAX_BRANCH;
-
-        for (int i=0; i<MAX_BRANCH/4; i++)
-        {
-            if (children[i*4] == NULL_ID)
-            {
-                limit = i*4;
-                break;
-            }
-
-            const box4_soa& b = child_bounds[i];
-
-            for (int j=0; j<4; j++)
-            {
-                area_before[i].v[j] = (b.maxx.v[j] - b.minx.v[j]) * (b.maxy.v[j] - b.miny.v[j]);
-                
-                box total;
-                total.minx = min(b.minx.v[j], bnew.minx);
-                total.miny = min(b.miny.v[j], bnew.miny);
-                total.maxx = max(b.maxx.v[j], bnew.maxx);
-                total.maxy = max(b.maxy.v[j], bnew.maxy);
-
-                area_after[i].v[j] = total.area();
-
-                area_increase[i].v[j] = area_after[i].v[j] - area_before[i].v[j];
-
-
-                //Remove the sign bit of the area_increase values --
-                //this has the effect of converting -Inf increase resulting
-                //from empty children to +Inf, which makes them easier to weed out
-                //later when looking for the minimum increase in area
-                area_increase[i].v[j] = fabsf(area_increase[i].v[j]);
-            }
-        }
-
-        int best = 0;
-        float best_incr = area_increase[0].v[0];
-        float best_area = area_before[0].v[0];
-        for (int i=1; i<limit; i++)
-        {
-            float area_incr = ((float*)&area_increase)[i];
-
-            if (    area_incr < best_incr 
-                || (area_incr == best_incr && ((float*)area_before)[i] < best_area) )
-            {
-                best = i;
-                best_incr = area_incr;
-                best_area = ((float*)area_before)[i];
-            }
-        }
-
-        return best;
-    }
-#endif
 
 
     //Adds a new branch to a given node. Splits the node if necessary,
@@ -1037,39 +1019,13 @@ typedef MappedFile<fill, 16384> node_mf_t;
     {
         id_t id;
         box b;
-        id_t* reinsert_list;
-        int* reinsert_level;
-        size_t sz;
-        int count;
+        id_t reinsert_list[MAX_DEPTH];
+        int reinsert_level[MAX_DEPTH];
+        int reinsert_count;
 
         erase_data()
         {
-            sz = MAX_DEPTH;
-            reinsert_list = (id_t*)malloc(sizeof(id_t) * sz);
-            reinsert_level = (int*)malloc(sizeof(int) * sz);
-
-            count = 0;
-            id = 0;
-        }
-
-        ~erase_data()
-        {
-            free(reinsert_list);
-            free(reinsert_level);
-        }
-
-        void add(id_t fid, int level)
-        {
-            if (count == sz)
-            {
-                sz *= 2;
-                reinsert_list = (id_t*)realloc(reinsert_list, sz * sizeof(id_t));
-                reinsert_level = (int*)realloc(reinsert_level, sz * sizeof(int));
-            }
-
-            reinsert_list[count] = fid;
-            reinsert_level[count] = level;
-            count++;
+            memset(this, 0, sizeof(erase_data));
         }
     };
 
@@ -1089,7 +1045,7 @@ typedef MappedFile<fill, 16384> node_mf_t;
         //We are done recursing. Now, we have to add back
         //the contents of nodes which got too light on content
         //during the recursive delete.
-        for (int i=0; i<data.count; i++)
+        for (int i=0; i<data.reinsert_count; i++)
         {
             node* n = nodes->get_node(data.reinsert_list[i]);
 
@@ -1118,7 +1074,6 @@ typedef MappedFile<fill, 16384> node_mf_t;
             id_t newroot = nr->children[0];
             nodes->free_node(_root);
             _root = newroot;
-            _root_level--;
         }
 
         return true;
@@ -1180,7 +1135,9 @@ typedef MappedFile<fill, 16384> node_mf_t;
                         {
                             //child is now less than half full --
                             //remove it and mark it for reinsertion
-                            pdata->add(n->children[i], level+1);
+                            pdata->reinsert_list[pdata->reinsert_count] = n->children[i];
+                            pdata->reinsert_level[pdata->reinsert_count] = level+1;
+                            pdata->reinsert_count++;
                             disconnect_branch(n, i);
                         }
 
@@ -1284,27 +1241,11 @@ typedef MappedFile<fill, 16384> node_mf_t;
 
     rtree_iterator::rtree_iterator(const rtree* rt, const dbox& db)
     {
-        //If the tree is too deep to fit the stack in our preallocated
-        //buffer, allocate a buffer on the heap
-        if (rt->_root_level >= MAX_DEPTH)
-        {
-            _stack = (rt_iter_stack*)malloc(sizeof(rt_iter_stack) * MAX_BRANCH * (rt->_root_level + 1));
-        }
-        else
-        {
-            _stack = _stack_mem;
-        }
-
         _nodes = rt->_nodes;
 
         box b;
         rt->offset_box(b, db);
-
-#if USE_SSE
         _bwide.make_wide_box(b);
-#else
-        _box = b;
-#endif
 
         //push the root node onto the stack
         //to start with
@@ -1312,12 +1253,6 @@ typedef MappedFile<fill, 16384> node_mf_t;
         top->inode = rt->_root;
         top->contained = false;
         _top = top+1;
-    }
-
-    rtree_iterator::~rtree_iterator()
-    {
-        if (_stack != _stack_mem)
-            free(_stack);
     }
    
     fid_t rtree_iterator::next()
@@ -1348,13 +1283,9 @@ typedef MappedFile<fill, 16384> node_mf_t;
         //We have passed the obvious cases, now we have to drill down
         //into the tree 
 
-#if USE_SSE
         //cache the search box locally -- things seem to go faster like that
         box4_soa bwide;
         bwide.copy(_bwide);
-#else
-        box b = _box;
-#endif
 
         while (1)
         {
@@ -1382,13 +1313,7 @@ typedef MappedFile<fill, 16384> node_mf_t;
             else
             {
                 char mask[2*MAX_BRANCH/4]; //mask[i] => disjoint boxes mask, mask[i+1] => containment mask
-
-#if USE_SSE
                 n->overlap_mask(mask, bwide);
-#else
-                n->overlap_mask(mask, b);
-#endif
-
 #if MAX_BRANCH != 4
                 char* maskptr = mask;
                 for (int i=0; i<MAX_BRANCH; i++)

@@ -1957,8 +1957,9 @@ void SchemaMgrTests::testViews ()
 
         classDef = classes->GetItem( table2class(phMgr, L"VIEW2") );
         idProps = classDef->GetIdentityProperties();
-        if ( FindsCrossDatastoreDependencies() ) 
-            CPPUNIT_ASSERT( idProps->GetCount() == 0 );
+#ifndef RDBI_DEF_SSQL
+        CPPUNIT_ASSERT( idProps->GetCount() == 0 );
+#endif
 
         UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_SUFFIX );
 

@@ -71,10 +71,9 @@ void UnitTestUtil::PrintException( FdoException* e, FdoIoStream* stream, FdoBool
     FdoIoTextWriterP writer = 
         stream ?
             FdoIoTextWriter::Create(stream) :
-            //FdoIoTextWriter::Create( FdoIoFileStreamP(FdoIoFileStream::Create(stdout)) ); TODO: Fix Usage of FILE*. vc9/vc10 mismatch
-	        NULL;
-
-    FdoPtr<FdoException> currE = e;
+            FdoIoTextWriter::Create( FdoIoFileStreamP(FdoIoFileStream::Create(stdout)) );
+	
+            FdoPtr<FdoException> currE = e;
 	// Add ref to prevent smart pointer from destroying exception.
 	FDO_SAFE_ADDREF(e);
 
@@ -93,11 +92,7 @@ void UnitTestUtil::PrintException( FdoException* e, FdoIoStream* stream, FdoBool
 		if (NULL == pMessage)
             pMessage = currE->GetExceptionMessage();
 
-        if (writer)
-            writer->WriteLine( pMessage );
-        else
-            printf("%ls", pMessage );
-
+        writer->WriteLine( pMessage );
 		currE = currE->GetCause();
 	}
 }

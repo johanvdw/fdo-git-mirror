@@ -20,14 +20,12 @@
 #include <stdafx.h>
 #include <ArcSDEFunctionLength2D.h>
 
-ArcSDEFunctionLength2D::ArcSDEFunctionLength2D ():
-  mGeom()
+ArcSDEFunctionLength2D::ArcSDEFunctionLength2D ()
 {
 	mCoordRef = NULL;
 } 
 
 ArcSDEFunctionLength2D::ArcSDEFunctionLength2D (ArcSDEConnection* connection, SE_COORDREF coordRef)
-    : mGeom()
 {
 	mConnection = connection;
 	mCoordRef = coordRef;
@@ -55,8 +53,7 @@ FdoLiteralValue *ArcSDEFunctionLength2D::Evaluate (FdoLiteralValueCollection *li
 	SE_SHAPE		result_shape; 
 
 	// Convert to SDE
-    result_shape = mGeom.FgfToShape(mConnection->mGeomFactory, fgf, mConnection->GetConnection(), mCoordRef, true);
-	//convert_fgf_to_sde_shape(mConnection, fgf, mCoordRef, result_shape, TRUE);
+	convert_fgf_to_sde_shape(mConnection, fgf, mCoordRef, result_shape, TRUE);
 
 	// Compute Length
 	LONG lResult = SE_shape_get_length (result_shape, 0, &length);

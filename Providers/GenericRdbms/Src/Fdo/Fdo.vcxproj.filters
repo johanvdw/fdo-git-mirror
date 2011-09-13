@@ -19,9 +19,6 @@
     <ClCompile Include="Other\FdoRdbmsBLOBStreamReader.cpp">
       <Filter>Source Files\Other</Filter>
     </ClCompile>
-    <ClCompile Include="Other\FdoRdbmsSimpleBLOBStreamReader.cpp">
-      <Filter>Source Files\Other</Filter>
-    </ClCompile>
     <ClCompile Include="Capability\FdoRdbmsCommandCapabilities.cpp">
       <Filter>Source Files\Capability</Filter>
     </ClCompile>
@@ -220,18 +217,6 @@
     <ClCompile Include="Filter\FdoRdbmsFunctionIsValid.cpp">
       <Filter>Source Files\Filter</Filter>
     </ClCompile>
-    <ClCompile Include="FeatureCommands\FdoRdbmsSimpleFeatureReader.cpp">
-      <Filter>Source Files\FeatureCommands</Filter>
-    </ClCompile>
-    <ClCompile Include="FeatureCommands\FdoRdbmsSimpleInsertCommand.cpp">
-      <Filter>Source Files\FeatureCommands</Filter>
-    </ClCompile>
-    <ClCompile Include="Pvc\FdoRdbmsPropBindHelper.cpp">
-      <Filter>Source Files\Pvc</Filter>
-    </ClCompile>
-    <ClCompile Include="FeatureCommands\FdoRdbmsSimpleUpdateCommand.cpp">
-      <Filter>Source Files\FeatureCommands</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Connection\DbiConnection.h">
@@ -256,9 +241,6 @@
       <Filter>Header Files\Filter</Filter>
     </ClInclude>
     <ClInclude Include="Other\FdoRdbmsBLOBStreamReader.h">
-      <Filter>Header Files\Other</Filter>
-    </ClInclude>
-    <ClInclude Include="Other\FdoRdbmsSimpleBLOBStreamReader.h">
       <Filter>Header Files\Other</Filter>
     </ClInclude>
     <ClInclude Include="Capability\FdoRdbmsCommandCapabilities.h">
@@ -476,21 +458,6 @@
     </ClInclude>
     <ClInclude Include="Filter\FdoRdbmsFunctionIsValid.h">
       <Filter>Header Files\Filter</Filter>
-    </ClInclude>
-    <ClInclude Include="Pvc\FdoRdbmsPropBindHelper.h">
-      <Filter>Header Files\Pvc</Filter>
-    </ClInclude>
-    <ClInclude Include="FeatureCommands\FdoRdbmsSimpleFeatureReader.h">
-      <Filter>Header Files\FeatureCommands</Filter>
-    </ClInclude>
-    <ClInclude Include="FeatureCommands\FdoRdbmsSimpleInsertCommand.h">
-      <Filter>Header Files\FeatureCommands</Filter>
-    </ClInclude>
-    <ClInclude Include="Other\FdoRdbmsSQLBuilder.h">
-      <Filter>Header Files\Pvc</Filter>
-    </ClInclude>
-    <ClInclude Include="FeatureCommands\FdoRdbmsSimpleUpdateCommand.h">
-      <Filter>Header Files\FeatureCommands</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

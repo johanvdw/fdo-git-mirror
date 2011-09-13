@@ -3847,10 +3847,8 @@ case OP_SeekGt: {       /* jump, in3 */
         i64 siKey;
         i64 siStKey = (u64)u.az.iKey + (i64)(u.az.oc==OP_SeekGt);
         if (!p->pSpIterator && p->u.iVarIndex && p->siTopTnum == p->siTnum){
-          if (p->u.iVarIndex <= p->nVar && p->nVar != 0 && p->u.iVarIndex > 0)
-              sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
-          else
-              sqlite3SetVdbeSpatialIterator(p, db->xSpIteratorCallback(p->pSpIndex, p->u.pParam, -1));
+          assert( p->u.iVarIndex <= p->nVar );
+          sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
         }
         p->lowerRowId = siStKey;
         if (p->pSpIterator)
@@ -3859,15 +3857,15 @@ case OP_SeekGt: {       /* jump, in3 */
           do{
             do{
               siKey = db->xSpIteratorReadNextCallback(p->pSpIterator);
-            }while(siKey != 0 && siKey < siStKey);
-            if (siKey != 0){
+            }while(siKey != -1 && siKey < siStKey);
+            if (siKey != -1){
               rc = sqlite3BtreeMovetoUnpacked(u.az.pC->pCursor, 0, (u64)siKey, 0, &u.az.res);
               if( rc!=SQLITE_OK ){
                 goto abort_due_to_error;
               }
             }
-          }while(u.az.res && siKey != 0);
-          if (siKey == 0){
+          }while(u.az.res && siKey != -1);
+          if (siKey == -1){
             pc = pOp->p2 - 1;
             break;
           }
@@ -4819,21 +4817,19 @@ case OP_Rewind: {        /* jump */
     else if ((u.bl.pC->iDb != -1 && sqlite3BtreeRootTableCursor(u.bl.pC->pCursor) == p->siTnum) && !p->spIndexDisabled && (p->pSpIterator || p->pSpIndex)){
       i64 siKey;
       if (!p->pSpIterator && p->u.iVarIndex && p->siTnum == p->siTopTnum){
-        if (p->u.iVarIndex <= p->nVar && p->nVar != 0 && p->u.iVarIndex > 0)
-          sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
-        else
-          sqlite3SetVdbeSpatialIterator(p, db->xSpIteratorCallback(p->pSpIndex, p->u.pParam, -1));
+        assert( p->u.iVarIndex <= p->nVar );
+        sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
       }
       if (p->pSpIterator)
       {
         do{
           /* Call read next on SI */
           siKey = db->xSpIteratorReadNextCallback(p->pSpIterator);
-          if (siKey == 0)
+          if (siKey == -1)
               u.bl.res = 1;
           else /* Move to the row pointed by SI */
               rc = sqlite3BtreeMovetoUnpacked(u.bl.pCrsr, 0, siKey, 0, &u.bl.res);
-        }while(u.bl.res && siKey != 0);
+        }while(u.bl.res && siKey != -1);
         u.bl.pC->lastRowid = siKey;
         u.bl.pC->rowidIsValid = u.bl.res==0 ?1:0;
       }else{
@@ -4913,22 +4909,20 @@ case OP_Next: {        /* jump */
   if ((u.bm.pC->iDb != -1 && sqlite3BtreeRootTableCursor(u.bm.pCrsr) == p->siTnum) && pOp->opcode==OP_Next && !p->spIndexDisabled && (p->pSpIterator || p->pSpIndex)){
     i64 siKey;
     if (!p->pSpIterator && p->u.iVarIndex && p->siTnum == p->siTopTnum){
-      if (p->u.iVarIndex <= p->nVar && p->nVar != 0 && p->u.iVarIndex > 0)
-        sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
-      else
-        sqlite3SetVdbeSpatialIterator(p, db->xSpIteratorCallback(p->pSpIndex, p->u.pParam, -1));
+      assert( p->u.iVarIndex <= p->nVar );
+      sqlite3GetVdbeSpatialIndex(p, &p->aVar[p->u.iVarIndex-1]);
     }
     if (p->pSpIterator){
       /* In case we have a max key ensure SI will provide lower keys */
       do{
         do{
           siKey = db->xSpIteratorReadNextCallback(p->pSpIterator);
-        }while(siKey != 0 && siKey < p->lowerRowId);
-        if (siKey == 0)
+        }while(siKey != -1 && siKey < p->lowerRowId);
+        if (siKey == -1)
           u.bm.res = 1;
         else
           rc = sqlite3BtreeMovetoUnpacked(u.bm.pCrsr, 0, siKey, 0, &u.bm.res);
-      }while(u.bm.res && siKey != 0);
+      }while(u.bm.res && siKey != -1);
 
       u.bm.pC->lastRowid = siKey;
       u.bm.pC->rowidIsValid = u.bm.res==0 ?1:0;
