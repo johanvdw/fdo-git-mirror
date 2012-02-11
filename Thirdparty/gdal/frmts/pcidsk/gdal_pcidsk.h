@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pcidsk.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gdal_pcidsk.h 17688 2009-09-25 16:01:19Z dron $
  *
  * Project:  PCIDSK Database File
  * Purpose:  PCIDSK driver declarations.
@@ -49,7 +49,7 @@ class PCIDSKDataset : public RawDataset
     friend class PCIDSKTiledRasterBand;
 
     const char          *pszFilename;
-    VSILFILE            *fp;
+    FILE                *fp;
 
     vsi_l_offset        nFileSize;
 
@@ -87,7 +87,7 @@ class PCIDSKDataset : public RawDataset
     vsi_l_offset *panSegSize;
 
     int         nBandFileCount;
-    VSILFILE  **pafpBandFiles;
+    FILE        **pafpBandFiles;
 
   public:
                 PCIDSKDataset();
@@ -188,7 +188,7 @@ class PCIDSKRawRasterBand : public RawRasterBand
     }
     
   public:
-    PCIDSKRawRasterBand( GDALDataset *poDS, int nBand, VSILFILE * fpRaw,
+    PCIDSKRawRasterBand( GDALDataset *poDS, int nBand, FILE * fpRaw, 
                          vsi_l_offset nImgOffset, int nPixelOffset,
                          int nLineOffset,
                          GDALDataType eDataType, int bNativeOrder )

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkdatablock.cpp 22873 2011-08-06 20:33:55Z rouault $
+ * $Id: vfkdatablock.cpp 18566 2010-01-16 16:36:45Z martinl $
  *
  * Project:  VFK Reader - Data block definition
  * Purpose:  Implements VFKDataBlock class.
@@ -777,7 +777,7 @@ long VFKDataBlock::LoadGeometry()
 	bool bIsPar, bNewRing, bFound;
 	
 	int id, idOb;
-	int idxId, idxPar1 = 0, idxPar2 = 0, idxBud = 0, idxOb = 0, idxIdOb = 0;
+	int idxId, idxPar1, idxPar2, idxBud, idxOb, idxIdOb;
 
 	VFKDataBlock *poDataBlockLines1, *poDataBlockLines2;
 	
@@ -890,7 +890,7 @@ long VFKDataBlock::LoadGeometry()
     end = clock();
     
     CPLDebug("OGR_VFK", "VFKDataBlock::LoadGeometry(): name=%s nfeatures=%ld sec=%ld",
-	     m_pszName, nfeatures, (long)((end - start) / CLOCKS_PER_SEC));
+	     m_pszName, nfeatures, (end - start) / CLOCKS_PER_SEC);
     
     return nfeatures;
 }

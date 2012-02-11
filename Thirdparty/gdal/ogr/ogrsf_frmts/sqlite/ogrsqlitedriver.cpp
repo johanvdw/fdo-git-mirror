@@ -1,16 +1,9 @@
 /******************************************************************************
- * $Id: ogrsqlitedriver.cpp 23410 2011-11-21 22:00:11Z rouault $
+ * $Id: ogrsqlitedriver.cpp 16847 2009-04-25 15:36:18Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteDriver class.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
- *
- ******************************************************************************
- *
- * Contributor: Alessandro Furieri, a.furieri@lqt.it
- * Portions of this module properly supporting SpatiaLite DB creation
- * Developed for Faunalia ( http://www.faunalia.it) with funding from 
- * Regione Toscana - Settore SISTEMA INFORMATIVO TERRITORIALE ED AMBIENTALE
  *
  ******************************************************************************
  * Copyright (c) 2004, Frank Warmerdam <warmerdam@pobox.com>
@@ -37,10 +30,10 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsqlitedriver.cpp 23410 2011-11-21 22:00:11Z rouault $");
+CPL_CVSID("$Id: ogrsqlitedriver.cpp 16847 2009-04-25 15:36:18Z rouault $");
 
 /************************************************************************/
-/*                            ~OGRSQLiteDriver()                        */
+/*                            ~OGRSQLiteDriver()                            */
 /************************************************************************/
 
 OGRSQLiteDriver::~OGRSQLiteDriver()
@@ -66,79 +59,21 @@ OGRDataSource *OGRSQLiteDriver::Open( const char * pszFilename,
                                      int bUpdate )
 
 {
-
-/* -------------------------------------------------------------------- */
-/*      Check VirtualShape:xxx.shp syntax                               */
-/* -------------------------------------------------------------------- */
-    int nLen = (int) strlen(pszFilename);
-    if (EQUALN(pszFilename, "VirtualShape:", strlen( "VirtualShape:" )) &&
-        nLen > 4 && EQUAL(pszFilename + nLen - 4, ".SHP"))
-    {
-        OGRSQLiteDataSource     *poDS;
-
-        poDS = new OGRSQLiteDataSource();
-
-        char** papszOptions = CSLAddString(NULL, "SPATIALITE=YES");
-        int nRet = poDS->Create( ":memory:", papszOptions );
-        poDS->SetName(pszFilename);
-        CSLDestroy(papszOptions);
-        if (!nRet)
-        {
-            delete poDS;
-            return NULL;
-        }
-
-        char* pszShapeFilename = CPLStrdup(pszFilename + strlen( "VirtualShape:" ));
-        OGRDataSource* poShapeDS = OGRSFDriverRegistrar::Open(pszShapeFilename);
-        if (poShapeDS == NULL)
-        {
-            CPLFree(pszShapeFilename);
-            delete poDS;
-            return NULL;
-        }
-        delete poShapeDS;
-
-        char* pszLastDot = strrchr(pszShapeFilename, '.');
-        if (pszLastDot)
-            *pszLastDot = '\0';
-
-        const char* pszTableName = CPLGetBasename(pszShapeFilename);
-
-        char* pszSQL = CPLStrdup(CPLSPrintf("CREATE VIRTUAL TABLE %s USING VirtualShape(%s, CP1252, -1)",
-                                            pszTableName, pszShapeFilename));
-        poDS->ExecuteSQL(pszSQL, NULL, NULL);
-        CPLFree(pszSQL);
-        CPLFree(pszShapeFilename);
-        return poDS;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Verify that the target is a real file, and has an               */
 /*      appropriate magic string at the beginning.                      */
 /* -------------------------------------------------------------------- */
-    char szHeader[16];
-
-#ifdef HAVE_SQLITE_VFS
-    VSILFILE *fpDB;
-    fpDB = VSIFOpenL( pszFilename, "rb" );
-    if( fpDB == NULL )
-        return NULL;
-    
-    if( VSIFReadL( szHeader, 1, 16, fpDB ) != 16 )
-        memset( szHeader, 0, 16 );
-    
-    VSIFCloseL( fpDB );
-#else
     FILE *fpDB;
+    char szHeader[16];
+    
     fpDB = VSIFOpen( pszFilename, "rb" );
     if( fpDB == NULL )
         return NULL;
-
+    
     if( VSIFRead( szHeader, 1, 16, fpDB ) != 16 )
         memset( szHeader, 0, 16 );
-
+    
     VSIFClose( fpDB );
-#endif
     
     if( strncmp( szHeader, "SQLite format 3", 15 ) != 0 )
         return NULL;
@@ -151,7 +86,7 @@ OGRDataSource *OGRSQLiteDriver::Open( const char * pszFilename,
 
     poDS = new OGRSQLiteDataSource();
 
-    if( !poDS->Open( pszFilename, bUpdate ) )
+    if( !poDS->Open( pszFilename ) )
     {
         delete poDS;
         return NULL;
@@ -171,9 +106,9 @@ OGRDataSource *OGRSQLiteDriver::CreateDataSource( const char * pszName,
 /* -------------------------------------------------------------------- */
 /*      First, ensure there isn't any such file yet.                    */
 /* -------------------------------------------------------------------- */
-    VSIStatBufL sStatBuf;
+    VSIStatBuf sStatBuf;
 
-    if( VSIStatL( pszName, &sStatBuf ) == 0 )
+    if( VSIStat( pszName, &sStatBuf ) == 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "It seems a file system object called '%s' already exists.",
@@ -183,31 +118,132 @@ OGRDataSource *OGRSQLiteDriver::CreateDataSource( const char * pszName,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Try to create datasource.                                       */
+/*      Create the database file.                                       */
 /* -------------------------------------------------------------------- */
-    OGRSQLiteDataSource     *poDS;
+    sqlite3             *hDB;
+    int rc;
 
-    poDS = new OGRSQLiteDataSource();
-
-    if( !poDS->Create( pszName, papszOptions ) )
+    hDB = NULL;
+    rc = sqlite3_open( pszName, &hDB );
+    if( rc != SQLITE_OK )
     {
-        delete poDS;
+        CPLError( CE_Failure, CPLE_OpenFailed, 
+                  "sqlite3_open(%s) failed: %s", 
+                  pszName, sqlite3_errmsg( hDB ) );
         return NULL;
     }
-    else
-        return poDS;
-}
 
-/************************************************************************/
-/*                         DeleteDataSource()                           */
-/************************************************************************/
+/* -------------------------------------------------------------------- */
+/*      Create the SpatiaLite metadata tables.                          */
+/* -------------------------------------------------------------------- */
+    if ( CSLFetchBoolean( papszOptions, "SPATIALITE", FALSE ) )
+    {
+        CPLString osCommand;
+        char *pszErrMsg = NULL;
 
-OGRErr OGRSQLiteDriver::DeleteDataSource( const char *pszName )
-{
-    if (VSIUnlink( pszName ) == 0)
-        return OGRERR_NONE;
+        osCommand = 
+            "CREATE TABLE geometry_columns ("
+            "     f_table_name VARCHAR, "
+            "     f_geometry_column VARCHAR, "
+            "     type VARCHAR, "
+            "     coord_dimension INTEGER, "
+            "     srid INTEGER,"
+            "     spatial_index_enabled INTEGER )";
+        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
+        if( rc != SQLITE_OK )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Unable to create table geometry_columns: %s",
+                      pszErrMsg );
+            sqlite3_free( pszErrMsg );
+            return NULL;
+        }
+
+        osCommand = 
+            "CREATE TABLE spatial_ref_sys        ("
+            "     srid INTEGER UNIQUE,"
+            "     auth_name VARCHAR,"
+            "     auth_srid INTEGER,"
+            "     ref_sys_name VARCHAR,"
+            "     proj4text VARCHAR )";
+        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
+        if( rc != SQLITE_OK )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Unable to create table spatial_ref_sys: %s",
+                      pszErrMsg );
+            sqlite3_free( pszErrMsg );
+            return NULL;
+        }
+    }
+
+/* -------------------------------------------------------------------- */
+/*  Create the geometry_columns and spatial_ref_sys metadata tables.    */
+/* -------------------------------------------------------------------- */
+    else if( CSLFetchBoolean( papszOptions, "METADATA", TRUE ) )
+    {
+        CPLString osCommand;
+        char *pszErrMsg = NULL;
+
+        osCommand = 
+            "CREATE TABLE geometry_columns ("
+            "     f_table_name VARCHAR, "
+            "     f_geometry_column VARCHAR, "
+            "     geometry_type INTEGER, "
+            "     coord_dimension INTEGER, "
+            "     srid INTEGER,"
+            "     geometry_format VARCHAR )";
+        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
+        if( rc != SQLITE_OK )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Unable to create table geometry_columns: %s",
+                      pszErrMsg );
+            sqlite3_free( pszErrMsg );
+            return NULL;
+        }
+
+        osCommand = 
+            "CREATE TABLE spatial_ref_sys        ("
+            "     srid INTEGER UNIQUE,"
+            "     auth_name TEXT,"
+            "     auth_srid TEXT,"
+            "     srtext TEXT)";
+        rc = sqlite3_exec( hDB, osCommand, NULL, NULL, &pszErrMsg );
+        if( rc != SQLITE_OK )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined, 
+                      "Unable to create table spatial_ref_sys: %s",
+                      pszErrMsg );
+            sqlite3_free( pszErrMsg );
+            return NULL;
+        }
+    }
     else
-        return OGRERR_FAILURE;
+    {
+/* -------------------------------------------------------------------- */
+/*      Close the DB file so we can reopen it normally.                 */
+/* -------------------------------------------------------------------- */
+        sqlite3_close( hDB );
+
+        OGRSQLiteDataSource     *poDS;
+        poDS = new OGRSQLiteDataSource();
+
+        if( !poDS->Open( pszName ) )
+        {
+            delete poDS;
+            return NULL;
+        }
+        else
+            return poDS;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Close the DB file so we can reopen it normally.                 */
+/* -------------------------------------------------------------------- */
+    sqlite3_close( hDB );
+
+    return Open( pszName, TRUE );
 }
 
 /************************************************************************/
@@ -218,8 +254,6 @@ int OGRSQLiteDriver::TestCapability( const char * pszCap )
 
 {
     if( EQUAL(pszCap,ODrCCreateDataSource) )
-        return TRUE;
-    else if( EQUAL(pszCap,ODrCDeleteDataSource) )
         return TRUE;
     else
         return FALSE;

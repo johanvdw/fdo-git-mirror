@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonutils.cpp 23293 2011-10-30 11:11:39Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of private utilities used within OGR GeoJSON Driver.
@@ -54,65 +54,6 @@ int GeoJSONIsObject( const char* pszText )
 }
 
 /************************************************************************/
-/*                           GeoJSONFileIsObject()                      */
-/************************************************************************/
-
-int GeoJSONFileIsObject( const char* pszSource ) 
-{ 
-    CPLAssert( NULL != pszSource ); 
- 
-    VSILFILE* fp = NULL; 
-    fp = VSIFOpenL( pszSource, "rb" ); 
-    if( NULL == fp ) 
-    { 
-        return FALSE; 
-    } 
-    
-    // by default read first 6000 bytes 
-    // 6000 was chosen as enough bytes to  
-    // enable all current tests to pass 
-    vsi_l_offset nToReadLen = 6000; 
-    vsi_l_offset nDataLen = 0; 
-
-    char* pszGeoData = (char*)VSIMalloc((size_t)(nToReadLen + 1)); 
-    if( NULL == pszGeoData ) 
-    { 
-        VSIFCloseL(fp); 
-        return FALSE; 
-    } 
-
-    nDataLen = VSIFReadL( pszGeoData, 1, (size_t)nToReadLen, fp );
-    pszGeoData[nDataLen] = '\0'; 
-    if( nDataLen == 0 ) 
-    { 
-        VSIFCloseL( fp ); 
-        CPLFree( pszGeoData ); 
-        return FALSE; 
-    } 
-    VSIFCloseL( fp ); 
-    
-    char* pszIter = pszGeoData;
-    while( *pszIter != '\0' && isspace( (unsigned char)*pszIter ) )
-        pszIter++;
-
-    if( *pszIter != '{' )
-    {
-        CPLFree( pszGeoData ); 
-        return FALSE;
-    }
-
-    int bRet = FALSE; 
-
-    if ((strstr(pszGeoData, "\"type\"") != NULL && strstr(pszGeoData, "\"coordinates\"") != NULL) 
-        || strstr(pszGeoData, "\"FeatureCollection\"") != NULL
-        || (strstr(pszGeoData, "\"geometryType\"") != NULL && strstr(pszGeoData, "\"esriGeometry") != NULL)) 
-        bRet = TRUE; 
-     
-    CPLFree( pszGeoData ); 
-    return bRet; 
-} 
-
-/************************************************************************/
 /*                           GeoJSONGetSourceType()                     */
 /************************************************************************/
 
@@ -129,19 +70,17 @@ GeoJSONSourceType GeoJSONGetSourceType( const char* pszSource )
     }
     else if( EQUAL( CPLGetExtension( pszSource ), "geojson" )
              || EQUAL( CPLGetExtension( pszSource ), "json" )
-             || ((EQUALN( pszSource, "/vsigzip/", 9) || EQUALN( pszSource, "/vsizip/", 8)) &&
-                 (strstr( pszSource, ".json") || strstr( pszSource, ".JSON") ||
-                  strstr( pszSource, ".geojson") || strstr( pszSource, ".GEOJSON")) ))
+             || (EQUALN( pszSource, "/vsigzip/", 9)
+                 && EQUAL( CPLGetExtension( pszSource ), "gz" ))
+             || (EQUALN( pszSource, "/vsizip/", 8)
+                 && EQUAL( CPLGetExtension( pszSource ), "zip" )))
     {
         srcType = eGeoJSONSourceFile;
     }
-    else if( GeoJSONIsObject( pszSource ) )
+    else
     {
-        srcType = eGeoJSONSourceText;
-    }
-    else if( GeoJSONFileIsObject( pszSource ) )
-    {
-        srcType = eGeoJSONSourceFile;
+        if( GeoJSONIsObject( pszSource ) )
+            srcType = eGeoJSONSourceText;
     }
 
     return srcType;
@@ -184,28 +123,7 @@ OGRFieldType GeoJSONPropertyToFieldType( json_object* poObject )
     else if( json_type_string == type )
         return OFTString;
     else if( json_type_array == type )
-    {
-        int nSize = json_object_array_length(poObject);
-        if (nSize == 0)
-            return OFTStringList; /* we don't know, so let's assume it's a string list */
-        OGRFieldType eType = OFTIntegerList;
-        for(int i=0;i<nSize;i++)
-        {
-            json_object* poRow = json_object_array_get_idx(poObject, i);
-            if (poRow != NULL)
-            {
-                type = json_object_get_type( poRow );
-                if (type == json_type_string)
-                    return OFTStringList;
-                else if (type == json_type_double)
-                    eType = OFTRealList;
-                else if (type != json_type_int &&
-                         type != json_type_boolean)
-                    return OFTString;
-            }
-        }
-        return eType;
-    }
+        return OFTStringList; /* string or JSON-string */
     else
         return OFTString; /* null, object */
 }

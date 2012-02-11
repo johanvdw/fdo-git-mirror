@@ -1,9 +1,9 @@
 /******************************************************************************
- * $Id: geo_normalize.c 2037 2011-05-24 01:45:24Z warmerdam $
+ * $Id: geo_normalize.c 1685 2009-11-11 17:08:09Z warmerdam $
  *
  * Project:  libgeotiff
  * Purpose:  Code to normalize PCS and other composite codes in a GeoTIFF file.
- * Author:   Frank Warmerdam, warmerdam@pobox.com
+ * Author:   Frank Warmerdam, warmerda@home.com
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
@@ -67,11 +67,6 @@
 #define EPSGSphericalOriginLong  8829
 #define EPSGInitialLongitude     8830
 #define EPSGZoneWidth            8831
-#define EPSGLatOfStdParallel     8832
-#define EPSGOriginLong           8833
-#define EPSGTopocentricOriginLat 8834
-#define EPSGTopocentricOriginLong 8835
-#define EPSGTopocentricOriginHeight 8836
 
 /************************************************************************/
 /*                           GTIFGetPCSInfo()                           */
@@ -114,13 +109,13 @@ int GTIFGetPCSInfo( int nPCSCode, char **ppszEPSGName,
             }
 
             if (pnProjOp)
-                *pnProjOp = (short) (((Proj == MapSys_UTM_North) ? Proj_UTM_zone_1N - 1 : Proj_UTM_zone_1S - 1) + nZone);
+                *pnProjOp = ((Proj == MapSys_UTM_North) ? Proj_UTM_zone_1N - 1 : Proj_UTM_zone_1S - 1) + nZone;
 
             if (pnUOMLengthCode)
                 *pnUOMLengthCode = 9001; /* Linear_Meter */
 
             if (pnGeogCS)
-                *pnGeogCS = (short) nDatum;
+                *pnGeogCS = nDatum;
 
             return TRUE;
         }
@@ -284,7 +279,7 @@ double GTIFAngleStringToDD( const char * pszAngle, int nUOMAngle )
                     szSeconds[1] = '0';
                     szSeconds[2] = '\0';
                 }
-                dfAngle += GTIFAtof(szSeconds) / 3600.0;
+                dfAngle += atof(szSeconds) / 3600.0;
             }
         }
 
@@ -293,26 +288,26 @@ double GTIFAngleStringToDD( const char * pszAngle, int nUOMAngle )
     }
     else if( nUOMAngle == 9105 || nUOMAngle == 9106 )	/* grad */
     {
-        dfAngle = 180 * (GTIFAtof(pszAngle ) / 200);
+        dfAngle = 180 * (atof(pszAngle ) / 200);
     }
     else if( nUOMAngle == 9101 )			/* radians */
     {
-        dfAngle = 180 * (GTIFAtof(pszAngle ) / PI);
+        dfAngle = 180 * (atof(pszAngle ) / PI);
     }
     else if( nUOMAngle == 9103 )			/* arc-minute */
     {
-        dfAngle = GTIFAtof(pszAngle) / 60;
+        dfAngle = atof(pszAngle) / 60;
     }
     else if( nUOMAngle == 9104 )			/* arc-second */
     {
-        dfAngle = GTIFAtof(pszAngle) / 3600;
+        dfAngle = atof(pszAngle) / 3600;
     }
     else /* decimal degrees ... some cases missing but seeminly never used */
     {
         CPLAssert( nUOMAngle == 9102 || nUOMAngle == KvUserDefined
                    || nUOMAngle == 0 );
         
-        dfAngle = GTIFAtof(pszAngle );
+        dfAngle = atof(pszAngle );
     }
 
     return( dfAngle );
@@ -330,7 +325,7 @@ int GTIFGetGCSInfo( int nGCSCode, char ** ppszName,
 
 {
     char	szSearchKey[24];
-    int		nDatum=0, nPM, nUOMAngle;
+    int		nDatum, nPM, nUOMAngle;
     const char *pszFilename;
 
 /* -------------------------------------------------------------------- */
@@ -457,14 +452,14 @@ int GTIFGetEllipsoidInfo( int nEllipseCode, char ** ppszName,
 
 {
     char	szSearchKey[24];
-    double	dfSemiMajor=0.0, dfToMeters = 1.0;
+    double	dfSemiMajor, dfToMeters = 1.0;
     int		nUOMLength;
     const char* pszFilename;
 
 /* -------------------------------------------------------------------- */
 /*      Try some well known ellipsoids.                                 */
 /* -------------------------------------------------------------------- */
-    double     dfInvFlattening=0.0, dfSemiMinor=0.0;
+    double     dfInvFlattening, dfSemiMinor;
     const char *pszName = NULL;
     
     if( nEllipseCode == Ellipse_Clarke_1866 )
@@ -518,7 +513,7 @@ int GTIFGetEllipsoidInfo( int nEllipseCode, char ** ppszName,
     pszFilename = CSVFilename("ellipsoid.csv" );
 
     dfSemiMajor =
-        GTIFAtof(CSVGetField( pszFilename,
+        atof(CSVGetField( pszFilename,
                           "ELLIPSOID_CODE", szSearchKey, CC_Integer,
                           "SEMI_MAJOR_AXIS" ) );
 
@@ -547,7 +542,7 @@ int GTIFGetEllipsoidInfo( int nEllipseCode, char ** ppszName,
     if( pdfSemiMinor != NULL )
     {
         *pdfSemiMinor =
-            GTIFAtof(CSVGetField( pszFilename,
+            atof(CSVGetField( pszFilename,
                               "ELLIPSOID_CODE", szSearchKey, CC_Integer,
                               "SEMI_MINOR_AXIS" )) * dfToMeters;
 
@@ -556,7 +551,7 @@ int GTIFGetEllipsoidInfo( int nEllipseCode, char ** ppszName,
             double	dfInvFlattening;
             
             dfInvFlattening = 
-                GTIFAtof(CSVGetField( pszFilename,
+                atof(CSVGetField( pszFilename,
                                   "ELLIPSOID_CODE", szSearchKey, CC_Integer,
                                   "INV_FLATTENING" ));
             *pdfSemiMinor = dfSemiMajor * (1 - 1.0/dfInvFlattening);
@@ -650,7 +645,7 @@ int GTIFGetDatumInfo( int nDatumCode, char ** ppszName, short * pnEllipsoid )
 
 {
     char	szSearchKey[24];
-    int		nEllipsoid = 0;
+    int		nEllipsoid;
     const char *pszFilename;
     FILE       *fp;
     const char *pszName = NULL;
@@ -822,9 +817,9 @@ int GTIFGetUOMLengthInfo( int nUOMLengthCode,
         iBFactorField = CSVGetFileFieldId( pszFilename, "FACTOR_B" );
         iCFactorField = CSVGetFileFieldId( pszFilename, "FACTOR_C" );
 
-        if( GTIFAtof(CSLGetField(papszUnitsRecord, iCFactorField)) > 0.0 )
-            *pdfInMeters = GTIFAtof(CSLGetField(papszUnitsRecord, iBFactorField))
-                / GTIFAtof(CSLGetField(papszUnitsRecord, iCFactorField));
+        if( atof(CSLGetField(papszUnitsRecord, iCFactorField)) > 0.0 )
+            *pdfInMeters = atof(CSLGetField(papszUnitsRecord, iBFactorField))
+                / atof(CSLGetField(papszUnitsRecord, iCFactorField));
         else
             *pdfInMeters = 0.0;
     }
@@ -924,12 +919,12 @@ int GTIFGetUOMAngleInfo( int nUOMAngleCode,
         double dfFactorB, dfFactorC, dfInRadians;
         
         dfFactorB = 
-            GTIFAtof(CSVGetField( pszFilename,
+            atof(CSVGetField( pszFilename,
                               "UOM_CODE", szSearchKey, CC_Integer,
                               "FACTOR_B" ));
         
         dfFactorC = 
-            GTIFAtof(CSVGetField( pszFilename,
+            atof(CSVGetField( pszFilename,
                               "UOM_CODE", szSearchKey, CC_Integer,
                               "FACTOR_C" ));
 
@@ -1011,7 +1006,6 @@ static int EPSGProjMethodToCTProjMethod( int nEPSG )
         return( CT_ObliqueStereographic );
 
       case 9810:
-        /* case 9829: variant B not quite the same */ 
         return( CT_PolarStereographic );
 
       case 9811:
@@ -1033,14 +1027,10 @@ static int EPSGProjMethodToCTProjMethod( int nEPSG )
         return( KvUserDefined );
 
       case 9820:
-      case 1027:
         return( CT_LambertAzimEqualArea );
 
       case 9822:
         return( CT_AlbersEqualArea );
-
-      case 9834:
-        return( CT_CylindricalEqualArea );
     }
 
     return( KvUserDefined );
@@ -1100,8 +1090,8 @@ static int SetGTParmIds( int nCTProjection,
         panEPSGCodes[2] = EPSGAzimuth;
         panEPSGCodes[3] = EPSGAngleRectifiedToSkewedGrid;
         panEPSGCodes[4] = EPSGInitialLineScaleFactor;
-        panEPSGCodes[5] = EPSGProjCenterEasting; /* EPSG proj method 9812 uses EPSGFalseEasting, but 9815 uses EPSGProjCenterEasting */
-        panEPSGCodes[6] = EPSGProjCenterNorthing; /* EPSG proj method 9812 uses EPSGFalseNorthing, but 9815 uses EPSGProjCenterNorthing */
+        panEPSGCodes[5] = EPSGProjCenterEasting;
+        panEPSGCodes[6] = EPSGProjCenterNorthing;
         return TRUE;
 
       case CT_ObliqueMercator_Laborde:
@@ -1190,18 +1180,6 @@ static int SetGTParmIds( int nCTProjection,
         panEPSGCodes[1] = EPSGNatOriginLong;
         panEPSGCodes[5] = EPSGFalseEasting;
         panEPSGCodes[6] = EPSGFalseNorthing;
-        return TRUE;
-
-      case CT_CylindricalEqualArea:
-        panProjParmId[0] = ProjStdParallel1GeoKey;
-        panProjParmId[1] = ProjNatOriginLongGeoKey;
-        panProjParmId[5] = ProjFalseEastingGeoKey;
-        panProjParmId[6] = ProjFalseNorthingGeoKey;
-
-        panEPSGCodes[0] = EPSGStdParallel1Lat;
-        panEPSGCodes[1] = EPSGFalseOriginLong;
-        panEPSGCodes[5] = EPSGFalseOriginEasting;
-        panEPSGCodes[6] = EPSGFalseOriginNorthing;
         return TRUE;
 
       default:
@@ -1338,29 +1316,7 @@ int GTIFGetProjTRFInfo( /* COORD_OP_CODE from coordinate_operation.csv */
 
         /* not found, accept the default */
         if( iEPSG == 7 )
-        {
-            /* for CT_ObliqueMercator try alternate parameter codes first */
-            /* because EPSG proj method 9812 uses EPSGFalseXXXXX, but 9815 uses EPSGProjCenterXXXXX */
-            if ( nCTProjMethod == CT_ObliqueMercator && nEPSGCode == EPSGProjCenterEasting )
-                nEPSGCode = EPSGFalseEasting;
-            else if ( nCTProjMethod == CT_ObliqueMercator && nEPSGCode == EPSGProjCenterNorthing )
-                nEPSGCode = EPSGFalseNorthing;
-            else
-                continue;
-                
-            for( iEPSG = 0; iEPSG < 7; iEPSG++ )
-            {
-                sprintf( szParamCodeID, "PARAMETER_CODE_%d", iEPSG+1 );
-
-                if( atoi(CSVGetField( pszFilename,
-                                      "COORD_OP_CODE", szTRFCode, CC_Integer, 
-                                      szParamCodeID )) == nEPSGCode )
-                    break;
-            }
-            
-            if( iEPSG == 7 )
-                continue;
-        }
+            continue;
 
         /* Get the value, and UOM */
         sprintf( szParamUOMID, "PARAMETER_UOM_%d", iEPSG+1 );
@@ -1382,10 +1338,10 @@ int GTIFGetProjTRFInfo( /* COORD_OP_CODE from coordinate_operation.csv */
 
             if( !GTIFGetUOMLengthInfo( nUOM, NULL, &dfInMeters ) )
                 dfInMeters = 1.0;
-            adfProjParms[i] = GTIFAtof(pszValue) * dfInMeters;
+            adfProjParms[i] = atof(pszValue) * dfInMeters;
         }
         else
-            adfProjParms[i] = GTIFAtof(pszValue);
+            adfProjParms[i] = atof(pszValue);
     }
 
 /* -------------------------------------------------------------------- */
@@ -1430,7 +1386,6 @@ static void GTIFFetchProjParms( GTIF * psGTIF, GTIFDefn * psDefn )
     double dfNatOriginLong = 0.0, dfNatOriginLat = 0.0, dfRectGridAngle = 0.0;
     double dfFalseEasting = 0.0, dfFalseNorthing = 0.0, dfNatOriginScale = 1.0;
     double dfStdParallel1 = 0.0, dfStdParallel2 = 0.0, dfAzimuth = 0.0;
-    int iParm;
 
 /* -------------------------------------------------------------------- */
 /*      Get the false easting, and northing if available.               */
@@ -1893,33 +1848,6 @@ static void GTIFFetchProjParms( GTIF * psGTIF, GTIFDefn * psDefn )
         psDefn->nParms = 7;
         break;
     }
-
-/* -------------------------------------------------------------------- */
-/*      Normalize any linear parameters into meters.  In GeoTIFF        */
-/*      the linear projection parameter tags are normally in the        */
-/*      units of the coordinate system described.                       */
-/* -------------------------------------------------------------------- */
-    for( iParm = 0; iParm < psDefn->nParms; iParm++ )
-    {
-        switch( psDefn->ProjParmId[iParm] )
-        {
-          case ProjFalseEastingGeoKey:
-          case ProjFalseNorthingGeoKey:
-          case ProjFalseOriginEastingGeoKey:
-          case ProjFalseOriginNorthingGeoKey:
-          case ProjCenterEastingGeoKey:
-          case ProjCenterNorthingGeoKey:
-            if( psDefn->UOMLengthInMeters != 0 
-                && psDefn->UOMLengthInMeters != 1.0 )
-            {
-                psDefn->ProjParm[iParm] *= psDefn->UOMLengthInMeters;
-            }
-            break;
-
-          default:
-            break;
-        }
-    }
 }
 
 /************************************************************************/
@@ -2066,8 +1994,6 @@ int GTIFGetDefn( GTIF * psGTIF, GTIFDefn * psDefn )
     psDefn->SemiMinor = 0.0;
     psDefn->PM = KvUserDefined;
     psDefn->PMLongToGreenwich = 0.0;
-    psDefn->TOWGS84Count = 0;
-    memset( psDefn->TOWGS84, 0, sizeof(psDefn->TOWGS84) );
 
     psDefn->ProjCode = KvUserDefined;
     psDefn->Projection = KvUserDefined;
@@ -2255,12 +2181,6 @@ int GTIFGetDefn( GTIF * psGTIF, GTIFDefn * psDefn )
             GTIFAngleToDD( psDefn->PMLongToGreenwich,
                            psDefn->UOMAngle );
     }
-
-/* -------------------------------------------------------------------- */
-/*      Get the TOWGS84 parameters.                                     */
-/* -------------------------------------------------------------------- */
-    psDefn->TOWGS84Count = 
-        GTIFKeyGet(psGTIF, GeogTOWGS84GeoKey, &(psDefn->TOWGS84), 0, 7 );
 
 /* -------------------------------------------------------------------- */
 /*      Have the projection units of measure been overridden?  We       */
@@ -2527,25 +2447,6 @@ void GTIFPrintDefn( GTIFDefn * psDefn, FILE * fp )
                  psDefn->PMLongToGreenwich,
                  GTIFDecToDMS( psDefn->PMLongToGreenwich, "Long", 2 ) );
         CPLFree( pszName );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Report TOWGS84 parameters.                                      */
-/* -------------------------------------------------------------------- */
-    if( psDefn->TOWGS84Count > 0 )
-    {
-        int i;
-
-        fprintf( fp, "TOWGS84: " );
-        
-        for( i = 0; i < psDefn->TOWGS84Count; i++ )
-        {
-            if( i > 0 )
-                fprintf( fp, "," );
-            fprintf( fp, "%g", psDefn->TOWGS84[i] );
-        }
-
-        fprintf( fp, "\n" );
     }
 
 /* -------------------------------------------------------------------- */

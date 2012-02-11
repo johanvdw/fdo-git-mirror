@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfsubfielddefn.cpp 23595 2011-12-18 22:58:47Z rouault $
+ * $Id: ddfsubfielddefn.cpp 17405 2009-07-17 06:13:24Z chaitanya $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFSubfieldDefn class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfsubfielddefn.cpp 23595 2011-12-18 22:58:47Z rouault $");
+CPL_CVSID("$Id: ddfsubfielddefn.cpp 17405 2009-07-17 06:13:24Z chaitanya $");
 
 /************************************************************************/
 /*                          DDFSubfieldDefn()                           */
@@ -135,13 +135,7 @@ int DDFSubfieldDefn::SetFormat( const char * pszFormat )
         bIsVariable = FALSE;
         if( pszFormatString[1] == '(' )
         {
-            if( atoi(pszFormatString+2) % 8 != 0 )
-            {
-                 CPLError( CE_Failure, CPLE_AppDefined,
-                           "Format width %s is invalid.",
-                           pszFormatString+2 );
-                return FALSE;
-            }
+            CPLAssert( atoi(pszFormatString+2) % 8 == 0 );
             
             nFormatWidth = atoi(pszFormatString+2) / 8;
             eBinaryFormat = SInt; // good default, works for SDTS.
@@ -172,6 +166,7 @@ int DDFSubfieldDefn::SetFormat( const char * pszFormat )
                   "Format type of `%c' not supported.\n",
                   pszFormatString[0] );
         
+        CPLAssert( FALSE );
         return FALSE;
         
       default:
@@ -179,6 +174,7 @@ int DDFSubfieldDefn::SetFormat( const char * pszFormat )
                   "Format type of `%c' not recognised.\n",
                   pszFormatString[0] );
         
+        CPLAssert( FALSE );
         return FALSE;
     }
     
@@ -449,15 +445,7 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
       {
           unsigned char   abyData[8];
 
-          if( nFormatWidth > nMaxBytes )
-          {
-              CPLError( CE_Warning, CPLE_AppDefined,
-                        "Attempt to extract float subfield %s with format %s\n"
-                        "failed as only %d bytes available.  Using zero.",
-                        pszName, pszFormatString, nMaxBytes );
-              return 0;
-          }
-
+          CPLAssert( nFormatWidth <= nMaxBytes );
           if( pnConsumedBytes != NULL )
               *pnConsumedBytes = nFormatWidth;
 
@@ -490,7 +478,7 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
                   return( *((GUInt32 *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0.0;
               }
             
@@ -503,7 +491,7 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
                   return( *((GInt32 *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0.0;
               }
             
@@ -514,14 +502,14 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
                   return( *((double *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0.0;
               }
 
             case NotBinary:            
             case FPReal:
             case FloatComplex:
-              //CPLAssert( FALSE );
+              CPLAssert( FALSE );
               return 0.0;
           }
           break;
@@ -529,11 +517,11 @@ DDFSubfieldDefn::ExtractFloatData( const char * pachSourceData,
       }
 
       default:
-        //CPLAssert( FALSE );
+        CPLAssert( FALSE );
         return 0.0;
     }
 
-    //CPLAssert( FALSE );
+    CPLAssert( FALSE );
     return 0.0;
 }
 
@@ -625,7 +613,7 @@ DDFSubfieldDefn::ExtractIntData( const char * pachSourceData,
                   return( *((GUInt16 *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0;
               }
             
@@ -638,7 +626,7 @@ DDFSubfieldDefn::ExtractIntData( const char * pachSourceData,
                   return( *((GInt16 *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0;
               }
             
@@ -649,14 +637,14 @@ DDFSubfieldDefn::ExtractIntData( const char * pachSourceData,
                   return( (int) *((double *) abyData) );
               else
               {
-                  //CPLAssert( FALSE );
+                  CPLAssert( FALSE );
                   return 0;
               }
 
             case NotBinary:            
             case FPReal:
             case FloatComplex:
-              //CPLAssert( FALSE );
+              CPLAssert( FALSE );
               return 0;
           }
           break;
@@ -664,11 +652,11 @@ DDFSubfieldDefn::ExtractIntData( const char * pachSourceData,
       }
 
       default:
-        //CPLAssert( FALSE );
+        CPLAssert( FALSE );
         return 0;
     }
 
-    //CPLAssert( FALSE );
+    CPLAssert( FALSE );
     return 0;
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocisession.cpp 22346 2011-05-10 03:02:15Z warmerdam $
+ * $Id: ogrocisession.cpp 16515 2009-03-08 19:25:45Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of OGROCISession, which encapsulates much of the
@@ -31,7 +31,9 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocisession.cpp 22346 2011-05-10 03:02:15Z warmerdam $");
+CPL_CVSID("$Id: ogrocisession.cpp 16515 2009-03-08 19:25:45Z warmerdam $");
+
+static OCIEnv *ghOracleEnvironment = NULL;
 
 /************************************************************************/
 /*                          OGRGetOCISession()                          */
@@ -64,8 +66,6 @@ OGROCISession::OGROCISession()
     hEnv = NULL;
     hError = NULL;
     hSvcCtx = NULL;
-    hServer = NULL;
-    hSession = NULL;
     hDescribe = NULL;
     hGeometryTDO = NULL;
     hOrdinatesTDO = NULL;
@@ -86,24 +86,7 @@ OGROCISession::~OGROCISession()
         OCIHandleFree((dvoid *)hDescribe, (ub4)OCI_HTYPE_DESCRIBE);
 
     if( hSvcCtx != NULL )
-    {
-        OCISessionEnd(hSvcCtx, hError, hSession, (ub4) 0);
-
-        if( hSvcCtx && hError)
-            OCIServerDetach(hServer, hError, (ub4) OCI_DEFAULT);
-
-        if( hServer )
-            OCIHandleFree((dvoid *) hServer, (ub4) OCI_HTYPE_SERVER);
-
-        if( hSvcCtx )
-            OCIHandleFree((dvoid *) hSvcCtx, (ub4) OCI_HTYPE_SVCCTX);
-
-        if( hError )
-            OCIHandleFree((dvoid *) hError, (ub4) OCI_HTYPE_ERROR);
-
-        if( hSession )
-            OCIHandleFree((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION);
-    }
+        OCILogoff( hSvcCtx, hError );
 
     CPLFree( pszUserid );
     CPLFree( pszPassword );
@@ -119,121 +102,53 @@ int OGROCISession::EstablishSession( const char *pszUserid,
                                      const char *pszDatabase )
 
 {
-/* -------------------------------------------------------------------- */
-/*      Operational Systems's authentication option                     */
-/* -------------------------------------------------------------------- */
-
-    ub4 eCred = OCI_CRED_RDBMS;
-
-    if( EQUAL(pszDatabase, "") &&
-        EQUAL(pszPassword, "") &&
-        EQUAL(pszUserid, "/") )
-    {
-        eCred = OCI_CRED_EXT;
-    }
+    sword nStatus;
 
 /* -------------------------------------------------------------------- */
-/*      Initialize Environment handler                                  */
+/*      Establish the environment.                                      */
 /* -------------------------------------------------------------------- */
-
-    if( Failed( OCIInitialize((ub4) (OCI_DEFAULT | OCI_OBJECT), (dvoid *)0,
-                (dvoid * (*)(dvoid *, size_t)) 0,
-                (dvoid * (*)(dvoid *, dvoid *, size_t))0,
-                (void (*)(dvoid *, dvoid *)) 0 ) ) )
+    if( ghOracleEnvironment == NULL )
     {
-        return FALSE;
+        nStatus = 
+            OCIEnvCreate( &ghOracleEnvironment, OCI_OBJECT, (dvoid *)0, 
+                          0, 0, 0, (size_t) 0, (dvoid **)0 );
+
+        if( nStatus == -1 || ghOracleEnvironment == NULL )
+        {
+            CPLDebug("OCI", 
+                     "OCIEnvCreate() failed with status %d.\n"
+                     "Presumably Oracle is not properly installed, skipping.",
+                     (int)nStatus);
+                      
+            return FALSE;
+        }
+        
     }
 
-    if( Failed( OCIEnvInit( (OCIEnv **) &hEnv, OCI_DEFAULT, (size_t) 0,
-                (dvoid **) 0 ) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hError,
-                OCI_HTYPE_ERROR, (size_t) 0, (dvoid **) 0) ) )
-    {
-        return FALSE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Initialize Server Context                                       */
-/* -------------------------------------------------------------------- */
-
-    if( Failed( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hServer,
-                OCI_HTYPE_SERVER, (size_t) 0, (dvoid **) 0) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hSvcCtx,
-                OCI_HTYPE_SVCCTX, (size_t) 0, (dvoid **) 0) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIServerAttach( hServer, hError, (text*) pszDatabase,
-                strlen((char*) pszDatabase), 0) ) )
-    {
-        return FALSE;
-    }
+    hEnv = ghOracleEnvironment;
 
 /* -------------------------------------------------------------------- */
-/*      Initialize Service Context                                      */
+/*      Create the error handle.                                        */
 /* -------------------------------------------------------------------- */
-
-    if( Failed( OCIAttrSet( (dvoid *) hSvcCtx, OCI_HTYPE_SVCCTX, (dvoid *)hServer,
-                (ub4) 0, OCI_ATTR_SERVER, (OCIError *) hError) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIHandleAlloc((dvoid *) hEnv, (dvoid **)&hSession,
-                (ub4) OCI_HTYPE_SESSION, (size_t) 0, (dvoid **) 0) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-                (dvoid *) pszUserid, (ub4) strlen((char *) pszUserid),
-                (ub4) OCI_ATTR_USERNAME, hError) ) )
-    {
-        return FALSE;
-    }
-
-    if( Failed( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-                (dvoid *) pszPassword, (ub4) strlen((char *) pszPassword),
-                (ub4) OCI_ATTR_PASSWORD, hError) ) )
-    {
-        return FALSE;
-    }
+    nStatus = OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hError, 
+                              (ub4) OCI_HTYPE_ERROR, (size_t) 0, 
+                              (dvoid **) NULL );
 
 /* -------------------------------------------------------------------- */
-/*      Initialize Session                                              */
+/*      Attempt Logon.                                                  */
 /* -------------------------------------------------------------------- */
-
-    if( Failed( OCISessionBegin(hSvcCtx, hError, hSession, eCred,
-                (ub4) OCI_DEFAULT) ) )
-    {
-        CPLDebug("OCI", "OCISessionBegin() failed to intialize session");
+    if( Failed( OCILogon( hEnv, hError, &hSvcCtx, 
+                          (text *) pszUserid, 
+                          strlen(pszUserid),
+                          (text *) pszPassword, 
+                          strlen(pszPassword),
+                          (text *) pszDatabase, 
+                          pszDatabase ? strlen(pszDatabase):0 ) ))
         return FALSE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Initialize Service                                              */
-/* -------------------------------------------------------------------- */
-
-    if( Failed( OCIAttrSet((dvoid *) hSvcCtx, (ub4) OCI_HTYPE_SVCCTX,
-                (dvoid *) hSession, (ub4) 0,
-                (ub4) OCI_ATTR_SESSION, hError) ) )
-    {
-        return FALSE;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Create a describe handle.                                       */
 /* -------------------------------------------------------------------- */
-
     if( Failed( 
         OCIHandleAlloc( hEnv, (dvoid **) &hDescribe, (ub4)OCI_HTYPE_DESCRIBE, 
                         (size_t)0, (dvoid **)0 ), 
@@ -248,7 +163,7 @@ int OGROCISession::EstablishSession( const char *pszUserid,
         See #2202 for more details (Tamas Szekeres)*/
     if (OCIDescribeAny(hSvcCtx, hError, 
                        (text *) SDO_GEOMETRY, (ub4) strlen(SDO_GEOMETRY), 
-                       OCI_OTYPE_NAME, (ub1) OCI_DEFAULT, (ub1)OCI_PTYPE_TYPE,
+                       OCI_OTYPE_NAME, (ub1)1, (ub1)OCI_PTYPE_TYPE, 
                        hDescribe ) != OCI_ERROR)
     {
         hGeometryTDO = PinTDO( SDO_GEOMETRY );
@@ -384,7 +299,7 @@ OGROCISession::GetParmInfo( OCIParam *hParmDesc, OGRFieldDefn *poOGRDefn,
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Column length (%d) longer than column name buffer (%d) in\n"
                   "OGROCISession::GetParmInfo()", 
-                  nColLen, (int) sizeof(szTermColName) );
+                  nColLen, sizeof(szTermColName) );
         return CE_Failure;
     }
 

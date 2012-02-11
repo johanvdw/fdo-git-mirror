@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_polygonize.py 19392 2010-04-12 18:27:09Z rouault $
+#  $Id: gdal_polygonize.py 18306 2009-12-15 18:57:11Z rouault $
 # 
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for converting raster data to a vector polygon layer.
@@ -130,7 +130,7 @@ except:
 src_ds = gdal.Open( src_filename )
     
 if src_ds is None:
-    print('Unable to open %s' % src_filename)
+    print('Unable to open ', src_filename)
     sys.exit(1)
 
 srcband = src_ds.GetRasterBand(src_band_n)
@@ -186,12 +186,7 @@ if dst_layer is None:
     fd = ogr.FieldDefn( dst_fieldname, ogr.OFTInteger )
     dst_layer.CreateField( fd )
     dst_field = 0
-else:
-    if dst_fieldname is not None:
-        dst_field = dst_layer.GetLayerDefn().GetFieldIndex(dst_fieldname)
-        if dst_field < 0:
-            print("Warning: cannot find field '%s' in layer '%s'" % (dst_fieldname, dst_layername))
-
+    
 # =============================================================================
 #	Invoke algorithm.
 # =============================================================================
@@ -205,9 +200,8 @@ result = gdal.Polygonize( srcband, maskband, dst_layer, dst_field, options,
                           callback = prog_func )
     
 srcband = None
-src_ds = None
 dst_ds = None
-mask_ds = None
+
 
 
 

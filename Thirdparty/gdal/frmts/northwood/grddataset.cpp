@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grddataset.cpp 23597 2011-12-18 23:29:48Z rouault $
+ * $Id: grddataset.cpp 18354 2009-12-20 10:42:15Z rouault $
  *
  * Project:  GRD Reader
  * Purpose:  GDAL driver for Northwood Grid Format
@@ -52,7 +52,7 @@ class NWT_GRDDataset:public GDALPamDataset
 {
   friend class NWT_GRDRasterBand;
 
-    VSILFILE *fp;
+    FILE *fp;
     GByte abyHeader[1024];
     NWT_GRID *pGrd;
     NWT_RGB ColorMap[4096];
@@ -63,7 +63,6 @@ class NWT_GRDDataset:public GDALPamDataset
     ~NWT_GRDDataset();
 
     static GDALDataset *Open( GDALOpenInfo * );
-    static int Identify( GDALOpenInfo * );
 
     CPLErr GetGeoTransform( double *padfTransform );
     const char *GetProjectionRef();
@@ -90,8 +89,6 @@ class NWT_GRDRasterBand:public GDALPamRasterBand
     virtual CPLErr IReadBlock( int, int, void * );
     virtual double GetNoDataValue( int *pbSuccess );
 
-    /* FIXME. I don't believe it is correct to advertize offset and */
-    /* scale because IReadBlock() already apply them. */
     virtual double GetOffset( int *pbSuccess = NULL );
     virtual CPLErr SetOffset( double dfNewValue );
     virtual double GetScale( int *pbSuccess = NULL );
@@ -138,20 +135,10 @@ NWT_GRDRasterBand::NWT_GRDRasterBand( NWT_GRDDataset * poDS, int nBand )
 
 double NWT_GRDRasterBand::GetNoDataValue( int *pbSuccess )
 {
-    if (nBand == 4)
-    {
-        if( pbSuccess != NULL )
-            *pbSuccess = TRUE;
+    if( pbSuccess != NULL )
+        *pbSuccess = TRUE;
 
-        return (float)-1.e37;
-    }
-    else
-    {
-        if( pbSuccess != NULL )
-            *pbSuccess = FALSE;
-
-        return 0;
-    }
+    return 0;                    //Northwood grid 0 is always null
 }
 
 GDALColorInterp NWT_GRDRasterBand::GetColorInterpretation()
@@ -180,10 +167,10 @@ CPLErr NWT_GRDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff, void *pIma
     int i;
     unsigned short raw1;
 
-    VSIFSeekL( poGDS->fp, 1024 + nRecordSize * nBlockYOff, SEEK_SET );
+    VSIFSeek( poGDS->fp, 1024 + nRecordSize * nBlockYOff, SEEK_SET );
 
     pszRecord = (char *) CPLMalloc( nRecordSize );
-    VSIFReadL( pszRecord, 1, nRecordSize, poGDS->fp );
+    VSIFRead( pszRecord, 1, nRecordSize, poGDS->fp );
 
     if( nBand == 4 )                //Z values
     {
@@ -193,11 +180,11 @@ CPLErr NWT_GRDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff, void *pIma
             CPL_LSBPTR16(&raw1);
             if( raw1 == 0 )
             {
-                ((float *)pImage)[i] = (float)-1.e37;    // null value
+                ((float *)pImage)[i] = -1.e37;    // null value
             }
             else
             {
-                ((float *)pImage)[i] = (float) (dfOffset + ((raw1 - 1) * dfScale));
+                ((float *)pImage)[i] = dfOffset + ((raw1 - 1) * dfScale);
             }
         }
     }
@@ -309,7 +296,7 @@ NWT_GRDDataset::~NWT_GRDDataset()
     nwtCloseGrid( pGrd );
 
     if( fp != NULL )
-        VSIFCloseL( fp );
+        VSIFClose( fp );
 
     if( pszProjection != NULL )
     {
@@ -356,34 +343,21 @@ const char *NWT_GRDDataset::GetProjectionRef()
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int NWT_GRDDataset::Identify( GDALOpenInfo * poOpenInfo )
-{
-/* -------------------------------------------------------------------- */
-/*  Look for the header                                                 */
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 50 )
-        return FALSE;
-
-    if( poOpenInfo->pabyHeader[0] != 'H' ||
-        poOpenInfo->pabyHeader[1] != 'G' ||
-        poOpenInfo->pabyHeader[2] != 'P' ||
-        poOpenInfo->pabyHeader[3] != 'C' ||
-        poOpenInfo->pabyHeader[4] != '1' )
-        return FALSE;
-
-    return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 GDALDataset *NWT_GRDDataset::Open( GDALOpenInfo * poOpenInfo )
 {
-    if( !Identify(poOpenInfo) )
+/* -------------------------------------------------------------------- */
+/*  Look for the header                                                 */
+/* -------------------------------------------------------------------- */
+    if( poOpenInfo->fp == NULL || poOpenInfo->nHeaderBytes < 50 )
         return NULL;
+
+    if( poOpenInfo->pabyHeader[0] != 'H' ||
+        poOpenInfo->pabyHeader[1] != 'G' ||
+        poOpenInfo->pabyHeader[2] != 'P' ||
+        poOpenInfo->pabyHeader[3] != 'C' || poOpenInfo->pabyHeader[4] != '1' )
+    return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -392,22 +366,15 @@ GDALDataset *NWT_GRDDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS = new NWT_GRDDataset();
 
-    poDS->fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
-    if (poDS->fp == NULL)
-    {
-        delete poDS;
-        return NULL;
-    }
+    poDS->fp = poOpenInfo->fp;
+    poOpenInfo->fp = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Read the header.                                                */
 /* -------------------------------------------------------------------- */
-    VSIFSeekL( poDS->fp, 0, SEEK_SET );
-    VSIFReadL( poDS->abyHeader, 1, 1024, poDS->fp );
+    VSIFSeek( poDS->fp, 0, SEEK_SET );
+    VSIFRead( poDS->abyHeader, 1, 1024, poDS->fp );
     poDS->pGrd = (NWT_GRID *) malloc(sizeof(NWT_GRID));
-
-    poDS->pGrd->fp = poDS->fp;
-
     if (!nwt_ParseHeader( poDS->pGrd, (char *) poDS->abyHeader ) ||
         !GDALCheckDatasetDimensions(poDS->pGrd->nXSide, poDS->pGrd->nYSide) )
     {
@@ -436,11 +403,6 @@ GDALDataset *NWT_GRDDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
     return (poDS);
 }
 
@@ -461,10 +423,8 @@ void GDALRegister_NWT_GRD()
                                  "Northwood Numeric Grid Format .grd/.tab" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_various.html#grd");
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "grd" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = NWT_GRDDataset::Open;
-        poDriver->pfnIdentify = NWT_GRDDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

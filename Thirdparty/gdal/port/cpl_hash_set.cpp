@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_hash_set.cpp 19040 2010-03-10 17:28:41Z warmerdam $
+ * $Id: cpl_hash_set.cpp 16029 2009-01-01 19:32:39Z rouault $
  *
  * Name:     cpl_hash_set.cpp
  * Project:  CPL - Common Portability Library
@@ -379,7 +379,7 @@ int CPLHashSetRemove(CPLHashSet* set, const void* elt)
 
 unsigned long CPLHashSetHashPointer(const void* elt)
 {
-    return (unsigned long)(GUIntBig) elt;
+    return (unsigned long)elt;
 }
 
 /************************************************************************/

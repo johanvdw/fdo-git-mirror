@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgtmdatasource.cpp 21684 2011-02-11 22:14:01Z warmerdam $
+ * $Id: ogrgtmdatasource.cpp 17604 2009-09-02 18:46:38Z rouault $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of OGRGTMDataSource class.
@@ -124,7 +124,7 @@ void OGRGTMDataSource::WriteWaypointStyles()
                 strncpy((char*)pBufferAux, "Arial", 5);
                 pBufferAux = ((char*)pBufferAux) + 5; 
                 // dspl
-                appendUChar(pBufferAux, (unsigned char) i);
+                appendUChar(pBufferAux, i);
                 pBufferAux = ((char*)pBufferAux) + 1;
                 // color
                 appendInt(pBufferAux, 0);
@@ -417,7 +417,7 @@ int OGRGTMDataSource::Create( const char* pszFilename, char** papszOptions )
         strcpy((char*)pCurrentPos, "Arial");
         pCurrentPos = ((char*)pCurrentPos) + 5;
     }
-    appendUShort(pCurrentPos, (unsigned short) strlen(pszBaseFileName));
+    appendUShort(pCurrentPos, strlen(pszBaseFileName));
     pCurrentPos = ((char*)pCurrentPos) + 2;
     strcpy((char*)pCurrentPos, pszBaseFileName);
 

@@ -59,8 +59,7 @@ namespace PCIDSK
         void        LoadSegmentPointer( const char *segment_pointer );
         void        LoadSegmentHeader();
 
-        PCIDSKBuffer &GetHeader() { return header; }
-        void        FlushHeader();
+        PCIDSKBuffer &GetHeader();
 
         void      WriteToFile( const void *buffer, uint64 offset, uint64 size );
         void      ReadFromFile( void *buffer, uint64 offset, uint64 size );
@@ -72,20 +71,11 @@ namespace PCIDSK
         uint64      GetContentSize() { return data_size - 1024; }
         bool        IsAtEOF();
 
-        void        SetDescription( const std::string &description);
-        
-        std::string GetMetadataValue( const std::string &key ) const;
-        void        SetMetadataValue( const std::string &key, const std::string &value );
-        std::vector<std::string> GetMetadataKeys() const;
+        std::string GetMetadataValue( std::string key );
+        void        SetMetadataValue( std::string key, std::string value );
+        std::vector<std::string> GetMetadataKeys();
             
         virtual void Synchronize() {}
-        
-        std::vector<std::string> GetHistoryEntries() const;
-        void SetHistoryEntries( const std::vector<std::string> &entries );
-        void PushHistory(const std::string &app,
-                         const std::string &message);
-
-        virtual std::string ConsistencyCheck() { return ""; }
 
     protected:
         PCIDSKFile *file;
@@ -96,17 +86,12 @@ namespace PCIDSK
         char        segment_flag;
         std::string segment_name;
 
-        uint64	    data_offset;     // includes 1024 byte segment header.
+        uint64	data_offset;     // includes 1024 byte segment header.
         uint64      data_size;
 
         PCIDSKBuffer header;
 
-        mutable MetadataSet  *metadata;
-        
-        std::vector<std::string> history_;
-
-        void        MoveData( uint64 src_offset, uint64 dst_offset, 
-                              uint64 size_in_bytes );
+        MetadataSet  *metadata;
     };
     
 } // end namespace PCIDSK

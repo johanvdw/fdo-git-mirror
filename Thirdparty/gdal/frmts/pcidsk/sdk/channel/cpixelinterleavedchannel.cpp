@@ -39,13 +39,12 @@ using namespace PCIDSK;
 /************************************************************************/
 
 CPixelInterleavedChannel::CPixelInterleavedChannel( PCIDSKBuffer &image_header, 
-                                                    uint64 ih_offset,
                                                     PCIDSKBuffer &file_header,
                                                     int channelnum,
                                                     CPCIDSKFile *file,
                                                     int image_offset,
                                                     eChanType pixel_type )
-        : CPCIDSKChannel( image_header, ih_offset, file, pixel_type, channelnum)
+        : CPCIDSKChannel( image_header, file, pixel_type, channelnum )
 
 {
     this->image_offset = image_offset;
@@ -155,19 +154,9 @@ int CPixelInterleavedChannel::ReadBlock( int block_index, void *buffer,
 /*      Do byte swapping if needed.                                     */
 /* -------------------------------------------------------------------- */
     if( needs_swap )
-        SwapPixels( buffer, pixel_type, win_xsize );
+        SwapData( buffer, pixel_size, win_xsize );
 
     return 1;
-}
-
-template <typename T>
-void CopyPixels(const T* const src, T* const dst,
-                std::size_t offset, std::size_t count)
-{
-    for (std::size_t i = 0; i < count; i++)
-    {
-        dst[i] = src[(i + 1) * offset];
-    }
 }
 
 /************************************************************************/
@@ -179,8 +168,6 @@ int CPixelInterleavedChannel::WriteBlock( int block_index, void *buffer )
 {
     if( !file->GetUpdatable() )
         throw PCIDSKException( "File not open for update in WriteBlock()" );
-
-    InvalidateOverviews();
 
 /* -------------------------------------------------------------------- */
 /*      Work out sizes and offsets.                                     */
@@ -198,7 +185,6 @@ int CPixelInterleavedChannel::WriteBlock( int block_index, void *buffer )
 /*      reasonably efficiently.  We might consider adding faster        */
 /*      cases for 16/32bit data that is word aligned.                   */
 /* -------------------------------------------------------------------- */
-    // TODO: fixup for the complex case
     if( pixel_size == pixel_group )
         memcpy( pixel_buffer, buffer, pixel_size * width );
     else

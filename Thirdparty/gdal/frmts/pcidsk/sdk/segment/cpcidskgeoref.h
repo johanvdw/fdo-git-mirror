@@ -43,7 +43,7 @@ namespace PCIDSK
     /*                            CPCIDSKGeoref                             */
     /************************************************************************/
 
-    class CPCIDSKGeoref : virtual public CPCIDSKSegment, 
+    class CPCIDSKGeoref : public CPCIDSKSegment, 
                           public PCIDSKGeoref
     {
     public:
@@ -51,22 +51,16 @@ namespace PCIDSK
 
         virtual     ~CPCIDSKGeoref();
 
-        // PCIDSKSegment 
-
-        void        Initialize();
-
-        // PCIDSKGeoref
-
         void        GetTransform( double &a1, double &a2, double &xrot, 
                                   double &b1, double &yrot, double &b3 );
         std::string GetGeosys();
 
         std::vector<double> GetParameters();
 
-        void        WriteSimple( std::string const& geosys, 
+        void        WriteSimple( std::string geosys, 
                                  double a1, double a2, double xrot, 
                                  double b1, double yrot, double b3 );
-        void        WriteParameters( std::vector<double> const& parameters );
+        void        WriteParameters( std::vector<double> &parameters );
 
         // special interface just for testing.
         std::vector<double> GetUSGSParameters();
@@ -79,7 +73,7 @@ namespace PCIDSK
         
         void         Load();
         void         PrepareGCTPFields();
-        std::string  ReformatGeosys( std::string const& geosys );
+        void         ReformatGeosys( std::string &geosys );
 
         PCIDSKBuffer seg_data;
     };

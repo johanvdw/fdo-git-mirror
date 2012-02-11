@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IntergraphDataset.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: IntergraphDataset.h 12099 2007-09-08 15:31:30Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read selected types of Intergraph Raster Format
@@ -41,7 +41,7 @@ class IntergraphDataset : public GDALPamDataset
     friend class IntergraphRLEBand;
 
 private:
-    VSILFILE       *fp;
+    FILE           *fp;
     char           *pszFilename;
     double          adfGeoTransform[6];
 

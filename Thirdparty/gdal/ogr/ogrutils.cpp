@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrutils.cpp 23584 2011-12-17 09:43:03Z rouault $
+ * $Id: ogrutils.cpp 17696 2009-09-26 15:56:39Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility functions for OGR classes, including some related to
@@ -37,117 +37,41 @@
 # include "ogrsf_frmts.h"
 #endif /* OGR_ENABLED */
 
-CPL_CVSID("$Id: ogrutils.cpp 23584 2011-12-17 09:43:03Z rouault $");
+CPL_CVSID("$Id: ogrutils.cpp 17696 2009-09-26 15:56:39Z rouault $");
 
 /************************************************************************/
-/*                        OGRFormatDouble()                             */
+/*                         OGRTrimExtraZeros()                          */
 /************************************************************************/
 
-void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDecimalSep, int nPrecision )
+static void OGRTrimExtraZeros( char *pszTarget )
+
 {
-    int i;
-    int bHasTruncated = FALSE;
-    char szFormat[16];
-    sprintf(szFormat, "%%.%df", nPrecision);
+    int i = 0;
 
-    int ret = snprintf(pszBuffer, nBufferLen, szFormat, dfVal);
-    /* Windows CRT doesn't conform with C99 and return -1 when buffer is truncated */
-    if (ret >= nBufferLen || ret == -1)
-        return;
+    while( pszTarget[i] != '\0' ) 
+        i++;
 
-    while(TRUE)
+/* -------------------------------------------------------------------- */
+/*      Trim trailing 000001's as they are likely roundoff error.       */
+/* -------------------------------------------------------------------- */
+    if( i > 10
+        && pszTarget[i-1] == '1' 
+        && pszTarget[i-2] == '0' 
+        && pszTarget[i-3] == '0' 
+        && pszTarget[i-4] == '0' 
+        && pszTarget[i-5] == '0' 
+        && pszTarget[i-6] == '0' )
     {
-        i = 0;
-        int nCountBeforeDot = 0;
-        int iDotPos = -1;
-        while( pszBuffer[i] != '\0' )
-        {
-            if ((pszBuffer[i] == '.' || pszBuffer[i] == ',') && chDecimalSep != '\0')
-            {
-                iDotPos = i;
-                pszBuffer[i] = chDecimalSep;
-            }
-            else if (iDotPos < 0 && pszBuffer[i] != '-')
-                nCountBeforeDot ++;
-            i++;
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      Trim trailing 00000x's as they are likely roundoff error.       */
-    /* -------------------------------------------------------------------- */
-        if( i > 10 && iDotPos >=0 )
-        {
-            if (/* && pszBuffer[i-1] == '1' &&*/
-                pszBuffer[i-2] == '0' 
-                && pszBuffer[i-3] == '0' 
-                && pszBuffer[i-4] == '0' 
-                && pszBuffer[i-5] == '0' 
-                && pszBuffer[i-6] == '0' )
-            {
-                pszBuffer[--i] = '\0';
-            }
-            else if( i - 8 > iDotPos && /* pszBuffer[i-1] == '1' */
-                  /* && pszBuffer[i-2] == '0' && */
-                    (nCountBeforeDot >= 4 || pszBuffer[i-3] == '0') 
-                    && (nCountBeforeDot >= 5 || pszBuffer[i-4] == '0') 
-                    && (nCountBeforeDot >= 6 || pszBuffer[i-5] == '0') 
-                    && (nCountBeforeDot >= 7 || pszBuffer[i-6] == '0')
-                    && (nCountBeforeDot >= 8 || pszBuffer[i-7] == '0')
-                    && pszBuffer[i-8] == '0'
-                    && pszBuffer[i-9] == '0')
-            {
-                i -= 8;
-                pszBuffer[i] = '\0';
-            }
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      Trim trailing zeros.                                            */
-    /* -------------------------------------------------------------------- */
-        while( i > 2 && pszBuffer[i-1] == '0' && pszBuffer[i-2] != '.' )
-        {
-            pszBuffer[--i] = '\0';
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      Detect trailing 99999X's as they are likely roundoff error.     */
-    /* -------------------------------------------------------------------- */
-        if( !bHasTruncated &&
-            i > 10 &&
-            iDotPos >= 0 &&
-            nPrecision >= 15)
-        {
-            if (/*pszBuffer[i-1] == '9' && */
-                 pszBuffer[i-2] == '9' 
-                && pszBuffer[i-3] == '9' 
-                && pszBuffer[i-4] == '9' 
-                && pszBuffer[i-5] == '9' 
-                && pszBuffer[i-6] == '9' )
-            {
-                snprintf(pszBuffer, nBufferLen, "%.9f", dfVal);
-                bHasTruncated = TRUE;
-                continue;
-            }
-            else if (i - 9 > iDotPos && /*pszBuffer[i-1] == '9' && */
-                     /*pszBuffer[i-2] == '9' && */
-                    (nCountBeforeDot >= 4 || pszBuffer[i-3] == '9') 
-                    && (nCountBeforeDot >= 5 || pszBuffer[i-4] == '9') 
-                    && (nCountBeforeDot >= 6 || pszBuffer[i-5] == '9') 
-                    && (nCountBeforeDot >= 7 || pszBuffer[i-6] == '9')
-                    && (nCountBeforeDot >= 8 || pszBuffer[i-7] == '9')
-                    && pszBuffer[i-8] == '9'
-                    && pszBuffer[i-9] == '9')
-            {
-                sprintf(szFormat, "%%.%df", MIN(5,12 - nCountBeforeDot));
-                snprintf(pszBuffer, nBufferLen, szFormat, dfVal);
-                bHasTruncated = TRUE;
-                continue;
-            }
-        }
-
-        break;
+        pszTarget[--i] = '\0';
     }
 
+/* -------------------------------------------------------------------- */
+/*      Trim trailing zeros.                                            */
+/* -------------------------------------------------------------------- */
+    while( i > 2 && pszTarget[i-1] == '0' && pszTarget[i-2] != '.' )
+    {
+        pszTarget[--i] = '\0';
+    }
 }
 
 /************************************************************************/
@@ -165,71 +89,62 @@ void OGRMakeWktCoordinate( char *pszTarget, double x, double y, double z,
                            int nDimension )
 
 {
-    const size_t bufSize = 75;
-    const size_t maxTargetSize = 75; /* Assumed max length of the target buffer. */
+    const size_t bufSize = 400;
+    const size_t maxTargetSize= 75; /* Assumed max length of the target buffer. */
 
     char szX[bufSize];
     char szY[bufSize];
     char szZ[bufSize];
 
-    szZ[0] = '\0';
+    memset( szX, '\0', bufSize );
+    memset( szY, '\0', bufSize );
+    memset( szZ, '\0', bufSize );
 
-    int nLenX, nLenY;
-
-    if( x == (int) x && y == (int) y )
+    if( x == (int) x && y == (int) y && z == (int) z )
     {
         snprintf( szX, bufSize, "%d", (int) x );
-        snprintf( szY, bufSize, "%d", (int) y );
+        snprintf( szY, bufSize, " %d", (int) y );
     }
     else
     {
-        OGRFormatDouble( szX, bufSize, x, '.' );
-        OGRFormatDouble( szY, bufSize, y, '.' );
-    }
+        snprintf( szX, bufSize, "%.15f", x );
+        OGRTrimExtraZeros( szX );
 
-    nLenX = strlen(szX);
-    nLenY = strlen(szY);
+        snprintf( szY, bufSize, " %.15f", y );
+        OGRTrimExtraZeros( szY );
+    }
 
     if( nDimension == 3 )
     {
         if( z == (int) z )
         {
-            snprintf( szZ, bufSize, "%d", (int) z );
+            snprintf( szZ, bufSize, " %d", (int) z );
         }
         else
         {
-            OGRFormatDouble( szZ, bufSize, z, '.' );
+            snprintf( szZ, bufSize, " %.15f", z );
+            OGRTrimExtraZeros( szZ );
         }
     }
 
-    if( nLenX + 1 + nLenY + ((nDimension == 3) ? (1 + strlen(szZ)) : 0) >= maxTargetSize )
+    if( strlen(szX) + strlen(szY) + strlen(szZ) > maxTargetSize )
     {
+        strcpy( szX, "0" );
+        strcpy( szY, " 0" );
+        if( nDimension == 3 )
+            strcpy( szZ, " 0" );
+
 #ifdef DEBUG
         CPLDebug( "OGR", 
                   "Yow!  Got this big result in OGRMakeWktCoordinate()\n"
                   "%s %s %s", 
                   szX, szY, szZ );
 #endif
-        if( nDimension == 3 )
-            strcpy( pszTarget, "0 0 0");
-        else
-            strcpy( pszTarget, "0 0");
     }
-    else
-    {
-        memcpy( pszTarget, szX, nLenX );
-        pszTarget[nLenX] = ' ';
-        memcpy( pszTarget + nLenX + 1, szY, nLenY );
-        if (nDimension == 3)
-        {
-            pszTarget[nLenX + 1 + nLenY] = ' ';
-            strcpy( pszTarget + nLenX + 1 + nLenY + 1, szZ );
-        }
-        else
-        {
-            pszTarget[nLenX + 1 + nLenY] = '\0';
-        }
-    }
+
+    strcpy( pszTarget, szX );
+    strcat( pszTarget, szY );
+    strcat( pszTarget, szZ );
 }
 
 /************************************************************************/
@@ -372,8 +287,8 @@ const char * OGRWktReadPoints( const char * pszInput,
 /* -------------------------------------------------------------------- */
 /*      Add point to list.                                              */
 /* -------------------------------------------------------------------- */
-        (*ppaoPoints)[*pnPointsRead].x = CPLAtof(szTokenX);
-        (*ppaoPoints)[*pnPointsRead].y = CPLAtof(szTokenY);
+        (*ppaoPoints)[*pnPointsRead].x = atof(szTokenX);
+        (*ppaoPoints)[*pnPointsRead].y = atof(szTokenY);
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a Z coordinate?                                      */
@@ -387,12 +302,10 @@ const char * OGRWktReadPoints( const char * pszInput,
                 *ppadfZ = (double *) CPLCalloc(sizeof(double),*pnMaxPoints);
             }
 
-            (*ppadfZ)[*pnPointsRead] = CPLAtof(szDelim);
-
+            (*ppadfZ)[*pnPointsRead] = atof(szDelim);
+            
             pszInput = OGRWktReadToken( pszInput, szDelim );
         }
-        else if ( *ppadfZ != NULL )
-            (*ppadfZ)[*pnPointsRead] = 0.0;
         
         (*pnPointsRead)++;
 
@@ -478,14 +391,10 @@ void OGRFree( void * pMemory )
  * options for all OGR commandline utilities.  It takes care of the following
  * commandline options:
  *  
- *  --version: report version of GDAL in use. 
- *  --license: report GDAL license info.
  *  --formats: report all format drivers configured.
  *  --optfile filename: expand an option file into the argument list. 
  *  --config key value: set system configuration option. 
  *  --debug [on/off/value]: set debug level.
- *  --pause: Pause for user input (allows time to attach debugger)
- *  --locale [locale]: Install a locale using setlocale() (debugging)
  *  --help-general: report detailed help on general options. 
  *
  * The argument array is replaced "in place" and should be freed with 
@@ -715,15 +624,6 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
         }
 
 /* -------------------------------------------------------------------- */
-/*      --pause - "hit enter" pause useful to connect a debugger.       */
-/* -------------------------------------------------------------------- */
-        else if( EQUAL(papszArgv[iArg],"--pause") )
-        {
-            printf( "Hit <ENTER> to Continue.\n" );
-            CPLReadLine( stdin );
-        }
-
-/* -------------------------------------------------------------------- */
 /*      --help-general                                                  */
 /* -------------------------------------------------------------------- */
         else if( EQUAL(papszArgv[iArg],"--help-general") )
@@ -737,8 +637,6 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
             printf( "  --optfile filename: expand an option file into the argument list.\n" );
             printf( "  --config key value: set system configuration option.\n" );
             printf( "  --debug [on/off/value]: set debug level.\n" );
-            printf( "  --pause: wait for user input, time to attach debugger\n" );
-            printf( "  --locale [locale]: install locale for debugging (ie. en_US.UTF-8)\n" );
             printf( "  --help-general: report detailed help on general options.\n" );
             CSLDestroy( papszReturn );
             return 0;
@@ -1217,48 +1115,6 @@ char* OGRGetXML_UTF8_EscapedString(const char* pszString)
 }
 
 /************************************************************************/
-/*                        OGRCompareDate()                              */
-/************************************************************************/
-
-int OGRCompareDate(   OGRField *psFirstTuple,
-                      OGRField *psSecondTuple )
-{
-    /* FIXME? : We ignore TZFlag */
-
-    if (psFirstTuple->Date.Year < psSecondTuple->Date.Year)
-        return -1;
-    else if (psFirstTuple->Date.Year > psSecondTuple->Date.Year)
-        return 1;
-
-    if (psFirstTuple->Date.Month < psSecondTuple->Date.Month)
-        return -1;
-    else if (psFirstTuple->Date.Month > psSecondTuple->Date.Month)
-        return 1;
-
-    if (psFirstTuple->Date.Day < psSecondTuple->Date.Day)
-        return -1;
-    else if (psFirstTuple->Date.Day > psSecondTuple->Date.Day)
-        return 1;
-
-    if (psFirstTuple->Date.Hour < psSecondTuple->Date.Hour)
-        return -1;
-    else if (psFirstTuple->Date.Hour > psSecondTuple->Date.Hour)
-        return 1;
-
-    if (psFirstTuple->Date.Minute < psSecondTuple->Date.Minute)
-        return -1;
-    else if (psFirstTuple->Date.Minute > psSecondTuple->Date.Minute)
-        return 1;
-
-    if (psFirstTuple->Date.Second < psSecondTuple->Date.Second)
-        return -1;
-    else if (psFirstTuple->Date.Second > psSecondTuple->Date.Second)
-        return 1;
-
-    return 0;
-}
-
-/************************************************************************/
 /*                        OGRFastAtof()                                 */
 /************************************************************************/
 
@@ -1277,7 +1133,6 @@ double OGRCallAtofOnShortString(const char* pszStr)
     while(*p == '+'  ||
           *p == '-'  ||
           (*p >= '0' && *p <= '9') ||
-          *p == '.'  ||
           (*p == 'e' || *p == 'E' || *p == 'd' || *p == 'D'))
     {
         szTemp[nCounter++] = *(p++);
@@ -1356,39 +1211,4 @@ double OGRFastAtof(const char* pszStr)
                 return OGRCallAtofOnShortString(pszStr);
         }
     }
-}
-
-/**
- * Check that panPermutation is a permutation of [0,nSize-1].
- * @param panPermutation an array of nSize elements.
- * @param nSize size of the array.
- * @return OGRERR_NONE if panPermutation is a permutation of [0,nSize-1].
- * @since OGR 1.9.0
- */
-OGRErr OGRCheckPermutation(int* panPermutation, int nSize)
-{
-    OGRErr eErr = OGRERR_NONE;
-    int* panCheck = (int*)CPLCalloc(nSize, sizeof(int));
-    int i;
-    for(i=0;i<nSize;i++)
-    {
-        if (panPermutation[i] < 0 || panPermutation[i] >= nSize)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg,
-                     "Bad value for element %d", i);
-            eErr = OGRERR_FAILURE;
-            break;
-        }
-        if (panCheck[panPermutation[i]] != 0)
-        {
-            CPLError(CE_Failure, CPLE_IllegalArg,
-                     "Array is not a permutation of [0,%d]",
-                     nSize - 1);
-            eErr = OGRERR_FAILURE;
-            break;
-        }
-        panCheck[panPermutation[i]] = 1;
-    }
-    CPLFree(panCheck);
-    return eErr;
 }

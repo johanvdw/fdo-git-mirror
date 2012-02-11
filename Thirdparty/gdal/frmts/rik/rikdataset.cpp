@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rikdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: rikdataset.cpp 18348 2009-12-19 14:32:39Z rouault $
  *
  * Project:  RIK Reader
  * Purpose:  All code for RIK Reader
@@ -31,7 +31,7 @@
 #include <zlib.h>
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: rikdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: rikdataset.cpp 18348 2009-12-19 14:32:39Z rouault $");
 
 CPL_C_START
 void	GDALRegister_RIK(void);
@@ -375,9 +375,10 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         GByte character[8192]; // only need LZW_CODES for size.
 
         int i;
+        GByte j;
 
-        for( i = 0; i < LZW_CLEAR; i++ )
-            character[i] = (GByte)i;
+        for( j = 0; j < LZW_CLEAR; j++ )
+            character[j] = j;
         for( i = 0; i < LZW_CODES; i++ )
             prefix[i] = LZW_NO_SUCH_CODE;
 
@@ -399,7 +400,7 @@ CPLErr RIKRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         lastOutput = (GByte)code;
 
         while( imageLine >= 0 &&
-               (imageLine || imagePos < poRDS->nBlockXSize) &&
+               (imageLine || imagePos < poRDS->nBlockXSize - 1) &&
                filePos < nBlockSize ) try
         {
             lastCode = code;
@@ -1055,12 +1056,12 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
               " name: %s\n"
               " header: %s\n"
               " unknown: 0x%X\n"
-              " south: %f\n"
-              " west: %f\n"
-              " north: %f\n"
-              " east: %f\n"
+              " south: %lf\n"
+              " west: %lf\n"
+              " north: %lf\n"
+              " east: %lf\n"
               " original scale: %d\n"
-              " meters per pixel: %f\n"
+              " meters per pixel: %lf\n"
               " block width: %d\n"
               " block height: %d\n"
               " horizontal blocks: %d\n"
@@ -1130,12 +1131,7 @@ GDALDataset *RIKDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
+    
 /* -------------------------------------------------------------------- */
 /*      Confirm the requested access is supported.                      */
 /* -------------------------------------------------------------------- */

@@ -29,7 +29,7 @@
 
 #include "ogr_xplane_awy_reader.h"
 
-CPL_CVSID("$Id: ogr_xplane_awy_reader.cpp 21634 2011-02-06 14:45:00Z rouault $");
+CPL_CVSID("$Id: ogr_xplane_awy_reader.cpp 18548 2010-01-14 22:01:35Z rouault $");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateAwyFileReader                       */
@@ -80,7 +80,7 @@ OGRXPlaneReader* OGRXPlaneAwyReader::CloneForLayer(OGRXPlaneLayer* poLayer)
     if (pszFilename)
     {
         poReader->pszFilename = CPLStrdup(pszFilename);
-        poReader->fp = VSIFOpenL( pszFilename, "rt" );
+        poReader->fp = VSIFOpen( pszFilename, "rt" );
     }
 
     return poReader;
@@ -104,7 +104,7 @@ int OGRXPlaneAwyReader::IsRecognizedVersion( const char* pszVersionString)
 void OGRXPlaneAwyReader::Read()
 {
     const char* pszLine;
-    while((pszLine = CPLReadLineL(fp)) != NULL)
+    while((pszLine = CPLReadLine(fp)) != NULL)
     {
         papszTokens = CSLTokenizeString(pszLine);
         nTokens = CSLCount(papszTokens);

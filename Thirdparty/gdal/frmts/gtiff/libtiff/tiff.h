@@ -1,4 +1,4 @@
-/* $Id: tiff.h,v 1.67 2011-01-24 21:06:32 olivier Exp $ */
+/* $Id: tiff.h,v 1.64 2007/07/10 11:52:02 dron Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -187,7 +187,6 @@ typedef enum {
 #define     COMPRESSION_SGILOG		34676	/* SGI Log Luminance RLE */
 #define     COMPRESSION_SGILOG24	34677	/* SGI Log 24-bit packed */
 #define     COMPRESSION_JP2000          34712   /* Leadtools JPEG2000 */
-#define	    COMPRESSION_LZMA		34925	/* LZMA2 */
 #define	TIFFTAG_PHOTOMETRIC		262	/* photometric interpretation */
 #define	    PHOTOMETRIC_MINISWHITE	0	/* min value is white */
 #define	    PHOTOMETRIC_MINISBLACK	1	/* min value is black */
@@ -568,10 +567,6 @@ typedef enum {
 #define TIFFTAG_SGILOGENCODE		65561 /* SGILog data encoding control*/
 #define     SGILOGENCODE_NODITHER	0     /* do not dither encoded values*/
 #define     SGILOGENCODE_RANDITHER	1     /* randomly dither encd values */
-#define	TIFFTAG_LZMAPRESET		65562	/* LZMA2 preset (compression level) */
-#define TIFFTAG_PERSAMPLE       65563	/* interface for per sample tags */
-#define     PERSAMPLE_MERGED        0	/* present as a single value */
-#define     PERSAMPLE_MULTI         1	/* present as multiple values */
 
 /*
  * EXIF tags
@@ -641,10 +636,3 @@ typedef enum {
 #endif /* _TIFF_ */
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rawdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: rawdataset.cpp 18525 2010-01-11 23:54:26Z mloskot $
  *
  * Project:  Generic Raw Binary Driver
  * Purpose:  Implementation of RawDataset and RawRasterBand classes.
@@ -31,35 +31,28 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rawdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: rawdataset.cpp 18525 2010-01-11 23:54:26Z mloskot $");
 
 /************************************************************************/
 /*                           RawRasterBand()                            */
 /************************************************************************/
 
 RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
-                              void * fpRaw, vsi_l_offset nImgOffset,
+                              FILE * fpRaw, vsi_l_offset nImgOffset,
                               int nPixelOffset, int nLineOffset,
                               GDALDataType eDataType, int bNativeOrder,
                               int bIsVSIL, int bOwnsFP )
 
 {
+    Initialize();
+
     this->poDS = poDS;
     this->nBand = nBand;
     this->eDataType = eDataType;
     this->bIsVSIL = bIsVSIL;
     this->bOwnsFP =bOwnsFP;
 
-    if (bIsVSIL)
-    {
-        this->fpRaw = NULL;
-        this->fpRawL = (VSILFILE*) fpRaw;
-    }
-    else
-    {
-        this->fpRaw = (FILE*) fpRaw;
-        this->fpRawL = NULL;
-    }
+    this->fpRaw = fpRaw;
     this->nImgOffset = nImgOffset;
     this->nPixelOffset = nPixelOffset;
     this->nLineOffset = nLineOffset;
@@ -79,37 +72,46 @@ RawRasterBand::RawRasterBand( GDALDataset *poDS, int nBand,
     nBlockYSize = 1;
 
 /* -------------------------------------------------------------------- */
-/*      Initialize other fields, and setup the line buffer.             */
+/*      Allocate working scanline.                                      */
 /* -------------------------------------------------------------------- */
-    Initialize();
+    nLoadedScanline = -1;
+    if (nPixelOffset <= 0 || nBlockXSize <= 0 || nPixelOffset > INT_MAX / nBlockXSize)
+    {
+        nLineSize = 0;
+        pLineBuffer = NULL;
+    }
+    else
+    {
+        nLineSize = nPixelOffset * nBlockXSize;
+        pLineBuffer = VSIMalloc2( nPixelOffset, nBlockXSize );
+    }
+    if (pLineBuffer == NULL)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Could not allocate line buffer : nPixelOffset=%d, nBlockXSize=%d",
+                 nPixelOffset, nBlockXSize);
+    }
 }
 
 /************************************************************************/
 /*                           RawRasterBand()                            */
 /************************************************************************/
 
-RawRasterBand::RawRasterBand( void * fpRaw, vsi_l_offset nImgOffset,
+RawRasterBand::RawRasterBand( FILE * fpRaw, vsi_l_offset nImgOffset,
                               int nPixelOffset, int nLineOffset,
                               GDALDataType eDataType, int bNativeOrder,
                               int nXSize, int nYSize, int bIsVSIL, int bOwnsFP )
 
 {
+    Initialize();
+
     this->poDS = NULL;
     this->nBand = 1;
     this->eDataType = eDataType;
     this->bIsVSIL = bIsVSIL;
     this->bOwnsFP =bOwnsFP;
 
-    if (bIsVSIL)
-    {
-        this->fpRaw = NULL;
-        this->fpRawL = (VSILFILE*) fpRaw;
-    }
-    else
-    {
-        this->fpRaw = (FILE*) fpRaw;
-        this->fpRawL = NULL;
-    }
+    this->fpRaw = fpRaw;
     this->nImgOffset = nImgOffset;
     this->nPixelOffset = nPixelOffset;
     this->nLineOffset = nLineOffset;
@@ -135,9 +137,25 @@ RawRasterBand::RawRasterBand( void * fpRaw, vsi_l_offset nImgOffset,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Initialize other fields, and setup the line buffer.             */
+/*      Allocate working scanline.                                      */
 /* -------------------------------------------------------------------- */
-    Initialize();
+    nLoadedScanline = -1;
+    if (nPixelOffset <= 0 || nPixelOffset > INT_MAX / nBlockXSize)
+    {
+        nLineSize = 0;
+        pLineBuffer = NULL;
+    }
+    else
+    {
+        nLineSize = nPixelOffset * nBlockXSize;
+        pLineBuffer = VSIMalloc2( nPixelOffset, nBlockXSize );
+    }
+    if (pLineBuffer == NULL)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Could not allocate line buffer : nPixelOffset=%d, nBlockXSize=%d",
+                 nPixelOffset, nBlockXSize);
+    }
 }
 
 /************************************************************************/
@@ -153,33 +171,8 @@ void RawRasterBand::Initialize()
     papszCategoryNames = NULL;
 
     bDirty = FALSE;
-
-/* -------------------------------------------------------------------- */
-/*      Allocate working scanline.                                      */
-/* -------------------------------------------------------------------- */
-    nLoadedScanline = -1;
-    if (nBlockXSize <= 0 || nPixelOffset > INT_MAX / nBlockXSize)
-    {
-        nLineSize = 0;
-        pLineBuffer = NULL;
-    }
-    else
-    {
-        nLineSize = ABS(nPixelOffset) * nBlockXSize;
-        pLineBuffer = VSIMalloc2( ABS(nPixelOffset), nBlockXSize );
-    }
-    if (pLineBuffer == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Could not allocate line buffer : nPixelOffset=%d, nBlockXSize=%d",
-                 nPixelOffset, nBlockXSize);
-    }
-
-    if( nPixelOffset >= 0 )
-        pLineStart = pLineBuffer;
-    else
-        pLineStart = ((char *) pLineBuffer) + ABS(nPixelOffset) * (nBlockXSize-1);
 }
+
 
 /************************************************************************/
 /*                           ~RawRasterBand()                           */
@@ -198,7 +191,7 @@ RawRasterBand::~RawRasterBand()
     if (bOwnsFP)
     {
         if ( bIsVSIL )
-            VSIFCloseL( fpRawL );
+            VSIFCloseL( fpRaw );
         else
             VSIFClose( fpRaw );
     }
@@ -237,7 +230,7 @@ CPLErr RawRasterBand::FlushCache()
     if ( bDirty )
     {
         if( bIsVSIL )
-            VSIFFlushL( fpRawL );
+            VSIFFlushL( fpRaw );
         else
             VSIFFlush( fpRaw );
 
@@ -261,21 +254,9 @@ CPLErr RawRasterBand::AccessLine( int iLine )
         return CE_None;
 
 /* -------------------------------------------------------------------- */
-/*      Figure out where to start reading.                              */
-/* -------------------------------------------------------------------- */
-    vsi_l_offset nReadStart;
-    if( nPixelOffset >= 0 )
-        nReadStart = nImgOffset + (vsi_l_offset)iLine * nLineOffset;
-    else
-    {
-        nReadStart = nImgOffset + (vsi_l_offset)iLine * nLineOffset
-            - ABS(nPixelOffset) * (nBlockXSize-1);
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Seek to the right line.                                         */
 /* -------------------------------------------------------------------- */
-    if( Seek(nReadStart, SEEK_SET) == -1 )
+    if( Seek(nImgOffset + (vsi_l_offset)iLine * nLineOffset, SEEK_SET) == -1 )
     {
         if (poDS != NULL && poDS->GetAccess() == GA_ReadOnly)
         {
@@ -299,7 +280,7 @@ CPLErr RawRasterBand::AccessLine( int iLine )
 /* -------------------------------------------------------------------- */
     int	nBytesToRead, nBytesActuallyRead;
 
-    nBytesToRead = ABS(nPixelOffset) * (nBlockXSize - 1) 
+    nBytesToRead = nPixelOffset * (nBlockXSize - 1) 
         + GDALGetDataTypeSize(GetRasterDataType()) / 8;
 
     nBytesActuallyRead = Read( pLineBuffer, 1, nBytesToRead );
@@ -329,13 +310,13 @@ CPLErr RawRasterBand::AccessLine( int iLine )
             int nWordSize;
 
             nWordSize = GDALGetDataTypeSize(eDataType)/16;
-            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, ABS(nPixelOffset) );
+            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, nPixelOffset );
             GDALSwapWords( ((GByte *) pLineBuffer)+nWordSize, 
-                           nWordSize, nBlockXSize, ABS(nPixelOffset) );
+                           nWordSize, nBlockXSize, nPixelOffset );
         }
         else
             GDALSwapWords( pLineBuffer, GDALGetDataTypeSize(eDataType)/8,
-                           nBlockXSize, ABS(nPixelOffset) );
+                           nBlockXSize, nPixelOffset );
     }
 
     nLoadedScanline = iLine;
@@ -363,7 +344,7 @@ CPLErr RawRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
 /*      Copy data from disk buffer to user block buffer.                */
 /* -------------------------------------------------------------------- */
-    GDALCopyWords( pLineStart, eDataType, nPixelOffset,
+    GDALCopyWords( pLineBuffer, eDataType, nPixelOffset,
                    pImage, eDataType, GDALGetDataTypeSize(eDataType)/8,
                    nBlockXSize );
 
@@ -389,14 +370,14 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 /*      If the data for this band is completely contiguous we don't     */
 /*      have to worry about pre-reading from disk.                      */
 /* -------------------------------------------------------------------- */
-    if( ABS(nPixelOffset) > GDALGetDataTypeSize(eDataType) / 8 )
+    if( nPixelOffset > GDALGetDataTypeSize(eDataType) / 8 )
         eErr = AccessLine( nBlockYOff );
 
 /* -------------------------------------------------------------------- */
 /*	Copy data from user buffer into disk buffer.                    */
 /* -------------------------------------------------------------------- */
     GDALCopyWords( pImage, eDataType, GDALGetDataTypeSize(eDataType)/8,
-                   pLineStart, eDataType, nPixelOffset,
+                   pLineBuffer, eDataType, nPixelOffset,
                    nBlockXSize );
 
 /* -------------------------------------------------------------------- */
@@ -409,32 +390,20 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
             int nWordSize;
 
             nWordSize = GDALGetDataTypeSize(eDataType)/16;
-            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, 
-                           ABS(nPixelOffset) );
+            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, nPixelOffset );
             GDALSwapWords( ((GByte *) pLineBuffer)+nWordSize, 
-                           nWordSize, nBlockXSize, ABS(nPixelOffset) );
+                           nWordSize, nBlockXSize, nPixelOffset );
         }
         else
             GDALSwapWords( pLineBuffer, GDALGetDataTypeSize(eDataType)/8,
-                           nBlockXSize, ABS(nPixelOffset) );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Figure out where to start reading.                              */
-/* -------------------------------------------------------------------- */
-    vsi_l_offset nWriteStart;
-    if( nPixelOffset >= 0 )
-        nWriteStart = nImgOffset + (vsi_l_offset)nBlockYOff * nLineOffset;
-    else
-    {
-        nWriteStart = nImgOffset + (vsi_l_offset)nBlockYOff * nLineOffset
-            - ABS(nPixelOffset) * (nBlockXSize-1);
+                           nBlockXSize, nPixelOffset );
     }
 
 /* -------------------------------------------------------------------- */
 /*      Seek to correct location.                                       */
 /* -------------------------------------------------------------------- */
-    if( Seek( nWriteStart, SEEK_SET ) == -1 ) 
+    if( Seek( nImgOffset + (vsi_l_offset) nBlockYOff * nLineOffset,
+              SEEK_SET ) == -1 ) 
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to seek to scanline %d @ %d to write to file.\n",
@@ -448,7 +417,7 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
     int	nBytesToWrite;
 
-    nBytesToWrite = ABS(nPixelOffset) * (nBlockXSize - 1) 
+    nBytesToWrite = nPixelOffset * (nBlockXSize - 1) 
         + GDALGetDataTypeSize(GetRasterDataType()) / 8;
 
     if( eErr == CE_None 
@@ -472,15 +441,13 @@ CPLErr RawRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
             int nWordSize;
 
             nWordSize = GDALGetDataTypeSize(eDataType)/16;
-            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, 
-                           ABS(nPixelOffset) );
+            GDALSwapWords( pLineBuffer, nWordSize, nBlockXSize, nPixelOffset );
             GDALSwapWords( ((GByte *) pLineBuffer)+nWordSize, 
-                           nWordSize, nBlockXSize, 
-                           ABS(nPixelOffset) );
+                           nWordSize, nBlockXSize, nPixelOffset );
         }
         else
             GDALSwapWords( pLineBuffer, GDALGetDataTypeSize(eDataType)/8,
-                           nBlockXSize, ABS(nPixelOffset) );
+                           nBlockXSize, nPixelOffset );
     }
 
     bDirty = TRUE;
@@ -590,17 +557,8 @@ CPLErr RawRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 /* width of the requested chunk is less than 40% of the whole scanline  */
 /* and none of the requested scanlines are already in the cache.        */
 /* -------------------------------------------------------------------- */
-    if( nPixelOffset < 0 ) 
-    {
-        return GDALRasterBand::IRasterIO( eRWFlag, nXOff, nYOff,
-                                          nXSize, nYSize,
-                                          pData, nBufXSize, nBufYSize,
-                                          eBufType,
-                                          nPixelSpace, nLineSpace );
-    }
-
     if ( !CSLTestBoolean( CPLGetConfigOption( "GDAL_ONE_BIG_READ", "NO") ) )
-    {
+         {
         if ( nLineSize < 50000
              || nBytesToRW > nLineSize / 5 * 2
              || IsLineLoaded( nYOff, nYSize ) )
@@ -940,7 +898,7 @@ int RawRasterBand::Seek( vsi_l_offset nOffset, int nSeekMode )
 
 {
     if( bIsVSIL )
-        return VSIFSeekL( fpRawL, nOffset, nSeekMode );
+        return VSIFSeekL( fpRaw, nOffset, nSeekMode );
     else
         return VSIFSeek( fpRaw, (long) nOffset, nSeekMode );
 }
@@ -953,7 +911,7 @@ size_t RawRasterBand::Read( void *pBuffer, size_t nSize, size_t nCount )
 
 {
     if( bIsVSIL )
-        return VSIFReadL( pBuffer, nSize, nCount, fpRawL );
+        return VSIFReadL( pBuffer, nSize, nCount, fpRaw );
     else
         return VSIFRead( pBuffer, nSize, nCount, fpRaw );
 }
@@ -966,7 +924,7 @@ size_t RawRasterBand::Write( void *pBuffer, size_t nSize, size_t nCount )
 
 {
     if( bIsVSIL )
-        return VSIFWriteL( pBuffer, nSize, nCount, fpRawL );
+        return VSIFWriteL( pBuffer, nSize, nCount, fpRaw );
     else
         return VSIFWrite( pBuffer, nSize, nCount, fpRaw );
 }

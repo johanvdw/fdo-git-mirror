@@ -1,5 +1,5 @@
 /****************************************************************************
- * $Id: gs7bgdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: gs7bgdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software Surfer 7 Binary Grid Format.
@@ -59,7 +59,7 @@
 # define SHRT_MAX 32767
 #endif /* SHRT_MAX */
 
-CPL_CVSID("$Id: gs7bgdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: gs7bgdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GS7BG(void);
@@ -80,7 +80,7 @@ class GS7BGDataset : public GDALPamDataset
     static double dfNoData_Value;
     static size_t nData_Position;
 
-    VSILFILE	*fp;
+    FILE	*fp;
 
   public:
     ~GS7BGDataset();
@@ -134,7 +134,7 @@ class GS7BGRasterBand : public GDALPamRasterBand
 GS7BGRasterBand::GS7BGRasterBand( GS7BGDataset *poDS, int nBand )
 {
     this->poDS = poDS;
-    this->nBand = nBand;
+    nBand = nBand;
 
     eDataType = GDT_Float64;
 
@@ -503,18 +503,14 @@ GDALDataset *GS7BGDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
-    poDS->nData_Position =  (size_t) VSIFTellL(poDS->fp);
+    poDS->nData_Position =  VSIFTellL(poDS->fp);
+
 
     /* --------------------------------------------------------------------*/
     /*      Initialize any PAM information.                                */
     /* --------------------------------------------------------------------*/
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return poDS;
 }
@@ -584,7 +580,6 @@ void GDALRegister_GS7BG()
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "grd" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
             "Byte Int16 UInt16 Float32 Float64" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = GS7BGDataset::Open;
 

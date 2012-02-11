@@ -163,9 +163,9 @@ Win32IOInterface::Seek( void *io_handle, uint64 offset, int whence ) const
         printf( "nOffset=%u, nMoveLow=%u, dwMoveHigh=%u\n", 
                 (GUInt32) nOffset, nMoveLow, dwMoveHigh );
 #endif
-        ThrowPCIDSKException( "Seek(%d,%d): %s (%d)", 
+        ThrowPCIDSKException( "Seek(%d,%d): %s", 
                               (int) offset, whence, 
-                              LastError(), GetLastError() );
+                              LastError() );
         return -1;
     }
 
@@ -310,10 +310,7 @@ int Win32IOInterface::Close( void *io_handle ) const
 {
     FileInfo *fi = (FileInfo *) io_handle;
 
-    int result = CloseHandle( fi->hFile ) ? 0 : -1;
-    delete fi;
-
-    return result;
+    return CloseHandle( fi->hFile ) ? 0 : -1;
 }
 
 /************************************************************************/

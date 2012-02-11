@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfaridpcm.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: nitfaridpcm.cpp 16416 2009-02-25 21:13:08Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  ARIDPCM reading code.
@@ -31,7 +31,7 @@
 #include "nitflib.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: nitfaridpcm.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+CPL_CVSID("$Id: nitfaridpcm.cpp 16416 2009-02-25 21:13:08Z rouault $");
 
 static const int neighbourhood_size_75[4] = { 23, 47, 74, 173 };
 static const int bits_per_level_by_busycode_75[4/*busy code*/][4/*level*/] = { 
@@ -421,7 +421,7 @@ int NITFUncompressARIDPCM( NITFImage *psImage,
             CPLFree(full_image);
             return FALSE;
         }
-        L00[i] = (unsigned char) get_bits( pabyInputData, block_offset[i], 8 );
+        L00[i] = get_bits( pabyInputData, block_offset[i], 8 );
 
         total += block_size[i];
     }

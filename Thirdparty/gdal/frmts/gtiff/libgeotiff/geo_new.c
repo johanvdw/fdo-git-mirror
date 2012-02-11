@@ -124,10 +124,6 @@ GTIF* GTIFNewWithMethods(void *tif, TIFFMethod* methods)
 	
     /* If we got here, then the geokey can be parsed */
     count = header->hdr_num_keys;
-
-    if (count * sizeof(KeyEntry) >= (4 + MAX_VALUES) * sizeof(pinfo_t)) 
-        goto failure; 
-
     gt->gt_num_keys = count;
     gt->gt_version  = header->hdr_version;
     gt->gt_rev_major  = header->hdr_rev_major;
@@ -160,11 +156,7 @@ GTIF* GTIFNewWithMethods(void *tif, TIFFMethod* methods)
     else
     {
         /* last NULL doesn't count; "|" used for delimiter */
-        if( tempData.tk_asciiParamsLength > 0 
-            && tempData.tk_asciiParams[tempData.tk_asciiParamsLength-1] == '\0')
-        {
-            --tempData.tk_asciiParamsLength;
-        }
+        --tempData.tk_asciiParamsLength;
     }
 
     /* allocate space for GeoKey array and its index */

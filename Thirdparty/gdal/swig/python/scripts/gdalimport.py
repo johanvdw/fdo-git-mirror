@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdalimport.py 18952 2010-02-28 11:59:53Z rouault $
+#  $Id: gdalimport.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Name:     gdalimport
 #  Project:  GDAL Python Interface
@@ -47,13 +47,13 @@ if len(argv) < 2:
     sys.exit(1)
 
 def progress_cb( complete, message, cb_data ):
-    print('%s %d' % (cb_data, complete))
+    print(cb_data, complete)
     
 
 filename = argv[1]
 dataset = gdal.Open( filename )
 if dataset is None:
-    print('Unable to open %s' % filename)
+    print('Unable to open ', filename)
     sys.exit(1)
 
 geotiff = gdal.GetDriverByName("GTiff")
@@ -71,7 +71,7 @@ if len(argv) < 3:
 else:
     newfile = argv[2]
 
-print('Importing to Tiled GeoTIFF file: %s' % newfile)
+print('Importing to Tiled GeoTIFF file:', newfile)
 new_dataset = geotiff.CreateCopy( newfile, dataset, 0,
                                   ['TILED=YES',],
                                   callback = progress_cb,

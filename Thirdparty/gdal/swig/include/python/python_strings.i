@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: python_strings.i 20716 2010-09-30 22:27:35Z rouault $
+ * $Id: python_strings.i 18192 2009-12-06 19:41:32Z rouault $
  *
  * Name:     python_strings.i
  * Project:  GDAL Python Interface
@@ -32,23 +32,14 @@
 /* Return a PyObject* from a NULL terminated C String */
 static PyObject* GDALPythonObjectFromCStr(const char *pszStr)
 {
+#if PY_VERSION_HEX >= 0x03000000
   const unsigned char* pszIter = (const unsigned char*) pszStr;
   while(*pszIter != 0)
   {
     if (*pszIter > 127)
-    {
-        PyObject* pyObj = PyUnicode_DecodeUTF8(pszStr, strlen(pszStr), "ignore");
-        if (pyObj != NULL)
-            return pyObj;
-#if PY_VERSION_HEX >= 0x03000000
-        return PyBytes_FromString(pszStr);
-#else
-        return PyString_FromString(pszStr);
-#endif
-    }
+        return PyBytes_FromString( pszStr );
     pszIter ++;
   }
-#if PY_VERSION_HEX >= 0x03000000
   return PyUnicode_FromString(pszStr); 
 #else
   return PyString_FromString(pszStr);
@@ -57,40 +48,46 @@ static PyObject* GDALPythonObjectFromCStr(const char *pszStr)
 
 /* Return a NULL terminated c String from a PyObject */
 /* Result must be freed with GDALPythonFreeCStr */
-static char* GDALPythonObjectToCStr(PyObject* pyObject, int* pbToFree)
+static char* GDALPythonObjectToCStr(PyObject* pyObject)
 {
-  *pbToFree = 0;
+#if PY_VERSION_HEX >= 0x03000000
   if (PyUnicode_Check(pyObject))
   {
       char *pszStr;
       char *pszNewStr;
-      Py_ssize_t nLen;
+      int nLen;
       PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObject);
-#if PY_VERSION_HEX >= 0x03000000
       PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-      PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
       pszNewStr = (char *) malloc(nLen+1);
       memcpy(pszNewStr, pszStr, nLen+1);
       Py_XDECREF(pyUTF8Str);
-      *pbToFree = 1;
       return pszNewStr;
   }
-  else 
+  else if (PyBytes_Check(pyObject))
   {
-#if PY_VERSION_HEX >= 0x03000000
-      return PyBytes_AsString(pyObject);
-#else
-      return PyString_AsString(pyObject);
-#endif
+      char *pszStr;
+      char *pszNewStr;
+      int nLen;
+      PyBytes_AsStringAndSize(pyObject, &pszStr, &nLen);
+      pszNewStr = (char *) malloc(nLen+1);
+      memcpy(pszNewStr, pszStr, nLen+1);
+      return pszNewStr;
   }
+  else
+  {
+      char *pszStr = (char *) malloc(1);
+      pszStr[0] = '\0';
+      return pszStr;
+  }
+#else
+  return PyString_AsString(pyObject);
+#endif
 }
 
-static void GDALPythonFreeCStr(void* ptr, int bToFree)
-{
-   if (bToFree)
-       free(ptr);
-}
+#if PY_VERSION_HEX >= 0x03000000
+#define GDALPythonFreeCStr(x) free( (void*) (x) )
+#else
+#define GDALPythonFreeCStr(x) 
+#endif
 
 %}
