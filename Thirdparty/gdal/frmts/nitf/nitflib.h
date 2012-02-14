@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitflib.h 22843 2011-07-31 23:22:42Z rouault $
+ * $Id: nitflib.h 17062 2009-05-19 21:58:16Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Main GDAL independent include file for NITF support.  
@@ -32,8 +32,6 @@
 
 #include "cpl_port.h"
 #include "cpl_error.h"
-#include "cpl_vsi.h"
-#include "cpl_minixml.h"
 
 CPL_C_START
 
@@ -57,7 +55,7 @@ typedef struct {
 } NITFSegmentInfo;
 
 typedef struct {
-    VSILFILE  *fp;
+    FILE    *fp;
 
     char    szVersion[10];
 
@@ -70,8 +68,6 @@ typedef struct {
     char    *pachTRE;
 
     char    **papszMetadata;
-
-    CPLXMLNode *psNITFSpecNode;
     
 } NITFFile;
 
@@ -109,9 +105,9 @@ typedef struct {
 } NITFBandInfo;
 
 typedef struct { 
-    GUInt16 nLocId;
-    GUInt32 nLocOffset;
-    GUInt32 nLocSize;
+    int	nLocId;
+    int nLocOffset;
+    int nLocSize;
 } NITFLocation;
 
 typedef struct
@@ -161,7 +157,6 @@ typedef struct {
     double     dfLRY;
     double     dfLLX;
     double     dfLLY;
-    int        bIsBoxCenterOfPixel;
 
     char       *pszComments;
     char       szIC[3];
@@ -217,8 +212,6 @@ int       CPL_DLL  NITFWriteIGEOLO( NITFImage *psImage, char chICORDS,
                                     double dfURX, double dfURY,
                                     double dfLRX, double dfLRY,
                                     double dfLLX, double dfLLY );
-char      CPL_DLL **NITFReadCSEXRA( NITFImage *psImage );
-char      CPL_DLL **NITFReadPIAIMC( NITFImage *psImage );
 char      CPL_DLL **NITFReadUSE00A( NITFImage *psImage );
 char      CPL_DLL **NITFReadSTDIDC( NITFImage *psImage );
 char      CPL_DLL **NITFReadBLOCKA( NITFImage *psImage );
@@ -236,31 +229,6 @@ int NITFUncompressARIDPCM( NITFImage *psImage,
 int NITFUncompressBILEVEL( NITFImage *psImage, 
                            GByte *pabyInputData, int nInputBytes,
                            GByte *pabyOutputImage );
-
-NITFLocation* NITFReadRPFLocationTable(VSILFILE* fp, int* pnLocCount);
-
-/* -------------------------------------------------------------------- */
-/*      DE segment access.                                              */
-/* -------------------------------------------------------------------- */
-typedef struct {
-    NITFFile  *psFile;
-    int        iSegment;
-    char      *pachHeader;
-
-    char       **papszMetadata;
-} NITFDES;
-
-NITFDES   CPL_DLL *NITFDESAccess( NITFFile *, int iSegment );
-void      CPL_DLL  NITFDESDeaccess( NITFDES * );
-
-int       CPL_DLL  NITFDESGetTRE(   NITFDES* psDES,
-                                    int nOffset,
-                                    char szTREName[7],
-                                    char** ppabyTREData,
-                                    int* pnFoundTRESize);
-void      CPL_DLL  NITFDESFreeTREData( char* pabyTREData );
-
-int       CPL_DLL  NITFDESExtractShapefile(NITFDES* psDES, const char* pszRadixFileName);
 
 /* -------------------------------------------------------------------- */
 /*      These are really intended to be private helper stuff for the    */
@@ -391,20 +359,6 @@ typedef struct
 
 /** Return not freeable (maybe NULL if no matching) */
 const NITFSeries CPL_DLL *NITFGetSeriesInfo(const char* pszFilename);
-
-/* -------------------------------------------------------------------- */
-/*                           Internal use                               */
-/* -------------------------------------------------------------------- */
-
-char **NITFGenericMetadataRead(char **papszMD,
-                               NITFFile* psFile,
-                               NITFImage *psImage,
-                               const char* pszSpecificTREName);
-
-CPLXMLNode* NITFCreateXMLTre(NITFFile* psFile,
-                             const char* pszTREName,
-                             const char *pachTRE,
-                             int nTRESize);
 
 CPL_C_END
 

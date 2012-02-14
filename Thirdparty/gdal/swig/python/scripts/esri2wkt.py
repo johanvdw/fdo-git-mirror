@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: esri2wkt.py 18952 2010-02-28 11:59:53Z rouault $
+#  $Id: esri2wkt.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Project:  GDAL
 #  Purpose:  Simple command line program for translating ESRI .prj files
@@ -51,7 +51,7 @@ for i in range(len(prj_lines)):
 prj_srs = osr.SpatialReference()
 err = prj_srs.ImportFromESRI( prj_lines )
 if err != 0:
-    print('Error = %d' % err)
+    print('Error = ', err)
 else:
     print(prj_srs.ExportToPrettyWkt())
 

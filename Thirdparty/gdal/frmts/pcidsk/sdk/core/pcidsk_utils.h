@@ -30,12 +30,9 @@
 #include "pcidsk_config.h"
 #include "pcidsk_types.h"
 #include <string>
-#include <vector>
 
 namespace PCIDSK
 {
-    class IOInterfaces;
-    
     /************************************************************************/
     /*                          Utility functions.                          */
     /************************************************************************/
@@ -49,35 +46,19 @@ namespace PCIDSK
 #define EQUAL(x,y) (pci_strcasecmp(x,y) == 0)
 #define EQUALN(x,y,n) (pci_strncasecmp(x,y,n) == 0)
   
-    void   SwapData( void* const data, const int size, const int wcount );
+    void   SwapData( void *data, int value_size, int value_count );
     bool   BigEndianSystem(void);
     void   GetCurrentDateTime( char *out_datetime );
 
     void   ParseTileFormat( std::string full_text, int &block_size, 
                             std::string &compression );
-    void   SwapPixels(void* const data, 
-                      const eChanType type, 
-                      const std::size_t count);
 
-    std::vector<double> ProjParmsFromText( std::string geosys, 
-                                           std::string parms );
-    std::string         ProjParmsToText( std::vector<double> );
-
-    std::string         MergeRelativePath( const PCIDSK::IOInterfaces *,
-                                           std::string base,
-                                           std::string src_filename );
-    std::string         ExtractPath( std::string );
-    
     void LibJPEG_DecompressBlock(
         uint8 *src_data, int src_bytes, uint8 *dst_data, int dst_bytes,
         int xsize, int ysize, eChanType pixel_type );
     void LibJPEG_CompressBlock(
         uint8 *src_data, int src_bytes, uint8 *dst_data, int &dst_bytes,
         int xsize, int ysize, eChanType pixel_type, int quality );
-
-    void                DefaultDebug( const char * );
-    void                Debug( void (*)(const char *), const char *fmt, ... );
-
 } // end namespace PCIDSK
 
 #endif // __INCLUDE_CORE_PCIDSK_UTILS_H

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ndfdataset.cpp 21749 2011-02-19 12:25:29Z rouault $
+ * $Id: ndfdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  NDF Driver
  * Purpose:  Implementation of NLAPS Data Format read support.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ndfdataset.cpp 21749 2011-02-19 12:25:29Z rouault $");
+CPL_CVSID("$Id: ndfdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -48,6 +48,8 @@ class NDFDataset : public RawDataset
 
     char        **papszHeader;
     const char  *Get( const char *pszKey, const char *pszDefault);
+
+    int         ReadHeader( FILE * );
 
   public:
     		NDFDataset();
@@ -93,7 +95,7 @@ NDFDataset::~NDFDataset()
 
     for( int i = 0; i < GetRasterCount(); i++ )
     {
-        VSIFCloseL( ((RawRasterBand *) GetRasterBand(i+1))->GetFPL() );
+        VSIFCloseL( ((RawRasterBand *) GetRasterBand(i+1))->GetFP() );
     }
 }
 
@@ -164,6 +166,9 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      The user must select the header file (ie. .H1).                 */
 /* -------------------------------------------------------------------- */
+    if( poOpenInfo->fp == NULL )
+        return NULL;
+
     if( poOpenInfo->nHeaderBytes < 50 )
         return NULL;
 
@@ -177,18 +182,14 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      keyword is already seperated from the value by an equal         */
 /*      sign.                                                           */
 /* -------------------------------------------------------------------- */
-
-    VSILFILE* fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
-    if (fp == NULL)
-        return NULL;
-
     const char *pszLine;
     const int nHeaderMax = 1000;
     int nHeaderLines = 0;
     char **papszHeader = (char **) CPLMalloc(sizeof(char *) * (nHeaderMax+1));
 
-    while( nHeaderLines < nHeaderMax
-           && (pszLine = CPLReadLineL( fp )) != NULL
+    VSIRewind( poOpenInfo->fp );
+    while( nHeaderLines < nHeaderMax 
+           && (pszLine = CPLReadLine( poOpenInfo->fp )) != NULL 
            && !EQUAL(pszLine,"END_OF_HDR;") )
     {
         char *pszFixed;
@@ -203,8 +204,6 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
         papszHeader[nHeaderLines++] = pszFixed;
         papszHeader[nHeaderLines] = NULL;
     }
-    VSIFCloseL(fp);
-    fp = NULL;
     
     if( CSLFetchNameValue( papszHeader, "PIXELS_PER_LINE" ) == NULL 
         || CSLFetchNameValue( papszHeader, "LINES_PER_DATA_FILE" ) == NULL 
@@ -293,7 +292,7 @@ GDALDataset *NDFDataset::Open( GDALOpenInfo * poOpenInfo )
             osFilename = CPLFormFilename( osBasePath, osFilename, NULL);
         }
 
-        VSILFILE *fpRaw = VSIFOpenL( osFilename, "rb" );
+        FILE *fpRaw = VSIFOpenL( osFilename, "rb" );
         if( fpRaw == NULL )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
@@ -444,7 +443,6 @@ void GDALRegister_NDF()
                                    "NLAPS Data Format" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#NDF" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = NDFDataset::Open;
 

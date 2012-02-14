@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpamproxydb.cpp 22812 2011-07-25 04:50:23Z warmerdam $
+ * $Id: gdalpamproxydb.cpp 18063 2009-11-21 21:11:49Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of the GDAL PAM Proxy database interface.
@@ -35,7 +35,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalpamproxydb.cpp 22812 2011-07-25 04:50:23Z warmerdam $");
+CPL_CVSID("$Id: gdalpamproxydb.cpp 18063 2009-11-21 21:11:49Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -93,7 +93,7 @@ void GDALPamProxyDB::LoadDB()
 /* -------------------------------------------------------------------- */
     CPLString osDBName = 
         CPLFormFilename( osProxyDBDir, "gdal_pam_proxy", "dat" );
-    VSILFILE *fpDB = VSIFOpenL( osDBName, "r" );
+    FILE *fpDB = VSIFOpenL( osDBName, "r" );
 
     nUpdateCounter = 0;
     if( fpDB == NULL )
@@ -186,7 +186,7 @@ void GDALPamProxyDB::SaveDB()
                   osDBName.c_str() );
     }
 
-    VSILFILE *fpDB = VSIFOpenL( osDBName, "w" );
+    FILE *fpDB = VSIFOpenL( osDBName, "w" );
     if( fpDB == NULL )
     {
         if( hLock )
@@ -281,17 +281,12 @@ static void InitProxyDB()
 void PamCleanProxyDB()
 
 {
-    {
-        CPLMutexHolderD( &hProxyDBLock );
-        
-        bProxyDBInitialized = FALSE;
-        
-        delete poProxyDB;
-        poProxyDB = NULL;
-    }
+    CPLMutexHolderD( &hProxyDBLock );
+    
+    bProxyDBInitialized = FALSE;
 
-    CPLDestroyMutex( hProxyDBLock );
-    hProxyDBLock = NULL;
+    delete poProxyDB;
+    poProxyDB = NULL;
 }
 
 /************************************************************************/

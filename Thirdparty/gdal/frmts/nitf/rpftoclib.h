@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rpftoclib.h 21951 2011-03-12 22:02:07Z warmerdam $
+ * $Id: rpftoclib.h rouault $
  *
  * Project:  RPF A.TOC read Library
  * Purpose:  Main GDAL independent include file for RPF TOC support.  
@@ -96,7 +96,7 @@ typedef struct
 RPFToc     CPL_DLL *RPFTOCRead(const char* pszFilename, NITFFile* psFile);
 
 /** Get the TOC information from a NITF TOC file or a non NITF TOC file */
-RPFToc     CPL_DLL *RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* tocHeader);
+RPFToc     CPL_DLL *RPFTOCReadFromBuffer(const char* pszFilename, FILE* fp, const char* tocHeader);
 
 void       CPL_DLL  RPFTOCFree(RPFToc*  nitfToc);
 

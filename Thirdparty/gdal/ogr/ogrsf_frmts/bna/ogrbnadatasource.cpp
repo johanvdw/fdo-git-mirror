@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrbnadatasource.cpp 23244 2011-10-16 21:52:16Z rouault $
+ * $Id: ogrbnadatasource.cpp
  *
  * Project:  BNA Translator
  * Purpose:  Implements OGRBNADataSource class
@@ -61,7 +61,7 @@ OGRBNADataSource::~OGRBNADataSource()
 {
     if ( fpOutput != NULL )
     {
-        VSIFCloseL( fpOutput);
+        VSIFClose( fpOutput);
     }
 
     for( int i = 0; i < nLayers; i++ )
@@ -163,18 +163,16 @@ int OGRBNADataSource::Open( const char * pszFilename, int bUpdateIn)
 /* -------------------------------------------------------------------- */
     VSIStatBufL sStatBuf;
 
-    if( VSIStatExL( pszFilename, &sStatBuf, VSI_STAT_NATURE_FLAG ) != 0 )
+    if( VSIStatL( pszFilename, &sStatBuf ) != 0 )
         return FALSE;
     
 // -------------------------------------------------------------------- 
-//      Does this appear to be a .bna file?
+//      Does this appear to be an .bna file?
 // --------------------------------------------------------------------
-    if( !(EQUAL( CPLGetExtension(pszFilename), "bna" )
-           || ((EQUALN( pszFilename, "/vsigzip/", 9) || EQUALN( pszFilename, "/vsizip/", 8)) &&
-               (strstr( pszFilename, ".bna") || strstr( pszFilename, ".BNA")))) )
+    if( !EQUAL( CPLGetExtension(pszFilename), "bna" ) )
         return FALSE;
     
-    VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
+    FILE* fp = VSIFOpen(pszFilename, "rb");
     if (fp)
     {
         BNARecord* record;
@@ -204,7 +202,7 @@ int OGRBNADataSource::Open( const char * pszFilename, int bUpdateIn)
 
         while(1)
         {
-            int offset = (int) VSIFTellL(fp);
+            int offset = VSIFTell(fp);
             int line = curLine;
             record =  BNA_GetNextRecord(fp, &ok, &curLine, FALSE, BNA_READ_NONE);
             if (ok == FALSE)
@@ -258,7 +256,7 @@ int OGRBNADataSource::Open( const char * pszFilename, int bUpdateIn)
             }
         }
 #endif
-        VSIFCloseL(fp);
+        VSIFClose(fp);
     }
 
     return ok;
@@ -278,9 +276,6 @@ int OGRBNADataSource::Create( const char *pszFilename,
         return FALSE;
     }
 
-    if( strcmp(pszFilename,"/dev/stdout") == 0 )
-        pszFilename = "/vsistdout/";
-
 /* -------------------------------------------------------------------- */
 /*     Do not override exiting file.                                    */
 /* -------------------------------------------------------------------- */
@@ -294,7 +289,10 @@ int OGRBNADataSource::Create( const char *pszFilename,
 /* -------------------------------------------------------------------- */
     pszName = CPLStrdup( pszFilename );
 
-    fpOutput = VSIFOpenL( pszFilename, "wb" );
+    if( EQUAL(pszFilename,"stdout") )
+        fpOutput = stdout;
+    else
+        fpOutput = VSIFOpen( pszFilename, "wb" );
     if( fpOutput == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 

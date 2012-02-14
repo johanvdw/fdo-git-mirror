@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grass57dataset.cpp 20157 2010-07-28 19:32:04Z rouault $
+ * $Id: grass57dataset.cpp 18537 2010-01-12 15:05:51Z rblazek $
  *
  * Project:  GRASS Driver
  * Purpose:  Implement GRASS raster read/write support
@@ -56,36 +56,11 @@ char *GPJ_grass_to_wkt(struct Key_Value *proj_info,
 
 #define GRASS_MAX_COLORS 100000  // what is the right value
 
-CPL_CVSID("$Id: grass57dataset.cpp 20157 2010-07-28 19:32:04Z rouault $");
+CPL_CVSID("$Id: grass57dataset.cpp 18537 2010-01-12 15:05:51Z rblazek $");
 
 CPL_C_START
 void	GDALRegister_GRASS(void);
 CPL_C_END
-
-#if GRASS_VERSION_MAJOR  >= 7
-#define G_get_cellhd             Rast_get_cellhd
-#define G_raster_map_type        Rast_map_type
-#define G_read_fp_range          Rast_read_fp_range
-#define G_get_fp_range_min_max   Rast_get_fp_range_min_max
-#define G_set_c_null_value       Rast_set_c_null_value
-#define G_set_f_null_value       Rast_set_f_null_value
-#define G_set_d_null_value       Rast_set_d_null_value
-#define G_open_cell_old          Rast_open_old
-#define G_copy                   memcpy
-#define G_read_colors            Rast_read_colors
-#define G_get_color_range        Rast_get_c_color_range
-#define G_colors_count           Rast_colors_count
-#define G_get_f_color_rule       Rast_get_fp_color_rule
-#define G_free_colors            Rast_free_colors
-#define G_close_cell             Rast_close
-#define G_allocate_c_raster_buf  Rast_allocate_c_buf
-#define G_get_c_raster_row       Rast_get_c_row
-#define G_is_c_null_value        Rast_is_c_null_value
-#define G_get_f_raster_row       Rast_get_f_row
-#define G_get_d_raster_row       Rast_get_d_row
-#define G_allocate_f_raster_buf  Rast_allocate_f_buf
-#define G_allocate_d_raster_buf  Rast_allocate_d_buf
-#endif
 
 /************************************************************************/
 /*                         Grass2CPLErrorHook()                         */
@@ -333,11 +308,7 @@ GRASSRasterBand::GRASSRasterBand( GRASSDataset *poDS, int nBand,
             int	nRed, nGreen, nBlue;
             GDALColorEntry    sColor;
 
-#if GRASS_VERSION_MAJOR  >= 7
-            if( Rast_get_c_color( &iColor, &nRed, &nGreen, &nBlue, &sGrassColors ) )
-#else
             if( G_get_color( iColor, &nRed, &nGreen, &nBlue, &sGrassColors ) )
-#endif
             {
                 sColor.c1 = nRed;
                 sColor.c2 = nGreen;
@@ -742,7 +713,7 @@ GRASSDataset::~GRASSDataset()
     if ( pszElement )
 	G_free ( pszElement );
 
-    G_free( pszProjection );
+    CPLFree( pszProjection );
 }
 
 /************************************************************************/
@@ -950,16 +921,12 @@ GDALDataset *GRASSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Capture some information from the file that is of interest.     */
 /* -------------------------------------------------------------------- */
-
-#if GRASS_VERSION_MAJOR  >= 7
-    Rast_get_cellhd( papszCells[0], papszMapsets[0], &(poDS->sCellInfo) );
-#else
+    
     if( G_get_cellhd( papszCells[0], papszMapsets[0], &(poDS->sCellInfo) ) != 0 ) {
-        CPLError( CE_Warning, CPLE_AppDefined, "GRASS: Cannot open raster header");
-        delete poDS;
-        return NULL;
+	CPLError( CE_Warning, CPLE_AppDefined, "GRASS: Cannot open raster header");
+	delete poDS;
+	return NULL;
     }
-#endif
 
     poDS->nRasterXSize = poDS->sCellInfo.cols;
     poDS->nRasterYSize = poDS->sCellInfo.rows;

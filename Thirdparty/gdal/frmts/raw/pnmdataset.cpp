@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pnmdataset.cpp 21696 2011-02-12 20:35:50Z rouault $
+ * $Id: pnmdataset.cpp 16865 2009-04-27 12:49:49Z chaitanya $
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: pnmdataset.cpp 21696 2011-02-12 20:35:50Z rouault $");
+CPL_CVSID("$Id: pnmdataset.cpp 16865 2009-04-27 12:49:49Z chaitanya $");
 
 CPL_C_START
 void    GDALRegister_PNM(void);
@@ -45,7 +45,7 @@ CPL_C_END
 
 class PNMDataset : public RawDataset
 {
-    VSILFILE        *fpImage;       // image data file.
+    FILE        *fpImage;       // image data file.
 
     int         bGeoTransformValid;
     double      adfGeoTransform[6];
@@ -119,7 +119,7 @@ int PNMDataset::Identify( GDALOpenInfo * poOpenInfo )
 /*      Verify that this is a _raw_ ppm or pgm file.  Note, we don't    */
 /*      support ascii files, or pbm (1bit) files.                       */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 10 )
+    if( poOpenInfo->nHeaderBytes < 10 || poOpenInfo->fp == NULL )
         return FALSE;
 
     if( poOpenInfo->pabyHeader[0] != 'P'  ||
@@ -217,8 +217,10 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->nRasterYSize = nHeight;
 
 /* -------------------------------------------------------------------- */
-/*      Open file                                                       */
+/*      Assume ownership of the file handled from the GDALOpenInfo.     */
 /* -------------------------------------------------------------------- */
+    VSIFClose( poOpenInfo->fp );
+    poOpenInfo->fp = NULL;
 
     if( poOpenInfo->eAccess == GA_Update )
         poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb+" );
@@ -349,7 +351,7 @@ GDALDataset *PNMDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to create the file.                                         */
 /* -------------------------------------------------------------------- */
-    VSILFILE        *fp;
+    FILE        *fp;
 
     fp = VSIFOpenL( pszFilename, "wb" );
 
@@ -426,7 +428,6 @@ void GDALRegister_PNM()
 "<CreationOptionList>"
 "   <Option name='MAXVAL' type='unsigned int' description='Maximum color value'/>"
 "</CreationOptionList>" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = PNMDataset::Open;
         poDriver->pfnCreate = PNMDataset::Create;

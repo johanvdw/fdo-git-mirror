@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57datasource.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogrs57datasource.cpp 15418 2008-09-23 07:13:36Z dron $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57DataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrs57datasource.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: ogrs57datasource.cpp 15418 2008-09-23 07:13:36Z dron $");
 
 /************************************************************************/
 /*                          OGRS57DataSource()                          */
@@ -157,13 +157,8 @@ int OGRS57DataSource::Open( const char * pszFilename, int bTestOpen )
 /* -------------------------------------------------------------------- */
     if( bTestOpen )
     {
-        VSILFILE    *fp;
+        FILE    *fp;
         char    pachLeader[10];
-
-        VSIStatBufL sStatBuf;
-        if (VSIStatExL( pszFilename, &sStatBuf, VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG ) != 0 ||
-            VSI_ISDIR(sStatBuf.st_mode))
-            return FALSE;
 
         fp = VSIFOpenL( pszFilename, "rb" );
         if( fp == NULL )

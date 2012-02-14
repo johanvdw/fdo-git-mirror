@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 ###############################################################################
-#  $Id: gdal_retile.py 21279 2010-12-16 21:25:08Z rouault $
 #
 # Purpose:  Module for retiling (merging) tiles and building tiled pyramids
 # Author:   Christian Meuller, christian.mueller@nvoe.at
-# UseDirForEachRow support by Chris Giesey & Elijah Robison
 #
 ###############################################################################
 # Copyright (c) 2007, Christian Mueller
@@ -84,7 +82,7 @@ class DataSetCache:
             return self.dict[name]
         result = gdal.Open(name)
         if result is None:
-            print("Error openenig:%s" % NameError)
+            print("Error openenig:",NameError)
             sys.exit(1)
         if len(self.queue)==self.cacheSize:
             toRemove = self.queue.pop(0)
@@ -105,10 +103,10 @@ class tile_info:
     def __init__(self,xsize,ysize,tileWidth,tileHeight):
         self.tileWidth=tileWidth
         self.tileHeight=tileHeight
-        self.countTilesX= int(xsize / tileWidth)
-        self.countTilesY= int(ysize / tileHeight)
-        self.lastTileWidth = int(xsize - self.countTilesX *  tileWidth)
-        self.lastTileHeight = int(ysize - self.countTilesY *  tileHeight)
+        self.countTilesX= xsize / tileWidth
+        self.countTilesY= ysize / tileHeight
+        self.lastTileWidth = xsize - self.countTilesX *  tileWidth
+        self.lastTileHeight = ysize - self.countTilesY *  tileHeight
 
         if (self.lastTileWidth > 0 ):
             self.countTilesX=self.countTilesX+1
@@ -166,9 +164,6 @@ class mosaic_info:
            self.ct = ct.Clone()
         else:
            self.ct = None
-        self.ci = [0] * self.bands
-        for iband in range(self.bands):
-            self.ci[iband] = fhInputTile.GetRasterBand(iband + 1).GetRasterColorInterpretation()
 
         extent = self.ogrTileIndexDS.GetLayer().GetExtent()
         self.ulx = extent[0];
@@ -252,7 +247,6 @@ class mosaic_info:
                 t_band = resultDS.GetRasterBand( bandNr )
                 if self.ct is not None:
                     t_band.SetRasterColorTable(self.ct)
-                t_band.SetRasterColorInterpretation(self.ci[bandNr-1])
                 data = s_band.ReadRaster( readOffsetX,readOffsetY,readX,readY, readX,readY, self.band_type )
                 t_band.WriteRaster(writeOffsetX,writeOffsetY,readX,readY,data )
 
@@ -276,11 +270,7 @@ class mosaic_info:
 def getTileIndexFromFiles( inputTiles, driverTyp):
 
     if Verbose:
-        from sys import version_info
-        if version_info >= (3,0,0):
-            exec('print("Building internal Index for %d tile(s) ..." % len(inputTiles), end=" ")')
-        else:
-            exec('print "Building internal Index for %d tile(s) ..." % len(inputTiles), ')
+        print("Building internal Index for %d tile(s) ..." % len(inputTiles), end=' ')
 
     ogrTileIndexDS = createTileIndex("TileIndex",TileIndexFieldName,None,driverTyp);
     for inputTile in inputTiles:
@@ -321,8 +311,7 @@ def tileImage(minfo, ti ):
 
     """
 
-    global LastRowIndx
-    LastRowIndx=-1
+
     OGRDS=createTileIndex("TileResult_0", TileIndexFieldName, Source_SRS,TileIndexDriverTyp)
 
 
@@ -342,25 +331,16 @@ def tileImage(minfo, ti ):
                 width=ti.lastTileWidth
             else:
                 width=ti.tileWidth
-            if UseDirForEachRow :
-                tilename=getTileName(minfo,ti, xIndex, yIndex,0)
-            else:
-                tilename=getTileName(minfo,ti, xIndex, yIndex)
+            tilename=getTileName(minfo,ti, xIndex, yIndex)
             createTile(minfo, offsetX, offsetY, width, height,tilename,OGRDS)
 
 
     if TileIndexName is not None:
-        if UseDirForEachRow and PyramidOnly == False:
-            shapeName=getTargetDir(0)+TileIndexName
-        else:
-            shapeName=getTargetDir()+TileIndexName
+        shapeName=getTargetDir()+TileIndexName
         copyTileIndexToDisk(OGRDS,shapeName)
 
     if CsvFileName is not None:
-        if UseDirForEachRow and PyramidOnly == False:
-            csvName=getTargetDir(0)+CsvFileName
-        else:
-            csvName=getTargetDir()+CsvFileName
+        csvName=getTargetDir()+CsvFileName
         copyTileIndexToCSV(OGRDS,csvName)
 
 
@@ -375,9 +355,6 @@ def copyTileIndexToDisk(OGRDS, fileName):
           break
       newFeature = feature.Clone()
       basename = os.path.basename(feature.GetField(0))
-      if UseDirForEachRow :
-          t = os.path.split(os.path.dirname(feature.GetField(0)))
-          basename = t[1]+"/"+basename
       newFeature.SetField(0,basename)
       SHAPEDS.GetLayer().CreateFeature(newFeature)
     closeTileIndex(SHAPEDS)
@@ -390,9 +367,6 @@ def copyTileIndexToCSV(OGRDS, fileName):
       if feature is None:
           break
       basename = os.path.basename(feature.GetField(0))
-      if UseDirForEachRow :
-          t = os.path.split(os.path.dirname(feature.GetField(0)))
-          basename = t[1]+"/"+basename
       csvfile.write(basename);
       geom = feature.GetGeometryRef()
       coords = geom.GetEnvelope();
@@ -449,11 +423,10 @@ def createPyramidTile(levelMosaicInfo, offsetX, offsetY, width, height,tileName,
 
     t_fh.SetGeoTransform( geotransform )
     t_fh.SetProjection( levelMosaicInfo.projection)
-    for band in range(1,bands+1):
-        t_band = t_fh.GetRasterBand( band )
-        if levelMosaicInfo.ct is not None:
+    if levelMosaicInfo.ct is not None:
+        for band in range(1,bands+1):
+            t_band = t_fh.GetRasterBand( band )
             t_band.SetRasterColorTable(levelMosaicInfo.ct)
-        t_band.SetRasterColorInterpretation(levelMosaicInfo.ci[band-1])
 
     res = gdal.ReprojectImage(s_fh,t_fh,None,None,ResamplingMethod)
     if  res!=0:
@@ -606,10 +579,8 @@ def closeTileIndex(OGRDataSource):
 
 def buildPyramid(minfo,createdTileIndexDS,tileWidth, tileHeight):
 
-    global LastRowIndx
     inputDS=createdTileIndexDS
     for level in range(1,Levels+1):
-        LastRowIndx = -1
         levelMosaicInfo = mosaic_info(minfo.filename,inputDS)
         levelOutputTileInfo = tile_info(levelMosaicInfo.xsize/2,levelMosaicInfo.ysize/2,tileWidth,tileHeight)
         inputDS=buildPyramidLevel(levelMosaicInfo,levelOutputTileInfo,level)
@@ -653,8 +624,6 @@ def getTileName(minfo,ti,xIndex,yIndex,level = -1):
     """
     creates the tile file name
     """
-    global LastRowIndx
-
     max = ti.countTilesX
     if (ti.countTilesY > max):
         max=ti.countTilesY
@@ -663,20 +632,10 @@ def getTileName(minfo,ti,xIndex,yIndex,level = -1):
     if parts[0][0]=="@" : #remove possible leading "@"
        parts = ( parts[0][1:len(parts[0])], parts[1])
 
-    if UseDirForEachRow :
-        format=getTargetDir(level)+str(yIndex)+os.sep+parts[0]+"_%0"+str(countDigits)+"i"+"_%0"+str(countDigits)+"i"
-        #See if there was a switch in the row, if so then create new dir for row.
-        if LastRowIndx < yIndex :
-            LastRowIndx = yIndex
-            if (os.path.exists(getTargetDir(level)+str(yIndex)) == False) :
-                os.mkdir(getTargetDir(level)+str(yIndex))
-    else:
-        format=getTargetDir(level)+parts[0]+"_%0"+str(countDigits)+"i"+"_%0"+str(countDigits)+"i"
-    #Check for the extension that should be used.
     if Extension is None:
-        format=format+parts[1]
+        format=getTargetDir(level)+parts[0]+"_%0"+str(countDigits)+"i"+"_%0"+str(countDigits)+"i"+parts[1]
     else:
-        format=format+"."+Extension
+        format=getTargetDir(level)+parts[0]+"_%0"+str(countDigits)+"i"+"_%0"+str(countDigits)+"i"+"."+Extension
     return format % (yIndex,xIndex)
 
 def UsageFormat():
@@ -697,7 +656,6 @@ def Usage():
      print('        [ -csv fileName [-csvDelim delimiter]]')
      print('        [-s_srs srs_def]  [-pyramidOnly] -levels numberoflevels')
      print('        [-r {near/bilinear/cubic/cubicspline/lanczos}]')
-     print('        [-useDirForEachRow]')
      print('        -targetDir TileDirectory input_files')
 
 # =============================================================================
@@ -708,7 +666,7 @@ def Usage():
 # Program mainline.
 #
 
-def main(args = None):
+def main(args):
 
     global Verbose
     global CreateOptions
@@ -731,12 +689,9 @@ def main(args = None):
     global ResamplingMethod
     global Levels
     global PyramidOnly
-    global UseDirForEachRow
 
     gdal.AllRegister()
 
-    if args is None:
-        args = sys.argv
     argv = gdal.GeneralCmdLineProcessor( args )
     if argv is None:
         return 1
@@ -753,7 +708,7 @@ def main(args = None):
             i+=1
             BandType = gdal.GetDataTypeByName( argv[i] )
             if BandType == gdal.GDT_Unknown:
-                print('Unknown GDAL data type: %s' % argv[i])
+                print('Unknown GDAL data type: ', argv[i])
                 return 1
         elif arg == '-co':
             i+=1
@@ -793,13 +748,13 @@ def main(args = None):
             elif ResamplingMethodString=="lanczos":
                 ResamplingMethod=GRA_Lanczos
             else:
-                print("Unknown resampling method: %s" % ResamplingMethodString)
+                print("Unknown resampling method:" ,ResamplingMethodString)
                 return 1
         elif arg == '-levels':
             i+=1
             Levels=int(argv[i])
             if Levels<1:
-                print("Invalid number of levels : %d" % Levels)
+                print("Invalid number of levels", Levels)
                 return 1
         elif arg == '-s_srs':
             i+=1
@@ -829,10 +784,8 @@ def main(args = None):
         elif arg == '-csvDelim':
             i+=1
             CsvDelimiter=argv[i]
-        elif arg == '-useDirForEachRow':
-            UseDirForEachRow=True
         elif arg[:1] == '-':
-            print('Unrecognised command option: %s' % arg)
+            print('Unrecognised command option: ', arg)
             Usage()
             return 1
 
@@ -854,24 +807,17 @@ def main(args = None):
         Usage()
         return 1
 
-    # create level 0 directory if needed
-    if(UseDirForEachRow and PyramidOnly==False) :
-        leveldir=TargetDir+str(0)+os.sep
-        if (os.path.exists(leveldir)==False):
-            os.mkdir(leveldir)
-
     if Levels > 0:    #prepare Dirs for pyramid
-        startIndx=1
-        for levelIndx in range (startIndx,Levels+1):
+        for levelIndx in range (1,Levels+1):
             leveldir=TargetDir+str(levelIndx)+os.sep
             if (os.path.exists(leveldir)):
                 continue
             os.mkdir(leveldir)
             if (os.path.exists(leveldir)==False):
-                print("Cannot create level dir: %s" % leveldir)
+                print("Cannot create level dir:", leveldir)
                 return 1
             if Verbose :
-                print("Created level dir: %s" % leveldir)
+                print("Created level dir: ",leveldir)
 
 
     Driver = gdal.GetDriverByName(Format)
@@ -942,9 +888,6 @@ def initGlobals():
     global ResamplingMethod
     global Levels
     global PyramidOnly
-    global LastRowIndx
-    global UseDirForEachRow
-
 
     Verbose=False
     CreateOptions = []
@@ -967,9 +910,6 @@ def initGlobals():
     ResamplingMethod=GRA_NearestNeighbour
     Levels=0
     PyramidOnly=False
-    LastRowIndx=-1
-    UseDirForEachRow=False
-
 
 
 #global vars
@@ -993,9 +933,9 @@ TargetDir=None
 ResamplingMethod=GRA_NearestNeighbour
 Levels=0
 PyramidOnly=False
-LastRowIndx=-1
-UseDirForEachRow=False
+
 
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
+

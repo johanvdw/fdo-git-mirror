@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvfkdatasource.cpp 23423 2011-11-26 18:40:30Z rouault $
+ * $Id: ogrvfkdatasource.cpp 18529 2010-01-12 00:10:56Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKDatasource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfkdatasource.cpp 23423 2011-11-26 18:40:30Z rouault $");
+CPL_CVSID("$Id: ogrvfkdatasource.cpp 18529 2010-01-12 00:10:56Z mloskot $");
 
 /*!
   \brief OGRVFKDataSource constructor
@@ -135,7 +135,7 @@ int OGRVFKDataSource::Open(const char *pszNewName, int bTestOpen)
     papoLayers = (OGRVFKLayer **) CPLCalloc(sizeof(OGRVFKLayer *), poReader->GetDataBlockCount());
     
     for (int iLayer = 0; iLayer < poReader->GetDataBlockCount(); iLayer++) {
-        papoLayers[iLayer] = CreateLayerFromBlock(poReader->GetDataBlock(iLayer));
+        papoLayers[iLayer] = CreateLayer(poReader->GetDataBlock(iLayer));
 	nLayers++;
     }
     
@@ -179,7 +179,7 @@ int OGRVFKDataSource::TestCapability(const char * pszCap)
   \return poiter to OGRVFKLayer instance
   \return NULL on error
 */
-OGRVFKLayer *OGRVFKDataSource::CreateLayerFromBlock(const VFKDataBlock *poDataBlock)
+OGRVFKLayer *OGRVFKDataSource::CreateLayer(const VFKDataBlock *poDataBlock)
 {
     OGRVFKLayer *poLayer;
 

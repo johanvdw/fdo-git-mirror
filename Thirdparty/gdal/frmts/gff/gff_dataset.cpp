@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gff_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gff_dataset.cpp 18244 2009-12-10 17:08:59Z warmerdam $
  *
  * Project:  Ground-based SAR Applitcations Testbed File Format driver
  * Purpose:  Support in GDAL for Sandia National Laboratory's GFF format
@@ -35,7 +35,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gff_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: gff_dataset.cpp 18244 2009-12-10 17:08:59Z warmerdam $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *
@@ -46,7 +46,7 @@ class GFFRasterBand;
 class GFFDataset : public GDALPamDataset 
 {
     friend class GFFRasterBand;
-    VSILFILE *fp;
+    FILE *fp;
     GDALDataType eDataType;
     unsigned int nEndianess;
     /* Some relevant headers */

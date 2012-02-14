@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdedatasource.cpp 22470 2011-05-31 18:18:26Z warmerdam $
+ * $Id: ogrsdedatasource.cpp 14243 2008-04-09 21:17:06Z hobu $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDEDataSource class.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "gdal.h"
 
-CPL_CVSID("$Id: ogrsdedatasource.cpp 22470 2011-05-31 18:18:26Z warmerdam $");
+CPL_CVSID("$Id: ogrsdedatasource.cpp 14243 2008-04-09 21:17:06Z hobu $");
 
 /************************************************************************/
 /*                          OGRSDEDataSource()                           */
@@ -71,8 +71,7 @@ OGRSDEDataSource::~OGRSDEDataSource()
     
     // Commit our transactions if we were opened for update
     if (bDSUpdate && bDSUseVersionEdits && (nNextState != -2 && nState != SE_DEFAULT_STATE_ID )  ) {
-        CPLDebug("OGR_SDE", "Moving states from %ld to %ld", 
-                 (long) nState, (long) nNextState);
+        CPLDebug("OGR_SDE", "Moving states from %ld to %ld", nState, nNextState);
 
         SE_connection_commit_transaction(hConnection);
         nSDEErr = SE_state_close(hConnection, nNextState);
@@ -555,8 +554,8 @@ int OGRSDEDataSource::SetVersionState( const char* pszVersionName ) {
 
     
     if (bDSUpdate && bDSUseVersionEdits) {
-        LONG nLockCount = 0;
-        SE_VERSION_LOCK* pahLocks = NULL;
+        LONG nLockCount;
+        SE_VERSION_LOCK* pahLocks;
         nSDEErr = SE_version_get_locks(hConnection, pszVersionName, &nLockCount, &pahLocks);
     
         if( nSDEErr != SE_SUCCESS )
@@ -837,21 +836,20 @@ OGRSDEDataSource::CreateLayer( const char * pszLayerName,
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
     int iLayer;
-    CPLString osFullName = pszLayerName;
 
-    if( strchr(pszLayerName,'.') == NULL )
-        osFullName = "SDE." + osFullName;
+
+    // TODO: This is deficient. You can open a layer as 'tablename', but it
+    // will be known as 'SDE.tablename' or whatever fully-qualified name.
+    // This won't match in that case.
 
     for( iLayer = 0; iLayer < nLayers; iLayer++ )
     {
-        // We look for an exact match or for SDE.layername which is how
-        // the layer will be known after reading back. 
-        if( EQUAL(osFullName,
-                  papoLayers[iLayer]->GetLayerDefn()->GetName())
-            || EQUAL(pszLayerName, 
-                     papoLayers[iLayer]->GetLayerDefn()->GetName()) )
+
+        if( EQUAL(pszLayerName,
+                  papoLayers[iLayer]->GetLayerDefn()->GetName()) )
         {
-            if( CSLFetchBoolean( papszOptions, "OVERWRITE", FALSE ) )
+            if( CSLFetchNameValue( papszOptions, "OVERWRITE" ) != NULL
+                && !EQUAL(CSLFetchNameValue(papszOptions,"OVERWRITE"),"NO") )
             {
                 DeleteLayer( iLayer );
             }
@@ -866,51 +864,6 @@ OGRSDEDataSource::CreateLayer( const char * pszLayerName,
             }
         }
     }
-
-/* -------------------------------------------------------------------- */
-/*      Sometimes there are residual layers left around and we need     */
-/*      to blow them away.                                              */
-/* -------------------------------------------------------------------- */
-    SE_REGINFO *ahTableList;
-    LONG nTableListCount;
-    int iTable;
-
-    nSDEErr = SE_registration_get_info_list( hConnection, &ahTableList,
-                                             &nTableListCount );
-    if( nSDEErr != SE_SUCCESS )
-    {
-        IssueSDEError( nSDEErr, "SE_registration_get_info_list" );
-        return NULL;
-    }
-
-    for( iTable = 0; iTable < nTableListCount; iTable++ )
-    {
-        char szTableName[SE_QUALIFIED_TABLE_NAME+1];
-        szTableName[0] = '\0';
-
-        SE_reginfo_get_table_name( ahTableList[iTable], szTableName );
-        if( EQUAL(szTableName,pszLayerName) 
-            || EQUAL(szTableName,osFullName) )
-        {
-            if( !CSLFetchBoolean( papszOptions, "OVERWRITE", FALSE ) )
-            {
-                CPLError( CE_Failure, CPLE_AppDefined, 
-                          "Registration informatin for  %s already exists, CreateLayer failed.\n"
-                          "Use the layer creation option OVERWRITE=YES to pre-clear it.",
-                          pszLayerName );
-                return NULL;
-            }
-
-            CPLDebug( "SDE", "sde_layer_delete(%s) - hidden/residual layer.",
-                      osFullName.c_str() );
-
-            SE_layer_delete( hConnection, szTableName, "SHAPE");
-            SE_registration_delete( hConnection, szTableName );
-            SE_table_delete( hConnection, szTableName );
-        }
-    }
-
-    SE_registration_free_info_list( nTableListCount, ahTableList );
 
 /* -------------------------------------------------------------------- */
 /*      Get various layer creation options.                             */
@@ -1006,15 +959,10 @@ OGRSDEDataSource::CreateLayer( const char * pszLayerName,
              || wkbFlatten(eType) == wkbMultiLineString )
         nLayerShapeTypes |= ( SE_LINE_TYPE_MASK | SE_SIMPLE_LINE_TYPE_MASK );
 
-    else if( wkbFlatten(eType) == wkbPolygon )
-    {
+    else if( wkbFlatten(eType) == wkbPolygon
+             || wkbFlatten(eType) == wkbMultiPolygon )
         nLayerShapeTypes |= SE_AREA_TYPE_MASK;
-    }
-    else if( wkbFlatten(eType) == wkbMultiPolygon )
-    {
-        nLayerShapeTypes |= SE_AREA_TYPE_MASK;
-        nLayerShapeTypes |= SE_MULTIPART_TYPE_MASK;
-    }
+    
     else if( eType == wkbUnknown )
     {
         nLayerShapeTypes |= (  SE_POINT_TYPE_MASK
@@ -1088,12 +1036,7 @@ OGRSDEDataSource::CreateLayer( const char * pszLayerName,
             return NULL;
         }
     }
-
-    CPLDebug( "SDE", "Creating layer with envelope (%g,%g) to (%g,%g)",
-              sLayerEnvelope.minx,
-              sLayerEnvelope.miny,
-              sLayerEnvelope.maxx,
-              sLayerEnvelope.maxy );
+    
     nSDEErr = SE_layerinfo_set_envelope( hLayerInfo, &sLayerEnvelope );
     if( nSDEErr != SE_SUCCESS )
     {
@@ -1260,9 +1203,6 @@ OGRSDEDataSource::CreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     poLayer->SetFIDColType( SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE );
 
-    poLayer->SetUseNSTRING( 
-        CSLFetchBoolean( papszOptions, "USE_NSTRING", FALSE ) );
-
 /* -------------------------------------------------------------------- */
 /*      Add layer to data source layer list.                            */
 /* -------------------------------------------------------------------- */
@@ -1322,9 +1262,7 @@ void OGRSDEDataSource::EnumerateSpatialTables()
         return;
     }
 
-    CPLDebug( "OGR_SDE", 
-              "SDE::EnumerateSpatialTables() found %d tables.", 
-              (int) nTableListCount );
+    CPLDebug( "OGR_SDE", "SDE::EnumerateSpatialTables() found %ld tables.", nTableListCount );
 
 /* -------------------------------------------------------------------- */
 /*      Process the tables, turning any appropriate ones into layers.   */
@@ -1380,21 +1318,15 @@ void OGRSDEDataSource::CreateLayerFromRegInfo( SE_REGINFO& reginfo )
     LONG nFIDColType;
     LONG nSDEErr;
 
-    nSDEErr = SE_reginfo_get_table_name( reginfo, szTableName );
-    if( nSDEErr != SE_SUCCESS )
-    {
-        CPLDebug( "SDE", 
-                  "Ignoring reginfo '%p', no table name.",
-                  reginfo );
-        return;
-    }
-
     // Ignore non-spatial, or hidden tables. 
     if( !SE_reginfo_has_layer( reginfo ) || SE_reginfo_is_hidden( reginfo ) )
     {
-        CPLDebug( "SDE", 
-                  "Ignoring layer '%s' as it is hidden or does not have a reginfo layer.", 
-                  szTableName );
+        return;
+    }
+
+    nSDEErr = SE_reginfo_get_table_name( reginfo, szTableName );
+    if( nSDEErr != SE_SUCCESS )
+    {
         return;
     }
 
@@ -1476,34 +1408,7 @@ OGRErr OGRSDEDataSource::ConvertOSRtoSDESpatRef( OGRSpatialReference *poSRS,
     if( SE_coordref_set_by_description( *psCoordRef, pszWkt ) != SE_SUCCESS )
         return OGRERR_FAILURE;
     
-    {
-        SE_ENVELOPE     sGenericEnvelope;
-        SE_coordref_get_xy_envelope( *psCoordRef, &sGenericEnvelope );
-
-        CPLDebug( "SDE", 
-                  "Created coordref '%s' with envelope (%g,%g) to (%g,%g)",
-                  pszWkt,
-                  sGenericEnvelope.minx,
-                  sGenericEnvelope.miny,
-                  sGenericEnvelope.maxx,
-                  sGenericEnvelope.maxy );
-    }
-
-    if( poSRS && poSRS->IsGeographic() )
-    {
-        LONG nSDEErr;
-
-        // Reset the offset and precision to match the ordinary values
-        // for SDE geographic coordinate systems. 
-        nSDEErr = SE_coordref_set_xy( *psCoordRef, -400, -400, 1.11195e9 );
-
-        if( nSDEErr != SE_SUCCESS ) 
-        {
-            IssueSDEError( nSDEErr, "SE_coordref_set_xy()" );
-        }
-    }
-
     CPLFree( pszWkt );
-
+    
     return OGRERR_NONE;
 }

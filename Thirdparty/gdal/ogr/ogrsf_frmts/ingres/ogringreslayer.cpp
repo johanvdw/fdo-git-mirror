@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringreslayer.cpp 19509 2010-04-23 16:49:33Z warmerdam $
+ * $Id: ogringreslayer.cpp 18518 2010-01-11 03:25:51Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogringreslayer.cpp 19509 2010-04-23 16:49:33Z warmerdam $");
+CPL_CVSID("$Id: ogringreslayer.cpp 18518 2010-01-11 03:25:51Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRIngresLayer()                            */
@@ -596,42 +596,42 @@ const char *OGRIngresLayer::GetGeometryColumn()
 /*                         FetchSRSId()                                 */
 /************************************************************************/
 
-int OGRIngresLayer::FetchSRSId(OGRFeatureDefn *poDefn)
+int OGRIngresLayer::FetchSRSId()
 {
-/* -------------------------------------------------------------------- */
-/*      We only support srses in the new ingres geospatial implementation.*/
-/* -------------------------------------------------------------------- */
-    if( !poDS->IsNewIngres() )
+    return -1;
+#ifdef notdef
+    char         szCommand[1024];
+    char           **papszRow;  
+    
+    if( hResultSet != NULL )
+        ingres_free_result( hResultSet );
+    hResultSet = NULL;
+				
+    sprintf( szCommand, 
+             "SELECT srid FROM geometry_columns "
+             "WHERE f_table_name = '%s'",
+             pszGeomColumnTable );
+
+    if( !ingres_query( poDS->GetConn(), szCommand ) )
+        hResultSet = ingres_store_result( poDS->GetConn() );
+
+    papszRow = NULL;
+    if( hResultSet != NULL )
+        papszRow = ingres_fetch_row( hResultSet );
+        
+
+    if( papszRow != NULL && papszRow[0] != NULL )
     {
-        nSRSId = -1;
+        nSRSId = atoi(papszRow[0]);
     }
 
-/* -------------------------------------------------------------------- */
-/*      If we haven't queried for the srs id yet, do so now.            */
-/* -------------------------------------------------------------------- */
-    if( nSRSId == -2 )
-    {
-        char         szCommand[1024];
-        char           **papszRow;
-        OGRIngresStatement oStatement(poDS->GetConn());
+    // make sure to free our results
+    if( hResultSet != NULL )
+        ingres_free_result( hResultSet );
+    hResultSet = NULL;
         
-        sprintf( szCommand, 
-                 "SELECT srid FROM geometry_columns "
-                 "WHERE f_table_name = '%s' AND f_geometry_column = '%s'",
-                 poDefn->GetName(),
-                 GetGeometryColumn());
-        
-        oStatement.ExecuteSQL(szCommand);
-        
-        papszRow = oStatement.GetRow();
-        
-        if( papszRow != NULL && papszRow[0] != NULL )
-        {
-            nSRSId = *((II_INT4 *) papszRow[0]);
-        }
-    }
-
     return nSRSId;
+#endif
 }
 
 /************************************************************************/

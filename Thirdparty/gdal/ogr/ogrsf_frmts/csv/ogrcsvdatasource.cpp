@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdatasource.cpp 23244 2011-10-16 21:52:16Z rouault $
+ * $Id: ogrcsvdatasource.cpp 17806 2009-10-13 17:27:54Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDataSource class
@@ -31,9 +31,8 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_csv.h"
-#include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: ogrcsvdatasource.cpp 23244 2011-10-16 21:52:16Z rouault $");
+CPL_CVSID("$Id: ogrcsvdatasource.cpp 17806 2009-10-13 17:27:54Z rouault $");
 
 /************************************************************************/
 /*                          OGRCSVDataSource()                          */
@@ -103,147 +102,21 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
     pszName = CPLStrdup( pszFilename );
     bUpdate = bUpdateIn;
 
-    if (bUpdateIn && bForceOpen && EQUAL(pszFilename, "/vsistdout/"))
-        return TRUE;
-
-    /* For writable /vsizip/, do nothing more */
-    if (bUpdateIn && bForceOpen && strncmp(pszFilename, "/vsizip/", 8) == 0)
-        return TRUE;
-
-    CPLString osFilename(pszFilename);
-    CPLString osBaseFilename = CPLGetFilename(pszFilename);
-    CPLString osExt = CPLGetExtension(osFilename);
-    pszFilename = NULL;
-
-    int bIgnoreExtension = EQUALN(osFilename, "CSV:", 4);
-    int bUSGeonamesFile = FALSE;
-    int bGeonamesOrgFile = FALSE;
-    if (bIgnoreExtension)
-    {
-        osFilename = osFilename + 4;
-    }
-
-    /* Those are *not* real .XLS files, but text file with tab as column separator */
-    if (EQUAL(osBaseFilename, "NfdcFacilities.xls") ||
-        EQUAL(osBaseFilename, "NfdcRunways.xls") ||
-        EQUAL(osBaseFilename, "NfdcRemarks.xls") ||
-        EQUAL(osBaseFilename, "NfdcSchedules.xls"))
-    {
-        if (bUpdateIn)
-            return FALSE;
-        bIgnoreExtension = TRUE;
-    }
-    else if ((EQUALN(osBaseFilename, "NationalFile_", 13) ||
-              EQUALN(osBaseFilename, "POP_PLACES_", 11) ||
-              EQUALN(osBaseFilename, "HIST_FEATURES_", 14) ||
-              EQUALN(osBaseFilename, "US_CONCISE_", 11) ||
-              EQUALN(osBaseFilename, "AllNames_", 9) ||
-              EQUALN(osBaseFilename, "Feature_Description_History_", 28) ||
-              EQUALN(osBaseFilename, "ANTARCTICA_", 11) ||
-              EQUALN(osBaseFilename, "GOVT_UNITS_", 11) ||
-              EQUALN(osBaseFilename, "NationalFedCodes_", 17) ||
-              EQUALN(osBaseFilename, "AllStates_", 10) ||
-              EQUALN(osBaseFilename, "AllStatesFedCodes_", 18) ||
-              (strlen(osBaseFilename) > 2 && EQUALN(osBaseFilename+2, "_Features_", 10)) ||
-              (strlen(osBaseFilename) > 2 && EQUALN(osBaseFilename+2, "_FedCodes_", 10))) &&
-             (EQUAL(osExt, "txt") || EQUAL(osExt, "zip")) )
-    {
-        if (bUpdateIn)
-            return FALSE;
-        bIgnoreExtension = TRUE;
-        bUSGeonamesFile = TRUE;
-
-        if (EQUAL(osExt, "zip") &&
-            strstr(osFilename, "/vsizip/") == NULL )
-        {
-            osFilename = "/vsizip/" + osFilename;
-        }
-    }
-    else if (EQUAL(osBaseFilename, "allCountries.txt") ||
-             EQUAL(osBaseFilename, "allCountries.zip"))
-    {
-        if (bUpdateIn)
-            return FALSE;
-        bIgnoreExtension = TRUE;
-        bGeonamesOrgFile = TRUE;
-
-        if (EQUAL(osExt, "zip") &&
-            strstr(osFilename, "/vsizip/") == NULL )
-        {
-            osFilename = "/vsizip/" + osFilename;
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Determine what sort of object this is.                          */
 /* -------------------------------------------------------------------- */
     VSIStatBufL sStatBuf;
 
-    if( VSIStatExL( osFilename, &sStatBuf, VSI_STAT_NATURE_FLAG ) != 0 )
+    if( VSIStatL( pszFilename, &sStatBuf ) != 0 )
         return FALSE;
 
 /* -------------------------------------------------------------------- */
 /*      Is this a single CSV file?                                      */
 /* -------------------------------------------------------------------- */
     if( VSI_ISREG(sStatBuf.st_mode)
-        && (bIgnoreExtension || EQUAL(osExt,"csv")) )
-    {
-        if (EQUAL(CPLGetFilename(osFilename), "NfdcFacilities.xls"))
-        {
-            return OpenTable( osFilename, "ARP");
-        }
-        else if (EQUAL(CPLGetFilename(osFilename), "NfdcRunways.xls"))
-        {
-            OpenTable( osFilename, "BaseEndPhysical");
-            OpenTable( osFilename, "BaseEndDisplaced");
-            OpenTable( osFilename, "ReciprocalEndPhysical");
-            OpenTable( osFilename, "ReciprocalEndDisplaced");
-            return nLayers != 0;
-        }
-        else if (bUSGeonamesFile)
-        {
-            /* GNIS specific */
-            if (EQUALN(osBaseFilename, "NationalFedCodes_", 17) ||
-                EQUALN(osBaseFilename, "AllStatesFedCodes_", 18) ||
-                EQUALN(osBaseFilename, "ANTARCTICA_", 11) ||
-                (strlen(osBaseFilename) > 2 && EQUALN(osBaseFilename+2, "_FedCodes_", 10)))
-            {
-                OpenTable( osFilename, NULL, "PRIMARY");
-            }
-            else if (EQUALN(osBaseFilename, "GOVT_UNITS_", 11) ||
-                     EQUALN(osBaseFilename, "Feature_Description_History_", 28))
-            {
-                OpenTable( osFilename, NULL, "");
-            }
-            else
-            {
-                OpenTable( osFilename, NULL, "PRIM");
-                OpenTable( osFilename, NULL, "SOURCE");
-            }
-            return nLayers != 0;
-        }
-
-        return OpenTable( osFilename );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Is this a single a ZIP file with only a CSV file inside ?       */
-/* -------------------------------------------------------------------- */
-    if( strncmp(osFilename, "/vsizip/", 8) == 0 &&
-        EQUAL(osExt, "zip") &&
-        VSI_ISREG(sStatBuf.st_mode) )
-    {
-        char** papszFiles = VSIReadDir(osFilename);
-        if (CSLCount(papszFiles) != 1 ||
-            !EQUAL(CPLGetExtension(papszFiles[0]), "CSV"))
-        {
-            CSLDestroy(papszFiles);
-            return FALSE;
-        }
-        CPLString osFilename = CPLFormFilename(osFilename, papszFiles[0], NULL);
-        CSLDestroy(papszFiles);
-        return OpenTable( osFilename );
-    }
+        && strlen(pszFilename) > 4
+        && EQUAL(pszFilename+strlen(pszFilename)-4,".csv") )
+        return OpenTable( pszFilename );
 
 /* -------------------------------------------------------------------- */
 /*      Otherwise it has to be a directory.                             */
@@ -255,12 +128,12 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
 /*      Scan through for entries ending in .csv.                        */
 /* -------------------------------------------------------------------- */
     int nNotCSVCount = 0, i;
-    char **papszNames = CPLReadDir( osFilename );
+    char **papszNames = CPLReadDir( pszFilename );
 
     for( i = 0; papszNames != NULL && papszNames[i] != NULL; i++ )
     {
         CPLString oSubFilename = 
-            CPLFormFilename( osFilename, papszNames[i], NULL );
+            CPLFormFilename( pszFilename, papszNames[i], NULL );
 
         if( EQUAL(papszNames[i],".") || EQUAL(papszNames[i],"..") )
             continue;
@@ -269,52 +142,18 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
             continue;
 
         if( VSIStatL( oSubFilename, &sStatBuf ) != 0 
-            || !VSI_ISREG(sStatBuf.st_mode) )
+            || !VSI_ISREG(sStatBuf.st_mode) 
+            || !EQUAL(CPLGetExtension(oSubFilename),"csv") )
         {
             nNotCSVCount++;
             continue;
         }
 
-        if (EQUAL(CPLGetExtension(oSubFilename),"csv"))
+        if( !OpenTable( oSubFilename ) )
         {
-            if( !OpenTable( oSubFilename ) )
-            {
-                CSLDestroy( papszNames );
-                nNotCSVCount++;
-                return FALSE;
-            }
-        }
-
-        /* GNIS specific */
-        else if ( strlen(papszNames[i]) > 2 &&
-                  EQUALN(papszNames[i]+2, "_Features_", 10) &&
-                  EQUAL(CPLGetExtension(papszNames[i]), "txt") )
-        {
-            int bRet = OpenTable( oSubFilename, NULL, "PRIM");
-            bRet |= OpenTable( oSubFilename, NULL, "SOURCE");
-            if ( !bRet )
-            {
-                CSLDestroy( papszNames );
-                nNotCSVCount++;
-                return FALSE;
-            }
-        }
-        /* GNIS specific */
-        else if ( strlen(papszNames[i]) > 2 &&
-                  EQUALN(papszNames[i]+2, "_FedCodes_", 10) &&
-                  EQUAL(CPLGetExtension(papszNames[i]), "txt") )
-        {
-            if ( !OpenTable( oSubFilename, NULL, "PRIMARY") )
-            {
-                CSLDestroy( papszNames );
-                nNotCSVCount++;
-                return FALSE;
-            }
-        }
-        else
-        {
+            CSLDestroy( papszNames );
             nNotCSVCount++;
-            continue;
+            return FALSE;
         }
     }
 
@@ -331,20 +170,18 @@ int OGRCSVDataSource::Open( const char * pszFilename, int bUpdateIn,
 /*                              OpenTable()                             */
 /************************************************************************/
 
-int OGRCSVDataSource::OpenTable( const char * pszFilename,
-                                 const char* pszNfdcRunwaysGeomField,
-                                 const char* pszGeonamesGeomFieldPrefix)
+int OGRCSVDataSource::OpenTable( const char * pszFilename )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    VSILFILE       * fp;
+    FILE       * fp;
 
     if( bUpdate )
-        fp = VSIFOpenL( pszFilename, "rb+" );
+        fp = VSIFOpen( pszFilename, "rb+" );
     else
-        fp = VSIFOpenL( pszFilename, "rb" );
+        fp = VSIFOpen( pszFilename, "rb" );
     if( fp == NULL )
     {
         CPLError( CE_Warning, CPLE_OpenFailed, 
@@ -353,38 +190,29 @@ int OGRCSVDataSource::OpenTable( const char * pszFilename,
         return FALSE;
     }
 
-    if( !bUpdate && strstr(pszFilename, "/vsigzip/") == NULL &&
-        strstr(pszFilename, "/vsizip/") == NULL )
-        fp = (VSILFILE*) VSICreateBufferedReaderHandle((VSIVirtualHandle*)fp);
-
 /* -------------------------------------------------------------------- */
 /*      Read and parse a line.  Did we get multiple fields?             */
 /* -------------------------------------------------------------------- */
 
-    const char* pszLine = CPLReadLineL( fp );
+    const char* pszLine = CPLReadLine( fp );
     if (pszLine == NULL)
     {
-        VSIFCloseL( fp );
+        VSIFClose( fp );
         return FALSE;
     }
     char chDelimiter = CSVDetectSeperator(pszLine);
-    VSIRewindL( fp );
+    VSIRewind( fp );
 
-    /* GNIS specific */
-    if (pszGeonamesGeomFieldPrefix != NULL &&
-        strchr(pszLine, '|') != NULL)
-        chDelimiter = '|';
-
-    char **papszFields = OGRCSVReadParseLineL( fp, chDelimiter, FALSE );
+    char **papszFields = CSVReadParseLine2( fp, chDelimiter );
 						
     if( CSLCount(papszFields) < 2 )
     {
-        VSIFCloseL( fp );
+        VSIFClose( fp );
         CSLDestroy( papszFields );
         return FALSE;
     }
 
-    VSIRewindL( fp );
+    VSIRewind( fp );
     CSLDestroy( papszFields );
 
 /* -------------------------------------------------------------------- */
@@ -393,24 +221,9 @@ int OGRCSVDataSource::OpenTable( const char * pszFilename,
     nLayers++;
     papoLayers = (OGRCSVLayer **) CPLRealloc(papoLayers, 
                                              sizeof(void*) * nLayers);
-
-    CPLString osLayerName = CPLGetBasename(pszFilename);
-    if (pszNfdcRunwaysGeomField != NULL)
-    {
-        osLayerName += "_";
-        osLayerName += pszNfdcRunwaysGeomField;
-    }
-    else if (pszGeonamesGeomFieldPrefix != NULL &&
-             !EQUAL(pszGeonamesGeomFieldPrefix, ""))
-    {
-        osLayerName += "_";
-        osLayerName += pszGeonamesGeomFieldPrefix;
-    }
-    if (EQUAL(pszFilename, "/vsistdin/"))
-        osLayerName = "layer";
+    
     papoLayers[nLayers-1] = 
-        new OGRCSVLayer( osLayerName, fp, pszFilename, FALSE, bUpdate,
-                         chDelimiter, pszNfdcRunwaysGeomField, pszGeonamesGeomFieldPrefix );
+        new OGRCSVLayer( CPLGetBasename(pszFilename), fp, pszFilename, FALSE, bUpdate, chDelimiter );
 
     return TRUE;
 }
@@ -442,15 +255,10 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      Verify that the datasource is a directory.                      */
 /* -------------------------------------------------------------------- */
-    VSIStatBufL sStatBuf;
+    VSIStatBuf sStatBuf;
 
-    if( strncmp(pszName, "/vsizip/", 8) == 0)
-    {
-        /* Do nothing */
-    }
-    else if( !EQUAL(pszName, "/vsistdout/") &&
-        (VSIStatL( pszName, &sStatBuf ) != 0
-        || !VSI_ISDIR( sStatBuf.st_mode )) )
+    if( VSIStat( pszName, &sStatBuf ) != 0 
+        || !VSI_ISDIR( sStatBuf.st_mode ) )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Attempt to create csv layer (file) against a non-directory datasource." );
@@ -460,32 +268,39 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
 /* -------------------------------------------------------------------- */
 /*      What filename would we use?                                     */
 /* -------------------------------------------------------------------- */
-    CPLString osFilename;
+    const char *pszFilename;
 
-    if( osDefaultCSVName != "" )
-    {
-        osFilename = CPLFormFilename( pszName, osDefaultCSVName, NULL );
-        osDefaultCSVName = "";
-    }
-    else
-    {
-        osFilename = CPLFormFilename( pszName, pszLayerName, "csv" );
-    }
+    pszFilename = CPLFormFilename( pszName, pszLayerName, "csv" );
 
 /* -------------------------------------------------------------------- */
-/*      Does this directory/file already exist?                         */
+/*      does this file already exist?                                   */
 /* -------------------------------------------------------------------- */
-    if( VSIStatL( osFilename, &sStatBuf ) == 0 )
+    
+    if( VSIStat( pszName, &sStatBuf ) != 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Attempt to create layer %s, but %s already exists.",
-                  pszLayerName, osFilename.c_str() );
+                  "Attempt to create layer %s, but file %s already exists.",
+                  pszLayerName, pszFilename );
         return NULL;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Create the empty file.                                          */
 /* -------------------------------------------------------------------- */
+    FILE *fp;
+
+    fp = VSIFOpen( pszFilename, "w+b" );
+
+    if( fp == NULL )
+    {
+        CPLError( CE_Failure, CPLE_OpenFailed, 
+                  "Failed to create %s:\n%s", 
+                  pszFilename, VSIStrerror( errno ) );
+                  
+                  
+        return NULL;
+    }
+
 
     const char *pszDelimiter = CSLFetchNameValue( papszOptions, "SEPARATOR");
     char chDelimiter = ',';
@@ -512,8 +327,7 @@ OGRCSVDataSource::CreateLayer( const char *pszLayerName,
     papoLayers = (OGRCSVLayer **) CPLRealloc(papoLayers, 
                                              sizeof(void*) * nLayers);
     
-    papoLayers[nLayers-1] = new OGRCSVLayer( pszLayerName, NULL, osFilename,
-                                             TRUE, TRUE, chDelimiter, NULL, NULL );
+    papoLayers[nLayers-1] = new OGRCSVLayer( pszLayerName, fp, pszFilename, TRUE, TRUE, chDelimiter );
 
 /* -------------------------------------------------------------------- */
 /*      Was a partiuclar CRLF order requested?                          */

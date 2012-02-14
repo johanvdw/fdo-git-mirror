@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_win32.cpp 23506 2011-12-10 13:43:59Z rouault $
+ * $Id: cpl_vsil_win32.cpp 17269 2009-06-20 03:42:47Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Win32.
@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_win32.cpp 23506 2011-12-10 13:43:59Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_win32.cpp 17269 2009-06-20 03:42:47Z warmerdam $");
 
 #if defined(WIN32)
 
@@ -63,14 +63,12 @@ class VSIWin32FilesystemHandler : public VSIFilesystemHandler
 public:
     virtual VSIVirtualHandle *Open( const char *pszFilename, 
                                     const char *pszAccess);
-    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags );
+    virtual int      Stat( const char *pszFilename, VSIStatBufL *pStatBuf );
     virtual int      Unlink( const char *pszFilename );
     virtual int      Rename( const char *oldpath, const char *newpath );
     virtual int      Mkdir( const char *pszDirname, long nMode );
     virtual int      Rmdir( const char *pszDirname );
     virtual char   **ReadDir( const char *pszDirname );
-    virtual int      IsCaseSensitive( const char* pszFilename )
-                      { (void) pszFilename; return FALSE; }
 };
 
 /************************************************************************/
@@ -83,7 +81,6 @@ class VSIWin32Handle : public VSIVirtualHandle
 {
   public:
     HANDLE       hFile;
-    int          bEOF;
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -92,7 +89,6 @@ class VSIWin32Handle : public VSIVirtualHandle
     virtual int       Eof();
     virtual int       Flush();
     virtual int       Close();
-    virtual int       Truncate( vsi_l_offset nNewSize );
 };
 
 /************************************************************************/
@@ -201,8 +197,6 @@ int VSIWin32Handle::Seek( vsi_l_offset nOffset, int nWhence )
     GUInt32       nMoveLow;
     LARGE_INTEGER li;
 
-    bEOF = FALSE;
-
     switch(nWhence)
     {
         case SEEK_CUR:
@@ -295,9 +289,6 @@ size_t VSIWin32Handle::Read( void * pBuffer, size_t nSize, size_t nCount )
     else
         nResult = dwSizeRead / nSize;
 
-    if( nResult != nCount )
-        bEOF = TRUE;
-
     return nResult;
 }
 
@@ -332,24 +323,14 @@ size_t VSIWin32Handle::Write( const void *pBuffer, size_t nSize, size_t nCount)
 int VSIWin32Handle::Eof()
 
 {
-    return bEOF;
-}
+    vsi_l_offset       nCur, nEnd;
 
-/************************************************************************/
-/*                             Truncate()                               */
-/************************************************************************/
-
-int VSIWin32Handle::Truncate( vsi_l_offset nNewSize )
-{
-    vsi_l_offset nCur = Tell();
-    Seek( nNewSize, SEEK_SET );
-    BOOL bRes = SetEndOfFile( hFile );
+    nCur = Tell();
+    Seek( 0, SEEK_END );
+    nEnd = Tell();
     Seek( nCur, SEEK_SET );
 
-    if (bRes)
-        return 0;
-    else
-        return -1;
+    return (nCur == nEnd);
 }
 
 /************************************************************************/
@@ -369,9 +350,7 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
     DWORD dwDesiredAccess, dwCreationDisposition, dwFlagsAndAttributes;
     HANDLE hFile;
 
-    if( strchr(pszAccess, '+') != NULL ||
-        strchr(pszAccess, 'w') != 0 ||
-        strchr(pszAccess, 'a') != 0 )
+    if( strchr(pszAccess, '+') != NULL || strchr(pszAccess, 'w') != 0 )
         dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
     else
         dwDesiredAccess = GENERIC_READ;
@@ -382,37 +361,13 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
         dwCreationDisposition = OPEN_EXISTING;
 
     dwFlagsAndAttributes = (dwDesiredAccess == GENERIC_READ) ? 
-        FILE_ATTRIBUTE_READONLY : FILE_ATTRIBUTE_NORMAL;
+                FILE_ATTRIBUTE_READONLY : FILE_ATTRIBUTE_NORMAL, 
     
-/* -------------------------------------------------------------------- */
-/*      On Win32 consider treating the filename as utf-8 and            */
-/*      converting to wide characters to open.                          */
-/* -------------------------------------------------------------------- */
 #ifndef WIN32CE
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        wchar_t *pwszFilename = 
-            CPLRecodeToWChar( pszFilename, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        hFile = CreateFileW( pwszFilename, dwDesiredAccess, 
-                            FILE_SHARE_READ | FILE_SHARE_WRITE, 
-                            NULL, dwCreationDisposition,  dwFlagsAndAttributes,
-                            NULL );
-        CPLFree( pwszFilename );
-    }
-    else
-    {
-        hFile = CreateFile( pszFilename, dwDesiredAccess, 
-                            FILE_SHARE_READ | FILE_SHARE_WRITE, 
-                            NULL, dwCreationDisposition,  dwFlagsAndAttributes,
-                            NULL );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      On WinCE we only support plain ascii filenames.                 */
-/* -------------------------------------------------------------------- */
-#else /* def WIN32CE */
+    hFile = CreateFile( pszFilename, dwDesiredAccess, 
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, 
+                        NULL, dwCreationDisposition,  dwFlagsAndAttributes, NULL );
+#else
     hFile = CE_CreateFileA( pszFilename, dwDesiredAccess, 
                         FILE_SHARE_READ | FILE_SHARE_WRITE, 
                         NULL, dwCreationDisposition,  dwFlagsAndAttributes, NULL );
@@ -423,29 +378,12 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
         errno = ErrnoFromGetLastError();
         return NULL;
     }
-
-/* -------------------------------------------------------------------- */
-/*      Create a VSI file handle.                                       */
-/* -------------------------------------------------------------------- */
-    VSIWin32Handle *poHandle = new VSIWin32Handle;
-    
-    poHandle->hFile = hFile;
-    poHandle->bEOF = FALSE;
-    
-    if (strchr(pszAccess, 'a') != 0)
-        poHandle->Seek(0, SEEK_END);
-    
-/* -------------------------------------------------------------------- */
-/*      If VSI_CACHE is set we want to use a cached reader instead      */
-/*      of more direct io on the underlying file.                       */
-/* -------------------------------------------------------------------- */
-    if( (EQUAL(pszAccess,"r") || EQUAL(pszAccess,"rb"))
-        && CSLTestBoolean( CPLGetConfigOption( "VSI_CACHE", "FALSE" ) ) )
-    {
-        return VSICreateCachedFile( poHandle );
-    }
     else
     {
+        VSIWin32Handle *poHandle = new VSIWin32Handle;
+        
+        poHandle->hFile = hFile;
+        
         return poHandle;
     }
 }
@@ -455,57 +393,20 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
 /************************************************************************/
 
 int VSIWin32FilesystemHandler::Stat( const char * pszFilename, 
-                                     VSIStatBufL * pStatBuf,
-                                     int nFlags )
+                                     VSIStatBufL * pStatBuf )
 
 {
-    (void) nFlags;
-
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        int nResult;
-        wchar_t *pwszFilename = 
-            CPLRecodeToWChar( pszFilename, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        nResult = _wstat64( pwszFilename, pStatBuf );
-        CPLFree( pwszFilename );
-
-        return nResult;
-    }
-    else
-#endif
-    {
-        return( VSI_STAT64( pszFilename, pStatBuf ) );
-    }
+    return( VSI_STAT64( pszFilename, pStatBuf ) );
 }
 
 /************************************************************************/
-
 /*                               Unlink()                               */
 /************************************************************************/
 
 int VSIWin32FilesystemHandler::Unlink( const char * pszFilename )
 
 {
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        int nResult;
-        wchar_t *pwszFilename = 
-            CPLRecodeToWChar( pszFilename, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        nResult = _wunlink( pwszFilename );
-        CPLFree( pwszFilename );
-        return nResult;
-    }
-    else
-#endif
-    {
-        return unlink( pszFilename );
-    }
+    return unlink( pszFilename );
 }
 
 /************************************************************************/
@@ -516,26 +417,7 @@ int VSIWin32FilesystemHandler::Rename( const char *oldpath,
                                            const char *newpath )
 
 {
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        int nResult;
-        wchar_t *pwszOldPath = 
-            CPLRecodeToWChar( oldpath, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-        wchar_t *pwszNewPath = 
-            CPLRecodeToWChar( newpath, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        nResult = _wrename( pwszOldPath, pwszNewPath );
-        CPLFree( pwszOldPath );
-        CPLFree( pwszNewPath );
-        return nResult;
-    }
-    else
-#endif
-    {
-        return rename( oldpath, newpath );
-    }
+    return rename( oldpath, newpath );
 }
 
 /************************************************************************/
@@ -547,23 +429,7 @@ int VSIWin32FilesystemHandler::Mkdir( const char * pszPathname,
 
 {
     (void) nMode;
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        int nResult;
-        wchar_t *pwszFilename = 
-            CPLRecodeToWChar( pszPathname, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        nResult = _wmkdir( pwszFilename );
-        CPLFree( pwszFilename );
-        return nResult;
-    }
-    else
-#endif
-    {
-        return mkdir( pszPathname );
-    }
+    return mkdir( pszPathname );
 }
 
 /************************************************************************/
@@ -573,23 +439,7 @@ int VSIWin32FilesystemHandler::Mkdir( const char * pszPathname,
 int VSIWin32FilesystemHandler::Rmdir( const char * pszPathname )
 
 {
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
-    {
-        int nResult;
-        wchar_t *pwszFilename = 
-            CPLRecodeToWChar( pszPathname, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-
-        nResult = _wrmdir( pwszFilename );
-        CPLFree( pwszFilename );
-        return nResult;
-    }
-    else
-#endif
-    {
-        return rmdir( pszPathname );
-    }
+    return rmdir( pszPathname );
 }
 
 /************************************************************************/
@@ -599,77 +449,53 @@ int VSIWin32FilesystemHandler::Rmdir( const char * pszPathname )
 char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
 
 {
-#if (defined(WIN32) && _MSC_VER >= 1310) || __MSVCRT_VERSION__ >= 0x0601
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "GDAL_FILENAME_IS_UTF8", "YES" ) ) )
+    struct _finddata_t c_file;
+    intptr_t hFile;
+    char    *pszFileSpec, **papszDir = NULL;
+
+    if (strlen(pszPath) == 0)
+        pszPath = ".";
+
+    pszFileSpec = CPLStrdup(CPLSPrintf("%s\\*.*", pszPath));
+
+    if ( (hFile = _findfirst( pszFileSpec, &c_file )) != -1L )
     {
-        struct _wfinddata_t c_file;
-        intptr_t hFile;
-        char    *pszFileSpec;
-        CPLStringList oDir;
-        
-        if (strlen(pszPath) == 0)
-            pszPath = ".";
-        
-        pszFileSpec = CPLStrdup(CPLSPrintf("%s\\*.*", pszPath));
-        wchar_t *pwszFileSpec = 
-            CPLRecodeToWChar( pszFileSpec, CPL_ENC_UTF8, CPL_ENC_UCS2 );
-        
-        if ( (hFile = _wfindfirst( pwszFileSpec, &c_file )) != -1L )
+        /* In case of really big number of files in the directory, CSLAddString */
+        /* can be slow (see #2158). We then directly build the list. */
+        int nItems=0;
+        int nAllocatedItems=0;
+        do
         {
-            do
+            if (nItems == 0)
             {
-                oDir.AddStringDirectly(
-                    CPLRecodeFromWChar(c_file.name,CPL_ENC_UCS2,CPL_ENC_UTF8));
-            } while( _wfindnext( hFile, &c_file ) == 0 );
-            
-            _findclose( hFile );
-        }
-        else
-        {
-            /* Should we generate an error???  
-             * For now we'll just return NULL (at the end of the function)
-             */
-        }
+                papszDir = (char**) CPLCalloc(2,sizeof(char*));
+                nAllocatedItems = 1;
+            }
+            else if (nItems >= nAllocatedItems)
+            {
+                nAllocatedItems = nAllocatedItems * 2;
+                papszDir = (char**)CPLRealloc(papszDir, 
+                                              (nAllocatedItems+2)*sizeof(char*));
+            }
 
-        CPLFree(pszFileSpec);
-        CPLFree(pwszFileSpec);
+            papszDir[nItems] = CPLStrdup(c_file.name);
+            papszDir[nItems+1] = NULL;
 
-        return oDir.StealList();
+            nItems++;
+        } while( _findnext( hFile, &c_file ) == 0 );
+
+        _findclose( hFile );
     }
     else
-#endif
     {
-        struct _finddata_t c_file;
-        intptr_t hFile;
-        char    *pszFileSpec;
-        CPLStringList oDir;
-        
-        if (strlen(pszPath) == 0)
-            pszPath = ".";
-        
-        pszFileSpec = CPLStrdup(CPLSPrintf("%s\\*.*", pszPath));
-        
-        if ( (hFile = _findfirst( pszFileSpec, &c_file )) != -1L )
-        {
-            do
-            {
-                oDir.AddString(c_file.name);
-            } while( _findnext( hFile, &c_file ) == 0 );
-            
-            _findclose( hFile );
-        }
-        else
-        {
-            /* Should we generate an error???  
-             * For now we'll just return NULL (at the end of the function)
-             */
-        }
-
-        CPLFree(pszFileSpec);
-        
-        return oDir.StealList();
+        /* Should we generate an error???  
+         * For now we'll just return NULL (at the end of the function)
+         */
     }
+
+    CPLFree(pszFileSpec);
+
+    return papszDir;
 }
 
 /************************************************************************/

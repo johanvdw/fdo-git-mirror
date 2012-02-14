@@ -64,7 +64,6 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 
   %rename (_UnsetField) UnsetField;
   %rename (_SetField) SetField;
-  %rename (_SetFrom) SetFrom;
 
 }
 
@@ -99,35 +98,26 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 %rename (_SetGeometryDirectly) SetGeometryDirectly;
 %rename (_ExportToWkb) ExportToWkb;
 %rename (_GetDriver) GetDriver;
-%rename (_TestCapability) TestCapability;
 
 %perlcode %{
     use strict;
     use Carp;
     {
-        package Geo::OGR;
-    }
-    {
-        package Geo::OGR::Driver;
+	package Geo::OGR::Driver;
 	use strict;
-	use vars qw /@CAPABILITIES %CAPABILITIES/;
-	@CAPABILITIES = qw/CreateDataSource DeleteDataSource/; 
-	for my $s (@CAPABILITIES) {
+	use vars qw /@CAPABILITIES/;
+	for my $s (qw/CreateDataSource DeleteDataSource/) {
 	    my $cap = eval "\$Geo::OGR::ODrC$s";
-	    $CAPABILITIES{$s} = $cap;
+	    push @CAPABILITIES, $cap;
 	}
 	sub Capabilities {
 	    return @CAPABILITIES if @_ == 0;
 	    my $self = shift;
 	    my @cap;
 	    for my $cap (@CAPABILITIES) {
-		push @cap, $cap if _TestCapability($self, $CAPABILITIES{$cap});
+		push @cap, $cap if TestCapability($self, $cap);
 	    }
 	    return @cap;
-	}
-        sub TestCapability {
-	    my($self, $cap) = @_;
-	    return _TestCapability($self, $CAPABILITIES{$cap});
 	}
 	*Create = *CreateDataSource;
 	*Copy = *CopyDataSource;
@@ -137,24 +127,19 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	package Geo::OGR::DataSource;
 	use Carp;
 	use strict;
-	use vars qw /@CAPABILITIES %CAPABILITIES %LAYERS/;
-	@CAPABILITIES = qw/CreateLayer DeleteLayer/;
-	for my $s (@CAPABILITIES) {
+	use vars qw /@CAPABILITIES %LAYERS/;
+	for my $s (qw/CreateLayer DeleteLayer/) {
 	    my $cap = eval "\$Geo::OGR::ODsC$s";
-	    $CAPABILITIES{$s} = $cap;
+	    push @CAPABILITIES, $cap;
 	}
 	sub Capabilities {
 	    return @CAPABILITIES if @_ == 0;
 	    my $self = shift;
 	    my @cap;
 	    for my $cap (@CAPABILITIES) {
-		push @cap, $cap if _TestCapability($self, $CAPABILITIES{$cap});
+		push @cap, $cap if TestCapability($self, $cap);
 	    }
 	    return @cap;
-	}
-	sub TestCapability {
-	    my($self, $cap) = @_;
-	    return _TestCapability($self, $CAPABILITIES{$cap});
 	}
 	*GetDriver = *_GetDriver;
 	sub new {
@@ -172,11 +157,11 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    my $layer;
 	    if (defined $name) {
 		$layer = _GetLayerByName($self, "$name");
-		$layer = _GetLayerByIndex($self, $name) unless $layer;
 	    } else {
-		$layer = _GetLayerByIndex($self, 0);
+		$name = 0;
 	    }
-	    croak "No such layer: $name\n" unless $layer;
+	    $layer = _GetLayerByIndex($self, $name) if !$layer and $name =~ /^\d+$/;
+	    return unless $layer;
 	    $LAYERS{tied(%$layer)} = $self;
 	    return $layer;
 	}
@@ -193,14 +178,14 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    my($self, $index) = @_;
 	    $index = 0 unless defined $index;
 	    my $layer = _GetLayerByIndex($self, $index+0);
-	    croak "No such layer: $index\n" unless $layer;
+	    return unless $layer;
 	    $LAYERS{tied(%$layer)} = $self;
 	    return $layer;
 	}
 	sub GetLayerByName {
 	    my($self, $name) = @_;
-	    my $layer = _GetLayerByName($self, "$name");
-	    croak "No such layer: $name\n" unless $layer;
+	    my $layer = _GetLayerByName($self, $name);
+	    return unless $layer;
 	    $LAYERS{tied(%$layer)} = $self;
 	    return $layer;
 	}
@@ -251,15 +236,12 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 
 	package Geo::OGR::Layer;
 	use strict;
-	use vars qw /@CAPABILITIES %CAPABILITIES/;
-	@CAPABILITIES = qw/RandomRead SequentialWrite RandomWrite 
+	use vars qw /@CAPABILITIES/;
+	for my $s (qw/RandomRead SequentialWrite RandomWrite 
 		   FastSpatialFilter FastFeatureCount FastGetExtent 
-		   CreateField DeleteField ReorderFields AlterFieldDefn
-                   Transactions DeleteFeature FastSetNextByIndex
-                   StringsAsUTF8 IgnoreFields/;
-	for my $s (@CAPABILITIES) {
+		   CreateField Transactions DeleteFeature FastSetNextByIndex/) {
 	    my $cap = eval "\$Geo::OGR::OLC$s";
-	    $CAPABILITIES{$s} = $cap;
+	    push @CAPABILITIES, $cap;
 	}
 	sub DESTROY {
 	    my $self;
@@ -285,13 +267,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    my $self = shift;
 	    my @cap;
 	    for my $cap (@CAPABILITIES) {
-		push @cap, $cap if _TestCapability($self, $CAPABILITIES{$cap});
+		push @cap, $cap if TestCapability($self, $cap);
 	    }
 	    return @cap;
-	}
-	sub TestCapability {
-	    my($self, $cap) = @_;
-	    return _TestCapability($self, $CAPABILITIES{$cap});
 	}
 	sub Schema {
 	    my $self = shift;
@@ -302,7 +280,6 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		    if (ref($fd) eq 'HASH') {
 			$fd = Geo::OGR::FieldDefn->create(%$fd);
 		    }
-		    $schema{ApproxOK} = 1 unless defined $schema{ApproxOK};
 		    CreateField($self, $fd, $schema{ApproxOK});
 		}
 	    }
@@ -328,7 +305,11 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    for my $fn (keys %row) {
 		next if $fn eq 'FID';
 		next if $fn eq 'Geometry';
-		$f->SetField($fn, $row{$fn});
+		if (defined $row{$fn}) {
+		    $f->SetField($fn, $row{$fn});
+		} else {
+		    $f->UnsetField($fn);
+		}
 		$changed = 1;
 	    }
 	    $self->SetFeature($f) if $changed;
@@ -369,7 +350,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		for my $field (@{$s->{Fields}}) {
 		    my $v = shift;
 		    my $n = $field->{Name};
-		    $f->SetField($n, $v);
+		    defined $v ? $f->SetField($n, $v) : $f->UnsetField($n);
 		}
 		$changed = 1;
 	    }
@@ -407,34 +388,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    }
 	    $self->CreateFeature($f);
 	}
-	sub GeometryType {
-	    my $self = shift;
-	    return $Geo::OGR::Geometry::TYPE_INT2STRING{GetGeomType($self)};
-	}
 
 	package Geo::OGR::FeatureDefn;
 	use strict;
-	use Encode;
-	sub create {
-	    my $pkg = shift;
-	    my %schema;
-	    if (@_ == 1) {
-	        %schema = %{$_[0]};
-	    } else {
-	        %schema = @_;
-	    }
-	    my $self = Geo::OGRc::new_FeatureDefn($schema{Name});
-	    bless $self, $pkg;
-	    $self->GeometryType($schema{GeometryType});
-	    for my $fd (@{$schema{Fields}}) {
-		if (ref($fd) eq 'HASH') {
-		    $fd = Geo::OGR::FieldDefn->create(%$fd);
-		}
-		AddFieldDefn($self, $fd);
-	    }
-	    return $self;
-	}
-	*Name = *GetName;
 	sub Schema {
 	    my $self = shift;
 	    my %schema;
@@ -454,11 +410,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    $schema{GeometryType} = $self->GeomType();
 	    $schema{Fields} = [];
 	    for my $i (0..$self->GetFieldCount-1) {
-		my $s = $self->GetFieldDefn($i)->Schema;
-		$s->{Index} = $i;
-		push @{$schema{Fields}}, $s;
+		push @{$schema{Fields}}, $self->GetFieldDefn($i)->Schema;
 	    }
-	    return wantarray ? %schema : \%schema;
+	    return \%schema;
 	}
 	sub GeomType {
 	    my($self, $type) = @_;
@@ -470,34 +424,11 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    return $Geo::OGR::Geometry::TYPE_INT2STRING{GetGeomType($self)} if defined wantarray;
 	}
 	*GeometryType = *GeomType;
-	sub GeometryIgnored {
-	    my $self = shift;
-	    SetGeometryIgnored($self, $_[0]) if @_;
-	    IsGeometryIgnored($self) if defined wantarray;
-	}
-	sub StyleIgnored {
-	    my $self = shift;
-	    SetStyleIgnored($self, $_[0]) if @_;
-	    IsStyleIgnored($self) if defined wantarray;
-	}
 
 	package Geo::OGR::Feature;
 	use strict;
 	use vars qw /%GEOMETRIES/;
 	use Carp;
-	use Encode;
-	sub create {
-	    my $pkg = shift;
-	    $pkg->new(Geo::OGR::FeatureDefn->create(@_));
-	}
-	sub FETCH {
-	    my($self, $index) = @_;
-	    $self->GetField($index);
-	}
-	sub STORE {
-	    my $self = shift;
-	    $self->SetField(@_);
-	}
 	sub FID {
 	    my $self = shift;
 	    $self->SetFID($_[0]) if @_;
@@ -519,7 +450,6 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		    if (ref($fd) eq 'HASH') {
 			$fd = Geo::OGR::FieldDefn->create(%$fd);
 		    }
-		    $schema{ApproxOK} = 1 unless defined $schema{ApproxOK};
 		    CreateField($self, $fd, $schema{ApproxOK});
 		}
 	    }
@@ -542,7 +472,11 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    for my $fn (keys %row) {
 		next if $fn eq 'FID';
 		next if $fn eq 'Geometry';
-		$self->SetField($fn, $row{$fn});
+		if (defined $row{$fn}) {
+		    $self->SetField($fn, $row{$fn});
+		} else {
+		    $self->UnsetField($fn);
+		}
 	    }
 	    return unless defined wantarray;
 	    %row = ();
@@ -578,7 +512,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		for my $field (@{$s->{Fields}}) {
 		    my $v = shift;
 		    my $n = $field->{Name};
-		    $self->SetField($n, $v);
+		    defined $v ? $self->SetField($n, $v) : $self->UnsetField($n);
 		}
 	    }
 	    return unless defined wantarray;
@@ -595,16 +529,13 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	}
 	sub GetFieldType {
 	    my($self, $field) = @_;
-	    my $index = GetFieldIndex($self, "$field");
-	    $field = $index unless $index == -1;
-	    croak "No such field: $field" if $field < 0 or $field >= GetFieldCount($self);
 	    return $Geo::OGR::FieldDefn::TYPE_INT2STRING{_GetFieldType($self, $field)};
 	}
 	sub FieldIsList {
 	    my($self, $field) = @_;
-	    my $index = GetFieldIndex($self, "$field");
-	    $field = $index unless $index == -1;
-	    croak "No such field: $field" if $field < 0 or $field >= GetFieldCount($self);
+	    my $count = GetFieldCount($self);
+	    $field = GetFieldIndex($self, $field) unless $field =~ /^\d+$/;
+	    croak("no such field: $_[1]") if $field < 0 or $field >= $count;
 	    my $type = _GetFieldType($self, $field);
 	    return 1 if ($type == $Geo::OGR::OFTIntegerList or
 			 $type == $Geo::OGR::OFTRealList or
@@ -616,9 +547,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	}
 	sub GetField {
 	    my($self, $field) = @_;
-	    my $index = GetFieldIndex($self, "$field");
-	    $field = $index unless $index == -1;
-	    croak "No such field: $field" if $field < 0 or $field >= GetFieldCount($self);
+	    my $count = GetFieldCount($self);
+	    $field = GetFieldIndex($self, $field) unless $field =~ /^\d+$/;
+	    croak("no such field: $_[1]") if $field < 0 or $field >= $count;
 	    return undef unless IsFieldSet($self, $field);
 	    my $type = _GetFieldType($self, $field);
 	    if ($type == $Geo::OGR::OFTInteger) {
@@ -632,15 +563,15 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    }
 	    if ($type == $Geo::OGR::OFTIntegerList) {
 		my $ret = GetFieldAsIntegerList($self, $field);
-		return wantarray ? @$ret : $ret;
+		return @$ret;
 	    } 
 	    if ($type == $Geo::OGR::OFTRealList) {
 		my $ret = GetFieldAsDoubleList($self, $field);
-		return wantarray ? @$ret : $ret;
+		return @$ret;
 	    }
 	    if ($type == $Geo::OGR::OFTStringList) {
 		my $ret = GetFieldAsStringList($self, $field);
-		return wantarray ? @$ret : $ret;
+		return @$ret;
 	    }
 	    if ($type == $Geo::OGR::OFTBinary) {
 		return GetFieldAsString($self, $field);
@@ -648,11 +579,11 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    if ($type == $Geo::OGR::OFTDate) {
 		my @ret = GetFieldAsDateTime($self, $field);
 		# year, month, day, hour, minute, second, timezone
-		return wantarray ? @ret[0..2] : [@ret[0..2]];
+		return @ret[0..2];
 	    }
 	    if ($type == $Geo::OGR::OFTTime) {
 		my @ret = GetFieldAsDateTime($self, $field);
-		return wantarray ? @ret[3..6] : [@ret[3..6]];
+		return @ret[3..6];
 	    }
 	    if ($type == $Geo::OGR::OFTDateTime) {
 		return GetFieldAsDateTime($self, $field);
@@ -661,17 +592,18 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	}
 	sub UnsetField {
 	    my($self, $field) = @_;
-	    my $index = GetFieldIndex($self, "$field");
-	    $field = $index unless $index == -1;
-	    croak "No such field: $field" if $field < 0 or $field >= GetFieldCount($self);
+	    my $type = _GetFieldType($self, $field);
+	    my $count = GetFieldCount($self);
+	    $field = GetFieldIndex($self, $field) unless $field =~ /^\d+$/;
+	    croak("no such field: $_[1]") if $field < 0 or $field >= $count;
 	    _UnsetField($self, $field);
 	}
 	sub SetField {
 	    my $self = shift;
 	    my $field = $_[0];
-	    my $index = GetFieldIndex($self, "$field");
-	    $field = $index unless $index == -1;
-	    croak "No such field: $field" if $field < 0 or $field >= GetFieldCount($self);
+	    my $count = GetFieldCount($self);
+	    $field = GetFieldIndex($self, $field) unless $field =~ /^\d+$/;
+	    croak("no such field: $_[0]") if $field < 0 or $field >= $count;
 	    shift;
 	    if (@_ == 0 or !defined($_[0])) {
 		_UnsetField($self, $field);
@@ -679,10 +611,10 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    }
 	    my $list = ref($_[0]) ? $_[0] : [@_];
 	    my $type = _GetFieldType($self, $field);
-	    if ($type == $Geo::OGR::OFTInteger or
-		$type == $Geo::OGR::OFTReal or
+	    if ($type == $Geo::OGR::OFTInteger or 
+		$type == $Geo::OGR::OFTReal or 
 		$type == $Geo::OGR::OFTString or
-		$type == $Geo::OGR::OFTBinary)
+		$type == $Geo::OGR::OFTBinary) 
 	    {
 		_SetField($self, $field, $_[0]);
 	    } 
@@ -711,7 +643,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		_SetField($self, $field, @$list[0..6]);
 	    } 
 	    else {
-		carp "unknown or unsupported field type: $type";
+		carp "unknown/unsupported field type: $type";
 	    }
 	}
 	sub Field {
@@ -736,44 +668,20 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    $GEOMETRIES{tied(%$geom)} = $self if $geom;
 	    return $geom;
 	}
-	sub ReferenceGeometry {
-	    my $self = shift;
-	    SetGeometryDirectly($self, $_[0]) if @_;
-	    if (defined wantarray) {
-		my $geometry = GetGeometry($self);
-		return $geometry->Clone() if $geometry;
-	    }
-	}
-	sub SetFrom {
-	    my($self, $other) = @_;
-	    _SetFrom($self, $other), return if @_ <= 2;
-	    my $forgiving = $_[2];
-	    _SetFrom($self, $other, $forgiving), return if @_ <= 3;	    
-	    my $map = $_[3];
-	    my @list;
-	    for my $i (1..GetFieldCount($self)) {
-		push @list, ($map->{$i} || -1);
-	    }
-	    SetFromWithMap($self, $other, 1, \@list);
-	}
 
 	package Geo::OGR::FieldDefn;
 	use strict;
 	use vars qw /
-	    @FIELD_TYPES @JUSTIFY_TYPES
 	    %TYPE_STRING2INT %TYPE_INT2STRING
 	    %JUSTIFY_STRING2INT %JUSTIFY_INT2STRING
 	    /;
-	use Encode;
-	@FIELD_TYPES = qw/Integer IntegerList Real RealList String StringList 
-			WideString WideStringList Binary Date Time DateTime/;
-	@JUSTIFY_TYPES = qw/Undefined Left Right/;
-	for my $string (@FIELD_TYPES) {
+	for my $string (qw/Integer IntegerList Real RealList String StringList 
+			WideString WideStringList Binary Date Time DateTime/) {
 	    my $int = eval "\$Geo::OGR::OFT$string";
 	    $TYPE_STRING2INT{$string} = $int;
 	    $TYPE_INT2STRING{$int} = $string;
 	}
-	for my $string (@JUSTIFY_TYPES) {
+	for my $string (qw/Undefined Left Right/) {
 	    my $int = eval "\$Geo::OGR::OJ$string";
 	    $JUSTIFY_STRING2INT{$string} = $int;
 	    $JUSTIFY_INT2STRING{$int} = $string;
@@ -796,10 +704,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		    }
 		}
 	    }
-	    $param{Type} = $TYPE_STRING2INT{$param{Type}} 
-	    if defined $param{Type} and exists $TYPE_STRING2INT{$param{Type}};
-	    $param{Justify} = $JUSTIFY_STRING2INT{$param{Justify}} 
-	    if defined $param{Justify} and exists $JUSTIFY_STRING2INT{$param{Justify}};
+	    $param{Type} = $TYPE_STRING2INT{$param{Type}} if defined $param{Type} and exists $TYPE_STRING2INT{$param{Type}};
 	    my $self = Geo::OGRc::new_FieldDefn($param{Name}, $param{Type});
 	    if (defined($self)) {
 		bless $self, $pkg;
@@ -840,11 +745,6 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    SetPrecision($self, $_[0]) if @_;
 	    GetPrecision($self) if defined wantarray;
 	}
-	sub Ignored {
-	    my $self = shift;
-	    SetIgnored($self, $_[0]) if @_;
-	    IsIgnored($self) if defined wantarray;
-	}
 	sub Schema {
 	    my $self = shift;
 	    if (@_) {
@@ -856,35 +756,31 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		$self->Precision($param{Precision}) if exists $param{Precision};
 	    }
 	    return unless defined wantarray;
-	    my %schema = ( Name => $self->Name, 
-			   Type  => $self->Type,
-			   Justify  => $self->Justify,
-			   Width  => $self->Width,
-			   Precision => $self->Precision );
-	    return wantarray ? %schema : \%schema;
+	    return { Name => $self->Name, 
+		     Type  => $self->Type,
+		     Justify  => $self->Justify,
+		     Width  => $self->Width,
+		     Precision => $self->Precision };
 	}
 
 	package Geo::OGR::Geometry;
 	use strict;
 	use Carp;
 	use vars qw /
-            @GEOMETRY_TYPES @BYTE_ORDER_TYPES
 	    %TYPE_STRING2INT %TYPE_INT2STRING
 	    %BYTE_ORDER_STRING2INT %BYTE_ORDER_INT2STRING
 	    /;
-        @GEOMETRY_TYPES = qw/Unknown 
+	for my $string (qw/Unknown 
 			Point LineString Polygon 
 			MultiPoint MultiLineString MultiPolygon GeometryCollection 
 			None LinearRing
 			Point25D LineString25D Polygon25D 
-			MultiPoint25D MultiLineString25D MultiPolygon25D GeometryCollection25D/;
-	for my $string (@GEOMETRY_TYPES) {
+			MultiPoint25D MultiLineString25D MultiPolygon25D GeometryCollection25D/) {
 	    my $int = eval "\$Geo::OGR::wkb$string";
 	    $TYPE_STRING2INT{$string} = $int;
 	    $TYPE_INT2STRING{$int} = $string;
 	}
-	@BYTE_ORDER_TYPES = qw/XDR NDR/;
-	for my $string (@BYTE_ORDER_TYPES) {
+	for my $string (qw/XDR NDR/) {
 	    my $int = eval "\$Geo::OGR::wkb$string";
 	    $BYTE_ORDER_STRING2INT{$string} = $int;
 	    $BYTE_ORDER_INT2STRING{$int} = $string;
@@ -893,9 +789,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    my $self = shift;
 	    delete $Geo::OGR::Feature::GEOMETRIES{$self};
 	}
-	sub create { # alternative constructor since swig created new cannot be overridden(?)
+	sub create { # alternative constructor since swig created new can't be overridden(?)
 	    my $pkg = shift;
-	    my($type, $wkt, $wkb, $gml, $json, $srs, $points, $arc);
+	    my($type, $wkt, $wkb, $gml, $json, $srs, $points);
 	    if (@_ == 1) {
 		$type = shift;
 	    } else {
@@ -904,9 +800,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		$srs = ($param{srs} or $param{SRS});
 		$wkt = ($param{wkt} or $param{WKT});
 		$wkb = ($param{wkb} or $param{WKB});
-		my $hex = ($param{hexewkb} or $param{HEXEWKB}); # PostGIS HEX EWKB
-		substr($hex, 10, 8) = '' if $hex; # remove SRID
-		$hex = ($param{hexwkb} or $param{HEXWKB}) unless $hex;
+		my $hex = ($param{hexwkb} or $param{HEXWKB});
 		if ($hex) {
 		    $wkb = '';
 		    for (my $i = 0; $i < length($hex); $i+=2) {
@@ -916,11 +810,14 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		$gml = ($param{gml} or $param{GML});
 		$json = ($param{geojson} or $param{GeoJSON});
 		$points = $param{Points};
-		$arc = ($param{arc} or $param{Arc});
 	    }
 	    $type = $TYPE_STRING2INT{$type} if defined $type and exists $TYPE_STRING2INT{$type};
 	    my $self;
-	    if (defined $wkt) {
+	    if (defined $type) {
+		croak "unknown GeometryType: $type" unless 
+		    exists($TYPE_STRING2INT{$type}) or exists($TYPE_INT2STRING{$type});
+		$self = Geo::OGRc::new_Geometry($type);
+	    } elsif (defined $wkt) {
 		$self = Geo::OGRc::CreateGeometryFromWkt($wkt, $srs);
 	    } elsif (defined $wkb) {
 		$self = Geo::OGRc::CreateGeometryFromWkb($wkb, $srs);
@@ -928,56 +825,12 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		$self = Geo::OGRc::CreateGeometryFromGML($gml);
 	    } elsif (defined $json) {
 		$self = Geo::OGRc::CreateGeometryFromJson($json);
-	    } elsif (defined $type) {
-		croak "unknown GeometryType: $type" unless 
-		    exists($TYPE_STRING2INT{$type}) or exists($TYPE_INT2STRING{$type});
-		$self = Geo::OGRc::new_Geometry($type);
-	    } elsif (defined $arc) {
-		$self = Geo::OGRc::ApproximateArcAngles(@$arc);
 	    } else {
 		croak "missing GeometryType, WKT, WKB, GML, or GeoJSON parameter in Geo::OGR::Geometry::create";
 	    }
 	    bless $self, $pkg if defined $self;
 	    $self->Points($points) if $points;
 	    return $self;
-	}
-	sub AsHEXWKB {
-	    my($self) = @_;
-	    my $wkb = _ExportToWkb($self, 1);
-	    my $hex = '';
-	    for (my $i = 0; $i < length($wkb); $i++) {
-		my $x = sprintf("%x", ord(substr($wkb,$i,1)));
-		$x = '0' . $x if length($x) == 1;
-		$hex .= uc($x);
-	    }
-	    return $hex;
-	}
-	sub AsHEXEWKB {
-	    my($self, $srid) = @_;
-	    my $hex = AsHEXWKB($self);
-	    if ($srid) {
-		my $s = sprintf("%x", $srid);
-		$srid = '';
-		do {
-		    if (length($s) > 2) {
-			$srid .= substr($s,-2,2);
-			substr($s,-2,2) = '';
-		    } elsif (length($s) > 1) {
-			$srid .= $s;
-			$s = '';
-		    } else {
-			$srid .= '0'.$s;
-			$s = '';
-		    }
-		} until $s eq '';
-	    } else {
-		$srid = '00000000';
-	    }
-	    while (length($srid) < 8) {
-		$srid .= '00';
-	    }
-	    substr($hex, 10, 0) = uc($srid);
-	    return $hex;
 	}
 	sub GeometryType {
 	    my $self = shift;
@@ -1029,16 +882,7 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 		if ($t eq 'Unknown' or $t eq 'None' or $t eq 'GeometryCollection') {
 		    croak("Can't set points of a geometry of type: $t");
 		} elsif ($t eq 'Point') {
-		    # support both "Point" as a list of one point and one point
-		    if (ref($points->[0])) {
-			$flat ? 
-			    AddPoint_2D($self, @{$points->[0]}[0..1]) : 
-			    AddPoint_3D($self, @{$points->[0]}[0..2]);
-		    } else {
-			$flat ? 
-			    AddPoint_2D($self, @$points[0..1]) : 
-			    AddPoint_3D($self, @$points[0..2]);
-		    }
+		    $flat ? AddPoint_2D($self, @$points[0..1]) : AddPoint_3D($self, @$points[0..2]);
 		} elsif ($t eq 'LineString' or $t eq 'LinearRing') {
 		    if ($flat) {
 			for my $p (@$points) {
@@ -1090,16 +934,16 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    } else {
 		$n = $self->GetPointCount;
 		if ($n == 1) {
-		    push @points, $flat ? scalar GetPoint_2D($self) : scalar GetPoint_3D($self);
+		    push @points, $flat ? GetPoint_2D($self) : GetPoint_3D($self);
 		} else {
 		    my $i;
 		    if ($flat) {
 			for my $i (0..$n-1) {
-			    push @points, scalar GetPoint_2D($self, $i);
+			    push @points, GetPoint_2D($self, $i);
 			}
 		    } else {
 			for my $i (0..$n-1) {
-			    push @points, scalar GetPoint_3D($self, $i);
+			    push @points, GetPoint_3D($self, $i);
 			}
 		    }
 		}
@@ -1111,59 +955,10 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	    $bo = $BYTE_ORDER_STRING2INT{$bo} if defined $bo and exists $BYTE_ORDER_STRING2INT{$bo};
 	    return _ExportToWkb($self, $bo);
 	}
-	sub ForceToMultiPoint {
-	    my $self = shift;
-	    $self = Geo::OGR::ForceToMultiPoint($self);
-	    for my $g (@_) {
-		$self->AddGeometry($g);
-	    }
-	    return $self;
-	}
-	sub ForceToMultiLineString {
-	    my $self = shift;
-	    $self = Geo::OGR::ForceToMultiLineString($self);
-	    for my $g (@_) {
-		$self->AddGeometry($g);
-	    }
-	    return $self;
-	}
-	sub ForceToMultiPolygon {
-	    my $self = shift;
-	    $self = Geo::OGR::ForceToMultiPolygon($self);
-	    for my $g (@_) {
-		$self->AddGeometry($g);
-	    }
-	    return $self;
-	}
-	sub ForceToCollection {
-	    my $self = Geo::OGR::Geometry->create(GeometryType => 'GeometryCollection');
-	    for my $g (@_) {
-		$self->AddGeometry($g);
-	    }
-	    return $self;
-	}
-	*Collect = *ForceToCollection;
-	sub Dissolve {
-	    my $self = shift;
-	    my @c;
-	    my $n = $self->GetGeometryCount;
-	    if ($n > 0) {
-		for my $i (0..$n-1) {
-		    push @c, $self->GetGeometryRef($i)->Clone;
-		}
-	    } else {
-		push @c, $self;
-	    }
-	    return @c;
-	}
 	*AsText = *ExportToWkt;
 	*AsBinary = *ExportToWkb;
 	*AsGML = *ExportToGML;
 	*AsKML = *ExportToKML;
-	*AsJSON = *ExportToJson;
-	*BuildPolygonFromEdges = *Geo::OGR::BuildPolygonFromEdges;
-	*ForceToPolygon = *Geo::OGR::ForceToPolygon;
-	
     }
     sub GeometryType {
 	my($type_or_name) = @_;
@@ -1190,11 +985,9 @@ ALTERED_DESTROY(OGRGeometryShadow, OGRc, delete_Geometry)
 	return @drivers;
     }
     sub GetDriver {
-	my($name) = @_;
-	my $driver = GetDriverByName("$name");
-	$driver = _GetDriver($name) unless $driver;
-	croak "No such OGR driver: $name\n" unless $driver;
-	return $driver;
+	my($name_or_number) = @_;
+	return _GetDriver($name_or_number) if $name_or_number =~ /^\d/;
+	return GetDriverByName("$name_or_number");
     }
     *Driver = *GetDriver;
 %}

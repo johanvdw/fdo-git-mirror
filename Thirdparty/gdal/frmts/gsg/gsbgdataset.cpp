@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gsbgdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: gsbgdataset.cpp 16431 2009-03-01 11:51:14Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software Binary Grid Format.
@@ -60,7 +60,7 @@
 # define SHRT_MAX 32767
 #endif /* SHRT_MAX */
 
-CPL_CVSID("$Id: gsbgdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: gsbgdataset.cpp 16431 2009-03-01 11:51:14Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GSBG(void);
@@ -81,12 +81,12 @@ class GSBGDataset : public GDALPamDataset
     static const float fNODATA_VALUE;
     static const size_t nHEADER_SIZE;
 
-    static CPLErr WriteHeader( VSILFILE *fp, GInt16 nXSize, GInt16 nYSize,
+    static CPLErr WriteHeader( FILE *fp, GInt16 nXSize, GInt16 nYSize,
 			       double dfMinX, double dfMaxX,
 			       double dfMinY, double dfMaxY,
 			       double dfMinZ, double dfMaxZ );
 
-    VSILFILE	*fp;
+    FILE	*fp;
 
   public:
 		~GSBGDataset();
@@ -162,7 +162,7 @@ GSBGRasterBand::GSBGRasterBand( GSBGDataset *poDS, int nBand ) :
 
 {
     this->poDS = poDS;
-    this->nBand = nBand;
+    nBand = nBand;
     
     eDataType = GDT_Float32;
 
@@ -451,8 +451,7 @@ CPLErr GSBGRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     if( bHeaderNeedsUpdate && dfMaxZ > dfMinZ )
     {
 	CPLErr eErr = poGDS->WriteHeader( poGDS->fp,
-					  (GInt16) nRasterXSize, 
-                                          (GInt16) nRasterYSize,
+					  nRasterXSize, nRasterYSize,
 					  dfMinX, dfMaxX,
 					  dfMinY, dfMaxY,
 					  dfMinZ, dfMaxZ );
@@ -658,11 +657,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
     return poDS;
 }
 
@@ -745,9 +739,7 @@ CPLErr GSBGDataset::SetGeoTransform( double *padfGeoTransform )
         padfGeoTransform[5] * (nRasterYSize - 0.5) + padfGeoTransform[3];
     double dfMaxY = padfGeoTransform[3] + padfGeoTransform[5] / 2;
 
-    eErr = WriteHeader( fp, 
-                        (GInt16) poGRB->nRasterXSize, 
-                        (GInt16) poGRB->nRasterYSize,
+    eErr = WriteHeader( fp, poGRB->nRasterXSize, poGRB->nRasterYSize,
 			dfMinX, dfMaxX, dfMinY, dfMaxY,
 			poGRB->dfMinZ, poGRB->dfMaxZ );
 
@@ -766,7 +758,7 @@ CPLErr GSBGDataset::SetGeoTransform( double *padfGeoTransform )
 /*                             WriteHeader()                            */
 /************************************************************************/
 
-CPLErr GSBGDataset::WriteHeader( VSILFILE *fp, GInt16 nXSize, GInt16 nYSize,
+CPLErr GSBGDataset::WriteHeader( FILE *fp, GInt16 nXSize, GInt16 nYSize,
 				 double dfMinX, double dfMaxX,
 				 double dfMinY, double dfMaxY,
 				 double dfMinZ, double dfMaxZ )
@@ -899,7 +891,7 @@ GDALDataset *GSBGDataset::Create( const char * pszFilename,
         return NULL;
     }
 
-    VSILFILE *fp = VSIFOpenL( pszFilename, "w+b" );
+    FILE *fp = VSIFOpenL( pszFilename, "w+b" );
 
     if( fp == NULL )
     {
@@ -908,8 +900,8 @@ GDALDataset *GSBGDataset::Create( const char * pszFilename,
                   pszFilename );
         return NULL;
     }
-    
-    CPLErr eErr = WriteHeader( fp, (GInt16) nXSize, (GInt16) nYSize,
+
+    CPLErr eErr = WriteHeader( fp, nXSize, nYSize,
 			       0.0, nXSize, 0.0, nYSize, 0.0, 0.0 );
     if( eErr != CE_None )
     {
@@ -992,7 +984,7 @@ GDALDataset *GSBGDataset::CreateCopy( const char *pszFilename,
         return NULL;
     }
 
-    VSILFILE    *fp = VSIFOpenL( pszFilename, "w+b" );
+    FILE    *fp = VSIFOpenL( pszFilename, "w+b" );
 
     if( fp == NULL )
     {
@@ -1002,8 +994,8 @@ GDALDataset *GSBGDataset::CreateCopy( const char *pszFilename,
         return NULL;
     }
 
-    GInt16  nXSize = (GInt16) poSrcBand->GetXSize();
-    GInt16  nYSize = (GInt16) poSrcBand->GetYSize();
+    GInt16  nXSize = poSrcBand->GetXSize();
+    GInt16  nYSize = poSrcBand->GetYSize();
     double  adfGeoTransform[6];
 
     poSrcDS->GetGeoTransform( adfGeoTransform );
@@ -1034,7 +1026,7 @@ GDALDataset *GSBGDataset::CreateCopy( const char *pszFilename,
     }
 
     int     bSrcHasNDValue;
-    float   fSrcNoDataValue = (float) poSrcBand->GetNoDataValue( &bSrcHasNDValue );
+    float   fSrcNoDataValue = poSrcBand->GetNoDataValue( &bSrcHasNDValue );
     double  dfMinZ = DBL_MAX;
     double  dfMaxZ = -DBL_MAX;
     for( GInt16 iRow = nYSize - 1; iRow >= 0; iRow-- )
@@ -1234,7 +1226,6 @@ void GDALRegister_GSBG()
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "grd" );
 	poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
 				   "Byte Int16 UInt16 Float32" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = GSBGDataset::Open;
 	poDriver->pfnCreate = GSBGDataset::Create;

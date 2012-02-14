@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtmtracklayer.cpp 21684 2011-02-11 22:14:01Z warmerdam $
+ * $Id: gtmtracklayer.cpp 17637 2009-09-12 23:22:00Z warmerdam $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of GTMTrackLayer class.
@@ -153,7 +153,7 @@ void GTMTrackLayer::WriteFeatureAttributes( OGRFeature *poFeature )
     pBuffer = CPLMalloc(bufferSize);
     void* pBufferAux = pBuffer;
     /* Write track string name size to buffer */
-    appendUShort(pBufferAux, (unsigned short) trackNameLength);
+    appendUShort(pBufferAux, trackNameLength);
     pBufferAux = (char*)pBufferAux + 2;
 
     /* Write track name */
@@ -161,7 +161,7 @@ void GTMTrackLayer::WriteFeatureAttributes( OGRFeature *poFeature )
     pBufferAux = (char*)pBufferAux + trackNameLength;
 
     /* Write track type */
-    appendUChar(pBufferAux, (unsigned char) type);
+    appendUChar(pBufferAux, type);
     pBufferAux = (char*)pBufferAux + 1;
   
     /* Write track color */
@@ -219,11 +219,11 @@ inline void GTMTrackLayer::WriteTrackpoint( double lat, double lon, float altitu
 /************************************************************************/
 OGRErr GTMTrackLayer::CreateFeature (OGRFeature *poFeature)
 {
-    VSILFILE* fpTmpTrackpoints = poDS->getTmpTrackpointsFP();
+    FILE* fpTmpTrackpoints = poDS->getTmpTrackpointsFP();
     if (fpTmpTrackpoints == NULL)
         return CE_Failure;
 
-    VSILFILE* fpTmpTracks = poDS->getTmpTracksFP();
+    FILE* fpTmpTracks = poDS->getTmpTracksFP();
     if (fpTmpTracks == NULL)
         return CE_Failure;
 

@@ -31,7 +31,7 @@ class SDERasterBand : public GDALRasterBand
         int                     nOverviews;
         long                    nBlockSize;
         double                  dfDepth;
-        LONG                    nSDERasterType;
+        long                    nSDERasterType;
         SE_QUERYINFO            hQuery;
         SE_RASCONSTRAINT        hConstraint;
         GDALRasterBand**        papoOverviews;

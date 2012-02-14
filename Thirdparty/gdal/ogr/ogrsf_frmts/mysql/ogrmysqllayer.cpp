@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqllayer.cpp 20458 2010-08-27 19:33:46Z rouault $
+ * $Id: ogrmysqllayer.cpp 14272 2008-04-12 13:47:54Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqllayer.cpp 20458 2010-08-27 19:33:46Z rouault $");
+CPL_CVSID("$Id: ogrmysqllayer.cpp 14272 2008-04-12 13:47:54Z rouault $");
 
 /************************************************************************/
 /*                           OGRMySQLLayer()                            */
@@ -333,19 +333,19 @@ const char *OGRMySQLLayer::GetGeometryColumn()
 
 int OGRMySQLLayer::FetchSRSId()
 {
-	CPLString        osCommand;
+	char         szCommand[1024];
     char           **papszRow;  
     
     if( hResultSet != NULL )
         mysql_free_result( hResultSet );
 		hResultSet = NULL;
 				
-    osCommand.Printf(
+    sprintf( szCommand, 
              "SELECT srid FROM geometry_columns "
              "WHERE f_table_name = '%s'",
              pszGeomColumnTable );
 
-    if( !mysql_query( poDS->GetConn(), osCommand ) )
+    if( !mysql_query( poDS->GetConn(), szCommand ) )
         hResultSet = mysql_store_result( poDS->GetConn() );
 
     papszRow = NULL;

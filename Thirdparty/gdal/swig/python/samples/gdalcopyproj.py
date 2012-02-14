@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdalcopyproj.py 23368 2011-11-13 11:18:25Z rouault $
+#  $Id: gdalcopyproj.py 18195 2009-12-06 20:24:39Z rouault $
 # 
 #  Name:     gdalcopyproj.py
 #  Project:  GDAL Python Interface
@@ -64,15 +64,9 @@ if dataset2 is None:
     print('Unable to open', output, 'for writing')
     sys.exit(1)
 
-if geotransform is not None and geotransform != (0,1,0,0,0,1):
+if geotransform is not None:
     dataset2.SetGeoTransform( geotransform )
 
-if projection is not None and projection != '':
+if projection is not None:
     dataset2.SetProjection( projection )
 
-gcp_count = dataset.GetGCPs()
-if gcp_count != 0:
-    dataset2.SetGCPs( gcp_count, dataset.GetGCPProjection() )
-
-dataset = None
-dataset2 = None

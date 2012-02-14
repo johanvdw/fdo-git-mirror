@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gtm.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogr_gtm.h 17612 2009-09-03 19:18:45Z rouault $
  *
  * Project:  GTM Driver
  * Purpose:  Declarations for OGR wrapper classes for GTM, and OGR->GTM
@@ -40,7 +40,7 @@ typedef enum
 {
     GTM_NONE,
     GTM_WPT,
-    GTM_TRACK
+    GTM_TRACK,
 } GTMGeometryType;
 
 #ifndef FILE_OFFSETS
@@ -188,9 +188,9 @@ public:
     int TestCapability( const char * );
 
     // OGRGTMDataSource Methods
-    VSILFILE* getOutputFP() { return fpOutput; }
-    VSILFILE* getTmpTrackpointsFP() { return fpTmpTrackpoints; }
-    VSILFILE* getTmpTracksFP() { return fpTmpTracks; }
+    FILE* getOutputFP() { return fpOutput; }
+    FILE* getTmpTrackpointsFP() { return fpTmpTrackpoints; }
+    FILE* getTmpTracksFP() { return fpTmpTracks; }
     bool isFirstCTError() { return !bIssuedCTError; }
     void issuedFirstCTError() { bIssuedCTError = true; }
 
@@ -223,7 +223,7 @@ public:
     int incNumTrackpoints() { return ++numTrackpoints; }
     int incNumTracks() { return ++numTracks; };
 private:
-    VSILFILE* fpOutput;
+    FILE* fpOutput;
   
     /* GTM is not a contiguous file. We need two temporary files because
        trackpoints and tracks are stored separated and we don't know in
@@ -231,10 +231,10 @@ private:
        have. So, we create temporary file and append the at the end of
        the gtm file whe everything is done, that is, in the
        destructor. */
-    VSILFILE* fpTmpTrackpoints;
+    FILE* fpTmpTrackpoints;
     char* pszTmpTrackpoints;
 
-    VSILFILE* fpTmpTracks;
+    FILE* fpTmpTracks;
     char* pszTmpTracks;
 
     GTM* poGTMFile;

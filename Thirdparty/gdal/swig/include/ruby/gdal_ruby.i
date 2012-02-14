@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_ruby.i 21964 2011-03-17 14:00:08Z warmerdam $
+ * $Id: gdal_ruby.i 8449 2005-09-26 08:18:55Z cfis $
  *
  * ruby specific code for gdal bindings.
  */
@@ -36,7 +36,7 @@ static CPLXMLNode *RubyArrayToXMLTree(VALUE rubyArray)
     CPLXMLNode *psChild;
     char       *pszText = NULL;
 
-    nChildCount = RARRAY_LEN(rubyArray) - 2;
+    nChildCount = RARRAY(rubyArray)->len - 2;
     if( nChildCount < 0 )
     {
 		 rb_raise(rb_eRuntimeError, "Error in input XMLTree, child count is less than zero.");

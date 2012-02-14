@@ -30,7 +30,6 @@
 
 #include "pcidsk_io.h"
 #include "pcidsk_mutex.h"
-#include "pcidsk_edb.h"
 
 namespace PCIDSK
 {
@@ -45,20 +44,18 @@ namespace PCIDSK
       public:
         PCIDSKInterfaces();
 
-        const IOInterfaces *io;
+        const IOInterfaces 	*io;
 
-        EDBFile           *(*OpenEDB)(std::string filename, std::string access);
+        Mutex               *(*CreateMutex)(void);
 
-        Mutex             *(*CreateMutex)(void);
-
-        void              (*JPEGDecompressBlock)
+        void                (*JPEGDecompressBlock)
             ( uint8 *src_data, int src_bytes, uint8 *dst_data, int dst_bytes,
               int xsize, int ysize, eChanType pixel_type );
-        void              (*JPEGCompressBlock)
+        void                (*JPEGCompressBlock)
             ( uint8 *src_data, int src_bytes, uint8 *dst_data, int &dst_bytes,
               int xsize, int ysize, eChanType pixel_type, int quality );
 
-        void              (*Debug)( const char * );
+    //    DBInterfaces 	db_interfaces;
     };
 } // end namespace PCIDSK
 

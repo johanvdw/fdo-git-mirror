@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: contour.cpp 21236 2010-12-11 17:28:32Z rouault $
+ * $Id: contour.cpp 18421 2010-01-01 20:54:00Z rouault $
  *
  * Project:  Contour Generation
  * Purpose:  Core algorithm implementation for contour line generation. 
@@ -32,9 +32,7 @@
 #include "gdal_alg.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: contour.cpp 21236 2010-12-11 17:28:32Z rouault $");
-
-#ifdef OGR_ENABLED
+CPL_CVSID("$Id: contour.cpp 18421 2010-01-01 20:54:00Z rouault $");
 
 // The amount of a contour interval that pixels should be fudged by if they
 // match a contour level exactly.
@@ -530,7 +528,7 @@ CPLErr GDALContourGenerator::ProcessRect(
 
         int  nPoints = 0; 
         double adfX[4], adfY[4];
-        CPLErr eErr = CE_None;
+        CPLErr eErr;
 
         /* Logs how many points we have af left + bottom,
         ** and left + bottom + right.
@@ -559,72 +557,42 @@ CPLErr GDALContourGenerator::ProcessRect(
 
         if( nPoints >= 2 )
         {
-            if ( nPoints1 == 1 && nPoints2 == 2) // left + bottom
-            {
+            if( 
+                ( ( (nPoints1 == 1 && nPoints2 == 2)||
+                    (nPoints1 == 1 && nPoints3 == 2)|| 
+                    (nPoints1 == 1 && nPoints  == 2)  ) &&
+                                           dfUpLeft > dfLoLeft )
+                ||
+                ( ( (nPoints2 == 1 && nPoints3 == 2)||
+                    (nPoints2 == 1 && nPoints  == 2)  ) &&
+                                         dfLoLeft > dfLoRight )
+                ||
+                ( ( (nPoints3 == 1 && nPoints  == 2)  ) &&
+                                         dfLoRight > dfUpRight )
+              )
                 eErr = AddSegment( dfLevel,
                                    adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfUpRight > dfLoLeft );
-            }
-            else if ( nPoints1 == 1 && nPoints3 == 2 ) // left + right 
-            {
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfUpLeft > dfLoRight );
-            }
-            else if ( nPoints1 == 1 && nPoints == 2 ) // left + top 
-            { // Do not do vertical contours on the left, due to symmetry
-              if ( !(dfUpLeft == dfLevel && dfLoLeft == dfLevel) )
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfUpLeft > dfLoRight );
-            }
-            else if(  nPoints2 == 1 && nPoints3 == 2) // bottom + right
-            {
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfUpLeft > dfLoRight );
-            }
-            else if ( nPoints2 == 1 && nPoints == 2 ) // bottom + top
-            {
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfLoLeft > dfUpRight );
-            }
-            else if ( nPoints3 == 1 && nPoints == 2 ) // right + top
-            { // Do not do horizontal contours on upside, due to symmetry
-              if ( !(dfUpRight == dfLevel && dfUpLeft == dfLevel) )
-                eErr = AddSegment( dfLevel,
-                                   adfX[0], adfY[0], adfX[1], adfY[1],
-                                   dfLoLeft > dfUpRight );
-            }
+                                   TRUE );
             else
-            {
-                // If we get here it is a serious error!
-                CPLDebug( "CONTOUR", "Contour state not implemented!");
-            }
- 
+                eErr = AddSegment( dfLevel,
+                                   adfX[0], adfY[0], adfX[1], adfY[1],
+                                   FALSE );
+
             if( eErr != CE_None )
-                 return eErr;
+                return eErr;
         }
 
         if( nPoints == 4 )
         {
-          // Do not do horizontal contours on upside, due to symmetry
-          if ( !(dfUpRight == dfLevel && dfUpLeft == dfLevel) )
-          {
-/* -------------------------------------------------------------------- */
-/*          If we get here, we know the first was left+bottom,          */
-/*          so we are at right+top, therefore "left is high"            */
-/*          if low-left is larger than up-right.                        */
-/*          We do not do a diagonal check here as we are dealing with   */
-/*          a saddle point.                                             */
-/* -------------------------------------------------------------------- */
+            /* If we get here, we know the first was left+bottom, so we are at
+            ** right+top, therefore "left is high" if loRight is larger than
+            ** up right...
+            */
             eErr = AddSegment( dfLevel,
                                adfX[2], adfY[2], adfX[3], adfY[3],
                                ( dfLoRight > dfUpRight) );
             if( eErr != CE_None )
                 return eErr;
-          }
         }
     }
 
@@ -1390,7 +1358,6 @@ CPLErr OGRContourWriter( double dfLevel,
 
     return CE_None;
 }
-#endif // OGR_ENABLED
 
 /************************************************************************/
 /*                        GDALContourGenerate()                         */
@@ -1538,10 +1505,6 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
                             GDALProgressFunc pfnProgress, void *pProgressArg )
 
 {
-#ifndef OGR_ENABLED
-    CPLError(CE_Failure, CPLE_NotSupported, "GDALContourGenerate() unimplemented in a non OGR build");
-    return CE_Failure;
-#else
     VALIDATE_POINTER1( hBand, "GDALContourGenerate", CE_Failure );
 
     OGRContourWriterInfo oCWI;
@@ -1617,5 +1580,4 @@ CPLErr GDALContourGenerate( GDALRasterBandH hBand,
     CPLFree( padfScanline );
 
     return eErr;
-#endif // OGR_ENABLED
 }

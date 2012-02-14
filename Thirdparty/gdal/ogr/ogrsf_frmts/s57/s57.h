@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57.h 22469 2011-05-31 14:19:18Z warmerdam $
+ * $Id: s57.h 11537 2007-05-16 03:35:17Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for S-57 translator not including the
@@ -93,7 +93,7 @@ char **S57FileCollector( const char * pszDataset );
 /************************************************************************/
 
 #define MAX_CLASSES 23000
-#define MAX_ATTRIBUTES 65535
+#define MAX_ATTRIBUTES 25000
 
 class CPL_DLL S57ClassRegistrar
 {
@@ -116,7 +116,7 @@ class CPL_DLL S57ClassRegistrar
     char     ***papapszAttrValues;
     char       *pachAttrType;
     char       *pachAttrClass;
-    GUInt16    *panAttrIndex; // sorted by acronym.
+    int        *panAttrIndex; // sorted by acronym.
 
     int         FindFile( const char *pszTarget, const char *pszDirectory,
                           int bReportErr, FILE **fp );
@@ -161,7 +161,7 @@ public:
 #define SAT_FREE_TEXT   'S'
 
     char        GetAttrClass( int i ) { return pachAttrClass[i]; }
-    GInt16      FindAttrByAcronym( const char * );
+    int         FindAttrByAcronym( const char * );
 
 };
 

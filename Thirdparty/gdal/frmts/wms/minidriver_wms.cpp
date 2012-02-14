@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_wms.cpp 23033 2011-09-03 18:46:11Z rouault $
+ * $Id: minidriver_wms.cpp 18345 2009-12-19 11:02:39Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -112,9 +112,11 @@ CPLErr GDALWMSMiniDriver_WMS::Initialize(CPLXMLNode *config) {
         m_styles = CPLGetXMLValue(config, "Styles", "");
         m_transparent = CPLGetXMLValue(config, "Transparent","");
         // the transparent flag needs to be "TRUE" or "FALSE" in upper case according to the WMS spec so force upper case
-        for(int i=0; i<(int)m_transparent.size();i++)
+        int i=0; 
+        while (m_transparent[i] != '\0')
         {
-            m_transparent[i] = (char) toupper(m_transparent[i]);
+            m_transparent[i] = toupper(m_transparent[i]);
+            i ++;
         }
     }
 
@@ -151,8 +153,6 @@ void GDALWMSMiniDriver_WMS::GetCapabilities(GDALWMSMiniDriverCapabilities *caps)
 void GDALWMSMiniDriver_WMS::ImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri) {
     // http://onearth.jpl.nasa.gov/wms.cgi?request=GetMap&width=1000&height=500&layers=modis,global_mosaic&styles=&srs=EPSG:4326&format=image/jpeg&bbox=-180.000000,-90.000000,180.000000,090.000000    
     *url = m_base_url;
-    if (m_base_url.ifind( "service=") == std::string::npos)
-        URLAppend(url, "&service=WMS");
     URLAppend(url, "&request=GetMap");
     URLAppendF(url, "&version=%s", m_version.c_str());
     URLAppendF(url, "&layers=%s", m_layers.c_str());

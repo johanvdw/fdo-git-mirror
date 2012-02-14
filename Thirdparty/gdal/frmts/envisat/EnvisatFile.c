@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.c 22619 2011-06-29 20:54:01Z rouault $
+ * $Id: EnvisatFile.c 11332 2007-04-21 20:48:53Z warmerdam $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -32,7 +32,7 @@
 #  include "cpl_conv.h"
 #  include "EnvisatFile.h"
 
-CPL_CVSID("$Id: EnvisatFile.c 22619 2011-06-29 20:54:01Z rouault $");
+CPL_CVSID("$Id: EnvisatFile.c 11332 2007-04-21 20:48:53Z warmerdam $");
 
 #else
 #  include "APP/app.h"
@@ -1213,8 +1213,7 @@ int EnvisatFile_GetDatasetIndex( EnvisatFile *self, const char *ds_name )
      * be 28 characters, I try to pad more than this incase the specification
      * is changed. 
      */
-    strncpy( padded_ds_name, ds_name, sizeof(padded_ds_name) );
-    padded_ds_name[sizeof(padded_ds_name)-1] = 0;
+    strcpy( padded_ds_name, ds_name );
     for( i = strlen(padded_ds_name); i < sizeof(padded_ds_name)-1; i++ )
     {
         padded_ds_name[i] = ' ';
@@ -1766,9 +1765,18 @@ int S_NameValueList_Parse( const char *text, int text_offset,
         /*
          * Add the entry to the name/value list. 
          */
-        (*entry_count)++;
-        *entries = (EnvisatNameValue **)
-            realloc( *entries, *entry_count * sizeof(EnvisatNameValue*) );
+        if( entries == NULL )
+        {
+            *entry_count = 1;
+            *entries = (EnvisatNameValue **) 
+                calloc( 1, sizeof(EnvisatNameValue) );
+        }
+        else
+        {
+            (*entry_count)++;
+            *entries = (EnvisatNameValue **) 
+                realloc( *entries, *entry_count * sizeof(EnvisatNameValue*) );
+        }
 
         if( *entries == NULL )
         {

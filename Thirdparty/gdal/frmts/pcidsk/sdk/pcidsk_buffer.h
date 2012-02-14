@@ -53,28 +53,24 @@ namespace PCIDSK
 
         PCIDSKBuffer &operator=(const PCIDSKBuffer& src);
 
-        const char *Get( int offset, int size ) const;
-        void        Get( int offset, int size, std::string &target, int unpad=1 ) const;
+        const char *Get( int offset, int size );
+        void        Get( int offset, int size, std::string &target, int unpad=1 );
 
-        double      GetDouble( int offset, int size ) const;
-        int         GetInt( int offset, int size ) const;
-        int64       GetInt64( int offset, int size ) const;
-        uint64      GetUInt64( int offset, int size ) const;
+        double      GetDouble( int offset, int size );
+        int         GetInt( int offset, int size );
+        int64       GetInt64( int offset, int size );
+        uint64      GetUInt64( int offset, int size );
 
-        void        Put( const char *value,  int offset, int size, bool null_term = false );
+        void        Put( const char *value,  int offset, int size );
         void        Put( uint64 value, int offset, int size );
         void        Put( double value, int offset, int size, const char *fmt=NULL );
         void        Put( int value, int offset, int size ) 
             { Put( (uint64) value, offset, size ); }
-        void        Put( unsigned int value, int offset, int size ) 
-            { Put( (uint64) value, offset, size ); }
-
-        void        PutBin(double value, int offset);
 
         void        SetSize( int size );
         
     private:
-        mutable std::string work_field;
+        std::string work_field;
     };
 } // end namespace PCIDSK
 #endif // __INCLUDE_PCIDSKBUFFER_H 

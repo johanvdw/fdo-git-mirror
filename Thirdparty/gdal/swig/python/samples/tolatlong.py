@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: tolatlong.py 19386 2010-04-11 19:20:36Z rouault $
+# $Id: tolatlong.py 18195 2009-12-06 20:24:39Z rouault $
 #
 # Project:  GDAL Python samples
 # Purpose:  Script to read coordinate system and geotransformation matrix
@@ -109,5 +109,6 @@ ct = osr.CoordinateTransformation(srs, srsLatLong)
 # Report results
 print('pixel: %g\t\t\tline: %g' % (pixel, line))
 print('latitude: %fd\t\tlongitude: %fd' % (lat, int))
-print('latitude: %s\t\tlongitude: %s' % (gdal.DecToDMS(lat, 'Lat', 2), gdal.DecToDMS(int, 'Long', 2)))
+print('latitude: ', gdal.DecToDMS(lat, 'Lat', 2), \
+    '\tlongitude: ', gdal.DecToDMS(int, 'Long', 2))
 

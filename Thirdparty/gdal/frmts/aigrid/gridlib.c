@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gridlib.c 22159 2011-04-14 18:18:54Z warmerdam $
+ * $Id: gridlib.c 17435 2009-07-23 22:36:32Z rouault $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file reading code.
@@ -29,7 +29,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: gridlib.c 22159 2011-04-14 18:18:54Z warmerdam $");
+CPL_CVSID("$Id: gridlib.c 17435 2009-07-23 22:36:32Z rouault $");
 
 /************************************************************************/
 /*                    AIGProcessRaw32bitFloatBlock()                    */
@@ -549,9 +549,9 @@ CPLErr AIGProcessBlock( GByte *pabyCur, int nDataSize, int nMin, int nMagic,
 /*      Read a single block of integer grid data.                       */
 /************************************************************************/
 
-CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
+CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
                      int nBlockXSize, int nBlockYSize,
-                     GInt32 *panData, int nCellType, int bCompressed )
+                     GInt32 *panData, int nCellType )
 
 {
     GByte	*pabyRaw, *pabyCur;
@@ -613,7 +613,7 @@ CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
     nDataSize = nBlockSize;
     
 /* -------------------------------------------------------------------- */
-/*      Handle float files and uncompressed integer files directly.     */
+/*      Handle float files directly.                                    */
 /* -------------------------------------------------------------------- */
     if( nCellType == AIG_CELLTYPE_FLOAT )
     {
@@ -622,15 +622,6 @@ CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
                                       (float *) panData );
         CPLFree( pabyRaw );
 
-        return CE_None;
-    }
-
-    if( nCellType == AIG_CELLTYPE_INT && !bCompressed  )
-    {
-        AIGProcessRaw32BitBlock( pabyRaw+2, nDataSize, nMin,
-                                 nBlockXSize, nBlockYSize,
-                                 panData );
-        CPLFree( pabyRaw );
         return CE_None;
     }
 
@@ -792,7 +783,7 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
 
 {
     char	*pszHDRFilename;
-    VSILFILE	*fp;
+    FILE	*fp;
     GByte	abyData[308];
 
 /* -------------------------------------------------------------------- */
@@ -827,7 +818,6 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
 /*      Read the block size information.                                */
 /* -------------------------------------------------------------------- */
     memcpy( &(psInfo->nCellType), abyData+16, 4 );
-    memcpy( &(psInfo->bCompressed), abyData+20, 4 );
     memcpy( &(psInfo->nBlocksPerRow), abyData+288, 4 );
     memcpy( &(psInfo->nBlocksPerColumn), abyData+292, 4 );
     memcpy( &(psInfo->nBlockXSize), abyData+296, 4 );
@@ -837,7 +827,6 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
     
 #ifdef CPL_LSB
     psInfo->nCellType = CPL_SWAP32( psInfo->nCellType );
-    psInfo->bCompressed = CPL_SWAP32( psInfo->bCompressed );
     psInfo->nBlocksPerRow = CPL_SWAP32( psInfo->nBlocksPerRow );
     psInfo->nBlocksPerColumn = CPL_SWAP32( psInfo->nBlocksPerColumn );
     psInfo->nBlockXSize = CPL_SWAP32( psInfo->nBlockXSize );
@@ -845,8 +834,6 @@ CPLErr AIGReadHeader( const char * pszCoverName, AIGInfo_t * psInfo )
     CPL_SWAPDOUBLE( &(psInfo->dfCellSizeX) );
     CPL_SWAPDOUBLE( &(psInfo->dfCellSizeY) );
 #endif
-
-    psInfo->bCompressed = !psInfo->bCompressed;
 
     return( CE_None );
 }
@@ -863,7 +850,7 @@ CPLErr AIGReadBlockIndex( AIGInfo_t * psInfo, AIGTileInfo *psTInfo,
 
 {
     char	*pszHDRFilename;
-    VSILFILE	*fp;
+    FILE	*fp;
     int		nLength, i;
     GInt32	nValue;
     GUInt32	*panIndex;
@@ -989,7 +976,7 @@ CPLErr AIGReadBounds( const char * pszCoverName, AIGInfo_t * psInfo )
 
 {
     char	*pszHDRFilename;
-    VSILFILE	*fp;
+    FILE	*fp;
     double	adfBound[4];
 
 /* -------------------------------------------------------------------- */
@@ -1044,7 +1031,7 @@ CPLErr AIGReadStatistics( const char * pszCoverName, AIGInfo_t * psInfo )
 
 {
     char	*pszHDRFilename;
-    VSILFILE	*fp;
+    FILE	*fp;
     double	adfStats[4];
 
     psInfo->dfMin = 0.0;

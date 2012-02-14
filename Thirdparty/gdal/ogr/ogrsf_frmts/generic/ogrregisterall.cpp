@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrregisterall.cpp 23381 2011-11-17 21:55:45Z rouault $
+ * $Id: ogrregisterall.cpp 18449 2010-01-07 09:09:09Z martinl $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Function to register all known OGR drivers.
@@ -29,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrregisterall.cpp 23381 2011-11-17 21:55:45Z rouault $");
+CPL_CVSID("$Id: ogrregisterall.cpp 18449 2010-01-07 09:09:09Z martinl $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */
@@ -84,9 +84,6 @@ void OGRRegisterAll()
 #ifdef GPX_ENABLED
     RegisterOGRGPX();
 #endif
-#ifdef LIBKML_ENABLED
-    RegisterOGRLIBKML();
-#endif
 #ifdef KML_ENABLED
     RegisterOGRKML();
 #endif
@@ -108,20 +105,10 @@ void OGRRegisterAll()
 #endif
 #ifdef ODBC_ENABLED
     RegisterOGRODBC();
-#endif
-
-/* Register before PGeo and Geomedia drivers */
-/* that don't work well on Linux */
-#ifdef MDB_ENABLED
-    RegisterOGRMDB();
-#endif
-
+#endif    
 #ifdef PGEO_ENABLED
     RegisterOGRPGeo();
 #endif
-#ifdef MSSQLSPATIAL_ENABLED
-    RegisterOGRMSSQLSpatial();
-#endif 
 #ifdef OGDI_ENABLED
     RegisterOGROGDI();
 #endif
@@ -142,9 +129,6 @@ void OGRRegisterAll()
 #endif
 #ifdef SDE_ENABLED
     RegisterOGRSDE();
-#endif
-#ifdef FGDB_ENABLED
-    RegisterOGRFileGDB();
 #endif
 #ifdef XPLANE_ENABLED
     RegisterOGRXPlane();
@@ -180,61 +164,6 @@ void OGRRegisterAll()
 #ifdef VFK_ENABLED
     RegisterOGRVFK();
 #endif
-#ifdef PGDUMP_ENABLED
-    RegisterOGRPGDump();
-#endif
-#ifdef GPSBABEL_ENABLED
-    RegisterOGRGPSBabel();
-#endif
-#ifdef SUA_ENABLED
-    RegisterOGRSUA();
-#endif
-#ifdef OPENAIR_ENABLED
-    RegisterOGROpenAir();
-#endif
-#ifdef PDS_ENABLED
-    RegisterOGRPDS();
-#endif
-#ifdef WFS_ENABLED
-    RegisterOGRWFS();
-#endif
-#ifdef SOSI_ENABLED 
-	RegisterOGRSOSI(); 
-#endif
-#ifdef HTF_ENABLED
-    RegisterOGRHTF();
-#endif
-#ifdef AERONAVFAA_ENABLED
-    RegisterOGRAeronavFAA();
-#endif
-#ifdef GEOMEDIA_ENABLED
-    RegisterOGRGeomedia();
-#endif
-#ifdef EDIGEO_ENABLED
-    RegisterOGREDIGEO();
-#endif
-#ifdef GFT_ENABLED
-    RegisterOGRGFT();
-#endif
-#ifdef SVG_ENABLED
-    RegisterOGRSVG();
-#endif
-#ifdef COUCHDB_ENABLED
-    RegisterOGRCouchDB();
-#endif
-#ifdef IDRISI_ENABLED
-    RegisterOGRIdrisi();
-#endif
-#ifdef ARCGEN_ENABLED
-    RegisterOGRARCGEN();
-#endif
-#ifdef SEGUKOOA_ENABLED
-    RegisterOGRSEGUKOOA();
-#endif
-#ifdef SEGY_ENABLED
-    RegisterOGRSEGY();
-#endif
-#ifdef FREEXL_ENABLED
-    RegisterOGRXLS();
-#endif
+
 } /* OGRRegisterAll */
+

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdtslayer.cpp 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: ogrsdtslayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  SDTSReader
  * Purpose:  Implements OGRSDTSLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdtslayer.cpp 19952 2010-07-02 05:44:18Z warmerdam $");
+CPL_CVSID("$Id: ogrsdtslayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRSDTSLayer()                            */
@@ -292,7 +292,7 @@ OGRFeature * OGRSDTSLayer::GetNextUnfilteredFeature()
 /* -------------------------------------------------------------------- */
     if( poTransfer->GetLayerType(iLayer) == SLTPoly )
     {
-        ((SDTSPolygonReader *) poReader)->AssembleRings(poTransfer,iLayer);
+        ((SDTSPolygonReader *) poReader)->AssembleRings(poTransfer);
     }
 
 /* -------------------------------------------------------------------- */

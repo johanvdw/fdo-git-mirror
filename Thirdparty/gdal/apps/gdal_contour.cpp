@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_contour.cpp 21191 2010-12-03 20:02:34Z rouault $
+ * $Id: gdal_contour.cpp 18356 2009-12-20 22:28:34Z rouault $
  *
  * Project:  Contour Generator
  * Purpose:  Contour Generator mainline.
@@ -34,30 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 21191 2010-12-03 20:02:34Z rouault $");
-
-/************************************************************************/
-/*                            ArgIsNumeric()                            */
-/************************************************************************/
-
-static int ArgIsNumeric( const char *pszArg )
-
-{
-    if( pszArg[0] == '-' )
-        pszArg++;
-
-    if( *pszArg == '\0' )
-        return FALSE;
-
-    while( *pszArg != '\0' )
-    {
-        if( (*pszArg < '0' || *pszArg > '9') && *pszArg != '.' )
-            return FALSE;
-        pszArg++;
-    }
-
-    return TRUE;
-}
+CPL_CVSID("$Id: gdal_contour.cpp 18356 2009-12-20 22:28:34Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -138,7 +115,8 @@ int main( int argc, char ** argv )
             while( i < argc-1 
                    && nFixedLevelCount 
                              < (int)(sizeof(adfFixedLevels)/sizeof(double))
-                   && ArgIsNumeric(argv[i+1]) )
+                   && (atof(argv[i+1]) != 0 || EQUAL(argv[i+1],"0"))
+                   && !EQUAL(argv[i+1], "-3d"))
                 adfFixedLevels[nFixedLevelCount++] = atof(argv[++i]);
         }
         else if( EQUAL(argv[i],"-b") && i < argc-1 )

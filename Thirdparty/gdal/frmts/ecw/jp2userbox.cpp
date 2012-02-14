@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jp2userbox.cpp 21514 2011-01-16 23:49:42Z warmerdam $
+ * $Id: jp2userbox.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  JP2UserBox implementation - arbitrary box read/write.
@@ -27,11 +27,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "gdal_ecw.h"
+#include "jp2userbox.h"
 
-CPL_CVSID("$Id: jp2userbox.cpp 21514 2011-01-16 23:49:42Z warmerdam $");
-
-#if defined(HAVE_COMPRESS)
+CPL_CVSID("$Id: jp2userbox.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                             JP2UserBox()                             */
@@ -93,13 +91,9 @@ void JP2UserBox::UpdateXLBox()
 /*      Parse box, and data contents from file into memory.             */
 /************************************************************************/
 
-#if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::Parse( NCS::JP2::CFile &JP2File, 
-                             NCS::CIOStream &Stream )
-#else
 CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File, 
                              CNCSJPCIOStream &Stream )
-#endif
+
 {
     CNCSError Error = NCS_SUCCESS;
     
@@ -112,13 +106,9 @@ CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File,
 /*      Write box meta information, and data to file.                   */
 /************************************************************************/
 
-#if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::UnParse( NCS::JP2::CFile &JP2File, 
-                               NCS::CIOStream &Stream )
-#else
 CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File, 
                                CNCSJPCIOStream &Stream )
-#endif
+
 {
     CNCSError Error = NCS_SUCCESS;
 
@@ -138,5 +128,3 @@ CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File,
 
     return Error;
 }
-
-#endif /* defined(HAVE_COMPRESS) */
