@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgpxlayer.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogrgpxlayer.cpp 17753 2009-10-04 18:41:53Z rouault $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXLayer class.
@@ -33,16 +33,7 @@
 #include "cpl_minixml.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgpxlayer.cpp 20996 2010-10-28 18:38:15Z rouault $");
-
-#define FLD_TRACK_FID       0
-#define FLD_TRACK_SEG_ID    1
-#define FLD_TRACK_PT_ID     2
-#define FLD_TRACK_NAME      3
-
-#define FLD_ROUTE_FID       0
-#define FLD_ROUTE_PT_ID     1
-#define FLD_ROUTE_NAME      2
+CPL_CVSID("$Id: ogrgpxlayer.cpp 17753 2009-10-04 18:41:53Z rouault $");
 
 /************************************************************************/
 /*                            OGRGPXLayer()                             */
@@ -64,7 +55,7 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
 
     eof = FALSE;
     nNextFID = 0;
-
+    
     this->poDS = poDS;
     this->bWriteMode = bWriteMode;
     this->gpxGeomType = gpxGeomType;
@@ -98,12 +89,6 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
         
         OGRFieldDefn oFieldTrackSegPointID((bShortNames) ? "trksegptid" : "track_seg_point_id", OFTInteger );
         poFeatureDefn->AddFieldDefn( &oFieldTrackSegPointID );
-        
-        if (bWriteMode)
-        {
-            OGRFieldDefn oFieldName("track_name", OFTString );
-            poFeatureDefn->AddFieldDefn( &oFieldName );
-        }
     }
     else if (gpxGeomType == GPX_ROUTE_POINT)
     {
@@ -113,15 +98,7 @@ OGRGPXLayer::OGRGPXLayer( const char* pszFilename,
         
         OGRFieldDefn oFieldRoutePointID((bShortNames) ? "rteptid" : "route_point_id", OFTInteger );
         poFeatureDefn->AddFieldDefn( &oFieldRoutePointID );
-
-        if (bWriteMode)
-        {
-            OGRFieldDefn oFieldName("route_name", OFTString );
-            poFeatureDefn->AddFieldDefn( &oFieldName );
-        }
     }
-
-    iFirstGPXField = poFeatureDefn->GetFieldCount();
 
     if (gpxGeomType == GPX_WPT ||
         gpxGeomType == GPX_TRACK_POINT ||
@@ -497,16 +474,16 @@ void OGRGPXLayer::startElementCbk(const char *pszName, const char **ppszAttr)
             if (gpxGeomType == GPX_ROUTE_POINT)
             {
                 rtePtId++;
-                poFeature->SetField( FLD_ROUTE_FID, rteFID-1);
-                poFeature->SetField( FLD_ROUTE_PT_ID, rtePtId-1);
+                poFeature->SetField( 0, rteFID-1);
+                poFeature->SetField( 1, rtePtId-1);
             }
             else if (gpxGeomType == GPX_TRACK_POINT)
             {
                 trkSegPtId++;
 
-                poFeature->SetField( FLD_TRACK_FID, trkFID-1);
-                poFeature->SetField( FLD_TRACK_SEG_ID, trkSegId-1);
-                poFeature->SetField( FLD_TRACK_PT_ID, trkSegPtId-1);
+                poFeature->SetField( 0, trkFID-1);
+                poFeature->SetField( 1, trkSegId-1);
+                poFeature->SetField( 2, trkSegPtId-1);
             }
         }
     }
@@ -1138,8 +1115,9 @@ static char* OGRGPX_GetUTF8String(const char* pszString)
 /*                   OGRGPX_WriteXMLExtension()                          */
 /************************************************************************/
 
-int OGRGPXLayer::OGRGPX_WriteXMLExtension(const char* pszTagName,
-                                          const char* pszContent)
+static int OGRGPX_WriteXMLExtension(FILE* fp,
+                                    const char* pszTagName,
+                                    const char* pszContent)
 {
     CPLXMLNode* poXML = CPLParseXMLString(pszContent);
     if (poXML)
@@ -1157,7 +1135,7 @@ int OGRGPXLayer::OGRGPX_WriteXMLExtension(const char* pszTagName,
             
         /* Don't XML escape here */
         char *pszUTF8 = OGRGPX_GetUTF8String( pszContent );
-        poDS->PrintLine("    <%s%s>%s</%s>",
+        VSIFPrintf(fp, "    <%s%s>%s</%s>\n",
                    pszTagNameWithNS, (pszXMLNS) ? pszXMLNS : "", pszUTF8, pszTagNameWithNS);
         CPLFree(pszUTF8);
         
@@ -1174,20 +1152,13 @@ int OGRGPXLayer::OGRGPX_WriteXMLExtension(const char* pszTagName,
 /*                      WriteFeatureAttributes()                        */
 /************************************************************************/
 
-static void AddIdent(VSILFILE* fp, int nIdentLevel)
+void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature )
 {
-    int i;
-    for(i=0;i<nIdentLevel;i++)
-        VSIFPrintfL(fp, "  ");
-}
-
-void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature, int nIdentLevel )
-{
-    VSILFILE* fp = poDS->GetOutputFP();
+    FILE* fp = poDS->GetOutputFP();
     int i;
     
     /* Begin with standard GPX fields */
-    for(i=iFirstGPXField;i<nGPXFields;i++)
+    for(i=0;i<nGPXFields;i++)
     { 
         OGRFieldDefn *poFieldDefn = poFeatureDefn->GetFieldDefn( i );
         if( poFeature->IsFieldSet( i ) )
@@ -1200,8 +1171,7 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature, int nIdentLevel
                                                   &hour, &minute, &second, &TZFlag))
                 {
                     char* pszDate = OGRGetXMLDateTime(year, month, day, hour, minute, second, TZFlag);
-                    AddIdent(fp, nIdentLevel);
-                    poDS->PrintLine("<time>%s</time>", pszDate);
+                    VSIFPrintf(fp, "  <time>%s</time>\n", pszDate);
                     CPLFree(pszDate);
                 }
             }
@@ -1209,28 +1179,20 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature, int nIdentLevel
             {
                 if (strstr(pszName, "href"))
                 {
-                    AddIdent(fp, nIdentLevel);
-                    VSIFPrintfL(fp, "<link href=\"%s\">", poFeature->GetFieldAsString( i ));
+                    VSIFPrintf(fp, "  <link href=\"%s\">", poFeature->GetFieldAsString( i ));
                     if( poFeature->IsFieldSet( i + 1 ) )
-                        VSIFPrintfL(fp, "<text>%s</text>", poFeature->GetFieldAsString( i + 1 ));
+                        VSIFPrintf(fp, "<text>%s</text>", poFeature->GetFieldAsString( i + 1 ));
                     if( poFeature->IsFieldSet( i + 2 ) )
-                        VSIFPrintfL(fp, "<type>%s</type>", poFeature->GetFieldAsString( i + 2 ));
-                    poDS->PrintLine("</link>");
+                        VSIFPrintf(fp, "<type>%s</type>", poFeature->GetFieldAsString( i + 2 ));
+                    VSIFPrintf(fp, "</link>\n");
                 }
-            }
-            else if (poFieldDefn->GetType() == OFTReal)
-            {
-                char szValue[64];
-                OGRFormatDouble(szValue, sizeof(szValue), poFeature->GetFieldAsDouble(i), '.');
-                AddIdent(fp, nIdentLevel);
-                poDS->PrintLine("<%s>%s</%s>", pszName, szValue, pszName);
             }
             else
             {
                 char* pszValue =
                         OGRGetXML_UTF8_EscapedString(poFeature->GetFieldAsString( i ));
-                AddIdent(fp, nIdentLevel);
-                poDS->PrintLine("<%s>%s</%s>", pszName, pszValue, pszName);
+                VSIFPrintf(fp, "  <%s>%s</%s>\n",
+                        pszName, pszValue, pszName);
                 CPLFree(pszValue);
             }
         }
@@ -1241,8 +1203,7 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature, int nIdentLevel
     if (i < n)
     {
         const char* pszExtensionsNS = poDS->GetExtensionsNS();
-        AddIdent(fp, nIdentLevel);
-        poDS->PrintLine("<extensions>");
+        VSIFPrintf(fp, "  <extensions>\n");
         for(;i<n;i++)
         {
             OGRFieldDefn *poFieldDefn = poFeatureDefn->GetFieldDefn( i );
@@ -1250,67 +1211,49 @@ void OGRGPXLayer::WriteFeatureAttributes( OGRFeature *poFeature, int nIdentLevel
             {
                 char* compatibleName =
                         OGRGPX_GetXMLCompatibleTagName(pszExtensionsNS, poFieldDefn->GetNameRef());
-
-                if (poFieldDefn->GetType() == OFTReal)
+                const char *pszRaw = poFeature->GetFieldAsString( i );
+                
+                /* Try to detect XML content */
+                if (pszRaw[0] == '<' && pszRaw[strlen(pszRaw) - 1] == '>')
                 {
-                    char szValue[64];
-                    OGRFormatDouble(szValue, sizeof(szValue), poFeature->GetFieldAsDouble(i), '.');
-                    AddIdent(fp, nIdentLevel + 1);
-                    poDS->PrintLine("<%s:%s>%s</%s:%s>",
-                                pszExtensionsNS,
-                                compatibleName,
-                                szValue,
-                                pszExtensionsNS,
-                                compatibleName);
+                    if (OGRGPX_WriteXMLExtension(fp, compatibleName, pszRaw))
+                        continue;
                 }
-                else
+                
+                /* Try to detect XML escaped content */
+                else if (strncmp(pszRaw, "&lt;", 4) == 0 &&
+                         strncmp(pszRaw + strlen(pszRaw) - 4, "&gt;", 4) == 0)
                 {
-                    const char *pszRaw = poFeature->GetFieldAsString( i );
-
-                    /* Try to detect XML content */
-                    if (pszRaw[0] == '<' && pszRaw[strlen(pszRaw) - 1] == '>')
+                    char* pszUnescapedContent = CPLUnescapeString( pszRaw, NULL, CPLES_XML );
+                    
+                    if (OGRGPX_WriteXMLExtension(fp, compatibleName, pszUnescapedContent))
                     {
-                        if (OGRGPX_WriteXMLExtension( compatibleName, pszRaw))
-                            continue;
-                    }
-
-                    /* Try to detect XML escaped content */
-                    else if (strncmp(pszRaw, "&lt;", 4) == 0 &&
-                            strncmp(pszRaw + strlen(pszRaw) - 4, "&gt;", 4) == 0)
-                    {
-                        char* pszUnescapedContent = CPLUnescapeString( pszRaw, NULL, CPLES_XML );
-
-                        if (OGRGPX_WriteXMLExtension(compatibleName, pszUnescapedContent))
-                        {
-                            CPLFree(pszUnescapedContent);
-                            continue;
-                        }
-
                         CPLFree(pszUnescapedContent);
+                        continue;
                     }
-
-                    /* Remove leading spaces for a numeric field */
-                    if (poFieldDefn->GetType() == OFTInteger || poFieldDefn->GetType() == OFTReal)
-                    {
-                        while( *pszRaw == ' ' )
-                            pszRaw++;
-                    }
-
-                    char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
-                    AddIdent(fp, nIdentLevel + 1);
-                    poDS->PrintLine("<%s:%s>%s</%s:%s>",
-                            pszExtensionsNS,
-                            compatibleName,
-                            pszEscaped,
-                            pszExtensionsNS,
-                            compatibleName);
-                    CPLFree(pszEscaped);
+                    
+                    CPLFree(pszUnescapedContent);
                 }
+
+                /* Remove leading spaces for a numeric field */
+                if (poFieldDefn->GetType() == OFTInteger || poFieldDefn->GetType() == OFTReal)
+                {
+                    while( *pszRaw == ' ' )
+                        pszRaw++;
+                }
+
+                char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
+                VSIFPrintf(fp, "    <%s:%s>%s</%s:%s>\n",
+                        pszExtensionsNS,
+                        compatibleName,
+                        pszEscaped,
+                        pszExtensionsNS,
+                        compatibleName);
                 CPLFree(compatibleName);
+                CPLFree(pszEscaped);
             }
         }
-        AddIdent(fp, nIdentLevel);
-        poDS->PrintLine("</extensions>");
+        VSIFPrintf(fp, "  </extensions>\n");
     }
 }
 
@@ -1362,13 +1305,9 @@ OGRErr OGRGPXLayer::CheckAndFixCoordinatesValidity( double* pdfLatitude, double*
 OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
 
 {
-    VSILFILE* fp = poDS->GetOutputFP();
+    FILE* fp = poDS->GetOutputFP();
     if (fp == NULL)
         return CE_Failure;
-    
-    char szLat[64];
-    char szLon[64];
-    char szAlt[64];
     
     OGRGeometry     *poGeom = poFeature->GetGeometryRef();
     
@@ -1390,56 +1329,56 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
         
         poDS->SetLastGPXGeomTypeWritten(gpxGeomType);
 
-        if ( poGeom == NULL || wkbFlatten(poGeom->getGeometryType()) != wkbPoint )
+        if ( poGeom == NULL )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Features without geometry or with non-ponctual geometries not supported by GPX writer in waypoints layer." );
+                      "Features without geometry not supported by GPX writer in waypoints layer." );
             return OGRERR_FAILURE;
         }
 
-        if ( poGeom->getCoordinateDimension() == 0 )
+        switch( poGeom->getGeometryType() )
         {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "POINT EMPTY geometries not supported by GPX writer." );
-            return OGRERR_FAILURE;
+            case wkbPoint:
+            case wkbPoint25D:
+            {
+                OGRPoint* point = (OGRPoint*)poGeom;
+                double lat = point->getY();
+                double lon = point->getX();
+                CheckAndFixCoordinatesValidity(&lat, &lon);
+                poDS->AddCoord(lon, lat);
+                VSIFPrintf(fp, "<wpt lat=\"%.15f\" lon=\"%.15f\">\n", lat, lon);
+                WriteFeatureAttributes(poFeature);
+                VSIFPrintf(fp, "</wpt>\n");
+                break;
+            }
+            
+            default:
+            {
+                CPLError( CE_Failure, CPLE_NotSupported,
+                    "Geometry type of `%s' not supported fort 'wpt' element.\n",
+                    OGRGeometryTypeToName(poGeom->getGeometryType()) );
+                return OGRERR_FAILURE;
+            }
         }
-
-        OGRPoint* point = (OGRPoint*)poGeom;
-        double lat = point->getY();
-        double lon = point->getX();
-        CheckAndFixCoordinatesValidity(&lat, &lon);
-        poDS->AddCoord(lon, lat);
-        OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-        OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-        poDS->PrintLine("<wpt lat=\"%s\" lon=\"%s\">", szLat, szLon);
-        WriteFeatureAttributes(poFeature);
-        poDS->PrintLine("</wpt>");
     }
     else if (gpxGeomType == GPX_ROUTE)
     {
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK ||
-            poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK_POINT)
+        if (poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK)
         {
             CPLError( CE_Failure, CPLE_NotSupported,
                         "Cannot write a 'rte' element after a 'trk' element.\n");
             return OGRERR_FAILURE;
         }
-
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_ROUTE_POINT && poDS->nLastRteId != -1)
-        {
-            poDS->PrintLine("</rte>");
-            poDS->nLastRteId = -1;
-        }
-
+        
         poDS->SetLastGPXGeomTypeWritten(gpxGeomType);
 
         OGRLineString* line = NULL;
 
         if ( poGeom == NULL )
         {
-            poDS->PrintLine("<rte>");
+            VSIFPrintf(fp, "<rte>\n");
             WriteFeatureAttributes(poFeature);
-            poDS->PrintLine("</rte>");
+            VSIFPrintf(fp, "</rte>\n");
             return OGRERR_NONE;
         }
 
@@ -1484,7 +1423,7 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
 
         int n = (line) ? line->getNumPoints() : 0;
         int i;
-        poDS->PrintLine("<rte>");
+        VSIFPrintf(fp, "<rte>\n");
         WriteFeatureAttributes(poFeature);
         for(i=0;i<n;i++)
         {
@@ -1492,41 +1431,25 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
             double lon = line->getX(i);
             CheckAndFixCoordinatesValidity(&lat, &lon);
             poDS->AddCoord(lon, lat);
-            OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-            OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-            poDS->PrintLine("  <rtept lat=\"%s\" lon=\"%s\">", szLat, szLon);
+            VSIFPrintf(fp, "  <rtept lat=\"%.15f\" lon=\"%.15f\">\n", lat, lon);
             if (poGeom->getGeometryType() == wkbLineString25D ||
                 poGeom->getGeometryType() == wkbMultiLineString25D)
             {
-                OGRFormatDouble(szAlt, sizeof(szAlt), line->getZ(i), '.');
-                poDS->PrintLine("    <ele>%s</ele>", szAlt);
+                VSIFPrintf(fp, "    <ele>%f</ele>\n", line->getZ(i));
             }
-            poDS->PrintLine("  </rtept>");
+            VSIFPrintf(fp, "  </rtept>\n");
         }
-        poDS->PrintLine("</rte>");
+        VSIFPrintf(fp, "</rte>\n");
     }
-    else if (gpxGeomType == GPX_TRACK)
+    else
     {
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_ROUTE_POINT && poDS->nLastRteId != -1)
-        {
-            poDS->PrintLine("</rte>");
-            poDS->nLastRteId = -1;
-        }
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK_POINT && poDS->nLastTrkId != -1)
-        {
-            poDS->PrintLine("  </trkseg>");
-            poDS->PrintLine("</trk>");
-            poDS->nLastTrkId = -1;
-            poDS->nLastTrkSegId = -1;
-        }
-
         poDS->SetLastGPXGeomTypeWritten(gpxGeomType);
 
         if (poGeom == NULL)
         {
-            poDS->PrintLine("<trk>");
+            VSIFPrintf(fp, "<trk>\n");
             WriteFeatureAttributes(poFeature);
-            poDS->PrintLine("</trk>");
+            VSIFPrintf(fp, "</trk>\n");
             return OGRERR_NONE;
         }
 
@@ -1538,27 +1461,24 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
                 OGRLineString* line = (OGRLineString*)poGeom;
                 int n = line->getNumPoints();
                 int i;
-                poDS->PrintLine("<trk>");
+                VSIFPrintf(fp, "<trk>\n");
                 WriteFeatureAttributes(poFeature);
-                poDS->PrintLine("  <trkseg>");
+                VSIFPrintf(fp, "  <trkseg>\n");
                 for(i=0;i<n;i++)
                 {
                     double lat = line->getY(i);
                     double lon = line->getX(i);
                     CheckAndFixCoordinatesValidity(&lat, &lon);
                     poDS->AddCoord(lon, lat);
-                    OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-                    OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-                    poDS->PrintLine("    <trkpt lat=\"%s\" lon=\"%s\">", szLat, szLon);
+                    VSIFPrintf(fp, "    <trkpt lat=\"%.15f\" lon=\"%.15f\">\n", lat, lon);
                     if (line->getGeometryType() == wkbLineString25D)
                     {
-                        OGRFormatDouble(szAlt, sizeof(szAlt), line->getZ(i), '.');
-                        poDS->PrintLine("        <ele>%s</ele>", szAlt);
+                        VSIFPrintf(fp, "        <ele>%f</ele>\n", line->getZ(i));
                     }
-                    poDS->PrintLine("    </trkpt>");
+                    VSIFPrintf(fp, "    </trkpt>\n");
                 }
-                poDS->PrintLine("  </trkseg>");
-                poDS->PrintLine("</trk>");
+                VSIFPrintf(fp, "  </trkseg>\n");
+                VSIFPrintf(fp, "</trk>\n");
                 break;
             }
 
@@ -1566,7 +1486,7 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
             case wkbMultiLineString25D:
             {
                 int nGeometries = ((OGRGeometryCollection*)poGeom)->getNumGeometries ();
-                poDS->PrintLine("<trk>");
+                VSIFPrintf(fp, "<trk>\n");
                 WriteFeatureAttributes(poFeature);
                 int j;
                 for(j=0;j<nGeometries;j++)
@@ -1574,26 +1494,23 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
                     OGRLineString* line = (OGRLineString*) ( ((OGRGeometryCollection*)poGeom)->getGeometryRef(j) );
                     int n = (line) ? line->getNumPoints() : 0;
                     int i;
-                    poDS->PrintLine("  <trkseg>");
+                    VSIFPrintf(fp, "  <trkseg>\n");
                     for(i=0;i<n;i++)
                     {
                         double lat = line->getY(i);
                         double lon = line->getX(i);
                         CheckAndFixCoordinatesValidity(&lat, &lon);
                         poDS->AddCoord(lon, lat);
-                        OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-                        OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-                        poDS->PrintLine("    <trkpt lat=\"%s\" lon=\"%s\">", szLat, szLon);
+                        VSIFPrintf(fp, "    <trkpt lat=\"%.15f\" lon=\"%.15f\">\n", lat, lon);
                         if (line->getGeometryType() == wkbLineString25D)
                         {
-                            OGRFormatDouble(szAlt, sizeof(szAlt), line->getZ(i), '.');
-                            poDS->PrintLine("        <ele>%s</ele>", szAlt);
+                            VSIFPrintf(fp, "        <ele>%f</ele>\n", line->getZ(i));
                         }
-                        poDS->PrintLine("    </trkpt>");
+                        VSIFPrintf(fp, "    </trkpt>\n");
                     }
-                    poDS->PrintLine("  </trkseg>");
+                    VSIFPrintf(fp, "  </trkseg>\n");
                 }
-                poDS->PrintLine("</trk>");
+                VSIFPrintf(fp, "</trk>\n");
                 break;
             }
 
@@ -1605,165 +1522,6 @@ OGRErr OGRGPXLayer::CreateFeature( OGRFeature *poFeature )
                 return OGRERR_FAILURE;
             }
         }
-    }
-    else if (gpxGeomType == GPX_ROUTE_POINT)
-    {
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK ||
-            poDS->GetLastGPXGeomTypeWritten() == GPX_TRACK_POINT)
-        {
-            CPLError( CE_Failure, CPLE_NotSupported,
-                        "Cannot write a 'rte' element after a 'trk' element.\n");
-            return OGRERR_FAILURE;
-        }
-
-        if ( poGeom == NULL || wkbFlatten(poGeom->getGeometryType()) != wkbPoint )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Features without geometry or with non-ponctual geometries not supported by GPX writer in route_points layer." );
-            return OGRERR_FAILURE;
-        }
-
-        if ( poGeom->getCoordinateDimension() == 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "POINT EMPTY geometries not supported by GPX writer." );
-            return OGRERR_FAILURE;
-        }
-
-        if ( !poFeature->IsFieldSet(FLD_ROUTE_FID) )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Field %s must be set.", poFeatureDefn->GetFieldDefn(FLD_ROUTE_FID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-        if ( poFeature->GetFieldAsInteger(FLD_ROUTE_FID) < 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Invalid value for field %s.", poFeatureDefn->GetFieldDefn(FLD_ROUTE_FID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-
-        poDS->SetLastGPXGeomTypeWritten(gpxGeomType);
-
-        if ( poDS->nLastRteId != poFeature->GetFieldAsInteger(FLD_ROUTE_FID))
-        {
-            if (poDS->nLastRteId != -1)
-            {
-                poDS->PrintLine("</rte>");
-            }
-            poDS->PrintLine("<rte>");
-            if ( poFeature->IsFieldSet(FLD_ROUTE_NAME) )
-            {
-                char* pszValue =
-                            OGRGetXML_UTF8_EscapedString(poFeature->GetFieldAsString( FLD_ROUTE_NAME ));
-                poDS->PrintLine("  <%s>%s</%s>",
-                        "name", pszValue, "name");
-                CPLFree(pszValue);
-            }
-        }
-
-        poDS->nLastRteId = poFeature->GetFieldAsInteger(FLD_ROUTE_FID);
-
-        OGRPoint* point = (OGRPoint*)poGeom;
-        double lat = point->getY();
-        double lon = point->getX();
-        CheckAndFixCoordinatesValidity(&lat, &lon);
-        poDS->AddCoord(lon, lat);
-        OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-        OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-        poDS->PrintLine("  <rtept lat=\"%s\" lon=\"%s\">", szLat, szLon);
-        WriteFeatureAttributes(poFeature, 2);
-        poDS->PrintLine("  </rtept>");
-
-    }
-    else
-    {
-        if (poDS->GetLastGPXGeomTypeWritten() == GPX_ROUTE_POINT && poDS->nLastRteId != -1)
-        {
-            poDS->PrintLine("</rte>");
-            poDS->nLastRteId = -1;
-        }
-
-        if ( poGeom == NULL || wkbFlatten(poGeom->getGeometryType()) != wkbPoint )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Features without geometry or with non-ponctual geometries not supported by GPX writer in track_points layer." );
-            return OGRERR_FAILURE;
-        }
-
-        if ( poGeom->getCoordinateDimension() == 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "POINT EMPTY geometries not supported by GPX writer." );
-            return OGRERR_FAILURE;
-        }
-
-        if ( !poFeature->IsFieldSet(FLD_TRACK_FID) )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Field %s must be set.", poFeatureDefn->GetFieldDefn(FLD_TRACK_FID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-        if ( poFeature->GetFieldAsInteger(FLD_TRACK_FID) < 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Invalid value for field %s.", poFeatureDefn->GetFieldDefn(FLD_TRACK_FID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-        if ( !poFeature->IsFieldSet(FLD_TRACK_SEG_ID) )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Field %s must be set.", poFeatureDefn->GetFieldDefn(FLD_TRACK_SEG_ID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-        if ( poFeature->GetFieldAsInteger(FLD_TRACK_SEG_ID) < 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Invalid value for field %s.", poFeatureDefn->GetFieldDefn(FLD_TRACK_SEG_ID)->GetNameRef() );
-            return OGRERR_FAILURE;
-        }
-
-        poDS->SetLastGPXGeomTypeWritten(gpxGeomType);
-
-        if ( poDS->nLastTrkId != poFeature->GetFieldAsInteger(FLD_TRACK_FID))
-        {
-            if (poDS->nLastTrkId != -1)
-            {
-                poDS->PrintLine("  </trkseg>");
-                poDS->PrintLine("</trk>");
-            }
-            poDS->PrintLine("<trk>");
-
-            if ( poFeature->IsFieldSet(FLD_TRACK_NAME) )
-            {
-                char* pszValue =
-                            OGRGetXML_UTF8_EscapedString(poFeature->GetFieldAsString( FLD_TRACK_NAME ));
-                poDS->PrintLine("  <%s>%s</%s>",
-                        "name", pszValue, "name");
-                CPLFree(pszValue);
-            }
-
-            poDS->PrintLine("  <trkseg>");
-        }
-        else if (poDS->nLastTrkSegId != poFeature->GetFieldAsInteger(FLD_TRACK_SEG_ID))
-        {
-            poDS->PrintLine("  </trkseg>");
-            poDS->PrintLine("  <trkseg>");
-        }
-
-        poDS->nLastTrkId = poFeature->GetFieldAsInteger(FLD_TRACK_FID);
-        poDS->nLastTrkSegId = poFeature->GetFieldAsInteger(FLD_TRACK_SEG_ID);
-
-        OGRPoint* point = (OGRPoint*)poGeom;
-        double lat = point->getY();
-        double lon = point->getX();
-        CheckAndFixCoordinatesValidity(&lat, &lon);
-        poDS->AddCoord(lon, lat);
-        OGRFormatDouble(szLat, sizeof(szLat), lat, '.');
-        OGRFormatDouble(szLon, sizeof(szLon), lon, '.');
-        poDS->PrintLine("    <trkpt lat=\"%s\" lon=\"%s\">", szLat, szLon);
-        WriteFeatureAttributes(poFeature, 3);
-        poDS->PrintLine("    </trkpt>");
     }
 
     return OGRERR_NONE;

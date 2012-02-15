@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tifvsi.cpp 22639 2011-07-03 15:51:39Z rouault $
+ * $Id: tifvsi.cpp 17674 2009-09-24 13:40:55Z chaitanya $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implement system hook functions for libtiff on top of CPL/VSI,
@@ -33,14 +33,10 @@
  * TIFF Library UNIX-specific Routines.
  */
 #include "cpl_vsi.h"
-#include "tifvsi.h"
+#include "tiffio.h"
 
 // We avoid including xtiffio.h since it drags in the libgeotiff version
 // of the VSI functions.
-
-#ifdef RENAME_INTERNAL_LIBGEOTIFF_SYMBOLS
-#include "gdal_libgeotiff_symbol_rename.h"
-#endif
 
 CPL_C_START
 extern TIFF CPL_DLL * XTIFFClientOpen(const char* name, const char* mode, 
@@ -54,20 +50,20 @@ CPL_C_END
 static tsize_t
 _tiffReadProc(thandle_t fd, tdata_t buf, tsize_t size)
 {
-    return VSIFReadL( buf, 1, size, (VSILFILE *) fd );
+    return VSIFReadL( buf, 1, size, (FILE *) fd );
 }
 
 static tsize_t
 _tiffWriteProc(thandle_t fd, tdata_t buf, tsize_t size)
 {
-    return VSIFWriteL( buf, 1, size, (VSILFILE *) fd );
+    return VSIFWriteL( buf, 1, size, (FILE *) fd );
 }
 
 static toff_t
 _tiffSeekProc(thandle_t fd, toff_t off, int whence)
 {
-    if( VSIFSeekL( (VSILFILE *) fd, off, whence ) == 0 )
-        return (toff_t) VSIFTellL( (VSILFILE *) fd );
+    if( VSIFSeekL( (FILE *) fd, off, whence ) == 0 )
+        return (toff_t) VSIFTellL( (FILE *) fd );
     else
         return (toff_t) -1;
 }
@@ -75,7 +71,7 @@ _tiffSeekProc(thandle_t fd, toff_t off, int whence)
 static int
 _tiffCloseProc(thandle_t fd)
 {
-    return VSIFCloseL( (VSILFILE *) fd );
+    return VSIFCloseL( (FILE *) fd );
 }
 
 static toff_t
@@ -84,11 +80,11 @@ _tiffSizeProc(thandle_t fd)
     vsi_l_offset  old_off;
     toff_t        file_size;
 
-    old_off = VSIFTellL( (VSILFILE *) fd );
-    VSIFSeekL( (VSILFILE *) fd, 0, SEEK_END );
+    old_off = VSIFTellL( (FILE *) fd );
+    VSIFSeekL( (FILE *) fd, 0, SEEK_END );
     
-    file_size = (toff_t) VSIFTellL( (VSILFILE *) fd );
-    VSIFSeekL( (VSILFILE *) fd, old_off, SEEK_SET );
+    file_size = (toff_t) VSIFTellL( (FILE *) fd );
+    VSIFSeekL( (FILE *) fd, old_off, SEEK_SET );
 
     return file_size;
 }
@@ -114,7 +110,7 @@ TIFF* VSI_TIFFOpen(const char* name, const char* mode)
     static const char module[] = "TIFFOpen";
     int           i, a_out;
     char          access[32];
-    VSILFILE      *fp;
+    FILE          *fp;
     TIFF          *tif;
 
     a_out = 0;

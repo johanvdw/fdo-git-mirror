@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonlayer.cpp 23367 2011-11-12 22:46:13Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONLayer class (OGR GeoJSON Driver).
@@ -55,8 +55,7 @@ OGRGeoJSONLayer::OGRGeoJSONLayer( const char* pszName,
                                   OGRGeoJSONDataSource* poDS )
     : iterCurrent_( seqFeatures_.end() ), poDS_( poDS ), poFeatureDefn_(new OGRFeatureDefn( pszName ) ), poSRS_( NULL ), nOutCounter_( 0 )
 {
-    bWriteBBOX = CSLTestBoolean(CSLFetchNameValueDef(papszOptions, "WRITE_BBOX", "FALSE"));
-    bBBOX3D = FALSE;
+    UNREFERENCED_PARAM(papszOptions);
 
     CPLAssert( NULL != poDS_ );
     CPLAssert( NULL != poFeatureDefn_ );
@@ -68,8 +67,6 @@ OGRGeoJSONLayer::OGRGeoJSONLayer( const char* pszName,
     {
         SetSpatialRef( poSRSIn );
     }
-
-    nCoordPrecision = atoi(CSLFetchNameValueDef(papszOptions, "COORDINATE_PRECISION", "-1"));
 }
 
 /************************************************************************/
@@ -78,46 +75,10 @@ OGRGeoJSONLayer::OGRGeoJSONLayer( const char* pszName,
 
 OGRGeoJSONLayer::~OGRGeoJSONLayer()
 {
-    VSILFILE* fp = poDS_->GetOutputFile();
+    FILE* fp = poDS_->GetOutputFile();
     if( NULL != fp )
     {
-        VSIFPrintfL( fp, "\n]" );
-
-        if( bWriteBBOX && sEnvelopeLayer.IsInit() )
-        {
-            json_object* poObjBBOX = json_object_new_array();
-            json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MinX, nCoordPrecision));
-            json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MinY, nCoordPrecision));
-            if( bBBOX3D )
-                json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MinZ, nCoordPrecision));
-            json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MaxX, nCoordPrecision));
-            json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MaxY, nCoordPrecision));
-            if( bBBOX3D )
-                json_object_array_add(poObjBBOX,
-                            json_object_new_double_with_precision(sEnvelopeLayer.MaxZ, nCoordPrecision));
-
-            const char* pszBBOX = json_object_to_json_string( poObjBBOX );
-            if( poDS_->GetFpOutputIsSeekable() )
-            {
-                VSIFSeekL(fp, poDS_->GetBBOXInsertLocation(), SEEK_SET);
-                if (strlen(pszBBOX) + 9 < SPACE_FOR_BBOX)
-                    VSIFPrintfL( fp, "\"bbox\": %s,", pszBBOX );
-                VSIFSeekL(fp, 0, SEEK_END);
-            }
-            else
-            {
-                VSIFPrintfL( fp, ",\n\"bbox\": %s", pszBBOX );
-            }
-
-            json_object_put( poObjBBOX );
-        }
-
-        VSIFPrintfL( fp, "\n}\n" );
+        VSIFPrintfL( fp, "\n]\n}\n" );
     }
 
     std::for_each(seqFeatures_.begin(), seqFeatures_.end(),
@@ -191,33 +152,97 @@ void OGRGeoJSONLayer::ResetReading()
     iterCurrent_ = seqFeatures_.begin();
 }
 
+/*======================================================================*/
+/*                           Features Filter Utilities                  */
+/*======================================================================*/
+
+/*******************************************/
+/*          EvaluateSpatialFilter          */
+/*******************************************/
+
+bool OGRGeoJSONLayer::EvaluateSpatialFilter( OGRGeometry* poGeometry )
+{
+    return ( FilterGeometry( poGeometry ) == 0 ? false : true );
+}
+
+/*******************************************/
+/*          SpatialFilterPredicate         */
+/*******************************************/
+
+struct SpatialFilterPredicate
+{
+    explicit SpatialFilterPredicate(OGRGeoJSONLayer& layer)
+        : layer_(layer)
+    {}
+    bool operator()( OGRFeature* p )
+    {
+        return layer_.EvaluateSpatialFilter( p->GetGeometryRef() );
+    }
+
+private:
+
+    OGRGeoJSONLayer& layer_;
+};
+
+/*******************************************/
+/*          AttributeFilterPredicate       */
+/*******************************************/
+
+struct AttributeFilterPredicate
+{
+    explicit AttributeFilterPredicate(OGRFeatureQuery& query)
+        : query_(query)
+    {}
+
+    bool operator()( OGRFeature* p )
+    {
+        return ( query_.Evaluate( p ) == 0 ? false : true );
+    }
+
+private:
+
+    OGRFeatureQuery& query_;
+};
+
 /************************************************************************/
 /*                           GetNextFeature                             */
 /************************************************************************/
 
 OGRFeature* OGRGeoJSONLayer::GetNextFeature()
 {
-    while ( iterCurrent_ != seqFeatures_.end() )
+    bool bSingle = false;
+
+    if( NULL != m_poFilterGeom )
+    {
+        iterCurrent_ = std::find_if( iterCurrent_, seqFeatures_.end(),
+                       SpatialFilterPredicate(*this) );
+        bSingle = (iterCurrent_ != seqFeatures_.end());
+    }
+
+    if( NULL != m_poAttrQuery )
+    {
+        FeaturesSeq::iterator seqEnd = 
+            ( bSingle ? iterCurrent_ : seqFeatures_.end() );
+
+        iterCurrent_ = std::find_if( iterCurrent_, seqEnd,
+                       AttributeFilterPredicate(*m_poAttrQuery) );
+    }
+
+    if( iterCurrent_ != seqFeatures_.end() )
     {
         OGRFeature* poFeature = (*iterCurrent_);
         CPLAssert( NULL != poFeature );
-        ++iterCurrent_;
-        
-        if((m_poFilterGeom == NULL
-            || FilterGeometry( poFeature->GetGeometryRef() ) )
-        && (m_poAttrQuery == NULL
-            || m_poAttrQuery->Evaluate( poFeature )) )
+
+        OGRFeature* poFeatureCopy = poFeature->Clone();
+        CPLAssert( NULL != poFeatureCopy );
+
+        if (poFeatureCopy->GetGeometryRef() != NULL && poSRS_ != NULL)
         {
-            OGRFeature* poFeatureCopy = poFeature->Clone();
-            CPLAssert( NULL != poFeatureCopy );
-
-            if (poFeatureCopy->GetGeometryRef() != NULL && poSRS_ != NULL)
-            {
-                poFeatureCopy->GetGeometryRef()->assignSpatialReference( poSRS_ );
-            }
-
-            return poFeatureCopy;
+            poFeatureCopy->GetGeometryRef()->assignSpatialReference( poSRS_ );
         }
+
+        ++iterCurrent_;
+        return poFeatureCopy;
     }
 
     return NULL;
@@ -241,8 +266,8 @@ OGRFeature* OGRGeoJSONLayer::GetFeature( long nFID )
 
 OGRErr OGRGeoJSONLayer::CreateFeature( OGRFeature* poFeature )
 {
-    VSILFILE* fp = poDS_->GetOutputFile();
-    if( NULL == fp )
+    FILE* fp = poDS_->GetOutputFile();
+    if( NULL == poFeature )
     {
         CPLDebug( "GeoJSON", "Target datasource file is invalid." );
         return CE_Failure;
@@ -254,7 +279,7 @@ OGRErr OGRGeoJSONLayer::CreateFeature( OGRFeature* poFeature )
         return OGRERR_INVALID_HANDLE;
     }
 
-    json_object* poObj = OGRGeoJSONWriteFeature( poFeature, bWriteBBOX, nCoordPrecision );
+    json_object* poObj = OGRGeoJSONWriteFeature( poFeature );
     CPLAssert( NULL != poObj );
 
     if( nOutCounter_ > 0 )
@@ -267,18 +292,6 @@ OGRErr OGRGeoJSONLayer::CreateFeature( OGRFeature* poFeature )
     json_object_put( poObj );
 
     ++nOutCounter_;
-
-    OGRGeometry* poGeometry = poFeature->GetGeometryRef();
-    if ( bWriteBBOX && !poGeometry->IsEmpty() )
-    {
-        OGREnvelope3D sEnvelope;
-        poGeometry->getEnvelope(&sEnvelope);
-
-        if( poGeometry->getCoordinateDimension() == 3 )
-            bBBOX3D = TRUE;
-
-        sEnvelopeLayer.Merge(sEnvelope);
-    }
 
     return OGRERR_NONE;
 }
@@ -376,9 +389,6 @@ void OGRGeoJSONLayer::AddFeature( OGRFeature* poFeature )
 
 void OGRGeoJSONLayer::DetectGeometryType()
 {
-    if (poFeatureDefn_->GetGeomType() != wkbUnknown)
-        return;
-
     OGRwkbGeometryType featType = wkbUnknown;
     OGRGeometry* poGeometry = NULL;
     FeaturesSeq::const_iterator it = seqFeatures_.begin();

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnwrite.cpp 22623 2011-06-29 21:44:00Z rouault $
+ * $Id: dgnwrite.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access functions related to writing DGN elements.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnwrite.cpp 22623 2011-06-29 21:44:00Z rouault $");
+CPL_CVSID("$Id: dgnwrite.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 static void DGNPointToInt( DGNInfo *psDGN, DGNPoint *psPoint, 
                            unsigned char *pabyTarget );
@@ -1593,7 +1593,7 @@ DGNCreateColorTableElem( DGNHandle hDGN, int nScreenFlag,
 /* -------------------------------------------------------------------- */
 /*      Setup Raw data for the color table specific portion.            */
 /* -------------------------------------------------------------------- */
-    psCore->raw_bytes = 806; /* FIXME: this is invalid : 806 < 41 + 783 (see below lines) */
+    psCore->raw_bytes = 806;
     psCore->raw_data = (unsigned char*) CPLCalloc(psCore->raw_bytes,1);
 
     psCore->raw_data[36] = (unsigned char) (nScreenFlag % 256);
@@ -2224,8 +2224,7 @@ DGNCreateCellHeaderFromGroup( DGNHandle hDGN, const char *pszName,
 
         /* establish level */
         nLevel = papsElems[i]->level;
-        nLevel = MAX(1,MIN(nLevel,64));
-        abyLevelsOccuring[(nLevel-1) >> 3] |= (0x1 << ((nLevel-1)&0x7));
+        abyLevelsOccuring[nLevel >> 3] |= (0x1 << ((nLevel-1)&0x7));
         
         DGNGetElementExtents( hDGN, papsElems[i], &sThisMin, &sThisMax );
         if( i == 0 )

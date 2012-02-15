@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: srpdataset.cpp 23124 2011-09-27 16:55:26Z rouault $
+ * $Id: srpdataset.cpp 18436 2010-01-04 20:52:43Z rouault $
  * Purpose:  ASRP/USRP Reader
  * Author:   Frank Warmerdam (warmerdam@pobox.com)
  *
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "iso8211.h"
 
-CPL_CVSID("$Id: srpdataset.cpp 23124 2011-09-27 16:55:26Z rouault $");
+CPL_CVSID("$Id: srpdataset.cpp 18436 2010-01-04 20:52:43Z rouault $");
 
 class SRPDataset : public GDALPamDataset
 {
@@ -41,7 +41,7 @@ class SRPDataset : public GDALPamDataset
 
     static CPLString ResetTo01( const char* str );
 
-    VSILFILE*        fdIMG;
+    FILE*        fdIMG;
     int*         TILEINDEX;
     int          offsetInIMG;
     CPLString    osProduct;
@@ -306,7 +306,7 @@ CPLErr SRPRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
             while( nCount > 0 )
             {
-                ((GByte *) pImage)[iPixel++] = (GByte) nValue;
+                ((GByte *) pImage)[iPixel++] = nValue;
                 nCount--;
             }
         }
@@ -387,25 +387,12 @@ CPLErr SRPDataset::GetGeoTransform( double * padfGeoTransform)
 {
     if( EQUAL(osProduct,"ASRP") )
     {
-        if( ZNA == 9 || ZNA == 18 )
-        {
-            padfGeoTransform[0] = -1152000.0;
-            padfGeoTransform[1] = 500.0;
-            padfGeoTransform[2] = 0.0;
-            padfGeoTransform[3] = 1152000.0;
-            padfGeoTransform[4] = 0.0;
-            padfGeoTransform[5] = -500.0;
-
-        }
-        else
-        {
-            padfGeoTransform[0] = LSO/3600.0;
-            padfGeoTransform[1] = 360. / ARV;
-            padfGeoTransform[2] = 0.0;
-            padfGeoTransform[3] = PSO/3600.0;
-            padfGeoTransform[4] = 0.0;
-            padfGeoTransform[5] = - 360. / BRV;
-        }
+        padfGeoTransform[0] = LSO/3600.0;
+        padfGeoTransform[1] = 360. / ARV;
+        padfGeoTransform[2] = 0.0;
+        padfGeoTransform[3] = PSO/3600.0;
+        padfGeoTransform[4] = 0.0;
+        padfGeoTransform[5] = - 360. / BRV;
 
         return CE_None;
     }
@@ -577,9 +564,7 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
 
         int nIndexValueWidth = subfieldDefn->GetWidth();
 
-        /* Should be strict comparison, but apparently a few datasets */
-        /* have GetDataSize() greater than the required minimum (#3862) */
-        if (field->GetDataSize() < nIndexValueWidth * NFL * NFC + 1)
+        if (field->GetDataSize() != nIndexValueWidth * NFL * NFC + 1)
         {
             return FALSE;
         }
@@ -644,7 +629,7 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
                 {
                     return FALSE;
                 }
-                while( c != 30 )
+                while(c ==' ' || c== '^')
                 {
                     offsetInIMG ++;
                     if (VSIFReadL(&c, 1, 1, fdIMG) != 1)
@@ -719,9 +704,9 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
                 nNSG = record->GetIntSubfield( "COL", 0, "NSG", iColor );
                 nNSB = record->GetIntSubfield( "COL", 0, "NSB", iColor );
 
-                sEntry.c1 = (short) nNSR;
-                sEntry.c2 = (short) nNSG;
-                sEntry.c3 = (short) nNSB;
+                sEntry.c1 = nNSR;
+                sEntry.c2 = nNSG;
+                sEntry.c3 = nNSB;
                 sEntry.c4 = 255;
 
                 oCT.SetColorEntry( nCCD, &sEntry );
@@ -742,14 +727,10 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
     {
         osSRS = SRS_WKT_WGS84;
 
-        if( ZNA == 9 )
+        if (ZNA == 9 || ZNA == 18)
         {
-            osSRS = "PROJCS[\"unnamed\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]],PROJECTION[\"Azimuthal_Equidistant\"],PARAMETER[\"latitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0]]";
-        }
-
-        if (ZNA == 18)
-        {
-            osSRS = "PROJCS[\"unnamed\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]],PROJECTION[\"Azimuthal_Equidistant\"],PARAMETER[\"latitude_of_center\",-90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0]]";
+            CPLError(CE_Failure, CPLE_AppDefined, "Polar cases are not handled by SRP driver");
+            return FALSE;
         }
     }
     else

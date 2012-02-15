@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ceosopen.c 18570 2010-01-17 13:13:07Z rouault $
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -29,7 +29,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: ceosopen.c 18570 2010-01-17 13:13:07Z rouault $");
 
 /************************************************************************/
 /*                            CEOSScanInt()                             */
@@ -72,10 +72,10 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 /* -------------------------------------------------------------------- */
 /*      Read the standard CEOS header.                                  */
 /* -------------------------------------------------------------------- */
-    if( VSIFEofL( psImage->fpImage ) )
+    if( VSIFEof( psImage->fpImage ) )
         return NULL;
 
-    if( VSIFReadL( abyHeader, 1, 12, psImage->fpImage ) != 12 )
+    if( VSIFRead( abyHeader, 1, 12, psImage->fpImage ) != 12 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Ran out of data reading CEOS record." );
@@ -139,7 +139,7 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
 
     memcpy( psRecord->pachData, abyHeader, 12 );
 
-    if( (int)VSIFReadL( psRecord->pachData + 12, 1, psRecord->nLength-12, 
+    if( (int)VSIFRead( psRecord->pachData + 12, 1, psRecord->nLength-12, 
                        psImage->fpImage )
         != psRecord->nLength - 12 )
     {
@@ -184,7 +184,7 @@ void CEOSDestroyRecord( CEOSRecord * psRecord )
 CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
 
 {
-    VSILFILE	*fp;
+    FILE	*fp;
     CEOSRecord  *psRecord;
     CEOSImage   *psImage;
     int		nSeqNum, i;
@@ -193,7 +193,7 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
 /* -------------------------------------------------------------------- */
 /*      Try to open the imagery file.                                   */
 /* -------------------------------------------------------------------- */
-    fp = VSIFOpenL( pszFilename, pszAccess );
+    fp = VSIFOpen( pszFilename, pszAccess );
 
     if( fp == NULL )
     {
@@ -215,8 +215,8 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
 /*      Preread info on the first record, to establish if it is         */
 /*      little endian.                                                  */
 /* -------------------------------------------------------------------- */
-    VSIFReadL( abyHeader, 16, 1, fp );
-    VSIFSeekL( fp, 0, SEEK_SET );
+    VSIFRead( abyHeader, 16, 1, fp );
+    VSIFSeek( fp, 0, SEEK_SET );
     
     if( abyHeader[0] != 0 || abyHeader[1] != 0 )
         psImage->bLittleEndian = TRUE;
@@ -336,7 +336,7 @@ CPLErr CEOSReadScanline( CEOSImage * psCEOS, int nBand, int nScanline,
     nOffset = psCEOS->panDataStart[nBand-1]
         	+ (nScanline-1) * psCEOS->nLineOffset;
 
-    if( VSIFSeekL( psCEOS->fpImage, nOffset, SEEK_SET ) != 0 )
+    if( VSIFSeek( psCEOS->fpImage, nOffset, SEEK_SET ) != 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Seek to %d for scanline %d failed.\n",
@@ -348,7 +348,7 @@ CPLErr CEOSReadScanline( CEOSImage * psCEOS, int nBand, int nScanline,
 /*      Read the data.                                                  */
 /* -------------------------------------------------------------------- */
     nBytes = psCEOS->nPixels * psCEOS->nBitsPerPixel / 8;
-    if( (int) VSIFReadL( pData, 1, nBytes, psCEOS->fpImage ) != nBytes )
+    if( (int) VSIFRead( pData, 1, nBytes, psCEOS->fpImage ) != nBytes )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Read of %d bytes for scanline %d failed.\n",
@@ -373,7 +373,7 @@ void CEOSClose( CEOSImage * psCEOS )
 
 {
     CPLFree( psCEOS->panDataStart );
-    VSIFCloseL( psCEOS->fpImage );
+    VSIFClose( psCEOS->fpImage );
     CPLFree( psCEOS );
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: msgndataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: msgndataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  MSG Native Reader
  * Purpose:  All code for EUMETSAT Archive format reader
@@ -33,7 +33,7 @@
 #include "msg_reader_core.h"
 using namespace msg_native_format;
 
-CPL_CVSID("$Id: msgndataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+CPL_CVSID("$Id: msgndataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void   GDALRegister_MSGN(void);
@@ -434,7 +434,7 @@ GDALDataset *MSGNDataset::Open( GDALOpenInfo * poOpenInfo )
             }
             if (ok_to_add) {
                 poDS->SetBand( band_count, new MSGNRasterBand( poDS, band_count, open_mode, i+1, i+1 - missing_band_count));
-                band_map[band_count] = (unsigned char) (i+1);
+                band_map[band_count] = i+1;
                 band_count++;
             }
         } else {

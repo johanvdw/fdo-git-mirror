@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: rdataset.cpp 17718 2009-09-30 20:15:36Z warmerdam $
  *
  * Project:  R Format Driver
  * Purpose:  Read/write R stats package object format.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "../raw/rawdataset.h"
 
-CPL_CVSID("$Id: rdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: rdataset.cpp 17718 2009-09-30 20:15:36Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_R(void);
@@ -58,7 +58,7 @@ RCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 class RDataset : public GDALPamDataset
 {
     friend class RRasterBand;
-    VSILFILE       *fp;
+    FILE       *fp;
     int         bASCII;
     CPLString   osLastStringRead;
 

@@ -1,4 +1,4 @@
-/* $Id: tif_print.c,v 1.54 2011-04-02 20:54:09 bfriesen Exp $ */
+/* $Id: tif_print.c,v 1.48 2009-08-24 16:51:14 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -93,7 +93,7 @@ _TIFFPrintField(FILE* fd, const TIFFField *fip,
 			|| fip->field_type == TIFF_FLOAT)
 			fprintf(fd, "%f", ((float *) raw_data)[j]);
 		else if(fip->field_type == TIFF_LONG8)
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 			fprintf(fd, "%I64u",
 			    (unsigned __int64)((uint64 *) raw_data)[j]);
 #else
@@ -101,13 +101,13 @@ _TIFFPrintField(FILE* fd, const TIFFField *fip,
 			    (unsigned long long)((uint64 *) raw_data)[j]);
 #endif
 		else if(fip->field_type == TIFF_SLONG8)
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 			fprintf(fd, "%I64d", (__int64)((int64 *) raw_data)[j]);
 #else
 			fprintf(fd, "%lld", (long long)((int64 *) raw_data)[j]);
 #endif
 		else if(fip->field_type == TIFF_IFD8)
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 			fprintf(fd, "0x%I64x",
 				(unsigned __int64)((uint64 *) raw_data)[j]);
 #else
@@ -138,8 +138,8 @@ static int
 _TIFFPrettyPrintField(TIFF* tif, FILE* fd, uint32 tag,
 		      uint32 value_count, void *raw_data)
 {
-        (void) tif;
-        
+	TIFFDirectory *td = &tif->tif_dir;
+
 	switch (tag)
 	{
 		case TIFFTAG_INKSET:
@@ -163,6 +163,17 @@ _TIFFPrettyPrintField(TIFF* tif, FILE* fd, uint32 tag,
 			fprintf(fd, "  White Point: %g-%g\n",
 			    ((float *)raw_data)[0], ((float *)raw_data)[1]);
 			return 1;
+		case TIFFTAG_REFERENCEBLACKWHITE:
+		{
+			uint16 i;
+
+			fprintf(fd, "  Reference Black/White:\n");
+			for (i = 0; i < td->td_samplesperpixel; i++)
+			fprintf(fd, "    %2d: %5g %5g\n", i,
+			    ((float *)raw_data)[2*i+0],
+			    ((float *)raw_data)[2*i+1]);
+			return 1;
+		}
 		case TIFFTAG_XMLPACKET:
 		{
 			uint32 i;
@@ -212,7 +223,7 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 	uint16 i;
 	long l, n;
 
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 	fprintf(fd, "TIFF Directory at offset 0x%I64x (%I64u)\n",
 		(unsigned __int64) tif->tif_diroff,
 		(unsigned __int64) tif->tif_diroff);
@@ -448,18 +459,12 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 		fprintf(fd, "  Min Sample Value: %u\n", td->td_minsamplevalue);
 	if (TIFFFieldSet(tif,FIELD_MAXSAMPLEVALUE))
 		fprintf(fd, "  Max Sample Value: %u\n", td->td_maxsamplevalue);
-	if (TIFFFieldSet(tif,FIELD_SMINSAMPLEVALUE)) {
-		fprintf(fd, "  SMin Sample Value:");
-		for (i = 0; i < td->td_samplesperpixel; ++i)
-			fprintf(fd, " %g", td->td_sminsamplevalue[i]);
-		fprintf(fd, "\n");
-	}
-	if (TIFFFieldSet(tif,FIELD_SMAXSAMPLEVALUE)) {
-		fprintf(fd, "  SMax Sample Value:");
-		for (i = 0; i < td->td_samplesperpixel; ++i)
-			fprintf(fd, " %g", td->td_smaxsamplevalue[i]);
-		fprintf(fd, "\n");
-	}
+	if (TIFFFieldSet(tif,FIELD_SMINSAMPLEVALUE))
+		fprintf(fd, "  SMin Sample Value: %g\n",
+		    td->td_sminsamplevalue);
+	if (TIFFFieldSet(tif,FIELD_SMAXSAMPLEVALUE))
+		fprintf(fd, "  SMax Sample Value: %g\n",
+		    td->td_smaxsamplevalue);
 	if (TIFFFieldSet(tif,FIELD_PLANARCONFIG)) {
 		fprintf(fd, "  Planar Configuration: ");
 		switch (td->td_planarconfig) {
@@ -492,13 +497,6 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 		} else
 			fprintf(fd, "(present)\n");
 	}
-	if (TIFFFieldSet(tif,FIELD_REFBLACKWHITE)) {
-		fprintf(fd, "  Reference Black/White:\n");
-		for (i = 0; i < 3; i++)
-		fprintf(fd, "    %2d: %5g %5g\n", i,
-			td->td_refblackwhite[2*i+0],
-			td->td_refblackwhite[2*i+1]);
-	}
 	if (TIFFFieldSet(tif,FIELD_TRANSFERFUNCTION)) {
 		fprintf(fd, "  Transfer Function: ");
 		if (flags & TIFFPRINT_CURVES) {
@@ -518,7 +516,7 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 	if (TIFFFieldSet(tif, FIELD_SUBIFD) && (td->td_subifd)) {
 		fprintf(fd, "  SubIFD Offsets:");
 		for (i = 0; i < td->td_nsubifd; i++)
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 			fprintf(fd, " %5I64u",
 				(unsigned __int64) td->td_subifd[i]);
 #else
@@ -620,9 +618,6 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
         
 	if (tif->tif_tagmethods.printdir)
 		(*tif->tif_tagmethods.printdir)(tif, fd, flags);
-
-        _TIFFFillStriles( tif );
-        
 	if ((flags & TIFFPRINT_STRIPS) &&
 	    TIFFFieldSet(tif,FIELD_STRIPOFFSETS)) {
 		uint32 s;
@@ -631,7 +626,7 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 		    (long) td->td_nstrips,
 		    isTiled(tif) ? "Tiles" : "Strips");
 		for (s = 0; s < td->td_nstrips; s++)
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 			fprintf(fd, "    %3lu: [%8I64u, %8I64u]\n",
 			    (unsigned long) s,
 			    (unsigned __int64) td->td_stripoffset[s],
@@ -674,10 +669,3 @@ _TIFFprintAsciiTag(FILE* fd, const char* name, const char* value)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

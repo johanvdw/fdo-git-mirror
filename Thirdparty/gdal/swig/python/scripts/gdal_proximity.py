@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_proximity.py 23152 2011-10-01 13:39:52Z rouault $
+#  $Id: gdal_proximity.py 18306 2009-12-15 18:57:11Z rouault $
 # 
 #  Name:     gdalproximity
 #  Project:  GDAL Python Interface
@@ -58,7 +58,6 @@ src_band_n = 1
 dst_filename = None
 dst_band_n = 1
 creation_type = 'Float32'
-quiet_flag = 0
 
 gdal.AllRegister()
 argv = gdal.GeneralCmdLineProcessor( sys.argv )
@@ -134,7 +133,7 @@ if src_filename is None or dst_filename is None:
 src_ds = gdal.Open( src_filename )
     
 if src_ds is None:
-    print('Unable to open %s' % src_filename)
+    print('Unable to open ', src_filename)
     sys.exit(1)
 
 srcband = src_ds.GetRasterBand(src_band_n)
@@ -151,7 +150,7 @@ try:
     else:
         dst_ds = None
 except:
-    dst_ds = None
+    dst_ts = None
 
 # =============================================================================
 #     Create output file.
@@ -160,7 +159,7 @@ if dst_ds is None:
     drv = gdal.GetDriverByName(format)
     dst_ds = drv.Create( dst_filename,
                          src_ds.RasterXSize, src_ds.RasterYSize, 1,
-                         gdal.GetDataTypeByName(creation_type), creation_options )
+                         gdal.GetDataTypeByName(creation_type) )
 
     dst_ds.SetGeoTransform( src_ds.GetGeoTransform() )
     dst_ds.SetProjection( src_ds.GetProjectionRef() )
@@ -182,7 +181,7 @@ gdal.ComputeProximity( srcband, dstband, options,
 srcband = None
 dstband = None
 src_ds = None
-dst_ds = None
+
 
 
 

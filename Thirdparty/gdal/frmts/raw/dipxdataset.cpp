@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dipxdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: dipxdataset.cpp 16396 2009-02-22 20:49:52Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dipxdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: dipxdataset.cpp 16396 2009-02-22 20:49:52Z rouault $");
 
 CPL_C_START
 void	GDALRegister_DIPEx(void);
@@ -73,7 +73,7 @@ class DIPExDataset : public GDALPamDataset
 {
     friend class DIPExRasterBand;
 
-    VSILFILE	*fp;
+    FILE	*fp;
     CPLString    osSRS;
 
     DIPExHeader  sHeader;
@@ -300,11 +300,6 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
     return( poDS );
 }
 
@@ -346,8 +341,7 @@ void GDALRegister_DIPEx()
         poDriver->SetDescription( "DIPEx" );
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
                                    "DIPEx" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-
+        
         poDriver->pfnOpen = DIPExDataset::Open;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

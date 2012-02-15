@@ -1,4 +1,4 @@
-/* $Id: tif_codec.c,v 1.15 2010-12-14 12:53:00 dron Exp $ */
+/* $Id: tif_codec.c,v 1.13 2008/05/25 03:10:56 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -69,9 +69,6 @@ static int NotConfigured(TIFF*, int);
 #ifndef LOGLUV_SUPPORT
 #define TIFFInitSGILog NotConfigured
 #endif
-#ifndef LZMA_SUPPORT
-#define TIFFInitLZMA NotConfigured
-#endif
 
 /*
  * Compression schemes statically built into the library.
@@ -98,7 +95,6 @@ TIFFCodec _TIFFBuiltinCODECS[] = {
     { "PixarLog",	COMPRESSION_PIXARLOG,	TIFFInitPixarLog },
     { "SGILog",		COMPRESSION_SGILOG,	TIFFInitSGILog },
     { "SGILog24",	COMPRESSION_SGILOG24,	TIFFInitSGILog },
-    { "LZMA",		COMPRESSION_LZMA,	TIFFInitLZMA },
     { NULL,             0,                      NULL }
 };
 
@@ -156,10 +152,3 @@ TIFFIsCODECConfigured(uint16 scheme)
 	return 0;
 }
 
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

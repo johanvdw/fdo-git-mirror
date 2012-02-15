@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtmwaypointlayer.cpp 21684 2011-02-11 22:14:01Z warmerdam $
+ * $Id: gtmwaypointlayer.cpp 17637 2009-09-12 23:22:00Z warmerdam $
  *
  * Project:  GTM Driver
  * Purpose:  Implementation of gtmwaypoint class.
@@ -187,14 +187,14 @@ void GTMWaypointLayer::WriteFeatureAttributes( OGRFeature *poFeature, float alti
 
     /* Write waypoint string comment size to buffer */
     pBufferAux = (char*)pBuffer+10;
-    appendUShort(pBufferAux, (unsigned short) commentLength);
+    appendUShort(pBufferAux, commentLength);
 
     /* Write waypoint string comment to buffer */
     strncpy((char*)pBuffer+12, pszcomment, commentLength);
 
     /* Write icon to buffer */
     pBufferAux = (char*)pBuffer+12+commentLength;
-    appendUShort(pBufferAux, (unsigned short) icon);
+    appendUShort(pBufferAux, icon);
 
     /* Write dslp to buffer */
     pBufferAux = (char*)pBufferAux + 2;
@@ -229,7 +229,7 @@ void GTMWaypointLayer::WriteFeatureAttributes( OGRFeature *poFeature, float alti
 /************************************************************************/
 OGRErr GTMWaypointLayer::CreateFeature (OGRFeature *poFeature)
 {
-    VSILFILE* fp = poDS->getOutputFP();
+    FILE* fp = poDS->getOutputFP();
     if (fp == NULL)
         return CE_Failure;
 

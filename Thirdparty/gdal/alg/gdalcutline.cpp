@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalcutline.cpp 23033 2011-09-03 18:46:11Z rouault $
+ * $Id: gdalcutline.cpp 17041 2009-05-17 22:35:15Z warmerdam $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implement cutline/blend mask generator.
@@ -34,7 +34,7 @@
 #include "ogr_geometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalcutline.cpp 23033 2011-09-03 18:46:11Z rouault $");
+CPL_CVSID("$Id: gdalcutline.cpp 17041 2009-05-17 22:35:15Z warmerdam $");
 
 /************************************************************************/
 /*                         BlendMaskGenerator()                         */
@@ -174,7 +174,7 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
                 dfRatio = 0.5 + (dfDist / dfBlendDist) * 0.5;
             }                
 
-            pafValidityMask[iX + iY * nXSize] *= (float)dfRatio;
+            pafValidityMask[iX + iY * nXSize] *= dfRatio;
         }
     }
 

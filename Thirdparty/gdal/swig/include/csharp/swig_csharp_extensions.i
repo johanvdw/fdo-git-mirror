@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * $Id: swig_csharp_extensions.i 20170 2010-08-05 11:24:07Z tamas $
+ * $Id: swig_csharp_extensions.i 15488 2008-10-08 20:38:14Z warmerdam $
  *
  * Name:     swig_csharp_extensions.i
  * Purpose:  Fix for the SWIG Interface problems (early GC) 
@@ -8,12 +8,6 @@
  * Author:   Tamas Szekeres
  *
 */
-
-// Ensure the class is not marked BeforeFieldInit causing memory corruption with CLR4 
-%pragma(csharp) imclasscode=%{
-  static $imclassname() {
-  }
-%}
 
 %typemap(csout, excode=SWIGEXCODE) SWIGTYPE {
     $&csclassname ret = new $&csclassname($imcall, true, null);$excode

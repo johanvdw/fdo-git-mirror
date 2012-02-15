@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpeg2000_vsil_io.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: jpeg2000_vsil_io.cpp 17567 2009-08-23 14:38:13Z rouault $
  *
  * Project:  JPEG-2000
  * Purpose:  Return a stream for a VSIL file
@@ -76,13 +76,13 @@
 #include "jpeg2000_vsil_io.h"
 #include "cpl_vsi.h"
 
-CPL_CVSID("$Id: jpeg2000_vsil_io.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: jpeg2000_vsil_io.cpp 17567 2009-08-23 14:38:13Z rouault $");
 
 /*
  * File descriptor file object.
  */
 typedef struct {
-	VSILFILE* fp;
+	FILE* fp;
 } jas_stream_VSIFL_t;
 
 /******************************************************************************\

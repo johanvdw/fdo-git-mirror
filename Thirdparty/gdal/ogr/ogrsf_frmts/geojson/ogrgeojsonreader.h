@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonreader.h 23325 2011-11-05 17:19:38Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines GeoJSON reader within OGR OGRGeoJSON Driver.
@@ -103,9 +103,6 @@ private:
     bool bGeometryPreserve_;
     bool bAttributesSkip_;
 
-    int bFlattenGeocouchSpatiallistFormat;
-    bool bFoundId, bFoundRev, bFoundTypeFeature, bIsGeocouchSpatiallistFormat;
-
     //
     // Copy operations not supported.
     //
@@ -147,51 +144,5 @@ OGRPolygon* OGRGeoJSONReadPolygon( json_object* poObj , bool bRaw=false);
 OGRMultiPolygon* OGRGeoJSONReadMultiPolygon( json_object* poObj );
 OGRGeometryCollection* OGRGeoJSONReadGeometryCollection( json_object* poObj );
 OGRSpatialReference* OGRGeoJSONReadSpatialReference( json_object* poObj );
-
-
-
-/************************************************************************/
-/*                          OGRESRIJSONReader                           */
-/************************************************************************/
-
-class OGRESRIJSONReader
-{
-public:
-
-    OGRESRIJSONReader();
-    ~OGRESRIJSONReader();
-
-    OGRErr Parse( const char* pszText );
-    OGRGeoJSONLayer* ReadLayer( const char* pszName, OGRGeoJSONDataSource* poDS );
-
-private:
-
-    json_object* poGJObject_;
-    OGRGeoJSONLayer* poLayer_;
-
-    //
-    // Copy operations not supported.
-    //
-    OGRESRIJSONReader( OGRESRIJSONReader const& );
-    OGRESRIJSONReader& operator=( OGRESRIJSONReader const& );
-
-    //
-    // Translation utilities.
-    //
-    bool GenerateLayerDefn();
-    bool GenerateFeatureDefn( json_object* poObj );
-    bool AddFeature( OGRFeature* poFeature );
-
-    OGRGeometry* ReadGeometry( json_object* poObj );
-    OGRFeature* ReadFeature( json_object* poObj );
-    OGRGeoJSONLayer* ReadFeatureCollection( json_object* poObj );
-};
-
-OGRSpatialReference* OGRESRIJSONReadSpatialReference( json_object* poObj );
-OGRwkbGeometryType OGRESRIJSONGetGeometryType( json_object* poObj );
-OGRPoint* OGRESRIJSONReadPoint( json_object* poObj);
-OGRLineString* OGRESRIJSONReadLineString( json_object* poObj);
-OGRPolygon* OGRESRIJSONReadPolygon( json_object* poObj);
-OGRMultiPoint* OGRESRIJSONReadMultiPoint( json_object* poObj);
 
 #endif /* OGR_GEOJSONUTILS_H_INCLUDED */

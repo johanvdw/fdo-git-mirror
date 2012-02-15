@@ -1,7 +1,7 @@
 %extend OGRDataSourceShadow {
 // File: ogrdatasource_8cpp.xml
 %feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogrdatasource.cpp
-23403 2011-11-20 21:01:21Z ajolma $\") ";
+16933 2009-05-03 19:49:41Z rouault $\") ";
 
 %feature("docstring")  Destroy "void OGR_DS_Destroy(OGRDataSourceH
 hDS)
@@ -135,10 +135,6 @@ pszLayerName:  Layer the layer name of the layer to fetch.
 an handle to the layer, or NULL if the layer is not found or an error
 occurs. ";
 
-%feature("docstring")  OGRDataSourceParseSQLType "static OGRFieldType
-OGRDataSourceParseSQLType(char *pszType, int &nWidth, int &nPrecision)
-";
-
 %feature("docstring")  ExecuteSQL "OGRLayerH
 OGR_DS_ExecuteSQL(OGRDataSourceH hDS, const char *pszStatement,
 OGRGeometryH hSpatialFilter, const char *pszDialect)
@@ -149,7 +145,7 @@ The result of an SQL query is either NULL for statements that are in
 error, or that have no results set, or an OGRLayer handle representing
 a results set from the query. Note that this OGRLayer is in addition
 to the layers in the data store and must be destroyed with
-OGR_DS_ReleaseResultSet() before the data source is closed
+OGR_DS_ReleaseResultsSet() before the data source is closed
 (destroyed).
 
 For more information on the SQL dialect supported internally by OGR
@@ -167,15 +163,13 @@ hDS:  handle to the data source on which the SQL query is executed.
 pszSQLCommand:  the SQL statement to execute.
 
 hSpatialFilter:  handle to a geometry which represents a spatial
-filter. Can be NULL.
+filter.
 
-pszDialect:  allows control of the statement dialect. If set to NULL,
-the OGR SQL engine will be used, except for RDBMS drivers that will
-use their dedicated SQL engine, unless OGRSQL is explicitely passed as
-the dialect.
+pszDialect:  allows control of the statement dialect. By default it is
+assumed to be \"generic\" SQL, whatever that is.
 
 an handle to a OGRLayer containing the results of the query.
-Deallocate with OGR_DS_ReleaseResultSet(). ";
+Deallocate with OGR_DS_ReleaseResultsSet(). ";
 
 %feature("docstring")  ReleaseResultSet "void
 OGR_DS_ReleaseResultSet(OGRDataSourceH hDS, OGRLayerH hLayer)
@@ -188,7 +182,7 @@ deallocate a results set before destroying the OGRDataSource may cause
 errors.
 
 This function is the same as the C++ method
-OGRDataSource::ReleaseResultSet().
+OGRDataSource::ReleaseResultsSet().
 
 Parameters:
 -----------

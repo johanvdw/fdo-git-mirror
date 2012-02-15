@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_overviews.cpp 18859 2010-02-19 19:41:06Z warmerdam $
+ * $Id: hfa_overviews.cpp 18092 2009-11-24 20:48:51Z rouault $
  *
  * Project:  Erdas Imagine Driver
  * Purpose:  Entry point for building overviews, used by non-imagine formats.
@@ -31,7 +31,7 @@
 #include "hfa_p.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: hfa_overviews.cpp 18859 2010-02-19 19:41:06Z warmerdam $");
+CPL_CVSID("$Id: hfa_overviews.cpp 18092 2009-11-24 20:48:51Z rouault $");
 
 CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename, 
                              GDALDataset *poParentDS,
@@ -87,12 +87,11 @@ CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename,
             return CE_Failure;
         }
         
-        const char *apszOptions[4] = { "COMPRESSED=YES", "AUX=YES", 
-                                       NULL, NULL };
+        const char *apszOptions[3] = { "COMPRESSED=YES", NULL, NULL };
         
         CPLString osDepFileOpt = "DEPENDENT_FILE=";
         osDepFileOpt += CPLGetFilename(poParentDS->GetDescription());
-        apszOptions[2] = osDepFileOpt.c_str();
+        apszOptions[1] = osDepFileOpt.c_str();
 
         *ppoODS = 
             poHFADriver->Create( pszOvrFilename, 

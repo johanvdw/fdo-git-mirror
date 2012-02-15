@@ -141,7 +141,7 @@ Writes out a georeferencing string and geotransform to the segment.
 @param b3 northing pixel size, normally negative indicating north-up.
 
 */
-        virtual void WriteSimple( std::string const& geosys, 
+        virtual void WriteSimple( std::string geosys, 
             double a1, double a2, double xrot, 
             double b1, double yrot, double b3 ) = 0;
 
@@ -154,7 +154,7 @@ See GetParameters() for the description of the parameters list.
 
 */
 
-        virtual void WriteParameters( std::vector<double> const& parameters ) = 0;
+        virtual void WriteParameters( std::vector<double> &parameters ) = 0;
     };
 } // end namespace PCIDSK
 

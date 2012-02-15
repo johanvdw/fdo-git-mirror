@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtm.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gtm.cpp 17612 2009-09-03 19:18:45Z rouault $
  *
  * Project:  GTM Driver
  * Purpose:  Class for reading, parsing and handling a gtmfile.
@@ -61,18 +61,18 @@ void appendUShort(void* pBuffer, unsigned short val)
     memcpy(pBuffer, &val, 2);
 }
 
-void writeUChar(VSILFILE* fp, unsigned char val)
+void writeUChar(FILE* fp, unsigned char val)
 {
     VSIFWriteL(&val, 1, 1, fp);
 }
 
-void writeDouble(VSILFILE* fp, double val)
+void writeDouble(FILE* fp, double val)
 {
     CPL_LSBPTR64(&val)
     VSIFWriteL(&val, 1, 8, fp);
 }
 
-static double readDouble(VSILFILE* fp)
+static double readDouble(FILE* fp)
 {
     double val;
     VSIFReadL( &val, 1, 8, fp );
@@ -80,7 +80,7 @@ static double readDouble(VSILFILE* fp)
     return val;
 }
 
-static float readFloat(VSILFILE* fp)
+static float readFloat(FILE* fp)
 {
     float val;
     VSIFReadL( &val, 1, 4, fp );
@@ -88,7 +88,7 @@ static float readFloat(VSILFILE* fp)
     return val;
 }
 
-static int readInt(VSILFILE* fp)
+static int readInt(FILE* fp)
 {
     int val;
     VSIFReadL( &val, 1, 4, fp );
@@ -96,14 +96,14 @@ static int readInt(VSILFILE* fp)
     return val;
 }
 
-static unsigned char readUChar(VSILFILE* fp)
+static unsigned char readUChar(FILE* fp)
 {
     unsigned char val;
     VSIFReadL( &val, 1, 1, fp );
     return val;
 }
 
-static unsigned short readUShort(VSILFILE* fp, int *pbSuccess = NULL)
+static unsigned short readUShort(FILE* fp, int *pbSuccess = NULL)
 {
     unsigned short val;
     if (VSIFReadL( &val, 1, 2, fp ) != 2)
@@ -116,19 +116,19 @@ static unsigned short readUShort(VSILFILE* fp, int *pbSuccess = NULL)
     return val;
 }
 
-void writeFloat(VSILFILE* fp, float val)
+void writeFloat(FILE* fp, float val)
 {
     CPL_LSBPTR32(&val)
     VSIFWriteL(&val, 1, 4, fp);
 }
 
-void writeInt(VSILFILE* fp, int val)
+void writeInt(FILE* fp, int val)
 {
     CPL_LSBPTR32(&val)
     VSIFWriteL(&val, 1, 4, fp);
 }
 
-void writeUShort(VSILFILE* fp, unsigned short val)
+void writeUShort(FILE* fp, unsigned short val)
 {
     CPL_LSBPTR16(&val)
     VSIFWriteL(&val, 1, 2, fp);
@@ -345,15 +345,14 @@ bool GTM::isValid()
         char* pszGZIPFileName = (char*)CPLMalloc(
                            strlen("/vsigzip/") + strlen(pszFilename) + 1);
         sprintf(pszGZIPFileName, "/vsigzip/%s", pszFilename);
-        VSILFILE* fp = VSIFOpenL(pszGZIPFileName, "rb");
+        FILE* fp = VSIFOpenL(pszGZIPFileName, "rb");
         if (fp)
         {
-            VSILFILE* pGTMFileOri = pGTMFile;
+            FILE* pGTMFileOri = pGTMFile;
             pGTMFile = fp;
             if (isValid())
             {
                 VSIFCloseL(pGTMFileOri);
-                CPLFree(pszGZIPFileName);
                 return TRUE;
             }
             else

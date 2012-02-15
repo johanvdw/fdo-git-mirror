@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqldatasource.cpp 22607 2011-06-28 20:43:27Z rouault $
+ * $Id: ogrmysqldatasource.cpp 14887 2008-07-11 13:31:22Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDataSource class.
@@ -36,7 +36,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqldatasource.cpp 22607 2011-06-28 20:43:27Z rouault $");
+CPL_CVSID("$Id: ogrmysqldatasource.cpp 14887 2008-07-11 13:31:22Z warmerdam $");
 /************************************************************************/
 /*                         OGRMySQLDataSource()                         */
 /************************************************************************/
@@ -372,14 +372,14 @@ OGRLayer *OGRMySQLDataSource::GetLayer( int iLayer )
 OGRErr OGRMySQLDataSource::InitializeMetadataTables()
 
 {
-    const char*      pszCommand;
+    char            szCommand[1024];
     MYSQL_RES       *hResult;
     OGRErr	    eErr = OGRERR_NONE;
  
-    pszCommand = "DESCRIBE geometry_columns";
-    if( mysql_query(GetConn(), pszCommand ) )
+    sprintf( szCommand, "DESCRIBE geometry_columns" );
+    if( mysql_query(GetConn(), szCommand ) )
     {
-        pszCommand =
+        sprintf(szCommand,
                 "CREATE TABLE geometry_columns "
                 "( F_TABLE_CATALOG VARCHAR(256), "
                 "F_TABLE_SCHEMA VARCHAR(256), "
@@ -387,10 +387,10 @@ OGRErr OGRMySQLDataSource::InitializeMetadataTables()
                 "F_GEOMETRY_COLUMN VARCHAR(256) NOT NULL, "
                 "COORD_DIMENSION INT, "
                 "SRID INT,"
-                "TYPE VARCHAR(256) NOT NULL)";
-        if( mysql_query(GetConn(), pszCommand ) )
+                "TYPE VARCHAR(256) NOT NULL)");
+        if( mysql_query(GetConn(), szCommand ) )
         {
-            ReportError( pszCommand );
+            ReportError( szCommand );
             eErr = OGRERR_FAILURE;
         }
         else
@@ -406,18 +406,18 @@ OGRErr OGRMySQLDataSource::InitializeMetadataTables()
         hResult = NULL;   
     }
  
-    pszCommand = "DESCRIBE spatial_ref_sys";
-    if( mysql_query(GetConn(), pszCommand ) )
+    sprintf( szCommand, "DESCRIBE spatial_ref_sys" );
+    if( mysql_query(GetConn(), szCommand ) )
     {
-        pszCommand =
+        sprintf(szCommand,
                 "CREATE TABLE spatial_ref_sys "
                 "(SRID INT NOT NULL, "
                 "AUTH_NAME VARCHAR(256), "
                 "AUTH_SRID INT, "
-                "SRTEXT VARCHAR(2048))";
-        if( mysql_query(GetConn(), pszCommand ) )
+                "SRTEXT VARCHAR(2048))");
+        if( mysql_query(GetConn(), szCommand ) )
         {
-            ReportError( pszCommand );
+            ReportError( szCommand );
             eErr = OGRERR_FAILURE;
         }
         else
@@ -446,7 +446,7 @@ OGRErr OGRMySQLDataSource::InitializeMetadataTables()
 
 OGRSpatialReference *OGRMySQLDataSource::FetchSRS( int nId )
 {
-    char         szCommand[128];
+    char         szCommand[1024];
     char           **papszRow;  
     MYSQL_RES       *hResult;
             
@@ -500,6 +500,7 @@ OGRSpatialReference *OGRMySQLDataSource::FetchSRS( int nId )
     if( pszWKT == NULL || poSRS->importFromWkt( &pszWKT ) != OGRERR_NONE )
     {
         delete poSRS;
+        CPLFree(pszWKTOri);
         poSRS = NULL;
     }
 
@@ -533,7 +534,7 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
     char           **papszRow;  
     MYSQL_RES       *hResult=NULL;
     
-    CPLString            osCommand;
+    char                szCommand[10000];
     char                *pszWKT = NULL;
     int                 nSRSId;
 
@@ -546,14 +547,16 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
     if( poSRS->exportToWkt( &pszWKT ) != OGRERR_NONE )
         return -1;
     
+    CPLAssert( strlen(pszWKT) < sizeof(szCommand) - 500 );
+
 /* -------------------------------------------------------------------- */
 /*      Try to find in the existing table.                              */
 /* -------------------------------------------------------------------- */
-    osCommand.Printf( 
+    sprintf( szCommand, 
              "SELECT srid FROM spatial_ref_sys WHERE srtext = '%s'",
              pszWKT );
 
-    if( !mysql_query( GetConn(), osCommand ) )
+    if( !mysql_query( GetConn(), szCommand ) )
         hResult = mysql_store_result( GetConn() );
 
     if (!mysql_num_rows(hResult))
@@ -585,8 +588,9 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 /* -------------------------------------------------------------------- */
 /*      Get the current maximum srid in the srs table.                  */
 /* -------------------------------------------------------------------- */
-    osCommand = "SELECT MAX(srid) FROM spatial_ref_sys";
-    if( !mysql_query( GetConn(), osCommand ) )
+    sprintf( szCommand, 
+             "SELECT MAX(srid) FROM spatial_ref_sys");    
+    if( !mysql_query( GetConn(), szCommand ) )
     {
         hResult = mysql_store_result( GetConn() );
         papszRow = mysql_fetch_row( hResult );
@@ -606,11 +610,11 @@ int OGRMySQLDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 /* -------------------------------------------------------------------- */
 /*      Try adding the SRS to the SRS table.                            */
 /* -------------------------------------------------------------------- */
-    osCommand.Printf(
+    sprintf( szCommand, 
              "INSERT INTO spatial_ref_sys (srid,srtext) VALUES (%d,'%s')",
              nSRSId, pszWKT );
 
-    if( !mysql_query( GetConn(), osCommand ) )
+    if( !mysql_query( GetConn(), szCommand ) )
         hResult = mysql_store_result( GetConn() );
 
     // make sure to attempt to free results of successful queries
@@ -799,20 +803,20 @@ int OGRMySQLDataSource::DeleteLayer( int iLayer)
 /* -------------------------------------------------------------------- */
 /*      Remove from the database.                                       */
 /* -------------------------------------------------------------------- */
-    CPLString osCommand;
+    char        		szCommand[1024];
 
-    osCommand.Printf(
+    sprintf( szCommand,
              "DROP TABLE `%s` ",
              osLayerName.c_str() );
 
-    if( !mysql_query(GetConn(), osCommand ) )
+    if( !mysql_query(GetConn(), szCommand ) )
     {
         CPLDebug("MYSQL","Dropped table %s.", osLayerName.c_str());
         return OGRERR_NONE;
     }
     else
     {
-        ReportError( osCommand );
+        ReportError( szCommand );
         return OGRERR_FAILURE;
     }
 
@@ -830,7 +834,7 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
 
 {
     MYSQL_RES           *hResult=NULL;
-    CPLString            osCommand;
+    char        		szCommand[1024];
     const char          *pszGeometryType;
     const char			*pszGeomColumnName;
     const char 			*pszExpectedFIDName; 
@@ -898,14 +902,14 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
 
     if( wkbFlatten(eType) == wkbNone )
     {
-        osCommand.Printf(
+        sprintf( szCommand,
                  "CREATE TABLE `%s` ( "
                  "   %s INT UNIQUE NOT NULL AUTO_INCREMENT )",
                  pszLayerName, pszExpectedFIDName );
     }
     else
     {
-        osCommand.Printf(
+        sprintf( szCommand,
                  "CREATE TABLE `%s` ( "
                  "   %s INT UNIQUE NOT NULL AUTO_INCREMENT, "
                  "   %s GEOMETRY NOT NULL )",
@@ -914,23 +918,23 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
 
     if( CSLFetchNameValue( papszOptions, "ENGINE" ) != NULL )
     {
-        osCommand += " ENGINE = ";
-        osCommand += CSLFetchNameValue( papszOptions, "ENGINE" );
+        strcat( szCommand, " ENGINE = " );
+        strcat( szCommand, CSLFetchNameValue( papszOptions, "ENGINE" ) );
     }
 	
-    if( !mysql_query(GetConn(), osCommand ) )
+    if( !mysql_query(GetConn(), szCommand ) )
     {
         if( mysql_field_count( GetConn() ) == 0 )
             CPLDebug("MYSQL","Created table %s.", pszLayerName);
         else
         {
-            ReportError( osCommand );
+            ReportError( szCommand );
             return NULL;
         }
     }
     else
     {
-        ReportError( osCommand );
+        ReportError( szCommand );
         return NULL;
     }
 
@@ -958,13 +962,13 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
 /*      an effort to clean out such cruft.                              */
 /*                                                                      */
 /* -------------------------------------------------------------------- */
-    osCommand.Printf(
+    sprintf( szCommand,
              "DELETE FROM geometry_columns WHERE f_table_name = '%s'",
              pszLayerName );
 
-    if( mysql_query(GetConn(), osCommand ) )
+    if( mysql_query(GetConn(), szCommand ) )
     {
-        ReportError( osCommand );
+        ReportError( szCommand );
         return NULL;
     }
 
@@ -986,10 +990,44 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
         else
             nCoordDimension = 3;
 
-        pszGeometryType = OGRToOGCGeomType(eType);
+        switch( wkbFlatten(eType) )
+        {
+            case wkbPoint:
+                pszGeometryType = "POINT";
+                break;
+
+            case wkbLineString:
+                pszGeometryType = "LINESTRING";
+                break;
+
+            case wkbPolygon:
+                pszGeometryType = "POLYGON";
+                break;
+
+            case wkbMultiPoint:
+                pszGeometryType = "MULTIPOINT";
+                break;
+
+            case wkbMultiLineString:
+                pszGeometryType = "MULTILINESTRING";
+                break;
+
+            case wkbMultiPolygon:
+                pszGeometryType = "MULTIPOLYGON";
+                break;
+
+            case wkbGeometryCollection:
+                pszGeometryType = "GEOMETRYCOLLECTION";
+                break;
+
+            default:
+                pszGeometryType = "GEOMETRY";
+                break;
+
+        }
 
         if( nSRSId == -1 )
-            osCommand.Printf(
+            sprintf( szCommand,
                      "INSERT INTO geometry_columns "
                      " (F_TABLE_NAME, "
                      "  F_GEOMETRY_COLUMN, "
@@ -1001,7 +1039,7 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
                      nCoordDimension,
                      pszGeometryType );
         else
-            osCommand.Printf(
+            sprintf( szCommand,
                      "INSERT INTO geometry_columns "
                      " (F_TABLE_NAME, "
                      "  F_GEOMETRY_COLUMN, "
@@ -1015,9 +1053,9 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
                      nSRSId,
                      pszGeometryType );
 
-        if( mysql_query(GetConn(), osCommand ) )
+        if( mysql_query(GetConn(), szCommand ) )
         {
-            ReportError( osCommand );
+            ReportError( szCommand );
             return NULL;
         }
 
@@ -1038,14 +1076,14 @@ OGRMySQLDataSource::CreateLayer( const char * pszLayerNameIn,
 
     if( eType != wkbNone && (pszSI == NULL || CSLTestBoolean(pszSI)) )
     {
-        osCommand.Printf(
+        sprintf( szCommand,
                  "ALTER TABLE `%s` ADD SPATIAL INDEX(`%s`) ",
                  pszLayerName,
                  pszGeomColumnName);
 
-        if( mysql_query(GetConn(), osCommand ) )
+        if( mysql_query(GetConn(), szCommand ) )
         {
-            ReportError( osCommand );
+            ReportError( szCommand );
             return NULL;
         }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocilayer.cpp 19871 2010-06-15 04:32:45Z ilucena $
+ * $Id: ogrocilayer.cpp 15240 2008-08-28 18:14:21Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILayer class.  This is layer semantics
@@ -32,7 +32,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocilayer.cpp 19871 2010-06-15 04:32:45Z ilucena $");
+CPL_CVSID("$Id: ogrocilayer.cpp 15240 2008-08-28 18:14:21Z warmerdam $");
 
 /************************************************************************/
 /*                           OGROCILayer()                               */
@@ -907,7 +907,7 @@ int OGROCILayer::LookupTableSRID()
     OGROCIStringBuf oCommand;
 
     oCommand.Appendf( 1000, "SELECT SRID FROM ALL_SDO_GEOM_METADATA "
-                      "WHERE TABLE_NAME = UPPER('%s') AND COLUMN_NAME = UPPER('%s')",
+                      "WHERE TABLE_NAME = '%s' AND COLUMN_NAME = '%s'", 
                       pszTableName, pszGeomName );
     
     if( pszOwner != NULL )

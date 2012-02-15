@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrass.h 20157 2010-07-28 19:32:04Z rouault $
+ * $Id: ogrgrass.h 15583 2008-10-23 00:04:33Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/GRASS driver.
@@ -37,11 +37,7 @@ extern "C" {
     #include <grass/gprojects.h>
     #include <grass/gis.h>
     #include <grass/dbmi.h>
-#if GRASS_VERSION_MAJOR  >= 7
-    #include <grass/vector.h>
-#else
     #include <grass/Vect.h>
-#endif
 }
 
 /************************************************************************/

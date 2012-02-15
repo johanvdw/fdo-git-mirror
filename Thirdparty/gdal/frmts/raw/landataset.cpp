@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: landataset.cpp 23033 2011-09-03 18:46:11Z rouault $
+ * $Id: landataset.cpp 17117 2009-05-25 19:26:01Z warmerdam $
  *
  * Project:  eCognition
  * Purpose:  Implementation of Erdas .LAN / .GIS format.
@@ -29,9 +29,9 @@
 
 #include "rawdataset.h"
 #include "cpl_string.h"
-#include "ogr_spatialref.h"
+#include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: landataset.cpp 23033 2011-09-03 18:46:11Z rouault $");
+CPL_CVSID("$Id: landataset.cpp 17117 2009-05-25 19:26:01Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_LAN(void);
@@ -132,7 +132,7 @@ class LAN4BitRasterBand : public GDALPamRasterBand
 class LANDataset : public RawDataset
 {
   public:
-    VSILFILE	*fpImage;	// image data file.
+    FILE	*fpImage;	// image data file.
     
     char	pachHeader[ERD_HEADER_SIZE];
 
@@ -150,14 +150,9 @@ class LANDataset : public RawDataset
     	        ~LANDataset();
     
     virtual CPLErr GetGeoTransform( double * padfTransform );
-    virtual CPLErr SetGeoTransform( double * padfTransform );
     virtual const char *GetProjectionRef();
-    virtual CPLErr SetProjection( const char * );
 
     static GDALDataset *Open( GDALOpenInfo * );
-    static GDALDataset *Create( const char * pszFilename,
-                                int nXSize, int nYSize, int nBands,
-                                GDALDataType eType, char ** papszOptions );
 };
 
 /************************************************************************/
@@ -344,7 +339,7 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      We assume the user is pointing to the header (.pcb) file.       */
 /*      Does this appear to be a pcb file?                              */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < ERD_HEADER_SIZE )
+    if( poOpenInfo->nHeaderBytes < ERD_HEADER_SIZE || poOpenInfo->fp == NULL )
         return NULL;
 
     if( !EQUALN((const char *)poOpenInfo->pabyHeader,"HEADER",6)
@@ -367,7 +362,6 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
     else
         poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb+" );
-
     if( poDS->fpImage == NULL )
         return NULL;
 
@@ -546,7 +540,7 @@ GDALDataset *LANDataset::Open( GDALOpenInfo * poOpenInfo )
     char *pszBasename = CPLStrdup(CPLGetBasename(poOpenInfo->pszFilename));
     const char *pszTRLFilename = 
         CPLFormCIFilename( pszPath, pszBasename, "trl" );
-    VSILFILE *fpTRL;
+    FILE *fpTRL;
 
     fpTRL = VSIFOpenL( pszTRLFilename, "rb" );
     if( fpTRL != NULL )
@@ -603,49 +597,6 @@ CPLErr LANDataset::GetGeoTransform( double * padfTransform )
 }
 
 /************************************************************************/
-/*                          SetGeoTransform()                           */
-/************************************************************************/
-
-CPLErr LANDataset::SetGeoTransform( double * padfTransform )
-
-{
-    unsigned char abyHeader[128];
-
-    memcpy( adfGeoTransform, padfTransform, sizeof(double) * 6 );
-
-    VSIFSeekL( fpImage, 0, SEEK_SET );
-    VSIFReadL( abyHeader, 128, 1, fpImage );
-
-    // Upper Left X
-    float f32Val;
-
-    f32Val = (float) (adfGeoTransform[0] + 0.5 * adfGeoTransform[1]);
-    memcpy( abyHeader + 112, &f32Val, 4 );
-    
-    // Upper Left Y
-    f32Val = (float) (adfGeoTransform[3] + 0.5 * adfGeoTransform[5]);
-    memcpy( abyHeader + 116, &f32Val, 4 );
-    
-    // width of pixel
-    f32Val = (float) adfGeoTransform[1];
-    memcpy( abyHeader + 120, &f32Val, 4 );
-    
-    // height of pixel
-    f32Val = (float) fabs(adfGeoTransform[5]);
-    memcpy( abyHeader + 124, &f32Val, 4 );
-
-    if( VSIFSeekL( fpImage, 0, SEEK_SET ) != 0 
-        || VSIFWriteL( abyHeader, 128, 1, fpImage ) != 1 )
-    {
-        CPLError( CE_Failure, CPLE_FileIO,
-                  "File IO Error writing header with new geotransform." );
-        return CE_Failure;
-    }
-    else
-        return CE_None;
-}
-
-/************************************************************************/
 /*                          GetProjectionRef()                          */
 /*                                                                      */
 /*      Use PAM coordinate system if available in preference to the     */
@@ -661,98 +612,6 @@ const char *LANDataset::GetProjectionRef()
         return pszProjection;
     else
         return pszPamPrj;
-}
-
-/************************************************************************/
-/*                           SetProjection()                            */
-/************************************************************************/
-
-CPLErr LANDataset::SetProjection( const char * pszWKT )
-
-{
-    unsigned char abyHeader[128];
-
-    VSIFSeekL( fpImage, 0, SEEK_SET );
-    VSIFReadL( abyHeader, 128, 1, fpImage );
-
-    OGRSpatialReference oSRS( pszWKT );
-    
-    GUInt16 nProjCode = 0;
-
-    if( oSRS.IsGeographic() )
-        nProjCode = 0;
-
-    else if( oSRS.GetUTMZone() != 0 )
-        nProjCode = 1;
-
-    // Too bad we have no way of recognising state plane projections. 
-
-    else 
-    {
-        const char *pszProjection = oSRS.GetAttrValue("PROJECTION");
-
-        if( pszProjection == NULL )
-            ;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_ALBERS_CONIC_EQUAL_AREA) )
-            nProjCode = 3;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP) )
-            nProjCode = 4;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_MERCATOR_1SP) )
-            nProjCode = 5;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_POLAR_STEREOGRAPHIC) )
-            nProjCode = 6;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_POLYCONIC) )
-            nProjCode = 7;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_EQUIDISTANT_CONIC) )
-            nProjCode = 8;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_TRANSVERSE_MERCATOR) )
-            nProjCode = 9;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_STEREOGRAPHIC) )
-            nProjCode = 10;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_LAMBERT_AZIMUTHAL_EQUAL_AREA) )
-            nProjCode = 11;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_AZIMUTHAL_EQUIDISTANT) )
-            nProjCode = 12;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_GNOMONIC) )
-            nProjCode = 13;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_ORTHOGRAPHIC) )
-            nProjCode = 14;
-        // we don't have GVNP.
-        else if( EQUAL(pszProjection,
-                       SRS_PT_SINUSOIDAL) )
-            nProjCode = 16;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_EQUIRECTANGULAR) )
-            nProjCode = 17;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_MILLER_CYLINDRICAL) )
-            nProjCode = 18;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_VANDERGRINTEN) )
-            nProjCode = 19;
-        else if( EQUAL(pszProjection,
-                       SRS_PT_HOTINE_OBLIQUE_MERCATOR) )
-            nProjCode = 20;
-    }
-
-    memcpy( abyHeader + 88, &nProjCode, 2 );
-
-    VSIFSeekL( fpImage, 0, SEEK_SET );
-    VSIFWriteL( abyHeader, 128, 1, fpImage );
-
-    return GDALPamDataset::SetProjection( pszWKT );
 }
 
 /************************************************************************/
@@ -785,13 +644,15 @@ void LANDataset::CheckForStatistics()
 /* -------------------------------------------------------------------- */
     osSTAFilename = CPLResetExtension(GetDescription(),"sta");
 
-    VSILFILE *fpSTA = VSIFOpenL( osSTAFilename, "r" );
+    FILE *fpSTA = VSIFOpenL( osSTAFilename, "r" );
 
-    if( fpSTA == NULL && VSIIsCaseSensitiveFS(osSTAFilename) )
+#ifndef WIN32
+    if( fpSTA == NULL )
     {
         osSTAFilename = CPLResetExtension(GetDescription(),"STA");
         fpSTA = VSIFOpenL( osSTAFilename, "r" );
     }
+#endif
 
     if( fpSTA == NULL )
     {
@@ -843,146 +704,6 @@ void LANDataset::CheckForStatistics()
 }
 
 /************************************************************************/
-/*                               Create()                               */
-/************************************************************************/
-
-GDALDataset *LANDataset::Create( const char * pszFilename,
-                                 int nXSize, int nYSize, int nBands,
-                                 GDALDataType eType,
-                                 char ** papszOptions )
-
-{
-    if( eType != GDT_Byte && eType != GDT_Int16 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Attempt to create .GIS file with unsupported data type '%s'.",
-                  GDALGetDataTypeName( eType ) );
-        return NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Try to create the file.                                         */
-/* -------------------------------------------------------------------- */
-    VSILFILE	*fp;
-
-    fp = VSIFOpenL( pszFilename, "wb" );
-
-    if( fp == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Attempt to create file `%s' failed.\n",
-                  pszFilename );
-        return NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Write out the header.                                           */
-/* -------------------------------------------------------------------- */
-    unsigned char abyHeader[128];
-    GInt16  n16Val;
-    GInt32  n32Val;
-
-    memset( abyHeader, 0, sizeof(abyHeader) );
-    
-    memcpy( abyHeader + 0, "HEAD74", 6 );
-
-    // Pixel type
-    if( eType == GDT_Byte ) // do we want 4bit?
-        n16Val = 0;
-    else
-        n16Val = 2;
-    memcpy( abyHeader + 6, &n16Val, 2 );
-
-    // Number of Bands.
-    n16Val = (GInt16) nBands;
-    memcpy( abyHeader + 8, &n16Val, 2 );
-
-    // Unknown (6)
-
-    // Width
-    n32Val = nXSize;
-    memcpy( abyHeader + 16, &n32Val, 4 );
-    
-    // Height
-    n32Val = nYSize;
-    memcpy( abyHeader + 20, &n32Val, 4 );
-
-    // X Start (4)
-    // Y Start (4)
-
-    // Unknown (56)
-
-    // Coordinate System
-    n16Val = 0;
-    memcpy( abyHeader + 88, &n16Val, 2 );
-
-    // Classes in coverage 
-    n16Val = 0;
-    memcpy( abyHeader + 90, &n16Val, 2 );
-
-    // Unknown (14)
-
-    // Area Unit
-    n16Val = 0;
-    memcpy( abyHeader + 106, &n16Val, 2 );
-
-    // Pixel Area
-    float f32Val;
-
-    f32Val = 0.0f;
-    memcpy( abyHeader + 108, &f32Val, 4 );
-
-    // Upper Left X
-    f32Val = 0.5f;
-    memcpy( abyHeader + 112, &f32Val, 4 );
-    
-    // Upper Left Y
-    f32Val = (float) (nYSize - 0.5);
-    memcpy( abyHeader + 116, &f32Val, 4 );
-    
-    // width of pixel
-    f32Val = 1.0f;
-    memcpy( abyHeader + 120, &f32Val, 4 );
-    
-    // height of pixel
-    f32Val = 1.0f;
-    memcpy( abyHeader + 124, &f32Val, 4 );
-
-    VSIFWriteL( abyHeader, sizeof(abyHeader), 1, fp );
-
-/* -------------------------------------------------------------------- */
-/*      Extend the file to the target size.                             */
-/* -------------------------------------------------------------------- */
-    vsi_l_offset nImageBytes;
-
-    if( eType != GDT_Byte )
-        nImageBytes = nXSize * (vsi_l_offset) nYSize * 2;
-    else
-        nImageBytes = nXSize * (vsi_l_offset) nYSize;
-
-    memset( abyHeader, 0, sizeof(abyHeader) );
-    
-    while( nImageBytes > 0 )
-    {
-        vsi_l_offset nWriteThisTime = MIN(nImageBytes,sizeof(abyHeader));
-        
-        if( VSIFWriteL( abyHeader, 1, (size_t)nWriteThisTime, fp ) 
-            != nWriteThisTime )
-        {
-            VSIFCloseL( fp );
-            CPLError( CE_Failure, CPLE_FileIO,
-                      "Failed to write whole Istar file." );
-            return NULL;
-        }
-        nImageBytes -= nWriteThisTime;
-    }
-
-    VSIFCloseL( fp );
-
-    return (GDALDataset *) GDALOpen( pszFilename, GA_Update );
-}
-
-/************************************************************************/
 /*                          GDALRegister_LAN()                          */
 /************************************************************************/
 
@@ -1000,12 +721,8 @@ void GDALRegister_LAN()
                                    "Erdas .LAN/.GIS" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#LAN" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte Int16" );
         
         poDriver->pfnOpen = LANDataset::Open;
-        poDriver->pfnCreate = LANDataset::Create;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

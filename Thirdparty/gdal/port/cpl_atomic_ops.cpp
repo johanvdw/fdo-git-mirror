@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_atomic_ops.cpp 19884 2010-06-17 22:01:19Z rouault $
+ * $Id: cpl_atomic_ops.cpp 17734 2009-10-03 09:48:01Z rouault $
  *
  * Name:     cpl_atomic_ops.cpp
  * Project:  CPL - Common Portability Library
@@ -107,20 +107,6 @@ int CPLAtomicAdd(volatile int* ptr, int increment)
     CPLMutexHolder oMutex(&hAtomicOpMutex);
     (*ptr) += increment;
     return *ptr;
-}
-
-#endif
-
-#ifndef HAS_CPL_INLINE
-
-int CPLAtomicInc(volatile int* ptr)
-{
-    return CPLAtomicAdd(ptr, 1);
-}
-
-int CPLAtomicDec(volatile int* ptr)
-{
-    return CPLAtomicAdd(ptr, -1);
 }
 
 #endif

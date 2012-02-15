@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst_java.i 21579 2011-01-24 21:57:24Z rouault $
+ * $Id: gdalconst_java.i 16316 2009-02-13 20:51:00Z rouault $
  *
  * Name:     gdalconst_java.i
  * Project:  GDAL SWIG Interface
@@ -34,10 +34,6 @@
   public static boolean isAvailable() {
     return available;
   }
-%}
-
-/* This hacks turns the gdalconstJNI class into a package private class */
-%pragma(java) jniclassimports=%{
 %}
 
 %pragma(java) modulecode=%{

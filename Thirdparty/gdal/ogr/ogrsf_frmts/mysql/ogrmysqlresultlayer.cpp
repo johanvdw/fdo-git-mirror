@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqlresultlayer.cpp 20460 2010-08-27 20:06:26Z rouault $
+ * $Id: ogrmysqlresultlayer.cpp 18362 2009-12-21 05:47:06Z chaitanya $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLResultLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 20460 2010-08-27 20:06:26Z rouault $");
+CPL_CVSID("$Id: ogrmysqlresultlayer.cpp 18362 2009-12-21 05:47:06Z chaitanya $");
 
 /************************************************************************/
 /*                        OGRMySQLResultLayer()                         */
@@ -183,11 +183,8 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
             break;
                         
           case FIELD_TYPE_GEOMETRY:
-            if (pszGeomColumn == NULL)
-            {
-                pszGeomColumnTable = CPLStrdup( psMSField->table);
-                pszGeomColumn = CPLStrdup( psMSField->name);
-            }
+            pszGeomColumnTable = CPLStrdup( psMSField->table);
+            pszGeomColumn = CPLStrdup( psMSField->name);            
             break;
             
           default:
@@ -228,13 +225,13 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
     if (pszGeomColumn) 
     {
         char*        pszType=NULL;
-        CPLString    osCommand;
+        char         szCommand[1024];
         char           **papszRow;  
          
         // set to unknown first
         poDefn->SetGeomType( wkbUnknown );
         
-        osCommand.Printf(
+        sprintf(szCommand, 
                 "SELECT type FROM geometry_columns WHERE f_table_name='%s'",
                 pszGeomColumnTable );
 
@@ -242,7 +239,7 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
             mysql_free_result( hResultSet );
      		hResultSet = NULL;
 
-        if( !mysql_query( poDS->GetConn(), osCommand ) )
+        if( !mysql_query( poDS->GetConn(), szCommand ) )
             hResultSet = mysql_store_result( poDS->GetConn() );
 
         papszRow = NULL;
@@ -254,7 +251,23 @@ OGRFeatureDefn *OGRMySQLResultLayer::ReadResultDefinition()
         {
             pszType = papszRow[0];
 
-            OGRwkbGeometryType nGeomType = OGRFromOGCGeomType(pszType);
+            OGRwkbGeometryType nGeomType = wkbUnknown;
+
+            // check only standard OGC geometry types
+            if ( EQUAL(pszType, "POINT") )
+                nGeomType = wkbPoint;
+            else if ( EQUAL(pszType,"LINESTRING"))
+                nGeomType = wkbLineString;
+            else if ( EQUAL(pszType,"POLYGON"))
+                nGeomType = wkbPolygon;
+            else if ( EQUAL(pszType,"MULTIPOINT"))
+                nGeomType = wkbMultiPoint;
+            else if ( EQUAL(pszType,"MULTILINESTRING"))
+                nGeomType = wkbMultiLineString;
+            else if ( EQUAL(pszType,"MULTIPOLYGON"))
+                nGeomType = wkbMultiPolygon;
+            else if ( EQUAL(pszType,"GEOMETRYCOLLECTION"))
+                nGeomType = wkbGeometryCollection;
 
             poDefn->SetGeomType( nGeomType );
 

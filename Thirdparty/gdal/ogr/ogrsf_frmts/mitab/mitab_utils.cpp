@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_utils.cpp,v 1.26 2011-06-16 15:53:12 fwarmerdam Exp $
+ * $Id: mitab_utils.cpp,v 1.22 2008/07/21 16:04:58 dmorissette Exp $
  *
  * Name:     mitab_utils.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -30,19 +30,7 @@
  **********************************************************************
  *
  * $Log: mitab_utils.cpp,v $
- * Revision 1.26  2011-06-16 15:53:12  fwarmerdam
- * improve TABBasename() for filenames with an embedded dot (gdal #4123)
- *
- * Revision 1.25  2010-07-07 19:00:15  aboudreault
- * Cleanup Win32 Compile Warnings (GDAL bug #2930)
- *
- * Revision 1.24  2010-07-05 17:41:07  aboudreault
- * Fixed TABCleanFieldName() function should allow char '#' in field name (bug 2231)
- *
- * Revision 1.23  2010-01-07 20:39:12  aboudreault
- * Added support to handle duplicate field names, Added validation to check if a field name start with a number (bug 2141)
- *
- * Revision 1.22  2008-07-21 16:04:58  dmorissette
+ * Revision 1.22  2008/07/21 16:04:58  dmorissette
  * Fixed const char * warnings with GCC 4.3 (GDAL ticket #2325)
  *
  * Revision 1.21  2006/12/01 16:53:15  dmorissette
@@ -361,7 +349,7 @@ GBool TABAdjustFilenameExtension(char *pszFname)
      *----------------------------------------------------------------*/
     for(i = strlen(pszFname)-1; i >= 0 && pszFname[i] != '.'; i--)
     {
-        pszFname[i] = (char)toupper(pszFname[i]);
+        pszFname[i] = toupper(pszFname[i]);
     }
 
     if (VSIStat(pszFname, &sStatBuf) == 0)
@@ -374,7 +362,7 @@ GBool TABAdjustFilenameExtension(char *pszFname)
      *----------------------------------------------------------------*/
     for(i = strlen(pszFname)-1; i >= 0 && pszFname[i] != '.'; i--)
     {
-        pszFname[i] = (char)tolower(pszFname[i]);
+        pszFname[i] = tolower(pszFname[i]);
     }
 
     if (VSIStat(pszFname, &sStatBuf) == 0)
@@ -420,7 +408,7 @@ char *TABGetBasename(const char *pszFname)
      *----------------------------------------------------------------*/
     char *pszBasename = CPLStrdup(pszTmp);
     int i;
-    for(i=strlen(pszBasename)-1; i >= 0; i-- )
+    for(i=0; pszBasename[i] != '\0'; i++)
     {
         if (pszBasename[i] == '.')
         {
@@ -650,19 +638,11 @@ char *TABCleanFieldName(const char *pszSrcName)
      *----------------------------------------------------------------*/
     for(int i=0; pszSrcName && pszSrcName[i] != '\0'; i++)
     {
-        if ( pszSrcName[i]=='#' )
-	{
-            if (i == 0)
-            {
-                pszNewName[i] = '_';
-                numInvalidChars++;
-            }
-        }
-        else if ( !( pszSrcName[i] == '_' ||
-                     (i!=0 && pszSrcName[i]>='0' && pszSrcName[i]<='9') || 
-                     (pszSrcName[i]>='a' && pszSrcName[i]<='z') || 
-                     (pszSrcName[i]>='A' && pszSrcName[i]<='Z') ||
-                     (GByte)pszSrcName[i]>=192 ) )
+        if ( !( pszSrcName[i] == '_' ||
+                (pszSrcName[i]>='0' && pszSrcName[i]<='9') || 
+                (pszSrcName[i]>='a' && pszSrcName[i]<='z') || 
+                (pszSrcName[i]>='A' && pszSrcName[i]<='Z') ||
+                (GByte)pszSrcName[i]>=192 ) )
         {
             pszNewName[i] = '_';
             numInvalidChars++;

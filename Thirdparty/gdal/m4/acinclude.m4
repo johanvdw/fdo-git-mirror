@@ -1,5 +1,5 @@
 dnl ***************************************************************************
-dnl $Id: acinclude.m4 23370 2011-11-13 13:21:30Z rouault $
+dnl $Id: acinclude.m4 18310 2009-12-16 03:51:18Z hobu $
 dnl
 dnl Project:  GDAL
 dnl Purpose:  Configure extra local definitions.
@@ -95,15 +95,6 @@ AC_DEFUN([AC_UNIX_STDIO_64],
 
   AC_MSG_CHECKING([for 64bit file io])
 
-  dnl Special case when using mingw cross compiler.
-  case "${host_os}" in
-    *mingw*)
-        with_unix_stdio_64=no
-        AC_DEFINE_UNQUOTED(VSI_STAT64,_stat64, [Define to name of 64bit stat function])
-        AC_DEFINE_UNQUOTED(VSI_STAT64_T,__stat64, [Define to name of 64bit stat structure])
-        ;;
-  esac
-
   if test x"$with_unix_stdio_64" = x"yes" ; then
     VSI_FTELL64=ftell64
     VSI_FSEEK64=fseek64
@@ -182,18 +173,16 @@ AC_DEFUN([AC_UNIX_STDIO_64],
 
     AC_CHECK_FUNC(stat64, VSI_STAT64=stat64 VSI_STAT64_T=stat64, VSI_STAT64=stat VSI_STAT64_T=stat)
     AC_CHECK_FUNC(fopen64, VSI_FOPEN64=fopen64, VSI_FOPEN64=fopen)
-    AC_CHECK_FUNC(ftruncate64, VSI_FTRUNCATE64=ftruncate64, VSI_FTRUNCATE64=ftruncate)
 
     AC_DEFINE(UNIX_STDIO_64, 1, [Define to 1 if you have fseek64, ftell64])
     AC_DEFINE(VSI_LARGE_API_SUPPORTED, 1, [Define to 1, if you have 64 bit STDIO API])
 
-    export VSI_FTELL64 VSI_FSEEK64 VSI_STAT64 VSI_STAT64_T VSI_OPEN64 VSI_FTRUNCATE64
+    export VSI_FTELL64 VSI_FSEEK64 VSI_STAT64 VSI_STAT64_T VSI_OPEN64
     AC_DEFINE_UNQUOTED(VSI_FTELL64,$VSI_FTELL64, [Define to name of 64bit ftell func])
     AC_DEFINE_UNQUOTED(VSI_FSEEK64,$VSI_FSEEK64, [Define to name of 64bit fseek func])
     AC_DEFINE_UNQUOTED(VSI_STAT64,$VSI_STAT64, [Define to name of 64bit stat function])
     AC_DEFINE_UNQUOTED(VSI_STAT64_T,$VSI_STAT64_T, [Define to name of 64bit stat structure])
     AC_DEFINE_UNQUOTED(VSI_FOPEN64,$VSI_FOPEN64, [Define to name of 64bit fopen function])
-    AC_DEFINE_UNQUOTED(VSI_FTRUNCATE64,$VSI_FTRUNCATE64, [Define to name of 64bit ftruncate function])
   else
     AC_MSG_RESULT([no])
   fi
@@ -475,14 +464,14 @@ print sys.version[:3]'`"
 
         dnl Verify that we have the makefile needed later.
     
-        dnl AC_MSG_CHECKING([for top-level Makefile for Python])
-        dnl py_mf=$python_execprefix/$PYLIB/python${python_version}/config/Makefile
-        dnl if test -f $py_mf ; then
-        dnl     AC_MSG_RESULT(found)
-        dnl else
-        dnl     AC_MSG_RESULT([missing, Old-gen Python disabled.])
-        dnl     PYTHON=no
-        dnl fi
+        AC_MSG_CHECKING([for top-level Makefile for Python])
+        py_mf=$python_execprefix/$PYLIB/python${python_version}/config/Makefile
+        if test -f $py_mf ; then
+            AC_MSG_RESULT(found)
+        else
+            AC_MSG_RESULT([missing, Old-gen Python disabled.])
+            PYTHON=no
+        fi
     else
         dnl These defaults are version independent
         pythondir='$(prefix)/lib/site-python'

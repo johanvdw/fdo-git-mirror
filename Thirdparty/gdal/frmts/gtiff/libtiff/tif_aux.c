@@ -1,4 +1,4 @@
-/* $Id: tif_aux.c,v 1.26 2010-07-01 15:33:28 dron Exp $ */
+/* $Id: tif_aux.c,v 1.24 2009-11-30 18:19:15 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -33,32 +33,6 @@
 #include "tif_predict.h"
 #include <math.h>
 
-uint32
-_TIFFMultiply32(TIFF* tif, uint32 first, uint32 second, const char* where)
-{
-	uint32 bytes = first * second;
-
-	if (second && bytes / second != first) {
-		TIFFErrorExt(tif->tif_clientdata, where, "Integer overflow in %s", where);
-		bytes = 0;
-	}
-
-	return bytes;
-}
-
-uint64
-_TIFFMultiply64(TIFF* tif, uint64 first, uint64 second, const char* where)
-{
-	uint64 bytes = first * second;
-
-	if (second && bytes / second != first) {
-		TIFFErrorExt(tif->tif_clientdata, where, "Integer overflow in %s", where);
-		bytes = 0;
-	}
-
-	return bytes;
-}
-
 void*
 _TIFFCheckRealloc(TIFF* tif, void* buffer,
 		  tmsize_t nmemb, tmsize_t elem_size, const char* what)
@@ -72,12 +46,9 @@ _TIFFCheckRealloc(TIFF* tif, void* buffer,
 	if (nmemb && elem_size && bytes / elem_size == nmemb)
 		cp = _TIFFrealloc(buffer, bytes);
 
-	if (cp == NULL) {
+	if (cp == NULL)
 		TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
-			     "Failed to allocate memory for %s "
-			     "(%ld elements of %ld bytes each)",
-			     what,(long) nmemb, (long) elem_size);
-	}
+			     "No space %s", what);
 
 	return cp;
 }
@@ -349,10 +320,4 @@ _TIFFUInt64ToDouble(uint64 ui64)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */
+

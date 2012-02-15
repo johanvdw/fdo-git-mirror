@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeaturedefn.cpp 22900 2011-08-07 20:47:41Z rouault $
+ * $Id: ogrfeaturedefn.cpp 17587 2009-08-27 17:56:01Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFeatureDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfeaturedefn.cpp 22900 2011-08-07 20:47:41Z rouault $");
+CPL_CVSID("$Id: ogrfeaturedefn.cpp 17587 2009-08-27 17:56:01Z warmerdam $");
 
 /************************************************************************/
 /*                           OGRFeatureDefn()                           */
@@ -58,8 +58,6 @@ OGRFeatureDefn::OGRFeatureDefn( const char * pszName )
     nFieldCount = 0;
     papoFieldDefn = NULL;
     eGeomType = wkbUnknown;
-    bIgnoreGeometry = FALSE;
-    bIgnoreStyle = FALSE;
 }
 
 /************************************************************************/
@@ -324,9 +322,6 @@ OGRFieldDefnH OGR_FD_GetFieldDefn( OGRFeatureDefnH hDefn, int iField )
 /**
  * \brief Add a new field definition.
  *
- * To add a new field definition to a layer definition, do not use this
- * function directly, but use OGRLayer::CreateField() instead.
- *
  * This method should only be called while there are no OGRFeature
  * objects in existance based on this OGRFeatureDefn.  The OGRFieldDefn
  * passed in is copied, and remains the responsibility of the caller.
@@ -353,14 +348,11 @@ void OGRFeatureDefn::AddFieldDefn( OGRFieldDefn * poNewDefn )
 /**
  * \brief Add a new field definition to the passed feature definition.
  *
- * To add a new field definition to a layer definition, do not use this
- * function directly, but use OGR_L_CreateField() instead.
- *
  * This function  should only be called while there are no OGRFeature
  * objects in existance based on this OGRFeatureDefn.  The OGRFieldDefn
  * passed in is copied, and remains the responsibility of the caller.
  *
- * This function is the same as the C++ method OGRFeatureDefn::AddFieldDefn().
+ * This function is the same as the C++ method OGRFeatureDefn::AddFieldDefn.
  *
  * @param hDefn handle to the feature definition to add the field definition
  * to.
@@ -371,151 +363,6 @@ void OGR_FD_AddFieldDefn( OGRFeatureDefnH hDefn, OGRFieldDefnH hNewField )
 
 {
     ((OGRFeatureDefn *) hDefn)->AddFieldDefn( (OGRFieldDefn *) hNewField );
-}
-
-/************************************************************************/
-/*                           DeleteFieldDefn()                          */
-/************************************************************************/
-
-/**
- * \brief Delete an existing field definition.
- *
- * To delete an existing field definition from a layer definition, do not use this
- * function directly, but use OGRLayer::DeleteField() instead.
- *
- * This method should only be called while there are no OGRFeature
- * objects in existance based on this OGRFeatureDefn.
- *
- * This method is the same as the C function OGR_FD_DeleteFieldDefn().
- *
- * @param iField the index of the field defintion.
- * @return OGRERR_NONE in case of success.
- * @since OGR 1.9.0
- */
-
-OGRErr OGRFeatureDefn::DeleteFieldDefn( int iField )
-
-{
-    if (iField < 0 || iField >= nFieldCount)
-        return OGRERR_FAILURE;
-
-    delete papoFieldDefn[iField];
-    papoFieldDefn[iField] = NULL;
-
-    if (iField < nFieldCount - 1)
-    {
-        memmove(papoFieldDefn + iField,
-                papoFieldDefn + iField + 1,
-                (nFieldCount - 1 - iField) * sizeof(void*));
-    }
-
-    nFieldCount--;
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                       OGR_FD_DeleteFieldDefn()                       */
-/************************************************************************/
-
-/**
- * \brief Delete an existing field definition.
- *
- * To delete an existing field definition from a layer definition, do not use this
- * function directly, but use OGR_L_DeleteField() instead.
- *
- * This method should only be called while there are no OGRFeature
- * objects in existance based on this OGRFeatureDefn.
- *
- * This method is the same as the C++ method OGRFeatureDefn::DeleteFieldDefn().
- *
- * @param hDefn handle to the feature definition.
- * @param iField the index of the field defintion.
- * @return OGRERR_NONE in case of success.
- * @since OGR 1.9.0
- */
-
-OGRErr OGR_FD_DeleteFieldDefn( OGRFeatureDefnH hDefn, int iField )
-
-{
-    return ((OGRFeatureDefn *) hDefn)->DeleteFieldDefn( iField );
-}
-
-/************************************************************************/
-/*                         ReorderFieldDefns()                          */
-/************************************************************************/
-
-/**
- * \brief Reorder the field definitions in the array of the feature definition
- *
- * To reorder the field definitions in a layer definition, do not use this
- * function directly, but use OGR_L_ReorderFields() instead.
- *
- * This method should only be called while there are no OGRFeature
- * objects in existance based on this OGRFeatureDefn.
- *
- * This method is the same as the C function OGR_FD_ReorderFieldDefns().
- *
- * @param panMap an array of GetFieldCount() elements which
- * is a permutation of [0, GetFieldCount()-1]. panMap is such that,
- * for each field definition at position i after reordering,
- * its position before reordering was panMap[i].
- * @return OGRERR_NONE in case of success.
- * @since OGR 1.9.0
- */
-
-OGRErr OGRFeatureDefn::ReorderFieldDefns( int* panMap )
-
-{
-    if (nFieldCount == 0)
-        return OGRERR_NONE;
-
-    OGRErr eErr = OGRCheckPermutation(panMap, nFieldCount);
-    if (eErr != OGRERR_NONE)
-        return eErr;
-
-    OGRFieldDefn** papoFieldDefnNew = (OGRFieldDefn**)
-        CPLMalloc(sizeof(OGRFieldDefn*) * nFieldCount);
-
-    for(int i=0;i<nFieldCount;i++)
-    {
-        papoFieldDefnNew[i] = papoFieldDefn[panMap[i]];
-    }
-
-    CPLFree(papoFieldDefn);
-    papoFieldDefn = papoFieldDefnNew;
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                     OGR_FD_ReorderFieldDefns()                       */
-/************************************************************************/
-
-/**
- * \brief Reorder the field definitions in the array of the feature definition
- *
- * To reorder the field definitions in a layer definition, do not use this
- * function directly, but use OGR_L_ReorderFields() instead.
- *
- * This method should only be called while there are no OGRFeature
- * objects in existance based on this OGRFeatureDefn.
- *
- * This method is the same as the C++ method OGRFeatureDefn::ReorderFieldDefns().
- *
- * @param hDefn handle to the feature definition.
- * @param panMap an array of GetFieldCount() elements which
- * is a permutation of [0, GetFieldCount()-1]. panMap is such that,
- * for each field definition at position i after reordering,
- * its position before reordering was panMap[i].
- * @return OGRERR_NONE in case of success.
- * @since OGR 1.9.0
- */
-
-OGRErr OGR_FD_ReorderFieldDefn( OGRFeatureDefnH hDefn, int* panMap )
-
-{
-    return ((OGRFeatureDefn *) hDefn)->ReorderFieldDefns( panMap );
 }
 
 /************************************************************************/
@@ -765,142 +612,6 @@ int OGR_FD_GetFieldIndex( OGRFeatureDefnH hDefn, const char *pszFieldName )
 
 {
     return ((OGRFeatureDefn *)hDefn)->GetFieldIndex( pszFieldName );
-}
-
-/************************************************************************/
-/*                         IsGeometryIgnored()                          */
-/************************************************************************/
-
-/**
- * \fn int OGRFeatureDefn::IsGeometryIgnored();
- *
- * \brief Determine whether the geometry can be omitted when fetching features
- *
- * This method is the same as the C function OGR_FD_IsGeometryIgnored().
- *
- * @return ignore state
- */
-
-/************************************************************************/
-/*                      OGR_FD_IsGeometryIgnored()                      */
-/************************************************************************/
-
-/**
- * \brief Determine whether the geometry can be omitted when fetching features
- *
- * This function is the same as the C++ method 
- * OGRFeatureDefn::IsGeometryIgnored().
- *
- * @param hDefn hanlde to the feature definition on witch OGRFeature are
- * based on. 
- * @return ignore state
- */
-
-int OGR_FD_IsGeometryIgnored( OGRFeatureDefnH hDefn )
-{
-    return ((OGRFeatureDefn *) hDefn)->IsGeometryIgnored();
-}
-
-/************************************************************************/
-/*                         SetGeometryIgnored()                         */
-/************************************************************************/
-
-/**
- * \fn void OGRFeatureDefn::SetGeometryIgnored( int bIgnore );
- *
- * \brief Set whether the geometry can be omitted when fetching features
- *
- * This method is the same as the C function OGR_FD_SetGeometryIgnored().
- *
- * @param bIgnore ignore state
- */
-
-/************************************************************************/
-/*                      OGR_FD_SetGeometryIgnored()                     */
-/************************************************************************/
-
-/**
- * \brief Set whether the geometry can be omitted when fetching features
- *
- * This function is the same as the C++ method 
- * OGRFeatureDefn::SetGeometryIgnored().
- *
- * @param hDefn hanlde to the feature definition on witch OGRFeature are
- * based on. 
- * @param bIgnore ignore state
- */
-
-void OGR_FD_SetGeometryIgnored( OGRFeatureDefnH hDefn, int bIgnore )
-{
-    ((OGRFeatureDefn *) hDefn)->SetGeometryIgnored( bIgnore );
-}
-
-/************************************************************************/
-/*                           IsStyleIgnored()                           */
-/************************************************************************/
-
-/**
- * \fn int OGRFeatureDefn::IsStyleIgnored();
- *
- * \brief Determine whether the style can be omitted when fetching features
- *
- * This method is the same as the C function OGR_FD_IsStyleIgnored().
- *
- * @return ignore state
- */
-
-/************************************************************************/
-/*                       OGR_FD_IsStyleIgnored()                        */
-/************************************************************************/
-
-/**
- * \brief Determine whether the style can be omitted when fetching features
- *
- * This function is the same as the C++ method 
- * OGRFeatureDefn::IsStyleIgnored().
- *
- * @param hDefn handle to the feature definition on which OGRFeature are
- * based on. 
- * @return ignore state
- */
-
-int OGR_FD_IsStyleIgnored( OGRFeatureDefnH hDefn )
-{
-    return ((OGRFeatureDefn *) hDefn)->IsStyleIgnored();
-}
-
-/************************************************************************/
-/*                          SetStyleIgnored()                           */
-/************************************************************************/
-
-/**
- * \fn void OGRFeatureDefn::SetStyleIgnored( int bIgnore );
- *
- * \brief Set whether the style can be omitted when fetching features
- *
- * This method is the same as the C function OGR_FD_SetStyleIgnored().
- *
- * @param bIgnore ignore state
- */
-
-/************************************************************************/
-/*                       OGR_FD_SetStyleIgnored()                       */
-/************************************************************************/
-
-/**
- * \brief Set whether the style can be omitted when fetching features
- *
- * This function is the same as the C++ method 
- * OGRFeatureDefn::SetStyleIgnored().
- *
- * @param hDefn hanlde to the feature definition on witch OGRFeature are
- * based on. 
- * @param bIgnore ignore state
- */
-
-void OGR_FD_SetStyleIgnored( OGRFeatureDefnH hDefn, int bIgnore )
-{
-    ((OGRFeatureDefn *) hDefn)->SetStyleIgnored( bIgnore );
 }
 
 /************************************************************************/
