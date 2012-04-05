@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgrasslayer.cpp 20157 2010-07-28 19:32:04Z rouault $
+ * $Id: ogrgrasslayer.cpp 17122 2009-05-25 20:48:40Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGRASSLayer class.
@@ -31,7 +31,7 @@
 #include "ogrgrass.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrgrasslayer.cpp 20157 2010-07-28 19:32:04Z rouault $");
+CPL_CVSID("$Id: ogrgrasslayer.cpp 17122 2009-05-25 20:48:40Z rouault $");
 
 /************************************************************************/
 /*                           OGRGRASSLayer()                            */
@@ -212,7 +212,7 @@ OGRGRASSLayer::OGRGRASSLayer( int layerIndex,  struct Map_info * map )
 	if ( srsWkt ) 
 	{
 	    poSRS = new OGRSpatialReference ( srsWkt );
-	    G_free ( srsWkt );
+	    CPLFree ( srsWkt );
 	}
 
         G_free_key_value(projinfo);
@@ -245,7 +245,7 @@ OGRGRASSLayer::~OGRGRASSLayer()
     
     if ( paFeatureIndex ) CPLFree ( paFeatureIndex );
     
-    if ( poLink ) G_free ( poLink );
+    if ( poLink ) CPLFree ( poLink );
     
     Vect_destroy_line_struct ( poPoints );
     Vect_destroy_cats_struct ( poCats );
@@ -640,11 +640,7 @@ bool OGRGRASSLayer::SetSpatialMatch()
 	
 	Vect_cidx_get_cat_by_index ( poMap, iLayerIndex, cidx, &cat, &type, &id );
 
-#if GRASS_VERSION_MAJOR  >= 7
-    struct bound_box box;
-#else
 	BOUND_BOX box;
-#endif
 
 	switch ( type ) 
 	{
@@ -785,7 +781,7 @@ OGRFeature *OGRGRASSLayer::GetNextFeature()
 OGRFeature *OGRGRASSLayer::GetFeature( long nFeatureId )
 
 {
-    CPLDebug ( "GRASS", "OGRGRASSLayer::GetFeature nFeatureId = %ld", nFeatureId );
+    CPLDebug ( "GRASS", "OGRGRASSLayer::GetFeature nFeatureId = %d", nFeatureId );
 
     int cat;
     OGRFeature *poFeature = NULL;
@@ -861,7 +857,7 @@ OGRFeature *OGRGRASSLayer::GetFeature( long nFeatureId )
 /************************************************************************/
 OGRGeometry *OGRGRASSLayer::GetFeatureGeometry ( long nFeatureId, int *cat )
 {
-    CPLDebug ( "GRASS", "OGRGRASSLayer::GetFeatureGeometry nFeatureId = %ld", nFeatureId );
+    CPLDebug ( "GRASS", "OGRGRASSLayer::GetFeatureGeometry nFeatureId = %d", nFeatureId );
 
     int cidx = paFeatureIndex[(int)nFeatureId];
 
@@ -1031,11 +1027,7 @@ int OGRGRASSLayer::GetFeatureCount( int bForce )
 /************************************************************************/
 OGRErr OGRGRASSLayer::GetExtent (OGREnvelope *psExtent, int bForce)
 {
-#if GRASS_VERSION_MAJOR  >= 7
-    struct bound_box box;
-#else
     BOUND_BOX box;
-#endif
 
     Vect_get_map_box ( poMap, &box );
 

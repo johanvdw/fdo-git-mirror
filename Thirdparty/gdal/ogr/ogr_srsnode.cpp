@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srsnode.cpp 23521 2011-12-10 23:04:17Z etourigny $
+ * $Id: ogr_srsnode.cpp 18443 2010-01-05 19:33:15Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGR_SRSNode class.
@@ -30,7 +30,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srsnode.cpp 23521 2011-12-10 23:04:17Z etourigny $");
+CPL_CVSID("$Id: ogr_srsnode.cpp 18443 2010-01-05 19:33:15Z rouault $");
 
 /************************************************************************/
 /*                            OGR_SRSNode()                             */
@@ -646,10 +646,6 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput )
 
             AddChild( poNewChild );
             
-            // swallow whitespace
-            while( isspace(*pszInput) ) 
-                pszInput++;
-
         } while( *pszInput == ',' );
 
         if( *pszInput != ')' && *pszInput != ']' )
@@ -769,8 +765,7 @@ OGRErr OGR_SRSNode::applyRemapper( const char *pszNode,
     {
         for( i = 0; papszSrcValues[i] != NULL; i += nStepSize )
         {
-            if( EQUAL(papszSrcValues[i],pszValue) && 
-                ! EQUAL(papszDstValues[i],"") )
+            if( EQUAL(papszSrcValues[i],pszValue) )
             {
                 SetValue( papszDstValues[i] );
                 break;
@@ -844,9 +839,8 @@ void OGR_SRSNode::StripNodes( const char * pszName )
  * wrong.  
  */
 
-/* EXTENSION ... being a OSR extension... is arbitrary placed before the AUTHORITY */
 static const char * const apszPROJCSRule[] = 
-{ "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "EXTENSION", "AUTHORITY", 
+{ "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "AUTHORITY", 
   NULL };
 
 static const char * const apszDATUMRule[] = 
@@ -855,11 +849,8 @@ static const char * const apszDATUMRule[] =
 static const char * const apszGEOGCSRule[] = 
 { "GEOGCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
 
-static const char * const apszGEOCCSRule[] = 
-{ "GEOCCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
-
 static const char * const *apszOrderingRules[] = {
-    apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, apszGEOCCSRule, NULL };
+    apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, NULL };
 
 OGRErr OGR_SRSNode::FixupOrdering()
 

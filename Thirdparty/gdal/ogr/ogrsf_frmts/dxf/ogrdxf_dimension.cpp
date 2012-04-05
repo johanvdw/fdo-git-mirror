@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxf_dimension.cpp 19643 2010-05-08 21:56:18Z rouault $
+ * $Id: ogrdxf_dimension.cpp 18223 2009-12-09 01:15:31Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements translation support for DIMENSION elements as a part
@@ -31,7 +31,7 @@
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrdxf_dimension.cpp 19643 2010-05-08 21:56:18Z rouault $");
+CPL_CVSID("$Id: ogrdxf_dimension.cpp 18223 2009-12-09 01:15:31Z warmerdam $");
 
 #ifndef PI
 #define PI  3.14159265358979323846
@@ -52,7 +52,7 @@ OGRFeature *OGRDXFLayer::TranslateDIMENSION()
     double dfTargetX2 = 0.0, dfTargetY2 = 0.0, dfTargetZ2 = 0.0;
     double dfTextX = 0.0, dfTextY = 0.0, dfTextZ = 0.0;
     double dfAngle = 0.0;
-    double dfHeight = CPLAtof(poDS->GetVariable("$DIMTXT", "2.5"));
+    double dfHeight = atof(poDS->GetVariable("$DIMTXT", "2.5"));
 
     CPLString osText;
 
@@ -61,51 +61,51 @@ OGRFeature *OGRDXFLayer::TranslateDIMENSION()
         switch( nCode )
         {
           case 10:
-            dfArrowX1 = CPLAtof(szLineBuf);
+            dfArrowX1 = atof(szLineBuf);
             break;
 
           case 20:
-            dfArrowY1 = CPLAtof(szLineBuf);
+            dfArrowY1 = atof(szLineBuf);
             break;
 
           case 30:
-            dfArrowZ1 = CPLAtof(szLineBuf);
+            dfArrowZ1 = atof(szLineBuf);
             break;
 
           case 11:
-            dfTextX = CPLAtof(szLineBuf);
+            dfTextX = atof(szLineBuf);
             break;
 
           case 21:
-            dfTextY = CPLAtof(szLineBuf);
+            dfTextY = atof(szLineBuf);
             break;
 
           case 31:
-            dfTextZ = CPLAtof(szLineBuf);
+            dfTextZ = atof(szLineBuf);
             break;
 
           case 13:
-            dfTargetX2 = CPLAtof(szLineBuf);
+            dfTargetX2 = atof(szLineBuf);
             break;
 
           case 23:
-            dfTargetY2 = CPLAtof(szLineBuf);
+            dfTargetY2 = atof(szLineBuf);
             break;
 
           case 33:
-            dfTargetZ2 = CPLAtof(szLineBuf);
+            dfTargetZ2 = atof(szLineBuf);
             break;
 
           case 14:
-            dfTargetX1 = CPLAtof(szLineBuf);
+            dfTargetX1 = atof(szLineBuf);
             break;
 
           case 24:
-            dfTargetY1 = CPLAtof(szLineBuf);
+            dfTargetY1 = atof(szLineBuf);
             break;
 
           case 34:
-            dfTargetZ1 = CPLAtof(szLineBuf);
+            dfTargetZ1 = atof(szLineBuf);
             break;
 
           case 70:
@@ -322,28 +322,14 @@ the approach is as above in all these cases.
     }
 
     CPLString osStyle;
-    char szBuffer[64];
-    char* pszComma;
 
     osStyle.Printf("LABEL(f:\"Arial\",t:\"%s\",p:5",osText.c_str());
 
     if( dfAngle != 0.0 )
-    {
-        snprintf(szBuffer, sizeof(szBuffer), "%.3g", dfAngle);
-        pszComma = strchr(szBuffer, ',');
-        if (pszComma)
-            *pszComma = '.';
-        osStyle += CPLString().Printf(",a:%s", szBuffer);
-    }
+        osStyle += CPLString().Printf(",a:%.3g", dfAngle);
 
     if( dfHeight != 0.0 )
-    {
-        snprintf(szBuffer, sizeof(szBuffer), "%.3g", dfHeight);
-        pszComma = strchr(szBuffer, ',');
-        if (pszComma)
-            *pszComma = '.';
-        osStyle += CPLString().Printf(",s:%sg", szBuffer);
-    }
+        osStyle += CPLString().Printf(",s:%.3gg", dfHeight);
 
     // add color!
 
@@ -367,17 +353,12 @@ void OGRDXFLayer::FormatDimension( CPLString &osText, double dfValue )
 
 {
     int nPrecision = atoi(poDS->GetVariable("$LUPREC","4"));
-    char szFormat[32];
-    char szBuffer[64];
+    CPLString osFormat;
 
     // we could do a significantly more precise formatting if we want
     // to spend the effort.  See QCAD's rs_dimlinear.cpp and related files
     // for example.  
 
-    sprintf(szFormat, "%%.%df", nPrecision );
-    snprintf(szBuffer, sizeof(szBuffer), szFormat, dfValue);
-    char* pszComma = strchr(szBuffer, ',');
-    if (pszComma)
-        *pszComma = '.';
-    osText = szBuffer;
+    osFormat.Printf( "%%.%df", nPrecision );
+    osText.Printf( osFormat, dfValue );
 }

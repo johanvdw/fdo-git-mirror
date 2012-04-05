@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalsievefilter.cpp 23156 2011-10-01 15:34:16Z rouault $
+ * $Id: gdalsievefilter.cpp 18523 2010-01-11 18:12:25Z mloskot $
  *
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
@@ -31,10 +31,9 @@
 #include "cpl_conv.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdalsievefilter.cpp 23156 2011-10-01 15:34:16Z rouault $");
+CPL_CVSID("$Id: gdalsievefilter.cpp 18523 2010-01-11 18:12:25Z mloskot $");
 
 #define GP_NODATA_MARKER -51502112
-#define MY_MAX_INT 2147483647
 
 /*
  * General Plan
@@ -169,7 +168,7 @@ static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
  * @param nConnectedness either 4 indicating that diagonal pixels are not
  * considered directly adjacent for polygon membership purposes or 8
  * indicating they are. 
- * @param papszOptions algorithm options in name=value list form.  None currently
+ * @param papszOption algorithm options in name=value list form.  None currently
  * supported.
  * @param pfnProgress callback for reporting algorithm progress matching the
  * GDALProgressFunc() semantics.  May be NULL.
@@ -260,8 +259,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
             iPoly = panThisLineId[iX]; 
 
             CPLAssert( iPoly >= 0 );
-            if( anPolySizes[iPoly] < MY_MAX_INT )
-                anPolySizes[iPoly] += 1;
+            anPolySizes[iPoly] += 1;
         }
 
 /* -------------------------------------------------------------------- */
@@ -302,14 +300,7 @@ GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
     {
         if( oFirstEnum.panPolyIdMap[iPoly] != iPoly )
         {
-            GIntBig nSize = anPolySizes[oFirstEnum.panPolyIdMap[iPoly]];
-
-            nSize += anPolySizes[iPoly];
-            
-            if( nSize > MY_MAX_INT )
-                nSize = MY_MAX_INT;
-
-            anPolySizes[oFirstEnum.panPolyIdMap[iPoly]] = (int)nSize;
+            anPolySizes[oFirstEnum.panPolyIdMap[iPoly]] += anPolySizes[iPoly];
             anPolySizes[iPoly] = 0;
         }
     }

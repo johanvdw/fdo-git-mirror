@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterfill.cpp 22395 2011-05-17 21:27:03Z warmerdam $
+ * $Id: rasterfill.cpp 18092 2009-11-24 20:48:51Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Interpolate in nodata areas.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rasterfill.cpp 22395 2011-05-17 21:27:03Z warmerdam $");
+CPL_CVSID("$Id: rasterfill.cpp 18092 2009-11-24 20:48:51Z rouault $");
 
 /************************************************************************/
 /*                           GDALFilterLine()                           */
@@ -120,7 +120,7 @@ GDALFilterLine( float *pafLastLine, float *pafThisLine, float *pafNextLine,
             }
         }
 
-        pafOutLine[iX] = (float) (dfValSum / dfWeightSum);
+        pafOutLine[iX] = dfValSum / dfWeightSum;
     }
 }
 
@@ -305,7 +305,7 @@ GDALMultiFilter( GDALRasterBandH hTargetBand,
 /*      Report progress.                                                */
 /* -------------------------------------------------------------------- */
         if( eErr == CE_None
-            && !pfnProgress( (nNewLine+1) / (double) (nYSize+nIterations), 
+            && !pfnProgress( (nNewLine+1) / (double) nYSize+nIterations, 
                              "Smoothing Filter...", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -423,9 +423,6 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
     if( hMaskBand == NULL )
         hMaskBand = GDALGetMaskBand( hTargetBand );
 
-    /* If there are smoothing iterations, reserve 10% of the progress for them */
-    double dfProgressRatio = (nSmoothingIterations > 0) ? 0.9 : 1.0;
-
 /* -------------------------------------------------------------------- */
 /*      Initialize progress counter.                                    */
 /* -------------------------------------------------------------------- */
@@ -451,8 +448,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
     
     GDALDatasetH hYDS;
     GDALRasterBandH hYBand;
-    static const char *apszOptions[] = { "COMPRESS=LZW", "BIGTIFF=IF_SAFER", 
-                                         NULL };
+    static const char *apszOptions[] = { "COMPRESS=LZW", NULL };
     CPLString osTmpFile = CPLGenerateTempFilename("");
     CPLString osYTmpFile = osTmpFile + "fill_y_work.tif";
     
@@ -609,7 +605,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
 /*      report progress.                                                */
 /* -------------------------------------------------------------------- */
         if( eErr == CE_None
-            && !pfnProgress( dfProgressRatio * (0.5*(iY+1) / (double)nYSize), 
+            && !pfnProgress( 0.5*(iY+1) / (double)nYSize, 
                              "Filling...", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -753,7 +749,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             {
                 pabyMask[iX] = 255;
                 pabyFiltMask[iX] = 255;
-                pafScanline[iX] = (float) (dfValueSum / dfWeightSum);
+                pafScanline[iX] = dfValueSum / dfWeightSum;
             }
 
         }
@@ -792,7 +788,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
 /*      report progress.                                                */
 /* -------------------------------------------------------------------- */
         if( eErr == CE_None
-            && !pfnProgress( dfProgressRatio*(0.5+0.5*(nYSize-iY) / (double)nYSize), 
+            && !pfnProgress( 0.5+0.5*(nYSize-iY) / (double)nYSize, 
                              "Filling...", pProgressArg ) )
         {
             CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
@@ -810,15 +806,9 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
         // force masks to be to flushed and recomputed.
         GDALFlushRasterCache( hMaskBand );
 
-        void *pScaledProgress;
-        pScaledProgress =
-            GDALCreateScaledProgress( dfProgressRatio, 1.0, pfnProgress, NULL );
-
         eErr = GDALMultiFilter( hTargetBand, hMaskBand, hFiltMaskBand, 
                                 nSmoothingIterations,
-                                GDALScaledProgress, pScaledProgress );
-
-        GDALDestroyScaledProgress( pScaledProgress );
+                                pfnProgress, pProgressArg );
     }
 
 /* -------------------------------------------------------------------- */

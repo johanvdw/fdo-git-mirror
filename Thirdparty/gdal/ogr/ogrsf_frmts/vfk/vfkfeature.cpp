@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkfeature.cpp 21684 2011-02-11 22:14:01Z warmerdam $
+ * $Id: vfkfeature.cpp 18509 2010-01-10 14:18:42Z martinl $
  *
  * Project:  VFK Reader - Feature definition
  * Purpose:  Implements VFKFeature class.
@@ -88,7 +88,7 @@ void VFKFeature::SetProperty(int iIndex, const char *pszValue)
 	    m_propertyList[iIndex] = VFKProperty(atoi(pszValue));
 	    break;
 	case OFTReal:
-	    m_propertyList[iIndex] = VFKProperty(CPLAtof(pszValue));
+	    m_propertyList[iIndex] = VFKProperty(atof(pszValue));
 	    break;
 	default:
 	    m_propertyList[iIndex] = VFKProperty(pszValue);
@@ -237,7 +237,7 @@ bool VFKFeature::LoadGeometry()
         idxBp_Id = m_poDataBlock->GetPropertyIndex("BP_ID");
         idxPCB   = m_poDataBlock->GetPropertyIndex("PORADOVE_CISLO_BODU");
         if (idxId < 0 || idxBp_Id < 0 || idxPCB < 0)
-            return false;
+            return -1;
         
         poLine = this;
         while (TRUE)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dteddataset.cpp 21837 2011-02-24 21:16:42Z rouault $
+ * $Id: dteddataset.cpp 18060 2009-11-21 20:26:25Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  GDALDataset driver for DTED translator.
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dteddataset.cpp 21837 2011-02-24 21:16:42Z rouault $");
+CPL_CVSID("$Id: dteddataset.cpp 18060 2009-11-21 20:26:25Z rouault $");
 
 CPL_C_START
 void    GDALRegister_DTED(void);
@@ -65,7 +65,6 @@ class DTEDDataset : public GDALPamDataset
     void SetFileName(const char* pszFilename);
     
     static GDALDataset *Open( GDALOpenInfo * );
-    static int Identify( GDALOpenInfo * );
 };
 
 /************************************************************************/
@@ -279,26 +278,27 @@ void DTEDDataset::SetFileName(const char* pszFilename)
 }
 
 /************************************************************************/
-/*                              Identify()                              */
+/*                                Open()                                */
 /************************************************************************/
 
-int DTEDDataset::Identify( GDALOpenInfo * poOpenInfo )
+GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
     int         i;
+    DTEDInfo    *psDTED;
 
 /* -------------------------------------------------------------------- */
 /*      Does the file start with one of the possible DTED header        */
 /*      record types, and do we have a UHL marker?                      */
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->nHeaderBytes < 240 )
-        return FALSE;
+        return NULL;
 
     if( !EQUALN((const char *)poOpenInfo->pabyHeader,"VOL",3)
         && !EQUALN((const char *)poOpenInfo->pabyHeader,"HDR",3)
         && !EQUALN((const char *)poOpenInfo->pabyHeader,"UHL",3) )
     {
-        return FALSE;
+        return NULL;
     }
 
     int bFoundUHL = FALSE;
@@ -310,22 +310,6 @@ int DTEDDataset::Identify( GDALOpenInfo * poOpenInfo )
         }
     }
     if (!bFoundUHL)
-        return FALSE;
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                                Open()                                */
-/************************************************************************/
-
-GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
-
-{
-    int         i;
-    DTEDInfo    *psDTED;
-
-    if (!Identify(poOpenInfo))
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -362,7 +346,7 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    poDS->nBands = 1;
+    poDS->nBands = 1;;
     for( i = 0; i < poDS->nBands; i++ )
         poDS->SetBand( i+1, new DTEDRasterBand( poDS, i+1 ) );
 
@@ -445,18 +429,6 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 
     pszValue = DTEDGetMetadata( psDTED, DTEDMD_REL_VERTACCURACY );
     poDS->SetMetadataItem( "DTED_RelVerticalAccuracy", pszValue );
-    free( pszValue );
-    
-    pszValue = DTEDGetMetadata( psDTED, DTEDMD_ORIGINLAT );
-    poDS->SetMetadataItem( "DTED_OriginLatitude", pszValue );
-    free( pszValue );
-    
-    pszValue = DTEDGetMetadata( psDTED, DTEDMD_ORIGINLONG );
-    poDS->SetMetadataItem( "DTED_OriginLongitude", pszValue );
-    free( pszValue );
-    
-    pszValue = DTEDGetMetadata( psDTED, DTEDMD_NIMA_DESIGNATOR ); 
-    poDS->SetMetadataItem( "DTED_NimaDesignator", pszValue ); 
     free( pszValue );
     
     poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
@@ -554,7 +526,7 @@ const char *DTEDDataset::GetProjectionRef()
             CPLError( CE_Warning, CPLE_AppDefined,
                       "The DTED file %s indicates %s as horizontal datum, which is not recognized by the DTED driver. \n"
                       "The DTED driver is going to consider it as WGS84.\n"
-                      "No more warnings will be issued in this session about this operation.", GetFileName(), pszPrj );
+                      "No more warnings will be issued in this session about this operation.", GetFileName(), pszProjection );
         }
         return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4326\"]]" );
     }
@@ -711,13 +683,7 @@ DTEDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     GInt16      *panData;
 
     panData = (GInt16 *) 
-        VSIMalloc(sizeof(GInt16) * psDTED->nXSize * psDTED->nYSize);
-    if (panData == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
-        DTEDClose(psDTED);
-        return NULL;
-    }
+        CPLMalloc(sizeof(GInt16) * psDTED->nXSize * psDTED->nYSize);
 
     for( int iY = 0; iY < psDTED->nYSize; iY++ )
     {
@@ -910,7 +876,6 @@ void GDALRegister_DTED()
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = DTEDDataset::Open;
-        poDriver->pfnIdentify = DTEDDataset::Identify;
         poDriver->pfnCreateCopy = DTEDCreateCopy;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

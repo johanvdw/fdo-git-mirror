@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.cpp 23589 2011-12-17 14:21:01Z rouault $
+ * $Id: kmlnode.cpp 17734 2009-10-03 09:48:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -76,7 +76,7 @@ Coordinate* ParseCoordinate(std::string const& text)
 
     // X coordinate
     while(isNumberDigit(text[pos++]));
-    psTmp->dfLongitude = CPLAtof(text.substr(0, (pos - 1)).c_str());
+    psTmp->dfLongitude = atof(text.substr(0, (pos - 1)).c_str());
 
     // Y coordinate
     if(text[pos - 1] != ',')
@@ -87,7 +87,7 @@ Coordinate* ParseCoordinate(std::string const& text)
     std::string tmp(text.substr(pos, text.length() - pos));
     pos = 0;
     while(isNumberDigit(tmp[pos++]));
-    psTmp->dfLatitude = CPLAtof(tmp.substr(0, (pos - 1)).c_str());
+    psTmp->dfLatitude = atof(tmp.substr(0, (pos - 1)).c_str());
     
     // Z coordinate
     if(tmp[pos - 1] != ',')
@@ -100,7 +100,7 @@ Coordinate* ParseCoordinate(std::string const& text)
     pos = 0;
     while(isNumberDigit(tmp[pos++]));
     psTmp->bHasZ = TRUE;
-    psTmp->dfAltitude = CPLAtof(tmp.substr(0, (pos - 1)).c_str());
+    psTmp->dfAltitude = atof(tmp.substr(0, (pos - 1)).c_str());
 
     return psTmp;
 }
@@ -200,20 +200,11 @@ void KMLNode::print(unsigned int what)
 //    return spaces;
 //}
 
-int KMLNode::classify(KML* poKML, int nRecLevel)
+void KMLNode::classify(KML* poKML)
 {
     Nodetype curr = Unknown;
     Nodetype all = Empty;
-
-    /* Arbitrary value, but certainly large enough for reasonable usages ! */
-    if( nRecLevel == 32 )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                    "Too many recursiong level (%d) while parsing KML geometry.",
-                    nRecLevel );
-        return NULL;
-    }
-
+    
     //CPLDebug("KML", "%s<%s>", genSpaces(), sName_.c_str());
     //nDepth ++;
     
@@ -254,8 +245,7 @@ int KMLNode::classify(KML* poKML, int nRecLevel)
         //CPLDebug("KML", "%s[%d] %s", genSpaces(), z, (*pvpoChildren_)[z]->sName_.c_str());
 
         // Classify pvpoChildren_
-        if (!(*pvpoChildren_)[z]->classify(poKML, nRecLevel + 1))
-            return FALSE;
+        (*pvpoChildren_)[z]->classify(poKML);
 
         curr = (*pvpoChildren_)[z]->eType_;
         b25D_ |= (*pvpoChildren_)[z]->b25D_;
@@ -293,8 +283,6 @@ int KMLNode::classify(KML* poKML, int nRecLevel)
 
     //nDepth --;
     //CPLDebug("KML", "%s</%s> --> eType=%s", genSpaces(), sName_.c_str(), Nodetype2String(eType_).c_str());
-
-    return TRUE;
 }
 
 void KMLNode::eliminateEmpty(KML* poKML)
@@ -504,12 +492,10 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
                 }
             }
         }
-        poGeom = new OGRPoint();
     }
     else if (sName_.compare("LineString") == 0)
     {
         // Search coordinate Element
-        poGeom = new OGRLineString();
         for(nCount = 0; nCount < pvpoChildren_->size(); nCount++)
         {
             if((*pvpoChildren_)[nCount]->sName_.compare("coordinates") == 0)
@@ -520,6 +506,8 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
                     psCoord = ParseCoordinate((*poCoor->pvsContent_)[nCountP]);
                     if(psCoord != NULL)
                     {
+                        if (poGeom == NULL)
+                            poGeom = new OGRLineString();
                         if (psCoord->bHasZ)
                             ((OGRLineString*)poGeom)->addPoint(psCoord->dfLongitude,
                                                                psCoord->dfLatitude,
@@ -538,11 +526,9 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
         //*********************************
         // Search outerBoundaryIs Element
         //*********************************
-        poGeom = new OGRPolygon();
         for(nCount = 0; nCount < pvpoChildren_->size(); nCount++)
         {
-            if((*pvpoChildren_)[nCount]->sName_.compare("outerBoundaryIs") == 0 &&
-               (*pvpoChildren_)[nCount]->pvpoChildren_->size() > 0)
+            if((*pvpoChildren_)[nCount]->sName_.compare("outerBoundaryIs") == 0)
             {
                 poCoor = (*(*pvpoChildren_)[nCount]->pvpoChildren_)[0];
             }
@@ -550,7 +536,7 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
         // No outer boundary found
         if(poCoor == NULL)
         {
-            return poGeom;
+            return NULL;
         }
         // Search coordinate Element
         OGRLinearRing* poLinearRing = NULL;
@@ -563,8 +549,9 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
                     psCoord = ParseCoordinate((*(*poCoor->pvpoChildren_)[nCount]->pvsContent_)[nCountP]);
                     if(psCoord != NULL)
                     {
-                        if (poLinearRing == NULL)
+                        if (poGeom == NULL)
                         {
+                            poGeom = new OGRPolygon();
                             poLinearRing = new OGRLinearRing();
                         }
                         if (psCoord->bHasZ)
@@ -580,9 +567,9 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
             }
         }
         // No outer boundary coordinates found
-        if(poLinearRing == NULL)
+        if(poGeom == NULL)
         {
-            return poGeom;
+            return NULL;
         }
 
         ((OGRPolygon*)poGeom)->addRingDirectly(poLinearRing);
@@ -598,11 +585,6 @@ OGRGeometry* KMLNode::getGeometry(Nodetype eType)
             {
                 if (poLinearRing)
                     ((OGRPolygon*)poGeom)->addRingDirectly(poLinearRing);
-                poLinearRing = NULL;
-
-                if ((*pvpoChildren_)[nCount2]->pvpoChildren_->size() == 0)
-                    continue;
-
                 poLinearRing = new OGRLinearRing();
 
                 poCoor = (*(*pvpoChildren_)[nCount2]->pvpoChildren_)[0];
@@ -664,7 +646,7 @@ Feature* KMLNode::getFeature(std::size_t nNum, int& nLastAsked, int &nLastCount)
     if(nNum >= this->getNumFeatures())
         return NULL;
 
-    if (nLastAsked + 1 != (int)nNum)
+    if (nLastAsked + 1 != nNum)
     {
         nCount = 0;
         nCountP = 0;

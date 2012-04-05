@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrawrasterband.cpp 22776 2011-07-23 18:07:58Z rouault $
+ * $Id: vrtrawrasterband.cpp 17902 2009-10-25 22:22:29Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRawRasterBand
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: vrtrawrasterband.cpp 22776 2011-07-23 18:07:58Z rouault $");
+CPL_CVSID("$Id: vrtrawrasterband.cpp 17902 2009-10-25 22:22:29Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -200,11 +200,6 @@ CPLErr VRTRawRasterBand::SetRawLink( const char *pszFilename,
     if( fp == NULL )
         fp = CPLOpenShared( pszExpandedFilename, "rb", TRUE );
 
-    if( fp == NULL && ((VRTDataset *)poDS)->GetAccess() == GA_Update )
-    {
-        fp = CPLOpenShared( pszExpandedFilename, "wb+", TRUE );
-    }
-
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -265,14 +260,14 @@ void VRTRawRasterBand::ClearRawLink()
 {
     if( poRawRaster != NULL )
     {
-        VSILFILE* fp = poRawRaster->GetFPL();
+        FILE* fp = poRawRaster->GetFP();
         delete poRawRaster;
         poRawRaster = NULL;
         /* We close the file after deleting the raster band */
         /* since data can be flushed in the destructor */
         if( fp != NULL )
         {
-            CPLCloseShared( (FILE*) fp );
+            CPLCloseShared( fp );
         }
     }
     CPLFree( pszSourceFilename );
@@ -458,7 +453,4 @@ void VRTRawRasterBand::GetFileList(char*** ppapszFileList, int *pnSize,
     CPLHashSetInsert(hSetFiles, (*ppapszFileList)[*pnSize]);
     
     (*pnSize) ++;
-
-    VRTRasterBand::GetFileList( ppapszFileList, pnSize,
-                                pnMaxSize, hSetFiles);
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeodriver.cpp 21550 2011-01-22 18:01:57Z rouault $
+ * $Id: ogrpgeodriver.cpp 18168 2009-12-03 23:56:59Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements Personal Geodatabase driver.
@@ -30,7 +30,7 @@
 #include "ogr_pgeo.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgeodriver.cpp 21550 2011-01-22 18:01:57Z rouault $");
+CPL_CVSID("$Id: ogrpgeodriver.cpp 18168 2009-12-03 23:56:59Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRODBCDriver()                            */
@@ -64,32 +64,6 @@ OGRDataSource *OGRPGeoDriver::Open( const char * pszFilename,
     if( !EQUALN(pszFilename,"PGEO:",5) 
         && !EQUAL(CPLGetExtension(pszFilename),"mdb") )
         return NULL;
-
-    if( !EQUALN(pszFilename,"PGEO:",5) &&
-        EQUAL(CPLGetExtension(pszFilename),"mdb") )
-    {
-        VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
-        if (!fp)
-            return NULL;
-        GByte* pabyHeader = (GByte*) CPLMalloc(100000);
-        VSIFReadL(pabyHeader, 100000, 1, fp);
-        VSIFCloseL(fp);
-
-        /* Look for GDB_GeomColumns table */
-        const GByte pabyNeedle[] = { 'G', 0, 'D', 0, 'B', 0, '_', 0, 'G', 0, 'e', 0, 'o', 0, 'm', 0, 'C', 0, 'o', 0, 'l', 0, 'u', 0, 'm', 0, 'n', 0, 's' };
-        int bFound = FALSE;
-        for(int i=0;i<100000 - (int)sizeof(pabyNeedle);i++)
-        {
-            if (memcmp(pabyHeader + i, pabyNeedle, sizeof(pabyNeedle)) == 0)
-            {
-                bFound = TRUE;
-                break;
-            }
-        }
-        CPLFree(pabyHeader);
-        if (!bFound)
-            return NULL;
-    }
 
 #ifndef WIN32
     // Try to register MDB Tools driver

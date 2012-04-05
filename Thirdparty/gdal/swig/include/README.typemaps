@@ -62,11 +62,6 @@ in (tostring argin ) - Required - Converts any argument in the script types to a
 In python this functionality directly calls AsString (ie str()) on the object.  This functionality
 could be reduced in other languages as long as it's documented.
 
-in (const char *utf8_path) - Optional - 
-  Any inputs marked this way should be treated as utf-8, and if the language supports it
-  a conversion should be applied.  For many languages the default (the fallback const char *
-  handler) will be sufficient. 
-
 -------------------
 
 out (char **dict) - Required - The return value is a collection of name/value pairs.  This can be
@@ -86,9 +81,6 @@ out OGRErr -
 
 out (char **CSL) - Required - The return value is a list that is copied
 into a list in the target language and then CSLDestroyed
-
-out (retStringAndCPLFree*) - Required - The returned string should be
-copied to target language and then CPLFree'd
 
 -------------------
 

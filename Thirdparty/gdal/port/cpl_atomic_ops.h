@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_atomic_ops.h 19884 2010-06-17 22:01:19Z rouault $
+ * $Id: cpl_atomic_ops.h 16035 2009-01-01 23:11:24Z tamas $
  *
  * Name:     cpl_atomic_ops.h
  * Project:  CPL - Common Portability Library
@@ -69,14 +69,10 @@ int CPL_DLL CPLAtomicAdd(volatile int* ptr, int increment);
   * @param ptr a pointer to an integer to increment
   * @return the pointed value AFTER the opeation: *ptr + 1
   */
-#ifdef HAS_CPL_INLINE
 CPL_INLINE int CPLAtomicInc(volatile int* ptr)
 {
     return CPLAtomicAdd(ptr, 1);
 }
-#else
-int CPL_DLL CPLAtomicInc(volatile int* ptr);
-#endif
 
 /** Decrement of 1 the pointed integer in a thread and SMP-safe way
   * and return the resulting value of the operation.
@@ -87,14 +83,10 @@ int CPL_DLL CPLAtomicInc(volatile int* ptr);
   * @param ptr a pointer to an integer to decrement
   * @return the pointed value AFTER the opeation: *ptr - 1
   */
-#ifdef HAS_CPL_INLINE
 CPL_INLINE int CPLAtomicDec(volatile int* ptr)
 {
     return CPLAtomicAdd(ptr, -1);
 }
-#else
-int CPL_DLL CPLAtomicDec(volatile int* ptr);
-#endif
 
 CPL_C_END
 

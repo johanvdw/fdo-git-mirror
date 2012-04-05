@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: blxdataset.cpp 23619 2011-12-20 22:40:19Z rouault $
+ * $Id: blxdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  BLX Driver
  * Purpose:  GDAL BLX support.
@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: blxdataset.cpp 23619 2011-12-20 22:40:19Z rouault $");
+CPL_CVSID("$Id: blxdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 #include <blx.h>
@@ -42,7 +42,7 @@ CPL_C_START
 void    GDALRegister_BLX(void);
 CPL_C_END
 
-class BLXDataset : public GDALPamDataset
+class BLXDataset : public GDALDataset
 {
     friend class BLXRasterBand;
 
@@ -62,7 +62,7 @@ class BLXDataset : public GDALPamDataset
     static GDALDataset *Open( GDALOpenInfo * );
 };
 
-class BLXRasterBand : public GDALPamRasterBand
+class BLXRasterBand : public GDALRasterBand
 {
     int overviewLevel;
   public:
@@ -99,17 +99,11 @@ GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )
     //      Open BLX file
     // -------------------------------------------------------------------- 
     poDS->blxcontext = blx_create_context();
-    if(poDS->blxcontext==NULL)
-    {
-        delete poDS;
-        return NULL;
-    }
-    if (blxopen(poDS->blxcontext, poOpenInfo->pszFilename, "rb") != 0)
-    {
-        delete poDS;
-        return NULL;
-    }
+    blxopen(poDS->blxcontext, poOpenInfo->pszFilename, "rb");
 
+    if(poDS->blxcontext==NULL)
+	return NULL;
+    
     if ((poDS->blxcontext->cell_xsize % (1 << (1+BLX_OVERVIEWLEVELS))) != 0 ||
         (poDS->blxcontext->cell_ysize % (1 << (1+BLX_OVERVIEWLEVELS))) != 0)
     {
@@ -150,12 +144,6 @@ GDALDataset *BLXDataset::Open( GDALOpenInfo * poOpenInfo )
                   " datasets.\n" );
         return NULL;
     }
-
-/* -------------------------------------------------------------------- */
-/*      Initialize any PAM information.                                 */
-/* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
 
     return( poDS );
 }
@@ -357,7 +345,6 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "Unable to create blx file %s.\n", 
                   pszFilename );
-        blx_free_context(ctx);
         return NULL;
     }
 
@@ -367,14 +354,7 @@ BLXCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     GInt16     *pabyTile;
     CPLErr      eErr=CE_None;
 
-    pabyTile = (GInt16 *) VSIMalloc( sizeof(GInt16)*ctx->cell_xsize*ctx->cell_ysize );
-    if (pabyTile == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
-        blxclose(ctx);
-        blx_free_context(ctx);
-        return NULL;
-    }
+    pabyTile = (GInt16 *) CPLMalloc( sizeof(GInt16)*ctx->cell_xsize*ctx->cell_ysize );
 
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         eErr = CE_Failure;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gh5_convenience.cpp 22145 2011-04-12 15:42:18Z warmerdam $
+ * $Id: gh5_convenience.cpp 17985 2009-11-10 13:39:46Z rouault $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  HDF5 convenience functions.
@@ -29,7 +29,7 @@
 
 #include "gh5_convenience.h"
 
-CPL_CVSID("$Id: gh5_convenience.cpp 22145 2011-04-12 15:42:18Z warmerdam $");
+CPL_CVSID("$Id: gh5_convenience.cpp 17985 2009-11-10 13:39:46Z rouault $");
 
 /************************************************************************/
 /*                    GH5_FetchAttribute(CPLString)                     */
@@ -39,8 +39,6 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
                         CPLString &osResult, bool bReportError )
 
 {
-    bool retVal = false;
-
     hid_t hAttr = H5Aopen_name( loc_id, pszAttrName );
 
     osResult.clear();
@@ -66,7 +64,7 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
         osResult = pachBuffer;
         CPLFree( pachBuffer );
 
-        retVal = true;
+        return true;
     }
 
     else
@@ -76,13 +74,8 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
                       "Attribute %s of unsupported type for conversion to string.",
                       pszAttrName );
 
-        retVal = false;
+        return false;
     }
-
-    H5Tclose( hAttrNativeType );
-    H5Tclose( hAttrTypeID );
-    H5Aclose( hAttr );
-    return retVal;
 }
 
 /************************************************************************/
@@ -119,7 +112,7 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
     int i, nAttrElements = 1;
 
     for( i=0; i < nAttrDims; i++ ) {
-        nAttrElements *= (int) anSize[i];
+        nAttrElements *= anSize[i];
     }
 
     if( nAttrElements != 1 )
@@ -128,11 +121,6 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to read attribute %s failed, count=%d, not 1.",
                       pszAttrName, nAttrElements );
-
-        H5Sclose( hAttrSpace );
-        H5Tclose( hAttrNativeType );
-        H5Tclose( hAttrTypeID );
-        H5Aclose( hAttr );
         return false;
     }
     
@@ -158,21 +146,11 @@ bool GH5_FetchAttribute( hid_t loc_id, const char *pszAttrName,
                       "Attribute %s of unsupported type for conversion to double.",
                       pszAttrName );
         CPLFree( buf );
-
-        H5Sclose( hAttrSpace );
-        H5Tclose( hAttrNativeType );
-        H5Tclose( hAttrTypeID );
-        H5Aclose( hAttr );
-
         return false;
     }
 
     CPLFree( buf );
 
-    H5Sclose( hAttrSpace );
-    H5Tclose( hAttrNativeType );
-    H5Tclose( hAttrTypeID );
-    H5Aclose( hAttr );
     return true;
 }
 

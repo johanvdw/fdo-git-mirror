@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Driver.i 21479 2011-01-13 02:11:29Z warmerdam $
+ * $Id: Driver.i 16509 2009-03-07 21:06:14Z rouault $
  *
  * Name:     Driver.i
  * Project:  GDAL Python Interface
@@ -51,13 +51,13 @@ public:
   char const *HelpTopic;
 %mutable;
 
-%apply Pointer NONNULL { const char* newName, const char* oldName, GDALDatasetShadow* src };
+%apply Pointer NONNULL { const char *name, const char* newName, const char* oldName, GDALDatasetShadow* src };
 
 %newobject Create;
 #ifndef SWIGJAVA
 %feature( "kwargs" ) Create;
 #endif
-  GDALDatasetShadow *Create(    const char *utf8_path, 
+  GDALDatasetShadow *Create(    const char *name, 
                                 int xsize, 
                                 int ysize, 
                                 int bands = 1,
@@ -65,7 +65,7 @@ public:
                                 char **options = 0 ) {
 
     GDALDatasetShadow* ds = (GDALDatasetShadow*) GDALCreate(    self, 
-                                                                utf8_path, 
+                                                                name, 
                                                                 xsize, 
                                                                 ysize, 
                                                                 bands, 
@@ -80,7 +80,7 @@ public:
 %feature( "kwargs" ) CreateCopy;
 #endif
 #endif
-  GDALDatasetShadow *CreateCopy(    const char *utf8_path, 
+  GDALDatasetShadow *CreateCopy(    const char *name, 
                                     GDALDatasetShadow* src, 
                                     int strict = 1, 
                                     char **options = 0, 
@@ -88,7 +88,7 @@ public:
                                     void* callback_data=NULL) {
 
     GDALDatasetShadow *ds = (GDALDatasetShadow*) GDALCreateCopy(    self, 
-                                                                    utf8_path, 
+                                                                    name, 
                                                                     src, 
                                                                     strict, 
                                                                     options, 
@@ -97,16 +97,12 @@ public:
     return ds;
   }
 
-  int Delete( const char *utf8_path ) {
-    return GDALDeleteDataset( self, utf8_path );
+  int Delete( const char *name ) {
+    return GDALDeleteDataset( self, name );
   }
 
   int Rename( const char *newName, const char *oldName ) {
     return GDALRenameDataset( self, newName, oldName );
-  }
-
-  int CopyFiles( const char *newName, const char *oldName ) {
-    return GDALCopyDatasetFiles( self, newName, oldName );
   }
 
   int Register() {

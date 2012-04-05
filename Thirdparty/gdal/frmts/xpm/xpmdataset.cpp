@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: xpmdataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: xpmdataset.cpp 18239 2009-12-10 15:48:43Z warmerdam $
  *
  * Project:  XPM Driver
  * Purpose:  Implement GDAL XPM Support
@@ -33,7 +33,7 @@
 #include "gdal_frmts.h"						      
 
 
-CPL_CVSID("$Id: xpmdataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+CPL_CVSID("$Id: xpmdataset.cpp 18239 2009-12-10 15:48:43Z warmerdam $");
 
 static unsigned char *ParseXPM( const char *pszInput,
                                 int *pnXSize, int *pnYSize, 
@@ -100,17 +100,17 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
+    if (poOpenInfo->fp == NULL)
+        return NULL;
+
 /* -------------------------------------------------------------------- */
 /*      Read the whole file into a memory strings.                      */
 /* -------------------------------------------------------------------- */
     unsigned int nFileSize;
     char *pszFileContents;
-    VSILFILE *fp = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
-    if( fp == NULL )
-        return NULL;
 
-    VSIFSeekL( fp, 0, SEEK_END );
-    nFileSize = (unsigned int) VSIFTellL( fp );
+    VSIFSeek( poOpenInfo->fp, 0, SEEK_END );
+    nFileSize = VSIFTell( poOpenInfo->fp );
     
     pszFileContents = (char *) VSIMalloc(nFileSize+1);
     if( pszFileContents == NULL )
@@ -118,25 +118,20 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLError( CE_Failure, CPLE_OutOfMemory, 
                   "Insufficient memory for loading XPM file %s into memory.", 
                   poOpenInfo->pszFilename );
-        VSIFCloseL(fp);
         return NULL;
     }
     pszFileContents[nFileSize] = '\0';
     
-    VSIFSeekL( fp, 0, SEEK_SET );
+    VSIFSeek( poOpenInfo->fp, 0, SEEK_SET );
 
-    if( VSIFReadL( pszFileContents, 1, nFileSize, fp ) != nFileSize)
+    if( VSIFRead( pszFileContents, 1, nFileSize, poOpenInfo->fp ) != nFileSize)
     {
         CPLFree( pszFileContents );
         CPLError( CE_Failure, CPLE_FileIO, 
                   "Failed to read all %d bytes from file %s.",
                   nFileSize, poOpenInfo->pszFilename );
-        VSIFCloseL(fp);
         return NULL;
     }
-    
-    VSIFCloseL(fp);
-    fp = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Convert into a binary image.                                    */
@@ -334,9 +329,9 @@ XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* ==================================================================== */
 /*      Write the output image.                                         */
 /* ==================================================================== */
-    VSILFILE	*fpPBM;
+    FILE	*fpPBM;
 
-    fpPBM = VSIFOpenL( pszFilename, "wb+" );
+    fpPBM = VSIFOpen( pszFilename, "wt+" );
     if( fpPBM == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -349,13 +344,13 @@ XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Write the header lines.                                         */
 /* -------------------------------------------------------------------- */
-    VSIFPrintfL( fpPBM, "/* XPM */\n" );
-    VSIFPrintfL( fpPBM, "static char *%s[] = {\n", 
+    fprintf( fpPBM, "/* XPM */\n" );
+    fprintf( fpPBM, "static char *%s[] = {\n", 
              CPLGetBasename( pszFilename ) );
-    VSIFPrintfL( fpPBM, "/* width height num_colors chars_per_pixel */\n" );
-    VSIFPrintfL( fpPBM, "\"  %3d   %3d     %3d             1\",\n",
+    fprintf( fpPBM, "/* width height num_colors chars_per_pixel */\n" );
+    fprintf( fpPBM, "\"  %3d   %3d     %3d             1\",\n",
              nXSize, nYSize, nActiveColors );
-    VSIFPrintfL( fpPBM, "/* colors */\n" );
+    fprintf( fpPBM, "/* colors */\n" );
 
 /* -------------------------------------------------------------------- */
 /*      Write the color table.                                          */
@@ -363,9 +358,9 @@ XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     for( i = 0; i < nActiveColors; i++ )
     {
         if( asPixelColor[i].c4 < 128 )
-            VSIFPrintfL( fpPBM, "\"%c c None\",\n", pszColorCodes[i] );
+            fprintf( fpPBM, "\"%c c None\",\n", pszColorCodes[i] );
         else
-            VSIFPrintfL( fpPBM, 
+            fprintf( fpPBM, 
                      "\"%c c #%02x%02x%02x\",\n",
                      pszColorCodes[i],
                      asPixelColor[i].c1, 
@@ -385,11 +380,11 @@ XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         poBand->RasterIO( GF_Read, 0, iLine, nXSize, 1, 
                           (void *) pabyScanline, nXSize, 1, GDT_Byte, 0, 0 );
         
-        VSIFPutcL( '"', fpPBM );
+        fputc( '"', fpPBM );
         for( int iPixel = 0; iPixel < nXSize; iPixel++ )
-            VSIFPutcL( pszColorCodes[anPixelMapping[pabyScanline[iPixel]]], 
+            fputc( pszColorCodes[anPixelMapping[pabyScanline[iPixel]]], 
                    fpPBM);
-        VSIFPrintfL( fpPBM, "\",\n" );
+        fprintf( fpPBM, "\",\n" );
     }
     
     CPLFree( pabyScanline );
@@ -397,8 +392,8 @@ XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      cleanup                                                         */
 /* -------------------------------------------------------------------- */
-    VSIFPrintfL( fpPBM, "};\n" );
-    VSIFCloseL( fpPBM );
+    fprintf( fpPBM, "};\n" );
+    VSIFClose( fpPBM );
 
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxilary pam information.         */
@@ -434,7 +429,6 @@ void GDALRegister_XPM()
         poDriver->SetMetadataItem( GDAL_DMD_MIMETYPE, "image/x-xpixmap" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = XPMDataset::Open;
         poDriver->pfnCreateCopy = XPMCreateCopy;

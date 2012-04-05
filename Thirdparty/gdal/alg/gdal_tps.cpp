@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_tps.cpp 23156 2011-10-01 15:34:16Z rouault $
+ * $Id: gdal_tps.cpp 16861 2009-04-26 19:22:29Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Thin Plate Spline transformer (GDAL wrapper portion)
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdal_tps.cpp 23156 2011-10-01 15:34:16Z rouault $");
+CPL_CVSID("$Id: gdal_tps.cpp 16861 2009-04-26 19:22:29Z rouault $");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg );
@@ -81,7 +81,7 @@ typedef struct
  *
  * @param nGCPCount the number of GCPs in pasGCPList.
  * @param pasGCPList an array of GCPs to be used as input.
- * @param bReversed set it to TRUE to compute the reversed transformation.
+ * @Param bReversed 
  * 
  * @return the transform argument or NULL if creation fails. 
  */

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: dumpoverviews.cpp 23484 2011-12-07 03:34:10Z warmerdam $
+ * $Id: dumpoverviews.cpp 17797 2009-10-12 15:23:05Z jorgearevalo $
  *
  * Project:  GDAL Utilities
  * Purpose:  Dump overviews to external files.
@@ -32,20 +32,10 @@
 #include "gdal_priv.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dumpoverviews.cpp 23484 2011-12-07 03:34:10Z warmerdam $");
+CPL_CVSID("$Id: dumpoverviews.cpp 17797 2009-10-12 15:23:05Z jorgearevalo $");
 
 static void DumpBand( GDALDatasetH hBaseDS, GDALRasterBandH hBand,
                       const char *pszName );
-
-/************************************************************************/
-/*                               Usage()                                */
-/************************************************************************/
-static void Usage() 
-
-{
-    printf( "Usage: dumpoverviews [-masks] <filename> [overview]*\n" );
-    exit( 1 );
-}
 
 /************************************************************************/
 /*                                main()                                */
@@ -85,12 +75,16 @@ int main( int argc, char ** argv )
         }
         else
         {
-            Usage();
+            printf( "Usage: dumpoverviews [-masks] <filename> [overview]*\n" );
+            exit( 1 );
         }
     }
 
     if( pszSrcFilename == NULL )
-        Usage();
+    {
+        printf( "Usage: dumpoverviews <filename> [overview]*\n" );
+        exit( 1 );
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Open the input file.                                            */
@@ -119,12 +113,6 @@ int main( int argc, char ** argv )
         for( iOverview = 0; iOverview < nOverviewCount; iOverview++ )
         {
             GDALRasterBandH hSrcOver = GDALGetOverview( hBaseBand, iOverview );
-            
-            if (hSrcOver == NULL)
-            {
-                fprintf(stderr, "skipping overview %d as being null\n", iOverview);
-                continue;
-            }
 
 /* -------------------------------------------------------------------- */
 /*      Is this a requested overview?                                   */
@@ -151,15 +139,6 @@ int main( int argc, char ** argv )
                                CPLGetBasename(pszSrcFilename),
                                iBand+1, iOverview );
             DumpBand( hSrcDS, hSrcOver, osFilename );
-
-            if( bMasks )
-            {
-                CPLString osFilename;
-                osFilename.Printf( "%s_%d_%d_mask.tif",
-                                CPLGetBasename(pszSrcFilename),
-                                iBand+1, iOverview );
-                DumpBand( hSrcDS, GDALGetMaskBand(hSrcOver), osFilename );
-            }
         }
 
 /* -------------------------------------------------------------------- */

@@ -1,9 +1,9 @@
 
-EXTRAFLAGS = 	$(ECWFLAGS) -DFRMT_ecw 
+EXTRAFLAGS = 	-I$(ECWDIR)\include -I$(ECWDIR)/Source/include \
+		/D_MBCS /D_UNICODE /DUNICODE /D_WINDOWS \
+		/DLIBECWJ2 /DWIN32 /D_WINDLL -DFRMT_ecw -DNO_X86_MMI
 
-
-OBJ	=	ecwdataset.obj ecwcreatecopy.obj jp2userbox.obj \
-		ecwasyncreader.obj
+OBJ	=	ecwdataset.obj ecwcreatecopy.obj jp2userbox.obj
 
 PLUGIN_DLL =	gdal_ECW_JP2ECW.dll
 
@@ -17,8 +17,6 @@ EXTRAFLAGS = $(EXTRAFLAGS) -D_WIN32_WINNT=0x0500
 
 default:	$(OBJ)
 	$(INSTALL) *.obj ..\o
-
-$(OBJ):	gdal_ecw.h
 
 all:	default testecw.exe
 

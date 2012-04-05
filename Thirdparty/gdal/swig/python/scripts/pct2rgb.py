@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: pct2rgb.py 19762 2010-05-23 18:34:46Z rouault $
+#  $Id: pct2rgb.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Name:     pct2rgb
 #  Project:  GDAL Python Interface
@@ -31,13 +31,9 @@
 
 try:
     from osgeo import gdal
+    gdal.TermProgress = gdal.TermProgress_nocb
 except ImportError:
     import gdal
-
-try:
-    progress = gdal.TermProgress_nocb
-except:
-    progress = gdal.TermProgress
 
 try:
     import numpy as Numeric
@@ -50,7 +46,7 @@ import sys
 import os.path
 
 def Usage():
-    print('Usage: pct2rgb.py [-of format] [-b <band>] [-rgba] source_file dest_file')
+    print('Usage: pct2rgb.py [-of format] [-b <band>] source_file dest_file')
     sys.exit(1)
 
 # =============================================================================
@@ -103,7 +99,7 @@ if dst_filename is None:
 
 src_ds = gdal.Open( src_filename )
 if src_ds is None:
-    print('Unable to open %s ' % src_filename)
+    print('Unable to open ', src_filename)
     sys.exit(1)
 
 src_band = src_ds.GetRasterBand(band_number)
@@ -157,7 +153,7 @@ if src_ds.GetGCPCount() > 0:
 # ----------------------------------------------------------------------------
 # Do the processing one scanline at a time. 
 
-progress( 0.0 )
+gdal.TermProgress( 0.0 )
 for iY in range(src_ds.RasterYSize):
     src_data = src_band.ReadAsArray(0,iY,src_ds.RasterXSize,1)
 
@@ -167,7 +163,7 @@ for iY in range(src_ds.RasterYSize):
         dst_data = Numeric.take(band_lookup,src_data)
         tif_ds.GetRasterBand(iBand+1).WriteArray(dst_data,0,iY)
 
-    progress( (iY+1.0) / src_ds.RasterYSize )
+    gdal.TermProgress( (iY+1.0) / src_ds.RasterYSize )
     
 
 tif_ds = None

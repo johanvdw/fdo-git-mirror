@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sgidataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: sgidataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $
  *
  * Project:  SGI Image Driver
  * Purpose:  Implement SGI Image Support based on Paul Bourke's SGI Image code.
@@ -35,7 +35,7 @@
 #include "cpl_port.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sgidataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+CPL_CVSID("$Id: sgidataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_SGI(void);
@@ -56,7 +56,7 @@ struct ImageRec
     char name[80];
     GUInt32 colorMap;
 
-    VSILFILE* file;
+    FILE* file;
     std::string fileName;
     unsigned char* tmp;
     GUInt32 rleEnd;
@@ -200,7 +200,7 @@ class SGIDataset : public GDALPamDataset
 {
     friend class SGIRasterBand;
 
-    VSILFILE*  fpImage;
+    FILE*  fpImage;
 
     int	   bGeoTransformValid;
     double adfGeoTransform[6];
@@ -334,7 +334,7 @@ CPLErr SGIRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                 && pabyRawBuf[iX + nRepeatCount + 1] 
                 == pabyRawBuf[iX + nRepeatCount + 3]) )
         { // encode a constant run.
-            pabyRLEBuf[nRLEBytes++] = (GByte) nRepeatCount; 
+            pabyRLEBuf[nRLEBytes++] = nRepeatCount; 
             pabyRLEBuf[nRLEBytes++] = pabyRawBuf[iX];
             iX += nRepeatCount;
         }
@@ -357,7 +357,7 @@ CPLErr SGIRasterBand::IWriteBlock(int nBlockXOff, int nBlockYOff,
                     break;
             }
 
-            pabyRLEBuf[nRLEBytes++] = (GByte) (0x80 | nRepeatCount); 
+            pabyRLEBuf[nRLEBytes++] = 0x80 | nRepeatCount; 
             memcpy( pabyRLEBuf + nRLEBytes, 
                     pabyRawBuf + iX, 
                     nRepeatCount );
@@ -701,7 +701,7 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Open the file for output.                                       */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fp = VSIFOpenL( pszFilename, "w" );
+    FILE *fp = VSIFOpenL( pszFilename, "w" );
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -758,7 +758,7 @@ GDALDataset *SGIDataset::Create( const char * pszFilename,
     
     while( nPixelsRemaining > 0 )
     {
-        pabyRLELine[nRLEBytes] = (GByte) MIN(127,nPixelsRemaining);
+        pabyRLELine[nRLEBytes] = MIN(127,nPixelsRemaining);
         pabyRLELine[nRLEBytes+1] = 0;
         nPixelsRemaining -= pabyRLELine[nRLEBytes];
 

@@ -53,13 +53,13 @@ namespace PCIDSK
             std::string access, const PCIDSKInterfaces *interfaces );
     public:
 
-        CPCIDSKFile( std::string filename );
+        CPCIDSKFile();
         virtual ~CPCIDSKFile();
 
         virtual PCIDSKInterfaces *GetInterfaces() { return &interfaces; }
 
         PCIDSKChannel  *GetChannel( int band );
-        PCIDSKSegment  *GetSegment( int segment );
+        PCIDSKSegment   *GetSegment( int segment );
         std::vector<PCIDSKSegment *> GetSegments();
 
         PCIDSKSegment  *GetSegment( int type, std::string name,
@@ -77,7 +77,7 @@ namespace PCIDSK
         bool      GetUpdatable() const { return updatable; } 
         uint64    GetFileSize() const { return file_size; }
 
-        // the following are only for pixel interleaved IO
+    // the following are only for pixel interleaved IO
         int       GetPixelGroupSize() const { return pixel_group_size; }
         void     *ReadAndLockBlock( int block_index, int xoff=-1, int xsize=-1 );
         void      UnlockBlock( bool mark_dirty = false );
@@ -87,13 +87,8 @@ namespace PCIDSK
         void      WriteToFile( const void *buffer, uint64 offset, uint64 size );
         void      ReadFromFile( void *buffer, uint64 offset, uint64 size );
 
-        std::string GetFilename() const { return base_filename; }
-
         void      GetIODetails( void ***io_handle_pp, Mutex ***io_mutex_pp,
-                                std::string filename="", bool writable=false );
-
-        bool      GetEDBFileDetails( EDBFile** file_p, Mutex **io_mutex_p,
-                                     std::string filename );
+            std::string filename = "" );
 
         std::string GetMetadataValue( const std::string& key ) 
             { return metadata.GetMetadataValue(key); }
@@ -115,8 +110,6 @@ namespace PCIDSK
 
         void         InitializeFromHeader();
 
-        std::string  base_filename;
-        
         int          width;
         int          height;
         int          channel_count;
@@ -150,9 +143,6 @@ namespace PCIDSK
 
     // register of open external raw files.
         std::vector<ProtectedFile>  file_list;
-
-    // register of open external databasefiles
-        std::vector<ProtectedEDBFile> edb_file_list;
 
         MetadataSet  metadata;
     };

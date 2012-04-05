@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsb_read.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: bsb_read.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  BSB Reader
  * Purpose:  non-GDAL BSB API Declarations
@@ -31,12 +31,11 @@
 #define _BSBREAD_H_INCLUDED
 
 #include "cpl_port.h"
-#include "cpl_vsi.h"
 
 CPL_C_START
 
 typedef struct {
-    VSILFILE   *fp;
+    FILE        *fp;
 
 
     GByte       *pabyBuffer;

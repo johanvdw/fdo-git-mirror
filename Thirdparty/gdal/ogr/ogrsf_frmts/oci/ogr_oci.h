@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_oci.h 22346 2011-05-10 03:02:15Z warmerdam $
+ * $Id: ogr_oci.h 15240 2008-08-28 18:14:21Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Oracle Spatial OGR Driver Declarations. 
@@ -98,8 +98,6 @@ class CPL_DLL OGROCISession {
     OCIEnv     *hEnv;
     OCIError   *hError;
     OCISvcCtx  *hSvcCtx;
-    OCIServer  *hServer;
-    OCISession *hSession;
     OCIDescribe*hDescribe;
     OCIType    *hGeometryTDO;
     OCIType    *hOrdinatesTDO;
@@ -388,8 +386,6 @@ class OGROCITableLayer : public OGROCIWritableLayer
     int                 bUpdateAccess;
     int                 bNewLayer;
     OGREnvelope         sExtent;
-    bool                bExtentUpdated;
-
     int                 iNextFIDToWrite;
     int                 bHaveSpatialIndex;
 
@@ -404,13 +400,9 @@ class OGROCITableLayer : public OGROCIWritableLayer
 
     int                 bValidTable;
 
-    CPLString           osTableName;
-    CPLString           osOwner;
-
     OCIArray           *hOrdVARRAY;
     OCIArray           *hElemInfoVARRAY;
 
-    void                UpdateLayerExtents();
     void                FinalizeNewLayer();
 
     void                TestForSpatialIndex( const char * );
@@ -429,7 +421,7 @@ class OGROCITableLayer : public OGROCIWritableLayer
     OCIInd            **papaeWriteFieldInd;
     int                *panWriteFIDs;
 
-    int                 AllocAndBindForWrite(int eType);
+    int                 AllocAndBindForWrite();
     OGRErr              FlushPendingFeatures();
 
     OGRErr              UnboundCreateFeature( OGRFeature *poFeature );
@@ -516,7 +508,6 @@ class OGROCIDataSource : public OGRDataSource
     int                 GetLayerCount() { return nLayers; }
     OGRLayer            *GetLayer( int );
 
-    virtual OGRErr      DeleteLayer(int);
     virtual OGRLayer    *CreateLayer( const char *, 
                                       OGRSpatialReference * = NULL,
                                       OGRwkbGeometryType = wkbUnknown,
@@ -525,8 +516,6 @@ class OGROCIDataSource : public OGRDataSource
     int                 TestCapability( const char * );
 
     void                DeleteLayer( const char * );
-
-    void                TruncateLayer( const char * );
     void                ValidateLayer( const char * );
     
     virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,

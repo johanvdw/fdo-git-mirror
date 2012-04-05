@@ -54,14 +54,13 @@ class OGRGmtLayer : public OGRLayer
     OGREnvelope         sRegion;
     vsi_l_offset        nRegionOffset;
 
-    VSILFILE           *fp;
+    FILE               *fp;
 
     int                 ReadLine();
     CPLString           osLine;
     char              **papszKeyedValues;
 
     int                 ScanAheadForHole();
-    int                 NextIsFeature();
 
     OGRFeature         *GetNextRawFeature();
 

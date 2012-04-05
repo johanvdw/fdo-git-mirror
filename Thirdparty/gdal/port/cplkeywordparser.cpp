@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplkeywordparser.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: cplkeywordparser.cpp 18063 2009-11-21 21:11:49Z warmerdam $
  *
  * Project:  Common Portability Library
  * Purpose:  Implementation of CPLKeywordParser - a class for parsing
@@ -66,7 +66,7 @@ CPLKeywordParser::~CPLKeywordParser()
 /*                               Ingest()                               */
 /************************************************************************/
 
-int CPLKeywordParser::Ingest( VSILFILE *fp )
+int CPLKeywordParser::Ingest( FILE *fp )
 
 {
 /* -------------------------------------------------------------------- */

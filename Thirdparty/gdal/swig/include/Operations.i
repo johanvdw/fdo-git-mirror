@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Operations.i 20606 2010-09-13 21:50:45Z rouault $
+ * $Id: Operations.i 16484 2009-03-06 22:42:35Z rouault $
  *
  * Name:     Operations.i
  * Project:  GDAL Python Interface
@@ -29,8 +29,6 @@
  *****************************************************************************/
 
 %{
-#include "gdalgrid.h"
-
 #ifdef DEBUG 
 typedef struct OGRLayerHS OGRLayerShadow;
 typedef struct OGRGeometryHS OGRGeometryShadow;
@@ -405,110 +403,6 @@ int  RegenerateOverview( GDALRasterBandShadow *srcBand,
 }
 %}
 %clear GDALRasterBandShadow* srcBand, GDALRasterBandShadow* overviewBand, char* resampling;
-
-/************************************************************************/
-/*                             GridCreate()                             */
-/************************************************************************/
-
-#ifdef SWIGJAVA
-%rename (GridCreate) wrapper_GridCreate;
-%apply (int nCount, double *x, double *y, double *z) { (int points, double *x, double *y, double *z) };
-%apply (void* nioBuffer, long nioBufferSize) { (void* nioBuffer, long nioBufferSize) };
-%inline %{
-int wrapper_GridCreate( char* algorithmOptions,
-                        int points, double *x, double *y, double *z,
-                        double xMin, double xMax, double yMin, double yMax,
-                        int xSize, int ySize, GDALDataType dataType,
-                        void* nioBuffer, long nioBufferSize,
-                        GDALProgressFunc callback = NULL,
-                        void* callback_data = NULL)
-{
-    GDALGridAlgorithm eAlgorithm = GGA_InverseDistanceToAPower;
-    void* pOptions = NULL;
-
-    CPLErr eErr = CE_Failure;
-
-    CPLErrorReset();
-
-    if (xSize * ySize * (GDALGetDataTypeSize(dataType) / 8) > nioBufferSize)
-    {
-        CPLError( eErr, CPLE_AppDefined, "Buffer too small" );
-        return eErr;
-    }
-
-    if ( algorithmOptions )
-    {
-        eErr = ParseAlgorithmAndOptions( algorithmOptions, &eAlgorithm, &pOptions );
-    }
-    else
-    {
-        eErr = ParseAlgorithmAndOptions( szAlgNameInvDist, &eAlgorithm, &pOptions );
-    }
-    
-    if ( eErr != CE_None )
-    {
-        CPLError( eErr, CPLE_AppDefined, "Failed to process algoritm name and parameters.\n" );
-        return eErr;
-    }
-
-    eErr = GDALGridCreate( eAlgorithm, pOptions, points, x, y, z,
-                           xMin, xMax, yMin, yMax, xSize, ySize, dataType, nioBuffer,
-                           callback, callback_data );
-
-    CPLFree(pOptions);
-
-    return eErr;
-}
-%}
-%clear (void *nioBuffer, long nioBufferSize);
-#endif
-
-/************************************************************************/
-/*                          ContourGenerate()                           */
-/************************************************************************/
-
-#ifndef SWIGJAVA
-%feature( "kwargs" ) ContourGenerate;
-#endif
-%apply Pointer NONNULL {GDALRasterBandShadow *srcBand, OGRLayerShadow* dstLayer};
-%apply (int nList, double *pList ) { (int fixedLevelCount, double *fixedLevels ) };
-%inline %{
-int ContourGenerate( GDALRasterBandShadow *srcBand,
-                     double contourInterval,
-                     double contourBase,
-                     int fixedLevelCount,
-                     double *fixedLevels,
-                     int useNoData,
-                     double noDataValue,
-                     OGRLayerShadow* dstLayer, 
-                     int idField,
-                     int elevField,
-                     GDALProgressFunc callback = NULL,
-                     void* callback_data = NULL)
-{
-    CPLErr eErr;
-
-    CPLErrorReset();
-
-    eErr =  GDALContourGenerate( srcBand,
-                                 contourInterval,
-                                 contourBase,
-                                 fixedLevelCount,
-                                 fixedLevels,
-                                 useNoData,
-                                 noDataValue,
-                                 dstLayer,
-                                 idField,
-                                 elevField,
-                                 callback,
-                                 callback_data);
-
-    return eErr;
-}
-%}
-%clear GDALRasterBandShadow *srcBand;
-%clear OGRLayerShadow* dstLayer;
-%clear  (int fixedLevelCount, double *fixedLevels );
 
 /************************************************************************/
 /*                        AutoCreateWarpedVRT()                         */

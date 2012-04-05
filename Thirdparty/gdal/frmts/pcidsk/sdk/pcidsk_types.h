@@ -39,10 +39,6 @@ namespace PCIDSK
         CHN_16S=1,    /*!< 16 bit signed integer */
         CHN_16U=2,    /*!< 16 bit unsigned integer */
         CHN_32R=3,    /*!< 32 bit ieee floating point */
-        CHN_C16U=4,     /*!< 16-bit unsigned integer, complex */
-        CHN_C16S=5,     /*!< 16-bit signed integer, complex */
-        CHN_C32R=6,     /*!< 32-bit IEEE-754 Float, complex */
-        CHN_BIT=7,      /*!< 1bit unsigned (packed bitmap) */
         CHN_UNKNOWN=99 /*!< unknown channel type */
     } eChanType;
 
@@ -71,8 +67,6 @@ namespace PCIDSK
     int PCIDSK_DLL DataTypeSize( eChanType );
     std::string PCIDSK_DLL DataTypeName( eChanType );
     std::string PCIDSK_DLL SegmentTypeName( eSegType );
-    eChanType PCIDSK_DLL GetDataTypeFromName(std::string const& type_name);
-    bool PCIDSK_DLL IsDataTypeComplex(eChanType type);
 
 } // end namespace PCIDSK
 

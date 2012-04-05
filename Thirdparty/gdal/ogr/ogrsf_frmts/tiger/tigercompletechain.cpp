@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigercompletechain.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigercompletechain.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerCompleteChain, providing access to RT1 and
@@ -31,9 +31,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigercompletechain.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigercompletechain.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
-static const TigerFieldInfo rt1_2002_fields[] = {
+static TigerFieldInfo rt1_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "TLID",       'R', 'N', OFTInteger,    6,  15,  10,       1,   1,     1 },
@@ -76,14 +76,14 @@ static const TigerFieldInfo rt1_2002_fields[] = {
   { "BLOCKL",     'L', 'N', OFTInteger,  183, 186,   4,       1,   1,     1 },
   { "BLOCKR",     'L', 'N', OFTInteger,  187, 190,   4,       1,   1,     1 }
 };
-static const TigerRecordInfo rt1_2002_info =
+static TigerRecordInfo rt1_2002_info =
   {
     rt1_2002_fields,
     sizeof(rt1_2002_fields) / sizeof(TigerFieldInfo),
     228
   };
 
-static const TigerFieldInfo rt1_fields[] = {
+static TigerFieldInfo rt1_fields[] = {
   // fieldname    fmt  type OFTType      beg  end   len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "TLID",       'R', 'N', OFTInteger,    6,  15,  10,       1,   1,     1 },
@@ -126,14 +126,14 @@ static const TigerFieldInfo rt1_fields[] = {
   { "BLKL",       'L', 'N', OFTString,   183, 186,   4,       1,   1,     1 },
   { "BLKR",       'L', 'N', OFTString,   187, 190,   4,       1,   1,     1 }
 }; 
-static const TigerRecordInfo rt1_info =
+static TigerRecordInfo rt1_info =
   {
     rt1_fields,
     sizeof(rt1_fields) / sizeof(TigerFieldInfo),
     228
   };
 
-static const TigerRecordInfo rt2_info =
+static TigerRecordInfo rt2_info =
   {
     NULL,       // RT2 is handled specially in the code below; the only
     0,          // thing from this structure that is used is:
@@ -141,7 +141,7 @@ static const TigerRecordInfo rt2_info =
   };
 
 
-static const TigerFieldInfo rt3_2000_Redistricting_fields[] = {
+static TigerFieldInfo rt3_2000_Redistricting_fields[] = {
   // fieldname    fmt  type OFTType       beg  end  len  bDefine bSet bWrite
   { "TLID",       'R', 'N', OFTInteger,     6,  15,  10,       0,   0,     1 },
   { "STATE90L",   'L', 'N', OFTInteger,    16,  17,   2,       1,   1,     1 },
@@ -170,14 +170,14 @@ static const TigerFieldInfo rt3_2000_Redistricting_fields[] = {
   { "AITSL",      'L', 'N', OFTInteger,   102, 106,   5 ,      1,   1,     1 },
   { "AITSR",      'L', 'N', OFTInteger,   107, 111,   5,       1,   1,     1 }
 };
-static const TigerRecordInfo rt3_2000_Redistricting_info  =
+static TigerRecordInfo rt3_2000_Redistricting_info  =
   {
     rt3_2000_Redistricting_fields,
     sizeof(rt3_2000_Redistricting_fields) / sizeof(TigerFieldInfo),
     111
   };
 
-static const TigerFieldInfo rt3_fields[] = {
+static TigerFieldInfo rt3_fields[] = {
   // fieldname    fmt  type OFTType       beg  end  len  bDefine bSet bWrite
   { "TLID",       'R', 'N', OFTInteger,     6,  15,  10,       0,   0,     1 },
   { "STATE90L",   'L', 'N', OFTInteger,    16,  17,   2,       1,   1,     1 },
@@ -203,7 +203,7 @@ static const TigerFieldInfo rt3_fields[] = {
   { "VTDR",       'L', 'A', OFTString,    108, 111,   4,       1,   1,     1 }
 
 };
-static const TigerRecordInfo rt3_info =
+static TigerRecordInfo rt3_info =
   {
     rt3_fields,
     sizeof(rt3_fields) / sizeof(TigerFieldInfo),

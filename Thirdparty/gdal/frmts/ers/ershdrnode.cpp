@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ershdrnode.cpp 21814 2011-02-23 22:55:14Z warmerdam $
+ * $Id: ershdrnode.cpp 17867 2009-10-21 21:04:49Z rouault $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of ERSHdrNode class for parsing/accessing .ers hdr.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ershdrnode.h"
 
-CPL_CVSID("$Id: ershdrnode.cpp 21814 2011-02-23 22:55:14Z warmerdam $");
+CPL_CVSID("$Id: ershdrnode.cpp 17867 2009-10-21 21:04:49Z rouault $");
 
 
 /************************************************************************/
@@ -100,7 +100,7 @@ void ERSHdrNode::MakeSpace()
 /*      will be appended for objects enclosed in {}.                    */
 /************************************************************************/
 
-int ERSHdrNode::ReadLine( VSILFILE * fp, CPLString &osLine )
+int ERSHdrNode::ReadLine( FILE * fp, CPLString &osLine )
 
 {
     int  nBracketLevel;
@@ -153,7 +153,7 @@ int ERSHdrNode::ReadLine( VSILFILE * fp, CPLString &osLine )
 /*      This function is used recursively to read sub-objects.          */
 /************************************************************************/
 
-int ERSHdrNode::ParseChildren( VSILFILE * fp )
+int ERSHdrNode::ParseChildren( FILE * fp )
 
 {
     while( TRUE )
@@ -189,7 +189,7 @@ int ERSHdrNode::ParseChildren( VSILFILE * fp )
 /* -------------------------------------------------------------------- */
 /*      Got a Begin for an object.                                      */
 /* -------------------------------------------------------------------- */
-        else if( (iOff = osLine.ifind( " Begin" )) != std::string::npos )
+        else if( (iOff = osLine.find( " Begin" )) != std::string::npos )
         {
             CPLString osName = osLine.substr(0,iOff);
             osName.Trim();
@@ -209,7 +209,7 @@ int ERSHdrNode::ParseChildren( VSILFILE * fp )
 /*      Got an End for our object.  Well, at least we *assume* it       */
 /*      must be for our object.                                         */
 /* -------------------------------------------------------------------- */
-        else if( osLine.ifind( " End" ) != std::string::npos )
+        else if( osLine.find( " End" ) != std::string::npos )
         {
             return TRUE;
         }
@@ -233,7 +233,7 @@ int ERSHdrNode::ParseChildren( VSILFILE * fp )
 /*      Recursively write self and children to file.                    */
 /************************************************************************/
 
-int ERSHdrNode::WriteSelf( VSILFILE * fp, int nIndent )
+int ERSHdrNode::WriteSelf( FILE * fp, int nIndent )
 
 {
     CPLString oIndent;

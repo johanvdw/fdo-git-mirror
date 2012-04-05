@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: northwood.h 21898 2011-03-06 14:27:52Z rouault $
+ * $Id: northwood.h 18090 2009-11-23 22:47:06Z rouault $
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Technologies Grid format declarations
@@ -27,16 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifdef NOT_GDAL
+
 #include <stdio.h>
-#define VSILFILE    FILE
-#define VSIFOpenL   fopen
-#define VSIFCloseL  fclose
-#define VSIFSeekL   fseek
-#define VSIFReadL   fread
-#else
-#include "cpl_vsi.h"
-#endif
 
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
@@ -99,7 +91,7 @@ typedef struct
 typedef struct
 {
     char szFileName[256];
-    VSILFILE *fp;
+    FILE *fp;
     float fVersion;
     unsigned char cFormat;        //0x00 16 bit, 0x01 32 bit, 0x80 8 bit classifed, 0x81 16 bit classified
     unsigned int nBitsPerPixel;

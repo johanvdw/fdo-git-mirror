@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrtigerdatasource.cpp 22622 2011-06-29 21:33:28Z rouault $
+ * $Id: ogrtigerdatasource.cpp 14288 2008-04-13 15:56:22Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements OGRTigerDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: ogrtigerdatasource.cpp 22622 2011-06-29 21:33:28Z rouault $");
+CPL_CVSID("$Id: ogrtigerdatasource.cpp 14288 2008-04-13 15:56:22Z rouault $");
 
 /************************************************************************/
 /*                        TigerClassifyVersion()                        */
@@ -322,7 +322,7 @@ int OGRTigerDataSource::Open( const char * pszFilename, int bTestOpen,
         pszPath = CPLStrdup( CPLGetPath(pszFilename) );
 
         strncpy( szModule, CPLGetFilename(pszFilename), sizeof(szModule)-1 );
-        szModule[sizeof(szModule)-1] = '\0';
+        szModule[strlen(szModule)-1] = '\0';
 
         papszFileList = CSLAddString( papszFileList, szModule );
     }
