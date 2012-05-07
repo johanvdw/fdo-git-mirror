@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: polygonize.cpp 22501 2011-06-04 21:28:47Z rouault $
+ * $Id: polygonize.cpp 18523 2010-01-11 18:12:25Z mloskot $
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -28,14 +28,11 @@
 
 #include "gdal_alg_priv.h"
 #include "cpl_conv.h"
-#include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: polygonize.cpp 22501 2011-06-04 21:28:47Z rouault $");
+CPL_CVSID("$Id: polygonize.cpp 18523 2010-01-11 18:12:25Z mloskot $");
 
 #define GP_NODATA_MARKER -51502112
-
-#ifdef OGR_ENABLED
 
 /************************************************************************/
 /* ==================================================================== */
@@ -430,8 +427,7 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXS
 
     return eErr;
 }
-#endif // OGR_ENABLED
-
+ 
 /************************************************************************/
 /*                           GDALPolygonize()                           */
 /************************************************************************/
@@ -446,8 +442,7 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXS
  *
  * Note that currently the source pixel band values are read into a
  * signed 32bit integer buffer (Int32), so floating point or complex 
- * bands will be implicitly truncated before processing. If you want to use a
- * version using 32bit float buffers, see GDALFPolygonize() at fpolygonize.cpp.
+ * bands will be implicitly truncated before processing.  
  *
  * Polygon features will be created on the output layer, with polygon 
  * geometries representing the polygons.  The polygon geometries will be
@@ -478,11 +473,8 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXS
  * be written. 
  * @param iPixValField the attribute field index indicating the feature
  * attribute into which the pixel value of the polygon should be written.
- * @param papszOptions a name/value list of additional options
- * <dl>
- * <dt>"8CONNECTED":</dt> May be set to "8" to use 8 connectedness.
- * Otherwise 4 connectedness will be applied to the algorithm
- * </dl>
+ * @param papszOptions a name/value list of additional options (none currently
+ * supported). 
  * @param pfnProgress callback for reporting algorithm progress matching the
  * GDALProgressFunc() semantics.  May be NULL.
  * @param pProgressArg callback argument passed to pfnProgress.
@@ -499,17 +491,11 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
                 void * pProgressArg )
 
 {
-#ifndef OGR_ENABLED
-    CPLError(CE_Failure, CPLE_NotSupported, "GDALPolygonize() unimplemented in a non OGR build");
-    return CE_Failure;
-#else
     VALIDATE_POINTER1( hSrcBand, "GDALPolygonize", CE_Failure );
     VALIDATE_POINTER1( hOutLayer, "GDALPolygonize", CE_Failure );
 
     if( pfnProgress == NULL )
         pfnProgress = GDALDummyProgress;
-
-    int nConnectedness = CSLFetchNameValue( papszOptions, "8CONNECTED" ) ? 8 : 4;
 
 /* -------------------------------------------------------------------- */
 /*      Confirm our output layer will support feature creation.         */
@@ -563,7 +549,7 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
 /*      what on the second pass.                                        */
 /* -------------------------------------------------------------------- */
     int iY;
-    GDALRasterPolygonEnumerator oFirstEnum(nConnectedness);
+    GDALRasterPolygonEnumerator oFirstEnum;
 
     for( iY = 0; eErr == CE_None && iY < nYSize; iY++ )
     {
@@ -629,7 +615,7 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
 /*      We will use a new enumerator for the second pass primariliy     */
 /*      so we can preserve the first pass map.                          */
 /* -------------------------------------------------------------------- */
-    GDALRasterPolygonEnumerator oSecondEnum(nConnectedness);
+    GDALRasterPolygonEnumerator oSecondEnum;
     RPolygon **papoPoly = (RPolygon **) 
         CPLCalloc(sizeof(RPolygon*),oFirstEnum.nNextPolygonId);
 
@@ -763,6 +749,5 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
     CPLFree( papoPoly );
 
     return eErr;
-#endif // OGR_ENABLED
 }
 

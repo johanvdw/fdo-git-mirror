@@ -182,7 +182,7 @@ void FdoRdbmsActivateLongTransaction::Execute ()
 
     catch (FdoException *ex) {
 
-      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 

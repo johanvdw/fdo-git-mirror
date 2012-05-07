@@ -21,8 +21,7 @@
 
 ArcSDERollbackLongTransactionCommand::ArcSDERollbackLongTransactionCommand (FdoIConnection *connection) :
     ArcSDEFeatureCommand<FdoIRollbackLongTransaction> (connection),
-    mName (),
-	m_bKeepLongTransaction (false)
+    mName ()
 {
     FdoPtr<ArcSDEConnection> conn;
 
@@ -62,7 +61,6 @@ void ArcSDERollbackLongTransactionCommand::Execute ()
     CHAR owner[2*SE_MAX_VERSION_LEN];
     CHAR user_name[SE_MAX_OWNER_LEN];
     LONG state;
-	CHAR description[SE_MAX_DESCRIPTION_LEN];
 
     // verify connection
     connection = static_cast<ArcSDEConnection*>(GetConnection ());
@@ -84,9 +82,6 @@ void ArcSDERollbackLongTransactionCommand::Execute ()
     result = SE_versioninfo_get_id (version, &id);
     handle_sde_err<FdoCommandException> (conn, result, __FILE__, __LINE__, ARCSDE_VERSION_INFO_ITEM, "Version info item '%1$ls' could not be retrieved.", L"Id");
 
-	result = SE_versioninfo_get_description (version, description);
-	handle_sde_err<FdoCommandException> (conn, result, __FILE__, __LINE__, ARCSDE_VERSION_INFO_ITEM, "Version info item '%1$ls' could not be retrieved.", L"Description");
-
     // if the active version is the one being rolled back, reset the active version
     if (id == connection->GetActiveVersion ())
         connection->SetActiveVersion (SDE_DEFAULT);
@@ -98,9 +93,7 @@ void ArcSDERollbackLongTransactionCommand::Execute ()
     result = SE_connection_get_user_name (conn, user_name);
     handle_sde_err<FdoCommandException> (conn, result, __FILE__, __LINE__, ARCSDE_USER_UNKNOWN, "Cannot determine current user.");
     if (0 == sde_strcmp (sde_pcus2wc(owner), sde_pcus2wc(user_name)))
-	{
-		ArcSDELongTransactionUtility::VersionDelete (conn, GetName ());
-	}
+        ArcSDELongTransactionUtility::VersionDelete (conn, GetName ());
     else
     {
         result = SE_versioninfo_get_parent_id (version, &id);
@@ -116,17 +109,6 @@ void ArcSDERollbackLongTransactionCommand::Execute ()
     }
 
     SE_versioninfo_free (version);
-
-	if (m_bKeepLongTransaction)
-	{
-		FdoPtr<ArcSDECreateLongTransactionCommand> cmdCreateTransaction = new ArcSDECreateLongTransactionCommand (connection);
-		cmdCreateTransaction->SetName(GetName ());
-
-		wchar_t* temp;
-		sde_multibyte_to_wide (temp, description);
-		cmdCreateTransaction->SetDescription(temp);
-		cmdCreateTransaction->Execute();
-	}
 }
 
 /// <summary>Gets a reference to the lock conflict reader.</summary>

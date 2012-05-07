@@ -60,11 +60,6 @@ bool FdoRdbmsOdbcConnectionCapabilities::SupportsTransactions()
     return false;
 }
 
-bool FdoRdbmsOdbcConnectionCapabilities::SupportsSavePoint()
-{
-    return false;
-}
-
 bool FdoRdbmsOdbcConnectionCapabilities::SupportsLongTransactions()
 {
     return false;

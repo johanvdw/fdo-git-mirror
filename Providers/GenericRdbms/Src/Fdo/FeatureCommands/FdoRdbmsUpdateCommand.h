@@ -49,8 +49,6 @@ class FdoRdbmsUpdateCommand : public FdoRdbmsFeatureCommand<FdoIUpdate>
 
   public:
 
-      static FdoRdbmsUpdateCommand* Create (FdoIConnection *connection);
-
       //
       // Prevent the use of the Assignment Operation by definning it and not implemeting it.
       // DO NOT IMPLEMENT

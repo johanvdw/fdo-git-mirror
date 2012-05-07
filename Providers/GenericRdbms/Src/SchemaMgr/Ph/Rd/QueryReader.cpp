@@ -33,25 +33,7 @@ FdoSmPhRdGrdQueryReader::FdoSmPhRdGrdQueryReader(
     mQuery(NULL),
     mResults(NULL)
 {
-    try
-    {
-        Execute();
-    }
-    catch(...)
-    {
-        if ( mResults )
-        {
-            delete mResults;
-            mResults = NULL;
-        }
-
-        if ( mQuery )
-        {
-            delete mQuery;
-            mQuery = NULL;
-        }
-        throw;
-    }
+    Execute();
 }
 
 FdoSmPhRdGrdQueryReader::FdoSmPhRdGrdQueryReader(
@@ -64,25 +46,7 @@ FdoSmPhRdGrdQueryReader::FdoSmPhRdGrdQueryReader(
     mQuery(NULL),
     mResults(NULL)
 {
-    try
-    {
-        Execute();
-    }
-    catch(...)
-    {
-        if ( mResults )
-        {
-            delete mResults;
-            mResults = NULL;
-        }
-
-        if ( mQuery )
-        {
-            delete mQuery;
-            mQuery = NULL;
-        }
-        throw;
-    }
+    Execute();
 }
 
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigeraltname.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigeraltname.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerAltName, providing access to RT4 files.
@@ -30,11 +30,11 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigeraltname.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigeraltname.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #define FILE_CODE "4"
 
-static const TigerFieldInfo rt4_fields[] = {
+static TigerFieldInfo rt4_fields[] = {
   // fieldname    fmt  type  OFTType         beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ',  ' ', OFTString,        0,   0,   8,       1,   0,     0 },
   { "TLID",       'R',  'N', OFTInteger,       6,  15,  10,       1,   1,     1 },
@@ -45,7 +45,7 @@ static const TigerFieldInfo rt4_fields[] = {
   // to the FEAT array field here.
 };
 
-static const TigerRecordInfo rt4_info =
+static TigerRecordInfo rt4_info =
   {
     rt4_fields,
     sizeof(rt4_fields) / sizeof(TigerFieldInfo),
@@ -58,10 +58,12 @@ static const TigerRecordInfo rt4_info =
 /************************************************************************/
 
 TigerAltName::TigerAltName( OGRTigerDataSource * poDSIn,
-                            const char * pszPrototypeModule ) : TigerFileBase(&rt4_info, FILE_CODE)
+                            const char * pszPrototypeModule )
 
 {
     OGRFieldDefn        oField("",OFTInteger);
+
+    psRT4Info = &rt4_info;
 
     poDS = poDSIn;
     poFeatureDefn = new OGRFeatureDefn( "AltName" );
@@ -72,7 +74,31 @@ TigerAltName::TigerAltName( OGRTigerDataSource * poDSIn,
     /*      Fields from type 4 record.                                      */
     /* -------------------------------------------------------------------- */
 
-    AddFieldDefns( psRTInfo, poFeatureDefn );
+    AddFieldDefns( psRT4Info, poFeatureDefn );
+}
+
+/************************************************************************/
+/*                           ~TigerAltName()                            */
+/************************************************************************/
+
+TigerAltName::~TigerAltName()
+
+{
+}
+
+/************************************************************************/
+/*                             SetModule()                              */
+/************************************************************************/
+
+int TigerAltName::SetModule( const char * pszModule )
+
+{
+    if( !OpenFile( pszModule, FILE_CODE ) )
+        return FALSE;
+
+    EstablishFeatureCount();
+    
+    return TRUE;
 }
 
 /************************************************************************/
@@ -106,7 +132,7 @@ OGRFeature *TigerAltName::GetFeature( int nRecordId )
         return NULL;
     }
 
-    if( VSIFRead( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 )
+    if( VSIFRead( achRecord, psRT4Info->nRecordLength, 1, fpPrimary ) != 1 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to read record %d of %s4",
@@ -122,7 +148,7 @@ OGRFeature *TigerAltName::GetFeature( int nRecordId )
     int         anFeatList[5];
     int         nFeatCount=0;
 
-    SetFields( psRTInfo, poFeature, achRecord );
+    SetFields( psRT4Info, poFeature, achRecord );
 
     for( int iFeat = 0; iFeat < 5; iFeat++ )
     {
@@ -150,12 +176,12 @@ OGRErr TigerAltName::CreateFeature( OGRFeature *poFeature )
     const int   *panValue;
     int         nValueCount = 0;
 
-    if( !SetWriteModule( FILE_CODE, psRTInfo->nRecordLength+2, poFeature ) )
+    if( !SetWriteModule( FILE_CODE, psRT4Info->nRecordLength+2, poFeature ) )
         return OGRERR_FAILURE;
 
-    memset( szRecord, ' ', psRTInfo->nRecordLength );
+    memset( szRecord, ' ', psRT4Info->nRecordLength );
 
-    WriteFields( psRTInfo, poFeature, szRecord );
+    WriteFields( psRT4Info, poFeature, szRecord );
 
     panValue = poFeature->GetFieldAsIntegerList( "FEAT", &nValueCount );
     for( int i = 0; i < nValueCount; i++ )
@@ -166,7 +192,7 @@ OGRErr TigerAltName::CreateFeature( OGRFeature *poFeature )
         strncpy( szRecord + 18 + 8 * i, szWork, 8 );
     }
 
-    WriteRecord( szRecord, psRTInfo->nRecordLength, FILE_CODE );
+    WriteRecord( szRecord, psRT4Info->nRecordLength, FILE_CODE );
 
     return OGRERR_NONE;
 }

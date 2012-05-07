@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcrasterdataset.cpp 22609 2011-06-28 21:01:48Z rouault $
+ * $Id: pcrasterdataset.cpp 16442 2009-03-01 16:46:45Z rouault $
  *
  * Project:  PCRaster Integration
  * Purpose:  PCRaster CSF 2.0 raster file driver
@@ -30,7 +30,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: pcrasterdataset.cpp 22609 2011-06-28 21:01:48Z rouault $");
+CPL_CVSID("$Id: pcrasterdataset.cpp 16442 2009-03-01 16:46:45Z rouault $");
 
 #ifndef INCLUDED_PCRASTERDATASET
 #include "pcrasterdataset.h"
@@ -245,10 +245,9 @@ GDALDataset* PCRasterDataset::createCopy(
     // Get row from source.
     if(raster->RasterIO(GF_Read, 0, row, nrCols, 1, buffer, nrCols, 1,
          raster->GetRasterDataType(), 0, 0) != CE_None) {
+      free(buffer);
       CPLError(CE_Failure, CPLE_FileIO,
          "PCRaster driver: Error reading from source raster");
-      errorCode = CE_Failure;
-      break;
     }
 
     // Upon reading values are converted to the
@@ -268,10 +267,9 @@ GDALDataset* PCRasterDataset::createCopy(
     RputRow(map, row, buffer);
 
     if(!progress((row + 1) / (static_cast<double>(nrRows)), 0, progressData)) {
+      free(buffer);
       CPLError(CE_Failure, CPLE_UserInterrupt,
          "PCRaster driver: User terminated CreateCopy()");
-      errorCode = CE_Failure;
-      break;
     }
   }
 

@@ -41,8 +41,7 @@ public:
         FdoSmPhRowsP froms,         // defines the fields to read
         FdoStringP schemaName,      // get classes for this feature schema
         FdoStringP className,
-        FdoSmPhMgrP mgr,             // Physical Schema Manager
-        bool fullLoad = true         // full load classes
+        FdoSmPhMgrP mgr             // Physical Schema Manager
     );
 
     /// Deactivate the class reader

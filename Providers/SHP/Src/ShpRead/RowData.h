@@ -37,7 +37,7 @@ struct ColumnData
 {
     union
     {
-        FdoInt64 nData;
+        int nData;
         double dData;
         wchar_t* wszData;
         Date tData;
@@ -45,7 +45,6 @@ struct ColumnData
     } value;
 
     bool bIsNull;
-	bool bIsInt;
 };
 
 class RowData
@@ -77,12 +76,6 @@ public:
     /// <returns>Returns nothing.</returns> 
     void SetData (int index, bool bIsNull, double value);
 
-    /// <summary>Sets the int64 data.</summary>
-    /// <param name="index">Input the column index of the data to set.</param> 
-    /// <param name="value">Input the value for the column.</param> 
-    /// <returns>Returns nothing.</returns> 
-    void SetData (int index, bool bIsNull, FdoInt64 value);
-
     /// <summary>Sets the string data.</summary>
     /// <param name="index">Input the column index of the data to set.</param> 
     /// <param name="value">Input the value for the column.</param> 
@@ -112,11 +105,7 @@ public:
     /// <param name="index">Input the column index of the data to get.</param> 
     /// <param name="type">The column type for the column.</param> 
     /// <returns>Returns nothing.</returns> 
-#ifdef _WIN32
-    void GetData (ColumnData* data, int index, eDBFColumnType type, ULONG codePage);
-#else
-    void GetData (ColumnData* data, int index, eDBFColumnType type, const char* codePage);
-#endif
+    void GetData (ColumnData* data, int index, eDBFColumnType type, WCHAR* codepage = NULL);
 };
 
 #endif // ROWDATA_H

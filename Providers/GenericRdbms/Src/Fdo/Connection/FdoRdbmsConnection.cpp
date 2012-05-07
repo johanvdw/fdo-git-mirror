@@ -96,8 +96,7 @@ FdoRdbmsConnection::FdoRdbmsConnection() :
 	mTransactionStarted(false),
     mUserNum(-1),
     mUserSessionId(-1),
-	mLongTransactionManager(NULL),
-    mEnforceClearSchAtFlush(false)
+	mLongTransactionManager(NULL)
 {
      mDbiConnection = new DbiConnection( );
 }
@@ -173,7 +172,6 @@ void FdoRdbmsConnection::SetConfiguration(FdoIoStream* configStream)
 
 void FdoRdbmsConnection::Close ()
 {
-    mEnforceClearSchAtFlush = false;
     if( mDbiConnection != NULL && mState != FdoConnectionState_Closed)
     {
         mState = FdoConnectionState_Closed;
@@ -396,40 +394,6 @@ FdoStringP FdoRdbmsConnection::GetUser()
 int FdoRdbmsConnection::GetUserNum ()
 {
     return mUserNum;
-}
-
-FdoClassDefinition* FdoRdbmsConnection::GetClassDefinition(FdoString* qName)
-{
-    DbiConnection  *mDbiConnection = GetDbiConnection();
-    const FdoSmLpClassDefinition *classDefinition = mDbiConnection->GetSchemaUtil()->GetClass(qName);
-    if (classDefinition != NULL)
-    {
-        FdoStringP clsName = classDefinition->GetQName();
-
-        const FdoSmLpClassDefinition* pClass = classDefinition;
-        FdoPtr<FdoIdentifier> className = FdoIdentifier::Create( clsName );
-        int leng;
-        if( className->GetScope(leng) != NULL && leng != 0 && classDefinition->GetParent() && classDefinition->GetParent()->GetParent() )
-        {
-            const FdoSmLpObjectPropertyDefinition* objProp = static_cast<const FdoSmLpObjectPropertyDefinition*>(classDefinition->GetParent()->GetParent());
-            pClass = objProp->RefClass();
-        }
-        clsName = pClass->GetQName();
-        FdoPtr<FdoRdbmsDescribeSchemaCommand>  pDescSchemaCmd = new FdoRdbmsDescribeSchemaCommand( this );
-        pDescSchemaCmd->SetSchemaName(pClass->RefLogicalPhysicalSchema()->GetName());
-        FdoStringsP classNames = FdoStringCollection::Create();
-        classNames->Add(clsName);
-        pDescSchemaCmd->SetClassNames(classNames);
-        FdoPtr<FdoFeatureSchemaCollection> schemaCollection = pDescSchemaCmd->Execute();
-
-        FdoPtr<FdoFeatureSchema> schm = schemaCollection->FindItem( pClass->RefLogicalPhysicalSchema()->GetName() );
-        if( schm )
-        {
-            FdoPtr<FdoClassCollection> classes = schm->GetClasses();
-            return classes->FindItem( pClass->GetName() );
-        }
-    }
-    return NULL;
 }
 
 // The function sets the unique user number for the current user.
@@ -925,7 +889,11 @@ FdoByteArray* FdoRdbmsConnection::GetGeometryValue(
 
     query->GetBinaryValue( columnName, sizeof(FdoIGeometry *), (char*)&geom, &isNull, NULL);
 
-    pgeom = FDO_SAFE_ADDREF(geom);
+    pgeom = TransformGeometry( 
+        geom, 
+        pGeometricProperty, 
+        true 
+    );
 
     if ( pgeom && pgeom->GetDerivedType() != FdoGeometryType_None )
         isSupportedType = true;
@@ -956,6 +924,11 @@ FdoByteArray* FdoRdbmsConnection::GetGeometryValue(
     }
 
     return byteArray;
+}
+
+FdoIGeometry* FdoRdbmsConnection::TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo )
+{
+    return FDO_SAFE_ADDREF(geom);
 }
 
 void* FdoRdbmsConnection::BindSpatialGeometry( 
@@ -1045,14 +1018,4 @@ void FdoRdbmsConnection::SetDefaultActiveSpatialContextName()
 bool FdoRdbmsConnection::NeedsSecondaryFiltering( FdoRdbmsSpatialSecondaryFilter* filter )
 {
 	return ( filter->GetOperation() != FdoSpatialOperations_EnvelopeIntersects );
-}
-
-FdoInt32 FdoRdbmsConnection::ExecuteDdlNonQuery(FdoString* sql)
-{
-    return GetDbiConnection()->GetGdbiConnection()->ExecuteNonQuery(sql);
-}
-
-FdoRdbmsSqlBuilder* FdoRdbmsConnection::GetSqlBuilder()
-{
-    return NULL;
 }

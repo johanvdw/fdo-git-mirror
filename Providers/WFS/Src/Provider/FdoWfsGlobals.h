@@ -99,19 +99,13 @@ namespace FdoWfsGlobals
     static FdoString* HTTPProtocal                      = L"http://";
     static size_t SizeHTTPProtocal                      = 7;
     static wchar_t SLASH                                = L'/';
-    static wchar_t QUESTION                             = L'\?';
+    static wchar_t QUESTION                             = L'\?'; 
     static FdoString* annotation                        = L"annotation";
     static FdoString* fdo_customer                      = L"fdo.osgeo.org/schemas/feature";
 
     static FdoString* FeatureServer                     = L"FeatureServer";
     static FdoString* Username                          = L"Username";
     static FdoString* Password                          = L"Password";
-
-    static FdoString* ProxyServer                       = L"ProxyServerName";
-    static FdoString* ProxyPort                         = L"ProxyServerPort";
-    static FdoString* ProxyUsername                     = L"ProxyServerUsername";
-    static FdoString* ProxyPassword                     = L"ProxyServerPassword";
-
     static FdoString* PROPERTYNAME                      = L"PROPERTYNAME";
     static FdoString* Filter                            = L"Filter";
     static FdoString* OgcUri                            = L"http://www.opengis.net/ogc";

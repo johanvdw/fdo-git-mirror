@@ -231,11 +231,9 @@ void SltQueryTranslator::ProcessInCondition(FdoInCondition& filter)
 
     m_sb.Reset();
     FdoPtr<FdoIdentifier> prop = filter.GetPropertyName();
-
-    m_sb.AppendIdentifier(prop->GetText());
-
+    m_sb.AppendDQuoted(prop->GetName());
     m_sb.Append(" IN(", 4);
-
+    
     if (szAfter > szBefore)
     {
         for(size_t idx = szBefore; idx < szAfter; idx++)
@@ -933,12 +931,6 @@ void SltExpressionTranslator::ProcessIdentifier(FdoIdentifier& expr)
                 }
             }
         }
-        else if (_wcsicmp(expr.GetName(), L"rowid") == 0 || _wcsicmp(expr.GetName(), L"oid") == 0
-            || _wcsicmp(expr.GetName(), L"_rowid_") == 0) // allow rowid in expressions
-        {
-            m_expr.Append(expr.GetName());
-            return;
-        }
         else
         {
             std::wstring err(L"The property '");
@@ -1091,7 +1083,7 @@ void SltExpressionTranslator::ProcessSingleValue(FdoSingleValue& expr)
 void SltExpressionTranslator::ProcessStringValue(FdoStringValue& expr)
 {
     if (!expr.IsNull())
-        m_expr.Append(expr.ToString());
+        m_expr.AppendSQuoted(expr.GetString());
     else
         m_expr.Append("null", 4);
 }
@@ -1113,86 +1105,7 @@ void SltExpressionTranslator::ProcessGeometryValue(FdoGeometryValue& expr)
 
 void SltExpressionTranslator::ProcessSubSelectExpression(FdoSubSelectExpression& expr)
 {
-    FdoPtr<FdoIdentifier> clsIdf = expr.GetFeatureClassName();
-    FdoPtr<FdoIdentifier> propIdf = expr.GetPropertyName();
-    FdoPtr<FdoFilter> filter = expr.GetFilter();
-    FdoPtr<FdoJoinCriteriaCollection> joinCrit = expr.GetJoinCriteria();
-    // since this expression can be used in 'IN' only it needs all important parameters set.
-    if (clsIdf == NULL || propIdf == NULL || filter == NULL)
-        throw FdoException::Create(L"Unsupported FDO type in filters");
-    StringBuffer sb;
-    sb.Append("(SELECT ", 8);
-    // let's not pass m_fc to avoid validating the properties for now
-    SltExpressionTranslator exTrans;
-    propIdf->Process(&exTrans);
-    StringBuffer* exp = exTrans.GetExpression();
-    sb.Append(exp->Data(), exp->Length());
-    sb.Append(" FROM ", 6);
-    sb.AppendDQuoted(clsIdf->GetName());
-    if (joinCrit != NULL)
-    {
-        StringBuffer sbjd;
-        int cntJoin = joinCrit->GetCount();
-        for (int idx = 0; idx < cntJoin; idx++)
-        {
-            FdoPtr<FdoJoinCriteria> jc = joinCrit->GetItem(idx);
-            FdoPtr<FdoIdentifier> joinCls = jc->GetJoinClass();
-            FdoPtr<FdoFilter> jFilter = jc->GetFilter();
-            FdoJoinType jType = jc->GetJoinType();
-            switch (jType)
-            {
-            case FdoJoinType_Cross:
-                sb.Append(",", 1);
-                sb.AppendDQuoted(joinCls->GetName());
-                if (jc->HasAlias())
-                {
-                    sb.Append(" AS ", 4);
-                    sb.AppendDQuoted(jc->GetAlias());
-                }
-                break;
-            case FdoJoinType_Inner:
-                sbjd.Append(" INNER ", 7);
-                break;
-            case FdoJoinType_LeftOuter:
-                sbjd.Append(" LEFT OUTER ", 12);
-                break;
-            case FdoJoinType_RightOuter:
-                throw FdoException::Create(L"Right outer join type is not supported.");
-                break;
-            case FdoJoinType_FullOuter:
-                throw FdoException::Create(L"Full outer join type is not supported.");
-                break;
-            default:
-                throw FdoException::Create(L"Unsupported join type used in filter");
-                break;
-            }
-            if (jType == FdoJoinType_Cross)
-                continue;
-            sbjd.Append(" JOIN ", 6);
-            sbjd.AppendDQuoted(joinCls->GetName());
-            if (jc->HasAlias())
-            {
-                sbjd.Append(" AS ", 4);
-                sbjd.AppendDQuoted(jc->GetAlias());
-            }
-            if (jFilter == NULL)
-                throw FdoException::Create(L"Unsupported FDO type in filters");
-            sbjd.Append(" ON (", 5);
-            SltQueryTranslator qtj(NULL, false);
-            jFilter->Process(&qtj);
-            sbjd.Append(qtj.GetFilter());
-            sbjd.Append(") ", 2);
-        }
-        if (sbjd.Length())
-            sb.Append(sbjd.Data(), sbjd.Length());
-    }
-    sb.Append(" WHERE ", 7);
-    SltQueryTranslator qt(NULL, false);
-    filter->Process(&qt);
-    sb.Append(qt.GetFilter());
-    sb.Append(")", 1);
-
-    m_expr.Append(sb.Data(), sb.Length());
+    throw FdoException::Create(L"Unsupported FDO type in expression");
 }
 
 void SltExtractExpressionTranslator::ProcessComputedIdentifier(FdoComputedIdentifier& expr)

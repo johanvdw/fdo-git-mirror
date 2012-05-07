@@ -162,14 +162,7 @@ void UnitTestUtil::Sql2Db(const wchar_t* sCommand, FdoIConnection* connection)
 
 void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMapping )
 {
-    FdoPtr<FdoIDescribeSchema> dcmd = (FdoIDescribeSchema*) connection->CreateCommand(FdoCommandType_DescribeSchema);
-    FdoPtr<FdoFeatureSchemaCollection> schs = dcmd->Execute();
-    // Check if land schema already exists
-    FdoPtr<FdoFeatureSchema> acadsch = schs->FindItem( L"Acad" );
-    if (acadsch != NULL)
-        return;
-
-    FdoPtr<FdoIApplySchema>  pCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
+    FdoIApplySchema*  pCmd = (FdoIApplySchema*) connection->CreateCommand(FdoCommandType_ApplySchema);
     FdoPtr<FdoRdbmsOvPhysicalSchemaMapping>pOverrides;
     FdoPtr<FdoRdbmsOvClassDefinition>pOvClass;
     SchemaOverrideUtilP overrideUtil = NewSchemaOverrideUtil();
@@ -184,58 +177,64 @@ void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMap
     }
     FdoPtr<FdoFeatureSchemaCollection> pSchemas = FdoFeatureSchemaCollection::Create(NULL);
 
-    FdoPtr<FdoFeatureSchema> pSchema = FdoFeatureSchema::Create( L"Acad", L"AutoCAD schema" );
+    FdoFeatureSchema* pSchema = FdoFeatureSchema::Create( L"Acad", L"AutoCAD schema" );
 
     pSchemas->Add( pSchema );
 
 // Create non-feature class
-    FdoPtr<FdoClass> pObjectClass = FdoClass::Create( L"ObjectClass", L"ObjectClass" );
+    FdoClass* pObjectClass = FdoClass::Create( L"ObjectClass", L"ObjectClass" );
     pObjectClass->SetIsAbstract(false);
 
-    FdoPtr<FdoDataPropertyDefinition> pObjectClassWeight = FdoDataPropertyDefinition::Create( L"ObjectWeight", L"weight" );
+    FdoDataPropertyDefinition* pObjectClassWeight = FdoDataPropertyDefinition::Create( L"ObjectWeight", L"weight" );
     pObjectClassWeight->SetDataType( FdoDataType_Int32 );
     pObjectClassWeight->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pObjectClass->GetProperties())->Add( pObjectClassWeight );
+    pObjectClass->GetProperties()->Add( pObjectClassWeight );
+    FDO_SAFE_RELEASE(pObjectClassWeight);
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pObjectClass );
+    pSchema->GetClasses()->Add( pObjectClass );
 
-    FdoPtr<FdoClass> pObjectClass2 = FdoClass::Create( L"ObjectClass2", L"ObjectClass2" );
+    FdoClass* pObjectClass2 = FdoClass::Create( L"ObjectClass2", L"ObjectClass2" );
     pObjectClass2->SetIsAbstract(false);
 
-    FdoPtr<FdoDataPropertyDefinition> pObjectClassColour2 = FdoDataPropertyDefinition::Create( L"Colours", L"colours" );
+    FdoDataPropertyDefinition* pObjectClassColour2 = FdoDataPropertyDefinition::Create( L"Colours", L"colours" );
     //pObjectClassColour2->SetDataType( FdoDataType_String );
     //pObjectClassColour2->SetLength(32);
     pObjectClassColour2->SetDataType(FdoDataType_Int32);
     pObjectClassColour2->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pObjectClass2->GetProperties())->Add( pObjectClassColour2 );
+    pObjectClass2->GetProperties()->Add( pObjectClassColour2 );
+//  FDO_SAFE_RELEASE(pObjectClassColour2);
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pObjectClass2 );
+    pSchema->GetClasses()->Add( pObjectClass2 );
 
-    FdoPtr<FdoClass> testClass = FdoClass::Create(L"testClass", L"Test class");
+    FdoClass* testClass = FdoClass::Create(L"testClass", L"Test class");
     testClass->SetIsAbstract(false);
-    FdoPtr<FdoDataPropertyDefinition> last = FdoDataPropertyDefinition::Create(L"LastName", L"last name");
+    FdoDataPropertyDefinition *last = FdoDataPropertyDefinition::Create(L"LastName", L"last name");
     last->SetDataType(FdoDataType_String);
     last->SetLength(32);
     last->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)testClass->GetProperties())->Add(last);
-    ((FdoPtr<FdoDataPropertyDefinitionCollection>)testClass->GetIdentityProperties())->Add(last);
+    testClass->GetProperties()->Add(last);
+    testClass->GetIdentityProperties()->Add(last);
+    FDO_SAFE_RELEASE(last);
 
-    FdoPtr<FdoDataPropertyDefinition> first = FdoDataPropertyDefinition::Create(L"FirstName", L"first name");
+    FdoDataPropertyDefinition *first = FdoDataPropertyDefinition::Create(L"FirstName", L"first name");
     first->SetDataType(FdoDataType_String);
     first->SetLength(32);
     first->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)testClass->GetProperties())->Add(first);
-    ((FdoPtr<FdoDataPropertyDefinitionCollection>)testClass->GetIdentityProperties())->Add(first);
+    testClass->GetProperties()->Add(first);
+    testClass->GetIdentityProperties()->Add(first);
+    FDO_SAFE_RELEASE(first);
 
-    FdoPtr<FdoDataPropertyDefinition> age = FdoDataPropertyDefinition::Create(L"Age", L"age");
+    FdoDataPropertyDefinition *age = FdoDataPropertyDefinition::Create(L"Age", L"age");
     age->SetDataType(FdoDataType_Int32);
     age->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)testClass->GetProperties())->Add(age);
+    testClass->GetProperties()->Add(age);
+    FDO_SAFE_RELEASE(age);
 
-    FdoPtr<FdoObjectPropertyDefinition> pObjPropData = FdoObjectPropertyDefinition::Create( L"Object", L"object property" );
+    FdoObjectPropertyDefinition* pObjPropData = FdoObjectPropertyDefinition::Create( L"Object", L"object property" );
     pObjPropData->SetClass( pObjectClass );
     pObjPropData->SetObjectType( FdoObjectType_Value );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)testClass->GetProperties())->Add( pObjPropData );
+    testClass->GetProperties()->Add( pObjPropData );
+    FDO_SAFE_RELEASE(pObjPropData);
 
     if( useBaseMapping && overrideUtil )
     {
@@ -254,63 +253,66 @@ void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMap
     pObjPropData2->SetClass( pObjectClass2 );
     pObjPropData2->SetIdentityProperty(pObjectClassColour2);
     pObjPropData2->SetObjectType( FdoObjectType_OrderedCollection );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)testClass->GetProperties())->Add( pObjPropData2 );
+    testClass->GetProperties()->Add( pObjPropData2 );
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( testClass );
+    FDO_SAFE_RELEASE(pObjectClassColour2);
+
+    pSchema->GetClasses()->Add( testClass );
 
 
 
     // Create a class to be used for Xdata class object property
-    FdoPtr<FdoClass> pXObjLc = FdoClass::Create( L"AcXObj", L"class uned to create an obj prop for xdata class" );
+    FdoClass* pXObjLc = FdoClass::Create( L"AcXObj", L"class uned to create an obj prop for xdata class" );
     pXObjLc->SetIsAbstract(false);
 
     FdoPtr<FdoDataPropertyDefinition>pXProp = FdoDataPropertyDefinition::Create( L"intdata", L"int data prop" );
     pXProp ->SetDataType( FdoDataType_Int32 );
     pXProp ->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXObjLc->GetProperties())->Add( pXProp  );
+    pXObjLc->GetProperties()->Add( pXProp  );
 
     pXProp = FdoDataPropertyDefinition::Create( L"strdata", L"str data prop" );
     pXProp->SetDataType( FdoDataType_String );
     pXProp->SetLength(4000);
     pXProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXObjLc->GetProperties())->Add( pXProp );
+    pXObjLc->GetProperties()->Add( pXProp );
 
     pXProp = FdoDataPropertyDefinition::Create( L"AutoGen1", L"autogenerated property" );
     pXProp->SetDataType( FdoDataType_Int64 );
     pXProp->SetNullable(true);
     pXProp->SetReadOnly(true);
     pXProp->SetIsAutoGenerated(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXObjLc->GetProperties())->Add( pXProp );
+    pXObjLc->GetProperties()->Add( pXProp );
 
     pXProp = FdoDataPropertyDefinition::Create( L"AutoGen2", L"autogenerated property" );
     pXProp->SetDataType( FdoDataType_Int64 );
     pXProp->SetNullable(false);
     pXProp->SetReadOnly(true);
     pXProp->SetIsAutoGenerated(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXObjLc->GetProperties())->Add( pXProp );
+    pXObjLc->GetProperties()->Add( pXProp );
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pXObjLc );
+    pSchema->GetClasses()->Add( pXObjLc );
 
     // Create the XData class that will be se for an object property
-    FdoPtr<FdoClass> pXData = FdoClass::Create( L"AcXData", L"Xdata" );
+    FdoClass* pXData = FdoClass::Create( L"AcXData", L"Xdata" );
     pXData->SetIsAbstract(false);
 
-    FdoPtr<FdoDataPropertyDefinition> pXDataSeq = FdoDataPropertyDefinition::Create( L"seq", L"seq" );
+    FdoDataPropertyDefinition* pXDataSeq = FdoDataPropertyDefinition::Create( L"seq", L"seq" );
     pXDataSeq ->SetDataType( FdoDataType_Int32 );
     pXDataSeq ->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXData->GetProperties())->Add( pXDataSeq  );
+    pXData->GetProperties()->Add( pXDataSeq  );
 
-    FdoPtr<FdoDataPropertyDefinition> pProp = FdoDataPropertyDefinition::Create( L"DataValue", L"datavalue" );
+    FdoDataPropertyDefinition* pProp = FdoDataPropertyDefinition::Create( L"DataValue", L"datavalue" );
     pProp->SetDataType( FdoDataType_String );
     pProp->SetLength(4000);
     pProp->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXData->GetProperties())->Add( pProp );
+    pXData->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     // Add an object property
     pObjPropData2 = FdoObjectPropertyDefinition::Create( L"AcXObj", L"object property" );
     pObjPropData2->SetClass( pXObjLc );
     pObjPropData2->SetObjectType( FdoObjectType_Value );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXData->GetProperties())->Add( pObjPropData2 );
+    pXData->GetProperties()->Add( pObjPropData2 );
 
     if( useBaseMapping && overrideUtil )
     {
@@ -322,149 +324,174 @@ void UnitTestUtil::CreateAcadSchema( FdoIConnection* connection, bool useBaseMap
         overrideUtil->ObjectPropertyOvSetMappingDefinition(pObProp, mapping);
         mapping->SetPrefix( L"OvTest2" );
     }
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pXData );
+    pSchema->GetClasses()->Add( pXData );
 
-    FdoPtr<FdoClass> pXData2 = FdoClass::Create( L"AcXData2", L"Xdata2" );
+    FdoClass* pXData2 = FdoClass::Create( L"AcXData2", L"Xdata2" );
     pXData2->SetIsAbstract(false);
 
-    FdoPtr<FdoDataPropertyDefinition> pXDataSeq2 = FdoDataPropertyDefinition::Create( L"seq", L"seq" );
+    FdoDataPropertyDefinition* pXDataSeq2 = FdoDataPropertyDefinition::Create( L"seq", L"seq" );
     pXDataSeq2->SetDataType( FdoDataType_Int32 );
     pXDataSeq2->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXData2->GetProperties())->Add( pXDataSeq2  );
+    pXData2->GetProperties()->Add( pXDataSeq2  );
 
-    FdoPtr<FdoDataPropertyDefinition> pProp2 = FdoDataPropertyDefinition::Create( L"DataValue", L"datavalue" );
+    FdoDataPropertyDefinition* pProp2 = FdoDataPropertyDefinition::Create( L"DataValue", L"datavalue" );
     pProp2->SetDataType( FdoDataType_String );
     pProp2->SetLength(4000);
     pProp2->SetNullable(false);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pXData2->GetProperties())->Add( pProp2 );
+    pXData2->GetProperties()->Add( pProp2 );
+    FDO_SAFE_RELEASE(pProp2);
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pXData2 );
+    pSchema->GetClasses()->Add( pXData2 );
 
-    FdoPtr<FdoFeatureClass> pEntClass = FdoFeatureClass::Create( L"AcDbEntity", L"AutoCAD entity base class" );
+    FdoFeatureClass* pEntClass = FdoFeatureClass::Create( L"AcDbEntity", L"AutoCAD entity base class" );
     pEntClass->SetIsAbstract(false);
 
     pProp = FdoDataPropertyDefinition::Create( L"FeatId", L"id" );
     pProp->SetDataType( FdoDataType_Int64 );
     pProp->SetNullable(false);
     pProp->SetIsAutoGenerated(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
-    ((FdoPtr<FdoDataPropertyDefinitionCollection>)pEntClass->GetIdentityProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    pEntClass->GetIdentityProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"layer", L"Acad layer" );
     pProp->SetDataType( FdoDataType_String );
     pProp->SetLength(10);
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"color", L"Acad Color" );
     pProp->SetDataType( FdoDataType_String );
     pProp->SetLength(32);
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"segcount", L"number of points" );
     pProp->SetDataType( FdoDataType_Int32 );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
 #if 1
     pProp = FdoDataPropertyDefinition::Create( L"boolean", L"" );
     pProp->SetDataType( FdoDataType_Boolean );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"byte", L"" );
     pProp->SetDataType( FdoDataType_Byte );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"datetime", L"" );
     pProp->SetDataType( FdoDataType_DateTime );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"decimal", L"" );
     pProp->SetDataType( FdoDataType_Decimal );
     pProp->SetPrecision(10);
     pProp->SetScale(2);
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"double", L"" );
     pProp->SetDataType( FdoDataType_Double );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"int16", L"" );
     pProp->SetDataType( FdoDataType_Int16 );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"int32", L"" );
     pProp->SetDataType( FdoDataType_Int32 );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
 
     pProp = FdoDataPropertyDefinition::Create( L"int64", L"" );
     pProp->SetDataType( FdoDataType_Int64 );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"single", L"" );
     pProp->SetDataType( FdoDataType_Single );
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pProp );
+    pEntClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
 #endif
 
-    FdoPtr<FdoObjectPropertyDefinition> pObjProp = FdoObjectPropertyDefinition::Create( L"xdata", L"xdata" );
+    FdoObjectPropertyDefinition* pObjProp = FdoObjectPropertyDefinition::Create( L"xdata", L"xdata" );
     pObjProp->SetClass( pXData );
     pObjProp->SetObjectType( FdoObjectType_Value );
 	//pObjProp->SetIdentityProperty( pXDataSeq );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pObjProp );
-    
-    FdoPtr<FdoObjectPropertyDefinition> pObjProp2 = FdoObjectPropertyDefinition::Create( L"xdata2", L"xdata" );
+    pEntClass->GetProperties()->Add( pObjProp );
+    FDO_SAFE_RELEASE(pProp);
+
+    FdoObjectPropertyDefinition* pObjProp2 = FdoObjectPropertyDefinition::Create( L"xdata2", L"xdata" );
     pObjProp2->SetClass( pXData2 );
     pObjProp2->SetIdentityProperty( pXDataSeq2 );
     pObjProp2->SetObjectType( FdoObjectType_OrderedCollection );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pEntClass->GetProperties())->Add( pObjProp2 );
+    pEntClass->GetProperties()->Add( pObjProp2 );
+    FDO_SAFE_RELEASE(pProp2);
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pEntClass );
+    pSchema->GetClasses()->Add( pEntClass );
 
-    FdoPtr<FdoFeatureClass> pClass = FdoFeatureClass::Create( L"AcDb3dPolyline", L"AutoCAD 3d polyline" );
+    FdoFeatureClass* pClass = FdoFeatureClass::Create( L"AcDb3dPolyline", L"AutoCAD 3d polyline" );
     pClass->SetIsAbstract(false);
     pClass->SetBaseClass( pEntClass );
 
 
-    FdoPtr<FdoGeometricPropertyDefinition> pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"location and shape" );
+    FdoGeometricPropertyDefinition* pGeomProp = FdoGeometricPropertyDefinition::Create( L"Geometry", L"location and shape" );
     pGeomProp->SetGeometryTypes( FdoGeometricType_Curve );
     if ( supportsZ ) 
         pGeomProp->SetHasElevation( true );
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pClass->GetProperties())->Add( pGeomProp );
+    pClass->GetProperties()->Add( pGeomProp );
 
     pClass->SetGeometryProperty( pGeomProp );
+    FDO_SAFE_RELEASE(pGeomProp);
 
 #if 0
     pProp = FdoDataPropertyDefinition::Create( L"F_SI1", L"Spatial Index 1" );
     pProp->SetDataType( FdoDataType_String );
     pProp->SetLength(50);
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pClass->GetProperties())->Add( pProp );
+    pClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 
     pProp = FdoDataPropertyDefinition::Create( L"F_SI2", L"Spatial Index 2" );
     pProp->SetDataType( FdoDataType_String );
     pProp->SetLength(50);
     pProp->SetNullable(true);
-    ((FdoPtr<FdoPropertyDefinitionCollection>)pClass->GetProperties())->Add( pProp );
+    pClass->GetProperties()->Add( pProp );
+    FDO_SAFE_RELEASE(pProp);
 #endif
 
-    ((FdoPtr<FdoClassCollection>)pSchema->GetClasses())->Add( pClass );
+    pSchema->GetClasses()->Add( pClass );
+    FDO_SAFE_RELEASE(pClass);
 
+    FDO_SAFE_RELEASE(pXDataSeq);
+    FDO_SAFE_RELEASE(pXData);
+    FDO_SAFE_RELEASE(pEntClass);
     pCmd->SetFeatureSchema( pSchema );
 
     pCmd->Execute();
 
+    FDO_SAFE_RELEASE(pSchema);
+    FDO_SAFE_RELEASE(pCmd);
 }
 
 void UnitTestUtil::CreateLandSchema( FdoIConnection* connection )
@@ -1229,11 +1256,13 @@ void UnitTestUtil::Exception2String( FdoException* e, char* buffer )
     // Add ref to prevent smart pointer from destroying exception.
     FDO_SAFE_ADDREF(e);
 
-    while ( innerE )
-    {
-        sprintf( buffer, "%ls\n", innerE->GetExceptionMessage() );
+    while ( innerE->GetCause() )
         innerE = innerE->GetCause();
-    }
+
+    if ( innerE == e )
+        sprintf( buffer, "%ls", e->GetExceptionMessage() );
+    else
+        sprintf( buffer, "%ls ... %ls", innerE->GetExceptionMessage(), e->GetExceptionMessage() );
 }
 
 void UnitTestUtil::PrintException( FdoException* e, FILE* fp, FdoBoolean stripLineNo )
@@ -1576,12 +1605,9 @@ FdoIConnection* UnitTestUtil::GetConnection(FdoString *suffix, bool bCreate, boo
 
         connection->Open();
         if ( (!bCreated) && bRecreateData ) {
-            try {TestCommonMiscUtil::DeleteObjects( connection, L"Acad", L"AcDb3dPolyline", NULL );
-            }catch(FdoException* ex){ ex->Release(); }
-            try {TestCommonMiscUtil::DeleteObjects( connection, L"L\x00e4nd", L"Parcel", NULL );
-            }catch(FdoException* ex){ ex->Release(); }
-            try {TestCommonMiscUtil::DeleteObjects( connection, L"Acad", L"testClass", NULL );
-            }catch(FdoException* ex){ ex->Release(); }
+            TestCommonMiscUtil::DeleteObjects( connection, L"Acad", L"AcDb3dPolyline", NULL );
+            TestCommonMiscUtil::DeleteObjects( connection, L"L\x00e4nd", L"Parcel", NULL );
+            TestCommonMiscUtil::DeleteObjects( connection, L"Acad", L"testClass", NULL );
         }
 
         if ( bCreated || bRecreateData ) {
@@ -1979,7 +2005,7 @@ void UnitTestUtil::LogicalPhysicalFormat(FdoIoStream* stream1, FdoIoStream* stre
     LogicalPhysicalSort( tempStream, stream2 );
 }
 
-void UnitTestUtil::LogicalPhysicalBend( FdoIoStream* stream1, FdoIoStream* stream2, FdoStringP providerName, int hybridLevel )
+void UnitTestUtil::LogicalPhysicalBend( FdoIoStream* stream1, FdoIoStream* stream2, FdoStringP providerName )
 {
     FdoIoMemoryStreamP tempStream = FdoIoMemoryStream::Create();
 
@@ -2002,56 +2028,8 @@ void UnitTestUtil::LogicalPhysicalBend( FdoIoStream* stream1, FdoIoStream* strea
         ) 
     );
 
-    params->Add( 
-        FdoDictionaryElementP( 
-            FdoDictionaryElement::Create( 
-                L"hybridLevel", 
-                FdoStringP::Format(L"%d", hybridLevel)
-            ) 
-        ) 
-    );
-
     transformer->Transform();
     transformer = NULL;
-
-    if ( hybridLevel > 0 ) 
-    {
-        FdoIoMemoryStreamP tempStream2 = FdoIoMemoryStream::Create();
-        tempStream->Reset();
-
-        stylesheet = FdoXmlReader::Create( L"LogicalPhysicalHybridBender.xslt" );
-
-        transformer = FdoXslTransformer::Create( 
-            FdoXmlReaderP(FdoXmlReader::Create(tempStream)), 
-            stylesheet, 
-            FdoXmlWriterP(FdoXmlWriter::Create(tempStream2,false))
-        );
-
-        FdoDictionaryP params = transformer->GetParameters();
-        params->Add( 
-            FdoDictionaryElementP( 
-                FdoDictionaryElement::Create( 
-                    L"providerName", 
-                    FdoStringP(L"'") + providerName + L"'"
-                ) 
-            ) 
-        );
-
-        params->Add( 
-            FdoDictionaryElementP( 
-                FdoDictionaryElement::Create( 
-                    L"hybridLevel", 
-                    FdoStringP::Format(L"%d", hybridLevel)
-                ) 
-            ) 
-        );
-
-        transformer->Transform();
-        transformer = NULL;
-
-        tempStream2->Reset();
-        tempStream = tempStream2;
-    }
 
     LogicalPhysicalSort( tempStream, stream2 );
 }

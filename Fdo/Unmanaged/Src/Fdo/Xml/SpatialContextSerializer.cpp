@@ -77,8 +77,9 @@ void FdoXmlSpatialContextSerializer::XmlDeserialize(
                     cmd->SetCoordinateSystemWkt( reader->GetCoordinateSystemWkt() );
 
                 cmd->SetExtentType( reader->GetExtentType() );
-                FdoPtr<FdoByteArray> extent = reader->GetExtent();
+                FdoByteArray* extent = reader->GetExtent();
                 cmd->SetExtent( extent );
+                extent->Release();
                 cmd->SetXYTolerance( reader->GetXYTolerance() );
                 cmd->SetZTolerance( reader->GetZTolerance() );
 
@@ -107,7 +108,7 @@ void FdoXmlSpatialContextSerializer::XmlSerialize(
             writer->SetCoordinateSystem( reader->GetCoordinateSystem() );
             writer->SetCoordinateSystemWkt( reader->GetCoordinateSystemWkt() );
             writer->SetExtentType( reader->GetExtentType() );
-            FdoPtr<FdoByteArray> extent = reader->GetExtent();
+            FdoByteArray* extent = reader->GetExtent();
             writer->SetExtent( extent );
             // Note: reader->GetExtent() does not do an AddRef, so no release is done here.
             writer->SetXYTolerance( reader->GetXYTolerance() );

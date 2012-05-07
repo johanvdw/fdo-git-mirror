@@ -142,11 +142,6 @@ void FdoSubSelectExpression::Process(FdoIExpressionProcessor* p)
 
 FdoString* FdoSubSelectExpression::ToString()
 {
-    return ToStringInternal(false);
-}
-
-FdoString* FdoSubSelectExpression::ToStringInternal(bool useFilterAsStr)
-{
     FdoStringUtility::ClearString(m_toString);
     if (m_className == NULL || m_propertyName == NULL)
         throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FILTER_4_INCOMPLETEINCONDITION)));
@@ -158,14 +153,7 @@ FdoString* FdoSubSelectExpression::ToStringInternal(bool useFilterAsStr)
     if (m_filter != NULL)
     {
         tostr.append(L",");
-        if (useFilterAsStr)
-        {
-            tostr.append(L"'");
-            tostr.append(m_filter->ToString());
-            tostr.append(L"'");
-        }
-        else
-            tostr.append(m_filter->ToString());
+        tostr.append(m_filter->ToString());
     }
     if (m_joinCritColl != NULL)
     {
@@ -205,14 +193,7 @@ FdoString* FdoSubSelectExpression::ToStringInternal(bool useFilterAsStr)
             if (joinFilter != NULL)
             {
                 tostr.append(L",");
-                if (useFilterAsStr)
-                {
-                    tostr.append(L"'");
-                    tostr.append(joinFilter->ToString());
-                    tostr.append(L"'");
-                }
-                else
-                    tostr.append(joinFilter->ToString());
+                tostr.append(joinFilter->ToString());
             }
             tostr.append(L")");
         }
@@ -221,4 +202,9 @@ FdoString* FdoSubSelectExpression::ToStringInternal(bool useFilterAsStr)
 
     m_toString = FdoStringUtility::MakeString(tostr.c_str());
     return m_toString;
+}
+
+FdoString* FdoSubSelectExpression::ToStringInternal( FdoIdentifierCollection *pIdCol )
+{
+    return ToString();
 }

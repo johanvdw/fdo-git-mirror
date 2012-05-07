@@ -25,35 +25,56 @@
 
 #include <Common/Collection.h>
 
+/// \cond DOXYGEN-IGNORE
 // An element in a string collection.
 // This class is just a wrapper around a string.
 class FdoStringElement : public FdoDisposable
 {
 public:
     /// Create from a string.
-	FDO_API_COMMON static FdoStringElement* Create( FdoStringP src );
+	static FdoStringElement* Create( FdoStringP src )
+	{
+	    return new FdoStringElement(src);
+	}
 
     /// Operator to copy from a "managed" string.
-	FDO_API_COMMON FdoStringElement& operator=( const FdoStringP& src );
+	FdoStringElement& operator=( const FdoStringP& src )
+	{
+	    mString = src;
+        return(*this);
+	}
 
     /// Operator to copy from an "unmanaged" string.
-	FDO_API_COMMON FdoStringElement& operator=( FdoString* wString );
+	FdoStringElement& operator=( FdoString* wString )
+	{
+	    mString = wString;
+        return(*this);
+	}
 
     /// Returns the string that this element represents.
-	FDO_API_COMMON FdoStringP GetString();
+	FdoStringP GetString()
+	{
+	    return mString;
+	}
 
 protected:
     /// Create from a string.
-    FDO_API_COMMON FdoStringElement();
-    FDO_API_COMMON FdoStringElement( FdoStringP src );
-    FDO_API_COMMON virtual ~FdoStringElement(void);
+    FdoStringElement() {}
+    FdoStringElement( FdoStringP src )
+    {
+	    mString = src;
+    }
+
+    virtual ~FdoStringElement(void)
+    {
+    }
 
 private:
     FdoStringP mString;
 };
 
 typedef FdoPtr<FdoStringElement> FdoStringElementP;
-
+/// \endcond
 
 /// \brief
 /// FdoStringCollection is a collection of strings.

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdi.h 20207 2010-08-06 22:07:29Z rouault $
+ * $Id: ogrogdi.h 18502 2010-01-09 19:38:29Z rouault $
  *
  * Project:  OGDI Bridge
  * Purpose:  Private definitions within the OGDI driver to implement
@@ -57,7 +57,6 @@ class OGROGDILayer : public OGRLayer
 
     int                 m_iNextShapeId;
     int                 m_nTotalShapeCount;
-    int                 m_nFilteredOutShapes;
 
   public:
                         OGROGDILayer(OGROGDIDataSource *, const char *, 
@@ -65,7 +64,6 @@ class OGROGDILayer : public OGRLayer
                         ~OGROGDILayer();
 
     virtual void        SetSpatialFilter( OGRGeometry * );
-    virtual OGRErr      SetAttributeFilter( const char *pszQuery );
 
     void                ResetReading();
     OGRFeature *        GetNextFeature();
@@ -102,8 +100,6 @@ class OGROGDIDataSource : public OGRDataSource
 
     char                *m_pszFullName;
 
-    int                 m_bLaunderLayerNames;
-
     void                IAddLayer( const char *pszLayerName, 
                                    ecs_Family eFamily );
 
@@ -125,8 +121,6 @@ class OGROGDIDataSource : public OGRDataSource
 
     OGROGDILayer       *GetCurrentLayer() { return m_poCurrentLayer; }
     void                SetCurrentLayer(OGROGDILayer* poLayer) { m_poCurrentLayer = poLayer ; }
-
-    int                 LaunderLayerNames() { return m_bLaunderLayerNames; }
 };
 
 /************************************************************************/

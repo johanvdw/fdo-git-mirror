@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmediancut.cpp 20629 2010-09-16 19:08:40Z rouault $
+ * $Id: gdalmediancut.cpp 13346 2007-12-15 12:53:04Z rouault $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Use median cut algorithm to generate an near-optimal PCT for a 
@@ -39,7 +39,7 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id: gdalmediancut.cpp 20629 2010-09-16 19:08:40Z rouault $");
+CPL_CVSID("$Id: gdalmediancut.cpp 13346 2007-12-15 12:53:04Z rouault $");
 
 #define	MAX_CMAP_SIZE	256
 
@@ -104,7 +104,7 @@ static	Colorbox* largest_box(Colorbox *usedboxes);
  * @return returns CE_None on success or CE_Failure if an error occurs. 
  */
 
-extern "C" int CPL_STDCALL
+int CPL_STDCALL
 GDALComputeMedianCutPCT( GDALRasterBandH hRed, 
                          GDALRasterBandH hGreen, 
                          GDALRasterBandH hBlue, 

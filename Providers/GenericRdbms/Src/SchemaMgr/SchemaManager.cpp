@@ -35,8 +35,6 @@ void FdoGrdSchemaManager::ApplySchema(
 	GdbiConnection*	        pConn = GetGdbiConnection();
 	bool			        tranBegun = false;
 	static char*	        transName = "FdoApplySchema"; 
-    GdbiStatement* lockStmt = NULL;
-    GdbiQueryResult* results = NULL;
 
 	try {
 		// Start a transaction so we can rollback on error.
@@ -49,15 +47,13 @@ void FdoGrdSchemaManager::ApplySchema(
         FdoSmPhOwnerP owner = GetPhysicalSchema()->FindOwner();
 
         if ( owner && owner->GetHasMetaSchema() ) {
-            lockStmt = pConn->Prepare( (const wchar_t*) GetSchemaLockStmt() );
-            results = lockStmt->ExecuteQuery();
+            GdbiStatement* lockStmt = pConn->Prepare( (const wchar_t*) GetSchemaLockStmt() );
+            GdbiQueryResult* results = lockStmt->ExecuteQuery();
 
             results->End();
             delete results;
-            results = NULL;
             lockStmt->Free();
             delete lockStmt;
-            lockStmt = NULL;
         }
 
         // Apply the schema.
@@ -71,16 +67,6 @@ void FdoGrdSchemaManager::ApplySchema(
 		pFeatSchema->AcceptChanges();
 	}
 	catch (...) {
-        if (results)
-        {
-            results->End();
-            delete results;
-        }
-        if (lockStmt)
-        {
-            lockStmt->Free();
-            delete lockStmt;
-        }
 		try {
 			// Rollback the schema changes on failure.
             // This only rolls back the MetaSchema changes
@@ -102,8 +88,6 @@ void FdoGrdSchemaManager::SynchPhysical( const wchar_t* schemaName, bool bRollba
 	GdbiConnection*	        pConn = GetGdbiConnection();
 	bool			        tranBegun = false;
 	static char*	        transName = "FdoSynchPhysical"; 
-    GdbiStatement* lockStmt = NULL;
-    GdbiQueryResult* results = NULL;
 
     // Proceed if synchronizing everything or the connection has rollback entries.
     if ( !bRollbackOnly || mPhysicalSchema->HasRollbackEntries() ) {
@@ -118,15 +102,13 @@ void FdoGrdSchemaManager::SynchPhysical( const wchar_t* schemaName, bool bRollba
             FdoSmPhOwnerP owner = GetPhysicalSchema()->FindOwner();
 
             if ( owner && owner->GetHasMetaSchema() ) {
-                lockStmt = pConn->Prepare( (const wchar_t*) GetSchemaLockStmt() );
-                results = lockStmt->ExecuteQuery();
+                GdbiStatement* lockStmt = pConn->Prepare( (const wchar_t*) GetSchemaLockStmt() );
+                GdbiQueryResult* results = lockStmt->ExecuteQuery();
 
                 results->End();
                 delete results;
-                results = NULL;
                 lockStmt->Free();
                 delete lockStmt;
-                lockStmt = NULL;
             }
 
             // Synchronize the schemas
@@ -137,16 +119,6 @@ void FdoGrdSchemaManager::SynchPhysical( const wchar_t* schemaName, bool bRollba
 		    tranBegun = false;
 	    }
 	    catch (...) {
-            if (results)
-            {
-                results->End();
-                delete results;
-            }
-            if (lockStmt)
-            {
-                lockStmt->Free();
-                delete lockStmt;
-            }
 		    try {
 			    // Rollback the schema changes on failure.
                 // This only rolls back the MetaSchema changes

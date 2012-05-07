@@ -1,22 +1,60 @@
 /*! \page ogr_sql OGR SQL
 
 The OGRDataSource supports executing commands against a datasource via the
-OGRDataSource::ExecuteSQL() method.  While in theory 
-any sort of command could be handled this way, in practice the mechanism is 
-used to provide a subset of SQL SELECT capability to applications.  This 
-page discusses the generic SQL implementation implemented within OGR, and 
-issue with driver specific SQL support.<p>
+OGRDataSource::ExecuteSQL() method.  While in theory any sort of command could
+be handled this way, in practice the mechanism is used to provide a subset of
+SQL SELECT capability to applications.  This page discusses the generic SQL
+implementation implemented within OGR, and issue with driver specific SQL
+support.<p>
 
-The OGRLayer class also supports applying an attribute query filter to 
-features returned using the OGRLayer::SetAttributeFilter() method.  The
-syntax for the attribute filter is the same as the WHERE clause in the 
-OGR SQL SELECT statement.  So everything here with regard to the WHERE 
-clause applies in the context of the SetAttributeFilter() method.<p>
+\section ogr_sql_syntax Supported SQL syntax
 
-NOTE: OGR SQL has been reimplemented for GDAL/OGR 1.8.0.  Many features
-discussed below, notably arithmetic expressions, and expressions in the 
-field list, were not support in GDAL/OGR 1.7.x and earlier.  See RFC 28 for
-details of the new features in GDAL/OGR 1.8.0.
+OGR SQL supports the following pseudo-syntax:
+
+\code
+SELECT <field-list> FROM <table_def>
+     [LEFT JOIN <table_def> 
+      ON [<table_ref>.]<key_field> = [<table_ref>.].<key_field>]*
+     [WHERE <where-expr>] 
+     [ORDER BY <sort specification list>]
+
+<field-list> ::= <column-spec> [ { , <column-spec> }... ]
+
+<column-spec> ::= <field-spec> [ <as clause> ]
+                 | CAST ( <field-spec> AS <data type> ) [ <as clause> ]
+
+<field-spec> ::= [DISTINCT] <field_ref>
+                 | <field_func> ( [DISTINCT] <field-ref> )
+                 | Count(*)
+
+<as clause> ::= [ AS ] <column_name>
+
+<data type> ::= character [ ( field_length ) ]
+                | float [ ( field_length ) ]
+                | numeric [ ( field_length [, field_precision ] ) ]
+                | integer [ ( field_length ) ]
+                | date [ ( field_length ) ]
+                | time [ ( field_length ) ]
+                | timestamp [ ( field_length ) ]
+
+<field-func> ::= AVG | MAX | MIN | SUM | COUNT
+
+<field_ref>  ::= [<table_ref>.]field_name
+
+<sort specification list> ::=
+              <sort specification> [ { <comma> <sort specification> }... ]
+
+<sort specification> ::= <sort key> [ <ordering specification> ]
+
+<sort key> ::=  <field_ref>
+
+<ordering specification> ::= ASC | DESC
+
+<table_def> ::= ['<datasource name>'.]table_name [table_alias]
+
+<table_ref> ::= table_name | table_alias
+\endcode
+
 
 \section ogr_sql_select SELECT
 
@@ -93,61 +131,19 @@ SELECT MIN(prop_value), MAX(prop_value), AVG(prop_value), SUM(prop_value),
        COUNT(prop_value) FROM polylayer WHERE prov_name = "Ontario"
 \endcode
 
-It is also possible to apply the COUNT() operator to a DISTINCT SELECT to get
+As a special case, the COUNT() operator can be given a "*" argument instead
+of a field name which is a short form for count all the records though it
+would get the same result as giving it any of the column names.   It is
+also possible to apply the COUNT() operator to a DISTINCT SELECT to get
 a count of distinct values, for instance:
 
 \code
 SELECT COUNT(DISTINCT areacode) FROM polylayer
 \endcode
 
-Note: prior to OGR 1.9.0, null values were counted in COUNT(column_name) or
-COUNT(DISTINCT column_name), which was not conformant with the SQL standard. Since
-OGR 1.9.0, only non-null values are counted.
-
-As a special case, the COUNT() operator can be given a "*" argument instead
-of a field name which is a short form for count all the records.
-
-\code
-SELECT COUNT(*) FROM polylayer
-\endcode
-
-
 Field names can also be prefixed by a table name though this is only 
 really meaningful when performing joins.  It is further demonstrated in 
 the JOIN section.
-
-Field definitions can also be complex expressions using arithmetic, and 
-functional operators.   However, the DISTINCT keyword, and summarization 
-operators like MIN, MAX, AVG and SUM may not be applied to expression fields.
-
-\code
-SELECT cost+tax from invoice
-\endcode
-
-or
-
-\code
-SELECT CONCAT(owner_first_name,' ',owner_last_name) from properties
-\endcode
-
-\subsubsection ogr_sql_functions Functions
-
-Starting with OGR 1.8.2, the SUBSTR function can be used to extract a substring from a string.
-Its syntax is the following one : SUBSTR(string_expr, start_offset [, length]). It extracts a substring of string_expr,
-starting at offset start_offset (1 being the first character of string_expr, 2 the second one, etc...).
-If start_offset is a negative value, the substring is extracted from the end of the string (-1 is the
-last character of the string, -2 the character before the last character, ...).
-If length is specified, up to length characters are extracted from the string. Otherwise the
-remainder of the string is extracted.
-
-Note: for the time being, the character as considered to be equivalent to bytes, which may not be
-appropriate for multi-byte encodings like UTF-8.
-
-\code
-SELECT SUBSTR('abcdef',1,2) FROM xxx   --> 'ab'
-SELECT SUBSTR('abcdef',4)   FROM xxx   --> 'def'
-SELECT SUBSTR('abcdef',-2)  FROM xxx   --> 'ef'
-\endcode
 
 \subsubsection ogr_sql_fname_alias Using the field name alias
 
@@ -155,16 +151,21 @@ OGR SQL supports renaming the fields following the SQL92 specification by
 using the AS keyword according to the following example:
 
 \code
-SELECT *, OGR_STYLE AS STYLE FROM polylayer
+SELECT select *, OGR_STYLE AS 'STYLE' FROM polylayer
 \endcode
 
 The field name alias can be used as the last operation in the column specification.
 Therefore we cannot rename the fields inside an operator, but we can
-rename whole column expression, like these two:
+rename whole column expression, like:
 
 \code
 SELECT COUNT(areacode) AS 'count' FROM polylayer
-SELECT dollars/100.0 AS cents FROM polylayer
+\endcode
+
+We can optionally omit the AS keyword in the field name aliases, like:
+
+\code
+SELECT *, OGR_STYLE 'STYLE' FROM polylayer
 \endcode
 
 \subsubsection ogr_sql_ftype_cast Changing the type of the fields
@@ -188,31 +189,37 @@ Currently casting to the following target types are supported:
 <li> timestamp(field_length)
 </ol>
 
-Specifying the field_length and/or the field_precision is optional.  An
-explicit value of zero can be used as the width for character() to indicate
-variable width.  Conversion to the 'integer list', 'double list' 
-and 'string list' OGR data types are not supported, which doesn't conform to 
-the SQL92 specification.
+Specifying the field_length and/or the field_precision is optional.
+Conversion to the 'integer list', 'double list' and 'string list' OGR data types are not
+supported, which doesn't conform to the SQL92 specification.
 
-While the CAST operator can be applied anywhere in an expression, including
-in a WHERE clause, the detailed control of output field format is only
-supported if the CAST operator is the "outer most" operators on a field
-in the field definition list.  In other contexts it is still useful to
-convert between numeric, string and date data types.
+\subsubsection ogr_sql_flist_limits Field List Limitations
+
+<ol>
+
+<li>
+Field arithmetic, and other binary operators are not supported, so you can't 
+do something like:
+
+\code
+SELECT prop_value / area FROM invoices
+\endcode
+
+<li> Lots of operators are missing.  
+
+</ol>
 
 \subsection ogr_sql_where WHERE
 
-The argument to the WHERE clause is a logical expression used select records 
-from the source layer.  In addition to its use within the WHERE statement, 
-the WHERE clause handling is also used for OGR attribute queries on regular 
-layers via OGRLayer::SetAttributeFilter().
+The argument to the WHERE clause is a fairly simplistic logical expression
+used select records to be selected from the source layer.  In addition to its
+use within the WHERE statement, the WHERE clause handling is also used for
+OGR attribute queries on regular layers. 
 
-In addition to the arithmetic and other functional operators available in
-expressions in the field selection clause of the SELECT statement, in the 
-WHERE context logical operators are also available and the evaluated value
-of the expression should be logical (true or false).
-
-The available logical operators are 
+A WHERE clause consists of
+a set of attribute tests.  Each basic test is of the form <b>fieldname 
+operator value</b>.  The <b>fieldname</b> is any of the fields in the source
+layer.  The operator is one of 
 <b>=</b>, 
 <b>!=</b>, 
 <b>&lt;&gt;</b>, 
@@ -221,18 +228,16 @@ The available logical operators are
 <b>&lt;=</b>, 
 <b>&gt;=</b>, 
 <b>LIKE</b> and 
-<b>ILIKE</b>,
-<b>BETWEEN</b> and
+<b>ILIKE</b> and 
 <b>IN</b>. 
+
 Most of the operators are self explanitory, but is is worth nothing that <b>
 !=</b> is the same as <b>&lt;&gt;</b>, the string equality is
 case insensitive, but the <b>&lt;</b>, <b>&gt;</b>, <b>&lt;=</b> and <b>&gt;=</b> operators <i>are</i> case sensitive.  Both the LIKE and ILIKE operators are case insensitive.
 
 The value argument to the <b>LIKE</b> operator is a pattern against which
 the value string is matched.  In this pattern percent (%) matches any number of
-characters, and underscore ( _ ) matches any one character. An optional ESCAPE escape_char
-clause can be added so that the percent or underscore characters can be searched
-as regular characters, by being preceded with the escape_char.
+characters, and underscore ( _ ) matches any one character.
 
 \code
     String             Pattern       Matches?
@@ -260,9 +265,6 @@ value for membership in the provided set.
     1                  IN (0,2,4,6)         No
 \endcode
 
-The syntax of the <b>BETWEEN</b> operator is "field_name BETWEEN value1 AND value2"
-and it is equivalent to "field_name >= value1 AND field_name <= value2".
-
 In addition to the above binary operators, there are additional operators
 for testing if a field is null or not. These are the <b>IS NULL</b>
 and <b>IS NOT NULL</b> operators. 
@@ -281,8 +283,13 @@ SELECT * FROM poly WHERE (prop_value IS NOT NULL) AND (prop_value < 100000)
 \subsection ogr_sql_where_limits WHERE Limitations
 
 <ol>
+<li> The left of any comparison operator must be a field name, and the right
+must be a literal value.  Fields cannot currently be compared to fields.  
 <li> Fields must all come from the primary table (the one listed in the FROM
-clause).
+clause, and must not have any table prefix ... they must just be the field 
+name.
+<li> No arithmetric operations are supported.  You can't test 
+"WHERE (a+b) < 10" for instance.
 <li> All string comparisons are case insensitive except for <b>&lt;</b>, <b>&gt;</b>, <b>&lt;=</b> and <b>&gt;=</b>.
 </ol>
 
@@ -530,39 +537,6 @@ DROP INDEX ON nation USING nation_id
 DROP INDEX ON nation
 \endcode
 
-\section ogr_sql_alter_table ALTER TABLE
-
-(OGR >= 1.9.0)
-
-The following OGR SQL ALTER TABLE commands can be used.
-
-<ol>
-<li>"ALTER TABLE tablename ADD [COLUMN] columnname columntype" to add a new field. Supported if the layer declares the OLCCreateField capability.
-<li>"ALTER TABLE tablename RENAME [COLUMN] oldcolumnname TO newcolumnname" to rename an existing field. Supported if the layer declares the OLCAlterFieldDefn capability.
-<li>"ALTER TABLE tablename ALTER [COLUMN] columnname TYPE columntype" to change the type of an existing field. Supported if the layer declares the OLCAlterFieldDefn capability.
-<li>"ALTER TABLE tablename DROP [COLUMN] columnname" to delete an existing field. Supported if the layer declares the OLCDeleteField capability.
-</ol>
-
-The columntype value follows the syntax of the types supported by the CAST operator descrived above.
-
-\code
-ALTER TABLE nation ADD COLUMN myfield integer
-ALTER TABLE nation RENAME COLUMN myfield TO myfield2
-ALTER TABLE nation ALTER COLUMN myfield2 TYPE character(15)
-ALTER TABLE nation DROP COLUMN myfield2
-\endcode
-
-\section ogr_sql_drop_table DROP TABLE
-
-(OGR >= 1.9.0)
-
-The OGR SQL DROP TABLE command can be used to delete a table. This is only
-supported on datasources that declare the ODsCDeleteLayer capability.
-
-\code
-DROP TABLE nation
-\endcode
-
 \section ogr_sql_exec_sql ExecuteSQL()
 
 SQL is executed against an OGRDataSource, not against a specific layer.  The
@@ -595,9 +569,8 @@ All OGR drivers for database systems: <a href="/ogr/drv_mysql.html">MySQL</a>,
 PostgreSQL and PostGIS (<a href="/ogr/drv_pg.html">PG</a>), 
 Oracle (<a href="/ogr/drv_oci.html">OCI</a>), 
 <a href="/ogr/drv_sqlite.html">SQLite</a>, 
-<a href="/ogr/drv_odbc.html">ODBC</a>,
-ESRI Personal Geodatabase (<a href="/ogr/drv_pgeo.html">PGeo</a>) and
-MS SQL Spatial (<a href="/ogr/drv_mssqlspatial.html">MSSQLSpatial</a>),
+<a href="/ogr/drv_odbc.html">ODBC</a> 
+and ESRI Personal Geodatabase (<a href="/ogr/drv_pgeo.html">PGeo</a>) 
 override the OGRDataSource::ExecuteSQL() function with dedicated implementation 
 and, by default, pass the SQL statements directly to the underlying RDBMS. 
 In these cases the SQL syntax varies in some particulars from OGR SQL.

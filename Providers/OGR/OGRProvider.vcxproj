@@ -29,23 +29,23 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -108,7 +108,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3_1D.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3D.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Fdo\Unmanaged\lib\win32\Debug;$(FDOGDAL)\lib\win32\Debug;..\..\Thirdparty\gdal\lib\win32\Debug;..\..\Thirdparty\apache\xerces\Build\Win32\VC9\Debug;..\..\Utilities\Common\Lib\Win32\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -118,7 +118,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.6.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -138,7 +138,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3_1D.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3D.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Fdo\Unmanaged\lib\win64\Debug;$(FDOGDAL)\lib\win64\Debug;..\..\Thirdparty\gdal\lib\win64\Debug;..\..\Thirdparty\apache\xerces\Build\Win64\VC9\Debug;..\..\Utilities\Common\Lib\Win64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -148,7 +148,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.6.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -164,7 +164,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;Xerces-C_3_1.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Fdo\Unmanaged\lib\win32\release;$(FDOGDAL)\lib\win32\Release;gdal\gdal-1.5.1;..\..\Thirdparty\apache\xerces\Build\Win32\VC9\Release;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win32\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>fdogeometry.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -178,7 +178,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.6.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -197,7 +197,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;Xerces-C_3_1.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fdo.lib;fdocommon.lib;fdogeometry.lib;wsock32.lib;gdal_i.lib;xerces-c_3.lib;fdospatial.lib;ProvidersCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Fdo\Unmanaged\lib\win64\release;$(FDOGDAL)\lib\win64\Release;gdal\gdal-1.5.1;..\..\Thirdparty\apache\xerces\Build\Win64\VC9\Release;..\..\Thirdparty\gdal\;..\..\Utilities\Common\Lib\Win64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>fdogeometry.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -211,7 +211,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\..\..\SubDoc\Providers.version" -f"3.6.0.0%PROVIDERS_VERSION%" $(OutDir)OGRProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

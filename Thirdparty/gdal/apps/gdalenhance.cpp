@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalenhance.cpp 22783 2011-07-23 19:28:16Z rouault $
+ * $Id: gdalenhance.cpp 17553 2009-08-21 14:27:19Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to do image enhancement. 
@@ -32,9 +32,8 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 #include "vrt/vrtdataset.h"
-#include "commonutils.h"
 
-CPL_CVSID("$Id: gdalenhance.cpp 22783 2011-07-23 19:28:16Z rouault $");
+CPL_CVSID("$Id: gdalenhance.cpp 17553 2009-08-21 14:27:19Z rouault $");
 
 static int
 ComputeEqualizationLUTs( GDALDatasetH hDataset,  int nLUTBins,
@@ -88,7 +87,6 @@ int main( int argc, char ** argv )
     GDALDatasetH	hDataset, hOutDS;
     int			i;
     const char		*pszSource=NULL, *pszDest=NULL, *pszFormat = "GTiff";
-    int bFormatExplicitelySet = FALSE;
     GDALDriverH		hDriver;
     GDALDataType	eOutputType = GDT_Unknown;
     char                **papszCreateOptions = NULL;
@@ -101,7 +99,6 @@ int main( int argc, char ** argv )
     int               **papanLUTs = NULL;
     int                 iBand;
     const char         *pszConfigFile = NULL;
-    int                 bQuiet = FALSE;
 
     /* Check strict compilation and runtime library version as we use C++ API */
     if (! GDAL_CHECK_VERSION(argv[0]))
@@ -127,10 +124,7 @@ int main( int argc, char ** argv )
             return 0;
         }
         else if( EQUAL(argv[i],"-of") && i < argc-1 )
-        {
             pszFormat = argv[++i];
-            bFormatExplicitelySet = TRUE;
-        }
 
         else if( EQUAL(argv[i],"-ot") && i < argc-1 )
         {
@@ -150,6 +144,8 @@ int main( int argc, char ** argv )
             {
                 printf( "Unknown output pixel type: %s\n", argv[i+1] );
                 Usage();
+                GDALDestroyDriverManager();
+                exit( 2 );
             }
             i++;
         }
@@ -190,7 +186,6 @@ int main( int argc, char ** argv )
         else if( EQUAL(argv[i],"-quiet") )
         {
             pfnProgress = GDALDummyProgress;
-            bQuiet = TRUE;
         }
 
         else if( argv[i][0] == '-' )
@@ -198,6 +193,8 @@ int main( int argc, char ** argv )
             printf( "Option %s incomplete, or not recognised.\n\n", 
                     argv[i] );
             Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
         else if( pszSource == NULL )
         {
@@ -212,12 +209,16 @@ int main( int argc, char ** argv )
         {
             printf( "Too many command options.\n\n" );
             Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
     }
 
     if( pszSource == NULL )
     {
         Usage();
+        GDALDestroyDriverManager();
+        exit( 10 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -262,10 +263,13 @@ int main( int argc, char ** argv )
         }
         printf( "\n" );
         Usage();
+        
+        GDALClose( hDataset );
+        GDALDestroyDriverManager();
+        CSLDestroy( argv );
+        CSLDestroy( papszCreateOptions );
+        exit( 1 );
     }
-
-    if (!bQuiet && pszDest != NULL && !bFormatExplicitelySet)
-        CheckExtensionConsistency(pszDest, pszFormat);
 
 /* -------------------------------------------------------------------- */
 /*      If histogram equalization is requested, do it now.              */
@@ -619,9 +623,9 @@ static CPLErr EnhancerCallback( void *hCBData,
         iBin = MAX(0,MIN(psEInfo->nLUTBins-1,iBin));
 
         if( psEInfo->panLUT )
-            pabyOutImage[iPixel] = (GByte) psEInfo->panLUT[iBin];
+            pabyOutImage[iPixel] = psEInfo->panLUT[iBin];
         else
-            pabyOutImage[iPixel] = (GByte) iBin;
+            pabyOutImage[iPixel] = iBin;
     }
 
     CPLFree( pafSrcImage );

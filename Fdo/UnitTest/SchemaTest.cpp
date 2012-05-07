@@ -655,9 +655,8 @@ void SchemaTest::testFeatureSchema()
     //
     try
     {
-        pfeatureclass->SetBaseClass(pclass);
-        FDO_CPPUNIT_ASSERT(FALSE);  // should never reach this, an exception should be thrown because a feature class is being based
-                                    // on a non-feature class.
+        pclass->SetBaseClass(pfeatureclass);
+        FDO_CPPUNIT_ASSERT(FALSE);  // should never reach this, an exception should be thrown because pclass would become its own grandparent
     }
     catch (FdoSchemaException* e)
     {
@@ -3955,7 +3954,7 @@ FdoFeatureSchema* SchemaTest::createRefSchema( FdoInt32 idx, FdoFeatureSchema* p
     }
 
 	FdoFeatureSchema* pSchema = FdoFeatureSchema::Create( 
-        (FdoString*) FdoStringP::Format( L"%d Reference Schema", idx ), 
+        (FdoString*) FdoStringP::Format( L"Reference Schema %d", idx ), 
         L"" 
     );
 
@@ -4168,7 +4167,7 @@ FdoFeatureSchema* SchemaTest::createAssocSchema( FdoInt32 idx, FdoFeatureSchema*
     }
 
 	FdoFeatureSchema* pSchema = FdoFeatureSchema::Create( 
-        (FdoString*) FdoStringP::Format( L"%d Reference Schema", idx ), 
+        (FdoString*) FdoStringP::Format( L"Reference Schema %d", idx ), 
         L"" 
     );
 

@@ -25,7 +25,6 @@
 #include <Fdo.h>
 #include <TestCommonMiscUtil.h>
 #include <TestCommonFileUtil.h>
-#include <stdio.h>
 #define DESTINATION_FILE L"../../TestData/PARCELS.SDF"
 
 /* 

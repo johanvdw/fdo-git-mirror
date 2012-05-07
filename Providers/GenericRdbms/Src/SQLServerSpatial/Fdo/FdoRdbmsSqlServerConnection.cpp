@@ -29,25 +29,19 @@
 #include "FdoRdbmsSqlServerCommandCapabilities.h"
 #include "FdoRdbmsSqlServerFilterCapabilities.h"
 #include "FdoRdbmsSqlServerExpressionCapabilities.h"
-#include "FdoRdbmsSimpleInsertCommand.h"
-#include "FdoRdbmsSimpleUpdateCommand.h"
-#include "FdoRdbmsSimpleSelectCommand.h"
-#include "FdoRdbmsSimpleDeleteCommand.h"
 
 #include "../SchemaMgr/SchemaManager.h"
 #include "../SchemaMgr/Ph/Mgr.h"
-#include "../SchemaMgr/Ph/ColTypeMapper.h"
 #include "../../Fdo/Capability/FdoRdbmsGeometryCapabilities.h"
 
 #include "FdoRdbmsSqlServerSchemaCapabilities.h"
 #include "FdoRdbmsSqlServerConnectionCapabilities.h"
 #include "FdoRdbmsSqlServerGeometryCapabilities.h"
 #include "FdoRdbmsSqlServerOptimizedAggregateReader.h"
+#include "FdoRdbmsSqlServerSpatialGeometryConverter.h"
 
 #include "DbiConnection.h"
 #include "Rdbms/FdoRdbmsCommandType.h"
-#include "FdoRdbmsSqlServerProcessors.h"
-#include "../../Fdo/Other/FdoRdbmsSQLDataReader.h"
 
 #include <Inc/Rdbi/proto.h>
 #include "../ODBCDriver/context.h"
@@ -60,7 +54,7 @@ wchar_t* getComDir (); // in SqlServer.cpp
 FdoRdbmsSqlServerConnection::FdoRdbmsSqlServerConnection():
 mFilterProcessor( NULL ),
 mConnectionInfo(NULL),
-mGeomVersion(1)
+mGeographyConverter(NULL)
 {
 }
 
@@ -68,6 +62,9 @@ FdoRdbmsSqlServerConnection::~FdoRdbmsSqlServerConnection ()
 {
     if( mFilterProcessor )
         delete mFilterProcessor;
+
+    if( mGeographyConverter )
+        delete mGeographyConverter;
 
     FDO_SAFE_RELEASE(mConnectionInfo);
 }
@@ -81,7 +78,10 @@ FdoRdbmsSqlServerConnection* FdoRdbmsSqlServerConnection::Create()
 
 FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
 {
-    FdoICommand* ret = NULL;
+    FdoICommand* ret;
+
+	FdoPtr<FdoICommandCapabilities> cmdCapabilities = GetCommandCapabilities();
+
     switch (commandType)
     {
         case FdoCommandType_CreateDataStore:
@@ -93,39 +93,24 @@ FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
              break;
 
 		case FdoCommandType_Delete:
-             ret = FdoRdbmsSimpleDeleteCommand::Create(this);
+             ret = new FdoRdbmsSqlServerDeleteCommand (this);
              break;
 
-        case FdoCommandType_Insert:
-             ret = FdoRdbmsSimpleInsertCommand::Create(this);
-             break;
-        case FdoCommandType_Update:
-             ret = FdoRdbmsSimpleUpdateCommand::Create(this);
-             break;
-        case FdoCommandType_Select:
-             ret = FdoRdbmsSimpleSelectCommand::Create(this);
-             break;
-        case FdoCommandType_SelectAggregates:
-        case FdoCommandType_DescribeSchema:
-        case FdoCommandType_ApplySchema:
-        case FdoCommandType_DestroySchema:
-        case FdoCommandType_DescribeSchemaMapping:
-        case FdoCommandType_ActivateSpatialContext:
-        case FdoCommandType_CreateSpatialContext:
-        case FdoCommandType_DestroySpatialContext:
-        case FdoCommandType_GetSpatialContexts:
-        case FdoCommandType_ListDataStores:
-        case FdoCommandType_SQLCommand:
-        case FdoCommandType_GetSchemaNames:
-        case FdoCommandType_GetClassNames:
-            ret = FdoRdbmsConnection::CreateCommand(commandType);
-            break;
         case FdoRdbmsCommandType_CreateSpatialIndex:
         case FdoRdbmsCommandType_DestroySpatialIndex:
         case FdoRdbmsCommandType_GetSpatialIndexes:
-        default:
-            throw FdoConnectionException::Create(NlsMsgGet(FDORDBMS_10, "Command not supported"));
-            break;
+			throw FdoConnectionException::Create(NlsMsgGet(FDORDBMS_10, "Command not supported"));
+			break;
+
+		 default:
+			 int size;
+			 FdoInt32 *cmds = cmdCapabilities->GetCommands( size );
+			 for(int i=0; i<size; i++ )
+			 {
+				 if( cmds[i] == commandType )
+					 return FdoRdbmsConnection::CreateCommand( commandType );
+			 }
+             return FdoRdbmsConnection::CreateCommand( -1/*undefined*/ );
     }
     return (ret);
 }
@@ -135,7 +120,6 @@ FdoRdbmsFilterProcessor* FdoRdbmsSqlServerConnection::GetFilterProcessor()
     if( mFilterProcessor == NULL )
         mFilterProcessor = new FdoRdbmsSqlServerFilterProcessor( this );
 
-    mFilterProcessor->Reset();
     return FDO_SAFE_ADDREF(mFilterProcessor);
 }
 
@@ -152,9 +136,6 @@ FdoIGeometryCapabilities* FdoRdbmsSqlServerConnection::GetGeometryCapabilities()
 {
     if( mGeometryCapabilities == NULL )
         mGeometryCapabilities = new FdoRdbmsSqlServerGeometryCapabilities();
-
-    FdoRdbmsSqlServerGeometryCapabilities* sc = (FdoRdbmsSqlServerGeometryCapabilities*)mGeometryCapabilities;
-    sc->SetGeomVersion(this->mGeomVersion);
 
     return FDO_SAFE_ADDREF(mGeometryCapabilities);
 }
@@ -202,88 +183,22 @@ FdoSchemaManagerP FdoRdbmsSqlServerConnection::NewSchemaManager(
 FdoDateTime  FdoRdbmsSqlServerConnection::DbiToFdoTime( const char* timeStr )
 {
     FdoDateTime fdoTime;
-    float seconds;
-    int year, month, day, hour, minute;
-    year = month = day = hour = minute = 0;
-    seconds = 0.0;
+    int year, month, day, hour, minute, seconds;
+    year = month = day = hour = minute = seconds = 0;
 
     if( timeStr != NULL && *timeStr != '\0' )
     {
-        int count = sscanf(timeStr,"%04d-%02d-%02d %02d:%02d:%06f", &year, &month, &day, &hour, &minute, &seconds);     
+        int count = sscanf(timeStr,"%4d-%02d-%02d %02d:%02d:%02d", &year, &month, &day, &hour, &minute, &seconds);     
         if( count != 6 )
-            count = sscanf(timeStr,"%04d-%02d-%02d",&year, &month, &day);
+            count = sscanf(timeStr,"%4d-%02d-%02d",&year, &month, &day);
     }
     fdoTime.year = (FdoInt16)year;
     fdoTime.month = (FdoByte)month;
     fdoTime.day = (FdoByte)day;
     fdoTime.hour = (FdoByte)hour;
     fdoTime.minute = (FdoByte)minute;
-    fdoTime.seconds = seconds;
+    fdoTime.seconds = (float)seconds;
     return fdoTime;
-}
-
- //
-// Converts a SqlServer string date of a specific format to a FdoDateTime (time_t) format.
-FdoDateTime  FdoRdbmsSqlServerConnection::DbiToFdoTime( const wchar_t* timeStr )
-{
-    FdoDateTime fdoTime;
-    float seconds;
-    int year, month, day, hour, minute;
-    year = month = day = hour = minute = 0;
-    seconds = 0.0;
-
-    if( timeStr != NULL && *timeStr != '\0' )
-    {
-        int count = swscanf(timeStr, L"%04d-%02d-%02d %02d:%02d:%06f", &year, &month, &day, &hour, &minute, &seconds);     
-        if( count != 6 )
-            count = swscanf(timeStr, L"%04d-%02d-%02d",&year, &month, &day);
-    }
-    fdoTime.year = (FdoInt16)year;
-    fdoTime.month = (FdoByte)month;
-    fdoTime.day = (FdoByte)day;
-    fdoTime.hour = (FdoByte)hour;
-    fdoTime.minute = (FdoByte)minute;
-    fdoTime.seconds = seconds;
-    return fdoTime;
-}
-
-const wchar_t* FdoRdbmsSqlServerConnection::FdoToDbiTime( FdoDateTime time, wchar_t* dest, size_t size )
-{
-    bool isDateSupplied = ((time.year != -1) || (time.month != -1) || (time.day != -1));
-    bool isValidDate    = isDateSupplied && ((time.year != -1) && (time.month != -1) && (time.day != -1));
-
-    bool isTimeSupplied = ((time.hour != -1) || (time.minute != -1));
-    bool isValidTime    = isTimeSupplied && ((time.hour != -1) && (time.minute != -1));
-
-    if ((isDateSupplied  && !isValidDate)    ||
-        (isTimeSupplied  && !isValidTime)    ||
-        (isTimeSupplied  && !isDateSupplied) ||
-        (!isDateSupplied && !isTimeSupplied)    )
-		 throw FdoException::Create(NlsMsgGet(FDORDBMS_480,
-                                              "Incomplete date/time setting."));
-
-    if (time.year >= 0 && time.year < 50)
-        time.year += 2000;
-    else if (time.year >= 50 && time.year < 99)
-        time.year += 1900;
-
-    if ((isDateSupplied) && (!isTimeSupplied))
-        swprintf (dest, size, L"%04d-%02d-%02d", time.year, time.month, time.day);
-    else
-    {
-        float sec = ((int)(time.seconds*1000.0f))/1000.0f;
-        if (sec >= 60.0f)
-            sec = 59.999f;
-
-        swprintf (dest, size, L"%04d-%02d-%02d %02d:%02d:%06.3f",
-                 time.year,
-                 time.month,
-                 time.day,
-                 time.hour,
-                 time.minute,
-                 sec);
-    }
-    return (dest);
 }
 
 //
@@ -323,27 +238,16 @@ const char* FdoRdbmsSqlServerConnection::FdoToDbiTime( FdoDateTime  when )
 		 throw FdoException::Create(NlsMsgGet(FDORDBMS_480,
                                               "Incomplete date/time setting."));
 
-    if (when.year >= 0 && when.year < 50)
-        when.year += 2000;
-    else if (when.year >= 50 && when.year < 99)
-        when.year += 1900;
-
     if ((isDateSupplied) && (!isTimeSupplied))
-        sprintf (ret, "%04d-%02d-%02d", when.year, when.month, when.day);
+        sprintf (ret, "%4d-%02d-%02d", when.year, when.month, when.day);
     else
-    {
-        float sec = ((int)(when.seconds*1000.0f))/1000.0f;
-        if (sec >= 60.0f)
-            sec = 59.999f;
-
-        sprintf (ret, "%04d-%02d-%02d %02d:%02d:%06.3f",
+        sprintf (ret, "%4d-%02d-%02d %02d:%02d:%02.2f",
                  when.year,
                  when.month,
                  when.day,
                  when.hour,
                  when.minute,
-                 sec);
-    }
+                 when.seconds);
 
     return (ret);
 }
@@ -393,7 +297,7 @@ const char* FdoRdbmsSqlServerConnection::FdoToDbiTimeFilter( FdoDateTime  when )
                 FDORDBMSODBCFILTER_TIME_FORMAT,
                 when.hour == -1 ? 0 : (int)when.hour,
                 when.minute == -1 ? 0 : (int)when.minute,
-                when.seconds == -1 ? 0: (float)when.seconds );
+                when.seconds == -1 ? 0: (int)when.seconds );
     }
 
     // Append suffix:
@@ -413,8 +317,6 @@ FdoConnectionState FdoRdbmsSqlServerConnection::Open()
 	if( state != FdoConnectionState_Open )
 	{
   	    state = FdoRdbmsConnection::Open();
-        if (mExpressionCapabilities != NULL)
-            (static_cast<FdoRdbmsSqlServerExpressionCapabilities*>(mExpressionCapabilities))->ForceRemoveServerFunctions();
         try
         {
             CheckForUnsupportedVersion();
@@ -461,9 +363,7 @@ void FdoRdbmsSqlServerConnection::Close()
         if (ltManager)
             ltManager->Deactivate();
     }
-    if (mExpressionCapabilities != NULL)
-        (static_cast<FdoRdbmsSqlServerExpressionCapabilities*>(mExpressionCapabilities))->ForceRemoveServerFunctions();
-
+		
 	FdoRdbmsConnection::Close();
 }
 
@@ -476,9 +376,6 @@ void FdoRdbmsSqlServerConnection::CheckForUnsupportedVersion()
     minSupported->Add( 9 );
     minSupported->Add( 0 );
     minSupported->Add( 0 );
-
-    if (verTokens->GetValue(0) >= 11)
-        mGeomVersion = 2;
 
     if ( verTokens < minSupported )
     {
@@ -500,7 +397,7 @@ void FdoRdbmsSqlServerConnection::CheckForFdoGeometries()
     // assume these can be opened by this provider. 
     // Also skip check if the Schema Manager can't find the datastore (owner == NULL).
     // This case will be trapped later on and an exception thrown.
-    if ( !owner || !owner->GetHasAttrMetaSchema() ) 
+    if ( !owner || !owner->GetHasMetaSchema() ) 
         return;
 
     // Geometric properties have numeric attributetype. Following query find
@@ -509,7 +406,7 @@ void FdoRdbmsSqlServerConnection::CheckForFdoGeometries()
 	FdoStringP sqlStmt = L"select top 1 tablename from f_attributedefinition where lower(columntype) = 'image' and isnumeric(attributetype) = 1";
 
 	GdbiConnection* gdbiConn = phMgr->GetGdbiConnection();
-  	GdbiQueryResult *gdbiResult = gdbiConn->ExecuteQuery((const wchar_t*)sqlStmt);
+	GdbiQueryResult *gdbiResult = gdbiConn->ExecuteQuery((const wchar_t*)sqlStmt);
 
 	if (gdbiResult->ReadNext())
 	{
@@ -543,38 +440,13 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
         
         // Supported parameters identify datastore, userid and password.
 		// We'll generate an odbc connection string in this format:
-		//  "DRIVER={SQL Server Native Client xx.0};MARS_Connection=yes;SERVER=seconds;UID=username;PWD=passwd;" 
+		//  "DRIVER={SQL Server};SERVER=seconds;UID=username;PWD=passwd;" 
 		// If the UID and PWD parameters are not specified, the trusted connection 
 		// (windows authentication) is assumed.
         FdoStringP dataSource = dict->GetProperty(FDO_RDBMS_CONNECTION_SERVICE);
         if (dataSource != NULL && dataSource.GetLength() > 0)
         {
-            // let's detect the client!
-            wchar_t tmpBuff[3];
-            int clientNo = 10;
-            bool found = false;
-            while(clientNo < 15)
-            {
-                _itow(clientNo, tmpBuff, 10);
-                std::wstring lName(L"SQLNCLI");
-                lName.append(tmpBuff);
-                lName.append(L".DLL");
-                HMODULE hmod = ::LoadLibraryW(lName.c_str());
-                if (hmod != NULL)
-                {
-                    ::FreeLibrary(hmod);
-                    found = true;
-                    break;
-                }
-                clientNo++;
-            }
-
-            if (!found)
-                throw FdoConnectionException::Create(L"Please install 'SQL Server Native Client 10.0' or upper to be able to use the provider");
-
-            newCs = L"DRIVER={SQL Server Native Client ";
-            newCs += tmpBuff;
-            newCs += L".0};MARS_Connection=yes;SERVER=";
+            newCs = L"DRIVER={SQL Server}; SERVER=";
             newCs += dataSource;
 			FdoStringP user = dict->GetProperty(FDO_RDBMS_CONNECTION_USERNAME);
 			if (user.GetLength() > 0)
@@ -588,18 +460,6 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
 					newCs += passwd;
 				}
 			}
-            else
-                newCs += L";Trusted_Connection=yes";
-			
-            FdoStringP database = dict->GetProperty(FDO_RDBMS_CONNECTION_DATASTORE);
-			if (database.GetLength() > 0)
-			{
-                GetDbiConnection()->SetAvoidSetSchema(true);
-				newCs += L";DATABASE=";
-				newCs += database;
-			}
-            else
-                GetDbiConnection()->SetAvoidSetSchema(false);
         }
     }
 
@@ -679,7 +539,7 @@ FdoIFilterCapabilities *FdoRdbmsSqlServerConnection::GetFilterCapabilities()
 FdoIExpressionCapabilities* FdoRdbmsSqlServerConnection::GetExpressionCapabilities()
 {
 	if (mExpressionCapabilities == NULL)
-		mExpressionCapabilities = new FdoRdbmsSqlServerExpressionCapabilities(this);
+		mExpressionCapabilities = new FdoRdbmsSqlServerExpressionCapabilities();
 	FDO_SAFE_ADDREF(mExpressionCapabilities);
 	return mExpressionCapabilities;
 }
@@ -705,13 +565,94 @@ FdoRdbmsFeatureReader *FdoRdbmsSqlServerConnection::GetOptimizedAggregateReader(
 
 FdoStringP FdoRdbmsSqlServerConnection::GetBindString( int n, const FdoSmLpPropertyDefinition* prop )
 { 
+    bool isGeom = false;
+    FdoInt64 srid = 0;
     FdoStringP bindStr(L"?", true);
+
+    const FdoSmLpGeometricPropertyDefinition* geomProp =
+        FdoSmLpGeometricPropertyDefinition::Cast(prop);
+
+    if ( geomProp ) 
+    {
+        FdoStringP geomType(L"geometry", true);
+
+        // For geometric properties, convert from WKB and add SRID.
+
+        FdoStringP scName = geomProp->GetSpatialContextAssociation();
+
+        FdoSchemaManagerP schemaMgr = this->GetSchemaManager();
+
+        // First, get SRID. Try column first.
+
+        FdoSmPhColumnP column = ((FdoSmLpGeometricPropertyDefinition*) geomProp)->GetColumn();
+    
+        if ( column ) 
+        {
+            FdoSmPhColumnGeomP geomColumn = column->SmartCast<FdoSmPhColumnGeom>();
+
+            if ( geomColumn ) 
+            {
+                srid = geomColumn->GetSRID();
+                // Also find out if geometry or geography column
+                geomType = geomColumn->GetTypeName();
+            }
+        }
+
+        // If Associated Spatial Context can be reached, get SRID from it
+        // instead
+
+        FdoSmLpSpatialContextMgrP scMgr = schemaMgr->GetLpSpatialContextMgr();
+        FdoSmLpSpatialContextP sc = scMgr->FindSpatialContext(scName);
+
+        if ( sc )
+        {
+            srid = sc->GetSrid();
+        }
+
+        bindStr = FdoStringP::Format( L"%ls::STGeomFromWKB(?, %ls)", (FdoString*) geomType, (FdoString*) FdoCommonStringUtil::Int64ToString(srid) );    
+    }
+
     return bindStr; 
 }
 
 bool  FdoRdbmsSqlServerConnection::BindGeometriesLast() 
 { 
     return true; 
+}
+
+FdoIGeometry* FdoRdbmsSqlServerConnection::TransformGeometry( FdoIGeometry* geom, const FdoSmLpGeometricPropertyDefinition* prop, bool toFdo )
+{
+    FdoStringP geomType;
+    bool       geogLatLong = false;
+
+    if ( !IsGeogLatLong() )
+        // No special transformation for geometry columns
+        return FdoRdbmsConnection::TransformGeometry( geom, prop, toFdo );
+
+    //TODO: check performance impact of looking up geomType for each geometry value and
+    //optimize if necessary.
+    FdoSmPhColumnP column = ((FdoSmLpGeometricPropertyDefinition*) prop)->GetColumn();
+    
+    if ( column ) 
+    {
+        FdoSmPhColumnGeomP geomColumn = column->SmartCast<FdoSmPhColumnGeom>();
+
+        if ( geomColumn ) 
+        {
+            geomType = geomColumn->GetTypeName();
+        }
+    }
+
+    if ( geomType != L"geography" )
+        // No special transformation for geometry columns
+        return FdoRdbmsConnection::TransformGeometry( geom, prop, toFdo );
+
+
+    if ( !mGeographyConverter )
+        mGeographyConverter = new FdoRdbmsSqlServerSpatialGeographyConverter();
+
+    // For geography columns, flip the X and Y.
+    return mGeographyConverter->ConvertOrdinates( geom );
 }
 
 bool FdoRdbmsSqlServerConnection::IsGeogLatLong()
@@ -725,376 +666,3 @@ bool FdoRdbmsSqlServerConnection::IsGeogLatLong()
 
     return mIsGeogLatLong;
 }
-
-FdoInt32 FdoRdbmsSqlServerConnection::ExecuteDdlNonQuery(FdoString* sql)
-{
-    GdbiConnection* gdbiConn = GetDbiConnection()->GetGdbiConnection();
-    GdbiCommands* gdbiCommands = gdbiConn->GetCommands();
-    bool autoCmtChanged = false;
-    FdoInt32 retVal = 0;
-
-    // Open and close a dummy transaction to force a commit before creating the database.
-    gdbiCommands->tran_begin ("SmPreChangeDatabase");
-    gdbiCommands->tran_end ("SmPreChangeDatabase");
-
-    int autoCmtMode = gdbiCommands->autocommit_mode();
-    if (autoCmtMode == 0) //SQL_AUTOCOMMIT_OFF
-    {
-        // we need it SQL_AUTOCOMMIT_ON with the new driver
-        gdbiCommands->autocommit_on();
-        autoCmtChanged = true;
-    }
-    // Wrap the database create in a transaction.
-    gdbiCommands->tran_begin ("SmPreChangeDatabase");
-    try
-    {
-        retVal = gdbiConn->ExecuteNonQuery(sql, true);
-    }
-    catch ( ... )
-    {
-        try
-        {
-            gdbiCommands->tran_end ("SmPreChangeDatabase");
-	        if (autoCmtChanged)
-		        gdbiCommands->autocommit_off();
-        }
-        catch (FdoException *ex) { ex->Release(); }
-        catch ( ... ) {}            
-        throw;
-    }
-    gdbiCommands->tran_end ("SmPreChangeDatabase");
-    if (autoCmtChanged)
-        gdbiCommands->autocommit_off();
-    return retVal;
-}
-
-void FdoRdbmsSqlServerConnection::Flush()
-{
-    if (mEnforceClearSchAtFlush) // clear cached schema
-    {
-        FdoSchemaManagerP pschemaManager = GetSchemaManager();
-        pschemaManager->Clear();
-        if (mExpressionCapabilities != NULL)
-            (static_cast<FdoRdbmsSqlServerExpressionCapabilities*>(mExpressionCapabilities))->ForceRemoveServerFunctions();
-    }
-}
-
-FdoRdbmsSqlBuilder* FdoRdbmsSqlServerConnection::GetSqlBuilder()
-{
-    // relax this since we check if we use association props
-    // and we avoid using this builder.
-    return new FdoRdbmsSqlServerSqlBuilder (this);
-}
-// mixing SQL_CURSOR_STATIC with 'SET NOCOUNT OFF' will make all calls to store procedure 
-// to retun null results this is mainly because with results from a store procedure 
-// we can move only FORWARD! On SQL_CURSOR_STATIC we can re-bind and move to a 
-// certain row, however that's not valid for store procedures
-void FdoRdbmsSqlServerConnection::StartStoredProcedure()
-{
-    GdbiConnection* gdbiConn = GetDbiConnection()->GetGdbiConnection();
-    gdbiConn->ExecuteNonQuery(L"SET NOCOUNT ON", true);
-}
-
-void FdoRdbmsSqlServerConnection::EndStoredProcedure()
-{
-    GdbiConnection* gdbiConn = GetDbiConnection()->GetGdbiConnection();
-    gdbiConn->ExecuteNonQuery(L"SET NOCOUNT OFF", true);
-}
-
-class RdbmsArgumentDefinition
-{
-public:
-    std::wstring m_argName;
-    FdoSmPhColType m_type;
-    FdoInt64    m_len;
-    FdoInt32    m_precision;
-    FdoInt32    m_scale;
-public:
-    RdbmsArgumentDefinition()
-    {
-        m_type = FdoSmPhColType_Double;
-        m_len = 0;
-        m_precision = m_scale = 0;
-    }
-    RdbmsArgumentDefinition(FdoSmPhColType type)
-    {
-        m_type = type;
-        m_len = 0;
-        m_precision = m_scale = 0;
-    }
-    RdbmsArgumentDefinition(FdoString* argName, FdoSmPhColType type, FdoInt64 len, FdoInt32 precision, FdoInt32 scale)
-    {
-        m_argName = argName;
-        m_type = type;
-        m_len = len;
-        m_precision = precision;
-        m_scale = scale;
-    }
-    void SetValues(FdoString* argName, FdoSmPhColType type, FdoInt64 len, FdoInt32 precision, FdoInt32 scale)
-    {
-        m_argName = argName;
-        m_type = type;
-        m_len = len;
-        m_precision = precision;
-        m_scale = scale;
-    }
-};
-
-FdoDataType PhColTypeToFdo(FdoSmPhColType type)
-{
-    FdoDataType retType = FdoDataType(-2);
-    switch(type)
-    {
-    case FdoSmPhColType_BLOB:
-        retType = FdoDataType_BLOB;
-        break;
-    case FdoSmPhColType_Bool:
-        retType = FdoDataType_Boolean;
-        break;
-    case FdoSmPhColType_Byte:
-        retType = FdoDataType_Byte;
-        break;
-    case FdoSmPhColType_Int16:
-        retType = FdoDataType_Int16;
-        break;
-    case FdoSmPhColType_Int32:
-        retType = FdoDataType_Int32;
-        break;
-    case FdoSmPhColType_Int64:
-        retType = FdoDataType_Int64;
-        break;
-    case FdoSmPhColType_Single:
-        retType = FdoDataType_Single;
-        break;
-    case FdoSmPhColType_String:
-        retType = FdoDataType_String;
-        break;
-    case FdoSmPhColType_Date:
-        retType = FdoDataType_DateTime;
-        break;
-    case FdoSmPhColType_Decimal:
-        retType = FdoDataType_Decimal;
-        break;
-    case FdoSmPhColType_Double:
-        retType = FdoDataType_Double;
-        break;
-    case FdoSmPhColType_Geom:
-        retType = FdoDataType(-1);
-        break;
-    }
-    return retType;
-}
-
-void GenerateCombination(size_t step, std::vector< size_t >& counts, FdoSignatureDefinitionCollection* signatures, std::vector< FdoArgumentDefinitionCollection* >& mainArgs, FdoDataType retType)
-{
-    if (step == counts.size())
-    {
-        // generate sig
-        FdoPtr<FdoArgumentDefinitionCollection> newArgColl = FdoArgumentDefinitionCollection::Create();
-        for(size_t i = 0; i < mainArgs.size(); i++)
-        {
-            FdoArgumentDefinitionCollection* ptr = mainArgs.at(i);
-            FdoPtr<FdoArgumentDefinition> arg = ptr->GetItem(counts[i]);
-            newArgColl->Add(arg);
-        }
-        FdoPtr<FdoSignatureDefinition> signature = FdoSignatureDefinition::Create(retType, newArgColl);
-        signatures->Add(signature);
-        return;
-    }
-    size_t cntArgTypes = mainArgs[step]->GetCount();
-    for (size_t idx = 0; idx < cntArgTypes; idx++)
-    {
-        counts[step] = idx;
-        GenerateCombination(step+1, counts, signatures, mainArgs, retType);
-    }
-}
-
-FdoFunctionDefinition* GenerateFunctionDefinition(FdoString* fctName, RdbmsArgumentDefinition* retFct, std::vector< RdbmsArgumentDefinition* > arguments, size_t len)
-{
-    FdoDataType retType = PhColTypeToFdo(retFct->m_type);
-
-    FdoPtr<FdoSignatureDefinitionCollection> signatures = FdoSignatureDefinitionCollection::Create();
-    FdoPtr<FdoArgumentDefinitionCollection> args = FdoArgumentDefinitionCollection::Create();
-    std::vector< size_t > counts;
-    std::vector< FdoArgumentDefinitionCollection* > mainArgs;
-    int cntRealParams = 0;
-    for(size_t idx = 0; idx < len; idx++)
-    {
-        RdbmsArgumentDefinition* argFct = *(arguments.begin()+idx);
-        FdoDataType dtType = PhColTypeToFdo(argFct->m_type);
-        if (dtType == (FdoDataType)-2)
-        {
-            for(size_t i = 0; i < mainArgs.size(); i++)
-                mainArgs.at(i)->Release();
-            return NULL;
-        }
-
-        FdoArgumentDefinitionCollection* actArgColl = NULL;
-        switch(dtType)
-        {
-        case FdoDataType_Byte:
-        case FdoDataType_Decimal:
-        case FdoDataType_Double:
-        case FdoDataType_Int16:
-        case FdoDataType_Int32:
-        case FdoDataType_Int64:
-        case FdoDataType_Single:
-            {
-                counts.push_back(0);
-                dtType = FdoDataType_Byte;
-                actArgColl = FdoArgumentDefinitionCollection::Create();
-                cntRealParams++;
-                // we create all numeric types to avoid create lots arguments (we create only 7 for each numeric)
-                FdoPtr<FdoArgumentDefinition> arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Byte);
-                // add first to the main collection
-                args->Add(arg);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Decimal);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Double);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Int16);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Int32);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Int64);
-                actArgColl->Add(arg);
-                arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoDataType_Single);
-                actArgColl->Add(arg);
-            }
-            break;
-        default:
-            {
-                FdoPtr<FdoArgumentDefinition> arg;
-                if (dtType == (FdoDataType)-1)
-                    arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", FdoPropertyType_GeometricProperty, dtType);
-                else
-                    arg = FdoArgumentDefinition::Create(argFct->m_argName.c_str(), L"", dtType);
-                args->Add(arg);
-                counts.push_back(0);
-
-                actArgColl = FdoArgumentDefinitionCollection::Create();
-                actArgColl->Add(arg);
-            }
-        }
-        mainArgs.push_back(actArgColl);
-    }
-    // we need to generate all the combinations of number values
-    if (cntRealParams == 0)
-    {
-        FdoPtr<FdoSignatureDefinition> signature = FdoSignatureDefinition::Create(retType, args);
-        signatures->Add(signature);
-    }
-    else
-        GenerateCombination(0, counts, signatures, mainArgs, retType);
-
-    for(size_t i = 0; i < mainArgs.size(); i++)
-    {
-        FdoArgumentDefinitionCollection* coll = mainArgs.at(i);
-        if (coll != NULL)
-            coll->Release();
-    }
-
-    FdoFunctionCategoryType ftp = FdoFunctionCategoryType_Custom;
-    switch(retType)
-    {
-    case FdoDataType_BLOB:
-    case FdoDataType(-1):
-        ftp = FdoFunctionCategoryType_Custom;
-        break;
-    case FdoDataType_Boolean: // I'm not sure yet what to do with boolean type
-    case FdoDataType_Byte:
-    case FdoDataType_Decimal:
-    case FdoDataType_Double:
-    case FdoDataType_Int16:
-    case FdoDataType_Int32:
-    case FdoDataType_Int64:
-    case FdoDataType_Single:
-        ftp = FdoFunctionCategoryType_Numeric;
-        break;
-    case FdoDataType_String:
-        ftp = FdoFunctionCategoryType_String;
-        break;
-    }
-
-    return FdoFunctionDefinition::Create (fctName, L"", false, signatures, ftp);
-}
-
-bool FdoRdbmsSqlServerConnection::GetServerSideFunctionCollection (FdoFunctionDefinitionCollection* coll)
-{
-    if (GetConnectionState() != FdoConnectionState_Open)
-        return false;
-
-    FdoSmPhSqsMgrP phMgr = GetSchemaManager()->GetPhysicalSchema()->SmartCast<FdoSmPhSqsMgr>();
-    FdoSmPhOwnerP owner = phMgr->FindOwner();
-    if (owner == NULL)
-        return false;
-
-	GdbiConnection* gdbiConn = phMgr->GetGdbiConnection();
-    GdbiQueryResult* gdbiResult = gdbiConn->ExecuteQuery(L"SELECT o.name as f_name, p.name as p_name, s.name as p_type, p.max_length as p_len, p.precision, p.scale from sys.objects o inner join sys.parameters p on (o.object_id = p.object_id) inner join sys.systypes s on p.user_type_id = s.xusertype WHERE o.type = N'FN' order by o.name, p.parameter_id");
-    FdoPtr<FdoRdbmsSQLDataReader> rdr = FdoRdbmsSQLDataReader::Create(this, gdbiResult);
-
-    std::wstring fctName;
-    std::vector< RdbmsArgumentDefinition* > arguments;
-    RdbmsArgumentDefinition* retFct = NULL;
-    try
-    {
-        size_t idxPos = 0;
-        while (rdr->ReadNext())
-        {
-            FdoString* argName = NULL;
-            if (!rdr->IsNull(1))
-                argName = rdr->GetString(1);
-
-            FdoSmPhColType colType = FdoSmPhSqsColTypeMapper::String2Type(rdr->GetString(2));
-            if (argName == NULL || *argName == L'\0')
-            {
-                // we have new function
-                if (retFct == NULL)
-                    retFct = new RdbmsArgumentDefinition(colType);
-                else
-                {
-                    // Should we return bool of Int32!? bool cannot be used in many places; we will see later
-                    //if (retFct->m_type == FdoSmPhColType_Bool)
-                    //    retFct->m_type == FdoSmPhColType_Int32;
-
-                    // we need to generate the function
-                    FdoPtr<FdoFunctionDefinition> fct = GenerateFunctionDefinition(fctName.c_str(), retFct, arguments, idxPos);
-                    if (fct != NULL)
-                        coll->Add(fct);
-                }
-                retFct->m_type = colType;
-                fctName = rdr->GetString(0);
-                idxPos = 0;
-            }
-            else
-            {
-                if (idxPos >= arguments.size())
-                    arguments.push_back(new RdbmsArgumentDefinition(argName, colType, rdr->GetInt64(3), rdr->GetInt32(4), rdr->GetInt32(5)));
-                else
-                    arguments.at(idxPos)->SetValues(argName, colType, rdr->GetInt64(3), rdr->GetInt32(4), rdr->GetInt32(5));
-                idxPos++;
-            }
-        }
-        if (idxPos != 0 && retFct != NULL)
-        {
-            FdoPtr<FdoFunctionDefinition> fct = GenerateFunctionDefinition(fctName.c_str(), retFct, arguments, idxPos);
-            if (fct != NULL)
-                coll->Add(fct);
-        }
-    }
-    catch(...)
-    {
-        for (size_t idx = arguments.size(); idx < arguments.size(); idx++)
-            delete arguments.at(idx);
-
-        delete retFct;
-        throw;
-    }
-    for (size_t idx = arguments.size(); idx < arguments.size(); idx++)
-        delete arguments.at(idx);
-    delete retFct;
-
-    return true;
-}
-

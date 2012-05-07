@@ -18,7 +18,6 @@
 
 
 #include "stdafx.h"
-#include <string>
 #include <Sm/Lp/SchemaCollection.h>
 #include <Sm/Ph/SchemaReader.h>
 //#include <Sm/Ph/SADReader.h>
@@ -65,28 +64,6 @@ FdoSmLpSchema::FdoSmLpSchema(
 
 FdoSmLpSchema::~FdoSmLpSchema(void)
 {
-}
-
-// avoid calling this method when there is no metadata 
-void FdoSmLpSchema::GetFdoSmLpClassNames (FdoStringCollection* classNames)
-{
-    FdoSmPhOwnerP owner = mPhysicalSchema->GetOwner();
-    if (!owner->GetHasClassMetaSchema())
-    {
-        // this can be used only with FDO metadata
-        return;
-    }
-	FdoSmPhClassReaderP classReader = mPhysicalSchema->CreateClassReader(GetName(), false);
-
-    std::wstring clsName(GetName());
-    clsName.append(L":");
-    size_t sz = clsName.size();
-	while (classReader->ReadNext())
-    {
-        clsName.append(classReader->GetName());
-        classNames->Add(clsName.c_str());
-        clsName.resize(sz);
-	}
 }
 
 const FdoSmLpClassCollection* FdoSmLpSchema::RefClasses() const
@@ -344,10 +321,7 @@ void FdoSmLpSchema::Update(
 void FdoSmLpSchema::SynchPhysical(bool bRollbackOnly)
 {
 	for ( int i = 0; i < RefClasses()->GetCount(); i++ )
-    {
-        FdoSmLpClassDefinitionP cls = mClasses->GetItem(i);
-		cls->SynchPhysical(bRollbackOnly);
-    }
+		mClasses->GetItem(i)->SynchPhysical(bRollbackOnly);
 }
  
 void FdoSmLpSchema::SetElementState(FdoSchemaElementState elementState)
@@ -524,7 +498,6 @@ FdoSmLpClassDefinitionP FdoSmLpSchema::LoadClass(FdoStringP className, FdoString
         return cls;
     
     FdoSmPhClassReaderP classReader = mPhysicalSchema->CreateClassReader((schemaName!=NULL&&schemaName[0]!='\0')?schemaName:GetName(),className);
-    classReader->SetMultiClassReder(false);
 
     while ( classReader->ReadNext() ) {
 		FdoSmLpClassDefinitionP newClass = CreateClassDefinition( classReader );

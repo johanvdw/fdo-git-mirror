@@ -33,7 +33,7 @@
 #include "SpatialManager/FdoRdbmsSpatialManager.h"
 
 
-static char* TRANSACTION_NAME = "TrInsCmd";
+static char* TRANSACTION_NAME = "FdoRdbmsInsertCommand::Execute";
 
 
 #define INSERT_CLEANUP \
@@ -50,6 +50,7 @@ FdoRdbmsInsertCommand::FdoRdbmsInsertCommand () :
     mConnection( NULL ),
     mPropertyValues(NULL),
     mAutoGenPropertyValues(NULL),
+    mBatchValues(NULL),
     m_ClassName( NULL ),
     mCurrentClass(NULL),
 	mPvcProcessor( NULL )
@@ -61,6 +62,7 @@ FdoRdbmsInsertCommand::FdoRdbmsInsertCommand (FdoIConnection *connection) :
     mPropertyValues(NULL),
     mAutoGenPropertyValues(NULL),
     m_ClassName( NULL ),
+    mBatchValues(NULL),
     FdoRdbmsCommand<FdoIInsert>(connection),
     mCurrentClass(NULL),
 	mPvcProcessor( NULL )
@@ -81,12 +83,8 @@ FdoRdbmsInsertCommand::~FdoRdbmsInsertCommand()
         delete [] mCurrentClass;
     FDO_SAFE_RELEASE(mPropertyValues);
     FDO_SAFE_RELEASE(mAutoGenPropertyValues);
+    FDO_SAFE_RELEASE(mBatchValues);
     FDO_SAFE_RELEASE(m_ClassName);
-}
-
-FdoRdbmsInsertCommand* FdoRdbmsInsertCommand::Create (FdoIConnection *connection)
-{
-    return new FdoRdbmsInsertCommand(connection);
 }
 
 FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
@@ -100,7 +98,7 @@ FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
     bool                containsObjectProperties = false;
     bool                handleForeignAutoincrementedId = false;
 
-    if (!mConnection || !mFdoConnection || mFdoConnection->GetConnectionState() != FdoConnectionState_Open)
+    if( NULL == mConnection )
         throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_13, "Connection not established"));
 
     className = this->GetClassNameRef();
@@ -297,7 +295,7 @@ FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
     catch (FdoException *ex)
     {
         INSERT_CLEANUP;
-        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
         ex->Release();
         throw exp;
 
@@ -366,7 +364,7 @@ FdoIFeatureReader* FdoRdbmsInsertCommand::Execute ()
 						    if (idDataValue->GetDataType() == FdoDataType_DateTime)
 							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime((static_cast<FdoDateTimeValue*>(idDataValue))->GetDateTime());
 						    else
-							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime(mFdoConnection->DbiToFdoTime(stringValue));
+							    (static_cast<FdoDateTimeValue*>(newValue.p))->SetDateTime(mFdoConnection->DbiToFdoTime(mConnection->GetUtility()->UnicodeToUtf8(stringValue)));
 						    newIdProp->SetValue(newValue);
 						    break;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo.java 22688 2011-07-10 22:00:30Z rouault $
+ * $Id: gdalinfo.java 16360 2009-02-18 20:45:09Z rouault $
  *
  * Name:     gdalinfo.java
  * Project:  GDAL SWIG Interface
@@ -649,12 +649,10 @@ public class gdalinfo {
 				hLatLong = hProj.CloneGeogCS();
 
 			if (hLatLong != null) {
-				gdal.PushErrorHandler( "CPLQuietErrorHandler" );
+				//CPLPushErrorHandler( gdalconstConstants.CPLQuietErrorHandler );
 				hTransform = new CoordinateTransformation(hProj, hLatLong);
-				gdal.PopErrorHandler();
+				//CPLPopErrorHandler();
 				hLatLong.delete();
-				if (gdal.GetLastErrorMsg().indexOf("Unable to load PROJ.4 library") != -1)
-					hTransform = null;
 			}
 
 			if (hProj != null)

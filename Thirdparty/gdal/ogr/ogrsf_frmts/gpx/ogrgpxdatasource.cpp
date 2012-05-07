@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgpxdatasource.cpp 23557 2011-12-12 22:08:17Z rouault $
+ * $Id: ogrgpxdatasource.cpp 17848 2009-10-17 12:59:16Z rouault $
  *
  * Project:  GPX Translator
  * Purpose:  Implements OGRGPXDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrgpxdatasource.cpp 23557 2011-12-12 22:08:17Z rouault $");
+CPL_CVSID("$Id: ogrgpxdatasource.cpp 17848 2009-10-17 12:59:16Z rouault $");
 
 #define SPACE_FOR_METADATA 160
 
@@ -59,13 +59,6 @@ OGRGPXDataSource::OGRGPXDataSource()
 
     pszName = NULL;
     pszVersion = NULL;
-
-    bIsBackSeekable = TRUE;
-    pszEOL = "\n";
-
-    nLastRteId = -1;
-    nLastTrkId = -1;
-    nLastTrkSegId = -1;
 }
 
 /************************************************************************/
@@ -77,30 +70,19 @@ OGRGPXDataSource::~OGRGPXDataSource()
 {
     if ( fpOutput != NULL )
     {
-        if (nLastRteId != -1)
-            PrintLine("</rte>");
-        else if (nLastTrkId != -1)
-        {
-            PrintLine("  </trkseg>");
-            PrintLine("</trk>");
-        }
-        PrintLine("</gpx>");
-        if ( bIsBackSeekable )
+        VSIFPrintf(fpOutput, "</gpx>\n");
+        if ( fpOutput != stdout )
         {
             /* Write the <bound> element in the reserved space */
             if (dfMinLon <= dfMaxLon)
             {
                 char szMetadata[SPACE_FOR_METADATA+1];
-                int nRet = snprintf(szMetadata, SPACE_FOR_METADATA,
-                         "<metadata><bounds minlat=\"%.15f\" minlon=\"%.15f\" maxlat=\"%.15f\" maxlon=\"%.15f\"/></metadata>",
+                sprintf(szMetadata, "<metadata><bounds minlat=\"%.15f\" minlon=\"%.15f\" maxlat=\"%.15f\" maxlon=\"%.15f\"/></metadata>",
                         dfMinLat, dfMinLon, dfMaxLat, dfMaxLon);
-                if (nRet < SPACE_FOR_METADATA)
-                {
-                    VSIFSeekL(fpOutput, nOffsetBounds, SEEK_SET);
-                    VSIFWriteL(szMetadata, 1, strlen(szMetadata), fpOutput);
-                }
+                VSIFSeek(fpOutput, nOffsetBounds, SEEK_SET);
+                VSIFWrite(szMetadata, 1, strlen(szMetadata), fpOutput);
             }
-            VSIFCloseL( fpOutput);
+            VSIFClose( fpOutput);
         }
     }
 
@@ -153,12 +135,7 @@ OGRLayer * OGRGPXDataSource::CreateLayer( const char * pszLayerName,
     GPXGeometryType gpxGeomType;
     if (eType == wkbPoint || eType == wkbPoint25D)
     {
-        if (EQUAL(pszLayerName, "track_points"))
-            gpxGeomType = GPX_TRACK_POINT;
-        else if (EQUAL(pszLayerName, "route_points"))
-            gpxGeomType = GPX_ROUTE_POINT;
-        else
-            gpxGeomType = GPX_WPT;
+        gpxGeomType = GPX_WPT;
     }
     else if (eType == wkbLineString || eType == wkbLineString25D)
     {
@@ -280,9 +257,17 @@ int OGRGPXDataSource::Open( const char * pszFilename, int bUpdateIn)
     pszName = CPLStrdup( pszFilename );
 
 /* -------------------------------------------------------------------- */
-/*      Try to open the file.                                           */
+/*      Determine what sort of object this is.                          */
 /* -------------------------------------------------------------------- */
-    VSILFILE* fp = VSIFOpenL(pszFilename, "r");
+    VSIStatBufL sStatBuf;
+
+    if( VSIStatL( pszFilename, &sStatBuf ) != 0 )
+        return FALSE;
+    
+    if( VSI_ISDIR(sStatBuf.st_mode) )
+        return FALSE;
+
+    FILE* fp = VSIFOpenL(pszFilename, "r");
     if (fp == NULL)
         return FALSE;
     
@@ -393,7 +378,7 @@ int OGRGPXDataSource::Open( const char * pszFilename, int bUpdateIn)
     return (validity == GPX_VALIDITY_VALID);
 #else
     char aBuf[256];
-    VSILFILE* fp = VSIFOpenL(pszFilename, "r");
+    FILE* fp = VSIFOpenL(pszFilename, "r");
     if (fp)
     {
         unsigned int nLen = (unsigned int)VSIFReadL( aBuf, 1, 255, fp );
@@ -423,9 +408,6 @@ int OGRGPXDataSource::Create( const char *pszFilename,
         return FALSE;
     }
 
-    if (strcmp(pszFilename, "/dev/stdout") == 0)
-        pszFilename = "/vsistdout/";
-
 /* -------------------------------------------------------------------- */
 /*     Do not override exiting file.                                    */
 /* -------------------------------------------------------------------- */
@@ -442,16 +424,12 @@ int OGRGPXDataSource::Create( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Create the output file.                                         */
 /* -------------------------------------------------------------------- */
-
     pszName = CPLStrdup( pszFilename );
 
-    if( strcmp(pszName, "/vsistdout/") == 0 )
-    {
-        bIsBackSeekable = FALSE;
-        fpOutput = VSIFOpenL( pszFilename, "w" );
-    }
+    if( EQUAL(pszFilename,"stdout") )
+        fpOutput = stdout;
     else
-        fpOutput = VSIFOpenL( pszFilename, "w+" );
+        fpOutput = VSIFOpen( pszFilename, "w+" );
     if( fpOutput == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -459,38 +437,7 @@ int OGRGPXDataSource::Create( const char *pszFilename,
                   pszFilename );
         return FALSE;
     }
-
-/* -------------------------------------------------------------------- */
-/*      End of line character.                                          */
-/* -------------------------------------------------------------------- */
-    const char *pszCRLFFormat = CSLFetchNameValue( papszOptions, "LINEFORMAT");
-
-    int bUseCRLF;
-    if( pszCRLFFormat == NULL )
-    {
-#ifdef WIN32
-        bUseCRLF = TRUE;
-#else
-        bUseCRLF = FALSE;
-#endif
-    }
-    else if( EQUAL(pszCRLFFormat,"CRLF") )
-        bUseCRLF = TRUE;
-    else if( EQUAL(pszCRLFFormat,"LF") )
-        bUseCRLF = FALSE;
-    else
-    {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-                  "LINEFORMAT=%s not understood, use one of CRLF or LF.",
-                  pszCRLFFormat );
-#ifdef WIN32
-        bUseCRLF = TRUE;
-#else
-        bUseCRLF = FALSE;
-#endif
-    }
-    pszEOL = (bUseCRLF) ? "\r\n" : "\n";
-
+    
 /* -------------------------------------------------------------------- */
 /*      Look at use extensions options.                                 */
 /* -------------------------------------------------------------------- */
@@ -517,21 +464,21 @@ int OGRGPXDataSource::Create( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*     Output header of GPX file.                                       */
 /* -------------------------------------------------------------------- */
-    PrintLine("<?xml version=\"1.0\"?>");
-    VSIFPrintfL(fpOutput, "<gpx version=\"1.1\" creator=\"GDAL " GDAL_RELEASE_NAME "\" ");
-    VSIFPrintfL(fpOutput, "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ");
+    VSIFPrintf(fpOutput, "<?xml version=\"1.0\"?>\n");
+    VSIFPrintf(fpOutput, "<gpx version=\"1.1\" creator=\"GDAL " GDAL_RELEASE_NAME "\" ");
+    VSIFPrintf(fpOutput, "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ");
     if (bUseExtensions)
-        VSIFPrintfL(fpOutput, "xmlns:%s=\"%s\" ", pszExtensionsNS, pszExtensionsNSURL);
-    VSIFPrintfL(fpOutput, "xmlns=\"http://www.topografix.com/GPX/1/1\" ");
-    PrintLine("xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">");
-    if (bIsBackSeekable)
+        VSIFPrintf(fpOutput, "xmlns:%s=\"%s\" ", pszExtensionsNS, pszExtensionsNSURL);
+    VSIFPrintf(fpOutput, "xmlns=\"http://www.topografix.com/GPX/1/1\" ");
+    VSIFPrintf(fpOutput, "xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
+    if (fpOutput != stdout)
     {
       /* Reserve space for <metadata><bounds/></metadata> */
       char szMetadata[SPACE_FOR_METADATA+1];
       memset(szMetadata, ' ', SPACE_FOR_METADATA);
       szMetadata[SPACE_FOR_METADATA] = '\0';
-      nOffsetBounds = (int) VSIFTellL(fpOutput);
-      PrintLine("%s", szMetadata);
+      nOffsetBounds = VSIFTell(fpOutput);
+      VSIFPrintf(fpOutput, "%s\n", szMetadata);
     }
 
     return TRUE;
@@ -547,20 +494,4 @@ void OGRGPXDataSource::AddCoord(double dfLon, double dfLat)
     if (dfLat < dfMinLat) dfMinLat = dfLat;
     if (dfLon > dfMaxLon) dfMaxLon = dfLon;
     if (dfLat > dfMaxLat) dfMaxLat = dfLat;
-}
-
-/************************************************************************/
-/*                            PrintLine()                               */
-/************************************************************************/
-
-void OGRGPXDataSource::PrintLine(const char *fmt, ...)
-{
-    CPLString osWork;
-    va_list args;
-
-    va_start( args, fmt );
-    osWork.vPrintf( fmt, args );
-    va_end( args );
-
-    VSIFPrintfL(fpOutput, "%s%s", osWork.c_str(), pszEOL);
 }

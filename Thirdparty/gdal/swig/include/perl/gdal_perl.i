@@ -35,13 +35,11 @@
 %}
 
 %inline %{
-    #ifndef SWIG
     typedef struct
     {
 	SV *fct;
 	SV *data;
     } SavedEnv;
-    #endif
     int callback_d_cp_vp(double d, const char *cp, void *vp)
     {
 	int count, ret;
@@ -129,21 +127,14 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 %rename (_GetTypeOfCol) GetTypeOfCol;
 %rename (_CreateColumn) CreateColumn;
 
-%rename (Stat) VSIStatL;
-
 %perlcode %{
     use strict;
     use Carp;
-    use Encode;
     use Geo::GDAL::Const;
     use Geo::OGR;
     use Geo::OSR;
-    # The three first numbers of the module version and the library
-    # version should match. GDAL version is available in runtime but
-    # it is needed here for the build time when it is compared against
-    # the version of GDAL against which we build.
-    our $VERSION = '1.90';
-    our $GDAL_VERSION = '1.9.0';
+    our $VERSION = '0.23';
+    our $GDAL_VERSION = '1.7.1';
     use vars qw/
 	%TYPE_STRING2INT %TYPE_INT2STRING
 	%ACCESS_STRING2INT %ACCESS_INT2STRING
@@ -293,19 +284,6 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	$_[3] = $RESAMPLING_STRING2INT{$_[3]} if $_[3] and exists $RESAMPLING_STRING2INT{$_[3]};
 	return _AutoCreateWarpedVRT(@_);
     }
-    sub FindFile {
-	my $a = _FindFile(@_);
-	$a = decode('utf8', $a); # GDAL returns utf8
-	return $a;
-    }
-    sub ReadDir {
-	return unless defined wantarray;
-	my $a = _ReadDir(@_);
-	for (@$a) {
-	    $_ = decode('utf8', $_); # GDAL returns utf8
-	}
-	return wantarray ? @$a : $a;
-    }
 
     package Geo::GDAL::MajorObject;
     use vars qw/@DOMAINS/;
@@ -344,15 +322,14 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	my $h = $self->GetMetadata;
 	my @cap;
 	for my $cap (@CAPABILITIES) {
-	    my $test = $h->{'DCAP_'.uc($cap)};
-	    push @cap, $cap if defined($test) and $test eq 'YES';
+	    push @cap, $cap if $h->{'DCAP_'.uc($cap)} eq 'YES';
 	}
 	return @cap;
     }
     sub TestCapability {
 	my($self, $cap) = @_;
-	my $h = $self->GetMetadata->{'DCAP_'.uc($cap)};
-	return (defined($h) and $h eq 'YES') ? 1 : undef;
+	my $h = $self->GetMetadata;
+	return $h->{'DCAP_'.uc($cap)} eq 'YES' ? 1 : undef;
     }
     sub Extension {
 	my $self = shift;
@@ -469,12 +446,10 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
     use UNIVERSAL qw(isa);
     use strict;
     use vars qw/
-        @COLOR_INTERPRETATIONS
 	%COLOR_INTERPRETATION_STRING2INT %COLOR_INTERPRETATION_INT2STRING @DOMAINS
 	/;
-    @COLOR_INTERPRETATIONS = qw/Undefined GrayIndex PaletteIndex RedBand GreenBand BlueBand AlphaBand 
-		    HueBand SaturationBand LightnessBand CyanBand MagentaBand YellowBand BlackBand/;
-    for my $string (@COLOR_INTERPRETATIONS) {
+    for my $string (qw/Undefined GrayIndex PaletteIndex RedBand GreenBand BlueBand AlphaBand 
+		    HueBand SaturationBand LightnessBand CyanBand MagentaBand YellowBand BlackBand/) {
 	my $int = eval "\$Geo::GDAL::Constc::GCI_$string";
 	$COLOR_INTERPRETATION_STRING2INT{$string} = $int;
 	$COLOR_INTERPRETATION_INT2STRING{$int} = $string;
@@ -514,17 +489,6 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	my $self = shift;
 	SetNoDataValue($self, $_[0]) if @_ > 0;
 	GetNoDataValue($self);
-    }
-    sub Unit {
-	my $self = shift;
-	SetUnitType($self, $_[0]) if @_ > 0;
-	GetUnitType($self);
-    }
-    sub ScaleAndOffset {
-	my $self = shift;
-	SetScale($self, $_[0]) if @_ > 0;
-	SetOffset($self, $_[1]) if @_ > 1;
-	(GetScale($self), GetOffset($self));
     }
     sub ReadTile {
 	my($self, $xoff, $yoff, $xsize, $ysize) = @_;
@@ -608,9 +572,10 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	    $params{$_} = $defaults{$_} unless defined $params{$_};
 	}
 	$params{ProgressData} = 1 if $params{Progress} and not defined $params{ProgressData};
-	_GetHistogram($self, $params{Min}, $params{Max}, $params{Buckets},
-		      $params{IncludeOutOfRange}, $params{ApproxOK},
-		      $params{Progress}, $params{ProgressData});
+	my $h = _GetHistogram($self, $params{Min}, $params{Max}, $params{Buckets},
+			      $params{IncludeOutOfRange}, $params{ApproxOK},
+			      $params{Progress}, $params{ProgressData});
+	return @$h if $h;
     }
     sub Contours {
 	my $self = shift;
@@ -653,16 +618,6 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 			$params{callback}, $params{callback_data});
 	return $layer;
     }
-    sub FillNodata {
-      croak 'usage: FillNodata($mask)' unless isa($_[1], 'Geo::GDAL::Band');
-      $_[2] = 10 unless defined $_[2];
-      $_[3] = 0 unless defined $_[3];
-      $_[4] = undef unless defined $_[4];
-      $_[5] = undef unless defined $_[5];
-      $_[6] = undef unless defined $_[6];
-      Geo::GDAL::FillNodata(@_);
-    }
-    *GetBandNumber = *GetBand;
 
     package Geo::GDAL::ColorTable;
     use strict;
@@ -777,13 +732,6 @@ ALTERED_DESTROY(GDALRasterAttributeTableShadow, GDALc, delete_RasterAttributeTab
 	SetValueAsString($self, $row, $column, $_[3]) if defined $_[3];
 	return unless defined wantarray;
 	GetValueAsString($self, $row, $column);
-    }
-    sub LinearBinning {
-	my $self = shift;
-	SetLinearBinning($self, @_) if @_ > 0;
-	return unless defined wantarray;
-	my @a = GetLinearBinning($self);
-	return $a[0] ? ($a[1], $a[2]) : ();
     }
 
  %}

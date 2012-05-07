@@ -25,7 +25,9 @@ class FdoRdbmsException : public FdoException
 protected:
     FdoRdbmsException();
 
-    FdoRdbmsException(const wchar_t* message, FdoException* causeFdo = NULL, FdoInt64 nativeErrorCode = 0);
+    FdoRdbmsException(const wchar_t* message);
+
+    FdoRdbmsException(const wchar_t* message, FdoException* cause);
 
     virtual ~FdoRdbmsException();
 
@@ -34,6 +36,8 @@ protected:
 public:
     static FdoRdbmsException* Create();
 
-    static FdoRdbmsException* Create(const wchar_t* message, FdoException* causeFdo = NULL, FdoInt64 nativeErrorCode = 0);
+    static FdoRdbmsException* Create(const wchar_t* message);
+
+    static FdoRdbmsException* Create(const wchar_t* message, FdoException* cause);
 };
 #endif // FDORDBMSEXCEPTION_H

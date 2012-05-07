@@ -38,20 +38,20 @@ II. Build Notes
   In preparation for building the Windows Open Source FDO Binaries:
 
   1. The FDO open source build process supports the usage of either the Visual 
-     Studio 2010 Express, Standard or Professional editions. 
+     Studio 2008 Express, Standard or Professional editions. 
 
-     The Visual Studio 2010 Express software can be download and installed for 
+     The Visual Studio 2008 Express software can be download and installed for 
      free from the following sites.
 
-     Visual Studio 2010 C# Express Edition:
+     Visual Studio 2008 C# Express Edition:
 
-        http://www.microsoft.com/visualstudio/en-us/products/2010-editions/express
+        http://www.microsoft.com/express/Downloads/
 
-     Visual Studio 2010 C++ Express Edition: 
+     Visual Studio 2008 C++ Express Edition: 
  
-        http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express
+        http://www.microsoft.com/express/Downloads/#2008-Visual-CPP
         
-     You will need to download and install Windows .NET Framework 4.0 Service Pack 1.
+     You will need to download and install Windows .NET Framework 3.5 Service Pack 1.
      You can download it from the following location:
      
         http://msdn.microsoft.com/en-us/netframework/default.aspx
@@ -514,7 +514,7 @@ II. Build Notes
      directory must be set as writeable by the user, otherwise the user 
      will have to log in and build FDO as the ROOT user. This requirement
      is due to the fact that the FDO Libraries will be built and installed 
-     in /usr/local/fdo-3.8.0/lib
+     in /usr/local/fdo-3.6.0/lib
 
   2. Ensure that the following FDO Environment Variables are set as follows:
 
@@ -647,11 +647,11 @@ II. Build Notes
      In order to build the FDO Python Wrappers, build and install the FDO 
      libraries. Once the install is complete, run the 
      [FDO OpenSource]/Fdo/Python/build_linux.sh script. 
-     The Python components will be installed in /usr/local/fdo-3.8.0/lib
+     The Python components will be installed in /usr/local/fdo-3.6.0/lib
 
   9. NOTE: To run the unit test, you must set LD_LIBRARY_PATH as follows:
 
-       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.8.0/lib
+       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/fdo-3.6.0/lib
        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SDEHOME/lib:$FDOTHIRDPARTY/ESRI/ArcSDEClient91/Linux/lib
  
  10. NOTE: Several known problems exist if auto-mounted drives are used as 

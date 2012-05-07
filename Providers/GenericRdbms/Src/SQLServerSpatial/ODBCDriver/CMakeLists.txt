@@ -21,7 +21,6 @@ set( FdoODBCDriver_STAT_SRCS
 	fetch.c
 	fre_cursor.c
 	geom.c
-	blob.c
 	get_con_var.c
 	get_curr_conn.c
 	get_cursor.c
@@ -34,7 +33,6 @@ set( FdoODBCDriver_STAT_SRCS
 	pkeys_.c
 	rdbi_init.c
 	run_sql.c
-	savepoint.c
 	set_schema.c
 	set_sess_env.c
 	show_.c

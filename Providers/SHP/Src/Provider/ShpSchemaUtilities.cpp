@@ -25,7 +25,7 @@
 
 
 
-FdoDataType ShpSchemaUtilities::DbfTypeToFdoType (int physicalColumnType, int precision, int scale)
+FdoDataType ShpSchemaUtilities::DbfTypeToFdoType (int physicalColumnType)
 {
     FdoDataType logicalDataType;
 
@@ -33,17 +33,6 @@ FdoDataType ShpSchemaUtilities::DbfTypeToFdoType (int physicalColumnType, int pr
     {
         case kColumnDecimalType:
             logicalDataType = FdoDataType_Decimal;
-
-			// Turn the Decimals into Integer types when the scale is 0 (see RFC 55)
-			if (scale == 0)
-			{
-				if (precision <= DEFAULT_INT16_COL_LENGTH)
-					logicalDataType = FdoDataType_Int16;
-				else if (precision <= DEFAULT_INT32_COL_LENGTH)
-					logicalDataType = FdoDataType_Int32;
-				else if (precision <= DEFAULT_INT64_COL_LENGTH)
-					logicalDataType = FdoDataType_Int64;
-			}
             break;
         case kColumnCharType:
             logicalDataType = FdoDataType_String;
@@ -68,9 +57,7 @@ eDBFColumnType ShpSchemaUtilities::FdoTypeToDbfType (FdoDataType logicalProperty
     switch (logicalPropertyType)
     {
         case FdoDataType_Decimal:
-		case FdoDataType_Int16:
         case FdoDataType_Int32:
-		case FdoDataType_Int64:
             physicalColumnType = kColumnDecimalType;
             break;
         case FdoDataType_String:

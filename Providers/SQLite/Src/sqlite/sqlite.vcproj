@@ -43,10 +43,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_OMIT_TRACE;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;SQLITE_OMIT_UTF16;SQLITE_OMIT_SHARED_CACHEXXX;SQLITE_THREADSAFE=2;SQLITE_ENABLE_RTREE;SQLITE_CORE;SQLITE_SOUNDEX"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -107,10 +106,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_OMIT_TRACE;SQLITE_OMIT_PROGRESS_CALLBACK;SQLITE_OMIT_AUTHORIZATION;SQLITE_OMIT_UTF16;SQLITE_OMIT_SHARED_CACHEXXX;SQLITE_THREADSAFE=2;SQLITE_ENABLE_RTREE;SQLITE_CORE;SQLITE_SOUNDEX"
-				MinimalRebuild="false"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -171,7 +169,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
@@ -242,7 +239,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"

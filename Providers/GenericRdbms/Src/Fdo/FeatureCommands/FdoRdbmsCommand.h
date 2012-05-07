@@ -42,7 +42,7 @@ protected:
     {
         if( connection != NULL )
             connection->AddRef();
-        this->mFdoConnection = static_cast<FdoRdbmsConnection*>(connection);
+        this->mFdoConnection = dynamic_cast<FdoRdbmsConnection*>(connection);
         m_TimeOut = 0;
     }
 
@@ -69,7 +69,7 @@ public:
             this->mFdoConnection->Release();
 
         value->AddRef();
-        this->mFdoConnection = static_cast<FdoRdbmsConnection*>(value);
+        this->mFdoConnection = dynamic_cast<FdoRdbmsConnection*>(value);
     }
 
     // Gets the wait time before terminating the attempt to execute a command

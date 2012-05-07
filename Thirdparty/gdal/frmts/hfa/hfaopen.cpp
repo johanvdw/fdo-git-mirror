@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaopen.cpp 23624 2011-12-21 19:31:43Z rouault $
+ * $Id: hfaopen.cpp 18622 2010-01-24 01:18:35Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Supporting functions for HFA (.img) ... main (C callable) API
@@ -39,9 +39,8 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 #include <limits.h>
-#include <vector>
 
-CPL_CVSID("$Id: hfaopen.cpp 23624 2011-12-21 19:31:43Z rouault $");
+CPL_CVSID("$Id: hfaopen.cpp 18622 2010-01-24 01:18:35Z warmerdam $");
 
 
 static const char *apszAuxMetadataItems[] = {
@@ -114,7 +113,7 @@ static char * HFAGetDictionary( HFAHandle hHFA )
 HFAHandle HFAOpen( const char * pszFilename, const char * pszAccess )
 
 {
-    VSILFILE *fp;
+    FILE	*fp;
     char	szHeader[16];
     HFAInfo_t	*psInfo;
     GUInt32	nHeaderPos;
@@ -246,7 +245,7 @@ HFAInfo_t *HFACreateDependent( HFAInfo_t *psBase )
 /* -------------------------------------------------------------------- */
 /*      Does this file already exist?  If so, re-use it.                */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fp = VSIFOpenL( oRRDFilename, "rb" );
+    FILE *fp = VSIFOpenL( oRRDFilename, "rb" );
     if( fp != NULL )
     {
         VSIFCloseL( fp );
@@ -303,7 +302,7 @@ HFAInfo_t *HFAGetDependent( HFAInfo_t *psBase, const char *pszFilename )
 /*      Try to open the dependent file.                                 */
 /* -------------------------------------------------------------------- */
     char	*pszDependent;
-    VSILFILE *fp;
+    FILE	*fp;
     const char* pszMode = psBase->eAccess == HFA_Update ? "r+b" : "rb";
 
     pszDependent = CPLStrdup(
@@ -383,7 +382,7 @@ void HFAClose( HFAHandle hHFA )
 {
     int		i;
 
-    if( hHFA->eAccess == HFA_Update && (hHFA->bTreeDirty || hHFA->poDictionary->bDictionaryTextDirty) )
+    if( hHFA->bTreeDirty || hHFA->poDictionary->bDictionaryTextDirty )
         HFAFlush( hHFA );
 
     if( hHFA->psDependent != NULL )
@@ -586,13 +585,6 @@ int HFAGetBandNoData( HFAHandle hHFA, int nBand, double *pdfNoData )
 
     HFABand *poBand = hHFA->papoBand[nBand-1];
 
-    if( !poBand->bNoDataSet && poBand->nOverviews > 0 )
-    {
-      poBand = poBand->papoOverviews[0];
-      if( poBand == NULL )
-          return FALSE;
-    }
-
     *pdfNoData = poBand->dfNoData;
     return poBand->bNoDataSet;
 }
@@ -665,10 +657,6 @@ CPLErr HFAGetOverviewInfo( HFAHandle hHFA, int nBand, int iOverview,
         return CE_Failure;
     }
     poBand = poBand->papoOverviews[iOverview];
-    if( poBand == NULL )
-    {
-        return CE_Failure;
-    }
 
     if( pnXSize != NULL )
         *pnXSize = poBand->nWidth;
@@ -1036,15 +1024,11 @@ int HFAGetGeoTransform( HFAHandle hHFA, double *padfGeoTransform )
         padfGeoTransform[0] = psMapInfo->upperLeftCenter.x
             - psMapInfo->pixelSize.width*0.5;
         padfGeoTransform[1] = psMapInfo->pixelSize.width;
-        if(padfGeoTransform[1] == 0.0)
-            padfGeoTransform[1] = 1.0;
         padfGeoTransform[2] = 0.0;
         if( psMapInfo->upperLeftCenter.y >= psMapInfo->lowerRightCenter.y )
             padfGeoTransform[5] = - psMapInfo->pixelSize.height;
         else
             padfGeoTransform[5] = psMapInfo->pixelSize.height;
-        if(padfGeoTransform[5] == 0.0)
-            padfGeoTransform[5] = 1.0;
 
         padfGeoTransform[3] = psMapInfo->upperLeftCenter.y
             - padfGeoTransform[5]*0.5;
@@ -1258,13 +1242,6 @@ CPLErr HFASetPEString( HFAHandle hHFA, const char *pszPEString )
         poProX = hHFA->papoBand[iBand]->poNode->GetNamedChild( "ProjectionX" );
 
 /* -------------------------------------------------------------------- */
-/*      If we are setting an empty string then a missing entry is       */
-/*      equivelent.                                                     */
-/* -------------------------------------------------------------------- */
-        if( strlen(pszPEString) == 0 && poProX == NULL )
-            continue;
-
-/* -------------------------------------------------------------------- */
 /*      Create the node.                                                */
 /* -------------------------------------------------------------------- */
         if( poProX == NULL )
@@ -1395,7 +1372,7 @@ const Eprj_ProParameters *HFAGetProParameters( HFAHandle hHFA )
 
     for( i = 0; i < 15; i++ )
     {
-        char	szFieldName[40];
+        char	szFieldName[30];
 
         sprintf( szFieldName, "proParams[%d]", i );
         psProParms->proParams[i] = poMIEntry->GetDoubleField(szFieldName);
@@ -1455,13 +1432,7 @@ CPLErr HFASetProParameters( HFAHandle hHFA, const Eprj_ProParameters *poPro )
             nSize += strlen(poPro->proExeName) + 1;
 
         pabyData = poMIEntry->MakeData( nSize );
-        if(!pabyData)
-            return CE_Failure;
-
         poMIEntry->SetPosition();
-
-        // Initialize the whole thing to zeros for a clean start.
-        memset( poMIEntry->GetData(), 0, poMIEntry->GetDataSize() );
 
 /* -------------------------------------------------------------------- */
 /*      Write the various fields.                                       */
@@ -1603,13 +1574,7 @@ CPLErr HFASetDatum( HFAHandle hHFA, const Eprj_Datum *poDatum )
             nSize += strlen(poDatum->gridname) + 1;
 
         pabyData = poDatumEntry->MakeData( nSize );
-        if(!pabyData)
-            return CE_Failure;
-
         poDatumEntry->SetPosition();
-
-        // Initialize the whole thing to zeros for a clean start.
-        memset( poDatumEntry->GetData(), 0, poDatumEntry->GetDataSize() );
 
 /* -------------------------------------------------------------------- */
 /*      Write the various fields.                                       */
@@ -1812,7 +1777,7 @@ NULL
 HFAHandle HFACreateLL( const char * pszFilename )
 
 {
-    VSILFILE *fp;
+    FILE	*fp;
     HFAInfo_t   *psInfo;
 
 /* -------------------------------------------------------------------- */
@@ -2453,8 +2418,7 @@ HFAHandle HFACreate( const char * pszFilename,
 /*      Create an overview layer object for a band.                     */
 /************************************************************************/
 
-int HFACreateOverview( HFAHandle hHFA, int nBand, int nOverviewLevel,
-                       const char *pszResampling )
+int HFACreateOverview( HFAHandle hHFA, int nBand, int nOverviewLevel )
 
 {
     if( nBand < 1 || nBand > hHFA->nBands )
@@ -2462,7 +2426,7 @@ int HFACreateOverview( HFAHandle hHFA, int nBand, int nOverviewLevel,
     else
     {
         HFABand *poBand = hHFA->papoBand[nBand-1];
-        return poBand->CreateOverview( nOverviewLevel, pszResampling );
+        return poBand->CreateOverview( nOverviewLevel );
     }
 }
 
@@ -2885,73 +2849,6 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
 }
 
 /************************************************************************/
-/*                         HFAGetIGEFilename()                          */
-/*                                                                      */
-/*      Returns the .ige filename if one is associated with this        */
-/*      object.  For files not newly created we need to scan the        */
-/*      bands for spill files.  Presumably there will only be one.      */
-/*                                                                      */
-/*      NOTE: Returns full path, not just the filename portion.         */
-/************************************************************************/
-
-const char *HFAGetIGEFilename( HFAHandle hHFA )
-
-{
-    if( hHFA->pszIGEFilename == NULL )
-    {
-        HFAEntry    *poDMS = NULL;
-        std::vector<HFAEntry*> apoDMSList = 
-            hHFA->poRoot->FindChildren( NULL, "ImgExternalRaster" );
-
-        if( apoDMSList.size() > 0 )
-            poDMS = apoDMSList[0];
-        
-/* -------------------------------------------------------------------- */
-/*      Get the IGE filename from if we have an ExternalRasterDMS       */
-/* -------------------------------------------------------------------- */
-        if( poDMS )
-        {
-            const char *pszRawFilename =
-                poDMS->GetStringField( "fileName.string" );
-            
-            if( pszRawFilename != NULL )
-            {
-                VSIStatBufL sStatBuf;
-                CPLString osFullFilename = 
-                    CPLFormFilename( hHFA->pszPath, pszRawFilename, NULL );
-
-                if( VSIStatL( osFullFilename, &sStatBuf ) != 0 )
-                {
-                    CPLString osExtension = CPLGetExtension(pszRawFilename);
-                    CPLString osBasename = CPLGetBasename(hHFA->pszFilename);
-                    CPLString osFullFilename = 
-                        CPLFormFilename( hHFA->pszPath, osBasename, 
-                                         osExtension );
-
-                    if( VSIStatL( osFullFilename, &sStatBuf ) == 0 )
-                        hHFA->pszIGEFilename = 
-                            CPLStrdup(
-                                CPLFormFilename( NULL, osBasename, 
-                                                 osExtension ) );
-                    else
-                        hHFA->pszIGEFilename = CPLStrdup( pszRawFilename );
-                }
-                else
-                    hHFA->pszIGEFilename = CPLStrdup( pszRawFilename );
-            }
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Return the full filename.                                       */
-/* -------------------------------------------------------------------- */
-    if( hHFA->pszIGEFilename )
-        return CPLFormFilename( hHFA->pszPath, hHFA->pszIGEFilename, NULL );
-    else
-        return NULL;
-}
-
-/************************************************************************/
 /*                        HFACreateSpillStack()                         */
 /*                                                                      */
 /*      Create a new stack of raster layers in the spill (.ige)         */
@@ -2976,17 +2873,8 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
     }
 
     if( psInfo->pszIGEFilename == NULL )
-    {
-        if( EQUAL(CPLGetExtension(psInfo->pszFilename),"rrd") )
-            psInfo->pszIGEFilename = 
-                CPLStrdup( CPLResetExtension( psInfo->pszFilename, "rde" ) );
-        else if( EQUAL(CPLGetExtension(psInfo->pszFilename),"aux") )
-            psInfo->pszIGEFilename = 
-                CPLStrdup( CPLResetExtension( psInfo->pszFilename, "axe" ) );
-        else								
-            psInfo->pszIGEFilename = 
-                CPLStrdup( CPLResetExtension( psInfo->pszFilename, "ige" ) );
-    }
+        psInfo->pszIGEFilename = 
+            CPLStrdup( CPLResetExtension( psInfo->pszFilename, "ige" ) );
 
     pszFullFilename = 
         CPLStrdup( CPLFormFilename( psInfo->pszPath, psInfo->pszIGEFilename, NULL ) );
@@ -2996,7 +2884,7 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
 /*      header.                                                         */
 /* -------------------------------------------------------------------- */
     static const char *pszMagick = "ERDAS_IMG_EXTERNAL_RASTER";
-    VSILFILE *fpVSIL;
+    FILE *fpVSIL;
 
     fpVSIL = VSIFOpenL( pszFullFilename, "r+b" );
     if( fpVSIL == NULL )
@@ -3237,9 +3125,7 @@ int HFAReadXFormStack( HFAHandle hHFA,
     {
         int bSuccess = FALSE;
         Efga_Polynomial sForward, sReverse;
-        memset( &sForward, 0, sizeof(sForward) );
-        memset( &sReverse, 0, sizeof(sReverse) );
-        
+
         if( EQUAL(poXForm->GetType(),"Efga_Polynomial") )
         {
             bSuccess = 
@@ -3257,6 +3143,8 @@ int HFAReadXFormStack( HFAHandle hHFA,
                 adfGT[5] = sForward.polycoefmtx[3];
 
                 bSuccess = HFAInvGeoTransform( adfGT, adfInvGT );
+
+                memset( &sReverse, 0, sizeof(sReverse) );
 
                 sReverse.order = sForward.order;
                 sReverse.polycoefvector[0] = adfInvGT[0];
@@ -3551,83 +3439,81 @@ char **HFAReadCameraModel( HFAHandle hHFA )
 /*      Create a pseudo-entry for the MIFObject with the                */
 /*      outputProjection.                                               */
 /* -------------------------------------------------------------------- */
-    HFAEntry *poProjInfo = HFAEntry::BuildEntryFromMIFObject( poXForm, "outputProjection" );
-    if (poProjInfo)
+    HFAEntry *poProjInfo = new HFAEntry( poXForm, "outputProjection" );
+
+/* -------------------------------------------------------------------- */
+/*      Fetch the datum.                                                */
+/* -------------------------------------------------------------------- */
+    Eprj_Datum sDatum;
+
+    memset( &sDatum, 0, sizeof(sDatum));
+    
+    sDatum.datumname = 
+        (char *) poProjInfo->GetStringField("earthModel.datum.datumname");
+    sDatum.type = (Eprj_DatumType) poProjInfo->GetIntField(
+        "earthModel.datum.type");
+
+    for( i = 0; i < 7; i++ )
     {
-    /* -------------------------------------------------------------------- */
-    /*      Fetch the datum.                                                */
-    /* -------------------------------------------------------------------- */
-        Eprj_Datum sDatum;
+        char	szFieldName[60];
 
-        memset( &sDatum, 0, sizeof(sDatum));
-
-        sDatum.datumname = 
-            (char *) poProjInfo->GetStringField("earthModel.datum.datumname");
-        sDatum.type = (Eprj_DatumType) poProjInfo->GetIntField(
-            "earthModel.datum.type");
-
-        for( i = 0; i < 7; i++ )
-        {
-            char	szFieldName[60];
-
-            sprintf( szFieldName, "earthModel.datum.params[%d]", i );
-            sDatum.params[i] = poProjInfo->GetDoubleField(szFieldName);
-        }
-
-        sDatum.gridname = (char *) 
-            poProjInfo->GetStringField("earthModel.datum.gridname");
-
-    /* -------------------------------------------------------------------- */
-    /*      Fetch the projection parameters.                                */
-    /* -------------------------------------------------------------------- */
-        Eprj_ProParameters sPro;
-
-        memset( &sPro, 0, sizeof(sPro) );
-
-        sPro.proType = (Eprj_ProType) poProjInfo->GetIntField("projectionObject.proType");
-        sPro.proNumber = poProjInfo->GetIntField("projectionObject.proNumber");
-        sPro.proExeName = (char *) poProjInfo->GetStringField("projectionObject.proExeName");
-        sPro.proName = (char *) poProjInfo->GetStringField("projectionObject.proName");
-        sPro.proZone = poProjInfo->GetIntField("projectionObject.proZone");
-
-        for( i = 0; i < 15; i++ )
-        {
-            char	szFieldName[40];
-
-            sprintf( szFieldName, "projectionObject.proParams[%d]", i );
-            sPro.proParams[i] = poProjInfo->GetDoubleField(szFieldName);
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      Fetch the spheroid.                                             */
-    /* -------------------------------------------------------------------- */
-        sPro.proSpheroid.sphereName = (char *)
-            poProjInfo->GetStringField("earthModel.proSpheroid.sphereName");
-        sPro.proSpheroid.a = poProjInfo->GetDoubleField("earthModel.proSpheroid.a");
-        sPro.proSpheroid.b = poProjInfo->GetDoubleField("earthModel.proSpheroid.b");
-        sPro.proSpheroid.eSquared =
-            poProjInfo->GetDoubleField("earthModel.proSpheroid.eSquared");
-        sPro.proSpheroid.radius =
-            poProjInfo->GetDoubleField("earthModel.proSpheroid.radius");
-
-    /* -------------------------------------------------------------------- */
-    /*      Fetch the projection info.                                      */
-    /* -------------------------------------------------------------------- */
-        char *pszProjection;
-
-    //    poProjInfo->DumpFieldValues( stdout, "" );
-
-        pszProjection = HFAPCSStructToWKT( &sDatum, &sPro, NULL, NULL );
-
-        if( pszProjection )
-        {
-            papszMD = 
-                CSLSetNameValue( papszMD, "outputProjection", pszProjection );
-            CPLFree( pszProjection );
-        }
-
-        delete poProjInfo;
+        sprintf( szFieldName, "earthModel.datum.params[%d]", i );
+        sDatum.params[i] = poProjInfo->GetDoubleField(szFieldName);
     }
+
+    sDatum.gridname = (char *) 
+        poProjInfo->GetStringField("earthModel.datum.gridname");
+    
+/* -------------------------------------------------------------------- */
+/*      Fetch the projection parameters.                                */
+/* -------------------------------------------------------------------- */
+    Eprj_ProParameters sPro;
+
+    memset( &sPro, 0, sizeof(sPro) );
+
+    sPro.proType = (Eprj_ProType) poProjInfo->GetIntField("projectionObject.proType");
+    sPro.proNumber = poProjInfo->GetIntField("projectionObject.proNumber");
+    sPro.proExeName = (char *) poProjInfo->GetStringField("projectionObject.proExeName");
+    sPro.proName = (char *) poProjInfo->GetStringField("projectionObject.proName");
+    sPro.proZone = poProjInfo->GetIntField("projectionObject.proZone");
+
+    for( i = 0; i < 15; i++ )
+    {
+        char	szFieldName[30];
+
+        sprintf( szFieldName, "projectionObject.proParams[%d]", i );
+        sPro.proParams[i] = poProjInfo->GetDoubleField(szFieldName);
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Fetch the spheroid.                                             */
+/* -------------------------------------------------------------------- */
+    sPro.proSpheroid.sphereName = (char *)
+        poProjInfo->GetStringField("earthModel.proSpheroid.sphereName");
+    sPro.proSpheroid.a = poProjInfo->GetDoubleField("earthModel.proSpheroid.a");
+    sPro.proSpheroid.b = poProjInfo->GetDoubleField("earthModel.proSpheroid.b");
+    sPro.proSpheroid.eSquared =
+        poProjInfo->GetDoubleField("earthModel.proSpheroid.eSquared");
+    sPro.proSpheroid.radius =
+        poProjInfo->GetDoubleField("earthModel.proSpheroid.radius");
+
+/* -------------------------------------------------------------------- */
+/*      Fetch the projection info.                                      */
+/* -------------------------------------------------------------------- */
+    char *pszProjection;
+
+//    poProjInfo->DumpFieldValues( stdout, "" );
+
+    pszProjection = HFAPCSStructToWKT( &sDatum, &sPro, NULL, NULL );
+
+    if( pszProjection )
+    {
+        papszMD = 
+            CSLSetNameValue( papszMD, "outputProjection", pszProjection );
+        CPLFree( pszProjection );
+    }
+
+    delete poProjInfo;
 
 /* -------------------------------------------------------------------- */
 /*      Fetch the horizontal units.                                     */
@@ -3641,32 +3527,29 @@ char **HFAReadCameraModel( HFAHandle hHFA )
 /* -------------------------------------------------------------------- */
 /*      Fetch the elevationinfo.                                        */
 /* -------------------------------------------------------------------- */
-    HFAEntry *poElevInfo = HFAEntry::BuildEntryFromMIFObject( poXForm, "outputElevationInfo" );
-    if ( poElevInfo )
+    HFAEntry *poElevInfo = new HFAEntry( poXForm, "outputElevationInfo" );
+    //poElevInfo->DumpFieldValues( stdout, "" );
+
+    if( poElevInfo->GetDataSize() != 0 )
     {
-        //poElevInfo->DumpFieldValues( stdout, "" );
+        static const char *apszEFields[] = { 
+            "verticalDatum.datumname", 
+            "verticalDatum.type",
+            "elevationUnit",
+            "elevationType",
+            NULL };
 
-        if( poElevInfo->GetDataSize() != 0 )
+        for( i = 0; apszEFields[i] != NULL; i++ )
         {
-            static const char *apszEFields[] = { 
-                "verticalDatum.datumname", 
-                "verticalDatum.type",
-                "elevationUnit",
-                "elevationType",
-                NULL };
-
-            for( i = 0; apszEFields[i] != NULL; i++ )
-            {
-                pszValue = poElevInfo->GetStringField( apszEFields[i] );
-                if( pszValue == NULL )
-                    pszValue = "";
-
-                papszMD = CSLSetNameValue( papszMD, apszEFields[i], pszValue );
-            }
+            pszValue = poElevInfo->GetStringField( apszEFields[i] );
+            if( pszValue == NULL )
+                pszValue = "";
+            
+            papszMD = CSLSetNameValue( papszMD, apszEFields[i], pszValue );
         }
-
-        delete poElevInfo;
     }
+
+    delete poElevInfo;
 
     return papszMD;
 }
@@ -3737,173 +3620,4 @@ CPLErr HFASetGeoTransform( HFAHandle hHFA,
     Efga_Polynomial *psForward=&sForward, *psReverse=&sReverse;
 
     return HFAWriteXFormStack( hHFA, 0, 1, &psForward, &psReverse );
-}
-
-/************************************************************************/
-/*                        HFARenameReferences()                         */
-/*                                                                      */
-/*      Rename references in this .img file from the old basename to    */
-/*      a new basename.  This should be passed on to .aux and .rrd      */
-/*      files and should include references to .aux, .rrd and .ige.     */
-/************************************************************************/
-
-CPLErr HFARenameReferences( HFAHandle hHFA, 
-                            const char *pszNewBase, 
-                            const char *pszOldBase )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Handle RRDNamesList updates.                                    */
-/* -------------------------------------------------------------------- */
-    size_t iNode;
-    std::vector<HFAEntry*> apoNodeList = 
-        hHFA->poRoot->FindChildren( "RRDNamesList", NULL );
-
-    for( iNode = 0; iNode < apoNodeList.size(); iNode++ )
-    {
-        HFAEntry *poRRDNL = apoNodeList[iNode];
-        std::vector<CPLString> aosNL;
-
-        // Collect all the existing names.
-        int i, nNameCount = poRRDNL->GetFieldCount( "nameList" );
-        
-        CPLString osAlgorithm = poRRDNL->GetStringField("algorithm.string");
-        for( i = 0; i < nNameCount; i++ )
-        {
-            CPLString osFN;
-            osFN.Printf( "nameList[%d].string", i );
-            aosNL.push_back( poRRDNL->GetStringField(osFN) );
-        } 
-
-        // Adjust the names to the new form.
-        for( i = 0; i < nNameCount; i++ )
-        {
-            if( strncmp(aosNL[i],pszOldBase,strlen(pszOldBase)) == 0 )
-            {
-                CPLString osNew = pszNewBase;
-                osNew += aosNL[i].c_str() + strlen(pszOldBase);
-                aosNL[i] = osNew;
-            }
-        } 
-
-        // try to make sure the RRDNamesList is big enough to hold the 
-        // adjusted name list. 
-        if( strlen(pszNewBase) > strlen(pszOldBase) )
-        {
-            CPLDebug( "HFA", "Growing RRDNamesList to hold new names" );
-            poRRDNL->MakeData( poRRDNL->GetDataSize() 
-                               + nNameCount * (strlen(pszNewBase) - strlen(pszOldBase)) );
-        }
-
-        // Initialize the whole thing to zeros for a clean start.
-        memset( poRRDNL->GetData(), 0, poRRDNL->GetDataSize() );
-
-        // Write the updates back to the file.
-        poRRDNL->SetStringField( "algorithm.string", osAlgorithm );
-        for( i = 0; i < nNameCount; i++ )
-        {
-            CPLString osFN;
-            osFN.Printf( "nameList[%d].string", i );
-            poRRDNL->SetStringField( osFN, aosNL[i] );
-        } 
-    }
-
-/* -------------------------------------------------------------------- */
-/*      spill file references.                                          */
-/* -------------------------------------------------------------------- */
-    apoNodeList =
-        hHFA->poRoot->FindChildren( "ExternalRasterDMS", "ImgExternalRaster" );
-
-    for( iNode = 0; iNode < apoNodeList.size(); iNode++ )
-    {
-        HFAEntry *poERDMS = apoNodeList[iNode];
-
-        if( poERDMS == NULL )
-            continue;
-
-        // Fetch all existing values. 
-        CPLString osFileName = poERDMS->GetStringField("fileName.string");
-        GInt32 anValidFlagsOffset[2], anStackDataOffset[2];
-        GInt32 nStackCount, nStackIndex;
-
-        anValidFlagsOffset[0] = 
-            poERDMS->GetIntField( "layerStackValidFlagsOffset[0]" );
-        anValidFlagsOffset[1] = 
-            poERDMS->GetIntField( "layerStackValidFlagsOffset[1]" );
-        
-        anStackDataOffset[0] = 
-            poERDMS->GetIntField( "layerStackDataOffset[0]" );
-        anStackDataOffset[1] = 
-            poERDMS->GetIntField( "layerStackDataOffset[1]" );
-
-        nStackCount = poERDMS->GetIntField( "layerStackCount" );
-        nStackIndex = poERDMS->GetIntField( "layerStackIndex" );
-
-        // Update the filename. 
-        if( strncmp(osFileName,pszOldBase,strlen(pszOldBase)) == 0 )
-        {
-            CPLString osNew = pszNewBase;
-            osNew += osFileName.c_str() + strlen(pszOldBase);
-            osFileName = osNew;
-        }
-
-        // Grow the node if needed.
-        if( strlen(pszNewBase) > strlen(pszOldBase) )
-        {
-            CPLDebug( "HFA", "Growing ExternalRasterDMS to hold new names" );
-            poERDMS->MakeData( poERDMS->GetDataSize() 
-                               + (strlen(pszNewBase) - strlen(pszOldBase)) );
-        }
-
-        // Initialize the whole thing to zeros for a clean start.
-        memset( poERDMS->GetData(), 0, poERDMS->GetDataSize() );
-
-        // Write it all out again, this may change the size of the node.
-        poERDMS->SetStringField( "fileName.string", osFileName );
-        poERDMS->SetIntField( "layerStackValidFlagsOffset[0]", 
-                              anValidFlagsOffset[0] );
-        poERDMS->SetIntField( "layerStackValidFlagsOffset[1]", 
-                              anValidFlagsOffset[1] );
-        
-        poERDMS->SetIntField( "layerStackDataOffset[0]", 
-                              anStackDataOffset[0] );
-        poERDMS->SetIntField( "layerStackDataOffset[1]", 
-                              anStackDataOffset[1] );
-
-        poERDMS->SetIntField( "layerStackCount", nStackCount );
-        poERDMS->SetIntField( "layerStackIndex", nStackIndex );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      DependentFile                                                   */
-/* -------------------------------------------------------------------- */
-    apoNodeList =
-        hHFA->poRoot->FindChildren( "DependentFile", "Eimg_DependentFile" );
-
-    for( iNode = 0; iNode < apoNodeList.size(); iNode++ )
-    {
-        CPLString osFileName = apoNodeList[iNode]->
-            GetStringField("dependent.string");
-
-        // Grow the node if needed.
-        if( strlen(pszNewBase) > strlen(pszOldBase) )
-        {
-            CPLDebug( "HFA", "Growing DependentFile to hold new names" );
-            apoNodeList[iNode]->MakeData( apoNodeList[iNode]->GetDataSize() 
-                                          + (strlen(pszNewBase) 
-                                             - strlen(pszOldBase)) );
-        }
-
-        // Update the filename. 
-        if( strncmp(osFileName,pszOldBase,strlen(pszOldBase)) == 0 )
-        {
-            CPLString osNew = pszNewBase;
-            osNew += osFileName.c_str() + strlen(pszOldBase);
-            osFileName = osNew;
-        }
-
-        apoNodeList[iNode]->SetStringField( "dependent.string", osFileName );
-    }        
-
-    return CE_None;
 }

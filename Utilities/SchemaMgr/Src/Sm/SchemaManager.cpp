@@ -108,7 +108,7 @@ void FdoSchemaManager::DestroySchema( const wchar_t* schemaName  )
 					schemaName
 				)
 			),
-            pException, pException->GetNativeErrorCode()
+			pException
 		);
 
 		FDO_SAFE_RELEASE(pException);
@@ -193,7 +193,7 @@ void FdoSchemaManager::SynchPhysical( const wchar_t* schemaName, bool bRollbackO
             FdoSmError::NLSGetMessage(
     			FDO_NLSID(FDOSM_277)
 			),
-			pException, pException->GetNativeErrorCode()
+			pException
 		);
 
 		FDO_SAFE_RELEASE(pException);
@@ -312,7 +312,7 @@ void FdoSchemaManager::ApplySchema(
 				FDO_NLSID(FDOSM_221),
 				pFeatSchema->GetName()
 			),
-			pException, pException->GetNativeErrorCode()
+			pException
 		);
 
 		FDO_SAFE_RELEASE(pException);
@@ -350,7 +350,7 @@ void FdoSchemaManager::CreateSpatialContext(
     FdoSmPhOwnerP owner = physMgr->FindOwner();
 
     if ( owner && !GetLogicalPhysicalSchemas()->CanApplySchemaWithoutMetaSchema() ) {
-        if ( !owner->GetHasSCMetaSchema() )
+        if ( !owner->GetHasMetaSchema() )
             throw FdoSchemaException::Create(
                 FdoSmError::NLSGetMessage(
                     FDO_NLSID(FDOSM_32),
@@ -638,33 +638,13 @@ FdoStringCollection* FdoSchemaManager::GetClassNames(const wchar_t* schemaName)
 {
     try
     {
-        FdoSmPhMgrP psch = GetPhysicalSchema();
-        FdoSmPhOwnerP owner = psch->GetOwner();
-        FdoStringCollection* retVal = NULL;
-        // we can load just class names only when we have FDO metadata
-        if (owner->GetHasClassMetaSchema())
-        {
-            bool bulkLoadConstraints = psch->GetBulkLoadConstraints();
-            bool bulkLoadSpatialContexts = psch->GetBulkLoadSpatialContexts();
-            psch->SetBulkLoadConstraints(false);
-            psch->SetBulkLoadSpatialContexts(false);
+        // Load all constraints in one select, for performance.
+        GetPhysicalSchema()->SetBulkLoadConstraints(true);
+        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
 
-            FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-            retVal = pLpSchemaColl->GetClassNames( schemaName );
+        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
 
-            psch->SetBulkLoadConstraints(bulkLoadConstraints);
-            psch->SetBulkLoadSpatialContexts(bulkLoadSpatialContexts);
-        }
-        else
-        {
-            // in case no metadata set bulk load since all classes will be loaded
-            psch->SetBulkLoadConstraints(true);
-            psch->SetBulkLoadSpatialContexts(true);
-
-            FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-            retVal = pLpSchemaColl->GetClassNames( schemaName );
-        }
-        return retVal;
+        return pLpSchemaColl->GetClassNames( schemaName );
     }
     catch (FdoSchemaException *ex)
     {
@@ -674,7 +654,7 @@ FdoStringCollection* FdoSchemaManager::GetClassNames(const wchar_t* schemaName)
     }
     catch (FdoException *ex)
     {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
     }
 }
 
@@ -682,25 +662,24 @@ FdoFeatureSchemasP FdoSchemaManager::GetFdoSchemasEx( FdoStringP schemaName, Fdo
 {
     try
     {
-        FdoSmPhMgrP mrg = GetPhysicalSchema();
-        FdoSmPhOwnerP owner = mrg->GetOwner();
-        if ( (!owner) || !(owner->GetHasAttrMetaSchema()) ) {
+        FdoSmPhOwnerP owner = GetPhysicalSchema()->GetOwner();
+        if ( (!owner) || !(owner->GetHasMetaSchema()) ) {
             // When no metaschema, need to bulk load pkeys (for identity properties)
+            // and fkeys (for association properties).
             owner->SetBulkLoadPkeys(true);
-        }
-
-        if ( (!owner) || !(owner->GetHasAssocMetaSchema()) ) {
-            // When no metaschema, need to bulk load fkeys (for association properties).
             owner->SetBulkLoadFkeys(true);
         }
 
         // Load all constraints in one select, for performance.
-        mrg->SetBulkLoadConstraints(true);
-
+        GetPhysicalSchema()->SetBulkLoadConstraints(true);
         if (classNames != NULL && classNames->GetCount() > 0)
-            mrg->SetBulkLoadSpatialContexts(false);
+        {
+            GetPhysicalSchema()->SetBulkLoadSpatialContexts(false);
+        }
         else
-            mrg->SetBulkLoadSpatialContexts(true);
+        {
+            GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
+        }
 
         FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
 
@@ -714,7 +693,7 @@ FdoFeatureSchemasP FdoSchemaManager::GetFdoSchemasEx( FdoStringP schemaName, Fdo
     }
     catch (FdoException *ex)
     {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
     }
 }
 
@@ -722,33 +701,13 @@ FdoStringCollection* FdoSchemaManager::GetSchemaNames()
 {
     try
     {
-        FdoSmPhMgrP psch = GetPhysicalSchema();
-        FdoSmPhOwnerP owner = psch->GetOwner();
-        FdoStringCollection* retVal = NULL;
-        // we can load just class names only when we have FDO metadata
-        if (owner->GetHasSCInfoMetaSchema())
-        {
-            bool bulkLoadConstraints = psch->GetBulkLoadConstraints();
-            bool bulkLoadSpatialContexts = psch->GetBulkLoadSpatialContexts();
-            psch->SetBulkLoadConstraints(false);
-            psch->SetBulkLoadSpatialContexts(false);
+        // Load all constraints in one select, for performance.
+        GetPhysicalSchema()->SetBulkLoadConstraints(true);
+        GetPhysicalSchema()->SetBulkLoadSpatialContexts(true);
 
-            FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-            retVal = pLpSchemaColl->GetSchemaNames();
+        FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
 
-            psch->SetBulkLoadConstraints(bulkLoadConstraints);
-            psch->SetBulkLoadSpatialContexts(bulkLoadSpatialContexts);
-        }
-        else
-        {
-            // in case no metadata set bulk load since all classes will be loaded
-            psch->SetBulkLoadConstraints(true);
-            psch->SetBulkLoadSpatialContexts(true);
-
-            FdoSmLpSchemasP pLpSchemaColl = GetLogicalPhysicalSchemas();
-            retVal = pLpSchemaColl->GetSchemaNames();
-        }
-        return retVal;
+        return pLpSchemaColl->GetSchemaNames();
     }
     catch (FdoSchemaException *ex)
     {
@@ -758,7 +717,7 @@ FdoStringCollection* FdoSchemaManager::GetSchemaNames()
     }
     catch (FdoException *ex)
     {
-        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        throw FdoSchemaException::Create(ex->GetExceptionMessage(), ex);
     }
 }
 

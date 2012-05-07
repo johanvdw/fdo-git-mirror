@@ -20,7 +20,6 @@
 #include <stdafx.h>
 #include <Functions/Numeric/FdoFunctionTrunc.h>
 #include <FdoCommonStringUtil.h>
-#include <math.h>
 
 
 // ----------------------------------------------------------------------------

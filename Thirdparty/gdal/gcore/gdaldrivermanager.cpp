@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldrivermanager.cpp 23175 2011-10-04 21:28:28Z rouault $
+ * $Id: gdaldrivermanager.cpp 18695 2010-02-01 17:23:44Z hobu $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriverManager class.
@@ -34,7 +34,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gdaldrivermanager.cpp 23175 2011-10-04 21:28:28Z rouault $");
+CPL_CVSID("$Id: gdaldrivermanager.cpp 18695 2010-02-01 17:23:44Z hobu $");
 
 static const char *pszUpdatableINST_DATA = 
 "__INST_DATA_TARGET:                                                                                                                                      ";
@@ -124,68 +124,15 @@ GDALDriverManager::GDALDriverManager()
 
 /************************************************************************/
 /*                         ~GDALDriverManager()                         */
+/*                                                                      */
+/*      Eventually this should also likely clean up all open            */
+/*      datasets.  Or perhaps the drivers that own them should do       */
+/*      that in their destructor?                                       */
 /************************************************************************/
-
-void GDALDatasetPoolPreventDestroy(); /* keep that in sync with gdalproxypool.cpp */
-void GDALDatasetPoolForceDestroy(); /* keep that in sync with gdalproxypool.cpp */
 
 GDALDriverManager::~GDALDriverManager()
 
 {
-/* -------------------------------------------------------------------- */
-/*      Cleanup any open datasets.                                      */
-/* -------------------------------------------------------------------- */
-    int i, nDSCount;
-    GDALDataset **papoDSList;
-
-    /* First begin by requesting each reamining dataset to drop any reference */
-    /* to other datasets */
-    int bHasDroppedRef;
-
-    /* We have to prevent the destroying of the dataset pool during this first */
-    /* phase, otherwise it cause crashes with a VRT B referencing a VRT A, and if */
-    /* CloseDependentDatasets() is called first on VRT A. */
-    /* If we didn't do this nasty trick, due to the refCountOfDisableRefCount */
-    /* mechanism that cheats the real refcount of the dataset pool, we might */
-    /* destroy the dataset pool too early, leading the VRT A to */
-    /* destroy itself indirectly ... Ok, I am aware this explanation does */
-    /* not make any sense unless you try it under a debugger ... */
-    /* When people just manipulate "top-level" dataset handles, we luckily */
-    /* don't need this horrible hack, but GetOpenDatasets() expose "low-level" */
-    /* datasets, which defeat some "design" of the proxy pool */
-    GDALDatasetPoolPreventDestroy();
-
-    do
-    {
-        papoDSList = GDALDataset::GetOpenDatasets(&nDSCount);
-        /* If a dataset has dropped a reference, the list might have become */
-        /* invalid, so go out of the loop and try again with the new valid */
-        /* list */
-        bHasDroppedRef = FALSE;
-        for(i=0;i<nDSCount && !bHasDroppedRef;i++)
-        {
-            //CPLDebug("GDAL", "Call CloseDependentDatasets() on %s",
-            //      papoDSList[i]->GetDescription() );
-            bHasDroppedRef = papoDSList[i]->CloseDependentDatasets();
-        }
-    } while(bHasDroppedRef);
-
-    /* Now let's destroy the dataset pool. Nobody shoud use it afterwards */
-    /* if people have well released their dependent datasets above */
-    GDALDatasetPoolForceDestroy();
-
-    /* Now close the stand-alone datasets */
-    papoDSList = GDALDataset::GetOpenDatasets(&nDSCount);
-    for(i=0;i<nDSCount;i++)
-    {
-        CPLDebug( "GDAL", "force close of %s in GDALDriverManager cleanup.",
-                  papoDSList[i]->GetDescription() );
-        /* Destroy with delete operator rather than GDALClose() to force deletion of */
-        /* datasets with multiple reference count */
-        /* We could also iterate while GetOpenDatasets() returns a non NULL list */
-        delete papoDSList[i];
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Destroy the existing drivers.                                   */
 /* -------------------------------------------------------------------- */
@@ -232,15 +179,6 @@ GDALDriverManager::~GDALDriverManager()
 /*      done with GDAL/OGR!                                             */
 /* -------------------------------------------------------------------- */
     CPLCleanupTLS();
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup our mutex.                                              */
-/* -------------------------------------------------------------------- */
-    if( hDMMutex )
-    {
-        CPLDestroyMutex( hDMMutex );
-        hDMMutex = NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Ensure the global driver manager pointer is NULLed out.         */
@@ -545,7 +483,7 @@ void GDALDriverManager::SetHome( const char * pszNewHome )
  * \brief This method unload undesirable drivers.
  *
  * All drivers specified in the space delimited list in the GDAL_SKIP 
- * environment variable) will be deregistered and destroyed.  This method 
+ * environmentvariable) will be deregistered and destroyed.  This method 
  * should normally be called after registration of standard drivers to allow 
  * the user a way of unloading undesired drivers.  The GDALAllRegister()
  * function already invokes AutoSkipDrivers() at the end, so if that functions
@@ -654,7 +592,7 @@ void GDALDriverManager::AutoLoadDrivers()
      papszSearchPath = CSLAddString( papszSearchPath, 
                                      "/Library/Application Support/GDAL/"
                                      num2str(GDAL_VERSION_MAJOR) "."  
-                                     num2str(GDAL_VERSION_MINOR) "/PlugIns" );
+                                     num2str(GDAL_VERSION_MINOR) "PlugIns" );
    #endif
 
 
@@ -665,7 +603,7 @@ void GDALDriverManager::AutoLoadDrivers()
     #ifdef MACOSX_FRAMEWORK 
                                      "/Library/Application Support/GDAL/"
                                      num2str(GDAL_VERSION_MAJOR) "."  
-                                     num2str(GDAL_VERSION_MINOR) "/PlugIns", NULL ) );
+                                     num2str(GDAL_VERSION_MINOR) "PlugIns" ) );
     #else
                                                     "lib/gdalplugins", NULL ) );
     #endif                                           
@@ -673,26 +611,11 @@ void GDALDriverManager::AutoLoadDrivers()
     }
 
 /* -------------------------------------------------------------------- */
-/*      Format the ABI version specific subdirectory to look in.        */
-/* -------------------------------------------------------------------- */
-    CPLString osABIVersion;
-
-    osABIVersion.Printf( "%d.%d", GDAL_VERSION_MAJOR, GDAL_VERSION_MINOR );
-
-/* -------------------------------------------------------------------- */
 /*      Scan each directory looking for files starting with gdal_       */
 /* -------------------------------------------------------------------- */
     for( int iDir = 0; iDir < CSLCount(papszSearchPath); iDir++ )
     {
-        char **papszFiles = NULL;
-        VSIStatBufL sStatBuf;
-        CPLString osABISpecificDir =
-            CPLFormFilename( papszSearchPath[iDir], osABIVersion, NULL );
-        
-        if( VSIStatL( osABISpecificDir, &sStatBuf ) != 0 )
-            osABISpecificDir = papszSearchPath[iDir];
-
-        papszFiles = CPLReadDir( osABISpecificDir );
+        char  **papszFiles = CPLReadDir( papszSearchPath[iDir] );
 
         for( int iFile = 0; iFile < CSLCount(papszFiles); iFile++ )
         {
@@ -714,23 +637,14 @@ void GDALDriverManager::AutoLoadDrivers()
                      CPLGetBasename(papszFiles[iFile]) + 5 );
             
             pszFilename = 
-                CPLFormFilename( osABISpecificDir, 
+                CPLFormFilename( papszSearchPath[iDir], 
                                  papszFiles[iFile], NULL );
 
-            CPLErrorReset();
-            CPLPushErrorHandler(CPLQuietErrorHandler);
             pRegister = CPLGetSymbol( pszFilename, pszFuncName );
-            CPLPopErrorHandler();
             if( pRegister == NULL )
             {
-                CPLString osLastErrorMsg(CPLGetLastErrorMsg());
                 strcpy( pszFuncName, "GDALRegisterMe" );
                 pRegister = CPLGetSymbol( pszFilename, pszFuncName );
-                if( pRegister == NULL )
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined,
-                              "%s", osLastErrorMsg.c_str() );
-                }
             }
             
             if( pRegister != NULL )

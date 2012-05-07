@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010  SL-King d.o.o
+* Copyright (C) 2006  SL-King d.o.o
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -87,14 +87,6 @@ public:
     /// Returns true if the feature provider supports transactions.
     /// 
     FDOKGKML_API virtual bool SupportsTransactions();
-
-    /// \brief
-    /// Determines if the feature provider supports save point.
-    /// 
-    /// \return
-    /// Returns true if the feature provider supports save point.
-    /// 
-    FDOKGKML_API virtual bool SupportsSavePoint();
 
     /// \brief
     /// Determines true if the feature provider supports long transactions.

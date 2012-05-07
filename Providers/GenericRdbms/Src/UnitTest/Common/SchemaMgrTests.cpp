@@ -422,7 +422,6 @@ void SchemaMgrTests::testGenDefault ()
         mgr = NULL;
         conn->disconnect();
         delete conn;
-        conn = NULL;
 
         printf( "Creating copy schema ...\n" );
 
@@ -574,7 +573,6 @@ void SchemaMgrTests::testGenDefault ()
         mgr = NULL;
         conn->disconnect();
         delete conn;
-        conn = NULL;
 
 #if 0 
 //TODO: investigate file differences
@@ -594,20 +592,14 @@ void SchemaMgrTests::testGenDefault ()
     }
     catch (FdoException* e ) 
     {
-        if ( conn ) 
-            delete conn;
         UnitTestUtil::FailOnException(e);
     }
     catch (CppUnit::Exception exception)
     {
-        if ( conn ) 
-            delete conn;
         throw exception;
     }
     catch (...)
     {
-        if ( conn ) 
-            delete conn;
         CPPUNIT_FAIL ("unexpected exception encountered");
     }
 }
@@ -1965,8 +1957,9 @@ void SchemaMgrTests::testViews ()
 
         classDef = classes->GetItem( table2class(phMgr, L"VIEW2") );
         idProps = classDef->GetIdentityProperties();
-        if ( FindsCrossDatastoreDependencies() ) 
-            CPPUNIT_ASSERT( idProps->GetCount() == 0 );
+#ifndef RDBI_DEF_SSQL
+        CPPUNIT_ASSERT( idProps->GetCount() == 0 );
+#endif
 
         UnitTestUtil::CloseConnection( fdoConn, false, DB_NAME_SUFFIX );
 

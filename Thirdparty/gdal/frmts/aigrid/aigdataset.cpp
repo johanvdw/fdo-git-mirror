@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aigdataset.cpp 22103 2011-04-02 14:51:10Z warmerdam $
+ * $Id: aigdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  Arc/Info Binary Grid Driver
  * Purpose:  Implements GDAL interface to underlying library.
@@ -34,7 +34,7 @@
 #include "aigrid.h"
 #include "avc.h"
 
-CPL_CVSID("$Id: aigdataset.cpp 22103 2011-04-02 14:51:10Z warmerdam $");
+CPL_CVSID("$Id: aigdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void	GDALRegister_AIGrid(void);
@@ -216,10 +216,7 @@ const GDALRasterAttributeTable *AIGRasterBand::GetDefaultRAT()
         poODS->bHasReadRat = TRUE;
     }
 
-    if( poODS->poRAT )
-        return poODS->poRAT;
-    else
-        return GDALPamRasterBand::GetDefaultRAT();
+    return poODS->poRAT;
 }
 
 /************************************************************************/
@@ -284,7 +281,7 @@ GDALColorInterp AIGRasterBand::GetColorInterpretation()
     if( poODS->poCT != NULL )
         return GCI_PaletteIndex;
     else
-        return GDALPamRasterBand::GetColorInterpretation();
+        return GCI_Undefined;
 }
 
 /************************************************************************/
@@ -296,10 +293,7 @@ GDALColorTable *AIGRasterBand::GetColorTable()
 {
     AIGDataset	*poODS = (AIGDataset *) poDS;
 
-    if( poODS->poCT != NULL )
-        return poODS->poCT;
-    else
-        return GDALPamRasterBand::GetColorTable();
+    return poODS->poCT;
 }
 
 /************************************************************************/
@@ -555,64 +549,23 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
             return NULL;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Confirm we have at least one raster data file.  These can be    */
-/*      sparse so we don't require particular ones to exists but if     */
-/*      there are none this is likely not a grid.                       */
-/* -------------------------------------------------------------------- */
-    char **papszFileList = VSIReadDir( osCoverName );
-    int iFile;
-    int bGotOne = FALSE;
+    osTestName.Printf( "%s/w001001x.adf", osCoverName.c_str() );
+    if( VSIStatL( osTestName, &sStatBuf ) != 0 )
 
-    if (papszFileList == NULL)
     {
-        /* Useful when reading from /vsicurl/ on servers that don't */
-        /* return a file list */
-        /* such as /vsicurl/http://eros.usgs.gov/archive/nslrsda/GeoTowns/NLCD/89110458 */
-        do
-        {
-            osTestName.Printf( "%s/W001001.ADF", osCoverName.c_str() );
-            if( VSIStatL( osTestName, &sStatBuf ) == 0 )
-            {
-                bGotOne = TRUE;
-                break;
-            }
-
-            osTestName.Printf( "%s/w001001.adf", osCoverName.c_str() );
-            if( VSIStatL( osTestName, &sStatBuf ) == 0 )
-            {
-                bGotOne = TRUE;
-                break;
-            }
-        } while(0);
+        osTestName.Printf( "%s/W001001X.ADF", osCoverName.c_str() );
+        if( VSIStatL( osTestName, &sStatBuf ) != 0 )
+            return NULL;
     }
 
-    for( iFile = 0; 
-         papszFileList != NULL && papszFileList[iFile] != NULL && !bGotOne;
-         iFile++ )
+    osTestName.Printf( "%s/w001001.adf", osCoverName.c_str() );
+    if( VSIStatL( osTestName, &sStatBuf ) != 0 )
+
     {
-        if( strlen(papszFileList[iFile]) != 11 )
-            continue;
-
-        // looking for something like w001001.adf or z001013.adf
-        if( papszFileList[iFile][0] != 'w'
-            && papszFileList[iFile][0] != 'W'
-            && papszFileList[iFile][0] != 'z'
-            && papszFileList[iFile][0] != 'Z' )
-            continue;
-
-        if( strncmp(papszFileList[iFile] + 1, "0010", 4) != 0 )
-            continue;
-
-        if( !EQUAL(papszFileList[iFile] + 7, ".adf") )
-            continue;
-
-        bGotOne = TRUE;
+        osTestName.Printf( "%s/W001001.ADF", osCoverName.c_str() );
+        if( VSIStatL( osTestName, &sStatBuf ) != 0 )
+            return NULL;
     }
-    CSLDestroy( papszFileList );
-
-    if( !bGotOne )
-        return NULL;
     
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
@@ -649,6 +602,7 @@ GDALDataset *AIGDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Try to read a color table (.clr).  It seems it is legal to      */
 /*      have more than one so we just use the first one found.          */
 /* -------------------------------------------------------------------- */
+    int  iFile;
     char **papszFiles = CPLReadDir( psInfo->pszCoverName );
     CPLString osClrFilename;
     CPLString osCleanPath = CPLCleanTrailingSlash( psInfo->pszCoverName );
@@ -1043,7 +997,6 @@ void GDALRegister_AIGrid()
                                    "Arc/Info Binary Grid" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#AIG" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
         
         poDriver->pfnOpen = AIGDataset::Open;
 

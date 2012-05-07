@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpoint.cpp 22448 2011-05-28 18:49:54Z rouault $
+ * $Id: ogrpoint.cpp 16853 2009-04-26 12:22:10Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The Point geometry class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrpoint.cpp 22448 2011-05-28 18:49:54Z rouault $");
+CPL_CVSID("$Id: ogrpoint.cpp 16853 2009-04-26 12:22:10Z rouault $");
 
 /************************************************************************/
 /*                              OGRPoint()                              */
@@ -244,9 +244,6 @@ OGRErr OGRPoint::importFromWkb( unsigned char * pabyData,
 
     if( bIs3D )
     {
-        if ( nSize < 29 && nSize != -1 )
-            return OGRERR_NOT_ENOUGH_DATA;
-
         memcpy( &z, pabyData + 5 + 16, 8 );
         if( OGR_SWAP( eByteOrder ) )
         {
@@ -340,66 +337,30 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 /*      Check for EMPTY ... but treat like a point at 0,0.              */
 /* -------------------------------------------------------------------- */
     const char *pszPreScan;
-    int bHasZ = FALSE, bHasM = FALSE;
 
     pszPreScan = OGRWktReadToken( pszInput, szToken );
     if( EQUAL(szToken,"EMPTY") )
     {
-        *ppszInput = (char *) pszPreScan;
+        *ppszInput = (char *) pszInput;
         empty();
         return OGRERR_NONE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Check for Z, M or ZM. Will ignore the Measure                   */
-/* -------------------------------------------------------------------- */
-    else if( EQUAL(szToken,"Z") )
-    {
-        bHasZ = TRUE;
-    }
-    else if( EQUAL(szToken,"M") )
-    {
-        bHasM = TRUE;
-    }
-    else if( EQUAL(szToken,"ZM") )
-    {
-        bHasZ = TRUE;
-        bHasM = TRUE;
-    }
-
-    if (bHasZ || bHasM)
-    {
-        pszInput = pszPreScan;
-        pszPreScan = OGRWktReadToken( pszInput, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            *ppszInput = (char *) pszPreScan;
-            empty();
-            /* FIXME?: In theory we should store the dimension and M presence */
-            /* if we want to allow round-trip with ExportToWKT v1.2 */
-            return OGRERR_NONE;
-        }
     }
 
     if( !EQUAL(szToken,"(") )
         return OGRERR_CORRUPT_DATA;
 
-    if ( !bHasZ && !bHasM )
+    pszPreScan = OGRWktReadToken( pszPreScan, szToken );
+    if( EQUAL(szToken,"EMPTY") )
     {
-        /* Test for old-style POINT(EMPTY) */
-        pszPreScan = OGRWktReadToken( pszPreScan, szToken );
-        if( EQUAL(szToken,"EMPTY") )
+        pszInput = OGRWktReadToken( pszPreScan, szToken );
+        
+        if( !EQUAL(szToken,")") )
+            return OGRERR_CORRUPT_DATA;
+        else
         {
-            pszInput = OGRWktReadToken( pszPreScan, szToken );
-
-            if( !EQUAL(szToken,")") )
-                return OGRERR_CORRUPT_DATA;
-            else
-            {
-                *ppszInput = (char *) pszInput;
-                empty();
-                return OGRERR_NONE;
-            }
+            *ppszInput = (char *) pszInput;
+            empty();
+            return OGRERR_NONE;
         }
     }
 
@@ -413,11 +374,7 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
     pszInput = OGRWktReadPoints( pszInput, &poPoints, &padfZ,
                                  &nMaxPoint, &nPoints );
     if( pszInput == NULL || nPoints != 1 )
-    {
-        CPLFree( poPoints );
-        CPLFree( padfZ );
         return OGRERR_CORRUPT_DATA;
-    }
 
     x = poPoints[0].x;
     y = poPoints[0].y;
@@ -426,22 +383,9 @@ OGRErr OGRPoint::importFromWkt( char ** ppszInput )
 
     if( padfZ != NULL )
     {
-        /* If there's a 3rd value, and it is not a POINT M, */
-        /* then assume it is the Z */
-        if ((!(bHasM && !bHasZ)))
-        {
-            z = padfZ[0];
-            nCoordDimension = 3;
-        }
-        else
-            nCoordDimension = 2;
-        CPLFree( padfZ );
-    }
-    else if ( bHasZ )
-    {
-        /* In theory we should have a z coordinate for POINT Z */
-        /* oh well, let be tolerant */
+        z = padfZ[0];						
         nCoordDimension = 3;
+        CPLFree( padfZ );
     }
     else
         nCoordDimension = 2;
@@ -487,17 +431,6 @@ void OGRPoint::getEnvelope( OGREnvelope * psEnvelope ) const
     psEnvelope->MinY = psEnvelope->MaxY = getY();
 }
 
-/************************************************************************/
-/*                            getEnvelope()                             */
-/************************************************************************/
-
-void OGRPoint::getEnvelope( OGREnvelope3D * psEnvelope ) const
-
-{
-    psEnvelope->MinX = psEnvelope->MaxX = getX();
-    psEnvelope->MinY = psEnvelope->MaxY = getY();
-    psEnvelope->MinZ = psEnvelope->MaxZ = getZ();
-}
 
 
 /**
@@ -608,15 +541,4 @@ OGRErr OGRPoint::transform( OGRCoordinateTransformation *poCT )
 OGRBoolean OGRPoint::IsEmpty(  ) const
 {
     return nCoordDimension == 0;
-}
-
-/************************************************************************/
-/*                               swapXY()                               */
-/************************************************************************/
-
-void OGRPoint::swapXY()
-{
-    double dfTemp = x;
-    x = y;
-    y = dfTemp;
 }

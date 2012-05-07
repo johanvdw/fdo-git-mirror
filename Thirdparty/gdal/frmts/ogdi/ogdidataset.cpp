@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogdidataset.cpp 20588 2010-09-12 16:29:21Z rouault $
+ * $Id: ogdidataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Name:     ogdidataset.cpp
  * Project:  OGDI Bridge
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogdidataset.cpp 20588 2010-09-12 16:29:21Z rouault $");
+CPL_CVSID("$Id: ogdidataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void	GDALRegister_OGDI(void);
@@ -622,7 +622,6 @@ GDALDataset *OGDIDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "%s", psResult->message );
-        CPLFree(pszURL);
         return NULL;
     }
 

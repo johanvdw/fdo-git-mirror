@@ -28,25 +28,25 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v90</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -106,7 +106,6 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/fixed:no %(AdditionalOptions)</AdditionalOptions>
@@ -136,7 +135,6 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/fixed:no %(AdditionalOptions)</AdditionalOptions>
@@ -161,7 +159,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FDONLS.lib;Rdbi.lib;cppunit.lib;FDO.lib;FDOCommon.lib;SQLServerSpatialOverrides.lib;FDOGeometry.lib;gdbi.lib;util.lib;FdoGeneric.lib;SQLServerSpatialProvider.lib;ProvidersCommon.lib;grdschemamgr.lib;rdbmsoverrides.lib;schemamgr_lpnew.lib;schemamgr_phnew.lib;SQLServerSpatialSchemaMgr.lib;schemamgrnew.lib;FDOSpatial.lib;SchemaMgr_OVNew.lib;SQLServerSpatialODBCDriver.lib;longtransactionmanager.lib;geometry_fgf.lib;TestCommon.lib;ExpressionEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -185,7 +182,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4250;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalOptions>/Zm110 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FDONLS.lib;Rdbi.lib;cppunit.lib;FDO.lib;FDOCommon.lib;SQLServerSpatialOverrides.lib;FDOGeometry.lib;gdbi.lib;util.lib;FdoGeneric.lib;SQLServerSpatialProvider.lib;ProvidersCommon.lib;grdschemamgr.lib;rdbmsoverrides.lib;schemamgr_lpnew.lib;schemamgr_phnew.lib;SQLServerSpatialSchemaMgr.lib;schemamgrnew.lib;FDOSpatial.lib;SchemaMgr_OVNew.lib;SQLServerSpatialODBCDriver.lib;longtransactionmanager.lib;geometry_fgf.lib;TestCommon.lib;ExpressionEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -310,7 +306,6 @@
     <ClCompile Include="Common\FdoSelectTest.cpp" />
     <ClCompile Include="Common\FdoSpatialContextTest.cpp" />
     <ClCompile Include="Common\FdoSqlCmdTest.cpp" />
-    <ClCompile Include="Common\FdoTransactionTest.cpp" />
     <ClCompile Include="Common\FdoUpdateTest.cpp" />
     <ClCompile Include="Common\GeometryTests.cpp" />
     <ClCompile Include="Common\MessageTest.cpp" />
@@ -319,7 +314,6 @@
     <ClCompile Include="Common\SelectTests.cpp" />
     <ClCompile Include="Common\SchemaOverrideUtil.cpp" />
     <ClCompile Include="SQLServerSpatial\SqlServerConnectionUtil.cpp" />
-    <ClCompile Include="SQLServerSpatial\SqlServerFdoTransactionTest.cpp" />
     <ClCompile Include="SQLServerSpatial\SqlServerSchemaOverrideUtil.cpp" />
     <ClCompile Include="SQLServerSpatial\SqlServerTestRegister.cpp" />
     <ClCompile Include="Common\UnitTestUtil.cpp" />
@@ -398,7 +392,6 @@
     <ClInclude Include="Common\FdoSelectTest.h" />
     <ClInclude Include="Common\FdoSpatialContextTest.h" />
     <ClInclude Include="Common\FdoSqlCmdTest.h" />
-    <ClInclude Include="Common\FdoTransactionTest.h" />
     <ClInclude Include="Common\FdoUpdateTest.h" />
     <ClInclude Include="Common\GeometryTests.h" />
     <ClInclude Include="Common\MessageTest.h" />
@@ -407,7 +400,6 @@
     <ClInclude Include="Common\SelectTests.h" />
     <ClInclude Include="Common\SchemaOverrideUtil.h" />
     <ClInclude Include="SQLServerSpatial\SqlServerConnectionUtil.h" />
-    <ClInclude Include="SQLServerSpatial\SqlServerFdoTransactionTest.h" />
     <ClInclude Include="SQLServerSpatial\SqlServerSchemaOverrideUtil.h" />
     <ClInclude Include="Common\StringPropertiesDictionary.h" />
     <ClInclude Include="Common\UnitTestUtil.h" />
@@ -720,6 +712,10 @@ echo "delete me please"&gt;$(OutDir)FakeInstall.ilk
     </ProjectReference>
     <ProjectReference Include="..\Util\util.vcxproj">
       <Project>{001b698f-66ff-4486-ad57-53318cf47a4a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="UnitTestSqlServer.vcxproj">
+      <Project>{c99add26-4c4c-4417-adfc-f296bede3b45}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

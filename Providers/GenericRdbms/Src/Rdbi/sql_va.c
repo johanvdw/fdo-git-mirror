@@ -234,7 +234,7 @@ extern char *rdbi_cat;
 #endif
 
 /*VARARGS3*/
-int local_rdbi_sql(rdbi_context_def *context, int sqlid, rdbi_string_def *sql, int defer, int type);
+int local_rdbi_sql(rdbi_context_def *context, int sqlid, rdbi_string_def *sql, int defer);
 
 int local_rdbi_sql_va(rdbi_context_def *context, int opts, int sqlid, rdbi_string_def* sql, va_list args)
 {
@@ -254,7 +254,7 @@ int local_rdbi_sql_va(rdbi_context_def *context, int opts, int sqlid, rdbi_strin
     /*
      *  First, parse the SQL statement (defered parse).
      */
-    rc = local_rdbi_sql(context, sqlid, sql, TRUE, 0);
+    rc = local_rdbi_sql(context, sqlid, sql, TRUE);
     if(rc != RDBI_SUCCESS) goto the_exit;
 
     /*
@@ -279,7 +279,7 @@ int local_rdbi_sql_va(rdbi_context_def *context, int opts, int sqlid, rdbi_strin
         else
             n_addr = NULL;
 
-        rc = rdbi_bind(context, sqlid, name, type, size, addr, n_addr, 1);
+        rc = rdbi_bind(context, sqlid, name, type, size, addr, n_addr);
         if(rc != RDBI_SUCCESS) goto the_exit;
     }
 

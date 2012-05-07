@@ -28,7 +28,6 @@
 *   int          size;                                                  *
 *   char        *address;                                               *
 *   short       *null_ind;                                              *
-*   int         typeBind;                                              *
 *                                                                       *
 * Description                                                           *
 *       Bind  a  ":n"  variable to a given address, data type and       *
@@ -72,9 +71,6 @@
 *       NULL).  If this pointer is itself NULL, the variable will       *
 *       be presumed to be always not NULL.                              *
 *                                                                       *
-*   typeBind:   input                                                   *
-*       Input=1; Output=4; InputOutput=2; Return=5                      *
-*                                                                       *
 * Function Value                                                        *
 *       An RDBI status integer.   Good  is  RDBI_SUCCESS  (ie 0).       *
 *       See inc/rdbi.h.  If the bound variable cannot be found in       *
@@ -98,48 +94,7 @@
 #include <sqlucode.h>
 #endif
 
-#define SQL_SS_LENGTH_UNLIMITED 0
 #include <limits.h>
-#define SQL_SS_VARIANT -150
-#define SQL_SS_UDT -151
-#define SQL_SS_XML -152
-
-SQLLEN* odbcdr_get_len_idf (odbcdr_cursor_def* c, int pos) 
-{
-    SQLLEN* ret = NULL;
-    if (c->len_idf_maping == NULL)
-    {
-        c->len_idf_maping = (len_idf_map*)ut_vm_malloc( "len_idf_map", sizeof( len_idf_map ) );
-        c->len_idf_maping->null_idf_value = -1;
-        c->len_idf_maping->next = NULL;
-        c->len_idf_maping->position = pos;
-        ret = &c->len_idf_maping->null_idf_value;
-    }
-    else
-    {
-        len_idf_map* ptr = c->len_idf_maping;
-        while (ptr != NULL)
-        {
-            if (ptr->position == pos)
-            {
-                ptr->null_idf_value = -1;
-                ret = &ptr->null_idf_value;
-                break;
-            }
-            if (ptr->next == NULL)
-            {
-                ptr->next = (len_idf_map*)ut_vm_malloc( "len_idf_map", sizeof( len_idf_map ) );
-                ptr->next->null_idf_value = -1;
-                ptr->next->next = NULL;
-                ptr->next->position = pos;
-                ret = &ptr->next->null_idf_value;
-                break;
-            }
-            ptr = ptr->next;
-        }
-    }
-    return ret;
-}
 
 int odbcdr_bind(
     odbcdr_context_def *context,
@@ -148,8 +103,7 @@ int odbcdr_bind(
 	int 	 datatype,
 	int 	 size,
 	char	*address,
-	SQLLEN	*null_ind,
-    int      typeBind
+	SQLLEN	*null_ind
 	)
 {
 	odbcdr_cursor_def	*c;
@@ -162,7 +116,7 @@ int odbcdr_bind(
 	SQLULEN    			col_size;
 	SQLSMALLINT			decimal_digits;
 	SQLSMALLINT			nullable; 
-    SQLLEN*             nullid;
+
 	SQLRETURN			rc;
 
 	debug_on5("odbcdr_bind", "c:%#x name: %s type: %d address: 0x%lx size: %d",
@@ -212,33 +166,25 @@ int odbcdr_bind(
             (sql_type != SQL_WLONGVARCHAR) &&
             (sql_type != SQL_BINARY) &&
             (sql_type != SQL_VARBINARY) &&
-            (sql_type != SQL_SS_UDT) &&
-            (sql_type != SQL_SS_VARIANT) &&
-            (sql_type != SQL_SS_XML) &&
             (sql_type != SQL_LONGVARBINARY))
 		)
 	{
+		debug3 ("\nError=%d in SQLDescribeParam() for '%s', type=%d. Assuming type = SQL_CHAR, length = 100\n", rc, name, sql_type );
         switch (odbcdr_datatype)
         {
         case SQL_C_WCHAR:
     		sql_type = SQL_WVARCHAR;
-		    col_size = 100;
-		    decimal_digits = 0;
             break;
         case SQL_C_CHAR:
     		sql_type = SQL_VARCHAR;
-		    col_size = 100;
-		    decimal_digits = 0;
             break;
-        case SQL_C_SBIGINT:
-            sql_type = SQL_BIGINT;
-            col_size = sizeof(double);
-            break;
-        default: // in case we fail to describe the parameter type use the type of the bind value
-            sql_type = odbcdr_datatype;
-            col_size = odbcdr_size;
+        default:
+    		// most SQL types can be converted to SQL_CHAR
+            sql_type = SQL_CHAR;
             break;
         }
+		col_size = 100;
+		decimal_digits = 0;
 	}
 
 	/*
@@ -246,46 +192,20 @@ int odbcdr_bind(
 	*/
     if ( datatype != RDBI_GEOMETRY )
     {
-        if (datatype != RDBI_BLOB)
-        {
-		    ODBCDR_ODBC_ERR( SQLBindParameter(
-						    c->hStmt,
-						    (SQLUSMALLINT) bindnum,
-                            typeBind,
-						    (SQLSMALLINT) odbcdr_datatype,
-						    (SQLSMALLINT) sql_type,
-						    (SQLUINTEGER) col_size,
-						    (SQLSMALLINT) decimal_digits,
-						    (SQLPOINTER) address,
-						    (SQLINTEGER) size,      // buffer size
-						    (SQLLEN *) null_ind),   // length indicator 
-					    SQL_HANDLE_STMT,c->hStmt,
-					    "SQLBindParameter",	"bind" );
-        }
-        else
-        {
-            if (size > 0)
-            {
-                nullid = odbcdr_get_len_idf(c, bindnum);
-                *nullid = size;
-            }
-            else
-                nullid = null_ind;
-
-		    ODBCDR_ODBC_ERR( SQLBindParameter(
-						    c->hStmt,
-						    (SQLUSMALLINT) bindnum,
-                            SQL_PARAM_INPUT,
-						    (SQLSMALLINT) SQL_C_BINARY,
-						    (SQLSMALLINT) SQL_VARBINARY,
-						    (SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,
-						    (SQLSMALLINT) 0,
-						    (SQLPOINTER)  address,
-						    (SQLINTEGER)  SQL_SS_LENGTH_UNLIMITED,      // buffer size
-						    (SQLLEN *)    nullid),   // length indicator 
-					    SQL_HANDLE_STMT,c->hStmt,
-					    "SQLBindParameter",	"bind" );
-        }
+		ODBCDR_ODBC_ERR( SQLBindParameter(
+						c->hStmt,
+						(SQLUSMALLINT) bindnum,
+						SQL_PARAM_INPUT,
+						(SQLSMALLINT) odbcdr_datatype,
+						(SQLSMALLINT) sql_type,
+						(SQLUINTEGER) col_size,
+						(SQLSMALLINT) decimal_digits,
+						(SQLPOINTER) address,
+						(SQLINTEGER) size,      // buffer size
+						(SQLLEN *) null_ind),   // length indicator 
+					SQL_HANDLE_STMT,c->hStmt,
+					"SQLBindParameter",	"bind" );
+	
     } else {
 
         ODBCDR_RDBI_ERR( odbcdr_geom_bindColumn( context, c, bindnum, address ) );
@@ -300,20 +220,19 @@ int odbcdr_bind(
         */
         // "For SQL_LONGVARBINARY type, ColumnSize must be set to the total length of the data to be sent, not the precision as defined in this table.
 
-        nullid = odbcdr_get_len_idf(c, bindnum);
-        *nullid = SQL_LEN_DATA_AT_EXEC(0);
+        c->lenDataParam = SQL_LEN_DATA_AT_EXEC(0);
 
         rc = SQLBindParameter(
 						c->hStmt,
 						(SQLUSMALLINT)bindnum,
 						SQL_PARAM_INPUT,
 						(SQLSMALLINT) SQL_C_BINARY, 
-						SQL_VARBINARY,
-						(SQLUINTEGER) SQL_SS_LENGTH_UNLIMITED,  
+						SQL_LONGVARBINARY,
+						(SQLUINTEGER) address,  
 						(SQLSMALLINT) 0,
-						(SQLPOINTER) address,
-						(SQLINTEGER) SQL_SS_LENGTH_UNLIMITED, 
-						(SQLLEN *)   nullid);
+						(SQLPOINTER) bindnum,
+						(SQLINTEGER) 0, 
+						&c->lenDataParam);
 
         if ( rc != SQL_SUCCESS_WITH_INFO ) {
             ODBCDR_ODBC_ERR( rc,

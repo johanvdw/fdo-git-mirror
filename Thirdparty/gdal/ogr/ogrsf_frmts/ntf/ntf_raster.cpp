@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntf_raster.cpp 21977 2011-03-18 19:53:18Z warmerdam $
+ * $Id: ntf_raster.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  NTF Translator
  * Purpose:  Handle UK Ordnance Survey Raster DTM products.  Includes some
@@ -31,7 +31,7 @@
 
 #include "ntf.h"
 
-CPL_CVSID("$Id: ntf_raster.cpp 21977 2011-03-18 19:53:18Z warmerdam $");
+CPL_CVSID("$Id: ntf_raster.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -241,7 +241,8 @@ OGRNTFRasterLayer::OGRNTFRasterLayer( OGRNTFDataSource *poDSIn,
     poFeatureDefn->Reference();
     poFeatureDefn->SetGeomType( wkbPoint25D );
 
-    OGRFieldDefn      oHeight( "HEIGHT", OFTReal );
+    OGRFieldDefn      oHeight( "HEIGHT", OFTInteger );
+    oHeight.SetWidth(5);
     poFeatureDefn->AddFieldDefn( &oHeight );
 
     poReader = poReaderIn;
@@ -386,7 +387,7 @@ OGRFeature *OGRNTFRasterLayer::GetFeature( long nFeatureId )
         new OGRPoint( padfGeoTransform[0] + padfGeoTransform[1] * iReqColumn,
                       padfGeoTransform[3] + padfGeoTransform[5] * iReqRow,
                       pafColumn[iReqRow] ) );
-    poFeature->SetField( 0, pafColumn[iReqRow] );
+    poFeature->SetField( 0, (int) pafColumn[iReqRow] );
     
     return poFeature;
 }

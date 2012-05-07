@@ -32,9 +32,7 @@
 //disable STL bounds checking
 #define _SECURE_SCL 0
 
-#include <map>
 #include <string>
-#include <vector>
 #include <wchar.h>
 #include <sstream>
 
@@ -80,8 +78,6 @@ extern "C"
   #define _snprintf snprintf
   #define _wcsicmp wcscasecmp
   #define _access(x,y) access(x,y)
-  #define _malloca alloca
-  #define _freea(x)
   typedef long long int __int64;
 #endif
 

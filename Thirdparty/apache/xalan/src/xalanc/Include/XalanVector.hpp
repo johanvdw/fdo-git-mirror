@@ -52,6 +52,8 @@ XALAN_CPP_NAMESPACE_BEGIN
 
 XALAN_USING_XERCES(MemoryManager)
 
+
+
 template <class Type, class ConstructionTraits = MemoryManagedConstructionTraits<Type> >
 class XalanVector
 {
@@ -65,6 +67,7 @@ public:
     typedef const value_type&   const_reference;
     typedef size_t              size_type;
     typedef ptrdiff_t           difference_type;
+
 #if defined(XALAN_VCPP_USE_PTRIT)
     typedef std::_Ptrit<
                 Type,
@@ -835,14 +838,10 @@ public:
                 }
 
                 // Copy everything that already exists...
-              if (m_size != 0 && theRHS.m_size != 0)
-                {
-                    XALAN_STD_QUALIFIER copy(
-                        theRHS.begin(),
-                        theRHSCopyEnd,
-                        begin());
-                }
-
+                XALAN_STD_QUALIFIER copy(
+                    theRHS.begin(),
+                    theRHSCopyEnd,
+                    begin());
             }
         }
 

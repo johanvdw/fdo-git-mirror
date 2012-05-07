@@ -29,7 +29,6 @@
 #endif // _WIN32
 
 // System includes
-#include <vector>
 #include <cstring>
 
 // Base FDO headers
@@ -53,9 +52,5 @@ namespace stdext = ::__gnu_cxx;
 using namespace std;
 #endif // _WIN32
 
-#ifndef _MSC_VER
-#include<unistd.h>
-  #define _wcsicmp wcscasecmp
-#endif
 
 #endif // _GENERICRDBMSFDOSTDAFX_H_

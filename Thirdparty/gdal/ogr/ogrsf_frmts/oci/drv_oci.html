@@ -94,13 +94,9 @@ in USER_SDO_GEOM_METADATA and rebuilding the spatial index.<p>
 <li> <b>OVERWRITE</b>: This may be "YES" to force an existing layer of the
 desired name to be destroyed before creating the requested layer.<p>
 
-<li> <b>TRUNCATE</b>: This may be "YES" to force the existing table to 
-be reused, but to first truncate all records in the table, preserving 
-indexes or dependencies.<p>
-
 <li> <b>LAUNDER</b>: This may be "YES" to force new fields created on this
 layer to have their field names "laundered" into a form more compatible with
-Oracle.  This converts to upper case and converts some special characters
+Oracle.  This converts to lower case and converts some special characters
 like "-" and "#" to "_".  The default value is "NO".<p>
 
 <li> <b>PRECISION</b>: This may be "YES" to force new fields created on this
@@ -120,15 +116,15 @@ when the spatial index is created.  For instance setting INDEX_PARAMETERS to
 SDO_LEVEL=5 would cause a 5 level tile index to be used.  By default no 
 parameters are passed causing a default R-Tree spatial index to be created.<p>
 
-<li> <b>DIMINFO_X</b>: This may be set to xmin,xmax,xres values to
+<li> <b>DIMINFO_X</b>: This may be set to <xmin>,<xmax>,<xres> values to
 control the X dimension info written into the USER_SDO_GEOM_METADATA table.
 By default extents are collected from the actual data written.<p>
 
-<li> <b>DIMINFO_Y</b>: This may be set to ymin,ymax,yres values to
+<li> <b>DIMINFO_Y</b>: This may be set to <ymin>,<ymax>,<yres> values to
 control the Y dimension info written into the USER_SDO_GEOM_METADATA table.
 By default extents are collected from the actual data written.<p>
 
-<li> <b>DIMINFO_Z</b>: This may be set to zmin,zmax,zres values to
+<li> <b>DIMINFO_Z</b>: This may be set to <zmin>,<zmax>,<zres> values to
 control the Y dimension info written into the USER_SDO_GEOM_METADATA table.
 By default fixed values of -100000,100000,0.002 are used for layers with
 a third dimension.<p>
@@ -143,8 +139,9 @@ match the WKT the driver expects.<p>
 <li> <b>MULTI_LOAD</b>: If enabled new features will be created in 
 groups of 100 per SQL INSERT command, instead of each feature being a separate
 INSERT command.  Having this enabled is the fastest way to load data quickly.
-Multi-load mode is enabled by default, and may be forced off for existing 
-layers or for new layers by setting to NO.<p>
+Multi-load mode is enabled by default for newly created layers, and may be
+forced on for existing layers by setting this option to YES, or disabled
+even for new layers by setting to NO.<p>
 
 <li> <b>LOADER_FILE</b>: If this option is set, all feature information will
 be written to a file suitable for use with SQL*Loader instead of inserted

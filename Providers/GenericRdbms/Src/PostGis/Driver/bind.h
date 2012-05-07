@@ -37,12 +37,7 @@ int postgis_bind (
     int   datatype,
     int   size,
     char *address,
-    char *null_ind,
-    int typeBind);
-
-int postgis_binds_alloc( 
-    postgis_cursor_def *curs,
-    int count);
+    char *null_ind);
 
 #endif /* POSTGIS_BIND_H */
 

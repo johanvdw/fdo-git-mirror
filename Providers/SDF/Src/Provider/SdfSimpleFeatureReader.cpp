@@ -1148,7 +1148,10 @@ void SdfSimpleFeatureReader::Close()
     FDO_SAFE_RELEASE(m_filter);
     FDO_SAFE_RELEASE(m_classDefPruned);
 
-    FDO_SAFE_RELEASE(m_filterExec);
+    //need to do this because of multiple inheritance in SdfFilterExecutor
+    FdoIFilterProcessor* asfilter = (FdoIFilterProcessor*)m_filterExec;
+    FDO_SAFE_RELEASE(asfilter);
+    m_filterExec = NULL;
 
     //it is our responsibility to free the feature recno list here
     if (m_features)

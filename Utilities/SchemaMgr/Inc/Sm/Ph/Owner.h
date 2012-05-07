@@ -26,7 +26,6 @@
 #include <Sm/Ph/LockTypesCollection.h>
 #include <Sm/Ph/Table.h>
 #include <Sm/Ph/View.h>
-#include <Sm/Ph/Synonym.h>
 #include <Sm/Ph/SpatialContextCollection.h>
 #include <Sm/Ph/SpatialContextGeom.h>
 #include <Sm/Ph/CoordinateSystemCollection.h>
@@ -40,14 +39,11 @@ class FdoSmPhRdCoordSysReader;
 class FdoSmPhRdConstraintReader;
 class FdoSmPhRdColumnReader;
 class FdoSmPhRdBaseObjectReader;
-class FdoSmPhRdSynonymReader;
 class FdoSmPhRdTableJoin;
 class FdoSmPhRdSpatialContextReader;
 class FdoSmPhRdCoordSysReader;
-class FdoSmPhRdViewRelationsObjectReader;
 
 class FdoSmPhIndexLoader;
-class FdoSmPhSynonymBaseLoader;
 
 // This class represents an Owner (Physical Schema). The exact meaning
 // of Owner depends on the Provider. For example, in the Oracle Provider
@@ -80,41 +76,8 @@ public:
     /// Get/Set whether the owner has MetaSchema tables.
     /// The Set function can only be called when this owner's
     /// element state is FdoSchemaElementState_Added.
-    inline void SetHasMetaSchema( bool hasMetaSchema ) { mHasMetaSchema = hasMetaSchema; }
-    inline bool GetHasMetaSchema() { return mHasMetaSchema; }
-
-    // Returns true if spatial contexts defined in SC metadata table (f_spatialcontexts)
-    virtual bool GetHasSCMetaSchema();
-
-    // Returns true if classes are defined in class metadata table (f_classdefinition)
-    virtual bool GetHasClassMetaSchema();
-
-    // Returns true if properties are defined in property metadata table (f_attributedefinition)
-    virtual bool GetHasAttrMetaSchema();
-
-    // Returns true if association properties are defined in the metadata table (f_associationdefinition)
-    virtual bool GetHasAssocMetaSchema();
-
-    // Returns true if object properties are defined in the metadata table (f_attributedependencies)
-    virtual bool GetHasObPropMetaSchema();
-
-    // Returns true if Schema Attribute Dictionary items are defined in the metadata table (f_sad)
-    virtual bool GetHasSADMetaSchema();
-
-    // Returns true if Schema option is defined in the metadata table (f_schemaoptions)
-    virtual bool GetHasSCOptionMetaSchema();
-
-    // Returns true if options is defined in the metadata table (f_options)
-    virtual bool GetHasOptionMetaSchema();
-
-    // Returns true if Schema option is defined in the metadata table (f_schemainfo)
-    virtual bool GetHasSCInfoMetaSchema();
-
-    // Returns true if spatial contexts geometry defined in SC metadata table (f_spatialcontextgeom)
-    virtual bool GetHasSCGeomInfoMetaSchema();
-
-    // Returns true if spatial contexts group defined in SC metadata table (f_spatialcontextgroup)
-    virtual bool GetHasSCGroupInfoMetaSchema();
+    void SetHasMetaSchema( bool hasMetaSchema );
+    bool GetHasMetaSchema();
 
     /// System database flag
 	void SetIsSystem( bool IsSystem );
@@ -189,10 +152,6 @@ public:
     // Returns NULL if coordinate system not found.
     virtual FdoSmPhCoordinateSystemP FindCoordinateSystemByWkt( FdoStringP wkt );
 
-    // Adds the given coordinate system to this owner's cache.
-    // Does nothing if the coordinate system is already cached.
-    virtual void CacheCoordinateSystem( FdoSmPhCoordinateSystemP coordSys );
-
     // Reverse-engineers an FDO feature schema name from this datastore.
     // Default implementation returns datastore name prepended by "Fdo".
     // "Fdo" is prepended to prevent name conflict with special schema 
@@ -215,17 +174,6 @@ public:
     /// Create a reader to get all database objects for this join.
     virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDbObjectReader( FdoPtr<FdoSmPhRdTableJoin> join ) const;
 
-    /// Create a reader to get derived objects for this owner.
-    /// A derived object is one where the RDBMS data dictionary does not explicitly
-    /// relate the object to its components (e.g. columns), but the object implicitly
-    /// has the same components as its base object. A typical derived object is a 
-    /// synonym. The body of DoLoadSpatialContexts provides more details on why these
-    /// retrievals are performed.
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDerivedObjectReader( FdoStringP objectName = L"") const;
-
-    /// Create a reader to get derived objects this owner and object name list.
-    virtual FdoPtr<FdoSmPhRdDbObjectReader> CreateDerivedObjectReader( FdoStringsP objectNames ) const;
-
     /// Create a reader to get all views for this owner.
     virtual FdoPtr<FdoSmPhRdViewReader> CreateViewReader() const;
 
@@ -246,9 +194,6 @@ public:
 
 	/// Get reader to retrieve all spatial contexts for a database object.
 	virtual FdoPtr<FdoSmPhRdSpatialContextReader> CreateRdSpatialContextReader( FdoStringP dbObjectName );
-
-	/// Get reader to retrieve all spatial contexts for a list of database objects.
-	virtual FdoPtr<FdoSmPhRdSpatialContextReader> CreateRdSpatialContextReader( FdoStringsP objectNames );
 
     // Create a reader to get all foreign keys (ordered by foreign table) for this owner.
     // Default implementation returns NULL (not supported).
@@ -293,19 +238,7 @@ public:
     // Create a reader to get all base object references for this owner
     virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader() const;
 
-    // Create a reader to get all relations in a view 
-    virtual FdoPtr<FdoSmPhRdViewRelationsObjectReader> CreateViewRelationsObjectReader( FdoStringsP objectNames ) const;
-
     virtual FdoPtr<FdoSmPhRdBaseObjectReader> CreateBaseObjectReader( FdoStringsP objectNames ) const;
-
-    // Create a reader to get all synonyms for this owner
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader() const;
-
-    // Create a reader to get a particular synonym
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader( FdoStringP synonymName ) const;
-
-    // Create a reader to get all synonyms in the synonymNames collection.
-    virtual FdoPtr<FdoSmPhRdSynonymReader> CreateSynonymReader( FdoStringsP synonymNames ) const;
 
     // Create a lazy bulk loader for indexes
     virtual FdoPtr<FdoSmPhIndexLoader> CreateIndexLoader(
@@ -329,28 +262,18 @@ public:
         FdoStringP rootObjectName
     );
 
-    /// Create a new synonym. Synonym is not posted to the datastore until its Commit() function
-    /// is called.
-    FdoSmPhSynonymP CreateSynonym(
-        FdoStringP synonymName,
-        FdoSmPhDbObjectP rootObject
-    );
-
     // read and cache all objects for this owner. This function providers the best performance
     // when all objects for the owner need to be accessed.
     //
     // Parameters:
     //  cacheComponents: if true, cache each object's components (primary key, foreign
-    //  keys, indexes). if false, then caching for listing purposes only.
+    //  keys, indexes).
     FdoSmPhDbObjectsP CacheDbObjects( bool cacheComponents );
 
     /// Given a DbObject reader, add its current database object to 
     /// this owner's cache.
     FdoSmPhDbObjectP CacheDbObject(
-        FdoPtr<FdoSmPhRdDbObjectReader> reader,
-        bool bulkFetchComponents = true
-            // false: caching for listing purposes only
-            // true: components will also be cached.
+        FdoPtr<FdoSmPhRdDbObjectReader> reader
     );
 
     /// Remove a database object from the cache.
@@ -367,9 +290,6 @@ public:
 
     // Remove a table or view name from the index fetch candidates list
     void RemoveCandIndex( FdoStringP objectName );
-
-    // Cache the base object for the given synonym along with up to 50 other candidates.
-    void CacheSynonymBases( FdoStringP synonymName );
 
     /// Gather all errors for this element and child elements into a chain of exceptions.
     /// Adds each error as an exception, to the given exception chain and returns
@@ -450,13 +370,6 @@ protected:
         FdoPtr<FdoSmPhRdDbObjectReader> reader
     );
 
-    virtual FdoSmPhDbObjectP NewSynonym(
-        FdoStringP synonymName,
-        FdoSmPhDbObjectP rootObject,
-        FdoSchemaElementState elementState,
-        FdoSmPhRdDbObjectReader* reader
-    );
-
     /// Commit modifications to database objects.
     virtual void CommitChildren( bool isBeforeParent );
 
@@ -490,21 +403,6 @@ protected:
     // Returns the number of object candidates to fetch in one operation (See CacheCandDbObjects). 
     virtual FdoInt32 GetCandFetchSize();
 
-    // Reset all loaders to start at the first cached dbObject when looking for 
-    // candidates to load.
-    void ResetLoaders();
-
-    // Change the fetch components status for the given dbObject
-    void SetBulkFetchComponents( 
-        FdoSmPhDbObjectP dbObject, 
-        bool bulkFetchComponents 
-            // false: This dbObject is being cached for listing purposes only. It can 
-            // be skipped when looking for candidates for lazy loading components
-            // (e.g.: indexes, base objects)
-            // true: This dbObject is being cached for component retrieval as well. It is 
-            // a candidate for lazy loading components. 
-    );
-
 protected:
     // Checks each DbObject in this owner and adds its base object (if any) to 
     // the Candidates list for the base object's owner.
@@ -527,12 +425,6 @@ private:
     void LoadLtLck();
 
     void DoLoadSpatialContexts( FdoStringP dbObjectName );
-
-    // Creates list of dbObjects that are candidates for spatial context loading.
-    // This allows bulk fetching of physical spatial context info when only partially
-    // describing a schema. 
-    // Returned list is empty if the given dbObject is not a candidate.
-    FdoStringsP GetRdScCands( FdoStringP dbObjectName );
 
     // Caches the coordinate systems retrieved by the given reader.
     void LoadCoordinateSystems( FdoPtr<FdoSmPhRdCoordSysReader> rdr );
@@ -571,15 +463,8 @@ private:
     // Any dbobjects with lower index in the cache have already been checked.
     int mNextBaseCandIdx;
 
-    // Current indexes for next dbObject to check for spatial context bulk fetching.
-    // Any dbobjects with lower index in the cache have already been checked.
-    int mNextRdScCandIdx;
-
     // Lazy bulk loader for indexes.
     FdoSmPhIndexLoader* mIndexLoader;
-
-    // Lazy bulk loader for synonyms.
-    FdoSmPhSynonymBaseLoader* mSynonymBaseLoader;
 
     // Cache of spatial contexts
     FdoSmPhSpatialContextsP mSpatialContexts;
@@ -606,7 +491,6 @@ private:
 
     bool mBulkLoadPkeys;
     bool mBulkLoadFkeys;
-    bool mHasOnlyFdoCand;
 
     // Statuses for cache candidates and mNotClassifiedObjects list
     static FdoString* NOT_CLASSIFIED;  // object exists but Schema Manager does not classify it (e.g. Oracle index)

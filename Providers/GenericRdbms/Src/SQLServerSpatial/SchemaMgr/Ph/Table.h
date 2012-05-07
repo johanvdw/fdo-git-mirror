@@ -58,6 +58,7 @@ public:
     // index readers.
     virtual FdoPtr<FdoSmPhRdConstraintReader> CreateConstraintReader( FdoString* type ) const;
 
+
 private:
     virtual bool Add();
     virtual bool Modify();

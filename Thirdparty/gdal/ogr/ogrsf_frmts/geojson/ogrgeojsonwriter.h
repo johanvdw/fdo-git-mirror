@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonwriter.h 22490 2011-06-03 10:26:47Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Defines GeoJSON reader within OGR OGRGeoJSON Driver.
@@ -51,19 +51,19 @@ class OGRGeometryCollection;
 /*                 GeoJSON Geometry Translators                         */
 /************************************************************************/
 
-json_object* OGRGeoJSONWriteFeature( OGRFeature* poFeature, int bWriteBBOX, int nCoordPrecision );
+json_object* OGRGeoJSONWriteFeature( OGRFeature* poFeature );
 json_object* OGRGeoJSONWriteAttributes( OGRFeature* poFeature );
-json_object* OGRGeoJSONWriteGeometry( OGRGeometry* poGeometry, int nCoordPrecision );
-json_object* OGRGeoJSONWritePoint( OGRPoint* poPoint, int nCoordPrecision );
-json_object* OGRGeoJSONWriteLineString( OGRLineString* poLine, int nCoordPrecision );
-json_object* OGRGeoJSONWritePolygon( OGRPolygon* poPolygon, int nCoordPrecision );
-json_object* OGRGeoJSONWriteMultiPoint( OGRMultiPoint* poGeometry, int nCoordPrecision );
-json_object* OGRGeoJSONWriteMultiLineString( OGRMultiLineString* poGeometry, int nCoordPrecision );
-json_object* OGRGeoJSONWriteMultiPolygon( OGRMultiPolygon* poGeometry, int nCoordPrecision );
-json_object* OGRGeoJSONWriteGeometryCollection( OGRGeometryCollection* poGeometry, int nCoordPrecision );
+json_object* OGRGeoJSONWriteGeometry( OGRGeometry* poGeometry );
+json_object* OGRGeoJSONWritePoint( OGRPoint* poPoint );
+json_object* OGRGeoJSONWriteLineString( OGRLineString* poLine );
+json_object* OGRGeoJSONWritePolygon( OGRPolygon* poPolygon );
+json_object* OGRGeoJSONWriteMultiPoint( OGRMultiPoint* poGeometry );
+json_object* OGRGeoJSONWriteMultiLineString( OGRMultiLineString* poGeometry );
+json_object* OGRGeoJSONWriteMultiPolygon( OGRMultiPolygon* poGeometry );
+json_object* OGRGeoJSONWriteGeometryCollection( OGRGeometryCollection* poGeometry );
 
-json_object* OGRGeoJSONWriteCoords( double const& fX, double const& fY, int nCoordPrecision );
-json_object* OGRGeoJSONWriteCoords( double const& fX, double const& fY, double const& fZ, int nCoordPrecision );
-json_object* OGRGeoJSONWriteLineCoords( OGRLineString* poLine, int nCoordPrecision );
+json_object* OGRGeoJSONWriteCoords( double const& fX, double const& fY );
+json_object* OGRGeoJSONWriteCoords( double const& fX, double const& fY, double const& fZ );
+json_object* OGRGeoJSONWriteLineCoords( OGRLineString* poLine );
 
 #endif /* OGR_GEOJSONWRITER_H_INCLUDED */

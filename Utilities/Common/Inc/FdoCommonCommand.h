@@ -25,6 +25,8 @@
 
 template <class FDO_COMMAND, class CONNECTION_CLASS> class FdoCommonCommand : public FDO_COMMAND
 {
+    /// friend class CONNECTION_CLASS;
+
 protected:
     /// The connection this command was created from.
     FdoPtr<CONNECTION_CLASS> mConnection;

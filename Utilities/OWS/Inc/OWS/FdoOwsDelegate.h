@@ -36,24 +36,12 @@ private:
     FdoStringP m_defaultUrl;
     FdoStringP m_userName;
     FdoStringP m_passwd;
-    FdoStringP m_proxyHost;
-    FdoStringP m_proxyPort;
-    FdoStringP m_proxyUser;
-    FdoStringP m_proxyPassword;
     FdoInt32 m_timeout;
     FdoPtr<FdoOwsUrlResolver> m_urlResolver;
 
 protected:
     FDOOWS_API FdoOwsDelegate();
-	FDOOWS_API FdoOwsDelegate(
-        FdoString* defaultUrl, 
-        FdoString* userName, 
-        FdoString* passwd, 
-        FdoString* proxyHost = NULL,
-        FdoString* proxyPort = NULL,
-        FdoString* proxyUser = NULL,
-        FdoString* proxyPassword = NULL
-        );
+	FDOOWS_API FdoOwsDelegate(FdoString* defaultUrl, FdoString* userName, FdoString* passwd);	
     FDOOWS_API virtual ~FdoOwsDelegate();
 	FDOOWS_API virtual void Dispose() { delete this; }
 

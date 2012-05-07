@@ -27,21 +27,12 @@
 #include "pcidsk_config.h"
 #include "pcidsk_types.h"
 #include "pcidsk_exception.h"
-#include "pcidsk_georef.h"
-#include "pcidsk_io.h"
 #include "core/pcidsk_utils.h"
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
-#include <cstdio>
-#include <cmath>
-#include <iostream>
 
 using namespace PCIDSK;
-
-#if defined(_MSC_VER) && (_MSC_VER < 1500)
-#  define vsnprintf _vsnprintf
-#endif
 
 /************************************************************************/
 /*                         GetCurrentDateTime()                         */
@@ -96,7 +87,7 @@ std::string &PCIDSK::UCaseStr( std::string &target )
     for( unsigned int i = 0; i < target.size(); i++ )
     {
         if( islower(target[i]) )
-            target[i] = (char) toupper(target[i]);
+            target[i] = toupper(target[i]);
     }
     
     return target;
@@ -131,50 +122,13 @@ int64 PCIDSK::atoint64( const char *str_value )
 }
 
 /************************************************************************/
-/*                            SwapPixels()                              */
-/************************************************************************/
-/**
- * @brief Perform an endianess swap for a given buffer of pixels
- *
- * Baed on the provided data type, do an appropriate endianess swap for
- * a buffer of pixels. Deals with the Complex case specially, in
- * particular.
- *
- * @param data the pixels to be swapped
- * @param type the data type of the pixels
- * @param count the count of pixels (not bytes, words, etc.)
- */
-void PCIDSK::SwapPixels(void* const data, 
-                        const eChanType type, 
-                        const std::size_t count)
-{
-    switch(type) {
-    case CHN_8U:
-    case CHN_16U:
-    case CHN_16S:
-    case CHN_32R:
-        SwapData(data, DataTypeSize(type), count);
-        break;
-    case CHN_C16U:
-    case CHN_C16S:
-    case CHN_C32R:
-        SwapData(data, DataTypeSize(type) / 2, count * 2);
-        break;
-    default:
-        ThrowPCIDSKException("Unknown data type passed to SwapPixels."
-            "This is a software bug. Please contact your vendor.");
-    }
-}
-
-/************************************************************************/
 /*                              SwapData()                              */
 /************************************************************************/
 
-void PCIDSK::SwapData( void* const data, const int size, const int wcount )
+void PCIDSK::SwapData( void *data, int size, int count )
 
 {
-    uint8* data8 = reinterpret_cast<uint8*>(data);
-    std::size_t count = wcount;
+    uint8 *data8 = (uint8 *) data;
 
     if( size == 2 )
     {
@@ -297,9 +251,7 @@ void PCIDSK::ParseTileFormat( std::string full_text,
     if( *next_text != '\0' )
     {
         compression = next_text;
-        if (compression == "NO_WARNINGS")
-            compression = "";
-        else if( compression != "RLE"
+        if( compression != "RLE"
             && strncmp(compression.c_str(),"JPEG",4) != 0 
             && compression != "NONE"
             && compression != "QUADTREE" )
@@ -325,14 +277,16 @@ int PCIDSK::pci_strcasecmp( const char *string1, const char *string2 )
         char c2 = string2[i];
 
         if( islower(c1) )
-            c1 = (char) toupper(c1);
+            c1 = toupper(c1);
         if( islower(c2) )
-            c2 = (char) toupper(c2);
+            c2 = toupper(c2);
 
         if( c1 < c2 )
             return -1;
         else if( c1 > c2 )
             return 1;
+        else 
+            return 0;
     }
 
     if( string1[i] == '\0' && string2[i] == '\0' )
@@ -365,9 +319,9 @@ int PCIDSK::pci_strncasecmp( const char *string1, const char *string2, int len )
         char c2 = string2[i];
 
         if( islower(c1) )
-            c1 = (char) toupper(c1);
+            c1 = toupper(c1);
         if( islower(c2) )
-            c2 = (char) toupper(c2);
+            c2 = toupper(c2);
 
         if( c1 < c2 )
             return -1;
@@ -378,311 +332,3 @@ int PCIDSK::pci_strncasecmp( const char *string1, const char *string2, int len )
     return 0;
 }
 
-/************************************************************************/
-/*                         ProjParmsFromText()                          */
-/*                                                                      */
-/*      function to turn a ProjParms string (17 floating point          */
-/*      numbers) into an array, as well as attaching the units code     */
-/*      derived from the geosys string.                                 */
-/************************************************************************/
-
-std::vector<double> PCIDSK::ProjParmsFromText( std::string geosys, 
-                                               std::string sparms )
-
-{
-    std::vector<double> dparms;
-    const char *next = sparms.c_str();
-
-    for( next = sparms.c_str(); *next != '\0'; )
-    {
-        dparms.push_back( atof(next) );
-
-        // move past this token
-        while( *next != '\0' && *next != ' ' )
-            next++;
-
-        // move past white space.
-        while( *next != '\0' && *next == ' ' )
-            next++;
-    }
-
-    dparms.resize(18);
-
-    // This is rather iffy!
-    if( EQUALN(geosys.c_str(),"DEGREE",3) )
-        dparms[17] = (double) (int) UNIT_DEGREE;
-    else if( EQUALN(geosys.c_str(),"MET",3) )
-        dparms[17] = (double) (int) UNIT_METER;
-    else if( EQUALN(geosys.c_str(),"FOOT",4) )
-        dparms[17] = (double) (int) UNIT_US_FOOT;
-    else if( EQUALN(geosys.c_str(),"FEET",4) )
-        dparms[17] = (double) (int) UNIT_US_FOOT;
-    else if( EQUALN(geosys.c_str(),"INTL FOOT",5) )
-        dparms[17] = (double) (int) UNIT_INTL_FOOT;
-    else if( EQUALN(geosys.c_str(),"SPCS",4) )
-        dparms[17] = (double) (int) UNIT_METER;
-    else if( EQUALN(geosys.c_str(),"SPIF",4) )
-        dparms[17] = (double) (int) UNIT_INTL_FOOT;
-    else if( EQUALN(geosys.c_str(),"SPAF",4) )
-        dparms[17] = (double) (int) UNIT_US_FOOT;
-    else
-        dparms[17] = -1.0; /* unknown */
-    
-    return dparms;
-}
-
-/************************************************************************/
-/*                          ProjParmsToText()                           */
-/************************************************************************/
-
-std::string PCIDSK::ProjParmsToText( std::vector<double> dparms )
-
-{
-    unsigned int i;
-    std::string sparms;
-
-    for( i = 0; i < 17; i++ )
-    {
-        char value[64];
-        double dvalue;
-
-        if( i < dparms.size() )
-            dvalue = dparms[i];
-        else
-            dvalue = 0.0;
-
-        if( dvalue == floor(dvalue) )
-            sprintf( value, "%d", (int) dvalue );
-        else
-            sprintf( value, "%.15g", dvalue );
-        
-        if( i > 0 )
-            sparms += " ";
-        
-        sparms += value;
-    }
-
-    return sparms;
-}
-
-/************************************************************************/
-/*                            ExtractPath()                             */
-/*                                                                      */
-/*      Extract the directory path portion of the passed filename.      */
-/*      It assumes the last component is a filename and should not      */
-/*      be passed a bare path.  The trailing directory delimeter is     */
-/*      removed from the result.  The return result is an empty         */
-/*      string for a simple filename passed in with no directory        */
-/*      component.                                                      */
-/************************************************************************/
-
-std::string PCIDSK::ExtractPath( std::string filename )
-
-{
-    int i;
-
-    for( i = filename.size()-1; i >= 0; i-- )
-    {
-        if( filename[i] == '\\' || filename[i] == '/' )
-            break;
-    }
-
-    if( i > 0 )
-        return filename.substr(0,i);
-    else
-        return "";
-}
-
-/************************************************************************/
-/*                         MergeRelativePath()                          */
-/*                                                                      */
-/*      This attempts to take src_filename and make it relative to      */
-/*      the base of the file "base", if this evaluates to a new file    */
-/*      in the filesystem.  It will not make any change if              */
-/*      src_filename appears to be absolute or if the altered path      */
-/*      does not resolve to a file in the filesystem.                   */
-/************************************************************************/
-
-std::string PCIDSK::MergeRelativePath( const PCIDSK::IOInterfaces *io_interfaces,
-                                       std::string base, 
-                                       std::string src_filename )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Does src_filename appear to be absolute?                        */
-/* -------------------------------------------------------------------- */
-    if( src_filename.size() == 0 )
-        return src_filename; // we can't do anything with a blank.
-    else if( src_filename.size() > 2 && src_filename[1] == ':' )
-        return src_filename; // has a drive letter?
-    else if( src_filename[0] == '/' || src_filename[0] == '\\' )
-        return src_filename; // has a leading dir marker. 
-
-/* -------------------------------------------------------------------- */
-/*      Figure out what path split char we want to use.                 */
-/* -------------------------------------------------------------------- */
-#if defined(__MSVCRT__) || defined(_MSC_VER)
-    const static char  path_split = '\\';
-#else
-    const static char  path_split = '/';
-#endif
-
-/* -------------------------------------------------------------------- */
-/*      Merge paths.                                                    */
-/* -------------------------------------------------------------------- */
-    std::string base_path = ExtractPath( base );
-    std::string result;
-
-    if( base_path == "" )
-        return src_filename;
-
-    result = base_path;
-    result += path_split;
-    result += src_filename;
-
-/* -------------------------------------------------------------------- */
-/*      Check if the target exists by this name.                        */
-/* -------------------------------------------------------------------- */
-    try 
-    {
-        void *hFile = io_interfaces->Open( result, "r" );
-        // should throw an exception on failure.
-        io_interfaces->Close( hFile );
-        return result;
-    }
-    catch( ... )
-    {
-        return src_filename;
-    }
-}
-
-
-/************************************************************************/
-/*                            DefaultDebug()                            */
-/*                                                                      */
-/*      Default implementation of the Debug() output interface.         */
-/************************************************************************/
-
-void PCIDSK::DefaultDebug( const char * message )
-
-{
-    static bool initialized = false;
-    static bool enabled = false;
-    
-    if( !initialized )
-    {
-        if( getenv( "PCIDSK_DEBUG" ) != NULL )
-            enabled = true;
-
-        initialized = true;
-    }
-
-    if( enabled )
-        std::cerr << message;
-}
-
-/************************************************************************/
-/*                               vDebug()                               */
-/*                                                                      */
-/*      Helper function for Debug().                                    */
-/************************************************************************/
-
-static void vDebug( void (*pfnDebug)(const char *),
-                    const char *fmt, std::va_list args )
-
-{
-    std::string message;
-
-/* -------------------------------------------------------------------- */
-/*      This implementation for platforms without vsnprintf() will      */
-/*      just plain fail if the formatted contents are too large.        */
-/* -------------------------------------------------------------------- */
-#if defined(MISSING_VSNPRINTF)
-    char *pszBuffer = (char *) malloc(30000);
-    if( vsprintf( pszBuffer, fmt, args) > 29998 )
-    {
-        message = "PCIDSK::Debug() ... buffer overrun.";
-    }
-    else
-        message = pszBuffer;
-
-    free( pszBuffer );
-
-/* -------------------------------------------------------------------- */
-/*      This should grow a big enough buffer to hold any formatted      */
-/*      result.                                                         */
-/* -------------------------------------------------------------------- */
-#else
-    char szModestBuffer[500];
-    int nPR;
-    va_list wrk_args;
-
-#ifdef va_copy
-    va_copy( wrk_args, args );
-#else
-    wrk_args = args;
-#endif
-    
-    nPR = vsnprintf( szModestBuffer, sizeof(szModestBuffer), fmt, 
-                     wrk_args );
-    if( nPR == -1 || nPR >= (int) sizeof(szModestBuffer)-1 )
-    {
-        int nWorkBufferSize = 2000;
-        char *pszWorkBuffer = (char *) malloc(nWorkBufferSize);
-
-#ifdef va_copy
-        va_end( wrk_args );
-        va_copy( wrk_args, args );
-#else
-        wrk_args = args;
-#endif
-        while( (nPR=vsnprintf( pszWorkBuffer, nWorkBufferSize, fmt, wrk_args))
-               >= nWorkBufferSize-1 
-               || nPR == -1 )
-        {
-            nWorkBufferSize *= 4;
-            pszWorkBuffer = (char *) realloc(pszWorkBuffer, 
-                                             nWorkBufferSize );
-#ifdef va_copy
-            va_end( wrk_args );
-            va_copy( wrk_args, args );
-#else
-            wrk_args = args;
-#endif
-        }
-        message = pszWorkBuffer;
-        free( pszWorkBuffer );
-    }
-    else
-    {
-        message = szModestBuffer;
-    }
-    va_end( wrk_args );
-#endif
-
-/* -------------------------------------------------------------------- */
-/*      Forward the message.                                            */
-/* -------------------------------------------------------------------- */
-    pfnDebug( message.c_str() );
-}
-
-/************************************************************************/
-/*                               Debug()                                */
-/*                                                                      */
-/*      Function to write output to a debug stream if one is            */
-/*      enabled.  This is intended to be widely called in the           */
-/*      library.                                                        */
-/************************************************************************/
-
-void PCIDSK::Debug( void (*pfnDebug)(const char *), const char *fmt, ... )
-
-{
-    if( pfnDebug == NULL )
-        return;
-
-    std::va_list args;
-
-    va_start( args, fmt );
-    vDebug( pfnDebug, fmt, args );
-    va_end( args );
-}

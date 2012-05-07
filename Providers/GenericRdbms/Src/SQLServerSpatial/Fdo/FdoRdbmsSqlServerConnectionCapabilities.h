@@ -39,9 +39,6 @@ public:
     /// <returns>Returns the list of lock types</returns>
     virtual FdoLockType* GetLockTypes(FdoInt32& size);
 
-    //  Returns true if the feature provider supports save point.
-    virtual bool SupportsSavePoint();
-    
     // Returns true if the feature provider supports long transactions.
     virtual bool SupportsLongTransactions();
 
@@ -55,12 +52,6 @@ public:
     // Determines if the provider or datastore can support more than one user writing to a single datastore at
     // one time.
     virtual bool SupportsMultiUserWrite();
-
-    virtual bool SupportsFlush() { return true; }
-
-    virtual bool SupportsJoins() const                              { return true; }
-    virtual FdoInt32 GetJoinTypes() const                           { return (FdoInt32)(FdoJoinType_Cross|FdoJoinType_Inner|FdoJoinType_LeftOuter|FdoJoinType_RightOuter|FdoJoinType_FullOuter); }
-    virtual bool SupportsSubSelects() const                         { return true; }
 
 protected:
     ~FdoRdbmsSqlServerConnectionCapabilities(void);
