@@ -1,4 +1,4 @@
-/* $Id: tif_thunder.c,v 1.12 2011-04-02 20:54:09 bfriesen Exp $ */
+/* $Id: tif_thunder.c,v 1.9 2007/07/19 15:50:28 dron Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -25,7 +25,6 @@
  */
 
 #include "tiffiop.h"
-#include <assert.h>
 #ifdef THUNDER_SUPPORT
 /*
  * TIFF Library.
@@ -56,32 +55,12 @@
 static const int twobitdeltas[4] = { 0, 1, 0, -1 };
 static const int threebitdeltas[8] = { 0, 1, 2, 3, 0, -3, -2, -1 };
 
-#define	SETPIXEL(op, v) {                     \
-	lastpixel = (v) & 0xf;                \
-        if ( npixels < maxpixels )         \
-        {                                     \
-	  if (npixels++ & 1)                  \
-	    *op++ |= lastpixel;               \
-	  else                                \
+#define	SETPIXEL(op, v) { \
+	lastpixel = (v) & 0xf; \
+	if (npixels++ & 1) \
+	    *op++ |= lastpixel; \
+	else \
 	    op[0] = (uint8) (lastpixel << 4); \
-        }                                     \
-}
-
-static int
-ThunderSetupDecode(TIFF* tif)
-{
-	static const char module[] = "ThunderSetupDecode";
-
-        if( tif->tif_dir.td_bitspersample != 4 )
-        {
-                TIFFErrorExt(tif->tif_clientdata, module,
-                             "Wrong bitspersample value (%d), Thunder decoder only supports 4bits per sample.",
-                             (int) tif->tif_dir.td_bitspersample );
-                return 0;
-        }
-        
-
-	return (1);
 }
 
 static int
@@ -143,7 +122,7 @@ ThunderDecode(TIFF* tif, uint8* op, tmsize_t maxpixels)
 	tif->tif_rawcp = (uint8*) bp;
 	tif->tif_rawcc = cc;
 	if (npixels != maxpixels) {
-#if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+#if defined(__WIN32__) && defined(_MSC_VER)
 		TIFFErrorExt(tif->tif_clientdata, module,
 			     "%s data at scanline %lu (%I64u != %I64u)",
 			     npixels < maxpixels ? "Not enough" : "Too much",
@@ -160,8 +139,7 @@ ThunderDecode(TIFF* tif, uint8* op, tmsize_t maxpixels)
 #endif
 		return (0);
 	}
-
-        return (1);
+	return (1);
 }
 
 static int
@@ -189,8 +167,6 @@ int
 TIFFInitThunderScan(TIFF* tif, int scheme)
 {
 	(void) scheme;
-
-        tif->tif_setupdecode = ThunderSetupDecode;
 	tif->tif_decoderow = ThunderDecodeRow;
 	tif->tif_decodestrip = ThunderDecodeRow; 
 	return (1);
@@ -198,10 +174,3 @@ TIFFInitThunderScan(TIFF* tif, int scheme)
 #endif /* THUNDER_SUPPORT */
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

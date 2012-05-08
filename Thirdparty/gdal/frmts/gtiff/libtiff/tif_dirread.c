@@ -1,4 +1,4 @@
-/* $Id: tif_dirread.c,v 1.172 2011-12-09 03:29:10 fwarmerdam Exp $ */
+/* $Id: tif_dirread.c,v 1.155 2009-10-29 20:04:07 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -67,7 +67,9 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryByte(TIFF* tif, TIFFDirEntry* di
 static enum TIFFReadDirEntryErr TIFFReadDirEntryShort(TIFF* tif, TIFFDirEntry* direntry, uint16* value);
 static enum TIFFReadDirEntryErr TIFFReadDirEntryLong(TIFF* tif, TIFFDirEntry* direntry, uint32* value);
 static enum TIFFReadDirEntryErr TIFFReadDirEntryLong8(TIFF* tif, TIFFDirEntry* direntry, uint64* value);
+#ifdef notdef
 static enum TIFFReadDirEntryErr TIFFReadDirEntryFloat(TIFF* tif, TIFFDirEntry* direntry, float* value);
+#endif
 static enum TIFFReadDirEntryErr TIFFReadDirEntryDouble(TIFF* tif, TIFFDirEntry* direntry, double* value);
 static enum TIFFReadDirEntryErr TIFFReadDirEntryIfd8(TIFF* tif, TIFFDirEntry* direntry, uint64* value);
 
@@ -85,9 +87,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryDoubleArray(TIFF* tif, TIFFDirEn
 static enum TIFFReadDirEntryErr TIFFReadDirEntryIfd8Array(TIFF* tif, TIFFDirEntry* direntry, uint64** value);
 
 static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleShort(TIFF* tif, TIFFDirEntry* direntry, uint16* value);
-#if 0
 static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleDouble(TIFF* tif, TIFFDirEntry* direntry, double* value);
-#endif
 
 static void TIFFReadDirEntryCheckedByte(TIFF* tif, TIFFDirEntry* direntry, uint8* value);
 static void TIFFReadDirEntryCheckedSbyte(TIFF* tif, TIFFDirEntry* direntry, int8* value);
@@ -530,6 +530,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryLong8(TIFF* tif, TIFFDirEntry* d
 	}
 }
 
+#ifdef notdef
 static enum TIFFReadDirEntryErr TIFFReadDirEntryFloat(TIFF* tif, TIFFDirEntry* direntry, float* value)
 {
 	enum TIFFReadDirEntryErr err;
@@ -585,16 +586,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryFloat(TIFF* tif, TIFFDirEntry* d
 				err=TIFFReadDirEntryCheckedLong8(tif,direntry,&m);
 				if (err!=TIFFReadDirEntryErrOk)
 					return(err);
-#if defined(__WIN32__) && (_MSC_VER < 1500)
-				/*
-				 * XXX: MSVC 6.0 does not support conversion
-				 * of 64-bit integers into floating point
-				 * values.
-				 */
-				*value = _TIFFUInt64ToFloat(m);
-#else
 				*value=(float)m;
-#endif
 				return(TIFFReadDirEntryErrOk);
 			}
 		case TIFF_SLONG8:
@@ -640,6 +632,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryFloat(TIFF* tif, TIFFDirEntry* d
 			return(TIFFReadDirEntryErrType);
 	}
 }
+#endif /* def notdef */
 
 static enum TIFFReadDirEntryErr TIFFReadDirEntryDouble(TIFF* tif, TIFFDirEntry* direntry, double* value)
 {
@@ -2738,7 +2731,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleShort(TIFF* tif, TIFFDi
 	uint16* m;
 	uint16* na;
 	uint16 nb;
-	if (direntry->tdir_count<(uint64)tif->tif_dir.td_samplesperpixel)
+	if (direntry->tdir_count!=(uint64)tif->tif_dir.td_samplesperpixel)
 		return(TIFFReadDirEntryErrCount);
 	err=TIFFReadDirEntryShortArray(tif,direntry,&m);
 	if (err!=TIFFReadDirEntryErrOk)
@@ -2760,14 +2753,13 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleShort(TIFF* tif, TIFFDi
 	return(err);
 }
 
-#if 0
 static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleDouble(TIFF* tif, TIFFDirEntry* direntry, double* value)
 {
 	enum TIFFReadDirEntryErr err;
 	double* m;
 	double* na;
 	uint16 nb;
-	if (direntry->tdir_count<(uint64)tif->tif_dir.td_samplesperpixel)
+	if (direntry->tdir_count!=(uint64)tif->tif_dir.td_samplesperpixel)
 		return(TIFFReadDirEntryErrCount);
 	err=TIFFReadDirEntryDoubleArray(tif,direntry,&m);
 	if (err!=TIFFReadDirEntryErrOk)
@@ -2788,7 +2780,6 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryPersampleDouble(TIFF* tif, TIFFD
 	_TIFFfree(m);
 	return(err);
 }
-#endif
 
 static void TIFFReadDirEntryCheckedByte(TIFF* tif, TIFFDirEntry* direntry, uint8* value)
 {
@@ -2805,7 +2796,7 @@ static void TIFFReadDirEntryCheckedSbyte(TIFF* tif, TIFFDirEntry* direntry, int8
 static void TIFFReadDirEntryCheckedShort(TIFF* tif, TIFFDirEntry* direntry, uint16* value)
 {
 	*value = direntry->tdir_offset.toff_short;
-	/* *value=*(uint16*)(&direntry->tdir_offset); */
+	//*value=*(uint16*)(&direntry->tdir_offset);
 	if (tif->tif_flags&TIFF_SWAB)
 		TIFFSwabShort(value);
 }
@@ -3423,7 +3414,7 @@ TIFFReadDirectory(TIFF* tif)
 	TIFFDirEntry* dp;
 	uint16 di;
 	const TIFFField* fip;
-	uint32 fii=FAILED_FII;
+	uint32 fii;
         toff_t nextdiroff;
 	tif->tif_diroff=tif->tif_nextdiroff;
 	if (!TIFFCheckDirOffset(tif,tif->tif_nextdiroff))
@@ -3439,20 +3430,6 @@ TIFFReadDirectory(TIFF* tif)
 		return 0;
 	}
 	TIFFReadDirectoryCheckOrder(tif,dir,dircount);
-	{
-		TIFFDirEntry* ma;
-		uint16 mb;
-		for (ma=dir, mb=0; mb<dircount; ma++, mb++)
-		{
-			TIFFDirEntry* na;
-			uint16 nb;
-			for (na=ma+1, nb=mb+1; nb<dircount; na++, nb++)
-			{
-				if (ma->tdir_tag==na->tdir_tag)
-					na->tdir_tag=IGNORE;
-			}
-		}
-	}
 	tif->tif_flags &= ~TIFF_BEENWRITING;    /* reset before new dir */
 	tif->tif_flags &= ~TIFF_BUF4WRITE;      /* reset before new dir */
 	/* free any old stuff and reinit */
@@ -3592,8 +3569,6 @@ TIFFReadDirectory(TIFF* tif)
 	if ((tif->tif_dir.td_compression==COMPRESSION_OJPEG)&&
 	    (tif->tif_dir.td_planarconfig==PLANARCONFIG_SEPARATE))
 	{
-        if (!_TIFFFillStriles(tif))
-            goto bad;
 		dp=TIFFReadDirectoryFindEntry(tif,dir,dircount,TIFFTAG_STRIPOFFSETS);
 		if ((dp!=0)&&(dp->tdir_count==1))
 		{
@@ -3689,8 +3664,7 @@ TIFFReadDirectory(TIFF* tif)
 						err=TIFFReadDirEntryPersampleShort(tif,dp,&value);
 					if (err!=TIFFReadDirEntryErrOk)
 					{
-                        fip = TIFFFieldWithTag(tif,dp->tdir_tag);
-						TIFFReadDirEntryOutputErr(tif,err,module,fip ? fip->field_name : "unknown tagname",0);
+						TIFFReadDirEntryOutputErr(tif,err,module,TIFFFieldWithTag(tif,dp->tdir_tag)->field_name,0);
 						goto bad;
 					}
 					if (!TIFFSetField(tif,dp->tdir_tag,value))
@@ -3700,49 +3674,27 @@ TIFFReadDirectory(TIFF* tif)
 			case TIFFTAG_SMINSAMPLEVALUE:
 			case TIFFTAG_SMAXSAMPLEVALUE:
 				{
-
-					double *data;
+					double value;
 					enum TIFFReadDirEntryErr err;
-					uint32 saved_flags;
-					int m;
-					if (dp->tdir_count != (uint64)tif->tif_dir.td_samplesperpixel)
-						err = TIFFReadDirEntryErrCount;
-					else
-						err = TIFFReadDirEntryDoubleArray(tif, dp, &data);
+					err=TIFFReadDirEntryPersampleDouble(tif,dp,&value);
 					if (err!=TIFFReadDirEntryErrOk)
 					{
-                        fip = TIFFFieldWithTag(tif,dp->tdir_tag);
-						TIFFReadDirEntryOutputErr(tif,err,module,fip ? fip->field_name : "unknown tagname",0);
+						TIFFReadDirEntryOutputErr(tif,err,module,TIFFFieldWithTag(tif,dp->tdir_tag)->field_name,0);
 						goto bad;
 					}
-					saved_flags = tif->tif_flags;
-					tif->tif_flags |= TIFF_PERSAMPLE;
-					m = TIFFSetField(tif,dp->tdir_tag,data);
-					tif->tif_flags = saved_flags;
-					_TIFFfree(data);
-					if (!m)
+					if (!TIFFSetField(tif,dp->tdir_tag,value))
 						goto bad;
 				}
 				break;
 			case TIFFTAG_STRIPOFFSETS:
 			case TIFFTAG_TILEOFFSETS:
-#if defined(DEFER_STRILE_LOAD)
-                                _TIFFmemcpy( &(tif->tif_dir.td_stripoffset_entry),
-                                             dp, sizeof(TIFFDirEntry) );
-#else                          
 				if (!TIFFFetchStripThing(tif,dp,tif->tif_dir.td_nstrips,&tif->tif_dir.td_stripoffset))  
 					goto bad;
-#endif                                
 				break;
 			case TIFFTAG_STRIPBYTECOUNTS:
 			case TIFFTAG_TILEBYTECOUNTS:
-#if defined(DEFER_STRILE_LOAD)
-                                _TIFFmemcpy( &(tif->tif_dir.td_stripbytecount_entry),
-                                             dp, sizeof(TIFFDirEntry) );
-#else                          
 				if (!TIFFFetchStripThing(tif,dp,tif->tif_dir.td_nstrips,&tif->tif_dir.td_stripbytecount))  
 					goto bad;
-#endif                                
 				break;
 			case TIFFTAG_COLORMAP:
 			case TIFFTAG_TRANSFERFUNCTION:
@@ -3751,7 +3703,7 @@ TIFFReadDirectory(TIFF* tif)
 					uint32 countpersample;
 					uint32 countrequired;
 					uint32 incrementpersample;
-					uint16* value=NULL;
+					uint16* value;
 					countpersample=(1L<<tif->tif_dir.td_bitspersample);
 					if ((dp->tdir_tag==TIFFTAG_TRANSFERFUNCTION)&&(dp->tdir_count==(uint64)countpersample))
 					{
@@ -3768,10 +3720,7 @@ TIFFReadDirectory(TIFF* tif)
 					else
 						err=TIFFReadDirEntryShortArray(tif,dp,&value);
 					if (err!=TIFFReadDirEntryErrOk)
-                    {
-                        fip = TIFFFieldWithTag(tif,dp->tdir_tag);
-						TIFFReadDirEntryOutputErr(tif,err,module,fip ? fip->field_name : "unknown tagname",1);
-                    }
+						TIFFReadDirEntryOutputErr(tif,err,module,TIFFFieldWithTag(tif,dp->tdir_tag)->field_name,1);
 					else
 					{
 						TIFFSetField(tif,dp->tdir_tag,value,value+incrementpersample,value+2*incrementpersample);
@@ -3844,7 +3793,8 @@ TIFFReadDirectory(TIFF* tif)
 		}
 		if (!TIFFFieldSet(tif,FIELD_SAMPLESPERPIXEL))
 		{
-			if (tif->tif_dir.td_photometric==PHOTOMETRIC_RGB)
+			if ((tif->tif_dir.td_photometric==PHOTOMETRIC_RGB)
+			    || (tif->tif_dir.td_photometric==PHOTOMETRIC_YCBCR))
 			{
 				TIFFWarningExt(tif->tif_clientdata,module,
 				    "SamplesPerPixel tag is missing, "
@@ -3852,21 +3802,12 @@ TIFFReadDirectory(TIFF* tif)
 				if (!TIFFSetField(tif,TIFFTAG_SAMPLESPERPIXEL,3))
 					goto bad;
 			}
-			if (tif->tif_dir.td_photometric==PHOTOMETRIC_YCBCR)
-			{
-				TIFFWarningExt(tif->tif_clientdata,module,
-				    "SamplesPerPixel tag is missing, "
-				    "applying correct SamplesPerPixel value of 3");
-				if (!TIFFSetField(tif,TIFFTAG_SAMPLESPERPIXEL,3))
-					goto bad;
-			}
 			else if ((tif->tif_dir.td_photometric==PHOTOMETRIC_MINISWHITE)
 				 || (tif->tif_dir.td_photometric==PHOTOMETRIC_MINISBLACK))
 			{
-				/*
-				 * SamplesPerPixel tag is missing, but is not required
-				 * by spec.  Assume correct SamplesPerPixel value of 1.
-				 */
+				TIFFWarningExt(tif->tif_clientdata,module,
+				    "SamplesPerPixel tag is missing, "
+				    "assuming correct SamplesPerPixel value is 1");
 				if (!TIFFSetField(tif,TIFFTAG_SAMPLESPERPIXEL,1))
 					goto bad;
 			}
@@ -3877,14 +3818,8 @@ TIFFReadDirectory(TIFF* tif)
 	 */
 	if (tif->tif_dir.td_photometric == PHOTOMETRIC_PALETTE &&
 	    !TIFFFieldSet(tif, FIELD_COLORMAP)) {
-		if ( tif->tif_dir.td_bitspersample>=8 && tif->tif_dir.td_samplesperpixel==3)
-			tif->tif_dir.td_photometric = PHOTOMETRIC_RGB;
-		else if (tif->tif_dir.td_bitspersample>=8)
-			tif->tif_dir.td_photometric = PHOTOMETRIC_MINISBLACK;
-		else {
-			MissingRequired(tif, "Colormap");
-			goto bad;
-		}
+		MissingRequired(tif, "Colormap");
+		goto bad;
 	}
 	/*
 	 * OJPEG hack:
@@ -3937,7 +3872,6 @@ TIFFReadDirectory(TIFF* tif)
 		       tif->tif_dir.td_stripbytecount[0] < TIFFScanlineSize64(tif) * tif->tif_dir.td_imagelength) )
 
 		} else if (tif->tif_dir.td_nstrips == 1
-                           && _TIFFFillStriles(tif)
 			   && tif->tif_dir.td_stripoffset[0] != 0
 			   && BYTECOUNTLOOKSBAD) {
 			/*
@@ -3951,8 +3885,6 @@ TIFFReadDirectory(TIFF* tif)
 			    TIFFFieldWithTag(tif,TIFFTAG_STRIPBYTECOUNTS)->field_name);
 			if(EstimateStripByteCounts(tif, dir, dircount) < 0)
 			    goto bad;
-
-#if !defined(DEFER_STRILE_LOAD)
 		} else if (tif->tif_dir.td_planarconfig == PLANARCONFIG_CONTIG
 			   && tif->tif_dir.td_nstrips > 2
 			   && tif->tif_dir.td_compression == COMPRESSION_NONE
@@ -3964,17 +3896,12 @@ TIFFReadDirectory(TIFF* tif)
 			 * absolutely wrong values (it can be equal to
 			 * StripOffset array, for example). Catch this case
 			 * here.
-                         *
-                         * We avoid this check if deferring strile loading
-                         * as it would always force us to load the strip/tile
-                         * information.
 			 */
 			TIFFWarningExt(tif->tif_clientdata, module,
 			    "Wrong \"%s\" field, ignoring and calculating from imagelength",
 			    TIFFFieldWithTag(tif,TIFFTAG_STRIPBYTECOUNTS)->field_name);
 			if (EstimateStripByteCounts(tif, dir, dircount) < 0)
 			    goto bad;
-#endif /* !defined(DEFER_STRILE_LOAD) */                        
 		}
 	}
 	if (dir)
@@ -3994,7 +3921,6 @@ TIFFReadDirectory(TIFF* tif)
 	 * bytecounts array. See also comments for TIFFAppendToStrip()
 	 * function in tif_write.c.
 	 */
-#if !defined(DEFER_STRILE_LOAD)        
 	if (tif->tif_dir.td_nstrips > 1) {
 		uint32 strip;
 
@@ -4007,8 +3933,6 @@ TIFFReadDirectory(TIFF* tif)
 			}
 		}
 	}
-#endif /* !defined(DEFER_STRILE_LOAD) */
-        
 	/*
 	 * An opportunity for compression mode dependent tag fixup
 	 */
@@ -4027,11 +3951,7 @@ TIFFReadDirectory(TIFF* tif)
 	    (tif->tif_dir.td_nstrips==1)&&
 	    (tif->tif_dir.td_compression==COMPRESSION_NONE)&&  
 	    ((tif->tif_flags&(TIFF_STRIPCHOP|TIFF_ISTILED))==TIFF_STRIPCHOP))
-    {
-        if ( !_TIFFFillStriles(tif) || !tif->tif_dir.td_stripbytecount )
-            return 0;
 		ChopUpSingleUncompressedStrip(tif);
-    }
 
         /*
          * Clear the dirty directory flag. 
@@ -4270,8 +4190,6 @@ EstimateStripByteCounts(TIFF* tif, TIFFDirEntry* dir, uint16 dircount)
 	TIFFDirectory *td = &tif->tif_dir;
 	uint32 strip;
 
-    _TIFFFillStriles( tif );
-
 	if (td->td_stripbytecount)
 		_TIFFfree(td->td_stripbytecount);
 	td->td_stripbytecount = (uint64*)
@@ -4405,19 +4323,16 @@ static int
 CheckDirCount(TIFF* tif, TIFFDirEntry* dir, uint32 count)
 {
 	if ((uint64)count > dir->tdir_count) {
-        const TIFFField* fip = TIFFFieldWithTag(tif, dir->tdir_tag);
 		TIFFWarningExt(tif->tif_clientdata, tif->tif_name,
 	"incorrect count for field \"%s\" (" TIFF_UINT64_FORMAT ", expecting %u); tag ignored",
-		    fip ? fip->field_name : "unknown tagname",
+		    TIFFFieldWithTag(tif, dir->tdir_tag)->field_name,
 		    dir->tdir_count, count);
 		return (0);
 	} else if ((uint64)count < dir->tdir_count) {
-        const TIFFField* fip = TIFFFieldWithTag(tif, dir->tdir_tag);
 		TIFFWarningExt(tif->tif_clientdata, tif->tif_name,
 	"incorrect count for field \"%s\" (" TIFF_UINT64_FORMAT ", expecting %u); tag trimmed",
-		    fip ? fip->field_name : "unknown tagname",
+		    TIFFFieldWithTag(tif, dir->tdir_tag)->field_name,
 		    dir->tdir_count, count);
-		dir->tdir_count = count;
 		return (1);
 	}
 	return (1);
@@ -4587,12 +4502,6 @@ TIFFFetchDirectory(TIFF* tif, uint64 diroff, TIFFDirEntry** pdir,
 			dircount16 = (uint16)dircount64;
 			dirsize = 20;
 		}
-		if (dircount16 == 0 )
-		{
-			TIFFErrorExt(tif->tif_clientdata, module,
-			             "Sanity check on directory count failed, zero tag directories not supported");
-			return 0;
-		}
 		origdir = _TIFFCheckMalloc(tif, dircount16,
 						dirsize,
 						"to read TIFF directory");
@@ -4690,7 +4599,7 @@ TIFFFetchNormalTag(TIFF* tif, TIFFDirEntry* dp, int recover)
 	static const char module[] = "TIFFFetchNormalTag";
 	enum TIFFReadDirEntryErr err;
 	uint32 fii;
-	const TIFFField* fip = NULL;
+	const TIFFField* fip;
 	TIFFReadDirectoryFindFieldInfo(tif,dp->tdir_tag,&fii);
         if( fii == FAILED_FII )
         {
@@ -4801,19 +4710,6 @@ TIFFFetchNormalTag(TIFF* tif, TIFFDirEntry* dp, int recover)
 				assert(fip->field_readcount==1);
 				assert(fip->field_passcount==0);
 				err=TIFFReadDirEntryLong8(tif,dp,&data);
-				if (err==TIFFReadDirEntryErrOk)
-				{
-					if (!TIFFSetField(tif,dp->tdir_tag,data))
-						return(0);
-				}
-			}
-			break;
-		case TIFF_SETGET_FLOAT:
-			{
-				float data;
-				assert(fip->field_readcount==1);
-				assert(fip->field_passcount==0);
-				err=TIFFReadDirEntryFloat(tif,dp,&data);
 				if (err==TIFFReadDirEntryErrOk)
 				{
 					if (!TIFFSetField(tif,dp->tdir_tag,data))
@@ -5339,7 +5235,7 @@ TIFFFetchNormalTag(TIFF* tif, TIFFDirEntry* dp, int recover)
 	}
 	if (err!=TIFFReadDirEntryErrOk)
 	{
-		TIFFReadDirEntryOutputErr(tif,err,module,fip ? fip->field_name : "unknown tagname",recover);
+		TIFFReadDirEntryOutputErr(tif,err,module,fip->field_name,recover);
 		return(0);
 	}
 	return(1);
@@ -5358,18 +5254,15 @@ TIFFFetchStripThing(TIFF* tif, TIFFDirEntry* dir, uint32 nstrips, uint64** lpp)
 	err=TIFFReadDirEntryLong8Array(tif,dir,&data);
 	if (err!=TIFFReadDirEntryErrOk)
 	{
-        const TIFFField* fip = TIFFFieldWithTag(tif,dir->tdir_tag); 
-		TIFFReadDirEntryOutputErr(tif,err,module,fip ? fip->field_name : "unknown tagname",0);
+		TIFFReadDirEntryOutputErr(tif,err,module,TIFFFieldWithTag(tif,dir->tdir_tag)->field_name,0);
 		return(0);
 	}
 	if (dir->tdir_count!=(uint64)nstrips)
 	{
 		uint64* resizeddata;
 		resizeddata=(uint64*)_TIFFCheckMalloc(tif,nstrips,sizeof(uint64),"for strip array");
-		if (resizeddata==0) {
-			_TIFFfree(data);
+		if (resizeddata==0)
 			return(0);
-		}
 		if (dir->tdir_count<(uint64)nstrips)
 		{
 			_TIFFmemcpy(resizeddata,data,(uint32)dir->tdir_count*sizeof(uint64));
@@ -5393,7 +5286,6 @@ TIFFFetchSubjectDistance(TIFF* tif, TIFFDirEntry* dir)
 	static const char module[] = "TIFFFetchSubjectDistance";
 	enum TIFFReadDirEntryErr err;
 	UInt64Aligned_t m;
-    m.l=0;
 	assert(sizeof(double)==8);
 	assert(sizeof(uint64)==8);
 	assert(sizeof(uint32)==4);
@@ -5539,59 +5431,4 @@ ChopUpSingleUncompressedStrip(TIFF* tif)
 	td->td_stripbytecountsorted = 1;
 }
 
-int _TIFFFillStriles( TIFF *tif )
-{
-#if defined(DEFER_STRILE_LOAD)
-        register TIFFDirectory *td = &tif->tif_dir;
-        int return_value = 1;
-
-        if( td->td_stripoffset != NULL )
-                return 1;
-
-        if( td->td_stripoffset_entry.tdir_count == 0 )
-                return 0;
-
-        if (!TIFFFetchStripThing(tif,&(td->td_stripoffset_entry),
-                                 td->td_nstrips,&td->td_stripoffset))
-        {
-                return_value = 0;
-        }
-
-        if (!TIFFFetchStripThing(tif,&(td->td_stripbytecount_entry),
-                                 td->td_nstrips,&td->td_stripbytecount))
-        {
-                return_value = 0;
-        }
-
-        _TIFFmemset( &(td->td_stripoffset_entry), 0, sizeof(TIFFDirEntry));
-        _TIFFmemset( &(td->td_stripbytecount_entry), 0, sizeof(TIFFDirEntry));
-
-	if (tif->tif_dir.td_nstrips > 1 && return_value == 1 ) {
-		uint32 strip;
-
-		tif->tif_dir.td_stripbytecountsorted = 1;
-		for (strip = 1; strip < tif->tif_dir.td_nstrips; strip++) {
-			if (tif->tif_dir.td_stripoffset[strip - 1] >
-			    tif->tif_dir.td_stripoffset[strip]) {
-				tif->tif_dir.td_stripbytecountsorted = 0;
-				break;
-			}
-		}
-	}
-
-        return return_value;
-#else /* !defined(DEFER_STRILE_LOAD) */
-        (void) tif;
-        return 1;
-#endif 
-}
-
-
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

@@ -40,7 +40,7 @@ public:
     /// 	schemaName: get the properties for this feature schema.
     /// 	mgr: holds the connection for a database.
     /// 		All Feature Schemas in this database are retrieved.
-	FdoSmPhPropertyReader(FdoStringP schemaName, FdoSmPhMgrP mgr, FdoStringCollection* classNames = NULL);
+	FdoSmPhPropertyReader(FdoStringP schemaName, FdoSmPhMgrP mgr);
 
 	FdoSmPhPropertyReader(FdoSmPhReaderP subReader, FdoSmPhMgrP mgr);
 
@@ -155,10 +155,10 @@ protected:
     FdoSmPhPropertyReader() {}
 
     /// Top level function for creating inner reader
-    FdoSmPhReaderP MakeReader( FdoSmPhMgrP mgr, FdoStringP schemaName, FdoStringCollection* classNames = NULL );
+    FdoSmPhReaderP MakeReader( FdoSmPhMgrP mgr, FdoStringP schemaName );
 
     /// Create inner reader for MetaSchema
-    FdoSmPhReaderP MakeMtReader( FdoSmPhRowsP rows, FdoStringP schemaName, FdoSmPhMgrP mgr, FdoStringCollection* classNames = NULL);
+    FdoSmPhReaderP MakeMtReader( FdoSmPhRowsP rows, FdoStringP schemaName, FdoSmPhMgrP mgr );
 
 //TODO: reader from native physical schema is created by 
 // FdoSmPhClassReader. However we need to create one here for the 

@@ -26,7 +26,7 @@ class ShpSchemaUtilities
 {
 public:
     // Convert column type to/from logical property type:
-    static FdoDataType DbfTypeToFdoType (int type, int precision, int scale);
+    static FdoDataType DbfTypeToFdoType (int type);
     static eDBFColumnType FdoTypeToDbfType (FdoDataType type);
 
     // Misc conversion functions:

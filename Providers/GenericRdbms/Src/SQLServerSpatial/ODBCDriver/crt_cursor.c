@@ -67,13 +67,6 @@ odbcdr_cursor_def *odbcdr_crt_cursor(
     c->odbcdr_geomNI        = NULL;
     c->odbcdr_blob_tmp      = NULL;
     c->odbcdr_blob_tmp_size = 0;
-    c->odbcdr_geom_handle   = NULL;
-    c->geom_srid_maping     = NULL;
-    c->geom_version_value   = 1;
-    c->odbcdr_blob          = NULL;
-    c->odbcdr_blobNI        = NULL;
-    c->defined_blobs        = NULL;
-    c->len_idf_maping       = NULL;
 
 the_exit:
 	debug_return (NULL,c);

@@ -56,7 +56,6 @@ FdoRdbmsCommitLongTransaction::FdoRdbmsCommitLongTransaction ()
 
     // Initialize the class variables.
 
-    lt_keep_long_transaction = false;
     SetToZero();
 
 }  //  FdoRdbmsCommitLongTransaction ()
@@ -72,13 +71,12 @@ FdoRdbmsCommitLongTransaction::FdoRdbmsCommitLongTransaction (
 {
 
     // Initialize the connection references.
-    
+
     fdo_i_connection     = connection;
     fdo_rdbms_connection = static_cast<FdoRdbmsConnection*>(connection);
 
     // Initialize the class variables.
 
-    lt_keep_long_transaction = false;
     SetToZero();
 
 }  //  FdoRdbmsCommitLongTransaction ()
@@ -189,32 +187,6 @@ void FdoRdbmsCommitLongTransaction::SetName (FdoString *value)
     }  //  if (lt_cfl_enum != NULL) ...
 
 }  //  SetName ()
-
-
-FdoBoolean FdoRdbmsCommitLongTransaction::GetKeepLongTransaction ()
-
-// +---------------------------------------------------------------------------
-// | The function indicates whether to keep the long transaction after it is committed.
-// | Returns true if keeping the long transaction after it is committed.
-// | Returns false if removing the long transaction after it is committed.
-// | Default value for KeepLongTransaction is false.
-// +---------------------------------------------------------------------------
-
-{
-    return lt_keep_long_transaction;
-}  //  GetKeepLongTransaction ()
-
-
-void FdoRdbmsCommitLongTransaction::SetKeepLongTransaction (FdoBoolean value)
-
-// +---------------------------------------------------------------------------
-// | Sets whether to keep the long transaction after it is committed.
-// | Default value for KeepLongTransaction is false.
-// +---------------------------------------------------------------------------
-
-{
-    lt_keep_long_transaction = value;
-}  //  SetKeepLongTransaction ()
 
 FdoILockConflictReader *FdoRdbmsCommitLongTransaction::GetLockConflictReader ()
 
@@ -348,7 +320,6 @@ FdoILongTransactionConflictDirectiveEnumerator
       lt_manager->Commit(((uses_active_lt_constant) 
                                 ? active_lt_info->GetName()
                                 : lt_name),
-                           lt_keep_long_transaction,
                            &lt_lk_cfl_reader,
                            &lk_conflicts_detected,
                            &lt_conflicts);
@@ -418,7 +389,7 @@ FdoILongTransactionConflictDirectiveEnumerator
 
       if (lt_manager != NULL) lt_manager = NULL;
 
-      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 

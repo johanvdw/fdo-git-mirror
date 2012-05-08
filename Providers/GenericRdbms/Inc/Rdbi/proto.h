@@ -47,8 +47,7 @@ int rdbi_bind(
         int datatype,
         int size,
         char *address,
-        void *null_ind,
-        int typeBind
+        void *null_ind
         );
 int rdbi_break(
         rdbi_context_def *context
@@ -197,9 +196,6 @@ int rdbi_get_info(
 void rdbi_get_msg(
         rdbi_context_def *context
         );
-long rdbi_get_server_rc(
-        rdbi_context_def *context
-        );
 int rdbi_get_size(
         rdbi_context_def *context,
         int datatype
@@ -271,18 +267,6 @@ int rdbi_sqlW(
         rdbi_context_def *context,
         int sqlid,
         const wchar_t *sql
-        );
-int rdbi_sqlWt(
-        rdbi_context_def *context,
-        int sqlid,
-        const char *sql,
-        int type
-        );
-int rdbi_sqlWWt(
-        rdbi_context_def *context,
-        int sqlid,
-        const wchar_t *sql,
-        int type
         );
 int rdbi_sql_d(
         rdbi_context_def *context,
@@ -432,12 +416,6 @@ int rdbi_geom_srid_set (
 		char *col_name,
         long srid );
 
-int rdbi_geom_version_set (
-        rdbi_context_def *context,
-        int sqlid,
-		char *col_name,
-        long version );
-
 int rdbi_geom_dimens_set (
         rdbi_context_def *context,
         int sqlid,
@@ -500,14 +478,16 @@ int rdbi_lob_close(
         int sqlid,
         void *lob_ref
         );
-#ifdef _WIN32
-int rdbi_get_gen_id( rdbi_context_def  *context, const char *table_name, _int64  *id );
-int rdbi_get_gen_idW( rdbi_context_def  *context, const wchar_t *table_name, _int64  *id );
-#else
-int rdbi_get_gen_id( rdbi_context_def  *context, const char *table_name, int64_t  *id );
-int rdbi_get_gen_idW( rdbi_context_def  *context, const wchar_t *table_name, int64_t  *id );
-#endif
-
+int rdbi_get_gen_id(
+        rdbi_context_def  *context,
+	    const char *table_name,
+	    int  *id
+	    );
+int rdbi_get_gen_idW(
+        rdbi_context_def  *context,
+	    const wchar_t *table_name,
+	    int  *id
+	    );
 
 int rdbi_get_next_seq(
         rdbi_context_def  *context,
@@ -532,10 +512,5 @@ int rdbi_autocommit_off (rdbi_context_def *context);
 int rdbi_autocommit_mode (rdbi_context_def *context);
 int rdbi_free_all(rdbi_context_def *context);
 
-int rdbi_tran_sp(rdbi_context_def *context, int action, const char* sp_name);
-int rdbi_tran_spW(rdbi_context_def *context, int action, const wchar_t* sp_name);
-
-int rdbi_tran_sp_exists(rdbi_context_def *context, const char* sp_name);
-int rdbi_tran_sp_existsW(rdbi_context_def *context, const wchar_t* sp_name);
 #endif /* INC_RDBI_PROTO_H */
 

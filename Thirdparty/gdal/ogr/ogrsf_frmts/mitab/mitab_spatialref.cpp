@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_spatialref.cpp,v 1.55 2011-06-11 00:35:00 fwarmerdam Exp $
+ * $Id: mitab_spatialref.cpp,v 1.49 2009-10-15 16:16:37 fwarmerdam Exp $
  *
  * Name:     mitab_spatialref.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -30,24 +30,6 @@
  **********************************************************************
  *
  * $Log: mitab_spatialref.cpp,v $
- * Revision 1.55  2011-06-11 00:35:00  fwarmerdam
- * add support for reading google mercator (#4115)
- *
- * Revision 1.54  2010-10-07 18:46:26  aboudreault
- * Fixed bad use of atof when locale setting doesn't use . for float (GDAL bug #3775)
- *
- * Revision 1.53  2010-09-07 16:48:08  aboudreault
- * Removed incomplete patch for affine params support in mitab. (bug 1155)
- *
- * Revision 1.52  2010-07-08 17:21:12  aboudreault
- * Put back New_Zealand Datum in asDatumInfoList
- *
- * Revision 1.51  2010-07-07 19:00:15  aboudreault
- * Cleanup Win32 Compile Warnings (GDAL bug #2930)
- *
- * Revision 1.50  2010-07-05 17:20:14  aboudreault
- * Added Krovak projection suppoprt (bug 2230)
- *
  * Revision 1.49  2009-10-15 16:16:37  fwarmerdam
  * add the default EPSG/OGR name for new zealand datums (gdal #3187)
  *
@@ -378,7 +360,6 @@ MapInfoDatumInfo asDatumInfoList[] =
 {150, "Hartebeesthoek94",           0, 0,    0,   0,    0, 0, 0, 0, 0},
 {151, "ATS77",                      51, 0, 0, 0, 0, 0, 0, 0, 0},
 {152, "JGD2000",                    0, 0, 0, 0, 0, 0, 0, 0, 0},
-{157, "WGS_1984",                   54,0, 0, 0, 0, 0, 0, 0, 0}, // Google merc
 {1000,"DHDN_Potsdam_Rauenberg",     10,582,  105, 414, -1.04, -0.35, 3.08, 8.3, 0},
 {1001,"Pulkovo_1942",               3, 24,   -123, -94, -0.02, 0.25, 0.13, 1.1, 0},
 {1002,"NTF_Paris_Meridian",         30,-168, -60, 320, 0, 0, 0, 0, 2.337229166667},
@@ -396,10 +377,6 @@ MapInfoDatumInfo asDatumInfoList[] =
 {1014,"Russia_SK95",                52, 24.82,-131.21,-82.66,0,0,-0.16,-0.12, 0},
 {1015,"Tokyo",                      10, -146.414, 507.337, 680.507,0,0,0,0,0},
 {1016,"Finnish_KKJ",                4, -96.062, -82.428, -121.754, -4.801, -0.345, 1.376, 1.496, 0},
-{1017,"Xian 1980",					53, 24, -123, -94, -0.02, -0.25, 0.13, 1.1, 0},
-{1018,"Lithuanian Pulkovo 1942",	4, -40.59527, -18.54979, -69.33956, -2.508, -1.8319, 2.6114, -4.2991, 0},
-{1019,"Belgian 1972 7 Parameter",   4, -99.059, 53.322, -112.486, -0.419, 0.83, -1.885, 0.999999, 0},
-{1020,"S-JTSK with Ferro prime meridian", 10, 589, 76, 480, 0, 0, 0, 0, -17.666666666667}, 
 
 {-1, NULL,                          0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
@@ -464,7 +441,6 @@ MapInfoSpheroidInfo asSpheroidInfoList[] =
 { 1,"WGS 72",                                   6378135.0,      298.26},
 {28,"WGS 84",                                   6378137.0,      298.257223563},
 {29,"WGS 84 (MAPINFO Datum 0)",                 6378137.01,     298.257223563},
-{54,"WGS 84 (MAPINFO Datum 157)",               6378137.01,     298.257223563},
 {-1,NULL,                                       0.0,            0.0}
 };
  
@@ -597,7 +573,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
         break;
     }
 
-    dfConv = CPLAtof(pszUnitsConv);
+    dfConv = atof(pszUnitsConv);
 
     /*-----------------------------------------------------------------
      * Transform them into an OGRSpatialReference.
@@ -894,19 +870,6 @@ OGRSpatialReference *TABFile::GetSpatialRef()
                                sTABProj.adProjParams[3] );
         break;
 
-     /*--------------------------------------------------------------
-      * Krovak
-      *-------------------------------------------------------------*/
-      case 32:
-        m_poSpatialRef->SetKrovak( sTABProj.adProjParams[1],   // dfCenterLat
-                                   sTABProj.adProjParams[0],   // dfCenterLong
-                                   sTABProj.adProjParams[3],   // dfAzimuth
-                                   sTABProj.adProjParams[2],   // dfPseudoStdParallelLat
-                                   1.0,					     // dfScale
-                                   sTABProj.adProjParams[4],   // dfFalseEasting
-                                   sTABProj.adProjParams[5] ); // dfFalseNorthing
-        break;
-
       default:
         break;
     }
@@ -923,6 +886,27 @@ OGRSpatialReference *TABFile::GetSpatialRef()
         poUnits->AddChild( new OGR_SRSNode( pszUnitsName ) );
         poUnits->AddChild( new OGR_SRSNode( pszUnitsConv ) );
     }
+
+#ifdef MITAB_AFFINE_PARAMS  // See MITAB bug 1155
+    /*-----------------------------------------------------------------
+     * Collect affine definitions. (Added by Encom 2003)
+     *----------------------------------------------------------------*/
+    if( sTABProj.nAffineFlag==1 && m_poSpatialRef->GetRoot() != NULL )
+    {
+        m_poSpatialRef->nAffineFlag = 1;
+        m_poSpatialRef->nAffineUnit = sTABProj.nAffineUnits;
+        m_poSpatialRef->dAffineParamA = sTABProj.dAffineParamA;
+        m_poSpatialRef->dAffineParamB = sTABProj.dAffineParamB;
+        m_poSpatialRef->dAffineParamC = sTABProj.dAffineParamC;
+        m_poSpatialRef->dAffineParamD = sTABProj.dAffineParamD;
+        m_poSpatialRef->dAffineParamE = sTABProj.dAffineParamE;
+        m_poSpatialRef->dAffineParamF = sTABProj.dAffineParamF;
+    }
+    else
+    {
+        m_poSpatialRef->nAffineFlag = 0;
+    }
+#endif // MITAB_AFFINE_PARAMS
 
     /*-----------------------------------------------------------------
      * Local (nonearth) coordinate systems have no Geographic relationship
@@ -977,7 +961,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
             && sTABProj.adDatumParams[4] == 0.0 )
         {
             sprintf( szDatumName,
-                     "MIF 999,%d,%.15g,%.15g,%.15g", 
+                     "MIF 999,%d,%.4g,%.4g,%.4g",
                      sTABProj.nEllipsoidId,
                      sTABProj.dDatumShiftX, 
                      sTABProj.dDatumShiftY, 
@@ -986,7 +970,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
         else
         {
             sprintf( szDatumName,
-                     "MIF 9999,%d,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g,%.15g",
+                     "MIF 9999,%d,%.4g,%.4g,%.4g,%.15g,%.15g,%.15g,%.15g,%.15g",
                      sTABProj.nEllipsoidId,
                      sTABProj.dDatumShiftX, 
                      sTABProj.dDatumShiftY, 
@@ -1055,7 +1039,7 @@ OGRSpatialReference *TABFile::GetSpatialRef()
                                pszSpheroidName,
                                dfSemiMajor, dfInvFlattening,
                                pszPMName, dfPMOffset,
-                               SRS_UA_DEGREE, CPLAtof(SRS_UA_DEGREE_CONV));
+                               SRS_UA_DEGREE, atof(SRS_UA_DEGREE_CONV));
 
     if( psDatumInfo != NULL )
     {
@@ -1066,17 +1050,6 @@ OGRSpatialReference *TABFile::GetSpatialRef()
                                     -psDatumInfo->dfDatumParm1, 
                                     -psDatumInfo->dfDatumParm2, 
                                     psDatumInfo->dfDatumParm3 );
-    }
-
-    /*-----------------------------------------------------------------
-     * Special case for Google Mercator (datum=157, ellipse=54, gdal #4115)
-     *----------------------------------------------------------------*/
-    if( sTABProj.nProjId == 10 
-        && sTABProj.nDatumId == 157
-        && sTABProj.nEllipsoidId == 54 )
-    {
-        m_poSpatialRef->SetNode( "PROJCS", "WGS 84 / Pseudo-Mercator" );
-        m_poSpatialRef->SetExtension( "PROJCS", "PROJ4", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs" );
     }
 
     return m_poSpatialRef;
@@ -1145,6 +1118,7 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
     sTABProj.adDatumParams[3] = 0.0;
     sTABProj.adDatumParams[4] = 0.0;
 
+    // Encom 2003
     sTABProj.nAffineFlag   = 0;
     sTABProj.nAffineUnits  = 7;
     sTABProj.dAffineParamA = 0.0;
@@ -1153,7 +1127,7 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
     sTABProj.dAffineParamD = 0.0;
     sTABProj.dAffineParamE = 0.0;
     sTABProj.dAffineParamF = 0.0;
-
+    
     /*-----------------------------------------------------------------
      * Get the linear units and conversion.
      *----------------------------------------------------------------*/
@@ -1423,17 +1397,6 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
         parms[3] = poSpatialRef->GetProjParm(SRS_PP_FALSE_NORTHING,0.0);
     }
 
-   else if( EQUAL(pszProjection,SRS_PT_KROVAK) )
-   {
-        sTABProj.nProjId = 32;
-        parms[0] = poSpatialRef->GetProjParm(SRS_PP_CENTRAL_MERIDIAN,0.0);
-        parms[1] = poSpatialRef->GetProjParm(SRS_PP_LATITUDE_OF_ORIGIN,0.0);
-        parms[2] = poSpatialRef->GetProjParm(SRS_PP_PSEUDO_STD_PARALLEL_1,0.0);
-        parms[3] = poSpatialRef->GetProjParm(SRS_PP_AZIMUTH,0.0);
-        parms[4] = poSpatialRef->GetProjParm(SRS_PP_FALSE_EASTING,0.0);
-        parms[5] = poSpatialRef->GetProjParm(SRS_PP_FALSE_NORTHING,0.0);
-   }
-
     /* ==============================================================
      * Translate Datum and Ellipsoid
      * ============================================================== */
@@ -1484,7 +1447,7 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
 
         if( CSLCount(papszFields) >= 5 )
         {
-            sTABProj.nEllipsoidId = (GByte)atoi(papszFields[1]);
+            sTABProj.nEllipsoidId = atoi(papszFields[1]);
             sTABProj.dDatumShiftX = atof(papszFields[2]);
             sTABProj.dDatumShiftY = atof(papszFields[3]);
             sTABProj.dDatumShiftZ = atof(papszFields[4]);
@@ -1528,8 +1491,8 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
 
     if( psDatumInfo != NULL )
     {
-        sTABProj.nEllipsoidId = (GByte)psDatumInfo->nEllipsoid;
-        sTABProj.nDatumId = (GInt16)psDatumInfo->nMapInfoDatumID;
+        sTABProj.nEllipsoidId = psDatumInfo->nEllipsoid;
+        sTABProj.nDatumId = psDatumInfo->nMapInfoDatumID;
         sTABProj.dDatumShiftX = psDatumInfo->dfShiftX;
         sTABProj.dDatumShiftY = psDatumInfo->dfShiftY;
         sTABProj.dDatumShiftZ = psDatumInfo->dfShiftZ;
@@ -1550,7 +1513,7 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
     else if( dfLinearConv == 0.0254 || EQUAL(pszLinearUnits,"Inch")
              || EQUAL(pszLinearUnits,"IINCH") )
         sTABProj.nUnitsId = 2;
-    else if( dfLinearConv == CPLAtof(SRS_UL_FOOT_CONV)
+    else if( dfLinearConv == atof(SRS_UL_FOOT_CONV)
              || EQUAL(pszLinearUnits,SRS_UL_FOOT) )
         sTABProj.nUnitsId = 3;
     else if( EQUAL(pszLinearUnits,"YARD") || EQUAL(pszLinearUnits,"IYARD") 
@@ -1562,7 +1525,7 @@ int TABFile::SetSpatialRef(OGRSpatialReference *poSpatialRef)
         sTABProj.nUnitsId = 6;
     else if( dfLinearConv == 1.0 )
         sTABProj.nUnitsId = 7;
-    else if( dfLinearConv == CPLAtof(SRS_UL_US_FOOT_CONV)
+    else if( dfLinearConv == atof(SRS_UL_US_FOOT_CONV)
              || EQUAL(pszLinearUnits,SRS_UL_US_FOOT) )
         sTABProj.nUnitsId = 8;
     else if( EQUAL(pszLinearUnits,SRS_UL_NAUTICAL_MILE) )

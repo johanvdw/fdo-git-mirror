@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnlibp.h 22381 2011-05-16 21:14:22Z rouault $
+ * $Id: dgnlibp.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  Internal (privatE) datastructures, and prototypes for DGN Access 
@@ -87,9 +87,9 @@ typedef struct {
 } DGNInfo;
 
 #define DGN_INT32( p )  ((p)[2] \
-                        + ((p)[3] << 8) \
-                        + ((p)[1] << 24) \
-                        + ((p)[0] << 16))
+                        + (p)[3]*256 \
+                        + (p)[1]*65536*256 \
+                        + (p)[0]*65536)
 #define DGN_WRITE_INT32( n, p ) { GInt32 nMacroWork = (n);                   \
  ((unsigned char *)p)[0] = (unsigned char)((nMacroWork & 0x00ff0000) >> 16); \
  ((unsigned char *)p)[1] = (unsigned char)((nMacroWork & 0xff000000) >> 24); \

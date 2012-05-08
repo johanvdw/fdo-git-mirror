@@ -8,7 +8,7 @@ GDAL_ROOT	=	..\..
 EXTRAFLAGS = 	-I. -DGDALDRIVER
 
 default:	$(OBJ)
-	xcopy /D  /Y *.obj ..\o
+	copy *.obj ..\o
 
 clean:
 	-del *.obj

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldefaultoverviews.cpp 22381 2011-05-16 21:14:22Z rouault $
+ * $Id: gdaldefaultoverviews.cpp 18333 2009-12-18 15:50:43Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Helper code to implement overview and mask support for many 
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaldefaultoverviews.cpp 22381 2011-05-16 21:14:22Z rouault $");
+CPL_CVSID("$Id: gdaldefaultoverviews.cpp 18333 2009-12-18 15:50:43Z warmerdam $");
 
 /************************************************************************/
 /*                        GDALDefaultOverviews()                        */
@@ -66,19 +66,8 @@ GDALDefaultOverviews::~GDALDefaultOverviews()
     CPLFree( pszInitName );
     CSLDestroy( papszInitSiblingFiles );
 
-    CloseDependentDatasets();
-}
-
-/************************************************************************/
-/*                       CloseDependentDatasets()                       */
-/************************************************************************/
-
-int GDALDefaultOverviews::CloseDependentDatasets()
-{
-    int bHasDroppedRef = FALSE;
     if( poODS != NULL )
     {
-        bHasDroppedRef = TRUE;
         poODS->FlushCache();
         GDALClose( poODS );
         poODS = NULL;
@@ -88,14 +77,11 @@ int GDALDefaultOverviews::CloseDependentDatasets()
     {
         if( bOwnMaskDS )
         {
-            bHasDroppedRef = TRUE;
             poMaskDS->FlushCache();
             GDALClose( poMaskDS );
         }
         poMaskDS = NULL;
     }
-
-    return bHasDroppedRef;
 }
 
 /************************************************************************/
@@ -203,9 +189,7 @@ void GDALDefaultOverviews::OverviewScan()
 
         if( bExists )
         {
-            GDALOpenInfo oOpenInfo(osOvrFilename, poDS->GetAccess(),
-                                   papszInitSiblingFiles);
-            poODS = (GDALDataset*) GDALOpenInternal( oOpenInfo, NULL );
+            poODS = (GDALDataset*) GDALOpen( osOvrFilename, poDS->GetAccess() );
         }
     }
 
@@ -219,28 +203,8 @@ void GDALDefaultOverviews::OverviewScan()
 /* -------------------------------------------------------------------- */
     if( !poODS && !EQUAL(pszInitName,":::VIRTUAL:::") )
     {
-        int bTryFindAssociatedAuxFile = TRUE;
-        if( papszInitSiblingFiles )
-        {
-            CPLString osAuxFilename = CPLResetExtension( pszInitName, "aux");
-            int iSibling = CSLFindString( papszInitSiblingFiles,
-                                        CPLGetFilename(osAuxFilename) );
-            if( iSibling < 0 )
-            {
-                osAuxFilename = pszInitName;
-                osAuxFilename += ".aux";
-                iSibling = CSLFindString( papszInitSiblingFiles,
-                                        CPLGetFilename(osAuxFilename) );
-                if( iSibling < 0 )
-                    bTryFindAssociatedAuxFile = FALSE;
-            }
-        }
-
-        if (bTryFindAssociatedAuxFile)
-        {
-            poODS = GDALFindAssociatedAuxFile( pszInitName, poDS->GetAccess(),
-                                            poDS );
-        }
+        poODS = GDALFindAssociatedAuxFile( pszInitName, poDS->GetAccess(),
+                                           poDS );
 
         if( poODS )
         {
@@ -446,7 +410,7 @@ GDALDefaultOverviews::BuildOverviewsSubDataset(
     GDALProgressFunc pfnProgress, void * pProgressData)
 
 {
-    if( osOvrFilename.length() == 0 && nOverviews > 0 )
+    if( osOvrFilename.length() == 0 )
     {
         int iSequence = 0;
         VSIStatBufL sStatBuf;
@@ -454,7 +418,7 @@ GDALDefaultOverviews::BuildOverviewsSubDataset(
         for( iSequence = 0; iSequence < 100; iSequence++ )
         {
             osOvrFilename.Printf( "%s_%d.ovr", pszPhysicalFile, iSequence );
-            if( VSIStatExL( osOvrFilename, &sStatBuf, VSI_STAT_EXISTS_FLAG ) != 0 )
+            if( VSIStatL( osOvrFilename, &sStatBuf ) != 0 )
             {
                 CPLString osAdjustedOvrFilename;
 
@@ -518,7 +482,7 @@ GDALDefaultOverviews::BuildOverviews(
 
             osOvrFilename = CPLResetExtension(poDS->GetDescription(),"aux");
 
-            if( VSIStatExL( osOvrFilename, &sStatBuf, VSI_STAT_EXISTS_FLAG ) == 0 )
+            if( VSIStatL( osOvrFilename, &sStatBuf ) == 0 )
                 osOvrFilename.Printf( "%s.aux", poDS->GetDescription() );
         }
     }
@@ -580,8 +544,6 @@ GDALDefaultOverviews::BuildOverviews(
         {
             int    nOvFactor;
             GDALRasterBand * poOverview = poBand->GetOverview( j );
-            if (poOverview == NULL)
-                continue;
  
             nOvFactor = (int) 
                 (0.5 + poBand->GetXSize() / (double) poOverview->GetXSize());
@@ -691,8 +653,6 @@ GDALDefaultOverviews::BuildOverviews(
             {
                 int    nOvFactor;
                 GDALRasterBand * poOverview = poBand->GetOverview( j );
-                if (poOverview == NULL)
-                    continue;
 
                 int bHasNoData;
                 double noDataValue = poBand->GetNoDataValue(&bHasNoData);
@@ -704,9 +664,8 @@ GDALDefaultOverviews::BuildOverviews(
                     (0.5 + poBand->GetXSize() / (double) poOverview->GetXSize());
 
                 if( nOvFactor == - panOverviewList[i] 
-                    || (panOverviewList[i] < 0 &&
-                        nOvFactor == GDALOvLevelAdjust( -panOverviewList[i],
-                                                       poBand->GetXSize() )) )
+                    || nOvFactor == GDALOvLevelAdjust( -panOverviewList[i], 
+                                                       poBand->GetXSize() ) )
                 {
                     papoOverviewBands[nNewOverviews++] = poOverview;
                     break;
@@ -956,8 +915,6 @@ int GDALDefaultOverviews::HaveMaskFile( char ** papszSiblingFiles,
         for( iOver = 0; iOver < nOverviewCount; iOver++ )
         {
             GDALRasterBand *poOverBand = poBaseMask->GetOverview( iOver );
-            if (poOverBand == NULL)
-                continue;
             
             if( poOverBand->GetXSize() == poDS->GetRasterXSize() 
                 && poOverBand->GetYSize() == poDS->GetRasterYSize() )
@@ -992,7 +949,7 @@ int GDALDefaultOverviews::HaveMaskFile( char ** papszSiblingFiles,
         pszBasename = poDS->GetDescription();
 
     // Don't bother checking for masks of masks. 
-    if( EQUAL(CPLGetExtension(pszBasename),"msk") )
+    if( EQUAL(CPLGetExtension(pszBasename),".msk") )
         return FALSE;
 
     osMskFilename.Printf( "%s.msk", pszBasename );
@@ -1015,9 +972,7 @@ int GDALDefaultOverviews::HaveMaskFile( char ** papszSiblingFiles,
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
-    GDALOpenInfo oOpenInfo(osMskFilename, poDS->GetAccess(),
-                           papszInitSiblingFiles);
-    poMaskDS = (GDALDataset *) GDALOpenInternal( oOpenInfo, NULL );
+    poMaskDS = (GDALDataset *) GDALOpen( osMskFilename, poDS->GetAccess() );
     CPLAssert( poMaskDS != poDS );
 
     if( poMaskDS == NULL )

@@ -25,7 +25,7 @@
 
 int odbcdr_rdbi_init (odbcdr_context_def **context, rdbi_methods methods);
 
-int odbcdr_bind( odbcdr_context_def *context, char *cursor, char *name, int datatype, int size, char *address, SQLLEN *null_ind, int typeBind);
+int odbcdr_bind( odbcdr_context_def *context, char *cursor, char *name, int datatype, int size, char *address, SQLLEN *null_ind );
 int odbcdr_close_cursor( odbcdr_context_def *context, char *cursor );
 
 int odbcdr_col_act( odbcdr_context_def *context, const char *owner, const char *object_name, const char *dbaselink );
@@ -131,13 +131,8 @@ wchar_t *odbcdr_vndr_nameW( odbcdr_context_def *context );
 
 int odbcdr_vndr_info( odbcdr_context_def *context, rdbi_vndr_info_def *vndr_info);
 
-#ifdef _WIN32
-int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, _int64  *id );
-int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, _int64  *id );
-#else
-int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, int64_t  *id );
-int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, int64_t  *id );
-#endif
+int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, int  *id );
+int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, int  *id );
 
 int odbcdr_alcnullind( odbcdr_context_def *context, int n, char  **null_ind );
 
@@ -171,10 +166,6 @@ int odbcdr_geom_convertDefinedFromSqlServer( odbcdr_context_def *context, odbcdr
 int odbcdr_geom_freeSqlServerGeometries( odbcdr_context_def *context, odbcdr_cursor_def *cursor );
 
 int odbcdr_geom_freeAllColumns( odbcdr_context_def *context, odbcdr_cursor_def *cursor );
-
-int odbcdr_geom_srid_set ( odbcdr_context_def *context, char *cursor, char* col_name, long srid );
-
-int odbcdr_geom_version_set ( odbcdr_context_def *context, char *cursor, char* col_name, long version );
 
 int odbcdr_autocommit_on( odbcdr_context_def *context );
 

@@ -24,16 +24,12 @@
 /// <summary>The FdoRdbmsGeometryCapabilities class delineates available support for raster processing from a provider.</summary>
 class FdoRdbmsSqlServerGeometryCapabilities : public FdoRdbmsGeometryCapabilities
 {
-    long mGeomVersion;
+
 protected:
     ~FdoRdbmsSqlServerGeometryCapabilities(void) { }
     virtual void Dispose() { delete this; }
 public:
-    FdoRdbmsSqlServerGeometryCapabilities(void)
-    {
-        mGeomVersion = 1;
-    }
-    void SetGeomVersion(long val) { mGeomVersion = val; }
+    FdoRdbmsSqlServerGeometryCapabilities(void) { }
 
     /// <summary>Return the list of supported geometry types. For example, if a client wanted to know if a provider supported
     /// multi-polygons, it would call GetGeometryTypes and check if the MultiPolygon type was listed.</summary>
@@ -48,16 +44,9 @@ public:
                                             FdoGeometryType_MultiPoint,
                                             FdoGeometryType_MultiLineString,
                                             FdoGeometryType_MultiPolygon,
-                                            FdoGeometryType_MultiGeometry,
-                                            FdoGeometryType_CurveString,
-                                            FdoGeometryType_CurvePolygon,
-                                            FdoGeometryType_MultiCurveString,
-                                            FdoGeometryType_MultiCurvePolygon
-        };
-        if (mGeomVersion >= 2)
-            length = sizeof(rdbmGeomTypes)/sizeof(FdoGeometryType);
-        else
-            length = 7;
+                                         //   FdoGeometryType_MultiGeometry,
+                                            };
+        length = sizeof(rdbmGeomTypes)/sizeof(FdoGeometryType);
         return rdbmGeomTypes;
     }
 
@@ -69,14 +58,11 @@ public:
     {
         static FdoGeometryComponentType  rdbmsGeomCompTypes[] = {
                                             FdoGeometryComponentType_LinearRing,
+                                            FdoGeometryComponentType_CircularArcSegment,
                                             FdoGeometryComponentType_LineStringSegment,
-                                            FdoGeometryComponentType_Ring,
-                                            FdoGeometryComponentType_CircularArcSegment
+                                            FdoGeometryComponentType_Ring
                                     };
-        if (mGeomVersion >= 2)
-            length = sizeof( rdbmsGeomCompTypes )/sizeof( FdoGeometryComponentType );
-        else
-            length = 2;
+        length = sizeof( rdbmsGeomCompTypes )/sizeof( FdoGeometryComponentType );
         return rdbmsGeomCompTypes;
     }
 
@@ -85,7 +71,7 @@ public:
     /// <returns>Returns the dimensionalities</returns>
     virtual FdoInt32 GetDimensionalities()
     {
-        return (0 | FdoDimensionality_XY | FdoDimensionality_Z | FdoDimensionality_M );
+        return (0 | FdoDimensionality_XY /*| FdoDimensionality_Z | FdoDimensionality_M*/ );
     }
 };
 

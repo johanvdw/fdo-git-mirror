@@ -26,7 +26,6 @@ ArcSDEFunctionArea2D::ArcSDEFunctionArea2D ()
 } 
 
 ArcSDEFunctionArea2D::ArcSDEFunctionArea2D (ArcSDEConnection* connection, SE_COORDREF coordRef)
-    : mGeom()
 {
 	mConnection = connection;
 	mCoordRef = coordRef;
@@ -54,10 +53,7 @@ FdoLiteralValue *ArcSDEFunctionArea2D::Evaluate (FdoLiteralValueCollection *lite
 	SE_SHAPE		result_shape; 
 
 	// Convert to SDE
-    ArcSDEConnection* conn = this->mConnection;
-    FdoFgfGeometryFactory* fgfFactory = conn->mGeomFactory;
-    SE_CONNECTION seConn = conn->GetConnection();
-    result_shape = mGeom.FgfToShape(fgfFactory, fgf, seConn, mCoordRef, true);
+	convert_fgf_to_sde_shape(mConnection, fgf, mCoordRef, result_shape, TRUE);
 
 	// Compute Area
 	LONG lResult = SE_shape_get_area (result_shape, 0, &area);

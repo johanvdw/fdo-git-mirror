@@ -165,9 +165,7 @@ ShpIScrollableFeatureReader* ShpImpExtendedSelect::ExecuteScrollable()
 					{
 						if ( wcscmp( infoCols->GetColumnNameAt(j), id->GetName() ) == 0 )
 						{
-							propStubs[i].m_dataType = ShpSchemaUtilities::DbfTypeToFdoType(infoCols->GetColumnTypeAt(j), 
-																						   infoCols->GetColumnWidthAt(j),
-                                                                                           infoCols->GetColumnScaleAt(j));
+							propStubs[i].m_dataType = ShpSchemaUtilities::DbfTypeToFdoType(infoCols->GetColumnTypeAt(j));
 							break;
 						}
 					}

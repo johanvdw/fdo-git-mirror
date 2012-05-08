@@ -41,60 +41,21 @@
   sv_setiv($result, (IV) $1);
   argvi++;
 }
-%typemap(out) const char *
-{
-    /* %typemap(out) const char * */
-    $result = newSVpv(result, 0);
-    SvUTF8_on($result); /* expecting GDAL to give us UTF-8 */
-    sv_2mortal($result);
-    argvi++;
-}
 %typemap(out) (char **CSL)
 {
     /* %typemap(out) char **CSL */
-    if (GIMME_V == G_ARRAY) {
-	if ($1) {
-	    int i;
-	    for (i = 0; $1[i]; i++) {
-		if (argvi > items-1) EXTEND(SP, 1);
-		SV *sv = newSVpv($1[i], 0);
-		SvUTF8_on(sv); /* expecting GDAL to give us UTF-8 */
-		ST(argvi++) = sv_2mortal(sv);
-	    }
-	    CSLDestroy($1);
+    AV *av = (AV*)sv_2mortal((SV*)newAV());
+    if ($1) {
+	int i;
+	for (i = 0; $1[i]; i++) {
+	    SV *s = newSVpv($1[i], 0);
+	    if (!av_store(av, i, s))
+		SvREFCNT_dec(s);
 	}
-    } else {
-	AV *av = (AV*)sv_2mortal((SV*)newAV());
-	if ($1) {
-	    int i;
-	    for (i = 0; $1[i]; i++) {
-	      SV *sv = newSVpv($1[i], 0);
-	      SvUTF8_on(sv); /* expecting GDAL to give us UTF-8 */
-	      if (!av_store(av, i, sv))
-		SvREFCNT_dec(sv);
-	    }
-	    CSLDestroy($1);
-	}
-	$result = newRV_noinc((SV*)av);
-	argvi++;
+	CSLDestroy($1);
     }
-}
-%typemap(out) (char **CSL_REF)
-{
-    /* %typemap(out) char **CSL_REF */
-  AV *av = (AV*)sv_2mortal((SV*)newAV());
-  if ($1) {
-    int i;
-    for (i = 0; $1[i]; i++) {
-      SV *sv = newSVpv($1[i], 0);
-      SvUTF8_on(sv); /* expecting GDAL to give us UTF-8 */
-      if (!av_store(av, i, sv))
-	SvREFCNT_dec(sv);
-    }
-    CSLDestroy($1);
-  }
-  $result = newRV_noinc((SV*)av);
-  argvi++;
+    $result = newRV_noinc((SV*)av);
+    argvi++;
 }
 %typemap(out) (char **free)
 {
@@ -110,36 +71,25 @@
   $result = newRV_noinc((SV*)av);
   argvi++;
 }
-/* drop GDAL return value */
+/* if the call to the fct failed, return an undef */
 %typemap(out) IF_FALSE_RETURN_NONE
 {
   /* %typemap(out) IF_FALSE_RETURN_NONE */
 }
-/* croak if GDAL return FALSE */
 %typemap(ret) IF_FALSE_RETURN_NONE
 {
  /* %typemap(ret) IF_FALSE_RETURN_NONE */
   if ($1 == 0 ) {
-    SWIG_croak("unexpected error in $symname");
+    /* this is currently used only in GDALGCPsToGeoTransform
+       this is probably a memory leak
+       ST(argvi-1) is at this point an array which needs to be destr
+     */
+    ST(argvi-1) = sv_newmortal();
   }
 }
-/* drop GDAL return value */
-%typemap(out) RETURN_NONE_TRUE_IS_ERROR
-{
-  /* %typemap(out) RETURN_NONE_TRUE_IS_ERROR */
-}
-/* croak if GDAL return TRUE */
-%typemap(ret) RETURN_NONE_TRUE_IS_ERROR
-{
- /* %typemap(ret) RETURN_NONE_TRUE_IS_ERROR */
-  if ($1 != 0 ) {
-    SWIG_croak("unexpected error in $symname");
-  }
-}
-/* drop GDAL return value */
 %typemap(out) IF_ERROR_RETURN_NONE
 {
-  /* %typemap(out) IF_ERROR_RETURN_NONE */
+  /* %typemap(out) IF_ERROR_RETURN_NONE (do not return the error code) */
 }
 
 /*
@@ -209,9 +159,7 @@ static SV *
 CreateArrayFromStringArray( char **first ) {
   AV *av = (AV*)sv_2mortal((SV*)newAV());
   for( unsigned int i = 0; *first != NULL; i++ ) {
-    SV *sv = newSVpv(*first, strlen(*first));
-    SvUTF8_on(sv); /* expecting UTF-8 from GDAL */
-    av_store(av,i,sv);
+    av_store(av,i,newSVpv(*first, strlen(*first)));
     ++first;
   }
   return newRV_noinc((SV*)av);
@@ -246,16 +194,8 @@ CreateArrayFromStringArray( char **first ) {
 %typemap(argout,fragment="CreateArrayFromIntArray") (int len, int *output)
 {
   /* %typemap(argout) (int len, int *output) */
-  if (GIMME_V == G_ARRAY) {
-    /* return a list */
-    int i;
-    EXTEND(SP, argvi+$1-items+1);
-    for (i = 0; i < $1; i++)
-      ST(argvi++) = sv_2mortal(newSVnv($2[i]));
-  } else {
-    $result = CreateArrayFromIntArray( $2, $1 );
-    argvi++;
-  }
+  $result = CreateArrayFromIntArray( $2, $1 );
+  argvi++;
 }
 %typemap(freearg) (int len, int *output)
 {
@@ -296,16 +236,8 @@ CreateArrayFromStringArray( char **first ) {
 %typemap(argout,fragment="CreateArrayFromDoubleArray") ( double argout[ANY])
 {
   /* %typemap(argout) (double argout[ANY]) */
-  if (GIMME_V == G_ARRAY) {
-    /* return a list */
-    int i;
-    EXTEND(SP, argvi+$dim0-items+1);
-    for (i = 0; i < $dim0; i++)
-      ST(argvi++) = sv_2mortal(newSVnv($1[i]));
-  } else {
-    $result = CreateArrayFromDoubleArray( $1, $dim0 );
-    argvi++;
-  }  
+  $result = CreateArrayFromDoubleArray( $1, $dim0 );
+  argvi++;
 }
 
 %typemap(in,numinputs=0) ( double *argout[ANY]) (double *argout)
@@ -338,7 +270,7 @@ CreateArrayFromStringArray( char **first ) {
 }
 
 /*
- *  Typemap for counted arrays of ints <- Perl list
+ *  Typemap for counted arrays of ints <- PySequence
  */
 %typemap(in,numinputs=1) (int nList, int* pList)
 {
@@ -387,9 +319,7 @@ CreateArrayFromStringArray( char **first ) {
 	SWIG_croak("expected a reference to an array");
     AV *av = (AV*)(SvRV($input));
     for (int i = 0; i < av_len(av)+1; i++) {
-	SV *sv = *(av_fetch(av, i, 0));
-	sv_utf8_upgrade(sv); /* GDAL expects UTF-8 */
-	char *pszItem = SvPV_nolen(sv);
+	char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
 	$1 = CSLAddString( $1, pszItem );
     }
 }
@@ -447,55 +377,6 @@ CreateArrayFromStringArray( char **first ) {
 	$1 = 0;
     }
 }
-%typemap(in,numinputs=1) (int nLen, unsigned char *pBuf )
-{
-    /* %typemap(in,numinputs=1) (int nLen, unsigned char *pBuf ) */
-    if (SvOK($input)) {
-	if (!SvPOK($input))
-	    SWIG_croak("expected binary data as input");
-	STRLEN len = SvCUR($input);
-	$2 = (unsigned char *)SvPV_nolen($input);
-	$1 = len;
-    } else {
-	$2 = NULL;
-	$1 = 0;
-    }
-}
-
-/***************************************************
- * Typemaps for  (retStringAndCPLFree*)
- ***************************************************/
-
-%typemap(out) (retStringAndCPLFree*)
-%{ 
-    /* %typemap(out) (retStringAndCPLFree*) */
-    if($1)
-    {
-        $result = SWIG_FromCharPtr((const char *)result);
-        CPLFree($1);
-    }
-    else
-    {
-        $result = sv_newmortal();
-    }
-    argvi++ ;
-%}
-
-/* slightly different version(?) for GDALAsyncReader */
-%typemap(in,numinputs=0) (int *nLength, char **pBuffer ) ( int nLength = 0, char *pBuffer = 0 )
-{
-  /* %typemap(in,numinputs=0) (int *nLength, char **pBuffer ) */
-  $1 = &nLength;
-  $2 = &pBuffer;
-}
-%typemap(freearg) (int *nLength, char **pBuffer )
-{
-  /* %typemap(freearg) (int *nLength, char **pBuffer ) */
-  if( *$1 ) {
-    free( *$2 );
-  }
-}
-
 
 /*
  * Typemap argout of GDAL_GCP* used in Dataset::GetGCPs( )
@@ -668,9 +549,7 @@ CreateArrayFromStringArray( char **first ) {
 	    if (SvTYPE(SvRV($input))==SVt_PVAV) {
 		AV *av = (AV*)(SvRV($input));
 		for (int i = 0; i < av_len(av)+1; i++) {
-		    SV *sv = *(av_fetch(av, i, 0));
-		    sv_utf8_upgrade(sv); /* GDAL expects UTF-8 */
-		    char *pszItem = SvPV_nolen(sv);
+		    char *pszItem = SvPV_nolen(*(av_fetch(av, i, 0)));
 		    $1 = CSLAddString( $1, pszItem );
 		}
 	    } else if (SvTYPE(SvRV($input))==SVt_PVHV) {
@@ -681,7 +560,6 @@ CreateArrayFromStringArray( char **first ) {
 		$1 = NULL;
 		hv_iterinit(hv);
 		while(sv = hv_iternextsv(hv,&key,&klen)) {
-		    sv_utf8_upgrade(sv); /* GDAL expects UTF-8 */
                     $1 = CSLAddNameValue( $1, key, SvPV_nolen(sv) );
 		}
 	    } else
@@ -703,10 +581,9 @@ CreateArrayFromStringArray( char **first ) {
     if ( stringarray != NULL ) {
 	int n = CSLCount( stringarray );
 	for ( int i = 0; i < n; i++ ) {
-	    SV *sv = newSVpv(stringarray[i], 0);
-	    SvUTF8_on(sv); /* expecting UTF-8 from GDAL */
-	    if (!av_store(av, i, sv))
-		SvREFCNT_dec(sv);
+	    SV *s = newSVpv(stringarray[i], strlen(*stringarray));
+	    if (!av_store(av, i, s))
+		SvREFCNT_dec(s);
 	}
     }
     $result = newRV_noinc((SV*)av);
@@ -719,10 +596,9 @@ CreateArrayFromStringArray( char **first ) {
  */
 %typemap(in) (char **ignorechange) ( char *val )
 {
-    /* %typemap(in) (char **ignorechange) */
-    sv_utf8_upgrade($input); /* GDAL expects UTF-8 */
-    val = SvPV_nolen($input);
-    $1 = &val;
+  /* %typemap(in) (char **ignorechange) */
+  val = SvPV_nolen($input);
+  $1 = &val;
 }
 
 /*
@@ -737,10 +613,8 @@ CreateArrayFromStringArray( char **first ) {
 {
   /* %typemap(argout) (char **argout) */
   $result = sv_newmortal();
-  if ( $1 ) {
+  if ( $1 )
     sv_setpv($result, *$1);
-    SvUTF8_on($result); /* expecting UTF-8 from GDAL */
-  }
   argvi++;
 }
 %typemap(freearg) (char **argout)
@@ -777,7 +651,6 @@ CreateArrayFromStringArray( char **first ) {
 %typemap(in) (tostring argin)
 {
   /* %typemap(in) (tostring argin) */
-  sv_utf8_upgrade($input); /* GDAL expects UTF-8 */
   $1 = SvPV_nolen( $input ); 
 }
 %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) (tostring argin)
@@ -833,9 +706,7 @@ static CPLXMLNode *AVToXMLTree( AV *av )
 	return NULL;
 
     nType = SvIV(*(av_fetch(av,0,0)));
-    SV *sv = *(av_fetch(av,1,0));
-    sv_utf8_upgrade(sv); /* GDAL expects UTF-8 */
-    pszText = SvPV_nolen(sv);
+    pszText = SvPV_nolen(*(av_fetch(av,1,0)));
     psThisNode = CPLCreateXMLNode( NULL, (CPLXMLNodeType) nType, pszText );
     
     for( iChild = 0; iChild < nChildCount; iChild++ )
@@ -892,10 +763,8 @@ static AV *XMLTreeToAV( CPLXMLNode *psTree )
     av = (AV*)sv_2mortal((SV*)newAV());
 
     av_store(av,0,newSViv((int) psTree->eType));
-    SV *sv = newSVpv(psTree->pszValue, strlen(psTree->pszValue));
-    SvUTF8_on(sv); /* expecting UTF-8 from GDAL */
-    av_store(av,1,sv);
-    
+    av_store(av,1,newSVpv(psTree->pszValue, strlen(psTree->pszValue)));
+
     for( psChild = psTree->psChild, iChild = 2; 
          psChild != NULL; 
          psChild = psChild->psNext, iChild++ )
@@ -934,7 +803,6 @@ static AV *XMLTreeToAV( CPLXMLNode *psTree )
 
 CHECK_NOT_UNDEF(char, method, method)
 CHECK_NOT_UNDEF(const char, name, name)
-CHECK_NOT_UNDEF(const char, utf8_path, path)
 CHECK_NOT_UNDEF(const char, request, request)
 CHECK_NOT_UNDEF(const char, cap, capability)
 CHECK_NOT_UNDEF(const char, statement, statement)
@@ -1011,8 +879,7 @@ CHECK_NOT_UNDEF(OGRFeatureShadow, feature, feature)
 {
     SavedEnv saved_env;
     saved_env.fct = NULL;
-    saved_env.data = &PL_sv_undef;
-    $1 = (void *)(&saved_env);
+    saved_env.data = NULL;
 }
 
 %typemap(in) (GDALProgressFunc callback = NULL)
@@ -1037,103 +904,6 @@ CHECK_NOT_UNDEF(OGRFeatureShadow, feature, feature)
     /* %typemap(in) (void* callback_data=NULL) */
     if (SvOK($input))
 	saved_env.data = (SV *)$input;
-}
-
-/*
- * Typemaps for VSIStatL
- */
-%typemap(in,numinputs=0) (VSIStatBufL *) (VSIStatBufL sStatBuf)
-{
-  /* %typemap(in,numinputs=0) (VSIStatBufL *) (VSIStatBufL sStatBuf) */
-  $1 = &sStatBuf;
-}
-%typemap(argout) (VSIStatBufL *)
-{
-  /* %typemap(argout) (VSIStatBufL *) */
-  SP -= 1; /* should be somewhere else, remove the filename arg */
-  EXTEND(SP, 1);
-  char mode[2];
-  mode[0] = ' ';
-  mode[1] = '\0';
-  if (S_ISREG(sStatBuf2.st_mode)) mode[0] = 'f';
-  else if (S_ISDIR(sStatBuf2.st_mode)) mode[0] = 'd';
-  else if (S_ISLNK(sStatBuf2.st_mode)) mode[0] = 'l';
-  else if (S_ISFIFO(sStatBuf2.st_mode)) mode[0] = 'p';
-  else if (S_ISSOCK(sStatBuf2.st_mode)) mode[0] = 'S';
-  else if (S_ISBLK(sStatBuf2.st_mode)) mode[0] = 'b';
-  else if (S_ISCHR(sStatBuf2.st_mode)) mode[0] = 'c';
-  PUSHs(sv_2mortal(newSVpv(mode, 0)));
-  argvi++;
-  EXTEND(SP, 1);
-  PUSHs(sv_2mortal(newSVuv(sStatBuf2.st_size)));
-  argvi++;
-}
-
-/*
- * Typemaps for VSIFReadL
- */
-%typemap(in,numinputs=1) (void *pBuffer, size_t nSize, size_t nCount)
-{
-  /* %typemap(in,numinputs=1) (void *pBuffer, size_t nSize, size_t nCount) */
-  size_t len = SvIV($input);
-  $1 = malloc(len);
-  $2 = 1;
-  $3 = len;
-}
-%typemap(argout) (void *pBuffer, size_t nSize, size_t nCount)
-{
-  /* %typemap(argout) (void *pBuffer, size_t nSize, size_t nCount) */
-  if (result) {
-    $result = newSVpvn((char*)$1, result);
-    sv_2mortal($result);
-  } else {
-    $result = &PL_sv_undef;
-  }
-  argvi++;
-}
-%typemap(out) (size_t VSIFReadL)
-{
-  /* %typemap(out) (size_t VSIFReadL) */
-}
-
-/*
- * Typemaps for VSIFWriteL
- */
-%typemap(in,numinputs=1) (const void *pBuffer, size_t nSize, size_t nCount)
-{
-  /* %typemap(in,numinputs=1) (const void *pBuffer, size_t nSize, size_t nCount) */
-  size_t len;
-  $1 = SvPV($input, len);
-  $2 = 1;
-  $3 = len;
-}
-
-/*
- * Typemaps for ensuring UTF-8 is given to GDAL if requested impacts:
- * (ogr:) Driver_CreateDataSource, Driver_CopyDataSource, Driver_Open,
- * Driver_DeleteDataSource Open, OpenShared,
- * DataSource__GetLayerByName, DataSource__CreateLayer,
- * Feature_GetFieldDefnRef__SWIG_1, Feature_IsFieldSet__SWIG_1,
- * Feature_GetFieldIndex (gdal:) PushFinderLocation, FindFile,
- * ReadDir, FileFromMemBuffer, Unlink, MkDir, RmDir, Stat VSIFOpenL,
- * Driver__Create, Driver_CreateCopy, Driver_Delete, Open__SWIG_1,
- * OpenShared__SWIG_1, IdentifyDriver
- */
-%typemap(in,numinputs=1) (const char* utf8_path)
-{
-  /* %typemap(in,numinputs=1) (const char* utf8_path) */
-  sv_utf8_upgrade($input);
-  $1 = SvPV_nolen($input);
-}
-%typemap(in,numinputs=1) (const char* layer_name)
-{
-  /* %typemap(in,numinputs=1) (const char* layer_name) */
-  sv_utf8_upgrade($input);
-  $1 = SvPV_nolen($input);
-}
-%typemap(in,numinputs=1) (const char* name)
-{
-  /* %typemap(in,numinputs=1) (const char* name) */
-  sv_utf8_upgrade($input);
-  $1 = SvPV_nolen($input);
+    if (saved_env.fct)
+	$1 = (void *)(&saved_env); /* the Perl layer must make sure that this parameter is always given */
 }

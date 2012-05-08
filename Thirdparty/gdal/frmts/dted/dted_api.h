@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: dted_api.h 14662 2008-06-08 14:51:41Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  Public (C callable) interface for DTED/CDED reading.
@@ -98,7 +98,7 @@ CPL_C_START
 #define DTED_NODATA_VALUE -32767
 
 typedef struct {
-  VSILFILE     *fp;
+  FILE          *fp;
   int           bUpdate;
 
   int           nXSize;
@@ -170,8 +170,8 @@ typedef enum {
     DTEDMD_DATA_EDITION = 7,            /* DSI 88+2 */
     DTEDMD_MATCHMERGE_VERSION = 8,      /* DSI 90+1 */
     DTEDMD_MAINT_DATE = 9,              /* DSI 91+4 */
-    DTEDMD_MATCHMERGE_DATE = 10,        /* DSI 95+4 */
-    DTEDMD_MAINT_DESCRIPTION = 11,      /* DSI 99+4 */
+    DTEDMD_MATCHMERGE_DATE = 10,         /* DSI 95+4 */
+    DTEDMD_MAINT_DESCRIPTION = 11,       /* DSI 99+4 */
     DTEDMD_PRODUCER = 12,               /* DSI 103+8 */
     DTEDMD_VERTDATUM = 13,              /* DSI 142+3 */
     DTEDMD_DIGITIZING_SYS = 14,         /* DSI 150+10 */
@@ -180,10 +180,7 @@ typedef enum {
     DTEDMD_REL_HORIZACCURACY = 17,      /* ACC 12+4 */
     DTEDMD_REL_VERTACCURACY = 18,       /* ACC 16+4 */
     DTEDMD_HORIZDATUM = 19,             /* DSI 145+5 */ 
-    DTEDMD_ORIGINLONG = 20,             /* UHL 5+7 */
-    DTEDMD_ORIGINLAT = 21,              /* UHL 13+7 */
-    DTEDMD_NIMA_DESIGNATOR = 22,        /* DSI 60 + 5 */
-    DTEDMD_MAX = 22
+    DTEDMD_MAX = 19
 } DTEDMetaDataCode;
 
     

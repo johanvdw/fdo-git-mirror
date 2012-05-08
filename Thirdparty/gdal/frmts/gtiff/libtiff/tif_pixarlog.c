@@ -1,4 +1,4 @@
-/* $Id: tif_pixarlog.c,v 1.35 2011-01-06 16:00:23 fwarmerdam Exp $ */
+/* $Id: tif_pixarlog.c,v 1.32 2009-10-31 23:42:27 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1996-1997 Sam Leffler
@@ -83,10 +83,7 @@
  * The codec also handle byte swapping the encoded values as necessary
  * since the library does not have the information necessary
  * to know the bit depth of the raw unencoded buffer.
- *
- * NOTE: This decoder does not appear to update tif_rawcp, and tif_rawcc.
- * This can cause problems with the implementation of CHUNKY_STRIP_READ_SUPPORT
- * as noted in http://trac.osgeo.org/gdal/ticket/3894.   FrankW - Jan'11
+ * 
  */
 
 #include "tif_predict.h"
@@ -788,8 +785,8 @@ PixarLogDecode(TIFF* tif, uint8* op, tmsize_t occ, uint16 s)
 	/* hopefully, we got all the bytes we needed */
 	if (sp->stream.avail_out != 0) {
 		TIFFErrorExt(tif->tif_clientdata, module,
-		    "Not enough data at scanline %lu (short " TIFF_UINT64_FORMAT " bytes)",
-		    (unsigned long) tif->tif_row, (TIFF_UINT64_T) sp->stream.avail_out);
+		    "Not enough data at scanline %lu (short %llu bytes)",
+		    (unsigned long) tif->tif_row, (unsigned long long) sp->stream.avail_out);
 		return (0);
 	}
 
@@ -1417,10 +1414,3 @@ bad:
 #endif /* PIXARLOG_SUPPORT */
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

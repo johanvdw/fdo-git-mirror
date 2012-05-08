@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IngrTypes.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: IngrTypes.cpp 17665 2009-09-22 00:39:48Z ilucena $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Types support function
@@ -27,12 +27,12 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#include "IngrTypes.h"
-#include "JpegHelper.h"
-
 #ifdef DEBUG
 #include "stdio.h"
 #endif
+
+#include "IngrTypes.h"
+#include "JpegHelper.h"
 
 static const INGR_FormatDescription INGR_FormatTable[] = {
     {PackedBinary,            "Packed Binary",               GDT_Byte},
@@ -401,7 +401,7 @@ uint32 CPL_STDCALL INGR_SetIGDSColors( GDALColorTable *poColorTable,
 //                                                       INGR_GetTileDirectory()
 // -----------------------------------------------------------------------------
 
-uint32 CPL_STDCALL INGR_GetTileDirectory( VSILFILE *fp,
+uint32 CPL_STDCALL INGR_GetTileDirectory( FILE *fp,
                                           uint32 nOffset,
                                           int nBandXSize,
                                           int nBandYSize,
@@ -493,7 +493,7 @@ uint32 CPL_STDCALL INGR_GetTileDirectory( VSILFILE *fp,
 //                                                          INGR_GetIGDSColors()
 // -----------------------------------------------------------------------------
 
-void CPL_STDCALL INGR_GetIGDSColors( VSILFILE *fp,
+void CPL_STDCALL INGR_GetIGDSColors( FILE *fp,
                                      uint32 nOffset,
                                      uint32 nEntries,
                                      GDALColorTable *poColorTable )
@@ -580,7 +580,7 @@ uint32 CPL_STDCALL INGR_SetEnvironColors( GDALColorTable *poColorTable,
 //                                                      INGR_GetEnvironVColors()
 // -----------------------------------------------------------------------------
 
-void CPL_STDCALL INGR_GetEnvironVColors( VSILFILE *fp,
+void CPL_STDCALL INGR_GetEnvironVColors( FILE *fp,
                              uint32 nOffset,
                              uint32 nEntries,
                              GDALColorTable *poColorTable )
@@ -760,7 +760,7 @@ uint32 CPL_STDCALL INGR_GetDataBlockSize( const char *pszFilename,
 
         VSIStatBufL  sStat;
         VSIStatL( pszFilename, &sStat );
-        return (uint32) (sStat.st_size - nDataOffset);
+        return sStat.st_size - nDataOffset;
     }
     else
     {
@@ -806,7 +806,7 @@ INGR_VirtualFile CPL_STDCALL INGR_CreateVirtualFile( const char *pszFilename,
                                                     nJPGComponents,
                                                     0,
                                                     nQuality );
-            VSILFILE *fp = VSIFOpenL( hVirtual.pszFileName, "w+" );
+            FILE *fp = VSIFOpenL( hVirtual.pszFileName, "w+" );
             VSIFWriteL( pabyHeader, 1, nHeaderSize, fp );
             VSIFWriteL( pabyBuffer, 1, nBufferSize, fp );
             VSIFCloseL( fp );
@@ -860,7 +860,7 @@ void CPL_STDCALL INGR_ReleaseVirtual( INGR_VirtualFile *poTiffMem )
 //                                                            INGR_ReleaseVirtual()
 // -----------------------------------------------------------------------------
 
-int CPL_STDCALL INGR_ReadJpegQuality( VSILFILE *fp, uint32 nAppDataOfseet,
+int CPL_STDCALL INGR_ReadJpegQuality( FILE *fp, uint32 nAppDataOfseet,
                                       uint32 nSeekLimit )
 {
     if( nAppDataOfseet == 0  )

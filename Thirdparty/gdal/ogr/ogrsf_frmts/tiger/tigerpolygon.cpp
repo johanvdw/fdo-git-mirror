@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpolygon.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigerpolygon.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolygon, providing access to .RTA files.
@@ -30,9 +30,9 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpolygon.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigerpolygon.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
-static const TigerFieldInfo rtA_2002_fields[] = {
+static TigerFieldInfo rtA_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       1,   1,     1 },
@@ -82,7 +82,7 @@ static const TigerFieldInfo rtA_2002_fields[] = {
   { "RS_A18",     'L', 'A', OFTString,   194, 199,   6,       1,   1,     1 },
   { "RS_A19",     'L', 'A', OFTString,   200, 210,  11,       1,   1,     1 },
 };
-static const TigerRecordInfo rtA_2002_info =
+static TigerRecordInfo rtA_2002_info =
   {
     rtA_2002_fields,
     sizeof(rtA_2002_fields) / sizeof(TigerFieldInfo),
@@ -90,7 +90,7 @@ static const TigerRecordInfo rtA_2002_info =
   };
 
 
-static const TigerFieldInfo rtA_2003_fields[] = {
+static TigerFieldInfo rtA_2003_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       1,   1,     1 },
@@ -142,7 +142,7 @@ static const TigerFieldInfo rtA_2003_fields[] = {
   { "RS_A18",     'L', 'A', OFTString,   194, 199,   6,       1,   1,     1 },
   { "RS_A19",     'L', 'A', OFTString,   200, 210,  11,       1,   1,     1 },
 };
-static const TigerRecordInfo rtA_2003_info =
+static TigerRecordInfo rtA_2003_info =
   {
     rtA_2003_fields,
     sizeof(rtA_2003_fields) / sizeof(TigerFieldInfo),
@@ -150,7 +150,7 @@ static const TigerRecordInfo rtA_2003_info =
   };
 
 
-static const TigerFieldInfo rtA_2004_fields[] = {
+static TigerFieldInfo rtA_2004_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       1,   1,     1 },
@@ -202,7 +202,7 @@ static const TigerFieldInfo rtA_2004_fields[] = {
   { "RS_A18",     'L', 'A', OFTString,   194, 199,   6,       1,   1,     1 },
   { "RS_A19",     'L', 'A', OFTString,   200, 210,  11,       1,   1,     1 },
 };
-static const TigerRecordInfo rtA_2004_info =
+static TigerRecordInfo rtA_2004_info =
   {
     rtA_2004_fields,
     sizeof(rtA_2004_fields) / sizeof(TigerFieldInfo),
@@ -210,7 +210,7 @@ static const TigerRecordInfo rtA_2004_info =
   };
 
 
-static const TigerFieldInfo rtA_fields[] = {
+static TigerFieldInfo rtA_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTString,     6,  10,   5,       1,   1,     1 },
@@ -237,7 +237,7 @@ static const TigerFieldInfo rtA_fields[] = {
   { "AIR90",      'L', 'N', OFTInteger,   95,  98,   4,       1,   1,     1 }
 };
 
-static const TigerRecordInfo rtA_info =
+static TigerRecordInfo rtA_info =
   {
     rtA_fields,
     sizeof(rtA_fields) / sizeof(TigerFieldInfo),
@@ -245,7 +245,7 @@ static const TigerRecordInfo rtA_info =
   };
 
 
-static const TigerFieldInfo rtS_2002_fields[] = {
+static TigerFieldInfo rtS_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       0,   0,     1 },
   { "CENID",      'L', 'A', OFTString,    11,  15,   5,       0,   0,     1 },
@@ -288,7 +288,7 @@ static const TigerFieldInfo rtS_2002_fields[] = {
   { "SLDL",       'R', 'A', OFTString,   161, 163,   3,       1,   1,     1 },
   { "UGA",        'L', 'A', OFTString,   164, 168,   5,       1,   1,     1 },
 };
-static const TigerRecordInfo rtS_2002_info =
+static TigerRecordInfo rtS_2002_info =
   {
     rtS_2002_fields,
     sizeof(rtS_2002_fields) / sizeof(TigerFieldInfo),
@@ -296,7 +296,7 @@ static const TigerRecordInfo rtS_2002_info =
   };
 
 
-static const TigerFieldInfo rtS_2000_Redistricting_fields[] = {
+static TigerFieldInfo rtS_2000_Redistricting_fields[] = {
   { "FILE",       'L', 'N', OFTString,     6,  10,   5,       0,   0,     1 },
   { "STATE",      'L', 'N', OFTInteger,    6,   7,   2,       0,   0,     1 },
   { "COUNTY",     'L', 'N', OFTInteger,    8,  10,   3,       0,   0,     1 },
@@ -333,14 +333,14 @@ static const TigerFieldInfo rtS_2000_Redistricting_fields[] = {
 
 };
 
-static const TigerRecordInfo rtS_2000_Redistricting_info =
+static TigerRecordInfo rtS_2000_Redistricting_info =
   {
     rtS_2000_Redistricting_fields,
     sizeof(rtS_2000_Redistricting_fields) / sizeof(TigerFieldInfo),
     120
   };
 
-static const TigerFieldInfo rtS_fields[] = {
+static TigerFieldInfo rtS_fields[] = {
   { "FILE",       'L', 'N', OFTString,     6,  10,   5,       0,   0,     1 },
   { "STATE",      'L', 'N', OFTInteger,    6,   7,   2,       0,   0,     1 },
   { "COUNTY",     'L', 'N', OFTInteger,    8,  10,   3,       0,   0,     1 },
@@ -369,7 +369,7 @@ static const TigerFieldInfo rtS_fields[] = {
   { "STHOUSE",    'L', 'A', OFTString,    91,  96,   6,       1,   1,     1 },
   { "VTD00",      'L', 'A', OFTString,    97, 102,   6,       1,   1,     1 }
 };
-static const TigerRecordInfo rtS_info =
+static TigerRecordInfo rtS_info =
   {
     rtS_fields,
     sizeof(rtS_fields) / sizeof(TigerFieldInfo),

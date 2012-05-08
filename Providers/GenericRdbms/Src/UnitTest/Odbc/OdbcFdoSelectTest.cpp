@@ -162,6 +162,7 @@ void OdbcOracleFdoSelectTest::View1Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
             FdoPtr<FdoDataPropertyDefinitionCollection> idPropDefs = classDef->GetIdentityProperties();
             FdoInt32 numIdProps = 0;
@@ -254,6 +255,7 @@ void OdbcMySqlFdoSelectTest::View1Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
             FdoPtr<FdoDataPropertyDefinitionCollection> idPropDefs = classDef->GetIdentityProperties();
             FdoInt32 numIdProps = 0;
@@ -305,6 +307,7 @@ void OdbcSqlServerFdoSelectTest::View1Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
             FdoPtr<FdoDataPropertyDefinitionCollection> idPropDefs = classDef->GetIdentityProperties();
             FdoInt32 numIdProps = 0;
@@ -359,6 +362,7 @@ void OdbcAccessFdoSelectTest::Table1Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
 
             // read through all the features
@@ -624,6 +628,7 @@ void OdbcAccessFdoSelectTest::View1Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
             FdoPtr<FdoDataPropertyDefinitionCollection> idPropDefs = classDef->GetIdentityProperties();
             FdoInt32 numIdProps = 0;
@@ -677,6 +682,7 @@ void OdbcAccessFdoSelectTest::View2Test()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
             FdoPtr<FdoDataPropertyDefinitionCollection> idPropDefs = classDef->GetIdentityProperties();
             FdoInt32 numIdProps = 0;
@@ -816,6 +822,7 @@ void OdbcExcelFdoSelectTest::AllTypesTest()
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
 
             // read through all the features
@@ -863,6 +870,7 @@ void OdbcExcelFdoSelectTest::AllTypesConfigFileTest()
         FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
         FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+        CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
         FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
 
         // read through all the features
@@ -909,6 +917,7 @@ void OdbcExcelFdoSelectTest::AllTypesConfigFileTest_defect814052()
         FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
         FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
+        CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
         FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
 
         // read through all the features
@@ -951,6 +960,7 @@ void OdbcExcelFdoSelectTest::CityTest()
             FdoPtr<FdoClassDefinition> classDef = reader->GetClassDefinition();
             FdoDataPropertiesP idProps = classDef->GetIdentityProperties();
             
+            CPPUNIT_ASSERT_MESSAGE("Class should not have IsComputed=true", !classDef->GetIsComputed());
             CPPUNIT_ASSERT_MESSAGE("Class should not have identity, otherwise need to try another class", idProps->GetCount() == 0);
             FdoFeatureSchemaP pSchema =  classDef->GetFeatureSchema(); 
 

@@ -1,5 +1,5 @@
 /***************************************************************************
-* 
+ * 
 * Copyright (C) 2004-2006  Autodesk, Inc.
 * 
 * This library is free software; you can redistribute it and/or
@@ -16,13 +16,10 @@
 * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * 
  ***************************************************************************/
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN	// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 #endif
-
-#include <string>
 
 #include <malloc.h>
 
@@ -36,10 +33,8 @@
 #include <string.h>
 #include <limits.h>
 #endif
-
 #include "RegistryUtility.h"
 #include "ProviderDef.h"
-
 #include <Fdo/ClientServices/Provider.h>
 #include <Fdo/ClientServices/ClientServiceException.h>
 #include <Fdo/ClientServices/ProviderNameTokens.h>
@@ -51,12 +46,10 @@
 #include <xercesc/framework/XMLErrorCodes.hpp>
 #include <xercesc/sax2/DefaultHandler.hpp>
 #include <xercesc/util/TransService.hpp>
-#include <xercesc/dom/impl/DOMLSOutputImpl.hpp>
-
 #include <Inc/Sys/stat.h>
-
 #include "Common/Xml/UtilXrcs.h"
 
+#include <xercesc/dom/impl/DOMLSOutputImpl.hpp>
 
 #ifdef _WIN32
 #define FILE_PATH_DELIMITER L'\\'
@@ -85,7 +78,7 @@
 // macro to convert a wide character string into a multibyte string, allocating space on the stack
 #define wide_to_multibyte(mb,w)\
 {\
-    FdoString* p = (w);\
+    const wchar_t* p = (w);\
     size_t i = wcslen (p);\
     i++;\
     mb = (char*)alloca (i * 6);\
@@ -119,7 +112,7 @@ extern wchar_t* getHomeDir();
 extern wchar_t* getModule ();
 #endif
 
-bool FdoRegistryUtility::FileExists (FdoString* filePath)
+bool FdoRegistryUtility::FileExists (const wchar_t* filePath)
 {
     bool ret;
 
@@ -165,7 +158,7 @@ bool FdoRegistryUtility::FileExists (FdoString* filePath)
 }
 
 // Gets a Provider's library path for a provider based on the provider name
-bool FdoRegistryUtility::GetLibraryLocation(FdoString* providerName, std::wstring &libraryLocation)
+bool FdoRegistryUtility::GetLibraryLocation(const wchar_t* providerName, std::wstring &libraryLocation)
 {
     if (providerName == NULL) {
         throw FdoClientServiceException::Create(FdoClientServiceException::NLSGetMessage(FDO_NLSID(CLNT_1_NULLINPUTPOINTER)));
@@ -496,12 +489,12 @@ void FdoRegistryUtility::GetProviderCollection(std::vector<FdoProvider*> &provid
 
 
 // Creates a provider key in the registry based on the provider properties
-void FdoRegistryUtility::RegisterProvider(FdoString * name, 
-                                          FdoString * displayName, 
-                                          FdoString * description, 
-                                          FdoString * version, 
-                                          FdoString * fdoVersion, 
-                                          FdoString * libraryPath,
+void FdoRegistryUtility::RegisterProvider(const wchar_t * name, 
+                                          const wchar_t * displayName, 
+                                          const wchar_t * description, 
+                                          const wchar_t * version, 
+                                          const wchar_t * fdoVersion, 
+                                          const wchar_t * libraryPath,
                                           bool isManaged)
 {
     XMLPlatformUtils::Initialize();
@@ -592,7 +585,7 @@ void FdoRegistryUtility::RegisterProvider(FdoString * name,
     return;
 }
 
-void FdoRegistryUtility::UnregisterProvider(FdoString * providerName)
+void FdoRegistryUtility::UnregisterProvider(const wchar_t * providerName)
 {
     if (!FileExists (GetFileName ()))
     {
@@ -676,7 +669,7 @@ void FdoRegistryUtility::UnregisterProvider(FdoString * providerName)
 
 }
 
-void FdoRegistryUtility::AddText(DOMDocument *doc, DOMElement* featureProviderElem, const XMLCh* name, FdoString *nameValue)
+void FdoRegistryUtility::AddText(DOMDocument *doc, DOMElement* featureProviderElem, const XMLCh* name, const wchar_t *nameValue)
 {
     FdoStringP tmp = nameValue;
 
@@ -702,7 +695,7 @@ void FdoRegistryUtility::AddText(DOMDocument *doc, DOMElement* featureProviderEl
 
 }
 
-bool FdoRegistryUtility::DeleteProvider(DOMDocument *doc, FdoString * name)
+bool FdoRegistryUtility::DeleteProvider(DOMDocument *doc, const wchar_t * name)
 
 {
     DOMElement*   root = doc->getDocumentElement();
@@ -797,7 +790,7 @@ wchar_t *FdoRegistryUtility::GetFileName()
             const char *me;
             char *home;
             char *last;
-            const char *install = "/usr/local/fdo-3.8.0";
+            const char *install = "/usr/local/fdo-3.6.0";
 
             // Determine the user-specified FDO install location
             char *fdo_home = getenv( "FDOHOME" );

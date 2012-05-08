@@ -11,7 +11,7 @@ Historical and Current:
  danmo & daniel & dmorissette - Daniel Morissette (MapGears)
  dnadeau & denad21 - Denis Nadeau
  kdejong & kor - Kor de Jong (geog.uu.nl / PCRaster)
- aubin - Mark Aubin - Keyhole
+ aubin - Mark(?) Aubin - Keyhole
  svillene & stephane - Stephane Villeneuve 
  kmelero - Ken Melero (SANZ)
  nemec - Philip Nemec (Keyhole)
@@ -20,11 +20,11 @@ Historical and Current:
  assefa - Assefa Yewondwossen (DM Solutions)
  jlacroix & julien - Julie Lacroix (Map Gears)
  shadow   (shadow @ dementia.org?)
- mbrudka - Marek Brudka (Filbico?)
+ mbrudka - Marek Brudka (aster.pl?)
  mbp - Mark Phillips (Tiger writer)
  gpotts - Garrett Potts (OSSIM)
  gwalter - Gillian Walter (Atlantis)
- aamici & andrea - Alessandro Amici
+ aamici - Alessandro Amici
  kintel - Marius Kintel - dgnlib only
  lichun - Lichun Wang at ITC. 
  hobu - Howard Butler (Hobu Inc)
@@ -45,12 +45,12 @@ Historical and Current:
  collinsb - Benjamin Collins (MITRE) - swig/java
  jimg - James Gallager (OPeNDAP)
  kruland - Kevin Ruland
- vgough - Valient Gough - 1999 - configure stuff. 
+ vgough - ? - 1999 - configure stuff. 
  silke - Silke Reimer (Intevation)
- ilucena - Ivan Lucena (Oracle)
+ ilucena - Ivan Lucena (Idrisi)
  shalasz - Steve Halasz (Debian)
  srioux - Sylvain Rioux (Softmap)
- ldjohn - Lowell D. Johnson - 2001 - rawdataset.cpp - one commit
+ ldjohn (? - rawdataset.cpp - one commit - 2001)
  pvachon - Phil Vachon
  klokan - Petr Pridal
  condit - Chris Condit (SDSC)

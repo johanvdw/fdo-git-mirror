@@ -124,12 +124,12 @@ if "%TYPEACTION%"=="clean" SET MSACTION=Clean
 if "%TYPEACTION%"=="install" goto install_files_sdf
 
 echo %MSACTION% %TYPEBUILD% SDF provider dlls
-SET FDOACTIVEBUILD=%cd%\Src\SDFOS%VCBEXTENSION%
+SET FDOACTIVEBUILD=%cd%\Src\SDFOS
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild SDFOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
+msbuild SDFOS_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
-if exist SDFOS%VCBEXTENSION%_temp.sln del /Q /F SDFOS%VCBEXTENSION%_temp.sln
+if exist SDFOS_temp.sln del /Q /F SDFOS_temp.sln
 popd
 if "%FDOERROR%"=="1" goto error
 if "%TYPEACTION%"=="clean" goto end
@@ -139,10 +139,7 @@ if "%TYPEACTION%"=="build" goto generate_docs
 echo copy %TYPEBUILD% SDF provider output files
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFMessage.dll" "%FDOBINPATH%"
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFProvider.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFMessage.pdb" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFProvider.pdb" "%FDOBINPATH%"
 copy /y "%FDOUTILITIES%\ExpressionEngine\bin\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.dll" "%FDOBINPATH%"
-copy /y "%FDOUTILITIES%\ExpressionEngine\bin\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.pdb" "%FDOBINPATH%"
 copy /y "%FDOUTILITIES%\ExpressionEngine\lib\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.lib" "%FDOLIBPATH%"
 
 echo copy header files

@@ -487,9 +487,7 @@ REC_NO ShpScrollableFeatureReader::SearchNewSortedTable( FdoPropertyValueCollect
 			{
 				if ( wcscmp( infoCols->GetColumnNameAt(j), propName ) == 0 )
 				{
-					propStubs[i].m_dataType = ShpSchemaUtilities::DbfTypeToFdoType(infoCols->GetColumnTypeAt(j), 
-																				   infoCols->GetColumnWidthAt(j),
-                                                                                   infoCols->GetColumnScaleAt(j));
+					propStubs[i].m_dataType = ShpSchemaUtilities::DbfTypeToFdoType(infoCols->GetColumnTypeAt(j));
 					break;
 				}
 			}

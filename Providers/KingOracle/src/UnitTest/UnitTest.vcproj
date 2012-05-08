@@ -1369,10 +1369,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ut_ApplySchema.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\ut_DataTypes.cpp"
 				>
 			</File>
@@ -1476,10 +1472,6 @@
 			</File>
 			<File
 				RelativePath=".\UnitTestDlg.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ut_ApplySchema.h"
 				>
 			</File>
 			<File

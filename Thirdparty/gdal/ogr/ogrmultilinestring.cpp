@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultilinestring.cpp 18913 2010-02-24 23:41:17Z rouault $
+ * $Id: ogrmultilinestring.cpp 14336 2008-04-20 14:36:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiLineString class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultilinestring.cpp 18913 2010-02-24 23:41:17Z rouault $");
+CPL_CVSID("$Id: ogrmultilinestring.cpp 14336 2008-04-20 14:36:09Z rouault $");
 
 /************************************************************************/
 /*                        OGRMultiLineString()                          */
@@ -133,78 +133,37 @@ OGRErr OGRMultiLineString::importFromWkt( char ** ppszInput )
         return OGRERR_CORRUPT_DATA;
 
 /* -------------------------------------------------------------------- */
-/*      Check for EMPTY ...                                             */
+/*      The next character should be a ( indicating the start of the    */
+/*      list of linestrings.                                            */
 /* -------------------------------------------------------------------- */
-    const char *pszPreScan;
-    int bHasZ = FALSE, bHasM = FALSE;
+    pszInput = OGRWktReadToken( pszInput, szToken );
 
-    pszPreScan = OGRWktReadToken( pszInput, szToken );
     if( EQUAL(szToken,"EMPTY") )
     {
-        *ppszInput = (char *) pszPreScan;
-        empty();
+        *ppszInput = (char *) pszInput;
         return OGRERR_NONE;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Check for Z, M or ZM. Will ignore the Measure                   */
-/* -------------------------------------------------------------------- */
-    else if( EQUAL(szToken,"Z") )
-    {
-        bHasZ = TRUE;
-    }
-    else if( EQUAL(szToken,"M") )
-    {
-        bHasM = TRUE;
-    }
-    else if( EQUAL(szToken,"ZM") )
-    {
-        bHasZ = TRUE;
-        bHasM = TRUE;
-    }
-
-    if (bHasZ || bHasM)
-    {
-        pszInput = pszPreScan;
-        pszPreScan = OGRWktReadToken( pszInput, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            *ppszInput = (char *) pszPreScan;
-            empty();
-            /* FIXME?: In theory we should store the dimension and M presence */
-            /* if we want to allow round-trip with ExportToWKT v1.2 */
-            return OGRERR_NONE;
-        }
-    }
-
-    if( !EQUAL(szToken,"(") )
+    if( szToken[0] != '(' )
         return OGRERR_CORRUPT_DATA;
 
-    if ( !bHasZ && !bHasM )
+/* -------------------------------------------------------------------- */
+/*      If the next token is EMPTY, then verify that we have proper     */
+/*      EMPTY format will a trailing closing bracket.                   */
+/* -------------------------------------------------------------------- */
+    OGRWktReadToken( pszInput, szToken );
+    if( EQUAL(szToken,"EMPTY") )
     {
-        /* Test for old-style MULTILINESTRING(EMPTY) */
-        pszPreScan = OGRWktReadToken( pszPreScan, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            pszPreScan = OGRWktReadToken( pszPreScan, szToken );
+        pszInput = OGRWktReadToken( pszInput, szToken );
+        pszInput = OGRWktReadToken( pszInput, szToken );
+        
+        *ppszInput = (char *) pszInput;
 
-            if( EQUAL(szToken,",") )
-            {
-                /* This is OK according to SFSQL SPEC. */
-            }
-            else if( !EQUAL(szToken,")") )
-                return OGRERR_CORRUPT_DATA;
-            else
-            {
-                *ppszInput = (char *) pszPreScan;
-                empty();
-                return OGRERR_NONE;
-            }
-        }
+        if( !EQUAL(szToken,")") )
+            return OGRERR_CORRUPT_DATA;
+        else
+            return OGRERR_NONE;
     }
-
-    /* Skip first '(' */
-    pszInput = OGRWktReadToken( pszInput, szToken );
 
 /* ==================================================================== */
 /*      Read each line in turn.  Note that we try to reuse the same     */
@@ -219,26 +178,13 @@ OGRErr OGRMultiLineString::importFromWkt( char ** ppszInput )
     {
         int     nPoints = 0;
 
-        const char* pszNext = OGRWktReadToken( pszInput, szToken );
-        if (EQUAL(szToken,"EMPTY"))
-        {
-            eErr = addGeometryDirectly( new OGRLineString() );
-            if( eErr != OGRERR_NONE )
-                return eErr;
-
-            pszInput = OGRWktReadToken( pszNext, szToken );
-            if ( !EQUAL(szToken, ",") )
-                break;
-
-            continue;
-        }
 /* -------------------------------------------------------------------- */
 /*      Read points for one line from input.                            */
 /* -------------------------------------------------------------------- */
         pszInput = OGRWktReadPoints( pszInput, &paoPoints, &padfZ, &nMaxPoints,
                                      &nPoints );
 
-        if( pszInput == NULL || nPoints == 0 )
+        if( pszInput == NULL )
         {
             eErr = OGRERR_CORRUPT_DATA;
             break;
@@ -250,11 +196,7 @@ OGRErr OGRMultiLineString::importFromWkt( char ** ppszInput )
         OGRLineString   *poLine;
 
         poLine = new OGRLineString();
-        /* Ignore Z array when we have a MULTILINESTRING M */
-        if (bHasM && !bHasZ)
-            poLine->setPoints( nPoints, paoPoints, NULL );
-        else
-            poLine->setPoints( nPoints, paoPoints, padfZ );
+        poLine->setPoints( nPoints, paoPoints, padfZ );
 
         eErr = addGeometryDirectly( poLine ); 
 

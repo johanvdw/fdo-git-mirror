@@ -25,7 +25,7 @@
 
 int odbcdr_rdbi_init (odbcdr_context_def **context, rdbi_methods methods);
 
-int odbcdr_bind( odbcdr_context_def *context, char *cursor, char *name, int datatype, int size, char *address, SQLLEN *null_ind, int typeBind);
+int odbcdr_bind( odbcdr_context_def *context, char *cursor, char *name, int datatype, int size, char *address, SQLLEN *null_ind );
 int odbcdr_close_cursor( odbcdr_context_def *context, char *cursor );
 
 int odbcdr_col_act( odbcdr_context_def *context, const char *owner, const char *object_name, const char *dbaselink );
@@ -95,7 +95,6 @@ int odbcdr_get_curr_conn( odbcdr_context_def *context, odbcdr_connData_def **con
 
 void odbcdr_get_msg( odbcdr_context_def *context, char *buffer );
 void odbcdr_get_msgW( odbcdr_context_def *context, wchar_t *buffer );
-long odbcdr_get_server_rc( odbcdr_context_def *context);
 
 void odbcdr_get_o_t_s( odbcdr_context_def *context, int datatype, int size, int *odbcdr_datatype, int *odbcdr_size );
 
@@ -132,13 +131,8 @@ wchar_t *odbcdr_vndr_nameW( odbcdr_context_def *context );
 
 int odbcdr_vndr_info( odbcdr_context_def *context, rdbi_vndr_info_def *vndr_info);
 
-#ifdef _WIN32
-int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, _int64  *id );
-int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, _int64  *id );
-#else
-int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, int64_t  *id );
-int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, int64_t  *id );
-#endif
+int odbcdr_get_gen_id( odbcdr_context_def  *context, const char *table_name, int  *id );
+int odbcdr_get_gen_idW( odbcdr_context_def  *context, const wchar_t *table_name, int  *id );
 
 int odbcdr_alcnullind( odbcdr_context_def *context, int n, char  **null_ind );
 
@@ -149,8 +143,6 @@ void odbcdr_set_nnull( odbcdr_context_def *context, SQLLEN *null_ind, int start,
 int odbcdr_is_null( odbcdr_context_def  *context, SQLLEN *null_ind, int offset );
 
 int odbcdr_xlt_status( odbcdr_context_def *context, SQLRETURN odbcdr_status, SQLSMALLINT handle_type, SQLHANDLE handle);
-
-long odbcdr_server_error( odbcdr_context_def *context);
 
 int odbcdr_set_schema( odbcdr_context_def *context, const char *schema_name);
 int odbcdr_set_schemaW( odbcdr_context_def *context, const wchar_t *schema_name);
@@ -165,12 +157,6 @@ int odbcdr_geom_defineColumn( odbcdr_context_def *context, odbcdr_cursor_def *cu
 
 int odbcdr_geom_setNumRows( odbcdr_context_def *context, odbcdr_cursor_def *cursor, int num_rows );
 
-int odbcdr_blob_defineColumn( odbcdr_context_def *context, odbcdr_cursor_def *cursor, int position, char *address );
-
-int odbcdr_blob_setNumRows( odbcdr_context_def *context, odbcdr_cursor_def *cursor, int num_rows );
-
-int odbcdr_blob_convertBlobsToByteArray( odbcdr_context_def *context, odbcdr_cursor_def *cursor, int num_rows );
-
 int odbcdr_geom_getSqlServerBuffAddr( odbcdr_context_def *context, odbcdr_geom_col_list_def *columnList_I, int position_I, odbcdr_geom_def ***buffer_O, odbcdr_geomNI_def ***ni_O );
 
 int odbcdr_geom_convertBoundToSqlServer(odbcdr_context_def *context,  odbcdr_cursor_def *cursor, int num_rows );
@@ -181,21 +167,13 @@ int odbcdr_geom_freeSqlServerGeometries( odbcdr_context_def *context, odbcdr_cur
 
 int odbcdr_geom_freeAllColumns( odbcdr_context_def *context, odbcdr_cursor_def *cursor );
 
-int odbcdr_blob_freeAllColumns( odbcdr_context_def *context, odbcdr_cursor_def *cursor );
-
 int odbcdr_geom_srid_set ( odbcdr_context_def *context, char *cursor, char* col_name, long srid );
-
-int odbcdr_geom_version_set ( odbcdr_context_def *context, char *cursor, char* col_name, long version );
 
 int odbcdr_autocommit_on( odbcdr_context_def *context );
 
 int odbcdr_autocommit_off( odbcdr_context_def *context );
 
 int odbcdr_autocommit_mode( odbcdr_context_def *context );
-
-int odbcdr_tran_sp(odbcdr_context_def * context, int action, const char* sp_name);
-
-int odbcdr_tran_spW(odbcdr_context_def * context, int action, const wchar_t* sp_name);
 
 #ifdef _WIN32
     #define odbcdr_swprintf swprintf_s

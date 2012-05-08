@@ -16,7 +16,6 @@
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
 
-
 class SltConnection;
 
 
@@ -28,7 +27,6 @@ public:
           m_needsRollback(true)
     {
         FDO_SAFE_ADDREF(m_conn);
-        m_savepoints = FdoStringCollection::Create();
     }
 protected:
     virtual ~SltTransaction()
@@ -47,14 +45,11 @@ protected:
     // FdoITransaction declaration
     //-------------------------------------------------------
     virtual FdoIConnection* GetConnection()     { return FDO_SAFE_ADDREF(m_conn); }
-    virtual void Commit()                       { m_needsRollback = false; m_conn->CommitTransaction(true); m_savepoints->Clear();}
-    virtual void Rollback()                     { m_needsRollback = false; m_conn->RollbackTransaction(true); m_savepoints->Clear();}
-    virtual FdoString* AddSavePoint(FdoString* suggestName);
-    virtual void ReleaseSavePoint(FdoString* savePointName);
-    virtual void Rollback(FdoString* savePointName);
+    virtual void Commit()                       { m_needsRollback = false; m_conn->CommitTransaction(true); }
+    virtual void Rollback()                     { m_needsRollback = false; m_conn->RollbackTransaction(true); }
+
+
 private:
     SltConnection*  m_conn;
-	FdoStringsP		m_savepoints;
     bool            m_needsRollback;
 };
-

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringresdatasource.cpp 19516 2010-04-24 16:03:45Z warmerdam $
+ * $Id: ogringresdatasource.cpp 18518 2010-01-11 03:25:51Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresDataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogringresdatasource.cpp 19516 2010-04-24 16:03:45Z warmerdam $");
+CPL_CVSID("$Id: ogringresdatasource.cpp 18518 2010-01-11 03:25:51Z warmerdam $");
 /************************************************************************/
 /*                         OGRIngresDataSource()                        */
 /************************************************************************/
@@ -131,7 +131,6 @@ int OGRIngresDataSource::Open( const char *pszFullName,
     IIAPI_CONNPARM	connParm;
     IIAPI_WAITPARM	waitParm = { -1 };
     
-    memset( &connParm, 0, sizeof(connParm) );
     connParm.co_genParm.gp_callback = NULL;
     connParm.co_genParm.gp_closure = NULL;
     connParm.co_target = (II_CHAR *) pszDBName;
@@ -370,17 +369,12 @@ OGRErr OGRIngresDataSource::InitializeMetadataTables()
 
 OGRSpatialReference *OGRIngresDataSource::FetchSRS( int nId )
 {
+#ifdef notdef
     char         szCommand[1024];
-    char           **papszRow;
-    OGRIngresStatement oStatement(GetConn());
+    char           **papszRow;  
+    INGRES_RES       *hResult;
             
     if( nId < 0 )
-        return NULL;
-
-    /*
-     * Only the new Ingres Geospatial library
-     */
-    if(IsNewIngres() == FALSE)
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -395,28 +389,38 @@ OGRSpatialReference *OGRIngresDataSource::FetchSRS( int nId )
     }
 
     OGRSpatialReference *poSRS = NULL;
-
+ 
+    // make sure to attempt to free any old results
+    hResult = ingres_store_result( GetConn() );
+    if( hResult != NULL )
+        ingres_free_result( hResult );
+    hResult = NULL;   
+                        
     sprintf( szCommand,
          "SELECT srtext FROM spatial_ref_sys WHERE srid = %d",
          nId );
-
-    oStatement.ExecuteSQL(szCommand);
+    
+    if( !ingres_query( GetConn(), szCommand ) )
+        hResult = ingres_store_result( GetConn() );
         
-    char    *pszWKT = NULL;
+    char  *pszWKT = NULL;
     papszRow = NULL;
     
 
-    papszRow = oStatement.GetRow();
+    if( hResult != NULL )
+        papszRow = ingres_fetch_row( hResult );
 
-    if( papszRow != NULL)
+    if( papszRow != NULL && papszRow[0] != NULL )
     {
-        if(papszRow[0] != NULL )
-        {
-            //VARCHAR uses the first two bytes for length
-            pszWKT = &papszRow[0][2];
-        }
+        pszWKT =papszRow[0];
     }
 
+    // make sure to attempt to free results of successful queries
+    hResult = ingres_store_result( GetConn() );
+    if( hResult != NULL )
+        ingres_free_result( hResult );
+	hResult = NULL;
+		
      poSRS = new OGRSpatialReference();
      if( pszWKT == NULL || poSRS->importFromWkt( &pszWKT ) != OGRERR_NONE )
      {
@@ -434,6 +438,8 @@ OGRSpatialReference *OGRIngresDataSource::FetchSRS( int nId )
     papoSRS[nKnownSRID] = poSRS;
 
     return poSRS;
+#endif
+    return NULL;
 }
 
 
@@ -448,30 +454,24 @@ OGRSpatialReference *OGRIngresDataSource::FetchSRS( int nId )
 int OGRIngresDataSource::FetchSRSId( OGRSpatialReference * poSRS )
 
 {
-    char            **papszRow;
-    char            szCommand[10000];
-    char            *pszWKT = NULL;
-    char            *pszProj4 = NULL;
-    const char      *pszAuthName;
-    const char      *pszAuthID;
-    int             nSRSId;
+#ifdef notdef
+    char           **papszRow;  
+    INGRES_RES       *hResult=NULL;
+    
+    char                szCommand[10000];
+    char                *pszWKT = NULL;
+    int                 nSRSId;
 
     if( poSRS == NULL )
         return -1;
 
-    /* -------------------------------------------------------------------- */
-    /*      Translate SRS to WKT.                                           */
-    /* -------------------------------------------------------------------- */
+/* -------------------------------------------------------------------- */
+/*      Translate SRS to WKT.                                           */
+/* -------------------------------------------------------------------- */
     if( poSRS->exportToWkt( &pszWKT ) != OGRERR_NONE )
         return -1;
-
-    /* -------------------------------------------------------------------- */
-    /*      Translate SRS to Proj4.                                         */
-    /* -------------------------------------------------------------------- */
-    if( poSRS->exportToProj4( &pszProj4 ) != OGRERR_NONE )
-        return -1;
-
-    CPLAssert( strlen(pszProj4) + strlen(pszWKT) < sizeof(szCommand) - 500 );
+    
+    CPLAssert( strlen(pszWKT) < sizeof(szCommand) - 500 );
 
 /* -------------------------------------------------------------------- */
 /*      Try to find in the existing table.                              */
@@ -480,90 +480,74 @@ int OGRIngresDataSource::FetchSRSId( OGRSpatialReference * poSRS )
              "SELECT srid FROM spatial_ref_sys WHERE srtext = '%s'",
              pszWKT );
 
-    {
-        OGRIngresStatement  oStateSRID(GetConn());
-        oStateSRID.ExecuteSQL(szCommand);
+    if( !ingres_query( GetConn(), szCommand ) )
+        hResult = ingres_store_result( GetConn() );
 
-        papszRow = oStateSRID.GetRow();
-        if (papszRow == NULL)
-        {
-            CPLDebug("INGRES", "No rows exist currently exist in spatial_ref_sys");
-        }
-        else if( papszRow != NULL && papszRow[0] != NULL )
-        {
-            nSRSId = *((II_INT4 *)papszRow[0]);
-            return nSRSId;
-        }
+    if (!ingres_num_rows(hResult))
+    {
+        CPLDebug("INGRES", "No rows exist currently exist in spatial_ref_sys");
+        ingres_free_result( hResult );
+        hResult = NULL;
     }
+    papszRow = NULL;
+    if( hResult != NULL )
+        papszRow = ingres_fetch_row( hResult );
+        
+    if( papszRow != NULL && papszRow[0] != NULL )
+    {
+        nSRSId = atoi(papszRow[0]);
+        if( hResult != NULL )
+            ingres_free_result( hResult );
+        hResult = NULL;
+        return nSRSId;
+    }
+
+    // make sure to attempt to free results of successful queries
+    hResult = ingres_store_result( GetConn() );
+    if( hResult != NULL )
+        ingres_free_result( hResult );
+    hResult = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Get the current maximum srid in the srs table.                  */
 /* -------------------------------------------------------------------- */
     sprintf( szCommand, 
              "SELECT MAX(srid) FROM spatial_ref_sys");    
-
+    if( !ingres_query( GetConn(), szCommand ) )
     {
-        OGRIngresStatement  oStateMaxSRID(GetConn());
-        oStateMaxSRID.ExecuteSQL(szCommand);
-        papszRow = oStateMaxSRID.GetRow();
-
-        if( papszRow != NULL && papszRow[0] != NULL )
-        {
-            nSRSId = *((II_INT4 *)papszRow[0]) + 1;
-        }
-        else
-            nSRSId = 1;
-
+        hResult = ingres_store_result( GetConn() );
+        papszRow = ingres_fetch_row( hResult );
     }
+        
+    if( papszRow != NULL && papszRow[0] != NULL )
+    {
+        nSRSId = atoi(papszRow[0]) + 1;
+        if( hResult != NULL )
+            ingres_free_result( hResult );
+        hResult = NULL;
+    }
+    else
+        nSRSId = 1;
     
-    pszAuthName = poSRS->GetAuthorityName(NULL);
-    pszAuthID = poSRS->GetAuthorityCode(NULL);
-
-    if(pszAuthName == NULL || strlen(pszAuthName) == 0)
-    {
-        poSRS->AutoIdentifyEPSG();
-        pszAuthName = poSRS->GetAuthorityName(NULL);
-        if (pszAuthName != NULL && EQUAL(pszAuthName, "EPSG"))
-        {
-            const char* pszAuthorityCode = poSRS->GetAuthorityCode(NULL);
-            if ( pszAuthorityCode != NULL && strlen(pszAuthorityCode) > 0 )
-            {
-                /* Import 'clean' SRS */
-                poSRS->importFromEPSG( atoi(pszAuthorityCode) );
-
-                pszAuthName = poSRS->GetAuthorityName(NULL);
-                pszAuthID = poSRS->GetAuthorityCode(NULL);
-            }
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Try adding the SRS to the SRS table.                            */
 /* -------------------------------------------------------------------- */
-    if(pszAuthName != NULL)
-    {
-        sprintf( szCommand,
-                 "INSERT INTO spatial_ref_sys (srid,auth_name,auth_srid,"
-                 "srtext,proj4text) VALUES (%d,'%s',%s,'%s','%s')",
-                 nSRSId, pszAuthName, pszAuthID, pszWKT, pszProj4 );
-    }
-    else
-    {
-        sprintf( szCommand,
-                 "INSERT INTO spatial_ref_sys (srid,auth_name,auth_srid,"
-                 "srtext,proj4text) VALUES (%d,NULL,NULL,'%s','%s')",
-                 nSRSId, pszWKT, pszProj4 );
-    }
+    sprintf( szCommand, 
+             "INSERT INTO spatial_ref_sys (srid,srtext) VALUES (%d,'%s')",
+             nSRSId, pszWKT );
 
-    {
-        OGRIngresStatement  oStateNewSRID(GetConn());
-        if(!oStateNewSRID.ExecuteSQL(szCommand))
-        {
-            CPLDebug("INGRES", "Failed to create new spatial reference system");
-        }
-    }
+    if( !ingres_query( GetConn(), szCommand ) )
+        hResult = ingres_store_result( GetConn() );
 
+    // make sure to attempt to free results of successful queries
+    hResult = ingres_store_result( GetConn() );
+    if( hResult != NULL )
+        ingres_free_result( hResult );
+    hResult = NULL;
+           
     return nSRSId;
+#endif
+    return -1;
 }
 
 /************************************************************************/
@@ -777,7 +761,7 @@ OGRIngresDataSource::CreateLayer( const char * pszLayerNameIn,
     {
     	if( IsNewIngres() )
     	{
-            pszGeometryType = "LINESTRING";
+    		pszGeometryType = "LINESTRING";
     	}
     	else
     	{
@@ -789,53 +773,13 @@ OGRIngresDataSource::CreateLayer( const char * pszLayerNameIn,
     {
     	if( IsNewIngres() )
     	{
-            pszGeometryType = "POLYGON";
+    		pszGeometryType = "POLYGON";
     	}
     	else
     	{
             pszGeometryType = "LONG POLYGON";
     	}
     }
-
-    else if( wkbFlatten(eType) == wkbMultiPolygon )
-    {
-    	if( IsNewIngres() )
-            pszGeometryType = "MULTIPOLYGON";
-    }
-
-    else if( wkbFlatten(eType) == wkbMultiLineString )
-    {
-    	if( IsNewIngres() )
-            pszGeometryType = "MULTILINESTRING";
-    }
-
-    else if( wkbFlatten(eType) == wkbMultiPoint )
-    {
-    	if( IsNewIngres() )
-            pszGeometryType = "MULTIPOINT";
-    }
-
-    else if( wkbFlatten(eType) == wkbGeometryCollection )
-    {
-    	if( IsNewIngres() )
-            pszGeometryType = "GEOMETRYCOLLECTION";
-    }
-
-    else if( wkbFlatten(eType) == wkbUnknown )
-    {
-    	if( IsNewIngres() )
-            // this is also used as the generic geometry type.
-            pszGeometryType = "GEOMETRYCOLLECTION";
-    }
-
-    /* -------------------------------------------------------------------- */
-    /*      Try to get the SRS Id of this spatial reference system,         */
-    /*      adding tot the srs table if needed.                             */
-    /* -------------------------------------------------------------------- */
-    int nSRSId = -1;
-    
-    if( poSRS != NULL && IsNewIngres() == TRUE )
-        nSRSId = FetchSRSId( poSRS );
 
 /* -------------------------------------------------------------------- */
 /*      Form table creation command.                                    */
@@ -860,27 +804,13 @@ OGRIngresDataSource::CreateLayer( const char * pszLayerNameIn,
             CPLErrorReset();
         }
 
-        if(nSRSId != -1)
-        {
-            osCommand.Printf( "CREATE TABLE %s ("
-                              " %s INTEGER NOT NULL PRIMARY KEY WITH DEFAULT NEXT VALUE FOR ogr_auto_increment_seq,"
-                              " %s %s SRID %d )",
-                              pszLayerName,
-                              pszExpectedFIDName,
-                              pszGeomColumnName,
-                              pszGeometryType,
-                              nSRSId);
-        }
-        else
-        {
-            osCommand.Printf( "CREATE TABLE %s ("
-                              " %s INTEGER NOT NULL PRIMARY KEY WITH DEFAULT NEXT VALUE FOR ogr_auto_increment_seq,"
-                              " %s %s )",
-                              pszLayerName,
-                              pszExpectedFIDName,
-                              pszGeomColumnName,
-                              pszGeometryType);
-        }
+        osCommand.Printf( "CREATE TABLE %s ("
+                          " %s INTEGER NOT NULL PRIMARY KEY WITH DEFAULT NEXT VALUE FOR ogr_auto_increment_seq,"
+                          " %s %s )",
+                          pszLayerName, 
+                          pszExpectedFIDName, 
+                          pszGeomColumnName, 
+                          pszGeometryType );
     }
 
 /* -------------------------------------------------------------------- */
@@ -893,6 +823,131 @@ OGRIngresDataSource::CreateLayer( const char * pszLayerNameIn,
             return NULL;
     }
 
+    // Calling this does no harm
+    //InitializeMetadataTables();
+    
+/* -------------------------------------------------------------------- */
+/*      Try to get the SRS Id of this spatial reference system,         */
+/*      adding tot the srs table if needed.                             */
+/* -------------------------------------------------------------------- */
+    int nSRSId = -1;
+
+    if( poSRS != NULL )
+        nSRSId = FetchSRSId( poSRS );
+
+/* -------------------------------------------------------------------- */
+/*      Sometimes there is an old crufty entry in the geometry_columns  */
+/*      table if things were not properly cleaned up before.  We make   */
+/*      an effort to clean out such cruft.                              */
+/* -------------------------------------------------------------------- */
+#ifdef notdef
+    sprintf( szCommand,
+             "DELETE FROM geometry_columns WHERE f_table_name = '%s'",
+             pszLayerName );
+
+    if( ingres_query(GetConn(), szCommand ) )
+    {
+        ReportError( szCommand );
+        return NULL;
+    }
+
+    // make sure to attempt to free results of successful queries
+    hResult = ingres_store_result( GetConn() );
+    if( hResult != NULL )
+        ingres_free_result( hResult );
+    hResult = NULL;   
+#endif
+        
+/* -------------------------------------------------------------------- */
+/*      Attempt to add this table to the geometry_columns table, if     */
+/*      it is a spatial layer.                                          */
+/* -------------------------------------------------------------------- */
+#ifdef notdef
+    if( eType != wkbNone )
+    {
+        int nCoordDimension;
+        if( eType == wkbFlatten(eType) )
+            nCoordDimension = 2;
+        else
+            nCoordDimension = 3;
+
+        switch( wkbFlatten(eType) )
+        {
+            case wkbPoint:
+                pszGeometryType = "POINT";
+                break;
+
+            case wkbLineString:
+                pszGeometryType = "LINESTRING";
+                break;
+
+            case wkbPolygon:
+                pszGeometryType = "POLYGON";
+                break;
+
+            case wkbMultiPoint:
+                pszGeometryType = "MULTIPOINT";
+                break;
+
+            case wkbMultiLineString:
+                pszGeometryType = "MULTILINESTRING";
+                break;
+
+            case wkbMultiPolygon:
+                pszGeometryType = "MULTIPOLYGON";
+                break;
+
+            case wkbGeometryCollection:
+                pszGeometryType = "GEOMETRYCOLLECTION";
+                break;
+
+            default:
+                pszGeometryType = "GEOMETRY";
+                break;
+
+        }
+
+        if( nSRSId == -1 )
+            sprintf( szCommand,
+                     "INSERT INTO geometry_columns "
+                     " (F_TABLE_NAME, "
+                     "  F_GEOMETRY_COLUMN, "
+                     "  COORD_DIMENSION, "
+                     "  TYPE) values "
+                     "  ('%s', '%s', %d, '%s')",
+                     pszLayerName,
+                     pszGeomColumnName,
+                     nCoordDimension,
+                     pszGeometryType );
+        else
+            sprintf( szCommand,
+                     "INSERT INTO geometry_columns "
+                     " (F_TABLE_NAME, "
+                     "  F_GEOMETRY_COLUMN, "
+                     "  COORD_DIMENSION, "
+                     "  SRID, "
+                     "  TYPE) values "
+                     "  ('%s', '%s', %d, %d, '%s')",
+                     pszLayerName,
+                     pszGeomColumnName,
+                     nCoordDimension,
+                     nSRSId,
+                     pszGeometryType );
+
+        if( ingres_query(GetConn(), szCommand ) )
+        {
+            ReportError( szCommand );
+            return NULL;
+        }
+
+        // make sure to attempt to free results of successful queries
+        hResult = ingres_store_result( GetConn() );
+        if( hResult != NULL )
+            ingres_free_result( hResult );
+        hResult = NULL;   
+    }
+#endif
+        
 /* -------------------------------------------------------------------- */
 /*      Create the layer object.                                        */
 /* -------------------------------------------------------------------- */

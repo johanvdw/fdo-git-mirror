@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $
+ * $Id: ceosdataset.cpp 18570 2010-01-17 13:13:07Z rouault $
  *
  * Project:  CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -30,7 +30,7 @@
 #include "ceosopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: ceosdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $");
+CPL_CVSID("$Id: ceosdataset.cpp 18570 2010-01-17 13:13:07Z rouault $");
 
 CPL_C_START
 void	GDALRegister_CEOS(void);
@@ -246,10 +246,10 @@ void GDALRegister_CEOS()
                                    "CEOS Image" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#CEOS" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
         
         poDriver->pfnOpen = CEOSDataset::Open;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }
 }
+

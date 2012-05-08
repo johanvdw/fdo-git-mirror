@@ -104,15 +104,11 @@ void odbcdr_get_o_t_s(
             *odbcdr_size = ODBCDR_DATE_SIZE + 1; 
             break;
         case RDBI_GEOMETRY:
-        case RDBI_BLOB_ULEN:
-        case RDBI_STRING_ULEN:
-        case RDBI_WSTRING_ULEN:
             *odbcdr_datatype = SQL_C_BINARY; 
-            *odbcdr_size    = sizeof(void*);
+            *odbcdr_size    = sizeof(long);
             break;
 		case RDBI_LONGLONG:
-			*odbcdr_datatype = SQL_C_SBIGINT;
-			*odbcdr_size    = sizeof(double); // __int64
+			*odbcdr_datatype = SQL_BIGINT;
 			break;
 		default:
 			*odbcdr_datatype = SQL_C_CHAR;

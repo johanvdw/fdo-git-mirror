@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocidatasource.cpp 22299 2011-05-04 21:23:02Z warmerdam $
+ * $Id: ogrocidatasource.cpp 15008 2008-07-23 19:27:15Z mloskot $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocidatasource.cpp 22299 2011-05-04 21:23:02Z warmerdam $");
+CPL_CVSID("$Id: ogrocidatasource.cpp 15008 2008-07-23 19:27:15Z mloskot $");
 
 static int anEPSGOracleMapping[] = 
 {
@@ -166,19 +166,7 @@ int OGROCIDataSource::Open( const char * pszNewName, int bUpdate,
     CPLDebug( "OCI", "Userid=%s, Password=%s, Database=%s", 
               pszUserid, pszPassword, pszDatabase );
 
-    if( EQUAL(pszDatabase, "") &&
-        EQUAL(pszPassword, "") &&
-        EQUAL(pszUserid, "") )
-    {
-        /* Use username/password OS Authentication and ORACLE_SID database */
-
-        poSession = OGRGetOCISession( "/", "", "" );
-    }
-    else
-    {
-        poSession = OGRGetOCISession( pszUserid, pszPassword, pszDatabase );
-    }
-
+    poSession = OGRGetOCISession( pszUserid, pszPassword, pszDatabase );
     if( poSession == NULL )
         return FALSE;
 
@@ -294,10 +282,11 @@ void OGROCIDataSource::ValidateLayer( const char *pszLayerName )
 /* -------------------------------------------------------------------- */
     OGROCITableLayer *poLayer = (OGROCITableLayer *) papoLayers[iLayer];
 
-    if( strlen(poLayer->GetFIDColumn()) == 0 )
+    if( strlen(poLayer->GetFIDColumn()) == 0 
+        || strlen(poLayer->GetGeometryColumn()) == 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
-                  "ValidateLayer(): %s lacks a fid column.", 
+                  "ValidateLayer(): %s lacks a geometry or fid column.", 
                   pszLayerName );
 
         return;
@@ -306,97 +295,48 @@ void OGROCIDataSource::ValidateLayer( const char *pszLayerName )
 /* -------------------------------------------------------------------- */
 /*      Prepare and execute the geometry validation.                    */
 /* -------------------------------------------------------------------- */
+    OGROCIStringBuf oValidateCmd;
+    OGROCIStatement oValidateStmt( GetSession() );
 
-    if( !strlen(poLayer->GetGeometryColumn()) == 0 )
-    {
-        OGROCIStringBuf oValidateCmd;
-        OGROCIStatement oValidateStmt( GetSession() );
+    oValidateCmd.Append( "SELECT c." );
+    oValidateCmd.Append( poLayer->GetFIDColumn() );
+    oValidateCmd.Append( ", SDO_GEOM.VALIDATE_GEOMETRY(c." );
+    oValidateCmd.Append( poLayer->GetGeometryColumn() );
+    oValidateCmd.Append( ", m.diminfo) from " );
+    oValidateCmd.Append( poLayer->GetLayerDefn()->GetName() );
+    oValidateCmd.Append( " c, user_sdo_geom_metadata m WHERE m.table_name= '");
+    oValidateCmd.Append( poLayer->GetLayerDefn()->GetName() );
+    oValidateCmd.Append( "' AND m.column_name = '" );
+    oValidateCmd.Append( poLayer->GetGeometryColumn() );
+    oValidateCmd.Append( "' AND SDO_GEOM.VALIDATE_GEOMETRY(c." );
+    oValidateCmd.Append( poLayer->GetGeometryColumn() );
+    oValidateCmd.Append( ", m.diminfo ) <> 'TRUE'" );
 
-        oValidateCmd.Append( "SELECT c." );
-        oValidateCmd.Append( poLayer->GetFIDColumn() );
-        oValidateCmd.Append( ", SDO_GEOM.VALIDATE_GEOMETRY(c." );
-        oValidateCmd.Append( poLayer->GetGeometryColumn() );
-        oValidateCmd.Append( ", m.diminfo) from " );
-        oValidateCmd.Append( poLayer->GetLayerDefn()->GetName() );
-        oValidateCmd.Append( " c, user_sdo_geom_metadata m WHERE m.table_name= '");
-        oValidateCmd.Append( poLayer->GetLayerDefn()->GetName() );
-        oValidateCmd.Append( "' AND m.column_name = '" );
-        oValidateCmd.Append( poLayer->GetGeometryColumn() );
-        oValidateCmd.Append( "' AND SDO_GEOM.VALIDATE_GEOMETRY(c." );
-        oValidateCmd.Append( poLayer->GetGeometryColumn() );
-        oValidateCmd.Append( ", m.diminfo ) <> 'TRUE'" );
-
-        oValidateStmt.Execute( oValidateCmd.GetString() );
+    oValidateStmt.Execute( oValidateCmd.GetString() );
 
 /* -------------------------------------------------------------------- */
 /*      Report results to debug stream.                                 */
 /* -------------------------------------------------------------------- */
-        char **papszRow;
+    char **papszRow;
 
-        while( (papszRow = oValidateStmt.SimpleFetchRow()) != NULL )
-        {
-            const char *pszReason = papszRow[1];
+    while( (papszRow = oValidateStmt.SimpleFetchRow()) != NULL )
+    {
+        const char *pszReason = papszRow[1];
 
-            if( EQUAL(pszReason,"13011") )
-                pszReason = "13011: value is out of range";
-            else if( EQUAL(pszReason,"13050") )
-                pszReason = "13050: unable to construct spatial object";
-            else if( EQUAL(pszReason,"13349") )
-                pszReason = "13349: polygon boundary crosses itself";
+        if( EQUAL(pszReason,"13011") )
+            pszReason = "13011: value is out of range";
+        else if( EQUAL(pszReason,"13050") )
+            pszReason = "13050: unable to construct spatial object";
+        else if( EQUAL(pszReason,"13349") )
+            pszReason = "13349: polygon boundary crosses itself";
 
-            CPLDebug( "OCI", "Validation failure for FID=%s: %s",
+        CPLDebug( "OCI", "Validation failure for FID=%s: %s", 
                   papszRow[0], pszReason );
-        }
     }
 }
 
 /************************************************************************/
-/*                           DeleteLayer(int)                           */
-/************************************************************************/
-
-OGRErr OGROCIDataSource::DeleteLayer( int iLayer )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Blow away our OGR structures related to the layer.  This is     */
-/*      pretty dangerous if anything has a reference to this layer!     */
-/* -------------------------------------------------------------------- */
-    CPLString osLayerName = 
-        papoLayers[iLayer]->GetLayerDefn()->GetName();
-
-    CPLDebug( "OCI", "DeleteLayer(%s)", osLayerName.c_str() );
-
-    delete papoLayers[iLayer];
-    memmove( papoLayers + iLayer, papoLayers + iLayer + 1, 
-             sizeof(void *) * (nLayers - iLayer - 1) );
-    nLayers--;
-
-/* -------------------------------------------------------------------- */
-/*      Remove from the database.                                       */
-/* -------------------------------------------------------------------- */
-    OGROCIStatement oCommand( poSession );
-    CPLString       osCommand;
-    int             nFailures = 0;
-
-    osCommand.Printf( "DROP TABLE \"%s\"", osLayerName.c_str() );
-    if( oCommand.Execute( osCommand ) != CE_None )
-        nFailures++;
-
-    osCommand.Printf( 
-        "DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = UPPER('%s')",
-        osLayerName.c_str() );
-
-    if( oCommand.Execute( osCommand ) != CE_None )
-        nFailures++;
-
-    if( nFailures == 0 )
-        return OGRERR_NONE;
-    else
-        return OGRERR_FAILURE;
-}
-
-/************************************************************************/
-/*                      DeleteLayer(const char *)                       */
+/*                            DeleteLayer()                             */
 /************************************************************************/
 
 void OGROCIDataSource::DeleteLayer( const char *pszLayerName )
@@ -423,30 +363,32 @@ void OGROCIDataSource::DeleteLayer( const char *pszLayerName )
         return;
     }
 
-    DeleteLayer( iLayer );
-}
+/* -------------------------------------------------------------------- */
+/*      Blow away our OGR structures related to the layer.  This is     */
+/*      pretty dangerous if anything has a reference to this layer!     */
+/* -------------------------------------------------------------------- */
+    CPLDebug( "OCI", "DeleteLayer(%s)", pszLayerName );
 
-/************************************************************************/
-/*                           TruncateLayer()                            */
-/************************************************************************/
-
-void OGROCIDataSource::TruncateLayer( const char *pszLayerName )
-
-{
+    delete papoLayers[iLayer];
+    memmove( papoLayers + iLayer, papoLayers + iLayer + 1, 
+             sizeof(void *) * (nLayers - iLayer - 1) );
+    nLayers--;
 
 /* -------------------------------------------------------------------- */
-/*      Set OGR Debug statement explaining what is happening            */
-/* -------------------------------------------------------------------- */
-    CPLDebug( "OCI", "Truncate TABLE %s", pszLayerName );
-    
-/* -------------------------------------------------------------------- */
-/*      Truncate the layer in the database.                             */
+/*      Remove from the database.                                       */
 /* -------------------------------------------------------------------- */
     OGROCIStatement oCommand( poSession );
-    CPLString       osCommand;
+    char            szCommand[1024];
 
-    osCommand.Printf( "TRUNCATE TABLE \"%s\"", pszLayerName );
-    oCommand.Execute( osCommand );
+    sprintf( szCommand, "DROP TABLE \"%s\"", pszLayerName );
+    oCommand.Execute( szCommand );
+
+    sprintf( szCommand, 
+             "DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '%s'", 
+             pszLayerName );
+    oCommand.Execute( szCommand );
+
+    CPLFree( (char *) pszLayerName );
 }
 
 /************************************************************************/
@@ -464,45 +406,35 @@ OGROCIDataSource::CreateLayer( const char * pszLayerName,
     char               *pszSafeLayerName = CPLStrdup(pszLayerName);
 
     poSession->CleanName( pszSafeLayerName );
-    CPLDebug( "OCI", "In Create Layer ..." );
-              
 
 /* -------------------------------------------------------------------- */
 /*      Do we already have this layer?  If so, should we blow it        */
 /*      away?                                                           */
 /* -------------------------------------------------------------------- */
     int iLayer;
-    
-    if( CSLFetchBoolean( papszOptions, "TRUNCATE", FALSE ) )
+
+    for( iLayer = 0; iLayer < nLayers; iLayer++ )
     {
-        CPLDebug( "OCI", "Calling TruncateLayer for %s", pszLayerName );
-        TruncateLayer( pszSafeLayerName );
-    }
-    else
-    {  
-        for( iLayer = 0; iLayer < nLayers; iLayer++ )
+        if( EQUAL(pszSafeLayerName,
+                  papoLayers[iLayer]->GetLayerDefn()->GetName()) )
         {
-            if( EQUAL(pszSafeLayerName,
-                      papoLayers[iLayer]->GetLayerDefn()->GetName()) )
+            if( CSLFetchNameValue( papszOptions, "OVERWRITE" ) != NULL
+                && !EQUAL(CSLFetchNameValue(papszOptions,"OVERWRITE"),"NO") )
             {
-                if( CSLFetchNameValue( papszOptions, "OVERWRITE" ) != NULL
-                    && !EQUAL(CSLFetchNameValue(papszOptions,"OVERWRITE"),"NO") )
-                {
-                    DeleteLayer( pszSafeLayerName );
-                }
-                else
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined, 
-                              "Layer %s already exists, CreateLayer failed.\n"
-                              "Use the layer creation option OVERWRITE=YES to "
-                              "replace it.",
-                              pszSafeLayerName );
-                    CPLFree( pszSafeLayerName );
-                    return NULL;
-                }              
+                DeleteLayer( pszSafeLayerName );
+            }
+            else
+            {
+                CPLError( CE_Failure, CPLE_AppDefined, 
+                          "Layer %s already exists, CreateLayer failed.\n"
+                          "Use the layer creation option OVERWRITE=YES to "
+                          "replace it.",
+                          pszSafeLayerName );
+                CPLFree( pszSafeLayerName );
+                return NULL;
             }
         }
-    } 
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Try to get the SRS Id of this spatial reference system,         */
@@ -533,35 +465,17 @@ OGROCIDataSource::CreateLayer( const char * pszLayerName,
         CPLGetConfigOption( "OCI_FID", "OGR_FID" );    
    
     OGROCIStatement oStatement( poSession );
+    sprintf( szCommand, 
+             "CREATE TABLE \"%s\" ( "
+             "%s INTEGER, "
+             "%s %s )",
+             pszSafeLayerName, pszExpectedFIDName, pszGeometryName, SDO_GEOMETRY );
 
-/* -------------------------------------------------------------------- */
-/*      If geometry type is wkbNone, do not create a geoemtry column    */
-/* -------------------------------------------------------------------- */
-
-    if ( CSLFetchNameValue( papszOptions, "TRUNCATE" ) == NULL  )
+    if( oStatement.Execute( szCommand ) != CE_None )
     {
-        if (eType == wkbNone)
-        {
-            sprintf( szCommand,
-                     "CREATE TABLE \"%s\" ( "
-                     "%s INTEGER)",
-                     pszSafeLayerName, pszExpectedFIDName);
-        }
-        else
-        {
-            sprintf( szCommand,
-                     "CREATE TABLE \"%s\" ( "
-                     "%s INTEGER, "
-                     "%s %s )",
-                     pszSafeLayerName, pszExpectedFIDName, pszGeometryName, SDO_GEOMETRY );
-        }
-
-        if( oStatement.Execute( szCommand ) != CE_None )
-        {
-            CPLFree( pszSafeLayerName );
-            return NULL;
-        }
-    }  
+        CPLFree( pszSafeLayerName );
+        return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create the layer object.                                        */
@@ -612,8 +526,6 @@ int OGROCIDataSource::TestCapability( const char * pszCap )
 
 {
     if( EQUAL(pszCap,ODsCCreateLayer) && bDSUpdate )
-        return TRUE;
-    else if( EQUAL(pszCap,ODsCDeleteLayer) && bDSUpdate )
         return TRUE;
     else
         return FALSE;

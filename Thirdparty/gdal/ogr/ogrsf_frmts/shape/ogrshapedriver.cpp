@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshapedriver.cpp 19457 2010-04-19 18:53:53Z rouault $
+ * $Id: ogrshapedriver.cpp 15755 2008-11-17 23:13:50Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRShapeDriver class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrshapedriver.cpp 19457 2010-04-19 18:53:53Z rouault $");
+CPL_CVSID("$Id: ogrshapedriver.cpp 15755 2008-11-17 23:13:50Z rouault $");
 
 /************************************************************************/
 /*                          ~OGRShapeDriver()                           */
@@ -153,12 +153,12 @@ OGRErr OGRShapeDriver::DeleteDataSource( const char *pszDataSource )
 
 {
     int iExt;
-    VSIStatBufL sStatBuf;
+    VSIStatBuf sStatBuf;
     static const char *apszExtensions[] = 
         { "shp", "shx", "dbf", "sbn", "sbx", "prj", "idm", "ind", 
           "qix", NULL };
 
-    if( VSIStatL( pszDataSource, &sStatBuf ) != 0 )
+    if( VSIStat( pszDataSource, &sStatBuf ) != 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "%s does not appear to be a file or directory.",
@@ -176,7 +176,7 @@ OGRErr OGRShapeDriver::DeleteDataSource( const char *pszDataSource )
         {
             const char *pszFile = CPLResetExtension(pszDataSource,
                                                     apszExtensions[iExt] );
-            if( VSIStatL( pszFile, &sStatBuf ) == 0 )
+            if( VSIStat( pszFile, &sStatBuf ) == 0 )
                 VSIUnlink( pszFile );
         }
     }

@@ -35,9 +35,6 @@ typedef enum ArcSDEFilterTypeEnum
 class ArcSDEFilterToSql :
     public FdoIExpressionProcessor, public FdoIFilterProcessor
 {
-private:
-    ArcSDEGeometryBuffer mGeom; // Geometry buffer
-
 protected:
     wchar_t *mSql;
     std::vector<SE_FILTER> mSpatialFilters;

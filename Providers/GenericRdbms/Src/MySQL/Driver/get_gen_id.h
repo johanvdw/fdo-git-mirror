@@ -28,11 +28,7 @@
 int mysql_get_gen_id(
     mysql_context_def  *context,
 	char *table_name,
-#ifdef _WIN32
-	_int64  *id
-#else
-	int64_t  *id
-#endif
+	int  *id
 	);
 
 #endif // GEN_GET_ID_H

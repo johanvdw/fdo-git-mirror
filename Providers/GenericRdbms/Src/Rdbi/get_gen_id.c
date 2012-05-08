@@ -46,16 +46,11 @@
 #include <Inc/debugext.h>
 #include <Inc/Rdbi/proto.h>
 
-#ifdef _WIN32
-    typedef _int64  rdbiLong;
-#else
-    typedef int64_t	rdbiLong;
-#endif
 
 int rdbi_get_gen_id(
     rdbi_context_def  *context,
 	const char *table_name,
-	rdbiLong  *id
+	int  *id
 	)
 {
 	int rdbi_status = RDBI_GENERIC_ERROR;
@@ -71,7 +66,7 @@ int rdbi_get_gen_id(
 int rdbi_get_gen_idW(
     rdbi_context_def  *context,
 	const wchar_t *table_name,
-	rdbiLong  *id
+	int  *id
 	)
 {
 	int rdbi_status = RDBI_GENERIC_ERROR;

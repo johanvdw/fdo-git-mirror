@@ -40,7 +40,10 @@ public:
     /// \return
     /// Returns FdoProviderNameTokens
     /// 
-	FDO_API_COMMON static FdoVectorElement* Create( double value );
+	FDO_API_COMMON static FdoVectorElement* Create( double value )
+	{
+	    return new FdoVectorElement(value);
+	}
 
     /// \brief
     /// Gets the element value.
@@ -48,7 +51,10 @@ public:
     /// \return
     /// Returns the value that this element represents.
     /// 
-	FDO_API_COMMON double  GetValue();
+	FDO_API_COMMON double  GetValue()
+	{
+	    return mValue;
+	}
 
     /// \brief
     /// Sets the element value.
@@ -56,7 +62,10 @@ public:
     /// \param value 
     /// Input the value to assign the element
     /// 
-    FDO_API_COMMON void SetValue( double value );
+    FDO_API_COMMON void SetValue( double value ) 
+    {
+        mValue = value;
+    }
 
     /// \brief
     /// Gets the element value in string format.
@@ -67,9 +76,17 @@ public:
     FDO_API_COMMON FdoStringP GetString();
 
 protected:
-    FdoVectorElement();
-    FdoVectorElement( double value );
-    virtual ~FdoVectorElement(void);
+/// \cond DOXYGEN-IGNORE
+    FdoVectorElement() {}
+    FdoVectorElement( double value )
+    {
+	    mValue = value;
+    }
+
+    virtual ~FdoVectorElement(void)
+    {
+    }
+/// \endcond
 
 private:
     double mValue;

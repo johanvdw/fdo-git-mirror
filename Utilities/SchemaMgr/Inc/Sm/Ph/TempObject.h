@@ -40,8 +40,6 @@ public:
 
 	~FdoSmPhTempObject(void);
 
-    virtual FdoSmPhDbObjType GetType() { return FdoSmPhDbObjType_Temp; };
-
 protected:
     //Unused constructor needed only to build on Linux
     FdoSmPhTempObject() {}

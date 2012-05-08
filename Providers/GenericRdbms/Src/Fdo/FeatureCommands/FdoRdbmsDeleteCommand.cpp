@@ -162,11 +162,6 @@ FdoRdbmsDeleteCommand::FdoRdbmsDeleteCommand (FdoIConnection *connection):
     mLockConflictReader = NULL;
 }
 
-FdoRdbmsDeleteCommand* FdoRdbmsDeleteCommand::Create(FdoIConnection *connection)
-{
-    return new FdoRdbmsDeleteCommand(connection);
-}
-
 FdoRdbmsDeleteCommand::~FdoRdbmsDeleteCommand()
 {
     FDO_SAFE_RELEASE(mLockConflictReader);
@@ -177,7 +172,7 @@ FdoInt32 FdoRdbmsDeleteCommand::Execute ()
 #define     DELETE_BATCH_SIZE       200   // Number of object to delete at a time when using complex filters
     FdoIdentifier*      className;
 
-    if (!mConnection || !mFdoConnection || mFdoConnection->GetConnectionState() != FdoConnectionState_Open)
+    if( NULL == mConnection )
         throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_13, "Connection not established"));
 
     className = this->GetClassNameRef();
@@ -348,8 +343,6 @@ FdoInt32 FdoRdbmsDeleteCommand::InternalExecute ()
         FdoIdentifierCollection* sqlFilterProps = (FdoIdentifierCollection*) NULL;
         FdoRdbmsFilterUtilConstrainDef  filterConstrain;
         filterConstrain.selectedProperties = sqlFilterProps;
-        FdoPtr<FdoParameterValueCollection> paramsCol = GetParameterValues();
-        flterProcessor->SetParameterValues(paramsCol);
         const wchar_t *tmpSelect = flterProcessor->FilterToSql( this->GetFilterRef(), className->GetText(), sqlFilterProps ? SqlCommandType_Select : SqlCommandType_Update, FdoCommandType_Delete, &filterConstrain );
         sqlFilter = new wchar_t[wcslen(tmpSelect)+1];
         wcscpy( sqlFilter, tmpSelect);
@@ -405,7 +398,7 @@ FdoInt32 FdoRdbmsDeleteCommand::InternalExecute ()
         DELETE_CLEANUP;
         if (throw_exception)
         {
-            FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+            FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
             ex->Release();
             throw exp;
         }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalgrid.cpp 22889 2011-08-07 13:07:14Z rouault $
+ * $Id: gdalgrid.cpp 18041 2009-11-17 14:14:43Z dron $
  *
  * Project:  GDAL Gridding API.
  * Purpose:  Implementation of GDAL scattered data gridder.
@@ -28,22 +28,11 @@
  ****************************************************************************/
 
 #include "cpl_vsi.h"
-#include "cpl_string.h"
 #include "gdalgrid.h"
-#include <float.h>
-#include <limits.h>
 
-CPL_CVSID("$Id: gdalgrid.cpp 22889 2011-08-07 13:07:14Z rouault $");
+CPL_CVSID("$Id: gdalgrid.cpp 18041 2009-11-17 14:14:43Z dron $");
 
 #define TO_RADIANS (3.14159265358979323846 / 180.0)
-
-#ifndef DBL_MAX
-# ifdef __DBL_MAX__
-#  define DBL_MAX __DBL_MAX__
-# else
-#  define DBL_MAX 1.7976931348623157E+308
-# endif /* __DBL_MAX__ */
-#endif /* DBL_MAX */
 
 /************************************************************************/
 /*                   GDALGridInverseDistanceToAPower()                  */
@@ -156,8 +145,6 @@ GDALGridInverseDistanceToAPower( const void *poOptions, GUInt32 nPoints,
         // Is this point located inside the search ellipse?
         if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
-            // If the test point is close to the grid node, use the point
-            // value directly as a node value to avoid singularity.
             if ( CPLIsEqual(dfR2, 0.0) )
             {
                 (*pdfValue) = padfZ[i];
@@ -223,8 +210,6 @@ GDALGridInverseDistanceToAPowerNoSearch( const void *poOptions, GUInt32 nPoints,
         const double dfR2 =
             dfRX * dfRX + dfRY * dfRY + dfSmoothing * dfSmoothing;
 
-        // If the test point is close to the grid node, use the point
-        // value directly as a node value to avoid singularity.
         if ( CPLIsEqual(dfR2, 0.0) )
         {
             (*pdfValue) = padfZ[i];
@@ -417,9 +402,9 @@ GDALGridNearestNeighbor( const void *poOptions, GUInt32 nPoints,
     // If the nearest point will not be found, its value remains as NODATA.
     double      dfNearestValue =
         ((GDALGridNearestNeighborOptions *)poOptions)->dfNoDataValue;
-    // Nearest distance will be initialized with the distance to the first
-    // point in array.
-    double      dfNearestR = DBL_MAX;
+    // Nearest distance will be initialized with a largest ellipse semi-axis.
+    // All nearest points should be located in this range.
+    double      dfNearestR = MAX(dfRadius1, dfRadius2);
     GUInt32 i = 0;
 
     while ( i < nPoints )
@@ -440,7 +425,7 @@ GDALGridNearestNeighbor( const void *poOptions, GUInt32 nPoints,
         if ( dfRadius2 * dfRX * dfRX + dfRadius1 * dfRY * dfRY <= dfR12 )
         {
             const double    dfR2 = dfRX * dfRX + dfRY * dfRY;
-            if ( dfR2 <= dfNearestR )
+            if ( dfNearestR == 0.0 || dfR2 < dfNearestR )
             {
                 dfNearestR = dfR2;
                 dfNearestValue = padfZ[i];
@@ -1140,7 +1125,7 @@ GDALGridDataMetricAverageDistancePts( const void *poOptions, GUInt32 nPoints,
 /**
  * Create regular grid from the scattered data.
  *
- * This function takes the arrays of X and Y coordinates and corresponding Z
+ * This fucntion takes the arrays of X and Y coordinates and corresponding Z
  * values as input and computes regular grid (or call it a raster) from these
  * scattered data. You should supply geometry and extent of the output grid
  * and allocate array sufficient to hold such a grid.
@@ -1290,182 +1275,6 @@ GDALGridCreate( GDALGridAlgorithm eAlgorithm, const void *poOptions,
 
     VSIFree( padfValues );
 
-    return CE_None;
-}
-
-/************************************************************************/
-/*                      ParseAlgorithmAndOptions()                      */
-/*                                                                      */
-/*      Translates mnemonic gridding algorithm names into               */
-/*      GDALGridAlgorithm code, parse control parameters and assign     */
-/*      defaults.                                                       */
-/************************************************************************/
-
-CPLErr ParseAlgorithmAndOptions( const char *pszAlgoritm,
-                                 GDALGridAlgorithm *peAlgorithm,
-                                 void **ppOptions )
-{
-    CPLAssert( pszAlgoritm );
-    CPLAssert( peAlgorithm );
-    CPLAssert( ppOptions );
-
-    *ppOptions = NULL;
-
-    char **papszParms = CSLTokenizeString2( pszAlgoritm, ":", FALSE );
-
-    if ( CSLCount(papszParms) < 1 )
-        return CE_Failure;
-
-    if ( EQUAL(papszParms[0], szAlgNameInvDist) )
-        *peAlgorithm = GGA_InverseDistanceToAPower;
-    else if ( EQUAL(papszParms[0], szAlgNameAverage) )
-        *peAlgorithm = GGA_MovingAverage;
-    else if ( EQUAL(papszParms[0], szAlgNameNearest) )
-        *peAlgorithm = GGA_NearestNeighbor;
-    else if ( EQUAL(papszParms[0], szAlgNameMinimum) )
-        *peAlgorithm = GGA_MetricMinimum;
-    else if ( EQUAL(papszParms[0], szAlgNameMaximum) )
-        *peAlgorithm = GGA_MetricMaximum;
-    else if ( EQUAL(papszParms[0], szAlgNameRange) )
-        *peAlgorithm = GGA_MetricRange;
-    else if ( EQUAL(papszParms[0], szAlgNameCount) )
-        *peAlgorithm = GGA_MetricCount;
-    else if ( EQUAL(papszParms[0], szAlgNameAverageDistance) )
-        *peAlgorithm = GGA_MetricAverageDistance;
-    else if ( EQUAL(papszParms[0], szAlgNameAverageDistancePts) )
-        *peAlgorithm = GGA_MetricAverageDistancePts;
-    else
-    {
-        fprintf( stderr, "Unsupported gridding method \"%s\".\n",
-                 papszParms[0] );
-        CSLDestroy( papszParms );
-        return CE_Failure;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Parse algorithm parameters and assign defaults.                 */
-/* -------------------------------------------------------------------- */
-    const char  *pszValue;
-
-    switch ( *peAlgorithm )
-    {
-        case GGA_InverseDistanceToAPower:
-        default:
-            *ppOptions =
-                CPLMalloc( sizeof(GDALGridInverseDistanceToAPowerOptions) );
-
-            pszValue = CSLFetchNameValue( papszParms, "power" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfPower = (pszValue) ? CPLAtofM(pszValue) : 2.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "smoothing" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfSmoothing = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "angle" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "max_points" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                nMaxPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
-
-            pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                nMinPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
-
-            pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            ((GDALGridInverseDistanceToAPowerOptions *)*ppOptions)->
-                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-            break;
-
-        case GGA_MovingAverage:
-            *ppOptions =
-                CPLMalloc( sizeof(GDALGridMovingAverageOptions) );
-
-            pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            ((GDALGridMovingAverageOptions *)*ppOptions)->
-                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            ((GDALGridMovingAverageOptions *)*ppOptions)->
-                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "angle" );
-            ((GDALGridMovingAverageOptions *)*ppOptions)->
-                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            ((GDALGridMovingAverageOptions *)*ppOptions)->
-                nMinPoints = (GUInt32) ((pszValue) ? CPLAtofM(pszValue) : 0);
-
-            pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            ((GDALGridMovingAverageOptions *)*ppOptions)->
-                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-            break;
-
-        case GGA_NearestNeighbor:
-            *ppOptions =
-                CPLMalloc( sizeof(GDALGridNearestNeighborOptions) );
-
-            pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            ((GDALGridNearestNeighborOptions *)*ppOptions)->
-                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            ((GDALGridNearestNeighborOptions *)*ppOptions)->
-                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "angle" );
-            ((GDALGridNearestNeighborOptions *)*ppOptions)->
-                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            ((GDALGridNearestNeighborOptions *)*ppOptions)->
-                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-            break;
-
-        case GGA_MetricMinimum:
-        case GGA_MetricMaximum:
-        case GGA_MetricRange:
-        case GGA_MetricCount:
-        case GGA_MetricAverageDistance:
-        case GGA_MetricAverageDistancePts:
-            *ppOptions =
-                CPLMalloc( sizeof(GDALGridDataMetricsOptions) );
-
-            pszValue = CSLFetchNameValue( papszParms, "radius1" );
-            ((GDALGridDataMetricsOptions *)*ppOptions)->
-                dfRadius1 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "radius2" );
-            ((GDALGridDataMetricsOptions *)*ppOptions)->
-                dfRadius2 = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "angle" );
-            ((GDALGridDataMetricsOptions *)*ppOptions)->
-                dfAngle = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-
-            pszValue = CSLFetchNameValue( papszParms, "min_points" );
-            ((GDALGridDataMetricsOptions *)*ppOptions)->
-                nMinPoints = (pszValue) ? atol(pszValue) : 0;
-
-            pszValue = CSLFetchNameValue( papszParms, "nodata" );
-            ((GDALGridDataMetricsOptions *)*ppOptions)->
-                dfNoDataValue = (pszValue) ? CPLAtofM(pszValue) : 0.0;
-            break;
-
-   }
-
-    CSLDestroy( papszParms );
     return CE_None;
 }
 

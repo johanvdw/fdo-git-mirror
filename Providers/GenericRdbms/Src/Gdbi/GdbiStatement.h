@@ -40,43 +40,41 @@ private:
 public:
 
      ~GdbiStatement(void);
-     int GetQueryId();
-
-     GdbiCommands* GetGdbiCommands() { return m_pGdbiCommands; }
-
     //
     // Bind overrides
-    int Bind( int parmIndex, int size, const char* szValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1);
+    int Bind( int parmIndex, int size, const char* szValue, GDBI_NI_TYPE *nullInd = NULL);
 
-    int Bind( int parmIndex, int size, const wchar_t* szValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, int size, const wchar_t* szValue, GDBI_NI_TYPE *nullInd = NULL );
 
-	int Bind( int parmIndex, short *sValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+	int Bind( int parmIndex, short *sValue, GDBI_NI_TYPE *nullInd = NULL );
 
-    int Bind( int parmIndex, int *nValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, int *nValue, GDBI_NI_TYPE *nullInd = NULL );
 
-    int Bind( int parmIndex, double *dValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, double *dValue, GDBI_NI_TYPE *nullInd = NULL );
 
-    int Bind( int parmIndex, float *fValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, float *fValue, GDBI_NI_TYPE *nullInd = NULL );
 
-    int Bind( int parmIndex, FdoInt64 *i64Value, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, FdoInt64 *i64Value, GDBI_NI_TYPE *nullInd = NULL );
 
-    int Bind( int parmIndex, FdoIGeometry* gValue, GDBI_NI_TYPE *nullInd = NULL, int typeBind = 1 );
+    int Bind( int parmIndex, FdoIGeometry* gValue, GDBI_NI_TYPE *nullInd = NULL );
+
+    int Bind( int parmIndex, FdoDateTime *dValue, GDBI_NI_TYPE *nullInd = NULL );
 
     int Bind(
         int parmIndex,       /* column/expression position               */
         int   datatype,     /* A data type from Inc/rdbi.h              */
         int   size,         /* binary size                              */
         char *address,      /* data address                             */
-        GDBI_NI_TYPE  *null_ind,   /* pointer to null indicator variables      */
-        int typeBind = 1);
+        GDBI_NI_TYPE  *null_ind   /* pointer to null indicator variables      */
+            );
 
     int Bind(
         const char* parmName,       /* bind variable name               */
         int   datatype,     /* A data type from Inc/rdbi.h              */
         int   size,         /* binary size                              */
         char *address,      /* data address                             */
-        GDBI_NI_TYPE  *null_ind,   /* pointer to null indicator variables      */
-        int typeBind = 1);
+        GDBI_NI_TYPE  *null_ind   /* pointer to null indicator variables      */
+            );
 
     int BindNull( int parmIndex );
     // End bind functions
@@ -95,10 +93,6 @@ public:
 	int geom_srid_set(
 			int				parmIndex,
 			long			srid );
-
-	int geom_version_set(
-			int				parmIndex,
-			long			version );
 
     char * GetGeomInfoFromFgf( long srid, FdoByteArray * fgf );
 

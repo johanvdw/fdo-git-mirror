@@ -67,8 +67,6 @@ char    *tran_id )
 {
 
     tran_entry_def  *tran_entry;
-    tran_entry_def  *tran_entry_previous;
-    sp_entry_def    *sp_entry;
     int              status;
     int              first = FALSE;
     int              second = FALSE;
@@ -117,16 +115,6 @@ char    *tran_id )
         if(tran_entry == NULL)
             tran_entry = Gtran_head;
     }
-    else
-    {
-         for( ; tran_entry != NULL; tran_entry=tran_entry->next)
-         {
-             if (_strnicmp("auto-exec-select", tran_entry->tran_id, 16) != 0 && !tran_entry->tran_ended)
-             {
-                break;
-             }
-         }
-    }
     if (strncmp(tran_id, tran_entry->tran_id,
                                         sizeof(tran_entry->tran_id)) != 0) {
 		char	transmsg[128];
@@ -161,29 +149,6 @@ char    *tran_id )
         Gtran_head = Gtran_head->next;
         (void)ut_vm_free("rdbi_tran_end", tran_entry);
     }
-    /* 
-     *  Skip all auto-exec-select transactions and 
-     *  free up all non auto-select transactions
-     */
-    tran_entry_previous = Gtran_head;
-    tran_entry = Gtran_head;
-    while(tran_entry)
-    {
-        if(_strnicmp("auto-exec-select", tran_entry->tran_id, 16) == 0)
-        {    
-            tran_entry_previous = tran_entry;
-            tran_entry = tran_entry->next;
-        }
-        else if(tran_entry->tran_ended)
-        {
-            tran_entry_previous->next = tran_entry->next;
-            (void)ut_vm_free("rdbi_tran_end", tran_entry);
-            tran_entry = tran_entry_previous->next;
-        }
-        else
-            break;
-    }
-
 
     status = TRUE;
     if (Gtran_head == NULL) {                   /* last one ==> commit  */
@@ -191,27 +156,12 @@ char    *tran_id )
             context->rdbi_last_status == RDBI_END_OF_FETCH)
             status = (rdbi_commit(context) == 0);
 
-        /* Free save point stack */
-        for(sp_entry = context->rdbi_cnct->sp_head; sp_entry != NULL; sp_entry = context->rdbi_cnct->sp_head)
-        {
-            context->rdbi_cnct->sp_head = sp_entry->next;
-            if(context->dispatch.capabilities.supports_unicode)
-            {
-                (void)ut_vm_free("rdbi_tran_end", sp_entry->wString);
-            }
-            else
-            {
-                (void)ut_vm_free("rdbi_tran_end", sp_entry->cString);
-            }
-            (void)ut_vm_free("rdbi_tran_end", sp_entry);
-        }
-
     } else {                                /* Track down problem areas */
         debug_area() {
         /* See if there are any explicit (ie. non-auto-) transactions   */
         for (tran_entry = Gtran_head; tran_entry != NULL;
                                             tran_entry = tran_entry->next) {
-			if (_strnicmp("auto-exec-", tran_entry->tran_id, 10 ) != 0)
+			if (_strnicmp("auto-exec-", tran_entry->tran_id, 9 ) != 0)
                 break;
         }
 
@@ -220,7 +170,7 @@ char    *tran_id )
          * insert,...) report when they are held off by any non-explicit
          * transaction
          */
-		if (_strnicmp("auto-exec-", tran_id, 10 ) == 0 &&
+		if (_strnicmp("auto-exec-", tran_id, 9 ) == 0 &&
             _strnicmp("auto-exec-select", tran_id, 16) != 0) {
 
             if (tran_entry == NULL) {

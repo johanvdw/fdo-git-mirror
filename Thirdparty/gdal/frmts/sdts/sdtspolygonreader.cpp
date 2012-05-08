@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtspolygonreader.cpp 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: sdtspolygonreader.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSPolygonReader and SDTSRawPolygon classes.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtspolygonreader.cpp 19952 2010-07-02 05:44:18Z warmerdam $");
+CPL_CVSID("$Id: sdtspolygonreader.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -577,12 +577,9 @@ SDTSRawPolygon * SDTSPolygonReader::GetNextPolygon()
  *
  * @param poTransfer the SDTSTransfer that this reader is a part of.  Used
  * to get a list of line layers that might be needed.
- * @param iPolyLayer the polygon reader instance number, used to avoid processing
- * lines for other layers.
  */
 
-void SDTSPolygonReader::AssembleRings( SDTSTransfer * poTransfer, 
-                                       int iPolyLayer )
+void SDTSPolygonReader::AssembleRings( SDTSTransfer * poTransfer )
 
 {
     if( bRingsAssembled )
@@ -610,7 +607,7 @@ void SDTSPolygonReader::AssembleRings( SDTSTransfer * poTransfer,
         if( poLineReader == NULL )
             continue;
 
-        poLineReader->AttachToPolygons( poTransfer, iPolyLayer );
+        poLineReader->AttachToPolygons( poTransfer );
         poLineReader->Rewind();
     }
 

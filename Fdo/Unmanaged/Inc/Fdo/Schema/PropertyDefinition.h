@@ -35,14 +35,13 @@ class FdoPropertyDefinition : public FdoSchemaElement
 /// \cond DOXYGEN-IGNORE
 protected:
     /// Constructs a default instance of a PropertyDefinition.
-    FDO_API FdoPropertyDefinition();
+    FdoPropertyDefinition();
 
     /// Constructs an instance of a PropertyDefinition using the specified
     /// arguments.
-    FDO_API FdoPropertyDefinition(FdoString* name, FdoString* description, bool system = false);
+    FdoPropertyDefinition(FdoString* name, FdoString* description, bool system = false);
 
-    /// Destruct this object
-    FDO_API virtual ~FdoPropertyDefinition();
+    virtual ~FdoPropertyDefinition();
 /// \endcond
 
 public:
@@ -82,17 +81,18 @@ public:
     FDO_API virtual void SetIsSystem( bool value );
 
 /// \cond DOXYGEN-IGNORE
+
     /// Public non-API functions for XML and Schema Merge support
 
     /// Update this property from the given property.
-    FDO_API virtual void Set( FdoPropertyDefinition* pProperty, FdoSchemaMergeContext* pContext );
+    virtual void Set( FdoPropertyDefinition* pProperty, FdoSchemaMergeContext* pContext );
 
     /// Initialize this property from its XML attributes
-    FDO_API virtual void InitFromXml(FdoString* propertyTypeName, FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
-    FDO_API virtual void InitFromXml(FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
+    virtual void InitFromXml(FdoString* propertyTypeName, FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
+    virtual void InitFromXml(FdoSchemaXmlContext* pContext, FdoXmlAttributeCollection* attrs);
 
     /// Serialize this property to XML.
-    FDO_API virtual void _writeXml( FdoSchemaXmlContext* pContext );
+    virtual void _writeXml( FdoSchemaXmlContext* pContext );
 
 protected:
     bool    m_system;

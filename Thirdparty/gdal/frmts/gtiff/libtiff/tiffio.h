@@ -1,4 +1,4 @@
-/* $Id: tiffio.h,v 1.88 2011-05-17 00:21:17 fwarmerdam Exp $ */
+/* $Id: tiffio.h,v 1.85 2009-11-30 12:22:26 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -530,7 +530,10 @@ typedef	struct {
 } TIFFFieldInfo;
 
 extern int TIFFMergeFieldInfo(TIFF*, const TIFFFieldInfo[], uint32);
-        
+extern const TIFFFieldInfo* TIFFFindFieldInfo(TIFF*, uint32, TIFFDataType);
+extern const TIFFFieldInfo* TIFFFindFieldInfoByName(TIFF* , const char *,
+						    TIFFDataType);
+
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
@@ -538,10 +541,3 @@ extern int TIFFMergeFieldInfo(TIFF*, const TIFFFieldInfo[], uint32);
 #endif /* _TIFFIO_ */
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

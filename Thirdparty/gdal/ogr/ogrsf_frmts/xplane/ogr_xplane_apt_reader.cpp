@@ -30,7 +30,7 @@
 #include "ogr_xplane_apt_reader.h"
 #include "ogr_xplane_geo_utils.h"
 
-CPL_CVSID("$Id: ogr_xplane_apt_reader.cpp 22627 2011-07-01 19:36:15Z rouault $");
+CPL_CVSID("$Id: ogr_xplane_apt_reader.cpp 18548 2010-01-14 22:01:35Z rouault $");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateAptFileReader                       */
@@ -147,7 +147,7 @@ OGRXPlaneReader* OGRXPlaneAptReader::CloneForLayer(OGRXPlaneLayer* poLayer)
     if (pszFilename)
     {
         poReader->pszFilename = CPLStrdup(pszFilename);
-        poReader->fp = VSIFOpenL( pszFilename, "rb" );
+        poReader->fp = VSIFOpen( pszFilename, "rt" );
     }
 
     return poReader;
@@ -191,14 +191,14 @@ int OGRXPlaneAptReader::IsRecognizedVersion( const char* pszVersionString)
 
 void OGRXPlaneAptReader::Read()
 {
-    const char* pszLine = NULL;
+    const char* pszLine;
 
     if (!bResumeLine)
     {
         CPLAssert(papszTokens == NULL);
     }
 
-    while(bResumeLine || (pszLine = CPLReadLineL(fp)) != NULL)
+    while(bResumeLine || (pszLine = CPLReadLine(fp)) != NULL)
     {
         int nType;
         if (!bResumeLine)
@@ -389,7 +389,7 @@ void    OGRXPlaneAptReader::ParseRunwayTaxiwayV810Record()
     double adfDisplacedThresholdLength[2];
     double adfStopwayLength[2];
     const char* pszRwyNum;
-    int /*aeVisualApproachLightingCode[2], */ aeRunwayLightingCode[2], aeApproachLightingCode[2];
+    int aeVisualApproachLightingCode[2], aeRunwayLightingCode[2], aeApproachLightingCode[2];
     int eSurfaceCode, eShoulderCode, eMarkings;
     double dfSmoothness;
     double adfVisualGlidePathAngle[2];
@@ -412,19 +412,12 @@ void    OGRXPlaneAptReader::ParseRunwayTaxiwayV810Record()
     dfWidth *= FEET_TO_METER;
     if (strlen(papszTokens[9]) == 6)
     {
-        /*aeVisualApproachLightingCode[0] = papszTokens[9][0] - '0'; */
+        aeVisualApproachLightingCode[0] = papszTokens[9][0] - '0';
         aeRunwayLightingCode[0] = papszTokens[9][1] - '0';
         aeApproachLightingCode[0] = papszTokens[9][2] - '0';
-        /* aeVisualApproachLightingCode[1] = papszTokens[9][3] - '0'; */
+        aeVisualApproachLightingCode[1] = papszTokens[9][3] - '0';
         aeRunwayLightingCode[1] = papszTokens[9][4] - '0';
         aeApproachLightingCode[1] = papszTokens[9][5] - '0';
-    }
-    else
-    {
-        aeRunwayLightingCode[0] = 0;
-        aeApproachLightingCode[0] = 0;
-        aeRunwayLightingCode[1] = 0;
-        aeApproachLightingCode[1] = 0;
     }
     eSurfaceCode = atoi(papszTokens[10]);
     eShoulderCode = atoi(papszTokens[11]);
@@ -436,13 +429,6 @@ void    OGRXPlaneAptReader::ParseRunwayTaxiwayV810Record()
         adfVisualGlidePathAngle[0] = atoi(papszTokens[15]) / 100.;
         if (strchr(papszTokens[15], '.') != NULL)
             adfVisualGlidePathAngle[1] = atoi(strchr(papszTokens[15], '.') + 1) / 100.;
-        else
-            adfVisualGlidePathAngle[1] = 0;
-    }
-    else
-    {
-        adfVisualGlidePathAngle[0] = 0;
-        adfVisualGlidePathAngle[1] = 0;
     }
 
     if (strcmp(pszRwyNum, "xxx") == 000)
@@ -925,30 +911,27 @@ is on the edge of the external ring, or other topological anomalies.
 
 OGRGeometry* OGRXPlaneAptReader::FixPolygonTopology(OGRPolygon& polygon)
 {
-    OGRPolygon* poPolygon = &polygon;
-    OGRPolygon* poPolygonTemp = NULL;
-    OGRLinearRing* poExternalRing = poPolygon->getExteriorRing();
+    OGRLinearRing* poExternalRing = polygon.getExteriorRing();
     if (poExternalRing->getNumPoints() < 4)
     {
         CPLDebug("XPLANE", "Discarded degenerated polygon at line %d", nLineNumber);
         return NULL;
     }
         
-    for(int i=0;i<poPolygon->getNumInteriorRings();i++)
+    for(int i=0;i<polygon.getNumInteriorRings();i++)
     {
-        OGRLinearRing* poInternalRing = poPolygon->getInteriorRing(i);
+        OGRLinearRing* poInternalRing = polygon.getInteriorRing(i);
         if (poInternalRing->getNumPoints() < 4)
         {
             CPLDebug("XPLANE", "Discarded degenerated interior ring (%d) at line %d", i, nLineNumber);
-            OGRPolygon* poPolygon2 = new OGRPolygon();
-            poPolygon2->addRing(poExternalRing);
-            for(int j=0;j<poPolygon->getNumInteriorRings();j++)
+            OGRPolygon polygon2;
+            polygon2.addRing(poExternalRing);
+            for(int j=0;j<polygon.getNumInteriorRings();j++)
             {
                 if (i != j)
-                    poPolygon2->addRing(poPolygon->getInteriorRing(j));
+                    polygon2.addRing(polygon.getInteriorRing(j));
             }
-            delete poPolygonTemp;
-            poPolygon = poPolygonTemp = poPolygon2;
+            polygon = * (OGRPolygon*) (polygon2.clone());
             i --;
             continue;
         }
@@ -992,24 +975,18 @@ OGRGeometry* OGRXPlaneAptReader::FixPolygonTopology(OGRPolygon& polygon)
                             "Didn't manage to fix polygon topology at line %d", nLineNumber);
 
                 /* Invalid topology. Will split into several pieces */
-                OGRGeometry* poRet = OGRXPlaneAptReaderSplitPolygon(*poPolygon);
-                delete poPolygonTemp;
-                return poRet;
+                return OGRXPlaneAptReaderSplitPolygon(polygon);
             }
         }
         else
         {
             /* Two parts. Or other strange cases */
-            OGRGeometry* poRet = OGRXPlaneAptReaderSplitPolygon(*poPolygon);
-            delete poPolygonTemp;
-            return poRet;
+            return OGRXPlaneAptReaderSplitPolygon(polygon);
         }
     }
 
     /* The geometry is right */
-    OGRGeometry* poRet = poPolygon->clone();
-    delete poPolygonTemp;
-    return poRet;
+    return polygon.clone();
 }
 
 /************************************************************************/
@@ -1026,7 +1003,7 @@ int OGRXPlaneAptReader::ParsePolygonalGeometry(OGRGeometry** ppoGeom)
     double dfLat, dfLon;
     double dfFirstLat = 0., dfFirstLon = 0.;
     double dfLastLat = 0., dfLastLon = 0.;
-    double dfLatBezier = 0., dfLonBezier = 0.;
+    double dfLatBezier, dfLonBezier;
     double dfFirstLatBezier = 0., dfFirstLonBezier = 0.;
     double dfLastLatBezier = 0., dfLastLonBezier = 0.;
     int bIsFirst = TRUE;
@@ -1041,7 +1018,7 @@ int OGRXPlaneAptReader::ParsePolygonalGeometry(OGRGeometry** ppoGeom)
 
     *ppoGeom = NULL;
 
-    while((pszLine = CPLReadLineL(fp)) != NULL)
+    while((pszLine = CPLReadLine(fp)) != NULL)
     {
         int nType = -1;
         papszTokens = CSLTokenizeString(pszLine);
@@ -1356,7 +1333,7 @@ int OGRXPlaneAptReader::ParseLinearGeometry(OGRMultiLineString& multilinestring,
     double dfLat, dfLon;
     double dfFirstLat = 0., dfFirstLon = 0.;
     double dfLastLat = 0., dfLastLon = 0.;
-    double dfLatBezier = 0., dfLonBezier = 0.;
+    double dfLatBezier, dfLonBezier;
     double dfFirstLatBezier = 0., dfFirstLonBezier = 0.;
     double dfLastLatBezier = 0., dfLastLonBezier = 0.;
     int bIsFirst = TRUE;
@@ -1368,7 +1345,7 @@ int OGRXPlaneAptReader::ParseLinearGeometry(OGRMultiLineString& multilinestring,
 
     OGRLineString lineString;
 
-    while((pszLine = CPLReadLineL(fp)) != NULL)
+    while((pszLine = CPLReadLine(fp)) != NULL)
     {
         int nType = -1;
         papszTokens = CSLTokenizeString(pszLine);

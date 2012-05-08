@@ -34,7 +34,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: levellerdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: levellerdataset.cpp 16444 2009-03-01 19:46:43Z rouault $");
 
 CPL_C_START
 void	GDALRegister_Leveller(void);
@@ -168,7 +168,7 @@ static const measurement_unit kUnits[] =
 	{ "%", 1.0, UNITLABEL_PERCENT }, // not actually used
 
 	{ "rad", 1.0, UNITLABEL_RADIAN },
-	{ "\xB0", kPI / 180.0, UNITLABEL_DEGREE }, // \xB0 is Unicode degree symbol 
+	{ "°", kPI / 180.0, UNITLABEL_DEGREE },
 	{ "d", kPI / 180.0, UNITLABEL_DEGREE },
 	{ "deg", kPI / 180.0, UNITLABEL_DEGREE },
 	{ "'", kPI / (60.0 * 180.0), UNITLABEL_ARCMINUTE },
@@ -262,18 +262,18 @@ class LevellerDataset : public GDALPamDataset
 	//double		m_dMeasurePerPixel;
 	double		m_dLogSpan[2];
 
-    VSILFILE*			m_fp;
+    FILE*			m_fp;
     vsi_l_offset	m_nDataOffset;
 
-    bool load_from_file(VSILFILE*, const char*);
+    bool load_from_file(FILE*, const char*);
 
 
-    bool locate_data(vsi_l_offset&, size_t&, VSILFILE*, const char*);
-    bool get(int&, VSILFILE*, const char*);
-    bool get(size_t& n, VSILFILE* fp, const char* psz)
+    bool locate_data(vsi_l_offset&, size_t&, FILE*, const char*);
+    bool get(int&, FILE*, const char*);
+    bool get(size_t& n, FILE* fp, const char* psz)
 		{ return this->get((int&)n, fp, psz); }
-    bool get(double&, VSILFILE*, const char*);
-    bool get(char*, size_t, VSILFILE*, const char*);
+    bool get(double&, FILE*, const char*);
+    bool get(char*, size_t, FILE*, const char*);
 
 	bool write_header();
 	bool write_tag(const char*, int);
@@ -322,7 +322,7 @@ class digital_axis
 	public:
 		digital_axis() : m_eStyle(LEV_DA_PIXEL_SIZED) {}
 
-		bool get(LevellerDataset& ds, VSILFILE* fp, int n)
+		bool get(LevellerDataset& ds, FILE* fp, int n)
 		{
 			char szTag[32];
 			sprintf(szTag, "coordsys_da%d_style", n);
@@ -488,8 +488,8 @@ CPLErr LevellerRasterBand::IWriteBlock
 		for(size_t x = 0; x < (size_t)nBlockXSize; x++)
 		{
 			// Convert logical elevations to physical.
-                    m_pLine[x] = (float) 
-				((pfImage[x] - ds.m_dElevBase) / ds.m_dElevScale);
+			m_pLine[x] = 
+				(pfImage[x] - ds.m_dElevBase) / ds.m_dElevScale;
 		}
 
 #ifdef CPL_MSB 
@@ -1030,7 +1030,7 @@ bool LevellerDataset::write_tag(const char* pszTag, const char* psz)
 }
 
 
-bool LevellerDataset::locate_data(vsi_l_offset& offset, size_t& len, VSILFILE* fp, const char* pszTag)
+bool LevellerDataset::locate_data(vsi_l_offset& offset, size_t& len, FILE* fp, const char* pszTag)
 {
     // Locate the file offset of the desired tag's data.
     // If it is not available, return false.
@@ -1074,13 +1074,14 @@ bool LevellerDataset::locate_data(vsi_l_offset& offset, size_t& len, VSILFILE* f
                 return false;
         }
     }
+    return false;
 }
 
 /************************************************************************/
 /*                                get()                                 */
 /************************************************************************/
 
-bool LevellerDataset::get(int& n, VSILFILE* fp, const char* psz)
+bool LevellerDataset::get(int& n, FILE* fp, const char* psz)
 {
     vsi_l_offset offset;
     size_t		 len;
@@ -1102,7 +1103,7 @@ bool LevellerDataset::get(int& n, VSILFILE* fp, const char* psz)
 /*                                get()                                 */
 /************************************************************************/
 
-bool LevellerDataset::get(double& d, VSILFILE* fp, const char* pszTag)
+bool LevellerDataset::get(double& d, FILE* fp, const char* pszTag)
 {
     vsi_l_offset offset;
     size_t		 len;
@@ -1122,7 +1123,7 @@ bool LevellerDataset::get(double& d, VSILFILE* fp, const char* pszTag)
 /************************************************************************/
 /*                                get()                                 */
 /************************************************************************/
-bool LevellerDataset::get(char* pszValue, size_t maxchars, VSILFILE* fp, const char* pszTag)
+bool LevellerDataset::get(char* pszValue, size_t maxchars, FILE* fp, const char* pszTag)
 {
     char szTag[65];
 
@@ -1275,7 +1276,7 @@ bool LevellerDataset::make_local_coordsys(const char* pszName, UNITLABEL code)
 /*                            load_from_file()                            */
 /************************************************************************/
 
-bool LevellerDataset::load_from_file(VSILFILE* file, const char* pszFilename)
+bool LevellerDataset::load_from_file(FILE* file, const char* pszFilename)
 {
     // get hf dimensions
     if(!this->get(nRasterXSize, file, "hf_w"))
@@ -1566,11 +1567,6 @@ GDALDataset *LevellerDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return( poDS );
 }

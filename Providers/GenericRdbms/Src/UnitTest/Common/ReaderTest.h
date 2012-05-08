@@ -64,7 +64,6 @@ protected:
     FdoPtr<FdoIConnection> m_connection;
 
     void Prepare();
-    int GetPropertyIndex (FdoClassDefinition* clsDef, FdoString* name);
     virtual void PrepareConnection();
     virtual void PrepareSchema();
     virtual void PrepareData();

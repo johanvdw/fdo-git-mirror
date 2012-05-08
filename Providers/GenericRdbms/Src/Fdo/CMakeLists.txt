@@ -50,11 +50,6 @@ set( FdoRdbms_FeatureCommands_STAT_SRCS
    FeatureCommands/FdoRdbmsFeatureReader.cpp
    FeatureCommands/FdoRdbmsUpdateCommand.cpp
    FeatureCommands/FdoRdbmsFeatureSubsetReader.cpp
-   FeatureCommands/FdoRdbmsSimpleUpdateCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleSelectCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleInsertCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleDeleteCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleFeatureReader.cpp
 )
 
 set( FdoRdbms_Filter_STAT_SRCS
@@ -89,7 +84,6 @@ set( FdoRdbms_Lt_STAT_SRCS
 
 set( FdoRdbms_Other_STAT_SRCS
    Other/FdoRdbmsBLOBStreamReader.cpp
-   Other/FdoRdbmsSimpleBLOBStreamReader.cpp
    Other/FdoRdbmsPrimaryKey.cpp
    Other/FdoRdbmsException.cpp
    Other/FdoRdbmsSQLCommand.cpp

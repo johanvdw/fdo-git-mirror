@@ -5,27 +5,21 @@
 These pages document the development version of the GDAL Perl API,
 which is extended from the released versions APIs.
 
-<a href="http://geoinformatics.tkk.fi/doc/Geo-GDAL-1.4/html/index.html">The
+<a href="http://map.hut.fi/doc/Geo-GDAL-1.4/html/index.html">The
 documentation for the version 1.4 API.</a>
 
-<a href="http://geoinformatics.tkk.fi/doc/Geo-GDAL-1.5/html/index.html">The
+<a href="http://map.hut.fi/doc/Geo-GDAL-1.5/html/index.html">The
 documentation for the version 1.5 API.</a>
 
-<a href="http://geoinformatics.tkk.fi/doc/Geo-GDAL-1.6/html/index.html">The
+<a href="http://map.hut.fi/doc/Geo-GDAL-1.6/html/index.html">The
 documentation for the version 1.6 API.</a>
-
-<a href="http://geoinformatics.tkk.fi/doc/Geo-GDAL-1.7/html/index.html">The
-documentation for the version 1.7 API.</a>
-
-<a href="http://geoinformatics.tkk.fi/doc/Geo-GDAL-1.8/html/index.html">The
-documentation for the version 1.8 API.</a>
 
 \section index_intro Introduction
 
 The Geo::GDAL modules are the Perl bindings to the GDAL/OGR
-library. The modules allow you to use Perl to access and manipulate
-all geospatial data that the installed GDAL library is configured to
-access and manipulate.
+library. The modules allow you to access and manipulate from Perl all
+geospatial data that the installed GDAL library is configured to
+read/write.
 
 This documentation covers mainly the syntax of the bindings. For more
 in-depth documentation see the main documentation of <a
@@ -77,38 +71,12 @@ $return = $object->method(); # method called in scalar context
 Many of the methods may throw an error, which can be caught by putting
 the call into eval{}; and then examining the contents of $@.
 
-\section class_methods_vs_object_methods Class methods vs object methods
-
-Some methods are class methods and some methods are object
-methods. Object methods are always invoked for objects, i.e.
-
-\code
-$object->method();
-\endcode
-
-while class methods are invoked either as methods
-
-\code
-Geo::GDAL::Class->method();
-\endcode
-
-or as subroutines
-
-\code
-Geo::GDAL::Class::subroutine();
-\endcode
-
-The disctinction between class methods and subroutines is subtle but
-often important. The method invocation passes the class name as the
-first argument while the subroutine invocation does not. Thus
-constructors (new and create) must be called as class methods.
-
 \section index_exceptions Exceptions
 
-Geo::GDAL uses the Perl exception mechanism. This means that
-exceptions that GDAL classifies as failures or fatal errors trigger a
-Perl exception, and an exception that is classified as a warning
-triggers a Perl warning.
+Geo::GDAL uses the Perl exception mechanism in such a way that
+exceptions that are classified in GDAL as failures or fatal errors
+trigger a Perl exception, and an exception that is classified as a
+warning triggers a Perl warning.
 
 Perl exceptions can be caught by \a eval() and Perl warnings can be
 caught by signal '__WARN__'. Examples:
@@ -142,7 +110,6 @@ Warning: Driver GTiff does not support a creation option at site/lib/Geo/GDAL.pm
 This documentation is generated from files within the GDAL
 distribution (directory swig/perl) with a tweaked version of <a
 href="http://www.bigsister.ch/doxygenfilter/">Perl Doxygen Filter</a>
-with Doxygen. The modified version is available <a
-href="https://geoinformatics.tkk.fi/svn/doxygenfilter/">here</a>.
+with Doxygen.
 
 */

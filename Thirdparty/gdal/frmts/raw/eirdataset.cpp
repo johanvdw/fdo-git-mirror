@@ -47,7 +47,7 @@ class EIRDataset : public RawDataset
 {
     friend class RawRasterBand;
 
-    VSILFILE  *fpImage; // image data file
+    FILE  *fpImage; // image data file
     int    bGotTransform;
     double adfGeoTransform[6];
     int    bHDRDirty;
@@ -249,7 +249,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
     int     i;
-    VSILFILE    *fp;
+    FILE    *fp;
     const char *    pszLine;
     
     
@@ -304,7 +304,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
     CPLString osRasterFilename = CPLFormCIFilename( osPath, osName, "" );
     
     // parse the header file
-    while( !bDone && (pszLine = CPLReadLineL( fp )) != NULL )
+    while( !bDone && (pszLine = CPLReadLineL( fp )) )
     {
         char    **papszTokens;
 
@@ -352,8 +352,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
             strncpy( szLayout, papszTokens[1], sizeof(szLayout) );
             szLayout[sizeof(szLayout)-1] = '\0';
         }
-        else if( EQUAL(papszTokens[0],"DATATYPE") 
-                 || EQUAL(papszTokens[0],"DATA_TYPE") )
+        else if( EQUAL(papszTokens[0],"DATATYPE") )
         {
             if ( EQUAL(papszTokens[1], "U1")
                  || EQUAL(papszTokens[1], "U2") 
@@ -399,7 +398,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         else if( EQUAL(papszTokens[0],"BYTE_ORDER") )
         {
             // M for MSB, L for LSB
-            chByteOrder = (char) toupper(papszTokens[1][0]);
+            chByteOrder = toupper(papszTokens[1][0]);
         }
         else if( EQUAL(papszTokens[0],"DATA_OFFSET") )
         {
@@ -574,7 +573,6 @@ void GDALRegister_EIR()
                                    "Erdas Imagine Raw" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#EIR" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = EIRDataset::Open;
         poDriver->pfnIdentify = EIRDataset::Identify;

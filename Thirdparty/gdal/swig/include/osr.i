@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr.i 22687 2011-07-10 21:59:49Z rouault $
+ * $Id: osr.i 18491 2010-01-09 09:34:44Z rouault $
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  OGRSpatialReference related declarations.
@@ -59,10 +59,6 @@
 %javaconst(0);
 #endif
 
-%inline %{
-typedef char retStringAndCPLFree;
-%}
-
 %{
 #include <iostream>
 using namespace std;
@@ -80,6 +76,9 @@ typedef struct OGRCoordinateTransformationHS OGRCoordinateTransformationShadow;
 typedef void OSRSpatialReferenceShadow;
 typedef void OSRCoordinateTransformationShadow;
 #endif
+
+typedef char retStringAndCPLFree;
+
 %}
 
 typedef int OGRErr;
@@ -149,7 +148,11 @@ OGRErr GetUserInputAsWKT( const char *name, char **argout ) {
 
 #if !defined(SWIGPYTHON)
 %rename (GetProjectionMethods) OPTGetProjectionMethods;
+#ifdef SWIGJAVA
+%apply (char **out_ppsz_and_free) {(char **)};
+#else
 %apply (char **CSL) {(char **)};
+#endif
 char **OPTGetProjectionMethods();
 %clear (char **);
 
@@ -157,8 +160,6 @@ char **OPTGetProjectionMethods();
 #ifdef SWIGJAVA
 %apply (char **retAsStringArrayAndFree) {(char **)};
 %apply (char **OUTPUT) { char **username };
-#elif defined(SWIGPERL)
-%apply (char **CSL_REF) {(char **)};
 #else
 %apply (char **CSL) {(char **)};
 #endif
@@ -204,7 +205,7 @@ public:
 /* FIXME : all bindings should avoid using the #else case */
 /* as the deallocator for the char* is delete[] where as */
 /* OSRExportToPrettyWkt uses CPL/VSIMalloc() */
-#if defined(SWIGCSHARP)||defined(SWIGPYTHON)||defined(SWIGJAVA)||defined(SWIGPERL)
+#if defined(SWIGPYTHON)||defined(SWIGJAVA)
   retStringAndCPLFree *__str__() {
     char *buf = 0;
     OSRExportToPrettyWkt( self, &buf, 0 );
@@ -227,10 +228,6 @@ public:
     return OSRIsSameGeogCS( self, rhs );
   }
 
-  int IsSameVertCS( OSRSpatialReferenceShadow *rhs ) {
-    return OSRIsSameVertCS( self, rhs );
-  }
-
   int IsGeographic() {
     return OSRIsGeographic(self);
   }
@@ -239,20 +236,8 @@ public:
     return OSRIsProjected(self);
   }
 
-  int IsCompound() {
-    return OSRIsCompound(self);
-  }
-
-  int IsGeocentric() {
-    return OSRIsGeocentric(self);
-  }
-
   int IsLocal() {
     return OSRIsLocal(self);
-  }
-
-  int IsVertical() {
-    return OSRIsVertical(self);
   }
 
   int EPSGTreatsAsLatLong() {
@@ -292,10 +277,6 @@ public:
   double GetAngularUnits() {
     // Return code ignored.
     return OSRGetAngularUnits( self, 0 );
-  }
-
-  OGRErr SetTargetLinearUnits( const char *target, const char*name, double to_meters ) {
-    return OSRSetTargetLinearUnits( self, target, name, to_meters );
   }
 
   OGRErr SetLinearUnits( const char*name, double to_meters ) {
@@ -338,16 +319,6 @@ public:
     return OSRSetUTM( self, zone, north );
   }
 
-  int GetUTMZone() {
-    // Note: we will return south zones as negative since it is 
-    // hard to return two values as the C API does. 
-    int bNorth = FALSE;
-    int nZone = OSRGetUTMZone( self, &bNorth );
-    if( !bNorth )
-        nZone = -1 * ABS(nZone);
-    return nZone;
-  }
-
   OGRErr SetStatePlane( int zone, int is_nad83 = 1, char const *unitsname = "", double units = 0.0 ) {
     return OSRSetStatePlaneWithUnits( self, zone, is_nad83, unitsname, units );
   }
@@ -376,21 +347,6 @@ public:
   double GetNormProjParm( const char *name, double default_val = 0.0 ) {
     // Return code ignored.
     return OSRGetNormProjParm( self, name, default_val, 0 );
-  }
-
-  double GetSemiMajor( ) {
-    // Return code ignored.
-    return OSRGetSemiMajor( self, 0 );
-  }
-
-  double GetSemiMinor( ) {
-    // Return code ignored.
-    return OSRGetSemiMinor( self, 0 );
-  }
-
-  double GetInvFlattening( ) {
-    // Return code ignored.
-    return OSRGetInvFlattening( self, 0 );
   }
 
 %feature( "kwargs" ) SetACEA;
@@ -478,10 +434,6 @@ public:
   OGRErr SetGH( double cm,
               double fe, double fn ) {
     return OSRSetGH( self, cm, fe, fn );
-  }
-
-  OGRErr SetIGH() {
-    return OSRSetIGH( self );
   }
     
 %feature( "kwargs" ) SetGEOS;
@@ -731,24 +683,6 @@ public:
     return OSRSetProjCS( self, name );
   }
 
-  OGRErr SetGeocCS( const char *name = "unnamed" ) {
-    return OSRSetGeocCS( self, name );
-  }
-
-  OGRErr SetVertCS( const char *VertCSName = "unnamed",
-                    const char *VertDatumName = "unnamed",
-                    int VertDatumType = 0) {
-    return OSRSetVertCS( self, VertCSName, VertDatumName, VertDatumType );
-  }  
-
-%apply Pointer NONNULL {OSRSpatialReferenceShadow* horizcs};
-%apply Pointer NONNULL {OSRSpatialReferenceShadow* vertcs};  
-  OGRErr SetCompoundCS( const char *name,
-                        OSRSpatialReferenceShadow *horizcs,
-                        OSRSpatialReferenceShadow *vertcs ) {
-    return OSRSetCompoundCS( self, name, horizcs, vertcs );
-  }
-
 %apply (char **ignorechange) { (char **) };
   OGRErr ImportFromWkt( char **ppszInput ) {
     return OSRImportFromWkt( self, ppszInput );
@@ -758,12 +692,10 @@ public:
   OGRErr ImportFromProj4( char *ppszInput ) {
     return OSRImportFromProj4( self, ppszInput );
   }
-
-%apply Pointer NONNULL {char* url};
+  
   OGRErr ImportFromUrl( char *url ) {
     return OSRImportFromUrl( self, url );
   }
-
 %apply (char **options) { (char **) };
   OGRErr ImportFromESRI( char **ppszInput ) {
     return OSRImportFromESRI( self, ppszInput );
@@ -792,14 +724,7 @@ public:
   OGRErr ImportFromXML( char const *xmlString ) {
     return OSRImportFromXML( self, xmlString );
   }
-
-%apply Pointer NONNULL {char const *proj};
-%apply Pointer NONNULL {char const *datum};
-  OGRErr ImportFromERM( char const *proj, char const *datum,
-                        char const *units ) {
-    return OSRImportFromERM( self, proj, datum, units );
-  }
-
+  
   OGRErr ImportFromMICoordSys( char const *pszCoordSys ) {
     return OSRImportFromMICoordSys( self, pszCoordSys );
   }
@@ -914,15 +839,11 @@ public:
 %apply (double argin[ANY]) {(double inout[3])};
 #endif
   void TransformPoint( double inout[3] ) {
-    if (self == NULL)
-        return;
     OCTTransform( self, 1, &inout[0], &inout[1], &inout[2] );
   }
 %clear (double inout[3]);
 
   void TransformPoint( double argout[3], double x, double y, double z = 0.0 ) {
-    if (self == NULL)
-        return;
     argout[0] = x;
     argout[1] = y;
     argout[2] = z;
@@ -933,8 +854,6 @@ public:
   %apply (double *inout) {(double*)};
 #endif
   void TransformPoints( int nCount, double *x, double *y, double *z ) {
-    if (self == NULL)
-        return;
     OCTTransform( self, nCount, x, y, z );
   }
 #ifdef SWIGCSHARP

@@ -276,9 +276,6 @@ void WmsTestSelect::testHttpBasicAuthentification ()
 void WmsTestSelect::testGetBounds ()
 {
     FdoPtr<FdoIConnection> conn = this->GetConnection ();
-
-    bool failed = false;
-
 	try
 	{
 		conn->SetConnectionString (L"FeatureServer=http://wms.jpl.nasa.gov/wms.cgi");
@@ -305,11 +302,8 @@ void WmsTestSelect::testGetBounds ()
 	}
 	catch (FdoException* e) 
     {
-        failed = true;
-//        fail (e);
+        fail (e);
 	}
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 // http://www.bsc-eoc.org/cgi-bin/bsc_ows.asp
@@ -411,7 +405,7 @@ void WmsTestSelect::testServer3 ()
 	    CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
 	    FdoPtr<FdoISelect> cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
-		cmd->SetFeatureClassName (L"Foundation bndtxt_1m");
+		cmd->SetFeatureClassName (L"Foundation BNDTXT_1M");
 	    FdoPtr<FdoIFeatureReader> featReader = cmd->Execute ();
 
 		CPPUNIT_ASSERT (featReader->ReadNext ());
@@ -430,12 +424,12 @@ void WmsTestSelect::testServer3 ()
 
 		conn->Close();
 
-        // connect the same server with 1.1.0 version
+		// connect the same server with 1.1.0 version
 	    conn->SetConnectionString (L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.1.0");
 	    CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
-        cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
-		cmd->SetFeatureClassName (L"Foundation bndtxt_1m");
+	    cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
+		cmd->SetFeatureClassName (L"Foundation BNDTXT_1M");
 	    featReader = cmd->Execute ();
 
 		CPPUNIT_ASSERT (featReader->ReadNext ());
@@ -854,7 +848,7 @@ void WmsTestSelect::testIntegraphWorld ()
     }
 }
 
-//http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi
+//http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?CONFIG=main
 void WmsTestSelect::testCubeServer ()
 {
     try
@@ -862,7 +856,7 @@ void WmsTestSelect::testCubeServer ()
         FdoPtr<FdoIConnection> conn = this->GetConnection ();
         FdoPtr<FdoIConnectionInfo> info = conn->GetConnectionInfo();
         FdoPtr<FdoIConnectionPropertyDictionary> props = info->GetConnectionProperties();
-        props->SetProperty(L"FeatureServer", L"http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi");
+        props->SetProperty(L"FeatureServer", L"http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?CONFIG=main");
         CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
         FdoPtr<FdoIDescribeSchema> cmdDescribeSchema = static_cast<FdoIDescribeSchema *> (conn->CreateCommand (FdoCommandType_DescribeSchema));
@@ -881,7 +875,7 @@ void WmsTestSelect::testCubeServer ()
 #endif//_DEBUG
 
         FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*>(conn->CreateCommand(FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName(L"Foundation landicea_1m");
+        cmdSelect->SetFeatureClassName(L"Foundation LANDICEA_1M");
 
         FdoPtr<FdoIFeatureReader> featureReader = cmdSelect->Execute();
         FdoPtr<FdoClassDefinition> classDef2 = featureReader->GetClassDefinition();
@@ -1432,8 +1426,6 @@ void WmsTestSelect::testTerraServiceThumbnail ()
 //http://142.176.62.108/cgi-bin/mapserv.exe?map=D:\ms441oci\maps\NS_TOPO_1000.map
 void WmsTestSelect::testNS_TOPO_1000 ()
 {
-    bool failed = false;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
@@ -1470,18 +1462,13 @@ void WmsTestSelect::testNS_TOPO_1000 ()
     }
     catch (FdoException* e)
     {
-//        fail(e);
-        failed = true;
+        fail(e);
     }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 //http://142.176.62.108/cgi-bin/mapserv.exe?map=D:\ms441oci\maps\NS_TOPO_5000.map
 void WmsTestSelect::testNS_TOPO_5000 ()
 {
-    bool failed = false;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
@@ -1518,18 +1505,13 @@ void WmsTestSelect::testNS_TOPO_5000 ()
     }
     catch (FdoException* e)
     {
-//        fail(e);
-        failed = true;
+        fail(e);
     }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 //http://142.176.62.108/cgi-bin/mapserv.exe?map=D:\\ms441oci\\maps\\NS_CRS.map
 void WmsTestSelect::testNS_CRS ()
 {
-    bool failed = false;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
@@ -1566,11 +1548,8 @@ void WmsTestSelect::testNS_CRS ()
     }
     catch (FdoException* e)
     {
-//        fail(e);
-        failed = true;
+        fail(e);
     }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 //http://mapconnect.ga.gov.au/wmsconnector/com.esri.wms.Esrimap?Servicename=GDA94_MapConnect_SDE_250kmap_WMS
@@ -1663,7 +1642,6 @@ void WmsTestSelect::testCeoware2 ()
 void WmsTestSelect::testLioib ()
 {
     bool failed = true;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
@@ -1698,8 +1676,6 @@ void WmsTestSelect::testLioib ()
 //http://kort.plandk.dk/scripts/mapserv.pl?service=wms
 void WmsTestSelect::testKortPlandk ()
 {
-    bool failed = false;
-
     try
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
@@ -1736,11 +1712,8 @@ void WmsTestSelect::testKortPlandk ()
     }
     catch (FdoException* e)
     {
-//        fail(e);
-        failed = true;
+        fail(e);
     }
-
-    CPPUNIT_ASSERT_MESSAGE("test started working again", failed);
 }
 
 //http://libcwms.gov.bc.ca/wmsconnector/com.esri.wsit.WMSServlet/ogc_layer_service?version=1.1.1

@@ -23,7 +23,7 @@
 *	#include <Inc/rdbi.h>												*
 *	mysql_get_gen_id(table_name, id) 								    *
 *	char *table_name;													*
-*	int64  *id;														    *
+*	int  *id;														    *
 *																		*
 * Description															*
 *																		*
@@ -55,16 +55,11 @@
 int mysql_get_gen_id(
     mysql_context_def  *context,
 	char *table_name,   // not used
-#ifdef _WIN32
-	_int64  *id
-#else
-	int64_t  *id
-#endif
+	int  *id
 	)
 {
 	char				    sql_buf[100];
 	int 				    rows;
-    int iid = 0;
 	mysql_cursor_def	    *c = NULL;
 
     int    rdbi_status = RDBI_GENERIC_ERROR;
@@ -83,7 +78,7 @@ int mysql_get_gen_id(
 
 	/* define output locations */
 	if ( RDBI_SUCCESS != mysql_define( context, (char *)c, "1", RDBI_LONG, sizeof(long),
-									(char *) &iid, (short *)NULL) )
+									(char *) id, (short *)NULL) )
         goto the_exit;
 
     /* execute the SQL statement */
@@ -97,7 +92,6 @@ int mysql_get_gen_id(
     if (c != (mysql_cursor_def *)NULL)
         mysql_fre_cursor (context, (char **)&c);
 
-    *id = iid;
     rdbi_status = RDBI_SUCCESS;
 
 the_exit:

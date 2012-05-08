@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrkmldatasource.cpp 23589 2011-12-17 14:21:01Z rouault $
+ * $Id: ogrkmldatasource.cpp 16908 2009-05-02 14:53:26Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDataSource class.
@@ -66,9 +66,10 @@ OGRKMLDataSource::~OGRKMLDataSource()
 {
     if( fpOutput_ != NULL )
     {
-        VSIFPrintfL( fpOutput_, "%s", "</Folder></Document></kml>\n" );
+        VSIFPrintf( fpOutput_, "%s", "</Folder></Document></kml>\n" );
 
-        VSIFCloseL( fpOutput_ );
+        if( fpOutput_ != stdout )
+            VSIFClose( fpOutput_ );
     }
 
     CSLDestroy( papszCreateOptions_ );
@@ -134,12 +135,7 @@ int OGRKMLDataSource::Open( const char * pszNewName, int bTestOpen )
 /* -------------------------------------------------------------------- */
 /*      Classify the nodes                                              */
 /* -------------------------------------------------------------------- */
-    if( !poKMLFile_->classifyNodes() )
-    {
-        delete poKMLFile_;
-        poKMLFile_ = NULL;
-        return FALSE;
-    }
+    poKMLFile_->classifyNodes();
 
 /* -------------------------------------------------------------------- */
 /*      Eliminate the empty containers                                  */
@@ -284,13 +280,13 @@ int OGRKMLDataSource::Create( const char* pszName, char** papszOptions )
 /* -------------------------------------------------------------------- */
 /*      Create the output file.                                         */
 /* -------------------------------------------------------------------- */
-
-    if (strcmp(pszName, "/dev/stdout") == 0)
-        pszName = "/vsistdout/";
-
     pszName_ = CPLStrdup( pszName );
 
-    fpOutput_ = VSIFOpenL( pszName, "wb" );
+    if( EQUAL(pszName, "stdout") )
+        fpOutput_ = stdout;
+    else
+        fpOutput_ = VSIFOpen( pszName, "wt+" );
+
     if( fpOutput_ == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -301,9 +297,11 @@ int OGRKMLDataSource::Create( const char* pszName, char** papszOptions )
 /* -------------------------------------------------------------------- */
 /*      Write out "standard" header.                                    */
 /* -------------------------------------------------------------------- */
-    VSIFPrintfL( fpOutput_, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" );	
+    VSIFPrintf( fpOutput_, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" );	
+
+    nSchemaInsertLocation_ = VSIFTell( fpOutput_ );
     
-    VSIFPrintfL( fpOutput_, "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n<Document>" );
+    VSIFPrintf( fpOutput_, "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n<Document>" );
 
     return TRUE;
 }
@@ -338,8 +336,7 @@ OGRKMLDataSource::CreateLayer( const char * pszLayerName,
 /* -------------------------------------------------------------------- */
     if (GetLayerCount() > 0)
     {
-        VSIFPrintfL( fpOutput_, "</Folder>\n");
-        ((OGRKMLLayer*)GetLayer(GetLayerCount()-1))->SetClosedForWriting();
+        VSIFPrintf( fpOutput_, "</Folder>\n");
     }
     
 /* -------------------------------------------------------------------- */
@@ -354,7 +351,7 @@ OGRKMLDataSource::CreateLayer( const char * pszLayerName,
                   "Layer name '%s' adjusted to '%s' for XML validity.",
                   pszLayerName, pszCleanLayerName );
     }
-    VSIFPrintfL( fpOutput_, "<Folder><name>%s</name>\n", pszCleanLayerName);
+    VSIFPrintf( fpOutput_, "<Folder><name>%s</name>\n", pszCleanLayerName);
     
 /* -------------------------------------------------------------------- */
 /*      Create the layer object.                                        */

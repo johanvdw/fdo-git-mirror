@@ -33,7 +33,7 @@
 #endif
 #include "../../Gdbi/GdbiStatement.h"
 
-static char* TRANSACTION_NAME = "TrUpdCmd";
+static char* TRANSACTION_NAME = "FdoRdbmsUpdateCommand::Execute";
 
 #define UPDATE_CLEANUP \
             if( innerSelect ) {\
@@ -101,11 +101,6 @@ FdoRdbmsUpdateCommand::~FdoRdbmsUpdateCommand()
 		delete mPvcProcessor;
 }
 
-FdoRdbmsUpdateCommand* FdoRdbmsUpdateCommand::Create (FdoIConnection *connection)
-{
-    return new FdoRdbmsUpdateCommand(connection);
-}
-
 FdoInt32 FdoRdbmsUpdateCommand::Execute ()
 {
     FdoIdentifier*      className;
@@ -117,7 +112,7 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
     bool                throw_exception      = true;
     bool                containsObjectProperties = false;
 
-    if (!mConnection || !mFdoConnection || mFdoConnection->GetConnectionState() != FdoConnectionState_Open)
+    if( NULL == mConnection )
         throw FdoCommandException::Create(NlsMsgGet(FDORDBMS_13, "Connection not established"));
 
     className = this->GetClassNameRef();
@@ -252,7 +247,7 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
             }
             //
             // Update the properties associated with this feature
-            FdoPtr<FdoRdbmsCollection<FdoRdbmsPvcOperation> > classes = mPvcProcessor->RefactorPvc(mPropertyValues, classDefinition, true);
+            FdoRdbmsCollection<FdoRdbmsPvcOperation>* classes = mPvcProcessor->RefactorPvc(mPropertyValues, classDefinition, true);
             for (int i=0; i<classes->GetCount(); i++)
             {
                 FdoPtr<FdoRdbmsPvcOperation>clas = classes->GetItem(i);
@@ -263,7 +258,7 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
 
 				if( ltPvcProcessor != NULL )
 				{
-					FdoPtr<FdoRdbmsCollection<FdoRdbmsPvcOperation> > ltOps = ltPvcProcessor->RefactorPvc(properties, clas->GetClass(), true );
+					FdoRdbmsCollection<FdoRdbmsPvcOperation> *ltOps = ltPvcProcessor->RefactorPvc(properties, clas->GetClass(), true );
 					for (int j=0; j<ltOps->GetCount(); j++)
 					{
 						FdoPtr<FdoRdbmsPvcOperation>ltPvcOp = ltOps->GetItem(j);
@@ -287,6 +282,7 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
 							}
 						}
 					}
+					ltOps->Release();
 				}
 				else
 				{
@@ -295,6 +291,7 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
 						numberOfRows += pvcHandler->Execute( clas->GetClass(), properties, /* RevisionNumber update flag */ true, false );
 				}
             }
+            classes->Release();
         }
 
         query->Close();
@@ -321,15 +318,15 @@ FdoInt32 FdoRdbmsUpdateCommand::Execute ()
                 mPropertyValues->Remove( propVal );
         }
     }
-    catch (FdoCommandException * ce)
+    catch (FdoCommandException *)
     {
         UPDATE_CLEANUP;
-        throw ce;
+        throw;
     }
     catch (FdoException *ex)
     {
         UPDATE_CLEANUP;
-        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+        FdoCommandException *exp = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
         ex->Release();
         throw exp;
     }
