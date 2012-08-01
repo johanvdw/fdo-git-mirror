@@ -7,9 +7,6 @@ OBJ	=	IntergraphDataset.o IntergraphBand.o IngrTypes.o JpegHelper.o
 CPPFLAGS	:=	$(GDAL_INCLUDE) $(CPPFLAGS)
 
 ifeq ($(TIFF_SETTING),internal)
-ifeq ($(RENAME_INTERNAL_LIBTIFF_SYMBOLS),yes)
-CPPFLAGS 	:=	$(CPPFLAGS) -DRENAME_INTERNAL_LIBTIFF_SYMBOLS
-endif
 CPPFLAGS	:=	$(CPPFLAGS) -I../gtiff/libtiff
 endif
 

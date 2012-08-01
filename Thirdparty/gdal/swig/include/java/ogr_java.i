@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_java.i 23330 2011-11-05 21:10:20Z rouault $
+ * $Id: ogr_java.i 17966 2009-11-04 22:05:11Z rouault $
  *
  * Name:     ogr_java.i
  * Project:  GDAL SWIG Interface
@@ -16,7 +16,11 @@
  *
  *
 */
-
+#ifdef SWIGJAVA
+%{
+typedef char retStringAndCPLFree;
+%}
+#endif
 %include java_exceptions.i
 
 %pragma(java) jniclasscode=%{
@@ -50,6 +54,13 @@
 %rename (GetOpenDSCount) OGRGetOpenDSCount;
 %rename (SetGenerate_DB2_V72_BYTE_ORDER) OGRSetGenerate_DB2_V72_BYTE_ORDER;
 %rename (RegisterAll) OGRRegisterAll();
+
+
+%rename (GeometryTypeToName) OGRGeometryTypeToName;
+const char *OGRGeometryTypeToName( OGRwkbGeometryType eType );
+
+%rename (GetFieldTypeName) OGR_GetFieldTypeName;
+const char * OGR_GetFieldTypeName(OGRFieldType type);
 
 /*
  *
@@ -129,8 +140,8 @@ import org.gdal.osr.SpatialReference;
       double[] argout = new double[4];
       try
       {
-          int ret = GetExtent(argout, (force) ? 1 : 0);
-          return (ret == 0) ? argout : null;
+          GetExtent(argout, (force) ? 1 : 0);
+          return argout;
       }
       catch(RuntimeException e)
       {

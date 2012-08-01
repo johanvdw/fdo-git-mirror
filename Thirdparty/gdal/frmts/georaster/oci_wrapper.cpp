@@ -63,139 +63,68 @@ OWConnection::OWConnection( const char* pszUserIn,
     hNumArrayTDO    = NULL;
     hGeometryTDO    = NULL;
     hGeoRasterTDO   = NULL;
-    hElemArrayTDO   = NULL;
-    hOrdnArrayTDO   = NULL;
     bSuceeeded      = false;
     nCharSize       = 1;
 
     // ------------------------------------------------------
-    //  Operational Systems's authentication option
+    //  Create Environment
     // ------------------------------------------------------
 
-    const char* pszUserId = "/";
+    ub4 nMode = ( OCI_DEFAULT | OCI_OBJECT );
 
-    ub4 eCred = OCI_CRED_RDBMS;
+    CheckError( OCIEnvCreate(
+        &hEnv,
+        nMode,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        (size_t) 0,
+        (dvoid**) NULL ), NULL );
 
-    if( EQUAL(pszServer, "") &&
-        EQUAL(pszPassword, "") &&
-        EQUAL(pszUser, "") )
+    // ------------------------------------------------------
+    //  Create Error Handle
+    // ------------------------------------------------------
+
+    CheckError( OCIHandleAlloc(
+        (dvoid*) hEnv,
+        (dvoid**) (dvoid*) &hError,
+        (ub4) OCI_HTYPE_ERROR,
+        (size_t) 0,
+        (void**) NULL ), hError );
+
+    // ------------------------------------------------------
+    //  Logon to Oracle Server
+    // ------------------------------------------------------
+    
+    if( CheckError( OCILogon(
+        hEnv,
+        hError,
+        &hSvcCtx,
+        (text*) pszUser,
+        (ub4) strlen(pszUser),
+        (text*) pszPassword,
+        (ub4) strlen(pszPassword),
+        (text*) pszServer,
+        (ub4) strlen(pszServer) ), hError ) )
     {
-        eCred = OCI_CRED_EXT;
+        bSuceeeded = false;
+        return;
     }
     else
     {
-        pszUserId = pszUser;
+        bSuceeeded = true;
     }
-
-    // ------------------------------------------------------
-    //  Initialize Environment handler
-    // ------------------------------------------------------
-
-    if( OCIEnvCreate( &hEnv,
-        (ub4) ( OCI_DEFAULT | OCI_OBJECT | OCI_THREADED ),
-        (dvoid *) 0, (dvoid * (*)(dvoid *, size_t)) 0,
-        (dvoid * (*)(dvoid *, dvoid *, size_t)) 0,
-        (void (*)(dvoid *, dvoid *)) 0, (size_t) 0,
-        (dvoid **) 0), NULL )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Initialize Error handler
-    // ------------------------------------------------------
-
-    if( CheckError( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hError,
-        OCI_HTYPE_ERROR, (size_t) 0, (dvoid **) 0), NULL ) )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Initialize Server Context
-    // ------------------------------------------------------
-
-    if( CheckError( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hSvcCtx,
-        OCI_HTYPE_SVCCTX, (size_t) 0, (dvoid **) 0), hError ) )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Allocate Server and Authentication (Session) handler
-    // ------------------------------------------------------
-
-    if( CheckError( OCIHandleAlloc( (dvoid *) hEnv, (dvoid **) &hServer,
-        (ub4) OCI_HTYPE_SERVER, (size_t) 0, (dvoid **) 0), hError ) )
-    {
-        return;
-    }
-
-    if( CheckError( OCIHandleAlloc((dvoid *) hEnv, (dvoid **)&hSession,
-        (ub4) OCI_HTYPE_SESSION, (size_t) 0, (dvoid **) 0), hError ) )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Attach to the server
-    // ------------------------------------------------------
-
-    if( CheckError( OCIServerAttach( hServer, hError, (text*) pszServer,
-        strlen((char*) pszServer), 0), hError ) )
-    {
-        return;
-    }
-
-    if( CheckError( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-        (dvoid *) pszUserId, (ub4) strlen( pszUserId),
-        (ub4) OCI_ATTR_USERNAME, hError), hError ) )
-    {
-        return;
-    }
-
-    if( CheckError( OCIAttrSet((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION,
-        (dvoid *) pszPassword, (ub4) strlen((char *) pszPassword),
-        (ub4) OCI_ATTR_PASSWORD, hError), hError ) )
-    {
-        return;
-    }
-
-    if( CheckError( OCIAttrSet( (dvoid *) hSvcCtx, OCI_HTYPE_SVCCTX, (dvoid *)hServer,
-        (ub4) 0, OCI_ATTR_SERVER, (OCIError *) hError), hError ) )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Initialize Session
-    // ------------------------------------------------------
-
-    if( CheckError( OCISessionBegin(hSvcCtx, hError, hSession, eCred,
-        (ub4) OCI_DEFAULT), hError ) )
-    {
-        return;
-    }
-
-    // ------------------------------------------------------
-    //  Initialize Service
-    // ------------------------------------------------------
-
-    if( CheckError( OCIAttrSet((dvoid *) hSvcCtx, (ub4) OCI_HTYPE_SVCCTX,
-        (dvoid *) hSession, (ub4) 0,
-        (ub4) OCI_ATTR_SESSION, hError), hError ) )
-    {
-        return;
-    }
-
-    bSuceeeded = true;
 
     // ------------------------------------------------------
     //  Get Character Size based on current Locale
     // ------------------------------------------------------
 
-    OCINlsNumericInfoGet( hEnv, hError,
-        &nCharSize, OCI_NLS_CHARSET_MAXBYTESZ );
+    OCINlsNumericInfoGet(
+            hEnv,
+            hError,
+            &nCharSize,
+            OCI_NLS_CHARSET_MAXBYTESZ );
 
     // ------------------------------------------------------
     //  Get Server Version
@@ -216,49 +145,34 @@ OWConnection::OWConnection( const char* pszUserIn,
     //  Initialize/Describe types
     // ------------------------------------------------------
 
-    CheckError( OCIHandleAlloc(
-        (dvoid*) hEnv,
-        (dvoid**) (dvoid*) &hDescribe,
-        (ub4) OCI_HTYPE_DESCRIBE,
-        (size_t) 0,
+    CheckError( OCIHandleAlloc( 
+        (dvoid*) hEnv, 
+        (dvoid**) (dvoid*) &hDescribe, 
+        (ub4) OCI_HTYPE_DESCRIBE, 
+        (size_t) 0, 
         (dvoid**) NULL ), hError );
 
-    hNumArrayTDO    = DescribeType( SDO_NUMBER_ARRAY );
-    hGeometryTDO    = DescribeType( SDO_GEOMETRY );
-    hGeoRasterTDO   = DescribeType( SDO_GEORASTER );
-    hElemArrayTDO   = DescribeType( SDO_ELEM_INFO_ARRAY);
-    hOrdnArrayTDO   = DescribeType( SDO_ORDINATE_ARRAY);
-
-    if( nVersion > 10 )
-    {
-        hPCTDO      = DescribeType( SDO_PC );
-    }
+    hNumArrayTDO    = DescribeType( (char*) SDO_NUMBER_ARRAY );
+    hGeometryTDO    = DescribeType( (char*) SDO_GEOMETRY );
+    hGeoRasterTDO   = DescribeType( (char*) SDO_GEORASTER );
 }
 
 OWConnection::~OWConnection()
 {
     OCIHandleFree( (dvoid*) hDescribe, (ub4) OCI_HTYPE_DESCRIBE);
 
-    if( hSvcCtx && hError && hSession )
-        OCISessionEnd( hSvcCtx, hError, hSession, (ub4) 0);
+    OCILogoff( hSvcCtx, hError );
 
-    if( hSvcCtx && hError)
-        OCIServerDetach( hServer, hError, (ub4) OCI_DEFAULT);
+    OCIHandleFree( (dvoid*) hSvcCtx, (ub4) OCI_HTYPE_SVCCTX);
+    OCIHandleFree( (dvoid*) hError, (ub4) OCI_HTYPE_ERROR);
+    OCIHandleFree( (dvoid*) hEnv, (ub4) OCI_HTYPE_ENV);
 
-    if( hServer )
-        OCIHandleFree((dvoid *) hServer, (ub4) OCI_HTYPE_SERVER);
-
-    if( hSvcCtx )
-        OCIHandleFree((dvoid *) hSvcCtx, (ub4) OCI_HTYPE_SVCCTX);
-
-    if( hError )
-        OCIHandleFree((dvoid *) hError, (ub4) OCI_HTYPE_ERROR);
-
-    if( hSession )
-        OCIHandleFree((dvoid *) hSession, (ub4) OCI_HTYPE_SESSION);
+    CPLFree( pszUser );
+    CPLFree( pszPassword );
+    CPLFree( pszServer );
 }
 
-OCIType* OWConnection::DescribeType( const char *pszTypeName )
+OCIType* OWConnection::DescribeType( char *pszTypeName )
 {
     OCIParam* hParam    = NULL;
     OCIRef*   hRef      = NULL;
@@ -290,14 +204,14 @@ OCIType* OWConnection::DescribeType( const char *pszTypeName )
         (ub4) OCI_ATTR_REF_TDO,
         hError ), hError );
 
-    CheckError( OCIObjectPin(
-        hEnv,
+    CheckError( OCIObjectPin( 
+        hEnv, 
         hError,
         hRef,
         (OCIComplexObject*) NULL,
         (OCIPinOpt) OCI_PIN_ANY,
         (OCIDuration) OCI_DURATION_SESSION,
-        (OCILockOpt) OCI_LOCK_NONE,
+        (OCILockOpt) OCI_LOCK_NONE, 
         (dvoid**) (dvoid*) &hType ), hError );
 
     return hType;
@@ -326,31 +240,9 @@ void OWConnection::DestroyType( sdo_geometry** pphData )
         (ub2) 0), NULL );
 }
 
-void OWConnection::CreateType( OCIArray** phData, OCIType* otype)
+OWStatement* OWConnection::CreateStatement( const char* pszStatementIn )
 {
-    CheckError( OCIObjectNew(   hEnv,
-        hError,
-        hSvcCtx,
-        OCI_TYPECODE_VARRAY,
-        otype,
-        (dvoid *)NULL,
-        OCI_DURATION_SESSION,
-        FALSE,
-        (dvoid **)phData), hError );
-}
-
-void OWConnection::DestroyType( OCIArray** phData )
-{
-    CheckError( OCIObjectFree(
-        hEnv,
-        hError,
-        (OCIColl*) *phData,
-        (ub2) 0), NULL );
-}
-
-OWStatement* OWConnection::CreateStatement( const char* pszStatement )
-{
-    OWStatement* poStatement = new OWStatement( this, pszStatement );
+    OWStatement* poStatement = new OWStatement( this, pszStatementIn );
 
     return poStatement;
 }
@@ -485,38 +377,19 @@ bool OWConnection::GetNextField( OCIParam* phTable,
 
 }
 
-bool OWConnection::StartTransaction()
-{
-    CheckError( OCITransStart (
-        hSvcCtx,
-        hError,
-        (uword) 30,
-        OCI_TRANS_NEW), hError );
-
-    return true;
-}
-
-bool OWConnection::Commit()
-{
-    CheckError( OCITransCommit (
-        hSvcCtx,
-        hError,
-        OCI_DEFAULT), hError );
-
-    return true;
-}
-
 /*****************************************************************************/
 /*                           OWStatement                                     */
 /*****************************************************************************/
 
-OWStatement::OWStatement( OWConnection* pConnect, const char* pszStatement )
+OWStatement::OWStatement( OWConnection* pConnection,
+                          const char* pszStatementIn )
 {
-    poConnection    = pConnect;
+    poConnect       = pConnection;
+    pszStatement    = CPLStrdup( pszStatementIn );
     nStmtMode       = OCI_DEFAULT;
     nNextCol        = 0;
     nNextBnd        = 0;
-    hError          = poConnection->hError;
+    hError          = pConnection->hError;
 
     //  -----------------------------------------------------------
     //  Create Statement handler
@@ -524,7 +397,7 @@ OWStatement::OWStatement( OWConnection* pConnect, const char* pszStatement )
 
     OCIStmt* hStatement;
 
-    CheckError( OCIHandleAlloc( (dvoid*) poConnection->hEnv,
+    CheckError( OCIHandleAlloc( (dvoid*) poConnect->hEnv,
         (dvoid**) (dvoid*) &hStatement,
         (ub4) OCI_HTYPE_STMT,
         (size_t) 0,
@@ -544,7 +417,7 @@ OWStatement::OWStatement( OWConnection* pConnect, const char* pszStatement )
         (ub4) OCI_DEFAULT ), hError );
 
     //  -----------------------------------------------------------
-    //  Get Statement type
+    //  Get Statement type 
     //  -----------------------------------------------------------
 
     ub2 nStmtType;
@@ -562,24 +435,26 @@ OWStatement::OWStatement( OWConnection* pConnect, const char* pszStatement )
 
     if( nStmtType != OCI_STMT_SELECT )
     {
-        nStmtMode = OCI_DEFAULT;
+        nStmtMode = OCI_COMMIT_ON_SUCCESS;
     }
-
-    CPLDebug("PL/SQL","\n%s\n", pszStatement);
 }
 
 OWStatement::~OWStatement()
 {
+    CPLFree( pszStatement );
+
     OCIHandleFree( (dvoid*) hStmt, (ub4) OCI_HTYPE_STMT);
 }
 
 bool OWStatement::Execute( int nRows )
 {
-    sword nStatus = OCIStmtExecute( poConnection->hSvcCtx,
+    CPLDebug("PL/SQL","\n%s\n", pszStatement );
+
+    sword nStatus = OCIStmtExecute( poConnect->hSvcCtx,
         hStmt,
         hError,
+        (ub4) ( nStmtMode != OCI_DEFAULT ),
         (ub4) nRows,
-        (ub4) 0,
         (OCISnapshot*) NULL,
         (OCISnapshot*) NULL,
         nStmtMode );
@@ -604,7 +479,7 @@ bool OWStatement::Fetch( int nRows )
 
     nStatus = OCIStmtFetch2 (
         (OCIStmt*) hStmt,
-        (OCIError*) poConnection->hError,
+        (OCIError*) poConnect->hError,
         (ub4) nRows,
         (ub2) OCI_FETCH_NEXT,
         (sb4) 0,
@@ -615,12 +490,31 @@ bool OWStatement::Fetch( int nRows )
         return false;
     }
 
-    if( CheckError( nStatus, poConnection->hError ) )
+    if( CheckError( nStatus, poConnect->hError ) )
     {
         return false;
     }
 
     return true;
+}
+
+void OWStatement::Define( int* pnData )
+{
+    OCIDefine* hDefine = NULL;
+
+    nNextCol++;
+
+    CheckError( OCIDefineByPos( hStmt,
+        &hDefine,
+        hError,
+        (ub4) nNextCol,
+        (dvoid*) pnData,
+        (sb4) sizeof(int),
+        (ub2) SQLT_INT,
+        (void*) NULL,
+        (ub2*) NULL,
+        (ub2*) NULL, 
+        (ub4) OCI_DEFAULT ), hError );
 }
 
 void OWStatement::Bind( int* pnData )
@@ -646,36 +540,13 @@ void OWStatement::Bind( int* pnData )
         hError );
 }
 
-void OWStatement::Bind( long* pnData )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) pnData,
-        (sb4) sizeof(long),
-        (ub2) SQLT_INT,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-}
-
 void OWStatement::Bind( double* pnData )
 {
     OCIBind* hBind = NULL;
 
     nNextBnd++;
 
-    CheckError( OCIBindByPos(
+    CheckError( OCIBindByPos( 
         hStmt,
         &hBind,
         hError,
@@ -698,7 +569,7 @@ void OWStatement::Bind( char* pData, long nData )
 
     nNextBnd++;
 
-    CheckError( OCIBindByPos(
+    CheckError( OCIBindByPos( 
         hStmt,
         &hBind,
         hError,
@@ -713,158 +584,6 @@ void OWStatement::Bind( char* pData, long nData )
         (ub4) NULL,
         (ub4) OCI_DEFAULT ),
         hError );
-}
-
-void OWStatement::Bind( sdo_geometry** pphData )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) NULL,
-        (sb4) 0,
-        (ub2) SQLT_NTY,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) 0,
-        (ub4) 0,
-        (ub4) OCI_DEFAULT ),
-        hError );
-
-    CheckError( OCIBindObject(
-        hBind,
-        hError,
-        poConnection->hGeometryTDO,
-    (dvoid**) pphData,
-        (ub4*) 0,
-    (dvoid**) 0,
-        (ub4*) 0),
-        hError );
-
-}
-
-void OWStatement::Bind( OCILobLocator** pphLocator )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) pphLocator,
-        (sb4) -1,
-        (ub2) SQLT_CLOB,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-}
-
-void OWStatement::Bind( OCIArray** pphData, OCIType* type )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) 0,
-        (sb4) 0,
-        (ub2) SQLT_NTY,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-
-    CheckError( OCIBindObject(
-        hBind,
-        hError,
-        type,
-        (dvoid **)pphData,
-        (ub4 *)0,
-        (dvoid **)0,
-        (ub4 *)0 ),
-        hError);
-
-}
-
-void OWStatement::Bind( char* pszData, int nSize )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) pszData,
-        (sb4) nSize,
-        (ub2) SQLT_STR,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-}
-
-void OWStatement::Define( int* pnData )
-{
-    OCIDefine* hDefine = NULL;
-
-    nNextCol++;
-
-    CheckError( OCIDefineByPos( hStmt,
-        &hDefine,
-        hError,
-        (ub4) nNextCol,
-        (dvoid*) pnData,
-        (sb4) sizeof(int),
-        (ub2) SQLT_INT,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) OCI_DEFAULT ), hError );
-}
-
-void OWStatement::Define( long* pnData )
-{
-    OCIDefine* hDefine = NULL;
-
-    nNextCol++;
-
-    CheckError( OCIDefineByPos( hStmt,
-        &hDefine,
-        hError,
-        (ub4) nNextCol,
-        (dvoid*) pnData,
-        (sb4) sizeof(long int),
-        (ub2) SQLT_INT,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) OCI_DEFAULT ), hError );
 }
 
 void OWStatement::Define( double* pfdData )
@@ -907,19 +626,44 @@ void OWStatement::Define( char* pszData, int nSize )
         hError );
 }
 
-void OWStatement::Define( OCILobLocator** pphLocator )
+void OWStatement::Bind( char* pszData, int nSize )
+{
+    OCIBind* hBind = NULL;
+
+    nNextBnd++;
+
+    CheckError( OCIBindByPos(
+        hStmt,
+        &hBind,
+        hError,
+        (ub4) nNextBnd,
+        (dvoid*) pszData,
+        (sb4) nSize,
+        (ub2) SQLT_STR,
+        (void*) NULL,
+        (ub2*) NULL,
+        (ub2*) NULL,
+        (ub4) NULL,
+        (ub4) NULL,
+        (ub4) OCI_DEFAULT ),
+        hError );
+}
+
+void OWStatement::Define( OCILobLocator** pphLocator, bool bBLOB ) 
 {
     OCIDefine*  hDefine = NULL;
 
     nNextCol++;
 
-    CheckError( OCIDescriptorAlloc(
-        poConnection->hEnv,
+    CheckError( OCIDescriptorAlloc( 
+        poConnect->hEnv,
         (void**) pphLocator,
         OCI_DTYPE_LOB,
         0,
         0),
         hError );
+
+    ub2 eDTY = bBLOB ? SQLT_BLOB : SQLT_CLOB;
 
     CheckError( OCIDefineByPos(
         hStmt,
@@ -928,52 +672,11 @@ void OWStatement::Define( OCILobLocator** pphLocator )
         (ub4) nNextCol,
         (dvoid*) pphLocator,
         (sb4) 0,
-        (ub2) SQLT_BLOB,
+        (ub2) eDTY,
         (void*) NULL,
         (ub2*) NULL,
         (ub2*) NULL,
         (ub4) OCI_DEFAULT ),
-        hError );
-}
-
-void OWStatement::WriteCLob( OCILobLocator** pphLocator, char* pszData )
-{
-    nNextCol++;
-
-    CheckError( OCIDescriptorAlloc(
-        poConnection->hEnv,
-        (void**) pphLocator,
-        OCI_DTYPE_LOB,
-        (size_t) 0,
-        (dvoid **) 0),
-        hError );
-
-    CheckError( OCILobCreateTemporary( 
-        poConnection->hSvcCtx,
-        poConnection->hError,
-        (OCILobLocator*) *pphLocator,
-        (ub4) OCI_DEFAULT,
-        (ub1) OCI_DEFAULT,
-        (ub1) OCI_TEMP_CLOB,
-        false,
-        OCI_DURATION_SESSION ),
-        hError );
-
-    ub4 nAmont = (ub4) strlen(pszData);
-
-    CheckError( OCILobWrite(
-        poConnection->hSvcCtx,
-        hError,
-        *pphLocator,
-        (ub4*) &nAmont,
-        (ub4) 1,
-        (dvoid*) pszData,
-        (ub4) strlen(pszData),
-        (ub1) OCI_ONE_PIECE,
-        (dvoid*) NULL,
-        NULL,
-        (ub2) 0,
-        (ub1) SQLCS_IMPLICIT ),
         hError );
 }
 
@@ -997,7 +700,7 @@ void OWStatement::Define( OCIArray** pphData )
 
     CheckError( OCIDefineObject( hDefine,
         hError,
-        poConnection->hNumArrayTDO,
+        poConnect->hNumArrayTDO,
         (dvoid**) pphData,
         (ub4*) NULL,
         (dvoid**) NULL,
@@ -1024,7 +727,7 @@ void OWStatement::Define( sdo_georaster** pphData )
 
     CheckError( OCIDefineObject( hDefine,
         hError,
-        poConnection->hGeoRasterTDO,
+        poConnect->hGeoRasterTDO,
         (dvoid**) pphData,
         (ub4*) NULL,
         (dvoid**) NULL,
@@ -1051,54 +754,39 @@ void OWStatement::Define( sdo_geometry** pphData )
 
     CheckError( OCIDefineObject( hDefine,
         hError,
-        poConnection->hGeometryTDO,
+        poConnect->hGeometryTDO,
         (dvoid**) pphData,
         (ub4*) NULL,
         (dvoid**) NULL,
         (ub4*) NULL ), hError );
 }
 
-void OWStatement::Define( sdo_pc** pphData )
+void OWStatement::Define( OCILobLocator** pphLocator, int nIterations )
 {
     OCIDefine* hDefine = NULL;
 
     nNextCol++;
 
-    CheckError( OCIDefineByPos( hStmt,
-        &hDefine,
-        hError,
-        (ub4) nNextCol,
-        (dvoid*) NULL,
-        (sb4) 0,
-        (ub2) SQLT_NTY,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) OCI_DEFAULT ), hError );
+    int i, nLobEmpty;
 
-    CheckError( OCIDefineObject( hDefine,
-        hError,
-        poConnection->hPCTDO,
-        (dvoid**) pphData,
-        (ub4*) NULL,
-        (dvoid**) NULL,
-        (ub4*) NULL ), hError );
-}
-
-void OWStatement::Define( OCILobLocator** pphLocator, long nIterations )
-{
-    OCIDefine* hDefine = NULL;
-
-    nNextCol++;
-
-    long i;
+    sword nStatus = 0;
 
     for (i = 0; i < nIterations; i++)
     {
-        OCIDescriptorAlloc(
-            poConnection->hEnv,
+        nStatus = OCIDescriptorAlloc( poConnect->hEnv,
             (void**) &pphLocator[i],
-            OCI_DTYPE_LOB, (size_t) 0, (void**) 0);
+            OCI_DTYPE_LOB,
+            0,
+            0);
+
+        nLobEmpty = 0;
+
+        nStatus = OCIAttrSet(pphLocator[i],
+            OCI_DTYPE_LOB,
+            &nLobEmpty,
+            0,
+            OCI_ATTR_LOBEMPTY,
+            hError);
     }
 
     CheckError( OCIDefineByPos( hStmt,
@@ -1146,7 +834,7 @@ double OWStatement::GetDouble( OCINumber* ppoData )
 char* OWStatement::GetString( OCIString* ppoData )
 {
     return (char*) OCIStringPtr(
-        poConnection->hEnv,
+        poConnect->hEnv,
         ppoData );
 }
 
@@ -1174,7 +862,7 @@ int OWStatement::GetElement( OCIArray** ppoData, int nIndex, int* pnResult )
     *pnResult = 0;
 
     if( CheckError( OCICollGetElem(
-        poConnection->hEnv,
+        poConnect->hEnv,
         hError,
         (OCIColl*) *ppoData,
         (sb4) nIndex,
@@ -1200,7 +888,7 @@ int OWStatement::GetElement( OCIArray** ppoData, int nIndex, int* pnResult )
     return *pnResult;
 }
 
-double OWStatement::GetElement( OCIArray** ppoData,
+double OWStatement::GetElement( OCIArray** ppoData, 
                                int nIndex, double* pdfResult )
 {
     boolean        exists;
@@ -1210,7 +898,7 @@ double OWStatement::GetElement( OCIArray** ppoData,
     *pdfResult = 0.0;
 
     if( CheckError( OCICollGetElem(
-        poConnection->hEnv,
+        poConnect->hEnv,
         hError,
         (OCIColl*) *ppoData,
         (sb4) nIndex,
@@ -1234,59 +922,26 @@ double OWStatement::GetElement( OCIArray** ppoData,
     return *pdfResult;
 }
 
-void OWStatement::AddElement( OCIArray* poData,
-                              int nValue )
-{
-    OCINumber      oci_number;
-
-    CheckError(OCINumberFromInt(hError,
-        (dvoid*) &nValue,
-        (uword) sizeof(ub4),
-        OCI_NUMBER_UNSIGNED,
-        (OCINumber*) &oci_number), hError);
-
-    CheckError(OCICollAppend(poConnection->hEnv,
-        hError,
-        (OCINumber*) &oci_number,
-        (dvoid*) 0,
-        (OCIColl*) poData), hError);
-}
-
-void OWStatement::AddElement( OCIArray* poData,
-                              double dfValue )
-{
-    OCINumber      oci_number;
-
-    CheckError(OCINumberFromReal(hError,
-        (dvoid*) &dfValue,
-        (uword) sizeof(double),
-        (OCINumber*) &oci_number), hError);
-
-    CheckError(OCICollAppend(poConnection->hEnv,
-        hError,
-        (OCINumber*) &oci_number,
-        (dvoid*) 0,
-        (OCIColl*) poData), hError);
-}
 
 unsigned long OWStatement::ReadBlob( OCILobLocator* phLocator,
                                      void* pBuffer,
                                      int nSize )
 {
-    ub4 nAmont      = (ub4) 0;
+    ub4 nAmont      = (ub4) nSize;
 
     if( CheckError( OCILobRead(
-        poConnection->hSvcCtx,
+        poConnect->hSvcCtx,
         hError,
         phLocator,
         (ub4*) &nAmont,
         (ub4) 1,
         (dvoid*) pBuffer,
         (ub4) nSize,
-        (dvoid *) 0,
-        (OCICallbackLobRead) 0,
-        (ub2) 0,
-        (ub1) SQLCS_IMPLICIT), hError ) )
+        0,
+        0,
+        0,
+        0 ),
+        hError ) )
     {
         return 0;
     }
@@ -1294,14 +949,13 @@ unsigned long OWStatement::ReadBlob( OCILobLocator* phLocator,
     return nAmont;
 }
 
-bool OWStatement::WriteBlob( OCILobLocator* phLocator,
-                             void* pBuffer,
+bool OWStatement::WriteBlob( OCILobLocator* phLocator, void* pBuffer, 
                              int nSize )
 {
     ub4 nAmont  = (ub4) nSize;
 
     if( CheckError( OCILobWrite(
-        poConnection->hSvcCtx,
+        poConnect->hSvcCtx,
         hError,
         phLocator,
         (ub4*) &nAmont,
@@ -1329,7 +983,7 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
     char* pszBuffer = NULL;
 
     if( CheckError( OCILobGetLength (
-        poConnection->hSvcCtx,
+        poConnect->hSvcCtx,
         hError,
         phLocator,
         (ub4*) &nSize ),
@@ -1338,7 +992,7 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
         return NULL;
     }
 
-    nSize *= this->poConnection->nCharSize;
+    nSize *= this->poConnect->nCharSize;
 
     pszBuffer = (char*) VSIMalloc( sizeof(char*) * nSize );
 
@@ -1348,7 +1002,7 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
     }
 
     if( CheckError( OCILobRead(
-        poConnection->hSvcCtx,
+        poConnect->hSvcCtx,
         hError,
         phLocator,
         (ub4*) &nAmont,
@@ -1365,12 +1019,23 @@ char* OWStatement::ReadCLob( OCILobLocator* phLocator )
         return NULL;
     }
 
-    pszBuffer[nAmont] = '\0';
+    nAmont *= this->poConnect->nCharSize;
+
+    if( nAmont == nSize )
+    {
+        pszBuffer[nAmont] = '\0';
+    }
+    else
+    {
+        CPLFree( pszBuffer );
+
+        return NULL;
+    }
 
     return pszBuffer;
 }
 
-void OWStatement::BindName( const char* pszName, int* pnData )
+void OWStatement::BindName( char* pszName, int* pnData )
 {
     OCIBind* hBind = NULL;
 
@@ -1392,33 +1057,11 @@ void OWStatement::BindName( const char* pszName, int* pnData )
         hError );
 }
 
-void OWStatement::BindName( const char* pszName, double* pnData )
+void OWStatement::BindName( char* pszName, char* pszData, int nSize )
 {
     OCIBind* hBind = NULL;
 
-    CheckError( OCIBindByName(
-        (OCIStmt*) hStmt,
-        (OCIBind**) &hBind,
-        (OCIError*) hError,
-        (text*) pszName,
-        (sb4) -1,
-        (dvoid*) pnData,
-        (sb4) sizeof(double),
-        (ub2) SQLT_BDOUBLE,
-        (dvoid*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) 0,
-        (ub4*) NULL,
-        (ub4) OCI_DEFAULT ),
-        hError );
-}
-
-void OWStatement::BindName( const char* pszName, char* pszData, int nSize )
-{
-    OCIBind* hBind = NULL;
-
-    CheckError( OCIBindByName(
+    CheckError( OCIBindByName( 
         (OCIStmt*) hStmt,
         (OCIBind**) &hBind,
         (OCIError*) hError,
@@ -1436,12 +1079,12 @@ void OWStatement::BindName( const char* pszName, char* pszData, int nSize )
         hError );
 }
 
-void OWStatement::BindName( const char* pszName, OCILobLocator** pphLocator )
+void OWStatement::BindName( char* pszName, OCILobLocator** pphLocator )
 {
     OCIBind* hBind = NULL;
 
     CheckError( OCIDescriptorAlloc(
-        poConnection->hEnv,
+        poConnect->hEnv,
         (void**) pphLocator,
         OCI_DTYPE_LOB,
         0,
@@ -1456,7 +1099,7 @@ void OWStatement::BindName( const char* pszName, OCILobLocator** pphLocator )
         (sb4) -1,
         (dvoid*) pphLocator,
         (sb4) -1,
-        (ub2) SQLT_CLOB,
+        (ub2) SQLT_BLOB,
         (dvoid*) NULL,
         (ub2*) NULL,
         (ub2*) NULL,
@@ -1464,36 +1107,6 @@ void OWStatement::BindName( const char* pszName, OCILobLocator** pphLocator )
         (ub4*) NULL,
         (ub4) OCI_DEFAULT ),
         hError );
-}
-
-void OWStatement::BindArray( void* pData, long nSize )
-{
-    OCIBind* hBind = NULL;
-
-    nNextBnd++;
-
-    CheckError( OCIBindByPos(
-        hStmt,
-        &hBind,
-        hError,
-        (ub4) nNextBnd,
-        (dvoid*) pData,
-        (sb4) nSize * sizeof(double),
-        (ub2) SQLT_BIN,
-        (void*) NULL,
-        (ub2*) NULL,
-        (ub2*) NULL,
-        (ub4) NULL,
-        (ub4) NULL,
-        (ub4) OCI_DEFAULT ), hError );
-
-    CheckError( OCIBindArrayOfStruct(
-        hBind,
-        hError,
-        (ub4) nSize * sizeof(double),
-        (ub4) 0,
-        (ub4) 0,
-        (ub4) 0), hError );
 }
 
 /*****************************************************************************/
@@ -1571,11 +1184,10 @@ const char* OWReplaceString( const char* pszBaseString,
     // Search for Token, Stop Token on the Base String
 
     char* pszStart = strstr( szUpcaseBase, szUpcaseToken );
+    char* pszEnd   = strstr( szUpcaseBase, szUpcaseStopT );
 
     if( pszStart )
     {
-	    char* pszEnd = strstr( pszStart, szUpcaseStopT );
-
         // Concatenate the result
 
         int nStart = (int) ( pszStart - szUpcaseBase );
@@ -1587,7 +1199,7 @@ const char* OWReplaceString( const char* pszBaseString,
         strcat( szResult, &pszBaseString[nEnd + 1] );
     }
 
-    return szResult;
+    return CPLStrdup( szResult );
 }
 
 /*****************************************************************************/
@@ -1660,8 +1272,6 @@ const char* OWParseSDO_GEOR_INIT( const char* pszInsert, int nField )
         return "";
     }
 
-    pszStart += strlen("SDO_GEOR.");
-
     pszEnd++;
 
     int nLength = pszEnd - pszStart + 1;
@@ -1671,7 +1281,7 @@ const char* OWParseSDO_GEOR_INIT( const char* pszInsert, int nField )
     strncpy( szBuffer, pszStart, nLength );
     szBuffer[nLength] = '\0';
 
-    const char* pszValue = OWParseValue( szBuffer, " (,)", "INIT", nField );
+    const char* pszValue = OWParseValue( szBuffer, " .(,)", "INIT", nField );
 
     return EQUAL( pszValue, "" ) ? "NULL" : pszValue;
 }
@@ -1720,8 +1330,8 @@ const GDALDataType OWGetDataType( const char* pszCellDepth )
 {
     unsigned int i;
 
-    for( i = 0;
-        i < (sizeof(ahOW_CellDepth) / sizeof(OW_CellDepth));
+    for( i = 0; 
+        i < (sizeof(ahOW_CellDepth) / sizeof(OW_CellDepth)); 
         i++ )
     {
         if( EQUAL( ahOW_CellDepth[i].pszValue, pszCellDepth ) )
@@ -1742,8 +1352,8 @@ const char* OWSetDataType( const GDALDataType eType )
 {
     unsigned int i;
 
-    for( i = 0;
-        i < (sizeof(ahOW_CellDepth) / sizeof(OW_CellDepth));
+    for( i = 0; 
+        i < (sizeof(ahOW_CellDepth) / sizeof(OW_CellDepth)); 
         i++ )
     {
         if( ahOW_CellDepth[i].eDataType == eType )
@@ -1802,9 +1412,9 @@ bool CheckError( sword nStatus, OCIError* hError )
         }
 
         CPLError( CE_Failure, CPLE_AppDefined, "%.*s",
-            static_cast<int>(sizeof(szMsg)), szMsg );
+            sizeof(szMsg), szMsg );
         break;
-
+    
     default:
 
             if( hError == NULL)
@@ -1818,7 +1428,7 @@ bool CheckError( sword nStatus, OCIError* hError )
                 (ub4) sizeof(szMsg), OCI_HTYPE_ERROR);
 
             CPLError( CE_Failure, CPLE_AppDefined, "%.*s",
-                static_cast<int>(sizeof(szMsg)), szMsg );
+                sizeof(szMsg), szMsg );
             break;
 
     }

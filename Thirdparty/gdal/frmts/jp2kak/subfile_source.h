@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: subfile_source.h 23357 2011-11-07 18:34:42Z warmerdam $
+ * $Id: subfile_source.h 17244 2009-06-16 16:22:47Z warmerdam $
  *
  * Project:  JPEG-2000
  * Purpose:  Implements read-only virtual io on a subregion of a file.
@@ -45,7 +45,7 @@ class subfile_source : public kdu_compressed_source {
 
     bool operator!() { return (file == NULL); }
 
-    void open(const char *fname, int bSequential )
+    void open(const char *fname )
       {
           const char *real_filename;
           close();
@@ -55,13 +55,13 @@ class subfile_source : public kdu_compressed_source {
               char** papszTokens = CSLTokenizeString2(fname + 12, ",", 0);
               if (CSLCount(papszTokens) >= 2)
               {
-                  subfile_offset = (int) CPLScanUIntBig(papszTokens[0], strlen(papszTokens[0]));
-                  subfile_size = (int) CPLScanUIntBig(papszTokens[1], strlen(papszTokens[1]));
+                  subfile_offset = CPLScanUIntBig(papszTokens[0], strlen(papszTokens[0]));
+                  subfile_size = CPLScanUIntBig(papszTokens[1], strlen(papszTokens[1]));
               }
               else
               {
                   kdu_error e;
-
+                  
                   e << "Corrupt subfile definition:" << fname;
                   return;
               }
@@ -75,7 +75,7 @@ class subfile_source : public kdu_compressed_source {
               else
               {
                   kdu_error e;
-
+              
                   e << "Could not find filename in subfile definition." << fname;
                   return;
               }
@@ -96,10 +96,7 @@ class subfile_source : public kdu_compressed_source {
               return;
           }
 
-          if( bSequential ) 
-            capabilities = KDU_SOURCE_CAP_SEQUENTIAL;
-          else
-            capabilities = KDU_SOURCE_CAP_SEQUENTIAL | KDU_SOURCE_CAP_SEEKABLE;
+          capabilities = KDU_SOURCE_CAP_SEQUENTIAL | KDU_SOURCE_CAP_SEEKABLE;
 
           seek_origin = subfile_offset;
           seek( 0 );
@@ -164,5 +161,6 @@ class subfile_source : public kdu_compressed_source {
     int subfile_offset;
     int subfile_size;
     
-    VSILFILE *file;
+    FILE *file;
   };
+

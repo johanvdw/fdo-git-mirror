@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterio.cpp 22420 2011-05-23 21:23:29Z rouault $
+ * $Id: rasterio.cpp 18744 2010-02-05 23:06:16Z pvachon $
  *
  * Project:  GDAL Core
  * Purpose:  Contains default implementation of GDALRasterBand::IRasterIO()
@@ -30,14 +30,8 @@
 
 #include "gdal_priv.h"
 
-// Define a list of "C++" compilers that have broken template support or
-// broken scoping so we can fall back on the legacy implementation of
-// GDALCopyWords
-#define NOT_BROKEN_COMPILER \
-	(!(defined(_MSC_VER) && _MSC_VER <= 1200) && !defined(__BORLANDC__) && \
-	!defined(__SUNPRO_CC))
 
-#if NOT_BROKEN_COMPILER
+#if !(defined(_MSC_VER) && _MSC_VER <= 1200)
 #include <stdexcept>
 #include <limits>
 
@@ -47,7 +41,7 @@
 #endif
 
 
-CPL_CVSID("$Id: rasterio.cpp 22420 2011-05-23 21:23:29Z rouault $");
+CPL_CVSID("$Id: rasterio.cpp 18744 2010-02-05 23:06:16Z pvachon $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */
@@ -69,15 +63,6 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     GByte       *pabySrcBlock = NULL;
     GDALRasterBlock *poBlock = NULL;
     int         nLBlockX=-1, nLBlockY=-1, iBufYOff, iBufXOff, iSrcY;
-
-    if( eRWFlag == GF_Write && eFlushBlockErr != CE_None )
-    {
-        CPLError(eFlushBlockErr, CPLE_AppDefined,
-                 "An error occured while writing a dirty block");
-        CPLErr eErr = eFlushBlockErr;
-        eFlushBlockErr = CE_None;
-        return eErr;
-    }
 
 /* ==================================================================== */
 /*      A common case is the data requested with the destination        */
@@ -176,21 +161,10 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     if( (nBufXSize < nXSize || nBufYSize < nYSize)
         && GetOverviewCount() > 0 && eRWFlag == GF_Read )
     {
-        int         nOverview;
-
-        nOverview =
-            GDALBandGetBestOverviewLevel(this, nXOff, nYOff, nXSize, nYSize,
-                                        nBufXSize, nBufYSize);
-        if (nOverview >= 0)
-        {
-            GDALRasterBand* poOverviewBand = GetOverview(nOverview);
-            if (poOverviewBand == NULL)
-                return CE_Failure;
-
-            return poOverviewBand->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
-                                            pData, nBufXSize, nBufYSize, eBufType,
-                                            nPixelSpace, nLineSpace );
-        }
+        if( OverviewRasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize, 
+                              pData, nBufXSize, nBufYSize, 
+                              eBufType, nPixelSpace, nLineSpace ) == CE_None )
+            return CE_None;
     }
 
 /* ==================================================================== */
@@ -690,7 +664,7 @@ inline void CopyWord(const Tin tValueIn, Tout &tValueOut)
 template <class Tin>
 inline void CopyWord(const Tin tValueIn, float &fValueOut)
 {
-    fValueOut = (float) tValueIn;
+    fValueOut = tValueIn;
 }
 
 template <class Tin>
@@ -1092,8 +1066,7 @@ void GDALReplicateWord(void *pSrcData, GDALDataType eSrcType,
         {
             if (nDstPixelOffset == 1)
             {
-                if (nWordCount > 0)
-                    memset(pabyDstWord, *(GByte*)pDstData, nWordCount);
+                memset(pabyDstWord, *(GByte*)pDstData, nWordCount - 1);
             }
             else
             {
@@ -2115,9 +2088,6 @@ int GDALBandGetBestOverviewLevel(GDALRasterBand* poBand,
     for( int iOverview = 0; iOverview < nOverviewCount; iOverview++ )
     {
         GDALRasterBand  *poOverview = poBand->GetOverview( iOverview );
-        if (poOverview == NULL)
-            continue;
-
         double          dfResolution;
 
         // What resolution is this?
@@ -2212,9 +2182,6 @@ CPLErr GDALRasterBand::OverviewRasterIO( GDALRWFlag eRWFlag,
 /*      Recast the call in terms of the new raster layer.               */
 /* -------------------------------------------------------------------- */
     GDALRasterBand* poOverviewBand = GetOverview(nOverview);
-    if (poOverviewBand == NULL)
-        return CE_Failure;
-
     return poOverviewBand->RasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
                                      pData, nBufXSize, nBufYSize, eBufType,
                                      nPixelSpace, nLineSpace );
@@ -2269,9 +2236,6 @@ int GDALDatasetGetBestOverviewLevel(GDALDataset* poDS,
                     poBand->GetOverview(iOverview);
                 GDALRasterBand* poOvrFirstBand =
                     poFirstBand->GetOverview(iOverview);
-                if ( poOvrBand == NULL || poOvrFirstBand == NULL)
-                    continue;
-
                 if ( poOvrFirstBand->GetXSize() != poOvrBand->GetXSize() ||
                      poOvrFirstBand->GetYSize() != poOvrBand->GetYSize() )
                 {
@@ -2624,152 +2588,6 @@ GDALDataset::BlockBasedRasterIO( GDALRWFlag eRWFlag,
 }
 
 /************************************************************************/
-/*                  GDALCopyWholeRasterGetSwathSize()                   */
-/************************************************************************/
-
-static void GDALCopyWholeRasterGetSwathSize(GDALRasterBand *poSrcPrototypeBand,
-                                            GDALRasterBand *poDstPrototypeBand,
-                                            int nBandCount,
-                                            int bDstIsCompressed, int bInterleave,
-                                            int* pnSwathCols, int *pnSwathLines)
-{
-    GDALDataType eDT = poDstPrototypeBand->GetRasterDataType();
-    int nSrcBlockXSize, nSrcBlockYSize;
-    int nBlockXSize, nBlockYSize;
-
-    int nXSize = poSrcPrototypeBand->GetXSize();
-    int nYSize = poSrcPrototypeBand->GetYSize();
-
-    poSrcPrototypeBand->GetBlockSize( &nSrcBlockXSize, &nSrcBlockYSize );
-    poDstPrototypeBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
-
-    int nMaxBlockXSize = MAX(nBlockXSize, nSrcBlockXSize);
-    int nMaxBlockYSize = MAX(nBlockYSize, nSrcBlockYSize);
-    
-/* -------------------------------------------------------------------- */
-/*      What will our swath size be?                                    */
-/* -------------------------------------------------------------------- */
-    /* When writing interleaved data in a compressed format, we want to be sure */
-    /* that each block will only be written once, so the swath size must not be */
-    /* greater than the block cache. */
-    /* So as the default cache size is 40 MB, 10 MB is a safe value */
-    int nTargetSwathSize = atoi(CPLGetConfigOption("GDAL_SWATH_SIZE", "10000000"));
-    if (nTargetSwathSize < 1000000)
-        nTargetSwathSize = 1000000;
-
-    /* But let's check that  */
-    if (bDstIsCompressed && bInterleave && nTargetSwathSize > GDALGetCacheMax64())
-    {
-        CPLError(CE_Warning, CPLE_AppDefined,
-                 "When translating into a compressed interleave format, the block cache size (" CPL_FRMT_GIB ") "
-                 "should be at least the size of the swath (%d)", GDALGetCacheMax64(), nTargetSwathSize);
-    }
-
-    int nPixelSize = (GDALGetDataTypeSize(eDT) / 8);
-    if( bInterleave)
-        nPixelSize *= nBandCount;
-
-    // aim for one row of blocks.  Do not settle for less.
-    int nSwathCols  = nXSize;
-    int nSwathLines = nBlockYSize;
-
-#define IS_MULTIPLE_OF(x,y) ((y)%(x) == 0)
-#define ROUND_TO(x,y) (((x)/(y))*(y))
-
-    /* if both input and output datasets are tiled, that the tile dimensions */
-    /* are "compatible", try to stick  to a swath dimension that is a multiple */
-    /* of input and output block dimensions */
-    if (nBlockXSize != nXSize && nSrcBlockXSize != nXSize &&
-        IS_MULTIPLE_OF(nBlockXSize, nMaxBlockXSize) &&
-        IS_MULTIPLE_OF(nSrcBlockXSize, nMaxBlockXSize) &&
-        IS_MULTIPLE_OF(nBlockYSize, nMaxBlockYSize) &&
-        IS_MULTIPLE_OF(nSrcBlockYSize, nMaxBlockYSize))
-    {
-        if (((GIntBig)nMaxBlockXSize) * nMaxBlockYSize * nPixelSize <=
-                                                    (GIntBig)nTargetSwathSize)
-        {
-            nSwathCols = nTargetSwathSize / (nMaxBlockYSize * nPixelSize);
-            nSwathCols = ROUND_TO(nSwathCols, nMaxBlockXSize);
-            if (nSwathCols == 0)
-                nSwathCols = nMaxBlockXSize;
-            if (nSwathCols > nXSize)
-                nSwathCols = nXSize;
-            nSwathLines = nMaxBlockYSize;
-
-            if (((GIntBig)nSwathCols) * nSwathLines * nPixelSize >
-                                                    (GIntBig)nTargetSwathSize)
-            {
-                nSwathCols  = nXSize;
-                nSwathLines = nBlockYSize;
-            }
-        }
-    }
-
-    int nMemoryPerCol = nSwathCols * nPixelSize;
-
-    /* Do the computation on a big int since for example when translating */
-    /* the JPL WMS layer, we overflow 32 bits*/
-    GIntBig nSwathBufSize = (GIntBig)nMemoryPerCol * nSwathLines;
-    if (nSwathBufSize > (GIntBig)nTargetSwathSize)
-    {
-        nSwathLines = nTargetSwathSize / nMemoryPerCol;
-        if (nSwathLines == 0)
-            nSwathLines = 1;
-
-        CPLDebug( "GDAL",
-              "GDALCopyWholeRasterGetSwathSize(): adjusting to %d line swath "
-              "since requirement (%d * %d bytes) exceed target swath size (%d bytes) ",
-              nSwathLines, nBlockYSize, nMemoryPerCol, nTargetSwathSize);
-    }
-    // If we are processing single scans, try to handle several at once.
-    // If we are handling swaths already, only grow the swath if a row
-    // of blocks is substantially less than our target buffer size.
-    else if( nSwathLines == 1
-        || nMemoryPerCol * nSwathLines < nTargetSwathSize / 10 )
-    {
-        nSwathLines = MIN(nYSize,MAX(1,nTargetSwathSize/nMemoryPerCol));
-
-        /* If possible try to align to source and target block height */
-        if ((nSwathLines % nMaxBlockYSize) != 0 && nSwathLines > nMaxBlockYSize &&
-            IS_MULTIPLE_OF(nBlockYSize, nMaxBlockYSize) &&
-            IS_MULTIPLE_OF(nSrcBlockYSize, nMaxBlockYSize))
-            nSwathLines = ROUND_TO(nSwathLines, nMaxBlockYSize);
-    }
-
-
-    if (bDstIsCompressed)
-    {
-        if (nSwathLines < nBlockYSize)
-        {
-            nSwathLines = nBlockYSize;
-
-            /* Number of pixels that can be read/write simultaneously */
-            nSwathCols = nTargetSwathSize / (nSwathLines * nPixelSize);
-            nSwathCols = ROUND_TO(nSwathCols, nBlockXSize);
-            if (nSwathCols == 0)
-                nSwathCols = nBlockXSize;
-            if (nSwathCols > nXSize)
-                nSwathCols = nXSize;
-
-            CPLDebug( "GDAL",
-              "GDALCopyWholeRasterGetSwathSize(): because of compression and too high block,\n"
-              "use partial width at one time");
-        }
-        else if ((nSwathLines % nBlockYSize) != 0)
-        {
-            /* Round on a multiple of nBlockYSize */
-            nSwathLines = ROUND_TO(nSwathLines, nBlockYSize);
-            CPLDebug( "GDAL",
-              "GDALCopyWholeRasterGetSwathSize(): because of compression, \n"
-              "round nSwathLines to block height : %d", nSwathLines);
-        }
-    }
-
-    *pnSwathCols = nSwathCols;
-    *pnSwathLines = nSwathLines;
-}
-
-/************************************************************************/
 /*                     GDALDatasetCopyWholeRaster()                     */
 /************************************************************************/
 
@@ -2786,9 +2604,8 @@ static void GDALCopyWholeRasterGetSwathSize(GDALRasterBand *poSrcPrototypeBand,
  * in particular "chunking" the copy in substantial blocks and, if appropriate,
  * performing the transfer in a pixel interleaved fashion.
  *
- * Currently the only papszOptions value supported are : "INTERLEAVE=PIXEL"
- * to force pixel interleaved operation and "COMPRESSED=YES" to force alignment
- * on target dataset block sizes to achieve best compression.  More options may be supported in
+ * Currently the only papszOptions value supported is "INTERLEAVE=PIXEL"
+ * to force pixel interleaved operation.  More options may be supported in
  * the future.  
  *
  * @param hSrcDS the source dataset
@@ -2848,10 +2665,12 @@ CPLErr CPL_STDCALL GDALDatasetCopyWholeRaster(
 /* -------------------------------------------------------------------- */
     if( nBandCount == 0 )
         return CE_None;
+    
+    GDALRasterBand *poPrototypeBand = poDstDS->GetRasterBand(1);
+    GDALDataType eDT = poPrototypeBand->GetRasterDataType();
+    int nBlockXSize, nBlockYSize;
 
-    GDALRasterBand *poSrcPrototypeBand = poSrcDS->GetRasterBand(1);
-    GDALRasterBand *poDstPrototypeBand = poDstDS->GetRasterBand(1);
-    GDALDataType eDT = poDstPrototypeBand->GetRasterDataType();
+    poPrototypeBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
 
 /* -------------------------------------------------------------------- */
 /*      Do we want to try and do the operation in a pixel               */
@@ -2885,19 +2704,84 @@ CPLErr CPL_STDCALL GDALDatasetCopyWholeRaster(
 /* -------------------------------------------------------------------- */
 /*      What will our swath size be?                                    */
 /* -------------------------------------------------------------------- */
+    /* When writing interleaved data in a compressed format, we want to be sure */
+    /* that each block will only be written once, so the swath size must not be */
+    /* greater than the block cache. */
+    /* So as the default cache size is 40 MB, 10 MB is a safe value */
+    int nTargetSwathSize = atoi(CPLGetConfigOption("GDAL_SWATH_SIZE", "10000000"));
+    if (nTargetSwathSize < 1000000)
+        nTargetSwathSize = 1000000;
 
-    int nSwathCols, nSwathLines;
-    GDALCopyWholeRasterGetSwathSize(poSrcPrototypeBand,
-                                    poDstPrototypeBand,
-                                    nBandCount,
-                                    bDstIsCompressed, bInterleave,
-                                    &nSwathCols, &nSwathLines);
+    /* But let's check that  */
+    if (bDstIsCompressed && bInterleave && nTargetSwathSize > GDALGetCacheMax())
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "When translating into a compressed interleave format, the block cache size (%d) "
+                 "should be at least the size of the swath (%d)", GDALGetCacheMax(), nTargetSwathSize);
+    }
+
+    void *pSwathBuf;
 
     int nPixelSize = (GDALGetDataTypeSize(eDT) / 8);
     if( bInterleave)
         nPixelSize *= nBandCount;
 
-    void *pSwathBuf = VSIMalloc3(nSwathCols, nSwathLines, nPixelSize );
+    // aim for one row of blocks.  Do not settle for less.
+    int nSwathCols  = nXSize;
+    int nSwathLines = nBlockYSize;
+
+    int nMemoryPerLine = nXSize * nPixelSize;
+
+    /* Do the computation on a big int since for example when translating */
+    /* the JPL WMS layer, we overflow 32 bits*/
+    GIntBig nSwathBufSize = (GIntBig)nMemoryPerLine * nSwathLines;
+    if (nSwathBufSize > (GIntBig)nTargetSwathSize)
+    {
+        nSwathLines = nTargetSwathSize / nMemoryPerLine;
+        if (nSwathLines == 0)
+            nSwathLines = 1;
+        CPLDebug( "GDAL", 
+              "GDALDatasetCopyWholeRaster(): adjusting to %d line swath "
+              "since requirement (%d * %d bytes) exceed target swath size (%d bytes) ",
+              nSwathLines, nBlockYSize, nMemoryPerLine, nTargetSwathSize);
+    }
+    // If we are processing single scans, try to handle several at once.
+    // If we are handling swaths already, only grow the swath if a row
+    // of blocks is substantially less than our target buffer size.
+    else if( nSwathLines == 1 
+        || nMemoryPerLine * nSwathLines < nTargetSwathSize / 10 )
+        nSwathLines = MIN(nYSize,MAX(1,nTargetSwathSize/nMemoryPerLine));
+
+
+    if (bDstIsCompressed)
+    {
+        if (nSwathLines < nBlockYSize)
+        {
+            nSwathLines = nBlockYSize;
+
+            /* Number of pixels that can be read/write simultaneously */
+            nSwathCols = nTargetSwathSize / (nSwathLines * nPixelSize);
+            nSwathCols = (nSwathCols / nBlockXSize) * nBlockXSize;
+            if (nSwathCols == 0)
+                nSwathCols = nBlockXSize;
+            if (nSwathCols > nXSize)
+                nSwathCols = nXSize;
+
+            CPLDebug( "GDAL", 
+              "GDALDatasetCopyWholeRaster(): because of compression and too high block,\n"
+              "use partial width at one time");
+        }
+        else
+        {
+            /* Round on a multiple of nBlockYSize */
+            nSwathLines = (nSwathLines / nBlockYSize) * nBlockYSize;
+            CPLDebug( "GDAL", 
+              "GDALDatasetCopyWholeRaster(): because of compression, \n"
+              "round nSwathLines to block height : %d", nSwathLines);
+        }
+    }
+
+    pSwathBuf = VSIMalloc3(nSwathCols, nSwathLines, nPixelSize );
     if( pSwathBuf == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory,
@@ -3006,162 +2890,6 @@ CPLErr CPL_STDCALL GDALDatasetCopyWholeRaster(
                     CPLError( CE_Failure, CPLE_UserInterrupt, 
                             "User terminated CreateCopy()" );
                 }
-            }
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup                                                         */
-/* -------------------------------------------------------------------- */
-    CPLFree( pSwathBuf );
-
-    return eErr;
-}
-
-
-/************************************************************************/
-/*                     GDALRasterBandCopyWholeRaster()                  */
-/************************************************************************/
-
-/**
- * \brief Copy all raster band raster data.
- *
- * This function copies the complete raster contents of one band to
- * another similarly configured band.  The source and destination
- * bands must have the same width and height.  The bands do not have
- * to have the same data type.
- *
- * It implements efficient copying, in particular "chunking" the copy in
- * substantial blocks.
- *
- * Currently the only papszOptions value supported is : "COMPRESSED=YES" to
- * force alignment on target dataset block sizes to achieve best compression.
- * More options may be supported in the future.
- *
- * @param hSrcBand the source band
- * @param hDstBand the destination band
- * @param papszOptions transfer hints in "StringList" Name=Value format.
- * @param pfnProgress progress reporting function.
- * @param pProgressData callback data for progress function.
- *
- * @return CE_None on success, or CE_Failure on failure.
- */
-
-CPLErr CPL_STDCALL GDALRasterBandCopyWholeRaster(
-    GDALRasterBandH hSrcBand, GDALRasterBandH hDstBand, char **papszOptions,
-    GDALProgressFunc pfnProgress, void *pProgressData )
-
-{
-    VALIDATE_POINTER1( hSrcBand, "GDALRasterBandCopyWholeRaster", CE_Failure );
-    VALIDATE_POINTER1( hDstBand, "GDALRasterBandCopyWholeRaster", CE_Failure );
-
-    GDALRasterBand *poSrcBand = (GDALRasterBand *) hSrcBand;
-    GDALRasterBand *poDstBand = (GDALRasterBand *) hDstBand;
-    CPLErr eErr = CE_None;
-
-    if( pfnProgress == NULL )
-        pfnProgress = GDALDummyProgress;
-
-/* -------------------------------------------------------------------- */
-/*      Confirm the datasets match in size and band counts.             */
-/* -------------------------------------------------------------------- */
-    int nXSize = poSrcBand->GetXSize(),
-        nYSize = poSrcBand->GetYSize();
-
-    if( poDstBand->GetXSize() != nXSize
-        || poDstBand->GetYSize() != nYSize )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Input and output band sizes do not\n"
-                  "match in GDALRasterBandCopyWholeRaster()" );
-        return CE_Failure;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Report preliminary (0) progress.                                */
-/* -------------------------------------------------------------------- */
-    if( !pfnProgress( 0.0, NULL, pProgressData ) )
-    {
-        CPLError( CE_Failure, CPLE_UserInterrupt,
-                  "User terminated CreateCopy()" );
-        return CE_Failure;
-    }
-
-    GDALDataType eDT = poDstBand->GetRasterDataType();
-
-    /* If the destination is compressed, we must try to write blocks just once, to save */
-    /* disk space (GTiff case for example), and to avoid data loss (JPEG compression for example) */
-    int bDstIsCompressed = FALSE;
-    const char* pszDstCompressed= CSLFetchNameValue( papszOptions, "COMPRESSED" );
-    if (pszDstCompressed != NULL && CSLTestBoolean(pszDstCompressed))
-        bDstIsCompressed = TRUE;
-
-/* -------------------------------------------------------------------- */
-/*      What will our swath size be?                                    */
-/* -------------------------------------------------------------------- */
-
-    int nSwathCols, nSwathLines;
-    GDALCopyWholeRasterGetSwathSize(poSrcBand,
-                                    poDstBand,
-                                    1,
-                                    bDstIsCompressed, FALSE,
-                                    &nSwathCols, &nSwathLines);
-
-    int nPixelSize = (GDALGetDataTypeSize(eDT) / 8);
-
-    void *pSwathBuf = VSIMalloc3(nSwathCols, nSwathLines, nPixelSize );
-    if( pSwathBuf == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory,
-                "Failed to allocate %d*%d*%d byte swath buffer in\n"
-                "GDALRasterBandCopyWholeRaster()",
-                nSwathCols, nSwathLines, nPixelSize );
-        return CE_Failure;
-    }
-
-    CPLDebug( "GDAL",
-            "GDALRasterBandCopyWholeRaster(): %d*%d swaths",
-            nSwathCols, nSwathLines );
-
-/* ==================================================================== */
-/*      Band oriented (uninterleaved) case.                             */
-/* ==================================================================== */
-
-    int iX, iY;
-
-    for( iY = 0; iY < nYSize && eErr == CE_None; iY += nSwathLines )
-    {
-        int nThisLines = nSwathLines;
-
-        if( iY + nThisLines > nYSize )
-            nThisLines = nYSize - iY;
-
-        for( iX = 0; iX < nXSize && eErr == CE_None; iX += nSwathCols )
-        {
-            int nThisCols = nSwathCols;
-
-            if( iX + nThisCols > nXSize )
-                nThisCols = nXSize - iX;
-
-            eErr = poSrcBand->RasterIO( GF_Read,
-                                    iX, iY, nThisCols, nThisLines,
-                                    pSwathBuf, nThisCols, nThisLines,
-                                    eDT, 0, 0 );
-
-            if( eErr == CE_None )
-                eErr = poDstBand->RasterIO( GF_Write,
-                                        iX, iY, nThisCols, nThisLines,
-                                        pSwathBuf, nThisCols, nThisLines,
-                                        eDT, 0, 0 );
-
-            if( eErr == CE_None
-                && !pfnProgress(
-                    (iY+nThisLines) / (float) (nYSize),
-                    NULL, pProgressData ) )
-            {
-                eErr = CE_Failure;
-                CPLError( CE_Failure, CPLE_UserInterrupt,
-                        "User terminated CreateCopy()" );
             }
         }
     }

@@ -39,14 +39,12 @@ namespace PCIDSK
 /*                            PCIDSKSegment                             */
 /************************************************************************/
 
-//! Public interface for the PCIDSK Segment Type
+//! Public tnterface for the PCIDSK Segment Type
 
     class PCIDSKSegment 
     {
     public:
         virtual	~PCIDSKSegment() {}
-
-        virtual void Initialize() {}
 
         virtual void WriteToFile( const void *buffer, uint64 offset, uint64 size)=0;
         virtual void ReadFromFile( void *buffer, uint64 offset, uint64 size ) = 0;
@@ -58,20 +56,11 @@ namespace PCIDSK
         virtual uint64      GetContentSize() = 0;
         virtual bool        IsAtEOF() = 0;
 
-        virtual void        SetDescription( const std::string &description) = 0;
-
-        virtual std::string GetMetadataValue( const std::string &key ) const = 0;
-        virtual void SetMetadataValue( const std::string &key, const std::string &value ) = 0;
-        virtual std::vector<std::string> GetMetadataKeys() const = 0;
-        
-        virtual std::vector<std::string> GetHistoryEntries() const = 0;
-        virtual void SetHistoryEntries( const std::vector<std::string> &entries ) = 0;
-        virtual void PushHistory(const std::string &app,
-                                 const std::string &message) = 0;
+        virtual std::string GetMetadataValue( std::string key ) = 0;
+        virtual void SetMetadataValue( std::string key, std::string value ) = 0;
+        virtual std::vector<std::string> GetMetadataKeys() = 0;
 
         virtual void Synchronize() = 0;
-
-        virtual std::string ConsistencyCheck() = 0;
     };
 
 } // end namespace PCIDSK

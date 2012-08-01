@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringresstatement.cpp 19509 2010-04-23 16:49:33Z warmerdam $
+ * $Id: ogringresstatement.cpp 18518 2010-01-11 03:25:51Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresStatement class.
@@ -30,7 +30,7 @@
 #include "ogr_ingres.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogringresstatement.cpp 19509 2010-04-23 16:49:33Z warmerdam $");
+CPL_CVSID("$Id: ogringresstatement.cpp 18518 2010-01-11 03:25:51Z warmerdam $");
 
 /************************************************************************/
 /*                         OGRIngresStatement()                         */
@@ -65,12 +65,7 @@ OGRIngresStatement::OGRIngresStatement( II_PTR hConn )
 OGRIngresStatement::~OGRIngresStatement()
 
 {
-    Close();
-}
-
-void OGRIngresStatement::Close()
-{
-    IIAPI_WAITPARM  waitParm = { -1 };
+    IIAPI_WAITPARM	waitParm = { -1 };
 
     if( hStmt != NULL )
     {
@@ -79,7 +74,7 @@ void OGRIngresStatement::Close()
         closeParm.cl_genParm.gp_callback = NULL;
         closeParm.cl_genParm.gp_closure = NULL;
         closeParm.cl_stmtHandle = hStmt;
-
+        
         IIapi_close( &closeParm );
 
         while( closeParm.cl_genParm.gp_completed == FALSE )
@@ -105,20 +100,12 @@ void OGRIngresStatement::Close()
     }
 
     ClearDynamicColumns();
- 
-    // Set the descriptorCount to zero to avoid attempting to refree it
-    // in another Close call.
-    getDescrParm.gd_descriptorCount = 0;
 
     CPLFree( papszFields );
     CPLFree( pabyWrkBuffer );
     CPLFree( pasDataBuffer );
     CPLFree( pabyParmData );
-
-    papszFields = NULL;
-    pabyWrkBuffer = NULL;
-    pasDataBuffer = NULL;
-    pabyParmData = NULL;
+//    CPLDebug( "INGRES", "Destroy Statement %p", this );
 }
 
 /************************************************************************/

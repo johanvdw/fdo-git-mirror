@@ -99,7 +99,6 @@ namespace FdoWfsGlobals
     static FdoString* HTTPProtocal                      = L"http://";
     static size_t SizeHTTPProtocal                      = 7;
     static wchar_t SLASH                                = L'/';
-    static wchar_t QUESTION                             = L'\?';
     static FdoString* annotation                        = L"annotation";
     static FdoString* fdo_customer                      = L"fdo.osgeo.org/schemas/feature";
 

@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_python.i 23417 2011-11-23 06:45:28Z warmerdam $
+ * $Id: ogr_python.i 18192 2009-12-06 19:41:32Z rouault $
  *
  * python specific code for ogr bindings.
  */
@@ -13,6 +13,10 @@
     OGRRegisterAll();
   }
   
+%}
+
+%{
+typedef char retStringAndCPLFree;
 %}
 
 /*%{
@@ -202,33 +206,12 @@ layer[0:4] would return a list of the first four features."""
     def __copy__(self):
         return self.Clone()
 
-    # This makes it possible to fetch fields in the form "feature.area". 
-    # This has some risk of name collisions.
-    def __getattr__(self, key):
+    def __getattr__(self, name):
         """Returns the values of fields by the given name"""
         try:
-            return self.GetField(key)
+            return self.GetField(name)
         except:
-            raise AttributeError(key)
-
-    # This makes it possible to set fields in the form "feature.area". 
-    # This has some risk of name collisions.
-    def __setattr__(self, key, value):
-        """Set the values of fields by the given name"""
-        if key != 'this' and key != 'thisown' and self.GetFieldIndex(key) != -1:
-            return self.SetField2(key,value)
-        else:
-            self.__dict__[key] = value
-
-    # This makes it possible to fetch fields in the form "feature['area']". 
-    def __getitem__(self, key):
-        """Returns the values of fields by the given name / field_index"""
-        return self.GetField(key)
-
-    # This makes it possible to set fields in the form "feature['area'] = 123". 
-    def __setitem__(self, key, value):
-        """Returns the value of a field by field name / index"""
-        self.SetField2( key, value )    
+            raise AttributeError(name)
 
     def GetField(self, fld_index):
         import types
@@ -243,47 +226,11 @@ layer[0:4] would return a list of the first four features."""
             return self.GetFieldAsInteger(fld_index)
         if fld_type == OFTReal:
             return self.GetFieldAsDouble(fld_index)
-        if fld_type == OFTStringList:
-            return self.GetFieldAsStringList(fld_index)
-        if fld_type == OFTIntegerList:
-            return self.GetFieldAsIntegerList(fld_index)
-        if fld_type == OFTRealList:
-            return self.GetFieldAsDoubleList(fld_index)
         ## if fld_type == OFTDateTime or fld_type == OFTDate or fld_type == OFTTime:
         #     return self.GetFieldAsDate(fld_index)
         # default to returning as a string.  Should we add more types?
         return self.GetFieldAsString(fld_index)
-
-    def SetField2(self, fld_index, value):
-        if isinstance(fld_index, str):
-            fld_index = self.GetFieldIndex(fld_index)
-
-        if value is None:
-            self.UnsetField( fld_index )
-            return
-
-        if isinstance(value,list):
-            if len(value) == 0:
-                self.UnsetField( fld_index )
-                return
-            if isinstance(value[0],int):
-                self.SetFieldIntegerList(fld_index,value)
-                return
-            elif isinstance(value[0],float):
-                self.SetFieldDoubleList(fld_index,value)
-                return
-            elif isinstance(value[0],str):
-                self.SetFieldStringList(fld_index,value)
-                return
-            else:
-                raise TypeError( 'Unsupported type of list in SetField2()' )
-
-        try:
-            self.SetField( fld_index, value )
-        except:
-            self.SetField( fld_index, str(value) )
-        return
-
+    
     def keys(self):
         names = []
         for i in range(self.GetFieldCount()):
@@ -300,31 +247,12 @@ layer[0:4] would return a list of the first four features."""
     def geometry(self):
         return self.GetGeometryRef()
 
-    def ExportToJson(self, as_object = False, options = None):
+    def ExportToJson(self, as_object = False):
         """Exports a GeoJSON object which represents the Feature. The
            as_object parameter determines whether the returned value 
-           should be a Python object instead of a string. Defaults to False.
-           The options parameter is passed to Geometry.ExportToJson()"""
-
-        try:
-            import simplejson
-        except ImportError:
-            try:
-                import json as simplejson
-            except ImportError:
-                raise ImportError("Unable to import simplejson or json, needed for ExportToJson.")
-
-        geom = self.GetGeometryRef()
-        if geom is not None:
-            if options is None:
-                options = []
-            geom_json_string = geom.ExportToJson(options = options)
-            geom_json_object = simplejson.loads(geom_json_string)
-        else:
-            geom_json_object = None
-
+           should be a Python object instead of a string. Defaults to False."""
         output = {'type':'Feature',
-                   'geometry': geom_json_object,
+                   'geometry': self.GetGeometryRef().ExportToJson(as_object=True),
                    'properties': {}
                   } 
         
@@ -336,8 +264,12 @@ layer[0:4] would return a list of the first four features."""
             output['properties'][key] = self.GetField(key)
         
         if not as_object:
+            try:
+                import simplejson
+            except ImportError:
+                raise ImportError("Unable to import simplejson, needed for ExportToJson.")
             output = simplejson.dumps(output)
-
+        
         return output
 
 

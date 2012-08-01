@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarpkernel.cpp 22887 2011-08-07 13:01:45Z rouault $
+ * $Id: gdalwarpkernel.cpp 18012 2009-11-13 06:20:52Z warmerdam $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of the GDALWarpKernel class.  Implements the actual
@@ -31,9 +31,8 @@
 
 #include "gdalwarper.h"
 #include "cpl_string.h"
-#include "gdalwarpkernel_opencl.h"
 
-CPL_CVSID("$Id: gdalwarpkernel.cpp 22887 2011-08-07 13:01:45Z rouault $");
+CPL_CVSID("$Id: gdalwarpkernel.cpp 18012 2009-11-13 06:20:52Z warmerdam $");
 
 static const int anGWKFilterRadius[] =
 {
@@ -49,10 +48,6 @@ int GWKGetFilterRadius(GDALResampleAlg eResampleAlg)
 {
     return anGWKFilterRadius[eResampleAlg];
 }
-
-#ifdef HAVE_OPENCL
-static CPLErr GWKOpenCLCase( GDALWarpKernel * );
-#endif
 
 static CPLErr GWKGeneralCase( GDALWarpKernel * );
 static CPLErr GWKNearestNoMasksByte( GDALWarpKernel *poWK );
@@ -572,28 +567,6 @@ CPLErr GDALWarpKernel::PerformWarp()
     if( CSLFetchBoolean( papszWarpOptions, "USE_GENERAL_CASE", FALSE ) )
         return GWKGeneralCase( this );
 
-#if defined(HAVE_OPENCL)
-    if((eWorkingDataType == GDT_Byte
-        || eWorkingDataType == GDT_CInt16
-        || eWorkingDataType == GDT_UInt16
-        || eWorkingDataType == GDT_Int16
-        || eWorkingDataType == GDT_CFloat32
-        || eWorkingDataType == GDT_Float32) &&
-       (eResample == GRA_Bilinear
-        || eResample == GRA_Cubic
-        || eResample == GRA_CubicSpline
-        || eResample == GRA_Lanczos) &&
-        CSLFetchBoolean( papszWarpOptions, "USE_OPENCL", TRUE ))
-    {
-        CPLErr eResult = GWKOpenCLCase( this );
-        
-        // CE_Warning tells us a suitable OpenCL environment was not available
-        // so we fall through to other CPU based methods.
-        if( eResult != CE_Warning )
-            return eResult;
-    }
-#endif /* defined HAVE_OPENCL */
-
     if( eWorkingDataType == GDT_Byte
         && eResample == GRA_NearestNeighbour
         && papanBandSrcValid == NULL
@@ -865,7 +838,7 @@ static int GWKSetPixelValue( GDALWarpKernel *poWK, int iBand,
         poWK->padfDstNoDataReal[iBand] == (double)((type *) pabyDst)[iDstOffset]) \
     { \
         if (((type *) pabyDst)[iDstOffset] == minval)  \
-            ((type *) pabyDst)[iDstOffset] = (type)(minval + 1); \
+            ((type *) pabyDst)[iDstOffset] = minval + 1; \
         else \
             ((type *) pabyDst)[iDstOffset] --; \
     } } while(0)
@@ -1429,7 +1402,7 @@ static int GWKBilinearResample( GDALWarpKernel *poWK, int iBand,
     
     int     iSrcX = (int) floor(dfSrcX - 0.5);
     int     iSrcY = (int) floor(dfSrcY - 0.5);
-    int     iSrcOffset;
+    int     iSrcOffset = iSrcX + iSrcY * nSrcXSize;
     double  dfRatioX = 1.5 - (dfSrcX - iSrcX);
     double  dfRatioY = 1.5 - (dfSrcY - iSrcY);
     double  adfDensity[2], adfReal[2], adfImag[2];
@@ -1437,19 +1410,7 @@ static int GWKBilinearResample( GDALWarpKernel *poWK, int iBand,
     double  dfAccumulatorDensity = 0.0;
     double  dfAccumulatorDivisor = 0.0;
     int     bShifted = FALSE;
-
-    if (iSrcX == -1)
-    {
-        iSrcX = 0;
-        dfRatioX = 1;
-    }
-    if (iSrcY == -1)
-    {
-        iSrcY = 0;
-        dfRatioY = 1;
-    }
-    iSrcOffset = iSrcX + iSrcY * nSrcXSize;
-
+    
     // Shift so we don't overrun the array
     if( nSrcXSize * nSrcYSize == iSrcOffset + 1
         || nSrcXSize * nSrcYSize == iSrcOffset + nSrcXSize + 1 )
@@ -2335,352 +2296,6 @@ static int GWKCubicSplineResampleNoMasksShort( GDALWarpKernel *poWK, int iBand,
 }
 
 /************************************************************************/
-/*                           GWKOpenCLCase()                            */
-/*                                                                      */
-/*      This is identical to GWKGeneralCase(), but functions via        */
-/*      OpenCL. This means we have vector optimization (SSE) and/or     */
-/*      GPU optimization depending on our prefs. The code itsef is      */
-/*      general and not optimized, but by defining constants we can     */
-/*      make some pretty darn good code on the fly.                     */
-/************************************************************************/
-
-#if defined(HAVE_OPENCL)
-static CPLErr GWKOpenCLCase( GDALWarpKernel *poWK )
-{
-    int iDstY, iBand;
-    int nDstXSize = poWK->nDstXSize, nDstYSize = poWK->nDstYSize;
-    int nSrcXSize = poWK->nSrcXSize, nSrcYSize = poWK->nSrcYSize;
-    int nDstXOff  = poWK->nDstXOff , nDstYOff  = poWK->nDstYOff;
-    int nSrcXOff  = poWK->nSrcXOff , nSrcYOff  = poWK->nSrcYOff;
-    CPLErr eErr = CE_None;
-    struct oclWarper *warper;
-    cl_channel_type imageFormat;
-    int useImag = FALSE;
-    OCLResampAlg resampAlg;
-    cl_int err;
-    
-    switch ( poWK->eWorkingDataType )
-    {
-      case GDT_Byte:
-        imageFormat = CL_UNORM_INT8;
-        break;
-      case GDT_UInt16:
-        imageFormat = CL_UNORM_INT16;
-        break;
-      case GDT_CInt16:
-        useImag = TRUE;
-      case GDT_Int16:
-        imageFormat = CL_SNORM_INT16;
-        break;
-      case GDT_CFloat32:
-        useImag = TRUE;
-      case GDT_Float32:
-        imageFormat = CL_FLOAT;
-        break;
-      default:
-        // We don't support higher precision formats
-        CPLDebug( "OpenCL",
-                  "Unsupported resampling OpenCL data type %d.", 
-                  (int) poWK->eWorkingDataType );
-        return CE_Warning;
-    }
-    
-    switch (poWK->eResample)
-    {
-      case GRA_Bilinear:
-        resampAlg = OCL_Bilinear;
-        break;
-      case GRA_Cubic:
-        resampAlg = OCL_Cubic;
-        break;
-      case GRA_CubicSpline:
-        resampAlg = OCL_CubicSpline;
-        break;
-      case GRA_Lanczos:
-        resampAlg = OCL_Lanczos;
-        break;
-      default:
-        // We don't support higher precision formats
-        CPLDebug( "OpenCL", 
-                  "Unsupported resampling OpenCL resampling alg %d.", 
-                  (int) poWK->eResample );
-        return CE_Warning;
-    }
-    
-    // Using a factor of 2 or 4 seems to have much less rounding error than 3 on the GPU.
-    // Then the rounding error can cause strange artifacting under the right conditions.
-    warper = GDALWarpKernelOpenCL_createEnv(nSrcXSize, nSrcYSize,
-                                            nDstXSize, nDstYSize,
-                                            imageFormat, poWK->nBands, 4,
-                                            useImag, poWK->papanBandSrcValid != NULL,
-                                            poWK->pafDstDensity,
-                                            poWK->padfDstNoDataReal,
-                                            resampAlg, &err );
-
-    if(err != CL_SUCCESS || warper == NULL)
-    {
-        eErr = CE_Warning;
-        if (warper != NULL)
-            goto free_warper;
-        return eErr;
-    }
-    
-    CPLDebug( "GDAL", "GDALWarpKernel()::GWKOpenCLCase()\n"
-              "Src=%d,%d,%dx%d Dst=%d,%d,%dx%d",
-              nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize,
-              nDstXOff, nDstYOff, nDstXSize, nDstYSize );
-    
-    if( !poWK->pfnProgress( poWK->dfProgressBase, "", poWK->pProgress ) )
-    {
-        CPLError( CE_Failure, CPLE_UserInterrupt, "User terminated" );
-        eErr = CE_Failure;
-        goto free_warper;
-    }
-    
-    /* ==================================================================== */
-    /*      Loop over bands.                                                */
-    /* ==================================================================== */
-    for( iBand = 0; iBand < poWK->nBands; iBand++ ) {
-        if( poWK->papanBandSrcValid != NULL && poWK->papanBandSrcValid[iBand] != NULL) {
-            GDALWarpKernelOpenCL_setSrcValid(warper, (int *)poWK->papanBandSrcValid[iBand], iBand);
-            if(err != CL_SUCCESS)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined, 
-                          "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-                eErr = CE_Failure;
-                goto free_warper;
-            }
-        }
-        
-        err = GDALWarpKernelOpenCL_setSrcImg(warper, poWK->papabySrcImage[iBand], iBand);
-        if(err != CL_SUCCESS)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-            eErr = CE_Failure;
-            goto free_warper;
-        }
-        
-        err = GDALWarpKernelOpenCL_setDstImg(warper, poWK->papabyDstImage[iBand], iBand);
-        if(err != CL_SUCCESS)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-            eErr = CE_Failure;
-            goto free_warper;
-        }
-    }
-    
-    /* -------------------------------------------------------------------- */
-    /*      Allocate x,y,z coordinate arrays for transformation ... one     */
-    /*      scanlines worth of positions.                                   */
-    /* -------------------------------------------------------------------- */
-    double *padfX, *padfY, *padfZ;
-    int    *pabSuccess;
-    
-    padfX = (double *) CPLMalloc(sizeof(double) * nDstXSize);
-    padfY = (double *) CPLMalloc(sizeof(double) * nDstXSize);
-    padfZ = (double *) CPLMalloc(sizeof(double) * nDstXSize);
-    pabSuccess = (int *) CPLMalloc(sizeof(int) * nDstXSize);
-    
-    /* ==================================================================== */
-    /*      Loop over output lines.                                         */
-    /* ==================================================================== */
-    for( iDstY = 0; iDstY < nDstYSize && eErr == CE_None; ++iDstY )
-    {
-        int iDstX;
-        
-        /* ---------------------------------------------------------------- */
-        /*      Setup points to transform to source image space.            */
-        /* ---------------------------------------------------------------- */
-        for( iDstX = 0; iDstX < nDstXSize; ++iDstX )
-        {
-            padfX[iDstX] = iDstX + 0.5 + nDstXOff;
-            padfY[iDstX] = iDstY + 0.5 + nDstYOff;
-            padfZ[iDstX] = 0.0;
-        }
-        
-        /* ---------------------------------------------------------------- */
-        /*      Transform the points from destination pixel/line coordinates*/
-        /*      to source pixel/line coordinates.                           */
-        /* ---------------------------------------------------------------- */
-        poWK->pfnTransformer( poWK->pTransformerArg, TRUE, nDstXSize, 
-                              padfX, padfY, padfZ, pabSuccess );
-        
-        err = GDALWarpKernelOpenCL_setCoordRow(warper, padfX, padfY,
-                                               nSrcXOff, nSrcYOff,
-                                               pabSuccess, iDstY);
-        if(err != CL_SUCCESS)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-            return CE_Failure;
-        }
-        
-        //Update the valid & density masks because we don't do so in the kernel
-        for( iDstX = 0; iDstX < nDstXSize && eErr == CE_None; iDstX++ )
-        {
-            double dfX = padfX[iDstX];
-            double dfY = padfY[iDstX];
-            int iDstOffset = iDstX + iDstY * nDstXSize;
-            
-            //See GWKGeneralCase() for appropriate commenting
-            if( !pabSuccess[iDstX] || dfX < nSrcXOff || dfY < nSrcYOff )
-                continue;
-            
-            int iSrcX = ((int) dfX) - nSrcXOff;
-            int iSrcY = ((int) dfY) - nSrcYOff;
-            
-            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
-                continue;
-            
-            int iSrcOffset = iSrcX + iSrcY * nSrcXSize;
-            double  dfDensity = 1.0;
-            
-            if( poWK->pafUnifiedSrcDensity != NULL 
-                && iSrcX >= 0 && iSrcY >= 0 
-                && iSrcX < nSrcXSize && iSrcY < nSrcYSize )
-                dfDensity = poWK->pafUnifiedSrcDensity[iSrcOffset];
-            
-            GWKOverlayDensity( poWK, iDstOffset, dfDensity );
-            
-            //Because this is on the bit-wise level, it can't be done well in OpenCL
-            if( poWK->panDstValid != NULL )
-                poWK->panDstValid[iDstOffset>>5] |= 0x01 << (iDstOffset & 0x1f);
-        }
-    }
-    
-    CPLFree( padfX );
-    CPLFree( padfY );
-    CPLFree( padfZ );
-    CPLFree( pabSuccess );
-    
-    err = GDALWarpKernelOpenCL_runResamp(warper,
-                                         poWK->pafUnifiedSrcDensity,
-                                         poWK->panUnifiedSrcValid,
-                                         poWK->pafDstDensity,
-                                         poWK->panUnifiedSrcValid,
-                                         poWK->dfXScale, poWK->dfYScale,
-                                         poWK->dfXFilter, poWK->dfYFilter,
-                                         poWK->nXRadius, poWK->nYRadius,
-                                         poWK->nFiltInitX, poWK->nFiltInitY);
-    
-    if(err != CL_SUCCESS)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-        eErr = CE_Failure;
-        goto free_warper;
-    }
-    
-    /* ==================================================================== */
-    /*      Loop over output lines.                                         */
-    /* ==================================================================== */
-    for( iDstY = 0; iDstY < nDstYSize && eErr == CE_None; iDstY++ )
-    {
-        for( iBand = 0; iBand < poWK->nBands; iBand++ )
-        {
-            int iDstX;
-            void *rowReal, *rowImag;
-            GByte *pabyDst = poWK->papabyDstImage[iBand];
-            
-            err = GDALWarpKernelOpenCL_getRow(warper, &rowReal, &rowImag, iDstY, iBand);
-            if(err != CL_SUCCESS)
-            {
-                CPLError( CE_Failure, CPLE_AppDefined, 
-                          "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-                eErr = CE_Failure;
-                goto free_warper;
-            }
-            
-            //Copy the data from the warper to GDAL's memory
-            switch ( poWK->eWorkingDataType )
-            {
-              case GDT_Byte:
-                memcpy((void **)&(((GByte *)pabyDst)[iDstY*nDstXSize]),
-                       rowReal, sizeof(GByte)*nDstXSize);
-                break;
-              case GDT_Int16:
-                memcpy((void **)&(((GInt16 *)pabyDst)[iDstY*nDstXSize]),
-                       rowReal, sizeof(GInt16)*nDstXSize);
-                break;
-              case GDT_UInt16:
-                memcpy((void **)&(((GUInt16 *)pabyDst)[iDstY*nDstXSize]),
-                       rowReal, sizeof(GUInt16)*nDstXSize);
-                break;
-              case GDT_Float32:
-                memcpy((void **)&(((float *)pabyDst)[iDstY*nDstXSize]),
-                       rowReal, sizeof(float)*nDstXSize);
-                break;
-              case GDT_CInt16:
-              {
-                  GInt16 *pabyDstI16 = &(((GInt16 *)pabyDst)[iDstY*nDstXSize]);
-                  for (iDstX = 0; iDstX < nDstXSize; iDstX++) {
-                      pabyDstI16[iDstX*2  ] = ((GInt16 *)rowReal)[iDstX];
-                      pabyDstI16[iDstX*2+1] = ((GInt16 *)rowImag)[iDstX];
-                  }
-              }
-              break;
-              case GDT_CFloat32:
-              {
-                  float *pabyDstF32 = &(((float *)pabyDst)[iDstY*nDstXSize]);
-                  for (iDstX = 0; iDstX < nDstXSize; iDstX++) {
-                      pabyDstF32[iDstX*2  ] = ((float *)rowReal)[iDstX];
-                      pabyDstF32[iDstX*2+1] = ((float *)rowImag)[iDstX];
-                  }
-              }
-              break;
-              default:
-                // We don't support higher precision formats
-                CPLError( CE_Failure, CPLE_AppDefined, 
-                          "Unsupported resampling OpenCL data type %d.", (int) poWK->eWorkingDataType );
-                eErr = CE_Failure;
-                goto free_warper;
-            }
-        }
-    }
-free_warper:
-    if((err = GDALWarpKernelOpenCL_deleteEnv(warper)) != CL_SUCCESS)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "OpenCL routines reported failure (%d) on line %d.", (int) err, __LINE__ );
-        return CE_Failure;
-    }
-    
-    return eErr;
-}
-#endif /* defined(HAVE_OPENCL) */
-
-
-#define COMPUTE_iSrcOffset(_pabSuccess, _iDstX, _padfX, _padfY, _poWK, _nSrcXSize, _nSrcYSize) \
-            if( !_pabSuccess[_iDstX] ) \
-                continue; \
-\
-/* -------------------------------------------------------------------- */ \
-/*      Figure out what pixel we want in our source raster, and skip    */ \
-/*      further processing if it is well off the source image.          */ \
-/* -------------------------------------------------------------------- */ \
-            /* We test against the value before casting to avoid the */ \
-            /* problem of asymmetric truncation effects around zero.  That is */ \
-            /* -0.5 will be 0 when cast to an int. */ \
-            if( _padfX[_iDstX] < _poWK->nSrcXOff \
-                || _padfY[_iDstX] < _poWK->nSrcYOff ) \
-                continue; \
-\
-            int iSrcX, iSrcY, iSrcOffset;\
-\
-            iSrcX = ((int) (_padfX[_iDstX] + 1e-10)) - _poWK->nSrcXOff;\
-            iSrcY = ((int) (_padfY[_iDstX] + 1e-10)) - _poWK->nSrcYOff;\
-\
-            /* If operating outside natural projection area, padfX/Y can be */ \
-            /* a very huge positive number, that becomes -2147483648 in the */ \
-            /* int trucation. So it is necessary to test now for non negativeness. */ \
-            if( iSrcX < 0 || iSrcX >= _nSrcXSize || iSrcY < 0 || iSrcY >= _nSrcYSize )\
-                continue;\
-\
-            iSrcOffset = iSrcX + iSrcY * _nSrcXSize;
-
-/************************************************************************/
 /*                           GWKGeneralCase()                           */
 /*                                                                      */
 /*      This is the most general case.  It attempts to handle all       */
@@ -2759,7 +2374,32 @@ static CPLErr GWKGeneralCase( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply transparent/invalid source pixels to the    */
@@ -2963,7 +2603,29 @@ static CPLErr GWKNearestNoMasksByte( GDALWarpKernel *poWK )
             if( !pabSuccess[iDstX] )
                 continue;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3073,7 +2735,32 @@ static CPLErr GWKBilinearNoMasksByte( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3185,7 +2872,32 @@ static CPLErr GWKCubicNoMasksByte( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3300,7 +3012,32 @@ static CPLErr GWKCubicSplineNoMasksByte( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3416,7 +3153,32 @@ static CPLErr GWKNearestByte( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply invalid source pixels to the dest.          */
@@ -3583,7 +3345,32 @@ static CPLErr GWKNearestNoMasksShort( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3692,7 +3479,32 @@ static CPLErr GWKBilinearNoMasksShort( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3806,7 +3618,32 @@ static CPLErr GWKCubicNoMasksShort( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -3924,7 +3761,32 @@ static CPLErr GWKCubicSplineNoMasksShort( GDALWarpKernel *poWK )
 /* ==================================================================== */
         for( iDstX = 0; iDstX < nDstXSize; iDstX++ )
         {
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -4042,7 +3904,32 @@ static CPLErr GWKNearestShort( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* -------------------------------------------------------------------- */
 /*      Don't generate output pixels for which the source valid         */
@@ -4208,7 +4095,32 @@ static CPLErr GWKNearestNoMasksFloat( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* ==================================================================== */
 /*      Loop processing each band.                                      */
@@ -4319,7 +4231,32 @@ static CPLErr GWKNearestFloat( GDALWarpKernel *poWK )
         {
             int iDstOffset;
 
-            COMPUTE_iSrcOffset(pabSuccess, iDstX, padfX, padfY, poWK, nSrcXSize, nSrcYSize);
+            if( !pabSuccess[iDstX] )
+                continue;
+
+/* -------------------------------------------------------------------- */
+/*      Figure out what pixel we want in our source raster, and skip    */
+/*      further processing if it is well off the source image.          */
+/* -------------------------------------------------------------------- */
+            // We test against the value before casting to avoid the
+            // problem of asymmetric truncation effects around zero.  That is
+            // -0.5 will be 0 when cast to an int. 
+            if( padfX[iDstX] < poWK->nSrcXOff 
+                || padfY[iDstX] < poWK->nSrcYOff )
+                continue;
+
+            int iSrcX, iSrcY, iSrcOffset;
+
+            iSrcX = ((int) padfX[iDstX]) - poWK->nSrcXOff;
+            iSrcY = ((int) padfY[iDstX]) - poWK->nSrcYOff;
+
+            // If operating outside natural projection area, padfX/Y can be
+            // a very huge positive number, that becomes -2147483648 in the
+            // int trucation. So it is necessary to test now for non negativeness.
+            if( iSrcX < 0 || iSrcX >= nSrcXSize || iSrcY < 0 || iSrcY >= nSrcYSize )
+                continue;
+
+            iSrcOffset = iSrcX + iSrcY * nSrcXSize;
 
 /* -------------------------------------------------------------------- */
 /*      Do not try to apply invalid source pixels to the dest.          */

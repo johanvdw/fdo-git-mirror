@@ -42,7 +42,6 @@
 #include <cassert>
 #include <vector>
 #include <cstring>
-#include <cstdlib>
 
 using namespace PCIDSK;
 
@@ -55,8 +54,7 @@ SysBlockMap::SysBlockMap( PCIDSKFile *file, int segment,
         : CPCIDSKSegment( file, segment, segment_pointer )
 
 {
-    partial_loaded = false;
-    full_loaded = false;
+    loaded = false;
     dirty = false;
     growing_segment = 0;
 }
@@ -105,84 +103,45 @@ void SysBlockMap::Initialize()
 }
 
 /************************************************************************/
-/*                            PartialLoad()                             */
-/*                                                                      */
-/*      Load the header and some per-layer information.                 */
+/*                                Load()                                */
 /************************************************************************/
 
-void SysBlockMap::PartialLoad()
+void SysBlockMap::Load()
 
 {
-    if( partial_loaded )
+    if( loaded )
         return;
-
-//    printf( "<PartialLoad>" );
-//    fflush( stdout );
-
-/* -------------------------------------------------------------------- */
-/*      Load the 512 byte count section of the blockmap.                */
-/* -------------------------------------------------------------------- */
-    PCIDSKBuffer count_data;
-
-    count_data.SetSize( 512 );
-    ReadFromFile( count_data.buffer, 0, 512 );
-
-    if( strncmp(count_data.buffer,"VERSION",7) != 0 )
-        ThrowPCIDSKException( "SysBlockMap::PartialLoad() - block map corrupt." );
-
-    if( count_data.GetInt( 7, 3 ) != 1 )
-        ThrowPCIDSKException( "SysBlockMap::PartialLoad() - unsupported version." );
-
-/* -------------------------------------------------------------------- */
-/*      Establish our SysVirtualFile array based on the number of       */
-/*      images listed in the image list.                                */
-/* -------------------------------------------------------------------- */
-    int layer_count = count_data.GetInt( 10, 8 );
-
-    virtual_files.resize( layer_count );
-
-    block_count = count_data.GetInt( 18, 8 );
-    first_free_block = count_data.GetInt( 26, 8 );
-
-/* -------------------------------------------------------------------- */
-/*      Load the layer list definitions.  These are fairly small.       */
-/* -------------------------------------------------------------------- */
-    layer_data.SetSize( 24 * layer_count );
-    ReadFromFile( layer_data.buffer, 
-                  512 + 28 * block_count, 
-                  layer_data.buffer_size);
-
-    partial_loaded = true;
-
-//    FullLoad();
-}
-
-/************************************************************************/
-/*                              FullLoad()                              */
-/*                                                                      */
-/*      Load the blockmap data (can be large) into blockmap_data.       */
-/************************************************************************/
-
-void SysBlockMap::FullLoad()
-
-{
-    PartialLoad();
-
-    if( full_loaded )
-        return;
-
-//    printf( "<FullLoad>" );
-//    fflush( stdout );
 
     // TODO: this should likely be protected by a mutex. 
 
 /* -------------------------------------------------------------------- */
 /*      Load the segment contents into a buffer.                        */
 /* -------------------------------------------------------------------- */
-    blockmap_data.SetSize( block_count * 28 );
-    ReadFromFile( blockmap_data.buffer, 512, blockmap_data.buffer_size );
+    seg_data.SetSize( (int) (data_size - 1024) );
 
-    full_loaded = true;
+    ReadFromFile( seg_data.buffer, 0, data_size - 1024 );
+
+    if( strncmp(seg_data.buffer,"VERSION",7) != 0 )
+        ThrowPCIDSKException( "SysBlockMap::Load() - block map corrupt." );
+
+    if( seg_data.GetInt( 7, 3 ) != 1 )
+        ThrowPCIDSKException( "SysBlockMap::Load() - unsupported version." );
+
+/* -------------------------------------------------------------------- */
+/*      Establish our SysVirtualFile array based on the number of       */
+/*      images listed in the image list.                                */
+/* -------------------------------------------------------------------- */
+    int layer_count = seg_data.GetInt( 10, 8 );
+
+    block_count = seg_data.GetInt( 18, 8 );
+    first_free_block = seg_data.GetInt( 26, 8 );
+
+    virtual_files.resize( layer_count );
+
+    block_map_offset = 512;
+    layer_list_offset = block_map_offset + 28 * block_count;
+
+    loaded = true;
 }
 
 /************************************************************************/
@@ -192,22 +151,10 @@ void SysBlockMap::FullLoad()
 void SysBlockMap::Synchronize()
 
 {
-    if( !full_loaded || !dirty )
+    if( !loaded || !dirty )
         return;
 
-    PCIDSKBuffer init_data(512);
-
-    init_data.Put( "VERSION  1", 0, 10 );
-    init_data.Put( (int) virtual_files.size(), 10, 8 );
-    init_data.Put( block_count, 18, 8 );
-    init_data.Put( first_free_block, 26, 8 );
-    init_data.Put( "", 34, 512-34 );
-
-    WriteToFile( init_data.buffer, 0, init_data.buffer_size );
-
-    WriteToFile( blockmap_data.buffer, 512, blockmap_data.buffer_size );
-    WriteToFile( layer_data.buffer, 512 + blockmap_data.buffer_size, 
-                 layer_data.buffer_size );
+    WriteToFile( seg_data.buffer, 0, seg_data.buffer_size );
 
     dirty = false;
 }
@@ -221,8 +168,6 @@ void SysBlockMap::Synchronize()
 void SysBlockMap::AllocateBlocks()
 
 {
-    FullLoad();
-
 /* -------------------------------------------------------------------- */
 /*      Find a segment we can extend.  We consider any SYS segments     */
 /*      with a name of SysBData.                                        */
@@ -269,19 +214,26 @@ void SysBlockMap::AllocateBlocks()
 /*      Allocate another set of space.                                  */
 /* -------------------------------------------------------------------- */
     uint64 new_big_blocks = 16;
-    uint64 new_bytes = new_big_blocks * SysVirtualFile::block_size;
+    int new_bytes = new_big_blocks * SysVirtualFile::block_size;
     seg = file->GetSegment( growing_segment );
-    int block_index_in_segment = (int) 
-        (seg->GetContentSize() / SysVirtualFile::block_size);
+    int block_index_in_segment = 
+        seg->GetContentSize() / SysVirtualFile::block_size;
 
     seg->WriteToFile( "\0", seg->GetContentSize() + new_bytes - 1, 1 );
     
 /* -------------------------------------------------------------------- */
-/*      Resize the memory image of the blockmap.                        */
+/*      Resize the SysBMDir segment data, growing the block map area.    */
 /* -------------------------------------------------------------------- */
-    if( 28 * (block_count + new_big_blocks) 
-        > (unsigned int) blockmap_data.buffer_size )
-        blockmap_data.SetSize( (int) (28 * (block_count + new_big_blocks)) );
+    if( block_map_offset + 28 * (block_count + new_big_blocks) 
+        + virtual_files.size() * 24 > (unsigned int) seg_data.buffer_size )
+        seg_data.SetSize( 
+            block_map_offset + 28 * (block_count + new_big_blocks) 
+            + virtual_files.size() * 24 );
+
+    // push the layer list on.
+    memmove( seg_data.buffer + layer_list_offset + new_big_blocks*28, 
+             seg_data.buffer + layer_list_offset, 
+             virtual_files.size() * 24 );
 
 /* -------------------------------------------------------------------- */
 /*      Fill in info on the new blocks.                                 */
@@ -292,21 +244,25 @@ void SysBlockMap::AllocateBlocks()
          block_index < block_count + new_big_blocks;
          block_index++ )
     {
-        int bi_offset = (int) (block_index * 28);
+        uint64 bi_offset = block_map_offset + block_index * 28;
 
-        blockmap_data.Put( growing_segment, bi_offset, 4 );
-        blockmap_data.Put( block_index_in_segment++, bi_offset+4, 8 );
-        blockmap_data.Put( -1, bi_offset+12, 8 );
+        seg_data.Put( growing_segment, bi_offset, 4 );
+        seg_data.Put( block_index_in_segment++, bi_offset+4, 8 );
+        seg_data.Put( -1, bi_offset+12, 8 );
 
         if( block_index == block_count + new_big_blocks - 1 )
-            blockmap_data.Put( -1, bi_offset+20, 8 );
+            seg_data.Put( -1, bi_offset+20, 8 );
         else
-            blockmap_data.Put( block_index+1, bi_offset+20, 8 );
+            seg_data.Put( block_index+1, bi_offset+20, 8 );
     }
 
     first_free_block = block_count;
+    seg_data.Put( first_free_block, 26, 8 );
 
-    block_count += (int) new_big_blocks;
+    block_count += new_big_blocks;
+    seg_data.Put( block_count, 18, 8 );
+
+    layer_list_offset = block_map_offset + 28 * block_count;
 
     dirty = true;
 }
@@ -321,7 +277,7 @@ int SysBlockMap::GrowVirtualFile( int image, int &last_block,
                                   int &block_segment_ret )
 
 {
-    FullLoad();
+    Load();
 
 /* -------------------------------------------------------------------- */
 /*      Do we need to create new free blocks?                           */
@@ -336,26 +292,27 @@ int SysBlockMap::GrowVirtualFile( int image, int &last_block,
     int alloc_block = first_free_block;
 
     // update first free block to point to the next free block.
-    first_free_block = blockmap_data.GetInt( alloc_block*28+20, 8);
+    first_free_block = seg_data.GetInt( block_map_offset+alloc_block*28+20, 8);
+    seg_data.Put( first_free_block, 26, 8 );
 
     // mark block as owned by this layer/image. 
-    blockmap_data.Put( image, alloc_block*28 + 12, 8 );
+    seg_data.Put( image, block_map_offset + alloc_block*28 + 12, 8 );
 
     // clear next free block on allocated block - it is the last in the chain
-    blockmap_data.Put( -1, alloc_block*28 + 20, 8 );
+    seg_data.Put( -1, block_map_offset + alloc_block*28 + 20, 8 );
 
     // point the previous "last block" for this virtual file to this new block
     if( last_block != -1 )
-        blockmap_data.Put( alloc_block, last_block*28 + 20, 8 );
+        seg_data.Put( alloc_block, block_map_offset + last_block*28 + 20, 8 );
     else
-        layer_data.Put( alloc_block, image*24 + 4, 8 );
+        seg_data.Put( alloc_block, layer_list_offset + image*24 + 4, 8 );
 
     dirty = true;
 
-    block_segment_ret = blockmap_data.GetInt( alloc_block*28, 4 );
+    block_segment_ret = seg_data.GetInt( block_map_offset+alloc_block*28, 4 );
     last_block = alloc_block;
 
-    return blockmap_data.GetInt( alloc_block*28+4, 8 );
+    return seg_data.GetInt( block_map_offset+alloc_block*28+4, 8 );
 }
 
 /************************************************************************/
@@ -365,9 +322,7 @@ int SysBlockMap::GrowVirtualFile( int image, int &last_block,
 void SysBlockMap::SetVirtualFileSize( int image_index, uint64 file_length )
 
 {
-    FullLoad();
-
-    layer_data.Put( file_length, 24*image_index + 12, 12 );
+    seg_data.Put( file_length, layer_list_offset + 24*image_index + 12, 12 );
     dirty = true;
 }
 
@@ -378,21 +333,22 @@ void SysBlockMap::SetVirtualFileSize( int image_index, uint64 file_length )
 SysVirtualFile *SysBlockMap::GetVirtualFile( int image )
 
 {
-    PartialLoad();
+    Load();
 
     if( image < 0 || image >= (int) virtual_files.size() )
         ThrowPCIDSKException( "GetImageSysFile(%d): invalid image index",
-                              image );
+                                   image );
 
     if( virtual_files[image] != NULL )
         return virtual_files[image];
 
-    uint64  vfile_length = layer_data.GetUInt64( 24*image + 12, 12 );
-    int  start_block = layer_data.GetInt( 24*image + 4, 8 );
+    uint64  vfile_length = 
+        seg_data.GetUInt64( layer_list_offset + 24*image + 12, 12 );
+    int  start_block = 
+        seg_data.GetInt( layer_list_offset + 24*image + 4, 8 );
 
     virtual_files[image] = 
-        new SysVirtualFile( dynamic_cast<CPCIDSKFile *>(file), 
-                            start_block, vfile_length,
+        new SysVirtualFile( dynamic_cast<CPCIDSKFile *>(file), start_block, vfile_length, seg_data,
                             this, image );
 
     return virtual_files[image];
@@ -405,7 +361,7 @@ SysVirtualFile *SysBlockMap::GetVirtualFile( int image )
 int SysBlockMap::CreateVirtualFile()
 
 {
-    FullLoad();
+    Load();
 
 /* -------------------------------------------------------------------- */
 /*      Is there an existing dead layer we can reuse?                   */
@@ -414,7 +370,8 @@ int SysBlockMap::CreateVirtualFile()
 
     for( layer_index = 0; layer_index < virtual_files.size(); layer_index++ )
     {
-        if( layer_data.GetInt( 24*layer_index + 0, 4 ) == 1 /* dead */ )
+        if( seg_data.GetInt( layer_list_offset + 24*layer_index + 0, 4 )
+            == 1 /* dead */ )
         {
             break;
         }
@@ -425,9 +382,14 @@ int SysBlockMap::CreateVirtualFile()
 /* -------------------------------------------------------------------- */
     if( layer_index == virtual_files.size() )
     {
-        layer_index = virtual_files.size();
-        layer_data.SetSize( (layer_index+1) * 24 );
-        virtual_files.push_back( NULL );
+        seg_data.Put( (int) layer_index+1, 10, 8 );
+        
+        if( layer_list_offset + (virtual_files.size()+1) * 24 
+            > (unsigned int) seg_data.buffer_size )
+            seg_data.SetSize( layer_list_offset + (virtual_files.size()+1) * 24  );
+
+        virtual_files.resize(layer_index+1);
+        virtual_files[layer_index] = NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -435,9 +397,9 @@ int SysBlockMap::CreateVirtualFile()
 /* -------------------------------------------------------------------- */
     dirty = true;
 
-    layer_data.Put( 2, 24*layer_index + 0, 4 );
-    layer_data.Put( -1, 24*layer_index + 4, 8 );
-    layer_data.Put( 0, 24*layer_index + 12, 12 );
+    seg_data.Put( 2, layer_list_offset + 24*layer_index + 0, 4 );
+    seg_data.Put( -1, layer_list_offset + 24*layer_index + 4, 8 );
+    seg_data.Put( 0, layer_list_offset + 24*layer_index + 12, 12 );
 
     return layer_index;
 }
@@ -496,56 +458,4 @@ int SysBlockMap::CreateVirtualImageFile( int width, int height,
     vfile->WriteToFile( tmap.buffer, 128, tile_count*20 );
 
     return img_index;
-}
-
-/************************************************************************/
-/*                        GetNextBlockMapEntry()                        */
-/*                                                                      */
-/*      SysVirtualFile's call this method to find the next block in     */
-/*      the blockmap which belongs to them.  This allows them to        */
-/*      fill their blockmap "as needed" without necessarily forcing     */
-/*      a full load of the blockmap.                                    */
-/************************************************************************/
-
-int SysBlockMap::GetNextBlockMapEntry( int bm_index,
-                                       uint16 &segment,
-                                       int &block_in_segment )
-
-{
-    if( !partial_loaded )
-        PartialLoad();
-
-/* -------------------------------------------------------------------- */
-/*      If the full blockmap is already loaded, just fetch it from      */
-/*      there to avoid extra IO or confusion between what is disk       */
-/*      and what is in memory.                                          */
-/*                                                                      */
-/*      Otherwise we read from disk and hope the io level buffering     */
-/*      is pretty good.                                                 */
-/* -------------------------------------------------------------------- */
-    char bm_entry[29];
-
-    if( full_loaded )
-    {
-        memcpy( bm_entry, blockmap_data.buffer + bm_index * 28, 28 );
-    }
-    else
-    {
-        ReadFromFile( bm_entry, bm_index * 28 + 512, 28 );
-    }
-    
-/* -------------------------------------------------------------------- */
-/*      Parse the values as efficiently as we can.                      */
-/* -------------------------------------------------------------------- */
-    bm_entry[28] = '\0';
-
-    int next_block = atoi( bm_entry+20 );
-
-    bm_entry[12] = '\0';
-    block_in_segment = atoi(bm_entry+4);
-
-    bm_entry[4] = '\0';
-    segment = atoi(bm_entry);
-    
-    return next_block;
 }

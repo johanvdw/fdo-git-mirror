@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsi_pcidsk_io.cpp 21680 2011-02-11 21:12:07Z warmerdam $
+ * $Id: pcidskdataset.cpp 17097 2009-05-21 19:59:35Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  PCIDSK SDK compatiable io interface built on VSI.
@@ -31,11 +31,9 @@
 #include "cpl_multiproc.h"
 #include "pcidsk.h"
 
-CPL_CVSID("$Id: vsi_pcidsk_io.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+CPL_CVSID("$Id: pcidskdataset.cpp 17097 2009-05-21 19:59:35Z warmerdam $");
 
 using namespace PCIDSK;
-
-EDBFile *GDAL_EDBOpen( std::string osFilename, std::string osAccess );
 
 class VSI_IOInterface : public IOInterfaces
 {
@@ -61,7 +59,6 @@ const PCIDSK::PCIDSKInterfaces *PCIDSK2GetInterfaces()
     static PCIDSKInterfaces singleton_pcidsk2_interfaces;
 
     singleton_pcidsk2_interfaces.io = &singleton_vsi_interface;
-    singleton_pcidsk2_interfaces.OpenEDB = GDAL_EDBOpen;
 
     return &singleton_pcidsk2_interfaces;
 }
@@ -74,7 +71,7 @@ void *
 VSI_IOInterface::Open( std::string filename, std::string access ) const
 
 {
-    VSILFILE *fp = VSIFOpenL( filename.c_str(), access.c_str() );
+    FILE *fp = VSIFOpenL( filename.c_str(), access.c_str() );
 
     if( fp == NULL )
         ThrowPCIDSKException( "Failed to open %s: %s", 
@@ -91,7 +88,7 @@ uint64
 VSI_IOInterface::Seek( void *io_handle, uint64 offset, int whence ) const
 
 {
-    VSILFILE *fp = (VSILFILE *) io_handle;
+    FILE *fp = (FILE *) io_handle;
 
     uint64 result = VSIFSeekL( fp, offset, whence );
 
@@ -110,7 +107,7 @@ VSI_IOInterface::Seek( void *io_handle, uint64 offset, int whence ) const
 uint64 VSI_IOInterface::Tell( void *io_handle ) const
 
 {
-    VSILFILE *fp = (VSILFILE *) io_handle;
+    FILE *fp = (FILE *) io_handle;
 
     return VSIFTellL( fp );
 }
@@ -123,11 +120,11 @@ uint64 VSI_IOInterface::Read( void *buffer, uint64 size, uint64 nmemb,
                                void *io_handle ) const
 
 {
-    VSILFILE *fp = (VSILFILE *) io_handle;
+    FILE *fp = (FILE *) io_handle;
 
     errno = 0;
 
-    uint64 result = VSIFReadL( buffer, (size_t) size, (size_t) nmemb, fp );
+    uint64 result = VSIFReadL( buffer, size, nmemb, fp );
 
     if( errno != 0 && result == 0 && nmemb != 0 )
         ThrowPCIDSKException( "Read(%d): %s", 
@@ -145,11 +142,11 @@ uint64 VSI_IOInterface::Write( const void *buffer, uint64 size, uint64 nmemb,
                                 void *io_handle ) const
 
 {
-    VSILFILE *fp = (VSILFILE *) io_handle;
+    FILE *fp = (FILE *) io_handle;
 
     errno = 0;
 
-    uint64 result = VSIFWriteL( buffer, (size_t) size, (size_t) nmemb, fp );
+    uint64 result = VSIFWriteL( buffer, size, nmemb, fp );
 
     if( errno != 0 && result == 0 && nmemb != 0 )
         ThrowPCIDSKException( "Write(%d): %s", 
@@ -166,7 +163,7 @@ uint64 VSI_IOInterface::Write( const void *buffer, uint64 size, uint64 nmemb,
 int VSI_IOInterface::Eof( void *io_handle ) const
 
 {
-    return VSIFEofL( (VSILFILE *) io_handle );
+    return VSIFEofL( (FILE *) io_handle );
 }
 
 /************************************************************************/
@@ -176,7 +173,7 @@ int VSI_IOInterface::Eof( void *io_handle ) const
 int VSI_IOInterface::Flush( void *io_handle ) const
 
 {
-    return VSIFFlushL( (VSILFILE *) io_handle );
+    return VSIFFlushL( (FILE *) io_handle );
 }
 
 /************************************************************************/
@@ -186,7 +183,7 @@ int VSI_IOInterface::Flush( void *io_handle ) const
 int VSI_IOInterface::Close( void *io_handle ) const
 
 {
-    return VSIFCloseL( (VSILFILE *) io_handle );
+    return VSIFCloseL( (FILE *) io_handle );
 }
 
 /************************************************************************/
@@ -242,7 +239,6 @@ CPLThreadMutex::CPLThreadMutex()
 
 {
     hMutex = CPLCreateMutex();
-    CPLReleaseMutex( hMutex ); // it is created acquired, but we want it free.
 }
 
 /************************************************************************/

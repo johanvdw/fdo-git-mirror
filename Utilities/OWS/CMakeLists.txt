@@ -39,33 +39,19 @@ set( FdoOws_LIB_SRCS
 	${FdoOwsSrc_SRCS}
 )
 
-if( NOT LOCAL_BOOST )
-	link_directories( ${Boost_LIBRARY_DIRS} )
-endif( NOT LOCAL_BOOST )
+link_directories( ${Boost_LIBRARY_DIRS} )
 
 add_library( FdoOws SHARED ${FdoOws_LIB_SRCS} )
 
-if( LOCAL_OPENSSL )
 target_link_libraries( FdoOws
 	FDO
 	ProvidersCommon
-	${Boost_THREAD_LIBRARY}
+	boost_thread-mt
 	${CURL_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	pthread
  )
-else ( LOCAL_OPENSSL )
-target_link_libraries( FdoOws
-	FDO
-	ProvidersCommon
-	${Boost_THREAD_LIBRARY}
-	${CURL_LIBRARIES}
-	${OPENSSL_LIBRARIES}
-	${ZLIB_LIBRARIES}
-	pthread
- )
-endif ( LOCAL_OPENSSL )
 
 set_target_properties( FdoOws PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
 install( TARGETS FdoOws DESTINATION ${LIB_INSTALL_DIR} )

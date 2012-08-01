@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shp_vsi.c 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: shp_vsi.c 17131 2009-05-26 22:03:31Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  IO Redirection via VSI services for shp/dbf io.
@@ -30,9 +30,8 @@
 #include "shapefil.h"
 #include "cpl_vsi.h"
 #include "cpl_error.h"
-#include "cpl_conv.h"
 
-CPL_CVSID("$Id: shp_vsi.c 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: shp_vsi.c 17131 2009-05-26 22:03:31Z rouault $");
 
 /************************************************************************/
 /*                            VSI_SHP_Open()                            */
@@ -52,7 +51,7 @@ SAOffset VSI_SHP_Read( void *p, SAOffset size, SAOffset nmemb, SAFile file )
 
 {
     return (SAOffset) VSIFReadL( p, (size_t) size, (size_t) nmemb, 
-                                 (VSILFILE *) file );
+                                 (FILE *) file );
 }
 
 /************************************************************************/
@@ -63,7 +62,7 @@ SAOffset VSI_SHP_Write( void *p, SAOffset size, SAOffset nmemb, SAFile file )
 
 {
     return (SAOffset) VSIFWriteL( p, (size_t) size, (size_t) nmemb, 
-                                  (VSILFILE *) file );
+                                  (FILE *) file );
 }
 
 /************************************************************************/
@@ -73,7 +72,7 @@ SAOffset VSI_SHP_Write( void *p, SAOffset size, SAOffset nmemb, SAFile file )
 SAOffset VSI_SHP_Seek( SAFile file, SAOffset offset, int whence )
 
 {
-    return (SAOffset) VSIFSeekL( (VSILFILE *) file, (vsi_l_offset) offset, whence );
+    return (SAOffset) VSIFSeekL( (FILE *) file, (vsi_l_offset) offset, whence );
 }
 
 /************************************************************************/
@@ -83,7 +82,7 @@ SAOffset VSI_SHP_Seek( SAFile file, SAOffset offset, int whence )
 SAOffset VSI_SHP_Tell( SAFile file )
 
 {
-    return (SAOffset) VSIFTellL( (VSILFILE *) file );
+    return (SAOffset) VSIFTellL( (FILE *) file );
 }
 
 /************************************************************************/
@@ -93,7 +92,7 @@ SAOffset VSI_SHP_Tell( SAFile file )
 int VSI_SHP_Flush( SAFile file )
 
 {
-    return VSIFFlushL( (VSILFILE *) file );
+    return VSIFFlushL( (FILE *) file );
 }
 
 /************************************************************************/
@@ -103,7 +102,7 @@ int VSI_SHP_Flush( SAFile file )
 int VSI_SHP_Close( SAFile file )
 
 {
-    return VSIFCloseL( (VSILFILE *) file );
+    return VSIFCloseL( (FILE *) file );
 }
 
 /************************************************************************/
@@ -142,7 +141,7 @@ void SASetupDefaultHooks( SAHooks *psHooks )
     psHooks->FClose  = VSI_SHP_Close;
 
     psHooks->Remove  = VSI_SHP_Remove;
-    psHooks->Atof    = CPLAtof;
+    psHooks->Atof    = atof;
 
     psHooks->Error   = VSI_SHP_Error;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_csharp.i 21588 2011-01-27 15:42:24Z tamas $
+ * $Id: typemaps_csharp.i 18358 2009-12-21 00:10:55Z tamas $
  *
  * Name:     typemaps_csharp.i
  * Project:  GDAL CSharp Interface
@@ -105,7 +105,10 @@ OPTIONAL_POD(int, int);
 /***************************************************
  * Typemaps for  (retStringAndCPLFree*)
  ***************************************************/
-
+%inline %{
+    typedef char retStringAndCPLFree;
+%}
+ 
 %typemap(out) (retStringAndCPLFree*)
 %{ 
     /* %typemap(out) (retStringAndCPLFree*) */
@@ -160,9 +163,6 @@ OPTIONAL_POD(int, int);
 /*
  * Typemap for char** options
  */
-
-/* FIXME: all those typemaps are not equivalent... out(char **CSL) should free */
-/* the list with CSLDestroy() for example */
 
 %typemap(imtype, out="IntPtr") char **options, char **dict, char **CSL "IntPtr[]"
 %typemap(cstype) char **options, char **dict, char **CSL %{string[]%}
@@ -259,7 +259,7 @@ OPTIONAL_POD(int, int);
   char* temp_string;
   temp_string = SWIG_csharp_string_callback(*$1);
   if (*$1)
-		CPLFree(*$1);
+		free(*$1);
   *$1 = temp_string;
 }
 %typemap(argout) (char **staticstring), (char **username), (char **usrname), (char **type)
@@ -380,11 +380,6 @@ OPTIONAL_POD(int, int);
 }
 
 %apply (int inout[ANY]) {int *pList};
-
-/*
- * Typemap for const char *utf8_path. 
- */
-%typemap(csin) (const char *utf8_path)  "System.Text.Encoding.Default.GetString(System.Text.Encoding.UTF8.GetBytes($csinput))" 
 
 /*
  * Typemap for double *defaultval. 

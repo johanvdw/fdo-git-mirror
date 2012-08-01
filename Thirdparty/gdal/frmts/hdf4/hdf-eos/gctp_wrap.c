@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gctp_wrap.c 22751 2011-07-18 15:25:05Z winkey $
+ * $Id: gctp_wrap.c 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  This is the wrapper code to use OGR Coordinate Transformation
@@ -29,33 +29,10 @@
  ****************************************************************************/
 
 #include "ogr_srs_api.h"
-#include <stdlib.h>
-
 #include "mfhdf.h"
 
-#include <math.h>
-
-#ifndef PI
-#ifndef M_PI
-#define PI (3.141592653589793238)
-#else
-#define PI (M_PI)
-#endif
-#endif
-
-#define DEG (180.0 / PI)
-#define RAD (PI / 180.0)
-
-/***** static vars to store the transformers in *****/
-/***** this is not thread safe *****/
-
-static OGRCoordinateTransformationH hForCT, hInvCT;
-
-/******************************************************************************
- function for forward gctp transformation
-
- gctp expects Longitude and Latitude values to be in radians
-******************************************************************************/
+static int iOutsys, iOutzone, iOutdatum, iInsys, iInzone, iIndatum;
+static double *pdfOutparm, *pdfInparm;
 
 int32 osr_for(
 double lon,			/* (I) Longitude 		*/
@@ -63,116 +40,96 @@ double lat,			/* (I) Latitude 		*/
 double *x,			/* (O) X projection coordinate 	*/
 double *y)			/* (O) Y projection coordinate 	*/
 {
-
+    OGRSpatialReferenceH hSourceSRS, hLatLong;
+    OGRCoordinateTransformationH hCT;
     double dfX, dfY, dfZ = 0.0;
 
-    dfX = lon * DEG;
-    dfY = lat * DEG;
-    
-    OCTTransform( hForCT, 1, &dfX, &dfY, &dfZ);
+    hSourceSRS = OSRNewSpatialReference( NULL );
+    OSRImportFromUSGS( hSourceSRS, iOutsys, iOutzone, pdfOutparm, iOutdatum );
+    hLatLong = OSRCloneGeogCS( hSourceSRS );
+    hCT = OCTNewCoordinateTransformation( hLatLong, hSourceSRS );
+    if( hCT == NULL )
+    {
+        ;
+    }
 
-    *x = dfX;
-    *y = dfY;
-    
+    dfY = lon, dfX = lat;
+    if( !OCTTransform( hCT, 1, &dfX, &dfY, &dfZ ) )
+        ;
+
+    *x = dfX, *y = dfY;
+
+    OSRDestroySpatialReference( hSourceSRS );
+    OSRDestroySpatialReference( hLatLong );
+
     return 0;
 }
 
-/******************************************************************************
- function to init a forward gctp transformer
-******************************************************************************/
-
 void for_init(
-int32 outsys,       /* output system code				*/
-int32 outzone,      /* output zone number				*/
-float64 *outparm,   /* output array of projection parameters	*/
-int32 outdatum,     /* output datum					*/
-char *fn27,         /* NAD 1927 parameter file			*/
-char *fn83,         /* NAD 1983 parameter file			*/
-int32 *iflg,        /* status flag					*/
+int32 outsys,		/* output system code				*/
+int32 outzone,		/* output zone number				*/
+float64 *outparm,	/* output array of projection parameters	*/
+int32 outdatum,		/* output datum					*/
+char *fn27,		/* NAD 1927 parameter file			*/
+char *fn83,		/* NAD 1983 parameter file			*/
+int32 *iflg,		/* status flag					*/
 int32 (*for_trans[])(double, double, double *, double *))
                         /* forward function pointer			*/
 {
-    OGRSpatialReferenceH hOutSourceSRS, hLatLong = NULL;
-    
-    *iflg = 0;
-    
-    hOutSourceSRS = OSRNewSpatialReference( NULL );
-    OSRImportFromUSGS( hOutSourceSRS, outsys, outzone, outparm, outdatum     );
-    hLatLong = OSRNewSpatialReference ( SRS_WKT_WGS84 );
-
-    hForCT = OCTNewCoordinateTransformation( hLatLong, hOutSourceSRS );
-
-    OSRDestroySpatialReference( hOutSourceSRS );
-    OSRDestroySpatialReference( hLatLong );
-    
-    for_trans[outsys] = osr_for;
+    iflg = 0;
+    iOutsys = outsys;
+    iOutzone = outzone;
+    pdfOutparm = outparm;
+    iOutdatum = outdatum;
+    for_trans[iOutsys] = osr_for;
 }
 
-/******************************************************************************
- function for inverse gctp transformation
-
- gctp returns Longitude and Latitude values in radians
-******************************************************************************/
-
 int32 osr_inv(
-double x,           /* (I) X projection coordinate 	*/
-double y,           /* (I) Y projection coordinate 	*/
-double *lon,        /* (O) Longitude 		*/
-double *lat)        /* (O) Latitude 		*/
+double x,			/* (O) X projection coordinate 	*/
+double y,			/* (O) Y projection coordinate 	*/
+double *lon,			/* (I) Longitude 		*/
+double *lat)			/* (I) Latitude 		*/
 {
-
+    OGRSpatialReferenceH hSourceSRS, hLatLong;
+    OGRCoordinateTransformationH hCT;
     double dfX, dfY, dfZ = 0.0;
-    
-    dfX = x;
-    dfY = y;
 
-    OCTTransform( hInvCT, 1, &dfX, &dfY, &dfZ );
+    hSourceSRS = OSRNewSpatialReference( NULL );
+    OSRImportFromUSGS( hSourceSRS, iInsys, iInzone, pdfInparm, iIndatum );
+    hLatLong = OSRCloneGeogCS( hSourceSRS );
+    hCT = OCTNewCoordinateTransformation( hSourceSRS, hLatLong );
+    if( hCT == NULL )
+    {
+        ;
+    }
 
-    *lon = dfX * RAD;
-    *lat = dfY * RAD;
+    //OSRDestroySpatialReference();
+
+    dfX = x, dfY = x;
+    if( !OCTTransform( hCT, 1, &dfX, &dfY, &dfZ ) )
+        ;
+
+    *lon = dfX, *lat = dfY;
 
     return 0;
 }
-
-/******************************************************************************
- function to init a inverse gctp transformer
-******************************************************************************/
 
 void inv_init(
 int32 insys,		/* input system code				*/
 int32 inzone,		/* input zone number				*/
 float64 *inparm,	/* input array of projection parameters         */
-int32 indatum,	    /* input datum code			        */
-char *fn27,		    /* NAD 1927 parameter file			*/
-char *fn83,		    /* NAD 1983 parameter file			*/
+int32 indatum,	        /* input datum code			        */
+char *fn27,		/* NAD 1927 parameter file			*/
+char *fn83,		/* NAD 1983 parameter file			*/
 int32 *iflg,		/* status flag					*/
 int32 (*inv_trans[])(double, double, double*, double*))	
                         /* inverse function pointer			*/
 {
-    
-    OGRSpatialReferenceH hInSourceSRS, hLatLong = NULL;
-    *iflg = 0;
-    
-    hInSourceSRS = OSRNewSpatialReference( NULL );
-    OSRImportFromUSGS( hInSourceSRS, insys, inzone, inparm, indatum );
-
-    hLatLong = OSRNewSpatialReference ( SRS_WKT_WGS84 );
-    
-    hInvCT = OCTNewCoordinateTransformation( hInSourceSRS, hLatLong );
-
-    OSRDestroySpatialReference( hInSourceSRS );
-    OSRDestroySpatialReference( hLatLong );
-    
+    iflg = 0;
+    iInsys = insys;
+    iInzone = inzone;
+    pdfInparm = inparm; 
+    iIndatum = indatum;
     inv_trans[insys] = osr_inv;
 }
 
-/******************************************************************************
- function to cleanup the transformers
-
- note: gctp does not have a function that does this
-******************************************************************************/
-
-void gctp_destroy(void) {
-    OCTDestroyCoordinateTransformation ( hForCT );
-    OCTDestroyCoordinateTransformation ( hInvCT );
-}

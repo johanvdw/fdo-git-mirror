@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.c 22606 2011-06-28 20:31:23Z rouault $
+ * $Id: dted_api.c 17398 2009-07-16 04:16:26Z chaitanya $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -30,7 +30,7 @@
 #include "dted_api.h"
 
 #ifndef AVOID_CPL
-CPL_CVSID("$Id: dted_api.c 22606 2011-06-28 20:31:23Z rouault $");
+CPL_CVSID("$Id: dted_api.c 17398 2009-07-16 04:16:26Z chaitanya $");
 #endif
 
 static int bWarnedTwoComplement = FALSE;
@@ -86,7 +86,7 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
                      int bTestOpen )
 
 {
-    VSILFILE   *fp;
+    FILE        *fp;
     char        achRecord[DTED_UHL_SIZE];
     DTEDInfo    *psDInfo = NULL;
     double      dfLLOriginX, dfLLOriginY;
@@ -95,8 +95,7 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     int sec = 0;
     int bSwapLatLong = FALSE;
     char szResult[81];
-    int bIsWeirdDTED;
-    char chHemisphere;
+
 /* -------------------------------------------------------------------- */
 /*      Open the physical file.                                         */
 /* -------------------------------------------------------------------- */
@@ -171,6 +170,9 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     psDInfo->fp = fp;
 
     psDInfo->bUpdate = EQUAL(pszAccess,"r+b");
+    
+    psDInfo->nXSize = atoi(DTEDGetField(szResult,achRecord,48,4));
+    psDInfo->nYSize = atoi(DTEDGetField(szResult,achRecord,52,4));
 
     psDInfo->nUHLOffset = (int)VSIFTellL( fp ) - DTED_UHL_SIZE;
     psDInfo->pachUHLRecord = (char *) CPLMalloc(DTED_UHL_SIZE);
@@ -201,53 +203,21 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 
     psDInfo->nDataOffset = (int)VSIFTellL( fp );
 
-    /* DTED3 file from http://www.falconview.org/trac/FalconView/downloads/20 */
-    /* (co_elevation.zip) has really weird offsets that don't comply with the 89020B specification */
-    bIsWeirdDTED = achRecord[4] == ' ';
-
 /* -------------------------------------------------------------------- */
 /*      Parse out position information.  Note that we are extracting    */
 /*      the top left corner of the top left pixel area, not the         */
 /*      center of the area.                                             */
 /* -------------------------------------------------------------------- */
-    if (!bIsWeirdDTED)
-    {
-        psDInfo->dfPixelSizeX =
-            atoi(DTEDGetField(szResult,achRecord,21,4)) / 36000.0;
+    psDInfo->dfPixelSizeX =
+        atoi(DTEDGetField(szResult,achRecord,21,4)) / 36000.0;
 
-        psDInfo->dfPixelSizeY =
-            atoi(DTEDGetField(szResult,achRecord,25,4)) / 36000.0;
-
-        psDInfo->nXSize = atoi(DTEDGetField(szResult,achRecord,48,4));
-        psDInfo->nYSize = atoi(DTEDGetField(szResult,achRecord,52,4));
-    }
-    else
-    {
-        psDInfo->dfPixelSizeX =
-            atoi(DTEDGetField(szResult,achRecord,41,4)) / 36000.0;
-
-        psDInfo->dfPixelSizeY =
-            atoi(DTEDGetField(szResult,achRecord,45,4)) / 36000.0;
-
-        psDInfo->nXSize = atoi(DTEDGetField(szResult,psDInfo->pachDSIRecord,563,4));
-        psDInfo->nYSize = atoi(DTEDGetField(szResult,psDInfo->pachDSIRecord,567,4));
-    }
+    psDInfo->dfPixelSizeY =
+        atoi(DTEDGetField(szResult,achRecord,25,4)) / 36000.0;
 
     /* create a scope so I don't need to declare these up top */
-    if (!bIsWeirdDTED)
-    {
-        deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,5,3)));
-        min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,8,2)));
-        sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,10,2)));
-        chHemisphere = achRecord[11];
-    }
-    else
-    {
-        deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,9,3)));
-        min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,12,2)));
-        sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,14,2)));
-        chHemisphere = achRecord[15];
-    }
+    deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,5,3)));
+    min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,8,2)));
+    sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,10,2)));
 
     /* NOTE : The first version of MIL-D-89020 was buggy.
        The latitude and longitude of the LL cornder of the UHF record was inverted.
@@ -257,33 +227,22 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     */
 
     dfLLOriginX = deg + min / 60.0 + sec / 3600.0;
-    if( chHemisphere == 'W' )
+    if( achRecord[11] == 'W' )
         dfLLOriginX *= -1;
-    else if ( chHemisphere == 'N' )
+    else if ( achRecord[11] == 'N' )
         bSwapLatLong = TRUE;
-    else if ( chHemisphere == 'S' )
+    else if ( achRecord[11] == 'S' )
     {
         dfLLOriginX *= -1;
         bSwapLatLong = TRUE;
     }
 
-    if (!bIsWeirdDTED)
-    {
-        deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,13,3)));
-        min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,16,2)));
-        sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,18,2)));
-        chHemisphere = achRecord[19];
-    }
-    else
-    {
-        deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,25,3)));
-        min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,28,2)));
-        sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,30,2)));
-        chHemisphere = achRecord[31];
-    }
+    deg = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,13,3)));
+    min = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,16,2)));
+    sec = atoi(stripLeadingZeros(DTEDGetField(szResult,achRecord,18,2)));
 
     dfLLOriginY = deg + min / 60.0 + sec / 3600.0;
-    if( chHemisphere == 'S' || (bSwapLatLong && chHemisphere == 'W'))
+    if( achRecord[19] == 'S' || (bSwapLatLong && achRecord[19] == 'W'))
         dfLLOriginY *= -1;
 
     if (bSwapLatLong)
@@ -563,6 +522,7 @@ int DTEDWriteProfile( DTEDInfo * psDInfo, int nColumnOffset,
     if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
         || VSIFWriteL( pabyRecord,(12+psDInfo->nYSize*2),1,psDInfo->fp ) != 1)
     {
+        CPLFree( pabyRecord );
 #ifndef AVOID_CPL
         CPLError( CE_Failure, CPLE_FileIO,
 #else
@@ -589,127 +549,70 @@ static void DTEDGetMetadataLocation( DTEDInfo *psDInfo,
                                      DTEDMetaDataCode eCode, 
                                      char **ppszLocation, int *pnLength )
 {
-    int bIsWeirdDTED = psDInfo->pachUHLRecord[4] == ' ';
-
     switch( eCode )
     {
-      case DTEDMD_ORIGINLONG:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachUHLRecord + 8;
-        else
-            *ppszLocation = psDInfo->pachUHLRecord + 4;
-        *pnLength = 8;
-        break;
-
-      case DTEDMD_ORIGINLAT:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachUHLRecord + 24;
-        else
-            *ppszLocation = psDInfo->pachUHLRecord + 12;
-        *pnLength = 8;
-        break;
-
       case DTEDMD_VERTACCURACY_UHL:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachUHLRecord + 56;
-        else
-            *ppszLocation = psDInfo->pachUHLRecord + 28;
+        *ppszLocation = psDInfo->pachUHLRecord + 28;
         *pnLength = 4;
         break;
 
       case DTEDMD_SECURITYCODE_UHL:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachUHLRecord + 60;
-        else
-            *ppszLocation = psDInfo->pachUHLRecord + 32;
+        *ppszLocation = psDInfo->pachUHLRecord + 32;
         *pnLength = 3;
         break;
 
       case DTEDMD_UNIQUEREF_UHL:
-        if (bIsWeirdDTED)
-            *ppszLocation = NULL;
-        else
-            *ppszLocation = psDInfo->pachUHLRecord + 35;
+        *ppszLocation = psDInfo->pachUHLRecord + 35;
         *pnLength = 12;
         break;
 
       case DTEDMD_DATA_EDITION:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 174;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 87;
+        *ppszLocation = psDInfo->pachDSIRecord + 87;
         *pnLength = 2;
         break;
 
       case DTEDMD_MATCHMERGE_VERSION:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 176;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 89;
+        *ppszLocation = psDInfo->pachDSIRecord + 89;
         *pnLength = 1;
         break;
 
       case DTEDMD_MAINT_DATE:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 177;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 90;
+        *ppszLocation = psDInfo->pachDSIRecord + 90;
         *pnLength = 4;
         break;
 
       case DTEDMD_MATCHMERGE_DATE:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 181;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 94;
+        *ppszLocation = psDInfo->pachDSIRecord + 94;
         *pnLength = 4;
         break;
 
       case DTEDMD_MAINT_DESCRIPTION:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 185;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 98;
+        *ppszLocation = psDInfo->pachDSIRecord + 98;
         *pnLength = 4;
         break;
 
       case DTEDMD_PRODUCER:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 189;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 102;
+        *ppszLocation = psDInfo->pachDSIRecord + 102;
         *pnLength = 8;
         break;
 
       case DTEDMD_VERTDATUM:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 267;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 141;
+        *ppszLocation = psDInfo->pachDSIRecord + 141;
         *pnLength = 3;
         break;
 
-      case DTEDMD_HORIZDATUM:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 270;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 144; 
+      case DTEDMD_HORIZDATUM: 
+        *ppszLocation = psDInfo->pachDSIRecord + 144; 
         *pnLength = 5; 
         break; 
 
       case DTEDMD_DIGITIZING_SYS:
-        if (bIsWeirdDTED)
-            *ppszLocation = NULL;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 149;
+        *ppszLocation = psDInfo->pachDSIRecord + 149;
         *pnLength = 10;
         break;
 
       case DTEDMD_COMPILATION_DATE:
-        if (bIsWeirdDTED)
-            *ppszLocation = NULL;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 159;
+        *ppszLocation = psDInfo->pachDSIRecord + 159;
         *pnLength = 4;
         break;
 
@@ -739,19 +642,8 @@ static void DTEDGetMetadataLocation( DTEDInfo *psDInfo,
         break;
 
       case DTEDMD_UNIQUEREF_DSI:
-        if (bIsWeirdDTED)
-            *ppszLocation = NULL;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 64;
+        *ppszLocation = psDInfo->pachDSIRecord + 64;
         *pnLength = 15;
-        break;
-
-      case DTEDMD_NIMA_DESIGNATOR:
-        if (bIsWeirdDTED)
-            *ppszLocation = psDInfo->pachDSIRecord + 118;
-        else
-            *ppszLocation = psDInfo->pachDSIRecord + 59;
-        *pnLength = 5;
         break;
 
       default:
@@ -773,7 +665,7 @@ char *DTEDGetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode )
 
     DTEDGetMetadataLocation( psDInfo, eCode, &pszFieldSrc, &nFieldLen );
     if( pszFieldSrc == NULL )
-        return strdup( "" );
+        return VSIStrdup( "" );
 
     pszResult = (char *) malloc(nFieldLen+1);
     strncpy( pszResult, pszFieldSrc, nFieldLen );

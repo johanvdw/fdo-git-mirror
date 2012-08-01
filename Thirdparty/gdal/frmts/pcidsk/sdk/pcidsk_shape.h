@@ -154,31 +154,6 @@ namespace PCIDSK
                 return *this;
             }
 
-        //! Assignment operator.
-        bool operator==( const ShapeField &other )
-            {
-                if( GetType() != other.GetType() )
-                    return false;
-
-                switch( other.GetType() )
-                {
-                  case FieldTypeFloat: 
-                    return GetValueFloat() == other.GetValueFloat();
-                  case FieldTypeDouble: 
-                    return GetValueDouble() == other.GetValueDouble();
-                  case FieldTypeInteger: 
-                    return GetValueInteger() == other.GetValueInteger();
-                  case FieldTypeString: 
-                    return GetValueString() == other.GetValueString();
-                  case FieldTypeCountedInt: 
-                    return GetValueCountedInt() == other.GetValueCountedInt();
-                  case FieldTypeNone:
-                    return false;
-                  default:
-                    return false;
-                }
-            }
-
         //! Clear field value.
         void Clear()
             { 
@@ -211,9 +186,8 @@ namespace PCIDSK
                 v.integer_list_val = (int32*)
                     malloc(sizeof(int32) * (val.size()+1) );
                 v.integer_list_val[0] = val.size();
-                if( val.size() > 0 )
-                    memcpy( v.integer_list_val+1, &(val[0]), 
-                            sizeof(int32) * val.size() ); 
+                memcpy( v.integer_list_val+1, &(val[0]), 
+                        sizeof(int32) * val.size() ); 
             }
 
         //! Set string value on field.
@@ -250,9 +224,8 @@ namespace PCIDSK
                 if( type == FieldTypeCountedInt )
                 {
                     result.resize( v.integer_list_val[0] );
-                    if( v.integer_list_val[0] > 0 )
-                        memcpy( &(result[0]), &(v.integer_list_val[1]), 
-                                (v.integer_list_val[0]) * sizeof(int32) );
+                    memcpy( &(result[0]), &(v.integer_list_val[1]), 
+                            (v.integer_list_val[0]) * sizeof(int32) );
                 }
                 return result;
             }

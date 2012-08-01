@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.h 23589 2011-12-17 14:21:01Z rouault $
+ * $Id: kml.h 17734 2009-10-03 09:48:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -30,8 +30,6 @@
 #define OGR_KML_KML_H_INCLUDED
 
 #include "ogr_expat.h"
-#include "cpl_vsi.h"
-
 // std
 #include <iostream>
 #include <string>
@@ -76,7 +74,7 @@ public:
 	void parse();
 	void print(unsigned short what = 3);
     std::string getError() const;
-	int classifyNodes();
+	void classifyNodes();
 	void eliminateEmpty();
 	int getNumLayers() const;
     bool selectLayer(int);
@@ -109,7 +107,7 @@ private:
 	// set to KML_VALIDITY_VALID if the beginning of the file is detected as KML
 	OGRKMLValidity validity;
 	// file descriptor
-	VSILFILE *pKMLFile_;
+	FILE *pKMLFile_;
 	// error text ("" when everything is OK")
 	std::string sError_;
 	// current KMLNode

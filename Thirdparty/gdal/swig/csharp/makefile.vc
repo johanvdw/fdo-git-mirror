@@ -8,7 +8,7 @@
 #  - Run the VCVARS32.BAT script to initialize the VC++ environment variables
 #  - Start the build with:  nmake /f makefile.vc
 #
-# $Id: makefile.vc 20170 2010-08-05 11:24:07Z tamas $
+# $Id: makefile.vc 17453 2009-07-25 19:23:06Z tamas $
 #
 
 GDAL_ROOT	=	..\..
@@ -41,10 +41,6 @@ CSC = csc
 CSDEBUG = /debug:full
 !ELSE
 CSDEBUG =
-!ENDIF
-
-!IF $(MSVC_VER) >= 1600
-CSC = $(CSC) /define:CLR4
 !ENDIF
 
 OBJ	=	gdal_wrap.obj gdalconst_wrap.obj ogr_wrap.obj osr_wrap.obj
@@ -125,7 +121,7 @@ samples:
     $(CSC) $(CSDEBUG) /r:ogr_csharp.dll /out:WKT2WKB.exe apps\WKT2WKB.cs
     $(CSC) $(CSDEBUG) /r:ogr_csharp.dll /out:OGRGEOS.exe apps\OGRGEOS.cs
     $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /out:ReadXML.exe apps\ReadXML.cs
-    $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /r:osr_csharp.dll /out:GDALInfo.exe apps\GDALInfo.cs
+    $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /out:GDALInfo.exe apps\GDALInfo.cs
     $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /out:GDALOverviews.exe apps\GDALOverviews.cs
     $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /out:GDALCreateCopy.exe apps\GDALCreateCopy.cs
     $(CSC) $(CSDEBUG) /r:gdal_csharp.dll /out:GDALGetHistogram.exe apps\GDALGetHistogram.cs

@@ -31,10 +31,6 @@
 #include <float.h>
 #include <limits.h>
 
-#include <string>
-
-using namespace std;
-
 // IniFile.cpp: implementation of the IniFile class.
 //
 //////////////////////////////////////////////////////////////////////
@@ -59,7 +55,7 @@ static string TrimSpaces(const string& input)
     return input.substr(iFirstNonSpace, iFindLastSpace - iFirstNonSpace + 1);
 }
 
-static string GetLine(VSILFILE* fil)
+static string GetLine(FILE* fil)
 {
     const char *p = CPLReadLineL( fil );
     if (p == NULL)
@@ -158,7 +154,7 @@ void IniFile::RemoveSection(const string& section)
 void IniFile::Load()
 {
     enum ParseState { FindSection, FindKey, ReadFindKey, StoreKey, None } state;
-    VSILFILE *filIni = VSIFOpenL(filename.c_str(), "r");
+    FILE *filIni = VSIFOpenL(filename.c_str(), "r");
     if (filIni == NULL)
         return;
 
@@ -217,7 +213,7 @@ void IniFile::Load()
 
 void IniFile::Store()
 {
-    VSILFILE *filIni = VSIFOpenL(filename.c_str(), "w+");
+    FILE *filIni = VSIFOpenL(filename.c_str(), "w+");
     if (filIni == NULL)
         return;
 
@@ -812,11 +808,6 @@ GDALDataset *ILWISDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
     return( poDS );
 }
 
@@ -952,7 +943,7 @@ GDALDataset *ILWISDataset::Create(const char* pszFilename,
 /* -------------------------------------------------------------------- */
         pszDataName = CPLResetExtension(pszODFName.c_str(), "mp#" );
 
-        VSILFILE  *fp = VSIFOpenL( pszDataName.c_str(), "wb" );
+        FILE  *fp = VSIFOpenL( pszDataName.c_str(), "wb" );
 
         if( fp == NULL )
         {
@@ -1061,7 +1052,7 @@ ILWISDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 		
     for( iBand = 0; iBand < nBands; iBand++ )
     {
-        VSILFILE *fpData;
+        FILE *fpData;
         GByte *pData;
         
         GDALRasterBand *poBand = poSrcDS->GetRasterBand( iBand+1 );
@@ -1936,7 +1927,7 @@ void ValueRange::init(double rRaw0)
             iBeforeDec = (short)floor(log10(rMax)) + 1;
         if (get_rLo() < 0)
             iBeforeDec++;
-        _iWidth = (short) (iBeforeDec + _iDec);
+        _iWidth = iBeforeDec + _iDec;
         if (_iDec > 0)
             _iWidth++;
         if (_iWidth > 12)

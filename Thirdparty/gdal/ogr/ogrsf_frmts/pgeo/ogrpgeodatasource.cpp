@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeodatasource.cpp 20440 2010-08-25 17:35:49Z rouault $
+ * $Id: ogrpgeodatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrpgeodatasource.cpp 20440 2010-08-25 17:35:49Z rouault $");
+CPL_CVSID("$Id: ogrpgeodatasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                         OGRPGeoDataSource()                          */
@@ -64,36 +64,6 @@ OGRPGeoDataSource::~OGRPGeoDataSource()
 }
 
 /************************************************************************/
-/*                  CheckDSNStringTemplate()                            */
-/* The string will be used as the formatting argument of sprintf with   */
-/* a string in vararg. So let's check there's only one '%s', and nothing*/
-/* else                                                                 */
-/************************************************************************/
-
-static int CheckDSNStringTemplate(const char* pszStr)
-{
-    int nPercentSFound = FALSE;
-    while(*pszStr)
-    {
-        if (*pszStr == '%')
-        {
-            if (pszStr[1] != 's')
-            {
-                return FALSE;
-            }
-            else
-            {
-                if (nPercentSFound)
-                    return FALSE;
-                nPercentSFound = TRUE;
-            }
-        }
-        pszStr ++;
-    }
-    return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
@@ -114,16 +84,9 @@ int OGRPGeoDataSource::Open( const char * pszNewName, int bUpdate,
         pszDSN = CPLStrdup( pszNewName + 5 );
     else
     {
-        const char *pszDSNStringTemplate = NULL;
-        pszDSNStringTemplate = CPLGetConfigOption( "PGEO_DRIVER_TEMPLATE", "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s");
-        if (!CheckDSNStringTemplate(pszDSNStringTemplate))
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Illegal value for PGEO_DRIVER_TEMPLATE option");
-            return FALSE;
-        }
-        pszDSN = (char *) CPLMalloc(strlen(pszNewName)+strlen(pszDSNStringTemplate)+100);
-        sprintf( pszDSN, pszDSNStringTemplate,  pszNewName );
+        pszDSN = (char *) CPLMalloc(strlen(pszNewName)+50);
+        sprintf( pszDSN, "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s", 
+                 pszNewName );
     }
 
 /* -------------------------------------------------------------------- */

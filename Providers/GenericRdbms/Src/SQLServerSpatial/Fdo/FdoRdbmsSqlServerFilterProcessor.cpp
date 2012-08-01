@@ -150,7 +150,6 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessDistanceCondition(FdoDistanceCondi
 void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialCondition& filter)
 {
     DbiConnection  *mDbiConnection = mFdoConnection->GetDbiConnection();
-
     const FdoSmLpClassDefinition *classDefinition = mDbiConnection->GetSchemaUtil()->GetClass(mCurrentClassName);
     if ( classDefinition == NULL ||  classDefinition->GetClassType() != FdoClassType_FeatureClass )
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_230, "Spatial condition can only be used with feature classes"));
@@ -190,63 +189,35 @@ void FdoRdbmsSqlServerFilterProcessor::ProcessSpatialCondition(FdoSpatialConditi
 
     if ( geomType == L"geography" ) 
     {
-		// Some spatial operations are not supported by SqlServer 2008 (version 10) but
-		// supported by SqlServer 2012 (version 11).
-		FdoSmPhSqsMgrP sqsMgr = mFdoConnection->GetSchemaManager()->GetPhysicalSchema()->SmartCast<FdoSmPhSqsMgr>();
-		bool bVersionSupported = ( sqsMgr->GetDbVersion().Left( L"." ).ToLong() > 10 );
-		FdoStringP bufOp(L"");
-
         switch( spatialOp )
         {
             case FdoSpatialOperations_Disjoint:
-                bufOp += "STDisjoint";
+                buf += "STDisjoint";
                 break;
             case FdoSpatialOperations_Intersects:
-                bufOp += "STIntersects";
+                buf += "STIntersects";
                 break;
-            case FdoSpatialOperations_Inside:
-				if (bVersionSupported)
-					bufOp += "STWithin";
-				break;
             case FdoSpatialOperations_Contains:
-				if (bVersionSupported)
-					bufOp += "STContains";
-				break;
+            case FdoSpatialOperations_Crosses:
             case FdoSpatialOperations_CoveredBy:
-				if (bVersionSupported)
-					bufOp += "STOverlaps";
-				break;
             case FdoSpatialOperations_Equals:
-				if (bVersionSupported)
-					bufOp += "STEquals";
-				break;
+            case FdoSpatialOperations_Inside:
             case FdoSpatialOperations_Overlaps:
-				if (bVersionSupported)
-					bufOp += "STOverlaps";
-				break;
-            case FdoSpatialOperations_Within:
-				if (bVersionSupported)
-					bufOp += "STWithin";
-				break;
-			case FdoSpatialOperations_Crosses:
             case FdoSpatialOperations_Touches:
+            case FdoSpatialOperations_Within:
             case FdoSpatialOperations_EnvelopeIntersects:
-                break; // non-supported operation exception will be thrown below
+                throw FdoFilterException::Create(
+                    NlsMsgGet2(
+                        FDORDBMS_44, 
+                        "Geometry property '%1$ls' has geodetic coordinate system; cannot use %2$ls spatial operator in filter",
+                        (FdoString*) geomProp->GetQName(),
+                        (FdoString*) FdoCommonMiscUtil::FdoSpatialOperationsToString(spatialOp)
+                    )
+                );
+                break;
             default:
                 throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_111, "Unsupported spatial operation"));
         } // of switch Operation
-
-		if (bufOp.GetLength() > 0)
-			buf += bufOp;
-		else
-            throw FdoFilterException::Create(
-                NlsMsgGet2(
-                    FDORDBMS_44, 
-                    "Geometry property '%1$ls' has geodetic coordinate system; cannot use %2$ls spatial operator in filter",
-                    (FdoString*) geomProp->GetQName(),
-                    (FdoString*) FdoCommonMiscUtil::FdoSpatialOperationsToString(spatialOp)
-                )
-            );
     }
     else
     {

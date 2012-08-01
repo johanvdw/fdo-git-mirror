@@ -211,21 +211,21 @@ int SDERasterBand::GetOverviewCount( void )
     // otherwise request it from SDE and set our member data with it.
     long nSDEErr;
     BOOL bSkipLevel;
-    LONG nOvRet;
     
     // return nothing if we were an overview band
     if (nOverview != -1)
         return 0;
 
-    nSDEErr = SE_rasbandinfo_get_max_level(*poBand, &nOvRet, &bSkipLevel);
+    nSDEErr = SE_rasbandinfo_get_max_level(*poBand, 
+                                           (long*)&nOverviews, 
+                                           &bSkipLevel);
     if( nSDEErr != SE_SUCCESS )
     {
         IssueSDEError( nSDEErr, "SE_rasbandinfo_get_band_size" );
     }
     
-    nOverviews = nOvRet;
-
     return nOverviews;
+    
 } 
 
 /************************************************************************/
@@ -234,7 +234,8 @@ int SDERasterBand::GetOverviewCount( void )
 GDALDataType SDERasterBand::GetRasterDataType(void) 
 {
     // Always ask SDE what it thinks our type is.
-    LONG nSDEErr;
+    long nSDEErr;
+
     
     nSDEErr = SE_rasbandinfo_get_pixel_type(*poBand, &nSDERasterType);
     if( nSDEErr != SE_SUCCESS )
@@ -378,7 +379,7 @@ CPLErr SDERasterBand::IReadBlock( int nBlockXOff,
     if (error != CE_None)
         return error;
 
-    LONG level;
+    long level;
     nSDEErr = SE_rastileinfo_get_level(hTile, &level);
     if( nSDEErr != SE_SUCCESS )
     {
@@ -393,7 +394,7 @@ CPLErr SDERasterBand::IReadBlock( int nBlockXOff,
         return CE_Fatal;
     }        
 
-    LONG row, column;
+    long row, column;
     nSDEErr = SE_rastileinfo_get_rowcol(hTile, &row, &column);
     if( nSDEErr != SE_SUCCESS )
     {
@@ -401,7 +402,7 @@ CPLErr SDERasterBand::IReadBlock( int nBlockXOff,
         return CE_Fatal;
     }     
 
-    LONG length;
+    long length;
     unsigned char* pixels;
     nSDEErr = SE_rastileinfo_get_pixel_data(hTile, (void**) &pixels, &length);
     if( nSDEErr != SE_SUCCESS )
@@ -465,7 +466,7 @@ void SDERasterBand::ComputeColorTable(void)
     SE_COLORMAP_TYPE eCMap_Type;
     SE_COLORMAP_DATA_TYPE eCMap_DataType;
     
-    LONG nCMapEntries;
+    long nCMapEntries;
     void * phSDEColormapData;
     
     unsigned char* puszSDECMapData;
@@ -646,22 +647,21 @@ CPLErr SDERasterBand::InitializeBand( int nOverview )
     if (error != CE_None)
         return error;
 
-    LONG nBXRet, nBYRet;
+
     nSDEErr = SE_rasterattr_get_tile_size (poGDS->hAttributes, 
-                                           &nBXRet, &nBYRet);
+                                           (long*)&nBlockXSize, 
+                                           (long*)&nBlockYSize);
     if( nSDEErr != SE_SUCCESS )
     {
         IssueSDEError( nSDEErr, "SE_rasterattr_get_tile_size" );
         return CE_Fatal;
     }
+    
+    long offset_x, offset_y, num_bands;
 
-    nBlockXSize = nBXRet;
-    nBlockYSize = nBYRet;
-    
-    LONG offset_x, offset_y, num_bands, nXSRet, nYSRet;
-    
     nSDEErr = SE_rasterattr_get_image_size_by_level (poGDS->hAttributes,
-                                                     &nXSRet, &nYSRet,
+                                                     (long*)&nRasterXSize,
+                                                     (long*)&nRasterYSize,
                                                      &offset_x,
                                                      &offset_y,
                                                      &num_bands,
@@ -672,9 +672,6 @@ CPLErr SDERasterBand::InitializeBand( int nOverview )
         IssueSDEError( nSDEErr, "SE_rasterattr_get_image_size_by_level" );
         return CE_Fatal;
     }
-
-    nRasterXSize = nXSRet;
-    nRasterYSize = nYSRet;
 
     nBlockSize = nBlockXSize * nBlockYSize;
 
@@ -710,8 +707,7 @@ SE_RASCONSTRAINT& SDERasterBand::InitializeConstraint( long* nBlockXOff,
             IssueSDEError( nSDEErr, "SE_rasconstraint_create" );
         }       
 
-        LONG nBandIn = nBand;
-        nSDEErr = SE_rasconstraint_set_bands(hConstraint, 1, &nBandIn);
+        nSDEErr = SE_rasconstraint_set_bands(hConstraint, 1, (long*)&nBand);
         if( nSDEErr != SE_SUCCESS )
         {
             IssueSDEError( nSDEErr, "SE_rasconstraint_set_bands" );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.h 23035 2011-09-04 10:28:41Z antonio $
+ * $Id: hdf5dataset.h 18004 2009-11-12 15:44:51Z warmerdam $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.
@@ -34,14 +34,14 @@
 #include "cpl_list.h"
 
 typedef struct HDF5GroupObjects {
-  char         *pszName;
+  char	       *pszName;
   char         *pszPath;
   char         *pszUnderscorePath;
   char         *pszTemp;
-  int           nType;
-  int           nIndex;
-  hsize_t       nbObjs;
-  int           nbAttrs;
+  int		nType;
+  int		nIndex;
+  int		nbObjs;
+  int		nbAttrs;
   int           nRank;
   hsize_t       *paDims;
   hid_t          native;
@@ -56,14 +56,14 @@ herr_t HDF5CreateGroupObjs(hid_t, const char *,void *);
 
 /************************************************************************/
 /* ==================================================================== */
-/*                              HDF5Dataset                             */
+/*				HDF5Dataset				*/
 /* ==================================================================== */
 /************************************************************************/
 class HDF5Dataset : public GDALPamDataset
 {
   protected:
 
-  hid_t            hHDF5;
+  hid_t            hHDF5;     
   hid_t            hDatasetID;
   hid_t            hGroupID; /* H handler interface */
   char             **papszSubDatasets;
@@ -78,22 +78,22 @@ class HDF5Dataset : public GDALPamDataset
   CPLErr HDF5ListGroupObjects(HDF5GroupObjects *, int );
   CPLErr CreateMetadata( HDF5GroupObjects *, int );
 
-  HDF5GroupObjects* HDF5FindDatasetObjects( HDF5GroupObjects *, const char * );
-  HDF5GroupObjects* HDF5FindDatasetObjectsbyPath( HDF5GroupObjects *, const char * );
+  HDF5GroupObjects* HDF5FindDatasetObjects( HDF5GroupObjects *, char * );
+  HDF5GroupObjects* HDF5FindDatasetObjectsbyPath( HDF5GroupObjects *, char * );
   char* CreatePath(HDF5GroupObjects *);
   void DestroyH5Objects(HDF5GroupObjects *);
-
+ 
   GDALDataType GetDataType(hid_t);
   const char * GetDataTypeName(hid_t);
 
   public:
 
   char	           **papszMetadata;
-  HDF5GroupObjects *poH5CurrentObject;
+  HDF5GroupObjects *poH5CurrentObject; 
 
   HDF5Dataset();
   ~HDF5Dataset();
-
+    
   static GDALDataset *Open(GDALOpenInfo *);
   static int Identify(GDALOpenInfo *);
 };

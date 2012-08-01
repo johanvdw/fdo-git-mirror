@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdelayer.cpp 22470 2011-05-31 18:18:26Z warmerdam $
+ * $Id: ogrsdelayer.cpp 14190 2008-04-05 04:30:14Z hobu $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDELayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdelayer.cpp 22470 2011-05-31 18:18:26Z warmerdam $");
+CPL_CVSID("$Id: ogrsdelayer.cpp 14190 2008-04-05 04:30:14Z hobu $");
 
 /************************************************************************/
 /*                            OGRSDELayer()                             */
@@ -60,7 +60,6 @@ OGRSDELayer::OGRSDELayer( OGRSDEDataSource *poDSIn, int bUpdate )
     hCoordRef = NULL;
     papszAllColumns = NULL;
     bHaveLayerInfo = FALSE;
-    bUseNSTRING = FALSE;
 }
 
 /************************************************************************/
@@ -216,12 +215,16 @@ int OGRSDELayer::Initialize( const char *pszTableName,
 #ifdef SE_UUID_TYPE
           case SE_UUID_TYPE:
 #endif
-#ifdef SE_NSTRING_TYPE
-          case SE_NSTRING_TYPE:
-#endif
             eOGRType = OFTString;
             nWidth = asColumnDefs[iCol].size;
             break;
+
+#ifdef SE_NSTRING_TYPE
+          case SE_NSTRING_TYPE:
+            eOGRType = OFTWideString;
+            nWidth = asColumnDefs[iCol].size;
+            break;
+#endif
 
           case SE_BLOB_TYPE:
             eOGRType = OFTBinary;
@@ -341,11 +344,6 @@ int OGRSDELayer::NeedLayerInfo()
             poSRS = new OGRSpatialReference(szWKT);
             poSRS->morphFromESRI();
         }
-
-	LFLOAT falsex, falsey, xyunits;
-	nSDEErr = SE_coordref_get_xy( hCoordRef, &falsex, &falsey, &xyunits );
-	CPLDebug( "SDE", "SE_coordref_get_xy(%s) = %g/%g/%g",
-		  pszDbTableName, falsex, falsey, xyunits );
     }
 
     return TRUE;
@@ -361,7 +359,7 @@ OGRwkbGeometryType OGRSDELayer::DiscoverLayerType()
         return wkbUnknown;
 
     int nSDEErr;
-    LONG nShapeTypeMask = 0;
+    long nShapeTypeMask = 0;
   
 /* -------------------------------------------------------------------- */
 /*      Check layerinfo flags to establish what geometry types may      */
@@ -956,26 +954,6 @@ OGRErr OGRSDELayer::TranslateOGRRecord( OGRFeature *poFeature,
             if( nSDEErr != SE_SUCCESS )
             {
                 poDS->IssueSDEError( nSDEErr, "SE_stream_set_float" );
-                CSLDestroy( papszInsertCols );
-                CPLFree( paiColToDefMap );
-                return OGRERR_FAILURE;
-            }
-        }
-        
-        else if( poFieldDefn->GetType() == OFTString 
-                 && anFieldTypeMap[iFieldDefnIdx] == SE_NSTRING_TYPE )
-        {
-            SE_WCHAR *pszUTF16 = (SE_WCHAR *) 
-                CPLRecodeToWChar( poField->String, CPL_ENC_UTF8, 
-                                  CPL_ENC_UTF16 );
-
-            nSDEErr = SE_stream_set_nstring( hStream, iCurColNum++,
-                                             pszUTF16 );
-            CPLFree( pszUTF16 );
-
-            if( nSDEErr != SE_SUCCESS )
-            {
-                poDS->IssueSDEError( nSDEErr, "SE_stream_set_nstring" );
                 CSLDestroy( papszInsertCols );
                 CPLFree( paiColToDefMap );
                 return OGRERR_FAILURE;
@@ -1695,7 +1673,7 @@ OGRGeometry *OGRSDELayer::TranslateSDEGeometry( SE_SHAPE hShape )
       {
           CPLError( CE_Warning, CPLE_NotSupported, 
                     "Unsupported geometry type: %d", 
-                    (int) nSDEGeomType );
+                    nSDEGeomType );
       }
     }
 
@@ -1810,32 +1788,6 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
           }
           break;
 
-          case SE_NSTRING_TYPE:
-          {
-              SE_WCHAR * pszTempStringUTF16 = (SE_WCHAR *) 
-                  CPLMalloc ((poFieldDef->GetWidth()+1) * sizeof(SE_WCHAR ));
-
-              nSDEErr = SE_stream_get_nstring( hStream, anFieldMap[i]+1, 
-                                               pszTempStringUTF16 );
-
-              if( nSDEErr == SE_SUCCESS ) 
-              {
-                  char* pszUTF8 = CPLRecodeFromWChar((const wchar_t*)pszTempStringUTF16, CPL_ENC_UTF16, CPL_ENC_UTF8);
-
-                  poFeat->SetField( i, pszUTF8 );
-                  CPLFree( pszUTF8 );
-
-              } 
-              else if( nSDEErr != SE_NULL_VALUE )
-              {
-                  poDS->IssueSDEError( nSDEErr, "SE_stream_get_nstring" );
-                  CPLFree( pszTempStringUTF16 );
-
-                  return NULL;
-              }
-              CPLFree( pszTempStringUTF16 );
-          }
-          break;
 
 #ifdef SE_UUID_TYPE
           case SE_UUID_TYPE:
@@ -2244,15 +2196,8 @@ OGRErr OGRSDELayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
         sColumnDef.sde_type = SE_DOUBLE_TYPE;
 
     else if( oField.GetType() == OFTString )
-    {
-        const char *pszUseNSTRING = 
-            CPLGetConfigOption( "OGR_SDE_USE_NSTRING", "FALSE" );
+        sColumnDef.sde_type = SE_STRING_TYPE;
 
-        if( bUseNSTRING || CSLTestBoolean( pszUseNSTRING ) )
-            sColumnDef.sde_type = SE_NSTRING_TYPE;
-        else
-            sColumnDef.sde_type = SE_STRING_TYPE;
-    }
     else if(    oField.GetType() == OFTDate
              || oField.GetType() == OFTTime
              || oField.GetType() == OFTDateTime
@@ -2327,7 +2272,6 @@ OGRErr OGRSDELayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
     }
 
     poFeatureDefn->AddFieldDefn( &oField );
-    anFieldTypeMap.push_back( sColumnDef.sde_type );
     
     return OGRERR_NONE;
 }
@@ -2466,8 +2410,7 @@ OGRErr OGRSDELayer::DeleteFeature( long nFID )
     {
         CPLError( CE_Warning, CPLE_AppDefined,
                   "Layer \"%s\": Tried to delete a feature by FID, but no "
-                  "rows were deleted!",
-                  poFeatureDefn->GetName() );
+                  "rows were deleted!" );
     }
     else if( nSDEErr != SE_SUCCESS )
     {
@@ -2507,14 +2450,6 @@ int OGRSDELayer::TestCapability( const char * pszCap )
              || EQUAL(pszCap,OLCRandomWrite) )
         return bUpdateAccess;
     
-    else if( EQUAL(pszCap,OLCStringsAsUTF8) )
-    {
-        // We always treat NSTRING fields by translating to UTF8, but
-        // we don't do anything to regular string fields so this is a
-        // bit hard to answer simply.  Also, whether writes support UTF8
-        // depend on whether the field(s) were created as NSTRING fields. 
-        return TRUE;
-    }
     else 
         return FALSE;
 }

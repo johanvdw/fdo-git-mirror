@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: lcpdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: lcpdataset.cpp 18125 2009-11-28 11:07:24Z rouault $
  *
  * Project:  LCP Driver
  * Purpose:  FARSITE v.4 Landscape file (.lcp) reader for GDAL
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: lcpdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: lcpdataset.cpp 18125 2009-11-28 11:07:24Z rouault $");
 
 CPL_C_START
 void    GDALRegister_LCP(void);
@@ -47,7 +47,7 @@ CPL_C_END
 
 class LCPDataset : public RawDataset
 {
-    VSILFILE    *fpImage;       // image data file.
+    FILE    *fpImage;       // image data file.
     char	pachHeader[LCP_HEADER_SIZE];
 
     CPLString   osPrjFilename;
@@ -192,7 +192,7 @@ GDALDataset *LCPDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     LCPDataset  *poDS;
-    VSILFILE        *fpImage;
+    FILE        *fpImage;
 
     fpImage = VSIFOpenL(poOpenInfo->pszFilename, "rb");
     if (fpImage == NULL)
@@ -696,11 +696,13 @@ GDALDataset *LCPDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->osPrjFilename = CPLFormFilename( pszDirname, pszBasename, "prj" );
     int nRet = VSIStatL( poDS->osPrjFilename, &sStatBuf );
 
-    if( nRet != 0 && VSIIsCaseSensitiveFS(poDS->osPrjFilename))
+#ifndef WIN32
+    if( nRet != 0 )
     {
         poDS->osPrjFilename = CPLFormFilename( pszDirname, pszBasename, "PRJ" );
         nRet = VSIStatL( poDS->osPrjFilename, &sStatBuf );
     }
+#endif
 
     if( nRet == 0 )
     {
@@ -727,11 +729,6 @@ GDALDataset *LCPDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     CPLFree(pszList);
 

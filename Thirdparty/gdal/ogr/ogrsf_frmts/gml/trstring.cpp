@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: trstring.cpp 22205 2011-04-18 21:17:30Z rouault $
+ * $Id: trstring.cpp 16785 2009-04-17 10:07:28Z chaitanya $
  *
  * Project:  GML Reader
  * Purpose:  Functions for translating back and forth between XMLCh and char.
@@ -29,8 +29,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
-
-#ifdef HAVE_XERCES
 
 #include "gmlreaderp.h"
 #include "cpl_vsi.h"
@@ -131,7 +129,7 @@ void tr_strcpy( XMLCh *panXMLString, const char *pszCString )
     int i;
     wchar_t *pwszUTF16;
 
-    pwszUTF16 = CPLRecodeToWChar( pszCString, CPL_ENC_UTF8, "WCHAR_T" );
+    pwszUTF16 = CPLRecodeToWChar( pszCString, CPL_ENC_UTF8, CPL_ENC_UTF16 );
     
     for( i = 0; pwszUTF16[i] != 0; i++ )
         panXMLString[i] = pwszUTF16[i];
@@ -180,7 +178,7 @@ void tr_strcpy( char *pszCString, const XMLCh *panXMLString )
     pwszSource[i] = 0;
     
     char *pszResult = CPLRecodeFromWChar( pwszSource, 
-                                          "WCHAR_T", CPL_ENC_UTF8 );
+                                          CPL_ENC_UTF16, CPL_ENC_UTF8 );
     
     strcpy( pszCString, pszResult );
 
@@ -232,5 +230,3 @@ char *tr_strdup( const XMLCh *panXMLString )
     tr_strcpy( pszResult, panXMLString );
     return pszResult;
 }
-
-#endif // HAVE_XERCES

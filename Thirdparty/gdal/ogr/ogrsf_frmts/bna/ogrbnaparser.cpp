@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrbnaparser.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogrbnadataparser.c
  *
  * Project:  BNA Parser
  * Purpose:  Parse a BNA record
@@ -146,10 +146,10 @@ enum
     BNA_LINE_TOO_LONG
 };
 
-static int BNA_GetLine(char szLineBuffer[LINE_BUFFER_SIZE+1], VSILFILE* f)
+static int BNA_GetLine(char szLineBuffer[LINE_BUFFER_SIZE+1], FILE* f)
 {
     char* ptrCurLine = szLineBuffer;
-    int nRead = VSIFReadL(szLineBuffer, 1, LINE_BUFFER_SIZE, f);
+    int nRead = VSIFRead(szLineBuffer, 1, LINE_BUFFER_SIZE, f);
     szLineBuffer[nRead] = 0;
     if (nRead == 0)
     {
@@ -180,7 +180,7 @@ static int BNA_GetLine(char szLineBuffer[LINE_BUFFER_SIZE+1], VSILFILE* f)
         if (ptrCurLine == szLineBuffer + LINE_BUFFER_SIZE - 1)
         {
             char c;
-            nRead = VSIFReadL(&c, 1, 1, f);
+            nRead = VSIFRead(&c, 1, 1, f);
             if (nRead == 1)
             {
                 if (c == 0x0a)
@@ -189,22 +189,22 @@ static int BNA_GetLine(char szLineBuffer[LINE_BUFFER_SIZE+1], VSILFILE* f)
                 }
                 else
                 {
-                    VSIFSeekL(f, VSIFTellL(f) - 1, SEEK_SET);
+                    VSIFSeek(f, -1, SEEK_CUR);
                 }
             }
         }
         else if (ptrCurLine[1] == 0x0a)
         {
-            VSIFSeekL(f, VSIFTellL(f) + ptrCurLine + 2 - (szLineBuffer + nRead), SEEK_SET);
+            VSIFSeek(f, ptrCurLine + 2 - (szLineBuffer + nRead), SEEK_CUR);
         }
         else
         {
-            VSIFSeekL(f, VSIFTellL(f) + ptrCurLine + 1 - (szLineBuffer + nRead), SEEK_SET);
+            VSIFSeek(f, ptrCurLine + 1 - (szLineBuffer + nRead), SEEK_CUR);
         }
     }
     else /* *ptrCurLine == 0x0a */
     {
-        VSIFSeekL(f, VSIFTellL(f) + ptrCurLine + 1 - (szLineBuffer + nRead), SEEK_SET);
+        VSIFSeek(f, ptrCurLine + 1 - (szLineBuffer + nRead), SEEK_CUR);
     }
     *ptrCurLine = 0;
 
@@ -212,7 +212,7 @@ static int BNA_GetLine(char szLineBuffer[LINE_BUFFER_SIZE+1], VSILFILE* f)
 }
 
 
-BNARecord* BNA_GetNextRecord(VSILFILE* f,
+BNARecord* BNA_GetNextRecord(FILE* f,
                              int* ok,
                              int* curLine,
                              int verbose,
@@ -222,7 +222,7 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
     char c;
     int inQuotes = FALSE;
     int numField = 0;
-    char* ptrBeginningOfNumber = NULL;
+    const char* ptrBeginningOfNumber = NULL;
     int exponentFound = 0;
     int exponentSignFound = 0;
     int dotFound = 0;
@@ -253,7 +253,7 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
           break;
       }
 
-      char* ptrCurLine = szLineBuffer;
+      const char* ptrCurLine = szLineBuffer;
       const char* ptrBeginLine = szLineBuffer;
 
       if (*ptrCurLine == 0)
@@ -313,14 +313,9 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
             if (interestFeatureType == BNA_READ_ALL ||
                 interestFeatureType == currentFeatureType)
             {
-              char* pszComma = strchr(ptrBeginningOfNumber, ',');
-              if (pszComma)
-                  *pszComma = '\0';
               record->tabCoords[(numField - nbExtraId - NB_MIN_BNA_IDS - 1) / 2]
                                [1 - ((numField - nbExtraId) % 2)] =
                   CPLAtof(ptrBeginningOfNumber);
-              if (pszComma)
-                  *pszComma = ',';
             }
             if (numField == NB_MIN_BNA_IDS + 1 + nbExtraId + 2 * record->nCoords - 1)
             {
@@ -456,14 +451,9 @@ BNARecord* BNA_GetNextRecord(VSILFILE* f,
             if (interestFeatureType == BNA_READ_ALL ||
                 interestFeatureType == currentFeatureType)
             {
-              char* pszComma = strchr(ptrBeginningOfNumber, ',');
-              if (pszComma)
-                  *pszComma = '\0';
               record->tabCoords[(numField - nbExtraId - NB_MIN_BNA_IDS - 1) / 2]
                                [1 - ((numField - nbExtraId) % 2)] =
                   CPLAtof(ptrBeginningOfNumber);
-              if (pszComma)
-                  *pszComma = ',';
             }
             if (numField == NB_MIN_BNA_IDS + 1 + nbExtraId + 2 * record->nCoords - 1)
             {
