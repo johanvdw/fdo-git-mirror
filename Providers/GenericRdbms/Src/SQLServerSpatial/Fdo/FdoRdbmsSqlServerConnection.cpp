@@ -32,7 +32,6 @@
 #include "FdoRdbmsSimpleInsertCommand.h"
 #include "FdoRdbmsSimpleUpdateCommand.h"
 #include "FdoRdbmsSimpleSelectCommand.h"
-#include "FdoRdbmsSimpleDeleteCommand.h"
 
 #include "../SchemaMgr/SchemaManager.h"
 #include "../SchemaMgr/Ph/Mgr.h"
@@ -93,7 +92,7 @@ FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
              break;
 
 		case FdoCommandType_Delete:
-             ret = FdoRdbmsSimpleDeleteCommand::Create(this);
+             ret = new FdoRdbmsSqlServerDeleteCommand (this);
              break;
 
         case FdoCommandType_Insert:
@@ -590,16 +589,6 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
 			}
             else
                 newCs += L";Trusted_Connection=yes";
-			
-            FdoStringP database = dict->GetProperty(FDO_RDBMS_CONNECTION_DATASTORE);
-			if (database.GetLength() > 0)
-			{
-                GetDbiConnection()->SetAvoidSetSchema(true);
-				newCs += L";DATABASE=";
-				newCs += database;
-			}
-            else
-                GetDbiConnection()->SetAvoidSetSchema(false);
         }
     }
 

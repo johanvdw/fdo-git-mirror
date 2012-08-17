@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaltindex.c 19806 2010-06-06 11:56:19Z rouault $
+ * $Id: gdaltindex.c 18344 2009-12-19 10:42:32Z rouault $
  *
  * Project:  MapServer
  * Purpose:  Commandline App to build tile index for raster files.
@@ -32,9 +32,8 @@
 #include "gdal.h"
 #include "cpl_port.h"
 #include "cpl_conv.h"
-#include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaltindex.c 19806 2010-06-06 11:56:19Z rouault $");
+CPL_CVSID("$Id: gdaltindex.c 18344 2009-12-19 10:42:32Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -436,8 +435,6 @@ int main(int argc, char *argv[])
     OGR_DS_Destroy( hTileIndexDS );
     
     GDALDestroyDriverManager();
-    OGRCleanupAll();
-    CSLDestroy(argv);
     
     exit( 0 );
 } 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rpcimdio.cpp 22057 2011-03-28 15:20:21Z warmerdam $
+ * $Id: gdal_rpcimdio.cpp 18063 2009-11-21 21:11:49Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Functions for reading RPC and IMD formats, and normalizing.
@@ -29,11 +29,10 @@
  ****************************************************************************/
 
 #include "gdal.h"
-#include "gdal_priv.h"
 #include "cpl_string.h"
 #include "cplkeywordparser.h"
 
-CPL_CVSID("$Id: gdal_rpcimdio.cpp 22057 2011-03-28 15:20:21Z warmerdam $");
+CPL_CVSID("$Id: gdal_rpcimdio.cpp 18063 2009-11-21 21:11:49Z warmerdam $");
 
 /************************************************************************/
 /*                          GDALLoadRPBFile()                           */
@@ -63,18 +62,37 @@ char **CPL_STDCALL GDALLoadRPBFile( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to identify the RPB file in upper or lower case.            */
 /* -------------------------------------------------------------------- */
-    CPLString osTarget = GDALFindAssociatedFile( pszFilename, "RPB", 
-                                                 papszSiblingFiles, 0 );
+    CPLString osTarget = CPLResetExtension( pszFilename, "RPB" );
+    
+    if( papszSiblingFiles == NULL )
+    {
+        VSIStatBufL sStatBuf;
+        
+        if( VSIStatL( osTarget, &sStatBuf ) != 0 )
+        {
+            osTarget = CPLResetExtension( pszFilename, "rpb" );
 
-    if( osTarget == "" )
-        return NULL;
+            if( VSIStatL( osTarget, &sStatBuf ) != 0 )
+                return NULL;
+        }
+    }
+    else
+    {
+        int iSibling = CSLFindString( papszSiblingFiles, 
+                                      CPLGetFilename(osTarget) );
+        if( iSibling < 0 )
+            return NULL;
+
+        osTarget.resize(osTarget.size() - strlen(papszSiblingFiles[iSibling]));
+        osTarget += papszSiblingFiles[iSibling];
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
 /* -------------------------------------------------------------------- */
     CPLKeywordParser oParser;
 
-    VSILFILE *fp = VSIFOpenL( osTarget, "r" );
+    FILE *fp = VSIFOpenL( osTarget, "r" );
 
     if( fp == NULL )
         return NULL;
@@ -140,129 +158,6 @@ char **CPL_STDCALL GDALLoadRPBFile( const char *pszFilename,
 }
 
 /************************************************************************/
-/*                          GDALLoadRPCFile()                           */
-/************************************************************************/
-
-/* Load a GeoEye _rpc.txt file. See ticket http://trac.osgeo.org/gdal/ticket/3639 */
-
-char **CPL_STDCALL GDALLoadRPCFile( const char *pszFilename,
-                                    char **papszSiblingFiles )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Try to identify the RPC file in upper or lower case.            */
-/* -------------------------------------------------------------------- */
-    CPLString osTarget; 
-
-    /* Is this already a _RPC.TXT file ? */
-    if (strlen(pszFilename) > 8 && EQUAL(pszFilename + strlen(pszFilename) - 8, "_RPC.TXT"))
-        osTarget = pszFilename;
-    else
-    {
-        CPLString osSrcPath = pszFilename;
-        CPLString soPt(".");
-        size_t found = osSrcPath.rfind(soPt);
-        if (found == CPLString::npos)
-            return NULL;
-        osSrcPath.replace (found, osSrcPath.size() - found, "_rpc.txt");
-        CPLString osTarget = osSrcPath; 
-
-        if( papszSiblingFiles == NULL )
-        {
-            VSIStatBufL sStatBuf;
-
-            if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-            {
-                osSrcPath = pszFilename;
-                osSrcPath.replace (found, osSrcPath.size() - found, "_RPC.TXT");
-                osTarget = osSrcPath; 
-
-                if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-                {
-                    osSrcPath = pszFilename;
-                    osSrcPath.replace (found, osSrcPath.size() - found, "_rpc.TXT");
-                    osTarget = osSrcPath; 
-
-                    if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-                    {
-                        return NULL;
-                    }
-                }
-            }
-        }
-        else
-        {
-            int iSibling = CSLFindString( papszSiblingFiles, 
-                                        CPLGetFilename(osTarget) );
-            if( iSibling < 0 )
-                return NULL;
-
-            osTarget.resize(osTarget.size() - strlen(papszSiblingFiles[iSibling]));
-            osTarget += papszSiblingFiles[iSibling];
-        }
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Read file and parse.                                            */
-/* -------------------------------------------------------------------- */
-    char **papszLines = CSLLoad2( osTarget, 100, 100, NULL );
-    if(!papszLines)
-        return NULL;
-
-    char **papszMD = NULL;
-
-    /* From LINE_OFF to HEIGHT_SCALE */
-    for(size_t i = 0; i < 19; i += 2 )
-    {
-        const char *pszRPBVal = CSLFetchNameValue(papszLines, apszRPBMap[i] );
-        if( pszRPBVal == NULL )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                "%s file found, but missing %s field (and possibly others).",
-                osTarget.c_str(), apszRPBMap[i]);
-            CSLDestroy( papszMD );
-            CSLDestroy( papszLines );
-            return NULL;
-        }
-        else
-        {
-            papszMD = CSLSetNameValue( papszMD, apszRPBMap[i], pszRPBVal );
-        }
-    }
-       
-    /* For LINE_NUM_COEFF, LINE_DEN_COEFF, SAMP_NUM_COEFF, SAMP_DEN_COEFF */
-    /* parameters that have 20 values each */
-    for(size_t i = 20; apszRPBMap[i] != NULL; i += 2 )
-    {
-        CPLString soVal;
-        for(int j = 1; j <= 20; j++)
-        {
-            CPLString soRPBMapItem;
-            soRPBMapItem.Printf("%s_%d", apszRPBMap[i], j);
-            const char *pszRPBVal = CSLFetchNameValue(papszLines, soRPBMapItem.c_str() );
-            if( pszRPBVal == NULL )
-            {
-                CPLError( CE_Failure, CPLE_AppDefined,
-                    "%s file found, but missing %s field (and possibly others).",
-                    osTarget.c_str(), soRPBMapItem.c_str() );
-                CSLDestroy( papszMD );
-                CSLDestroy( papszLines );
-                return NULL;
-            }
-            else
-            {
-                soVal += pszRPBVal;
-                soVal += " ";
-            }
-        }
-        papszMD = CSLSetNameValue( papszMD, apszRPBMap[i], soVal.c_str() );
-    }
-
-    CSLDestroy( papszLines );
-    return papszMD;
-}
-
-/************************************************************************/
 /*                          GDALWriteRPBFile()                          */
 /************************************************************************/
 
@@ -275,7 +170,7 @@ CPLErr CPL_STDCALL GDALWriteRPBFile( const char *pszFilename, char **papszMD )
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fp = VSIFOpenL( osRPBFilename, "w" );
+    FILE *fp = VSIFOpenL( osRPBFilename, "w" );
 
     if( fp == NULL )
     {
@@ -483,20 +378,39 @@ char ** CPL_STDCALL GDALLoadIMDFile( const char *pszFilename,
 
 {
 /* -------------------------------------------------------------------- */
-/*      Try to identify the IMD file in upper or lower case.            */
+/*      Try to identify the RPB file in upper or lower case.            */
 /* -------------------------------------------------------------------- */
-    CPLString osTarget = GDALFindAssociatedFile( pszFilename, "IMD", 
-                                                 papszSiblingFiles, 0 );
+    CPLString osTarget = CPLResetExtension( pszFilename, "IMD" );
+    
+    if( papszSiblingFiles == NULL )
+    {
+        VSIStatBufL sStatBuf;
+        
+        if( VSIStatL( osTarget, &sStatBuf ) != 0 )
+        {
+            osTarget = CPLResetExtension( pszFilename, "imd" );
 
-    if( osTarget == "" )
-        return NULL;
+            if( VSIStatL( osTarget, &sStatBuf ) != 0 )
+                return NULL;
+        }
+    }
+    else
+    {
+        int iSibling = CSLFindString( papszSiblingFiles, 
+                                      CPLGetFilename(osTarget) );
+        if( iSibling < 0 )
+            return NULL;
+
+        osTarget.resize(osTarget.size() - strlen(papszSiblingFiles[iSibling]));
+        osTarget += papszSiblingFiles[iSibling];
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
 /* -------------------------------------------------------------------- */
     CPLKeywordParser oParser;
 
-    VSILFILE *fp = VSIFOpenL( osTarget, "r" );
+    FILE *fp = VSIFOpenL( osTarget, "r" );
 
     if( fp == NULL )
         return NULL;
@@ -533,7 +447,7 @@ char ** CPL_STDCALL GDALLoadIMDFile( const char *pszFilename,
 /*      Write a value that is split over multiple lines.                */
 /************************************************************************/
  
-static void GDALWriteIMDMultiLine( VSILFILE *fp, const char *pszValue )
+static void GDALWriteIMDMultiLine( FILE *fp, const char *pszValue )
 
 {
     char **papszItems = CSLTokenizeStringComplex( pszValue, "(,) ", 
@@ -561,11 +475,12 @@ CPLErr CPL_STDCALL GDALWriteIMDFile( const char *pszFilename, char **papszMD )
 
 {
     CPLString osRPBFilename = CPLResetExtension( pszFilename, "IMD" );
+    
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fp = VSIFOpenL( osRPBFilename, "w" );
+    FILE *fp = VSIFOpenL( osRPBFilename, "w" );
 
     if( fp == NULL )
     {

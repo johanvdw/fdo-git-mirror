@@ -31,7 +31,6 @@
 #include <string>
 
 namespace PCIDSK {
-//! Interface to PCIDSK RPC segment.
     class PCIDSKRPCSegment 
     {
     public:
@@ -54,9 +53,9 @@ namespace PCIDSK {
             
         // Set the RPC offset/scale Coefficients
         virtual void SetRPCTranslationCoeffs(const double xoffset, const double xscale,
-            const double yoffset, const double yscale,
+            const double yoffset, const double yscale, 
             const double zoffset, const double zscale,
-            const double pixoffset, const double pixscale,
+            const double pixoffset, const double pixscale, 
             const double lineoffset, const double linescale) = 0;
 
         // Get the adjusted X values
@@ -98,10 +97,6 @@ namespace PCIDSK {
         // Set the number of lines/pixels
         virtual void SetRasterSize(const unsigned int lines, const unsigned int pixels) = 0;
         
-        // Set/get the downsample factor
-        virtual void SetDownsample(const unsigned int downsample) = 0;
-        virtual unsigned int GetDownsample(void) const = 0;
-
         // TODO: Setting/getting detailed projection params (just GCTP params?)
 
         // Virtual destructor

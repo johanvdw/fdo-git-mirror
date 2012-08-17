@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfwritejpeg.cpp 21951 2011-03-12 22:02:07Z warmerdam $
+ * $Id: nitfwritejpeg.cpp 18667 2010-01-26 20:15:09Z rouault $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  GDALDataset/GDALRasterBand implementation on top of "nitflib".
@@ -55,7 +55,7 @@ CPL_C_END
 
 #if defined(JPEG_DUAL_MODE_8_12) && !defined(NITFWriteJPEGBlock)
 int 
-NITFWriteJPEGBlock_12( GDALDataset *poSrcDS, VSILFILE *fp,
+NITFWriteJPEGBlock_12( GDALDataset *poSrcDS, FILE *fp,
                      int nBlockXOff, int nBlockYOff,
                      int nBlockXSize, int nBlockYSize,
                      int bProgressive, int nQuality,
@@ -63,15 +63,15 @@ NITFWriteJPEGBlock_12( GDALDataset *poSrcDS, VSILFILE *fp,
                      GDALProgressFunc pfnProgress, void * pProgressData );
 #endif
 
-void jpeg_vsiio_src (j_decompress_ptr cinfo, VSILFILE * infile);
-void jpeg_vsiio_dest (j_compress_ptr cinfo, VSILFILE * outfile);
+void jpeg_vsiio_src (j_decompress_ptr cinfo, FILE * infile);
+void jpeg_vsiio_dest (j_compress_ptr cinfo, FILE * outfile);
 
 /************************************************************************/
 /*                         NITFWriteJPEGBlock()                         */
 /************************************************************************/
 
 int 
-NITFWriteJPEGBlock( GDALDataset *poSrcDS, VSILFILE *fp,
+NITFWriteJPEGBlock( GDALDataset *poSrcDS, FILE *fp,
                     int nBlockXOff, int nBlockYOff,
                     int nBlockXSize, int nBlockYSize,
                     int bProgressive, int nQuality,

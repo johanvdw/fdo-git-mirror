@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IntergraphBand.cpp 23117 2011-09-24 15:06:37Z rouault $
+ * $Id: IntergraphBand.cpp 16620 2009-03-19 21:07:13Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, band support
@@ -194,13 +194,6 @@ IntergraphRasterBand::IntergraphRasterBand( IntergraphDataset *poDS,
     SetMetadataItem( "ORIENTATION", 
         INGR_GetOrientation( hHeaderOne.ScanlineOrientation ),
         "IMAGE_STRUCTURE" );
-
-    if( eFormat == PackedBinary ||
-        eFormat == RunLengthEncoded ||
-        eFormat == CCITTGroup4 )
-    {
-        SetMetadataItem( "NBITS", "1", "IMAGE_STRUCTURE" );
-    }
 }
 
 //  ----------------------------------------------------------------------------

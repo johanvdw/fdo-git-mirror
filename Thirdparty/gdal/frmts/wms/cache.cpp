@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cache.cpp 21880 2011-02-27 14:28:26Z rouault $
+ * $Id: cache.cpp 18020 2009-11-14 14:33:20Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -66,10 +66,9 @@ CPLErr GDALWMSCache::Write(const char *key, const CPLString &file_name) {
 CPLErr GDALWMSCache::Read(const char *key, CPLString *file_name) {
     CPLErr ret = CE_Failure;
     CPLString cache_file(KeyToCacheFile(key));
-    VSILFILE* fp = VSIFOpenL(cache_file.c_str(), "rb");
-    if (fp != NULL)
-    {
-        VSIFCloseL(fp);
+    FILE *f = VSIFOpen(cache_file.c_str(), "rb");
+    if (f != NULL) {
+        VSIFClose(f);
         *file_name = cache_file;
         ret = CE_None;
     }

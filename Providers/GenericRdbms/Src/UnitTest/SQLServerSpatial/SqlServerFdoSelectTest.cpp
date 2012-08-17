@@ -20,7 +20,6 @@
 #include "SqlServerFdoSelectTest.h"
 #include "UnitTestUtil.h"
 #include "ConnectionUtil.h"
-#include "../../SQLServerSpatial/SchemaMgr/Ph/Mgr.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( SqlServerFdoSelectTest );
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( SqlServerFdoSelectTest, "FdoSelectTest");
@@ -225,9 +224,9 @@ void SqlServerFdoSelectTest::TestSpatialGeog()
             {
             case 0:
                 ordsXYExt[0] = -0.004; ordsXYExt[1] = -0.004; 
-                ordsXYExt[2] = -0.002; ordsXYExt[3] = -0.004; 
+                ordsXYExt[2] = -0.004; ordsXYExt[3] = -0.002; 
                 ordsXYExt[4] = -0.002; ordsXYExt[5] = -0.002; 
-                ordsXYExt[6] = -0.004; ordsXYExt[7] = -0.002; 
+                ordsXYExt[6] = -0.002; ordsXYExt[7] = -0.004; 
                 ordsXYExt[8] = -0.004; ordsXYExt[9] = -0.004; 
                 break;
             case 1:
@@ -239,9 +238,9 @@ void SqlServerFdoSelectTest::TestSpatialGeog()
                 break;
             case 2:
                 ordsXYExt[0] = 0.002; ordsXYExt[1] = 0.002; 
-                ordsXYExt[2] = 0.004; ordsXYExt[3] = 0.002; 
+                ordsXYExt[2] = 0.002; ordsXYExt[3] = 0.004; 
                 ordsXYExt[4] = 0.004; ordsXYExt[5] = 0.004; 
-                ordsXYExt[6] = 0.002; ordsXYExt[7] = 0.004; 
+                ordsXYExt[6] = 0.004; ordsXYExt[7] = 0.002; 
                 ordsXYExt[8] = 0.002; ordsXYExt[9] = 0.002; 
                 break;
             }
@@ -274,9 +273,9 @@ void SqlServerFdoSelectTest::TestSpatialGeog()
         // CounterClockwise polygon with Islands (some clockwise, some counterclockwise)
 
         ordsXYExt[0] = -0.005; ordsXYExt[1] = -0.005; 
-        ordsXYExt[2] = -0.005; ordsXYExt[3] = 0.005; 
+        ordsXYExt[2] = 0.005;  ordsXYExt[3] = -0.005; 
         ordsXYExt[4] = 0.005;  ordsXYExt[5] = 0.005 ; 
-        ordsXYExt[6] = 0.005;  ordsXYExt[7] = -0.005; 
+        ordsXYExt[6] = -0.005; ordsXYExt[7] = 0.005; 
         ordsXYExt[8] = -0.005; ordsXYExt[9] = -0.005; 
 
         extRing = gf->CreateLinearRing(FdoDimensionality_XY, 10, ordsXYExt);
@@ -285,14 +284,14 @@ void SqlServerFdoSelectTest::TestSpatialGeog()
 
         SpatialGeogSelect( connection, spatialArea );
 
-        // MultiPolygon with Islands. 1st polygon has CW exterior
+        // MultiPolygon with Islands. 1st polygon has CCW exterior
 
         polygons = FdoPolygonCollection::Create();
         polygons->Add( (FdoIPolygon*) spatialArea.p );
 
         ordsXYExt[0] = 0.007; ordsXYExt[1] = 0.007; 
-        ordsXYExt[2] = 0.009; ordsXYExt[3] = 0.007; 
-        ordsXYExt[4] = 0.007; ordsXYExt[5] = 0.009; 
+        ordsXYExt[2] = 0.007; ordsXYExt[3] = 0.009; 
+        ordsXYExt[4] = 0.009; ordsXYExt[5] = 0.007; 
         ordsXYExt[6] = 0.007; ordsXYExt[7] = 0.007; 
 
         extRing = gf->CreateLinearRing(FdoDimensionality_XY, 8, ordsXYExt);
@@ -343,113 +342,6 @@ void SqlServerFdoSelectTest::TestSpatialGeog()
         }
         throw;
     }
-}
-
-void SqlServerFdoSelectTest::TestSpatialGeogValidSpatialOperators()
-{
-	FdoPtr<FdoIConnection> connection;
-    StaticConnection* conn = UnitTestUtil::NewStaticConnection();
-    FdoStringP providerName = conn->GetServiceName();
-
-    try {
-        FdoStringP datastore = UnitTestUtil::GetEnviron("datastore", mSpatialGeogSuffix);
-
-        printf( "\nOpening Connection ...\n" );
-
-        conn->connect();
-
-        FdoSchemaManagerP mgr = conn->CreateSchemaManager();
-
-        UnitTestUtil::CreateDBNoMeta( mgr, datastore );
-
-        printf( "Creating Spatial Contexts and Feature Schema ...\n" );
-
-        connection = UnitTestUtil::CreateConnection(
-            false,
-            false,
-            mSpatialGeogSuffix
-        );
-
-        SpatialGeogSchema( connection );
-
-        printf( "Creating Features ...\n" );
-
-        SpatialGeogData( connection );
-
-        printf( "Performing Selects ...\n" );
-
-        FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
-
-        double ordsXYExt[10];
-        ordsXYExt[0] = -0.005; ordsXYExt[1] = -0.005; 
-        ordsXYExt[2] = -0.005; ordsXYExt[3] = 0.005; 
-        ordsXYExt[4] = 0.005;  ordsXYExt[5] = 0.005; 
-        ordsXYExt[6] = 0.005;  ordsXYExt[7] = -0.005; 
-        ordsXYExt[8] = -0.005; ordsXYExt[9] = -0.005; 
-
-        FdoPtr<FdoILinearRing> extRing = gf->CreateLinearRing(FdoDimensionality_XY, 10, ordsXYExt);
-        FdoPtr<FdoIGeometry> spatialArea = gf->CreatePolygon(extRing, NULL );
-
-		// These 2 operations must succeed regardless the SqlServer release (2008 or 2012)
-        bool status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Disjoint );
-		CPPUNIT_ASSERT_MESSAGE("Disjoint test failed", status == true);
-
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Intersects );
-		CPPUNIT_ASSERT_MESSAGE("Intersects test failed", status == true);
-
-		// Get the database version
-        FdoSmPhMgrP phMgr = mgr->GetPhysicalSchema()->SmartCast<FdoSmPhGrdMgr>();
-        FdoSmPhSqsMgrP sqsMgr = phMgr->SmartCast<FdoSmPhSqsMgr>();
-		bool bVersionSupported = ( sqsMgr->GetDbVersion().Left( L"." ).ToLong() > 10 );
-		
-		// The following operations are only supported on SqlServer 2012
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Inside );
-		CPPUNIT_ASSERT_MESSAGE("Inside test failed", status == bVersionSupported);
-
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Equals );
-		CPPUNIT_ASSERT_MESSAGE("Equals test failed", status == bVersionSupported);
-
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Overlaps );
-		CPPUNIT_ASSERT_MESSAGE("Overlaps test failed", status == bVersionSupported);
-
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_Within );
-		CPPUNIT_ASSERT_MESSAGE("Within test failed", status == bVersionSupported);
-
-		status = SpatialGeogSelectWithSpOp( connection, spatialArea, FdoSpatialOperations_CoveredBy );
-		CPPUNIT_ASSERT_MESSAGE("CoveredBy test failed", status == bVersionSupported);
-	}
-    catch ( ... )
-    {
-    }
-}
-
-bool SqlServerFdoSelectTest::SpatialGeogSelectWithSpOp( FdoIConnection* connection, FdoIGeometry* spatialArea, FdoSpatialOperations spOp )
-{
-    FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance();
-    FdoStringsP names = FdoStringCollection::Create();
-
-    FdoPtr<FdoGeometryValue> geomValue = FdoGeometryValue::Create(FdoPtr<FdoByteArray>(gf->GetFgf(spatialArea)));
-    FdoPtr<FdoSpatialCondition> spatialFilter = FdoSpatialCondition::Create(L"Geog",
-                                                                      spOp,
-                                                                      geomValue);
-
-    FdoPtr<FdoISelect> selectCommand = (FdoISelect *) connection->CreateCommand(FdoCommandType_Select);
-
-    selectCommand->SetFeatureClassName( L"Schema1:FeatClass1" );
-    selectCommand->SetFilter(spatialFilter);
-
-	bool status = false;
-	try
-	{
-		FdoPtr<FdoIFeatureReader> rdr = selectCommand->Execute();
-		status = true;
-	}
-	catch(FdoException * ex)
-	{
-		ex->Release();
-	}
-
-    return status;
 }
 
 void SqlServerFdoSelectTest::spatial_query_defect813611()

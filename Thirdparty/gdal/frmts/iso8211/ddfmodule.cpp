@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfmodule.cpp 23595 2011-12-18 22:58:47Z rouault $
+ * $Id: ddfmodule.cpp 17405 2009-07-17 06:13:24Z chaitanya $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFModule class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfmodule.cpp 23595 2011-12-18 22:58:47Z rouault $");
+CPL_CVSID("$Id: ddfmodule.cpp 17405 2009-07-17 06:13:24Z chaitanya $");
 
 /************************************************************************/
 /*                             DDFModule()                              */
@@ -161,7 +161,7 @@ void DDFModule::Close()
 int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 
 {
-    static const int nLeaderSize = 24;
+    static const size_t nLeaderSize = 24;
 
 /* -------------------------------------------------------------------- */
 /*      Close the existing file if there is one.                        */
@@ -188,7 +188,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 /* -------------------------------------------------------------------- */
     char        achLeader[nLeaderSize];
     
-    if( (int)VSIFReadL( achLeader, 1, nLeaderSize, fpDDF ) != nLeaderSize )
+    if( VSIFReadL( achLeader, 1, nLeaderSize, fpDDF ) != nLeaderSize )
     {
         VSIFCloseL( fpDDF );
         fpDDF = NULL;
@@ -206,7 +206,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 /* -------------------------------------------------------------------- */
     int         i, bValid = TRUE;
 
-    for( i = 0; i < nLeaderSize; i++ )
+    for( i = 0; i < (int)nLeaderSize; i++ )
     {
         if( achLeader[i] < 32 || achLeader[i] > 126 )
             bValid = FALSE;
@@ -242,7 +242,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
         _sizeFieldPos                 = DDFScanInt(achLeader+21,1);
         _sizeFieldTag                 = DDFScanInt(achLeader+23,1);
 
-        if( _recLength < nLeaderSize || _fieldControlLength == 0
+        if( _recLength < 12 || _fieldControlLength == 0
             || _fieldAreaStart < 24 || _sizeFieldLength == 0
             || _sizeFieldPos == 0 || _sizeFieldTag == 0 )
         {
@@ -319,18 +319,6 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
         
         nEntryOffset += _sizeFieldLength;
         nFieldPos = DDFScanInt( pachRecord+nEntryOffset, _sizeFieldPos );
-
-        if (_fieldAreaStart+nFieldPos < 0 ||
-            _recLength - (_fieldAreaStart+nFieldPos) < nFieldLength)
-        {
-            if( !bFailQuietly )
-                CPLError( CE_Failure, CPLE_FileIO,
-                        "Header record invalid on DDF file `%s'.",
-                        pszFilename );
-
-            CPLFree( pachRecord );
-            return FALSE;
-        }
         
         poFDefn = new DDFFieldDefn();
         if( poFDefn->Initialize( this, szTag, nFieldLength,

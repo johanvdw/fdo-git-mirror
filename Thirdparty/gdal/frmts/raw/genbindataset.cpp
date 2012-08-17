@@ -194,7 +194,7 @@ class GenBinDataset : public RawDataset
 {
     friend class GenBinBitRasterBand;
 
-    VSILFILE	*fpImage;	// image data file.
+    FILE	*fpImage;	// image data file.
 
     int         bGotTransform;
     double      adfGeoTransform[6];
@@ -580,7 +580,7 @@ GDALDataset *GenBinDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Do we have a .hdr file?                                         */
 /* -------------------------------------------------------------------- */
-    VSILFILE	*fp;
+    FILE	*fp;
 
     fp = VSIFOpenL( osHDRFilename, "r" );
     
@@ -893,8 +893,6 @@ void GDALRegister_GenBin()
                                    "Generic Binary (.hdr Labelled)" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#GenBin" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-
         poDriver->pfnOpen = GenBinDataset::Open;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

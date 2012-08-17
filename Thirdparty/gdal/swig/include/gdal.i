@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.i 20712 2010-09-30 03:35:27Z warmerdam $
+ * $Id: gdal.i 18347 2009-12-19 14:02:04Z rouault $
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
@@ -68,10 +68,8 @@ typedef void GDALRasterBandShadow;
 typedef void GDALColorTableShadow;
 typedef void GDALRasterAttributeTableShadow;
 typedef void GDALTransformerInfoShadow;
-typedef void GDALAsyncReaderShadow;
 
-/* use this to not return the int returned by GDAL */
-typedef int RETURN_NONE;
+typedef int FALSE_IS_ERR;
 
 %}
 
@@ -88,7 +86,6 @@ typedef int GDALAccess;
 typedef int GDALDataType;
 typedef int CPLErr;
 typedef int GDALResampleAlg;
-typedef int GDALAsyncStatusType;
 #else
 /*! Pixel data types */
 %rename (DataType) GDALDataType;
@@ -164,14 +161,6 @@ typedef enum {
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
 } GDALResampleAlg;
-
-%rename (AsyncStatusType) GDALAsyncStatusType;
-typedef enum {
-	GARIO_PENDING = 0,
-	GARIO_UPDATE = 1,
-	GARIO_ERROR = 2,
-	GARIO_COMPLETE = 3
-} GDALAsyncStatusType;
 #endif
 
 #if defined(SWIGPYTHON)
@@ -202,9 +191,6 @@ $1;
 $1;
 %}
 
-//************************************************************************
-// Apply NONNULL to all utf8_path's. 
-%apply Pointer NONNULL { const char* utf8_path };
 
 //************************************************************************
 //
@@ -246,9 +232,9 @@ $1;
 
 #ifdef SWIGRUBY
 %rename (all_register) GDALAllRegister;
-%rename (get_cache_max) wrapper_GDALGetCacheMax;
-%rename (set_cache_max) wrapper_GDALSetCacheMax;
-%rename (get_cache_used) wrapper_GDALGetCacheUsed;
+%rename (get_cache_max) GDALGetCacheMax;
+%rename (set_cache_max) GDALSetCacheMax;
+%rename (set_cache_used) GDALGetCacheUsed;
 %rename (get_data_type_size) GDALGetDataTypeSize;
 %rename (data_type_is_complex) GDALDataTypeIsComplex;
 %rename (gcps_to_geo_transform) GDALGCPsToGeoTransform;
@@ -268,9 +254,9 @@ $1;
 %rename (InvGeoTransform) GDALInvGeoTransform;
 %rename (VersionInfo) GDALVersionInfo;
 %rename (AllRegister) GDALAllRegister;
-%rename (GetCacheMax) wrapper_GDALGetCacheMax;
-%rename (SetCacheMax) wrapper_GDALSetCacheMax;
-%rename (GetCacheUsed) wrapper_GDALGetCacheUsed;
+%rename (GetCacheMax) GDALGetCacheMax;
+%rename (SetCacheMax) GDALSetCacheMax;
+%rename (GetCacheUsed) GDALGetCacheUsed;
 %rename (GetDataTypeSize) GDALGetDataTypeSize;
 %rename (DataTypeIsComplex) GDALDataTypeIsComplex;
 %rename (GetDataTypeName) GDALGetDataTypeName;
@@ -470,10 +456,10 @@ int wrapper_GDALGCPsToGeoTransform( int nGCPs, GDAL_GCP const * pGCPs,
 }
 }
 #else
-%apply (IF_FALSE_RETURN_NONE) { (RETURN_NONE) };
-RETURN_NONE GDALGCPsToGeoTransform( int nGCPs, GDAL_GCP const * pGCPs, 
+%apply (IF_FALSE_RETURN_NONE) { (FALSE_IS_ERR) };
+FALSE_IS_ERR GDALGCPsToGeoTransform( int nGCPs, GDAL_GCP const * pGCPs, 
     	                             double argout[6], int bApproxOK = 1 ); 
-%clear (RETURN_NONE);
+%clear (FALSE_IS_ERR);
 #endif
 
 //************************************************************************
@@ -545,51 +531,11 @@ void GDALAllRegister();
 
 void GDALDestroyDriverManager();
 
-#ifdef SWIGPYTHON
-%apply (GIntBig bigint) { GIntBig };
-%inline {
-GIntBig wrapper_GDALGetCacheMax()
-{
-    return GDALGetCacheMax64();
-}
-}
+int GDALGetCacheMax();
 
-%inline {
-GIntBig wrapper_GDALGetCacheUsed()
-{
-    return GDALGetCacheUsed64();
-}
-}
-
-%inline {
-void wrapper_GDALSetCacheMax(GIntBig nBytes)
-{
-    return GDALSetCacheMax64(nBytes);
-}
-}
-
-#else
-%inline {
-int wrapper_GDALGetCacheMax()
-{
-    return GDALGetCacheMax();
-}
-}
-
-%inline {
-int wrapper_GDALGetCacheUsed()
-{
-    return GDALGetCacheUsed();
-}
-}
-
-%inline {
-void wrapper_GDALSetCacheMax(int nBytes)
-{
-    return GDALSetCacheMax(nBytes);
-}
-}
-#endif
+void GDALSetCacheMax( int nBytes );
+    
+int GDALGetCacheUsed();
 
 int GDALGetDataTypeSize( GDALDataType eDataType );
 
@@ -628,7 +574,7 @@ double GDALDecToPackedDMS( double dfDec );
 #endif
 CPLXMLNode *CPLParseXMLString( char * pszXMLString );
 
-#if defined(SWIGJAVA) || defined(SWIGCSHARP) || defined(SWIGPYTHON) || defined(SWIGPERL)
+#if defined(SWIGJAVA) || defined(SWIGCSHARP) || defined(SWIGPYTHON)
 retStringAndCPLFree *CPLSerializeXMLTree( CPLXMLNode *xmlnode );
 #else
 char *CPLSerializeXMLTree( CPLXMLNode *xmlnode );
@@ -665,9 +611,9 @@ GDALDriverShadow* GetDriver( int i ) {
 #ifdef SWIGJAVA
 %newobject Open;
 %inline %{
-GDALDatasetShadow* Open( char const* utf8_path, GDALAccess eAccess) {
+GDALDatasetShadow* Open( char const* name, GDALAccess eAccess) {
   CPLErrorReset();
-  GDALDatasetShadow *ds = GDALOpen( utf8_path, eAccess );
+  GDALDatasetShadow *ds = GDALOpen( name, eAccess );
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
@@ -687,9 +633,9 @@ GDALDatasetShadow* Open( char const* name ) {
 #else
 %newobject Open;
 %inline %{
-GDALDatasetShadow* Open( char const* utf8_path, GDALAccess eAccess = GA_ReadOnly ) {
+GDALDatasetShadow* Open( char const* name, GDALAccess eAccess = GA_ReadOnly ) {
   CPLErrorReset();
-  GDALDatasetShadow *ds = GDALOpen( utf8_path, eAccess );
+  GDALDatasetShadow *ds = GDALOpen( name, eAccess );
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
@@ -703,9 +649,9 @@ GDALDatasetShadow* Open( char const* utf8_path, GDALAccess eAccess = GA_ReadOnly
 
 %newobject OpenShared;
 %inline %{
-GDALDatasetShadow* OpenShared( char const* utf8_path, GDALAccess eAccess = GA_ReadOnly ) {
+GDALDatasetShadow* OpenShared( char const* name, GDALAccess eAccess = GA_ReadOnly ) {
   CPLErrorReset();
-  GDALDatasetShadow *ds = GDALOpenShared( utf8_path, eAccess );
+  GDALDatasetShadow *ds = GDALOpenShared( name, eAccess );
   if( ds != NULL && CPLGetLastErrorType() == CE_Failure )
   {
       if ( GDALDereferenceDataset( ds ) <= 0 )
@@ -718,9 +664,9 @@ GDALDatasetShadow* OpenShared( char const* utf8_path, GDALAccess eAccess = GA_Re
 
 %apply (char **options) {char **papszSiblings};
 %inline %{
-GDALDriverShadow *IdentifyDriver( const char *utf8_path, 
+GDALDriverShadow *IdentifyDriver( const char *pszDatasource, 
                                   char **papszSiblings = NULL ) {
-    return (GDALDriverShadow *) GDALIdentifyDriver( utf8_path, 
+    return (GDALDriverShadow *) GDALIdentifyDriver( pszDatasource, 
 	                                            papszSiblings );
 }
 %}
@@ -740,7 +686,7 @@ GDALDriverShadow *IdentifyDriver( const char *utf8_path,
 #if defined(SWIGPYTHON) || defined(SWIGJAVA)
 /* FIXME: other bindings should also use those typemaps to avoid memory leaks */
 %apply (char **options) {char ** papszArgv};
-%apply (char **CSL) {(char **)};
+%apply (char **out_ppsz_and_free) {(char **)};
 #else
 %apply (char **options) {char **};
 #endif

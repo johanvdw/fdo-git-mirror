@@ -33,15 +33,10 @@ Process :
 
 2) Update the release date, and number information in gcore/gdal_version.h.
 
-3) Update the VERSION file. 
+3) Update the VERSION file. Update ./swig/python/setup.py version information. 
+   Update ./swig/include/perl/gdal_perl.i $VERSION string to current version.
 
-3.1) Update ./swig/python/setup.py version information. 
-
-3.2) Update ./swig/include/perl/gdal_perl.i $VERSION and $GDAL_VERSION
-strings to current version. Kick Perl module maintainer to make a CPAN
-release.
-
-3.3) For major releases update the VERSION macro in nmake.opt (for 1.6, 1.7etc)
+3.5) For major releases update the VERSION macro in nmake.opt (for 1.6, 1.7etc)
 
 4) Update LIBGDAL_CURRENT/REVISION/AGE macros in GDALmake.opt.in.
    - For a release with no interface changes just bump REVISION. 
@@ -84,8 +79,8 @@ release.
 
  ie. On www.gdal.org:
  % cd /osgeo/gdal
- % ./gdal-web-refresh.sh
- % zip -r gdal180doc.zip gdal-web/*.* gdal-web/ogr gdal-web/java 
+ % ./gdalhtmlupdate.sh
+ % zip -r /osgeo/download/gdal/gdal150doc.zip gdal-web/*.* gdal-web/ogr
 
 11) Create a snapshot of autotest suite:
 
@@ -109,13 +104,4 @@ release.
 15) Update the freegis.org entry for GDAL.
 
 16) Update doc/index.dox to advertize the new release and link to the release notes
-
-17) Create a News page in Trac for the release (like 
-http://trac.osgeo.org/gdal/wiki/Release/1.7.0-News) and reference it from
-http://trac.osgeo.org/gdal/ (Releases) and 
-http://trac.osgeo.org/gdal/wiki/NewsAndStatus .
-
-18) Add pointers to the source releases at:
-  
-  http://trac.osgeo.org/gdal/wiki/DownloadSource
 

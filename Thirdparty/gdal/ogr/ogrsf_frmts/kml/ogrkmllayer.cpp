@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrkmllayer.cpp 22872 2011-08-06 20:32:14Z rouault $
+ * $Id: ogrkmllayer.cpp 16908 2009-05-02 14:53:26Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLLayer class.
@@ -102,7 +102,6 @@ OGRKMLLayer::OGRKMLLayer( const char * pszName,
 
     bWriter_ = bWriterIn;
     nWroteFeatureCount_ = 0;
-    bClosedForWriting = (bWriterIn == FALSE);
 
     pszName_ = CPLStrdup(pszName);
 }
@@ -244,20 +243,13 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
     if( !bWriter_ )
         return OGRERR_FAILURE;
 
-    if( bClosedForWriting )
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "Interleaved feature adding to different layers is not supported");
-        return OGRERR_FAILURE;
-    }
-
-    VSILFILE *fp = poDS_->GetOutputFP();
+    FILE *fp = poDS_->GetOutputFP();
     CPLAssert( NULL != fp );
 
     // If we haven't writen any features yet, output the layer's schema
     if (0 == nWroteFeatureCount_)
     {
-        VSIFPrintfL( fp, "<Schema name=\"%s\" id=\"%s\">\n", pszName_, pszName_ );
+        VSIFPrintf( fp, "<Schema name=\"%s\" id=\"%s\">\n", pszName_, pszName_ );
         OGRFeatureDefn *featureDefinition = GetLayerDefn();
         for (int j=0; j < featureDefinition->GetFieldCount(); j++)
         {
@@ -308,13 +300,13 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
                 pszKMLEltName = "SimpleField";
                 break;
             }
-            VSIFPrintfL( fp, "\t<%s name=\"%s\" type=\"%s\"></%s>\n", 
+            VSIFPrintf( fp, "\t<%s name=\"%s\" type=\"%s\"></%s>\n", 
                         pszKMLEltName, fieldDefinition->GetNameRef() ,pszKMLType, pszKMLEltName );
         }
-        VSIFPrintfL( fp, "</Schema>\n" );
+        VSIFPrintf( fp, "</Schema>\n" );
     }
 
-    VSIFPrintfL( fp, "  <Placemark>\n" );
+    VSIFPrintf( fp, "  <Placemark>\n" );
 
     if( poFeature->GetFID() == OGRNullFID )
         poFeature->SetFID( iNextKMLId_++ );
@@ -335,7 +327,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
 
                 char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
 
-                VSIFPrintfL( fp, "\t<name>%s</name>\n", pszEscaped);
+                VSIFPrintf( fp, "\t<name>%s</name>\n", pszEscaped);
                 CPLFree( pszEscaped );
             }
         }
@@ -356,88 +348,21 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
 
                 char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
 
-                VSIFPrintfL( fp, "\t<description>%s</description>\n", pszEscaped);
+                VSIFPrintf( fp, "\t<description>%s</description>\n", pszEscaped);
                 CPLFree( pszEscaped );
             }
         }
     }
 
-    OGRwkbGeometryType eGeomType = wkbNone;
-    if (poFeature->GetGeometryRef() != NULL)
-        eGeomType = wkbFlatten(poFeature->GetGeometryRef()->getGeometryType());
+    OGRwkbGeometryType eGeomType = wkbFlatten(poFeatureDefn_->GetGeomType());
     if ( wkbPolygon == eGeomType
          || wkbMultiPolygon == eGeomType
          || wkbLineString == eGeomType
          || wkbMultiLineString == eGeomType )
     {
-        OGRStylePen *poPen = NULL;
-        OGRStyleMgr oSM;
-
-        if( poFeature->GetStyleString() != NULL )
-        {
-            oSM.InitFromFeature( poFeature );
-
-            int i;
-            for(i=0; i<oSM.GetPartCount();i++)
-            {
-                OGRStyleTool *poTool = oSM.GetPart(i);
-                if (poTool && poTool->GetType() == OGRSTCPen )
-                {
-                    poPen = (OGRStylePen*) poTool;
-                    break;
-                }
-                delete poTool;
-            }
-        }
-
-        VSIFPrintfL( fp, "\t<Style>");
-        if( poPen != NULL )
-        {
-            GBool  bDefault;
-            int    bHasWidth = FALSE;
-
-            /* Require width to be returned in pixel */
-            poPen->SetUnit(OGRSTUPixel);
-            double fW = poPen->Width(bDefault);
-            if( bDefault )
-                fW = 1;
-            else
-                bHasWidth = TRUE;
-            const char* pszColor = poPen->Color(bDefault);
-            int nColorLen = CPLStrnlen(pszColor, 10);
-            if( pszColor != NULL && pszColor[0] == '#' && !bDefault && nColorLen >= 7)
-            {
-                char acColor[9] = {0};
-                /* Order of KML color is aabbggrr, whereas OGR color is #rrggbb[aa] ! */
-                if(nColorLen == 9)
-                {
-                    acColor[0] = pszColor[7]; /* A */
-                    acColor[1] = pszColor[8];
-                }
-                else
-                {
-                    acColor[0] = 'F';
-                    acColor[1] = 'F';
-                }
-                acColor[2] = pszColor[5]; /* B */
-                acColor[3] = pszColor[6];
-                acColor[4] = pszColor[3]; /* G */
-                acColor[5] = pszColor[4];
-                acColor[6] = pszColor[1]; /* R */
-                acColor[7] = pszColor[2];
-                VSIFPrintfL( fp, "<LineStyle><color>%s</color>", acColor);
-                if (bHasWidth)
-                    VSIFPrintfL( fp, "<width>%g</width>", fW);
-                VSIFPrintfL( fp, "</LineStyle>");
-            }
-            else
-                VSIFPrintfL( fp, "<LineStyle><color>ff0000ff</color></LineStyle>");
-        }
-        else
-            VSIFPrintfL( fp, "<LineStyle><color>ff0000ff</color></LineStyle>");
-        delete poPen;
         //If we're dealing with a polygon, add a line style that will stand out a bit
-        VSIFPrintfL( fp, "<PolyStyle><fill>0</fill></PolyStyle></Style>\n" );
+        VSIFPrintf( fp, "  <Style><LineStyle><color>ff0000ff</color></LineStyle>");
+        VSIFPrintf( fp, "  <PolyStyle><fill>0</fill></PolyStyle></Style>\n" );
     }
 
     int bHasFoundOtherField = FALSE;
@@ -451,7 +376,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
         {
             if (!bHasFoundOtherField)
             {                
-                VSIFPrintfL( fp, "\t<ExtendedData><SchemaData schemaUrl=\"#%s\">\n", pszName_ );
+                VSIFPrintf( fp, "\t<ExtendedData><SchemaData schemaUrl=\"#%s\">\n", pszName_ );
                 bHasFoundOtherField = TRUE;
             }
             const char *pszRaw = poFeature->GetFieldAsString( iField );
@@ -461,7 +386,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
 
             char *pszEscaped = OGRGetXML_UTF8_EscapedString( pszRaw );
 
-            VSIFPrintfL( fp, "\t\t<SimpleData name=\"%s\">%s</SimpleData>\n", 
+            VSIFPrintf( fp, "\t\t<SimpleData name=\"%s\">%s</SimpleData>\n", 
                         poField->GetNameRef(), pszEscaped);
 
             CPLFree( pszEscaped );
@@ -470,7 +395,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
 
     if (bHasFoundOtherField)
     {
-        VSIFPrintfL( fp, "\t</SchemaData></ExtendedData>\n" );
+        VSIFPrintf( fp, "\t</SchemaData></ExtendedData>\n" );
     }
 
     // Write out Geometry - for now it isn't indented properly.
@@ -496,7 +421,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
             OGR_G_ExportToKML( (OGRGeometryH)poWGS84Geom,
                                poDS_->GetAltitudeMode());
         
-        VSIFPrintfL( fp, "      %s\n", pszGeometry );
+        VSIFPrintf( fp, "      %s\n", pszGeometry );
         CPLFree( pszGeometry );
 
         poWGS84Geom->getEnvelope( &sGeomBounds );
@@ -508,7 +433,7 @@ OGRErr OGRKMLLayer::CreateFeature( OGRFeature* poFeature )
         }
     }
     
-    VSIFPrintfL( fp, "  </Placemark>\n" );
+    VSIFPrintf( fp, "  </Placemark>\n" );
     nWroteFeatureCount_++;
     return OGRERR_NONE;
 }
@@ -536,9 +461,6 @@ int OGRKMLLayer::TestCapability( const char * pszCap )
 
 //        return poFClass->GetFeatureCount() != -1;
     }
-
-    else if (EQUAL(pszCap, OLCStringsAsUTF8))
-        return TRUE;
 
     return FALSE;
 }

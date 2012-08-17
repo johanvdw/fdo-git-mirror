@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdriver.cpp 23016 2011-08-31 21:24:12Z rouault $
+ * $Id: ogrcsvdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -30,7 +30,7 @@
 #include "ogr_csv.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 23016 2011-08-31 21:24:12Z rouault $");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                           ~OGRCSVDriver()                            */
@@ -74,18 +74,15 @@ OGRDataSource *OGRCSVDriver::Open( const char * pszFilename, int bUpdate )
 /************************************************************************/
 
 OGRDataSource *OGRCSVDriver::CreateDataSource( const char * pszName,
-                                               char **papszOptions )
+                                               char ** /* papszOptions */ )
 
 {
 /* -------------------------------------------------------------------- */
 /*      First, ensure there isn't any such file yet.                    */
 /* -------------------------------------------------------------------- */
-    VSIStatBufL sStatBuf;
+    VSIStatBuf sStatBuf;
 
-    if (strcmp(pszName, "/dev/stdout") == 0)
-        pszName = "/vsistdout/";
-
-    if( VSIStatL( pszName, &sStatBuf ) == 0 )
+    if( VSIStat( pszName, &sStatBuf ) == 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "It seems a file system object called '%s' already exists.",
@@ -95,32 +92,14 @@ OGRDataSource *OGRCSVDriver::CreateDataSource( const char * pszName,
     }
 
 /* -------------------------------------------------------------------- */
-/*      If the target is not a simple .csv then create it as a          */
-/*      directory.                                                      */
+/*      Create a directory.                                             */
 /* -------------------------------------------------------------------- */
-    CPLString osDirName;
-
-    if( EQUAL(CPLGetExtension(pszName),"csv") )
+    if( VSIMkdir( pszName, 0755 ) != 0 )
     {
-        osDirName = CPLGetPath(pszName);
-        if( osDirName == "" )
-            osDirName = ".";
-    }
-    else
-    {
-        if( strncmp(pszName, "/vsizip/", 8) == 0)
-        {
-            /* do nothing */
-        }
-        else if( !EQUAL(pszName, "/vsistdout/") &&
-            VSIMkdir( pszName, 0755 ) != 0 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, 
-                      "Failed to create directory %s:\n%s", 
-                      pszName, VSIStrerror( errno ) );
-            return NULL;
-        }
-        osDirName = pszName;
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Failed to create directory %s:\n%s", 
+                  pszName, VSIStrerror( errno ) );
+        return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -128,14 +107,11 @@ OGRDataSource *OGRCSVDriver::CreateDataSource( const char * pszName,
 /* -------------------------------------------------------------------- */
     OGRCSVDataSource   *poDS = new OGRCSVDataSource();
 
-    if( !poDS->Open( osDirName, TRUE, TRUE ) )
+    if( !poDS->Open( pszName, TRUE, TRUE ) )
     {
         delete poDS;
         return NULL;
     }
-
-    if( osDirName != pszName )
-        poDS->SetDefaultCSVName( CPLGetFilename(pszName) );
 
     return poDS;
 }

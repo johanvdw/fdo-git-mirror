@@ -33,7 +33,7 @@
 namespace PCIDSK {
     class PCIDSKFile;
     
-    class CPCIDSKRPCModelSegment : virtual public PCIDSKRPCSegment,
+    class CPCIDSKRPCModelSegment : public PCIDSKRPCSegment,
                                    public CPCIDSKSegment
     {
     public:
@@ -103,15 +103,6 @@ namespace PCIDSK {
         
         // Set the number of lines/pixels
         void SetRasterSize(const unsigned int lines, const unsigned int pixels);
-
-        // Set the downsample factor
-        void SetDownsample(const unsigned int downsample);
-
-        // Get the downsample factor
-        unsigned int GetDownsample(void) const;
-
-        //synchronize the segment on disk.
-        void Synchronize();
     private:
         // Helper housekeeping functions
         void Load();
@@ -120,7 +111,6 @@ namespace PCIDSK {
         struct PCIDSKRPCInfo;
         PCIDSKRPCInfo *pimpl_;
         bool loaded_;
-        bool mbModified;
     };
 }
 

@@ -19,7 +19,6 @@
 
 #include <stdafx.h>
 
-#include <FdoCommonOSUtil.h>
 #include <FdoExpressionEngineIFunction.h>
 
 #include <Functions/Aggregate/FdoFunctionAvg.h>

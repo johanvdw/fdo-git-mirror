@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterlitecreatecopy.cpp 22035 2011-03-25 23:57:59Z rouault $
+ * $Id: rasterlitecreatecopy.cpp 18604 2010-01-19 23:10:43Z rouault $
  *
  * Project:  GDAL Rasterlite driver
  * Purpose:  Implement GDAL Rasterlite support using OGR SQLite driver
@@ -33,7 +33,7 @@
 
 #include "rasterlitedataset.h"
 
-CPL_CVSID("$Id: rasterlitecreatecopy.cpp 22035 2011-03-25 23:57:59Z rouault $");
+CPL_CVSID("$Id: rasterlitecreatecopy.cpp 18604 2010-01-19 23:10:43Z rouault $");
 
 /************************************************************************/
 /*                  RasterliteGetTileDriverOptions ()                   */
@@ -85,7 +85,7 @@ static char** RasterliteGetTileDriverOptions(char** papszOptions)
             papszTileDriverOptions =
                 CSLSetNameValue(papszTileDriverOptions, "JPEG_QUALITY", pszQuality);
         }
-        else if (EQUAL(pszDriverName, "JPEG") || EQUAL(pszDriverName, "WEBP"))
+        else if (EQUAL(pszDriverName, "JPEG"))
         {
             papszTileDriverOptions =
                 CSLSetNameValue(papszTileDriverOptions, "QUALITY", pszQuality);
@@ -254,9 +254,9 @@ OGRDataSourceH RasterliteCreateTables(OGRDataSourceH hDS, const char* pszTableNa
         /* Re-open the DB to take into account the new tables*/
         OGRReleaseDataSource(hDS);
         
-        CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
+        CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
         hDS = OGROpen(osDBName.c_str(), TRUE, NULL);
-        CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
+        CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
     }
     else
     {
@@ -288,9 +288,9 @@ OGRDataSourceH RasterliteCreateTables(OGRDataSourceH hDS, const char* pszTableNa
                     /* Re-open the DB to take into account the change of SRS */
                     OGRReleaseDataSource(hDS);
                     
-                    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
+                    CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
                     hDS = OGROpen(osDBName.c_str(), TRUE, NULL);
-                    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
+                    CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
                 }
                 else
                 {
@@ -332,13 +332,6 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
     
     const char* pszDriverName = CSLFetchNameValueDef(papszOptions, "DRIVER", "GTiff");
-    if (EQUAL(pszDriverName, "MEM") || EQUAL(pszDriverName, "VRT"))
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "GDAL %s driver cannot be used as underlying driver",
-                 pszDriverName);
-        return NULL;
-    }
-
     GDALDriverH hTileDriver = GDALGetDriverByName(pszDriverName);
     if ( hTileDriver == NULL)
     {
@@ -468,7 +461,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     
     CPLString osOldVal =
         CPLGetConfigOption("SQLITE_LIST_ALL_TABLES", "FALSE");
-    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
+    CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
     if (!bExists)
     {
         char** papszOGROptions = CSLAddString(NULL, "SPATIALITE=YES");
@@ -480,7 +473,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         hDS = OGROpen(osDBName.c_str(), TRUE, NULL);
     }
-    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
+    CPLSetConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
     
     if (hDS == NULL)
     {
@@ -653,7 +646,7 @@ RasterliteCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      Insert new entry into raster table                              */
 /* -------------------------------------------------------------------- */
 
-            vsi_l_offset nDataLength = 0;
+            vsi_l_offset nDataLength;
             GByte *pabyData = VSIGetMemFileBuffer( osTempFileName.c_str(),
                                                    &nDataLength, FALSE);
 

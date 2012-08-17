@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogringrestablelayer.cpp 19516 2010-04-24 16:03:45Z warmerdam $
+ * $Id: ogringrestablelayer.cpp 18519 2010-01-11 03:33:55Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRIngresTableLayer class.
@@ -32,7 +32,7 @@
 #include "ogr_ingres.h"
 #include <geos_c.h> 
 
-CPL_CVSID("$Id: ogringrestablelayer.cpp 19516 2010-04-24 16:03:45Z warmerdam $");
+CPL_CVSID("$Id: ogringrestablelayer.cpp 18519 2010-01-11 03:33:55Z warmerdam $");
 
 /************************************************************************/
 /*                         OGRIngresTableLayer()                         */
@@ -156,10 +156,9 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
                 || EQUAL(osInternalType,"LONG POLYGON")
                 || EQUAL(osInternalType,"CIRCLE")
                 || EQUAL(osInternalType,"LINESTRING")
-                || EQUAL(osInternalType,"MULTIPOINT")
-                || EQUAL(osInternalType,"MULTIPOLYGON")
-                || EQUAL(osInternalType,"MULTILINESTRING")
-                || EQUAL(osInternalType,"GEOMETRYCOLLECTION")
+				|| EQUAL(osInternalType,"MULTIPOINT")
+				|| EQUAL(osInternalType,"MULTIPOLYGON")
+				|| EQUAL(osInternalType,"MULTILINESTRING")
                 || EQUAL(osInternalType,"ICIRCLE")) )
         {
             osGeomColumn = osFieldName;
@@ -177,9 +176,6 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
             	poDefn->SetGeomType(wkbMultiPolygon);
             else if( strstr(osInternalType,"MULTILINESTRING"))
             	poDefn->SetGeomType(wkbMultiLineString);
-            // Oddly this is the standin for a generic geometry type.
-            else if( strstr(osInternalType,"GEOMETRYCOLLECTION"))
-            	poDefn->SetGeomType(wkbUnknown);
             else
                 poDefn->SetGeomType( wkbPolygon );
             continue;
@@ -252,14 +248,8 @@ OGRFeatureDefn *OGRIngresTableLayer::ReadTableDefinition( const char *pszTable )
                   "table %s has no FID column, FIDs will not be reliable!",
                   pszTable );
 
-    //We must close the current statement before calling this or else
-    //The query within FetchSRSId will fail
-    oStatement.Close();
-
     // Fetch the SRID for this table now
-    // But only if it's the new Ingres Geospatial
-    if(poDS->IsNewIngres() == TRUE)
-        nSRSId = FetchSRSId(poDefn);
+    //nSRSId = FetchSRSId(); 
 
     return poDefn;
 }
@@ -746,61 +736,46 @@ OGRErr OGRIngresTableLayer::PrepareNewStyleGeometry(
 /* -------------------------------------------------------------------- */
     if( wkbFlatten(poGeom->getGeometryType()) == wkbPoint )
     {
-        osRetGeomText.Printf( "POINTFROMWKB( ~V , %d )", nSRSId );
+        osRetGeomText.Printf( "POINTFROMWKB( ~V )");
     }
 /* -------------------------------------------------------------------- */
 /*      Linestring                                                      */
 /* -------------------------------------------------------------------- */
     else if( wkbFlatten(poGeom->getGeometryType()) == wkbLineString )
     {
-        osRetGeomText.Printf("LINEFROMWKB( ~V , %d)", nSRSId);
+        osRetGeomText.Printf("LINEFROMWKB( ~V )");
     }
 /* -------------------------------------------------------------------- */
 /*      Polygon                                                         */
 /* -------------------------------------------------------------------- */
     else if( wkbFlatten(poGeom->getGeometryType()) == wkbPolygon )
     {
-        osRetGeomText.Printf("POLYFROMWKB( ~V , %d)", nSRSId);
+        osRetGeomText.Printf("POLYFROMWKB( ~V )");
     }
 /* -------------------------------------------------------------------- */
 /*      Multipoint                                                      */
 /* -------------------------------------------------------------------- */
     else if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiPoint )
     {
-        osRetGeomText.Printf("MPOINTFROMWKB( ~V , %d)", nSRSId);
+        osRetGeomText.Printf("MPOINTFROMWKB( ~V )");
     }
 /* -------------------------------------------------------------------- */
 /*      Multilinestring                                                 */
 /* -------------------------------------------------------------------- */
     else if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiLineString )
     {
-    	osRetGeomText.Printf("MLINEFROMWKB( ~V , %d)", nSRSId);
+    	osRetGeomText.Printf("MLINEFROMWKB( ~V )");
     }
 /* -------------------------------------------------------------------- */
 /*      Multipolygon                                                    */
 /* -------------------------------------------------------------------- */
     else if( wkbFlatten(poGeom->getGeometryType()) == wkbMultiPolygon )
     {
-    	osRetGeomText.Printf("MPOLYFROMWKB( ~V , %d)", nSRSId);
+    	osRetGeomText.Printf("MPOLYFROMWKB( ~V )");
     }
-/* -------------------------------------------------------------------- */
-/*      Geometry collection.                                            */
-/* -------------------------------------------------------------------- */
-    else if( wkbFlatten(poGeom->getGeometryType()) == wkbGeometryCollection )
+    else
     {
-    	osRetGeomText.Printf("GEOMCOLLFROMWKB( ~V , %d)", nSRSId);
-    }
-/* -------------------------------------------------------------------- */
-/*      Fallback generic geometry handling.                             */
-/* -------------------------------------------------------------------- */
-    else 
-    {
-        CPLDebug( 
-            "INGRES",
-            "Unexpected geometry type (%s), attempting to treat generically.",
-            poGeom->getGeometryName() );
-
-    	osRetGeomText.Printf("GEOMETRYFROMWKB( ~V , %d)", nSRSId);
+        eErr = OGRERR_FAILURE;
     }
 
     return eErr;

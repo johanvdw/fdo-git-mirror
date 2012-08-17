@@ -45,7 +45,7 @@ namespace PCIDSK
     /*                           MetadataSegment                            */
     /************************************************************************/
 
-    class MetadataSegment : virtual public CPCIDSKSegment
+    class MetadataSegment : public CPCIDSKSegment
     {
 
 

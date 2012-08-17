@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_conv.cpp 23504 2011-12-09 20:43:50Z rouault $
+ * $Id: cpl_conv.cpp 18060 2009-11-21 20:26:25Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions.
@@ -34,7 +34,7 @@
 #include "cpl_vsi.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: cpl_conv.cpp 23504 2011-12-09 20:43:50Z rouault $");
+CPL_CVSID("$Id: cpl_conv.cpp 18060 2009-11-21 20:26:25Z rouault $");
 
 #if defined(WIN32CE)
 #  include "cpl_wince.h"
@@ -77,8 +77,14 @@ void *CPLCalloc( size_t nCount, size_t nSize )
     if( nSize * nCount == 0 )
         return NULL;
     
-    pReturn = CPLMalloc( nCount * nSize );
-    memset( pReturn, 0, nCount * nSize );
+    pReturn = VSICalloc( nCount, nSize );
+    if( pReturn == NULL )
+    {
+        CPLError( CE_Fatal, CPLE_OutOfMemory,
+                  "CPLCalloc(): Out of memory allocating %ld bytes.\n",
+                  (long) (nSize * nCount) );
+    }
+
     return pReturn;
 }
 
@@ -111,7 +117,7 @@ void *CPLMalloc( size_t nSize )
     if( nSize == 0 )
         return NULL;
 
-    if( long(nSize) < 0 )
+    if( nSize < 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "CPLMalloc(%ld): Silly size requested.\n",
@@ -122,19 +128,9 @@ void *CPLMalloc( size_t nSize )
     pReturn = VSIMalloc( nSize );
     if( pReturn == NULL )
     {
-        if( nSize > 0 && nSize < 2000 )
-        {
-            char szSmallMsg[60];
-
-            sprintf( szSmallMsg, 
-                     "CPLMalloc(): Out of memory allocating %ld bytes.", 
-                     (long) nSize );
-            CPLEmergencyError( szSmallMsg ); 
-        }
-        else
-            CPLError( CE_Fatal, CPLE_OutOfMemory,
-                      "CPLMalloc(): Out of memory allocating %ld bytes.\n",
-                      (long) nSize );
+        CPLError( CE_Fatal, CPLE_OutOfMemory,
+                  "CPLMalloc(): Out of memory allocating %ld bytes.\n",
+                  (long) nSize );
     }
 
     return pReturn;
@@ -175,7 +171,7 @@ void * CPLRealloc( void * pData, size_t nNewSize )
         return NULL;
     }
 
-    if( long(nNewSize) < 0 )
+    if( nNewSize < 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "CPLRealloc(%ld): Silly size requested.\n",
@@ -190,19 +186,9 @@ void * CPLRealloc( void * pData, size_t nNewSize )
     
     if( pReturn == NULL )
     {
-        if( nNewSize > 0 && nNewSize < 2000 )
-        {
-            char szSmallMsg[60];
-
-            sprintf( szSmallMsg, 
-                     "CPLRealloc(): Out of memory allocating %ld bytes.", 
-                     (long) nNewSize );
-            CPLEmergencyError( szSmallMsg ); 
-        }
-        else
-            CPLError( CE_Fatal, CPLE_OutOfMemory,
-                      "CPLRealloc(): Out of memory allocating %ld bytes.\n",
-                      (long) nNewSize );
+        CPLError( CE_Fatal, CPLE_OutOfMemory,
+                  "CPLRealloc(): Out of memory allocating %ld bytes.\n",
+                  (long)nNewSize );
     }
 
     return pReturn;
@@ -238,7 +224,8 @@ char *CPLStrdup( const char * pszString )
     if( pszString == NULL )
         pszString = "";
 
-    pszReturn = (char *) CPLMalloc(strlen(pszString)+1);
+    pszReturn = VSIStrdup( pszString );
+        
     if( pszReturn == NULL )
     {
         CPLError( CE_Fatal, CPLE_OutOfMemory,
@@ -246,8 +233,7 @@ char *CPLStrdup( const char * pszString )
                   (long) strlen(pszString) );
         
     }
-
-    strcpy( pszReturn, pszString );
+    
     return( pszReturn );
 }
 
@@ -408,9 +394,6 @@ char *CPLFGets( char *pszBuffer, int nBufferSize, FILE * fp )
 /*      Fetch readline buffer, and ensure it is the desired size,       */
 /*      reallocating if needed.  Manages TLS (thread local storage)     */
 /*      issues for the buffer.                                          */
-/*      We use a special trick to track the actual size of the buffer   */
-/*      The first 4 bytes are reserved to store it as a int, hence the  */
-/*      -4 / +4 hacks with the size and pointer.                        */
 /************************************************************************/
 static char *CPLReadLineBuffer( int nRequiredSize )
 
@@ -444,26 +427,15 @@ static char *CPLReadLineBuffer( int nRequiredSize )
 /* -------------------------------------------------------------------- */
 /*      If it is too small, grow it bigger.                             */
 /* -------------------------------------------------------------------- */
-    if( ((int) *pnAlloc) -1 < nRequiredSize )
+    if( (int) *pnAlloc < nRequiredSize+1 )
     {
         int nNewSize = nRequiredSize + 4 + 500;
-        if (nNewSize <= 0)
-        {
-            VSIFree( pnAlloc );
-            CPLSetTLS( CTLS_RLBUFFERINFO, NULL, FALSE );
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                      "CPLReadLineBuffer(): Trying to allocate more than 2 GB." );
-            return NULL;
-        }
 
         GUInt32* pnAllocNew = (GUInt32 *) VSIRealloc(pnAlloc,nNewSize);
         if( pnAllocNew == NULL )
         {
             VSIFree( pnAlloc );
             CPLSetTLS( CTLS_RLBUFFERINFO, NULL, FALSE );
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                      "CPLReadLineBuffer(): Out of memory allocating %ld bytes.",
-                      (long) nNewSize );
             return NULL;
         }
         pnAlloc = pnAllocNew;
@@ -564,7 +536,7 @@ const char *CPLReadLine( FILE * fp )
  * from the file or NULL if the end of file was encountered.
  */
 
-const char *CPLReadLineL( VSILFILE * fp )
+const char *CPLReadLineL( FILE * fp )
 {
     return CPLReadLine2L( fp, -1, NULL );
 }
@@ -589,11 +561,9 @@ const char *CPLReadLineL( VSILFILE * fp )
  * @since GDAL 1.7.0
  */
 
-const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars, char** papszOptions )
+const char *CPLReadLine2L( FILE * fp, int nMaxCars, char** papszOptions )
 
 {
-    (void) papszOptions;
-
 /* -------------------------------------------------------------------- */
 /*      Cleanup case.                                                   */
 /* -------------------------------------------------------------------- */
@@ -619,17 +589,7 @@ const char *CPLReadLine2L( VSILFILE * fp, int nMaxCars, char** papszOptions )
 /* -------------------------------------------------------------------- */
 /*      Read a chunk from the input file.                               */
 /* -------------------------------------------------------------------- */
-        if ( nBufLength > INT_MAX - nChunkSize - 1 )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Too big line : more than 2 billion characters!." );
-            CPLReadLineBuffer( -1 );
-            return NULL;
-        }
-
         pszRLBuffer = CPLReadLineBuffer( nBufLength + nChunkSize + 1 );
-        if( pszRLBuffer == NULL )
-            return NULL;
 
         if( nChunkBytesRead == nChunkBytesConsumed + 1 )
         {
@@ -957,12 +917,6 @@ void *CPLScanPointer( const char *pszString, int nMaxLength )
         sscanf( szTemp+2, "%p", &pResult );
 #else
         sscanf( szTemp, "%p", &pResult );
-
-        /* Solaris actually behaves like MSVCRT... */
-        if (pResult == NULL)
-        {
-            sscanf( szTemp+2, "%p", &pResult );
-        }
 #endif
     }
     
@@ -1429,69 +1383,6 @@ void CPLVerifyConfiguration()
                   "CPLVerifyConfiguration(): byte order set wrong.\n" );
 }
 
-/* Uncomment to get list of options that have been fetched and set */
-//#define DEBUG_CONFIG_OPTIONS
-
-#ifdef DEBUG_CONFIG_OPTIONS
-
-#include <set>
-#include "cpl_multiproc.h"
-
-static void* hRegisterConfigurationOptionMutex = 0;
-static std::set<CPLString>* paoGetKeys = NULL;
-static std::set<CPLString>* paoSetKeys = NULL;
-
-/************************************************************************/
-/*                      CPLShowAccessedOptions()                        */
-/************************************************************************/
-
-static void CPLShowAccessedOptions()
-{
-    std::set<CPLString>::iterator aoIter;
-
-    printf("Configuration options accessed in reading : "),
-    aoIter = paoGetKeys->begin();
-    while(aoIter != paoGetKeys->end())
-    {
-        printf("%s, ", (*aoIter).c_str());
-        aoIter ++;
-    }
-    printf("\n");
-
-    printf("Configuration options accessed in writing : "),
-    aoIter = paoSetKeys->begin();
-    while(aoIter != paoSetKeys->end())
-    {
-        printf("%s, ", (*aoIter).c_str());
-        aoIter ++;
-    }
-    printf("\n");
-
-    delete paoGetKeys;
-    delete paoSetKeys;
-    paoGetKeys = paoSetKeys = NULL;
-}
-
-/************************************************************************/
-/*                       CPLAccessConfigOption()                        */
-/************************************************************************/
-
-static void CPLAccessConfigOption(const char* pszKey, int bGet)
-{
-    CPLMutexHolderD(&hRegisterConfigurationOptionMutex);
-    if (paoGetKeys == NULL)
-    {
-        paoGetKeys = new std::set<CPLString>;
-        paoSetKeys = new std::set<CPLString>;
-        atexit(CPLShowAccessedOptions);
-    }
-    if (bGet)
-        paoGetKeys->insert(pszKey);
-    else
-        paoSetKeys->insert(pszKey);
-}
-#endif
-
 /************************************************************************/
 /*                         CPLGetConfigOption()                         */
 /************************************************************************/
@@ -1507,16 +1398,12 @@ static void CPLAccessConfigOption(const char* pszKey, int bGet)
   * @param pszDefault a default value if the key does not match existing defined options (may be NULL)
   * @return the value associated to the key, or the default value if not found
   *
-  * @see CPLSetConfigOption(), http://trac.osgeo.org/gdal/wiki/ConfigOptions
+  * @see CPLSetConfigOption()
   */
 const char * CPL_STDCALL
 CPLGetConfigOption( const char *pszKey, const char *pszDefault )
 
 {
-#ifdef DEBUG_CONFIG_OPTIONS
-    CPLAccessConfigOption(pszKey, TRUE);
-#endif
-
     const char *pszResult = NULL;
 
     char **papszTLConfigOptions = (char **) CPLGetTLS( CTLS_CONFIGOPTIONS );
@@ -1563,17 +1450,12 @@ CPLGetConfigOption( const char *pszKey, const char *pszDefault )
   * ogrinfo --config CPL_DEBUG ON ~/data/test/point.shp
   *
   * @param pszKey the key of the option
-  * @param pszValue the value of the option, or NULL to clear a setting.
-  * 
-  * @see http://trac.osgeo.org/gdal/wiki/ConfigOptions
+  * @param pszValue the value of the option
   */
 void CPL_STDCALL 
 CPLSetConfigOption( const char *pszKey, const char *pszValue )
 
 {
-#ifdef DEBUG_CONFIG_OPTIONS
-    CPLAccessConfigOption(pszKey, FALSE);
-#endif
     CPLMutexHolderD( &hConfigMutex );
 
     papszConfigOptions = (volatile char **) 
@@ -1595,23 +1477,19 @@ CPLSetConfigOption( const char *pszKey, const char *pszValue )
   * that applies on all threads.
   *
   * @param pszKey the key of the option
-  * @param pszValue the value of the option, or NULL to clear a setting.
+  * @param pszValue the value of the option
   */
 
 void CPL_STDCALL 
 CPLSetThreadLocalConfigOption( const char *pszKey, const char *pszValue )
 
 {
-#ifdef DEBUG_CONFIG_OPTIONS
-    CPLAccessConfigOption(pszKey, FALSE);
-#endif
-
     char **papszTLConfigOptions = (char **) CPLGetTLS( CTLS_CONFIGOPTIONS );
 
     papszTLConfigOptions = 
         CSLSetNameValue( papszTLConfigOptions, pszKey, pszValue );
 
-    CPLSetTLSWithFreeFunc( CTLS_CONFIGOPTIONS, papszTLConfigOptions, (CPLTLSFreeFunc)CSLDestroy );
+    CPLSetTLS( CTLS_CONFIGOPTIONS, papszTLConfigOptions, FALSE );
 }
 
 /************************************************************************/
@@ -1621,21 +1499,17 @@ CPLSetThreadLocalConfigOption( const char *pszKey, const char *pszValue )
 void CPL_STDCALL CPLFreeConfig()
 
 {
-    {
-        CPLMutexHolderD( &hConfigMutex );
+    CPLMutexHolderD( &hConfigMutex );
 
-        CSLDestroy( (char **) papszConfigOptions);
-        papszConfigOptions = NULL;
-        
-        char **papszTLConfigOptions = (char **) CPLGetTLS( CTLS_CONFIGOPTIONS );
-        if( papszTLConfigOptions != NULL )
-        {
-            CSLDestroy( papszTLConfigOptions );
-            CPLSetTLS( CTLS_CONFIGOPTIONS, NULL, FALSE );
-        }
+    CSLDestroy( (char **) papszConfigOptions);
+    papszConfigOptions = NULL;
+
+    char **papszTLConfigOptions = (char **) CPLGetTLS( CTLS_CONFIGOPTIONS );
+    if( papszTLConfigOptions != NULL )
+    {
+        CSLDestroy( papszTLConfigOptions );
+        CPLSetTLS( CTLS_CONFIGOPTIONS, NULL, FALSE );
     }
-    CPLDestroyMutex( hConfigMutex );
-    hConfigMutex = NULL;
 }
 
 /************************************************************************/
@@ -1749,7 +1623,7 @@ double CPLDMSToDec( const char *is )
         ++s;
     }
     /* postfix sign */
-    if (*s && ((p = (char *) strchr(sym, *s))) != NULL) {
+    if (*s && (p = (char *) strchr(sym, *s))) {
         sign = (p - sym) >= 4 ? '-' : '+';
         ++s;
     }
@@ -1804,7 +1678,7 @@ const char *CPLDecToDMS( double dfAngle, const char * pszAxis,
     else
         pszHemisphere = "N";
 
-    sprintf( szFormat, "%%3dd%%2d\'%%%d.%df\"%s", nPrecision+3, nPrecision, pszHemisphere );
+    sprintf( szFormat, "%%3dd%%2d\'%%.%df\"%s", nPrecision, pszHemisphere );
     sprintf( szBuffer, szFormat, nDegrees, nMinutes, dfSeconds );
 
     return( szBuffer );
@@ -1921,7 +1795,7 @@ void CPL_DLL CPLStringToComplex( const char *pszString,
     while( *pszString == ' ' )
         pszString++;
 
-    *pdfReal = CPLAtof(pszString);
+    *pdfReal = atof(pszString);
     *pdfImag = 0.0;
 
     for( i = 0; pszString[i] != '\0' && pszString[i] != ' ' && i < 100; i++ )
@@ -1936,7 +1810,7 @@ void CPL_DLL CPLStringToComplex( const char *pszString,
 
     if( iPlus > -1 && iImagEnd > -1 && iPlus < iImagEnd )
     {
-        *pdfImag = CPLAtof(pszString + iPlus);
+        *pdfImag = atof(pszString + iPlus);
     }
 
     return;
@@ -2001,7 +1875,7 @@ FILE *CPLOpenShared( const char *pszFilename, const char *pszAccess,
     FILE *fp;
 
     if( bLarge )
-        fp = (FILE*) VSIFOpenL( pszFilename, pszAccess );
+        fp = VSIFOpenL( pszFilename, pszAccess );
     else
         fp = VSIFOpen( pszFilename, pszAccess );
 
@@ -2069,7 +1943,7 @@ void CPLCloseShared( FILE * fp )
 /*      Close the file, and remove the information.                     */
 /* -------------------------------------------------------------------- */
     if( pasSharedFileList[i].bLarge )
-        VSIFCloseL( (VSILFILE*) pasSharedFileList[i].fp );
+        VSIFCloseL( pasSharedFileList[i].fp );
     else
         VSIFClose( pasSharedFileList[i].fp );
 
@@ -2077,9 +1951,9 @@ void CPLCloseShared( FILE * fp )
     CPLFree( pasSharedFileList[i].pszAccess );
 
 //    pasSharedFileList[i] = pasSharedFileList[--nSharedFileCount];
-    memmove( (void *) (pasSharedFileList + i), 
-             (void *) (pasSharedFileList + --nSharedFileCount), 
-             sizeof(CPLSharedFileInfo) );
+    memcpy( (void *) (pasSharedFileList + i), 
+            (void *) (pasSharedFileList + --nSharedFileCount), 
+            sizeof(CPLSharedFileInfo) );
 
     if( nSharedFileCount == 0 )
     {
@@ -2256,7 +2130,7 @@ int CPLUnlinkTree( const char *pszPath )
 int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 
 {
-    VSILFILE *fpOld, *fpNew;
+    FILE *fpOld, *fpNew;
     GByte *pabyBuffer;
     size_t nBufferSize;
     size_t nBytesRead;
@@ -2287,7 +2161,7 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 /* -------------------------------------------------------------------- */
     do { 
         nBytesRead = VSIFReadL( pabyBuffer, 1, nBufferSize, fpOld );
-        if( long(nBytesRead) < 0 )
+        if( nBytesRead < 0 )
             nRet = -1;
 
         if( nRet == 0
@@ -2313,7 +2187,7 @@ int CPLCopyFile( const char *pszNewPath, const char *pszOldPath )
 int CPLMoveFile( const char *pszNewPath, const char *pszOldPath )
 
 {
-    if( VSIRename( pszOldPath, pszNewPath ) == 0 )
+    if( VSIRename( pszNewPath, pszOldPath ) == 0 )
         return 0;
 
     int nRet = CPLCopyFile( pszNewPath, pszOldPath );
@@ -2339,10 +2213,7 @@ int CPLMoveFile( const char *pszNewPath, const char *pszOldPath )
 CPLLocaleC::CPLLocaleC() : pszOldLocale(CPLStrdup(setlocale(LC_NUMERIC,NULL)))
 
 {
-    if( CSLTestBoolean(CPLGetConfigOption("GDAL_DISABLE_CPLLOCALEC","NO"))
-        || EQUAL(pszOldLocale,"C")
-        || EQUAL(pszOldLocale,"POSIX")
-        || setlocale(LC_NUMERIC,"C") == NULL )
+    if( setlocale(LC_NUMERIC,"C") == NULL )
     {
         CPLFree( pszOldLocale );
         pszOldLocale = NULL;
@@ -2422,44 +2293,3 @@ int CPLCheckForFile( char *pszFilename, char **papszSiblingFiles )
 
     return FALSE;
 }
-
-/************************************************************************/
-/*      Stub implementation of zip services if we don't have libz.      */
-/************************************************************************/
-
-#if !defined(HAVE_LIBZ)
-
-void *CPLCreateZip( const char *pszZipFilename, char **papszOptions )
-
-{
-    CPLError( CE_Failure, CPLE_NotSupported,
-              "This GDAL/OGR build does not include zlib and zip services." );
-    return NULL;
-}
-
-CPLErr CPLCreateFileInZip( void *hZip, const char *pszFilename, 
-                           char **papszOptions )
-
-{
-    return CE_Failure;
-}
-
-CPLErr CPLWriteFileInZip( void *hZip, const void *pBuffer, int nBufferSize )
-
-{
-    return CE_Failure;
-}
-
-CPLErr CPLCloseFileInZip( void *hZip )
-
-{
-    return CE_Failure;
-}
-
-CPLErr CPLCloseZip( void *hZip )
-
-{
-    return CE_Failure;
-}
-
-#endif /* !defined(HAVE_LIBZ) */

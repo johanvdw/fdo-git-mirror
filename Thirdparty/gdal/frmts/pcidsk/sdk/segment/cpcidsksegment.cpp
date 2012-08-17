@@ -33,9 +33,6 @@
 #include "pcidsk_exception.h"
 #include <cassert>
 #include <cstdlib>
-#include <cstring>
-#include <vector>
-#include <string>
 
 using namespace PCIDSK;
 
@@ -71,26 +68,17 @@ CPCIDSKSegment::~CPCIDSKSegment()
     delete metadata;
 }
 
-/************************************************************************/
-/*                          GetMetadataValue()                          */
-/************************************************************************/
-std::string CPCIDSKSegment::GetMetadataValue( const std::string &key ) const
+std::string CPCIDSKSegment::GetMetadataValue( std::string key ) 
 {
     return metadata->GetMetadataValue(key);
 }
 
-/************************************************************************/
-/*                          SetMetadataValue()                          */
-/************************************************************************/
-void CPCIDSKSegment::SetMetadataValue( const std::string &key, const std::string &value ) 
+void CPCIDSKSegment::SetMetadataValue( std::string key, std::string value ) 
 {
     metadata->SetMetadataValue(key,value);
 }
 
-/************************************************************************/
-/*                           GetMetdataKeys()                           */
-/************************************************************************/
-std::vector<std::string> CPCIDSKSegment::GetMetadataKeys() const
+std::vector<std::string> CPCIDSKSegment::GetMetadataKeys() 
 {
     return metadata->GetMetadataKeys();
 }
@@ -115,47 +103,15 @@ void CPCIDSKSegment::LoadSegmentPointer( const char *segment_pointer )
 /************************************************************************/
 /*                         LoadSegmentHeader()                          */
 /************************************************************************/
-#include <iostream>
+
 void CPCIDSKSegment::LoadSegmentHeader()
 
 {
     header.SetSize(1024);
 
     file->ReadFromFile( header.buffer, data_offset, 1024 );
-    
-    // Read the history from the segment header. PCIDSK supports
-    // 8 history entries per segment.
-    std::string hist_msg;
-    history_.clear();
-    for (unsigned int i = 0; i < 8; i++)
-    {
-        header.Get(384 + i * 80, 80, hist_msg);
 
-        // Some programs seem to push history records with a trailing '\0'
-        // so do some extra processing to cleanup.  FUN records on segment
-        // 3 of eltoro.pix are an example of this.
-        size_t size = hist_msg.size();
-        while( size > 0 
-               && (hist_msg[size-1] == ' ' || hist_msg[size-1] == '\0') )
-            size--;
-
-        hist_msg.resize(size);
-        
-        history_.push_back(hist_msg);
-    }
-}
-
-/************************************************************************/
-/*                            FlushHeader()                             */
-/*                                                                      */
-/*      This is used primarily after this class or subclasses have      */
-/*      modified the header buffer and need it pushed back to disk.     */
-/************************************************************************/
-
-void CPCIDSKSegment::FlushHeader()
-
-{
-    file->WriteToFile( header.buffer, data_offset, 1024 );
+    // parse out history, etc 
 }
 
 /************************************************************************/
@@ -210,22 +166,7 @@ void CPCIDSKSegment::WriteToFile( const void *buffer, uint64 offset, uint64 size
 
 std::string CPCIDSKSegment::GetDescription()
 {
-    std::string target;
-
-    header.Get( 0, 64, target );
-
-    return target;
-}
-
-/************************************************************************/
-/*                           SetDescription()                           */
-/************************************************************************/
-
-void CPCIDSKSegment::SetDescription( const std::string &description )
-{
-    header.Put( description.c_str(), 0, 64);
-
-    file->WriteToFile( header.buffer, data_offset, 1024 );
+    return "";
 }
 
 /************************************************************************/
@@ -238,122 +179,4 @@ bool CPCIDSKSegment::IsAtEOF()
         return true;
     else
         return false;
-}
-
-/************************************************************************/
-/*                         GetHistoryEntries()                          */
-/************************************************************************/
-
-std::vector<std::string> CPCIDSKSegment::GetHistoryEntries() const
-{
-    return history_;
-}
-
-/************************************************************************/
-/*                         SetHistoryEntries()                          */
-/************************************************************************/
-
-void CPCIDSKSegment::SetHistoryEntries(const std::vector<std::string> &entries)
-
-{
-    for( unsigned int i = 0; i < 8; i++ )
-    {
-        const char *msg = "";
-        if( entries.size() > i )
-            msg = entries[i].c_str();
-
-        header.Put( msg, 384 + i * 80, 80 );
-    }
-
-    FlushHeader();
-
-    // Force reloading of history_
-    LoadSegmentHeader();
-}
-
-/************************************************************************/
-/*                            PushHistory()                             */
-/************************************************************************/
-
-void CPCIDSKSegment::PushHistory( const std::string &app,
-                                  const std::string &message )
-
-{
-#define MY_MIN(a,b)      ((a<b) ? a : b)
-
-    char current_time[17];
-    char history[81];
-
-    GetCurrentDateTime( current_time );
-
-    memset( history, ' ', 80 );
-    history[80] = '\0';
-
-    memcpy( history + 0, app.c_str(), MY_MIN(app.size(),7) );
-    history[7] = ':';
-    
-    memcpy( history + 8, message.c_str(), MY_MIN(message.size(),56) );
-    memcpy( history + 64, current_time, 16 );
-
-    std::vector<std::string> history_entries = GetHistoryEntries();
-
-    history_entries.insert( history_entries.begin(), history );
-    history_entries.resize(8);
-
-    SetHistoryEntries( history_entries );
-}
-
-
-/************************************************************************/
-/*                              MoveData()                              */
-/*                                                                      */
-/*      Move a chunk of data within a segment. Overlapping source       */
-/*      and destination are permitted.                                  */
-/************************************************************************/
-
-void CPCIDSKSegment::MoveData( uint64 src_offset, uint64 dst_offset, 
-                               uint64 size_in_bytes )
-
-{
-    bool copy_backwards = false;
-
-    // We move things backwards if the areas overlap and the destination
-    // is further on in the segment. 
-    if( dst_offset > src_offset
-        && src_offset + size_in_bytes > dst_offset )
-        copy_backwards = true;
-
-    
-    // Move the segment data to the new location.
-    uint8 copy_buf[16384];
-    uint64 bytes_to_go;
-
-    bytes_to_go = size_in_bytes;
-
-    while( bytes_to_go > 0 )
-    {
-        uint64 bytes_this_chunk = sizeof(copy_buf);
-        if( bytes_to_go < bytes_this_chunk )
-            bytes_this_chunk = bytes_to_go;
-
-        if( copy_backwards )
-        {
-            ReadFromFile( copy_buf, 
-                          src_offset + bytes_to_go - bytes_this_chunk, 
-                          bytes_this_chunk );
-            WriteToFile( copy_buf, 
-                         dst_offset + bytes_to_go - bytes_this_chunk, 
-                         bytes_this_chunk );
-        }
-        else
-        {
-            ReadFromFile( copy_buf, src_offset, bytes_this_chunk );
-            WriteToFile( copy_buf, dst_offset, bytes_this_chunk );
-
-            src_offset += bytes_this_chunk;
-            dst_offset += bytes_this_chunk;
-        }
-
-        bytes_to_go -= bytes_this_chunk;
-    }
 }

@@ -1,4 +1,4 @@
-/* $Id: tif_getimage.c,v 1.78 2011-02-23 21:46:09 fwarmerdam Exp $ */
+/* $Id: tif_getimage.c,v 1.74 2009-11-30 12:22:26 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -215,7 +215,6 @@ TIFFRGBAImageEnd(TIFFRGBAImage* img)
 		_TIFFfree( img->redcmap );
 		_TIFFfree( img->greencmap );
 		_TIFFfree( img->bluecmap );
-                img->redcmap = img->greencmap = img->bluecmap = NULL;
 	}
 }
 
@@ -262,7 +261,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 		default:
 			sprintf(emsg, "Sorry, can not handle images with %d-bit samples",
 			    img->bitspersample);
-			goto fail_return;
+			return (0);
 	}
 	img->alpha = 0;
 	TIFFGetFieldDefaulted(tif, TIFFTAG_SAMPLESPERPIXEL, &img->samplesperpixel);
@@ -311,7 +310,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 				break;
 			default:
 				sprintf(emsg, "Missing needed %s tag", photoTag);
-                                goto fail_return;
+				return (0);
 		}
 	}
 	switch (img->photometric) {
@@ -319,7 +318,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 			if (!TIFFGetField(tif, TIFFTAG_COLORMAP,
 			    &red_orig, &green_orig, &blue_orig)) {
 				sprintf(emsg, "Missing required \"Colormap\" tag");
-                                goto fail_return;
+				return (0);
 			}
 
 			/* copy the colormaps so we can modify them */
@@ -329,7 +328,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 			img->bluecmap = (uint16 *) _TIFFmalloc(sizeof(uint16)*n_color);
 			if( !img->redcmap || !img->greencmap || !img->bluecmap ) {
 				sprintf(emsg, "Out of memory for colormap copy");
-                                goto fail_return;
+				return (0);
 			}
 
 			_TIFFmemcpy( img->redcmap, red_orig, n_color * 2 );
@@ -348,7 +347,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 				    photoTag, img->photometric,
 				    "Samples/pixel", img->samplesperpixel,
 				    img->bitspersample);
-                                goto fail_return;
+				return (0);
 			}
 			break;
 		case PHOTOMETRIC_YCBCR:
@@ -381,7 +380,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 			if (colorchannels < 3) {
 				sprintf(emsg, "Sorry, can not handle RGB image with %s=%d",
 				    "Color channels", colorchannels);
-                                goto fail_return;
+				return (0);
 			}
 			break;
 		case PHOTOMETRIC_SEPARATED:
@@ -391,12 +390,12 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 				if (inkset != INKSET_CMYK) {
 					sprintf(emsg, "Sorry, can not handle separated image with %s=%d",
 					    "InkSet", inkset);
-                                        goto fail_return;
+					return (0);
 				}
 				if (img->samplesperpixel < 4) {
 					sprintf(emsg, "Sorry, can not handle separated image with %s=%d",
 					    "Samples/pixel", img->samplesperpixel);
-                                        goto fail_return;
+					return (0);
 				}
 			}
 			break;
@@ -404,7 +403,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 			if (compress != COMPRESSION_SGILOG) {
 				sprintf(emsg, "Sorry, LogL data must have %s=%d",
 				    "Compression", COMPRESSION_SGILOG);
-                                goto fail_return;
+				return (0);
 			}
 			TIFFSetField(tif, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_8BIT);
 			img->photometric = PHOTOMETRIC_MINISBLACK;	/* little white lie */
@@ -414,7 +413,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 			if (compress != COMPRESSION_SGILOG && compress != COMPRESSION_SGILOG24) {
 				sprintf(emsg, "Sorry, LogLuv data must have %s=%d or %d",
 				    "Compression", COMPRESSION_SGILOG, COMPRESSION_SGILOG24);
-                                goto fail_return;
+				return (0);
 			}
 			if (planarconfig != PLANARCONFIG_CONTIG) {
 				sprintf(emsg, "Sorry, can not handle LogLuv images with %s=%d",
@@ -430,7 +429,7 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 		default:
 			sprintf(emsg, "Sorry, can not handle image with %s=%d",
 			    photoTag, img->photometric);
-                        goto fail_return;
+			return (0);
 	}
 	img->Map = NULL;
 	img->BWmap = NULL;
@@ -447,22 +446,15 @@ TIFFRGBAImageBegin(TIFFRGBAImage* img, TIFF* tif, int stop, char emsg[1024])
 	if (img->isContig) {
 		if (!PickContigCase(img)) {
 			sprintf(emsg, "Sorry, can not handle image");
-			goto fail_return;
+			return 0;
 		}
 	} else {
 		if (!PickSeparateCase(img)) {
 			sprintf(emsg, "Sorry, can not handle image");
-			goto fail_return;
+			return 0;
 		}
 	}
 	return 1;
-
-  fail_return:
-        _TIFFfree( img->redcmap );
-        _TIFFfree( img->greencmap );
-        _TIFFfree( img->bluecmap );
-        img->redcmap = img->greencmap = img->bluecmap = NULL;
-        return 0;
 }
 
 int
@@ -1918,7 +1910,6 @@ DECLAREContigPutFunc(putcontig8bitYCbCr41tile)
 DECLAREContigPutFunc(putcontig8bitYCbCr22tile)
 {
 	uint32* cp2;
-	int32 incr = 2*toskew+w;
 	(void) y;
 	fromskew = (fromskew / 2) * 6;
 	cp2 = cp+w+toskew;
@@ -1945,8 +1936,8 @@ DECLAREContigPutFunc(putcontig8bitYCbCr22tile)
 			cp2 ++ ;
 			pp += 6;
 		}
-		cp += incr;
-		cp2 += incr;
+		cp += toskew*2+w;
+		cp2 += toskew*2+w;
 		pp += fromskew;
 		h-=2;
 	}
@@ -2012,7 +2003,6 @@ DECLAREContigPutFunc(putcontig8bitYCbCr21tile)
 DECLAREContigPutFunc(putcontig8bitYCbCr12tile)
 {
 	uint32* cp2;
-	int32 incr = 2*toskew+w;
 	(void) y;
 	fromskew = (fromskew / 2) * 4;
 	cp2 = cp+w+toskew;
@@ -2027,8 +2017,8 @@ DECLAREContigPutFunc(putcontig8bitYCbCr12tile)
 			cp2 ++;
 			pp += 4;
 		} while (--x);
-		cp += incr;
-		cp2 += incr;
+		cp += toskew*2+w;
+		cp2 += toskew*2+w;
 		pp += fromskew;
 		h-=2;
 	}
@@ -2476,7 +2466,7 @@ PickContigCase(TIFFRGBAImage* img)
 			}
 			break;
 		case PHOTOMETRIC_YCBCR:
-			if ((img->bitspersample==8) && (img->samplesperpixel==3))
+			if (img->bitspersample == 8)
 			{
 				if (initYCbCrConversion(img)!=0)
 				{
@@ -2796,10 +2786,3 @@ TIFFReadRGBATile(TIFF* tif, uint32 col, uint32 row, uint32 * raster)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

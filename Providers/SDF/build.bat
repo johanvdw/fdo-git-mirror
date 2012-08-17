@@ -31,12 +31,6 @@ SET FDODOCPATH=%cd%\Fdo\Docs
 SET DOCENABLESDF=skip
 SET FDOERROR=0
 
-REM If you want to build 64-bit with Visual C++ 2010 Express, you will need to
-REM install the Windows SDK v7.1. In addition, you need to override the default
-REM platform toolset from v100 to Windows7.1SDK. Uncommenting the line below will
-REM do this for you
-REM SET EXTRA_MSBUILD_PROPERTIES=/p:PlatformToolset=Windows7.1SDK
-
 :study_params
 if (%1)==() goto start_build
 
@@ -133,7 +127,7 @@ echo %MSACTION% %TYPEBUILD% SDF provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\SDFOS%VCBEXTENSION%
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild SDFOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
+msbuild SDFOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist SDFOS%VCBEXTENSION%_temp.sln del /Q /F SDFOS%VCBEXTENSION%_temp.sln
 popd
@@ -145,10 +139,7 @@ if "%TYPEACTION%"=="build" goto generate_docs
 echo copy %TYPEBUILD% SDF provider output files
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFMessage.dll" "%FDOBINPATH%"
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFProvider.dll" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFMessage.pdb" "%FDOBINPATH%"
-copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\SDFProvider.pdb" "%FDOBINPATH%"
 copy /y "%FDOUTILITIES%\ExpressionEngine\bin\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.dll" "%FDOBINPATH%"
-copy /y "%FDOUTILITIES%\ExpressionEngine\bin\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.pdb" "%FDOBINPATH%"
 copy /y "%FDOUTILITIES%\ExpressionEngine\lib\%INTERMEDIATEDIR%\%TYPEBUILD%\ExpressionEngine.lib" "%FDOLIBPATH%"
 
 echo copy header files

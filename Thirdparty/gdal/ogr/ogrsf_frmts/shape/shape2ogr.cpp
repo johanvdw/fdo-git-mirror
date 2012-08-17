@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: shape2ogr.cpp 23599 2011-12-19 00:54:21Z warmerdam $
+ * $Id: shape2ogr.cpp 18473 2010-01-07 23:40:39Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements translation of Shapefile shapes into OGR
@@ -31,13 +31,24 @@
 #include "ogrshape.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: shape2ogr.cpp 23599 2011-12-19 00:54:21Z warmerdam $");
+CPL_CVSID("$Id: shape2ogr.cpp 18473 2010-01-07 23:40:39Z rouault $");
+
+static const double EPSILON = 1E-5;
+
+/************************************************************************/
+/*                            epsilonEqual()                            */
+/************************************************************************/
+
+static inline bool epsilonEqual(double a, double b, double eps) 
+{
+    return (::fabs(a - b) < eps);
+}
 
 /************************************************************************/
 /*                        RingStartEnd                                  */
 /*        set first and last vertex for given ring                      */
 /************************************************************************/
-static void RingStartEnd ( SHPObject *psShape, int ring, int *start, int *end )
+void RingStartEnd ( SHPObject *psShape, int ring, int *start, int *end )
 {
     if( psShape->panPartStart == NULL )
     {
@@ -59,7 +70,7 @@ static void RingStartEnd ( SHPObject *psShape, int ring, int *start, int *end )
 /*                        CreateLinearRing                              */
 /*                                                                      */
 /************************************************************************/
-static OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring, int bHasZ )
+OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring )
 {
     OGRLinearRing *poRing;
     int nRingStart, nRingEnd, nRingPoints;
@@ -70,13 +81,8 @@ static OGRLinearRing * CreateLinearRing ( SHPObject *psShape, int ring, int bHas
 
     nRingPoints = nRingEnd - nRingStart + 1;
 
-    if (bHasZ)
-        poRing->setPoints( nRingPoints, psShape->padfX + nRingStart, 
-                           psShape->padfY + nRingStart,
-                           psShape->padfZ + nRingStart );
-    else
-        poRing->setPoints( nRingPoints, psShape->padfX + nRingStart,
-                           psShape->padfY + nRingStart );
+    poRing->setPoints( nRingPoints, psShape->padfX + nRingStart, 
+	       psShape->padfY + nRingStart, psShape->padfZ + nRingStart );
 
     return ( poRing );
 }
@@ -106,21 +112,19 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
 /* -------------------------------------------------------------------- */
 /*      Point.                                                          */
 /* -------------------------------------------------------------------- */
-    else if( psShape->nSHPType == SHPT_POINT )
-    {
-        poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0] );
-    }
-    else if(psShape->nSHPType == SHPT_POINTZ )
+    else if( psShape->nSHPType == SHPT_POINT
+             || psShape->nSHPType == SHPT_POINTM
+             || psShape->nSHPType == SHPT_POINTZ )
     {
         poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
                               psShape->padfZ[0] );
+
+        if( psShape->nSHPType == SHPT_POINT )
+        {
+            poOGR->setCoordinateDimension( 2 );
+        }
     }
-    else if(psShape->nSHPType == SHPT_POINTM )
-    {
-        // Read XYM as XYZ
-        poOGR = new OGRPoint( psShape->padfX[0], psShape->padfY[0],
-                              psShape->padfM[0] );
-    }
+
 /* -------------------------------------------------------------------- */
 /*      Multipoint.                                                     */
 /* -------------------------------------------------------------------- */
@@ -141,11 +145,8 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             {
                 OGRPoint    *poPoint;
 
-                if( psShape->nSHPType == SHPT_MULTIPOINTZ )
-                    poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i],
-                                            psShape->padfZ[i] );
-                else
-                    poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i] );
+                poPoint = new OGRPoint( psShape->padfX[i], psShape->padfY[i],
+                                        psShape->padfZ[i] );
 
                 poOGRMPoint->addGeometry( poPoint );
 
@@ -153,6 +154,9 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             }
 
             poOGR = poOGRMPoint;
+
+            if( psShape->nSHPType == SHPT_MULTIPOINT )
+                poOGR->setCoordinateDimension( 2 );
         }
     }
 
@@ -173,16 +177,8 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
         {
             OGRLineString *poOGRLine = new OGRLineString();
 
-            if( psShape->nSHPType == SHPT_ARCZ )
-                poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY, psShape->padfZ );
-            else if( psShape->nSHPType == SHPT_ARCM )
-                // Read XYM as XYZ
-                poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY, psShape->padfM );
-            else
-                poOGRLine->setPoints( psShape->nVertices,
-                                    psShape->padfX, psShape->padfY );
+            poOGRLine->setPoints( psShape->nVertices,
+                                  psShape->padfX, psShape->padfY, psShape->padfZ );
 
             poOGR = poOGRLine;
         }
@@ -217,26 +213,18 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
                             - psShape->panPartStart[iRing];
                     nRingStart = psShape->panPartStart[iRing];
                 }
-
-                if( psShape->nSHPType == SHPT_ARCZ )
-                    poLine->setPoints( nRingPoints,
-                                    psShape->padfX + nRingStart,
-                                    psShape->padfY + nRingStart,
-                                    psShape->padfZ + nRingStart );
-                else if( psShape->nSHPType == SHPT_ARCM )
-                    // Read XYM as XYZ
-                    poLine->setPoints( nRingPoints,
-                                    psShape->padfX + nRingStart,
-                                    psShape->padfY + nRingStart,
-                                    psShape->padfM + nRingStart );
-                else
-                    poLine->setPoints( nRingPoints,
-                                    psShape->padfX + nRingStart,
-                                    psShape->padfY + nRingStart );
+            
+                poLine->setPoints( nRingPoints, 
+                                   psShape->padfX + nRingStart,
+                                   psShape->padfY + nRingStart,
+                                   psShape->padfZ + nRingStart );
 
                 poOGRMulti->addGeometryDirectly( poLine );
             }
         }
+
+        if( poOGR != NULL && psShape->nSHPType == SHPT_ARC )
+            poOGR->setCoordinateDimension( 2 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -249,7 +237,6 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
              || psShape->nSHPType == SHPT_POLYGONZ )
     {
         int iRing;
-        int bHasZ = ( psShape->nSHPType == SHPT_POLYGONZ );
         
         //CPLDebug( "Shape", "Shape type: polygon with nParts=%d \n", psShape->nParts );
 
@@ -264,7 +251,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             OGRLinearRing *poRing = NULL;
 
             poOGR = poOGRPoly = new OGRPolygon();
-            poRing = CreateLinearRing ( psShape, 0, bHasZ );
+            poRing = CreateLinearRing ( psShape, 0 );
             poOGRPoly->addRingDirectly( poRing );
         }
 
@@ -274,7 +261,7 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
             for( iRing = 0; iRing < psShape->nParts; iRing++ )
             {
                 tabPolygons[iRing] = new OGRPolygon();
-                tabPolygons[iRing]->addRingDirectly(CreateLinearRing ( psShape, iRing, bHasZ ));
+                tabPolygons[iRing]->addRingDirectly(CreateLinearRing ( psShape, iRing ));
             }
 
             int isValidGeometry;
@@ -292,150 +279,16 @@ OGRGeometry *SHPReadOGRObject( SHPHandle hSHP, int iShape, SHPObject *psShape )
 
             delete[] tabPolygons;
         }
+
+        if( poOGR != NULL && psShape->nSHPType == SHPT_POLYGON )
+        {
+            poOGR->setCoordinateDimension( 2 );
+        }
     }
 
 /* -------------------------------------------------------------------- */
-/*      MultiPatch                                                      */
-/* -------------------------------------------------------------------- */
-    else if( psShape->nSHPType == SHPT_MULTIPATCH )
-    {
-        OGRMultiPolygon *poMP = new OGRMultiPolygon();
-        int iPart;
-        OGRPolygon *poLastPoly = NULL;
-
-        for( iPart = 0; iPart < psShape->nParts; iPart++ )
-        {
-            int nPartPoints, nPartStart;
-
-            // Figure out details about this part's vertex list.
-            if( psShape->panPartStart == NULL )
-            {
-                nPartPoints = psShape->nVertices;
-                nPartStart = 0;
-            }
-            else
-            {
-                
-                if( iPart == psShape->nParts - 1 )
-                    nPartPoints =
-                        psShape->nVertices - psShape->panPartStart[iPart];
-                else
-                    nPartPoints = psShape->panPartStart[iPart+1]
-                        - psShape->panPartStart[iPart];
-                nPartStart = psShape->panPartStart[iPart];
-            }
-
-            if( psShape->panPartType[iPart] == SHPP_TRISTRIP )
-            {
-                int iBaseVert;
-
-                if( poLastPoly != NULL )
-                {
-                    poMP->addGeometryDirectly( poLastPoly );
-                    poLastPoly = NULL;
-                }
-
-                for( iBaseVert = 0; iBaseVert < nPartPoints-2; iBaseVert++ )
-                {
-                    OGRPolygon *poPoly = new OGRPolygon();
-                    OGRLinearRing *poRing = new OGRLinearRing();
-                    int iSrcVert = iBaseVert + nPartStart;
-
-                    poRing->setPoint( 0, 
-                                      psShape->padfX[iSrcVert], 
-                                      psShape->padfY[iSrcVert], 
-                                      psShape->padfZ[iSrcVert] );
-                    poRing->setPoint( 1, 
-                                      psShape->padfX[iSrcVert+1], 
-                                      psShape->padfY[iSrcVert+1], 
-                                      psShape->padfZ[iSrcVert+1] );
-
-                    poRing->setPoint( 2, 
-                                      psShape->padfX[iSrcVert+2], 
-                                      psShape->padfY[iSrcVert+2], 
-                                      psShape->padfZ[iSrcVert+2] );
-                    poRing->setPoint( 3, 
-                                      psShape->padfX[iSrcVert], 
-                                      psShape->padfY[iSrcVert], 
-                                      psShape->padfZ[iSrcVert] );
-                        
-                    poPoly->addRingDirectly( poRing );
-                    poMP->addGeometryDirectly( poPoly );
-                }
-            }
-            else if( psShape->panPartType[iPart] == SHPP_TRIFAN )
-            {
-                int iBaseVert;
-
-                if( poLastPoly != NULL )
-                {
-                    poMP->addGeometryDirectly( poLastPoly );
-                    poLastPoly = NULL;
-                }
-
-                for( iBaseVert = 0; iBaseVert < nPartPoints-2; iBaseVert++ )
-                {
-                    OGRPolygon *poPoly = new OGRPolygon();
-                    OGRLinearRing *poRing = new OGRLinearRing();
-                    int iSrcVert = iBaseVert + nPartStart;
-
-                    poRing->setPoint( 0, 
-                                      psShape->padfX[nPartStart], 
-                                      psShape->padfY[nPartStart],
-                                      psShape->padfZ[nPartStart] );
-                    poRing->setPoint( 1, 
-                                      psShape->padfX[iSrcVert+1], 
-                                      psShape->padfY[iSrcVert+1], 
-                                      psShape->padfZ[iSrcVert+1] );
-
-                    poRing->setPoint( 2, 
-                                      psShape->padfX[iSrcVert+2], 
-                                      psShape->padfY[iSrcVert+2], 
-                                      psShape->padfZ[iSrcVert+2] );
-                    poRing->setPoint( 3, 
-                                      psShape->padfX[nPartStart], 
-                                      psShape->padfY[nPartStart], 
-                                      psShape->padfZ[nPartStart] );
-                        
-                    poPoly->addRingDirectly( poRing );
-                    poMP->addGeometryDirectly( poPoly );
-                }
-            }
-            else if( psShape->panPartType[iPart] == SHPP_OUTERRING
-                     || psShape->panPartType[iPart] == SHPP_INNERRING
-                     || psShape->panPartType[iPart] == SHPP_FIRSTRING
-                     || psShape->panPartType[iPart] == SHPP_RING )
-            {
-                if( poLastPoly != NULL 
-                    && (psShape->panPartType[iPart] == SHPP_OUTERRING
-                        || psShape->panPartType[iPart] == SHPP_FIRSTRING) )
-                {
-                    poMP->addGeometryDirectly( poLastPoly );
-                    poLastPoly = NULL;
-                }
-
-                if( poLastPoly == NULL )
-                    poLastPoly = new OGRPolygon();
-
-                poLastPoly->addRingDirectly( 
-                    CreateLinearRing( psShape, iPart, TRUE ) );
-            }
-            else
-                CPLDebug( "OGR", "Unrecognised parttype %d, ignored.", 
-                          psShape->panPartType[iPart] );
-        }
-
-        if( poLastPoly != NULL )
-        {
-            poMP->addGeometryDirectly( poLastPoly );
-            poLastPoly = NULL;
-        }
-
-        poOGR = poMP;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Otherwise for now we just ignore the object.                    */
+/*      Otherwise for now we just ignore the object.  Eventually we     */
+/*      should implement multipatch.                                    */
 /* -------------------------------------------------------------------- */
     else
     {
@@ -871,8 +724,7 @@ OGRErr SHPWriteOGRObject( SHPHandle hSHP, int iShape, OGRGeometry *poGeom )
 /************************************************************************/
 
 OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
-                                       SHPHandle hSHP, DBFHandle hDBF,
-                                       const char* pszSHPEncoding )
+                                       SHPHandle hSHP, DBFHandle hDBF )
 
 {
     OGRFeatureDefn      *poDefn = new OGRFeatureDefn( pszName );
@@ -894,16 +746,7 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
         eDBFType = DBFGetFieldInfo( hDBF, iField, szFieldName,
                                     &nWidth, &nPrecision );
 
-        if( strlen(pszSHPEncoding) > 0 )
-        {
-            char *pszUTF8Field = CPLRecode( szFieldName,
-                                            pszSHPEncoding, CPL_ENC_UTF8);
-            oField.SetName( pszUTF8Field );
-            CPLFree( pszUTF8Field );
-        }
-        else
-            oField.SetName( szFieldName );
-
+        oField.SetName( szFieldName );
         oField.SetWidth( nWidth );
         oField.SetPrecision( nPrecision );
 
@@ -936,38 +779,38 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
         switch( hSHP->nShapeType )
         {
           case SHPT_POINT:
+          case SHPT_POINTM:
             poDefn->SetGeomType( wkbPoint );
             break;
 
           case SHPT_POINTZ:
-          case SHPT_POINTM:
             poDefn->SetGeomType( wkbPoint25D );
             break;
 
           case SHPT_ARC:
+          case SHPT_ARCM:
             poDefn->SetGeomType( wkbLineString );
             break;
 
           case SHPT_ARCZ:
-          case SHPT_ARCM:
             poDefn->SetGeomType( wkbLineString25D );
             break;
 
           case SHPT_MULTIPOINT:
+          case SHPT_MULTIPOINTM:
             poDefn->SetGeomType( wkbMultiPoint );
             break;
 
           case SHPT_MULTIPOINTZ:
-          case SHPT_MULTIPOINTM:
             poDefn->SetGeomType( wkbMultiPoint25D );
             break;
 
           case SHPT_POLYGON:
+          case SHPT_POLYGONM:
             poDefn->SetGeomType( wkbPolygon );
             break;
 
           case SHPT_POLYGONZ:
-          case SHPT_POLYGONM:
             poDefn->SetGeomType( wkbPolygon25D );
             break;
             
@@ -983,7 +826,7 @@ OGRFeatureDefn *SHPReadOGRFeatureDefn( const char * pszName,
 
 OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
                                OGRFeatureDefn * poDefn, int iShape,
-                               SHPObject *psShape, const char *pszSHPEncoding )
+                               SHPObject *psShape )
 
 {
     if( iShape < 0 
@@ -1009,7 +852,7 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 /* -------------------------------------------------------------------- */
 /*      Fetch geometry from Shapefile to OGRFeature.                    */
 /* -------------------------------------------------------------------- */
-    if( hSHP != NULL && !poDefn->IsGeometryIgnored() )
+    if( hSHP != NULL )
     {
         OGRGeometry* poGeometry = NULL;
         poGeometry = SHPReadOGRObject( hSHP, iShape, psShape );
@@ -1032,9 +875,6 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 
     for( int iField = 0; iField < poDefn->GetFieldCount(); iField++ )
     {
-        if ( poDefn->GetFieldDefn(iField)->IsIgnored() )
-            continue;
-        
         // Skip null fields.
         if( DBFIsAttributeNULL( hDBF, iShape, iField ) )
             continue;
@@ -1042,20 +882,10 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
         switch( poDefn->GetFieldDefn(iField)->GetType() )
         {
           case OFTString:
-          {
-              const char *pszFieldVal = 
-                  DBFReadStringAttribute( hDBF, iShape, iField );
-              if( strlen(pszSHPEncoding) > 0 )
-              {
-                  char *pszUTF8Field = CPLRecode( pszFieldVal, 
-                                                  pszSHPEncoding, CPL_ENC_UTF8);
-                  poFeature->SetField( iField, pszUTF8Field );
-                  CPLFree( pszUTF8Field );
-              }
-              else
-                  poFeature->SetField( iField, pszFieldVal );
-          }
-          break;
+            poFeature->SetField( iField,
+                                 DBFReadStringAttribute( hDBF, iShape,
+                                                         iField ) );
+            break;
 
           case OFTInteger:
             poFeature->SetField( iField,
@@ -1073,18 +903,12 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
           {
               OGRField sFld;
               const char* pszDateValue = 
-                  DBFReadStringAttribute(hDBF,iShape,iField);
-
-              /* Some DBF files have fields filled with spaces */
-              /* (trimmed by DBFReadStringAttribute) to indicate null */
-              /* values for dates (#4265) */
-              if (pszDateValue[0] == '\0')
-                  continue;
+                  DBFReadStringAttribute(hDBF,iShape,iField); 
 
               memset( &sFld, 0, sizeof(sFld) );
 
-              if( strlen(pszDateValue) >= 10 &&
-                  pszDateValue[2] == '/' && pszDateValue[5] == '/' )
+              if( pszDateValue[2] == '/' && pszDateValue[5] == '/' 
+                  && strlen(pszDateValue) >= 10 )
               {
                   sFld.Date.Month = (GByte)atoi(pszDateValue+0);
                   sFld.Date.Day   = (GByte)atoi(pszDateValue+3);
@@ -1122,9 +946,7 @@ OGRFeature *SHPReadOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 
 OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
                            OGRFeatureDefn * poDefn, 
-                           OGRFeature * poFeature,
-                           const char *pszSHPEncoding,
-                           int* pbTruncationWarningEmitted )
+                           OGRFeature * poFeature )
 
 {
 #ifdef notdef
@@ -1207,34 +1029,20 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
             continue;
         }
 
-        int nRet = FALSE;
-
         switch( poDefn->GetFieldDefn(iField)->GetType() )
         {
           case OFTString:
-          {
-              const char *pszStr = poFeature->GetFieldAsString(iField);
-              if( strlen(pszSHPEncoding) > 0 )
-              {
-                  char *pszEncoded = 
-                      CPLRecode( pszStr, CPL_ENC_UTF8, pszSHPEncoding );
-                  nRet = DBFWriteStringAttribute( hDBF, poFeature->GetFID(), iField,
-                                           pszEncoded );
-                  CPLFree( pszEncoded );
-              }
-              else
-                  nRet = DBFWriteStringAttribute( hDBF, poFeature->GetFID(), iField, 
-                                           pszStr );
-          }
-          break;
+            DBFWriteStringAttribute( hDBF, poFeature->GetFID(), iField, 
+                                     poFeature->GetFieldAsString( iField ));
+            break;
 
           case OFTInteger:
-            nRet = DBFWriteIntegerAttribute( hDBF, poFeature->GetFID(), iField, 
+            DBFWriteIntegerAttribute( hDBF, poFeature->GetFID(), iField, 
                                       poFeature->GetFieldAsInteger(iField) );
             break;
 
           case OFTReal:
-            nRet = DBFWriteDoubleAttribute( hDBF, poFeature->GetFID(), iField, 
+            DBFWriteDoubleAttribute( hDBF, poFeature->GetFID(), iField, 
                                      poFeature->GetFieldAsDouble(iField) );
             break;
 
@@ -1245,7 +1053,7 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
               if( poFeature->GetFieldAsDateTime( iField, &nYear, &nMonth, &nDay,
                                                  NULL, NULL, NULL, NULL ) )
               {
-                  nRet = DBFWriteIntegerAttribute( hDBF, poFeature->GetFID(), iField, 
+                  DBFWriteIntegerAttribute( hDBF, poFeature->GetFID(), iField, 
                                             nYear*10000 + nMonth*100 + nDay );
               }
           }
@@ -1256,18 +1064,6 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
               /* Ignore fields of other types */
               break;
           }
-        }
-
-        if (!nRet && !(*pbTruncationWarningEmitted) &&
-            strstr(CPLGetLastErrorMsg(), "Failure writing DBF") == NULL)
-        {
-            *pbTruncationWarningEmitted = TRUE;
-            CPLError(CE_Warning, CPLE_AppDefined,
-                     "Value '%s' of field %s has been truncated to %d characters.\n"
-                     "This warning will not be emitted any more for that layer.",
-                     poFeature->GetFieldAsString(iField),
-                     poDefn->GetFieldDefn(iField)->GetNameRef(),
-                     poDefn->GetFieldDefn(iField)->GetWidth());
         }
     }
 

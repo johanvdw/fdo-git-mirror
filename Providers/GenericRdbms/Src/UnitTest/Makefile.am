@@ -240,10 +240,7 @@ UnitTestPostGis_LDADD =  \
   ../Rdbi/librdbi.la \
   ../Util/libutil.la \
   -lpq \
-  -lz \
-  -lkrb5 \
-  -lssl \
-  -lcom_err
+  -lz
 
 UnitTestPostGis_LDFLAGS = \
   -L$(FDOTHIRDPARTY)/pgsql/lib

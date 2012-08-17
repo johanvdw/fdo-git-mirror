@@ -1,5 +1,5 @@
 /* ***************************************************************************
-* $Id: javadoc.java 23513 2011-12-10 21:12:59Z rouault $
+* $Id$
 *
 * Project:  GDAL/OGR Java bindings
 * Purpose:  Documentation for the Java bindings
@@ -166,13 +166,13 @@ public class gdal:public static int PushErrorHandler()
  * action failed, but that normal recover mechanisms will be used or
  * CE_Fatal meaning that a fatal error has occured, and that Error()
  * should not return.  
- * <p>
+ *
  * The default behaviour of Error() is to report errors to stderr,
  * and to abort() after reporting a gdalconst.CE_Fatal error.  It is expected that
  * some applications will want to supress error reporting, and will want to
  * install a C++ exception, or longjmp() approach to no local fatal error
  * recovery.
- * <p>
+ *
  * Regardless of how application error handlers or the default error
  * handler choose to handle an error, the error number, and message will
  * be stored for recovery with gdal.GetLastErrorNo() and gdal.GetLastErrorMsg().
@@ -185,7 +185,7 @@ public class gdal:public static void Error(int msg_class, int err_code, String m
 
 /**
  * Pop error handler off stack.
- * <p>
+ *
  * Discards the current error handler on the error handler stack, and restores 
  * the one in use before the last gdal.PushErrorHandler() call.  This method
  * has no effect if there are no error handlers on the current threads error
@@ -195,7 +195,7 @@ public class gdal:public static void PopErrorHandler()
 
 /**
  * Erase any traces of previous errors.
- * <p>
+ *
  * This is normally used to ensure that an error which has been recovered
  * from does not appear to be still in play with high level functions.
  */
@@ -215,9 +215,9 @@ public class gdal:public static String EscapeString(byte[] byteArray, int scheme
  * Create memory "file" from a buffer.
  *
  * A virtual memory file is created from the passed buffer with the indicated filename. Under normal conditions the filename would need to be absolute and within the /vsimem/ portion of the filesystem.
- * <p>
+ *
  * The filename then can be used with GDAL and OGR drivers that uses the virtual file API.
- * <p>
+ *
  * To free the memory associated with the file, you must use Unlink(fileName), otherwise memory leaks will occur.
  *
  * @param fileName filename (should begin with "/vsimem/")
@@ -231,10 +231,10 @@ public class gdal:public static void FileFromMemBuffer(String fileName, byte[] b
 
 /**
  * Delete a file.
- * <p>
+ *
  * Deletes a file object from the file system. This method goes through the
  * VSIFileHandler virtualization and may work on unusual filesystems such as in memory.
- * <p>
+ *
  * Analog of the POSIX unlink() function.
  *
  * @param fileName the path of the file to be deleted.
@@ -292,7 +292,7 @@ public class gdal:public static String EscapeString(String str, int scheme)
 
 /**
  * Fetch the last error number.
- * <p>
+ *
  * This is the error number, not the error class.
  *
  * @return the error number of the last error to occur, or gdalconst.CPLE_None (0)
@@ -303,7 +303,7 @@ public class gdal:public static int GetLastErrorNo()
 
 /**
  * Fetch the last error type.
- * <p>
+ *
  * This is the error class, not the error number.
  *
  * @return the error number of the last error to occur, or gdalconst.CE_None (0)
@@ -313,7 +313,7 @@ public class gdal:public static int GetLastErrorType()
 
 /**
  * Get the last error message.
- * <p>
+ *
  * Fetches the last error message posted with CPLError(), that hasn't
  * been cleared by gdal.ErrorReset().
  *
@@ -324,7 +324,7 @@ public class gdal:public static String GetLastErrorMsg()
 
 /**
   * Set a configuration option for GDAL/OGR use.
-  * <p>
+  *
   * Those options are defined as a (key, value) couple. The value corresponding
   * to a key can be got later with the gdal.GetConfigOption() method.
   * <p>
@@ -348,7 +348,7 @@ public class gdal:public static void SetConfigOption(String key, String value)
 
 /**
   * Get the value of a configuration option.
-  * <p>
+  * 
   * The value is the value of a (key, value) option set with gdal.SetConfigOption().
   * If the given option was no defined with gdal.SetConfigOption(), it tries to find
   * it in environment variables.
@@ -364,7 +364,7 @@ public class gdal:public static String GetConfigOption(String key, String defaul
 
 /**
   * Get the value of a configuration option.
-  * <p>
+  * 
   * Same as below with defaultValue == null
   *
   * @see #GetConfigOption(String key, String defaultValue)
@@ -376,7 +376,7 @@ public class gdal:public static String GetConfigOption(String key)
 
 /**
  * Generate Geotransform from GCPs. 
- * <p>
+ *
  * Given a set of GCPs perform first order fit as a geotransform. 
  * <p>
  * Due to imprecision in the calculations the fit algorithm will often 
@@ -401,7 +401,7 @@ public class gdal:public static int GCPsToGeoTransform(GCP[] gcpArray, double[] 
 
 /**
  * Generate Geotransform from GCPs. 
- * <p>
+ *
  * Same as below with bApproxOK == 0
  *
  * @see #GCPsToGeoTransform(GCP[] gcpArray, double[] outGeoTransform, int bApproxOK)
@@ -413,7 +413,7 @@ public class gdal:public static int GCPsToGeoTransform(GCP[] gcpArray, double[] 
 
 /**
  * Compute optimal PCT for RGB image.
- * <p>
+ *
  * This function implements a median cut algorithm to compute an "optimal"
  * pseudocolor table for representing an input RGB image.  This PCT could
  * then be used with GDALDitherRGB2PCT() to convert a 24bit RGB image into
@@ -448,7 +448,7 @@ public class gdal:public static int ComputeMedianCutPCT(Band red, Band green, Ba
 
 /**
  * Compute optimal PCT for RGB image.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #ComputeMedianCutPCT(Band red, Band green, Band blue, int num_colors, ColorTable colors, ProgressCallback callback)
@@ -460,7 +460,7 @@ public class gdal:public static int ComputeMedianCutPCT(Band red, Band green, Ba
 
 /**
  * 24bit to 8bit conversion with dithering.
- * <p>
+ *
  * This functions utilizes Floyd-Steinberg dithering in the process of 
  * converting a 24bit RGB image into a pseudocolored 8bit image using a
  * provided color table.  
@@ -488,7 +488,7 @@ public class gdal:public static int DitherRGB2PCT(Band red, Band green, Band blu
 
 /**
  * 24bit to 8bit conversion with dithering.
- * <p>
+ *
  * Same as below with callback == null
  * @see #DitherRGB2PCT(Band red, Band green, Band blue, Band target, ColorTable colors, ProgressCallback callback)
  *
@@ -498,7 +498,7 @@ public class gdal:public static int DitherRGB2PCT(Band red, Band green, Band blu
 
 /**
  * Reproject image.
- * <p>
+ *
  * This is a convenience function utilizing the GDALWarpOperation class to
  * reproject an image from a source to a destination.  In particular, this
  * function takes care of establishing the transformation function to
@@ -532,7 +532,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -545,7 +545,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with maxError == 0.0 and callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -556,7 +556,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with warpMemoryLimit == 0.0, maxError == 0.0 and callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -567,7 +567,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with resampleAlg == gdalconst.GRA_NearestNeighbour, warpMemoryLimit == 0.0, maxError == 0.0 and callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -578,7 +578,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with dst_wkt == null, resampleAlg == gdalconst.GRA_NearestNeighbour, warpMemoryLimit == 0.0, maxError == 0.0 and callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -589,7 +589,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Reproject image.
- * <p>
+ *
  * Same as below with src_wkt == null, dst_wkt == null, resampleAlg == gdalconst.GRA_NearestNeighbour, warpMemoryLimit == 0.0, maxError == 0.0 and callback == null.
  * 
  * @see #ReprojectImage(Dataset src_ds, Dataset dst_ds, String src_wkt, String dst_wkt, int resampleAlg, double warpMemoryLimit, double maxError, ProgressCallback callback)
@@ -600,7 +600,7 @@ public class gdal:public static int ReprojectImage(Dataset src_ds, Dataset dst_d
 
 /**
  * Compute the proximity of all pixels in the image to a set of pixels in the source image.
- * <p>
+ *
  * The following options are used to define the behavior of the function.  By
  * default all non-zero pixels in srcBand will be considered the
  * "target", and all proximities will be computed in pixels.  Note
@@ -643,7 +643,7 @@ public class gdal:public static int ComputeProximity(Band srcBand, Band proximit
 
 /**
  * Compute the proximity of all pixels in the image to a set of pixels in the source image.
- * <p>
+ *
  * Same as below with callback = null
  *
  * @see #ComputeProximity(Band srcBand, Band proximityBand, java.util.Vector options, ProgressCallback callback)
@@ -655,7 +655,7 @@ public class gdal:public static int ComputeProximity(Band srcBand, Band proximit
 
 /**
  * Compute the proximity of all pixels in the image to a set of pixels in the source image.
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #ComputeProximity(Band srcBand, Band proximityBand, java.util.Vector options, ProgressCallback callback)
@@ -667,7 +667,7 @@ public class gdal:public static int ComputeProximity(Band srcBand, Band proximit
 
 /**
  * Burn geometries from the specified layer into raster.
- * <p>
+ *
  * Rasterize all the geometric objects from a layer into a raster
  * dataset.
  * <p>
@@ -708,7 +708,7 @@ public class gdal:public static int RasterizeLayer(Dataset dataset, int[] bandNu
 
 /**
  * Burn geometries from the specified layer into raster.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #RasterizeLayer(Dataset dataset, int[] bandNumbers, org.gdal.ogr.Layer layer, double[] burn_values, java.util.Vector options, ProgressCallback callback)
@@ -720,7 +720,7 @@ public class gdal:public static int RasterizeLayer(Dataset dataset, int[] bandNu
 
 /**
  * Burn geometries from the specified layer into raster.
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #RasterizeLayer(Dataset dataset, int[] bandNumbers, org.gdal.ogr.Layer layer, double[] burn_values, java.util.Vector options, ProgressCallback callback)
@@ -732,7 +732,7 @@ public class gdal:public static int RasterizeLayer(Dataset dataset, int[] bandNu
 
 /**
  * Burn geometries from the specified layer into raster.
- * <p>
+ *
  * Same as below with burn_values == null, options == null and callback == null
  *
  * @see #RasterizeLayer(Dataset dataset, int[] bandNumbers, org.gdal.ogr.Layer layer, double[] burn_values, java.util.Vector options, ProgressCallback callback)
@@ -743,7 +743,7 @@ public class gdal:public static int RasterizeLayer(Dataset dataset, int[] bandNu
 
 /**
  * Create polygon coverage from raster data.
- * <p>
+ *
  * This function creates vector polygons for all connected regions of pixels in
  * the raster sharing a common pixel value.  Optionally each polygon may be
  * labelled with the pixel value in an attribute.  Optionally a mask band
@@ -794,7 +794,7 @@ public class gdal:public static int Polygonize(Band srcBand, Band maskBand, org.
 
 /**
  * Create polygon coverage from raster data.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #Polygonize(Band srcBand, Band maskBand, org.gdal.ogr.Layer outLayer, int iPixValField, java.util.Vector options, ProgressCallback callback)
@@ -805,7 +805,7 @@ public class gdal:public static int Polygonize(Band srcBand, Band maskBand, org.
 
 /**
  * Create polygon coverage from raster data.
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #Polygonize(Band srcBand, Band maskBand, org.gdal.ogr.Layer outLayer, int iPixValField, java.util.Vector options, ProgressCallback callback)
@@ -816,7 +816,7 @@ public class gdal:public static int Polygonize(Band srcBand, Band maskBand, org.
 
 /**
  * Fill selected raster regions by interpolation from the edges.
- * <p>
+ *
  * This algorithm will interpolate values for all designated 
  * nodata pixels (marked by zeros in maskBand).  For each pixel
  * a four direction conic search is done to find values to interpolate
@@ -850,7 +850,7 @@ public class gdal:public static int FillNodata(Band targetBand, Band maskBand, d
 
 /**
  * Fill selected raster regions by interpolation from the edges.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #FillNodata(Band targetBand, Band maskBand, double maxSearchDist, int smoothingIterations, java.util.Vector options, ProgressCallback callback)
@@ -861,7 +861,7 @@ public class gdal:public static int FillNodata(Band targetBand, Band maskBand, d
 
 /**
  * Fill selected raster regions by interpolation from the edges.
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #FillNodata(Band targetBand, Band maskBand, double maxSearchDist, int smoothingIterations, java.util.Vector options, ProgressCallback callback)
@@ -872,7 +872,7 @@ public class gdal:public static int FillNodata(Band targetBand, Band maskBand, d
 
 /** 
  * Removes small raster polygons. 
- * <p>
+ *
  * The function removes raster polygons smaller than a provided
  * threshold size (in pixels) and replaces replaces them with the pixel value 
  * of the largest neighbour polygon.  
@@ -919,7 +919,7 @@ public class gdal:public static int SieveFilter(Band srcBand, Band maskBand, Ban
 
 /**
  * Removes small raster polygons. 
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #SieveFilter(Band srcBand, Band maskBand, Band dstBand, int threshold, int connectedness, java.util.Vector options, ProgressCallback callback)
@@ -930,7 +930,7 @@ public class gdal:public static int SieveFilter(Band srcBand, Band maskBand, Ban
 
 /**
  * Removes small raster polygons. 
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #SieveFilter(Band srcBand, Band maskBand, Band dstBand, int threshold, int connectedness, java.util.Vector options, ProgressCallback callback)
@@ -941,7 +941,7 @@ public class gdal:public static int SieveFilter(Band srcBand, Band maskBand, Ban
 
 /**
  * Removes small raster polygons. 
- * <p>
+ *
  * Same as below with connectedness == 4, options == null and callback == null
  *
  * @see #SieveFilter(Band srcBand, Band maskBand, Band dstBand, int threshold, int connectedness, java.util.Vector options, ProgressCallback callback)
@@ -952,7 +952,7 @@ public class gdal:public static int SieveFilter(Band srcBand, Band maskBand, Ban
 
 /**
  * Generate downsampled overviews.
- * <p>
+ *
  * This function will generate one or more overview images from a base
  * image using the requested downsampling algorithm.  It's primary use
  * is for generating overviews via Dataset.<a href="Dataset.html#BuildOverviews(java.lang.String, int[], org.gdal.gdal.ProgressCallback)">BuildOverviews()</a>, but it
@@ -979,7 +979,7 @@ public class gdal:public static int RegenerateOverviews(Band srcBand, Band[] ove
 
 /**
  * Generate downsampled overviews.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #RegenerateOverviews(Band srcBand, Band[] overviewBands, String resampling, ProgressCallback callback)
@@ -990,7 +990,7 @@ public class gdal:public static int RegenerateOverviews(Band srcBand, Band[] ove
 
 /**
  * Generate downsampled overviews.
- * <p>
+ *
  * Same as below with resampling == "AVERAGE" and callback == null
  *
  * @see #RegenerateOverviews(Band srcBand, Band[] overviewBands, String resampling, ProgressCallback callback)
@@ -1001,7 +1001,7 @@ public class gdal:public static int RegenerateOverviews(Band srcBand, Band[] ove
 
 /**
  * Generate downsampled overview.
- * <p>
+ *
  * Same as below for a unique overview band
  *
  * @see #RegenerateOverviews(Band srcBand, Band[] overviewBands, String resampling, ProgressCallback callback)
@@ -1012,7 +1012,7 @@ public class gdal:public static int RegenerateOverview(Band srcBand, Band overvi
 
 /**
  * Generate downsampled overview.
- * <p>
+ *
  * Same as below for a unique overview band and callback == null
  *
  * @see #RegenerateOverviews(Band srcBand, Band[] overviewBands, String resampling, ProgressCallback callback)
@@ -1023,7 +1023,7 @@ public class gdal:public static int RegenerateOverview(Band srcBand, Band overvi
 
 /**
  * Generate downsampled overview.
- * <p>
+ *
  * Same as below for a unique overview band, resampling == "AVERAGE" and callback == null
  *
  * @see #RegenerateOverviews(Band srcBand, Band[] overviewBands, String resampling, ProgressCallback callback)
@@ -1035,7 +1035,7 @@ public class gdal:public static int RegenerateOverview(Band srcBand, Band overvi
 
 /**
  * Create virtual warped dataset automatically.
- * <p>
+ *
  * This function will create a warped virtual file representing the 
  * input image warped into the target coordinate system.  A GenImgProj
  * transformation is created to accomplish any required GCP/Geotransform
@@ -1075,7 +1075,7 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds, Stri
 
 /**
  * Create virtual warped dataset automatically.
- * <p>
+ *
  * Same as below with maxError == 0.0
  *
  * @see #AutoCreateWarpedVRT(Dataset src_ds, String src_wkt, String dst_wkt, int eResampleAlg, double maxError)
@@ -1086,7 +1086,7 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds, Stri
 
 /**
  * Create virtual warped dataset automatically.
- * <p>
+ *
  * Same as below with eResampleAlg == gdalconst.GRA_NearestNeighbour and maxError == 0.0
  *
  * @see #AutoCreateWarpedVRT(Dataset src_ds, String src_wkt, String dst_wkt, int eResampleAlg, double maxError)
@@ -1097,7 +1097,7 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds, Stri
 
 /**
  * Create virtual warped dataset automatically.
- * <p>
+ *
  * Same as below with dst_wkt == null, eResampleAlg == gdalconst.GRA_NearestNeighbour and maxError == 0.0
  *
  * @see #AutoCreateWarpedVRT(Dataset src_ds, String src_wkt, String dst_wkt, int eResampleAlg, double maxError)
@@ -1108,7 +1108,7 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds, Stri
 
 /**
  * Create virtual warped dataset automatically.
- * <p>
+ *
  * Same as below with src_wkt == null, dst_wkt == null, eResampleAlg == gdalconst.GRA_NearestNeighbour and maxError == 0.0
  *
  * @see #AutoCreateWarpedVRT(Dataset src_ds, String src_wkt, String dst_wkt, int eResampleAlg, double maxError)
@@ -1119,7 +1119,7 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds)
 
 /**
  * Get runtime version information.
- * <p>
+ *
  * Available request values:
  * <ul>
  * <li> "VERSION_NUM": Returns GDAL_VERSION_NUM formatted as a string.  ie. "1170"
@@ -1149,7 +1149,7 @@ public class gdal:public static String VersionInfo()
 
 /**
  * Register all known configured GDAL drivers.
- * <p>
+ *
  * This function will drive any of the following that are configured into
  * GDAL.  Many others as well that haven't been updated in this
  * documentation (see <a href="http://gdal.org/formats_list.html">full list</a>):
@@ -1177,7 +1177,7 @@ public class gdal:public static void AllRegister()
 
 /**
  * Get maximum cache memory.
- * <p>
+ *
  * Gets the maximum amount of memory available to the GDALRasterBlock
  * caching system for caching GDAL read/write imagery. 
  *
@@ -1187,7 +1187,7 @@ public class gdal:public static int GetCacheMax()
 
 /**
  * Set maximum cache memory.
- * <p>
+ *
  * This function sets the maximum amount of memory that GDAL is permitted
  * to use for GDALRasterBlock caching.
  *
@@ -1197,7 +1197,7 @@ public class gdal:public static void SetCacheMax(int newSize)
 
 /**
  * Get cache memory used.
- * 
+ *
  * @return the number of bytes of memory currently in use by the 
  * GDALRasterBlock memory caching.
  */
@@ -1206,7 +1206,7 @@ public class gdal:public static int GetCacheUsed()
 
 /**
  * Get data type size in bits.
- * <p>
+ *
  * Returns the size of a a GDT_* type <b>in bits</b>, not bytes!
  *
  * @param eDataType type, such as gdalconst.GDT_Byte. 
@@ -1225,7 +1225,7 @@ public class gdal:public static int DataTypeIsComplex(int eDataType)
 
 /**
  * Get name of data type.
- * <p>
+ *
  * Returns a symbolic name for the data type.  This is essentially the
  * the enumerated item name with the GDT_ prefix removed.  So gdalconst.GDT_Byte returns
  * "Byte". These strings are useful for reporting
@@ -1238,7 +1238,7 @@ public class gdal:public static String GetDataTypeName(int eDataType)
 
 /**
  * Get data type by symbolic name.
- * <p>
+ *
  * Returns a data type corresponding to the given symbolic name. This
  * function is opposite to the gdal.GetDataTypeName().
  *
@@ -1250,7 +1250,7 @@ public class gdal:public static int GetDataTypeByName(String dataTypeName)
 
 /**
  * Get name of color interpretation.
- * <p>
+ *
  * Returns a symbolic name for the color interpretation.  This is derived from
  * the enumerated item name with the GCI_ prefix removed, but there are some
  * variations. So GCI_GrayIndex returns "Gray" and GCI_RedBand returns "Red".
@@ -1265,7 +1265,7 @@ public class gdal:public static String GetColorInterpretationName(int eColorInte
 
 /**
  * Get name of palette interpretation.
- * <p>
+ *
  * Returns a symbolic name for the palette interpretation.  This is the
  * the enumerated item name with the GPI_ prefix removed.  So GPI_Gray returns
  * "Gray".  The returned strings are static strings and should not be modified
@@ -1303,7 +1303,7 @@ public class gdal:public static Driver GetDriver(int iDriver)
 
 /**
  * Open a raster file as a Dataset object.
- * <p>
+ *
  * This function will try to open the passed file, or virtual dataset
  * name by invoking the Open method of each registered Driver in turn. 
  * The first successful open will result in a returned dataset.  If all
@@ -1328,7 +1328,7 @@ public class gdal:public static Dataset Open(String name, int eAccess)
 
 /**
  * Open a raster file as a Dataset object.
- * <p>
+ *
  * Same as below with eAccess == gdalconst.GA_ReadOnly
  *
  * @see #Open(String name, int eAccess)
@@ -1339,7 +1339,7 @@ public class gdal:public static Dataset Open(String name)
 
 /**
  * Open a raster file as a GDALDataset.
- * <p>
+ *
  * This function works the same as gdal.Open(), but allows the sharing of
  * GDALDataset handles for a dataset with other callers to gdal.OpenShared().
  * <p>
@@ -1363,7 +1363,7 @@ public class gdal:public static Dataset OpenShared(String name, int eAccess)
 
 /**
  * Open a raster file as a Dataset object.
- * <p>
+ *
  * Same as below with eAccess == gdalconst.GA_ReadOnly
  *
  * @see #OpenShared(String name, int eAccess)
@@ -1375,7 +1375,7 @@ public class gdal:public static Dataset OpenShared(String name)
 
 /**
  * Identify the driver that can open a raster file.
- * <p>
+ *
  * This function will try to identify the driver that can open the passed file
  * name by invoking the Identify method of each registered Driver in turn. 
  * The first driver that successful identifies the file name will be returned.
@@ -1385,7 +1385,7 @@ public class gdal:public static Dataset OpenShared(String name)
  * file system machinery, it is possible to give an optional list of files.
  * This is the list of all files at the same level in the file system as the
  * target file, including the target file. The filenames will not include any
- * path components, are an essentially just the output of ReadDir() on the
+ * path components, are an essentially just the output of CPLReadDir() on the
  * parent directory. If the target object does not have filesystem semantics
  * then the file list should be null.
  *
@@ -1403,7 +1403,7 @@ public class gdal:public static Driver IdentifyDriver(String name, java.util.Vec
 
 /**
  * Identify the driver that can open a raster file.
- * <p>
+ *
  * Same as below with fileList == null
  *
  * @see #IdentifyDriver(String name, java.util.Vector fileList)
@@ -1414,12 +1414,12 @@ public class gdal:public static Driver IdentifyDriver(String name)
 
 /**
  * Parse an XML string into tree form.
- * <p>
+ *
  * The passed document is parsed into a  XMLNode tree representation. 
  * If the document is not well formed XML then null is returned, and errors
  * are reported via CPLError().  No validation beyond wellformedness is
  * done.
- * <p>
+ *
  * If the document has more than one "root level" element then those after the 
  * first will be attached to the first as siblings (via the psNext pointers)
  * even though there is no common parent.  A document with no XML structure
@@ -1436,7 +1436,7 @@ public class gdal:public static XMLNode ParseXMLString(String xmlString)
 
 /**
  * Convert tree into string document.
- * <p>
+ *
  * This function converts a XMLNode tree representation of a document
  * into a flat string representation.  White space indentation is used
  * visually preserve the tree structure of the document.
@@ -1451,7 +1451,7 @@ public class gdal:public static String SerializeXMLTree(XMLNode xmlnode)
 
 /**
  * Apply GeoTransform to x/y coordinate.
- * <p>
+ *
  * Applies the following computation, converting a (pixel,line) coordinate
  * into a georeferenced (geo_x,geo_y) location.
  * <pre>
@@ -1471,7 +1471,7 @@ public class gdal:public static void ApplyGeoTransform(double[] padfGeoTransform
 
 /**
  * Invert Geotransform.
- * <p>
+ *
  * This function will invert a standard 3x2 set of GeoTransform coefficients.
  * This converts the equation from being pixel to geo to being geo to pixel.
  *
@@ -1486,7 +1486,7 @@ public class gdal:public static int InvGeoTransform(double[] gt_in, double[] gt_
 
 /**
  * Invert Geotransform.
- * <p>
+ *
  * This function will invert a standard 3x2 set of GeoTransform coefficients.
  * This converts the equation from being pixel to geo to being geo to pixel.
  *
@@ -1501,87 +1501,6 @@ public class gdal:public static double[] InvGeoTransform(double[] gt_in)
 
 @hide public class gdal:public static int HasThreadSupport()
 
-
-/**
- * Create a directory.
- * <p>
- * Create a new directory with the indicated mode.  The mode is ignored
- * on some platforms.  A reasonable default mode value would be 0666.
- * This method goes through the VSIFileHandler virtualization and may
- * work on unusual filesystems such as in memory.
- * <p>
- * Analog of the POSIX mkdir() function.
- *
- * @param path the path to the directory to create.
- * @param mode the permissions mode.
- *
- * @return 0 on success or -1 on an error.
- *
- * @since Java bindings 1.8.0
- */
-public class gdal:public static int Mkdir(String path, int mode)
-
-/**
- * Rename a file.
- * <p>
- * Renames a file object in the file system.  It should be possible
- * to rename a file onto a new filesystem, but it is safest if this
- * function is only used to rename files that remain in the same directory.
- * <p>
- * This method goes through the VSIFileHandler virtualization and may
- * work on unusual filesystems such as in memory.
- * <p>
- * Analog of the POSIX rename() function.
- *
- * @param oldpath the name of the file to be renamed.
- * @param newpath the name the file should be given.
- *
- * @return 0 on success or -1 on an error.
- *
- * @since Java bindings 1.8.0
- */
-
-public class gdal:public static int Rename( String oldpath, String newpath )
-
-/**
- * Delete a directory.
- * <p>
- * Deletes a directory object from the file system.  On some systems
- * the directory must be empty before it can be deleted.
- * <p>
- * This method goes through the VSIFileHandler virtualization and may
- * work on unusual filesystems such as in memory.
- * <p>
- * Analog of the POSIX rmdir() function.
- *
- * @param path the path of the directory to be deleted.
- *
- * @return 0 on success or -1 on an error.
- *
- * @since Java bindings 1.8.0
- */
-
-public class gdal:public static int Rmdir(String path)
-
-/**
- * Read names in a directory.
- * <p>
- * This function abstracts access to directory contains.  It returns a
- * list of strings containing the names of files, and directories in this
- * directory.
- * <p>
- * Note that no error is issued via CPLError() if the directory path is
- * invalid, though null is returned.
- *
- * @param path the relative, or absolute path of a directory to read.
- * @return The list of entries in the directory, or null if the directory
- * doesn't exist.
- *
- * @since Java bindings 1.7.0
- */
-
-public class gdal:public static java.util.Vector ReadDir(String path)
-
 /* Class ColorTable */
 
 /**
@@ -1594,7 +1513,7 @@ public class ColorTable
 
 /**
  * Construct a new color table.
- * <p>
+ *
  * Same as below with ePaletteInterpretation == gdalconst.GPI_RGB
  *
  * @see #ColorTable(int ePaletteInterpretation)
@@ -1618,7 +1537,7 @@ public class ColorTable:public ColorTable Clone()
 
 /**
  * Create color ramp.
- * <p>
+ *
  * Automatically creates a color ramp from one color entry to another. It can be called several times to create multiples ramps in the same color table.
  *
  * @param nStartIndex 	index to start the ramp on the color table [0..255]
@@ -1646,7 +1565,7 @@ public class ColorTable:public int GetCount()
 
 /**
  * Fetch palette interpretation.
- * <p>
+ *
  * The returned value is used to interprete the values in the GDALColorEntry.
  *
  * @return palette interpretation enumeration value, usually gdalconst.GPI_RGB. 
@@ -1655,9 +1574,9 @@ public class ColorTable:public int GetPaletteInterpretation()
 
 /**
  * Set entry in color table.
- * <p>
+ *
  * The passed in entry must match the color interpretation of the table to which it is being assigned.
- * <p>
+ *
  * The table is grown as needed to hold the supplied offset.
  *
  * @param entry entry offset from zero to GetCount()-1.
@@ -1686,13 +1605,13 @@ public class Dataset
 
 /**
  * Add a band to a dataset.
- * <p>
+ *
  * This method will add a new band to the dataset if the underlying format
  * supports this action.  Except VRT and MEM drivers, most formats do not.
- * <p>
+ *
  * Note that the new Band object is not returned.  It may be fetched
  * after successful completion of the method by calling 
- * ds.GetRasterBand(ds.GetRasterCount()) as the newest
+ * ds.GetRasterBand(ds.GetRasterCount()-1) as the newest
  * band will always be the last band.
  *
  * @param datatype the data type of the pixels in the new band. 
@@ -1706,7 +1625,7 @@ public class Dataset:public int AddBand(int datatype, java.util.Vector options)
 
 /**
  * Add a band to a dataset.
- * <p>
+ *
  * Same as below with options == null
  *
  * @see #AddBand(int datatype, java.util.Vector options)
@@ -1717,7 +1636,7 @@ public class Dataset:public int AddBand(int datatype)
 
 /**
  * Add a band to a dataset.
- * <p>
+ *
  * Same as below with datatype == gdalconst.GDT_Byte and options == null
  *
  * @see #AddBand(int datatype, java.util.Vector options)
@@ -1729,7 +1648,7 @@ public class Dataset:public int AddBand()
 
 /**
  * Build raster overview(s).
- * <p>
+ *
  * If the operation is unsupported for the indicated dataset, then 
  * gdalconst.CE_Failure is returned, and gdal.GetLastErrorNo() will return 
  * gdalconst.CPLE_NotSupported.
@@ -1756,7 +1675,7 @@ public class Dataset:public int BuildOverviews(String resampling, int[] overview
 
 /**
  * Build raster overview(s).
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #BuildOverviews(String resampling, int[] overviewlist, ProgressCallback callback)
@@ -1765,7 +1684,7 @@ public class Dataset:public int BuildOverviews(String resampling, int[] overview
 
 /**
  * Build raster overview(s).
- * <p>
+ *
  * Same as below with resampling == "NEAREST" and callback == null
  *
  * @see #BuildOverviews(String resampling, int[] overviewlist, ProgressCallback callback)
@@ -1776,7 +1695,7 @@ public class Dataset:public int BuildOverviews(int[] overviewlist)
 
 /**
  * Build raster overview(s).
- * <p>
+ *
  * Same as below with resampling == "NEAREST"
  *
  * @see #BuildOverviews(String resampling, int[] overviewlist, ProgressCallback callback)
@@ -1787,7 +1706,7 @@ public class Dataset:public int BuildOverviews(int[] overviewlist, ProgressCallb
 
 /**
  * Adds a mask band to the current band.
- * <p>
+ *
  * The default implementation of the CreateMaskBand() method is implemented
  * based on similar rules to the .ovr handling implemented using the
  * GDALDefaultOverviews object. A TIFF file with the extension .msk will
@@ -1807,7 +1726,7 @@ public class Dataset:public int CreateMaskBand(int nFlags)
 
 /**
   * Frees the native resource associated to a Dataset object and close the file.
-  * <p>
+  *
   * This method will delete the underlying C++ object. After it has been called,
   * all native resources will have been destroyed, so it will be illegal (and likely to
   * cause JVM crashes) to use any method on this object or any derived objects,
@@ -1821,7 +1740,7 @@ public class Dataset:public void delete()
 
 /**
  * Flush all write cached data to disk.
- * <p>
+ *
  * Any raster (or other GDAL) data written via GDAL calls, but buffered
  * internally will be written to disk.
  * <p>
@@ -1842,7 +1761,7 @@ public class Dataset:public void FlushCache()
 public class Dataset:public Driver GetDriver()
 
 /**
- * Fetch a band object for a dataset.
+ *  Fetch a band object for a dataset.
  *
  * @param nBandId the index number of the band to fetch, from 1 to
                   GetRasterCount().
@@ -1852,11 +1771,11 @@ public class Dataset:public Band GetRasterBand(int nBandId)
 
 /**
  * Fetch the projection definition string for this dataset.
- * <p>
+ *
  * The returned string defines the projection coordinate system of the
  * image in OpenGIS WKT format.  It should be suitable for use with the 
  * OGRSpatialReference class.
- * <p>
+ *
  * When a projection definition is not available an empty (but not null)
  * string is returned.
  *
@@ -1868,11 +1787,11 @@ public class Dataset:public String GetProjection()
 
 /**
  * Fetch the projection definition string for this dataset.
- * <p>
+ *
  * The returned string defines the projection coordinate system of the
  * image in OpenGIS WKT format.  It should be suitable for use with the 
  * OGRSpatialReference class.
- * <p>
+ *
  * When a projection definition is not available an empty (but not null)
  * string is returned.
  *
@@ -1885,7 +1804,7 @@ public class Dataset:public String GetProjectionRef()
 
 /**
  * Set the projection reference string for this dataset.
- * <p>
+ *
  * The string should be in OGC WKT or PROJ.4 format.  An error may occur
  * because of incorrectly specified projection strings, because the dataset
  * is not writable, or because the dataset does not support the indicated
@@ -1900,7 +1819,7 @@ public class Dataset:public int SetProjection(String projection)
 
 /**
  * Fetch the affine transformation coefficients.
- * <p>
+ *
  * Fetches the coefficients for transforming between pixel/line (P,L) raster
  * space, and projection coordinates (Xp,Yp) space.
  * <p>
@@ -1933,7 +1852,7 @@ public class Dataset:public void GetGeoTransform(double[] geoTransformArray)
 
 /**
  * Fetch the affine transformation coefficients.
- * <p>
+ *
  * Same as below, except the geotransform array is returned by the method
  *
  * @see #GetGeoTransform(double[] geoTransformArray)
@@ -1947,7 +1866,7 @@ public class Dataset:public double[] GetGeoTransform()
 
 /**
  * Set the affine transformation coefficients.
- * <p>
+ *
  * See <a href="#GetGeoTransform(double[])">#GetGeoTransform()</a> for details on the meaning of the geoTransformArray
  * coefficients.
  *
@@ -1963,7 +1882,7 @@ public class Dataset:public int SetGeoTransform(double[] geoTransformArray)
 
 /**
  * Fetch files forming dataset.
- * <p>
+ *
  * Returns a list of files believed to be part of this dataset.  If it returns
  * an empty list of files it means there is believed to be no local file
  * system files associated with the dataset (for instance a virtual dataset).
@@ -1984,7 +1903,7 @@ public class Dataset:public int GetGCPCount()
 
 /**
  * Get output projection for GCPs. 
- * <p>
+ *
  * The projection string follows the normal rules from <a href="#GetProjectionRef()">GetProjectionRef()</a>.
  * 
  * @return projection string or "" if there are no GCPs. 
@@ -1993,7 +1912,7 @@ public class Dataset:public String GetGCPProjection()
 
 /**
  * Fetch GCPs.
- * <p>
+ *
  * Add to the provided vector the GCPs of the dataset
  *
  * @param gcpVector non null Vector object
@@ -2012,7 +1931,7 @@ public class Dataset:public java.util.Vector GetGCPs()
 
 /**
  * Assign GCPs.
- * <p>
+ *
  * This method assigns the passed set of GCPs to this dataset, as well as
  * setting their coordinate system.  Internally copies are made of the
  * coordinate system and list of points, so the caller remains resposible for
@@ -2084,7 +2003,7 @@ public class Dataset:public int GetRasterCount()
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * This method allows reading a region of one or more Band's from
  * this dataset into a buffer. It automatically takes care of data type
  * translation if the data type (buf_type) of the buffer is different than
@@ -2160,7 +2079,7 @@ public class Dataset:public int ReadRaster_Direct(int xoff, int yoff, int xsize,
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2171,7 +2090,7 @@ public class Dataset:public int ReadRaster_Direct(int xoff, int yoff, int xsize,
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * This method allows reading a region of one or more Band's from
  * this dataset into a buffer. It automatically takes care of data type
  * translation if the data type (buf_type) of the buffer is different than
@@ -2243,7 +2162,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2266,7 +2185,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2277,7 +2196,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
  *
  * @since Java bindings 1.7.0
@@ -2289,7 +2208,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2312,7 +2231,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2335,7 +2254,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Read a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2346,7 +2265,7 @@ public class Dataset:public int ReadRaster(int xoff, int yoff, int xsize, int ys
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * This method allows writing data from a buffer into a region 
  * of the Band's.  It automatically takes care of data type
  * translation if the data type (buf_type) of the buffer is different than
@@ -2422,7 +2341,7 @@ public class Dataset:public int WriteRaster_Direct(int xoff, int yoff, int xsize
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #WriteRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2434,7 +2353,7 @@ public class Dataset:public int WriteRaster_Direct(int xoff, int yoff, int xsize
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * This method allows writing data from a buffer into a region 
  * of the Band's.  It automatically takes care of data type
  * translation if the data type (buf_type) of the buffer is different than
@@ -2505,7 +2424,7 @@ public class Dataset:public int WriteRaster(int xoff, int yoff, int xsize, int y
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2586,7 +2505,7 @@ public class Dataset:public int WriteRaster(int xoff, int yoff, int xsize, int y
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2613,7 +2532,7 @@ public class Dataset:public int WriteRaster(int xoff, int yoff, int xsize, int y
 
 /**
  * Write a region of image data from multiple bands.
- * <p>
+ *
  * Same as below with nPixelSpace == 0, nLineSpace == 0 and nBandSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int[] band_list, int nPixelSpace, int nLineSpace, int nBandSpace)
@@ -2633,7 +2552,7 @@ public class Dataset:public int WriteRaster(int xoff, int yoff, int xsize, int y
 
 /**
  * Class Band is an uninstanciable class providing various methods to access a single raster band (or channel).
- * 
+ *
  * <p>
  * The Band class is a binding for the C++ <a href="http://gdal.org/classGDALRasterBand.html">GDALRasterBand</a> class.
  * <p>
@@ -2677,7 +2596,7 @@ public class Band:public void delete()
 
 /**
  * Compute checksum for image region. 
- * <p>
+ *
  * Computes a 16bit (0-65535) checksum from a region of raster data on the raster band.
  * Floating point data is converted to 32bit integer 
  * so decimal portions of such raster data will not affect the checksum.
@@ -2694,7 +2613,7 @@ public class Band:public int Checksum(int xoff, int yoff, int xsize, int ysize)
 
 /**
  * Compute checksum for while image.
- * <p>
+ *
  * Computes a 16bit (0-65535) checksum from data on the raster band.
  * Floating point data is converted to 32bit integer 
  * so decimal portions of such raster data will not affect the checksum.
@@ -2716,7 +2635,7 @@ public class Band:public void ComputeBandStats(double[] meanAndStdDevArray, int 
 
 /**
  * Compute mean and standard deviation values.
- * <p>
+ *
  * Same as below with samplestep == 1
  *
  * @see #ComputeBandStats(double[] meanAndStdDevArray, int samplestep)
@@ -2726,7 +2645,7 @@ public class Band:public void ComputeBandStats(double[] meanAndStdDevArray)
 
 /**
  * Compute the min/max values for a band.
- * <p>
+ * 
  * If approximate is OK, then the band's GetMinimum()/GetMaximum() will
  * be trusted.  If it doesn't work, a subsample of blocks will be read to
  * get an approximate min/max.  If the band has a nodata value it will
@@ -2743,7 +2662,7 @@ public class Band:public void ComputeRasterMinMax(double[] minMaxArray, int appr
 
 /**
  * Compute the min/max values for a band.
- * <p>
+ * 
  * Same as below with approx_ok == 0
  *
  * @see #ComputeRasterMinMax(double[] minMaxArray, int approx_ok)
@@ -2753,7 +2672,7 @@ public class Band:public void ComputeRasterMinMax(double[] minMaxArray)
 
 /**
  * Compute image statistics. 
- * <p>
+ *
  * Returns the minimum, maximum, mean and standard deviation of all
  * pixel values in this band.  If approximate statistics are sufficient,
  * the approx_ok flag can be set to true in which case overviews, or a
@@ -2785,7 +2704,7 @@ public class Band:public int ComputeStatistics(boolean approx_ok, double[] min, 
 
 /**
  * Compute image statistics. 
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #ComputeStatistics(boolean approx_ok, double[] min, double[] max, double[] mean, double[] stddev, ProgressCallback callback)
@@ -2798,7 +2717,7 @@ public class Band:public int ComputeStatistics(boolean approx_ok, double[] min, 
 
 /**
  * Compute image statistics. 
- * <p>
+ *
  * Same as below with mean == null, stddev == null and callback == null
  *
  * @see #ComputeStatistics(boolean approx_ok, double[] min, double[] max, double[] mean, double[] stddev, ProgressCallback callback)
@@ -2811,7 +2730,7 @@ public class Band:public int ComputeStatistics(boolean approx_ok, double[] min, 
 
 /**
  * Compute image statistics. 
- * <p>
+ *
  * Same as below with min == null, max == null, mean == null, stddev == null and callback == null
  *
  * @see #ComputeStatistics(boolean approx_ok, double[] min, double[] max, double[] mean, double[] stddev, ProgressCallback callback)
@@ -2822,7 +2741,7 @@ public class Band:public int ComputeStatistics(boolean approx_ok)
 
 /**
  * Adds a mask band to the current band.
- * <p>
+ *
  * The default implementation of the CreateMaskBand() method is implemented
  * based on similar rules to the .ovr handling implemented using the
  * GDALDefaultOverviews object. A TIFF file with the extension .msk will
@@ -2842,7 +2761,7 @@ public class Band:public int CreateMaskBand(int nFlags)
 
 /** 
  * Fill this band with a constant value.
- * <p>
+ *
  * GDAL makes no guarantees
  * about what values pixels in newly created files are set to, so this
  * method can be used to clear a band to a specified "default" value.
@@ -2860,7 +2779,7 @@ public class Band:public int Fill(double real_fill, double imag_fill)
 
 /** 
  * Fill this band with a constant value.
- * <p>
+ *
  * Same as below with image_fill == 0
  *
  * @see #Fill(double real_fill, double imag_fill)
@@ -2871,7 +2790,7 @@ public class Band:public int Fill(double real_fill)
 
 /**
  * Flush raster data cache.
- * <p>
+ *
  * This call will recover memory used to cache data blocks for this raster
  * band, and ensure that new requests are referred to the underlying driver.
  */
@@ -2879,7 +2798,7 @@ public class Band:public void FlushCache()
 
 /**
  * Fetch the band number.
- * <p>
+ *
  * This method returns the band that this Band object represents
  * within its dataset.  This method may return a value of 0 to indicate
  * Band objects without an apparently relationship to a dataset,
@@ -2893,7 +2812,7 @@ public class Band:public int GetBand()
 
 /**
  * Fetch the "natural" block size of this band.
- * <p>
+ *
  * GDAL contains a concept of the natural block size of rasters so that
  * applications can organized data access efficiently for some file formats.
  * The natural block size is the block size that is most efficient for
@@ -2932,7 +2851,7 @@ public class Band:public int GetBlockYSize()
 
 /**
  * How should this band be interpreted as color?
- * <p>
+ *
  * gdalconst.GCI_Undefined is returned when the format doesn't know anything
  * about the color interpretation. 
  *
@@ -2944,7 +2863,7 @@ public class Band:public int GetColorInterpretation()
 
 /**
  * Fetch the color table associated with band.
- * <p>
+ *
  * If there is no associated color table, the return result is null.  The
  * returned color table remains owned by the Band object.
  * It should not be modified by the caller.
@@ -2955,7 +2874,7 @@ public class Band:public ColorTable GetColorTable()
 
 /**
  * Return the data type of the band.
- * <p>
+ *
  * A value such as gdalconst.GDT_Byte, gdalconst.GDT_Int16, ...
  * @return the data type of the band.
  */
@@ -2964,7 +2883,7 @@ public class Band:public int getDataType()
 
 /**
  * Fetch default raster histogram. 
- * <p>
+ *
  * The default method in GDALRasterBand will compute a default histogram. This
  * method is overriden by derived classes (such as GDALPamRasterBand, VRTDataset, HFADataset...)
  * that may be able to fetch efficiently an already stored histogram.
@@ -3002,7 +2921,7 @@ public class Band:public int GetDefaultHistogram(double[] min_ret, double[] max_
 
 /**
  * Fetch default raster histogram. 
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #GetDefaultHistogram(double[] min_ret, double[] max_ret, int[][] histogram_ret, boolean force, ProgressCallback callback)
@@ -3013,7 +2932,7 @@ public class Band:public int GetDefaultHistogram(double[] min_ret, double[] max_
 
 /**
  * Fetch default raster histogram. 
- * <p>
+ *
  * Same as below with force == true and callback == null
  *
  * @see #GetDefaultHistogram(double[] min_ret, double[] max_ret, int[][] histogram_ret, boolean force, ProgressCallback callback)
@@ -3024,7 +2943,7 @@ public class Band:public int GetDefaultHistogram(double[] min_ret, double[] max_
 
 /**
  * Fetch default Raster Attribute Table.
- * <p>
+ *
  * A RAT will be returned if there is a default one associated with the
  * band, otherwise null is returned.  The returned RAT is owned by the
  * band and should not be altered by the application. 
@@ -3035,7 +2954,7 @@ public class Band:public RasterAttributeTable GetDefaultRAT()
 
 /**
  * Compute raster histogram. 
- * <p>
+ *
  * Note that the bucket size is (dfMax-dfMin) / nBuckets.  
  * <p>
  * For example to compute a simple 256 entry histogram of eight bit data, 
@@ -3071,7 +2990,7 @@ public class Band:public int GetHistogram(double min, double max, int[] histogra
 
 /**
  * Compute raster histogram. 
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #GetHistogram(double min, double max, int[] histogram, boolean include_out_of_range, boolean approx_ok, ProgressCallback callback)
@@ -3082,7 +3001,7 @@ public class Band:public int GetHistogram(double min, double max, int[] histogra
 
 /**
  * Compute raster histogram. 
- * <p>
+ *
  * Same as below with include_out_of_range == 0, approx_ok == true and callback == null
  *
  * @see #GetHistogram(double min, double max, int[] histogram, boolean include_out_of_range, boolean approx_ok, ProgressCallback callback)
@@ -3093,7 +3012,7 @@ public class Band:public int GetHistogram(double min, double max, int[] histogra
 
 /**
  * Compute raster histogram. 
- * <p>
+ *
  * Same as below with include_out_of_range == 0, approx_ok == true and callback == null
  *
  * @see #GetHistogram(double min, double max, int[] histogram, boolean include_out_of_range, boolean approx_ok, ProgressCallback callback)
@@ -3104,7 +3023,7 @@ public class Band:public int GetHistogram(int[] histogram)
 
 /**
  * Return the mask band associated with the band.
- * <p>
+ *
  * The GDALRasterBand class includes a default implementation of GetMaskBand() that
  * returns one of four default implementations :
  * <ul>
@@ -3138,7 +3057,7 @@ public class Band:public Band GetMaskBand()
 
 /**
  * Return the status flags of the mask band associated with the band.
- * <p>
+ *
  * The GetMaskFlags() method returns an bitwise OR-ed set of status flags with
  * the following available definitions that may be extended in the future:
  * <ul>
@@ -3150,7 +3069,7 @@ public class Band:public Band GetMaskBand()
  * <li>GMF_NODATA(0x08): Indicates the mask is actually being generated from nodata values.
  *     (mutually exclusive of GMF_ALPHA)</li>
  * </ul>
- * <p>
+ *
  * The GDALRasterBand class includes a default implementation of GetMaskBand() that
  * returns one of four default implementations :
  * <ul>
@@ -3181,27 +3100,27 @@ public class Band:public int GetMaskFlags()
 
 /**
  * Fetch the minimum value for this band.
- * <p>
+ * 
  * For file formats that don't know this intrinsically, no value will be returned
  *
- * @param val empty allocated array of type Double[] of size 1. val[0] will contain a Double object
+ * @param val empty allocated array of type Doube[] of size 1. val[0] will contain a Double object
  * with the minimum value if available, other val[0] will contain null
  */
 public class Band:public void GetMinimum(Double[] val)
 
 /**
  * Fetch the maximum value for this band.
- * <p>
+ * 
  * For file formats that don't know this intrinsically, no value will be returned
  *
- * @param val empty allocated array of type Double[] of size 1. val[0] will contain a Double object
+ * @param val empty allocated array of type Doube[] of size 1. val[0] will contain a Double object
  * with the maximum value if available, other val[0] will contain null
  */
 public class Band:public void GetMaximum(Double[] val)
 
 /**
  * Fetch the raster value offset.
- * <p>
+ *
  * This value (in combination with the GetScale() value) is used to
  * transform raw pixel values into the units returned by GetUnits().  
  * For example this might be used to store elevations in GUInt16 bands
@@ -3211,14 +3130,14 @@ public class Band:public void GetMaximum(Double[] val)
  * <p>
  * For file formats that don't know this intrinsically, no value will be returned
  *
- * @param val empty allocated array of type Double[] of size 1. val[0] will contain a Double object
+ * @param val empty allocated array of type Doube[] of size 1. val[0] will contain a Double object
  * with the offset value if available, other val[0] will contain null
  */
 public class Band:public void GetOffset(Double[] val)
 
 /**
  * Fetch the raster value scale.
- * <p>
+ *
  * This value (in combination with the GetOffset() value) is used to
  * transform raw pixel values into the units returned by GetUnits().  
  * For example this might be used to store elevations in GUInt16 bands
@@ -3228,19 +3147,19 @@ public class Band:public void GetOffset(Double[] val)
  * <p>
  * For file formats that don't know this intrinsically, no value will be returned
  *
- * @param val empty allocated array of type Double[] of size 1. val[0] will contain a Double object
+ * @param val empty allocated array of type Doube[] of size 1. val[0] will contain a Double object
  * with the scale value if available, other val[0] will contain null
  */
 public class Band:public void GetScale(Double[] val)
 
 /**
  * Fetch the no data value for this band.
- * <p>
+ * 
  * The no data value for a band is generally a special marker
  * value used to mark pixels that are not valid data.  Such pixels should
  * generally not be displayed, nor contribute to analysis operations.
  *
- * @param val empty allocated array of type Double[] of size 1. val[0] will contain a Double object
+ * @param val empty allocated array of type Doube[] of size 1. val[0] will contain a Double object
  * with the no data value if available, other val[0] will contain null
  */
 public class Band:public void GetNoDataValue(Double[] val)
@@ -3263,20 +3182,7 @@ public class Band:public int GetOverviewCount()
 
 /**
  * Fetch the list of category names for this raster.
- * <p>
- * Raster values without
- * associated names will have an empty string in the returned list.  The
- * first entry in the list is for raster values of zero, and so on.
  *
- * @return vector of names, or null if none.
- *
- * @since GDAL 1.9.0
- */
-public class Band:public java.util.Vector GetCategoryNames()
-
-/**
- * Fetch the list of category names for this raster.
- * <p>
  * Raster values without 
  * associated names will have an empty string in the returned list.  The
  * first entry in the list is for raster values of zero, and so on. 
@@ -3287,7 +3193,7 @@ public class Band:public java.util.Vector GetRasterCategoryNames()
 
 /**
  * How should this band be interpreted as color?
- * <p>
+ *
  * gdalconst.GCI_Undefined is returned when the format doesn't know anything
  * about the color interpretation. 
  *
@@ -3297,7 +3203,7 @@ public class Band:public int GetRasterColorInterpretation()
 
 /**
  * Fetch the color table associated with band.
- * <p>
+ *
  * If there is no associated color table, the return result is null.  The
  * returned color table remains owned by the Band object.
  * It should not be modified by the caller.
@@ -3308,7 +3214,7 @@ public class Band:public ColorTable GetRasterColorTable()
 
 /**
  * Return the data type of the band.
- * <p>
+ *
  * A value such as gdalconst.GDT_Byte, gdalconst.GDT_Int16, ...
  * @return the data type of the band.
  *
@@ -3318,7 +3224,7 @@ public class Band:public int GetRasterDataType()
 
 /**
  * Fetch image statistics. 
- * <p>
+ *
  * Returns the minimum, maximum, mean and standard deviation of all
  * pixel values in this band.  If approximate statistics are sufficient,
  * the approx_ok flag can be set to true in which case overviews, or a
@@ -3358,7 +3264,7 @@ public class Band:public int GetStatistics(boolean approx_ok, boolean force, dou
 
 /**
  * Fetch image statistics. 
- * <p>
+ *
  * Same as below but boolean value of true should be replaced with 1, and false with 0.
  *
  * @see #GetStatistics(boolean approx_ok, boolean force, double[] min, double[] max, double[] mean, double[] stddev)
@@ -3367,7 +3273,7 @@ public class Band:public int GetStatistics(int approx_ok, int force, double[] mi
 
 /**
  * Return raster unit type.
- * <p>
+ *
  * Return a name for the units of this raster's values.  For instance, it
  * might be "m" for an elevation model in meters, or "ft" for feet.  If no 
  * units are available, a value of "" will be returned.
@@ -3413,7 +3319,7 @@ public class Band:public int GetYSize()
 
 /**
  * Check for arbitrary overviews.
- * <p>
+ *
  * This returns true if the underlying datastore can compute arbitrary 
  * overviews efficiently, such as is the case with OGDI over a network. 
  * Datastores with arbitrary overviews don't generally have any fixed
@@ -3429,7 +3335,7 @@ public class Band:public boolean HasArbitraryOverviews()
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * This method allows reading a region of a GDALRasterBand into a buffer.  It
  * automatically takes care of data type translation if the data type
  * (buf_type) of the buffer is different than that of the GDALRasterBand.
@@ -3500,7 +3406,7 @@ public class Band:public int ReadRaster_Direct(int xoff, int yoff, int xsize, in
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3509,7 +3415,7 @@ public class Band:public int ReadRaster_Direct(int xoff, int yoff, int xsize, in
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_type == gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3520,7 +3426,7 @@ public class Band:public int ReadRaster_Direct(int xoff, int yoff, int xsize, in
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type == gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3531,7 +3437,7 @@ public class Band:public int ReadRaster_Direct(int xoff, int yoff, int xsize, in
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below but buffer is allocated by the method
  *
  * @return a newly allocated byte buffer with the read region. Its byte order is BIG_ENDIAN by default.
@@ -3544,7 +3450,7 @@ public class Band:public java.nio.ByteBuffer ReadRaster_Direct(int xoff, int yof
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0 but buffer is allocated by the method
  *
  * @return a newly allocated byte buffer with the read region. Its byte order is BIG_ENDIAN by default.
@@ -3557,7 +3463,7 @@ public class Band:public java.nio.ByteBuffer ReadRaster_Direct(int xoff, int yof
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0 but buffer is allocated by the method
  *
  * @return a newly allocated byte buffer with the read region. Its byte order is BIG_ENDIAN by default.
@@ -3572,7 +3478,7 @@ public class Band:public java.nio.ByteBuffer ReadRaster_Direct(int xoff, int yof
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * This method allows reading a region of a GDALRasterBand into a buffer.  It
  * automatically takes care of data type translation if the data type
  * (buf_type) of the buffer is different than that of the GDALRasterBand.
@@ -3638,7 +3544,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -3649,7 +3555,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -3660,7 +3566,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type = gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -3686,7 +3592,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -3697,7 +3603,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -3708,7 +3614,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type = gdalconst.GDT_Int16, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -3722,7 +3628,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
  *
  * @since Java bindings 1.7.0
@@ -3733,7 +3639,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -3744,7 +3650,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -3755,7 +3661,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type = gdalconst.GDT_Int32, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -3769,7 +3675,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
  *
  * @since Java bindings 1.7.0
@@ -3780,7 +3686,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -3791,7 +3697,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -3802,7 +3708,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type = gdalconst.GDT_Float32, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -3827,7 +3733,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -3838,7 +3744,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -3849,7 +3755,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Read a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize = xsize, buf_ysize = ysize, buf_type = gdalconst.GDT_Float64, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #ReadRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -3863,7 +3769,7 @@ public class Band:public int ReadRaster(int xoff, int yoff, int xsize, int ysize
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * This method allows writing data from a buffer into a region 
  * of the Band.  It
  * automatically takes care of data type translation if the data type
@@ -3933,7 +3839,7 @@ public class Band:public int WriteRaster_Direct(int xoff, int yoff, int xsize, i
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3942,7 +3848,7 @@ public class Band:public int WriteRaster_Direct(int xoff, int yoff, int xsize, i
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_type == gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3953,7 +3859,7 @@ public class Band:public int WriteRaster_Direct(int xoff, int yoff, int xsize, i
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3964,7 +3870,7 @@ public class Band:public int WriteRaster_Direct(int xoff, int yoff, int xsize, i
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster_Direct(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, java.nio.ByteBuffer nioBuffer, int nPixelSpace, int nLineSpace)
@@ -3979,7 +3885,7 @@ public class Band:public int WriteRaster_Direct(int xoff, int yoff, int xsize, i
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * This method allows writing data from a buffer into a region 
  * of the Band.  It
  * automatically takes care of data type translation if the data type
@@ -4044,7 +3950,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -4055,7 +3961,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -4066,7 +3972,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Byte, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
@@ -4078,7 +3984,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
  *
  * @since Java bindings 1.7.0
@@ -4089,7 +3995,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -4100,7 +4006,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -4111,7 +4017,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Int16, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, short[] array, int nPixelSpace, int nLineSpace)
@@ -4123,7 +4029,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
  *
  * @since Java bindings 1.7.0
@@ -4134,7 +4040,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -4145,7 +4051,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -4156,7 +4062,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Int32, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, int[] array, int nPixelSpace, int nLineSpace)
@@ -4179,7 +4085,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -4190,7 +4096,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -4201,7 +4107,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Float32, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, float[] array, int nPixelSpace, int nLineSpace)
@@ -4213,7 +4119,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, byte[] array, int nPixelSpace, int nLineSpace)
  *
  * @since Java bindings 1.7.0
@@ -4224,7 +4130,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -4235,7 +4141,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -4246,7 +4152,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Write a region of image data for this band.
- * <p>
+ *
  * Same as below with buf_xsize == xsize, buf_ysize == ysize, buf_type == gdalconst.GDT_Float64, nPixelSpace == 0 and nLineSpace == 0
  *
  * @see #WriteRaster(int xoff, int yoff, int xsize, int ysize, int buf_xsize, int buf_ysize, int buf_type, double[] array, int nPixelSpace, int nLineSpace)
@@ -4258,7 +4164,7 @@ public class Band:public int WriteRaster(int xoff, int yoff, int xsize, int ysiz
 
 /**
  * Read a block of image data efficiently.
- * <p>
+ *
  * This method accesses a "natural" block from the raster band without
  * resampling, or data type conversion.  For a more generalized, but
  * potentially less efficient access use ReadRaster().
@@ -4281,7 +4187,7 @@ public class Band:public int ReadBlock_Direct(int nXBlockOff, int nYBlockOff, ja
 
 /**
  * Write a block of image data efficiently.
- * <p>
+ *
  * This method accesses a "natural" block from the raster band without
  * resampling, or data type conversion.  For a more generalized, but
  * potentially less efficient access use WriteRaster().
@@ -4355,7 +4261,7 @@ public class Band:public int SetDefaultHistogram(double min, double max, int[] h
 
 /**
  * Set default Raster Attribute Table.
- * <p>
+ *
  * Associates a default RAT with the band.  If not implemented for the
  * format a CPLE_NotSupported error will be issued.
  *
@@ -4368,7 +4274,7 @@ public class Band:public int SetDefaultRAT(RasterAttributeTable table)
 
 /**
  * Set the no data value for this band. 
- * <p>
+ *
  * To clear the nodata value, just set it with an "out of range" value.
  * Complex band no data values must have an imagery component of zero.
  *
@@ -4381,69 +4287,8 @@ public class Band:public int SetDefaultRAT(RasterAttributeTable table)
 public class Band:public int SetNoDataValue(double nodataValue)
 
 /**
- * Set scaling offset.
- * <p>
- * Very few formats implement this method.
- * When not implemented it will issue a CPLE_NotSupported error and return CE_Failure.
- *
- * @param newoffset the new offset.
- *
- * @return gdalconst.CE_None or success or gdalconst.CE_Failure on failure. 
- *
- * @since Java bindings 1.8.0
- */
-public class Band:public int SetOffset(double newoffset)
-
-/**
- * Set scaling ratio.
- * <p>
- * Very few formats implement this method.
- * When not implemented it will issue a CPLE_NotSupported error and return CE_Failure.
- *
- * @param newscale the new scale.
- *
- * @return gdalconst.CE_None or success or gdalconst.CE_Failure on failure. 
- *
- * @since Java bindings 1.8.0
- */
-public class Band:public int SetScale(double newscale)
-
-/**
- * Set unit type.
- * <p>
- * Set the unit type for a raster band.  Values should be one of
- * "" (the default indicating it is unknown), "m" indicating meters, 
- * or "ft" indicating feet, though other nonstandard values are allowed.
- *
- * @param newunittype the new unit type value.
- *
- * @return gdalconst.CE_None on success or gdalconst.CE_Failure if not succuessful, or 
- * unsupported.
- *
- * @since Java bindings 1.8.0
- */
-public class Band:public int SetUnitType(String newunittype)
-
-/**
  * Set the category names for this band.
- * <p>
- * See the GetCategoryNames() method for more on the interpretation of
- * category names.
  *
- * @param names a vector of strings with category names.  May
- * be ,ull to just clear the existing list.
- *
- * @return gdalconst.CE_None on success, or gdalconst.CE_Failure on failure.  If unsupported
- * by the driver, CE_Failure is returned by no error message will have
- * been emitted.
- *
- * @since GDAL 1.9.0
- */
-public class Band:public int SetCategoryNames(java.util.Vector names)
-
-/**
- * Set the category names for this band.
- * <p>
  * See the GetCategoryNames() method for more on the interpretation of
  * category names. 
  *
@@ -4458,7 +4303,7 @@ public class Band:public int SetRasterCategoryNames(java.util.Vector names)
 
 /**
  * Set statistics on band.
- * <p>
+ *
  * This method can be used to store min/max/mean/standard deviation
  * statistics on a raster band.  
  * <p>
@@ -4525,7 +4370,7 @@ public class RasterAttributeTable:public RasterAttributeTable()
 
 /**
  * Copy Raster Attribute Table.
- * <p>
+ *
  * Creates a new copy of an existing raster attribute table.
  *
  * @return new copy of the RAT. 
@@ -4534,7 +4379,7 @@ public class RasterAttributeTable:public RasterAttributeTable Clone()
 
 /**
  * Create new column.
- * <p>
+ *
  * If the table already has rows, all row values for the new column will
  * be initialized to the default value ("", or zero).  The new column is
  * always created as the last column, can will be column (field) 
@@ -4550,7 +4395,7 @@ public class RasterAttributeTable:public int CreateColumn(String name, int eFiel
 
 /**
  * Fetch column index for given usage.
- * <p>
+ *
  * Returns the index of the first column of the requested usage type, or -1 
  * if no match is found. 
  *
@@ -4569,7 +4414,7 @@ public class RasterAttributeTable:public int GetColumnCount()
 
 /**
  * Get linear binning information.
- * <p>
+ *
  * Returns linear binning information if any is associated with the RAT.
  *
  * @param pdfRow0Min (out) array of 1 double that will contain the lower bound (pixel value) of the first category.
@@ -4599,7 +4444,7 @@ public class RasterAttributeTable:public int GetRowCount()
 
 /**
  * Get row for pixel value.
- * <p>
+ *
  * Given a raw pixel value, the raster attribute table is scanned to 
  * determine which row in the table applies to the pixel value.  The
  * row index is returned. 
@@ -4630,7 +4475,7 @@ public class RasterAttributeTable:public int GetUsageOfCol(int iCol)
 
 /**
  * Fetch field value as a double.
- * <p>
+ *
  * The value of the requested column in the requested row is returned
  * as a double.   Non double fields will be converted to double with
  * the possibility of data loss.
@@ -4644,7 +4489,7 @@ public class RasterAttributeTable:public double GetValueAsDouble(int iRow, int i
 
 /**
  * Fetch field value as a integer.
- * <p>
+ *
  * The value of the requested column in the requested row is returned
  * as an integer.  Non-integer fields will be converted to integer with
  * the possibility of data loss.
@@ -4658,7 +4503,7 @@ public class RasterAttributeTable:public int GetValueAsInt(int iRow, int iCol)
 
 /**
  * Fetch field value as a string.
- * <p>
+ *
  * The value of the requested column in the requested row is returned
  * as a string.  If the field is numeric, it is formatted as a string
  * using default rules, so some precision may be lost.
@@ -4673,7 +4518,7 @@ public class RasterAttributeTable:public String GetValueAsString(int iRow, int i
 
 /**
  * Set linear binning information.
- * <p>
+ *
  * For RATs with equal sized categories (in pixel value space) that are
  * evenly spaced, this method may be used to associate the linear binning
  * information with the table.
@@ -4689,7 +4534,7 @@ public class RasterAttributeTable:public int SetLinearBinning(double dfRow0Min, 
 
 /**
  * Set row count.
- * <p>
+ *
  * Resizes the table to include the indicated number of rows.  Newly created
  * rows will be initialized to their default values - "" for strings, 
  * and zero for numeric fields. 
@@ -4700,7 +4545,7 @@ public class RasterAttributeTable:public void SetRowCount(int nCount)
 
 /**
  * Set field value from double.
- * <p>
+ *
  * The indicated field (column) on the indicated row is set from the
  * passed value.  The value will be automatically converted for other field
  * types, with a possible loss of precision.
@@ -4713,7 +4558,7 @@ public class RasterAttributeTable:public void SetValueAsDouble(int iRow, int iCo
 
 /**
  * Set field value from integer.
- * <p>
+ *
  * The indicated field (column) on the indicated row is set from the
  * passed value.  The value will be automatically converted for other field
  * types, with a possible loss of precision.
@@ -4726,7 +4571,7 @@ public class RasterAttributeTable:public void SetValueAsInt(int iRow, int iCol, 
 
 /**
  * Set field value from string.
- * <p>
+ *
  * The indicated field (column) on the indicated row is set from the
  * passed value.  The value will be automatically converted for other field
  * types, with a possible loss of precision.
@@ -4759,7 +4604,7 @@ public class org.gdal.gdal.Driver:public void delete()
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * What argument values are legal for particular drivers is driver specific,
  * and there is no way to query in advance to establish legal values (except
  * querying driver.GetMetadataItem(gdalconst.DMD_CREATIONOPTIONLIST)
@@ -4786,7 +4631,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * Same as below but options are passed as a Vector of String.
  *
  * @see #Create(String name, int xsize, int ysize, int nBands, int eType, String[] options)
@@ -4795,7 +4640,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * Same as below with eType == gdalconst.GDT_Byte
  *
  * @see #Create(String name, int xsize, int ysize, int nBands, int eType, String[] options)
@@ -4806,7 +4651,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * Same as below with options == null
  *
  * @see #Create(String name, int xsize, int ysize, int nBands, int eType, String[] options)
@@ -4817,7 +4662,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * Same as below with eType == gdalconst.GDT_Byte and options == null
  *
  * @see #Create(String name, int xsize, int ysize, int nBands, int eType, String[] options)
@@ -4828,7 +4673,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a new dataset with this driver.
- * <p>
+ *
  * Same as below with nbands == 1, eType == gdalconst.GDT_Byte and options == null
  *
  * @see #Create(String name, int xsize, int ysize, int nBands, int eType, String[] options)
@@ -4839,7 +4684,7 @@ public class org.gdal.gdal.Driver:public Dataset Create(String name, int xsize, 
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * This method will attempt to create a copy of a raster dataset with the
  * indicated filename, and in this drivers format.  Band number, size, 
  * type, projection, geotransform and so forth are all to be copied from
@@ -4880,7 +4725,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with callback == null
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4889,7 +4734,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with strict == 1 and callback == null
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4900,7 +4745,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with options == null and callback == null
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4911,7 +4756,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with strict == 1, options == null and callback == null
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4922,7 +4767,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with callback == null and options as an array of strings
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4931,7 +4776,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Create a copy of a dataset.
- * <p>
+ *
  * Same as below with strict == 1, callback == null and options as an array of strings
  *
  * @see #CreateCopy(String name, Dataset src_ds, int strict, java.util.Vector options, ProgressCallback callback)
@@ -4942,7 +4787,7 @@ public class org.gdal.gdal.Driver:public Dataset CreateCopy(String name, Dataset
 
 /**
  * Delete named dataset.
- * <p>
+ *
  * The driver will attempt to delete the named dataset in a driver specific
  * fashion.  Full featured drivers will delete all associated files,
  * database objects, or whatever is appropriate.  The default behaviour when
@@ -4960,7 +4805,7 @@ public class org.gdal.gdal.Driver:public int Delete(String name)
 
 /**
  * Rename a dataset.
- * <p>
+ *
  * Rename a dataset. This may including moving the dataset to a new directory
  * or even a new filesystem.  
  * <p>
@@ -4977,7 +4822,7 @@ public class org.gdal.gdal.Driver:public int Rename(String newName, String oldNa
 
 /**
  * Register a driver for use.
- * <p>
+ *
  * Normally this method is used by format specific C callable registration
  * entry points such as GDALRegister_GTiff() rather than being called
  * directly by application level code.
@@ -4998,7 +4843,7 @@ public class org.gdal.gdal.Driver:public void Deregister()
 
 /**
  * Return the short name of a driver.
- * <p>
+ *
  * This is the string that can be
  * passed to the GDALGetDriverByName() function.
  * <p>
@@ -5009,8 +4854,8 @@ public class org.gdal.gdal.Driver:public void Deregister()
 public class org.gdal.gdal.Driver:public String getShortName()
 
 /**
- * Return the long name of a driver.
- * <p>
+ * Return the long name of a driver
+ *
  * For the GeoTIFF driver, this is "GeoTIFF"
  *
  * @return the long name of the driver or empty string.
@@ -5018,8 +4863,8 @@ public class org.gdal.gdal.Driver:public String getShortName()
 public class org.gdal.gdal.Driver:public String getLongName()
 
 /**
- * Return the URL to the help that describes the driver.
- * <p>
+ * Return the URL to the help that describes the driver
+ *
  * That URL is relative to the GDAL documentation directory.
  * <p>
  * For the GeoTIFF driver, this is "frmt_gtiff.html"
@@ -5033,7 +4878,7 @@ public class org.gdal.gdal.Driver:public String getHelpTopic()
 
 /**
   * Class used to report progression of long operations.
-  * <p>
+  *
   * This class will not do anything by itself, but it can be subclassed, like <a href="TermProgressCallback.html">TermProgressCallback</a> class.
   * to do more usefull things.
   *
@@ -5043,7 +4888,7 @@ public class ProgressCallback
 
 /**
   * Callback method called from long processing from GDAL methods.
-  * <p>
+  *
   * This method is called back with the progression percentage. Its return value
   * is used by the caller to determine whether the processing should go on or be
   * interrupted.
@@ -5064,7 +4909,7 @@ public class ProgressCallback:public int run(double dfComplete, String message)
 
 /**
   * Class used for simple progress report to terminal.
-  * <p>
+  *
   * This progress reporter prints simple progress report to the
   * terminal window.  The progress report generally looks something like
   * this:
@@ -5091,7 +4936,7 @@ public class TermProgressCallback
 
 /**
   * Class used for object with metadata. 
-  * 
+  *
   * <p>
   * The MajorObject class is a binding for the C++ <a href="http://gdal.org/classGDALMajorObject.html">GDALMajorObject</a> class.
   */
@@ -5099,7 +4944,7 @@ public class MajorObject
 
 /**
  * Fetch object description. 
- * <p>
+ *
  * The semantics of the returned description are specific to the derived
  * type.  For Dataset object it is the dataset name.  For Band object
  * it is actually a description (if supported) or "".
@@ -5112,7 +4957,7 @@ public class MajorObject:public String GetDescription()
 
 /**
  * Set object description. 
- * <p>
+ *
  * The semantics of the returned description are specific to the derived
  * type.  For Dataset object it is the dataset name.  For Band object
  * it is actually a description (if supported) or "".
@@ -5163,7 +5008,7 @@ public class MajorObject:public java.util.Vector GetMetadata_List(String domain)
 
 /**
  * Fetch metadata.
- * <p>
+ *
  * Returns metadata from the default domain as a vector of strings of the format "KEY=VALUE".
  * 
  * @return null or a vector of strings
@@ -5174,7 +5019,7 @@ public class MajorObject:public java.util.Vector GetMetadata_List()
 
 /** 
  * Set metadata. 
- * <p>
+ *
  * The metadata is set into the domain specified.
  *
  * @param metadata the metadata as a table of (key, value) tuples to apply
@@ -5190,7 +5035,7 @@ public class MajorObject:public int SetMetadata(java.util.Hashtable metadata, St
 
 /** 
  * Set metadata. 
- * <p>
+ *
  * The metadata is set into the default domain
  *
  * @return gdalconst.CE_None on success, gdalconst.CE_Failure on failure and gdalconst.CE_Warning if the
@@ -5204,7 +5049,7 @@ public class MajorObject:public int SetMetadata(java.util.Hashtable metadata)
 
 /** 
  * Set metadata.
- * <p>
+ *
  * The metadata is set into the domain specified.
  *
  * @param metadataString the metadata to apply as a string of the format "KEY=VALUE".
@@ -5219,7 +5064,7 @@ public class MajorObject:public int SetMetadata(String metadataString, String do
 
 /** 
  * Set metadata.
- * <p>
+ *
  * The metadata is set into the default domain
  *
  * @param metadataString the metadata to apply as a string of the format "KEY=VALUE".
@@ -5234,7 +5079,7 @@ public class MajorObject:public int SetMetadata(String metadataString)
 
 /** 
  * Set metadata.
- * <p>
+ *
  * The metadata is set into the domain specified.
  *
  * @param metadata the metadata to apply as a vector of strings of the format "KEY=VALUE".
@@ -5251,7 +5096,7 @@ public class MajorObject:public int SetMetadata(java.util.Vector metadata, Strin
 
 /** 
  * Set metadata.
- * <p>
+ *
  * The metadata is set into the default domain
  *
  * @param metadata the metadata to apply as a vector of strings of the format "KEY=VALUE".
@@ -5277,7 +5122,7 @@ public class MajorObject:public String GetMetadataItem( String name, String doma
 
 /**
  * Fetch single metadata item.
- * <p>
+ *
  * The metadata item is searched into the default domain.
  *
  * @param name the key for the metadata item to fetch.
@@ -5304,7 +5149,7 @@ public class MajorObject:public int SetMetadataItem( String name, String value, 
 
 /**
  * Set single metadata item.
- * <p>
+ *
  * The metadata item is set into the default domain.
  *
  * @param name the key for the metadata item to fetch.
@@ -5328,7 +5173,7 @@ public class Transformer
 
 /**
  * Create image to image transformer.
- * <p>
+ *
  * This function creates a transformation object that maps from pixel/line
  * coordinates on one image to pixel/line coordinates on another image.  The
  * images may potentially be georeferenced in different coordinate systems, 
@@ -5377,7 +5222,7 @@ public class Transformer:public Transformer(Dataset src_ds, Dataset dst_ds, java
 
 /**
   * Transform a 3D point.
-  * <p>
+  *
   * The method will use the provided 3 double values and update them.
   *
   * @param inout array of 3 double values (x, y, z) used for input and output.
@@ -5388,7 +5233,7 @@ public class Transformer:public int TransformPoint(int bDstToSrc, double[] inout
 
 /**
   * Transform a 3D point.
-  * <p>
+  *
   * The method will use the provided (x, y, z) values and put the transformed
   * values into argout
   *
@@ -5403,7 +5248,7 @@ public class Transformer:public int TransformPoint(double[] argout, int bDstToSr
 
 /**
   * Transform a 2D point.
-  * <p>
+  *
   * The method will use the provided (x, y) values and put the transformed
   * values into argout
   *
@@ -5419,7 +5264,7 @@ public class Transformer:public int TransformPoint(double[] argout, int bDstToSr
 
 /**
   * Transform an array of coordinates.
-  * <p>
+  *
   * The method will use the provided array of values and put the update coordinates
   * into it.
   *
@@ -5438,7 +5283,7 @@ public class Transformer:public int TransformPoints(int bDstToSrc, double[][] ar
 
 /**
   * Various constants used by the org.gdal.gdal package.
-  * <p>
+  *
   * These constants correspond to different enumerations : error codes, XML content type, metadata, palette interpretation,
   * color interpretation, data type, raster color table attribute type, band mask flags, resampling methods...
   */
@@ -5530,7 +5375,7 @@ public interface gdalconstConstants:public final static int CPLE_ObjectNull
 
 /**
  * CPLES_BackslashQuotable(0).
- * <p>
+ *
  * This scheme turns a binary string into 
  * a form suitable to be placed within double quotes as a string constant.
  * The backslash, quote, '\\0' and newline characters are all escaped in 
@@ -5540,7 +5385,7 @@ public interface gdalconstConstants:public final static int CPLES_BackslashQuota
 
 /**
  * CPLES_XML(1).
- * <p>
+ *
  * This scheme converts the '<', '<' and '&' characters into
  * their XML/HTML equivelent (&gt;, &lt; and &amp;) making a string safe
  * to embed as CDATA within an XML element.  The '\\0' is not escaped and 
@@ -5550,7 +5395,7 @@ public interface gdalconstConstants:public final static int CPLES_XML
 
 /**
  * CPLES_URL(2).
- * <p>
+ *
  * Everything except alphanumerics and the underscore are 
  * converted to a percent followed by a two digit hex encoding of the character
  * (leading zero supplied if needed).  This is the mechanism used for encoding
@@ -5560,7 +5405,7 @@ public interface gdalconstConstants:public final static int CPLES_URL
 
 /**
  * CPLES_SQL(3).
- * <p>
+ *
  * All single quotes are replaced with two single quotes.  
  * Suitable for use when constructing literal values for SQL commands where
  * the literal will be enclosed in single quotes.
@@ -5569,7 +5414,7 @@ public interface gdalconstConstants:public final static int CPLES_SQL
 
 /**
  * CPLES_CSV(4).
- * <p>
+ *
  * If the values contains commas, double quotes, or newlines it 
  * placed in double quotes, and double quotes in the value are doubled.
  * Suitable for use when constructing field values for .csv files.  Note that
@@ -5918,7 +5763,6 @@ public class org.gdal.ogr.Driver:public void delete()
 
 /**
  Attempt to create a new data source based on the passed driver.
- <p>
  The papszOptions argument can be used to control driver specific
  creation options.  These options are normally documented in the format
  specific documentation.
@@ -5938,7 +5782,7 @@ public class org.gdal.ogr.Driver:public DataSource CreateDataSource(String name,
 
 /**
  * Attempt to create a new data source based on the passed driver.
- * <p>
+ *
  * Same as below with options == null.
  *
  * @see #CreateDataSource(String name, java.util.Vector options)
@@ -5965,7 +5809,7 @@ public class org.gdal.ogr.Driver:public DataSource CopyDataSource(DataSource src
 /**
  * Creates a new datasource by copying all the layers from the
  * source datasource.
- * <p>
+ *
  * Same as below with options == null.
  *
  * @see #CreateDataSource(String name, java.util.Vector options)
@@ -5991,7 +5835,7 @@ public class org.gdal.ogr.Driver:public DataSource Open(String name, int update)
 
 /**
  * Attempt to open file with this driver. 
- * <p>
+ *
  * Same as below with update == 0.
  *
  * @see #Open(String name, int update)
@@ -6002,7 +5846,7 @@ public class org.gdal.ogr.Driver:public DataSource Open(String name)
 
 /**
  Destroy a datasource.
- <p>
+
  Destroy the named datasource.  Normally it would be safest if the
  datasource was not open at the time. 
  <p>
@@ -6018,7 +5862,7 @@ public class org.gdal.ogr.Driver:public int DeleteDataSource(String name)
 
 /**
  Test if capability is available.
- <p>
+
  One of the following data source capability names can be passed into this
  function, and a TRUE or FALSE value will be returned indicating whether
  or not the capability is available for this object.
@@ -6039,7 +5883,7 @@ public class org.gdal.ogr.Driver:public boolean TestCapability(String cap)
 
 /** 
   Fetch name of driver (file format).
- <p>
+
   This name should be relatively short
   (10-40 characters), and should reflect the underlying file format.  For
   instance "ESRI Shapefile".
@@ -6050,7 +5894,7 @@ public class org.gdal.ogr.Driver:public String getName()
 
 /** 
   Fetch name of driver (file format).
- <p>
+
   This name should be relatively short
   (10-40 characters), and should reflect the underlying file format.  For
   instance "ESRI Shapefile".
@@ -6060,28 +5904,10 @@ public class org.gdal.ogr.Driver:public String getName()
 public class org.gdal.ogr.Driver:public String GetName()
 
 
-/** 
-  Add a driver to the list of registered drivers.
- <p>
-  If the driver is already registered (based on handle comparison) 
-  then the driver isn't registered.  New drivers are added at the end of
-  the list of registered drivers.
-
-  @since GDAL 1.8.0
-*/
-public class org.gdal.ogr.Driver:public void Register()
-
-/** 
-  Remove the  driver from the list of registered drivers.
-
-  @since GDAL 1.8.0
-*/
-public class org.gdal.ogr.Driver:public void Deregister()
-
 /* Class DataSource */
 /**
   * This class represents a data source.
-  * 
+  *
   * <p>
   * The DataSource class is a binding for the C++ <a href="http://gdal.org/ogr/classOGRDataSource.html">OGRDataSource</a> class.
   * <p>
@@ -6093,7 +5919,7 @@ public class DataSource
 
 /**
   * Frees the native resource associated to a DataSource object and close the file.
-  * <p>
+  *
   * This method will delete the underlying C++ object. After it has been called,
   * all native resources will have been destroyed, so it will be illegal (and likely to
   * cause JVM crashes) to use any method on this object or any derived objects,
@@ -6107,7 +5933,7 @@ public class DataSource:public void delete()
 
 /**
  Duplicate an existing layer.
- <p>
+
  This function creates a new layer, duplicate the field definitions of the
  source layer and then duplicate each features of the source layer.
  The papszOptions argument
@@ -6127,7 +5953,7 @@ public class DataSource:public Layer CopyLayer(Layer src_layer, String new_name,
 
 /**
  * Duplicate an existing layer.
- * <p>
+ *
  * Same as below with options == null.
  *
  * @see #CopyLayer(Layer src_layer, String new_name, java.util.Vector options)
@@ -6138,7 +5964,7 @@ public class DataSource:public Layer CopyLayer(Layer src_layer, String new_name)
 
 /**
 Create a new layer on the data source with the indicated name, coordinate system, geometry type.
-<p>
+
 The options argument
 can be used to control driver specific creation options.  These options are
 normally documented in the format specific documentation. 
@@ -6180,7 +6006,7 @@ public class DataSource:public Layer CreateLayer(String name, SpatialReference s
 
 /**
  * Create a new layer on the data source with the indicated name, coordinate system, geometry type.
- * <p>
+ *
  * Same as below with options == null.
  *
  * @see #CreateLayer(String name, SpatialReference srs, int geom_type, java.util.Vector options)
@@ -6191,7 +6017,7 @@ public class DataSource:public Layer CreateLayer(String name, SpatialReference s
 
 /**
  * Create a new layer on the data source with the indicated name, coordinate system.
- * <p>
+ *
  * Same as below with geom_type == ogr.wkbUnknown and options == null.
  *
  * @see #CreateLayer(String name, SpatialReference srs, int geom_type, java.util.Vector options)
@@ -6202,7 +6028,7 @@ public class DataSource:public Layer CreateLayer(String name, SpatialReference s
 
 /**
  * Create a new layer on the data source with the indicated name.
- * <p>
+ *
  * Same as below with srs == null, geom_type == ogr.wkbUnknown and options == null.
  *
  * @see #CreateLayer(String name, SpatialReference srs, int geom_type, java.util.Vector options)
@@ -6213,7 +6039,6 @@ public class DataSource:public Layer CreateLayer(String name)
 
 /**
  Delete the indicated layer from the datasource.
- <p>
  If this method is supported
  the ODsCDeleteLayer capability will test true on the DataSource.
 
@@ -6226,7 +6051,7 @@ public class DataSource:public int DeleteLayer(int index)
 
 /**
  Execute an SQL statement against the data store. 
- <p>
+
  The result of an SQL query is either null for statements that are in error,
  or that have no results set, or a Layer representing a results
  set from the query.  Note that this Layer is in addition to the layers
@@ -6249,7 +6074,7 @@ public class DataSource:public Layer ExecuteSQL(String statement, Geometry spati
 
 /**
  * Execute an SQL statement against the data store.
- * <p>
+ *
  * Same as below with dialect = ""
  *
  * @see #ExecuteSQL(String statement, Geometry spatialFilter, String dialect)
@@ -6260,7 +6085,7 @@ public class DataSource:public Layer ExecuteSQL(String statement, Geometry spati
 
 /**
  * Execute an SQL statement against the data store.
- * <p>
+ *
  * Same as below with spatialFilter == null and dialect = ""
  *
  * @see #ExecuteSQL(String statement, Geometry spatialFilter, String dialect)
@@ -6271,7 +6096,7 @@ public class DataSource:public Layer ExecuteSQL(String statement)
 
 /**
  Release results of ExecuteSQL().
- <p>
+
  This method should only be used to deallocate Layers resulting from
  an ExecuteSQL() call on the same DataSource.  Failure to deallocate a
  results set before destroying the DataSource may cause errors. 
@@ -6280,35 +6105,9 @@ public class DataSource:public Layer ExecuteSQL(String statement)
 */
 public class DataSource:public void ReleaseResultSet(Layer layer)
 
-
-
-/**
-Flush pending changes to disk.
-<p>
-This call is intended to force the datasource to flush any pending writes to
-disk, and leave the disk file in a consistent state.  It would not normally
-have any effect on read-only datasources.
-<p>
-Some data sources do not implement this method, and will still return
-ogr.OGRERR_NONE.  An error is only returned if an error occurs while attempting
-to flush to disk.
-<p>
-The default implementation of this method just calls the SyncToDisk() method
-on each of the layers.  Conceptionally, calling SyncToDisk() on a datasource
-should include any work that might be accomplished by calling SyncToDisk()
-on layers in that data source.
-<p>
-In any event, you should always close any opened datasource with
-delete() that will ensure all data is correctly flushed.
-
-@return ogr.OGRERR_NONE if no error occurs (even if nothing is done) or an
-error code.
-*/
-public class DataSource:public int SyncToDisk()
-
 /**
  Test if capability is available.
- <p>
+
  One of the following data source capability names can be passed into this
  method, and a true or false value will be returned indicating whether or not
  the capability is available for this object.
@@ -6328,7 +6127,7 @@ public class DataSource:public boolean TestCapability(String cap)
 
 /**
  Fetch a layer by index.
- <p>
+
  The returned layer remains owned by the 
  DataSource and should not be deleted by the application.
 
@@ -6340,7 +6139,7 @@ public class DataSource:public Layer GetLayerByIndex(int index)
 
 /**
  Fetch a layer by index.
- <p>
+
  The returned layer remains owned by the 
  DataSource and should not be deleted by the application.
 
@@ -6354,7 +6153,7 @@ public class DataSource:public Layer GetLayer(int index)
 
 /**
  Fetch a layer by name.
- <p>
+
  The returned layer remains owned by the 
  DataSource and should not be deleted by the application.
 
@@ -6386,9 +6185,7 @@ public class DataSource:public Layer GetLayer(String layer_name)
 public class DataSource:public int GetLayerCount()
 
 /** 
- Returns the name of the data source.
-<p>
- This string should be sufficient to
+ Returns the name of the data source.  This string should be sufficient to
  open the data source if passed to the same Driver that this data
  source was opened with, but it need not be exactly the same string that
  was used to open the data source.  Normally this is a filename. 
@@ -6398,9 +6195,7 @@ public class DataSource:public int GetLayerCount()
 public class DataSource:public String GetName()
 
 /** 
- Returns the name of the data source.
- <p>
- This string should be sufficient to
+ Returns the name of the data source.  This string should be sufficient to
  open the data source if passed to the same Driver that this data
  source was opened with, but it need not be exactly the same string that
  was used to open the data source.  Normally this is a filename. 
@@ -6449,7 +6244,7 @@ public class Layer:public void delete()
 
 /**
  Create and write a new feature within a layer.
- <p>
+
  The passed feature is written to the layer as a new feature, rather than
  overwriting an existing one.  If the feature has a feature id other than
  OGRNullFID, then the native implementation may use that as the feature id
@@ -6466,19 +6261,11 @@ public class Layer:public int CreateFeature(Feature feature)
 
 /**
 Create a new field on a layer.
-<p>
+
 You must use this to create new fields
 on a real layer. Internally the FeatureDefn for the layer will be updated
 to reflect the new field.  Applications should never modify the FeatureDefn
 used by a layer directly.
-<p>
-This method should not be called while there are feature objects in existance that
-were obtained or created with the previous layer definition.
-<p>
-Not all drivers support this method. You can query a layer to check if it supports it
-with the OLCCreateField capability. Some drivers may only support this method while
-there are still no features in the layer. When it is supported, the existings features of the
-backing file/database should be updated accordingly.
 
 @param field_def field definition to write to disk. 
 @param approx_ok If 1, the field may be created in a slightly different
@@ -6499,126 +6286,8 @@ public class Layer:public int CreateField(FieldDefn field_def)
 
 
 /**
-Delete an existing field on a layer.
-<p>
-You must use this to delete existing fields
-on a real layer. Internally the FeatureDefn for the layer will be updated
-to reflect the deleted field.  Applications should never modify the FeatureDefn
-used by a layer directly.
-<p>
-This method should not be called while there are feature objects in existance that
-were obtained or created with the previous layer definition.
-<p>
-Not all drivers support this method. You can query a layer to check if it supports it
-with the OLCDeleteField capability. Some drivers may only support this method while
-there are still no features in the layer. When it is supported, the existings features of the
-backing file/database should be updated accordingly.
-
-@param iField index of the field to delete.
-
-@return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
-
-@since OGR 1.9.0
-*/
-public class Layer:public int DeleteField( int iField )
-
-/**
-Reorder all the fields of a layer.
-<p>
-You must use this to reorder existing fields
-on a real layer. Internally the FeatureDefn for the layer will be updated
-to reflect the reordering of the fields.  Applications should never modify the FeatureDefn
-used by a layer directly.
-<p>
-This method should not be called while there are feature objects in existance that
-were obtained or created with the previous layer definition.
-<p>
-panMap is such that,for each field definition at position i after reordering,
-its position before reordering was panMap[i].
-<p>
-For example, let suppose the fields were "0","1","2","3","4" initially.
-ReorderFields(new Integer[]{0,2,3,1,4}) will reorder them as "0","2","3","1","4".
-<p>
-Not all drivers support this method. You can query a layer to check if it supports it
-with the OLCReorderFields capability. Some drivers may only support this method while
-there are still no features in the layer. When it is supported, the existings features of the
-backing file/database should be updated accordingly.
-
-@param panMap an array of GetLayerDefn().GetFieldCount() elements which
-is a permutation of [0, GetLayerDefn().GetFieldCount()-1].
-
-@return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
-
-@since OGR 1.9.0
-*/
-public class Layer:public int ReorderFields( int[] panMap )
-
-/**
-Reorder an existing field on a layer.
-<p>
-This method is a conveniency wrapper of ReorderFields() dedicated to move a single field.
-It is a non-virtual method, so drivers should implement ReorderFields() instead.
-<p>
-You must use this to reorder existing fields
-on a real layer. Internally the FeatureDefn for the layer will be updated
-to reflect the reordering of the fields.  Applications should never modify the FeatureDefn
-used by a layer directly.
-<p>
-This method should not be called while there are feature objects in existance that
-were obtained or created with the previous layer definition.
-<p>
-The field definition that was at initial position iOldFieldPos will be moved at
-position iNewFieldPos, and elements between will be shuffled accordingly.
-<p>
-For example, let suppose the fields were "0","1","2","3","4" initially.
-ReorderField(1, 3) will reorder them as "0","2","3","1","4".
-<p>
-Not all drivers support this method. You can query a layer to check if it supports it
-with the OLCReorderFields capability. Some drivers may only support this method while
-there are still no features in the layer. When it is supported, the existings features of the
-backing file/database should be updated accordingly.
-
-@param iOldFieldPos previous position of the field to move. Must be in the range [0,GetFieldCount()-1].
-@param iNewFieldPos new position of the field to move. Must be in the range [0,GetFieldCount()-1].
-
-@return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
-
-@since OGR 1.9.0
-*/
-public class Layer:public int ReorderField( int iOldFieldPos, int iNewFieldPos )
-
-/**
-Alter the definition of an existing field on a layer.
-<p>
-You must use this to alter the definition of an existing field of a real layer.
-Internally the FeatureDefn for the layer will be updated
-to reflect the altered field.  Applications should never modify the FeatureDefn
-used by a layer directly.
-<p>
-This method should not be called while there are feature objects in existance that
-were obtained or created with the previous layer definition.
-<p>
-Not all drivers support this method. You can query a layer to check if it supports it
-with the OLCAlterFieldDefn capability. Some drivers may only support this method while
-there are still no features in the layer. When it is supported, the existings features of the
-backing file/database should be updated accordingly. Some drivers might also not support
-all update flags.
-
-@param iField index of the field whose definition must be altered.
-@param newFieldDefn new field definition
-@param nFlags combination of ALTER_NAME_FLAG, ALTER_TYPE_FLAG and ALTER_WIDTH_PRECISION_FLAG
-to indicate which of the name and/or type and/or width and precision fields from the new field
-definition must be taken into account.
-
-@return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
-
-@since OGR 1.9.0
-*/
-public class Layer:public int AlterFieldDefn( int iField, FieldDefn newFieldDefn, int nFlags )
-
-/**
  Fetch the extent of this layer.
- <p>
+
  Returns the extent (MBR) of the data in the layer.  If force is 0,
  and it would be expensive to establish the extent then a RuntimeException
  will be throwned indicating that the extent isn't know.  If force is 
@@ -6642,7 +6311,7 @@ public class Layer:public int GetExtent(double[] extent, int force)
 
 /**
  Fetch the extent of this layer.
- <p>
+
  Returns the extent (MBR) of the data in the layer.  If force is false,
  and it would be expensive to establish the extent then a null value
  will be returned indicating that the extent isn't know.  If force is 
@@ -6721,7 +6390,7 @@ public class Layer:public Feature GetFeature(int fid)
 
 /**
  Fetch the feature count in this layer. 
- <p>
+
  Returns the number of features in the layer.  For dynamic databases the
  count may not be exact.  If force is 0, and it would be expensive
  to establish the feature count a value of -1 may be returned indicating
@@ -6739,7 +6408,7 @@ public class Layer:public int GetFeatureCount(int force)
 
 /**
   * Fetch the feature count in this layer.
-  * <p>
+  *
   * Same as below with force == 1.
   *
   * @see #GetFeatureCount(int force)
@@ -6750,7 +6419,6 @@ public class Layer:public int GetFeatureCount()
 
 /**
   * Return the total number of features read.
-  * <p>
   * Note: not all drivers seem to update properly this count.
   * @return total number of features read.
   *
@@ -6760,7 +6428,7 @@ public class Layer:public long GetFeaturesRead()
 
 /**
  Returns the name of the FID column.
- <p>
+
  This method returns the name of the underlying database column
  being used as the FID column, or "" if not supported.
 
@@ -6770,7 +6438,7 @@ public class Layer:public String GetFIDColumn()
 
 /**
  Returns the name of the geometry column.
- <p>
+
  This method returns the name of the underlying database column
  being used as the geometry column, or "" if not supported.
 
@@ -6778,28 +6446,9 @@ public class Layer:public String GetFIDColumn()
 */
 public class Layer:public String GetGeometryColumn()
 
-
-/**
- Set which fields can be omitted when retrieving features from the layer.
- <p>
- If the driver supports this functionality (testable using OLCIgnoreFields capability), it will not fetch the specified fields
- in subsequent calls to GetFeature() / GetNextFeature() and thus save some processing time and/or bandwidth.
- <p>
- Besides field names of the layers, the following special fields can be passed: "OGR_GEOMETRY" to ignore geometry and
- "OGR_STYLE" to ignore layer style.
- <p>
- By default, no fields are ignored.
-
- @param fieldNames a vector of field names. If null is passed, the ignored list is cleared.
- @return ogr.OGRERR_NONE if all field names have been resolved (even if the driver does not support this method)
-
- @since OGR 1.8.0
-*/
-public class Layer:public int SetIgnoredFields(java.util.Vector fieldNames)
-
 /** 
  Fetch the schema information for this layer.
- <p>
+
  The returned FeatureDefn is owned by the Layer, and should not be
  modified or freed by the application.  It encapsulates the attribute schema
  of the features of the layer. 
@@ -6810,31 +6459,14 @@ public class Layer:public FeatureDefn GetLayerDefn()
 
 /**
  * Return the layer name.
- * <p>
- * This returns the same content as GetLayerDefn().GetName(), but for a
- * few drivers, calling GetName() directly can avoid lengthy layer
- * definition initialization.
- *
+ * This actually an alias for GetLayerDefn().GetName().
  * @return the layer name
 */
 public class Layer:public String GetName()
 
 /**
- * Return the layer geometry type.
- * <p>
- * This returns the same result as GetLayerDefn().GetGeomType(), but for a
- * few drivers, calling GetGeomType() directly can avoid lengthy layer
- * definition initialization.
- *
- * @return the geometry name
- *
- * @since OGR 1.8.0
- */
-public class Layer:public int GetGeomType()
-
-/**
  Fetch the next available feature from this layer.
- <p>
+
  Only features matching the current spatial filter (set with 
  <a href="#SetSpatialFilter(org.gdal.ogr.Geometry)")>SetSpatialFilter()</a> will be returned. 
  <p>
@@ -6851,7 +6483,7 @@ public class Layer:public Feature GetNextFeature()
 
 /**
  Fetch reference count.
- <p>
+
  Should be of little use in Java...
 
  @return the current reference count for the layer object itself.
@@ -6880,7 +6512,7 @@ public class Layer:public void ResetReading()
 
 /** 
  Set a new attribute query.
- <p>
+
  This method sets the attribute query string to be used when 
  fetching features via the <a href="#GetNextFeature()">GetNextFeature()</a> method.  Only features for which
  the query evaluates as true will be returned.
@@ -6905,7 +6537,7 @@ public class Layer:public int SetAttributeFilter(String filter_string)
 
 /**
  Rewrite an existing feature.
- <p>
+
  This method will write a feature to the layer, based on the feature id
  within the Feature.
  <p>
@@ -6922,7 +6554,7 @@ public class Layer:public int SetFeature(Feature feature)
 
 /**
  Move read cursor to the new_index'th feature in the current resultset. 
- <p>
+
  This method allows positioning of a layer such that the <a href="#GetNextFeature()">GetNextFeature()</a>
  call will read the requested feature, where nIndex is an absolute index
  into the current result set.   So, setting it to 3 would mean the next
@@ -6946,7 +6578,7 @@ public class Layer:public int SetNextByIndex(int new_index)
 
 /** 
  Set a new spatial filter. 
- <p>
+
  This method set the geometry to be used as a spatial filter when 
  fetching features via the <a href="#GetNextFeature()">GetNextFeature()</a> method.  Only features that
  geometrically intersect the filter geometry will be returned.  
@@ -6996,7 +6628,7 @@ public class Layer:public void SetSpatialFilterRect(double minx, double miny, do
 
 /**
 Flush pending changes to disk.
-<p>
+
 This call is intended to force the layer to flush any pending writes to
 disk, and leave the disk file in a consistent state.  It would not normally
 have any effect on read-only datasources. 
@@ -7011,9 +6643,7 @@ public class Layer:public int SyncToDisk()
 
 /**
  For datasources which support transactions, StartTransaction creates 
- a transaction.
- <p>
- If starting the transaction fails, will throw a RuntimeException (or an error code if DontUseExceptions() has been called).
+ a transaction. If starting the transaction fails, will throw a RuntimeException (or an error code if DontUseExceptions() has been called).
  Datasources which do not support transactions will always return 0.
 
  @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
@@ -7022,9 +6652,7 @@ public class Layer:public int StartTransaction()
 
 /**
  For datasources which support transactions, CommitTransaction commits a 
- transaction.
- <p>
- If no transaction is active, or the commit fails, will throw a RuntimeException (or an error code if DontUseExceptions() has been called).
+ transaction.  If no transaction is active, or the commit fails, will throw a RuntimeException (or an error code if DontUseExceptions() has been called).
  Datasources which do not support transactions will always return 0.
 
  @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
@@ -7034,8 +6662,7 @@ public class Layer:public int CommitTransaction()
 /**
 
  For datasources which support transactions, RollbackTransaction will roll 
- back a datasource to its state before the start of the current transaction.
- <p>
+ back a datasource to its state before the start of the current transaction. 
  If no transaction is active, or the rollback fails, will throw a RuntimeException (or an error code if DontUseExceptions() has been called).
  Datasources which do not support transactions will always return 0.
 
@@ -7045,7 +6672,7 @@ public class Layer:public int RollbackTransaction()
 
 /**
  Test if this layer supported the named capability.
- <p>
+
  The capability codes that can be tested are represented as strings, but
  ogrConstants constants exists to ensure correct spelling.  Specific layer 
  types may implement class specific capabilities, but this can't generally
@@ -7090,15 +6717,6 @@ false.<p>
  <li> <b>OLCCreateField</b> / "CreateField": true if this layer can create 
 new fields on the current layer using CreateField(), otherwise false.<p>
 
- <li> <b>OLCDeleteField</b> / "DeleteField": TRUE if this layer can delete
-existing fields on the current layer using DeleteField(), otherwise false.<p>
-
- <li> <b>OLCReorderFields</b> / "ReorderFields": TRUE if this layer can reorder
-existing fields on the current layer using ReorderField() or ReorderFields(), otherwise false.<p>
-
- <li> <b>OLCAlterFieldDefn</b> / "AlterFieldDefn": TRUE if this layer can alter
-the definition of an existing field on the current layer using AlterFieldDefn(), otherwise false.<p>
-
  <li> <b>OLCDeleteFeature</b> / "DeleteFeature": true if the DeleteFeature()
 method is supported on this layer, otherwise false.<p>
 
@@ -7111,8 +6729,6 @@ fields are assured to be in UTF-8 format.  If false the encoding of fields
 is uncertain, though it might still be UTF-8.<p>
 
 <li> <b>OLCTransactions</b> / "Transactions": true if the StartTransaction(), CommitTransaction() and RollbackTransaction() methods work in a meaningful way, otherwise false.<p>
-
-<li> <b>OLCIgnoreFields</b> / "IgnoreFields": true if fields, geometry and style will be omitted when fetching features as set by SetIgnoredFields() method.<p>
 
 <p>
 
@@ -7140,7 +6756,7 @@ public class Feature
 
 /**
  * Constructor.
- * <p>
+ *
  * Note that the Feature will increment the reference count of its
  * defining FeatureDefn.
  *
@@ -7151,7 +6767,7 @@ public class Feature:public Feature(FeatureDefn feature_def)
 
 /**
  * Duplicate feature.
- * <p>
+ *
  * The newly created feature is owned by the caller, and will have its own
  * reference to the FeatureDefn.
  *
@@ -7161,7 +6777,6 @@ public class Feature:public Feature Clone()
 
 /**
  * Delete (in memory) a feature.
- * <p>
  * Calling this method is not required as normal garbage collection will
  * reclaim associated resources when the object goes out of scope.
  * Otherwise calling delete() explicitely will help release resources sooner.
@@ -7171,7 +6786,7 @@ public class Feature:public void delete()
 
 /**
  * Dump this feature in a human readable form.
- * <p>
+ *
  * This dumps the attributes, and geometry; however, it doesn't definition
  * information (other than field types and names), nor does it report the
  * geometry spatial reference system.
@@ -7181,7 +6796,7 @@ public class Feature:public void DumpReadable()
 
 /**
  * Test if two features are the same.
- * <p>
+ *
  * Two features are considered equal if they share the (pointer equality)
  * same FeatureDefn, have the same field values, and the same geometry
  * (as tested by Geometry.Equal()) as well as the same feature id.
@@ -7208,7 +6823,7 @@ public class Feature:public int GetFID()
 
 /**
  * Fetch field value as date and time.
- * <p>
+ *
  * Currently this method only works for OFTDate, OFTTime and OFTDateTime fields.
  *
  * @param ifield the field to fetch, from 0 to GetFieldCount()-1.
@@ -7224,7 +6839,7 @@ public class Feature:public void GetFieldAsDateTime(int ifield, int[] pnYear, in
 
 /**
  * Fetch field value as a double.
- * <p>
+ *
  * OFTString features will be translated using atof().  OFTInteger fields
  * will be cast to double.   Other field types, or errors will result in
  * a return value of zero.
@@ -7237,7 +6852,7 @@ public class Feature:public double GetFieldAsDouble(int ifield)
 
 /**
  * Fetch field value as a double.
- * <p>
+ *
  * OFTString features will be translated using atof().  OFTInteger fields
  * will be cast to double.   Other field types, or errors will result in
  * a return value of zero.
@@ -7250,7 +6865,7 @@ public class Feature:public double GetFieldAsDouble(String name)
 
 /**
  * Fetch field value as a list of doubles.
- * <p>
+ *
  * Currently this method only works for OFTRealList fields.
  *
  * @param ifield the field to fetch, from 0 to GetFieldCount()-1.
@@ -7263,7 +6878,7 @@ public class Feature:public double[] GetFieldAsDoubleList(int ifield)
 
 /**
  * Fetch field value as integer.
- * <p>
+ *
  * OFTString features will be translated using atoi().  OFTReal fields
  * will be cast to integer.   Other field types, or errors will result in
  * a return value of zero.
@@ -7276,7 +6891,7 @@ public class Feature:public int GetFieldAsInteger(int ifield)
 
 /**
  * Fetch field value as integer.
- * <p>
+ *
  * OFTString features will be translated using atoi().  OFTReal fields
  * will be cast to integer.   Other field types, or errors will result in
  * a return value of zero.
@@ -7289,7 +6904,7 @@ public class Feature:public int GetFieldAsInteger(String name)
 
 /**
  * Fetch field value as a list of integers.
- * <p>
+ *
  * Currently this method only works for OFTIntegerList fields.
  *
  * @param ifield the field to fetch, from 0 to GetFieldCount()-1.
@@ -7302,7 +6917,7 @@ public class Feature:public int[] GetFieldAsIntegerList(int ifield)
 
 /**
  * Fetch field value as a string.
- * <p>
+ *
  * OFTReal and OFTInteger fields will be translated to string using
  * sprintf(), but not necessarily using the established formatting rules.
  * Other field types, or errors will result in a return value of zero.
@@ -7315,7 +6930,7 @@ public class Feature:public String GetFieldAsString(int ifield)
 
 /**
  * Fetch field value as a string.
- * <p>
+ *
  * OFTReal and OFTInteger fields will be translated to string using
  * sprintf(), but not necessarily using the established formatting rules.
  * Other field types, or errors will result in a return value of zero.
@@ -7328,7 +6943,7 @@ public class Feature:public String GetFieldAsString(String name)
 
 /**
  * Fetch field value as a list of strings.
- * <p>
+ *
  * Currently this method only works for OFTStringList fields.
  *
  * @param ifield the field to fetch, from 0 to GetFieldCount()-1.
@@ -7379,7 +6994,7 @@ public class Feature:public int GetFieldIndex(String name)
 
 /**
  * Fetch the field type.
- * <p>
+ *
  * This is a cover for the FeatureDefn.GetFieldType() method. 
  *
  * @param ifield the field to fetch, from 0 to GetFieldCount()-1.
@@ -7390,7 +7005,7 @@ public class Feature:public int GetFieldType(int ifield)
 
 /**
  * Fetch the field type.
- * <p>
+ *
  * This is a cover for the FeatureDefn.GetFieldType() method. 
  *
  * @param name the name of the field to fetch.
@@ -7409,7 +7024,7 @@ public class Feature:public Geometry GetGeometryRef()
 
 /**
  * Fetch style string for this feature.
- * <p>
+ *
  * Set the OGR Feature Style Specification for details on the format of
  * this string, and ogr_featurestyle.h for services available to parse it.
  * 
@@ -7438,7 +7053,7 @@ public class Feature:public boolean IsFieldSet(String name)
 
 /**
  * Set the feature identifier.
- * <p>
+ *
  * For specific types of features this operation may fail on illegal
  * features ids.  Generally it always succeeds.  Feature ids should be
  * greater than or equal to zero, with the exception of OGRNullFID (-1)
@@ -7452,7 +7067,7 @@ public class Feature:public int SetFID(int fid)
 
 /**
  * Set field to double value. 
- * <p>
+ *
  * OFTInteger and OFTReal fields will be set directly.  OFTString fields
  * will be assigned a string representation of the value, but not necessarily
  * taking into account formatting constraints on this field.  Other field
@@ -7465,7 +7080,7 @@ public class Feature:public void SetField(int ifield, double val)
 
 /**
  * Set field to integer value. 
- * <p>
+ *
  * OFTInteger and OFTReal fields will be set directly.  OFTString fields
  * will be assigned a string representation of the value, but not necessarily
  * taking into account formatting constraints on this field.  Other field
@@ -7478,7 +7093,7 @@ public class Feature:public void SetField(int ifield, int val)
 
 /**
  * Set field to date.
- * <p>
+ *
  * This method currently only has an effect for OFTDate, OFTTime and OFTDateTime
  * fields.
  *
@@ -7495,7 +7110,7 @@ public class Feature:public void SetField(int ifield, int year, int month, int d
 
 /**
  * Set field to string value. 
- * <p>
+ *
  * OFTInteger fields will be set based on an atoi() conversion of the string.
  * OFTReal fields will be set based on an atof() conversion of the string.
  * Other field types may be unaffected.
@@ -7507,7 +7122,7 @@ public class Feature:public void SetField(int ifield, String val)
 
 /**
  * Set field to double value. 
- * <p>
+ *
  * OFTInteger and OFTReal fields will be set directly.  OFTString fields
  * will be assigned a string representation of the value, but not necessarily
  * taking into account formatting constraints on this field.  Other field
@@ -7520,7 +7135,7 @@ public class Feature:public void SetField(String name, double val)
 
 /**
  * Set field to integer value. 
- * <p>
+ *
  * OFTInteger and OFTReal fields will be set directly.  OFTString fields
  * will be assigned a string representation of the value, but not necessarily
  * taking into account formatting constraints on this field.  Other field
@@ -7533,7 +7148,7 @@ public class Feature:public void SetField(String name, int val)
 
 /**
  * Set field to date.
- * <p>
+ *
  * This method currently only has an effect for OFTDate, OFTTime and OFTDateTime
  * fields.
  *
@@ -7550,7 +7165,7 @@ public class Feature:public void SetField(String name, int year, int month, int 
 
 /**
  * Set field to string value. 
- * <p>
+ *
  * OFTInteger fields will be set based on an atoi() conversion of the string.
  * OFTReal fields will be set based on an atof() conversion of the string.
  * Other field types may be unaffected.
@@ -7562,7 +7177,7 @@ public class Feature:public void SetField(String name, String val)
 
 /**
  * Set field to list of doubles value. 
- * <p>
+ *
  * This method currently on has an effect of OFTRealList fields.
  *
  * @param ifield the field to set, from 0 to GetFieldCount()-1.
@@ -7573,7 +7188,7 @@ public class Feature:public void SetFieldDoubleList(int ifield, double[] values)
 
 /**
  * Set field to list of integers value. 
- * <p>
+ *
  * This method currently on has an effect of OFTIntegerList fields.
  *
  * @param ifield the field to set, from 0 to GetFieldCount()-1.
@@ -7583,7 +7198,7 @@ public class Feature:public void SetFieldIntegerList(int ifield, int[] values)
 
 /**
  * Set field to list of strings value. 
- * <p>
+ *
  * This method currently on has an effect of OFTStringList fields.
  *
  * @param ifield the field to set, from 0 to GetFieldCount()-1.
@@ -7596,7 +7211,7 @@ public class Feature:public void SetFieldStringList(int ifield, java.util.Vector
 
 /**
  * Set one feature from another.
- * <p>
+ *
  * Overwrite the contents of this feature from the geometry and attributes
  * of another.  The srcFeature does not need to have the same
  * FeatureDefn.  Field values are copied by corresponding field names.
@@ -7611,14 +7226,13 @@ public class Feature:public void SetFieldStringList(int ifield, java.util.Vector
  *
  * @return 0 if the operation succeeds, even if some values are
  * not transferred, otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @see #SetFromWithMap(org.gdal.ogr.Feature srcFeature, int forgiving, int[] map)
  */
 public class Feature:public int SetFrom(Feature srcFeature, int forgiving)
 
+
 /**
  * Set one feature from another.
- * <p>
+ *
  * Same as below with forgiving == 1
  *
  * @see #SetFrom(Feature srcFeature, int forgiving)
@@ -7628,41 +7242,8 @@ public class Feature:public int SetFrom(Feature srcFeature, int forgiving)
 public class Feature:public int SetFrom(Feature srcFeature)
 
 /**
- * Set one feature from another.
- * <p>
- * Overwrite the contents of this feature from the geometry and attributes
- * of another.  The hOtherFeature does not need to have the same
- * OGRFeatureDefn.  Field values are copied according to the provided indices
- * map. Field types do not have to exactly match.  SetField() function
- * conversion rules will be applied as needed. This is more efficient than
- * <a href="#SetFrom(org.gdal.ogr.Feature, int)">SetFrom(Feature, int)</a>
- * in that this doesn't lookup the fields by their names.
- * Particularly useful when the field names don't match.
- *
- * @param srcFeature the feature from which geometry, and field values will
- * be copied.
- *
- * @param forgiving 1 if the operation should continue despite lacking
- * output fields matching some of the source fields.
- *
- * @param map Array of the indices of the destination feature's fields
- * stored at the corresponding index of the source feature's fields. A value of
- * -1 should be used to ignore the source's field. The array should not be null
- * and be as long as the number of fields in the source feature.
- *
- * @return 0 if the operation succeeds, even if some values are
- * not transferred, otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.8.0
- *
- * @see #SetFrom(org.gdal.ogr.Feature srcFeature, int forgiving)
- */
-public class Feature:public int SetFromWithMap(Feature srcFeature, int forgiving, int[] map)
-
-
-/**
  * Set feature geometry.
- * <p>
+ *
  * This method updates the features geometry, and operate exactly as
  * SetGeometryDirectly(), except that this method does not assume ownership
  * of the passed geometry, but instead makes a copy of it. 
@@ -7679,7 +7260,7 @@ public class Feature:public int SetGeometry(Geometry geom)
 
 /**
  * Set feature geometry.
- * <p>
+ *
  * This method updates the features geometry, and operate exactly as
  * SetGeometry(), except that this method assumes ownership of the
  * passed geometry.
@@ -7724,6 +7305,11 @@ public class Feature:public void UnsetField(String name)
  * <p>
  * The Geometry class is a binding for the C++ <a href="http://gdal.org/ogr/classOGRGeometry.html">OGRGeometry</a> class.
  * <p>
+ * Note that the family of spatial analysis methods (Equal(), Disjoint(), ...,
+ * ConvexHull(), Buffer(), ...) are not implemented at ths time.  Some other
+ * required and optional geometry methods have also been omitted at this
+ * time.
+ * <p>
  * Some spatial analysis methods require that OGR is built on the GEOS library
  * to work properly. The precise meaning of methods that describe spatial relationships
  * between geometries is described in the SFCOM, or other simple features interface
@@ -7736,7 +7322,7 @@ public class Geometry
 
 /** 
  * Create an empty geometry of desired type.
- * <p>
+ *
  * The type may be one of ogr.wkbPoint, etc..
  *
  * @param eGeometryType the type code of the geometry class to be instantiated.
@@ -7747,7 +7333,7 @@ public class Geometry:public Geometry(int eGeometryType)
 
 /** 
  * Create a new geometry.
- * <p>
+ *
  * The geometry can be instanciated by 4 different and exclusive way :
  * <ul>
  * <li> By specifying the geometry type (ogr.wkbPoint, etc..)</li>
@@ -7774,16 +7360,12 @@ public class Geometry:public Geometry(int eGeometryType, String wkt, byte[] wkb,
 
 /**
  * Add a geometry to the container.
- * <p>
+ *
  * Some subclasses of OGRGeometryCollection restrict the types of geometry
  * that can be added, and may return an error.  The passed geometry is cloned
  * to make an internal copy.
  * <p>
  * There is no SFCOM analog to this method.
- * <p>
- * For a polygon, other must be a linearring. If the polygon is empty,
- * the first added subgeometry will be the exterior ring. The next ones will be
- * the interior rings.
  *
  * @param other geometry to add to the container.
  *
@@ -7794,17 +7376,13 @@ public class Geometry:public int AddGeometry(Geometry other)
 
 /**
  * Add a geometry directly to the container.
- * <p>
+ *
  * Some subclasses of OGRGeometryCollection restrict the types of geometry
  * that can be added, and may return an error.  Ownership of the passed
  * geometry is taken by the container rather than cloning as addGeometry()
  * does.
  * <p>
  * There is no SFCOM analog to this method.
- * <p>
- * For a polygon, other must be a linearring. If the polygon is empty,
- * the first added subgeometry will be the exterior ring. The next ones will be
- * the interior rings.
  *
  * @param other geometry to add to the container.
  *
@@ -7815,7 +7393,7 @@ public class Geometry:public int AddGeometryDirectly(Geometry other)
 
 /**
  * Add a point to a geometry (line string or point).
- * <p>
+ *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
  *
@@ -7826,7 +7404,7 @@ public class Geometry:public void AddPoint_2D(double x, double y)
 
 /**
  * Add a point to a geometry (line string or point).
- * <p>
+ *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
  *
@@ -7838,7 +7416,7 @@ public class Geometry:public void AddPoint(double x, double y, double z)
 
 /**
  * Add a point to a geometry (line string or point).
- * <p>
+ *
  * The vertex count of the line string is increased by one, and assigned from
  * the passed location value.
  *
@@ -7850,9 +7428,7 @@ public class Geometry:public void AddPoint(double x, double y, double z)
 public class Geometry:public void AddPoint(double x, double y)
 
 /**
- * Assign spatial reference to this object.
- * <p>
- * Any existing spatial reference
+ * Assign spatial reference to this object.  Any existing spatial reference
  * is replaced, but under no circumstances does this result in the object
  * being reprojected.  It is just changing the interpretation of the existing
  * geometry.  Note that assigning a spatial reference increments the
@@ -7867,7 +7443,7 @@ public class Geometry:public void AssignSpatialReference(SpatialReference srs)
 
 /**
  * Compute buffer of geometry.
- * <p>
+ *
  * Builds a new geometry containing the buffer region around the geometry
  * on which it is invoked.  The buffer is a polygon containing the region within
  * the buffer distance of the original geometry.  
@@ -7894,7 +7470,7 @@ public class Geometry:public Geometry Buffer(double distance, int quadsecs)
 
 /**
  * Compute buffer of geometry.
- * <p>
+ *
  * Same as below with quadsecs == 30.
  *
  * @see #Buffer(double distance, int quadsecs)
@@ -7904,21 +7480,12 @@ public class Geometry:public Geometry Buffer(double distance, int quadsecs)
 public class Geometry:public Geometry Buffer(double distance)
 
 /**
- * Compute the geometry centroid.
- *
- * The centroid is not necessarily within the geometry.  
+ * Compute and return centroid of surface.  The centroid is not necessarily
+ * within the geometry.  
  * <p>
- * This method relates to the SFCOM ISurface::get_Centroid() method
- * however the current implementation based on GEOS can operate on other
- * geometry types such as multipoint, linestring, geometrycollection such as
- * multipolygons.
- * OGC SF SQL 1.1 defines the operation for surfaces (polygons).
- * SQL/MM-Part 3 defines the operation for surfaces and multisurfaces (multipolygons).
+ * This method relates to the SFCOM ISurface::get_Centroid() method.
  * <p>
- * This function is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this function will always fail, 
- * issuing a CPLE_NotSupported error. 
+ * NOTE: Only implemented when GEOS included in build.
  *
  * @return point with the centroid location, or null in case of failure
  */
@@ -7926,7 +7493,7 @@ public class Geometry:public Geometry Centroid()
 
 /**
  * Make a copy of this object.
- * <p>
+ *
  * This method relates to the SFCOM IGeometry::clone() method.
  * 
  * @return a new object instance with the same geometry, and spatial
@@ -7936,7 +7503,7 @@ public class Geometry:public Geometry Clone()
 
 /**
  * Force rings to be closed.
- * <p>
+ *
  * If this geometry, or any contained geometries has polygon rings that 
  * are not closed, they will be closed by adding the starting point at
  * the end. 
@@ -7945,7 +7512,7 @@ public class Geometry:public void CloseRings()
 
 /**
  * Test for containment.
- * <p>
+ *
  * Tests if actual geometry object contains the passed geometry.
  * <p>
  * This method is built on the GEOS library, check it for the definition
@@ -7960,7 +7527,7 @@ public class Geometry:public boolean Contains(Geometry other)
 
 /**
  * Compute convex hull.
- * <p>
+ *
  * A new geometry object is created and returned containing the convex
  * hull of the geometry on which the method is invoked.  
  * <p>
@@ -7974,7 +7541,7 @@ public class Geometry:public Geometry ConvexHull()
 
 /**
  * Create geometry from GML.
- * <p>
+ *
  * This method translates a fragment of GML containing only the geometry
  * portion into a corresponding Geometry.  There are many limitations
  * on the forms of GML geometries supported by this parser, but they are
@@ -8026,7 +7593,7 @@ public class Geometry:public static Geometry CreateFromWkt(String wkt)
 
 /**
  * Test for crossing.
- * <p>
+ *
  * Tests if this geometry and the other passed into the method are crossing.
  * <p>
  * This method is built on the GEOS library, check it for the definition
@@ -8041,7 +7608,6 @@ public class Geometry:public boolean Crosses(Geometry other)
 
 /**
  * Delete a geometry.
- * <p>
  * Calling this method is not required as normal garbage collection will
  * reclaim associated resources when the object goes out of scope.
  * Otherwise calling delete() explicitely will help release resources sooner.
@@ -8051,7 +7617,7 @@ public class Geometry:public void delete()
 
 /**
  * Compute difference.
- * <p>
+ *
  * Generates a new geometry which is the region of this geometry with the
  * region of the second geometry removed. 
  * <p>
@@ -8068,7 +7634,7 @@ public class Geometry:public Geometry Difference(Geometry other)
 
 /**
  * Test for disjointness.
- * <p>
+ *
  * Tests if this geometry and the other passed into the method are disjoint. 
  * <p>
  * This method is built on the GEOS library, check it for the definition
@@ -8083,7 +7649,7 @@ public class Geometry:public boolean Disjoint(Geometry other)
 
 /**
  * Compute distance between two geometries.
- * <p>
+ *
  * Returns the shortest distance between the two geometries. 
  * <p>
  * This method is built on the GEOS library, check it for the definition
@@ -8097,9 +7663,7 @@ public class Geometry:public boolean Disjoint(Geometry other)
 public class Geometry:public double Distance(Geometry other)
 
 /**
- * Clear geometry information.
- * <p>
- * This restores the geometry to it's initial
+ * Clear geometry information.  This restores the geometry to it's initial
  * state after construction, and before assignment of actual geometry.
  * <p>
  * This method relates to the SFCOM IGeometry::Empty() method.
@@ -8115,7 +7679,7 @@ public class Geometry:public boolean Equal(Geometry other)
 
 /**
  * Convert a geometry into GML format.
- * <p>
+ *
  * The GML geometry is expressed directly in terms of GML basic data
  * types assuming the this is available in the gml namespace.
  *
@@ -8150,7 +7714,7 @@ public class Geometry:public String ExportToJson()
 
 /**
  * Convert a geometry into well known binary format.
- * <p>
+ *
  * This function relates to the SFCOM IWks::ExportToWKB() method.
  *
  * @param byte_order One of wkbXDR or wkbNDR indicating MSB or LSB byte order
@@ -8164,7 +7728,7 @@ public class Geometry:public byte[] ExportToWkb(int byte_order)
 
 /**
  * Convert a geometry into well known binary format.
- * <p>
+ *
  * This function relates to the SFCOM IWks::ExportToWKB() method.
  *
  * @param wkbArray a sufficiently large array (at least WkbSize() large) to receive the wkb content.
@@ -8177,7 +7741,7 @@ public class Geometry:public int ExportToWkb(byte[] wkbArray, int byte_order)
 
 /**
  * Convert a geometry into well known binary format.
- * <p>
+ *
  * This function relates to the SFCOM IWks::ExportToWKB() method.
  * MSB order (wkbXDR) will be used.
  *
@@ -8189,7 +7753,7 @@ public class Geometry:public byte[] ExportToWkb()
 
 /**
  * Convert a geometry into well known text format.
- * <p>
+ *
  * This method relates to the SFCOM IWks::ExportToWKT() method.
  *
  * @param argout an allocated array of 1 string where the WKT output will be inserted
@@ -8200,7 +7764,7 @@ public class Geometry:public int ExportToWkt(String[] argout)
 
 /**
  * Convert a geometry into well known text format.
- * <p>
+ *
  * This method relates to the SFCOM IWks::ExportToWKT() method.
  *
  * @return the WKT string
@@ -8210,62 +7774,38 @@ public class Geometry:public int ExportToWkt(String[] argout)
 public class Geometry:public String ExportToWkt()
 
 /**
- * Convert geometry to strictly 2D.
- * <p>
- * In a sense this converts all Z coordinates
+ * Convert geometry to strictly 2D.  In a sense this converts all Z coordinates
  * to 0.0.
  */
 public class Geometry:public void FlattenTo2D()
 
 /**
  * Compute geometry area.
- * <p>
+ *
  * Computes the area for an OGRLinearRing, OGRPolygon or OGRMultiPolygon.
- * Undefined for all other geometry types (returns zero).
+ * Undefined for all other geometry types (returns zero). 
  *
  * @return the area or 0.0 for unsupported geometry types.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public double Area()
-
-/**
- * Compute geometry area (deprecated).
- *
- * @deprecated
- *
- * @see #Area()
  */
 public class Geometry:public double GetArea()
 
 /**
  * Compute boundary.
- * <p>
+ *
  * A new geometry object is created and returned containing the boundary
- * of the geometry on which the method is invoked.
+ * of the geometry on which the method is invoked.  
  * <p>
  * This method is built on the GEOS library, check it for the definition
  * of the geometry operation.
  * If OGR is built without the GEOS library, this method will always fail.
  *
  * @return a newly allocated geometry now owned by the caller, or null on failure.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public Geometry Boundary()
-
-/**
- * Compute boundary (deprecated).
- *
- * @deprecated
- *
- * @see #Boundary()
  */
 public class Geometry:public Geometry GetBoundary()
 
 /**
  * Get the dimension of the coordinates in this object.
- * <p>
+ *
  * This method corresponds to the SFCOM IGeometry::GetDimension() method.
  *
  * @return in practice this always returns 2 indicating that coordinates are
@@ -8275,7 +7815,7 @@ public class Geometry:public int GetCoordinateDimension()
 
 /**
  * Get the dimension of this object.
- * <p>
+ *
  * This method corresponds to the SFCOM IGeometry::GetDimension() method.
  * It indicates the dimension of the object, but does not indicate the
  * dimension of the underlying space (as indicated by
@@ -8287,7 +7827,7 @@ public class Geometry:public int GetDimension()
 
 /**
  * Computes and returns the bounding envelope for this geometry.
- * <p>
+ *
  * @param argout an allocated array of 4 doubles into which to place the result
  */
 public class Geometry:public void GetEnvelope(double[] argout)
@@ -8295,12 +7835,10 @@ public class Geometry:public void GetEnvelope(double[] argout)
 /**
  * Fetch the number of elements in a geometry or number of geometries in
  * container.
- * <p>
+ *
  * Only geometries of type wkbPolygon[25D], wkbMultiPoint[25D], wkbMultiLineString[25D],
  * wkbMultiPolygon[25D] or wkbGeometryCollection[25D] may return a valid value.
  * Other geometry types will silently return 0.
- *
- * For a polygon, the returned number is the number of rings (exterior ring + interior rings).
  *
  * @return the number of elements.
  */
@@ -8308,7 +7846,7 @@ public class Geometry:public int GetGeometryCount()
 
 /**
  * Fetch WKT name for geometry type.
- * <p>
+ *
  * There is no SFCOM analog to this method.  
  *
  * @return name used for this geometry type in well known text format.
@@ -8317,7 +7855,7 @@ public class Geometry:public String GetGeometryName()
 
 /**
  * Fetch geometry from a geometry container.
- * <p>
+ *
  * This function returns an handle to a geometry within the container.
  * The returned geometry remains owned by the container, and should not be
  * modified.  The handle is only valid untill the next change to the
@@ -8325,9 +7863,6 @@ public class Geometry:public String GetGeometryName()
  * <p>
  * This function relates to the SFCOM 
  * IGeometryCollection::get_Geometry() method.
- * <p>
- * For a polygon, OGR_G_GetGeometryRef(iSubGeom) returns the exterior ring
- * if iSubGeom == 0, and the interior rings for iSubGeom > 0.
  *
  * @param iSubGeom the index of the geometry to fetch, between 0 and
  *          GetGeometryCount() - 1.
@@ -8337,7 +7872,7 @@ public class Geometry:public Geometry GetGeometryRef(int iSubGeom)
 
 /**
  * Fetch geometry type.
- * <p>
+ *
  * Note that the geometry type may include the 2.5D flag.  To get a 2D
  * flattened version of the geometry type apply the wkbFlatten() macro
  * to the return result.
@@ -8384,7 +7919,7 @@ public class Geometry:public double[] GetPoint_2D(int iPoint)
 
 /**
  * Fetch number of points from a geometry.
- * <p>
+ *
  * Only wkbPoint[25D] or wkbLineString[25D] may return a valid value.
  * Other geometry types will silently return 0.
  *
@@ -8393,40 +7928,8 @@ public class Geometry:public double[] GetPoint_2D(int iPoint)
 public class Geometry:public int GetPointCount()
 
 /**
- * Returns all points of a point or a line string.
- * <p>
- * This method returns an array of tuples with the [x,y] or [x,y,z] coordinates pair or triplets.
- * <p>
- * Only wkbPoint[25D] or wkbLineString[25D] may return a valid value.
- * Other geometry types will return null.
- *
- * @param nCoordinateDimension if nCoordinateDimension == 0 then the number of coordinates per tuple
- * will reflect the coordinate dimension of the geometry. If nCoordinateDimension == 2,
- * the number of coordinates per tuple will be 2. If nCoordinateDimension == 3, the number of
- * coordinates per tuple will be 3.
- *
- * @return the coordinates
- *
- * @since OGR 1.9.0
- */
-public class Geometry:public double[][] GetPoints(int nCoordinateDimension)
-
-/**
- * Returns all points of a point or a line string.
- * <p>
- * Same as below with nCoordinateDimension == 0
- *
- * @return the coordinates
- *
- * @since OGR 1.9.0
- *
- * @see #GetPoints(int)
- */
-public class Geometry:public double[][] GetPoints()
-
-/**
  * Returns spatial reference system for object.
- * <p>
+ *
  * This method relates to the SFCOM IGeometry::get_SpatialReference() method.
  *
  * @return a reference to the spatial reference object.  The object may be
@@ -8487,7 +7990,7 @@ public class Geometry:public double GetZ()
 
 /**
  * Do these features intersect?
- * <p>
+ *
  * Determines whether two geometries intersect.  If GEOS is enabled, then
  * this is done in rigerous fashion otherwise true is returned if the
  * envelopes (bounding boxes) of the two features overlap. 
@@ -8504,7 +8007,7 @@ public class Geometry:public boolean Intersect(Geometry other)
 
 /**
  * Compute intersection.
- * <p>
+ *
  * Generates a new geometry which is the region of intersection of the
  * two geometries operated on.  The Intersect() method can be used to test if
  * two geometries intersect. 
@@ -8521,9 +8024,7 @@ public class Geometry:public boolean Intersect(Geometry other)
 public class Geometry:public Geometry Intersection(Geometry other)
 
 /**
- * Returns true (non-zero) if the object has no points.
- * <p>
- * Normally this
+ * Returns true (non-zero) if the object has no points.  Normally this
  * returns false except between when an object is instantiated and points
  * have been assigned.
  *
@@ -8535,7 +8036,7 @@ public class Geometry:public boolean IsEmpty()
 
 /**
  * Test if the geometry is valid.
- * <p>
+ *
  * This method is built on the GEOS library, check it for the definition
  * of the geometry operation.
  * If OGR is built without the GEOS library, this method will always return 
@@ -8549,7 +8050,7 @@ public class Geometry:public boolean IsValid()
 
 /**
  * Test if the geometry is simple.
- * <p>
+ *
  * This method is built on the GEOS library, check it for the definition
  * of the geometry operation.
  * If OGR is built without the GEOS library, this method will always return 
@@ -8562,7 +8063,7 @@ public class Geometry:public boolean IsSimple()
 
 /**
  * Test if the geometry is a ring.
- * <p>
+ *
  * This method is built on the GEOS library, check it for the definition
  * of the geometry operation.
  * If OGR is built without the GEOS library, this method will always return 
@@ -8575,7 +8076,7 @@ public class Geometry:public boolean IsRing()
 
 /**
  * Test for overlap.
- * <p>
+ *
  * Tests if this geometry and the other passed into the method overlap, that is
  * their intersection has a non-zero area. 
  *
@@ -8591,7 +8092,7 @@ public class Geometry:public boolean Overlaps(Geometry other)
 
 /**
  * Modify the geometry such it has no segment longer then the given distance.
- * <p>
+ *
  * Interpolated points will have Z and M values (if needed) set to 0.
  * Distance computation is performed in 2d only
  *
@@ -8603,7 +8104,7 @@ public class Geometry:public void Segmentize(double max_length)
 
 /**
  * Set the coordinate dimension. 
- * <p>
+ *
  * This method sets the explicit coordinate dimension.  Setting the coordinate
  * dimension of a geometry to 2 should zero out any existing Z values.  Setting
  * the dimension of a geometry collection will not necessarily affect the
@@ -8615,7 +8116,7 @@ public class Geometry:public void SetCoordinateDimension(int dimension)
 
 /**
  * Set the location of a vertex in a point or linestring geometry.
- * <p>
+ *
  * If ipoint is larger than the number of existing
  * points in the linestring, the point count will be increased to
  * accomodate the request.
@@ -8629,7 +8130,7 @@ public class Geometry:public void SetPoint_2D(int ipoint, double x, double y)
 
 /**
  * Set the location of a vertex in a point or linestring geometry.
- * <p>
+ *
  * If ipoint is larger than the number of existing
  * points in the linestring, the point count will be increased to
  * accomodate the request.
@@ -8644,7 +8145,7 @@ public class Geometry:public void SetPoint(int ipoint, double x, double y, doubl
 
 /**
  * Set the location of a vertex in a point or linestring geometry.
- * <p>
+ *
  * If ipoint is larger than the number of existing
  * points in the linestring, the point count will be increased to
  * accomodate the request.
@@ -8659,41 +8160,8 @@ public class Geometry:public void SetPoint(int ipoint, double x, double y, doubl
 public class Geometry:public void SetPoint(int ipoint, double x, double y)
 
 /**
- * Simplify the geometry.
- * <p>
- * This function is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this function will always fail,
- * issuing a CPLE_NotSupported error.
- *
- * @param dTolerance the distance tolerance for the simplification.
- *
- * @return the simplified geometry or null if an error occurs.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public Geometry Simplify(double dTolerance)
-
-/**
- * Simplify the geometry while preserving topology.
- * <p>
- * This function is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this function will always fail,
- * issuing a CPLE_NotSupported error.
- *
- * @param dTolerance the distance tolerance for the simplification.
- *
- * @return the simplified geometry or null if an error occurs.
- *
- * @since OGR 1.9.0
- */
-public class Geometry:public Geometry SimplifyPreserveTopology(double dTolerance)
-
-
-/**
  * Compute symmetric difference.
- * <p>
+ *
  * Generates a new geometry which is the symmetric difference of this
  * geometry and the second geometry passed into the method.
  * <p>
@@ -8705,23 +8173,12 @@ public class Geometry:public Geometry SimplifyPreserveTopology(double dTolerance
  *
  * @return a new geometry representing the symmetric difference or null if the 
  * difference is empty or an error occurs.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public Geometry SymDifference(Geometry other)
-
-/**
- * Compute symmetric difference (deprecated).
- *
- * @deprecated
- *
- * @see #SymDifference(Geometry)
  */
 public class Geometry:public Geometry SymmetricDifference(Geometry other)
 
 /**
  * Test for touching.
- * <p>
+ *
  * Tests if this geometry and the other passed into the method are touching.
  *
  * This method is built on the GEOS library, check it for the definition
@@ -8736,7 +8193,7 @@ public class Geometry:public boolean Touches(Geometry other)
 
 /**
  * Transform geometry to new spatial reference system.
- * <p>
+ *
  * This method will transform the coordinates of a geometry from
  * their current spatial reference system to a new target spatial
  * reference system.  Normally this means reprojecting the vectors,
@@ -8762,7 +8219,7 @@ public class Geometry:public int TransformTo(SpatialReference srs)
 
 /**
  * Apply arbitrary coordinate transformation to geometry.
- * <p>
+ *
  * This method will transform the coordinates of a geometry from
  * their current spatial reference system to a new target spatial
  * reference system.  Normally this means reprojecting the vectors,
@@ -8783,7 +8240,7 @@ public class Geometry:public int Transform(CoordinateTransformation ct)
 
 /**
  * Compute union.
- * <p>
+ *
  * Generates a new geometry which is the region of union of the
  * two geometries operated on.  
  * <p>
@@ -8798,22 +8255,8 @@ public class Geometry:public int Transform(CoordinateTransformation ct)
 public class Geometry:public Geometry Union(Geometry other)
 
 /**
- * Compute union using cascading.
- * <p>
- * This method is built on the GEOS library, check it for the definition
- * of the geometry operation.
- * If OGR is built without the GEOS library, this method will always fail,
- * issuing a CPLE_NotSupported error.
- *
- * @return a new geometry representing the union or null if an error occurs.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public Geometry UnionCascaded()
-
-/**
  * Test for containment.
- * <p>
+ *
  * Tests if actual geometry object is within the passed geometry.
  *
  * This method is built on the GEOS library, check it for the definition
@@ -8828,7 +8271,7 @@ public class Geometry:public boolean Within(Geometry other)
 
 /**
  * Returns size of related binary representation.
- * <p>
+ *
  * This method returns the exact number of bytes required to hold the
  * well known binary representation of this geometry object.  Its computation
  * may be slightly expensive for complex geometries.
@@ -8839,12 +8282,6 @@ public class Geometry:public boolean Within(Geometry other)
  */
 public class Geometry:public int WkbSize()
 
-/**
- * Returns the length of the geometry
- * @return length of the geometry
- * @since Java bindings 1.8.0
- */
-public class Geometry:public double Length()
 
 /* Class FeatureDefn */
 
@@ -8866,7 +8303,7 @@ public class FeatureDefn
 
 /**
  * Constructor.
- * <p>
+ *
  * The FeatureDefn maintains a reference count, but this starts at
  * zero.  It is mainly intended to represent a count of Feature's
  * based on this definition.
@@ -8876,7 +8313,7 @@ public class FeatureDefn:public FeatureDefn()
 
 /**
  * Constructor.
- * <p>
+ *
  * The FeatureDefn maintains a reference count, but this starts at
  * zero.  It is mainly intended to represent a count of Feature's
  * based on this definition.
@@ -8890,10 +8327,7 @@ public class FeatureDefn:public FeatureDefn(String name)
 
 /**
  * Add a new field definition.
- * <p>
- * To add a new field definition to a layer definition, do not use this
- * function directly, but use Layer.<a href="Layer.html#CreateField(org.gdal.ogr.FieldDefn)">CreateField()</a> instead.
- * <p>
+ *
  * This method should only be called while there are no Feature
  * objects in existance based on this FeatureDefn.  The FieldDefn
  * passed in is copied, and remains the responsibility of the caller.
@@ -8928,7 +8362,7 @@ public class FeatureDefn:public FieldDefn GetFieldDefn(int ifield)
 
 /**
  * Find field by name.
- * <p>
+ *
  * The field index of the first field matching the passed field name (case
  * insensitively) is returned.
  *
@@ -8939,44 +8373,8 @@ public class FeatureDefn:public FieldDefn GetFieldDefn(int ifield)
 public class FeatureDefn:public int GetFieldIndex(String name)
 
 /**
- * Determine whether the geometry can be omitted when fetching features.
- *
- * @return ignore state (1 if ignored, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FeatureDefn:public int IsGeometryIgnored()
-
-/**
- * Set whether the geometry can be omitted when fetching features.
- *
- * @param bIgnore ignore state (1 to ignore, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FeatureDefn:public void SetGeometryIgnored(int bIgnore)
-
-/**
- * Determine whether the style can be omitted when fetching features.
- *
- * @return ignore state (1 if ignored, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FeatureDefn:public int IsStyleIgnored()
-
-/**
- * Set whether the style can be omitted when fetching features.
- *
- * @param bIgnore ignore state (1 to ignore, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FeatureDefn:public void SetStyleIgnored(int bIgnore)
-
-/**
  * Fetch the geometry base type.
- * <p>
+ *
  * Note that some drivers are unable to determine a specific geometry
  * type for a layer, in which case wkbUnknown is returned.  A value of
  * wkbNone indicates no geometry is available for the layer at all.
@@ -8990,7 +8388,7 @@ public class FeatureDefn:public int GetGeomType()
 
 /**
  * Assign the base geometry type for this layer.
- * <p>
+ *
  * All geometry objects using this type must be of the defined type or
  * a derived type.  The default upon creation is wkbUnknown which allows for
  * any geometry type.  The geometry type should generally not be changed
@@ -9020,7 +8418,7 @@ public class FieldDefn
 
 /**
  * Constructor.
- * <p>
+ *
  * The new field will be named "unnamed" and of type OFTString
  *
  * @since Java bindings 1.7.0
@@ -9029,7 +8427,7 @@ public class FieldDefn:public FieldDefn()
 
 /**
  * Constructor.
- * <p>
+ *
  * The new field will be of type OFTString
  * @param name the name of the new field.
  *
@@ -9083,9 +8481,7 @@ public class FieldDefn:public String GetName()
 public class FieldDefn:public String GetNameRef()
 
 /**
- * Get the formatting precision for this field.
- * <p>
- * This should normally be
+ * Get the formatting precision for this field.  This should normally be
  * zero for fields of types other than OFTReal.
  *
  * @return the precision.
@@ -9122,7 +8518,7 @@ public class FieldDefn:public void SetName(String name)
 
 /**
  * Set the formatting precision for this field in characters.
- *  <p>
+ * 
  * This should normally be zero for fields of types other than OFTReal. 
  *
  * @param precision the new precision. 
@@ -9130,9 +8526,7 @@ public class FieldDefn:public void SetName(String name)
 public class FieldDefn:public void SetPrecision(int precision)
 
 /**
- * Set the type of this field.
- * <p>
- * This should never be done to an FieldDefn
+ * Set the type of this field.  This should never be done to an FieldDefn
  * that is already part of an FeatureDefn.
  *
  * @param type the new field type.
@@ -9146,23 +8540,6 @@ public class FieldDefn:public void SetType(int type)
  */
 public class FieldDefn:public void SetWidth(int width) 
 
-/**
- * Return whether this field should be omitted when fetching features.
- *
- * @return ignore state (1 if ignored, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FieldDefn:public int IsIgnored()
-
-/**
- * Set whether this field should be omitted when fetching features.
- *
- * @param bIgnored ignore state (1 to ignore, 0 otherwise)
- *
- * @since OGR 1.8.0
- */
-public class FieldDefn:public void SetIgnored(int bIgnored) 
 
 /* Class ogr */
 
@@ -9175,7 +8552,7 @@ public class ogr
 
 /**
  * Use exceptions instead of error return codes.
- * <p>
+ *
  * This is the default behavious : methods that in C/C++ return an OGRErr return code
  * would throw a RuntimeException() in case the code it is different
  * from ogr.OGRERR_NONE. By calling this method, you can get
@@ -9188,7 +8565,7 @@ public class ogr:public static void UseExceptions()
 
 /**
  * Use return code instead of exceptions.
- * <p>
+ *
  * By default, methods that in C/C++ return an OGRErr return code
  * would throw a RuntimeException() in case the code it is different
  * from ogr.OGRERR_NONE. By calling this method, you can prevent
@@ -9202,7 +8579,7 @@ public class ogr:public static void DontUseExceptions()
 
 /**
  * Stroke arc to linestring.
- * <p>
+ *
  * Stroke an arc of a circle to a linestring based on a center
  * point, radius, start angle and end angle, all angles in degrees.
  *
@@ -9220,11 +8597,11 @@ public class ogr:public static void DontUseExceptions()
  *
  * @since Java bindings 1.7.0
  */
-public class ogr:public static Geometry ApproximateArcAngles(double dfCenterX, double dfCenterY, double dfZ, double dfPrimaryRadius, double dfSecondaryRadius, double dfRotation, double dfStartAngle, double dfEndAngle, double dfMaxAngleStepSizeDegrees) 
+public class ogr:public static Geometry ApproximateArcAngles(double dfCenterX, double dfCenterY, double dfZ, double dfPrimaryRadius, double dfSecondaryAxis, double dfRotation, double dfStartAngle, double dfEndAngle, double dfMaxAngleStepSizeDegrees) 
 
 /**
  * Build a ring from a bunch of arcs.
- * <p>
+ *
  * Same as below with bAutoClose == 0 and dfTolerance == 0.
  *
  * @see #BuildPolygonFromEdges(Geometry lineCollection, int bBestEffort, int bAutoClose, double dfTolerance)
@@ -9235,7 +8612,7 @@ public class ogr:public static Geometry BuildPolygonFromEdges(Geometry hLineColl
 
 /**
  * Build a ring from a bunch of arcs.
- * <p>
+ *
  * Same as below with dfTolerance == 0.
  *
  * @see #BuildPolygonFromEdges(Geometry lineCollection, int bBestEffort, int bAutoClose, double dfTolerance)
@@ -9314,7 +8691,7 @@ public class ogr:public static Geometry CreateGeometryFromWkt(String wkt, Spatia
 
    /**
     * General utility option processing.
-    * <p>
+    *
     * This function is intended to provide a variety of generic commandline 
     * options for all OGR commandline utilities.  It takes care of the following
     * commandline options:
@@ -9350,7 +8727,7 @@ public class ogr:public static String[] GeneralCmdLineProcessor(String[] args, i
 
    /**
     * General utility option processing.
-    * <p>
+    *
     * Same as below with options == 0
     *
     * @see #GeneralCmdLineProcessor(String[] args, int options)
@@ -9361,7 +8738,7 @@ public class ogr:public static String[] GeneralCmdLineProcessor(String[] args)
 
    /**
     * General utility option processing.
-    * <p>
+    *
     * Same as below but with arguments as a Vector of strings
     *
     * @return updated argument list as a new Vector of strings
@@ -9374,7 +8751,7 @@ public class ogr:public static java.util.Vector GeneralCmdLineProcessor(java.uti
 
    /**
     * General utility option processing.
-    * <p>
+    *
     * Same as below but with arguments as a Vector of strings and options == 0
     *
     * @return updated argument list as a new Vector of strings
@@ -9448,7 +8825,7 @@ public class ogr:public static int GetOpenDSCount()
 
 /**
   * Open a file / data source with one of the registered drivers.
-  * <p>
+  *
   * Same as below with update == 0
   *
   * @see #Open(String filename, int update)
@@ -9459,7 +8836,7 @@ public class ogr:public static DataSource Open(String filename)
 
 /**
   * Open a file / data source with one of the registered drivers.
-  * <p>
+  *
   * Same as below with boolean value being transformed to 1 (for true) or 0 (for false)
   *
   * @see #Open(String filename, int update)
@@ -9470,7 +8847,7 @@ public class ogr:public static DataSource Open(String filename, boolean update)
 
 /**
   Open a file / data source with one of the registered drivers.
-  <p>
+
   This method loops through all the drivers registered with the driver
   manager trying each until one succeeds with the given data source.
   <p>
@@ -9507,7 +8884,7 @@ public class ogr:public static DataSource Open(String filename, int update)
 
 /**
   * Open a file / data source with one of the registered drivers.
-  * <p>
+  *
   * This first try finding an existing open dataset matching exactly
   * on the original datasource raw name used to open the
   * datasource.
@@ -9524,7 +8901,7 @@ public class ogr:public static DataSource OpenShared(String filename)
 
 /**
   * Open a file / data source with one of the registered drivers.
-  * <p>
+  *
   * This first try finding an existing open dataset matching exactly
   * on the original datasource raw name used to open the
   * datasource.
@@ -9539,7 +8916,7 @@ public class ogr:public static DataSource OpenShared(String filename, int update
 
 /**
  * Register all known configured OGR drivers.
- * <p>
+ *
  * This function will drive any of the following that are configured into
  * OGR.  Many others as well that haven't been updated in this
  * documentation (see <a href="http://gdal.org/ogr/ogr_formats.html">full list</a>):
@@ -9588,73 +8965,12 @@ public class ogr:public static void RegisterAll()
 
 /**
   * Special entry point to enable the hack for generating DB2 V7.2 style WKB.
-  * <p>
+  *
   * DB2 seems to have placed  (and require) an extra 0x30 or'ed with the byte order in
   * WKB.  This entry point is used to turn on or off the
   * generation of such WKB.
   */
 public class ogr:public static int SetGenerate_DB2_V72_BYTE_ORDER(int bGenerate_DB2_V72_BYTE_ORDER) 
-
-/**
- * Convert to polygon.
- * <p>
- * Tries to force the provided geometry to be a polygon.  Currently
- * this just effects a change on multipolygons.
- * <p>
- * Note: contrary to the C/C++ method, a new object is returned.
- * 
- * @param geom the input geometry
- * @return new geometry.
- * @since Java bindings 1.8.0
- */
-public class ogr:public static Geometry ForceToPolygon(Geometry geom)
-
-/**
- * Convert to multipolygon.
- * <p>
- * Tries to force the provided geometry to be a multipolygon.  Currently
- * this just effects a change on polygons.
- * <p>
- * Note: contrary to the C/C++ method, a new object is returned.
- * 
- * @param geom the input geometry
- * @return new geometry.
- * @since Java bindings 1.8.0
- */
-public class ogr:public static Geometry ForceToMultiPolygon(Geometry geom)
-
-/**
- * Convert to multipoint.
- * <p>
- * Tries to force the provided geometry to be a multipoint.  Currently
- * this just effects a change on points.
- * <p>
- * Note: contrary to the C/C++ method, a new object is returned.
- * 
- * @param geom the input geometry
- * @return new geometry.
- * @since Java bindings 1.8.0
- */
-public class ogr:public static Geometry ForceToMultiPoint(Geometry geom)
-
-/**
- * Convert to multilinestring.
- * <p>
- * Tries to force the provided geometry to be a multilinestring.
- * <ul>
- * <li>linestrings are placed in a multilinestring.
- * <li>geometry collections will be converted to multilinestring if they only 
- * contain linestrings.
- * <li>polygons will be changed to a collection of linestrings (one per ring).
- * </ul>
- * <p>
- * Note: contrary to the C/C++ method, a new object is returned.
- * 
- * @param geom the input geometry
- * @return new geometry.
- * @since Java bindings 1.8.0
- */
-public class ogr:public static Geometry ForceToMultiLineString(Geometry geom)
 
 /* Class SpatialReference */
 
@@ -9677,11 +8993,11 @@ public class SpatialReference
 
 /**
  * Constructor.
- * <p>
+ *
  * This constructor takes an optional string argument which if passed
  * should be a WKT representation of an SRS.  Passing this is equivelent
  * to not passing it, and then calling importFromWkt() with the WKT string.
- * <p>
+ *
  * Note that newly created objects are given a reference count of one. 
  *
  * @param wkt well known text definition to which the object should
@@ -9691,7 +9007,7 @@ public class SpatialReference:public SpatialReference(String wkt)
 
 /**
  * Constructor.
- * <p>
+ *
  * Same as below with wkt == null.
  *
  * @see #SpatialReference(String wkt)
@@ -9709,7 +9025,7 @@ public class SpatialReference:public String __str__()
 
 /**
  * Set EPSG authority info if possible.
- * <p>
+ *
  * This method inspects a WKT definition, and adds EPSG authority nodes
  * where an aspect of the coordinate system can be easily and safely 
  * corresponded with an EPSG identifier.  In practice, this method will 
@@ -9743,7 +9059,7 @@ public class SpatialReference:public SpatialReference CloneGeogCS()
 
 /**
  * Copy GEOGCS from another OGRSpatialReference.
- * <p>
+ *
  * The GEOGCS information is copied into this SpatialReference from another.
  * If this object has a PROJCS root already, the GEOGCS is installed within
  * it, otherwise it is installed as the root.
@@ -9773,7 +9089,7 @@ public class SpatialReference:public int ExportToMICoordSys(String[] argout)
 
 /**
  * Export coordinate system in PCI projection definition.
- * <p>
+ *
  * Converts the loaded coordinate reference system into PCI projection
  * definition to the extent possible. 
  * <p>
@@ -9794,7 +9110,7 @@ public class SpatialReference:public int ExportToPCI(String[] proj, String[] uni
 
 /**
  * Convert this SRS into a a nicely formatted WKT string for display to a person.
- * <p>
+ *
  * Same as below with simplify == 0 and the string is returned as a return value
  *
  * @see #ExportToPrettyWkt(String[] argout, int simplify)
@@ -9805,7 +9121,7 @@ public class SpatialReference:public String ExportToPrettyWkt()
 
 /**
  * Convert this SRS into a a nicely formatted WKT string for display to a person.
- * <p>
+ *
  * Same as below but the string is returned as a return value
  *
  * @see #ExportToPrettyWkt(String[] argout, int simplify)
@@ -9816,7 +9132,7 @@ public class SpatialReference:public String ExportToPrettyWkt(int simplify)
 
 /**
  * Convert this SRS into a a nicely formatted WKT string for display to a person.
- * <p>
+ *
  * Same as below with simplify == 0.
  *
  * @see #ExportToPrettyWkt(String[] argout, int simplify)
@@ -9837,7 +9153,7 @@ public class SpatialReference:public int ExportToPrettyWkt(String[] argout, int 
 
 /**
  * Export coordinate system in PROJ.4 format.
- * <p>
+ *
  * Same as below but the string is returned as a return value
  *
  * @see #ExportToProj4(String[] argout)
@@ -9848,7 +9164,7 @@ public class SpatialReference:public String ExportToProj4()
 
 /**
  * Export coordinate system in PROJ.4 format.
- * <p>
+ *
  * Converts the loaded coordinate reference system into PROJ.4 format
  * to the extent possible. 
  * <p>
@@ -9882,7 +9198,7 @@ public class SpatialReference:public int ExportToUSGS(int[] projsys, int[] zone,
 
 /**
  * Convert this SRS into WKT format.
- * <p>
+ *
  * Same as below but the string is returned as a return value
  *
  * @see #ExportToWkt(String[] argout)
@@ -9929,10 +9245,10 @@ public class SpatialReference:public int ExportToXML(String[] argout)
 
 /**
  * Export coordinate system in XML format.
- * <p>
+ *
  * Converts the loaded coordinate reference system into XML format
  * to the extent possible.
- * <p>
+ *
  * LOCAL_CS coordinate systems are not translatable.  An empty string
  * will be returned along with 0.  
  *
@@ -9945,7 +9261,7 @@ public class SpatialReference:public int ExportToXML(String[] argout, String dia
 
 /**
  * Fixup as needed.
- * <p>
+ *
  * Some mechanisms to create WKT using OGRSpatialReference, and some
  * imported WKT, are not valid according to the OGC CT specification.  This
  * method attempts to fill in any missing defaults that are required, and
@@ -9966,7 +9282,7 @@ public class SpatialReference:public int Fixup()
 
 /**
  * Correct parameter ordering to match CT Specification.
- * <p>
+ *
  * Some mechanisms to create WKT using OGRSpatialReference, and some
  * imported WKT fail to maintain the order of parameters required according
  * to the BNF definitions in the OpenGIS SF-SQL and CT Specifications.  This
@@ -9979,7 +9295,7 @@ public class SpatialReference:public int FixupOrdering()
 
 /**
  * Fetch angular geographic coordinate system units.
- * <p>
+ *
  * If no units are available, a value of "degree" and SRS_UA_DEGREE_CONV 
  * will be assumed.  This method only checks directly under the GEOGCS node
  * for units.
@@ -9991,7 +9307,7 @@ public class SpatialReference:public double GetAngularUnits()
 
 /**
  * Fetch first attribute of named node.
- * <p>
+ *
  * This method uses GetAttrNode() to find the named node, and then extracts
  * the value of the first child.
  *
@@ -10005,7 +9321,7 @@ public class SpatialReference:public String GetAttrValue(String name)
 
 /**
  * Fetch indicated attribute of named node.
- * <p>
+ *
  * This method uses GetAttrNode() to find the named node, and then extracts
  * the value of the indicated child.  Thus a call to GetAttrValue("UNIT",1)
  * would return the second child of the UNIT node, which is normally the
@@ -10020,7 +9336,7 @@ public class SpatialReference:public String GetAttrValue(String name, int child)
 
 /**
  * Get the authority code for a node.
- * <p>
+ *
  * This method is used to query an AUTHORITY[] node from within the 
  * WKT tree, and fetch the code value.  
  * <p>
@@ -10037,7 +9353,7 @@ public class SpatialReference:public String GetAuthorityCode(String target_key)
 
 /**
  * Get the authority name for a node.
- * <p>
+ *
  * This method is used to query an AUTHORITY[] node from within the 
  * WKT tree, and fetch the authority name value.  
  * <p>
@@ -10053,7 +9369,7 @@ public class SpatialReference:public String GetAuthorityName(String target_key)
 
 /**
  * Fetch linear projection units. 
- * <p>
+ *
  * If no units are available, a value of "Meters" and 1.0 will be assumed.
  * This method only checks directly under the PROJCS or LOCAL_CS node for 
  * units.
@@ -10065,7 +9381,7 @@ public class SpatialReference:public double GetLinearUnits()
 
 /**
  * Fetch linear projection units name.
- * <p>
+ *
  * If no units are available, a value of "Meters" will be assumed.
  * This method only checks directly under the PROJCS or LOCAL_CS node for 
  * units.
@@ -10076,7 +9392,7 @@ public class SpatialReference:public String GetLinearUnitsName()
 
 /**
  * Fetch a normalized projection parameter value.
- * <p>
+ *
  * Same as below with default_val == 0
  *
  * @see #GetNormProjParm(String name, double default_val)
@@ -10087,7 +9403,7 @@ public class SpatialReference:public double GetNormProjParm(String name)
 
 /**
  * Fetch a normalized projection parameter value.
- * <p>
+ *
  * This method is the same as GetProjParm() except that the value of
  * the parameter is "normalized" into degrees or meters depending on 
  * whether it is linear or angular.
@@ -10103,7 +9419,7 @@ public class SpatialReference:public double GetNormProjParm(String name, double 
 
 /**
  * Fetch a projection parameter value.
- * <p>
+ *
  * Same as below with default_val == 0
  *
  * @see #GetProjParm(String name, double default_val)
@@ -10114,7 +9430,7 @@ public class SpatialReference:public double GetProjParm(String name)
 
 /**
  * Fetch a projection parameter value.
- * <p>
+ *
  * NOTE: This code should be modified to translate non degree angles into
  * degrees based on the GEOGCS unit.  This has not yet been done.
  *
@@ -10147,7 +9463,7 @@ public class SpatialReference:public int GetTOWGS84(double[] argout)
 
 /**
  * Initialize SRS based on EPSG GCS or PCS code.
- * <p>
+ *
  * This method will initialize the spatial reference based on the
  * passed in EPSG GCS or PCS code.  The coordinate system definitions
  * are normally read from the EPSG derived support files such as 
@@ -10175,7 +9491,7 @@ public class SpatialReference:public int ImportFromEPSG(int nCode)
 
 /**
  * Import coordinate system from ESRI .prj format(s).
- * <p>
+ *
  * This function will read the text loaded from an ESRI .prj file, and
  * translate it into an OGRSpatialReference definition.  This should support
  * many (but by no means all) old style (Arc/Info 7.x) .prj files, as well
@@ -10201,7 +9517,7 @@ public class SpatialReference:public int ImportFromESRI(java.util.Vector ppszInp
 
 /**
  * Import Mapinfo style CoordSys definition.
- * <p>
+ *
  * The SpatialReference is initialized from the passed Mapinfo style CoordSys definition string.
  *
  * @param coord_sys Mapinfo style CoordSys definition string.
@@ -10212,7 +9528,7 @@ public class SpatialReference:public int ImportFromMICoordSys(String coord_sys)
 
 /**
  * Import coordinate system from PCI projection definition.
- * <p>
+ *
  * Same as below with units == null and prjParams == null
  *
  * @see #ImportFromPCI(String proj, String units, double[] prjParams)
@@ -10223,7 +9539,7 @@ public class SpatialReference:public int ImportFromPCI(String proj)
 
 /**
  * Import coordinate system from PCI projection definition.
- * <p>
+ *
  * Same as below with prjParams == null
  *
  * @see #ImportFromPCI(String proj, String units, double[] prjParams)
@@ -10234,7 +9550,7 @@ public class SpatialReference:public int ImportFromPCI(String proj, String units
 
 /**
  * Import coordinate system from PCI projection definition.
- * <p>
+ *
  * PCI software uses 16-character string to specify coordinate system
  * and datum/ellipsoid. You should supply at least this string to the
  * importFromPCI() function.
@@ -10276,7 +9592,7 @@ public class SpatialReference:public int ImportFromPCI(String proj, String units
 
 /**
  * Import PROJ.4 coordinate string.
- * <p>
+ *
  * The OGRSpatialReference is initialized from the passed PROJ.4 style
  * coordinate system string.  In addition to many +proj formulations which
  * have OGC equivelents, it is also possible to import "+init=epsg:n" style
@@ -10322,7 +9638,7 @@ public class SpatialReference:public int ImportFromProj4(String proj4)
 
 /**
  * Set spatial reference from a URL.
- * <p>
+ *
  * This method will download the spatial reference at a given URL and 
  * feed it into SetFromUserInput for you.
  * 
@@ -10334,7 +9650,7 @@ public class SpatialReference:public int ImportFromUrl(String url)
 
 /**
  * Import coordinate system from USGS projection definition.
- * <p>
+ *
  * Same as below with iZone == 0, padfPrjParams == null and iDatum == 0
  *
  * @see #ImportFromUSGS(int iProjSys, int iZone, double[] padfPrjParams, int iDatum)
@@ -10345,7 +9661,7 @@ public class SpatialReference:public int ImportFromUSGS(int iProjSys)
 
 /**
  * Import coordinate system from USGS projection definition.
- * <p>
+ *
  * Same as below with padfPrjParams == null and iDatum == 0
  *
  * @see #ImportFromUSGS(int iProjSys, int iZone, double[] padfPrjParams, int iDatum)
@@ -10356,7 +9672,7 @@ public class SpatialReference:public int ImportFromUSGS(int iProjSys, int iZone)
 
 /**
  * Import coordinate system from USGS projection definition.
- * <p>
+ *
  * Same as below with iDatum == 0
  *
  * @see #ImportFromUSGS(int iProjSys, int iZone, double[] padfPrjParams, int iDatum)
@@ -10367,7 +9683,7 @@ public class SpatialReference:public int ImportFromUSGS(int iProjSys, int iZone,
 
 /**
  * Import coordinate system from USGS projection definition.
- * <p>
+ *
  * This method will import projection definition in style, used by USGS GCTP
  * software. GCTP operates on angles in packed DMS format (see
  * CPLDecToPackedDMS() function for details), so all angle values (latitudes,
@@ -10591,7 +9907,7 @@ public class SpatialReference:public int ImportFromUSGS(int iProjSys, int iZone,
 
 /**
  * Import from WKT string.
- * <p>
+ *
  * This method will wipe the existing SRS definition, and
  * reassign it based on the contents of the passed WKT string.  Only as
  * much of the input string as needed to construct this SRS is consumed from
@@ -10611,25 +9927,6 @@ public class SpatialReference:public int ImportFromWkt(String wkt)
  * @return 0 on success. Otherwise throws a RuntimeException() (or an error code if DontUseExceptions() has been called).
  */
 public class SpatialReference:public int ImportFromXML(String xmlString)
-
-/**
- * Check if coordinate system is compound.
- *
- * @return 1 if this is rooted with a COMPD_CS node.
- *
- * @since GDAL 1.9.0
- */
-public class SpatialReference:public int IsCompound()
-
-/**
- * Check if geocentric coordinate system.
- *
- * @return 1 if this contains a GEOCCS node indicating a it is a
- * geocentric coordinate system.
- *
- * @since GDAL 1.9.0
- */
-public class SpatialReference:public int IsGeocentric()
 
 /**
  * Check if geographic coordinate system.
@@ -10674,27 +9971,8 @@ public class SpatialReference:public int IsSame(SpatialReference other)
 public class SpatialReference:public int IsSameGeogCS(SpatialReference other)
 
 /**
- * Do the VertCS'es match?
- *
- * @param other the SRS being compared against.
- *
- * @return 1 if they are the same or 0 otherwise.
- */
-public class SpatialReference:public int IsSameVertCS(SpatialReference other)
-
-/**
- * Check if vertical coordinate system.
- *
- * @return 1 if this contains a VERT_CS node indicating a it is a
- * vertical coordinate system.
- *
- * @since OGR 1.8.0
- */
-public class SpatialReference:public int IsVertical()
-
-/**
  * Convert in place from ESRI WKT format.
- * <p>
+ *
  * The value notes of this coordinate system are modified in various manners
  * to adhere more closely to the WKT standard.  This mostly involves
  * translating a variety of ESRI names for projections, arguments and
@@ -10707,7 +9985,7 @@ public class SpatialReference:public int MorphFromESRI()
 
 /**
  * Convert in place to ESRI WKT format.
- * <p>
+ *
  * The value nodes of this coordinate system are modified in various manners
  * more closely map onto the ESRI concept of WKT format.  This includes
  * renaming a variety of projections and arguments, and stripping out 
@@ -10719,7 +9997,7 @@ public class SpatialReference:public int MorphToESRI()
 
 /**
  * Set the angular units for the geographic coordinate system.
- * <p>
+ *
  * This method creates a UNITS subnode with the specified values as a
  * child of the GEOGCS node. 
  *
@@ -10736,7 +10014,7 @@ public class SpatialReference:public int SetAngularUnits(String name, double to_
 
 /**
  * Set attribute value in spatial reference.
- * <p>
+ *
  * Missing intermediate nodes in the path will be created if not already
  * in existance.  If the attribute has no children one will be created and
  * assigned the value otherwise the zeroth child will be assigned the value.
@@ -10768,7 +10046,7 @@ public class SpatialReference:public int SetAuthority(String target_key, String 
 
 /**
  * Set spatial reference from various text formats.
- * <p>
+ *
  * This method will examine the provided input, and try to deduce the
  * format, and then use it to initialize the spatial reference system.  It
  * may take the following forms:
@@ -10803,35 +10081,8 @@ public class SpatialReference:public int SetAuthority(String target_key, String 
 public class SpatialReference:public int SetFromUserInput(String definition)
 
 /**
- * Set the user visible GEOCCS name.
- * <p>
- * Same as below with name == null
- *
- * @see #SetGeocCS(String name)
- *
- * @since OGR 1.9.0
- */
-public class SpatialReference:public int SetGeocCS()
-
-/**
- * Set the user visible GEOCCS name.
- * <p>
- * This method is will ensure a GEOCCS node is created as the root,
- * and set the provided name on it.  If used on a GEOGCS coordinate system,
- * the DATUM and PRIMEM nodes from the GEOGCS will be tarnsferred over to
- * the GEOGCS.
- *
- * @param name the user visible name to assign. Not used as a key. May be null
- *
- * @return 0 on success. Otherwise throws a RuntimeException() (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.9.0
- */
-public class SpatialReference:public int SetGeocCS(String name)
-
-/**
  * Set geographic coordinate system. 
- * <p>
+ *
  * Same as below with pszPMName = "Greenwich", dfPMOffset = 0.0, pszAngularUnits = "degree" and dfConvertToRadians =  0.0174532925199433
  *
  * @see #SetGeogCS(String pszGeogName, String pszDatumName, String pszSpheroidName, double dfSemiMajor, double dfInvFlattening, String pszPMName, double dfPMOffset, String pszAngularUnits, double dfConvertToRadians)
@@ -10842,7 +10093,7 @@ public class SpatialReference:public int SetGeogCS(String pszGeogName, String ps
 
 /**
  * Set geographic coordinate system. 
- * <p>
+ *
  * Same as below with dfPMOffset = 0.0, pszAngularUnits = "degree" and dfConvertToRadians =  0.0174532925199433
  *
  * @see #SetGeogCS(String pszGeogName, String pszDatumName, String pszSpheroidName, double dfSemiMajor, double dfInvFlattening, String pszPMName, double dfPMOffset, String pszAngularUnits, double dfConvertToRadians)
@@ -10853,7 +10104,7 @@ public class SpatialReference:public int SetGeogCS(String pszGeogName, String ps
 
 /**
  * Set geographic coordinate system. 
- * <p>
+ *
  * Same as below with pszAngularUnits = "degree" and dfConvertToRadians =  0.0174532925199433
  *
  * @see #SetGeogCS(String pszGeogName, String pszDatumName, String pszSpheroidName, double dfSemiMajor, double dfInvFlattening, String pszPMName, double dfPMOffset, String pszAngularUnits, double dfConvertToRadians)
@@ -10864,7 +10115,7 @@ public class SpatialReference:public int SetGeogCS(String pszGeogName, String ps
 
 /**
  * Set geographic coordinate system. 
- * <p>
+ *
  * Same as below with dfConvertToRadians =  0.0174532925199433
  *
  * @see #SetGeogCS(String pszGeogName, String pszDatumName, String pszSpheroidName, double dfSemiMajor, double dfInvFlattening, String pszPMName, double dfPMOffset, String pszUnits, double dfConvertToRadians)
@@ -10875,7 +10126,7 @@ public class SpatialReference:public int SetGeogCS(String pszGeogName, String ps
 
 /**
  * Set geographic coordinate system. 
- * <p>
+ *
  * This method is used to set the datum, ellipsoid, prime meridian and
  * angular units for a geographic coordinate system.  It can be used on it's
  * own to establish a geographic spatial reference, or applied to a 
@@ -10916,7 +10167,7 @@ public class SpatialReference:public int SetGeogCS(String pszGeogName, String ps
 
 /**
  * Set the linear units for the projection.
- * <p>
+ *
  * This method creates a UNITS subnode with the specified values as a
  * child of the PROJCS or LOCAL_CS node. 
  *
@@ -10934,7 +10185,7 @@ public class SpatialReference:public int SetLinearUnits(String name, double to_m
 
 /**
  * Set the linear units for the projection.
- * <p>
+ *
  * This method creates a UNITS subnode with the specified values as a
  * child of the PROJCS or LOCAL_CS node.   It works the same as the
  * SetLinearUnits() method, but it also updates all existing linear
@@ -10954,7 +10205,7 @@ public class SpatialReference:public int SetLinearUnitsAndUpdateParameters(Strin
 
 /**
  * Set the user visible LOCAL_CS name.
- * <p>
+ *
  * This method is will ensure a LOCAL_CS node is created as the root, 
  * and set the provided name on it.  It must be used before SetLinearUnits().
  *
@@ -10966,7 +10217,7 @@ public class SpatialReference:public int SetLocalCS(String name)
 
 /**
  * Set a projection parameter with a normalized value.
- * <p>
+ *
  * This method is the same as SetProjParm() except that the value of
  * the parameter passed in is assumed to be in "normalized" form (decimal
  * degrees for angular values, meters for linear values.  The values are 
@@ -10983,7 +10234,7 @@ public class SpatialReference:public int SetNormProjParm(String name, double val
 
 /**
  * Set the user visible PROJCS name.
- * <p>
+ *
  * Same as below with name == null
  *
  * @see #SetProjCS(String name)
@@ -10992,7 +10243,7 @@ public class SpatialReference:public int SetProjCS()
 
 /**
  * Set the user visible PROJCS name.
- * <p>
+ *
  * This method is will ensure a PROJCS node is created as the root, 
  * and set the provided name on it.  If used on a GEOGCS coordinate system, 
  * the GEOGCS node will be demoted to be a child of the new PROJCS root.
@@ -11015,7 +10266,7 @@ public class SpatialReference:public int SetProjection(String name)
 
 /**
  * Set a projection parameter value.
- * <p>
+ *
  * Adds a new PARAMETER under the PROJCS with the indicated name and value.
  * <p>
  * Please check <a href="http://www.remotesensing.org/geotiff/proj_list">http://www.remotesensing.org/geotiff/proj_list</a> pages for
@@ -11032,7 +10283,7 @@ public class SpatialReference:public int SetProjParm(String name, double val)
 
 /**
  * Set State Plane projection definition.
- * <p>
+ *
  * Same as below with is_nad83 == 1, unitsname == "" and units == 0
  *
  * @see #SetStatePlane(int zone, int is_nad83, String unitsname, double units)
@@ -11043,7 +10294,7 @@ public class SpatialReference:public int SetStatePlane(int zone)
 
 /**
  * Set State Plane projection definition.
- * <p>
+ *
  * Same as below with unitsname == "" and units == 0
  *
  * @see #SetStatePlane(int zone, int is_nad83, String unitsname, double units)
@@ -11054,7 +10305,7 @@ public class SpatialReference:public int SetStatePlane(int zone, int is_nad83)
 
 /**
  * Set State Plane projection definition.
- * <p>
+ *
  * Same as below with units == 0
  *
  * @see #SetStatePlane(int zone, int is_nad83, String unitsname, double units)
@@ -11065,7 +10316,7 @@ public class SpatialReference:public int SetStatePlane(int zone, int is_nad83, S
 
 /**
  * Set State Plane projection definition.
- * <p>
+ *
  * This will attempt to generate a complete definition of a state plane
  * zone based on generating the entire SRS from the EPSG tables.  If the
  * EPSG tables are unavailable, it will produce a stubbed LOCAL_CS definition
@@ -11088,31 +10339,8 @@ public class SpatialReference:public int SetStatePlane(int zone, int is_nad83, S
 public class SpatialReference:public int SetStatePlane(int zone, int is_nad83, String unitsname, double units)
 
 /**
- * Set the linear units for the projection.
- * <p>
- * This method creates a UNIT subnode with the specified values as a
- * child of the target node.
- *
- * @param target the keyword to set the linear units for.  ie. "PROJCS" or "VERT_CS"
- *
- * @param name the units name to be used.  Some preferred units
- * names can be found in ogr_srs_api.h such as SRS_UL_METER, SRS_UL_FOOT
- * and SRS_UL_US_FOOT.
- *
- * @param to_meters the value to multiple by a length in the indicated
- * units to transform to meters.  Some standard conversion factors can
- * be found in ogr_srs_api.h.
- *
- * @return OGRERR_NONE on success. Otherwise throws a RuntimeException() (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.9.0
- */
-
-public class SpatialReference:public int SetTargetLinearUnits(String target, String name, double to_meters)
-
-/**
  * Set the Bursa-Wolf conversion to WGS84. 
- * <p>
+ *
  * Same as below with dfEX == dfEY == dfEZ == dfPPM == 0
  *
  * @see #SetTOWGS84(double dfDX, double dfDY, double dfDZ, double dfEX, double dfEY, double dfEZ, double dfPPM)
@@ -11123,7 +10351,7 @@ public class SpatialReference:public int SetTOWGS84(double p1, double p2, double
 
 /**
  * Set the Bursa-Wolf conversion to WGS84. 
- * <p>
+ * 
  * This will create the TOWGS84 node as a child of the DATUM.  It will fail
  * if there is no existing DATUM node.  Unlike most OGRSpatialReference
  * methods it will insert itself in the appropriate order, and will replace
@@ -11146,7 +10374,7 @@ public class SpatialReference:public int SetTOWGS84(double dfDX, double dfDY, do
 
 /**
  * Set UTM projection definition.
- * <p>
+ *
  * Same as below with north == 1
  *
  * @see #SetUTM(int zone, int north)
@@ -11157,7 +10385,7 @@ public class SpatialReference:public int SetUTM(int zone)
 
 /**
  * Set UTM projection definition.
- * <p>
+ *
  * This will generate a projection definition with the full set of 
  * transverse mercator projection parameters for the given UTM zone.
  * If no PROJCS[] description is set yet, one will be set to look
@@ -11173,39 +10401,8 @@ public class SpatialReference:public int SetUTM(int zone)
 public class SpatialReference:public int SetUTM(int zone, int north)
 
 /**
- * Get UTM zone information.
- *
- * @return the UTM zone. As a positive value for the northern hemisphere
- * and as a negative value for the southern hemisphere.
- *
- * @since Java bindings 1.8.0
- */
-public class SpatialReference:public int GetUTMZone()
-
-/**
- * Set the user visible VERT_CS name.
- * <p>
- * This method is will ensure a VERT_CS node is created if needed.  If the
- * existing coordinate system is GEOGCS or PROJCS rooted, then it will be
- * turned into a COMPD_CS.
- *
- * @param VertCSName the user visible name of the vertical coordinate
- * system. Not used as a key.
- *
- * @param VertDatumName the user visible name of the vertical datum.  It
- * is helpful if this matches the EPSG name.
- *
- * @param VertDatumType the OGC vertical datum type, usually 2005.
- *
- * @return 0 on success. Otherwise throws a RuntimeException() (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.9.0
- */
-public class SpatialReference:public int SetVertCS(String VertCSName, String VertDatumName, int VertDatumType)
-
-/**
  * Set a GeogCS based on well known name.
- * <p>
+ *
  * This may be called on an empty OGRSpatialReference to make a geographic
  * coordinate system, or on something with an existing PROJCS node to 
  * set the underlying geographic coordinate system of a projected coordinate
@@ -11227,7 +10424,7 @@ public class SpatialReference:public int SetWellKnownGeogCS(String name)
 
 /** 
  * Strip OGC CT Parameters.
- * <p>
+ *
  * This method will remove all components of the coordinate system
  * that are specific to the OGC CT Specification.  That is it will attempt
  * to strip it down to being compatible with the Simple Features 1.0 
@@ -11246,7 +10443,7 @@ public class SpatialReference:public String toString()
 
 /**
  * Validate SRS tokens.
- * <p>
+ *
  * This method attempts to verify that the spatial reference system is
  * well formed, and consists of known tokens.  The validation is not
  * comprehensive. 
@@ -11255,21 +10452,6 @@ public class SpatialReference:public String toString()
  */
 public class SpatialReference:public int Validate()
 
-/**
- * This method returns TRUE if EPSG feels this geographic coordinate
- * system should be treated as having lat/long coordinate ordering.
- * <p>
- * Currently this returns TRUE for all geographic coordinate systems
- * with an EPSG code set, and AXIS values set defining it as lat, long.
- * Note that coordinate systems with an EPSG code and no axis settings
- * will be assumed to not be lat/long.
- * <p>
- * FALSE will be returned for all coordinate systems that are not geographic,
- * or that do not have an EPSG code set.
- *
- * @return TRUE or FALSE.
- */
-public class SpatialReference:public int EPSGTreatsAsLatLong()
 
 
 /* Class CoordinateTransformation */
@@ -11284,7 +10466,7 @@ public class CoordinateTransformation
 
 /**
  * Create transformation object.
- * <p>
+ *
  * Input spatial reference system objects are assigned 
  * by copy (calling clone() method) and no ownership transfer occurs.
  *
@@ -11295,7 +10477,7 @@ public class CoordinateTransformation:public CoordinateTransformation(SpatialRef
 
 /**
  * Transform point from source to destination space.
- * <p>
+ *
  * The provided array will be modified in place.
  *
  * @param inout an array of 3 doubles
@@ -11347,7 +10529,7 @@ public class CoordinateTransformation:public double[] TransformPoint(double x, d
 
 /**
  * Transform points from source to destination space.
- * <p>
+ *
  * The provided array will be modified in place.
  *
  * @param pointArray an array of coordinates. Each coordinate can be either 2D or 3D
@@ -11363,7 +10545,7 @@ public class osr
 
 /**
  * Use exceptions instead of error return codes.
- * <p>
+ *
  * This is the default behavious : methods that in C/C++ return an OGRErr return code
  * would throw a RuntimeException() in case the code it is different
  * from ogr.OGRERR_NONE. By calling this method, you can get
@@ -11376,7 +10558,7 @@ public class osr:public static void UseExceptions()
 
 /**
  * Use return code instead of exceptions.
- * <p>
+ *
  * By default, methods that in C/C++ return an OGRErr return code
  * would throw a RuntimeException() in case the code is different
  * from ogr.OGRERR_NONE. By calling this method, you can prevent
@@ -11390,7 +10572,7 @@ public class osr:public static void DontUseExceptions()
 
 /**
  * Utility function that returns the WKT definition of the SRS expressed as a user input.
- * <p>
+ *
  * Such a user input is what can be passed in to
  * SpatialReference.<a href="SpatialReference.html#SetFromUserInput(java.lang.String)">SetFromUserInput()</a>.
  *
@@ -11402,7 +10584,7 @@ public class osr:public static String GetUserInputAsWKT(String definition)
 
 /**
  * Utility function that returns the WKT definition of the SRS expressed as a well known Geog CS.
- * <p>
+ *
  * Such a user input is what can be passed in to
  * SpatialReference.<a href="SpatialReference.html#SetWellKnownGeogCS(java.lang.String)">SetWellKnownGeogCS()</a>.
  *

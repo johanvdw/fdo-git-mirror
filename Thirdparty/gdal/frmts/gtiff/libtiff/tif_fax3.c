@@ -1,4 +1,4 @@
-/* $Id: tif_fax3.c,v 1.72 2010-06-09 17:17:13 bfriesen Exp $ */
+/* $Id: tif_fax3.c,v 1.67 2009-03-13 02:02:51 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -504,26 +504,10 @@ Fax3SetupState(TIFF* tif)
 	    td->td_compression == COMPRESSION_CCITTFAX4
 	);
 
-	/*
-	  Assure that allocation computations do not overflow.
-	  
-	  TIFFroundup and TIFFSafeMultiply return zero on integer overflow
-	*/
-	dsp->runs=(uint32*) NULL;
-	nruns = TIFFroundup_32(rowpixels,32);
-	if (needsRefLine) {
-		nruns = TIFFSafeMultiply(uint32,nruns,2);
-	}
-	if ((nruns == 0) || (TIFFSafeMultiply(uint32,nruns,2) == 0)) {
-		TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
-			     "Row pixels integer overflow (rowpixels %u)",
-			     rowpixels);
-		return (0);
-	}
-	dsp->runs = (uint32*) _TIFFCheckMalloc(tif,
-					       TIFFSafeMultiply(uint32,nruns,2),
-					       sizeof (uint32),
-					       "for Group 3/4 run arrays");
+	nruns = needsRefLine ? 2*TIFFroundup_32(rowpixels,32) : rowpixels;
+	nruns += 3;
+	dsp->runs = (uint32*) _TIFFCheckMalloc(tif, 2*nruns, sizeof (uint32),
+					  "for Group 3/4 run arrays");
 	if (dsp->runs == NULL)
 		return (0);
 	dsp->curruns = dsp->runs;
@@ -1413,12 +1397,12 @@ Fax4Decode(TIFF* tif, uint8* buf, tmsize_t occ, uint16 s)
         BADG4:
 #ifdef FAX3_DEBUG
                 if( GetBits(13) != 0x1001 )
-                    fputs( "Bad EOFB\n", stderr );
+                    fputs( "Bad RTC\n", stderr );
 #endif                
                 ClrBits( 13 );
 		(*sp->fill)(buf, thisrun, pa, lastx);
 		UNCACHE_STATE(tif, sp);
-		return ( sp->line ? 1 : -1);	/* don't error on badly-terminated strips */
+		return (-1);
 	}
 	UNCACHE_STATE(tif, sp);
 	return (1);
@@ -1585,10 +1569,3 @@ TIFFInitCCITTRLEW(TIFF* tif, int scheme)
 #endif /* CCITT_SUPPORT */
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

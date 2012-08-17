@@ -55,7 +55,8 @@ namespace PCIDSK
         virtual std::vector<PCIDSKSegment *> GetSegments() = 0;
 
         virtual PCIDSK::PCIDSKSegment *GetSegment( int type, 
-            std::string name, int previous = 0 ) = 0;
+            std::string name,
+            int previous = 0 ) = 0;
 
         virtual int GetWidth() const = 0;
         virtual int GetHeight() const = 0;
@@ -80,7 +81,7 @@ namespace PCIDSK
         virtual void ReadFromFile( void *buffer, uint64 offset, uint64 size ) = 0;
 
         virtual void GetIODetails( void ***io_handle_pp, Mutex ***io_mutex_pp,
-                                   std::string filename="", bool writable=false ) = 0;
+            std::string filename = "" ) = 0;
 
         virtual std::string GetMetadataValue( const std::string& key ) = 0;
         virtual void SetMetadataValue( const std::string& key, const std::string& value ) = 0;

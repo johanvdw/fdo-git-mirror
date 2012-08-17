@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_exceptions.i 20628 2010-09-15 20:50:56Z ajolma $
+ * $Id: cpl_exceptions.i 18357 2009-12-20 23:25:36Z tamas $
  *
  * Code for Optional Exception Handling through UseExceptions(),
  * DontUseExceptions()
@@ -74,7 +74,7 @@ void DontUseExceptions() {
     message if DontUseExceptions() is in effect (it is not by default).
     */
     if ( eclass == CE_Warning ) {
-      warn( CPLGetLastErrorMsg(), "%s" );
+      warn( CPLGetLastErrorMsg() );
     }
 #endif
 

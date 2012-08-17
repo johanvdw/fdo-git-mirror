@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: idadataset.cpp 22614 2011-06-29 19:08:07Z rouault $
+ * $Id: idadataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $
  *
  * Project:  IDA Raster Driver
  * Purpose:  Implemenents IDA driver/dataset/rasterband.
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "gdal_rat.h"
 
-CPL_CVSID("$Id: idadataset.cpp 22614 2011-06-29 19:08:07Z rouault $");
+CPL_CVSID("$Id: idadataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_IDA(void);
@@ -545,7 +545,7 @@ CPLErr IDADataset::SetProjection( const char *pszWKTIn )
 /* -------------------------------------------------------------------- */
     bHeaderDirty = TRUE;
 
-    abyHeader[23] = (GByte) nProjection;
+    abyHeader[23] = nProjection;
     c2tp( dfLatCenter, abyHeader + 120 );
     c2tp( dfLongCenter, abyHeader + 126 );
     c2tp( dfParallel1, abyHeader + 156 );
@@ -662,8 +662,6 @@ void IDADataset::ReadColorTable()
         CSLDestroy( papszTokens );
         pszLine = CPLReadLine( fp );
     }
-
-    VSIFClose( fp );
 
 /* -------------------------------------------------------------------- */
 /*      Attach RAT to band.                                             */
@@ -1008,7 +1006,7 @@ static void c2tp(double x, GByte *r)
     r[5] |= 0x80;
 
   // put exponent
-  r[0] = (GByte) (exp + 129);
+  r[0] = exp + 129;
 }
 
 /************************************************************************/
@@ -1057,9 +1055,9 @@ GDALDataset *IDADataset::Create( const char * pszFilename,
     abyHeader[22] = 200; /* image type - CALCULATED */
     abyHeader[23] = 0; /* projection - NONE */
     abyHeader[30] = nYSize % 256;
-    abyHeader[31] = (GByte) (nYSize / 256);
+    abyHeader[31] = nYSize / 256;
     abyHeader[32] = nXSize % 256;
-    abyHeader[33] = (GByte) (nXSize / 256);
+    abyHeader[33] = nXSize / 256;
 
     abyHeader[170] = 255; /* missing = 255 */
     c2tp( 1.0, abyHeader + 171 ); /* slope = 1.0 */

@@ -304,7 +304,7 @@ const wchar_t * FdoRdbmsFilterProcessor::PropertyNameToColumnName( const wchar_t
                             static_cast<const FdoSmLpDataPropertyDefinition*>(propertyDefinition);
                 const FdoSmPhColumn *column = dataProp->RefColumn();
                 if (NULL == column)
-                    throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_267, "Column does not exist for property '%1$ls'", (FdoString*)dataProp->GetQName()));
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
                 return column->GetName();
             }
             break;
@@ -351,7 +351,7 @@ const wchar_t * FdoRdbmsFilterProcessor::PropertyNameToColumnName( const wchar_t
 
                 const FdoSmPhColumn *column = geomProp->RefColumn();
                 if (NULL == column)
-                    throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_267, "Column does not exist for property '%1$ls'", (FdoString*)geomProp->GetQName()));
+                    throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
                 return  column->GetName();
             }
             break;
@@ -632,7 +632,7 @@ void FdoRdbmsFilterProcessor::ProcessIdentifier( FdoIdentifier& expr, bool useOu
             }
 
         default:
-            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_53, "Unsupported Schema Property Type"));
+            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
     }
 }
 
@@ -1099,12 +1099,12 @@ void FdoRdbmsFilterProcessor::AppendObjectProperty( const FdoSmLpClassDefinition
 
     const FdoSmLpDbObject* pTargetTable = pTargetClass->RefDbObject();
     if ( !pTargetTable )
-        throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_268, "Table does not exist for object property '%1$ls'", (FdoString*)objProp->GetQName()));
+        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
 
     const FdoSmPhColumnCollection* pkCols = pTargetTable->RefTargetColumns();
 
     if( !pkCols || pkCols->GetCount() == 0 )
-        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_45, "Schema error; no primary key found"));
+        throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
 
     if( pkCols->GetCount() != 1 )
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_20, "Case not handled yet"));
@@ -1127,10 +1127,8 @@ void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinit
         const FdoSmPhColumn *columnX = geomProp->RefColumnX();
         const FdoSmPhColumn *columnY = geomProp->RefColumnY();
         const FdoSmPhColumn *columnZ = geomProp->RefColumnZ();
-        if (NULL == columnX)
-            throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_267, "Column does not exist for property '%1$ls'", (FdoString*)geomProp->GetQName()));
-        if (NULL == columnY)
-            throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_267, "Column does not exist for property '%1$ls'", (FdoString*)geomProp->GetQName()));
+        if (NULL == columnX || NULL == columnY)
+            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
         AppendString( tableAlias );
         AppendString (L".", 1);
         AppendString( (FdoString*)(columnX->GetDbName()) );
@@ -1150,7 +1148,7 @@ void FdoRdbmsFilterProcessor::AppendGeometricProperty( const FdoSmLpClassDefinit
     {
         const FdoSmPhColumn *column = geomProp->RefColumn();
         if (NULL == column)
-            throw FdoFilterException::Create(NlsMsgGet1(FDORDBMS_267, "Column does not exist for property '%1$ls'", (FdoString*)geomProp->GetQName()));
+            throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, "Internal error"));
         FdoStringP sqlTableName = mFdoConnection->GetDbiConnection()->GetSchemaUtil()->GetDbObjectSqlName(currentClass);
         FdoString * tableAlias = GetTableAlias( sqlTableName );
         AppendString( tableAlias );

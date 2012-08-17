@@ -40,11 +40,6 @@ using namespace PCIDSK;
 /**
  * Return size of data type.
  *
- * Note that type CHN_BIT exists to represent one bit backed data from
- * bitmap segments, but because the return of this functions is measured
- * in bytes, the size of a CHN_BIT pixel cannot be properly returned (one
- * eighth of a byte), so "1" is returned instead.
- *
  * @param chan_type the channel type enumeration value.
  *
  * @return the size of the passed data type in bytes, or zero for unknown 
@@ -64,14 +59,6 @@ int PCIDSK::DataTypeSize( eChanType chan_type )
         return 2;
       case CHN_32R:
         return 4;
-      case CHN_C16U:
-        return 4;
-      case CHN_C16S:
-        return 4;
-      case CHN_C32R:
-        return 8;
-      case CHN_BIT:
-        return 1; // not really accurate!
       default:
         return 0;
     }
@@ -105,77 +92,10 @@ std::string PCIDSK::DataTypeName( eChanType chan_type )
         return "16U";
       case CHN_32R:
         return "32R";
-      case CHN_C16U:
-        return "C16U";
-      case CHN_C16S:
-        return "C16S";
-      case CHN_C32R:
-        return "C32R";
-      case CHN_BIT:
-        return "BIT";
       default:
         return "UNK";
     }
 }
-
-/************************************************************************/
-/*                      GetDataTypeFromName()                           */
-/************************************************************************/
-
-/**
- * @brief Return the segment type code based on the contents of type_name
- * 
- * @param the type name, as a string
- *
- * @return the channel type code
- */
-eChanType PCIDSK::GetDataTypeFromName(std::string const& type_name)
-{
-    if (type_name.find("8U") != std::string::npos) {
-        return CHN_8U;
-    } else if (type_name.find("C16U") != std::string::npos) {
-        return CHN_C16U;
-    } else if (type_name.find("C16S") != std::string::npos) {
-        return CHN_C16S;
-    } else if (type_name.find("C32R") != std::string::npos) {
-        return CHN_C32R;
-    } else if (type_name.find("16U") != std::string::npos) {
-        return CHN_16U;
-    } else if (type_name.find("16S") != std::string::npos) {
-        return CHN_16S;
-    } else if (type_name.find("32R") != std::string::npos) {
-        return CHN_32R;
-    } else if (type_name.find("BIT") != std::string::npos) {
-        return CHN_BIT;
-    } else {
-        return CHN_UNKNOWN;
-    }
-}
-
-/************************************************************************/
-/*                       IsDataTypeComplex()                           */
-/************************************************************************/
-
-/**
- * @brief Return whether or not the data type is complex
- * 
- * @param the type
- *
- * @return true if the data type is complex, false otherwise
- */
-bool PCIDSK::IsDataTypeComplex(eChanType type)
-{
-    switch(type)
-    {
-    case CHN_C32R:
-    case CHN_C16U:
-    case CHN_C16S:
-        return true;
-    default:
-        return false;
-    }
-}
-
 /************************************************************************/
 /*                          SegmentTypeName()                           */
 /************************************************************************/
