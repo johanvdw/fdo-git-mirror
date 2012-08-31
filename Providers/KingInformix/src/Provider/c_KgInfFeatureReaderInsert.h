@@ -18,16 +18,10 @@
 
 #ifndef _c_KgInfFeatureReaderInsert_h
 #define _c_KgInfFeatureReaderInsert_h
-
-#ifdef _FDO_3_5
 #include "FdoDefaultFeatureReader.h"
-#endif
 
-#ifdef _FDO_3_5
+
 class c_KgInfFeatureReaderInsert : public FdoDefaultFeatureReader
-#else
-class c_KgInfFeatureReaderInsert : public FdoIFeatureReader
-#endif
 {
 
 public:

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdodsdatasource.cpp 20634 2010-09-16 22:02:29Z rouault $
+ * $Id: ogrdodsdatasource.cpp 18515 2010-01-10 19:59:11Z rouault $
  *
  * Project:  OGR/DODS Interface
  * Purpose:  Implements OGRDODSDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdodsdatasource.cpp 20634 2010-09-16 22:02:29Z rouault $");
+CPL_CVSID("$Id: ogrdodsdatasource.cpp 18515 2010-01-10 19:59:11Z rouault $");
 /************************************************************************/
 /*                         OGRDODSDataSource()                          */
 /************************************************************************/
@@ -156,7 +156,7 @@ int OGRDODSDataSource::Open( const char * pszNewName )
     catch (Error &e) 
     {
         CPLError(CE_Failure, CPLE_OpenFailed, 
-                 "%s", e.get_error_message().c_str() );
+                 e.get_error_message().c_str() );
         return FALSE;
     }
 
@@ -195,11 +195,6 @@ int OGRDODSDataSource::Open( const char * pszNewName )
 
 #ifdef LIBDAP_39
     AttrTable* poTable = oDAS.container();
-    if (poTable == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Cannot get container");
-        return FALSE;
-    }
 #else
     AttrTable* poTable = &oDAS;
 #endif

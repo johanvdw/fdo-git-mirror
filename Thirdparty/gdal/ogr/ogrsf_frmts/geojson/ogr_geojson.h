@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geojson.h 23367 2011-11-12 22:46:13Z rouault $
+ * $Id$
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Definitions of OGR OGRGeoJSON driver types.
@@ -32,8 +32,6 @@
 #include <ogrsf_frmts.h>
 #include <cstdio>
 #include <vector> // used by OGRGeoJSONLayer
-
-#define SPACE_FOR_BBOX  80
 
 class OGRGeoJSONDataSource;
 
@@ -78,6 +76,7 @@ public:
     void AddFeature( OGRFeature* poFeature );
     void SetSpatialRef( OGRSpatialReference* poSRS );
     void DetectGeometryType();
+    bool EvaluateSpatialFilter( OGRGeometry* poGeometry );
 
 private:
 
@@ -90,12 +89,6 @@ private:
     OGRSpatialReference* poSRS_;
     CPLString sFIDColumn_;
     int nOutCounter_;
-
-    int bWriteBBOX;
-    int bBBOX3D;
-    OGREnvelope3D sEnvelopeLayer;
-
-    int nCoordPrecision;
 };
 
 /************************************************************************/
@@ -126,7 +119,7 @@ public:
     // OGRGeoJSONDataSource Interface
     //
     int Create( const char* pszName, char** papszOptions );
-    VSILFILE* GetOutputFile() const { return fpOut_; }
+    FILE* GetOutputFile() const { return fpOut_; }
 
     enum GeometryTranslation
     {
@@ -144,9 +137,6 @@ public:
 
     void SetAttributesTranslation( AttributesTranslation type );
 
-    int  GetFpOutputIsSeekable() const { return bFpOutputIsSeekable_; }
-    int  GetBBOXInsertLocation() const { return nBBOXInsertLocation_; }
-
 private:
 
     //
@@ -156,16 +146,13 @@ private:
     char* pszGeoData_;
     OGRGeoJSONLayer** papoLayers_;
     int nLayers_;
-    VSILFILE* fpOut_;
+    FILE* fpOut_;
     
     //
     // Translation/Creation control flags
     // 
     GeometryTranslation flTransGeom_;
     AttributesTranslation flTransAttrs_;
-
-    int bFpOutputIsSeekable_;
-    int nBBOXInsertLocation_;
 
     //
     // Priavte utility functions
@@ -200,7 +187,7 @@ public:
     //
     // OGRGeoJSONDriver Interface
     //
-    // NOTE: New version of Open() based on Andrey's RFC 10.
+    // NOTE: New version of Open() based on Andrey's RCF 10.
     OGRDataSource* Open( const char* pszName, int bUpdate,
                          char** papszOptions );
 

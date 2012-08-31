@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.h 18945 2010-02-27 20:39:31Z rouault $
+ * $Id: hdf4dataset.h 15691 2008-11-07 09:54:58Z dron $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Header file for HDF4 datasets reader.
@@ -76,6 +76,7 @@ class HDF4Dataset : public GDALPamDataset
     FILE	*fp;
     int32	hGR, hSD;
     int32	nImages;
+    HDF4DatasetType iDatasetType;
     HDF4SubdatasetType iSubdatasetType;
     const char	*pszSubdatasetType;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.cpp 22838 2011-07-30 17:55:35Z rouault $
+ * $Id: hdf4dataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  HDF4 Datasets. Open HDF4 file, fetch metadata and list of
@@ -39,7 +39,7 @@
 #include "hdf4compat.h"
 #include "hdf4dataset.h"
 
-CPL_CVSID("$Id: hdf4dataset.cpp 22838 2011-07-30 17:55:35Z rouault $");
+CPL_CVSID("$Id: hdf4dataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void	GDALRegister_HDF4(void);
@@ -63,9 +63,6 @@ HDF4Dataset::HDF4Dataset()
     fp = NULL;
     hSD = 0;
     hGR = 0;
-    nImages = 0;
-    iSubdatasetType = H4ST_UNKNOWN;
-    pszSubdatasetType = NULL;
     papszGlobalMetadata = NULL;
     papszSubDatasets = NULL;
     bIsHDFEOS = 0;
@@ -755,28 +752,19 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
     int		nCount;
     int32	aiDimSizes[H4_MAX_VAR_DIMS];
     int32	iRank, iNumType, nAttrs;
-    bool        bIsHDF = true;
-    
+
     // Sometimes "HDFEOSVersion" attribute is not defined and we will
     // determine HDF-EOS datasets using other records
     // (see ReadGlobalAttributes() method).
     if ( poDS->bIsHDFEOS
          || CSLFetchNameValue(poDS->papszGlobalMetadata, "HDFEOSVersion") )
     {
-        bIsHDF  = false;
-
         int32   nSubDatasets, nStrBufSize;
 
 /* -------------------------------------------------------------------- */
 /*  Process swath layers.                                               */
 /* -------------------------------------------------------------------- */
         hHDF4 = SWopen( poOpenInfo->pszFilename, DFACC_READ );
-        if( hHDF4 < 0)
-        {
-            delete poDS;
-            CPLError( CE_Failure, CPLE_OpenFailed, "Failed to open HDF4 `%s'.\n", poOpenInfo->pszFilename );
-            return NULL;
-        } 
         nSubDatasets = SWinqswath(poOpenInfo->pszFilename, NULL, &nStrBufSize);
 #if DEBUG
         CPLDebug( "HDF4", "Number of HDF-EOS swaths: %d", (int)nSubDatasets );
@@ -987,11 +975,9 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
             GDclose( hHDF4 );
         }
         GDclose( hHDF4 );
-
-        bIsHDF = ( nSubDatasets == 0 ); // Try to read as HDF
     }
 
-    if( bIsHDF )
+    else
     {
 
 /* -------------------------------------------------------------------- */
@@ -1099,17 +1085,8 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
         pszSDSName = CPLStrdup( CSLFetchNameValue( poDS->papszSubDatasets,
                             "SUBDATASET_1_NAME" ));
         delete poDS;
-        poDS = NULL;
-
-        GDALDataset* poRetDS = (GDALDataset*) GDALOpen( pszSDSName, poOpenInfo->eAccess );
+        poDS = (HDF4Dataset *) GDALOpen( pszSDSName, poOpenInfo->eAccess );
         CPLFree( pszSDSName );
-
-        if (poRetDS)
-        {
-            poRetDS->SetDescription(poOpenInfo->pszFilename);
-        }
-
-        return poRetDS;
     }
     else
     {

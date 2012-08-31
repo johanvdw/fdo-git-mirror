@@ -54,59 +54,26 @@ if (0) {
 }
 
 {
-    # test memory files
-    my $fp = Geo::GDAL::VSIFOpenL('/vsimem/x', 'w');
-    my $c = Geo::GDAL::VSIFWriteL("hello world!\n", $fp);
-    ok($c == 13, 'Wrote 13 characters to a memory file.');
-    Geo::GDAL::VSIFCloseL($fp);
-    $fp = Geo::GDAL::VSIFOpenL('/vsimem/x', 'r');
-    my $b = Geo::GDAL::VSIFReadL(40, $fp);
-    ok($b eq "hello world!\n", 'Read back what I Wrote to a memory file.');
-    Geo::GDAL::VSIFCloseL($fp);
-    Geo::GDAL::Unlink('/vsimem/x');
-}
-
-{
     my $driver = Geo::GDAL::GetDriver('MEM');
     my $dataset = $driver->Create('tmp', 10, 10, 3 , 'Int32', []);
-    ok($dataset->isa('Geo::GDAL::Dataset'), 'Geo::GDAL::Dataset');
-    ok($dataset->{RasterXSize} == 10, "Geo::GDAL::Dataset::RasterXSize $dataset->{RasterXSize}");
-    ok($dataset->{RasterCount} == 3, "Geo::GDAL::Dataset::RasterCount $dataset->{RasterCount}");
     my $drv = $dataset->GetDriver;
     ok($drv->isa('Geo::GDAL::Driver'), 'Geo::GDAL::Dataset::GetDriver');
-    my @size = $dataset->Size();
-    ok(is_deeply([10,10], \@size), "Geo::GDAL::Dataset::Size @size");
     my $r = $dataset->GetRasterBand(1);
-    my $g = $dataset->GetRasterBand(2);
-    my $b = $dataset->GetRasterBand(3);
+    my $g = $dataset->GetRasterBand(1);
+    my $b = $dataset->GetRasterBand(1);
 
     $b->WriteTile([
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10]
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+    [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
     ]);
-    $r->WriteTile([
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,0,0,0,0,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10],
-    [1,2,3,4,5,6,7,8,9,10]
-    ]);
-    $g->WriteTile($b->ReadTile);
-    $b->FillNodata($r);
-    #print STDERR "@$_\n" for (@{$b->ReadTile()});
 
     my $histogram;
     eval {
@@ -236,10 +203,14 @@ ok(is_deeply($a, $b), "xml parsing");
 
 my @tmp = sort keys %available_driver;
 
-print STDERR "\nGDAL version: ",Geo::GDAL::VersionInfo,"\n";
-print STDERR "Unexpected failures:\n",@fails,"\n" if @fails;
-print STDERR "Available drivers were ",join(', ',@tmp),"\n";
-print STDERR "Drivers used in tests were: ",join(', ',@tested_drivers),"\n";
+if (@fails) {
+    print STDERR "\nUnexpected failures:\n",@fails;
+    print STDERR "\nAvailable drivers were ",join(', ',@tmp),"\n";
+    print STDERR "Drivers used in tests were: ",join(', ',@tested_drivers),"\n";
+} else {
+    print STDERR "\nAvailable drivers were ",join(', ',@tmp),"\n";
+    print STDERR "Drivers used in tests were: ",join(', ',@tested_drivers),"\n";
+}
 
 system "rm -rf tmp_ds_*" unless $^O eq 'MSWin32';
 

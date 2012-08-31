@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst.i 20604 2010-09-13 21:02:41Z rouault $
+ * $Id: gdalconst.i 16513 2009-03-07 22:16:51Z rouault $
  *
  * Name:     gdalconst.i
  * Project:  GDAL Python Interface
@@ -130,8 +130,6 @@
 %constant CPLE_NoWriteAccess              = CPLE_NoWriteAccess;
 %constant CPLE_UserInterrupt              = CPLE_UserInterrupt;
 
-#ifndef SWIGCSHARP
-
 %constant char *DMD_LONGNAME           = GDAL_DMD_LONGNAME;
 %constant char *DMD_HELPTOPIC          = GDAL_DMD_HELPTOPIC;
 %constant char *DMD_MIMETYPE           = GDAL_DMD_MIMETYPE;
@@ -142,21 +140,6 @@
 %constant char *DCAP_CREATE     = GDAL_DCAP_CREATE;
 %constant char *DCAP_CREATECOPY = GDAL_DCAP_CREATECOPY;
 %constant char *DCAP_VIRTUALIO = GDAL_DCAP_VIRTUALIO;
-
-#else
-
-#define GDAL_DMD_LONGNAME "DMD_LONGNAME"
-#define GDAL_DMD_HELPTOPIC "DMD_HELPTOPIC"
-#define GDAL_DMD_MIMETYPE "DMD_MIMETYPE"
-#define GDAL_DMD_EXTENSION "DMD_EXTENSION"
-#define GDAL_DMD_CREATIONOPTIONLIST "DMD_CREATIONOPTIONLIST"
-#define GDAL_DMD_CREATIONDATATYPES "DMD_CREATIONDATATYPES"
-
-#define GDAL_DCAP_CREATE     "DCAP_CREATE"
-#define GDAL_DCAP_CREATECOPY "DCAP_CREATECOPY"
-#define GDAL_DCAP_VIRTUALIO  "DCAP_VIRTUALIO"
-
-#endif
 
 %constant CPLES_BackslashQuotable = CPLES_BackslashQuotable;
 %constant CPLES_XML               = CPLES_XML;
@@ -195,8 +178,3 @@
 %constant GMF_ALPHA               = 0x04;
 %constant GMF_NODATA              = 0x08;
 
-// GDALAsyncStatusType
-%constant GARIO_PENDING = GARIO_PENDING;
-%constant GARIO_UPDATE = GARIO_UPDATE;
-%constant GARIO_ERROR = GARIO_ERROR;
-%constant GARIO_COMPLETE = GARIO_COMPLETE;

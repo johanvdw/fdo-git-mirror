@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxfdatasource.cpp 22527 2011-06-13 03:58:34Z warmerdam $
+ * $Id: ogrdxfdatasource.cpp 18223 2009-12-09 01:15:31Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrdxfdatasource.cpp 22527 2011-06-13 03:58:34Z warmerdam $");
+CPL_CVSID("$Id: ogrdxfdatasource.cpp 18223 2009-12-09 01:15:31Z warmerdam $");
 
 /************************************************************************/
 /*                          OGRDXFDataSource()                          */
@@ -41,6 +41,12 @@ OGRDXFDataSource::OGRDXFDataSource()
 
 {
     fp = NULL;
+
+    iSrcBufferOffset = 0;
+    nSrcBufferBytes = 0;
+    iSrcBufferFileOffset = 0;
+
+    nLastValueSize = 0;
 }
 
 /************************************************************************/
@@ -97,22 +103,13 @@ OGRLayer *OGRDXFDataSource::GetLayer( int iLayer )
 /*                                Open()                                */
 /************************************************************************/
 
-int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
+int OGRDXFDataSource::Open( const char * pszFilename )
 
 {
     if( !EQUAL(CPLGetExtension(pszFilename),"dxf") )
         return FALSE;
 
-    osEncoding = CPL_ENC_ISO8859_1;
-
     osName = pszFilename;
-
-    bInlineBlocks = CSLTestBoolean(
-        CPLGetConfigOption( "DXF_INLINE_BLOCKS", "TRUE" ) );
-
-    if( CSLTestBoolean(
-            CPLGetConfigOption( "DXF_HEADER_ONLY", "FALSE" ) ) )
-        bHeaderOnly = TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
@@ -121,73 +118,57 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
     if( fp == NULL )
         return FALSE;
 
-    oReader.Initialize( fp );
-    
 /* -------------------------------------------------------------------- */
 /*      Confirm we have a header section.                               */
 /* -------------------------------------------------------------------- */
     char szLineBuf[257];
     int  nCode;
-    int  bEntitiesOnly = FALSE;
 
     if( ReadValue( szLineBuf ) != 0 || !EQUAL(szLineBuf,"SECTION") )
         return FALSE;
 
-    if( ReadValue( szLineBuf ) != 2 
-        || (!EQUAL(szLineBuf,"HEADER") && !EQUAL(szLineBuf,"ENTITIES")) )
+    if( ReadValue( szLineBuf ) != 2 || !EQUAL(szLineBuf,"HEADER") )
         return FALSE;
-
-    if( EQUAL(szLineBuf,"ENTITIES") )
-        bEntitiesOnly = TRUE;
 
 /* -------------------------------------------------------------------- */
 /*      Process the header, picking up a few useful pieces of           */
 /*      information.                                                    */
 /* -------------------------------------------------------------------- */
-    if( !bEntitiesOnly )
-    {
-        ReadHeaderSection();
-        ReadValue(szLineBuf);
+    ReadHeaderSection();
+    ReadValue(szLineBuf);
 
 /* -------------------------------------------------------------------- */
 /*      Process the CLASSES section, if present.                        */
 /* -------------------------------------------------------------------- */
-        if( EQUAL(szLineBuf,"ENDSEC") )
-            ReadValue(szLineBuf);
+    if( EQUAL(szLineBuf,"ENDSEC") )
+        ReadValue(szLineBuf);
 
-        if( EQUAL(szLineBuf,"SECTION") )
-            ReadValue(szLineBuf);
-        
-        if( EQUAL(szLineBuf,"CLASSES") )
-        {
-            while( (nCode = ReadValue( szLineBuf,sizeof(szLineBuf) )) > -1 
-                   && !EQUAL(szLineBuf,"ENDSEC") )
-            {
-                //printf("C:%d/%s\n", nCode, szLineBuf );
-            }
-        }
+    if( EQUAL(szLineBuf,"SECTION") )
+        ReadValue(szLineBuf);
 
-/* -------------------------------------------------------------------- */
-/*      Process the TABLES section, if present.                         */
-/* -------------------------------------------------------------------- */
-        if( EQUAL(szLineBuf,"ENDSEC") )
-            ReadValue(szLineBuf);
-        
-        if( EQUAL(szLineBuf,"SECTION") )
-            ReadValue(szLineBuf);
-        
-        if( EQUAL(szLineBuf,"TABLES") )
+    if( EQUAL(szLineBuf,"CLASSES") )
+    {
+        while( (nCode = ReadValue( szLineBuf,sizeof(szLineBuf) )) > -1 
+               && !EQUAL(szLineBuf,"ENDSEC") )
         {
-            ReadTablesSection();
-            ReadValue(szLineBuf);
+            //printf("C:%d/%s\n", nCode, szLineBuf );
         }
     }
 
 /* -------------------------------------------------------------------- */
-/*      Create a blocks layer if we are not in inlining mode.           */
+/*      Process the TABLES section, if present.                         */
 /* -------------------------------------------------------------------- */
-    if( !bInlineBlocks )
-        apoLayers.push_back( new OGRDXFBlocksLayer( this ) );
+    if( EQUAL(szLineBuf,"ENDSEC") )
+        ReadValue(szLineBuf);
+
+    if( EQUAL(szLineBuf,"SECTION") )
+        ReadValue(szLineBuf);
+
+    if( EQUAL(szLineBuf,"TABLES") )
+    {
+        ReadTablesSection();
+        ReadValue(szLineBuf);
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create out layer object - we will need it when interpreting     */
@@ -198,23 +179,17 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
 /* -------------------------------------------------------------------- */
 /*      Process the BLOCKS section if present.                          */
 /* -------------------------------------------------------------------- */
-    if( !bEntitiesOnly )
-    {
-        if( EQUAL(szLineBuf,"ENDSEC") )
-            ReadValue(szLineBuf);
-        
-        if( EQUAL(szLineBuf,"SECTION") )
-            ReadValue(szLineBuf);
-        
-        if( EQUAL(szLineBuf,"BLOCKS") )
-        {
-            ReadBlocksSection();
-            ReadValue(szLineBuf);
-        }
-    }
+    if( EQUAL(szLineBuf,"ENDSEC") )
+        ReadValue(szLineBuf);
 
-    if( bHeaderOnly )
-        return TRUE;
+    if( EQUAL(szLineBuf,"SECTION") )
+        ReadValue(szLineBuf);
+
+    if( EQUAL(szLineBuf,"BLOCKS") )
+    {
+        ReadBlocksSection();
+        ReadValue(szLineBuf);
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Now we are at the entities section, hopefully.  Confirm.        */
@@ -225,7 +200,7 @@ int OGRDXFDataSource::Open( const char * pszFilename, int bHeaderOnly )
     if( !EQUAL(szLineBuf,"ENTITIES") )
         return FALSE;
 
-    iEntitiesSectionOffset = oReader.iSrcBufferFileOffset + oReader.iSrcBufferOffset;
+    iEntitiesSectionOffset = iSrcBufferFileOffset + iSrcBufferOffset;
     apoLayers[0]->ResetReading();
 
     return TRUE;
@@ -251,18 +226,14 @@ void OGRDXFDataSource::ReadTablesSection()
         // Currently we are only interested in the LAYER table.
         nCode = ReadValue( szLineBuf, sizeof(szLineBuf) );
 
-        if( nCode != 2 )
+        if( nCode != 2 || !EQUAL(szLineBuf,"LAYER") )
             continue;
-
-        //CPLDebug( "DXF", "Found table %s.", szLineBuf );
 
         while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > -1
                && !EQUAL(szLineBuf,"ENDTAB") )
         {
             if( nCode == 0 && EQUAL(szLineBuf,"LAYER") )
                 ReadLayerDefinition();
-            if( nCode == 0 && EQUAL(szLineBuf,"LTYPE") )
-                ReadLineTypeDefinition();
         }
     }
 
@@ -281,33 +252,24 @@ void OGRDXFDataSource::ReadLayerDefinition()
     std::map<CPLString,CPLString> oLayerProperties;
     CPLString osLayerName = "";
 
-    oLayerProperties["Hidden"] = "0";
-
     while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > 0 )
     {
         switch( nCode )
         {
           case 2:
-            osLayerName = ACTextUnescape(szLineBuf,GetEncoding());
-            oLayerProperties["Exists"] = "1";
+            osLayerName = szLineBuf;
             break;
 
           case 6:
-            oLayerProperties["Linetype"] = ACTextUnescape(szLineBuf,
-                                                          GetEncoding());
+            oLayerProperties["Linetype"] = szLineBuf;
             break;
             
           case 62:
             oLayerProperties["Color"] = szLineBuf;
-
-            if( atoi(szLineBuf) < 0 ) // Is layer off?
-                oLayerProperties["Hidden"] = "1";
             break;
             
           case 70:
             oLayerProperties["Flags"] = szLineBuf;
-            if( atoi(szLineBuf) & 0x01 ) // Is layer frozen?
-                oLayerProperties["Hidden"] = "1";
             break;
 
           case 370:
@@ -345,64 +307,6 @@ const char *OGRDXFDataSource::LookupLayerProperty( const char *pszLayer,
 }
 
 /************************************************************************/
-/*                       ReadLineTypeDefinition()                       */
-/************************************************************************/
-
-void OGRDXFDataSource::ReadLineTypeDefinition()
-
-{
-    char szLineBuf[257];
-    int  nCode;
-    CPLString osLineTypeName;
-    CPLString osLineTypeDef;
-
-    while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > 0 )
-    {
-        switch( nCode )
-        {
-          case 2:
-            osLineTypeName = ACTextUnescape(szLineBuf,GetEncoding());
-            break;
-
-          case 49:
-          {
-              if( osLineTypeDef != "" )
-                  osLineTypeDef += " ";
-
-              if( szLineBuf[0] == '-' )
-                  osLineTypeDef += szLineBuf+1;
-              else
-                  osLineTypeDef += szLineBuf;
-
-              osLineTypeDef += "g";
-          }
-          break;
-            
-          default:
-            break;
-        }
-    }
-
-    if( osLineTypeDef != "" )
-        oLineTypeTable[osLineTypeName] = osLineTypeDef;
-    
-    UnreadValue();
-}
-
-/************************************************************************/
-/*                           LookupLineType()                           */
-/************************************************************************/
-
-const char *OGRDXFDataSource::LookupLineType( const char *pszName )
-
-{
-    if( oLineTypeTable.count(pszName) > 0 )
-        return oLineTypeTable[pszName];
-    else
-        return NULL;
-}
-
-/************************************************************************/
 /*                         ReadHeaderSection()                          */
 /************************************************************************/
 
@@ -429,33 +333,6 @@ void OGRDXFDataSource::ReadHeaderSection()
 
     CPLDebug( "DXF", "Read %d header variables.", 
               (int) oHeaderVariables.size() );
-
-/* -------------------------------------------------------------------- */
-/*      Decide on what CPLRecode() name to use for the files            */
-/*      encoding or allow the encoding to be overridden.                */
-/* -------------------------------------------------------------------- */
-    CPLString osCodepage = GetVariable( "$DWGCODEPAGE", "ANSI_1252" );
-
-    // not strictly accurate but works even without iconv.
-    if( osCodepage == "ANSI_1252" )
-        osEncoding = CPL_ENC_ISO8859_1; 
-    else if( EQUALN(osCodepage,"ANSI_",5) )
-    {
-        osEncoding = "CP";
-        osEncoding += osCodepage + 5;
-    }
-    else
-    {
-        // fallback to the default 
-        osEncoding = CPL_ENC_ISO8859_1;
-    }
-                                       
-    if( CPLGetConfigOption( "DXF_ENCODING", NULL ) != NULL )
-        osEncoding = CPLGetConfigOption( "DXF_ENCODING", NULL );
-
-    if( osEncoding != CPL_ENC_ISO8859_1 )
-        CPLDebug( "DXF", "Treating DXF as encoding '%s', $DWGCODEPAGE='%s'", 
-                  osEncoding.c_str(), osCodepage.c_str() );
 }
 
 /************************************************************************/
@@ -474,34 +351,3 @@ const char *OGRDXFDataSource::GetVariable( const char *pszName,
         return oHeaderVariables[pszName];
 }
 
-/************************************************************************/
-/*                         AddStandardFields()                          */
-/************************************************************************/
-
-void OGRDXFDataSource::AddStandardFields( OGRFeatureDefn *poFeatureDefn )
-
-{
-    OGRFieldDefn  oLayerField( "Layer", OFTString );
-    poFeatureDefn->AddFieldDefn( &oLayerField );
-
-    OGRFieldDefn  oClassField( "SubClasses", OFTString );
-    poFeatureDefn->AddFieldDefn( &oClassField );
-
-    OGRFieldDefn  oExtendedField( "ExtendedEntity", OFTString );
-    poFeatureDefn->AddFieldDefn( &oExtendedField );
-
-    OGRFieldDefn  oLinetypeField( "Linetype", OFTString );
-    poFeatureDefn->AddFieldDefn( &oLinetypeField );
-
-    OGRFieldDefn  oEntityHandleField( "EntityHandle", OFTString );
-    poFeatureDefn->AddFieldDefn( &oEntityHandleField );
-
-    OGRFieldDefn  oTextField( "Text", OFTString );
-    poFeatureDefn->AddFieldDefn( &oTextField );
-
-    if( !bInlineBlocks )
-    {
-        OGRFieldDefn  oTextField( "BlockName", OFTString );
-        poFeatureDefn->AddFieldDefn( &oTextField );
-    }
-}

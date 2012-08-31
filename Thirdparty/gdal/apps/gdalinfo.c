@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo.c 23245 2011-10-17 06:55:42Z etourigny $
+ * $Id: gdalinfo.c 18576 2010-01-17 22:32:24Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to list info about a file.
@@ -34,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalinfo.c 23245 2011-10-17 06:55:42Z etourigny $");
+CPL_CVSID("$Id: gdalinfo.c 18576 2010-01-17 22:32:24Z rouault $");
 
 static int 
 GDALInfoReportCorner( GDALDatasetH hDataset, 
@@ -50,8 +50,7 @@ void Usage()
 
 {
     printf( "Usage: gdalinfo [--help-general] [-mm] [-stats] [-hist] [-nogcp] [-nomd]\n"
-            "                [-norat] [-noct] [-nofl] [-checksum] [-proj4] [-mdd domain]*\n"
-            "                [-sd subdataset] datasetname\n" );
+            "                [-norat] [-noct] [-checksum] [-mdd domain]* datasetname\n" );
     exit( 1 );
 }
 
@@ -59,7 +58,7 @@ void Usage()
 /*                                main()                                */
 /************************************************************************/
 
-int main( int argc, char ** argv ) 
+int main( int argc, char ** argv )
 
 {
     GDALDatasetH	hDataset;
@@ -73,13 +72,10 @@ int main( int argc, char ** argv )
     int                 bStats = FALSE, bApproxStats = TRUE, iMDD;
     int                 bShowColorTable = TRUE, bComputeChecksum = FALSE;
     int                 bReportHistograms = FALSE;
-    int                 bReportProj4 = FALSE;
-    int                 nSubdataset = -1;
     const char          *pszFilename = NULL;
     char              **papszExtraMDDomains = NULL, **papszFileList;
     const char  *pszProjection = NULL;
     OGRCoordinateTransformationH hTransform = NULL;
-    int             bShowFileList = TRUE;
 
     /* Check that we are running against at least GDAL 1.5 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -125,8 +121,6 @@ int main( int argc, char ** argv )
             bComputeMinMax = TRUE;
         else if( EQUAL(argv[i], "-hist") )
             bReportHistograms = TRUE;
-        else if( EQUAL(argv[i], "-proj4") )
-            bReportProj4 = TRUE;
         else if( EQUAL(argv[i], "-stats") )
         {
             bStats = TRUE;
@@ -152,10 +146,6 @@ int main( int argc, char ** argv )
         else if( EQUAL(argv[i], "-mdd") && i < argc-1 )
             papszExtraMDDomains = CSLAddString( papszExtraMDDomains,
                                                 argv[++i] );
-        else if( EQUAL(argv[i], "-nofl") )
-            bShowFileList = FALSE;
-        else if( EQUAL(argv[i], "-sd") && i < argc-1 )
-            nSubdataset = atoi(argv[++i]);
         else if( argv[i][0] == '-' )
             Usage();
         else if( pszFilename == NULL )
@@ -179,7 +169,6 @@ int main( int argc, char ** argv )
                  pszFilename );
 
         CSLDestroy( argv );
-        CSLDestroy( papszExtraMDDomains );
     
         GDALDumpOpenDatasets( stderr );
 
@@ -190,38 +179,6 @@ int main( int argc, char ** argv )
         exit( 1 );
     }
     
-/* -------------------------------------------------------------------- */
-/*      Read specified subdataset if requested.                         */
-/* -------------------------------------------------------------------- */
-    if ( nSubdataset > 0 )
-    {
-        char **papszSubdatasets = GDALGetMetadata( hDataset, "SUBDATASETS" );
-        int nSubdatasets = CSLCount( papszSubdatasets );
-
-        if ( nSubdatasets > 0 && nSubdataset <= nSubdatasets )
-        {
-            char szKeyName[1024];
-            char *pszSubdatasetName;
-
-            snprintf( szKeyName, sizeof(szKeyName),
-                      "SUBDATASET_%d_NAME", nSubdataset );
-            szKeyName[sizeof(szKeyName) - 1] = '\0';
-            pszSubdatasetName =
-                CPLStrdup( CSLFetchNameValue( papszSubdatasets, szKeyName ) );
-            GDALClose( hDataset );
-            hDataset = GDALOpen( pszSubdatasetName, GA_ReadOnly );
-            CPLFree( pszSubdatasetName );
-        }
-        else
-        {
-            fprintf( stderr,
-                     "gdalinfo warning: subdataset %d of %d requested. "
-                     "Reading the main dataset.\n",
-                     nSubdataset, nSubdatasets );
-
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Report general info.                                            */
 /* -------------------------------------------------------------------- */
@@ -238,11 +195,8 @@ int main( int argc, char ** argv )
     else
     {
         printf( "Files: %s\n", papszFileList[0] );
-        if( bShowFileList )
-        {
-            for( i = 1; papszFileList[i] != NULL; i++ )
-                printf( "       %s\n", papszFileList[i] );
-        }
+        for( i = 1; papszFileList[i] != NULL; i++ )
+            printf( "       %s\n", papszFileList[i] );
     }
     CSLDestroy( papszFileList );
 
@@ -272,14 +226,6 @@ int main( int argc, char ** argv )
         else
             printf( "Coordinate System is `%s'\n",
                     GDALGetProjectionRef( hDataset ) );
-
-        if ( bReportProj4 ) 
-        {
-            char *pszProj4 = NULL;
-            OSRExportToProj4( hSRS, &pszProj4 );
-            printf("PROJ.4 string is:\n\'%s\'\n",pszProj4);
-            CPLFree( pszProj4 ); 
-        }
 
         OSRDestroySpatialReference( hSRS );
     }
@@ -372,10 +318,7 @@ int main( int argc, char ** argv )
             printf( "Metadata (%s):\n", papszExtraMDDomains[iMDD]);
             for( i = 0; papszMetadata[i] != NULL; i++ )
             {
-                if (EQUALN(papszExtraMDDomains[iMDD], "xml:", 4))
-                    printf( "%s\n", papszMetadata[i] );
-                else
-                    printf( "  %s\n", papszMetadata[i] );
+                printf( "  %s\n", papszMetadata[i] );
             }
         }
     }
@@ -580,10 +523,7 @@ int main( int argc, char ** argv )
         dfNoData = GDALGetRasterNoDataValue( hBand, &bGotNodata );
         if( bGotNodata )
         {
-            if (CPLIsNan(dfNoData))
-                printf( "  NoData Value=nan\n" );
-            else
-                printf( "  NoData Value=%.18g\n", dfNoData );
+            printf( "  NoData Value=%.18g\n", dfNoData );
         }
 
         if( GDALGetOverviewCount(hBand) > 0 )
@@ -602,21 +542,16 @@ int main( int argc, char ** argv )
                     printf( ", " );
 
                 hOverview = GDALGetOverview( hBand, iOverview );
-                if (hOverview != NULL)
-                {
-                    printf( "%dx%d", 
-                            GDALGetRasterBandXSize( hOverview ),
-                            GDALGetRasterBandYSize( hOverview ) );
+                printf( "%dx%d", 
+                        GDALGetRasterBandXSize( hOverview ),
+                        GDALGetRasterBandYSize( hOverview ) );
 
-                    pszResampling = 
-                        GDALGetMetadataItem( hOverview, "RESAMPLING", "" );
+                pszResampling = 
+                    GDALGetMetadataItem( hOverview, "RESAMPLING", "" );
 
-                    if( pszResampling != NULL 
-                        && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
-                        printf( "*" );
-                }
-                else
-                    printf( "(null)" );
+                if( pszResampling != NULL 
+                    && EQUALN(pszResampling,"AVERAGE_BIT2",12) )
+                    printf( "*" );
             }
             printf( "\n" );
 
@@ -633,13 +568,10 @@ int main( int argc, char ** argv )
                         printf( ", " );
 
                     hOverview = GDALGetOverview( hBand, iOverview );
-                    if (hOverview)
-                        printf( "%d",
-                                GDALChecksumImage(hOverview, 0, 0,
-                                        GDALGetRasterBandXSize(hOverview),
-                                        GDALGetRasterBandYSize(hOverview)));
-                    else
-                        printf( "(null)" );
+                    printf( "%d",
+                            GDALChecksumImage(hOverview, 0, 0,
+                                      GDALGetRasterBandXSize(hOverview),
+                                      GDALGetRasterBandYSize(hOverview)));
                 }
                 printf( "\n" );
             }

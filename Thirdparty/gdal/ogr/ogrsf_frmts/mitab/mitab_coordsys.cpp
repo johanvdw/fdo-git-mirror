@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_coordsys.cpp,v 1.42 2011-06-11 00:35:00 fwarmerdam Exp $
+ * $Id: mitab_coordsys.cpp,v 1.36 2007/11/21 21:15:45 dmorissette Exp $
  *
  * Name:     mitab_coordsys.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -31,25 +31,7 @@
  **********************************************************************
  *
  * $Log: mitab_coordsys.cpp,v $
- * Revision 1.42  2011-06-11 00:35:00  fwarmerdam
- * add support for reading google mercator (#4115)
- *
- * Revision 1.41  2010-10-07 18:46:26  aboudreault
- * Fixed bad use of atof when locale setting doesn't use . for float (GDAL bug #3775)
- *
- * Revision 1.40  2010-09-07 16:48:08  aboudreault
- * Removed incomplete patch for affine params support in mitab. (bug 1155)
- *
- * Revision 1.39  2010-07-07 19:00:15  aboudreault
- * Cleanup Win32 Compile Warnings (GDAL bug #2930)
- *
- * Revision 1.38  2010-07-05 18:32:48  aboudreault
- * Fixed memory leaks in mitab_capi.cpp and mitab_coordsys.cpp
- *
- * Revision 1.37  2010-07-05 17:20:14  aboudreault
- * Added Krovak projection suppoprt (bug 2230)
- *
- * Revision 1.36  2007-11-21 21:15:45  dmorissette
+ * Revision 1.36  2007/11/21 21:15:45  dmorissette
  * Fix asDatumInfoList[] and asSpheroidInfoList[] defns/refs (bug 1826)
  *
  * Revision 1.35  2007/06/21 13:23:43  fwarmerdam
@@ -147,6 +129,12 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
     char        **papszFields;
     OGRSpatialReference *poSR;
 
+#ifdef MITAB_AFFINE_PARAMS  // See MITAB bug 1155
+    // Encom 2003
+    int nAffineUnits = 7;
+    double dAffineParams[6];
+#endif
+
     if( pszCoordSys == NULL )
         return NULL;
     
@@ -158,6 +146,40 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
         pszCoordSys += 9;
     
     papszFields = CSLTokenizeStringComplex( pszCoordSys, " ,", TRUE, FALSE );
+
+#ifdef MITAB_AFFINE_PARAMS  // See MITAB bug 1155
+/* -------------------------------------------------------------------- */
+/*      Store and then clip off Affine information. - Encom 2003        */
+/* -------------------------------------------------------------------- */
+    int         iAffine = CSLFindString( papszFields, "Affine" );
+    int         nAffineIndex = 0;
+    int         nAffineFlag = 0;
+
+    while( iAffine != -1 && papszFields[iAffine] != NULL )
+    {
+        nAffineFlag = 1;
+        if (nAffineIndex<2)
+        {
+            // Ignore "Affine Units"
+        }
+        else if (nAffineIndex==2)
+        {
+            // Convert units to integer (TBD)
+            nAffineUnits = TABUnitIdFromString(papszFields[iAffine]);
+            if (nAffineUnits==-1) nAffineUnits = 7; // metres is default
+        }
+        else if (nAffineIndex<=8)
+        {
+            // Store affine params
+            dAffineParams[nAffineIndex-3] = atof(papszFields[iAffine]);
+        }
+        nAffineIndex++;
+
+        CPLFree( papszFields[iAffine] );
+        papszFields[iAffine] = NULL;
+        iAffine++;
+    }
+#endif // MITAB_AFFINE_PARAMS
 
 /* -------------------------------------------------------------------- */
 /*      Clip off Bounds information.                                    */
@@ -175,6 +197,25 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
 /*      Create a spatialreference object to operate on.                 */
 /* -------------------------------------------------------------------- */
     poSR = new OGRSpatialReference;
+
+#ifdef MITAB_AFFINE_PARAMS  // See MITAB bug 1155
+    // Encom 2003
+    if (nAffineFlag)
+    {
+        poSR->nAffineFlag = 1;
+        poSR->nAffineUnit = nAffineUnits;
+        poSR->dAffineParamA = dAffineParams[0];
+        poSR->dAffineParamB = dAffineParams[1];
+        poSR->dAffineParamC = dAffineParams[2];
+        poSR->dAffineParamD = dAffineParams[3];
+        poSR->dAffineParamE = dAffineParams[4];
+        poSR->dAffineParamF = dAffineParams[5];
+    }
+    else
+    {
+        poSR->nAffineFlag = 0; // Encom 2005
+    }
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      Fetch the projection.                                           */
@@ -206,7 +247,6 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
             CPLError(CE_Warning, CPLE_IllegalArg,
                      "Failed parsing CoordSys: '%s'", pszCoordSys);
         CSLDestroy(papszFields);
-        delete poSR;
         return NULL;
     }
 
@@ -272,7 +312,7 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
     else if( EQUAL(pszMIFUnits, "ft" ) )
     {
         pszUnitsName = SRS_UL_FOOT;
-        dfUnitsConv = CPLAtof(SRS_UL_FOOT_CONV);
+        dfUnitsConv = atof(SRS_UL_FOOT_CONV);
     }
     else if( EQUAL(pszMIFUnits, "yd" ) )
     {
@@ -298,27 +338,27 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
              || EQUAL(pszMIFUnits, "survey ft" ) )
     {
         pszUnitsName = SRS_UL_US_FOOT;
-        dfUnitsConv = CPLAtof(SRS_UL_US_FOOT_CONV);
+        dfUnitsConv = atof(SRS_UL_US_FOOT_CONV);
     }   
     else if( EQUAL(pszMIFUnits, "nmi" ) )
     {
         pszUnitsName = SRS_UL_NAUTICAL_MILE;
-        dfUnitsConv = CPLAtof(SRS_UL_NAUTICAL_MILE_CONV);
+        dfUnitsConv = atof(SRS_UL_NAUTICAL_MILE_CONV);
     }   
     else if( EQUAL(pszMIFUnits, "li" ) )
     {
         pszUnitsName = SRS_UL_LINK;
-        dfUnitsConv = CPLAtof(SRS_UL_LINK_CONV);
+        dfUnitsConv = atof(SRS_UL_LINK_CONV);
     }
     else if( EQUAL(pszMIFUnits, "ch" ) )
     {
         pszUnitsName = SRS_UL_CHAIN;
-        dfUnitsConv = CPLAtof(SRS_UL_CHAIN_CONV);
+        dfUnitsConv = atof(SRS_UL_CHAIN_CONV);
     }   
     else if( EQUAL(pszMIFUnits, "rd" ) )
     {
         pszUnitsName = SRS_UL_ROD;
-        dfUnitsConv = CPLAtof(SRS_UL_ROD);
+        dfUnitsConv = atof(SRS_UL_ROD);
     }   
     else if( EQUAL(pszMIFUnits, "mi" ) )
     {
@@ -333,11 +373,7 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
 /*      Note that per GDAL bug 1113 the false easting and north are     */
 /*      in local units, not necessarily meters.                         */
 /* -------------------------------------------------------------------- */
-    int nBaseProjection = nProjection;
-    if (nBaseProjection>=3000) nBaseProjection -=3000;
-    else if (nBaseProjection>=2000) nBaseProjection -=2000;
-    else if (nBaseProjection>=1000) nBaseProjection -=1000;
-    switch( nBaseProjection )
+    switch( nProjection )
     {
         /*--------------------------------------------------------------
          * NonEarth ... we return with an empty SpatialRef.  Eventually
@@ -636,19 +672,6 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
             GetMIFParm( papszNextField, 3, 0.0 ) );
         break;
 
-        /*--------------------------------------------------------------
-         * Krovak
-         *-------------------------------------------------------------*/
-       case 32:
-         poSR->SetKrovak( GetMIFParm( papszNextField, 1, 0.0 ),  // dfCenterLat
-                          GetMIFParm( papszNextField, 0, 0.0 ),  // dfCenterLong
-                          GetMIFParm( papszNextField, 3, 1.0 ),  // dfAzimuth
-                          GetMIFParm( papszNextField, 2, 0.0 ),  // dfPseudoStdParallelLat
-                          1.0,									  // dfScale
-                          GetMIFParm( papszNextField, 4, 0.0 ),  // dfFalseEasting
-                          GetMIFParm( papszNextField, 5, 0.0 )); // dfFalseNorthing
-         break;
-
       default:
         break;
     }
@@ -782,21 +805,12 @@ OGRSpatialReference *MITABCoordSys2SpatialRef( const char * pszCoordSys )
                      dfSemiMajor, dfInvFlattening,
                      pszPrimeM, dfPMLongToGreenwich,
                      SRS_UA_DEGREE,
-                     CPLAtof(SRS_UA_DEGREE_CONV) );
+                     atof(SRS_UA_DEGREE_CONV) );
 
     poSR->SetTOWGS84( adfDatumParm[0], adfDatumParm[1], adfDatumParm[2],
                       -adfDatumParm[3], -adfDatumParm[4], -adfDatumParm[5], 
                       adfDatumParm[6] );
 
-    /*-----------------------------------------------------------------
-     * Special case for Google Mercator (datum=157, ellipse=54, gdal #4115)
-     *----------------------------------------------------------------*/
-
-    if( nBaseProjection == 10 && nDatum == 157 )
-    {
-        poSR->SetNode( "PROJCS", "WGS 84 / Pseudo-Mercator" );
-        poSR->SetExtension( "PROJCS", "PROJ4", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs" );
-    }
 /* -------------------------------------------------------------------- */
 /*      Report on translation.                                          */
 /* -------------------------------------------------------------------- */
@@ -1126,18 +1140,6 @@ char *MITABSpatialRef2CoordSys( OGRSpatialReference * poSR )
         nParmCount = 4;
     }
 
-    else if( EQUAL(pszProjection,SRS_PT_KROVAK) )
-    {
-        nProjection = 32;
-        parms[0] = poSR->GetProjParm(SRS_PP_LONGITUDE_OF_CENTER,0.0);
-        parms[1] = poSR->GetProjParm(SRS_PP_LATITUDE_OF_CENTER,0.0);
-        parms[2] = poSR->GetProjParm(SRS_PP_PSEUDO_STD_PARALLEL_1,0.0);
-        parms[3] = poSR->GetProjParm(SRS_PP_AZIMUTH,0.0);
-        parms[4] = poSR->GetProjParm(SRS_PP_FALSE_EASTING,0.0);
-        parms[5] = poSR->GetProjParm(SRS_PP_FALSE_NORTHING,0.0);
-        nParmCount = 6;
-    }
-
     /* ==============================================================
      * Translate Datum and Ellipsoid
      * ============================================================== */
@@ -1236,7 +1238,7 @@ char *MITABSpatialRef2CoordSys( OGRSpatialReference * poSR )
     else if( dfLinearConv == 0.0254 || EQUAL(pszLinearUnits,"Inch")
              || EQUAL(pszLinearUnits,"IINCH"))
         pszMIFUnits = "in";
-    else if( dfLinearConv == CPLAtof(SRS_UL_FOOT_CONV)
+    else if( dfLinearConv == atof(SRS_UL_FOOT_CONV)
              || EQUAL(pszLinearUnits,SRS_UL_FOOT) )
         pszMIFUnits = "ft";
     else if( EQUAL(pszLinearUnits,"YARD") || EQUAL(pszLinearUnits,"IYARD") 
@@ -1248,7 +1250,7 @@ char *MITABSpatialRef2CoordSys( OGRSpatialReference * poSR )
         pszMIFUnits = "cm";
     else if( dfLinearConv == 1.0 )
         pszMIFUnits = "m";
-    else if( dfLinearConv == CPLAtof(SRS_UL_US_FOOT_CONV)
+    else if( dfLinearConv == atof(SRS_UL_US_FOOT_CONV)
              || EQUAL(pszLinearUnits,SRS_UL_US_FOOT) )
         pszMIFUnits = "survey ft";
     else if( EQUAL(pszLinearUnits,SRS_UL_NAUTICAL_MILE) )
@@ -1435,7 +1437,7 @@ int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj)
         && EQUAL(papszFields[0],"Earth")
         && EQUAL(papszFields[1],"Projection") )
     {
-        psProj->nProjId = (GByte)atoi(papszFields[2]);
+        psProj->nProjId = atoi(papszFields[2]);
         papszNextField = papszFields + 3;
     }
     else if (CSLCount( papszFields ) >= 2
@@ -1472,7 +1474,7 @@ int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj)
     if( (nDatum == 999 || nDatum == 9999)
         && CSLCount(papszNextField) >= 4 )
     {
-        psProj->nEllipsoidId = (GByte)atoi(papszFields[0]);
+        psProj->nEllipsoidId = atoi(papszFields[0]);
         psProj->dDatumShiftX = atof(papszNextField[1]);
         psProj->dDatumShiftY = atof(papszNextField[2]);
         psProj->dDatumShiftZ = atof(papszNextField[3]);
@@ -1515,8 +1517,8 @@ int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj)
 
         if( psDatumInfo != NULL )
         {
-            psProj->nEllipsoidId = (GByte)psDatumInfo->nEllipsoid;
-            psProj->nDatumId = (GInt16)psDatumInfo->nMapInfoDatumID;
+            psProj->nEllipsoidId = psDatumInfo->nEllipsoid;
+            psProj->nDatumId = psDatumInfo->nMapInfoDatumID;
             psProj->dDatumShiftX = psDatumInfo->dfShiftX;
             psProj->dDatumShiftY = psDatumInfo->dfShiftY;
             psProj->dDatumShiftZ = psDatumInfo->dfShiftZ;
@@ -1533,7 +1535,7 @@ int MITABCoordSys2TABProjInfo(const char * pszCoordSys, TABProjInfo *psProj)
      *----------------------------------------------------------------*/
     if( CSLCount(papszNextField) > 0 )
     {
-        psProj->nUnitsId = (GByte)TABUnitIdFromString(papszNextField[0]);
+        psProj->nUnitsId = TABUnitIdFromString(papszNextField[0]);
         papszNextField++;
     }
 

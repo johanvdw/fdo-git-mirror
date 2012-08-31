@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_java.i 21579 2011-01-24 21:57:24Z rouault $
+ * $Id: osr_java.i 16554 2009-03-12 20:10:50Z rouault $
  *
  * Name:     osr_java.i
  * Project:  GDAL SWIG Interface
@@ -46,10 +46,6 @@
     private osr()
     {
     }
-%}
-
-/* This hacks turns the osrJNI class into a package private class */
-%pragma(java) jniclassimports=%{
 %}
 
 /*
@@ -170,6 +166,10 @@
 /************************************************************************/
 /*                        GetWellKnownGeogCSAsWKT()                     */
 /************************************************************************/
+
+%{
+typedef char retStringAndCPLFree;
+%}
 
 %inline %{
 retStringAndCPLFree* GetWellKnownGeogCSAsWKT( const char *name ) {

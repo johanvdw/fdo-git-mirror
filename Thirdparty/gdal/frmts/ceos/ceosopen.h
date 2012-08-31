@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ceosopen.h 12285 2007-10-01 04:04:24Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  Public (C callable) interface for CEOS and related formats such
@@ -70,7 +70,7 @@ typedef struct {
     int		nBitsPerPixel;
 
     /* private information */
-    VSILFILE	*fpImage;
+    FILE	*fpImage;
 
     int         bLittleEndian;
 

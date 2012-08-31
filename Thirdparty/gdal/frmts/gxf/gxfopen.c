@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfopen.c 19867 2010-06-14 20:45:06Z rouault $
+ * $Id: gxfopen.c 16865 2009-04-27 12:49:49Z chaitanya $
  *
  * Project:  GXF Reader
  * Purpose:  Majority of Geosoft GXF reading code.
@@ -31,7 +31,7 @@
 #include <ctype.h>
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxfopen.c 19867 2010-06-14 20:45:06Z rouault $");
+CPL_CVSID("$Id: gxfopen.c 16865 2009-04-27 12:49:49Z chaitanya $");
 
 
 /* this is also defined in gdal.h which we avoid in this separable component */
@@ -341,7 +341,6 @@ void GXFClose( GXFHandle hGXF )
     CSLDestroy( psGXF->papszMapDatumTransform );
     CSLDestroy( psGXF->papszMapProjection );
     CPLFree( psGXF->pszTitle );
-    CPLFree( psGXF->pszTransformName );
 
     VSIFClose( psGXF->fp );
 

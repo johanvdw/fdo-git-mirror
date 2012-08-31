@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testepsg.cpp 18987 2010-03-01 19:44:06Z rouault $
+ * $Id: testepsg.cpp 18108 2009-11-26 19:35:30Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Test mainline for translating EPSG definitions into WKT.
@@ -32,7 +32,6 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "ogr_p.h"
-#include "cpl_multiproc.h"
 
 void Usage()
 
@@ -187,7 +186,6 @@ int main( int nArgc, char ** papszArgv )
     CSLDestroy( papszArgv );
     OSRCleanup();
     CPLFinderClean();
-    CPLCleanupTLS();
     
     return 0;
 }

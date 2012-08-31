@@ -1,4 +1,4 @@
-/* $Id: tif_write.c,v 1.36 2011-02-18 20:53:04 fwarmerdam Exp $ */
+/* $Id: tif_write.c,v 1.34 2009-06-03 23:47:22 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -498,8 +498,6 @@ TIFFWriteCheck(TIFF* tif, int tiles, const char* module)
 		    "Can not write scanlines to a tiled image");
 		return (0);
 	}
-
-        _TIFFFillStriles( tif );
         
 	/*
 	 * On the first write verify all the required information
@@ -740,10 +738,3 @@ TIFFSetWriteOffset(TIFF* tif, toff_t off)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

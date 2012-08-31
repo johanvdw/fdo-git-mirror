@@ -29,7 +29,7 @@
 
 #include "ogr_xplane_nav_reader.h"
 
-CPL_CVSID("$Id: ogr_xplane_nav_reader.cpp 21634 2011-02-06 14:45:00Z rouault $");
+CPL_CVSID("$Id: ogr_xplane_nav_reader.cpp 18548 2010-01-14 22:01:35Z rouault $");
 
 /************************************************************************/
 /*                   OGRXPlaneCreateNavFileReader                       */
@@ -100,7 +100,7 @@ OGRXPlaneReader* OGRXPlaneNavReader::CloneForLayer(OGRXPlaneLayer* poLayer)
     if (pszFilename)
     {
         poReader->pszFilename = CPLStrdup(pszFilename);
-        poReader->fp = VSIFOpenL( pszFilename, "rb" );
+        poReader->fp = VSIFOpen( pszFilename, "rt" );
     }
 
     return poReader;
@@ -123,7 +123,7 @@ int OGRXPlaneNavReader::IsRecognizedVersion( const char* pszVersionString)
 void OGRXPlaneNavReader::Read()
 {
     const char* pszLine;
-    while((pszLine = CPLReadLineL(fp)) != NULL)
+    while((pszLine = CPLReadLine(fp)) != NULL)
     {
         int nType;
         papszTokens = CSLTokenizeString(pszLine);

@@ -64,7 +64,7 @@ class ISIS3Dataset;
 
 class ISISTiledBand : public GDALPamRasterBand
 {
-    VSILFILE      *fpVSIL;
+    FILE      *fpVSIL;
     GIntBig   nFirstTileOffset;
     GIntBig   nXTileOffset;
     GIntBig   nYTileOffset;
@@ -72,7 +72,7 @@ class ISISTiledBand : public GDALPamRasterBand
 
   public:
 
-                ISISTiledBand( GDALDataset *poDS, VSILFILE *fpVSIL,
+                ISISTiledBand( GDALDataset *poDS, FILE *fpVSIL, 
                                int nBand, GDALDataType eDT,
                                int nTileXSize, int nTileYSize, 
                                GIntBig nFirstTileOffset, 
@@ -88,7 +88,7 @@ class ISISTiledBand : public GDALPamRasterBand
 /*                           ISISTiledBand()                            */
 /************************************************************************/
 
-ISISTiledBand::ISISTiledBand( GDALDataset *poDS, VSILFILE *fpVSIL,
+ISISTiledBand::ISISTiledBand( GDALDataset *poDS, FILE *fpVSIL, 
                               int nBand, GDALDataType eDT,
                               int nTileXSize, int nTileYSize, 
                               GIntBig nFirstTileOffset, 
@@ -167,7 +167,7 @@ CPLErr ISISTiledBand::IReadBlock( int nXBlock, int nYBlock, void *pImage )
 
 class ISIS3Dataset : public RawDataset
 {
-    VSILFILE	*fpImage;	// image data file.
+    FILE	*fpImage;	// image data file.
 
     CPLString   osExternalCube;
     
@@ -311,7 +311,7 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Open the file using the large file API.                         */
 /* -------------------------------------------------------------------- */
-    VSILFILE *fpQube = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
+    FILE *fpQube = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
 
     if( fpQube == NULL )
         return NULL;
@@ -401,12 +401,12 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
     double semi_major = 0.0;
     double semi_minor = 0.0;
     double iflattening = 0.0;
-    double center_lat = 0.0;
-    double center_lon = 0.0;
-    double first_std_parallel = 0.0;
-    double second_std_parallel = 0.0;
+    float center_lat = 0.0;
+    float center_lon = 0.0;
+    float first_std_parallel = 0.0;
+    float second_std_parallel = 0.0;
     double radLat, localRadius;
-    VSILFILE	*fp;
+    FILE	*fp;
 
     /*************   Skipbytes     *****************************/
     nSkipBytes = atoi(poDS->GetKeyword("IsisCube.Core.StartByte","")) - 1;
@@ -794,13 +794,13 @@ GDALDataset *ISIS3Dataset::Open( GDALOpenInfo * poOpenInfo )
     osName = CPLGetBasename(poOpenInfo->pszFilename);
     const char  *pszPrjFile = CPLFormCIFilename( osPath, osName, "prj" );
 
-    fp = VSIFOpenL( pszPrjFile, "r" );
+    fp = VSIFOpen( pszPrjFile, "r" );
     if( fp != NULL )
     {
         char	**papszLines;
         OGRSpatialReference oSRS;
 
-        VSIFCloseL( fp );
+        VSIFClose( fp );
         
         papszLines = CSLLoad( pszPrjFile );
 
@@ -913,8 +913,7 @@ void GDALRegister_ISIS3()
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
                                    "USGS Astrogeology ISIS cube (Version 3)" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
-                                   "frmt_isis3.html" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+                                   "frmt_various.html#ISIS3" );
 
         poDriver->pfnOpen = ISIS3Dataset::Open;
         poDriver->pfnIdentify = ISIS3Dataset::Identify;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALOverviews.java 20974 2010-10-26 18:03:08Z rouault $
+ * $Id: GDALOverviews.java 16341 2009-02-14 17:15:33Z rouault $
  *
  * Name:     GDALOverviews.java
  * Project:  GDAL Java Interface
@@ -125,10 +125,6 @@ class GDALOverviews {
                     System.out.println("         PaletteInterp: " + gdal.GetColorInterpretationName(over.GetRasterColorInterpretation()));
                 }
             }
-
-            /* explicit closing of dataset */
-            ds.delete();
-
             System.out.println("Completed.");
             System.out.println("Use:  gdalread " + args[0] + " outfile.png [overview] to extract a particular overview!" );
         }

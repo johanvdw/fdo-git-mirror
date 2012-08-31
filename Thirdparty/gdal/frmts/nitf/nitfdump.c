@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfdump.c 21182 2010-11-30 16:49:59Z rouault $
+ * $Id: nitfdump.c 17779 2009-10-09 16:38:08Z warmerdam $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Simple test mainline to dump info about NITF file. 
@@ -29,192 +29,11 @@
 
 #include "nitflib.h"
 #include "cpl_string.h"
-#include "cpl_multiproc.h"
-#include "cpl_vsi.h"
 
-#ifdef OGR_ENABLED
-#include "ogr_api.h"
-#endif
-
-CPL_CVSID("$Id: nitfdump.c 21182 2010-11-30 16:49:59Z rouault $");
+CPL_CVSID("$Id: nitfdump.c 17779 2009-10-09 16:38:08Z warmerdam $");
 
 static void DumpRPC( NITFImage *psImage, NITFRPC00BInfo *psRPC );
 static void DumpMetadata( const char *, const char *, char ** );
-
-#ifdef WIN32
-
-/* Below a few internal functions from nitffile.c and nitfimage.c */
-/* To be used by nitfdump.c, they should be CPL_DLL exported, but */
-/* they are mostly internal beasts so we copy&paste them here... */
-
-/************************************************************************/
-/*                            NITFGetField()                            */
-/*                                                                      */
-/*      Copy a field from a passed in header buffer into a temporary    */
-/*      buffer and zero terminate it.                                   */
-/************************************************************************/
-
-char *NITFGetField( char *pszTarget, const char *pszSource, 
-                    int nStart, int nLength )
-
-{
-    memcpy( pszTarget, pszSource + nStart, nLength );
-    pszTarget[nLength] = '\0';
-
-    return pszTarget;
-}
-
-
-static GUInt16 NITFReadMSBGUInt16(VSILFILE* fp, int* pbSuccess)
-{
-    GUInt16 nVal;
-    if (VSIFReadL(&nVal, 1, sizeof(nVal), fp) != sizeof(nVal))
-    {
-        *pbSuccess = FALSE;
-        return 0;
-    }
-    CPL_MSBPTR16( &nVal );
-    return nVal;
-}
-
-static GUInt32 NITFReadMSBGUInt32(VSILFILE* fp, int* pbSuccess)
-{
-    GUInt32 nVal;
-    if (VSIFReadL(&nVal, 1, sizeof(nVal), fp) != sizeof(nVal))
-    {
-        *pbSuccess = FALSE;
-        return 0;
-    }
-    CPL_MSBPTR32( &nVal );
-    return nVal;
-}
-
-/************************************************************************/
-/*                     NITFReadRPFLocationTable()                       */
-/************************************************************************/
-
-NITFLocation* NITFReadRPFLocationTable(VSILFILE* fp, int* pnLocCount)
-{
-    GUInt16 nLocSectionLength;
-    GUInt32 nLocSectionOffset;
-    GUInt16 iLoc;
-    GUInt16 nLocCount;
-    GUInt16 nLocRecordLength;
-    GUInt32 nLocComponentAggregateLength;
-    NITFLocation* pasLocations = NULL;
-    int bSuccess;
-    GUIntBig nCurOffset;
-
-    if (fp == NULL || pnLocCount == NULL)
-        return NULL;
-
-    *pnLocCount = 0;
-
-    nCurOffset = VSIFTellL(fp);
-
-    bSuccess = TRUE;
-    nLocSectionLength = NITFReadMSBGUInt16(fp, &bSuccess);
-    nLocSectionOffset = NITFReadMSBGUInt32(fp, &bSuccess);
-    if (nLocSectionOffset != 14)
-    {
-        CPLDebug("NITF", "Unusual location section offset : %d", nLocSectionOffset);
-    }
-
-    nLocCount = NITFReadMSBGUInt16(fp, &bSuccess);
-
-    if (!bSuccess || nLocCount == 0)
-    {
-        return NULL;
-    }
-
-    nLocRecordLength = NITFReadMSBGUInt16(fp, &bSuccess);
-    if (nLocRecordLength != 10)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "Did not get expected record length : %d", nLocRecordLength);
-        return NULL;
-    }
-
-    nLocComponentAggregateLength = NITFReadMSBGUInt32(fp, &bSuccess);
-
-    VSIFSeekL(fp, nCurOffset + nLocSectionOffset, SEEK_SET);
-
-    pasLocations = (NITFLocation *)  VSICalloc(sizeof(NITFLocation), nLocCount);
-    if (pasLocations == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-                 "Cannot allocate memory for location table");
-        return NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Process the locations.                                          */
-/* -------------------------------------------------------------------- */
-    for( iLoc = 0; iLoc < nLocCount; iLoc++ )
-    {
-        pasLocations[iLoc].nLocId = NITFReadMSBGUInt16(fp, &bSuccess);
-        pasLocations[iLoc].nLocSize = NITFReadMSBGUInt32(fp, &bSuccess);
-        pasLocations[iLoc].nLocOffset = NITFReadMSBGUInt32(fp, &bSuccess);
-    }
-
-    if (!bSuccess)
-    {
-        CPLFree(pasLocations);
-        return NULL;
-    }
-
-    *pnLocCount = nLocCount;
-    return pasLocations;
-}
-
-#endif
-
-typedef struct
-{
-    const char* pszLocName;
-    int         nLocID;
-} LocationNameId;
-
-static const LocationNameId asLocationTable[] =
-{
-    { "HeaderComponent", 128 },
-    { "LocationComponent", 129 },
-    { "CoverageSectionSubheader", 130 },
-    { "CompressionSectionSubsection", 131 },
-    { "CompressionLookupSubsection", 132 },
-    { "CompressionParameterSubsection", 133 },
-    { "ColorGrayscaleSectionSubheader", 134 },
-    { "ColormapSubsection", 135 },
-    { "ImageDescriptionSubheader", 136 },
-    { "ImageDisplayParametersSubheader", 137 },
-    { "MaskSubsection", 138 },
-    { "ColorConverterSubsection", 139 },
-    { "SpatialDataSubsection", 140 },
-    { "AttributeSectionSubheader", 141 },
-    { "AttributeSubsection", 142 },
-    { "ExplicitArealCoverageTable", 143 },
-    { "RelatedImagesSectionSubheader", 144 },
-    { "RelatedImagesSubsection", 145 },
-    { "ReplaceUpdateSectionSubheader", 146 },
-    { "ReplaceUpdateTable", 147 },
-    { "BoundaryRectangleSectionSubheader", 148 },
-    { "BoundaryRectangleTable", 149 },
-    { "FrameFileIndexSectionSubHeader", 150 },
-    { "FrameFileIndexSubsection", 151 },
-    { "ColorTableIndexSectionSubheader", 152 },
-    { "ColorTableIndexRecord", 153 }
-};
-
-const char* GetLocationNameFromId(int nID)
-{
-    unsigned int i;
-    for(i=0;i<sizeof(asLocationTable) / sizeof(asLocationTable[0]);i++)
-    {
-        if (asLocationTable[i].nLocID == nID)
-            return asLocationTable[i].pszLocName;
-    }
-    return "(unknown)";
-}
 
 /************************************************************************/
 /*                                main()                                */
@@ -226,26 +45,11 @@ int main( int nArgc, char ** papszArgv )
     NITFFile	*psFile;
     int          iSegment, iFile;
     char         szTemp[100];
-    int          bDisplayTRE = FALSE;
-    int          bExtractSHP = FALSE, bExtractSHPInMem = FALSE;
 
     if( nArgc < 2 )
     {
-        printf( "Usage: nitfdump [-tre] [-extractshp | -extractshpinmem] <nitf_filename>*\n" );
+        printf( "Usage: nitfdump <nitf_filename>*\n" );
         exit( 1 );
-    }
-    
-    for( iFile = 1; iFile < nArgc; iFile++ )
-    {
-        if ( EQUAL(papszArgv[iFile], "-tre") )
-            bDisplayTRE = TRUE;
-        else if ( EQUAL(papszArgv[iFile], "-extractshp") )
-            bExtractSHP = TRUE;
-        else if ( EQUAL(papszArgv[iFile], "-extractshpinmem") )
-        {
-            bExtractSHP = TRUE;
-            bExtractSHPInMem = TRUE;
-        }
     }
 
 /* ==================================================================== */
@@ -253,15 +57,6 @@ int main( int nArgc, char ** papszArgv )
 /* ==================================================================== */
     for( iFile = 1; iFile < nArgc; iFile++ )
     {
-        int bHasFoundLocationTable = FALSE;
-
-        if ( EQUAL(papszArgv[iFile], "-tre") )
-            continue;
-        if ( EQUAL(papszArgv[iFile], "-extractshp") )
-            continue;
-        if ( EQUAL(papszArgv[iFile], "-extractshpinmem") )
-            continue;
-
 /* -------------------------------------------------------------------- */
 /*      Open the file.                                                  */
 /* -------------------------------------------------------------------- */
@@ -285,7 +80,7 @@ int main( int nArgc, char ** papszArgv )
             while( nTREBytes > 10 )
             {
                 int nThisTRESize = atoi(NITFGetField(szTemp, pszTREData, 6, 5 ));
-                if (nThisTRESize < 0 || nThisTRESize > nTREBytes - 11)
+                if (nThisTRESize < 0)
                 {
                     NITFGetField(szTemp, pszTREData, 0, 6 );
                     printf(" Invalid size (%d) for TRE %s", nThisTRESize, szTemp);
@@ -297,30 +92,6 @@ int main( int nArgc, char ** papszArgv )
                 nTREBytes -= (nThisTRESize + 11);
             }
             printf( "\n" );
-
-            if (bDisplayTRE)
-            {
-                nTREBytes = psFile->nTREBytes;
-                pszTREData = psFile->pachTRE;
-
-                while( nTREBytes > 10 )
-                {
-                    char *pszEscaped;
-                    int nThisTRESize = atoi(NITFGetField(szTemp, pszTREData, 6, 5 ));
-                    if (nThisTRESize < 0 || nThisTRESize > nTREBytes - 11)
-                    {
-                        break;
-                    }
-
-                    pszEscaped = CPLEscapeString( pszTREData + 11, nThisTRESize,
-                                                       CPLES_BackslashQuotable );
-                    printf( "TRE '%6.6s' : %s\n", pszTREData, pszEscaped);
-                    CPLFree(pszEscaped);
-
-                    pszTREData += nThisTRESize + 11;
-                    nTREBytes -= (nThisTRESize + 11);
-                }
-            }
         }
 
 /* -------------------------------------------------------------------- */
@@ -378,7 +149,7 @@ int main( int nArgc, char ** papszArgv )
             }
 
             printf( "Image Segment %d, %dPx%dLx%dB x %dbits:\n", 
-                    iSegment + 1, psImage->nCols, psImage->nRows, 
+                    iSegment, psImage->nCols, psImage->nRows, 
                     psImage->nBands, psImage->nBitsPerSample );
             printf( "  PVTYPE=%s, IREP=%s, ICAT=%s, IMODE=%c, IC=%s, COMRAT=%s, ICORDS=%c\n", 
                     psImage->szPVType, psImage->szIREP, psImage->szICAT,
@@ -386,10 +157,9 @@ int main( int nArgc, char ** papszArgv )
                     psImage->chICORDS );
             if( psImage->chICORDS != ' ' )
             {
-                printf( "  UL=(%.15g,%.15g), UR=(%.15g,%.15g) Center=%d\n  LL=(%.15g,%.15g), LR=(%.15g,%.15g)\n", 
+                printf( "  UL=(%.15g,%.15g), UR=(%.15g,%.15g)\n  LL=(%.15g,%.15g), LR=(%.15g,%.15g)\n", 
                         psImage->dfULX, psImage->dfULY,
                         psImage->dfURX, psImage->dfURY,
-                        psImage->bIsBoxCenterOfPixel,
                         psImage->dfLLX, psImage->dfLLY,
                         psImage->dfLRX, psImage->dfLRY );
             }
@@ -414,7 +184,7 @@ int main( int nArgc, char ** papszArgv )
                 while( nTREBytes > 10 )
                 {
                     int nThisTRESize = atoi(NITFGetField(szTemp, pszTREData, 6, 5 ));
-                    if (nThisTRESize < 0 || nThisTRESize > nTREBytes - 11)
+                    if (nThisTRESize < 0)
                     {
                         NITFGetField(szTemp, pszTREData, 0, 6 );
                         printf(" Invalid size (%d) for TRE %s", nThisTRESize, szTemp);
@@ -426,42 +196,16 @@ int main( int nArgc, char ** papszArgv )
                     nTREBytes -= (nThisTRESize + 11);
                 }
                 printf( "\n" );
-
-                if (bDisplayTRE)
-                {
-                    nTREBytes = psImage->nTREBytes;
-                    pszTREData = psImage->pachTRE;
-    
-                    while( nTREBytes > 10 )
-                    {
-                        char *pszEscaped;
-                        int nThisTRESize = atoi(NITFGetField(szTemp, pszTREData, 6, 5 ));
-                        if (nThisTRESize < 0 || nThisTRESize > nTREBytes - 11)
-                        {
-                            break;
-                        }
-    
-                        pszEscaped = CPLEscapeString( pszTREData + 11, nThisTRESize,
-                                                        CPLES_BackslashQuotable );
-                        printf( "  TRE '%6.6s' : %s\n", pszTREData, pszEscaped);
-                        CPLFree(pszEscaped);
-    
-                        pszTREData += nThisTRESize + 11;
-                        nTREBytes -= (nThisTRESize + 11);
-                    }
-                }
             }
 
             /* Report info from location table, if found.                  */
             if( psImage->nLocCount > 0 )
             {
                 int i;
-                bHasFoundLocationTable = TRUE;
                 printf( "  Location Table\n" );
                 for( i = 0; i < psImage->nLocCount; i++ )
                 {
-                    printf( "    LocName=%s, LocId=%d, Offset=%d, Size=%d\n", 
-                            GetLocationNameFromId(psImage->pasLocations[i].nLocId),
+                    printf( "    LocId=%d, Offset=%d, Size=%d\n", 
                             psImage->pasLocations[i].nLocId,
                             psImage->pasLocations[i].nLocOffset,
                             psImage->pasLocations[i].nLocSize );
@@ -508,7 +252,6 @@ int main( int nArgc, char ** papszArgv )
             }
 
             DumpMetadata( "  Image Metadata:", "    ", psImage->papszMetadata );
-            printf("\n");
         }
 
 /* ==================================================================== */
@@ -547,212 +290,12 @@ int main( int nArgc, char ** papszArgv )
 /*      Report some standard info.                                      */
 /* -------------------------------------------------------------------- */
             printf( "Graphic Segment %d, type=%2.2s, sfmt=%c, sid=%10.10s\n",
-                    iSegment + 1, 
+                    iSegment, 
                     achSubheader + 0, 
                     achSubheader[nSTYPEOffset],
                     achSubheader + 2 );
 
             printf( "  sname=%20.20s\n", achSubheader + 12 );
-            printf("\n");
-        }
-
-/* ==================================================================== */
-/*      Report details of text segments.                                */
-/* ==================================================================== */
-        for( iSegment = 0; iSegment < psFile->nSegmentCount; iSegment++ )
-        {
-            char *pabyHeaderData;
-            char *pabyTextData;
-
-            NITFSegmentInfo *psSegment = psFile->pasSegmentInfo + iSegment;
-
-            if( !EQUAL(psSegment->szSegmentType,"TX") )
-                continue;
-
-            printf( "Text Segment %d\n", iSegment + 1);
-
-/* -------------------------------------------------------------------- */
-/*      Load the text header                                            */
-/* -------------------------------------------------------------------- */
-
-            /* Allocate one extra byte for the NULL terminating character */
-            pabyHeaderData = (char *) CPLCalloc(1,
-                    (size_t) psSegment->nSegmentHeaderSize + 1);
-            if (VSIFSeekL(psFile->fp, psSegment->nSegmentHeaderStart,
-                        SEEK_SET) != 0 ||
-                VSIFReadL(pabyHeaderData, 1, (size_t) psSegment->nSegmentHeaderSize,
-                        psFile->fp) != psSegment->nSegmentHeaderSize)
-            {
-                CPLError( CE_Warning, CPLE_FileIO,
-                        "Failed to read %d bytes of text header data at " CPL_FRMT_GUIB ".",
-                        psSegment->nSegmentHeaderSize,
-                        psSegment->nSegmentHeaderStart);
-                CPLFree(pabyHeaderData);
-                continue;
-            }
-
-            printf("  Header : %s\n", pabyHeaderData);
-            CPLFree(pabyHeaderData);
-
-/* -------------------------------------------------------------------- */
-/*      Load the raw TEXT data itself.                                  */
-/* -------------------------------------------------------------------- */
-
-
-            /* Allocate one extra byte for the NULL terminating character */
-            pabyTextData = (char *) CPLCalloc(1,(size_t)psSegment->nSegmentSize+1);
-            if( VSIFSeekL( psFile->fp, psSegment->nSegmentStart, 
-                        SEEK_SET ) != 0 
-                || VSIFReadL( pabyTextData, 1, (size_t)psSegment->nSegmentSize, 
-                            psFile->fp ) != psSegment->nSegmentSize )
-            {
-                CPLError( CE_Warning, CPLE_FileIO, 
-                        "Failed to read " CPL_FRMT_GUIB " bytes of text data at " CPL_FRMT_GUIB ".", 
-                        psSegment->nSegmentSize,
-                        psSegment->nSegmentStart );
-                CPLFree( pabyTextData );
-                continue;
-            }
-
-            printf("  Data  : %s\n", pabyTextData);
-            printf("\n");
-            CPLFree( pabyTextData );
-
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Report details of DES.                                          */
-/* -------------------------------------------------------------------- */
-        for( iSegment = 0; iSegment < psFile->nSegmentCount; iSegment++ )
-        {
-            NITFSegmentInfo *psSegInfo = psFile->pasSegmentInfo + iSegment;
-            NITFDES *psDES;
-            int nOffset = 0;
-            char szTREName[7];
-            int nThisTRESize;
-            int nRPFDESOffset = -1;
-
-            if( !EQUAL(psSegInfo->szSegmentType,"DE") )
-                continue;
-        
-            psDES = NITFDESAccess( psFile, iSegment );
-            if( psDES == NULL )
-            {
-                printf( "NITFDESAccess(%d) failed!\n", iSegment );
-                continue;
-            }
-
-            printf( "DE Segment %d:\n", iSegment + 1 );
-
-            printf( "  Segment TREs:" );
-            nOffset = 0;
-            while (NITFDESGetTRE( psDES, nOffset, szTREName, NULL, &nThisTRESize))
-            {
-                printf( " %6.6s(%d)", szTREName, nThisTRESize );
-                if (strcmp(szTREName, "RPFDES") == 0)
-                    nRPFDESOffset = nOffset + 11;
-                nOffset += 11 + nThisTRESize;
-            }
-            printf( "\n" );
-
-            if (bDisplayTRE)
-            {
-                char* pabyTREData = NULL;
-                nOffset = 0;
-                while (NITFDESGetTRE( psDES, nOffset, szTREName, &pabyTREData, &nThisTRESize))
-                {
-                    char* pszEscaped = CPLEscapeString( pabyTREData, nThisTRESize,
-                                                        CPLES_BackslashQuotable );
-                    printf( "  TRE '%6.6s' : %s\n", szTREName, pszEscaped);
-                    CPLFree(pszEscaped);
-
-                    nOffset += 11 + nThisTRESize;
-
-                    NITFDESFreeTREData(pabyTREData);
-                }
-            }
-
-            /* Report info from location table, if found. */
-            if( !bHasFoundLocationTable && nRPFDESOffset >= 0 )
-            {
-                int i;
-                int nLocCount = 0;
-                NITFLocation* pasLocations;
-
-                VSIFSeekL(psFile->fp, psSegInfo->nSegmentStart + nRPFDESOffset, SEEK_SET);
-                pasLocations = NITFReadRPFLocationTable(psFile->fp, &nLocCount);
-                if (pasLocations)
-                {
-                    printf( "  Location Table\n" );
-                    for( i = 0; i < nLocCount; i++ )
-                    {
-                        printf( "    LocName=%s, LocId=%d, Offset=%d, Size=%d\n", 
-                                GetLocationNameFromId(pasLocations[i].nLocId),
-                                pasLocations[i].nLocId,
-                                pasLocations[i].nLocOffset,
-                                pasLocations[i].nLocSize );
-                    }
-
-                    CPLFree(pasLocations);
-                    printf( "\n" );
-                }
-            }
-
-            DumpMetadata( "  DES Metadata:", "    ", psDES->papszMetadata );
-
-            if ( bExtractSHP && CSLFetchNameValue(psDES->papszMetadata, "NITF_SHAPE_USE") != NULL )
-            {
-                char szFilename[32];
-                char szRadix[32];
-                if (bExtractSHPInMem)
-                    sprintf(szRadix, "/vsimem/nitf_segment_%d", iSegment + 1);
-                else
-                    sprintf(szRadix, "nitf_segment_%d", iSegment + 1);
-
-                if (NITFDESExtractShapefile(psDES, szRadix))
-                {
-#ifdef OGR_ENABLED
-                    OGRDataSourceH hDS;
-                    OGRRegisterAll();
-                    sprintf(szFilename, "%s.SHP", szRadix);
-                    hDS = OGROpen(szFilename, FALSE, NULL);
-                    if (hDS)
-                    {
-                        int nGeom = 0;
-                        OGRLayerH hLayer = OGR_DS_GetLayer(hDS, 0);
-                        if (hLayer)
-                        {
-                            OGRFeatureH hFeat;
-                            printf("\n");
-                            while ( (hFeat = OGR_L_GetNextFeature(hLayer)) != NULL )
-                            {
-                                OGRGeometryH hGeom = OGR_F_GetGeometryRef(hFeat);
-                                if (hGeom)
-                                {
-                                    char* pszWKT = NULL;
-                                    OGR_G_ExportToWkt(hGeom, &pszWKT);
-                                    if (pszWKT)
-                                        printf("    Geometry %d : %s\n", nGeom ++, pszWKT);
-                                    CPLFree(pszWKT);
-                                }
-                                OGR_F_Destroy(hFeat);
-                            }
-                        }
-                        OGR_DS_Destroy(hDS);
-                    }
-#endif
-                }
-
-                if (bExtractSHPInMem)
-                {
-                    sprintf(szFilename, "%s.SHP", szRadix);
-                    VSIUnlink(szFilename);
-                    sprintf(szFilename, "%s.SHX", szRadix);
-                    VSIUnlink(szFilename);
-                    sprintf(szFilename, "%s.DBF", szRadix);
-                    VSIUnlink(szFilename);
-                }
-            }
         }
 
 /* -------------------------------------------------------------------- */
@@ -760,13 +303,6 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
         NITFClose( psFile );
     }
-    
-    CPLFinderClean();
-    CPLCleanupTLS();
-    VSICleanupFileManager();
-#ifdef OGR_ENABLED
-    OGRCleanupAll();
-#endif
 
     exit( 0 );
 }

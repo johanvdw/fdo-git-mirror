@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IntergraphDataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: IntergraphDataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, dataset support
@@ -167,7 +167,7 @@ GDALDataset *IntergraphDataset::Open( GDALOpenInfo *poOpenInfo )
     // We need to scan around the file, so we open it now. 
     // -------------------------------------------------------------------- 
 
-    VSILFILE   *fp;
+    FILE   *fp;
 
     if( poOpenInfo->eAccess == GA_ReadOnly  )
     {
@@ -591,7 +591,7 @@ GDALDataset *IntergraphDataset::Create( const char *pszFilename,
     //  Create output file with minimum header info
     // -------------------------------------------------------------------- 
 
-    VSILFILE *fp = VSIFOpenL( pszFilename, "wb+" );
+    FILE *fp = VSIFOpenL( pszFilename, "wb+" );
 
     if( fp == NULL )
     {
@@ -860,7 +860,6 @@ void GDALRegister_INGR()
         poDriver->SetDescription( "INGR" );
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "Intergraph Raster" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_IntergraphRaster.html" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
             "Byte Int16 Int32 Float32 Float64" );
         poDriver->pfnOpen = IntergraphDataset::Open;

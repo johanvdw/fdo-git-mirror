@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gribdataset.cpp 23302 2011-11-02 16:07:04Z aboudreault $
+ * $Id: gribdataset.cpp 18099 2009-11-25 20:02:16Z warmerdam $
  *
  * Project:  GRIB Driver
  * Purpose:  GDALDataset driver for GRIB translator for read support
@@ -40,7 +40,7 @@
 
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gribdataset.cpp 23302 2011-11-02 16:07:04Z aboudreault $");
+CPL_CVSID("$Id: gribdataset.cpp 18099 2009-11-25 20:02:16Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_GRIB(void);
@@ -69,7 +69,7 @@ class GRIBDataset : public GDALPamDataset
     const char *GetProjectionRef();
 	private:
 		void SetGribMetaData(grib_MetaData* meta);
-    VSILFILE	*fp;
+    FILE	*fp;
     char  *pszProjection;
 		char  *pszDescription;
     OGRCoordinateTransformation *poTransform;
@@ -238,7 +238,7 @@ CPLErr GRIBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                                    void * pImage )
 
 {
-    if( !m_Grib_Data )
+    if (!m_Grib_Data)
     {
         GRIBDataset *poGDS = (GRIBDataset *) poDS;
 
@@ -246,11 +246,6 @@ CPLErr GRIBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         // we don't seem to have any way to detect errors in this!
         ReadGribData(grib_fp, start, subgNum, &m_Grib_Data, &m_Grib_MetaData);
-        if( !m_Grib_Data )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined, "Out of memory." );
-            return CE_Failure;
-        }
 
 /* -------------------------------------------------------------------- */
 /*      Check that this band matches the dataset as a whole, size       */
@@ -330,9 +325,6 @@ void GRIBRasterBand::ReadGribData( DataSource & fp, sInt4 start, int subgNum, do
 
     IS_Init (&is);
 
-    const char* pszGribNormalizeUnits = CPLGetConfigOption("GRIB_NORMALIZE_UNITS", NULL);
-    if ( pszGribNormalizeUnits != NULL && ( STRCASECMP(pszGribNormalizeUnits,"NO")==0 ) )
-        f_unit = 0; /* do not normalize units to metric */
 
     /* Read GRIB message from file position "start". */
     fp.DataSourceFseek(start, SEEK_SET);
@@ -455,6 +447,9 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      A fast "probe" on the header that is partially read in memory.  */
 /* -------------------------------------------------------------------- */
+    if( poOpenInfo->fp == NULL)
+        return NULL;
+
     char *buff = NULL;
     uInt4 buffLen = 0;
     sInt4 sect0[SECT0LEN_WORD];
@@ -493,19 +488,6 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS = new GRIBDataset();
 
     poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, "r" );
-
-	/* Check the return values */    
-	if (!poDS->fp) {
-        // we have no FP, so we don't have anywhere to read from
-        char * errMsg = errSprintf(NULL);
-        if( errMsg != NULL )
-            CPLDebug( "GRIB", "%s", errMsg );
-        free(errMsg);
-		
-		CPLError( CE_Failure, CPLE_OpenFailed, "Error (%d) opening file %s", errno, poOpenInfo->pszFilename);
-        delete poDS;
-        return NULL;
-	}
     
 /* -------------------------------------------------------------------- */
 /*      Read the header.                                                */
@@ -554,7 +536,7 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
             double * data = NULL;
             grib_MetaData* metaData;
             GRIBRasterBand::ReadGribData(grib_fp, 0, Inv[i].subgNum, &data, &metaData);
-            if (data == 0 || metaData->gds.Nx < 1 || metaData->gds.Ny < 1)
+            if (metaData->gds.Nx < 1 || metaData->gds.Ny < 1 )
             {
                 CPLError( CE_Failure, CPLE_OpenFailed, 
                           "%s is a grib file, but no raster dataset was successfully identified.",
@@ -584,11 +566,6 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return( poDS );
 }
@@ -720,35 +697,11 @@ void GRIBDataset::SetGribMetaData(grib_MetaData* meta)
         rMinX = meta->gds.lon1; // longitude in degrees, to be transformed to meters (or degrees in case of latlon)
         rMaxY = meta->gds.lat1; // latitude in degrees, to be transformed to meters 
 
-        double rMinY = meta->gds.lat2;
-        if (meta->gds.lat2 > rMaxY)
-        {
-          rMaxY = meta->gds.lat2;
-          rMinY = meta->gds.lat1;
-        }
-
-        if (meta->gds.lon1 > meta->gds.lon2)
-          rPixelSizeX = (360.0 - (meta->gds.lon1 - meta->gds.lon2)) / (meta->gds.Nx - 1);
-        else
-          rPixelSizeX = (meta->gds.lon2 - meta->gds.lon1) / (meta->gds.Nx - 1);
-
-        rPixelSizeY = (rMaxY - rMinY) / (meta->gds.Ny - 1);
-
-        // Do some sanity checks for cases that can't be handled by the above
-        // pixel size corrections. GRIB1 has a minimum precision of 0.001
-        // for latitudes and longitudes, so we'll allow a bit higher than that.
-        if (rPixelSizeX < 0 || fabs(rPixelSizeX - meta->gds.Dx) > 0.002)
-          rPixelSizeX = meta->gds.Dx;
-
-        if (rPixelSizeY < 0 || fabs(rPixelSizeY - meta->gds.Dy) > 0.002)
-          rPixelSizeY = meta->gds.Dy;
+        if (meta->gds.scan == GRIB2BIT_2) // Y is minY, GDAL wants maxY
+            rMaxY += (meta->gds.Ny - 1) * meta->gds.Dy; // -1 because we GDAL needs the coordinates of the centre of the pixel
+        rPixelSizeX = meta->gds.Dx;
+        rPixelSizeY = meta->gds.Dy;
     }
-
-    // http://gdal.org/gdal_datamodel.html :
-    //   we need the top left corner of the top left pixel.
-    //   At the moment we have the center of the pixel.
-    rMinX-=rPixelSizeX/2;
-    rMaxY+=rPixelSizeY/2;
 
     adfGeoTransform[0] = rMinX;
     adfGeoTransform[3] = rMaxY;
@@ -779,7 +732,6 @@ void GDALRegister_GRIB()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_grib.html" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "grb" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = GRIBDataset::Open;
         poDriver->pfnIdentify = GRIBDataset::Identify;

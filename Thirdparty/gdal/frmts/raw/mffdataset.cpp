@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mffdataset.cpp 23425 2011-11-26 19:14:25Z rouault $
+ * $Id: mffdataset.cpp 18182 2009-12-05 01:12:13Z warmerdam $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: mffdataset.cpp 23425 2011-11-26 19:14:25Z rouault $");
+CPL_CVSID("$Id: mffdataset.cpp 18182 2009-12-05 01:12:13Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_MFF(void);
@@ -75,7 +75,7 @@ class MFFDataset : public RawDataset
     
     char	**papszHdrLines;
     
-    VSILFILE        **pafpBandFiles;
+    FILE        **pafpBandFiles;
     
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
@@ -106,12 +106,12 @@ class MFFTiledBand : public GDALRasterBand
 {
     friend class MFFDataset;
 
-    VSILFILE        *fpRaw;
+    FILE        *fpRaw;
     int         bNative;
 
   public:
 
-                   MFFTiledBand( MFFDataset *, int, VSILFILE *, int, int,
+                   MFFTiledBand( MFFDataset *, int, FILE *, int, int, 
                                  GDALDataType, int );
                    ~MFFTiledBand();
 
@@ -123,7 +123,7 @@ class MFFTiledBand : public GDALRasterBand
 /*                            MFFTiledBand()                            */
 /************************************************************************/
 
-MFFTiledBand::MFFTiledBand( MFFDataset *poDS, int nBand, VSILFILE *fp, 
+MFFTiledBand::MFFTiledBand( MFFDataset *poDS, int nBand, FILE *fp, 
                             int nTileXSize, int nTileYSize, 
                             GDALDataType eDataType, int bNative )
 
@@ -543,7 +543,7 @@ void MFFDataset::ScanForProjectionInfo()
     if (pszOriginLong != NULL)
         oLL.SetProjParm(SRS_PP_LONGITUDE_OF_ORIGIN,atof(pszOriginLong));
 
-    if (pszSpheroidName == NULL)
+    if ((pszSpheroidName == NULL))
     {
         CPLError(CE_Warning,CPLE_AppDefined,
             "Warning- unspecified ellipsoid.  Using wgs-84 parameters.\n");
@@ -855,7 +855,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
             break;
 
         /* open the file for required level of access */
-        VSILFILE     *fpRaw;
+        FILE     *fpRaw;
         const char *pszRawFilename = CPLFormFilename(pszTargetPath, 
                                                      papszDirFiles[i], NULL );
 

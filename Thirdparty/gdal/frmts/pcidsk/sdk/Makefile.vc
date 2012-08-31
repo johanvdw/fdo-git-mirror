@@ -29,9 +29,7 @@ OBJ = \
 	segment\cpcidskvectorsegment.obj \
 	segment\cpcidskrpcmodel.obj \
 	segment\metadatasegment_p.obj \
-	segment\sysblockmap.obj \
-	segment\cpcidskbitmap.obj \
-	segment\cpcidsk_tex.obj 
+	segment\sysblockmap.obj
 
 default:	pcidsk.lib
 

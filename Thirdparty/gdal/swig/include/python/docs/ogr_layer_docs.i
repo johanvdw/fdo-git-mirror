@@ -1,7 +1,7 @@
 %extend OGRLayerShadow {
 // File: ogrlayer_8cpp.xml
-%feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogrlayer.cpp 22724
-2011-07-15 16:45:39Z rouault $\") ";
+%feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogrlayer.cpp 17223
+2009-06-07 19:41:08Z rouault $\") ";
 
 %feature("docstring")  Reference "int OGR_L_Reference(OGRLayerH
 hLayer) ";
@@ -25,9 +25,6 @@ implementations will actually scan the entire layer once to count
 objects.
 
 The returned count takes the spatial filter into account.
-
-Note that some implementations of this method may alter the read
-cursor of the layer.
 
 This function is the same as the CPP OGRLayer::GetFeatureCount().
 
@@ -58,9 +55,6 @@ without setting a spatial filter.
 
 Layers without any geometry may return OGRERR_FAILURE just indicating
 that no meaningful extents could be collected.
-
-Note that some implementations of this method may alter the read
-cursor of the layer.
 
 This function is the same as the C++ method OGRLayer::GetExtent().
 
@@ -191,7 +185,8 @@ SetSpatialFilter()) will be returned.
 
 This function implements sequential access to the features of a layer.
 The OGR_L_ResetReading() function can be used to start at the
-beginning again.
+beginning again. Random reading, writing and spatial filtering will be
+added to the OGRLayer in the future.
 
 This function is the same as the C++ method
 OGRLayer::GetNextFeature().
@@ -260,16 +255,6 @@ OGRFeatureDefn for the layer will be updated to reflect the new field.
 Applications should never modify the OGRFeatureDefn used by a layer
 directly.
 
-This function should not be called while there are feature objects in
-existance that were obtained or created with the previous layer
-definition.
-
-Not all drivers support this function. You can query a layer to check
-if it supports it with the OLCCreateField capability. Some drivers may
-only support this method while there are still no features in the
-layer. When it is supported, the existings features of the backing
-file/database should be updated accordingly.
-
 This function is the same as the C++ method OGRLayer::CreateField().
 
 Parameters:
@@ -283,172 +268,6 @@ bApproxOK:  If TRUE, the field may be created in a slightly different
 form depending on the limitations of the format driver.
 
 OGRERR_NONE on success. ";
-
-%feature("docstring")  DeleteField "OGRErr
-OGR_L_DeleteField(OGRLayerH hLayer, int iField)
-
-Create a new field on a layer.
-
-You must use this to delete existing fields on a real layer.
-Internally the OGRFeatureDefn for the layer will be updated to reflect
-the deleted field. Applications should never modify the OGRFeatureDefn
-used by a layer directly.
-
-This function should not be called while there are feature objects in
-existance that were obtained or created with the previous layer
-definition.
-
-Not all drivers support this function. You can query a layer to check
-if it supports it with the OLCDeleteField capability. Some drivers may
-only support this method while there are still no features in the
-layer. When it is supported, the existings features of the backing
-file/database should be updated accordingly.
-
-This function is the same as the C++ method OGRLayer::DeleteField().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-iField:  index of the field to delete.
-
-OGRERR_NONE on success.
-
-OGR 1.9.0 ";
-
-%feature("docstring")  ReorderFields "OGRErr
-OGR_L_ReorderFields(OGRLayerH hLayer, int *panMap)
-
-Reorder all the fields of a layer.
-
-You must use this to reorder existing fields on a real layer.
-Internally the OGRFeatureDefn for the layer will be updated to reflect
-the reordering of the fields. Applications should never modify the
-OGRFeatureDefn used by a layer directly.
-
-This function should not be called while there are feature objects in
-existance that were obtained or created with the previous layer
-definition.
-
-panMap is such that,for each field definition at position i after
-reordering, its position before reordering was panMap[i].
-
-For example, let suppose the fields were \"0\",\"1\",\"2\",\"3\",\"4\"
-initially. ReorderFields([0,2,3,1,4]) will reorder them as
-\"0\",\"2\",\"3\",\"1\",\"4\".
-
-Not all drivers support this function. You can query a layer to check
-if it supports it with the OLCReorderFields capability. Some drivers
-may only support this method while there are still no features in the
-layer. When it is supported, the existings features of the backing
-file/database should be updated accordingly.
-
-This function is the same as the C++ method OGRLayer::ReorderFields().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-panMap:  an array of GetLayerDefn()->GetFieldCount() elements which is
-a permutation of [0, GetLayerDefn()->GetFieldCount()-1].
-
-OGRERR_NONE on success.
-
-OGR 1.9.0 ";
-
-%feature("docstring")  ReorderField "OGRErr
-OGR_L_ReorderField(OGRLayerH hLayer, int iOldFieldPos, int
-iNewFieldPos)
-
-Reorder an existing field on a layer.
-
-This function is a conveniency wrapper of OGR_L_ReorderFields()
-dedicated to move a single field.
-
-You must use this to reorder existing fields on a real layer.
-Internally the OGRFeatureDefn for the layer will be updated to reflect
-the reordering of the fields. Applications should never modify the
-OGRFeatureDefn used by a layer directly.
-
-This function should not be called while there are feature objects in
-existance that were obtained or created with the previous layer
-definition.
-
-The field definition that was at initial position iOldFieldPos will be
-moved at position iNewFieldPos, and elements between will be shuffled
-accordingly.
-
-For example, let suppose the fields were \"0\",\"1\",\"2\",\"3\",\"4\"
-initially. ReorderField(1, 3) will reorder them as
-\"0\",\"2\",\"3\",\"1\",\"4\".
-
-Not all drivers support this function. You can query a layer to check
-if it supports it with the OLCReorderFields capability. Some drivers
-may only support this method while there are still no features in the
-layer. When it is supported, the existings features of the backing
-file/database should be updated accordingly.
-
-This function is the same as the C++ method OGRLayer::ReorderField().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-iOldFieldPos:  previous position of the field to move. Must be in the
-range [0,GetFieldCount()-1].
-
-iNewFieldPos:  new position of the field to move. Must be in the range
-[0,GetFieldCount()-1].
-
-OGRERR_NONE on success.
-
-OGR 1.9.0 ";
-
-%feature("docstring")  AlterFieldDefn "OGRErr
-OGR_L_AlterFieldDefn(OGRLayerH hLayer, int iField, OGRFieldDefnH
-hNewFieldDefn, int nFlags)
-
-Alter the definition of an existing field on a layer.
-
-You must use this to alter the definition of an existing field of a
-real layer. Internally the OGRFeatureDefn for the layer will be
-updated to reflect the altered field. Applications should never modify
-the OGRFeatureDefn used by a layer directly.
-
-This function should not be called while there are feature objects in
-existance that were obtained or created with the previous layer
-definition.
-
-Not all drivers support this function. You can query a layer to check
-if it supports it with the OLCAlterFieldDefn capability. Some drivers
-may only support this method while there are still no features in the
-layer. When it is supported, the existings features of the backing
-file/database should be updated accordingly. Some drivers might also
-not support all update flags.
-
-This function is the same as the C++ method
-OGRLayer::AlterFieldDefn().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-iField:  index of the field whose definition must be altered.
-
-hNewFieldDefn:  new field definition
-
-nFlags:  combination of ALTER_NAME_FLAG, ALTER_TYPE_FLAG and
-ALTER_WIDTH_PRECISION_FLAG to indicate which of the name and/or type
-and/or width and precision fields from the new field definition must
-be taken into account.
-
-OGRERR_NONE on success.
-
-OGR 1.9.0 ";
 
 %feature("docstring")  StartTransaction "OGRErr
 OGR_L_StartTransaction(OGRLayerH hLayer)
@@ -591,18 +410,6 @@ perform the SetNextByIndex() call efficiently, otherwise FALSE.
 
 OLCCreateField / \"CreateField\": TRUE if this layer can create new
 fields on the current layer using CreateField(), otherwise FALSE.
-
-OLCDeleteField / \"DeleteField\": TRUE if this layer can delete
-existing fields on the current layer using DeleteField(), otherwise
-FALSE.
-
-OLCReorderFields / \"ReorderFields\": TRUE if this layer can reorder
-existing fields on the current layer using ReorderField() or
-ReorderFields(), otherwise FALSE.
-
-OLCAlterFieldDefn / \"AlterFieldDefn\": TRUE if this layer can alter
-the definition of an existing field on the current layer using
-AlterFieldDefn(), otherwise FALSE.
 
 OLCDeleteFeature / \"DeleteFeature\": TRUE if the DeleteFeature()
 method is supported on this layer, otherwise FALSE.
@@ -823,75 +630,5 @@ hStyleTable) ";
 
 %feature("docstring")  SetStyleTable "void
 OGR_L_SetStyleTable(OGRLayerH hLayer, OGRStyleTableH hStyleTable) ";
-
-%feature("docstring")  GetName "const char* OGR_L_GetName(OGRLayerH
-hLayer)
-
-Return the layer name.
-
-This returns the same content as
-OGR_FD_GetName(OGR_L_GetLayerDefn(hLayer)), but for a few drivers,
-calling OGR_L_GetName() directly can avoid lengthy layer definition
-initialization.
-
-This function is the same as the C++ method OGRLayer::GetName().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-the layer name (must not been freed)
-
-OGR 1.8.0 ";
-
-%feature("docstring")  GetGeomType "OGRwkbGeometryType
-OGR_L_GetGeomType(OGRLayerH hLayer)
-
-Return the layer geometry type.
-
-This returns the same result as
-OGR_FD_GetGeomType(OGR_L_GetLayerDefn(hLayer)), but for a few drivers,
-calling OGR_L_GetGeomType() directly can avoid lengthy layer
-definition initialization.
-
-This function is the same as the C++ method OGRLayer::GetGeomType().
-
-Parameters:
------------
-
-hLayer:  handle to the layer.
-
-the geometry type
-
-OGR 1.8.0 ";
-
-%feature("docstring")  SetIgnoredFields "OGRErr
-OGR_L_SetIgnoredFields(OGRLayerH hLayer, const char **papszFields)
-
-Set which fields can be omitted when retrieving features from the
-layer.
-
-If the driver supports this functionality (testable using
-OLCIgnoreFields capability), it will not fetch the specified fields in
-subsequent calls to GetFeature() / GetNextFeature() and thus save some
-processing time and/or bandwidth.
-
-Besides field names of the layers, the following special fields can be
-passed: \"OGR_GEOMETRY\" to ignore geometry and \"OGR_STYLE\" to
-ignore layer style.
-
-By default, no fields are ignored.
-
-This method is the same as the C++ method OGRLayer::SetIgnoredFields()
-
-Parameters:
------------
-
-papszFields:  an array of field names terminated by NULL item. If NULL
-is passed, the ignored list is cleared.
-
-OGRERR_NONE if all field names have been resolved (even if the driver
-does not support this method) ";
 
 }

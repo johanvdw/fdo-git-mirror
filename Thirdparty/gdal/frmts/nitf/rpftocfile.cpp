@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rpftocfile.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: rpftocfile.cpp 17617 2009-09-07 19:14:46Z rouault $
  *
  * Project:  RPF A.TOC read Library
  * Purpose:  Module responsible for opening a RPF TOC file, populating RPFToc
@@ -49,7 +49,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rpftocfile.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: rpftocfile.cpp 17617 2009-09-07 19:14:46Z rouault $");
 
 /************************************************************************/
 /*                        RPFTOCTrim()                                    */
@@ -86,9 +86,9 @@ static void RPFTOCTrim(char* str)
  
 RPFToc* RPFTOCRead(const char* pszFilename, NITFFile* psFile)
 {
-    int nTRESize;
+    int TRESize;
     const char* pachTRE = NITFFindTRE( psFile->pachTRE, psFile->nTREBytes, 
-                           "RPFHDR", &nTRESize );
+                           "RPFHDR", &TRESize );
     if (pachTRE == NULL)
     {
         CPLError( CE_Failure, CPLE_NotSupported, 
@@ -96,10 +96,18 @@ RPFToc* RPFTOCRead(const char* pszFilename, NITFFile* psFile)
         return NULL;
     }
 
-    if (nTRESize != 48)
+    if (TRESize < 48)
     {
         CPLError( CE_Failure, CPLE_NotSupported, 
-                  "RPFHDR TRE wrong size." );
+                  "Not enough bytes in RPFHDR." );
+        return NULL;
+    }
+
+    int nRemainingBytes = psFile->nTREBytes - (pachTRE - psFile->pachTRE);
+    if (nRemainingBytes < 48)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                "Cannot read RPFHDR TRE. Not enough bytes");
         return NULL;
     }
 
@@ -109,16 +117,16 @@ RPFToc* RPFTOCRead(const char* pszFilename, NITFFile* psFile)
 
 /* This function is directly inspired by function parse_toc coming from ogdi/driver/rpf/utils.c */
 
-RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* tocHeader)
+RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, FILE* fp, const char* tocHeader)
 {
     int i, j;
     unsigned int locationSectionPhysicalLocation;
     
-    int nSections;
-    unsigned int boundaryRectangleSectionSubHeaderPhysIndex = 0;
-    unsigned int boundaryRectangleTablePhysIndex = 0;
-    unsigned int frameFileIndexSectionSubHeaderPhysIndex = 0;
-    unsigned int frameFileIndexSubsectionPhysIndex = 0;
+    unsigned short nSections;
+    unsigned int boundaryRectangleSectionSubHeaderPhysIndex = 0, boundaryRectangleSectionSubHeaderLength = 0;
+    unsigned int boundaryRectangleTablePhysIndex = 0, boundaryRectangleTableLength = 0;
+    unsigned int frameFileIndexSectionSubHeaderPhysIndex = 0, frameFileIndexSectionSubHeaderLength = 0;
+    unsigned int frameFileIndexSubsectionPhysIndex = 0, frameFileIndexSubsectionLength = 0;
     
     unsigned int boundaryRectangleTableOffset;
     unsigned short boundaryRectangleCount;
@@ -153,29 +161,50 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* 
         return NULL;
     }
     
-    NITFLocation* pasLocations = NITFReadRPFLocationTable(fp, &nSections);
+    /* Skip location section length (4) and component location table offset (2)*/
+    VSIFSeekL( fp, 4 + 2, SEEK_CUR);
+    
+    /* How many sections: # of section location records */
+    VSIFReadL( &nSections, 1, sizeof(nSections), fp);
+    CPL_MSBPTR16( &nSections );
+    
+    /* Skip location record length(2) + component aggregate length(4) */
+    VSIFSeekL( fp, 2 + 4, SEEK_CUR);
     
     for (i = 0; i < nSections; i++)
     {
-        if (pasLocations[i].nLocId == LID_BoundaryRectangleSectionSubheader)
+        unsigned short id;
+        unsigned int sectionLength, physIndex;
+        VSIFReadL( &id, 1, sizeof(id), fp);
+        CPL_MSBPTR16( &id );
+        
+        VSIFReadL( &sectionLength, 1, sizeof(sectionLength), fp);
+        CPL_MSBPTR32( &sectionLength );
+        
+        VSIFReadL( &physIndex, 1, sizeof(physIndex), fp);
+        CPL_MSBPTR32( &physIndex );
+        
+        if (id == LID_BoundaryRectangleSectionSubheader)
         {
-            boundaryRectangleSectionSubHeaderPhysIndex = pasLocations[i].nLocOffset;
+            boundaryRectangleSectionSubHeaderPhysIndex = physIndex;
+            boundaryRectangleSectionSubHeaderLength = sectionLength;
         }
-        else if (pasLocations[i].nLocId == LID_BoundaryRectangleTable)
+        else if (id == LID_BoundaryRectangleTable)
         {
-            boundaryRectangleTablePhysIndex = pasLocations[i].nLocOffset;
+            boundaryRectangleTablePhysIndex = physIndex;
+            boundaryRectangleTableLength = sectionLength;
         }
-        else if (pasLocations[i].nLocId == LID_FrameFileIndexSectionSubHeader)
+        else if (id == LID_FrameFileIndexSectionSubHeader)
         {
-            frameFileIndexSectionSubHeaderPhysIndex = pasLocations[i].nLocOffset;
+            frameFileIndexSectionSubHeaderPhysIndex = physIndex;
+            frameFileIndexSectionSubHeaderLength = sectionLength;
         }
-        else if (pasLocations[i].nLocId == LID_FrameFileIndexSubsection)
+        else if (id == LID_FrameFileIndexSubsection)
         {
-            frameFileIndexSubsectionPhysIndex = pasLocations[i].nLocOffset;
+            frameFileIndexSubsectionPhysIndex = physIndex;
+            frameFileIndexSubsectionLength = sectionLength;
         }
     }
-
-    CPLFree(pasLocations);
     
     if (boundaryRectangleSectionSubHeaderPhysIndex == 0)
     {
@@ -422,14 +451,11 @@ RPFToc* RPFTOCReadFromBuffer(const char* pszFilename, VSILFILE* fp, const char* 
 
         if (frameEntry->exists)
         {
-            CPLError( CE_Warning, CPLE_AppDefined, 
-                      "Frame entry(%d,%d) for frame file index %d was already found.",
+            CPLError( CE_Failure, CPLE_NotSupported, 
+                      "Invalid TOC file. Frame entry(%d,%d) for frame file index %d is a duplicate.",
                       frameRow, frameCol, i);
-            CPLFree(frameEntry->directory);
-            frameEntry->directory = NULL;
-            CPLFree(frameEntry->fullFilePath);
-            frameEntry->fullFilePath = NULL;
-            frameEntry->exists = 0;
+            RPFTOCFree(toc);
+            return NULL;
         }
         
         VSIFReadL( &offsetFrameFilePathName, 1, sizeof(offsetFrameFilePathName), fp);

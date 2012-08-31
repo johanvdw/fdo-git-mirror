@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmanage.cpp 21425 2011-01-07 19:36:23Z warmerdam $
+ * $Id: gdalmanage.cpp 17553 2009-08-21 14:27:19Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline utility for GDAL identify, delete, rename and copy 
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: gdalmanage.cpp 21425 2011-01-07 19:36:23Z warmerdam $");
+CPL_CVSID("$Id: gdalmanage.cpp 17553 2009-08-21 14:27:19Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -166,6 +166,8 @@ int main( int argc, char ** argv )
 
 {
     char *pszDriver = NULL;
+    char **papszRemainingArgv = argv + 2;
+    int  nRemainingArgc = argc - 2;
     GDALDriverH hDriver = NULL;
 
     /* Check that we are running against at least GDAL 1.5 */
@@ -196,9 +198,6 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Do we have a driver specifier?                                  */
 /* -------------------------------------------------------------------- */
-    char **papszRemainingArgv = argv + 2;
-    int  nRemainingArgc = argc - 2;
-
     if( EQUAL(papszRemainingArgv[0],"-f") && nRemainingArgc > 1 )
     {
         pszDriver = papszRemainingArgv[1];

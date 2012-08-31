@@ -6,7 +6,7 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '1.9.0'
+gdal_version = '1.7.1'
 
 import sys
 import os
@@ -42,6 +42,7 @@ def get_numpy_include():
     else:
         return '.'
 
+
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
@@ -69,33 +70,19 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
-class gdal_config_error(Exception): pass
-
 
 from distutils.command.build_ext import build_ext
 from distutils.ccompiler import get_default_compiler
 from distutils.sysconfig import get_python_inc
 
-def fetch_config(option, gdal_config='gdal-config'):
-
+def get_gdal_config(option, gdal_config='gdal-config'):
+    
     command = gdal_config + " --%s" % option
-
     try:
         import subprocess
         command, args = command.split()[0], command.split()[1]
-        from sys import version_info
-        if version_info >= (3,0,0):
-            try:
-                p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
-            except OSError(e):
-                raise gdal_config_error(e)
-            r = p.stdout.readline().decode('ascii').strip()
-        else:
-            exec("""try:
-    p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
-except OSError, e:
-    raise gdal_config_error, e""")
-            r = p.stdout.readline().strip()
+        p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
+        r = p.stdout.readline().decode('ascii').strip()
         p.stdout.close()
         p.wait()
 
@@ -125,24 +112,13 @@ class gdal_ext(build_ext):
         self.numpy_include_dir = get_numpy_include()
         self.gdaldir = None
         self.gdal_config = self.GDAL_CONFIG
-        self.already_raised_no_config_error = False
 
     def get_compiler(self):
         return self.compiler or get_default_compiler()
     
     def get_gdal_config(self, option):
-        try:
-            return fetch_config(option, gdal_config = self.gdal_config)
-        except gdal_config_error:
-            # If an error is thrown, it is possibly because 
-            # the gdal-config location given in setup.cfg is 
-            # incorrect, or possibly the default -- ../../apps/gdal-config
-            # We'll try one time to use the gdal-config that might be 
-            # on the path. If that fails, we're done, however.
-            if not self.already_raised_no_config_error:
-                self.already_raised_no_config_error = True
-                return fetch_config(option)
-            
+        return get_gdal_config(option, gdal_config =self.gdal_config)
+    
     def finalize_options(self):
         if self.include_dirs is None:
             self.include_dirs = include_dirs
@@ -160,11 +136,12 @@ class gdal_ext(build_ext):
         
         if self.get_compiler() == 'msvc':
             return True
-
-        self.gdaldir = self.get_gdal_config('prefix')
-        self.library_dirs.append(os.path.join(self.gdaldir,'lib'))
-        self.include_dirs.append(os.path.join(self.gdaldir,'include'))
-
+        try:
+            self.gdaldir = self.get_gdal_config('prefix')
+            self.library_dirs.append(os.path.join(self.gdaldir,'lib'))
+            self.include_dirs.append(os.path.join(self.gdaldir,'include'))
+        except:
+            print ('Could not run gdal-config!!!!')
 
 extra_link_args = []
 extra_compile_args = []

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_java.i 21579 2011-01-24 21:57:24Z rouault $
+ * $Id: gdal_java.i 18017 2009-11-14 13:47:26Z rouault $
  *
  * Name:     gdal_java.i
  * Project:  GDAL SWIG Interface
@@ -42,9 +42,6 @@
   }
 %}
 
-/* This hacks turns the gdalJNI class into a package private class */
-%pragma(java) jniclassimports=%{
-%}
 
 %pragma(java) modulecode=%{
 
@@ -232,15 +229,10 @@ import org.gdal.gdalconst.gdalconstConstants;
       band_list = GDALGetRasterCount(self);
   }
 
-  GIntBig nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
+  int nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
                          buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                          band_list, pband_list, band_list,
                          nPixelSpace, nLineSpace, nBandSpace, FALSE );
-  if (nMinBufferSizeInBytes > 0x7fffffff)
-  {
-     CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-     nMinBufferSizeInBytes = 0;
-  }
   if (nMinBufferSizeInBytes == 0)
       return CE_Failure;
   if (nioBufferSize < nMinBufferSizeInBytes)
@@ -282,15 +274,10 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
       band_list = GDALGetRasterCount(self);
   }
 
-  GIntBig nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
+  int nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
                          buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                          band_list, pband_list, band_list,
                          nPixelSpace, nLineSpace, nBandSpace, sizeof(ctype) > 1 );
-  if (nMinBufferSizeInBytes > 0x7fffffff)
-  {
-     CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-     nMinBufferSizeInBytes = 0;
-  }
   if (nMinBufferSizeInBytes == 0)
       return CE_Failure;
   if (nRegularArraySizeOut < nMinBufferSizeInBytes)
@@ -328,15 +315,10 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
       band_list = GDALGetRasterCount(self);
   }
 
-  GIntBig nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
+  int nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
                          buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                          band_list, pband_list, band_list,
                          nPixelSpace, nLineSpace, nBandSpace, FALSE );
-  if (nMinBufferSizeInBytes > 0x7fffffff)
-  {
-     CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-     nMinBufferSizeInBytes = 0;
-  }
   if (nMinBufferSizeInBytes == 0)
       return CE_Failure;
   if (nioBufferSize < nMinBufferSizeInBytes)
@@ -376,15 +358,10 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
       band_list = GDALGetRasterCount(self);
   }
 
-  GIntBig nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
+  int nMinBufferSizeInBytes = ComputeDatasetRasterIOSize (
                          buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                          band_list, pband_list, band_list,
                          nPixelSpace, nLineSpace, nBandSpace, sizeof(ctype) > 1 );
-  if (nMinBufferSizeInBytes > 0x7fffffff)
-  {
-     CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-     nMinBufferSizeInBytes = 0;
-  }
   if (nMinBufferSizeInBytes == 0)
       return CE_Failure;
   if (nRegularArraySizeIn < nMinBufferSizeInBytes)
@@ -416,14 +393,9 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
                             void *nioBuffer, long nioBufferSize,
                             int nPixelSpace = 0, int nLineSpace = 0)
   {
-    GIntBig nMinBufferSizeInBytes = ComputeBandRasterIOSize (
+    int nMinBufferSizeInBytes = ComputeBandRasterIOSize (
                             buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                             nPixelSpace, nLineSpace, FALSE );
-    if (nMinBufferSizeInBytes > 0x7fffffff)
-    {
-       CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-       nMinBufferSizeInBytes = 0;
-    }
     if (nMinBufferSizeInBytes == 0)
         return CE_Failure;
     if (nioBufferSize < nMinBufferSizeInBytes)
@@ -456,14 +428,9 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
         return CE_Failure;
     }
   
-    GIntBig nMinBufferSizeInBytes = ComputeBandRasterIOSize (
+    int nMinBufferSizeInBytes = ComputeBandRasterIOSize (
                             buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                             nPixelSpace, nLineSpace, sizeof(ctype) > 1 );
-    if (nMinBufferSizeInBytes > 0x7fffffff)
-    {
-       CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-       nMinBufferSizeInBytes = 0;
-    }
     if (nMinBufferSizeInBytes == 0)
         return CE_Failure;
     if (nRegularArraySizeOut < nMinBufferSizeInBytes)
@@ -491,14 +458,9 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
                             void *nioBuffer, long nioBufferSize,
                             int nPixelSpace = 0, int nLineSpace = 0)
   {
-    GIntBig nMinBufferSizeInBytes = ComputeBandRasterIOSize (
+    int nMinBufferSizeInBytes = ComputeBandRasterIOSize (
                             buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                             nPixelSpace, nLineSpace, FALSE );
-    if (nMinBufferSizeInBytes > 0x7fffffff)
-    {
-       CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-       nMinBufferSizeInBytes = 0;
-    }
     if (nMinBufferSizeInBytes == 0)
         return CE_Failure;
     if (nioBufferSize < nMinBufferSizeInBytes)
@@ -530,14 +492,9 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
         return CE_Failure;
     }
     
-    GIntBig nMinBufferSizeInBytes = ComputeBandRasterIOSize (
+    int nMinBufferSizeInBytes = ComputeBandRasterIOSize (
                             buf_xsize, buf_ysize, GDALGetDataTypeSize(buf_type) / 8,
                             nPixelSpace, nLineSpace, sizeof(ctype) > 1 );
-    if (nMinBufferSizeInBytes > 0x7fffffff)
-    {
-       CPLError(CE_Failure, CPLE_IllegalArg, "Integer overflow");
-       nMinBufferSizeInBytes = 0;
-    }
     if (nMinBufferSizeInBytes == 0)
         return CE_Failure;
     if (nRegularArraySizeIn < nMinBufferSizeInBytes)
@@ -574,7 +531,7 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
 
     return GDALWriteBlock(self, nXBlockOff, nYBlockOff, nioBuffer);
   }
-/* %clear (void *nioBuffer, long nioBufferSize); */
+%clear (void *nioBuffer, long nioBufferSize);
 
 %clear (char *regularArrayOut, long nRegularArraySizeOut);
 %clear (short *regularArrayOut, long nRegularArraySizeOut);
@@ -589,7 +546,6 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
 %clear (double *regularArrayIn, long nRegularArraySizeIn);
 
 %apply (int nList, int* pListOut) {(int buckets, int *panHistogram)};
-%apply Pointer NONNULL { int *panHistogram };
   CPLErr GetHistogram(double min,
                      double max,
                      int buckets,
@@ -632,7 +588,7 @@ CPLErr ReadRaster( int xoff, int yoff, int xsize, int ysize,
   CPLErr GetHistogram(int buckets,
                         int *panHistogram) {
     CPLErrorReset(); 
-    CPLErr err = GDALGetRasterHistogram( self, -0.5, 255.5, buckets, panHistogram,
+    CPLErr err = GDALGetRasterHistogram( self, -0.5, 225.5, buckets, panHistogram,
                                          0, 1,
                                          NULL, NULL);
     return err;
@@ -681,34 +637,18 @@ import java.awt.Color;
     byte[] greens = new byte[size];
     byte[] blues = new byte[size];
     byte[] alphas = new byte[size];
-    int noAlphas = 0;
-    int zeroAlphas = 0;
-    int lastAlphaIndex = -1;
 
     Color entry = null;
     for(int i = 0; i < size; i++) {
       entry = GetColorEntry(i);
-      reds[i] = (byte)(entry.getRed()&0xff);
-      greens[i] = (byte)(entry.getGreen()&0xff);
-      blues[i] = (byte)(entry.getBlue()&0xff);
-      byte alpha = (byte)(entry.getAlpha()&0xff);
-      if (alpha == 255) 
-          noAlphas ++;
-      else{
-        if (alpha == 0){
-           zeroAlphas++;
-           lastAlphaIndex = i;
-        }
-      }
+      reds[i] = (byte)entry.getRed();
+      greens[i] = (byte)entry.getGreen();
+      blues[i] = (byte)entry.getBlue();
+      byte alpha = (byte)entry.getAlpha();
       alphas[i] = alpha;
     }
-    if (noAlphas == size)
-        return new IndexColorModel(bits, size, reds, greens, blues);
-    else if (noAlphas == (size - 1) && zeroAlphas == 1)
-        return new IndexColorModel(bits, size, reds, greens, blues, lastAlphaIndex);
-    else 
-        return new IndexColorModel(bits, size, reds, greens, blues, alphas);
- }
+    return new IndexColorModel(bits, size, reds, greens, blues, alphas);
+  }
 %}
 
 

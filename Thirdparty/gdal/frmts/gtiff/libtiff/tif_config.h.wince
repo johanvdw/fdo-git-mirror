@@ -1,4 +1,4 @@
-/* $Id: tif_config.h.wince 19417 2010-04-15 16:28:40Z mloskot $ */
+/* $Id: tif_config.h.wince 12244 2007-09-26 20:33:49Z mloskot $ */
 
 /*
  * Windows CE platform config.
@@ -8,7 +8,7 @@
 #endif
 
 /* Get the common system configuration switches from the main file. */
-#include "cpl_port.h"
+#include "cpl_config.h"
 
 /* Compatibility stuff. */
 
@@ -80,14 +80,12 @@
 /* Signed size type */
 #ifdef _WIN64
 #  define TIFF_SSIZE_T long
-#  define TIFF_SSIZE_FORMAT CPL_FRMT_GIB
 #else
 #  define TIFF_SSIZE_T signed long
-#  define TIFF_SSIZE_FORMAT "%ld"
 #endif
 
 /* Unsigned 16-bit type */
-#define TIFF_UINT16_T unsigned short
+#define TIFF_UINT16_T short
 
 /* Unsigned 32-bit type */
 #define TIFF_UINT32_T unsigned int
@@ -97,5 +95,3 @@
 
 /* Unsigned 8-bit type */
 #define TIFF_UINT8_T unsigned char
-
-#define TIFF_UINT64_FORMAT CPL_FRMT_GUIB
