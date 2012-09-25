@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: epsilondataset.cpp 22363 2011-05-12 18:26:19Z rouault $
+ * $Id: epsilondataset.cpp 17975 2009-11-08 20:51:31Z rouault $
  *
  * Project:  GDAL Epsilon driver
  * Purpose:  Implement GDAL Epsilon support using Epsilon library
@@ -30,7 +30,7 @@
 #include "epsilon.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: epsilondataset.cpp 22363 2011-05-12 18:26:19Z rouault $");
+CPL_CVSID("$Id: epsilondataset.cpp 17975 2009-11-08 20:51:31Z rouault $");
 
 #define RASTERLITE_WAVELET_HEADER "StartWaveletsImage$$"
 #define RASTERLITE_WAVELET_FOOTER "$$EndWaveletsImage"
@@ -48,13 +48,6 @@ typedef struct
     vsi_l_offset offset;
 } BlockDesc;
 
-#ifdef I_WANT_COMPATIBILITY_WITH_EPSILON_0_8_1
-#define GET_FIELD(hdr, field) \
-    (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.field : hdr.tc.field
-#else
-#define GET_FIELD(hdr, field) \
-    (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.hdr_data.gs.field : hdr.hdr_data.tc.field
-#endif
 
 /************************************************************************/
 /* ==================================================================== */
@@ -66,7 +59,7 @@ class EpsilonDataset : public GDALPamDataset
 {
     friend class EpsilonRasterBand;
 
-    VSILFILE*    fp;
+    FILE*    fp;
     vsi_l_offset nFileOff;
     
     GByte*   pabyFileBuf;
@@ -244,8 +237,8 @@ CPLErr EpsilonRasterBand::IReadBlock( int nBlockXOff,
         return CE_Failure;
     }
     
-    int w = GET_FIELD(hdr, w);
-    int h = GET_FIELD(hdr, h);
+    int w = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.w : hdr.tc.w;
+    int h = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.h : hdr.tc.h;
     int i;
 
     if (poGDS->nBands == 1)
@@ -512,12 +505,12 @@ int EpsilonDataset::ScanBlocks(int* pnBands)
             continue;
         }
         
-        int W = GET_FIELD(hdr, W);
-        int H = GET_FIELD(hdr, H);
-        int x = GET_FIELD(hdr, x);
-        int y = GET_FIELD(hdr, y);
-        int w = GET_FIELD(hdr, w);
-        int h = GET_FIELD(hdr, h);
+        int W = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.W : hdr.tc.W;
+        int H = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.H : hdr.tc.H;
+        int x = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.x : hdr.tc.x;
+        int y = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.y : hdr.tc.y;
+        int w = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.w : hdr.tc.w;
+        int h = (hdr.block_type == EPS_GRAYSCALE_BLOCK) ? hdr.gs.h : hdr.tc.h;
 
         //CPLDebug("EPSILON", "W=%d,H=%d,x=%d,y=%d,w=%d,h=%d,offset=" CPL_FRMT_GUIB,
         //                    W, H, x, y, w, h, nStartBlockFileOff);
@@ -634,7 +627,7 @@ GDALDataset* EpsilonDataset::Open(GDALOpenInfo* poOpenInfo)
         return NULL;
     }
 
-    VSILFILE* fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
+    FILE* fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
     if (fp == NULL)
         return NULL;
     
@@ -787,7 +780,7 @@ EpsilonDatasetCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      Open file                                                       */
 /* -------------------------------------------------------------------- */
 
-    VSILFILE* fp = VSIFOpenL(pszFilename, "wb");
+    FILE* fp = VSIFOpenL(pszFilename, "wb");
     if (fp == NULL)
         return NULL;
 
@@ -1019,8 +1012,8 @@ void GDALRegister_EPSILON()
 "   <Option name='FILTER' type='string-select' description='Filter ID' default='daub97lift'>"
 "%s"
 "   </Option>"
-"   <Option name='BLOCKXSIZE' type='int' description='Tile Width. Between 32 and 1024' default='256'/>"
-"   <Option name='BLOCKYSIZE' type='int' description='Tile Height. Between 32 and 1024' default='256'/>"
+"   <Option name='BLOCKXSIZE' type='int' description='Tile Width. Between 32 and 1024' default=256/>"
+"   <Option name='BLOCKYSIZE' type='int' description='Tile Height. Between 32 and 1024' default=256/>"
 "   <Option name='MODE' type='string-select' default='OTLPF'>"
 "       <Value>NORMAL</Value>"
 "       <Value>OTLPF</Value>"

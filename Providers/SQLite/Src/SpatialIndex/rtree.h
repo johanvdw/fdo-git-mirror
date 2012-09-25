@@ -16,33 +16,23 @@
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
 
-#define USE_SSE 1
-
-#include "float.h"
-
 #ifdef _MSC_VER
   #define ALGNW __declspec(align(16))
   #define ALGNL
-  #if USE_SSE
-    #include <emmintrin.h>
-  #endif
+  #include <emmintrin.h>
 #else
   #define ALGNW
   #define ALGNL __attribute__((aligned(16)))
 
-  #if USE_SSE
-    #if defined(__ICC)
-        #include <emmintrin.h>
-    #else
-        #include <xmmintrin.h>
-    #endif
+  #if defined(__ICC)
+      #include <emmintrin.h>
+  #else
+      #include <xmmintrin.h>
   #endif
 
-  #ifndef _aligned_free
-    #define _aligned_free free
-  #endif
+  #define _aligned_free free
 
-  static void* _aligned_malloc(size_t size, size_t alignment)
+  void* _aligned_malloc(size_t size, size_t alignment)
   {
     void* ret = 0;
     int res = posix_memalign(&ret, alignment, size);
@@ -50,11 +40,8 @@
   }
 #endif
 
-namespace fdo
-{
-
-//The type to use for feature IDs. Must be a signed type, int or __int64!
-typedef int fid_t;
+//The type to use for feature IDs. Must be a signed type!
+typedef __int64 fid_t;
 
 //The type to use for node IDs. Generally should match fid_t.
 typedef fid_t id_t;
@@ -64,7 +51,7 @@ typedef fid_t id_t;
     #ifdef _M_X64
         #define RTREE_OUTOFCORE 0
     #else
-        #define RTREE_OUTOFCORE 0
+        #define RTREE_OUTOFCORE 1
     #endif
 #else
     #define RTREE_OUTOFCORE 0
@@ -81,19 +68,21 @@ static const size_t OUT_OF_CORE_THRESHOLD = 16*1024*1024; //bytes
 //Should be enough for a tree depth to hold the maximum expected number of items
 //at the specified branching factor. So max_depth = log_base_branch_factor (num_items)
 #if MAX_BRANCH == 4
-#define MAX_DEPTH 32
+#define MAX_DEPTH 16
 #elif MAX_BRANCH == 8
-#define MAX_DEPTH  16
+#define MAX_DEPTH  11
 #elif MAX_BRANCH == 16
-#define MAX_DEPTH  12
-#elif MAX_BRANCH == 32
 #define MAX_DEPTH  8
+#elif MAX_BRANCH == 32
+#define MAX_DEPTH  7
 #else
 #error "MAX_BRANCH is not what I expect -- please define MAX_DEPTH here, or fix MAX_BRANCH"
 #endif
 
 #define CACHE_LINE 64
 
+namespace bvh
+{
 
 /*
 static int flt_plus_inf = 0x7f800000; //+Infinity
@@ -105,26 +94,16 @@ static int ALGNW make_positive[] ALGNL = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0
 
 static inline void minss(float* a, const float* b)
 {
-#if USE_SSE
     __m128 v1 = _mm_load_ss(a);
     __m128 v2 = _mm_load_ss(b);
     _mm_store_ss(a, _mm_min_ss(v1, v2));
-#else
-    if (*b < *a)
-        *a = *b;
-#endif
 }
 
 static inline void maxss(float* a, const float* b)
 {
-#if USE_SSE
     __m128 v1 = _mm_load_ss(a);
     __m128 v2 = _mm_load_ss(b);
     _mm_store_ss(a, _mm_max_ss(v1, v2));
-#else
-    if (*b > *a)
-        *a = *b;
-#endif
 }
 
 
@@ -141,9 +120,7 @@ ALGNW struct box
             float maxy;
         };
         float v[4];
-#if USE_SSE
         __m128 xmm;
-#endif
     };
 
     box()
@@ -168,43 +145,28 @@ ALGNW struct box
 
     inline box& operator=(const box& right)
     {
-#if USE_SSE
         xmm = right.xmm;
-#else
-        memcpy(v, right.v, sizeof(float)*4);
-#endif
         return *this;
     }
 
     void add(const box& b)
     {
-#if USE_SSE
         __m128 mins = _mm_min_ps(xmm, b.xmm);
         __m128 maxs = _mm_max_ps(xmm, b.xmm);
         xmm = _mm_shuffle_ps(mins, maxs, _MM_SHUFFLE(3, 2, 1, 0));
-#else
-        minss(&minx, &b.minx);
-        minss(&miny, &b.miny);
-        maxss(&maxx, &b.maxx);
-        maxss(&maxy, &b.maxy);
-#endif
     }
 
-#if USE_SSE
     inline operator __m128() { return xmm; }
     inline operator const __m128() const { return xmm; }
-#endif
 
 } ALGNL;
 
 //A vector of 4 elements -- useful for casting to/from SSE structures
 ALGNW struct vec
 {
-#if USE_SSE
     union
     {
         float v[4];
-
         __m128 xmm;
     };
 
@@ -222,18 +184,6 @@ ALGNW struct vec
         xmm = right;
         return *this;
     }
-#else
-    union
-    {
-        float v[4];
-    };
-
-    inline vec& operator=(const vec& right)
-    {
-        memcpy(v, right.v, sizeof(float)*4);
-        return *this;
-    }
-#endif
 
     //returns the minimum of the 4 values
     inline float hmin() const
@@ -259,7 +209,6 @@ ALGNW struct vec
 } ALGNL;
 
 
-#if USE_SSE
 //A vector of 4 elements -- useful for casting to/from SSE structures
 ALGNW struct veci
 {
@@ -284,7 +233,6 @@ ALGNW struct veci
         return *this;
     }
 } ALGNL;
-#endif
 
 
 //A pack of 4 bounding boxes in Structure-of-Arrays form
@@ -311,28 +259,16 @@ ALGNW struct box4_soa
 
     void make_empty()
     {
-#if USE_SSE
         minx.xmm = miny.xmm = *(__m128*)plus_inf;
         maxx.xmm = maxy.xmm = *(__m128*)minus_inf;
-#else
-        minx = miny = *(const vec*)plus_inf;
-        maxx = maxy = *(const vec*)minus_inf;
-#endif
     }
 
     void copy(const box4_soa& bin)
     {
-#if USE_SSE
         minx.xmm = bin.minx.xmm;
         miny.xmm = bin.miny.xmm;
         maxx.xmm = bin.maxx.xmm;
         maxy.xmm = bin.maxy.xmm;
-#else
-        minx = bin.minx;
-        miny = bin.miny;
-        maxx = bin.maxx;
-        maxy = bin.maxy;
-#endif
     }
 
 
@@ -340,27 +276,16 @@ ALGNW struct box4_soa
     //contents of the given box
     void make_wide_box(const box& b)
     {
-#if USE_SSE
         minx.xmm = _mm_shuffle_ps(b, b, 0x00);
         miny.xmm = _mm_shuffle_ps(b, b, 0x55);
         maxx.xmm = _mm_shuffle_ps(b, b, 0xaa);
         maxy.xmm = _mm_shuffle_ps(b, b, 0xff);
-#else
-        for (int i=0; i<4; i++)
-        {
-            minx.v[i] = b.minx;
-            miny.v[i] = b.miny;
-            maxx.v[i] = b.maxx;
-            maxy.v[i] = b.maxy;
-        }
-#endif
     }
 
     //returns bitmasks containing intersection/containment flags for each
     //of the 4 boxes with the given input box
     //mask[0] has bits set if the boxes are disjoint (do not intersect at all),
     //mask[1] has bits set if the input box contains this box.
-#if USE_SSE
     inline void overlap_mask(char* ret, const box4_soa& b) const
     {
         //do the intersection comparisons
@@ -389,28 +314,6 @@ ALGNW struct box4_soa
 
         ret[1] = (char)_mm_movemask_ps(contains);
     }
-#else
-    inline void overlap_mask(char* ret, const box& b) const
-    {
-        ret[0] = ret[1] = 0;
-        for (int i=0; i<4; i++)
-        {
-            char disjoint =  (b.minx > maxx.v[i])
-                          || (b.miny > maxy.v[i])
-                          || (b.maxx < minx.v[i])
-                          || (b.maxy < miny.v[i]);
-
-            ret[0] = ret[0] | (disjoint << i);
-
-            char contains =  (b.minx <= minx.v[i])
-                           &&(b.miny <= miny.v[i])
-                           &&(b.maxx >= maxx.v[i])
-                           &&(b.maxy >= maxy.v[i]);
-
-            ret[1] = ret[1] | (contains << i);
-        }
-    }
-#endif
 
     //sets one of the 4 boxes in the pack
     //to the given bounds
@@ -479,7 +382,7 @@ ALGNW struct node4
 
     inline bool is_leaf() const
     {
-        return fdo::is_leaf(children[0]);
+        return bvh::is_leaf(children[0]);
     }
 
     inline void set_branch(int i, id_t id, const box& b)
@@ -525,24 +428,12 @@ ALGNW struct node4
         child_bounds.copy(val);
     }
 
-#if USE_SSE
     inline void overlap_mask(char* ret, const box4_soa& b) const
     {
         return child_bounds.overlap_mask(ret, b);
     }
-#else
-    inline void overlap_mask(char* ret, const box& b) const
-    {
-        return child_bounds.overlap_mask(ret, b);
-    }
-#endif
 
-#if USE_SSE
     int pick_child(const box4_soa& bnew) const;
-#else
-    int pick_child(const box& bnew) const;
-#endif
-
 
 } ALGNL;
 
@@ -556,7 +447,7 @@ ALGNW struct node_generic_mul4
 
     inline bool is_leaf() const
     {
-        return fdo::is_leaf(children[0]);
+        return bvh::is_leaf(children[0]);
     }
 
     inline void set_branch(int i, id_t id, const box& b)
@@ -612,7 +503,6 @@ ALGNW struct node_generic_mul4
         }
     }
 
-#if USE_SSE
     inline void overlap_mask(char* ret, const box4_soa& b) const
     {
         for (int i=0; i<MAX_BRANCH/4; i++)
@@ -621,23 +511,8 @@ ALGNW struct node_generic_mul4
             ret += 2;
         }
     }
-#else
-    inline void overlap_mask(char* ret, const box& b) const
-    {
-        for (int i=0; i<MAX_BRANCH/4; i++)
-        {
-            child_bounds[i].overlap_mask(ret, b);
-            ret += 2;
-        }
-    }
-#endif
 
-#if USE_SSE
     int pick_child(const box4_soa& bnew) const;
-#else
-    int pick_child(const box& bnew) const;
-#endif
-
 
 } ALGNL;
 
@@ -689,37 +564,6 @@ struct dbox
         };
         double v[4];
     };
-
-    dbox()
-    {
-        minx = miny = DBL_MAX;
-        maxx = maxy = -DBL_MAX;
-    }
-
-    dbox(double minx_, double miny_, double maxx_, double maxy_)
-    {
-        minx = minx_;
-        miny = miny_;
-        maxx = maxx_;
-        maxy = maxy_;
-    }
-
-    bool is_valid() const
-    {
-        return maxx >= minx && maxy >= miny;
-    }
-
-    void add(const dbox& other)
-    {
-        if (minx > other.minx)
-            minx = other.minx;
-        if (miny > other.miny)
-            miny = other.miny;
-        if (maxx < other.maxx)
-            maxx = other.maxx;
-        if (maxy < other.maxy)
-            maxy = other.maxy;
-    }
 };
 
 
@@ -733,7 +577,6 @@ class rtree
 public:
 
     rtree();
-    rtree(const wchar_t* name);
     ~rtree();
 
     void insert(const fid_t& fid, const dbox& b);
@@ -782,18 +625,12 @@ ALGNW class rtree_iterator
 public:
 
     rtree_iterator(const rtree* rt, const dbox& db);
-    ~rtree_iterator();
    
     fid_t next();
 
 private:
-#if USE_SSE
     box4_soa _bwide;
-#else
-    box _box;
-#endif
-    rt_iter_stack _stack_mem[MAX_DEPTH*MAX_BRANCH];
-    rt_iter_stack *_stack;
+    rt_iter_stack _stack[MAX_DEPTH*MAX_BRANCH];
     rt_iter_stack *_top;
     const node_mgr* _nodes;
 } ALGNL;

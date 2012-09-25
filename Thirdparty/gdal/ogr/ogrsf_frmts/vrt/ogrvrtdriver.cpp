@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtdriver.cpp 23575 2011-12-14 20:24:08Z rouault $
+ * $Id: ogrvrtdriver.cpp 17637 2009-09-12 23:22:00Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_vrt.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrvrtdriver.cpp 23575 2011-12-14 20:24:08Z rouault $");
+CPL_CVSID("$Id: ogrvrtdriver.cpp 17637 2009-09-12 23:22:00Z warmerdam $");
 
 /************************************************************************/
 /*                            ~OGRVRTDriver()                            */
@@ -80,7 +80,7 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     else
     {
-        VSILFILE *fp;
+        FILE *fp;
         char achHeader[18];
 
         fp = VSIFOpenL( pszFilename, "rb" );
@@ -100,19 +100,13 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
             return NULL;
         }
 
-        VSIStatBufL sStatBuf;
-        if ( VSIStatL( pszFilename, &sStatBuf ) != 0 ||
-             sStatBuf.st_size > 1024 * 1024 )
-        {
-            VSIFCloseL( fp );
-            return NULL;
-        }
-
 /* -------------------------------------------------------------------- */
 /*      It is the right file, now load the full XML definition.         */
 /* -------------------------------------------------------------------- */
-        int nLen = (int) sStatBuf.st_size;
+        int nLen;
 
+        VSIFSeekL( fp, 0, SEEK_END );
+        nLen = (int) VSIFTellL( fp );
         VSIFSeekL( fp, 0, SEEK_SET );
 
         pszXML = (char *) VSIMalloc(nLen+1);
@@ -145,13 +139,14 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
 /*      Create a virtual datasource configured based on this XML input. */
 /* -------------------------------------------------------------------- */
     poDS = new OGRVRTDataSource();
-    poDS->SetDriver(this);
-    /* psTree is owned by poDS */
     if( !poDS->Initialize( psTree, pszFilename, bUpdate ) )
     {
+        CPLDestroyXMLNode( psTree );
         delete poDS;
         return NULL;
     }
+
+    CPLDestroyXMLNode( psTree );
 
     return poDS;
 }

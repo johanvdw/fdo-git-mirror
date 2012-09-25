@@ -634,12 +634,12 @@ void OverridesTest::TestRequestSpcialImageFormat()
             CPPUNIT_FAIL("FAILED - CreateConnection returned NULL\n");
         }
  
-        connection->SetConnectionString(L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.3.0"); 
+        connection->SetConnectionString(L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.1.0"); 
         FdoIoFileStreamP fileStream = FdoIoFileStream::Create(L"newconfig1.xml", L"r"); // config for WMS 3.3
   
         connection->SetConfiguration(fileStream);
         connection->Open();
-        
+      
 	    FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*> (connection->CreateCommand (FdoCommandType_Select));
         cmdSelect->SetFeatureClassName (L"WMSLayers:Foundation BARRIERL_1M");
         FdoPtr<FdoIFeatureReader> featReader = cmdSelect->Execute ();

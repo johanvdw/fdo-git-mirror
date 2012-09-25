@@ -285,7 +285,7 @@ void FdoAssociationUpdateTest::masterTestWithObj(AssociationUpdateType type, con
         dataValue = FdoDataValue::Create( name2 );
 	    propertyValue = FdoAssociationUpdateTest::AddNewProperty( propertyValues, L"Name Two");
 	    propertyValue->SetValue(dataValue);
-        FdoPtr<FdoIFeatureReader> rdr = insertCommand->Execute();
+        insertCommand->Execute();
 
         // Add an instance of the TestFeatureClass with no association property initialized
         insertCommand->SetFeatureClassName(L"TestSubFeatureClass");
@@ -400,14 +400,18 @@ void FdoAssociationUpdateTest::update_NoIdentObjNested()
 
 FdoPropertyValue* FdoAssociationUpdateTest::AddNewProperty( FdoPropertyValueCollection* propertyValues, const wchar_t *name )
 {
-    FdoPtr<FdoPropertyValue> propertyValue = propertyValues->FindItem( name );
-
-    if (propertyValue == NULL)
+    FdoPropertyValue*  propertyValue = NULL;
+    try
     {
+        propertyValue = propertyValues->GetItem( name );
+    }
+    catch( FdoException *exp )
+    {
+        exp->Release();
         propertyValue =  FdoPropertyValue::Create();
         propertyValue->SetName( name );
         propertyValues->Add( propertyValue );
     }
     
-    return FDO_SAFE_ADDREF(propertyValue.p);
+    return propertyValue;
 }

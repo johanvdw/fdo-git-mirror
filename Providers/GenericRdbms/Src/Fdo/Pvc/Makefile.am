@@ -24,7 +24,6 @@ libFdoRdbms_Pvc_la_SOURCES = \
   FdoRdbmsPvcInsertHandler.cpp  \
   FdoRdbmsPvcProcessor.cpp \
   FdoRdbmsPvcOperation.cpp      \
-  FdoRdbmsPropBindHelper.cpp \
   FdoRdbmsPvcUpdateHandler.cpp
 
 noinst_HEADERS = $(libFdoRdbms_Pvc_la_SOURCES) \
@@ -32,7 +31,6 @@ noinst_HEADERS = $(libFdoRdbms_Pvc_la_SOURCES) \
   FdoRdbmsPvcInsertHandler.h \
   FdoRdbmsPvcOperation.h \
   FdoRdbmsPvcProcessor.h \
-  FdoRdbmsPropBindHelper.h \
   FdoRdbmsPvcUpdateHandler.h
 
 INCLUDES = \

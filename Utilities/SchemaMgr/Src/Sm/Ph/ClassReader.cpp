@@ -29,24 +29,14 @@
 
 FdoSmPhClassReader::FdoSmPhClassReader(FdoStringP schemaName, FdoSmPhMgrP physicalSchema) : 
 	FdoSmPhReader( MakeReader(schemaName, physicalSchema) ),
-	mSchemaName(schemaName),
-    mbMultiClassReder(true)
+	mSchemaName(schemaName)
 {
     mpSOReader = new FdoSmPhSOReader(FdoSmPhMgr::ClassType, physicalSchema->GetOwner());
 }
 
 FdoSmPhClassReader::FdoSmPhClassReader(FdoStringP schemaName, FdoStringP className, FdoSmPhMgrP physicalSchema) : 
 	FdoSmPhReader( MakeReader(schemaName, physicalSchema, className) ),
-	mSchemaName(schemaName),
-    mbMultiClassReder(true)
-{
-    mpSOReader = new FdoSmPhSOReader(FdoSmPhMgr::ClassType, physicalSchema->GetOwner());
-}
-
-FdoSmPhClassReader::FdoSmPhClassReader(FdoStringP schemaName, FdoSmPhMgrP physicalSchema, bool fullLoad) : 
-	FdoSmPhReader( MakeReader(schemaName, physicalSchema, NULL, fullLoad) ),
-	mSchemaName(schemaName),
-    mbMultiClassReder(true)
+	mSchemaName(schemaName)
 {
     mpSOReader = new FdoSmPhSOReader(FdoSmPhMgr::ClassType, physicalSchema->GetOwner());
 }
@@ -152,21 +142,13 @@ FdoStringP FdoSmPhClassReader::GetOption( FdoStringP optionName )
 FdoSmPhClassPropertyReaderP FdoSmPhClassReader::CreateClassPropertyReader()
 {
     FdoSmPhPropertyReaderP propReader;
-    FdoSmPhOwnerP owner = GetManager()->GetOwner();
-    FdoStringP className = GetName();
 
-    if (owner && owner->GetHasAttrMetaSchema() ) {
-        // for now we will ask only for one class.
-        FdoPtr<FdoStringCollection> classNames;
-        // do not use single class read when we expect to read all classes (or a subset)
-        if (!IsMultiClassReder())
-        {
-            classNames = FdoStringCollection::Create();
-            classNames->Add(className);
-        }
-        // Read properties from metaschema
+    if ( GetId() > 0 ) {
+        // ClassId set so class was read from MetaSchema.
+	    // Create the property reader if not already done. This property
+        // reader reads all class properties for the current schema.
 	    if ( !mPropReader ) 
-		    mPropReader = new FdoSmPhPropertyReader(mSchemaName, GetManager(), classNames);
+		    mPropReader = new FdoSmPhPropertyReader(mSchemaName, GetManager());
     
         propReader = mPropReader;
     }
@@ -186,15 +168,12 @@ FdoSmPhClassPropertyReaderP FdoSmPhClassReader::CreateClassPropertyReader()
         }
         else {
 
-            // Properties not in metaschema or config document so read them 
+            // No ClassId so we know that properties must be read
             // from the native physical schema.
             propReader = new FdoSmPhPropertyReader( 
                             GetManager()->CreateRdPropertyReader( dbObject).p->SmartCast<FdoSmPhReader>(),
                             GetManager()
             );
-
-            if ( dbObject )
-                className = dbObject->GetBestClassName();
         }
     }
 
@@ -208,7 +187,7 @@ FdoSmPhClassPropertyReaderP FdoSmPhClassReader::CreateClassPropertyReader()
 	// class reader and property reader both retrieve their rows ordered
 	// by class name.
 
-	return new FdoSmPhClassPropertyReader(mSchemaName, className, propReader, mPropSADReader);
+	return new FdoSmPhClassPropertyReader(mSchemaName, GetName(), propReader, mPropSADReader);
 }
 
 /*TODO
@@ -236,7 +215,7 @@ FdoSmPhClassSADReaderP FdoSmPhClassReader::GetClassSADReader()
 	return new FdoSmPhClassSADReader(mSchemaName, GetName(), mClassSADReader );
 }
 
-FdoSmPhReaderP FdoSmPhClassReader::MakeReader( FdoStringP schemaName, FdoSmPhMgrP mgr, FdoString* className, bool fullLoad)
+FdoSmPhReaderP FdoSmPhClassReader::MakeReader( FdoStringP schemaName, FdoSmPhMgrP mgr, FdoString* className )
 {
     mbTableCreatorDefined = false;
     mbSchemaOptionsTableDefined = false;
@@ -254,8 +233,10 @@ FdoSmPhReaderP FdoSmPhClassReader::MakeReader( FdoStringP schemaName, FdoSmPhMgr
 
 
 	// Determine which table/field names to use, depending on if F_SCHEMAOPTIONS exists:
-    FdoSmPhOwnerP owner = mgr->GetOwner();
-    mbSchemaOptionsTableDefined = owner->GetHasSCOptionMetaSchema();
+	mbSchemaOptionsTableDefined =
+        (FdoSmPhOwnerP(mgr->GetOwner())->GetHasMetaSchema() &&
+         mgr->FindDbObject(mgr->GetDcDbObjectName(L"f_schemaoptions")) != NULL);
+
 
 	// Create the appropriate class reader:
     FdoSchemaMappingsP mappings = mgr->GetConfigMappings();
@@ -265,10 +246,10 @@ FdoSmPhReaderP FdoSmPhClassReader::MakeReader( FdoStringP schemaName, FdoSmPhMgr
         pSubReader = mgr->CreateCfgClassReader( rows, schemaName ).p->SmartCast<FdoSmPhReader>();
     }
     else {
-        if (owner->GetHasClassMetaSchema()) {
+        if ( FdoSmPhDbObjectP(classRow->GetDbObject())->GetExists() ) {
             mbReadFromMetadata = true;
             // F_CLASSDEFINITION exists, read from MetaSchema
-            pSubReader = MakeMtReader( rows, schemaName, mgr, className, fullLoad);
+            pSubReader = MakeMtReader( rows, schemaName, mgr, className );
         }
         else {
             // F_CLASSDEFINITION does not exist, read from native physical schema.
@@ -279,9 +260,9 @@ FdoSmPhReaderP FdoSmPhClassReader::MakeReader( FdoStringP schemaName, FdoSmPhMgr
     return pSubReader;
 }
 
-FdoSmPhReaderP FdoSmPhClassReader::MakeMtReader( FdoSmPhRowsP rows, FdoStringP schemaName, FdoSmPhMgrP mgr, FdoString* className, bool fullLoad )
+FdoSmPhReaderP FdoSmPhClassReader::MakeMtReader( FdoSmPhRowsP rows, FdoStringP schemaName, FdoSmPhMgrP mgr, FdoString* className )
 {
-    return new FdoSmPhMtClassReader( rows, schemaName, className, mgr, fullLoad);
+    return new FdoSmPhMtClassReader( rows, schemaName, className, mgr );
 }
 
 FdoSmPhReaderP FdoSmPhClassReader::MakeRdReader( FdoSmPhRowsP rows, FdoStringP schemaName, FdoSmPhMgrP mgr, FdoString* className  )

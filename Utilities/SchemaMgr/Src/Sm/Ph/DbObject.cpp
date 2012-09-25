@@ -25,14 +25,12 @@
 #include <Sm/Ph/Rd/QueryReader.h>
 #include <Sm/Ph/Rd/ColumnReader.h>
 #include <Sm/Ph/Rd/BaseObjectReader.h>
-#include <Sm/Ph/Rd/ViewRelObjectReader.h>
 #include <Sm/Ph/Rd/PkeyReader.h>
 #include <Sm/Ph/Rd/FkeyReader.h>
 #include <Sm/Ph/Rd/IndexReader.h>
 #include <Sm/Ph/DependencyReader.h>
 #include <Sm/Ph/TableComponentReader.h>
 #include <Sm/Error.h>
-#include <vector>
 
 FdoSmPhDbObject::FdoSmPhDbObject(
     FdoStringP name, 
@@ -41,8 +39,7 @@ FdoSmPhDbObject::FdoSmPhDbObject(
 ) : 
     FdoSmPhDbElement(name, (FdoSmPhMgr*) NULL, pOwner, elementState ),
     mLtMode(NoLtLock),
-    mLockingMode(NoLtLock),
-    mBulkFetchComponents(false)
+    mLockingMode(NoLtLock)
 {
 }
 
@@ -949,82 +946,17 @@ void FdoSmPhDbObject::CacheColumns( FdoSmPhRdColumnReaderP rdr )
     }
 }
 
-void FdoSmPhDbObject::CacheViewRelationObjects( FdoSmPhRdViewRelationsObjectReaderP rdr)
-{
-    if (!mColumns)
-        return;
-
-    FdoSmPhTableComponentReaderP groupReader = new FdoSmPhTableComponentReader(
-        GetName(),
-        L"",
-        L"name",
-        rdr->SmartCast<FdoSmPhReader>()
-    );
-
-    for (int idx = 0; idx < mColumns->GetCount(); idx++)
-    {
-        FdoSmPhColumnP col = mColumns->GetItem(idx);
-        col->SetReadOnly(true);
-    }
-
-    std::vector<FdoSmPhColumn*> columns;
-    bool geomFound = false;
-    FdoStringP oldtable_name(L"");
-    while ( groupReader->ReadNext() )
-    {
-        FdoStringP table_name = groupReader->GetString(L"",L"base_name");
-        FdoStringP column_name = groupReader->GetString(L"",L"column_name");
-        FdoSmPhColumnP col = mColumns->FindItem(column_name);
-        if (col)
-        {
-            if (*((FdoString*)oldtable_name) != 0 && wcscmp(oldtable_name, table_name) != 0)
-            {
-                if (geomFound)
-                    break;
-                columns.clear();
-            }
-
-            FdoSmPhColType ctype = col->GetType();
-            if (ctype == FdoSmPhColType_Geom)
-                geomFound = true;
-
-            columns.push_back(col.p);
-            oldtable_name = table_name;
-        }
-    }
-
-    if (geomFound && columns.size() > 1)
-    {
-        for (size_t idx = 0; idx < columns.size(); idx++)
-        {
-            columns.at(idx)->SetReadOnly(false);
-        }
-    }
-    if (!geomFound)
-    {
-        for (int idx = 0; idx < mColumns->GetCount(); idx++)
-        {
-            FdoSmPhColumnP col = mColumns->GetItem(idx);
-            col->SetReadOnly(false);
-        }
-    }
-}
-
 void FdoSmPhDbObject::CacheBaseObjects( FdoSmPhRdBaseObjectReaderP rdr )
 {
-    FdoSmPhTableComponentReaderP groupReader = NewTableBaseReader(
-        rdr
-    );
-
+    // Do nothing if base objects already loaded
 	if ( !mBaseObjects ) {
 		mBaseObjects = new FdoSmPhBaseObjectCollection( this );
 
+        FdoSmPhTableComponentReaderP groupReader = NewTableBaseReader(
+            rdr
+        );
+
         LoadBaseObjects( groupReader );
-    }
-    else
-    {
-        // Base objects already loaded, just skip ones in reader.
-        LoadBaseObjects( groupReader, true );
     }
 }
 
@@ -1489,16 +1421,6 @@ bool FdoSmPhDbObject::IndexesLoaded()
     return (mIndexes != NULL);
 }
 
-bool FdoSmPhDbObject::GetBulkFetchComponents()
-{
-    return mBulkFetchComponents;
-}
-
-void FdoSmPhDbObject::SetBulkFetchComponents(bool bulkFetchComponents)
-{
-    mBulkFetchComponents = bulkFetchComponents;
-}
-
 void FdoSmPhDbObject::LoadFkeys(void)
 {
     // Do nothing if already loaded
@@ -1528,8 +1450,8 @@ void FdoSmPhDbObject::LoadFkeys( FdoSmPhReaderP fkeyRdr, bool isSkipAdd  )
             // hit the next foreign key. Create an object for it
             fkey = NewFkey(
                 nextFkey, 
-                fkeyRdr->GetString(L"", L"r_table_name"),
-                fkeyRdr->GetString(L"", L"r_owner_name"),
+                fkeyRdr->GetString(L"", "r_table_name"),
+                fkeyRdr->GetString(L"", "r_owner_name"),
                 FdoSchemaElementState_Unchanged
             );
 
@@ -1550,7 +1472,7 @@ void FdoSmPhDbObject::LoadFkeyColumn( FdoSmPhReaderP fkeyRdr, FdoSmPhFkeyP fkey 
     if ( fkey && column ) {
         fkey->AddFkeyColumn( 
             column,
-            fkeyRdr->GetString(L"", L"r_column_name")
+            fkeyRdr->GetString(L"", "r_column_name")
         );
     }
     else {
@@ -1591,8 +1513,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
         );
 
     case FdoSmPhColType_Date:
-        {
-            FdoSmPhColumnP ret = NewColumnDate(
+        return NewColumnDate(
             colRdr->GetString(L"",L"name"),
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
@@ -1600,11 +1521,6 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
 			defaultValue,
             colRdr
         );
-            FdoSmPhFieldP fld = colRdr->GetField(L"",L"is_autoincremented");
-            if (fld != NULL && colRdr->GetBoolean(L"",L"is_autoincremented"))
-                ret->SetReadOnly(true);
-            return ret;
-        }
 
     case FdoSmPhColType_Decimal:
         return NewColumnDecimal(

@@ -1,6 +1,6 @@
 #!/bin/bash
 REVISION=`svn info .. | perl revnum.pl`
-FDOBUILD=3.8.0
+FDOBUILD=3.6.0
 FDOINST=/usr/local/fdo-${FDOBUILD}
 
 verifylib()
@@ -47,6 +47,10 @@ verifylib libGRFPOverrides
 
 ./buildfdoprovider.sh ogr
 verifylib libOGRProvider
+
+./buildfdoprovider.sh postgis
+verifylib libPostGISProvider
+verifylib libPostGISOverrides
 
 ./buildfdoprovider.sh kingoracle
 verifylib libKingOracleProvider

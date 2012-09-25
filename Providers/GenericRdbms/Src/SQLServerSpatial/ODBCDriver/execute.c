@@ -190,7 +190,6 @@ int odbcdr_execute(						/* execute an SQL statement		  */
 
     if ( rc == SQL_NEED_DATA && c->bound_geometries != NULL )
     {
-        count = !count ? 1 : count;
         assert(count <= ODBCDR_MAX_ARRAY_SIZE);
 
         /* Free any Oracle objects from previous executions/fetches. */
@@ -336,7 +335,7 @@ int odbcdr_execute(						/* execute an SQL statement		  */
                                 "SQLFetch", "fetch");
 
                     SQLLEN null_ind;
-                    ODBCDR_ODBC_ERR( SQLGetData( c->hStmt, 1, SQL_C_SBIGINT, (SQLPOINTER) &(context->odbcdr_last_autoincrement), 0, &null_ind),
+                    ODBCDR_ODBC_ERR( SQLGetData( c->hStmt, 1, SQL_C_LONG, (SQLPOINTER) &(context->odbcdr_last_autoincrement), 0, &null_ind),
                                SQL_HANDLE_STMT, c->hStmt,
                                 "SQLGetData", "getData");
 

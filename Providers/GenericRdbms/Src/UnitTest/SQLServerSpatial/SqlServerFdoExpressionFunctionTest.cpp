@@ -19,8 +19,6 @@
 #include "Pch.h"
 #include "SqlServerFdoExpressionFunctionTest.h"
 #include "UnitTestUtil.h"
-#include <limits>       // For quiet_NaN()
-using namespace std;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SqlServerFdoExpressionFunctionTest);
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(SqlServerFdoExpressionFunctionTest, "FdoExpressionFunctionTest");
@@ -509,11 +507,9 @@ void SqlServerFdoExpressionFunctionTest::TestToStringFunction ()
 
     catch (FdoException *exp) {
 
-      printf(" >>> This is a known issue with Denali (trims the value to 18.8891) - we will ignore it till we find a solution\n");
-      //printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
-      //printf(" >>> Test failed \n");
-      //throw exp;
-      exp->Release();
+      printf(" >>> Exception: %ls\n", exp->GetExceptionMessage());
+      printf(" >>> Test failed \n");
+      throw exp;
 
     }  //  catch (FdoException *ex) ...
 
@@ -1556,7 +1552,3 @@ void SqlServerFdoExpressionFunctionTest::CheckReaderGeometryAndCount (
 
 }  //  CheckReaderGeometry ()
 
-double SqlServerFdoExpressionFunctionTest::GetNullOrdinate()
-{
-    return numeric_limits<double>::quiet_NaN();
-}

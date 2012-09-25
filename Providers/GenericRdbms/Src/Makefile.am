@@ -40,11 +40,7 @@ libFdoPostgreSQL_la_LIBADD =  \
   -lxerces-c \
   -lz \
   -lpq \
-  -lrt \
-  -lssl \
-  -lcrypto \
-  -lkrb5 \
-  -lcom_err \
+  -lcrypt \
   PostGis/libFdoRdbmsPostgreSQL.la  \
   Fdo/libFdoRdbms.la   \
   Rdbi/librdbi.la  \
@@ -77,8 +73,8 @@ libFdoPostgreSQL_la_LDFLAGS = \
   -release $(VERSION) \
   -L$(FDOPOSTGRESQL)/lib \
   -L$(FDOTHIRDPARTY)/pgsql/lib \
-  -L$(FDOTHIRDPARTY)/apache/xalan/lib \
-  -L$(FDOTHIRDPARTY)/apache/xerces/lib
+  -L$(FDOTHIRDPARTY)/apache/xml-xalan/c/lib \
+  -L$(FDOTHIRDPARTY)/apache/xml-xerces/c/lib
 
 #MySQL
 libFdoMySQL_la_SOURCES =
@@ -126,8 +122,8 @@ libFdoMySQL_la_LDFLAGS = \
   -release $(VERSION) \
   -L/usr/lib/mysql \
   -L$(FDOMYSQL)/lib \
-  -L$(FDOTHIRDPARTY)/apache/xalan/lib \
-  -L$(FDOTHIRDPARTY)/apache/xerces/lib
+  -L$(FDOTHIRDPARTY)/apache/xml-xalan/c/lib \
+  -L$(FDOTHIRDPARTY)/apache/xml-xerces/c/lib
 
 #ODBC
 libFdoODBC_la_SOURCES =
@@ -172,8 +168,8 @@ libFdoODBC_la_LIBADD =  \
 libFdoODBC_la_LDFLAGS = \
   -shared \
   -release $(VERSION)  \
-  -L$(FDOTHIRDPARTY)/apache/xalan/lib \
-  -L$(FDOTHIRDPARTY)/apache/xerces/lib \
+  -L$(FDOTHIRDPARTY)/apache/xml-xalan/c/lib \
+  -L$(FDOTHIRDPARTY)/apache/xml-xerces/c/lib \
   -L$(FDOODBC)/lib
 
 libSchemaMgr_OV_la_SOURCES =

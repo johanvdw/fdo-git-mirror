@@ -1,9 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{95FC714E-97E9-4126-8D49-957401FB618E}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -14,7 +13,7 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,19 +35,19 @@
   <ItemGroup>
     <Reference Include="OSGeo.FDO, Version=3.2.6195.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\Win32\Debug\OSGeo.FDO.dll</HintPath>
+      <HintPath>..\bin\debug\OSGeo.FDO.dll</HintPath>
     </Reference>
     <Reference Include="OSGeo.FDO.Common, Version=3.2.6195.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\Win32\Debug\OSGeo.FDO.Common.dll</HintPath>
+      <HintPath>..\bin\debug\OSGeo.FDO.Common.dll</HintPath>
     </Reference>
     <Reference Include="OSGeo.FDO.Geometry, Version=3.2.6195.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\Win32\Debug\OSGeo.FDO.Geometry.dll</HintPath>
+      <HintPath>..\bin\debug\OSGeo.FDO.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="OSGeo.FDO.Spatial, Version=3.2.6195.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\Win32\Debug\OSGeo.FDO.Spatial.dll</HintPath>
+      <HintPath>..\bin\debug\OSGeo.FDO.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -76,9 +75,7 @@
     <Compile Include="mgSpatialContextTest.cs" />
     <Compile Include="mgSpatialUtilityTest.cs" />
     <Compile Include="mgStringStream.cs" />
-    <Compile Include="mgUnitTestProcessor.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="mgUnitTestProcessor.cs" />
     <Compile Include="mgUnitTestUtil.cs" />
     <Compile Include="mgXmlFormatter.cs" />
     <Compile Include="mgXmlTest.cs" />
@@ -100,9 +97,14 @@
       Copy $(FDO)\Unmanaged\Bin\Win32\Debug\FDOGeometry.dll .\
       Copy $(FDO)\Unmanaged\Bin\Win32\Debug\FDOSpatial.dll .\
 
-      copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\Xalan-C_1_11D.dll .\
-      copy $(FDOTHIRDPARTY)\apache\xalan\Build\Win32\VC9\Debug\XalanMessages_1_11D.dll .\
-      copy $(FDOTHIRDPARTY)\apache\xerces\Build\Win32\VC9\Debug\xerces-c_3_1D.dll .\
+      Copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.dll .\
+      Copy $(FDOTHIRDPARTY)\apache\xml-xerces\c\Build\Win32\VC9\Release\xerces-c_2_5_0.pdb .\
+
+      Copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\vc9\Release\Xalan-C_1_7_0D.dll .\
+      Copy $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\vc9\Release\Xalan-C_1_7_0D.pdb .\
+
+      Copy  $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\vc9\Release\XalanMessages_1_7_0D.dll .\
+      Copy  $(FDOTHIRDPARTY)\apache\xml-xalan\c\Build\Win32\vc9\Release\XalanMessages_1_7_0D.pdb .\
 
       Copy  $(FDO)\Unmanaged\Bin\Win32\Debug\FDO.pdb .\
       Copy  $(FDO)\Unmanaged\Bin\Win32\Debug\FDOMessage.pdb .\

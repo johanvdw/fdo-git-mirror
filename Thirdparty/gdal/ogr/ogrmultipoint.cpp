@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultipoint.cpp 21298 2010-12-20 10:58:34Z rouault $
+ * $Id: ogrmultipoint.cpp 14336 2008-04-20 14:36:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPoint class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrmultipoint.cpp 21298 2010-12-20 10:58:34Z rouault $");
+CPL_CVSID("$Id: ogrmultipoint.cpp 14336 2008-04-20 14:36:09Z rouault $");
 
 /************************************************************************/
 /*                           OGRMultiPoint()                            */
@@ -192,90 +192,59 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
     if( !EQUAL(szToken,getGeometryName()) )
         return OGRERR_CORRUPT_DATA;
 
-
 /* -------------------------------------------------------------------- */
-/*      Check for EMPTY ...                                             */
+/*      Skip past first bracket for checking purposes, but don't        */
+/*      alter pszInput.                                                 */
 /* -------------------------------------------------------------------- */
-    const char *pszPreScan;
-    int bHasZ = FALSE, bHasM = FALSE;
+    const char *pszPreScan = pszInput;
 
-    pszPreScan = OGRWktReadToken( pszInput, szToken );
-    if( EQUAL(szToken,"EMPTY") )
+    // skip white space. 
+    while( *pszPreScan == ' ' || *pszPreScan == '\t' )
+        pszPreScan++;
+
+    // Handle the proper EMPTY syntax.
+    if( EQUALN(pszPreScan,"EMPTY",5) )
     {
-        *ppszInput = (char *) pszPreScan;
-        empty();
+        *ppszInput = (char *) pszPreScan+5;
         return OGRERR_NONE;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Check for Z, M or ZM. Will ignore the Measure                   */
-/* -------------------------------------------------------------------- */
-    else if( EQUAL(szToken,"Z") )
-    {
-        bHasZ = TRUE;
-    }
-    else if( EQUAL(szToken,"M") )
-    {
-        bHasM = TRUE;
-    }
-    else if( EQUAL(szToken,"ZM") )
-    {
-        bHasZ = TRUE;
-        bHasM = TRUE;
-    }
-
-    if (bHasZ || bHasM)
-    {
-        pszInput = pszPreScan;
-        pszPreScan = OGRWktReadToken( pszInput, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            *ppszInput = (char *) pszPreScan;
-            empty();
-            /* FIXME?: In theory we should store the dimension and M presence */
-            /* if we want to allow round-trip with ExportToWKT v1.2 */
-            return OGRERR_NONE;
-        }
-    }
-
-    if( !EQUAL(szToken,"(") )
+    // Skip outer bracket.
+    if( *pszPreScan != '(' )
         return OGRERR_CORRUPT_DATA;
 
-    if ( !bHasZ && !bHasM )
-    {
-        /* Test for old-style MULTIPOINT(EMPTY) */
-        pszPreScan = OGRWktReadToken( pszPreScan, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            pszPreScan = OGRWktReadToken( pszPreScan, szToken );
+    pszPreScan++;
 
-            if( EQUAL(szToken,",") )
-            {
-                /* This is OK according to SFSQL SPEC. */
-            }
-            else if( !EQUAL(szToken,")") )
-                return OGRERR_CORRUPT_DATA;
-            else
-            {
-                *ppszInput = (char *) pszPreScan;
-                empty();
-                return OGRERR_NONE;
-            }
-        }
+/* -------------------------------------------------------------------- */
+/*      If the next token is EMPTY, then verify that we have proper     */
+/*      EMPTY format will a trailing closing bracket.                   */
+/* -------------------------------------------------------------------- */
+    OGRWktReadToken( pszPreScan, szToken );
+    if( EQUAL(szToken,"EMPTY") )
+    {
+        pszInput = OGRWktReadToken( pszPreScan, szToken );
+        pszInput = OGRWktReadToken( pszInput, szToken );
+        
+        *ppszInput = (char *) pszInput;
+
+        if( !EQUAL(szToken,")") )
+            return OGRERR_CORRUPT_DATA;
+        else
+            return OGRERR_NONE;
     }
 
-    pszPreScan = OGRWktReadToken( pszInput, szToken );
-    OGRWktReadToken( pszPreScan, szToken );
+/* -------------------------------------------------------------------- */
+/*      Check for inner bracket indicating the improper bracketed       */
+/*      format which we still want to support.                          */
+/* -------------------------------------------------------------------- */
+    // skip white space.
+    while( *pszPreScan == ' ' || *pszPreScan == '\t' )
+        pszPreScan++;
 
     // Do we have an inner bracket? 
-    if (EQUAL(szToken,"(") || EQUAL(szToken, "EMPTY") )
-        return importFromWkt_Bracketed( ppszInput, bHasM, bHasZ );
-
-    if (bHasZ || bHasM)
-    {
-        return OGRERR_CORRUPT_DATA;
-    }
-
+    if( *pszPreScan == '(' )
+        return importFromWkt_Bracketed( ppszInput );
+    
 /* -------------------------------------------------------------------- */
 /*      Read the point list which should consist of exactly one point.  */
 /* -------------------------------------------------------------------- */
@@ -287,11 +256,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
     pszInput = OGRWktReadPoints( pszInput, &paoPoints, &padfZ, &nMaxPoint,
                                  &nPointCount );
     if( pszInput == NULL )
-    {
-        OGRFree( paoPoints );
-        OGRFree( padfZ );
         return OGRERR_CORRUPT_DATA;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Transform raw points into point objects.                        */
@@ -332,7 +297,7 @@ OGRErr OGRMultiPoint::importFromWkt( char ** ppszInput )
 /*      importFromWkt().                                                */
 /************************************************************************/
 
-OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput, int bHasM, int bHasZ )
+OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput )
 
 {
 
@@ -345,12 +310,6 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput, int bHasM, int
 /* -------------------------------------------------------------------- */
     pszInput = OGRWktReadToken( pszInput, szToken );
 
-    if (bHasZ || bHasM)
-    {
-        /* Skip Z, M or ZM */
-        pszInput = OGRWktReadToken( pszInput, szToken );
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Read points till we get to the closing bracket.                 */
 /* -------------------------------------------------------------------- */
@@ -359,37 +318,18 @@ OGRErr OGRMultiPoint::importFromWkt_Bracketed( char ** ppszInput, int bHasM, int
     OGRRawPoint         *paoPoints = NULL;
     double              *padfZ = NULL;
 
-    while( (pszInput = OGRWktReadToken( pszInput, szToken )) != NULL
+    while( (pszInput = OGRWktReadToken( pszInput, szToken ))
            && (EQUAL(szToken,"(") || EQUAL(szToken,",")) )
     {
         OGRGeometry     *poGeom;
-
-        const char* pszNext = OGRWktReadToken( pszInput, szToken );
-        if (EQUAL(szToken,"EMPTY"))
-        {
-            poGeom = new OGRPoint(0,0);
-            poGeom->empty();
-            eErr = addGeometryDirectly( poGeom );
-            if( eErr != OGRERR_NONE )
-                return eErr;
-
-            pszInput = pszNext;
-
-            continue;
-        }
 
         pszInput = OGRWktReadPoints( pszInput, &paoPoints, &padfZ, &nMaxPoint,
                                      &nPointCount );
 
         if( pszInput == NULL || nPointCount != 1 )
-        {
-            OGRFree( paoPoints );
-            OGRFree( padfZ );
             return OGRERR_CORRUPT_DATA;
-        }
 
-        /* Ignore Z array when we have a MULTIPOINT M */
-        if( padfZ && !(bHasM && !bHasZ))
+        if( padfZ )
             poGeom = new OGRPoint( paoPoints[0].x, 
                                    paoPoints[0].y, 
                                    padfZ[0] );

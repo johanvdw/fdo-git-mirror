@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: l1bdataset.cpp 22715 2011-07-12 10:34:07Z rouault $
+ * $Id: l1bdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  NOAA Polar Orbiter Level 1b Dataset Reader (AVHRR)
  * Purpose:  Can read NOAA-9(F)-NOAA-17(M) AVHRR datasets
@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: l1bdataset.cpp 22715 2011-07-12 10:34:07Z rouault $");
+CPL_CVSID("$Id: l1bdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 CPL_C_START
 void    GDALRegister_L1B(void);
@@ -235,7 +235,7 @@ class L1BDataset : public GDALPamDataset
 
     char        *pszGCPProjection;
 
-    VSILFILE   *fp;
+    FILE        *fp;
 
     int         bFetchGeolocation;
     int         bGuessDataFormat;
@@ -646,14 +646,8 @@ void L1BDataset::ProcessRecordHeaders()
 /* -------------------------------------------------------------------- */
 /*      Initialize the GCP list.                                        */
 /* -------------------------------------------------------------------- */
-    pasGCPList = (GDAL_GCP *)VSICalloc( nTargetLines * nGCPsPerLine,
+    pasGCPList = (GDAL_GCP *)CPLCalloc( nTargetLines * nGCPsPerLine,
                                         sizeof(GDAL_GCP) );
-    if (pasGCPList == NULL)
-    {
-        CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
-        CPLFree( pRecordHeader );
-        return;
-    }
     GDALInitGCPs( nTargetLines * nGCPsPerLine, pasGCPList );
 
 /* -------------------------------------------------------------------- */
@@ -1590,6 +1584,9 @@ int L1BDataset::DetectFormat( GDALOpenInfo *poOpenInfo )
 int L1BDataset::Identify( GDALOpenInfo *poOpenInfo )
 
 {
+    if( poOpenInfo->fp == NULL )
+        return FALSE;
+
     if ( DetectFormat(poOpenInfo) == L1B_NONE )
         return FALSE;
 
@@ -1628,7 +1625,7 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     L1BDataset  *poDS;
-    VSIStatBufL  sStat;
+    VSIStatBuf  sStat;
     const char  *pszFilename = poOpenInfo->pszFilename;
 
     poDS = new L1BDataset( eL1BFormat );
@@ -1649,7 +1646,7 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
         goto bad;
     }
 
-    VSIStatL(pszFilename, &sStat);
+    CPLStat(pszFilename, &sStat);
 
     if ( poDS->bGuessDataFormat )
     {
@@ -1820,11 +1817,6 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-
     return( poDS );
 
 bad:
@@ -1850,8 +1842,6 @@ void GDALRegister_L1B()
                                    "NOAA Polar Orbiter Level 1b Data Set" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_l1b.html" );
-
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = L1BDataset::Open;
 

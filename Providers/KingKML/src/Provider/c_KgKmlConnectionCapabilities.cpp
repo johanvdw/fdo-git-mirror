@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010  SL-King d.o.o
+* Copyright (C) 2006  SL-King d.o.o
 * 
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of version 2.1 of the GNU Lesser
@@ -89,13 +89,6 @@ bool c_KgKmlConnectionCapabilities::SupportsTransactions ()
 {
     //9.5.2008. 
     //spremenil simon na false ker ni narejeno 
-    return false;
-}
-
-/// <summary>Determines if the feature provider supports save point.</summary>
-/// <returns>Returns true if the feature provider supports save point.</returns> 
-bool c_KgKmlConnectionCapabilities::SupportsSavePoint ()
-{
     return false;
 }
 

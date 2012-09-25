@@ -49,25 +49,6 @@ typedef	SQLHDBC odbcdr_service_ctx_def;			/* ODBC db conenction handle */
 typedef SQLHSTMT odbcdr_cursor_handle_def;		/* 1 per SQL statement		*/
 
 /*---------------------------------------------------------------------------
- * Blob data structures.
- */
-typedef ut_da_def   odbcdr_blob_list_def;   /* List of odbcdr_geom_def *'s   */
-typedef ut_da_def   odbcdr_blobNI_list_def; /* List of odbcdr_geomNI_def *'s*/
-
-typedef PBYTE       odbcdr_blob_def;        /* SqlServer geometry (image)   */
-typedef SQLLEN      odbcdr_blobNI_def;      /* Null indicator from SqlServer */
-
-typedef struct odbcdr_blob_col_def {        /* A bind/define column             */
-    int                     position;       /* Column # (1-based)               */
-    pByteArray_def          *address;       /* Caller's bind/define address     */
-	pByteArray_def			*l_address;		/* Copies of caller's define blobs addresses */
-    odbcdr_blob_list_def    blob_list;      /* List of ocidr_blob_def *'s       */
-    odbcdr_blobNI_list_def  blobNI_list;    /* List of ocidr_blobNullInd_def *'s */
-} odbcdr_blob_col_def;
-
-typedef ut_da_def odbcdr_blob_col_list_def;  /* List of ocidr_blob_col_def's */
-
-/*---------------------------------------------------------------------------
  * Geometry conversion data structures.
  *  These data structure are the conversion buffers between SqlServer-specific
  *  coordinate geometries and geometries from the FdoGeometry package.
@@ -108,17 +89,6 @@ typedef struct bindname_map_def {
 	int		is_filled;						/* Is this bindame map element assigned */
 } bindname_map;
 
-typedef struct geom_srid_map_def {
-	int		            position; 						/* position of the bind variable	*/
-	int		            geom_srid_value;				/* srid value for the geom variable */
-    geom_srid_map_def*  next;
-} geom_srid_map;
-
-typedef struct len_idf_map_def {
-	int		            position; 					/* position of the bind variable	*/
-	SQLLEN	            null_idf_value;				/* len idf for the geom/blob variable */
-    len_idf_map_def*    next;
-} len_idf_map;
 
 typedef struct cursor_def {					/* Statement linked list		*/
     union
@@ -137,20 +107,14 @@ typedef struct cursor_def {					/* Statement linked list		*/
     odbcdr_geom_col_list_def *bound_geometries;   /* odbcdr -->SqlServer buffer  */
     odbcdr_geom_col_list_def *defined_geometries; /* SqlServer-->odbcdr buffer  */
  
+    SQLLEN		        lenDataParam;
+
     PBYTE               odbcdr_geom;    /* define a working area for fething bound geoms */
     SQLLEN              *odbcdr_geomNI;
 
     PBYTE               odbcdr_blob_tmp;    /* define a working area for fething geoms as Blobs*/
     int                 odbcdr_blob_tmp_size;
-    void*               odbcdr_geom_handle;
-    geom_srid_map*      geom_srid_maping;
-    long                geom_version_value;
 
-    PBYTE               odbcdr_blob;    /* define a working area for fething blobs */
-    SQLLEN              *odbcdr_blobNI;
-    odbcdr_geom_col_list_def *defined_blobs; /* SqlServer-->odbcdr blobs */
-
-    len_idf_map*      len_idf_maping;
 } odbcdr_cursor_def;
 
 

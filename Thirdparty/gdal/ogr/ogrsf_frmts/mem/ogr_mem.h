@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mem.h 22369 2011-05-13 18:00:27Z rouault $
+ * $Id: ogr_mem.h 17807 2009-10-13 18:18:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the OGR Memory driver.
@@ -71,9 +71,6 @@ class OGRMemLayer : public OGRLayer
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
                                      int bApproxOK = TRUE );
-    virtual OGRErr      DeleteField( int iField );
-    virtual OGRErr      ReorderFields( int* panMap );
-    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags );
 
     virtual OGRSpatialReference *GetSpatialRef();
     

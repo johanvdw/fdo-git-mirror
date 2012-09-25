@@ -40,7 +40,6 @@ typedef struct {
         GDBI_NI_TYPE	 *null_ind;
         wchar_t			 propertyName[GDBI_SCHEMA_ELEMENT_NAME_SIZE];
         FdoIStreamReader *reader;
-        FdoByteArray     *barray;
         int				 pos;
 } FdoRdbmsPvcBindDef;
 
@@ -62,13 +61,6 @@ protected:
     /// <param>doubleValue (input) - the ordinate value</param> 
     /// <param>columnDefinition (input) - provides column precision</param> 
     void SetGeomOrdinateBindValue( char* buffer, double doubleValue, const FdoSmPhColumn* columnDefinition );
-
-    // Given a double and a column definition, convert the double to the type defined by the column,
-    // and return as a data value.
-    FdoPtr<FdoDataValue> GetGeomOrdinateBindValue( 
-        double doubleValue, 
-        const FdoSmPhColumn* columnDefinition 
-    );
 };
 
 #endif

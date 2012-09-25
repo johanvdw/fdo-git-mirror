@@ -49,7 +49,6 @@ public:
 	virtual FdoStringP GetOutputFileName (FdoString* pBaseFileName);
     virtual FdoStringP GetNlsObjectName( FdoStringP inName );
     virtual wchar_t GetNlsChar( int index );
-    static FdoStringP GetNativeClient();
 };
 
 #endif // SQLSERVER_CONNECTIONUTIL_H

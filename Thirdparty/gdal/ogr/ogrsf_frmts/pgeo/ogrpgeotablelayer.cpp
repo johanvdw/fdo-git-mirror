@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeotablelayer.cpp 22155 2011-04-13 19:52:57Z rouault $
+ * $Id: ogrpgeotablelayer.cpp 17755 2009-10-04 21:04:10Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGeoTableLayer class, access to an existing table.
@@ -29,9 +29,8 @@
 
 #include "cpl_conv.h"
 #include "ogr_pgeo.h"
-#include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id: ogrpgeotablelayer.cpp 22155 2011-04-13 19:52:57Z rouault $");
+CPL_CVSID("$Id: ogrpgeotablelayer.cpp 17755 2009-10-04 21:04:10Z rouault $");
 
 /************************************************************************/
 /*                          OGRPGeoTableLayer()                         */
@@ -101,34 +100,33 @@ CPLErr OGRPGeoTableLayer::Initialize( const char *pszTableName,
 
     switch( nShapeType )
     {
-        case ESRI_LAYERGEOMTYPE_NULL:
-            eOGRType = wkbNone;
-            break;
-
-        case ESRI_LAYERGEOMTYPE_POINT:
+        case SHPT_POINT:
+        case SHPT_POINTM:
+        case SHPT_POINTZ:
+        case SHPT_POINTZM:
             eOGRType = wkbPoint;
             break;
 
-        case ESRI_LAYERGEOMTYPE_MULTIPOINT:
+        case SHPT_ARC:
+        case SHPT_ARCZ:
+        case SHPT_ARCM:
+        case SHPT_ARCZM:
+            eOGRType = wkbLineString;
+            break;
+            
+        case SHPT_MULTIPOINT:
+        case SHPT_MULTIPOINTZ:
+        case SHPT_MULTIPOINTM:
+        case SHPT_MULTIPOINTZM:
             eOGRType = wkbMultiPoint;
             break;
 
-        case ESRI_LAYERGEOMTYPE_POLYLINE:
-            eOGRType = wkbLineString;
-            break;
-
-        case ESRI_LAYERGEOMTYPE_POLYGON:
-        case ESRI_LAYERGEOMTYPE_MULTIPATCH:
-            eOGRType = wkbPolygon;
-            break;
-
         default:
-            CPLDebug("PGeo", "Unexpected value for shape type : %d", nShapeType);
             eOGRType = wkbUnknown;
             break;
     }
 
-    if( eOGRType != wkbUnknown && eOGRType != wkbNone && bHasZ )
+    if( eOGRType != wkbUnknown && bHasZ )
         eOGRType = (OGRwkbGeometryType)(((int) eOGRType) | wkb25DBit);
 
 /* -------------------------------------------------------------------- */
@@ -280,7 +278,7 @@ OGRFeature *OGRPGeoTableLayer::GetFeature( long nFeatureId )
     poStmt = new CPLODBCStatement( poDS->GetSession() );
     poStmt->Append( "SELECT * FROM " );
     poStmt->Append( poFeatureDefn->GetName() );
-    poStmt->Appendf( " WHERE %s = %ld", pszFIDColumn, nFeatureId );
+    poStmt->Appendf( " WHERE %s = %d", pszFIDColumn, nFeatureId );
 
     if( !poStmt->ExecuteSQL() )
     {
@@ -305,7 +303,7 @@ OGRErr OGRPGeoTableLayer::SetAttributeFilter( const char *pszQuery )
         return OGRERR_NONE;
 
     CPLFree( this->pszQuery );
-    this->pszQuery = pszQuery ? CPLStrdup( pszQuery ) : NULL; 
+    this->pszQuery = CPLStrdup( pszQuery );
 
     ClearStatement();
 

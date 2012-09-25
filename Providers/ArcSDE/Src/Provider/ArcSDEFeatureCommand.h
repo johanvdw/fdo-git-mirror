@@ -33,9 +33,6 @@ template <class FDO_COMMAND> class ArcSDEFeatureCommand : public ArcSDECommand<F
     friend class ArcSDEConnection;
     friend class ArcSDEFeatureReader;
 
-private:
-    ArcSDEGeometryBuffer mGeom;
-
 protected:
     FdoPtr<FdoFilter> mFilter;         // the command filter
     FdoPtr<FdoIdentifier> mClassName;  // the name of the feature class
@@ -45,9 +42,7 @@ protected:
 
     // Constructs an instance of a command for the given connection.    
     ArcSDEFeatureCommand (FdoIConnection* connection) :
-
-    ArcSDECommand<FDO_COMMAND>(connection),  // superclass constructor
-        mGeom()
+        ArcSDECommand<FDO_COMMAND>(connection)  // superclass constructor
     {
         // Initialize the property value collection:
         mValues = FdoPropertyValueCollection::Create ();
@@ -555,10 +550,7 @@ void ArcSDEFeatureCommand<FDO_COMMAND>::assignValue (ArcSDEConnection* connectio
                     FdoPtr<FdoByteArray> fgf = geometry->GetGeometry ();
                     try
                     {
-                        ArcSDEConnection* conn = this->mConnection;
-                        FdoFgfGeometryFactory* fgfFactory = conn->mGeomFactory;
-                        SE_CONNECTION seConn = conn->GetConnection();
-                        shape = mGeom.FgfToShape(fgfFactory, fgf, seConn, coordref);
+                        convert_fgf_to_sde_shape (connection, fgf, coordref, shape);
                         SE_coordref_free (coordref);
                     }
                     catch (FdoException *e)

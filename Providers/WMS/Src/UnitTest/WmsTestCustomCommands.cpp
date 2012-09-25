@@ -99,13 +99,13 @@ void WmsTestCustomCommands::testSpacialFeatureClassName ()
     {
         FdoPtr<FdoIConnection> connection = WmsTests::GetConnection ();
 
-        FdoStringP sServer = FdoStringP::Format(L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.3.0");
+        FdoStringP sServer = FdoStringP::Format(L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.1.0");
         connection->SetConnectionString((FdoString*)sServer);
         FdoConnectionState state = connection->Open ();
         
         //test for get styles command
         FdoPtr<FdoWmsIGetFeatureClassStyles> cmdGLS = static_cast<FdoWmsIGetFeatureClassStyles *> (connection->CreateCommand(FdoWmsCommandType_GetFeatureClassStyles));
-        cmdGLS->SetFeatureClassName(L"Foundation barrierl_1m"); // layer name is Foundation.barrierl_1m
+        cmdGLS->SetFeatureClassName(L"Foundation BARRIERL_1M"); // layer name is Foundation:BARRIERL_1M
         FdoStringsP styles = cmdGLS->Execute();
         CPPUNIT_ASSERT(styles->GetCount() == 1);
 #ifdef _DEBUG
@@ -116,7 +116,7 @@ void WmsTestCustomCommands::testSpacialFeatureClassName ()
 #endif
         //test for get CRS command
         FdoPtr<FdoWmsIGetFeatureClassCRSNames> cmdGLCRS = static_cast<FdoWmsIGetFeatureClassCRSNames *> (connection->CreateCommand(FdoWmsCommandType_GetFeatureClassCRSNames));
-        cmdGLCRS->SetFeatureClassName(L"Foundation barrierl_1m");//layer name is Foundation.barrierl_1m
+        cmdGLCRS->SetFeatureClassName(L"Foundation BARRIERL_1M");//layer name is Foundation:BARRIERL_1M
         FdoStringsP crsNames = cmdGLCRS->Execute();
         CPPUNIT_ASSERT(crsNames->GetCount() == 1);
 #ifdef _DEBUG

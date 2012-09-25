@@ -12,7 +12,6 @@ include_directories(
 	Gdbi
 	LockManager
 	LongTransactionManager
-    Fdo/Capability
     Fdo/Connection
 	Fdo/Other
 	Fdo/FeatureCommands
@@ -35,6 +34,5 @@ add_subdirectory( Util )
 add_subdirectory( Geometry )
 add_subdirectory( ODBCDriver )
 add_subdirectory( ODBC )
-add_subdirectory( PostGis )
 # Later
 # add_subdirectory( UnitTest )

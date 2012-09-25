@@ -1,7 +1,7 @@
 %extend OGRDriverShadow {
 // File: ogrsfdriver_8cpp.xml
 %feature("docstring")  CPL_CVSID "CPL_CVSID(\"$Id: ogrsfdriver.cpp
-23413 2011-11-22 21:53:32Z rouault $\") ";
+16319 2009-02-13 23:17:58Z rouault $\") ";
 
 %feature("docstring")  CreateDataSource "OGRDataSourceH
 OGR_Dr_CreateDataSource(OGRSFDriverH hDriver, const char *pszName,
@@ -25,7 +25,7 @@ Parameters:
 
 hDriver:  handle to the driver on which data source creation is based.
 
-pszName:  the name for the new data source. UTF-8 encoded.
+pszName:  the name for the new data source.
 
 papszOptions:  a StringList of name=value options. Options are driver
 specific, and driver information can be found at the following

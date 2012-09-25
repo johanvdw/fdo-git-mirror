@@ -5,7 +5,6 @@
 class ut_SelectAggregates : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE( ut_SelectAggregates );
-    CPPUNIT_TEST( SelectExtent );    
     CPPUNIT_TEST( SelectCount );    
     CPPUNIT_TEST( SelectDistinct );  
   CPPUNIT_TEST_SUITE_END();
@@ -15,7 +14,6 @@ public:
 public:
   ~ut_SelectAggregates(void);
   
-  void SelectExtent();
   void SelectCount();   
   
   void SelectDistinct();   

@@ -1039,10 +1039,6 @@ bool SdfSimpleFeatureReader::ReadNext()
             if (ret == SQLiteDB_NOTFOUND)
                 return false;
 
-            // try next feature
-            if (ret == SQLiteDB_KEYEMPTY)
-                return ReadNext();
-
             if (ret != SQLiteDB_OK)
                 throw FdoCommandException::Create(NlsMsgGetMain(FDO_NLSID(SDFPROVIDER_10_ERROR_ACCESSING_SDFDB)));
 
@@ -1152,7 +1148,10 @@ void SdfSimpleFeatureReader::Close()
     FDO_SAFE_RELEASE(m_filter);
     FDO_SAFE_RELEASE(m_classDefPruned);
 
-    FDO_SAFE_RELEASE(m_filterExec);
+    //need to do this because of multiple inheritance in SdfFilterExecutor
+    FdoIFilterProcessor* asfilter = (FdoIFilterProcessor*)m_filterExec;
+    FDO_SAFE_RELEASE(asfilter);
+    m_filterExec = NULL;
 
     //it is our responsibility to free the feature recno list here
     if (m_features)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalhttp.cpp 22007 2011-03-21 20:44:14Z rouault $
+ * $Id: gdalhttp.cpp 18020 2009-11-14 14:33:20Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -81,36 +81,18 @@ void CPLHTTPInitializeRequest(CPLHTTPRequest *psRequest, const char *pszURL, con
         CPLError(CE_Fatal, CPLE_AppDefined, "CPLHTTPInitializeRequest(): Unable to create CURL handle.");
     }
 
-    /* Set User-Agent */
-    const char *pszUserAgent = CSLFetchNameValue(const_cast<char **>(psRequest->papszOptions), "USERAGENT");
-    if (pszUserAgent == NULL)
-        pszUserAgent = "GDAL WMS driver (http://www.gdal.org/frmt_wms.html)";
-    curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_USERAGENT, pszUserAgent);
-
-    /* Set Referer */
-    const char *pszReferer = CSLFetchNameValue(const_cast<char **>(psRequest->papszOptions), "REFERER");
-    if (pszReferer != NULL)
-        curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_REFERER, pszReferer);
-
-    /* Set URL */
+    curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_USERAGENT, "GDAL WMS driver (http://www.gdal.org/frmt_wms.html)");
     curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_URL, psRequest->pszURL);
 
-    /* Set timeout.*/
     const char *timeout = CSLFetchNameValue(const_cast<char **>(psRequest->papszOptions), "TIMEOUT");
     if (timeout != NULL) {
         curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_TIMEOUT, atoi(timeout));
     }
 
-    /* Set Headers (copied&pasted from cpl_http.cpp, but unused by callers of CPLHTTPInitializeRequest) .*/
     const char *headers = CSLFetchNameValue(const_cast<char **>(psRequest->papszOptions), "HEADERS");
     if (headers != NULL) {
         psRequest->m_headers = curl_slist_append(psRequest->m_headers, headers);
         curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_HTTPHEADER, psRequest->m_headers);
-    }
-    
-    if (CSLFetchBoolean(const_cast<char **>(psRequest->papszOptions), "UNSAFESSL", 0)) {
-        curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
     }
 
     /* Enable following redirections.  Requires libcurl 7.10.1 at least */
@@ -130,19 +112,6 @@ void CPLHTTPInitializeRequest(CPLHTTPRequest *psRequest, const char *pszURL, con
     psRequest->m_curl_error = reinterpret_cast<char *>(CPLMalloc(CURL_ERROR_SIZE + 1));
     psRequest->m_curl_error[0] = '\0';
     curl_easy_setopt(psRequest->m_curl_handle, CURLOPT_ERRORBUFFER, psRequest->m_curl_error);
-    
-    /* Set Proxy parameters */
-    const char* pszProxy = CSLFetchNameValue( const_cast<char **>(psRequest->papszOptions), "PROXY" );
-    if (pszProxy == NULL)
-        pszProxy = CPLGetConfigOption("GDAL_HTTP_PROXY", NULL);
-    if (pszProxy)
-        curl_easy_setopt(psRequest->m_curl_handle,CURLOPT_PROXY,pszProxy);
-
-    const char* pszProxyUserPwd = CSLFetchNameValue( const_cast<char **>(psRequest->papszOptions), "PROXYUSERPWD" );
-    if (pszProxyUserPwd == NULL)
-        pszProxyUserPwd = CPLGetConfigOption("GDAL_HTTP_PROXYUSERPWD", NULL);
-    if (pszProxyUserPwd)
-        curl_easy_setopt(psRequest->m_curl_handle,CURLOPT_PROXYUSERPWD,pszProxyUserPwd);
 }
 
 void CPLHTTPCleanupRequest(CPLHTTPRequest *psRequest) {
@@ -257,17 +226,9 @@ CPLErr CPLHTTPFetchMulti(CPLHTTPRequest *pasRequest, int nRequestCount, const ch
         if ((psRequest->pszError == NULL) && (psRequest->m_curl_error != NULL) && (psRequest->m_curl_error[0] != '\0')) {
             psRequest->pszError = CPLStrdup(psRequest->m_curl_error);
         }
-
-        /* In the case of a file:// URL, curl will return a status == 0, so if there's no */
-        /* error returned, patch the status code to be 200, as it would be for http:// */
-        if (strncmp(psRequest->pszURL, "file://", 7) == 0 && psRequest->nStatus == 0 &&
-            psRequest->pszError == NULL)
-        {
-            psRequest->nStatus = 200;
-        }
-
+        
         CPLDebug("HTTP", "Request [%d] %s : status = %d, content type = %s, error = %s",
-                 i, psRequest->pszURL, psRequest->nStatus,
+                 conn_i, psRequest->pszURL, psRequest->nStatus,
                  (psRequest->pszContentType) ? psRequest->pszContentType : "(null)",
                  (psRequest->pszError) ? psRequest->pszError : "(null)");
 

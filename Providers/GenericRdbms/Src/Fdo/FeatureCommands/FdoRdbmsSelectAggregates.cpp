@@ -54,15 +54,16 @@ FdoRdbmsSelectAggregates::FdoRdbmsSelectAggregates (FdoIConnection *connection)
 // the delegation to the select-command is still issued.
 FdoIDataReader *FdoRdbmsSelectAggregates::Execute ()
 {
-    if (!mIConnection || mIConnection->GetConnectionState() != FdoConnectionState_Open)
-        throw FdoCommandException::Create(
-                        NlsMsgGet(FDORDBMS_13, "Connection not established"));
 
     if (pSelect.p == NULL)
         throw FdoFilterException::Create(NlsMsgGet(FDORDBMS_22, errorMsg ));
 
     // Define some needed connection cbjects.
 
+    if (mIConnection == NULL)
+        throw FdoCommandException::Create(
+                        NlsMsgGet(FDORDBMS_13, "Connection not established"));
+    
     DbiConnection      *dbiConnection   = NULL;
     FdoRdbmsConnection *rdbmsConnection =
                                 static_cast<FdoRdbmsConnection*>(mIConnection);
@@ -155,7 +156,7 @@ FdoIDataReader *FdoRdbmsSelectAggregates::Execute ()
                                                                     functions,
                                                                     idCol,
                                                                     exprType);
-        return FdoExpressionEngineUtilDataReader::Create(functions,
+        return new FdoExpressionEngineUtilDataReader(functions,
                                                      featureReader,
                                                      classDef,
                                                      idCol,
@@ -169,6 +170,11 @@ FdoIDataReader *FdoRdbmsSelectAggregates::Execute ()
 
     // The filter and the select list contain only natively supported expression
     // functions (if any). Delegate the request to the select-command.
-    FdoPtr<FdoRdbmsFeatureReader> retRdr = (FdoRdbmsFeatureReader*)pSelect->Execute(mbDistinct, FdoCommandType_SelectAggregates);
-    return new FdoRdbmsDataReader(retRdr);
+
+    return new FdoRdbmsDataReader(
+                FdoPtr<FdoRdbmsFeatureReader>(
+                            (FdoRdbmsFeatureReader*)pSelect->Execute(
+                                        mbDistinct,
+                                        FdoCommandType_SelectAggregates)));
+
 }

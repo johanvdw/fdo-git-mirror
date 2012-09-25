@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal2tiles.py 19288 2010-04-02 18:36:17Z rouault $
+#  $Id: gdal2tiles.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 # Project:  Google Summer of Code 2007, 2008 (http://code.google.com/soc/)
 # Support:  BRGM (http://www.brgm.fr)
@@ -35,16 +35,10 @@
 #  DEALINGS IN THE SOFTWARE.
 #******************************************************************************
 
+from osgeo import gdal
+from osgeo import osr
+
 import sys
-
-try:
-    from osgeo import gdal
-    from osgeo import osr
-except:
-    import gdal
-    print('You are using "old gen" bindings. gdal2tiles needs "new gen" bindings.')
-    sys.exit(1)
-
 import os
 import math
 
@@ -56,7 +50,7 @@ except:
 	# 'antialias' resampling is not available
 	pass
 
-__version__ = "$Id: gdal2tiles.py 19288 2010-04-02 18:36:17Z rouault $"
+__version__ = "$Id: gdal2tiles.py 18194 2009-12-06 20:07:45Z rouault $"
 
 resampling_list = ('average','near','bilinear','cubic','cubicspline','lanczos','antialias')
 profile_list = ('mercator','geodetic','raster') #,'zoomify')

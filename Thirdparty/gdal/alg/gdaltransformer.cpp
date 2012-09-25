@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaltransformer.cpp 23156 2011-10-01 15:34:16Z rouault $
+ * $Id: gdaltransformer.cpp 18035 2009-11-15 23:33:45Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implementation of one or more GDALTrasformerFunc types, including
@@ -33,11 +33,8 @@
 #include "gdal_alg.h"
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
-#include "gdal_alg_priv.h"
-#include "cpl_list.h"
-#include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdaltransformer.cpp 23156 2011-10-01 15:34:16Z rouault $");
+CPL_CVSID("$Id: gdaltransformer.cpp 18035 2009-11-15 23:33:45Z rouault $");
 CPL_C_START
 void *GDALDeserializeGCPTransformer( CPLXMLNode *psTree );
 void *GDALDeserializeTPSTransformer( CPLXMLNode *psTree );
@@ -50,8 +47,6 @@ static void *GDALDeserializeReprojectionTransformer( CPLXMLNode *psTree );
 
 static CPLXMLNode *GDALSerializeGenImgProjTransformer( void *pTransformArg );
 static void *GDALDeserializeGenImgProjTransformer( CPLXMLNode *psTree );
-
-static void GDALRefreshGenImgProjTransformer(void* hTransformArg);
 
 /************************************************************************/
 /*                          GDALTransformFunc                           */
@@ -347,80 +342,50 @@ GDALSuggestedWarpOutput2( GDALDatasetH hSrcDS,
 /*      Setup sample points all around the edge of the input raster.    */
 /* -------------------------------------------------------------------- */
     int    nSamplePoints = 0;
+#define N_STEPS 20
+    int    abSuccess[(N_STEPS+1)*(N_STEPS+1)] = { 0 };;
+    double adfX[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double adfY[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double adfZ[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double adfXRevert[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double adfYRevert[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double adfZRevert[(N_STEPS+1)*(N_STEPS+1)] = { 0 };
+    double dfRatio = 0;
     int    nInXSize = GDALGetRasterXSize( hSrcDS );
     int    nInYSize = GDALGetRasterYSize( hSrcDS );
 
-    if (pfnTransformer == GDALGenImgProjTransform)
+    // Take N_STEPS steps 
+    for( dfRatio = 0.0; dfRatio <= 1.01; dfRatio += 1. / N_STEPS )
     {
-        /* In case CHECK_WITH_INVERT_PROJ has been modified */
-        GDALRefreshGenImgProjTransformer(pTransformArg);
-    }
-
-#define N_PIXELSTEP 50
-    int nSteps = (int) (double(MIN(nInYSize, nInXSize)) / N_PIXELSTEP + .5);
-    if (nSteps < 20)
-        nSteps = 20;
-
-retry:
-    int nSampleMax = (nSteps + 1)*(nSteps + 1);
-    int *pabSuccess = NULL;
-    double *padfX, *padfY, *padfZ;
-    double *padfXRevert, *padfYRevert, *padfZRevert;
-
-    double dfRatio = 0.0;
-    double dfStep = 1. / nSteps;
-
-    pabSuccess = (int *) VSIMalloc3(sizeof(int), nSteps + 1, nSteps + 1);
-    padfX = (double *) VSIMalloc3(sizeof(double) * 3, nSteps + 1, nSteps + 1);
-    padfXRevert = (double *) VSIMalloc3(sizeof(double) * 3, nSteps + 1, nSteps + 1);
-    if (pabSuccess == NULL || padfX == NULL || padfXRevert == NULL)
-    {
-        CPLFree( padfX );
-        CPLFree( padfXRevert );
-        CPLFree( pabSuccess );
-        if (nSteps > 20)
-        {
-            nSteps = 20;
-            goto retry;
-        }
-        return CE_Failure;
-    }
-    padfY = padfX + nSampleMax;
-    padfZ = padfX + nSampleMax * 2;
-    padfYRevert = padfXRevert + nSampleMax;
-    padfZRevert = padfXRevert + nSampleMax * 2;
-
-
-    // Take N_STEPS steps
-    int iStep;
-    for( iStep = 0; iStep <= nSteps; iStep ++ )
-    {
-        dfRatio = (iStep == nSteps) ? 1.0 : iStep * dfStep;
+        
+        // Ensure we end exactly at the end.
+        if( dfRatio > 0.99 )
+            dfRatio = 1.0;
 
         // Along top 
-        padfX[nSamplePoints]   = dfRatio * nInXSize;
-        padfY[nSamplePoints]   = 0.0;
-        padfZ[nSamplePoints++] = 0.0;
+        adfX[nSamplePoints]   = dfRatio * nInXSize;
+        adfY[nSamplePoints]   = 0.0;
+        adfZ[nSamplePoints++] = 0.0;
 
         // Along bottom 
-        padfX[nSamplePoints]   = dfRatio * nInXSize;
-        padfY[nSamplePoints]   = nInYSize;
-        padfZ[nSamplePoints++] = 0.0;
+        adfX[nSamplePoints]   = dfRatio * nInXSize;
+        adfY[nSamplePoints]   = nInYSize;
+        adfZ[nSamplePoints++] = 0.0;
 
         // Along left
-        padfX[nSamplePoints]   = 0.0;
-        padfY[nSamplePoints] = dfRatio * nInYSize;
-        padfZ[nSamplePoints++] = 0.0;
+        adfX[nSamplePoints]   = 0.0;
+        adfY[nSamplePoints] = dfRatio * nInYSize;
+        adfZ[nSamplePoints++] = 0.0;
 
         // Along right
-        padfX[nSamplePoints]   = nInXSize;
-        padfY[nSamplePoints] = dfRatio * nInYSize;
-        padfZ[nSamplePoints++] = 0.0;
+        adfX[nSamplePoints]   = nInXSize;
+        adfY[nSamplePoints] = dfRatio * nInYSize;
+        adfZ[nSamplePoints++] = 0.0;
     }
 
-    CPLAssert( nSamplePoints == 4 * (nSteps + 1) );
+    CPLAssert( nSamplePoints == 4 * (N_STEPS + 1) );
 
-    memset( pabSuccess, 1, sizeof(int) * nSampleMax );
+    memset( abSuccess, 1, sizeof(abSuccess) );
 
 /* -------------------------------------------------------------------- */
 /*      Transform them to the output coordinate system.                 */
@@ -428,20 +393,17 @@ retry:
     int    nFailedCount = 0, i;
 
     if( !pfnTransformer( pTransformArg, FALSE, nSamplePoints, 
-                         padfX, padfY, padfZ, pabSuccess ) )
+                         adfX, adfY, adfZ, abSuccess ) )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "GDALSuggestedWarpOutput() failed because the passed\n"
                   "transformer failed." );
-        CPLFree( padfX );
-        CPLFree( padfXRevert );
-        CPLFree( pabSuccess );
         return CE_Failure;
     }
 
     for( i = 0; i < nSamplePoints; i++ )
     {
-        if( !pabSuccess[i] )
+        if( !abSuccess[i] )
             nFailedCount++;
     }
     
@@ -451,11 +413,11 @@ retry:
 /* -------------------------------------------------------------------- */
     if (nFailedCount == 0 )
     {
-        memcpy(padfXRevert, padfX, nSamplePoints * sizeof(double));
-        memcpy(padfYRevert, padfY, nSamplePoints * sizeof(double));
-        memcpy(padfZRevert, padfZ, nSamplePoints * sizeof(double));
+        memcpy(adfXRevert, adfX, sizeof(adfX));
+        memcpy(adfYRevert, adfY, sizeof(adfY));
+        memcpy(adfZRevert, adfZ, sizeof(adfZ));
         if( !pfnTransformer( pTransformArg, TRUE, nSamplePoints, 
-                             padfXRevert, padfYRevert, padfZRevert, pabSuccess ) )
+                             adfXRevert, adfYRevert,adfZRevert, abSuccess ) )
         {
             nFailedCount = 1;
         }
@@ -463,13 +425,9 @@ retry:
         {
             for( i = 0; nFailedCount == 0 && i < nSamplePoints; i++ )
             {
-                if( !pabSuccess[i] )
+                if( !abSuccess[i] )
                     nFailedCount++;
-
-                dfRatio = 0.0 + (i/4) * dfStep;
-                if (dfRatio>0.99)
-                    dfRatio = 1.0;
-
+                
                 double dfExpectedX, dfExpectedY;
                 if ((i % 4) == 0)
                 {
@@ -492,8 +450,8 @@ retry:
                     dfExpectedY   = dfRatio * nInYSize;
                 }
                 
-                if (fabs(padfXRevert[i] - dfExpectedX) > nInXSize / nSteps ||
-                    fabs(padfYRevert[i] - dfExpectedY) > nInYSize / nSteps)
+                if (fabs(adfX[i] - dfExpectedX) > nInXSize / N_STEPS ||
+                    fabs(adfX[i] - dfExpectedX) > nInYSize / N_STEPS)
                     nFailedCount ++;
             }
         }
@@ -506,39 +464,37 @@ retry:
 /* -------------------------------------------------------------------- */
     if( nFailedCount > 0 )
     {
-        int iStep2;
         double dfRatio2;
         nSamplePoints = 0;
 
         // Take N_STEPS steps 
-        for( iStep = 0; iStep <= nSteps; iStep ++ )
+        for( dfRatio = 0.0; dfRatio <= 1.01; dfRatio += 1. / N_STEPS )
         {
-            dfRatio = (iStep == nSteps) ? 1.0 : iStep * dfStep;
+            // Ensure we end exactly at the end.
+            if( dfRatio > 0.99 )
+                dfRatio = 1.0;
 
-            for( iStep2 = 0; iStep2 <= nSteps; iStep2 ++ )
+            for( dfRatio2 = 0.0; dfRatio2 <= 1.01; dfRatio2 += 1. / N_STEPS )
             {
-                dfRatio2 = (iStep2 == nSteps) ? 1.0 : iStep2 * dfStep;
+                // Ensure we end exactly at the end.
+                if( dfRatio2 > 0.99 )
+                    dfRatio2 = 1.0;
 
                 // Along top 
-                padfX[nSamplePoints]   = dfRatio2 * nInXSize;
-                padfY[nSamplePoints]   = dfRatio * nInYSize;
-                padfZ[nSamplePoints++] = 0.0;
+                adfX[nSamplePoints]   = dfRatio2 * nInXSize;
+                adfY[nSamplePoints]   = dfRatio * nInYSize;
+                adfZ[nSamplePoints++] = 0.0;
             }
         }
 
-        CPLAssert( nSamplePoints == nSampleMax );
+        CPLAssert( nSamplePoints == (N_STEPS+1)*(N_STEPS+1) );
 
         if( !pfnTransformer( pTransformArg, FALSE, nSamplePoints, 
-                             padfX, padfY, padfZ, pabSuccess ) )
+                             adfX, adfY, adfZ, abSuccess ) )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "GDALSuggestedWarpOutput() failed because the passed\n"
                       "transformer failed." );
-
-            CPLFree( padfX );
-            CPLFree( padfXRevert );
-            CPLFree( pabSuccess );
-
             return CE_Failure;
         }
     }
@@ -553,18 +509,18 @@ retry:
     for( i = 0; i < nSamplePoints; i++ )
     {
         
-        int x_i = i % (nSteps + 1);
-        int y_i = i / (nSteps + 1);
+        int x_i = i % (N_STEPS+1);
+        int y_i = i / (N_STEPS+1);
 
-        if (x_i > 0 && (pabSuccess[i-1] || pabSuccess[i]))
+        if (x_i > 0 && (abSuccess[i-1] || abSuccess[i]))
         {
-            double x_out_before = padfX[i-1];
-            double x_out_after = padfX[i];
+            double x_out_before = adfX[i-1];
+            double x_out_after = adfX[i];
             int nIter = 0;
-            double x_in_before = (x_i - 1) * nInXSize * 1.0 / nSteps;
-            double x_in_after = x_i * nInXSize * 1.0 / nSteps;
-            int valid_before = pabSuccess[i-1];
-            int valid_after = pabSuccess[i];
+            double x_in_before = (x_i - 1) * nInXSize * 1.0 / N_STEPS;
+            double x_in_after = x_i * nInXSize * 1.0 / N_STEPS;
+            int valid_before = abSuccess[i-1];
+            int valid_after = abSuccess[i];
             
             /* Detect discontinuity in target coordinates when the target x coordinates */
             /* change sign. This may be a false positive when the targe tx is around 0 */
@@ -574,7 +530,7 @@ retry:
                      x_out_before * x_out_after < 0) && nIter < 16 )
             {
                 double x = (x_in_before + x_in_after) / 2;
-                double y = y_i * nInYSize * 1.0 / nSteps;
+                double y = y_i * nInYSize * 1.0 / N_STEPS;
                 double z= 0;
                 //fprintf(stderr, "[%d] (%f, %f) -> ", nIter, x, y);
                 int bSuccess = TRUE;
@@ -628,7 +584,7 @@ retry:
             }
         }
         
-        if( !pabSuccess[i] )
+        if( !abSuccess[i] )
         {
             nFailedCount++;
             continue;
@@ -637,15 +593,15 @@ retry:
         if( !bGotInitialPoint )
         {
             bGotInitialPoint = TRUE;
-            dfMinXOut = dfMaxXOut = padfX[i];
-            dfMinYOut = dfMaxYOut = padfY[i];
+            dfMinXOut = dfMaxXOut = adfX[i];
+            dfMinYOut = dfMaxYOut = adfY[i];
         }
         else
         {
-            dfMinXOut = MIN(dfMinXOut, padfX[i]);
-            dfMinYOut = MIN(dfMinYOut, padfY[i]);
-            dfMaxXOut = MAX(dfMaxXOut, padfX[i]);
-            dfMaxYOut = MAX(dfMaxYOut, padfY[i]);
+            dfMinXOut = MIN(dfMinXOut,adfX[i]);
+            dfMinYOut = MIN(dfMinYOut,adfY[i]);
+            dfMaxXOut = MAX(dfMaxXOut,adfX[i]);
+            dfMaxYOut = MAX(dfMaxYOut,adfY[i]);
         }
     }
 
@@ -655,11 +611,6 @@ retry:
                   "Too many points (%d out of %d) failed to transform,\n"
                   "unable to compute output bounds.",
                   nFailedCount, nSamplePoints );
-
-        CPLFree( padfX );
-        CPLFree( padfXRevert );
-        CPLFree( pabSuccess );
-
         return CE_Failure;
     }
 
@@ -677,10 +628,10 @@ retry:
 /* -------------------------------------------------------------------- */
     double dfDiagonalDist, dfDeltaX, dfDeltaY;
 
-    if( pabSuccess[0] && pabSuccess[nSamplePoints - 1] )
+    if( abSuccess[0] && abSuccess[nSamplePoints-1] )
     {
-        dfDeltaX = padfX[nSamplePoints-1] - padfX[0];
-        dfDeltaY = padfY[nSamplePoints-1] - padfY[0];
+        dfDeltaX = adfX[nSamplePoints-1] - adfX[0];
+        dfDeltaY = adfY[nSamplePoints-1] - adfY[0];
     }
     else
     {
@@ -781,10 +732,6 @@ retry:
     padfGeoTransformOut[4] = 0.0;
     padfGeoTransformOut[5] = - dfPixelSizeY;
     
-    CPLFree( padfX );
-    CPLFree( padfXRevert );
-    CPLFree( pabSuccess );
-
     return CE_None;
 }
 
@@ -1008,8 +955,6 @@ static CPLString InsertCenterLong( GDALDatasetH hDS, CPLString osWKT )
  * <li> SRC_SRS: WKT SRS to be used as an override for hSrcDS.
  * <li> DST_SRS: WKT SRS to be used as an override for hDstDS.
  * <li> GCPS_OK: If false, GCPs will not be used, default is TRUE. 
- * <li> REFINE_MINIMUM_GCPS: The minimum amount of GCPs that should be available after the refinement.
- * <li> REFINE_TOLERANCE: The tolernace that specifies when a GCP will be eliminated.
  * <li> MAX_GCP_ORDER: the maximum order to use for GCP derived polynomials if
  * possible.  The default is to autoselect based on the number of GCPs.  
  * A value of -1 triggers use of Thin Plate Spline instead of polynomials.
@@ -1018,14 +963,10 @@ static CPLString InsertCenterLong( GDALDatasetH hDS, CPLString osWKT )
  * considered on the source dataset. 
  * <li> RPC_HEIGHT: A fixed height to be used with RPC calculations.
  * <li> RPC_DEM: The name of a DEM file to be used with RPC calculations.
- * <li> INSERT_CENTER_LONG: May be set to FALSE to disable setting up a 
- * CENTER_LONG value on the coordinate system to rewrap things around the
- * center of the image.  
  * </ul>
  * 
  * @param hSrcDS source dataset, or NULL.
- * @param hDstDS destination dataset (or NULL).
- * @param papszOptions NULL-terminated list of string options (or NULL).
+ * @param hDstDS destination dataset (or NULL). 
  * 
  * @return handle suitable for use GDALGenImgProjTransform(), and to be
  * deallocated with GDALDestroyGenImgProjTransformer() or NULL on failure.
@@ -1041,8 +982,7 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     GDALRPCInfo sRPCInfo;
     const char *pszMethod = CSLFetchNameValue( papszOptions, "METHOD" );
     const char *pszValue;
-    int nOrder = 0, bGCPUseOK = TRUE, nMinimumGcps = -1, bRefine = FALSE;
-    double dfTolerance = 0.0;
+    int nOrder = 0, bGCPUseOK = TRUE;
     const char *pszSrcWKT = CSLFetchNameValue( papszOptions, "SRC_SRS" );
     const char *pszDstWKT = CSLFetchNameValue( papszOptions, "DST_SRS" );
 
@@ -1053,20 +993,6 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     pszValue = CSLFetchNameValue( papszOptions, "GCPS_OK" );
     if( pszValue )
         bGCPUseOK = CSLTestBoolean(pszValue);
-
-    pszValue = CSLFetchNameValue( papszOptions, "REFINE_MINIMUM_GCPS" );
-    if( pszValue )
-    {
-        if( atoi(pszValue) != -1)
-            nMinimumGcps = atoi(pszValue);
-    }
-
-    pszValue = CSLFetchNameValue( papszOptions, "REFINE_TOLERANCE" );
-    if( pszValue )
-    {
-        dfTolerance = atof(pszValue);
-        bRefine = TRUE;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Initialize the transform info.                                  */
@@ -1115,20 +1041,10 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
              && (pszMethod == NULL || EQUAL(pszMethod,"GCP_POLYNOMIAL") )
              && GDALGetGCPCount( hSrcDS ) > 0 && nOrder >= 0 )
     {
-        if(bRefine)
-        {
-                psInfo->pSrcGCPTransformArg = 
-                    GDALCreateGCPRefineTransformer( GDALGetGCPCount( hSrcDS ),
-                                                    GDALGetGCPs( hSrcDS ), nOrder, 
-                                                    FALSE, dfTolerance, nMinimumGcps );
-        }
-        else
-        {
-            psInfo->pSrcGCPTransformArg = 
-                GDALCreateGCPTransformer( GDALGetGCPCount( hSrcDS ),
-                                          GDALGetGCPs( hSrcDS ), nOrder, 
-                                          FALSE );
-        }
+        psInfo->pSrcGCPTransformArg = 
+            GDALCreateGCPTransformer( GDALGetGCPCount( hSrcDS ),
+                                      GDALGetGCPs( hSrcDS ), nOrder, 
+                                      FALSE );
 
         if( psInfo->pSrcGCPTransformArg == NULL )
         {
@@ -1222,8 +1138,7 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
         && !EQUAL(pszSrcWKT,pszDstWKT) )
     {
         CPLString osSrcWKT = pszSrcWKT;
-        if (hSrcDS 
-            && CSLFetchBoolean( papszOptions, "INSERT_CENTER_LONG", TRUE ) )
+        if (hSrcDS)
             osSrcWKT = InsertCenterLong( hSrcDS, osSrcWKT );
         
         psInfo->pReprojectArg = 
@@ -1253,24 +1168,6 @@ GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS,
     }
     
     return psInfo;
-}
-
-/************************************************************************/
-/*                  GDALRefreshGenImgProjTransformer()                  */
-/************************************************************************/
-
-void GDALRefreshGenImgProjTransformer(void* hTransformArg)
-{
-    GDALGenImgProjTransformInfo *psInfo =
-        static_cast<GDALGenImgProjTransformInfo *>( hTransformArg );
-
-    if (psInfo->pReprojectArg)
-    {
-        CPLXMLNode* psXML = GDALSerializeReprojectionTransformer(psInfo->pReprojectArg);
-        GDALDestroyReprojectionTransformer(psInfo->pReprojectArg);
-        psInfo->pReprojectArg = GDALDeserializeReprojectionTransformer(psXML);
-        CPLDestroyXMLNode(psXML);
-    }
 }
 
 /************************************************************************/
@@ -1305,10 +1202,8 @@ void GDALRefreshGenImgProjTransformer(void* hTransformArg)
  * GDALGCPTransform().  This stage is skipped if hDstDS is NULL when the
  * transformation is created. 
  *
- * @param pszSrcWKT source WKT (or NULL).
- * @param padfSrcGeoTransform source geotransform (or NULL).
- * @param pszDstWKT destination WKT (or NULL).
- * @param padfDstGeoTransform destination geotransform (or NULL).
+ * @param hSrcDS source dataset, or NULL.
+ * @param hDstDS destination dataset (or NULL). 
  * 
  * @return handle suitable for use GDALGenImgProjTransform(), and to be
  * deallocated with GDALDestroyGenImgProjTransformer() or NULL on failure.
@@ -2047,19 +1942,19 @@ void *GDALCreateReprojectionTransformer( const char *pszSrcWKT,
  * GDALCreateReprojectionTransformer().
  */
 
-void GDALDestroyReprojectionTransformer( void *pTransformArg )
+void GDALDestroyReprojectionTransformer( void *pTransformAlg )
 
 {
-    VALIDATE_POINTER0( pTransformArg, "GDALDestroyReprojectionTransformer" );
+    VALIDATE_POINTER0( pTransformAlg, "GDALDestroyReprojectionTransformer" );
 
     GDALReprojectionTransformInfo *psInfo = 
-        (GDALReprojectionTransformInfo *) pTransformArg;		
+        (GDALReprojectionTransformInfo *) pTransformAlg;		
 
     if( psInfo->poForwardTransform )
         delete psInfo->poForwardTransform;
 
     if( psInfo->poReverseTransform )
-        delete psInfo->poReverseTransform;
+    delete psInfo->poReverseTransform;
 
     CPLFree( psInfo );
 }
@@ -2581,77 +2476,9 @@ CPLXMLNode *GDALSerializeTransformer( GDALTransformerFunc pfnFunc,
                   "Attempt to serialize non-GTI transformer." );
         return NULL;
     }
-    else if ( psInfo->pfnSerialize == NULL )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "No serialization function available for this transformer." );
-        return NULL;
-    }
     else
-    {
         return psInfo->pfnSerialize( pTransformArg );
-    }
 }
-
-/************************************************************************/
-/*                  GDALRegisterTransformDeserializer()                 */
-/************************************************************************/
-
-static CPLList* psListDeserializer = NULL;
-static void* hDeserializerMutex = NULL;
-
-typedef struct
-{
-    char* pszTransformName;
-    GDALTransformerFunc pfnTransformerFunc;
-    GDALTransformDeserializeFunc pfnDeserializeFunc;
-} TransformDeserializerInfo;
-
-void* GDALRegisterTransformDeserializer(const char* pszTransformName,
-                                       GDALTransformerFunc pfnTransformerFunc,
-                                       GDALTransformDeserializeFunc pfnDeserializeFunc)
-{
-    TransformDeserializerInfo* psInfo =
-        (TransformDeserializerInfo*)CPLMalloc(sizeof(TransformDeserializerInfo));
-    psInfo->pszTransformName = CPLStrdup(pszTransformName);
-    psInfo->pfnTransformerFunc = pfnTransformerFunc;
-    psInfo->pfnDeserializeFunc = pfnDeserializeFunc;
-
-    CPLMutexHolderD(&hDeserializerMutex);
-    psListDeserializer = CPLListInsert(psListDeserializer, psInfo, 0);
-
-    return psInfo;
-}
-
-/************************************************************************/
-/*                GDALUnregisterTransformDeserializer()                 */
-/************************************************************************/
-
-void GDALUnregisterTransformDeserializer(void* pData)
-{
-    CPLMutexHolderD(&hDeserializerMutex);
-    CPLList* psList = psListDeserializer;
-    CPLList* psLast = NULL;
-    while(psList)
-    {
-        if (psList->pData == pData)
-        {
-            TransformDeserializerInfo* psInfo =
-                    (TransformDeserializerInfo*)pData;
-            CPLFree(psInfo->pszTransformName);
-            CPLFree(pData);
-            if (psLast)
-                psLast->psNext = psList->psNext;
-            else
-                psListDeserializer = NULL;
-            CPLFree(psList);
-            break;
-        }
-        psLast = psList;
-        psList = psList->psNext;
-    }
-}
-
 
 /************************************************************************/
 /*                     GDALDeserializeTransformer()                     */
@@ -2706,36 +2533,9 @@ CPLErr GDALDeserializeTransformer( CPLXMLNode *psTree,
         *ppTransformArg = GDALDeserializeApproxTransformer( psTree );
     }
     else
-    {
-        GDALTransformDeserializeFunc pfnDeserializeFunc = NULL;
-        {
-            CPLMutexHolderD(&hDeserializerMutex);
-            CPLList* psList = psListDeserializer;
-            while(psList)
-            {
-                TransformDeserializerInfo* psInfo =
-                            (TransformDeserializerInfo*)psList->pData;
-                if (strcmp(psInfo->pszTransformName, psTree->pszValue) == 0)
-                {
-                    *ppfnFunc = psInfo->pfnTransformerFunc;
-                    pfnDeserializeFunc = psInfo->pfnDeserializeFunc;
-                    break;
-                }
-                psList = psList->psNext;
-            }
-        }
-
-        if (pfnDeserializeFunc != NULL)
-        {
-            *ppTransformArg = pfnDeserializeFunc( psTree );
-        }
-        else
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                    "Unrecognised element '%s' GDALDeserializeTransformer",
-                    psTree->pszValue );
-        }
-    }
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Unrecognised element '%s' GDALDeserializeTransformer",
+                  psTree->pszValue );
 
     return CPLGetLastErrorType();
 }

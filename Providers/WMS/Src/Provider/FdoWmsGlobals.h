@@ -22,23 +22,17 @@
 #pragma once
 #endif //_WIN32
 
-#define WMS_PROVIDER_NAME					L"OSGeo.WMS.3.8"
+#define WMS_PROVIDER_NAME					L"OSGeo.WMS.3.6"
 #define WMS_PROVIDER_DEFAULT_DISPLAY_NAME	"OSGeo FDO Provider for WMS"
 #define WMS_PROVIDER_DEFAULT_DESCRIPTION	"Read access to OGC WMS-based data store."
-#define WMS_PROVIDER_VERSION				L"3.8.0.0"
-#define WMS_FDO_VERSION						L"3.8.0.0"
+#define WMS_PROVIDER_VERSION				L"3.6.0.0"
+#define WMS_FDO_VERSION						L"3.6.0.0"
 
 namespace FdoWmsGlobals
 {
     static FdoString* ConnectionPropertyFeatureServer       = L"FeatureServer";
     static FdoString* ConnectionPropertyUsername            = L"Username";
     static FdoString* ConnectionPropertyPassword            = L"Password";
-
-    static FdoString* ConnectionPropertyProxyServer         = L"ProxyServerName";
-    static FdoString* ConnectionPropertyProxyPort           = L"ProxyServerPort";
-    static FdoString* ConnectionPropertyProxyUsername       = L"ProxyServerUsername";
-    static FdoString* ConnectionPropertyProxyPassword       = L"ProxyServerPassword";
-
 	static FdoString* ConnectionPropertyDefaultImageHeight  = L"DefaultImageHeight";
 	static FdoString* ConnectionPropertyDelimiter	        = L";";
 	static FdoString* ConnectionPropertySeparator	        = L"=";
@@ -71,12 +65,12 @@ namespace FdoWmsGlobals
 	static FdoString* PaletteAttrName						= L"Palette";
 	static FdoString* NumOfPaletteEntriesAttrName			= L"NumOfPaletteEntries";
 
-	static FdoString *RasterMIMEFormat_PNG			        = L"image/png";
+    static FdoString *RasterMIMEFormat_PNG			        = L"image/png";
 	static FdoString *RasterMIMEFormat_TIFF				    = L"image/tiff";
 	static FdoString *RasterMIMEFormat_JPEG				    = L"image/jpeg";
 	static FdoString *RasterMIMEFormat_GIF				    = L"image/gif";
 	static FdoString *ImageFormatPrefix						= L"image/";
-	static FdoString *RasterFormatSemicolon                 = L";";
+    static FdoString *RasterFormatSemicolon                 = L";";
 
 	static FdoString *DefaultEPSGCode     				    = L"EPSG:4326";
 	static FdoString *DefaultEPSGCode2     				    = L"CRS:4326";

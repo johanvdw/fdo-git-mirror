@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpglayer.cpp 23565 2011-12-13 20:33:20Z rouault $
+ * $Id: ogrpglayer.cpp 17987 2009-11-10 15:39:16Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGLayer class  which implements shared handling
@@ -58,13 +58,12 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 */
 
 #include "ogr_pg.h"
+#include "ogrpgutility.h"
 #include "ogr_p.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-#define PQexec this_is_an_error
-
-CPL_CVSID("$Id: ogrpglayer.cpp 23565 2011-12-13 20:33:20Z rouault $");
+CPL_CVSID("$Id: ogrpglayer.cpp 17987 2009-11-10 15:39:16Z rouault $");
 
 #define CURSOR_PAGE     500
 
@@ -106,11 +105,12 @@ OGRPGLayer::OGRPGLayer()
     nCoordDimension = 2; // initialize in case PostGIS is not available
 
     poSRS = NULL;
-    nSRSId = UNDETERMINED_SRID; // we haven't even queried the database for it yet.
+    nSRSId = -2; // we haven't even queried the database for it yet.
 
     pszCursorName = CPLStrdup(CPLSPrintf("OGRPGLayerReader%p", this));
     
     hCursorResult = NULL;
+    bCursorActive = FALSE;
 
     bCanUseBinaryCursor = TRUE;
 
@@ -148,41 +148,33 @@ OGRPGLayer::~OGRPGLayer()
 }
 
 /************************************************************************/
-/*                            CloseCursor()                             */
-/************************************************************************/
-
-void OGRPGLayer::CloseCursor()
-{
-    PGconn      *hPGConn = poDS->GetPGConn();
-
-    if( hCursorResult != NULL )
-    {
-        OGRPGClearResult( hCursorResult );
-
-        CPLString    osCommand;
-        osCommand.Printf("CLOSE %s", pszCursorName );
-
-        hCursorResult = OGRPG_PQexec(hPGConn, osCommand.c_str());
-        OGRPGClearResult( hCursorResult );
-
-        poDS->FlushSoftTransaction();
-
-        hCursorResult = NULL;
-    }
-}
-
-/************************************************************************/
 /*                            ResetReading()                            */
 /************************************************************************/
 
 void OGRPGLayer::ResetReading()
 
 {
-    GetLayerDefn();
+    PGconn      *hPGConn = poDS->GetPGConn();
+    CPLString    osCommand;
 
     iNextShapeId = 0;
 
-    CloseCursor();
+    if( hCursorResult != NULL )
+    {
+        OGRPGClearResult( hCursorResult );
+
+        if( bCursorActive )
+        {
+            osCommand.Printf("CLOSE %s", pszCursorName );
+
+            hCursorResult = PQexec(hPGConn, osCommand.c_str());
+            OGRPGClearResult( hCursorResult );
+        }
+
+        poDS->FlushSoftTransaction();
+
+        hCursorResult = NULL;
+    }
 }
 
 /************************************************************************/
@@ -270,18 +262,18 @@ OGRPGGetStrFromBinaryNumeric(NumericVar *var)
                                 dig -= d1 * 1000;
                                 putit |= (d1 > 0);
                                 if (putit)
-                                        *cp++ = (char)(d1 + '0');
+                                        *cp++ = d1 + '0';
                                 d1 = dig / 100;
                                 dig -= d1 * 100;
                                 putit |= (d1 > 0);
                                 if (putit)
-                                        *cp++ = (char)(d1 + '0');
+                                        *cp++ = d1 + '0';
                                 d1 = dig / 10;
                                 dig -= d1 * 10;
                                 putit |= (d1 > 0);
                                 if (putit)
-                                        *cp++ = (char)(d1 + '0');
-                                *cp++ = (char)(dig + '0');
+                                        *cp++ = d1 + '0';
+                                *cp++ = dig + '0';
                         }
                 }
         }
@@ -301,14 +293,14 @@ OGRPGGetStrFromBinaryNumeric(NumericVar *var)
                         CPL_MSBPTR16(&dig);
                         d1 = dig / 1000;
                         dig -= d1 * 1000;
-                        *cp++ = (char)(d1 + '0');
+                        *cp++ = d1 + '0';
                         d1 = dig / 100;
                         dig -= d1 * 100;
-                        *cp++ = (char)(d1 + '0');
+                        *cp++ = d1 + '0';
                         d1 = dig / 10;
                         dig -= d1 * 10;
-                        *cp++ = (char)(d1 + '0');
-                        *cp++ = (char)(dig + '0');
+                        *cp++ = d1 + '0';
+                        *cp++ = dig + '0';
                 }
                 cp = endcp;
         }
@@ -380,7 +372,7 @@ OGRPGdt2timeInt8(GIntBig jd, int *hour, int *min, int *sec, double *fsec)
 	*min = (int) (time / USECS_PER_MIN);
 	time -=  (GIntBig) (*min) * USECS_PER_MIN;
 	*sec = (int)time / USECS_PER_SEC;
-	*fsec = (double)(time - *sec * USECS_PER_SEC);
+	*fsec = time - *sec * USECS_PER_SEC;
 }	/* dt2time() */
 
 static
@@ -596,12 +588,11 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 #if !defined(PG_PRE74)
         int nTypeOID = PQftype(hCursorResult, iField);
 #endif
-        const char* pszFieldName = PQfname(hCursorResult,iField);
 
 /* -------------------------------------------------------------------- */
 /*      Handle FID.                                                     */
 /* -------------------------------------------------------------------- */
-        if( bHasFid && EQUAL(pszFieldName,pszFIDColumn) )
+        if( bHasFid && EQUAL(PQfname(hCursorResult,iField),pszFIDColumn) )
         {
 #if !defined(PG_PRE74)
             if ( PQfformat( hCursorResult, iField ) == 1 ) // Binary data representation
@@ -638,36 +629,11 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 
         if( bHasPostGISGeometry || bHasPostGISGeography )
         {
-            if ( !poDS->bUseBinaryCursor &&
-                 EQUAL(pszFieldName,"BinaryBase64") )
+            if ( EQUAL(PQfname(hCursorResult,iField),"ST_AsBinary") ||
+                 EQUAL(PQfname(hCursorResult,iField),"AsBinary") )
             {
-                GByte* pabyData = (GByte*)PQgetvalue( hCursorResult,
-                                                        iRecord, iField);
-
-                int nLength = PQgetlength(hCursorResult, iRecord, iField);
-
-                /* No geometry */
-                if (nLength == 0)
-                    continue;
-
-                nLength = CPLBase64DecodeInPlace(pabyData);
-                OGRGeometry * poGeom = NULL;
-                OGRGeometryFactory::createFromWkb( pabyData, NULL, &poGeom, nLength );
-
-                if( poGeom != NULL )
-                {
-                    poGeom->assignSpatialReference( poSRS );
-                    poFeature->SetGeometryDirectly( poGeom );
-                }
-
-                continue;
-            }
-            else if ( EQUAL(pszFieldName,"ST_AsBinary") ||
-                 EQUAL(pszFieldName,"AsBinary") )
-            {
-                GByte* pabyVal = (GByte*) PQgetvalue( hCursorResult,
+                GByte * pabyWKB = (GByte*) PQgetvalue( hCursorResult,
                                              iRecord, iField);
-                const char* pszVal = (const char*) pabyVal;
 
                 int nLength = PQgetlength(hCursorResult, iRecord, iField);
 
@@ -677,15 +643,15 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                     
                 OGRGeometry * poGeom = NULL;
                 if( !poDS->bUseBinaryCursor && nLength >= 4 &&
-                    /* escaped byea data */
-                    (strncmp(pszVal, "\\000",4) == 0 || strncmp(pszVal, "\\001",4) == 0 ||
-                    /* hex bytea data (PostgreSQL >= 9.0) */
-                     strncmp(pszVal, "\\x00",4) == 0 || strncmp(pszVal, "\\x01",4) == 0) )
+                    (EQUALN((const char*)pabyWKB,"\\000",4) || EQUALN((const char*)pabyWKB,"\\001",4)) )
                 {
-                    poGeom = BYTEAToGeometry(pszVal);
+                    const char* pszBYTEA = (const char*)pabyWKB;
+                    pabyWKB = BYTEAToGByteArray(pszBYTEA, &nLength);
+                    OGRGeometryFactory::createFromWkb( pabyWKB, NULL, &poGeom, nLength );
+                    CPLFree(pabyWKB);
                 }
                 else
-                    OGRGeometryFactory::createFromWkb( pabyVal, NULL, &poGeom, nLength );
+                    OGRGeometryFactory::createFromWkb( pabyWKB, NULL, &poGeom, nLength );
                 
                 if( poGeom != NULL )
                 {
@@ -695,33 +661,9 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 
                 continue;
             }
-            else if ( !poDS->bUseBinaryCursor &&
-                      EQUAL(pszFieldName,"EWKBBase64") )
-            {
-                GByte* pabyData = (GByte*)PQgetvalue( hCursorResult,
-                                                        iRecord, iField);
-
-                int nLength = PQgetlength(hCursorResult, iRecord, iField);
-
-                /* No geometry */
-                if (nLength == 0)
-                    continue;
-
-                nLength = CPLBase64DecodeInPlace(pabyData);
-                OGRGeometry * poGeom = EWKBToGeometry(pabyData, nLength);
-
-                if( poGeom != NULL )
-                {
-                    poGeom->assignSpatialReference( poSRS );
-                    poFeature->SetGeometryDirectly( poGeom );
-                }
-
-                continue;
-            }
-            else if ( (poDS->bUseBinaryCursor &&
-                       (EQUAL(pszFieldName,pszGeomColumn))) ||
-                      EQUAL(pszFieldName,"ST_AsEWKB") ||
-                      EQUAL(pszFieldName,"AsEWKB") )
+            else if ( poDS->bUseBinaryCursor &&
+                 (EQUAL(PQfname(hCursorResult,iField),pszGeomColumn) ||
+                  EQUAL(PQfname(hCursorResult,iField),"AsEWKB")) )
             {
                 /* Handle HEX result or EWKB binary cursor result */
                 char * pabyData = PQgetvalue( hCursorResult,
@@ -734,16 +676,7 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                     continue;
 
                 OGRGeometry * poGeom;
-
-                if( !poDS->bUseBinaryCursor &&
-                    (strncmp(pabyData, "\\x00",4) == 0 || strncmp(pabyData, "\\x01",4) == 0 ||
-                     strncmp(pabyData, "\\000",4) == 0 || strncmp(pabyData, "\\001",4) == 0) )
-                {
-                    GByte* pabyEWKB = BYTEAToGByteArray(pabyData, &nLength);
-                    poGeom = EWKBToGeometry(pabyEWKB, nLength);
-                    CPLFree(pabyEWKB);
-                }
-                else if( nLength >= 2 && (EQUALN(pabyData,"00",2) || EQUALN(pabyData,"01",2)) )
+                if( nLength >= 2 && (EQUALN(pabyData,"00",2) || EQUALN(pabyData,"01",2)) )
                 {
                     poGeom = HEXToGeometry(pabyData);
                 }
@@ -760,11 +693,10 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 
                 continue;
             }
-            else if (EQUAL(pszFieldName,pszGeomColumn) ||
-                     EQUAL(pszFieldName,"asEWKT") ||
-                     EQUAL(pszFieldName,"asText") ||
-                     EQUAL(pszFieldName,"ST_AsEWKT") ||
-                     EQUAL(pszFieldName,"ST_AsText") )
+            else if (EQUAL(PQfname(hCursorResult,iField),pszGeomColumn) ||
+                     EQUAL(PQfname(hCursorResult,iField),"asEWKT") ||
+                     EQUAL(PQfname(hCursorResult,iField),"asText") ||
+                     EQUAL(PQfname(hCursorResult,iField),"ST_AsText") )
             {
                 /* Handle WKT */
                 char        *pszWKT;
@@ -786,7 +718,9 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 
                 if( EQUALN(pszPostSRID,"00",2) || EQUALN(pszPostSRID,"01",2) )
                 {
-                    poGeometry = HEXToGeometry( pszWKT );
+                    poGeometry =
+                        HEXToGeometry(
+                            PQgetvalue( hCursorResult, iRecord, iField ) );
                 }
                 else
                     OGRGeometryFactory::createFromWkt( &pszPostSRID, NULL,
@@ -804,15 +738,15 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
 /*      Handle raw binary geometry ... this hasn't been tested in a     */
 /*      while.                                                          */
 /* -------------------------------------------------------------------- */
-        else if( EQUAL(pszFieldName,"WKB_GEOMETRY") )
+        else if( EQUAL(PQfname(hCursorResult,iField),"WKB_GEOMETRY") )
         {
             OGRGeometry *poGeometry = NULL;
-            GByte* pabyData = (GByte*) PQgetvalue( hCursorResult, iRecord, iField);
+            char * pabyData = PQgetvalue( hCursorResult, iRecord, iField);
 
             if( bWkbAsOid )
             {
                 poGeometry =
-                    OIDToGeometry( (Oid) atoi((const char*)pabyData) );
+                    OIDToGeometry( (Oid) atoi(pabyData) );
             }
             else
             {
@@ -823,11 +757,11 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                    )
                 {
                     int nLength = PQgetlength(hCursorResult, iRecord, iField);
-                    poGeometry = EWKBToGeometry(pabyData, nLength);
+                    poGeometry = EWKBToGeometry((GByte*)pabyData, nLength);
                 }
                 if (poGeometry == NULL)
                 {
-                    poGeometry = BYTEAToGeometry( (const char*)pabyData );
+                    poGeometry = BYTEAToGeometry( pabyData );
                 }
             }
 
@@ -985,7 +919,7 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                 padfList = (double *) CPLCalloc(sizeof(double),nCount);
 
                 for( i = 0; i < nCount; i++ )
-                    padfList[i] = CPLAtof(papszTokens[i]);
+                    padfList[i] = atof(papszTokens[i]);
                 CSLDestroy( papszTokens );
             }
 
@@ -1192,7 +1126,7 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                     var.dscale = sDscale;
                     var.digits = (NumericDigit*)pabyData;
                     char* str = OGRPGGetStrFromBinaryNumeric(&var);
-                    poFeature->SetField( iOGRField, CPLAtof(str));
+                    poFeature->SetField( iOGRField, str);
                     CPLFree(str);
                 }
                 else if ( nTypeOID == INT2OID )
@@ -1260,11 +1194,6 @@ OGRFeature *OGRPGLayer::RecordToFeature( int iRecord )
                     else
                         poFeature->SetField( iOGRField, pabyData);
                 }
-                else if ( eOGRType == OFTReal )
-                {
-                    poFeature->SetField( iOGRField,
-                                CPLAtof(PQgetvalue( hCursorResult, iRecord, iField )) );
-                }
                 else
                 {
                     poFeature->SetField( iOGRField,
@@ -1325,16 +1254,13 @@ void OGRPGLayer::SetInitialQueryCursor()
         osCommand.Printf( "DECLARE %s CURSOR for %s",
                             pszCursorName, pszQueryStatement );
 
-    hCursorResult = OGRPG_PQexec(hPGConn, osCommand );
-    if ( !hCursorResult || PQresultStatus(hCursorResult) != PGRES_COMMAND_OK )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "%s", PQerrorMessage( hPGConn ) );
-    }
+    hCursorResult = PQexec(hPGConn, osCommand );
     OGRPGClearResult( hCursorResult );
 
     osCommand.Printf( "FETCH %d in %s", CURSOR_PAGE, pszCursorName );
-    hCursorResult = OGRPG_PQexec(hPGConn, osCommand );
+    hCursorResult = PQexec(hPGConn, osCommand );
+
+    bCursorActive = TRUE;
 
     CreateMapFromFieldNameToIndex();
 
@@ -1376,16 +1302,13 @@ OGRFeature *OGRPGLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Do we need to fetch more records?                               */
 /* -------------------------------------------------------------------- */
-
-    /* We test for PQntuples(hCursorResult) == 1 in the case the previous */
-    /* request was a SetNextByIndex() */
-    if( (PQntuples(hCursorResult) == 1 || PQntuples(hCursorResult) == CURSOR_PAGE) &&
-        nResultOffset == PQntuples(hCursorResult) )
+    if( nResultOffset >= PQntuples(hCursorResult)
+        && bCursorActive )
     {
         OGRPGClearResult( hCursorResult );
         
         osCommand.Printf( "FETCH %d in %s", CURSOR_PAGE, pszCursorName );
-        hCursorResult = OGRPG_PQexec(hPGConn, osCommand );
+        hCursorResult = PQexec(hPGConn, osCommand );
 
         nResultOffset = 0;
     }
@@ -1394,9 +1317,22 @@ OGRFeature *OGRPGLayer::GetNextRawFeature()
 /*      Are we out of results?  If so complete the transaction, and     */
 /*      cleanup, but don't reset the next shapeid.                      */
 /* -------------------------------------------------------------------- */
-    if( nResultOffset == PQntuples(hCursorResult) )
+    if( nResultOffset >= PQntuples(hCursorResult) )
     {
-        CloseCursor();
+        OGRPGClearResult( hCursorResult );
+
+        if( bCursorActive )
+        {
+            osCommand.Printf( "CLOSE %s", pszCursorName );
+
+            hCursorResult = PQexec(hPGConn, osCommand);
+            OGRPGClearResult( hCursorResult );
+        }
+
+        poDS->FlushSoftTransaction();
+
+        hCursorResult = NULL;
+        bCursorActive = FALSE;
 
         iNextShapeId = MAX(1,iNextShapeId);
 
@@ -1422,8 +1358,6 @@ OGRFeature *OGRPGLayer::GetNextRawFeature()
 OGRErr OGRPGLayer::SetNextByIndex( long nIndex )
 
 {
-    GetLayerDefn();
-
     if( !TestCapability(OLCFastSetNextByIndex) )
         return OGRLayer::SetNextByIndex(nIndex);
 
@@ -1455,15 +1389,28 @@ OGRErr OGRPGLayer::SetNextByIndex( long nIndex )
     OGRPGClearResult( hCursorResult );
     
     osCommand.Printf( "FETCH ABSOLUTE %ld in %s", nIndex+1, pszCursorName );
-    hCursorResult = OGRPG_PQexec(hPGConn, osCommand );
-
+    hCursorResult = PQexec(hPGConn, osCommand );
+    
     if (PQresultStatus(hCursorResult) != PGRES_TUPLES_OK ||
         PQntuples(hCursorResult) != 1)
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to read feature at invalid index (%ld).", nIndex );
+                  
+        OGRPGClearResult( hCursorResult );
 
-        CloseCursor();
+        if( bCursorActive )
+        {
+            osCommand.Printf( "CLOSE %s", pszCursorName );
+
+            hCursorResult = PQexec(hPGConn, osCommand);
+            OGRPGClearResult( hCursorResult );
+        }
+
+        poDS->FlushSoftTransaction();
+
+        hCursorResult = NULL;
+        bCursorActive = FALSE;
 
         iNextShapeId = 0;
 
@@ -1483,16 +1430,47 @@ OGRErr OGRPGLayer::SetNextByIndex( long nIndex )
 OGRGeometry *OGRPGLayer::HEXToGeometry( const char *pszBytea )
 
 {
-    GByte   *pabyWKB;
-    int     nWKBLength=0;
-    OGRGeometry *poGeometry;
+    GByte   *pabyWKB = NULL;
+    int     iSrc=0;
+    int     iDst=0;
+    OGRGeometry *poGeometry = NULL;
 
     if( pszBytea == NULL )
         return NULL;
 
-    pabyWKB = CPLHexToBinary(pszBytea, &nWKBLength);
+/* -------------------------------------------------------------------- */
+/*      Convert hex to binary.                                          */
+/* -------------------------------------------------------------------- */
+    pabyWKB = (GByte *) CPLMalloc(strlen(pszBytea)+1);
+    while( pszBytea[iSrc] != '\0' )
+    {
+        if( pszBytea[iSrc] >= '0' && pszBytea[iSrc] <= '9' )
+            pabyWKB[iDst] = pszBytea[iSrc] - '0';
+        else if( pszBytea[iSrc] >= 'A' && pszBytea[iSrc] <= 'F' )
+            pabyWKB[iDst] = pszBytea[iSrc] - 'A' + 10;
+        else if( pszBytea[iSrc] >= 'a' && pszBytea[iSrc] <= 'f' )
+            pabyWKB[iDst] = pszBytea[iSrc] - 'a' + 10;
+        else
+            pabyWKB[iDst] = 0;
 
-    poGeometry = EWKBToGeometry(pabyWKB, nWKBLength);
+        pabyWKB[iDst] *= 16;
+
+        iSrc++;
+
+        if( pszBytea[iSrc] >= '0' && pszBytea[iSrc] <= '9' )
+            pabyWKB[iDst] += pszBytea[iSrc] - '0';
+        else if( pszBytea[iSrc] >= 'A' && pszBytea[iSrc] <= 'F' )
+            pabyWKB[iDst] += pszBytea[iSrc] - 'A' + 10;
+        else if( pszBytea[iSrc] >= 'a' && pszBytea[iSrc] <= 'f' )
+            pabyWKB[iDst] += pszBytea[iSrc] - 'a' + 10;
+        else
+            pabyWKB[iDst] += 0;
+
+        iSrc++;
+        iDst++;
+    }
+
+    poGeometry = EWKBToGeometry(pabyWKB, iDst);
 
     CPLFree(pabyWKB);
 
@@ -1509,13 +1487,6 @@ OGRGeometry *OGRPGLayer::EWKBToGeometry( GByte *pabyWKB, int nLength )
 {
     OGRGeometry *poGeometry = NULL;
     unsigned int ewkbFlags = 0;
-    
-    if (nLength < 5)
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Invalid EWKB content : %d bytes", nLength );
-        return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Detect XYZM variant of PostGIS EWKB                             */
@@ -1541,9 +1512,8 @@ OGRGeometry *OGRPGLayer::EWKBToGeometry( GByte *pabyWKB, int nLength )
 /*      understood by OGR, so if the SRID flag is set, we remove the    */
 /*      SRID (bytes at offset 5 to 8).                                  */
 /* -------------------------------------------------------------------- */
-    if( nLength > 9 &&
-        ((pabyWKB[0] == 0 /* big endian */ && (pabyWKB[1] & 0x20) )
-        || (pabyWKB[0] != 0 /* little endian */ && (pabyWKB[4] & 0x20))) )
+    if( (pabyWKB[0] == 0 /* big endian */ && (pabyWKB[1] & 0x20) )
+        || (pabyWKB[0] != 0 /* little endian */ && (pabyWKB[4] & 0x20)) )
     {
         memmove( pabyWKB+5, pabyWKB+9, nLength-9 );
         nLength -= 4;
@@ -1599,7 +1569,7 @@ char *OGRPGLayer::GeometryToHex( OGRGeometry * poGeometry, int nSRSId )
     memcpy( &geomType, pabyWKB+1, 4 );
 
     /* Now add the SRID flag if an SRID is provided */
-    if (nSRSId > 0)
+    if (nSRSId != -1)
     {
         /* Change the flag to wkbNDR (little) endianess */
         GUInt32 nGSrsFlag = CPL_LSBWORD32( WKBSRIDFLAG );
@@ -1614,7 +1584,7 @@ char *OGRPGLayer::GeometryToHex( OGRGeometry * poGeometry, int nSRSId )
     pszTextBufCurrent += 8;
 
     /* Now include SRID if provided */
-    if (nSRSId > 0)
+    if (nSRSId != -1)
     {
         /* Force the srsid to wkbNDR (little) endianess */
         GUInt32 nGSRSId = CPL_LSBWORD32( nSRSId );
@@ -1651,10 +1621,6 @@ GByte* OGRPGLayer::BYTEAToGByteArray( const char *pszBytea, int* pnLength )
         return NULL;
     }
 
-    /* hex bytea data (PostgreSQL >= 9.0) */
-    if (pszBytea[0] == '\\' && pszBytea[1] == 'x')
-        return CPLHexToBinary(pszBytea + 2, pnLength);
-
     pabyData = (GByte *) CPLMalloc(strlen(pszBytea));
 
     while( pszBytea[iSrc] != '\0' )
@@ -1663,10 +1629,6 @@ GByte* OGRPGLayer::BYTEAToGByteArray( const char *pszBytea, int* pnLength )
         {
             if( pszBytea[iSrc+1] >= '0' && pszBytea[iSrc+1] <= '9' )
             {
-                if (pszBytea[iSrc+2] == '\0' ||
-                    pszBytea[iSrc+3] == '\0')
-                    break;
-
                 pabyData[iDst++] =
                     (pszBytea[iSrc+1] - 48) * 64
                     + (pszBytea[iSrc+2] - 48) * 8
@@ -1675,9 +1637,6 @@ GByte* OGRPGLayer::BYTEAToGByteArray( const char *pszBytea, int* pnLength )
             }
             else
             {
-                if (pszBytea[iSrc+1] == '\0')
-                    break;
-
                 pabyData[iDst++] = pszBytea[iSrc+1];
                 iSrc += 2;
             }
@@ -1874,14 +1833,13 @@ OGRErr OGRPGLayer::RollbackTransaction()
 OGRSpatialReference *OGRPGLayer::GetSpatialRef()
 
 {
-    if (nSRSId == UNDETERMINED_SRID)
-        GetLayerDefn();
-
-    if( poSRS == NULL && nSRSId > 0 )
+    if( poSRS == NULL && nSRSId > -1 )
     {
         poSRS = poDS->FetchSRS( nSRSId );
         if( poSRS != NULL )
             poSRS->Reference();
+        else
+            nSRSId = -1;
     }
 
     return poSRS;
@@ -1894,8 +1852,6 @@ OGRSpatialReference *OGRPGLayer::GetSpatialRef()
 const char *OGRPGLayer::GetFIDColumn() 
 
 {
-    GetLayerDefn();
-
     if( pszFIDColumn != NULL )
         return pszFIDColumn;
     else
@@ -1909,8 +1865,6 @@ const char *OGRPGLayer::GetFIDColumn()
 const char *OGRPGLayer::GetGeometryColumn() 
 
 {
-    GetLayerDefn();
-
     if( pszGeomColumn != NULL )
         return pszGeomColumn;
     else
@@ -1932,7 +1886,7 @@ OGRErr OGRPGLayer::RunGetExtentRequest( OGREnvelope *psExtent, int bForce,
         PGconn      *hPGConn = poDS->GetPGConn();
         PGresult    *hResult = NULL;
 
-        hResult = OGRPG_PQexec( hPGConn, osCommand );
+        hResult = PQexec( hPGConn, osCommand );
         if( ! hResult || PQresultStatus(hResult) != PGRES_TUPLES_OK || PQgetisnull(hResult,0,0) )
         {
             OGRPGClearResult( hResult );
@@ -1992,198 +1946,4 @@ OGRErr OGRPGLayer::RunGetExtentRequest( OGREnvelope *psExtent, int bForce,
     }
 
     return OGRLayer::GetExtent( psExtent, bForce );
-}
-
-/************************************************************************/
-/*                         GetLayerDefn()                              */
-/************************************************************************/
-
-OGRFeatureDefn * OGRPGLayer::GetLayerDefn()
-{
-    return poFeatureDefn;
-}
-
-/************************************************************************/
-/*                        ReadResultDefinition()                        */
-/*                                                                      */
-/*      Build a schema from the current resultset.                      */
-/************************************************************************/
-
-OGRFeatureDefn *OGRPGLayer::ReadResultDefinition(PGresult *hInitialResultIn)
-
-{
-    PGresult            *hResult = hInitialResultIn;
-
-/* -------------------------------------------------------------------- */
-/*      Parse the returned table information.                           */
-/* -------------------------------------------------------------------- */
-    OGRFeatureDefn *poDefn = new OGRFeatureDefn( "sql_statement" );
-    int            iRawField;
-
-    poDefn->Reference();
-
-    for( iRawField = 0; iRawField < PQnfields(hResult); iRawField++ )
-    {
-        OGRFieldDefn    oField( PQfname(hResult,iRawField), OFTString);
-        Oid             nTypeOID;
-
-        nTypeOID = PQftype(hResult,iRawField);
-
-        if( EQUAL(oField.GetNameRef(),"ogc_fid") )
-        {
-            if (bHasFid)
-            {
-                CPLError(CE_Warning, CPLE_AppDefined,
-                         "More than one ogc_fid column was found in the result of the SQL request. Only last one will be used");
-            }
-            bHasFid = TRUE;
-            CPLFree(pszFIDColumn);
-            pszFIDColumn = CPLStrdup(oField.GetNameRef());
-            continue;
-        }
-        else if( nTypeOID == poDS->GetGeometryOID()  ||
-                 nTypeOID == poDS->GetGeographyOID()  ||
-                 EQUAL(oField.GetNameRef(),"ST_AsBinary") ||
-                 EQUAL(oField.GetNameRef(),"BinaryBase64") ||
-                 EQUAL(oField.GetNameRef(),"ST_AsEWKT") ||
-                 EQUAL(oField.GetNameRef(),"ST_AsEWKB") ||
-                 EQUAL(oField.GetNameRef(),"EWKBBase64") ||
-                 EQUAL(oField.GetNameRef(),"ST_AsText") ||
-                 EQUAL(oField.GetNameRef(),"AsBinary") ||
-                 EQUAL(oField.GetNameRef(),"asEWKT") ||
-                 EQUAL(oField.GetNameRef(),"asEWKB") ||
-                 EQUAL(oField.GetNameRef(),"asText") )
-        {
-            if (bHasPostGISGeometry || bHasPostGISGeography )
-            {
-                CPLError(CE_Warning, CPLE_AppDefined,
-                         "More than one geometry column was found in the result of the SQL request. Only last one will be used");
-            }
-            if (nTypeOID == poDS->GetGeographyOID())
-                bHasPostGISGeography = TRUE;
-            else
-                bHasPostGISGeometry = TRUE;
-            CPLFree(pszGeomColumn);
-            pszGeomColumn = CPLStrdup(oField.GetNameRef());
-            continue;
-        }
-        else if( EQUAL(oField.GetNameRef(),"WKB_GEOMETRY") )
-        {
-            bHasWkb = TRUE;
-            if( nTypeOID == OIDOID )
-                bWkbAsOid = TRUE;
-            continue;
-        }
-
-        if( nTypeOID == BYTEAOID )
-        {
-            oField.SetType( OFTBinary );
-        }
-        else if( nTypeOID == CHAROID ||
-                 nTypeOID == TEXTOID ||
-                 nTypeOID == BPCHAROID ||
-                 nTypeOID == VARCHAROID )
-        {
-            oField.SetType( OFTString );
-
-            /* See http://www.mail-archive.com/pgsql-hackers@postgresql.org/msg57726.html */
-            /* nTypmod = width + 4 */
-            int nTypmod = PQfmod(hResult, iRawField);
-            if (nTypmod >= 4 && (nTypeOID == BPCHAROID ||
-                               nTypeOID == VARCHAROID ) )
-            {
-                oField.SetWidth( nTypmod - 4);
-            }
-        }
-        else if( nTypeOID == BOOLOID )
-        {
-            oField.SetType( OFTInteger );
-            oField.SetWidth( 1 );
-        }
-        else if (nTypeOID == INT2OID )
-        {
-            oField.SetType( OFTInteger );
-            oField.SetWidth( 5 );
-        }
-        else if (nTypeOID == INT4OID )
-        {
-            oField.SetType( OFTInteger );
-        }
-        else if ( nTypeOID == INT8OID )
-        {
-            /* FIXME: OFTInteger can not handle 64bit integers */
-            oField.SetType( OFTInteger );
-        }
-        else if( nTypeOID == FLOAT4OID ||
-                 nTypeOID == FLOAT8OID )
-        {
-            oField.SetType( OFTReal );
-        }
-        else if( nTypeOID == NUMERICOID )
-        {
-            /* See http://www.mail-archive.com/pgsql-hackers@postgresql.org/msg57726.html */
-            /* typmod = (width << 16) + precision + 4 */
-            int nTypmod = PQfmod(hResult, iRawField);
-            if (nTypmod >= 4)
-            {
-                int nWidth = (nTypmod - 4) >> 16;
-                int nPrecision = (nTypmod - 4) & 0xFFFF;
-                if (nWidth <= 10 && nPrecision == 0)
-                {
-                    oField.SetType( OFTInteger );
-                    oField.SetWidth( nWidth );
-                }
-                else
-                {
-                    oField.SetType( OFTReal );
-                    oField.SetWidth( nWidth );
-                    oField.SetPrecision( nPrecision );
-                }
-            }
-            else
-                oField.SetType( OFTReal );
-        }
-        else if ( nTypeOID == INT4ARRAYOID )
-        {
-            oField.SetType ( OFTIntegerList );
-        }
-        else if ( nTypeOID == FLOAT4ARRAYOID ||
-                  nTypeOID == FLOAT8ARRAYOID )
-        {
-            oField.SetType ( OFTRealList );
-        }
-        else if ( nTypeOID == TEXTARRAYOID ||
-                  nTypeOID == BPCHARARRAYOID ||
-                  nTypeOID == VARCHARARRAYOID )
-        {
-            oField.SetType ( OFTStringList );
-        }
-        else if ( nTypeOID == DATEOID )
-        {
-            oField.SetType( OFTDate );
-        }
-        else if ( nTypeOID == TIMEOID )
-        {
-            oField.SetType( OFTTime );
-        }
-        else if ( nTypeOID == TIMESTAMPOID ||
-                  nTypeOID == TIMESTAMPTZOID )
-        {
-            /* We can't deserialize properly timestamp with time zone */
-            /* with binary cursors */
-            if (nTypeOID == TIMESTAMPTZOID)
-                bCanUseBinaryCursor = FALSE;
-
-            oField.SetType( OFTDateTime );
-        }
-        else /* unknown type */
-        {
-            CPLDebug("PG", "Unhandled OID (%d) for column %d. Defaulting to String.", nTypeOID, iRawField);
-            oField.SetType( OFTString );
-        }
-
-        poDefn->AddFieldDefn( &oField );
-    }
-
-    return poDefn;
 }

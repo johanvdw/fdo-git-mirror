@@ -31,15 +31,15 @@ void SqlServerFdoConnectTest::set_provider()
 void SqlServerFdoConnectTest::connectPropDictionaryTest()
 
 {
-	FdoPtr<FdoIConnection> oConn;
+	FdoIConnection* oConn;
 	int ret;
 	ret = 1;
 
 	try
 	{
 		oConn = UnitTestUtil::GetProviderConnectionObject();
-		FdoPtr<FdoIConnectionInfo> oConnInfo = oConn->GetConnectionInfo();
-		FdoPtr<FdoIConnectionPropertyDictionary> oConnProp = oConnInfo->GetConnectionProperties();
+		FdoIConnectionInfo* oConnInfo = oConn->GetConnectionInfo();
+		FdoIConnectionPropertyDictionary* oConnProp = oConnInfo->GetConnectionProperties();
 
 		FdoString ** propertyNames = NULL;
 		FdoInt32 nameCount = 0;
@@ -52,7 +52,7 @@ void SqlServerFdoConnectTest::connectPropDictionaryTest()
 	catch (FdoException* exception)
 	{
 		wprintf (L"%ls\n", exception->GetExceptionMessage ());
-        exception->Release();
+		//delete exception;
 	}
 	catch (...)
 	{

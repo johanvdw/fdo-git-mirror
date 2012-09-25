@@ -29,12 +29,6 @@ SET FDOLIBPATH=\Fdo\Lib
 SET DOCENABLE=skip
 SET FDOERROR=0
 
-REM If you want to build 64-bit with Visual C++ 2010 Express, you will need to
-REM install the Windows SDK v7.1. In addition, you need to override the default
-REM platform toolset from v100 to Windows7.1SDK. Uncommenting the line below will
-REM do this for you
-REM SET EXTRA_MSBUILD_PROPERTIES=/p:PlatformToolset=Windows7.1SDK
-
 :study_params
 if (%1)==() goto start_build
 
@@ -133,11 +127,11 @@ if "%TYPEACTION%"=="clean" SET MSACTION=Clean
 if "%TYPEACTION%"=="install" goto install_files_sqlspatial
 
 echo %MSACTION% %TYPEBUILD% SQLServer Spatial Provider DLLs
-SET FDOACTIVEBUILD=%cd%\SQLServerSpatial%VCBEXTENSION%
+SET FDOACTIVEBUILD=%cd%\SQLServerSpatial
 cscript //Nologo //job:prepare ../../preparebuilds.wsf
-msbuild SQLServerSpatial%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
+msbuild SQLServerSpatial_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
-if exist SQLServerSpatial%VCBEXTENSION%_temp.sln del /Q /F SQLServerSpatial%VCBEXTENSION%_temp.sln
+if exist SQLServerSpatial_temp.sln del /Q /F SQLServerSpatial_temp.sln
 if "%FDOERROR%"=="1" goto error
 if "%TYPEACTION%"=="clean" goto end
 if "%TYPEACTION%"=="build" goto generate_docs

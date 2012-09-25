@@ -188,7 +188,7 @@ FdoPropertyValueCollection *FdoRdbmsLockedObjectsReader::GetIdentity ()
 
       FreeMemory();
 
-      FdoCommandException *fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      FdoCommandException *fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 
@@ -297,7 +297,7 @@ bool FdoRdbmsLockedObjectsReader::ReadNext ()
 
       FreeMemory();
 
-      FdoCommandException *fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex, ex->GetNativeErrorCode());
+      FdoCommandException *fdo_cmd_ex = FdoCommandException::Create(ex->GetExceptionMessage(), ex);
       ex->Release();
       throw fdo_cmd_ex;
 

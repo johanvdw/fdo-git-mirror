@@ -16964,10 +16964,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
     // Navigate through the reader and perform the necessary checks.
 
     printf(" >>> Cross check result \n");
-    if (expected_cmp_id_value.year >= 0 && expected_cmp_id_value.year < 50)
-      expected_cmp_id_value.year += 2000;
-    else if (expected_cmp_id_value.year > 50 && expected_cmp_id_value.year < 100)
-      expected_cmp_id_value.year += 1900;
 
     while (data_reader->ReadNext()) {
 
@@ -16976,11 +16972,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
       if (include_id_check)
           id_prop_val = data_reader->GetInt32(L"id");
       cmp_id_val  = data_reader->GetDateTime(L"cmp_id");
-
-      if (cmp_id_val.year >= 0 && cmp_id_val.year < 50)
-          cmp_id_val.year += 2000;
-      else if (cmp_id_val.year > 50 && cmp_id_val.year < 100)
-          cmp_id_val.year += 1900;
 
       if (!is_extract_request)
           is_valid_result =
@@ -17069,10 +17060,6 @@ void FdoExpressionFunctionTest::CheckReaderDt (
     // Navigate through the reader and perform the necessary checks.
 
     printf(" >>> Cross check result \n");
-    if (expected_cmp_id_value.year >= 0 && expected_cmp_id_value.year < 50)
-      expected_cmp_id_value.year += 2000;
-    else if (expected_cmp_id_value.year > 50 && expected_cmp_id_value.year < 100)
-      expected_cmp_id_value.year += 1900;
 
     while (data_reader->ReadNext()) {
 
@@ -17080,12 +17067,7 @@ void FdoExpressionFunctionTest::CheckReaderDt (
 
       if (include_id_check)
           id_prop_val = data_reader->GetInt32(L"id");
-      cmp_id_val = data_reader->GetDateTime(L"cmp_id");
-
-      if (cmp_id_val.year >= 0 && cmp_id_val.year < 50)
-          cmp_id_val.year += 2000;
-      else if (cmp_id_val.year > 50 && cmp_id_val.year < 100)
-          cmp_id_val.year += 1900;
+      cmp_id_val  = data_reader->GetDateTime(L"cmp_id");
 
       if (!is_extract_request)
           is_valid_result =
@@ -17475,11 +17457,10 @@ void FdoExpressionFunctionTest::CheckReaderString (
       cmp_id_val  = (data_reader->IsNull(L"cmp_id"))
                   ? NULL
                   : data_reader->GetString(L"cmp_id");
-      // we can relax the "rule" here since for certain providers might be hard to
-      // return NULL when server returns empty string
+
       is_valid_result =
         ((id_prop_val == expected_id_value) &&
-         (((cmp_id_val == NULL || *cmp_id_val == '\0') && (expected_cmp_id_value == NULL || *expected_cmp_id_value == '\0')) ||
+         (((cmp_id_val == NULL) && (expected_cmp_id_value == NULL)) ||
           ((cmp_id_val != NULL) && (expected_cmp_id_value != NULL) &&
                          (wcscmp(cmp_id_val, expected_cmp_id_value) == 0))));
       if (!is_valid_result)
@@ -17589,8 +17570,6 @@ FdoIFeatureReader *FdoExpressionFunctionTest::ExecuteSelectCommand (
     if (filter != NULL)
         select_cmd->SetFilter(filter);
     id_col = select_cmd->GetPropertyNames();
-    id_prop = FdoIdentifier::Create(L"featid");
-    id_col->Add(id_prop);
     if (inc_id_prop) {
 
         id_prop = FdoIdentifier::Create(L"id");
@@ -17948,25 +17927,27 @@ void FdoExpressionFunctionTest::AddFeature (
 
     FdoBoolean                 bool_value           = false;
 
-    FdoPtr<FdoIInsert>         insert_command;
+    FdoIInsert                 *insert_command      = NULL;
 
     FdoDateTime                dt;
 
-	FdoPtr<FdoDataValue>        data_value;
+	FdoDataValue               *data_value          = NULL;
 
-    FdoPtr<FdoByteArray>        byte_array;
+    FdoByteArray               *byte_array          = NULL;
 
-    FdoPtr<FdoILineString>      line_str;
+    FdoILineString             *line_str            = NULL;
 
-    FdoPtr<FdoGeometryValue>    geometry_value;
+    FdoGeometryValue           *geometry_value      = NULL;
 
-	FdoPtr<FdoPropertyValue>    property_value;
+	FdoPropertyValue           *property_value      = NULL;
 
-    FdoPtr<FdoIFeatureReader>           feature_reader;
+    FdoIFeatureReader          *feature_reader      = NULL;
 
-    FdoPtr<FdoFgfGeometryFactory>       geometry_factory;
+    FdoFgfGeometryFactory      *geometry_factory    = NULL;
 
-    FdoPtr<FdoPropertyValueCollection>  property_values;
+    FdoPropertyValueCollection *property_values     = NULL;
+
+    try {
 
       // Create the FdoIInsert command and set the necessary command properties.
 
@@ -18008,13 +17989,20 @@ void FdoExpressionFunctionTest::AddFeature (
 
           property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"RDBMS_GEOM");
           property_value->SetValue(geometry_value);
+          FDO_SAFE_RELEASE(geometry_value);
+          FDO_SAFE_RELEASE(line_str);
+          FDO_SAFE_RELEASE(byte_array);
+          FDO_SAFE_RELEASE(geometry_value);
+          FDO_SAFE_RELEASE(property_value);
 
       }  //  if (is_spatial)
       else {
 
         data_value     = FdoDataValue::Create(index);
-        property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"featid");
+        property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"xid");
         property_value->SetValue(data_value);
+        FDO_SAFE_RELEASE(property_value);
+        FDO_SAFE_RELEASE(data_value);
 
       }  //  else ...
 
@@ -18023,16 +18011,22 @@ void FdoExpressionFunctionTest::AddFeature (
       data_value     = FdoDataValue::Create(index);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"id");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       bool_value     = ((index % 2) == 0);
       data_value     = FdoDataValue::Create(bool_value);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"bool_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       byte_value     = (index % 10) + 65;
       data_value     = FdoDataValue::Create(byte_value);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"byte_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       if (index != 21) {
 
@@ -18045,6 +18039,8 @@ void FdoExpressionFunctionTest::AddFeature (
           data_value     = FdoDataValue::Create(dt);
           property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"dt_val");
           property_value->SetValue(data_value);
+          FDO_SAFE_RELEASE(data_value);
+          FDO_SAFE_RELEASE(property_value);
 
       }  //  if (index != 21) ...
 
@@ -18059,6 +18055,8 @@ void FdoExpressionFunctionTest::AddFeature (
           data_value     = FdoDataValue::Create(dt);
           property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"dt2_val");
           property_value->SetValue(data_value);
+          FDO_SAFE_RELEASE(data_value);
+          FDO_SAFE_RELEASE(property_value);
 
       }  //  if (index != 22) ...
 
@@ -18068,6 +18066,8 @@ void FdoExpressionFunctionTest::AddFeature (
           data_value     = FdoDataValue::Create(dbl_value, FdoDataType_Decimal);
           property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"dcl_val");
           property_value->SetValue(data_value);
+          FDO_SAFE_RELEASE(data_value);
+          FDO_SAFE_RELEASE(property_value);
 
       }  //  if (index != 21) ...
 
@@ -18077,35 +18077,88 @@ void FdoExpressionFunctionTest::AddFeature (
           data_value     = FdoDataValue::Create(dbl_value, FdoDataType_Double);
           property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"dbl_val");
           property_value->SetValue(data_value);
+          FDO_SAFE_RELEASE(data_value);
+          FDO_SAFE_RELEASE(property_value);
 
       }  //  if (index != 22) ...
 
       data_value     = FdoDataValue::Create((index * 4));
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"i16_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       data_value     = FdoDataValue::Create((index * 10));
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"i32_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       flt_value      = (FdoFloat) (2.4 * (index /6.99));
       data_value     = FdoDataValue::Create(flt_value);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"sgl_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       id_str         = FdoStringP::Format(L"  %d  ", index);
       data_value     = FdoDataValue::Create((FdoString *)id_str);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"str_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       id_str         = FdoStringP::Format(L"The Color is: %d", (index + 2109));
       data_value     = FdoDataValue::Create((FdoString *)id_str);
       property_value = TestCommonMiscUtil::AddNewProperty(property_values, L"str2_val");
       property_value->SetValue(data_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_value);
 
       // Execute the command.
 
       feature_reader = insert_command->Execute();
+
+      // Clean up.
+
+      FDO_SAFE_RELEASE(feature_reader);
+      FDO_SAFE_RELEASE(property_values);
+      FDO_SAFE_RELEASE(insert_command);
+
+      return;
+    
+    }  //  try ...
+
+   catch (FdoException *exp) {
+
+      FDO_SAFE_RELEASE(feature_reader);
+      FDO_SAFE_RELEASE(property_value);
+      FDO_SAFE_RELEASE(geometry_value);
+      FDO_SAFE_RELEASE(line_str);
+      FDO_SAFE_RELEASE(byte_array);
+      FDO_SAFE_RELEASE(geometry_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_values);
+      FDO_SAFE_RELEASE(insert_command);
+      throw exp;
+
+    }  //  catch (FdoException *exp) ...
+
+    catch ( ... ) {
+
+      FDO_SAFE_RELEASE(feature_reader);
+      FDO_SAFE_RELEASE(property_value);
+      FDO_SAFE_RELEASE(geometry_value);
+      FDO_SAFE_RELEASE(line_str);
+      FDO_SAFE_RELEASE(byte_array);
+      FDO_SAFE_RELEASE(geometry_value);
+      FDO_SAFE_RELEASE(data_value);
+      FDO_SAFE_RELEASE(property_values);
+      FDO_SAFE_RELEASE(insert_command);
+      throw FdoException::Create(L"Failed to add a feature");
+
+    }  //  catch ...
+
 }  //  AddFeature ()
 
 void FdoExpressionFunctionTest::Connect ()
@@ -18176,87 +18229,118 @@ FdoClass *FdoExpressionFunctionTest::CreateFdoClass (FdoString *class_name)
 
     // Declare and initialize all necessary local variables.
 
-    FdoClass*                               the_class = NULL;
+    FdoClass                            *the_class                 = NULL;
 
-    FdoPtr<FdoDataPropertyDefinition>       data_property_definition;
+    FdoDataPropertyDefinition           *data_property_definition  = NULL;
 
-    FdoPtr<FdoPropertyDefinitionCollection> data_property_definitions;
+    FdoPropertyDefinitionCollection     *data_property_definitions = NULL;
 
-    FdoPtr<FdoDataPropertyDefinitionCollection> id_property_definitions;
+    FdoDataPropertyDefinitionCollection *id_property_definitions   = NULL;
 
-    // Create the class and set the abstract property.
+    try {
 
-	the_class = FdoClass::Create(class_name, class_name);
-	the_class->SetIsAbstract(false);
+      // Create the class and set the abstract property.
 
-    // Define each of the class properties and add it to the proper collection.
-    // If the property identifies the primary key add it to the class' primary
-    // key collection.
+	  the_class = FdoClass::Create(class_name, class_name);
+	  the_class->SetIsAbstract(false);
 
-    data_property_definitions = the_class->GetProperties();
-    id_property_definitions   = the_class->GetIdentityProperties();
+      // Define each of the class properties and add it to the proper collection.
+      // If the property identifies the primary key add it to the class' primary
+      // key collection.
 
-    data_property_definition = CreateDataProperty(L"featid",
-                                                FdoDataType_Int32,
-                                                0,
-                                                0,
-                                                false);
-	data_property_definitions->Add(data_property_definition);
-    id_property_definitions->Add(data_property_definition);
+      data_property_definitions = the_class->GetProperties();
+      id_property_definitions   = the_class->GetIdentityProperties();
 
-    data_property_definition =
-        CreateDataProperty(L"bool_val", FdoDataType_Boolean, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"byte_val", FdoDataType_Byte, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"dt_val", FdoDataType_DateTime, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"dt2_val", FdoDataType_DateTime, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"dcl_val", FdoDataType_Decimal, 8, 2, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"dbl_val", FdoDataType_Double, 10, 5, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"i16_val", FdoDataType_Int16, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"i32_val", FdoDataType_Int32, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"sgl_val", FdoDataType_Single, 10, 3, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"str_val", FdoDataType_String, 30, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"str2_val", FdoDataType_String, 30, 0, true);
-	data_property_definitions->Add(data_property_definition);
-	  
-    data_property_definition =
-        CreateDataProperty(L"id", FdoDataType_Int32, 0, 0, true);
-	data_property_definitions->Add(data_property_definition);
+      data_property_definition = CreateDataProperty(L"xid",
+                                                    FdoDataType_Int32,
+                                                    0,
+                                                    0,
+                                                    false);
+	  data_property_definitions->Add(data_property_definition);
+      id_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
 
-    the_class->SetBaseClass(NULL);
+      data_property_definition =
+           CreateDataProperty(L"bool_val", FdoDataType_Boolean, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
 
-    // Return a handle to the created class.
+      data_property_definition =
+           CreateDataProperty(L"byte_val", FdoDataType_Byte, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
 
-    return the_class;
+      data_property_definition =
+           CreateDataProperty(L"dt_val", FdoDataType_DateTime, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"dt2_val", FdoDataType_DateTime, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"dcl_val", FdoDataType_Decimal, 8, 2, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"dbl_val", FdoDataType_Double, 10, 5, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"i16_val", FdoDataType_Int16, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"i32_val", FdoDataType_Int32, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"sgl_val", FdoDataType_Single, 10, 3, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"str_val", FdoDataType_String, 30, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"str2_val", FdoDataType_String, 30, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      data_property_definition =
+           CreateDataProperty(L"id", FdoDataType_Int32, 0, 0, true);
+	  data_property_definitions->Add(data_property_definition);
+	  FDO_SAFE_RELEASE(data_property_definition);
+
+      FDO_SAFE_RELEASE(id_property_definitions);
+      FDO_SAFE_RELEASE(data_property_definitions);
+
+      the_class->SetBaseClass(NULL);
+
+      // Return a handle to the created class.
+
+      return the_class;
+
+    }  //  try ...
+
+    catch ( ... ) {
+
+	  FDO_SAFE_RELEASE(data_property_definition);
+      FDO_SAFE_RELEASE(id_property_definitions);
+      FDO_SAFE_RELEASE(data_property_definitions);
+
+      throw;
+
+    }  //  catch ...
+
 }  //  CreateFdoClass ()
 
 void FdoExpressionFunctionTest::CreateTestDataStore (
@@ -18363,7 +18447,7 @@ void FdoExpressionFunctionTest::SetupUnitTestEnvironment (
       // Commit the transaction.
 
       fdo_i_transaction->Commit();
-      FDO_SAFE_RELEASE(fdo_i_transaction);
+      fdo_i_transaction->Release();
 
       transaction_started = false;
 

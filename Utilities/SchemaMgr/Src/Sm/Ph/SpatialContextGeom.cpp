@@ -54,13 +54,7 @@ void FdoSmPhSpatialContextGeom::Finalize()
                 if ( geomColumn ) 
                 {
                     // Get the root column for the column.
-                    FdoSmPhColumnGeomP rootColumn = geomColumn->SmartCast<FdoSmPhColumnGeom>();
-                    
-                    // If the column's dbObject differs from the SCGeom's dbObject
-                    // then it is already the root column. Otherwise need to 
-                    // get the root column from the column.
-                    if ( dbObject->GetQName() == geomColumn->GetParent()->GetQName() ) 
-                        rootColumn = geomColumn->GetRootColumn().p->SmartCast<FdoSmPhColumnGeom>();
+                    FdoSmPhColumnGeomP rootColumn = geomColumn->GetRootColumn().p->SmartCast<FdoSmPhColumnGeom>();
         
                     if ( rootColumn )
                     {
@@ -72,31 +66,10 @@ void FdoSmPhSpatialContextGeom::Finalize()
                             // If SRID already determined for this SCGeom, derive the spatial context
                             // only if it has the same SRID. It is possible for a view column to have a
                             // different sampled SRID than its corresponding base table column.
-                            if ( (!mSpatialContext) || (mSpatialContext->GetSrid() <= 0) || (rootSc->GetSrid() == mSpatialContext->GetSrid()) ) 
+                            if ( (mSpatialContext->GetSrid() <= 0) || (rootSc->GetSrid() == mSpatialContext->GetSrid()) ) 
                             {
-                                // make copy of root SC in case it is in another owner.
-                                mSpatialContext = new FdoSmPhSpatialContext(
-                                    GetManager(),
-                                    rootSc->GetSrid(),
-                                    GetGeomColumnName(),
-                                    rootSc->GetDescription(),
-                                    rootSc->GetCoordinateSystem(),
-                                    rootSc->GetCoordinateSystemWkt(),
-                                    rootSc->GetExtentType(),
-                                    FdoPtr<FdoByteArray>(rootSc->GetExtent()),
-                                    rootSc->GetXYTolerance(),
-                                    rootSc->GetZTolerance()
-                                );
+                                mSpatialContext = rootSc;
                                 mIsDerived = true;
-
-                                FdoSmPhSpatialContextGeomP rootScGeom = rootColumn->GetSpatialContextGeom();
-
-                                if ( rootScGeom )
-                                {
-                                    mHasElevation = rootScGeom->GetHasElevation();
-                                    mHasMeasure = rootScGeom->GetHasMeasure();
-                                    mGeometryType = rootScGeom->GetGeometryType();
-                                }
                             }
                         }
                     }
@@ -104,59 +77,56 @@ void FdoSmPhSpatialContextGeom::Finalize()
             }
         }
 
-        if ( mSpatialContext ) 
+        // Check if there is already a Spatial Contexts with same attributes as current
+        // spatial contexts. If there is, use the existing SC instead. This coalesces
+        // equivalent SC's.
+        indexSC = mSpatialContexts->FindExistingSC( mSpatialContext );
+
+        if ( indexSC >= 0 ) 
         {
-            // Check if there is already a Spatial Contexts with same attributes as current
-            // spatial contexts. If there is, use the existing SC instead. This coalesces
-            // equivalent SC's.
-            indexSC = mSpatialContexts->FindExistingSC( mSpatialContext );
+            FdoSmPhSpatialContextP existingSC = mSpatialContexts->GetItem( indexSC );
+            // Don't coalesce spatial contexts from the ScInfo table; each
+            // column represents a different spatial context even if the
+            // spatial context attributes are the same.
+            if ( tableIsScInfo && (FdoStringP(mSpatialContext->GetName()) != existingSC->GetName()) ) 
+                indexSC = -1;
+            else
+                mSpatialContext = existingSC;
+        }
 
-            if ( indexSC >= 0 ) 
+        if ( indexSC < 0 ) 
+        {
+            // Spatial Context not coalesced, need to add it.
+	        FdoStringP	scName;
+            if ( tableIsScInfo ) 
             {
-                FdoSmPhSpatialContextP existingSC = mSpatialContexts->GetItem( indexSC );
-                // Don't coalesce spatial contexts from the ScInfo table; each
-                // column represents a different spatial context even if the
-                // spatial context attributes are the same.
-                if ( tableIsScInfo && (FdoStringP(mSpatialContext->GetName()) != existingSC->GetName()) ) 
-                    indexSC = -1;
-                else
-                    mSpatialContext = existingSC;
+                // For column in ScInfo table, the spatial context name is the
+                // column name.
+                scName = GetGeomColumnName();
+            }
+            else
+            {
+                scName = mSpatialContexts->AutoGenName();
             }
 
-            if ( indexSC < 0 ) 
-            {
-                // Spatial Context not coalesced, need to add it.
-	            FdoStringP	scName;
-                if ( tableIsScInfo ) 
-                {
-                    // For column in ScInfo table, the spatial context name is the
-                    // column name.
-                    scName = GetGeomColumnName();
-                }
-                else
-                {
-                    scName = mSpatialContexts->AutoGenName();
-                }
+            FdoSmPhSpatialContextP newSC = new FdoSmPhSpatialContext(
+                GetManager(),
+                mSpatialContext->GetSrid(),
+                scName,
+                mSpatialContext->GetDescription(),
+                mSpatialContext->GetCoordinateSystem(),
+                mSpatialContext->GetCoordinateSystemWkt(),
+                mSpatialContext->GetExtentType(),
+                FdoPtr<FdoByteArray>(mSpatialContext->GetExtent()),
+                mSpatialContext->GetXYTolerance(),
+                mSpatialContext->GetZTolerance()
+            );
 
-                FdoSmPhSpatialContextP newSC = new FdoSmPhSpatialContext(
-                    GetManager(),
-                    mSpatialContext->GetSrid(),
-                    scName,
-                    mSpatialContext->GetDescription(),
-                    mSpatialContext->GetCoordinateSystem(),
-                    mSpatialContext->GetCoordinateSystemWkt(),
-                    mSpatialContext->GetExtentType(),
-                    FdoPtr<FdoByteArray>(mSpatialContext->GetExtent()),
-                    mSpatialContext->GetXYTolerance(),
-                    mSpatialContext->GetZTolerance()
-                );
+            if (NULL == newSC.p)
+		        throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));
 
-                if (NULL == newSC.p)
-		            throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_1_BADALLOC)));
-
-                mSpatialContext = newSC;
-                mSpatialContexts->Add( mSpatialContext );
-            }
+            mSpatialContext = newSC;
+            mSpatialContexts->Add( mSpatialContext );
         }
 
         SetState( FdoSmObjectState_Final );

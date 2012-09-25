@@ -67,6 +67,9 @@ target_link_libraries( SDFProvider
 	FDO
 	ExpressionEngine
 	ProvidersCommon
+	xalan-c
+	xalanMsg
+	xerces-c
  )
 
 if( CMAKE_COMPILER_IS_GNUCXX )

@@ -15,90 +15,14 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //  
-
 #include "stdafx.h"
 #include <Util/FdoExpressionEngineUtilDataReader.h>
-#include <FdoCommonOSUtil.h>
-#include <FdoCommonMiscUtil.h>
 #include <FdoCommonBinaryReader.h>
 #include <FdoCommonBinaryWriter.h>
+#include <FdoCommonPropertyIndex.h>
 #include <FdoExpressionEngine.h>
-
-#ifdef __GNUC__
-//Some pre-processor massaging to get hash_map into stdext
-#undef min
-#undef max
-#define stdext __gnu_cxx
-#include <ext/hash_map>
-#endif
-
-class my_hash_compare
-{	// traits class for hash containers
-private:
-    std::less< FdoByteArray* > comp;	// the comparator object
-
-public:
-	enum
-	{	// parameters for hash table
-		bucket_size = 4,	// 0 < bucket_size
-		min_buckets = 8
-    };	// min_buckets = 2 ^^ N, 0 < N
-
-    my_hash_compare()
-		: comp()
-	{	// construct with default comparator
-	}
-
-	my_hash_compare(std::less< FdoByteArray* > _Pred)
-		: comp(_Pred)
-	{	// construct with _Pred comparator
-	}
-
-	bool operator()(FdoByteArray * const _Keyval1, FdoByteArray * const _Keyval2) const;
-
-	size_t operator()(FdoByteArray * const key) const;
-
-	size_t hashvalue(FdoByteArray * const key) const;
-};
-
-
-#ifdef _WIN32
-typedef stdext::hash_map<FdoByteArray*, FdoByteArray*, my_hash_compare >                    HASHMAP;
-#else // _WIN32
-typedef stdext::hash_map<FdoByteArray*, FdoByteArray*, my_hash_compare, my_hash_compare >   HASHMAP;
-#endif // _WIN32
-typedef std::pair<FdoByteArray*, FdoByteArray*>                                             HASHMAP_PAIR;
-typedef HASHMAP::iterator                                                                   HASHMAP_ITER;
-
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-
-
-class FdoResultsStack
-{
-public:
-    FdoResultsStack() { }
-    ~FdoResultsStack() { Clear(); }
-    void Clear() 
-    {
-        for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
-        {
-            FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
-            FDO_SAFE_RELEASE(bytes);
-        }
-        m_results.clear();
-    }
-    void Add(void* ptr) { m_results.push_back(ptr); }
-    size_t GetCount() { return m_results.size(); }
-    void* GetItem(int index) { return m_results.at(index); }
-    void SetItem(int index, void* ptr) { m_results[index] = ptr; }
-
-private:
-    std::vector<void*> m_results;
-
-
-};
-
+#include <FdoCommonMiscUtil.h>
+#include <algorithm>
 
 // hash _Keyval to size_t value
 size_t my_hash_compare::operator()(FdoByteArray * const key) const
@@ -169,15 +93,10 @@ bool my_hash_compare::operator()(FdoByteArray * const bytearray1, FdoByteArray *
 
 
 
-FdoExpressionEngineUtilDataReader* FdoExpressionEngineUtilDataReader::Create(FdoFunctionDefinitionCollection *functions, FdoIFeatureReader* reader, FdoClassDefinition* originalClassDef, FdoIdentifierCollection* selectedIds, bool bDistinct, FdoIdentifierCollection* orderingIds, FdoOrderingOption eOrderingOption, FdoIdentifierCollection* ids, FdoPtr<FdoArray<FdoFunction*> > aggrIdents )
-{
-    return new FdoExpressionEngineUtilDataReader(functions, reader, originalClassDef, selectedIds, bDistinct, orderingIds, eOrderingOption, ids, aggrIdents);
-}
 
 FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunctionDefinitionCollection *functions, FdoIFeatureReader* reader, FdoClassDefinition* originalClassDef, FdoIdentifierCollection* selectedIds, bool bDistinct, FdoIdentifierCollection* orderingIds, FdoOrderingOption eOrderingOption, FdoIdentifierCollection* ids, FdoPtr<FdoArray<FdoFunction*> > aggrIdents )
 {
-    m_resultsStack = new FdoResultsStack();
-    
+    m_results.clear();
     m_resultsIndex = -1;
     m_orderbyIds = FDO_SAFE_ADDREF(orderingIds);
     m_orderbyOption = eOrderingOption;
@@ -232,7 +151,7 @@ FdoExpressionEngineUtilDataReader::FdoExpressionEngineUtilDataReader(FdoFunction
             delete[] data;  //TODO: avoid copying bytes to FdoByteArray
 
             // Insert FdoByteArray into m_results:
-            m_resultsStack->Add(FDO_SAFE_ADDREF(bytes.p));
+            m_results.push_back(FDO_SAFE_ADDREF(bytes.p));
         }
     }
 
@@ -266,11 +185,7 @@ FdoExpressionEngineUtilDataReader::~FdoExpressionEngineUtilDataReader()
     FDO_SAFE_RELEASE(m_binReader);
     FDO_SAFE_RELEASE(m_orderbyBinReader1);
     FDO_SAFE_RELEASE(m_orderbyBinReader2);
-
     Close();
-
-    if (m_resultsStack)
-        delete m_resultsStack;
 }
 
 void FdoExpressionEngineUtilDataReader::Dispose()
@@ -575,7 +490,12 @@ FdoIRaster* FdoExpressionEngineUtilDataReader::GetRaster(FdoInt32 index)
 
 void FdoExpressionEngineUtilDataReader::Close()
 {
-    m_resultsStack->Clear();
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
+    {
+        FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
+        FDO_SAFE_RELEASE(bytes);
+    }
+    m_results.clear();
 }
 
 
@@ -583,6 +503,7 @@ FdoCommonPropertyIndex* FdoExpressionEngineUtilDataReader::GetPropertyIndex()
 {
     return FDO_SAFE_ADDREF(m_propIndex);
 }
+
 
 FdoArray<FdoFunction*>* FdoExpressionEngineUtilDataReader::GetAggregateFunctions(FdoFunctionDefinitionCollection *funcDefs, FdoIdentifierCollection* selectedIds, FdoCommonExpressionType &exprType)
 {
@@ -819,7 +740,7 @@ void FdoExpressionEngineUtilDataReader::RunAggregateQuery(FdoIFeatureReader* rdr
 
         // Store the results in m_results:
         FdoByteArray* bytes = FdoByteArray::Create(wrt->GetData(), wrt->GetDataLen());  // NO RELEASE OF bytes ON PURPOSE!
-        m_resultsStack->Add(bytes);
+        m_results.push_back(bytes);
     }
 }
 
@@ -831,22 +752,22 @@ void FdoExpressionEngineUtilDataReader::PerformDistinct()
     //Dump m_results to a hashmap, to weed out duplicate rows:
     HASHMAP hashmap;
     hashmap.clear();
-    for (FdoInt32 i=0; i<(FdoInt32)m_resultsStack->GetCount(); i++)
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
     {
-        FdoByteArray *bytes = (FdoByteArray*)m_resultsStack->GetItem(i);
+        FdoByteArray *bytes = (FdoByteArray*)m_results.at(i);
 
         std::pair <HASHMAP_ITER, bool> testresult = hashmap.insert(HASHMAP_PAIR(bytes, (FdoByteArray *)NULL));
-        // Do an addref ONLY if its been inserted into the hashmap:
-        if (testresult.second)
-            FDO_SAFE_ADDREF(bytes);
+        // Do a release ONLY if its not been inserted into the hashmap:
+        if (!testresult.second)
+            FDO_SAFE_RELEASE(bytes);
     }
 
     // Dump hashmap back into m_results:
-    m_resultsStack->Clear();
+    m_results.clear();
     for (HASHMAP_ITER iter = hashmap.begin(); iter != hashmap.end(); iter++)
     {
         FdoByteArray* array = (FdoByteArray*)iter->first;
-        m_resultsStack->Add(array);
+        m_results.push_back(array);
     }
 }
 
@@ -1026,9 +947,9 @@ void FdoExpressionEngineUtilDataReader::PerformOrderBy()
     //Dump the results to a vector that contains context information required for sorting:
     std::vector<orderby_context> orderedResults;
     orderedResults.clear();
-    for (FdoInt32 i=0; i<(FdoInt32)m_resultsStack->GetCount(); i++)
+    for (FdoInt32 i=0; i<(FdoInt32)m_results.size(); i++)
     {
-        FdoByteArray* bytes = (FdoByteArray*)m_resultsStack->GetItem(i);
+        FdoByteArray* bytes = (FdoByteArray*)m_results.at(i);
         orderby_context context(this, bytes);
         orderedResults.push_back(context);
     }
@@ -1039,7 +960,7 @@ void FdoExpressionEngineUtilDataReader::PerformOrderBy()
     // Dump the results back into m_results:
     for (FdoInt32 i=0; i<(FdoInt32)orderedResults.size(); i++)
     {
-        m_resultsStack->SetItem(i, orderedResults.at(i).rowData);
+        m_results[i] = orderedResults.at(i).rowData;
     }
 }
 
@@ -1049,12 +970,12 @@ bool FdoExpressionEngineUtilDataReader::ReadNext()
 {
     m_resultsIndex++;
 
-    if (m_resultsIndex >= (FdoInt32)m_resultsStack->GetCount())
+    if (m_resultsIndex >= (FdoInt32)m_results.size())
         return false;
     else
     {
         // Read next record:
-        const FdoByteArray* byteArray = (FdoByteArray*)m_resultsStack->GetItem(m_resultsIndex);
+        const FdoByteArray* byteArray = (FdoByteArray*)m_results.at(m_resultsIndex);
         m_binReader->Reset((unsigned char*)byteArray->GetData(), byteArray->GetCount());
 
         return true;

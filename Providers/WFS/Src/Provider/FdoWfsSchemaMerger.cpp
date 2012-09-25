@@ -263,19 +263,19 @@ FdoStringP FdoWfsSchemaMerger::_getXSDName(FdoStringP location)
 
 	size_t len = location.GetLength();
 	size_t i;
-    size_t pos = len -1;
+    size_t pos = len -1; 
 	for (i = len - 1;i>=0;i--)
 	{
-         if (*((FdoString*)location + i ) == FdoWfsGlobals::QUESTION)
-             pos = i - 1;
-         else if (*((FdoString*)location + i) == FdoWfsGlobals::SLASH)
+          if (*((FdoString*)location + i ) == FdoWfsGlobals::QUESTION) 
+                pos = i - 1; 
+          else if (*((FdoString*)location + i) == FdoWfsGlobals::SLASH) 
               break;
 	}
 
 	if ( i == -1)
 		rv = L"";
 	else
-		rv = location.Mid(i + 1, pos - i);
+		rv = location.Mid(i + 1, pos - i); 
 	return rv;
 
 }
@@ -299,13 +299,6 @@ FdoStringP FdoWfsSchemaMerger::_getFullLocation(FdoString* relativeLocation, Fdo
         else
             rv = rv.Mid(0, i + 1) + relativeLocation;
     }
-
-    // Strip out any ./ parts in the full URI. These don't make any difference in an absolute path.
-    // They also get tacked on indefinitely when processing recursive schema includes, causing infinite
-    // recursion. The Schema Merger does not recognize when a schema is processed twice, since the extra ./
-    // makes it look like a different schema.
-    while (rv.Contains(L"/./"))
-        rv = rv.Replace(L"/./",L"/");
 
     return rv;
 }

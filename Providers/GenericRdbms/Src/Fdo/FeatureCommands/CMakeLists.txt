@@ -9,11 +9,6 @@ set( FdoRdbms_FeatureCommands_STAT_SRCS
    FdoRdbmsFeatureReader.cpp
    FdoRdbmsUpdateCommand.cpp
    FdoRdbmsFeatureSubsetReader.cpp
-   FdoRdbmsSimpleFeatureReader.cpp
-   FdoRdbmsSimpleInsertCommand.cpp
-   FdoRdbmsSimpleDeleteCommand.cpp
-   FdoRdbmsSimpleUpdateCommand.cpp
-   FdoRdbmsSimpleSelectCommand.cpp
 )
 
 add_library( FdoRdbms_FeatureCommands STATIC ${FdoRdbms_FeatureCommands_STAT_SRCS} )

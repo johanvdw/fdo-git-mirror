@@ -51,12 +51,10 @@ void GdbiCommands::CheckDB()
 
 void GdbiCommands::ThrowException()
 {
-    long serverRc = ::rdbi_get_server_rc (m_pRdbiContext);
-
     if( m_pRdbiContext->last_error_msg == NULL )
         ::rdbi_get_msg (m_pRdbiContext);
     
-    throw GdbiException::Create( m_pRdbiContext->last_error_msg, (!serverRc) ? m_pRdbiContext->rdbi_last_status : serverRc);
+    throw GdbiException::Create( m_pRdbiContext->last_error_msg, m_pRdbiContext->rdbi_last_status);
 }
 
 int GdbiCommands::err_stat()
@@ -94,28 +92,6 @@ int GdbiCommands::sql( FdoStringP sql,  int *qid  )
 			rc = ::rdbi_sqlW (m_pRdbiContext, *qid, sql );
 		else
 			rc = ::rdbi_sql (m_pRdbiContext, *qid, sql );
-	}
-
-    if( rc == RDBI_SUCCESS )
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR; // to supress a compiler warning
-}
-
-int GdbiCommands::sql( FdoStringP sql,  int type,  int *qid  )
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-
-    rc = ::rdbi_est_cursor (m_pRdbiContext, qid);
-
-    if( rc == RDBI_SUCCESS )
-	{
-		if( SupportsUnicode() )
-			rc = ::rdbi_sqlWWt (m_pRdbiContext, *qid, sql, type );
-		else
-			rc = ::rdbi_sqlWt (m_pRdbiContext, *qid, sql, type );
 	}
 
     if( rc == RDBI_SUCCESS )
@@ -180,8 +156,7 @@ int GdbiCommands::bind(
     int   datatype,     /* A data type from Inc/rdbi.h              */
     int   size,         /* binary size                              */
     char *address,      /* data address                             */
-    GDBI_NI_TYPE *null_ind,
-    int typeBind
+    GDBI_NI_TYPE *null_ind
     )
 {
 	int   loc_datatype = datatype;
@@ -195,7 +170,7 @@ int GdbiCommands::bind(
 		throw new GdbiException(L"Cannot bind widechar strings; target RDBMS does not support widechar strings");
 	}
 
-    if( ::rdbi_bind(m_pRdbiContext, cursorId, name, loc_datatype,  loc_size, loc_address, (void *)null_ind, typeBind) == RDBI_SUCCESS )
+    if( ::rdbi_bind(m_pRdbiContext, cursorId, name, loc_datatype,  loc_size, loc_address, (void *)null_ind) == RDBI_SUCCESS )
         return RDBI_SUCCESS;
 
     ThrowException();
@@ -320,7 +295,7 @@ int GdbiCommands::vndr_info(
 //
 // Use the RDBMS sequence number capability(i.e Oracle )
 // TODO: need to cache the sequences for all sequences. Currently it will only work with one sequence for feature ids
-FdoInt64 GdbiCommands::NextSequenceNumber(  FdoString* dbiSequenceName )
+long GdbiCommands::NextSequenceNumber(  FdoString* dbiSequenceName )
 {
     FdoString* dbiSeqName = dbiSequenceName;
     FdoString* adbSeqName;
@@ -352,13 +327,13 @@ FdoInt64 GdbiCommands::NextSequenceNumber(  FdoString* dbiSequenceName )
 // In case sequence is not supported the method simulate a sequence allocation scheme.
 // The caller should start a transaction if one is not started. Apply Schema does.
 
-FdoInt64 GdbiCommands::NextGDBISequenceNumber( FdoString* adbSequenceName )
+long GdbiCommands::NextGDBISequenceNumber( FdoString* adbSequenceName )
 {
     bool                rc = false; 
     FdoStringP          strUse;
     int                 cursor;
     int                 select_begun = FALSE;
-    FdoInt64            number = 0;
+    int                 number = 0;
     int                 rows_proc;
     double              doubleVal;
     gdbi_full_seq_def   *gptr = &mFeatureSeq;
@@ -412,7 +387,7 @@ FdoInt64 GdbiCommands::NextGDBISequenceNumber( FdoString* adbSequenceName )
 
     if(rows_proc == 0) goto the_exit;
 
-    number = (FdoInt64)doubleVal;
+    number = (long)doubleVal;
     gptr->size = ADB_SN_ALLOC_INCREMENT;
     for(int i=0; i<ADB_SN_ALLOC_INCREMENT;i++)
         gptr->sequence[i] = number--;
@@ -433,27 +408,11 @@ the_exit:
     return number;
 }
 
-FdoInt64 GdbiCommands::GetLastSequenceNumber()
-{
-    FdoInt64 lastId = 0;
-    if (SupportsUnicode())
-    {
-        if ( ::rdbi_get_gen_idW ( m_pRdbiContext, L"", &lastId ) != RDBI_SUCCESS )
-            ThrowException();
-    }
-    else
-    {
-        if ( ::rdbi_get_gen_id ( m_pRdbiContext, "", &lastId ) != RDBI_SUCCESS )
-            ThrowException();
-    }
-    return lastId;
-}
-
 // In case sequence is not supported this method simulate a sequence allocation scheme.
-FdoInt64 GdbiCommands::NextRDBMSAutoincrementNumber( FdoString* adbSequenceName )
+long GdbiCommands::NextRDBMSAutoincrementNumber( FdoString* adbSequenceName )
 {
     FdoStringP tableName;
-    FdoInt64            number = 0;
+    int                 number = 0;
     bool                seqSupported = true;
 
     CheckDB();
@@ -670,72 +629,12 @@ int GdbiCommands::lob_read_next(int sqlid, void *lob_ref, int rdbi_lob_type, uns
 
 	return RDBI_GENERIC_ERROR;
 }
-
-int GdbiCommands::sp_add(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_ADD, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_ADD, sp);
-
-    if(rc == RDBI_SUCCESS)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::sp_rollback(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_RB, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_RB, sp);
-
-    if(rc == RDBI_SUCCESS)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::sp_release(FdoStringP sp)
-{
-    CheckDB();
-    int rc = RDBI_GENERIC_ERROR;
-	if(SupportsUnicode())
-        rc = ::rdbi_tran_spW (m_pRdbiContext, RDBI_SP_RL, sp);
-	else
-        rc = ::rdbi_tran_sp (m_pRdbiContext, RDBI_SP_RL, sp);
-
-    if(rc == RDBI_SUCCESS || rc == RDBI_SP_NOT_SUPPORTED)
-        return rc;
-
-    ThrowException();
-    return RDBI_GENERIC_ERROR;
-}
-
-bool GdbiCommands::sp_exists(FdoStringP sp)
-{
-	if(SupportsUnicode())
-        return ::rdbi_tran_sp_existsW (m_pRdbiContext, sp) ? true: false;
-	else
-        return ::rdbi_tran_sp_exists (m_pRdbiContext, sp) ? true: false;
-}
-
 int GdbiCommands::autocommit_on()
 {
 	int rc = ::rdbi_autocommit_on(m_pRdbiContext);
 
 	return rc;
 }
-
 int GdbiCommands::autocommit_off()
 {
 	int rc = ::rdbi_autocommit_off(m_pRdbiContext);
@@ -792,18 +691,6 @@ int GdbiCommands::geom_srid_set(
 	long			srid)
 {
 	int rc = ::rdbi_geom_srid_set(m_pRdbiContext, sqlid, geom_col_name, srid);
-	if (rc == RDBI_SUCCESS)
-		return rc;
-
-	return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::geom_version_set(
-	int				sqlid,
-	char			*geom_col_name,
-	long			version)
-{
-	int rc = ::rdbi_geom_version_set(m_pRdbiContext, sqlid, geom_col_name, version);
 	if (rc == RDBI_SUCCESS)
 		return rc;
 

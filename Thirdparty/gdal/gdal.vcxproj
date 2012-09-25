@@ -27,21 +27,17 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
-    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
-    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -68,17 +64,17 @@
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir bin\win32\debug
 mkdir lib\win32\debug
 cd $(ProjectDir)
-nmake -f makefile.vc MSVC_VER=1700 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES DEBUG=1
-nmake -f makefile.vc MSVC_VER=1700 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES DEBUG=1 devinstall</NMakeBuildCommandLine>
+nmake -f makefile.vc MSVC_VER=1600 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES DEBUG=1
+nmake -f makefile.vc MSVC_VER=1600 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES DEBUG=1 devinstall</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mkdir bin\win32\debug
 mkdir lib\win32\debug
 cd $(ProjectDir)
-nmake -f makefile.vc MSVC_VER=1700 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1 clean
-nmake -f makefile.vc MSVC_VER=1700 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1
-nmake -f makefile.vc MSVC_VER=1700 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1 devinstall </NMakeReBuildCommandLine>
+nmake -f makefile.vc MSVC_VER=1600 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1 clean
+nmake -f makefile.vc MSVC_VER=1600 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1
+nmake -f makefile.vc MSVC_VER=1600 PLATFORM_BITS=32 INCLUDE_OGR_FRMTS=YES  DEBUG=1 devinstall </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)
-nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES DEBUG=1 clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gdal19.dll</NMakeOutput>
+nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES DEBUG=1 clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gdal17.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
@@ -89,17 +85,17 @@ nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES DEBUG=
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir bin\win64\debug
 mkdir lib\win64\debug
 cd $(ProjectDir)
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 DEBUG=1
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 DEBUG=1 devinstall</NMakeBuildCommandLine>
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 DEBUG=1
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 DEBUG=1 devinstall</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mkdir bin\win64\debug
 mkdir lib\win64\debug
 cd $(ProjectDir)
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 DEBUG=1 clean
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 DEBUG=1
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 DEBUG=1 devinstall </NMakeReBuildCommandLine>
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 DEBUG=1 clean
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 DEBUG=1
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 DEBUG=1 devinstall </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd $(ProjectDir)
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=64 MSVC_VER=1700 DEBUG=1 clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gdal19.dll</NMakeOutput>
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=64 MSVC_VER=1600 DEBUG=1 clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gdal17.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_WIN64;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
@@ -110,17 +106,17 @@ nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=64 MSVC_VER=1700 DEBUG=
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir bin\win32\release
 mkdir lib\win32\release
 cd $(ProjectDir)
-nmake -f makefile.vc MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32
-nmake -f makefile.vc MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 devinstall</NMakeBuildCommandLine>
+nmake -f makefile.vc MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32
+nmake -f makefile.vc MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 devinstall</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mkdir bin\win32\release
 mkdir lib\win32\release
 cd $(ProjectDir)
-nmake -f makefile.vc MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 clean
-nmake -f makefile.vc MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32
-nmake -f makefile.vc MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 devinstall </NMakeReBuildCommandLine>
+nmake -f makefile.vc MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 clean
+nmake -f makefile.vc MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32
+nmake -f makefile.vc MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES PLATFORM_BITS=32 devinstall </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)
-nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gdal19.dll</NMakeOutput>
+nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1600 INCLUDE_OGR_FRMTS=YES clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gdal17.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
@@ -131,17 +127,17 @@ nmake -f makefile.vc PLATFORM_BITS=32 MSVC_VER=1700 INCLUDE_OGR_FRMTS=YES clean<
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir bin\win64\release
 mkdir lib\win64\release
 cd $(ProjectDir)
-nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700
-nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 devinstall</NMakeBuildCommandLine>
+nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1600
+nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 devinstall</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mkdir bin\win64\release
 mkdir lib\win64\release
 cd $(ProjectDir)
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 clean
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64
-nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 PLATFORM_BITS=64 devinstall</NMakeReBuildCommandLine>
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 clean
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64
+nmake -f makefile.vc INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 PLATFORM_BITS=64 devinstall</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)
-nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gdal19.dll</NMakeOutput>
+nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1600 clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gdal17.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
@@ -174,14 +170,13 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="frmts\ecw\makefile.vc" />
     <None Include="frmts\elas\makefile.vc" />
     <None Include="frmts\envisat\makefile.vc" />
-    <None Include="frmts\epsilon\makefile.vc" />
     <None Include="frmts\ers\makefile.vc" />
     <None Include="frmts\fit\makefile.vc" />
     <None Include="frmts\fits\makefile.vc" />
     <None Include="frmts\georaster\makefile.vc" />
     <None Include="frmts\gff\makefile.vc" />
     <None Include="frmts\gif\makefile.vc" />
-    <None Include="frmts\gif\giflib\makefile.vc" />
+    <None Include="frmts\gif\libungif\makefile.vc" />
     <None Include="frmts\grib\makefile.vc" />
     <None Include="frmts\grib\degrib18\makefile.vc" />
     <None Include="frmts\grib\degrib18\degrib\makefile.vc" />
@@ -204,7 +199,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="frmts\jp2kak\makefile.vc" />
     <None Include="frmts\jpeg\makefile.vc" />
     <None Include="frmts\jpeg\libjpeg\makefile.vc" />
-    <None Include="frmts\jpeg\libjpeg12\makefile.vc" />
     <None Include="frmts\jpeg2000\makefile.vc" />
     <None Include="frmts\l1b\makefile.vc" />
     <None Include="frmts\leveller\makefile.vc" />
@@ -214,35 +208,28 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="frmts\msgn\makefile.vc" />
     <None Include="frmts\netcdf\makefile.vc" />
     <None Include="frmts\nitf\makefile.vc" />
-    <None Include="frmts\northwood\makefile.vc" />
     <None Include="frmts\ogdi\makefile.vc" />
     <None Include="frmts\pcidsk\makefile.vc" />
-    <None Include="frmts\pcidsk\sdk\Makefile.vc" />
     <None Include="frmts\pcraster\makefile.vc" />
     <None Include="frmts\pcraster\libcsf\makefile.vc" />
     <None Include="frmts\pds\makefile.vc" />
     <None Include="frmts\pgchip\makefile.vc" />
     <None Include="frmts\png\makefile.vc" />
     <None Include="frmts\png\libpng\makefile.vc" />
-    <None Include="frmts\r\makefile.vc" />
-    <None Include="frmts\rasterlite\makefile.vc" />
     <None Include="frmts\raw\makefile.vc" />
     <None Include="frmts\rik\makefile.vc" />
     <None Include="frmts\rmf\makefile.vc" />
     <None Include="frmts\rs2\makefile.vc" />
-    <None Include="frmts\saga\makefile.vc" />
     <None Include="frmts\sde\makefile.vc" />
     <None Include="frmts\sdts\makefile.vc" />
     <None Include="frmts\sgi\makefile.vc" />
     <None Include="frmts\srtmhgt\makefile.vc" />
     <None Include="frmts\terragen\makefile.vc" />
     <None Include="frmts\terralib\makefile.vc" />
-    <None Include="frmts\til\makefile.vc" />
     <None Include="frmts\tsx\makefile.vc" />
     <None Include="frmts\usgsdem\makefile.vc" />
     <None Include="frmts\vrt\makefile.vc" />
     <None Include="frmts\wcs\makefile.vc" />
-    <None Include="frmts\wktraster\makefile.vc" />
     <None Include="frmts\wms\makefile.vc" />
     <None Include="frmts\xpm\makefile.vc" />
     <None Include="frmts\zlib\makefile.vc" />
@@ -255,17 +242,14 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="ogr\ogrsf_frmts\dgn\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\dgn\dist\Makefile.vc" />
     <None Include="ogr\ogrsf_frmts\dods\makefile.vc" />
-    <None Include="ogr\ogrsf_frmts\dxf\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\fme\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\generic\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\geoconcept\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\geojson\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\geojson\jsonc\makefile.vc" />
-    <None Include="ogr\ogrsf_frmts\georss\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\gml\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\gmt\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\gpx\makefile.vc" />
-    <None Include="ogr\ogrsf_frmts\gtm\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\idb\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\ili\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\ili\iom\makefile.vc" />
@@ -277,7 +261,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="ogr\ogrsf_frmts\oci\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\odbc\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\ogdi\makefile.vc" />
-    <None Include="ogr\ogrsf_frmts\pcidsk\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\pg\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\pgeo\makefile.vc" />
     <None Include="ogr\ogrsf_frmts\rec\makefile.vc" />
@@ -294,10 +277,10 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <None Include="port\makefile.vc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="alg\gdalgrid.h" />
-    <ClInclude Include="alg\gdalwarper.h" />
     <ClInclude Include="alg\gdal_alg.h" />
     <ClInclude Include="alg\gdal_alg_priv.h" />
+    <ClInclude Include="alg\gdalgrid.h" />
+    <ClInclude Include="alg\gdalwarper.h" />
     <ClInclude Include="alg\gvgcpfit.h" />
     <ClInclude Include="alg\thinplatespline.h" />
     <ClInclude Include="bridge\gdalbridge.h" />
@@ -316,9 +299,8 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\fit\gstTypes.h" />
     <ClInclude Include="frmts\georaster\georaster_priv.h" />
     <ClInclude Include="frmts\georaster\oci_wrapper.h" />
-    <ClInclude Include="frmts\gif\giflib\gif_hash.h" />
-    <ClInclude Include="frmts\gif\giflib\gif_lib.h" />
-    <ClInclude Include="frmts\gif\giflib\gif_lib_private.h" />
+    <ClInclude Include="frmts\gif\libungif\gif_lib.h" />
+    <ClInclude Include="frmts\gif\libungif\gif_lib_private.h" />
     <ClInclude Include="frmts\grib\degrib18\degrib\clock.h" />
     <ClInclude Include="frmts\grib\degrib18\degrib\datasource.h" />
     <ClInclude Include="frmts\grib\degrib18\degrib\degrib1.h" />
@@ -345,27 +327,26 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\grib\degrib18\g2clib-1.0.4\pdstemplates.h" />
     <ClInclude Include="frmts\gtiff\gt_overview.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\cpl_serv.h" />
+    <ClInclude Include="frmts\gtiff\libgeotiff\geo_config.h" />
+    <ClInclude Include="frmts\gtiff\libgeotiff\geo_keyp.h" />
+    <ClInclude Include="frmts\gtiff\libgeotiff\geo_normalize.h" />
+    <ClInclude Include="frmts\gtiff\libgeotiff\geo_tiffp.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\geokeys.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\geonames.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\geotiff.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\geotiffio.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\geovalues.h" />
-    <ClInclude Include="frmts\gtiff\libgeotiff\geo_config.h" />
-    <ClInclude Include="frmts\gtiff\libgeotiff\geo_keyp.h" />
-    <ClInclude Include="frmts\gtiff\libgeotiff\geo_normalize.h" />
-    <ClInclude Include="frmts\gtiff\libgeotiff\geo_simpletags.h" />
-    <ClInclude Include="frmts\gtiff\libgeotiff\geo_tiffp.h" />
     <ClInclude Include="frmts\gtiff\libgeotiff\xtiffio.h" />
     <ClInclude Include="frmts\gtiff\libtiff\t4.h" />
+    <ClInclude Include="frmts\gtiff\libtiff\tif_config.h" />
+    <ClInclude Include="frmts\gtiff\libtiff\tif_dir.h" />
+    <ClInclude Include="frmts\gtiff\libtiff\tif_fax3.h" />
+    <ClInclude Include="frmts\gtiff\libtiff\tif_predict.h" />
     <ClInclude Include="frmts\gtiff\libtiff\tiff.h" />
     <ClInclude Include="frmts\gtiff\libtiff\tiffconf.h" />
     <ClInclude Include="frmts\gtiff\libtiff\tiffio.h" />
     <ClInclude Include="frmts\gtiff\libtiff\tiffiop.h" />
     <ClInclude Include="frmts\gtiff\libtiff\tiffvers.h" />
-    <ClInclude Include="frmts\gtiff\libtiff\tif_config.h" />
-    <ClInclude Include="frmts\gtiff\libtiff\tif_dir.h" />
-    <ClInclude Include="frmts\gtiff\libtiff\tif_fax3.h" />
-    <ClInclude Include="frmts\gtiff\libtiff\tif_predict.h" />
     <ClInclude Include="frmts\gtiff\libtiff\uvcode.h" />
     <ClInclude Include="frmts\gxf\gxfopen.h" />
     <ClInclude Include="frmts\hdf4\hdf4compat.h" />
@@ -373,10 +354,10 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\hdf4\hdf-eos\ease.h" />
     <ClInclude Include="frmts\hdf4\hdf-eos\HdfEosDef.h" />
     <ClInclude Include="frmts\hdf4\hdf-eos\HDFEOSVersion.h" />
-    <ClInclude Include="frmts\hdf5\gh5_convenience.h" />
     <ClInclude Include="frmts\hdf5\hdf5dataset.h" />
     <ClInclude Include="frmts\hfa\hfa.h" />
     <ClInclude Include="frmts\hfa\hfa_p.h" />
+    <ClInclude Include="frmts\hfa\addtiffo_src\rawblockedimage.h" />
     <ClInclude Include="frmts\ilwis\ilwisdataset.h" />
     <ClInclude Include="frmts\ingr\IngrTypes.h" />
     <ClInclude Include="frmts\ingr\IntergraphBand.h" />
@@ -397,18 +378,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\jpeg\libjpeg\jpegint.h" />
     <ClInclude Include="frmts\jpeg\libjpeg\jpeglib.h" />
     <ClInclude Include="frmts\jpeg\libjpeg\jversion.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jchuff.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jconfig.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jdct.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jdhuff.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jerror.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jinclude.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jmemsys.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jmorecfg.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jpegint.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jpeglib.h" />
-    <ClInclude Include="frmts\jpeg\libjpeg12\jversion.h" />
-    <ClInclude Include="frmts\jpeg2000\jpeg2000_vsil_io.h" />
     <ClInclude Include="frmts\mem\memdataset.h" />
     <ClInclude Include="frmts\mrsid\mrsidstream.h" />
     <ClInclude Include="frmts\msg\msgcommand.h" />
@@ -422,43 +391,7 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\nitf\mgrs.h" />
     <ClInclude Include="frmts\nitf\nitflib.h" />
     <ClInclude Include="frmts\nitf\rpftoclib.h" />
-    <ClInclude Include="frmts\northwood\northwood.h" />
     <ClInclude Include="frmts\pcidsk\gdal_pcidsk.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_buffer.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_channel.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_config.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_exception.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_file.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_georef.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_interfaces.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_io.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_mutex.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_pct.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_segment.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_shape.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_types.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\pcidsk_vectorsegment.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\channel\cbandinterleavedchannel.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\channel\cpcidskchannel.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\channel\cpixelinterleavedchannel.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\channel\ctiledchannel.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\cpcidskfile.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\metadataset.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\mutexholder.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\pcidsk_utils.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\protectedfile.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\core\sysvirtualfile.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\cpcidskgeoref.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\cpcidskpct.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\cpcidsksegment.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\cpcidskvectorsegment.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\metadatasegment.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\pcidskgeorefbuilder.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\pcidsksegmentbuilder.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\segmentfactory.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\sysblockmap.h" />
-    <ClInclude Include="frmts\pcidsk\sdk\segment\uuid.h" />
     <ClInclude Include="frmts\pcraster\pcrasterdataset.h" />
     <ClInclude Include="frmts\pcraster\pcrasterrasterband.h" />
     <ClInclude Include="frmts\pcraster\pcrasterutil.h" />
@@ -471,7 +404,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\pgchip\pgchip.h" />
     <ClInclude Include="frmts\png\libpng\png.h" />
     <ClInclude Include="frmts\png\libpng\pngconf.h" />
-    <ClInclude Include="frmts\rasterlite\rasterlitedataset.h" />
     <ClInclude Include="frmts\raw\atlsci_spheroid.h" />
     <ClInclude Include="frmts\raw\rawdataset.h" />
     <ClInclude Include="frmts\rmf\rmfdataset.h" />
@@ -484,11 +416,9 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\terralib\TerraLibRasterBand.h" />
     <ClInclude Include="frmts\vrt\gdal_vrt.h" />
     <ClInclude Include="frmts\vrt\vrtdataset.h" />
-    <ClInclude Include="frmts\wktraster\wktraster.h" />
     <ClInclude Include="frmts\wms\gdalhttp.h" />
     <ClInclude Include="frmts\wms\md5.h" />
     <ClInclude Include="frmts\wms\minidriver_tileservice.h" />
-    <ClInclude Include="frmts\wms\minidriver_tms.h" />
     <ClInclude Include="frmts\wms\minidriver_wms.h" />
     <ClInclude Include="frmts\wms\minidriver_worldwind.h" />
     <ClInclude Include="frmts\wms\stdinc.h" />
@@ -504,16 +434,15 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="frmts\zlib\zlib.h" />
     <ClInclude Include="frmts\zlib\zutil.h" />
     <ClInclude Include="gcore\gdal.h" />
-    <ClInclude Include="gcore\gdaljp2metadata.h" />
     <ClInclude Include="gcore\gdal_frmts.h" />
     <ClInclude Include="gcore\gdal_pam.h" />
     <ClInclude Include="gcore\gdal_priv.h" />
     <ClInclude Include="gcore\gdal_proxy.h" />
     <ClInclude Include="gcore\gdal_rat.h" />
     <ClInclude Include="gcore\gdal_version.h" />
+    <ClInclude Include="gcore\gdaljp2metadata.h" />
     <ClInclude Include="ogr\ogr_api.h" />
     <ClInclude Include="ogr\ogr_core.h" />
-    <ClInclude Include="ogr\ogr_expat.h" />
     <ClInclude Include="ogr\ogr_feature.h" />
     <ClInclude Include="ogr\ogr_featurestyle.h" />
     <ClInclude Include="ogr\ogr_geometry.h" />
@@ -521,23 +450,21 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="ogr\ogr_p.h" />
     <ClInclude Include="ogr\ogr_spatialref.h" />
     <ClInclude Include="ogr\ogr_srs_api.h" />
-    <ClInclude Include="ogr\ogr_srs_esri_names.h" />
     <ClInclude Include="ogr\swq.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\ogrsf_frmts.h" />
     <ClInclude Include="ogr\ogrsf_frmts\ogr_attrind.h" />
+    <ClInclude Include="ogr\ogrsf_frmts\ogrsf_frmts.h" />
     <ClInclude Include="ogr\ogrsf_frmts\avc\avc.h" />
     <ClInclude Include="ogr\ogrsf_frmts\avc\avc_mbyte.h" />
     <ClInclude Include="ogr\ogrsf_frmts\avc\dbfopen.h" />
     <ClInclude Include="ogr\ogrsf_frmts\avc\ogr_avc.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\bna\ogrbnaparser.h" />
     <ClInclude Include="ogr\ogrsf_frmts\bna\ogr_bna.h" />
+    <ClInclude Include="ogr\ogrsf_frmts\bna\ogrbnaparser.h" />
     <ClInclude Include="ogr\ogrsf_frmts\csv\ogr_csv.h" />
     <ClInclude Include="ogr\ogrsf_frmts\dgn\dgnlib.h" />
     <ClInclude Include="ogr\ogrsf_frmts\dgn\dgnlibp.h" />
     <ClInclude Include="ogr\ogrsf_frmts\dgn\ogr_dgn.h" />
     <ClInclude Include="ogr\ogrsf_frmts\dgn\dist\cpl_config.h" />
     <ClInclude Include="ogr\ogrsf_frmts\dods\ogr_dods.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\dxf\ogr_dxf.h" />
     <ClInclude Include="ogr\ogrsf_frmts\fme\fme2ogr.h" />
     <ClInclude Include="ogr\ogrsf_frmts\generic\ogr_gensql.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geoconcept\geoconcept.h" />
@@ -545,10 +472,10 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="ogr\ogrsf_frmts\geoconcept\ogrgeoconceptdatasource.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geoconcept\ogrgeoconceptdriver.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geoconcept\ogrgeoconceptlayer.h" />
+    <ClInclude Include="ogr\ogrsf_frmts\geojson\ogr_geojson.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\ogrgeojsonreader.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\ogrgeojsonutils.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\ogrgeojsonwriter.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\geojson\ogr_geojson.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\arraylist.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\bits.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\config.h" />
@@ -560,15 +487,12 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\json_util.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\linkhash.h" />
     <ClInclude Include="ogr\ogrsf_frmts\geojson\jsonc\printbuf.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\georss\ogr_georss.h" />
     <ClInclude Include="ogr\ogrsf_frmts\gml\gmlreader.h" />
     <ClInclude Include="ogr\ogrsf_frmts\gml\gmlreaderp.h" />
     <ClInclude Include="ogr\ogrsf_frmts\gml\ogr_gml.h" />
     <ClInclude Include="ogr\ogrsf_frmts\gmt\ogr_gmt.h" />
     <ClInclude Include="ogr\ogrsf_frmts\gpx\ogr_gpx.h" />
     <ClInclude Include="ogr\ogrsf_frmts\grass\ogrgrass.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\gtm\gtm.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\gtm\ogr_gtm.h" />
     <ClInclude Include="ogr\ogrsf_frmts\idb\ogr_idb.h" />
     <ClInclude Include="ogr\ogrsf_frmts\ili\ili1reader.h" />
     <ClInclude Include="ogr\ogrsf_frmts\ili\ili1readerp.h" />
@@ -597,9 +521,8 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="ogr\ogrsf_frmts\oci\ogr_oci.h" />
     <ClInclude Include="ogr\ogrsf_frmts\odbc\ogr_odbc.h" />
     <ClInclude Include="ogr\ogrsf_frmts\ogdi\ogrogdi.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\pcidsk\ogr_pcidsk.h" />
-    <ClInclude Include="ogr\ogrsf_frmts\pg\ogrpgutility.h" />
     <ClInclude Include="ogr\ogrsf_frmts\pg\ogr_pg.h" />
+    <ClInclude Include="ogr\ogrsf_frmts\pg\ogrpgutility.h" />
     <ClInclude Include="ogr\ogrsf_frmts\pgeo\ogr_pgeo.h" />
     <ClInclude Include="ogr\ogrsf_frmts\rec\ogr_rec.h" />
     <ClInclude Include="ogr\ogrsf_frmts\s57\ogr_s57.h" />
@@ -619,10 +542,7 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="ogr\ogrsf_frmts\xplane\ogr_xplane_geo_utils.h" />
     <ClInclude Include="ogr\ogrsf_frmts\xplane\ogr_xplane_nav_reader.h" />
     <ClInclude Include="ogr\ogrsf_frmts\xplane\ogr_xplane_reader.h" />
-    <ClInclude Include="port\cplkeywordparser.h" />
-    <ClInclude Include="port\cpl_atomic_ops.h" />
     <ClInclude Include="port\cpl_config.h" />
-    <ClInclude Include="port\cpl_config_extras.h" />
     <ClInclude Include="port\cpl_conv.h" />
     <ClInclude Include="port\cpl_csv.h" />
     <ClInclude Include="port\cpl_error.h" />
@@ -637,16 +557,18 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClInclude Include="port\cpl_port.h" />
     <ClInclude Include="port\cpl_quad_tree.h" />
     <ClInclude Include="port\cpl_string.h" />
-    <ClInclude Include="port\cpl_time.h" />
     <ClInclude Include="port\cpl_vsi.h" />
     <ClInclude Include="port\cpl_vsi_virtual.h" />
     <ClInclude Include="port\cpl_win32ce_api.h" />
     <ClInclude Include="port\cpl_wince.h" />
+    <ClInclude Include="port\cplkeywordparser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="alg\contour.cpp" />
     <ClCompile Include="alg\gdal_crs.c" />
     <ClCompile Include="alg\gdal_nrgcrs.c" />
-    <ClCompile Include="alg\contour.cpp" />
+    <ClCompile Include="alg\gdal_rpc.cpp" />
+    <ClCompile Include="alg\gdal_tps.cpp" />
     <ClCompile Include="alg\gdalchecksum.cpp" />
     <ClCompile Include="alg\gdalcutline.cpp" />
     <ClCompile Include="alg\gdaldither.cpp" />
@@ -662,50 +584,46 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="alg\gdalwarper.cpp" />
     <ClCompile Include="alg\gdalwarpkernel.cpp" />
     <ClCompile Include="alg\gdalwarpoperation.cpp" />
-    <ClCompile Include="alg\gdal_rpc.cpp" />
-    <ClCompile Include="alg\gdal_tps.cpp" />
     <ClCompile Include="alg\llrasterize.cpp" />
     <ClCompile Include="alg\polygonize.cpp" />
     <ClCompile Include="alg\rasterfill.cpp" />
     <ClCompile Include="alg\thinplatespline.cpp" />
-    <ClCompile Include="apps\gdal2ogr.c" />
-    <ClCompile Include="apps\gdalflattenmask.c" />
-    <ClCompile Include="apps\gdalinfo.c" />
-    <ClCompile Include="apps\gdaltindex.c" />
-    <ClCompile Include="apps\gdalwarpsimple.c" />
     <ClCompile Include="apps\dumpoverviews.cpp" />
-    <ClCompile Include="apps\gdaladdo.cpp" />
-    <ClCompile Include="apps\gdalbuildvrt.cpp" />
-    <ClCompile Include="apps\gdaldem.cpp" />
-    <ClCompile Include="apps\gdalenhance.cpp" />
-    <ClCompile Include="apps\gdalmanage.cpp" />
-    <ClCompile Include="apps\gdaltorture.cpp" />
-    <ClCompile Include="apps\gdaltransform.cpp" />
-    <ClCompile Include="apps\gdalwarp.cpp" />
+    <ClCompile Include="apps\gdal2ogr.c" />
     <ClCompile Include="apps\gdal_contour.cpp" />
     <ClCompile Include="apps\gdal_grid.cpp" />
     <ClCompile Include="apps\gdal_rasterize.cpp" />
     <ClCompile Include="apps\gdal_translate.cpp" />
+    <ClCompile Include="apps\gdaladdo.cpp" />
+    <ClCompile Include="apps\gdalbuildvrt.cpp" />
+    <ClCompile Include="apps\gdalenhance.cpp" />
+    <ClCompile Include="apps\gdalflattenmask.c" />
+    <ClCompile Include="apps\gdalinfo.c" />
+    <ClCompile Include="apps\gdalmanage.cpp" />
+    <ClCompile Include="apps\gdaltindex.c" />
+    <ClCompile Include="apps\gdaltorture.cpp" />
+    <ClCompile Include="apps\gdaltransform.cpp" />
+    <ClCompile Include="apps\gdalwarp.cpp" />
+    <ClCompile Include="apps\gdalwarpsimple.c" />
     <ClCompile Include="apps\multireadtest.cpp" />
     <ClCompile Include="apps\nearblack.cpp" />
     <ClCompile Include="apps\ogr2ogr.cpp" />
     <ClCompile Include="apps\ogrdissolve.cpp" />
     <ClCompile Include="apps\ogrinfo.cpp" />
     <ClCompile Include="apps\ogrtindex.cpp" />
-    <ClCompile Include="apps\testepsg.cpp" />
     <ClCompile Include="apps\test_ogrsf.cpp" />
+    <ClCompile Include="apps\testepsg.cpp" />
     <ClCompile Include="bridge\bridge_test.cpp" />
     <ClCompile Include="bridge\gbgetsymbol.cpp" />
     <ClCompile Include="bridge\gdalbridge.cpp" />
     <ClCompile Include="frmts\gdalallregister.cpp" />
     <ClCompile Include="frmts\aaigrid\aaigriddataset.cpp" />
     <ClCompile Include="frmts\adrg\adrgdataset.cpp" />
-    <ClCompile Include="frmts\adrg\srpdataset.cpp" />
     <ClCompile Include="frmts\aigrid\aigccitt.c" />
+    <ClCompile Include="frmts\aigrid\aigdataset.cpp" />
     <ClCompile Include="frmts\aigrid\aigopen.c" />
     <ClCompile Include="frmts\aigrid\aitest.c" />
     <ClCompile Include="frmts\aigrid\gridlib.c" />
-    <ClCompile Include="frmts\aigrid\aigdataset.cpp" />
     <ClCompile Include="frmts\airsar\airsardataset.cpp" />
     <ClCompile Include="frmts\blx\blx.c" />
     <ClCompile Include="frmts\blx\blxdataset.cpp" />
@@ -713,9 +631,9 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\bsb\bsb2raw.c" />
     <ClCompile Include="frmts\bsb\bsb_read.c" />
     <ClCompile Include="frmts\bsb\bsbdataset.cpp" />
+    <ClCompile Include="frmts\ceos\ceosdataset.cpp" />
     <ClCompile Include="frmts\ceos\ceosopen.c" />
     <ClCompile Include="frmts\ceos\ceostest.c" />
-    <ClCompile Include="frmts\ceos\ceosdataset.cpp" />
     <ClCompile Include="frmts\ceos2\ceos.c" />
     <ClCompile Include="frmts\ceos2\ceosrecipe.c" />
     <ClCompile Include="frmts\ceos2\ceossar.c" />
@@ -735,10 +653,9 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\ecw\jp2userbox.cpp" />
     <ClCompile Include="frmts\elas\elasdataset.cpp" />
     <ClCompile Include="frmts\envisat\dumpgeo.c" />
-    <ClCompile Include="frmts\envisat\EnvisatFile.c" />
     <ClCompile Include="frmts\envisat\envisat_dump.c" />
     <ClCompile Include="frmts\envisat\envisatdataset.cpp" />
-    <ClCompile Include="frmts\epsilon\epsilondataset.cpp" />
+    <ClCompile Include="frmts\envisat\EnvisatFile.c" />
     <ClCompile Include="frmts\ers\ersdataset.cpp" />
     <ClCompile Include="frmts\ers\ershdrnode.cpp" />
     <ClCompile Include="frmts\fit\fit.cpp" />
@@ -750,39 +667,38 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\georaster\georaster_wrapper.cpp" />
     <ClCompile Include="frmts\georaster\oci_wrapper.cpp" />
     <ClCompile Include="frmts\gff\gff_dataset.cpp" />
-    <ClCompile Include="frmts\gif\biggifdataset.cpp" />
     <ClCompile Include="frmts\gif\gifdataset.cpp" />
-    <ClCompile Include="frmts\gif\giflib\dgif_lib.c" />
-    <ClCompile Include="frmts\gif\giflib\egif_lib.c" />
-    <ClCompile Include="frmts\gif\giflib\gifalloc.c" />
-    <ClCompile Include="frmts\gif\giflib\gif_err.c" />
-    <ClCompile Include="frmts\gif\giflib\gif_hash.c" />
+    <ClCompile Include="frmts\gif\libungif\dgif_lib.c" />
+    <ClCompile Include="frmts\gif\libungif\egif_lib.c" />
+    <ClCompile Include="frmts\gif\libungif\gif_err.c" />
+    <ClCompile Include="frmts\gif\libungif\gifalloc.c" />
     <ClCompile Include="frmts\grass\grass57dataset.cpp" />
     <ClCompile Include="frmts\grass\grassdataset.cpp" />
     <ClCompile Include="frmts\grib\gribdataset.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\clock.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\engribapi.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\grib2api.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\memendian.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\myassert.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\myerror.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\myutil.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\scan.c" />
-    <ClCompile Include="frmts\grib\degrib18\degrib\weather.c" />
     <ClCompile Include="frmts\grib\degrib18\degrib\degrib1.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\degrib2.cpp" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\engribapi.c" />
     <ClCompile Include="frmts\grib\degrib18\degrib\filedatasource.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\fileendian.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\grib1tab.cpp" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\grib2api.c" />
     <ClCompile Include="frmts\grib\degrib18\degrib\inventory.cpp" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\memendian.c" />
     <ClCompile Include="frmts\grib\degrib18\degrib\memorydatasource.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\metaname.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\metaparse.cpp" />
     <ClCompile Include="frmts\grib\degrib18\degrib\metaprint.cpp" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\myassert.c" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\myerror.c" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\myutil.c" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\scan.c" />
     <ClCompile Include="frmts\grib\degrib18\degrib\tdlpack.cpp" />
+    <ClCompile Include="frmts\grib\degrib18\degrib\weather.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\cmplxpack.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\compack.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\comunpack.c" />
+    <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\dec_jpeg2000.cpp" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\dec_png.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\drstemplates.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\enc_jpeg2000.c" />
@@ -823,17 +739,14 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\simunpack.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\specpack.c" />
     <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\specunpack.c" />
-    <ClCompile Include="frmts\grib\degrib18\g2clib-1.0.4\dec_jpeg2000.cpp" />
     <ClCompile Include="frmts\gsg\gs7bgdataset.cpp" />
     <ClCompile Include="frmts\gsg\gsagdataset.cpp" />
     <ClCompile Include="frmts\gsg\gsbgdataset.cpp" />
-    <ClCompile Include="frmts\gtiff\tif_float.c" />
     <ClCompile Include="frmts\gtiff\geotiff.cpp" />
-    <ClCompile Include="frmts\gtiff\gt_citation.cpp" />
     <ClCompile Include="frmts\gtiff\gt_overview.cpp" />
     <ClCompile Include="frmts\gtiff\gt_wkt_srs.cpp" />
+    <ClCompile Include="frmts\gtiff\tif_float.c" />
     <ClCompile Include="frmts\gtiff\tifvsi.cpp" />
-    <ClCompile Include="frmts\gtiff\libgeotiff\geotiff_proj4.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_extra.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_free.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_get.c" />
@@ -842,10 +755,10 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_normalize.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_print.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_set.c" />
-    <ClCompile Include="frmts\gtiff\libgeotiff\geo_simpletags.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_tiffp.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_trans.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\geo_write.c" />
+    <ClCompile Include="frmts\gtiff\libgeotiff\geotiff_proj4.c" />
     <ClCompile Include="frmts\gtiff\libgeotiff\xtiff.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_aux.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_close.c" />
@@ -864,7 +777,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\gtiff\libtiff\tif_flush.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_getimage.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_jpeg.c" />
-    <ClCompile Include="frmts\gtiff\libtiff\tif_jpeg_12.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_luv.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_lzw.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_next.c" />
@@ -884,21 +796,20 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\gtiff\libtiff\tif_warning.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_write.c" />
     <ClCompile Include="frmts\gtiff\libtiff\tif_zip.c" />
-    <ClCompile Include="frmts\gxf\gxfopen.c" />
     <ClCompile Include="frmts\gxf\gxf_ogcwkt.c" />
     <ClCompile Include="frmts\gxf\gxf_proj4.c" />
     <ClCompile Include="frmts\gxf\gxfdataset.cpp" />
+    <ClCompile Include="frmts\gxf\gxfopen.c" />
     <ClCompile Include="frmts\hdf4\hdf4dataset.cpp" />
     <ClCompile Include="frmts\hdf4\hdf4imagedataset.cpp" />
     <ClCompile Include="frmts\hdf4\hdf-eos\EHapi.c" />
     <ClCompile Include="frmts\hdf4\hdf-eos\gctp_wrap.c" />
     <ClCompile Include="frmts\hdf4\hdf-eos\GDapi.c" />
     <ClCompile Include="frmts\hdf4\hdf-eos\SWapi.c" />
-    <ClCompile Include="frmts\hdf5\bagdataset.cpp" />
-    <ClCompile Include="frmts\hdf5\gh5_convenience.cpp" />
     <ClCompile Include="frmts\hdf5\hdf5dataset.cpp" />
     <ClCompile Include="frmts\hdf5\hdf5imagedataset.cpp" />
-    <ClCompile Include="frmts\hdf5\iso19115_srs.cpp" />
+    <ClCompile Include="frmts\hfa\geoextra.c" />
+    <ClCompile Include="frmts\hfa\hfa_overviews.cpp" />
     <ClCompile Include="frmts\hfa\hfaband.cpp" />
     <ClCompile Include="frmts\hfa\hfacompress.cpp" />
     <ClCompile Include="frmts\hfa\hfadataset.cpp" />
@@ -908,7 +819,10 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\hfa\hfaopen.cpp" />
     <ClCompile Include="frmts\hfa\hfatest.cpp" />
     <ClCompile Include="frmts\hfa\hfatype.cpp" />
-    <ClCompile Include="frmts\hfa\hfa_overviews.cpp" />
+    <ClCompile Include="frmts\hfa\img2tif.cpp" />
+    <ClCompile Include="frmts\hfa\imggeotiff.cpp" />
+    <ClCompile Include="frmts\hfa\addtiffo_src\rawblockedimage.cpp" />
+    <ClCompile Include="frmts\hfa\addtiffo_src\tif_overview.cpp" />
     <ClCompile Include="frmts\idrisi\IdrisiDataset.cpp" />
     <ClCompile Include="frmts\ilwis\ilwiscoordinatesystem.cpp" />
     <ClCompile Include="frmts\ilwis\ilwisdataset.cpp" />
@@ -930,7 +844,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\jdem\jdemdataset.cpp" />
     <ClCompile Include="frmts\jp2kak\jp2kakdataset.cpp" />
     <ClCompile Include="frmts\jpeg\jpgdataset.cpp" />
-    <ClCompile Include="frmts\jpeg\jpgdataset_12.cpp" />
     <ClCompile Include="frmts\jpeg\vsidataio.cpp" />
     <ClCompile Include="frmts\jpeg\libjpeg\jcapimin.c" />
     <ClCompile Include="frmts\jpeg\libjpeg\jcapistd.c" />
@@ -978,54 +891,7 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\jpeg\libjpeg\jquant1.c" />
     <ClCompile Include="frmts\jpeg\libjpeg\jquant2.c" />
     <ClCompile Include="frmts\jpeg\libjpeg\jutils.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcapimin12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcapistd12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jccoefct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jccolor12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcdctmgr12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jchuff12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcinit12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcmainct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcmarker12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcmaster12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcomapi12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcparam12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcphuff12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcprepct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jcsample12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jctrans12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdapimin12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdapistd12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdatadst12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdatasrc12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdcoefct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdcolor12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jddctmgr12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdhuff12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdinput12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdmainct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdmarker12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdmaster12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdmerge12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdphuff12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdpostct12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdsample12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jdtrans12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jerror12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jfdctflt12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jfdctfst12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jfdctint12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jidctflt12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jidctfst12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jidctint12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jidctred12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jmemansi12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jmemmgr12.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jquant112.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jquant212.c" />
-    <ClCompile Include="frmts\jpeg\libjpeg12\jutils12.c" />
     <ClCompile Include="frmts\jpeg2000\jpeg2000dataset.cpp" />
-    <ClCompile Include="frmts\jpeg2000\jpeg2000_vsil_io.cpp" />
     <ClCompile Include="frmts\l1b\l1bdataset.cpp" />
     <ClCompile Include="frmts\leveller\levellerdataset.cpp" />
     <ClCompile Include="frmts\mem\memdataset.cpp" />
@@ -1036,61 +902,32 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\msg\prologue.cpp" />
     <ClCompile Include="frmts\msg\reflectancecalculator.cpp" />
     <ClCompile Include="frmts\msg\xritheaderparser.cpp" />
-    <ClCompile Include="frmts\msgn\msgndataset.cpp" />
     <ClCompile Include="frmts\msgn\msg_basic_types.cpp" />
     <ClCompile Include="frmts\msgn\msg_reader_core.cpp" />
+    <ClCompile Include="frmts\msgn\msgndataset.cpp" />
     <ClCompile Include="frmts\netcdf\gmtdataset.cpp" />
     <ClCompile Include="frmts\netcdf\netcdfdataset.cpp" />
     <ClCompile Include="frmts\nitf\mgrs.c" />
-    <ClCompile Include="frmts\nitf\nitfdump.c" />
-    <ClCompile Include="frmts\nitf\nitffile.c" />
-    <ClCompile Include="frmts\nitf\nitfimage.c" />
     <ClCompile Include="frmts\nitf\nitfaridpcm.cpp" />
     <ClCompile Include="frmts\nitf\nitfbilevel.cpp" />
     <ClCompile Include="frmts\nitf\nitfdataset.cpp" />
-    <ClCompile Include="frmts\nitf\nitfwritejpeg.cpp" />
-    <ClCompile Include="frmts\nitf\nitfwritejpeg_12.cpp" />
+    <ClCompile Include="frmts\nitf\nitfdump.c" />
+    <ClCompile Include="frmts\nitf\nitffile.c" />
+    <ClCompile Include="frmts\nitf\nitfimage.c" />
     <ClCompile Include="frmts\nitf\rpftocdataset.cpp" />
     <ClCompile Include="frmts\nitf\rpftocfile.cpp" />
-    <ClCompile Include="frmts\northwood\grcdataset.cpp" />
-    <ClCompile Include="frmts\northwood\grddataset.cpp" />
-    <ClCompile Include="frmts\northwood\northwood.cpp" />
     <ClCompile Include="frmts\ogdi\ogdidataset.cpp" />
     <ClCompile Include="frmts\pcidsk\pcidskdataset.cpp" />
-    <ClCompile Include="frmts\pcidsk\pcidskdataset2.cpp" />
     <ClCompile Include="frmts\pcidsk\pcidsktiledrasterband.cpp" />
-    <ClCompile Include="frmts\pcidsk\vsi_pcidsk_io.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\channel\cbandinterleavedchannel.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\channel\cpcidskchannel.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\channel\cpixelinterleavedchannel.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\channel\ctiledchannel.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\cpcidskfile.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\libjpeg_io.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\metadataset_p.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidskbuffer.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidskcreate.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidskexception.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidskinterfaces.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidskopen.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidsk_pubutils.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\pcidsk_utils.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\core\sysvirtualfile.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\port\io_stdio.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\port\io_win32.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\port\pthread_mutex.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\port\win32_mutex.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\cpcidskgeoref.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\cpcidskpct.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\cpcidsksegment.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\cpcidskvectorsegment.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\metadatasegment_p.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\segmentfactory.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\segment_loader.cpp" />
-    <ClCompile Include="frmts\pcidsk\sdk\segment\sysblockmap.cpp" />
     <ClCompile Include="frmts\pcraster\pcrasterdataset.cpp" />
     <ClCompile Include="frmts\pcraster\pcrastermisc.cpp" />
     <ClCompile Include="frmts\pcraster\pcrasterrasterband.cpp" />
     <ClCompile Include="frmts\pcraster\pcrasterutil.cpp" />
+    <ClCompile Include="frmts\pcraster\libcsf\_getcell.c" />
+    <ClCompile Include="frmts\pcraster\libcsf\_getrow.c" />
+    <ClCompile Include="frmts\pcraster\libcsf\_gsomece.c" />
+    <ClCompile Include="frmts\pcraster\libcsf\_putcell.c" />
+    <ClCompile Include="frmts\pcraster\libcsf\_rputrow.c" />
     <ClCompile Include="frmts\pcraster\libcsf\angle.c" />
     <ClCompile Include="frmts\pcraster\libcsf\attravai.c" />
     <ClCompile Include="frmts\pcraster\libcsf\attrsize.c" />
@@ -1156,11 +993,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\pcraster\libcsf\vsis.c" />
     <ClCompile Include="frmts\pcraster\libcsf\vsvers.c" />
     <ClCompile Include="frmts\pcraster\libcsf\wattrblk.c" />
-    <ClCompile Include="frmts\pcraster\libcsf\_getcell.c" />
-    <ClCompile Include="frmts\pcraster\libcsf\_getrow.c" />
-    <ClCompile Include="frmts\pcraster\libcsf\_gsomece.c" />
-    <ClCompile Include="frmts\pcraster\libcsf\_putcell.c" />
-    <ClCompile Include="frmts\pcraster\libcsf\_rputrow.c" />
     <ClCompile Include="frmts\pds\isis2dataset.cpp" />
     <ClCompile Include="frmts\pds\isis3dataset.cpp" />
     <ClCompile Include="frmts\pds\nasakeywordhandler.cpp" />
@@ -1186,11 +1018,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\png\libpng\pngwrite.c" />
     <ClCompile Include="frmts\png\libpng\pngwtran.c" />
     <ClCompile Include="frmts\png\libpng\pngwutil.c" />
-    <ClCompile Include="frmts\r\rcreatecopy.cpp" />
-    <ClCompile Include="frmts\r\rdataset.cpp" />
-    <ClCompile Include="frmts\rasterlite\rasterlitecreatecopy.cpp" />
-    <ClCompile Include="frmts\rasterlite\rasterlitedataset.cpp" />
-    <ClCompile Include="frmts\rasterlite\rasterliteoverviews.cpp" />
     <ClCompile Include="frmts\raw\atlsci_spheroid.cpp" />
     <ClCompile Include="frmts\raw\btdataset.cpp" />
     <ClCompile Include="frmts\raw\cpgdataset.cpp" />
@@ -1217,7 +1044,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\rmf\rmfdataset.cpp" />
     <ClCompile Include="frmts\rmf\rmflzw.cpp" />
     <ClCompile Include="frmts\rs2\rs2dataset.cpp" />
-    <ClCompile Include="frmts\saga\sagadataset.cpp" />
     <ClCompile Include="frmts\sde\sdedataset.cpp" />
     <ClCompile Include="frmts\sde\sdeerror.cpp" />
     <ClCompile Include="frmts\sde\sderasterband.cpp" />
@@ -1239,10 +1065,9 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\terragen\terragendataset.cpp" />
     <ClCompile Include="frmts\terralib\TerraLibDataset.cpp" />
     <ClCompile Include="frmts\terralib\TerraLibRasterBand.cpp" />
-    <ClCompile Include="frmts\til\tildataset.cpp" />
     <ClCompile Include="frmts\tsx\tsxdataset.cpp" />
-    <ClCompile Include="frmts\usgsdem\usgsdemdataset.cpp" />
     <ClCompile Include="frmts\usgsdem\usgsdem_create.cpp" />
+    <ClCompile Include="frmts\usgsdem\usgsdemdataset.cpp" />
     <ClCompile Include="frmts\vrt\vrtdataset.cpp" />
     <ClCompile Include="frmts\vrt\vrtderivedrasterband.cpp" />
     <ClCompile Include="frmts\vrt\vrtdriver.cpp" />
@@ -1254,16 +1079,12 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\vrt\vrtwarped.cpp" />
     <ClCompile Include="frmts\wcs\httpdriver.cpp" />
     <ClCompile Include="frmts\wcs\wcsdataset.cpp" />
-    <ClCompile Include="frmts\wktraster\wktrasterdataset.cpp" />
-    <ClCompile Include="frmts\wktraster\wktrasterrasterband.cpp" />
-    <ClCompile Include="frmts\wktraster\wktrasterwrapper.cpp" />
     <ClCompile Include="frmts\wms\cache.cpp" />
     <ClCompile Include="frmts\wms\dataset.cpp" />
     <ClCompile Include="frmts\wms\gdalhttp.cpp" />
     <ClCompile Include="frmts\wms\md5.cpp" />
     <ClCompile Include="frmts\wms\minidriver.cpp" />
     <ClCompile Include="frmts\wms\minidriver_tileservice.cpp" />
-    <ClCompile Include="frmts\wms\minidriver_tms.cpp" />
     <ClCompile Include="frmts\wms\minidriver_wms.cpp" />
     <ClCompile Include="frmts\wms\minidriver_worldwind.cpp" />
     <ClCompile Include="frmts\wms\rasterband.cpp" />
@@ -1282,6 +1103,9 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="frmts\zlib\trees.c" />
     <ClCompile Include="frmts\zlib\uncompr.c" />
     <ClCompile Include="frmts\zlib\zutil.c" />
+    <ClCompile Include="gcore\gdal_misc.cpp" />
+    <ClCompile Include="gcore\gdal_rat.cpp" />
+    <ClCompile Include="gcore\gdal_rpcimdio.cpp" />
     <ClCompile Include="gcore\gdalallvalidmaskband.cpp" />
     <ClCompile Include="gcore\gdalcolortable.cpp" />
     <ClCompile Include="gcore\gdaldataset.cpp" />
@@ -1303,15 +1127,24 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="gcore\gdalproxypool.cpp" />
     <ClCompile Include="gcore\gdalrasterband.cpp" />
     <ClCompile Include="gcore\gdalrasterblock.cpp" />
-    <ClCompile Include="gcore\gdal_misc.cpp" />
-    <ClCompile Include="gcore\gdal_rat.cpp" />
-    <ClCompile Include="gcore\gdal_rpcimdio.cpp" />
     <ClCompile Include="gcore\overview.cpp" />
     <ClCompile Include="gcore\rasterio.cpp" />
-    <ClCompile Include="ogr\ogr_capi_test.c" />
-    <ClCompile Include="ogr\swq.c" />
     <ClCompile Include="ogr\gml2ogrgeometry.cpp" />
     <ClCompile Include="ogr\ogr2gmlgeometry.cpp" />
+    <ClCompile Include="ogr\ogr_api.cpp" />
+    <ClCompile Include="ogr\ogr_capi_test.c" />
+    <ClCompile Include="ogr\ogr_fromepsg.cpp" />
+    <ClCompile Include="ogr\ogr_opt.cpp" />
+    <ClCompile Include="ogr\ogr_srs_dict.cpp" />
+    <ClCompile Include="ogr\ogr_srs_erm.cpp" />
+    <ClCompile Include="ogr\ogr_srs_esri.cpp" />
+    <ClCompile Include="ogr\ogr_srs_panorama.cpp" />
+    <ClCompile Include="ogr\ogr_srs_pci.cpp" />
+    <ClCompile Include="ogr\ogr_srs_proj4.cpp" />
+    <ClCompile Include="ogr\ogr_srs_usgs.cpp" />
+    <ClCompile Include="ogr\ogr_srs_validate.cpp" />
+    <ClCompile Include="ogr\ogr_srs_xml.cpp" />
+    <ClCompile Include="ogr\ogr_srsnode.cpp" />
     <ClCompile Include="ogr\ograssemblepolygon.cpp" />
     <ClCompile Include="ogr\ogrct.cpp" />
     <ClCompile Include="ogr\ogrcurve.cpp" />
@@ -1333,21 +1166,7 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrspatialreference.cpp" />
     <ClCompile Include="ogr\ogrsurface.cpp" />
     <ClCompile Include="ogr\ogrutils.cpp" />
-    <ClCompile Include="ogr\ogr_api.cpp" />
-    <ClCompile Include="ogr\ogr_expat.cpp" />
-    <ClCompile Include="ogr\ogr_fromepsg.cpp" />
-    <ClCompile Include="ogr\ogr_opt.cpp" />
-    <ClCompile Include="ogr\ogr_srsnode.cpp" />
-    <ClCompile Include="ogr\ogr_srs_dict.cpp" />
-    <ClCompile Include="ogr\ogr_srs_erm.cpp" />
-    <ClCompile Include="ogr\ogr_srs_esri.cpp" />
-    <ClCompile Include="ogr\ogr_srs_ozi.cpp" />
-    <ClCompile Include="ogr\ogr_srs_panorama.cpp" />
-    <ClCompile Include="ogr\ogr_srs_pci.cpp" />
-    <ClCompile Include="ogr\ogr_srs_proj4.cpp" />
-    <ClCompile Include="ogr\ogr_srs_usgs.cpp" />
-    <ClCompile Include="ogr\ogr_srs_validate.cpp" />
-    <ClCompile Include="ogr\ogr_srs_xml.cpp" />
+    <ClCompile Include="ogr\swq.c" />
     <ClCompile Include="ogr\ogrsf_frmts\avc\avc_bin.c" />
     <ClCompile Include="ogr\ogrsf_frmts\avc\avc_binwr.c" />
     <ClCompile Include="ogr\ogrsf_frmts\avc\avc_e00gen.c" />
@@ -1373,13 +1192,13 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\csv\ogrcsvdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\csv\ogrcsvlayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgndump.c" />
-    <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnwritetest.c" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnfloat.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnhelp.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnopen.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnread.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnstroke.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnwrite.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\dgn\dgnwritetest.c" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\ogrdgndatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\ogrdgndriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dgn\ogrdgnlayer.cpp" />
@@ -1389,14 +1208,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\dods\ogrdodsgrid.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dods\ogrdodslayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\dods\ogrdodssequencelayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxfdatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxfdriver.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxflayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxfwriterds.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxfwriterlayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxf_blockmap.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxf_dimension.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\dxf\ogrdxf_diskio.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\fme\fme2ogr_utils.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\fme\ogrfmecacheindex.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\fme\ogrfmedatasource.cpp" />
@@ -1404,14 +1215,14 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\fme\ogrfmelayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\fme\ogrfmelayercached.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\fme\ogrfmelayerdb.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_attrind.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_gensql.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_miattrind.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\generic\ogrdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\generic\ogrlayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\generic\ogrregisterall.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\generic\ogrsfdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\generic\ogrsfdriverregistrar.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_attrind.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_gensql.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\generic\ogr_miattrind.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\geoconcept\geoconcept.c" />
     <ClCompile Include="ogr\ogrsf_frmts\geoconcept\geoconcept_syscoord.c" />
     <ClCompile Include="ogr\ogrsf_frmts\geoconcept\ogrgeoconceptdatasource.cpp" />
@@ -1430,9 +1241,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\geojson\jsonc\json_util.c" />
     <ClCompile Include="ogr\ogrsf_frmts\geojson\jsonc\linkhash.c" />
     <ClCompile Include="ogr\ogrsf_frmts\geojson\jsonc\printbuf.c" />
-    <ClCompile Include="ogr\ogrsf_frmts\georss\ogrgeorssdatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\georss\ogrgeorssdriver.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\georss\ogrgeorsslayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gml\gmlfeature.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gml\gmlfeatureclass.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gml\gmlhandler.cpp" />
@@ -1444,7 +1252,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\gml\ogrgmllayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gml\parsexsd.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gml\trstring.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gml\resolvexlinks.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gmt\ogrgmtdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gmt\ogrgmtdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\gmt\ogrgmtlayer.cpp" />
@@ -1454,12 +1261,6 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\grass\ogrgrassdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\grass\ogrgrassdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\grass\ogrgrasslayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\gtm.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\gtmtracklayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\gtmwaypointlayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\ogrgtmdatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\ogrgtmdriver.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\gtm\ogrgtmlayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\idb\ogridbdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\idb\ogridbdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\idb\ogridblayer.cpp" />
@@ -1535,21 +1336,21 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\mysql\ogrmysqllayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\mysql\ogrmysqlresultlayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\mysql\ogrmysqltablelayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfdump.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntffilereader.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfrecord.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfstroke.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ntf_codelist.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ntf_estlayers.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ntf_generic.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ntf_raster.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfdump.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntffilereader.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfrecord.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\ntf\ntfstroke.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ogrntfdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ogrntfdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ogrntffeatureclasslayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ntf\ogrntflayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\oci\fastload.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\oci\ocitest.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\oci\oci_utils.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\oci\ocitest.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\oci\ogrocidatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\oci\ogrocidriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\oci\ogrocilayer.cpp" />
@@ -1569,11 +1370,7 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\ogdi\ogrogdidatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ogdi\ogrogdidriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\ogdi\ogrogdilayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\pcidsk\ogrpcidskdatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\pcidsk\ogrpcidskdriver.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\pcidsk\ogrpcidsklayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\pg\ogrpgdatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\pg\ogrpgdebug.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\pg\ogrpgdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\pg\ogrpglayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\pg\ogrpgresultlayer.cpp" />
@@ -1604,13 +1401,13 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\sdts\ogrsdtsdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\sdts\ogrsdtslayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\shape\dbfopen.c" />
-    <ClCompile Include="ogr\ogrsf_frmts\shape\shpopen.c" />
-    <ClCompile Include="ogr\ogrsf_frmts\shape\shptree.c" />
-    <ClCompile Include="ogr\ogrsf_frmts\shape\shp_vsi.c" />
     <ClCompile Include="ogr\ogrsf_frmts\shape\ogrshapedatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\shape\ogrshapedriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\shape\ogrshapelayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\shape\shape2ogr.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\shape\shp_vsi.c" />
+    <ClCompile Include="ogr\ogrsf_frmts\shape\shpopen.c" />
+    <ClCompile Include="ogr\ogrsf_frmts\shape\shptree.c" />
     <ClCompile Include="ogr\ogrsf_frmts\sqlite\ogrsqlitedatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\sqlite\ogrsqlitedriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\sqlite\ogrsqlitelayer.cpp" />
@@ -1644,22 +1441,18 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="ogr\ogrsf_frmts\vrt\ogrvrtdatasource.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\vrt\ogrvrtdriver.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\vrt\ogrvrtlayer.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanedatasource.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanedriver.cpp" />
-    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanelayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_apt_reader.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_awy_reader.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_fix_reader.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_geo_utils.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_nav_reader.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\ogr_xplane_reader.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanedatasource.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanedriver.cpp" />
+    <ClCompile Include="ogr\ogrsf_frmts\xplane\ogrxplanelayer.cpp" />
     <ClCompile Include="ogr\ogrsf_frmts\xplane\test_geo_utils.cpp" />
     <ClCompile Include="ogr\wcts\ogrwcts.cpp" />
     <ClCompile Include="ogr\wcts\wctsclient.cpp" />
-    <ClCompile Include="port\cplgetsymbol.cpp" />
-    <ClCompile Include="port\cplkeywordparser.cpp" />
-    <ClCompile Include="port\cplstring.cpp" />
-    <ClCompile Include="port\cpl_atomic_ops.cpp" />
     <ClCompile Include="port\cpl_conv.cpp" />
     <ClCompile Include="port\cpl_csv.cpp" />
     <ClCompile Include="port\cpl_error.cpp" />
@@ -1678,16 +1471,17 @@ nmake -f makefile.vc PLATFORM_BITS=64 INCLUDE_OGR_FRMTS=YES MSVC_VER=1700 clean<
     <ClCompile Include="port\cpl_recode_stub.cpp" />
     <ClCompile Include="port\cpl_string.cpp" />
     <ClCompile Include="port\cpl_strtod.cpp" />
-    <ClCompile Include="port\cpl_time.cpp" />
+    <ClCompile Include="port\cpl_vsi_mem.cpp" />
     <ClCompile Include="port\cpl_vsil.cpp" />
     <ClCompile Include="port\cpl_vsil_gzip.cpp" />
     <ClCompile Include="port\cpl_vsil_simple.cpp" />
-    <ClCompile Include="port\cpl_vsil_subfile.cpp" />
     <ClCompile Include="port\cpl_vsil_unix_stdio_64.cpp" />
     <ClCompile Include="port\cpl_vsil_win32.cpp" />
     <ClCompile Include="port\cpl_vsisimple.cpp" />
-    <ClCompile Include="port\cpl_vsi_mem.cpp" />
     <ClCompile Include="port\cpl_win32ce_api.cpp" />
+    <ClCompile Include="port\cplgetsymbol.cpp" />
+    <ClCompile Include="port\cplkeywordparser.cpp" />
+    <ClCompile Include="port\cplstring.cpp" />
     <ClCompile Include="port\xmlreformat.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

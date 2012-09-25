@@ -18,7 +18,7 @@
 #include <Fdo/Schema/FeatureClassCollection.h>
 
 // Constructs an instance of a FeatureClassCollection using the specified argument.
-FdoFeatureClassCollection* FdoFeatureClassCollection::Create(FdoSchemaElement* parent)
+FDO_API FdoFeatureClassCollection* FdoFeatureClassCollection::Create(FdoSchemaElement* parent)
 {
     return new FdoFeatureClassCollection(parent);
 }

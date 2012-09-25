@@ -18,64 +18,25 @@
  */
 
 #include <stdafx.h>
-#include <vector>
-#include <cstdio>
+#include <FdoExpressionEngineImp.h>
+#include <FdoCommonOSUtil.h>
+#include <FdoCommonMiscUtil.h>
 #include <FdoCommonThreadMutex.h>
 #include <FdoCommonStringUtil.h>
-#include <FdoCommonMiscUtil.h>
 #include <FdoCommonSchemaUtil.h>
-#include <FdoExpressionEngineImp.h>
 
 #include <Spatial/SpatialStd.h>
 #include <Spatial/SpatialUtility.h>
 
+#include <wctype.h>
+#include <malloc.h>
+#include <math.h>
+#include <limits.h>
+#include <stdio.h>
+
 #include <FdoExpressionEngineIAggregateFunction.h>
 #include <Util/FdoExpressionEngineUtilDataReader.h>
 #include "ExpressionEngineInitializeClass.h"
-
-typedef std::vector<FdoLiteralValue*> retval_stack;
-
-class FdoExecutionStack
-{
-public:
-    // Execution Stack
-    retval_stack                    m_retvals;
-
-    /// pools of data values
-    std::vector<FdoBooleanValue*>   mBooleanPool;
-    std::vector<FdoByteValue*>      mBytePool;
-    std::vector<FdoDateTimeValue*>  mDateTimePool;
-    std::vector<FdoDecimalValue*>   mDecimalPool;
-    std::vector<FdoDoubleValue*>    mDoublePool;
-    std::vector<FdoInt16Value*>     mInt16Pool;
-    std::vector<FdoInt32Value*>     mInt32Pool;
-    std::vector<FdoInt64Value*>     mInt64Pool;
-    std::vector<FdoSingleValue*>    mSinglePool;
-    std::vector<FdoStringValue*>    mStringPool;
-    std::vector<FdoBLOBValue*>      mBLOBPool;
-    std::vector<FdoCLOBValue*>      mCLOBPool;
-
-    std::vector<FdoLiteralValueCollection*> mLiteralValueCollectionPool;
-
-    std::vector<FdoBooleanValue*>   mPotentialBooleanPool;
-    std::vector<FdoByteValue*>      mPotentialBytePool;
-    std::vector<FdoDateTimeValue*>  mPotentialDateTimePool;
-    std::vector<FdoDecimalValue*>   mPotentialDecimalPool;
-    std::vector<FdoDoubleValue*>    mPotentialDoublePool;
-    std::vector<FdoInt16Value*>     mPotentialInt16Pool;
-    std::vector<FdoInt32Value*>     mPotentialInt32Pool;
-    std::vector<FdoInt64Value*>     mPotentialInt64Pool;
-    std::vector<FdoSingleValue*>    mPotentialSinglePool;
-    std::vector<FdoStringValue*>    mPotentialStringPool;
-    std::vector<FdoBLOBValue*>      mPotentialBLOBPool;
-    std::vector<FdoCLOBValue*>      mPotentialCLOBPool;
-
-    std::vector<FdoExpressionEngineIAggregateFunction *> m_AggregateFunctions;      // the aggregate functions. If selecting
-                                                                                    // min(property), max(property2), min(property3) 
-                                                                                    // the first item would be the min object,
-                                                                                    // second item would be a max object and the last 
-                                                                                    // item would be another max object 
-};
 
 enum OptFilterType
 {
@@ -105,7 +66,6 @@ FdoExpressionEngineImp* FdoExpressionEngineImp::Create(FdoIReader* reader, FdoCl
 FdoExpressionEngineImp::FdoExpressionEngineImp(FdoIReader* reader, FdoClassDefinition* classDef, FdoIdentifierCollection* compIdents,
 		FdoExpressionEngineFunctionCollection *userDefinedFunctions)
 {
-    m_stack = new FdoExecutionStack();
 
 	m_reader = reader;  // NOTE: weak reference
 	m_classDefinition = FDO_SAFE_ADDREF(classDef);
@@ -133,7 +93,6 @@ FdoExpressionEngineImp::FdoExpressionEngineImp(FdoIReader* reader, FdoClassDefin
 
 FdoExpressionEngineImp::FdoExpressionEngineImp()
 {
-    m_stack = new FdoExecutionStack();
 }
 
 bool FdoExpressionEngineImp::IsAggregateFunction(FdoFunctionDefinitionCollection *funcDefs, FdoString *name)
@@ -162,74 +121,71 @@ FdoExpressionEngineImp::~FdoExpressionEngineImp()
 		FDO_SAFE_RELEASE(m_CacheFunc[i].function);
 	}
 
-    size_t count = m_stack->m_AggregateFunctions.size();
+    size_t count = m_AggregateFunctions.size();
     for (size_t i=0; i<count; i++)
     {
-        FdoExpressionEngineIAggregateFunction *func = (FdoExpressionEngineIAggregateFunction*)m_stack->m_AggregateFunctions.back();
+        FdoExpressionEngineIAggregateFunction *func = (FdoExpressionEngineIAggregateFunction*)m_AggregateFunctions.back();
         FDO_SAFE_RELEASE(func);
-        m_stack->m_AggregateFunctions.pop_back();
+        m_AggregateFunctions.pop_back();
     }
 	free(m_CacheFunc);
 
     delete [] m_ExpressionCache;
 
-    for (retval_stack::iterator iter = m_stack->m_retvals.begin (); iter != m_stack->m_retvals.end (); iter++)
+    for (retval_stack::iterator iter = m_retvals.begin (); iter != m_retvals.end (); iter++)
         delete *iter;
-    for (std::vector<FdoBooleanValue*>::iterator i = m_stack->mBooleanPool.begin (); i != m_stack->mBooleanPool.end (); i++)
+    for (std::vector<FdoBooleanValue*>::iterator i = mBooleanPool.begin (); i != mBooleanPool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoByteValue*>::iterator i = m_stack->mBytePool.begin (); i != m_stack->mBytePool.end (); i++)
+    for (std::vector<FdoByteValue*>::iterator i = mBytePool.begin (); i != mBytePool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoDateTimeValue*>::iterator i = m_stack->mDateTimePool.begin (); i != m_stack->mDateTimePool.end (); i++)
+    for (std::vector<FdoDateTimeValue*>::iterator i = mDateTimePool.begin (); i != mDateTimePool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoDecimalValue*>::iterator i = m_stack->mDecimalPool.begin (); i != m_stack->mDecimalPool.end (); i++)
+    for (std::vector<FdoDecimalValue*>::iterator i = mDecimalPool.begin (); i != mDecimalPool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoDoubleValue*>::iterator i = m_stack->mDoublePool.begin (); i != m_stack->mDoublePool.end (); i++)
+    for (std::vector<FdoDoubleValue*>::iterator i = mDoublePool.begin (); i != mDoublePool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoInt16Value*>::iterator i = m_stack->mInt16Pool.begin (); i != m_stack->mInt16Pool.end (); i++)
+    for (std::vector<FdoInt16Value*>::iterator i = mInt16Pool.begin (); i != mInt16Pool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoInt32Value*>::iterator i = m_stack->mInt32Pool.begin (); i != m_stack->mInt32Pool.end (); i++)
+    for (std::vector<FdoInt32Value*>::iterator i = mInt32Pool.begin (); i != mInt32Pool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoInt64Value*>::iterator i = m_stack->mInt64Pool.begin (); i != m_stack->mInt64Pool.end (); i++)
+    for (std::vector<FdoInt64Value*>::iterator i = mInt64Pool.begin (); i != mInt64Pool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoSingleValue*>::iterator i = m_stack->mSinglePool.begin (); i != m_stack->mSinglePool.end (); i++)
+    for (std::vector<FdoSingleValue*>::iterator i = mSinglePool.begin (); i != mSinglePool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoStringValue*>::iterator i = m_stack->mStringPool.begin (); i != m_stack->mStringPool.end (); i++)
+    for (std::vector<FdoStringValue*>::iterator i = mStringPool.begin (); i != mStringPool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoBLOBValue*>::iterator i = m_stack->mBLOBPool.begin (); i != m_stack->mBLOBPool.end (); i++)
+    for (std::vector<FdoBLOBValue*>::iterator i = mBLOBPool.begin (); i != mBLOBPool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoCLOBValue*>::iterator i = m_stack->mCLOBPool.begin (); i != m_stack->mCLOBPool.end (); i++)
+    for (std::vector<FdoCLOBValue*>::iterator i = mCLOBPool.begin (); i != mCLOBPool.end (); i++)
         (*i)->Release ();
-    for (std::vector<FdoLiteralValueCollection*>::iterator i = m_stack->mLiteralValueCollectionPool.begin (); i != m_stack->mLiteralValueCollectionPool.end (); i++)
-        (*i)->Release ();
-
-
-    for (std::vector<FdoBooleanValue*>::iterator i = m_stack->mPotentialBooleanPool.begin (); i != m_stack->mPotentialBooleanPool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoByteValue*>::iterator i = m_stack->mPotentialBytePool.begin (); i != m_stack->mPotentialBytePool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoDateTimeValue*>::iterator i = m_stack->mPotentialDateTimePool.begin (); i != m_stack->mPotentialDateTimePool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoDecimalValue*>::iterator i = m_stack->mPotentialDecimalPool.begin (); i != m_stack->mPotentialDecimalPool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoDoubleValue*>::iterator i = m_stack->mPotentialDoublePool.begin (); i != m_stack->mPotentialDoublePool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoInt16Value*>::iterator i = m_stack->mPotentialInt16Pool.begin (); i != m_stack->mPotentialInt16Pool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoInt32Value*>::iterator i = m_stack->mPotentialInt32Pool.begin (); i != m_stack->mPotentialInt32Pool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoInt64Value*>::iterator i = m_stack->mPotentialInt64Pool.begin (); i != m_stack->mPotentialInt64Pool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoSingleValue*>::iterator i = m_stack->mPotentialSinglePool.begin (); i != m_stack->mPotentialSinglePool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoStringValue*>::iterator i = m_stack->mPotentialStringPool.begin (); i != m_stack->mPotentialStringPool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoBLOBValue*>::iterator i = m_stack->mPotentialBLOBPool.begin (); i != m_stack->mPotentialBLOBPool.end (); i++)
-        (*i)->Release ();
-    for (std::vector<FdoCLOBValue*>::iterator i = m_stack->mPotentialCLOBPool.begin (); i != m_stack->mPotentialCLOBPool.end (); i++)
+    for (std::vector<FdoLiteralValueCollection*>::iterator i = mLiteralValueCollectionPool.begin (); i != mLiteralValueCollectionPool.end (); i++)
         (*i)->Release ();
 
-    if (m_stack)
-        delete m_stack;
+
+    for (std::vector<FdoBooleanValue*>::iterator i = mPotentialBooleanPool.begin (); i != mPotentialBooleanPool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoByteValue*>::iterator i = mPotentialBytePool.begin (); i != mPotentialBytePool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoDateTimeValue*>::iterator i = mPotentialDateTimePool.begin (); i != mPotentialDateTimePool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoDecimalValue*>::iterator i = mPotentialDecimalPool.begin (); i != mPotentialDecimalPool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoDoubleValue*>::iterator i = mPotentialDoublePool.begin (); i != mPotentialDoublePool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoInt16Value*>::iterator i = mPotentialInt16Pool.begin (); i != mPotentialInt16Pool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoInt32Value*>::iterator i = mPotentialInt32Pool.begin (); i != mPotentialInt32Pool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoInt64Value*>::iterator i = mPotentialInt64Pool.begin (); i != mPotentialInt64Pool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoSingleValue*>::iterator i = mPotentialSinglePool.begin (); i != mPotentialSinglePool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoStringValue*>::iterator i = mPotentialStringPool.begin (); i != mPotentialStringPool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoBLOBValue*>::iterator i = mPotentialBLOBPool.begin (); i != mPotentialBLOBPool.end (); i++)
+        (*i)->Release ();
+    for (std::vector<FdoCLOBValue*>::iterator i = mPotentialCLOBPool.begin (); i != mPotentialCLOBPool.end (); i++)
+        (*i)->Release ();
 }
 
 void FdoExpressionEngineImp::Dispose ()
@@ -248,10 +204,10 @@ FdoCommonPropertyStub* FdoExpressionEngineImp::GetPropInfo(FdoString* name)
 
 void FdoExpressionEngineImp::Reset ()
 {
-    for (retval_stack::iterator iter = m_stack->m_retvals.begin (); iter != m_stack->m_retvals.end (); iter++)
+    for (retval_stack::iterator iter = m_retvals.begin (); iter != m_retvals.end (); iter++)
         RelinquishDataValue (*iter);
 
-    m_stack->m_retvals.clear ();
+    m_retvals.clear ();
 }
 
 //returns the data type of the result
@@ -262,14 +218,14 @@ FdoDataType FdoExpressionEngineImp::GetResultDataType ()
     if (GetResultPropertyType() != FdoPropertyType_DataProperty)
         throw FdoException::Create(FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    return (static_cast<FdoDataValue*>(m_stack->m_retvals.back ())->GetDataType ());
+    return (static_cast<FdoDataValue*>(m_retvals.back ())->GetDataType ());
 }
 
 FdoPropertyType FdoExpressionEngineImp::GetResultPropertyType ()
 {
-    if ( dynamic_cast<FdoDataValue*>(m_stack->m_retvals.back ()) != NULL )
+    if ( dynamic_cast<FdoDataValue*>(m_retvals.back ()) != NULL )
         return FdoPropertyType_DataProperty;
-    else if ( dynamic_cast<FdoGeometryValue*>(m_stack->m_retvals.back ()) != NULL )
+    else if ( dynamic_cast<FdoGeometryValue*>(m_retvals.back ()) != NULL )
         return FdoPropertyType_GeometricProperty;
     else
         throw FdoException::Create(FdoException::NLSGetMessage (FDO_NLSID (FDO_57_UNEXPECTEDERROR)));
@@ -279,9 +235,9 @@ bool FdoExpressionEngineImp::IsResultNull ()
 {
     FdoPropertyType propType = GetResultPropertyType();
     if (propType == FdoPropertyType_DataProperty)
-        return ((FdoDataValue*)m_stack->m_retvals.back())->IsNull();
+        return ((FdoDataValue*)m_retvals.back())->IsNull();
     else if (propType == FdoPropertyType_GeometricProperty)
-        return ((FdoGeometryValue*)m_stack->m_retvals.back())->IsNull();
+        return ((FdoGeometryValue*)m_retvals.back())->IsNull();
     else
         throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_57_UNEXPECTEDERROR)));
 }
@@ -294,8 +250,8 @@ bool FdoExpressionEngineImp::GetBooleanResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Boolean != dv->GetDataType ())
     {
@@ -320,8 +276,8 @@ double FdoExpressionEngineImp::GetDoubleResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Double != dv->GetDataType ())
     {
@@ -345,8 +301,8 @@ float FdoExpressionEngineImp::GetSingleResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Single != dv->GetDataType ())
     {
@@ -370,8 +326,8 @@ double FdoExpressionEngineImp::GetDecimalResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Decimal != dv->GetDataType ())
     {
@@ -395,8 +351,8 @@ FdoByte FdoExpressionEngineImp::GetByteResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Byte != dv->GetDataType ())
     {
@@ -420,8 +376,8 @@ FdoInt16 FdoExpressionEngineImp::GetInt16Result (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Int16 != dv->GetDataType ())
     {
@@ -445,8 +401,8 @@ FdoInt32 FdoExpressionEngineImp::GetInt32Result (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Int32 != dv->GetDataType ())
     {
@@ -470,8 +426,8 @@ FdoInt64 FdoExpressionEngineImp::GetInt64Result (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_Int64 != dv->GetDataType ())
     {
@@ -495,8 +451,8 @@ const wchar_t* FdoExpressionEngineImp::GetStringResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_String != dv->GetDataType ())
     {
@@ -520,8 +476,8 @@ FdoDateTime FdoExpressionEngineImp::GetDateTimeResult (bool &bIsNull)
     if (FdoPropertyType_DataProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoDataValue* dv = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* dv = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (FdoDataType_DateTime != dv->GetDataType ())
     {
@@ -545,8 +501,8 @@ FdoGeometryValue* FdoExpressionEngineImp::GetGeometricResult (bool &bIsNull)
     if (FdoPropertyType_GeometricProperty != GetResultPropertyType())
         throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
 
-    FdoGeometryValue* gv = (FdoGeometryValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoGeometryValue* gv = (FdoGeometryValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     bIsNull = gv->IsNull();
     ret = gv;
@@ -561,10 +517,10 @@ FdoBooleanValue* FdoExpressionEngineImp::ObtainBooleanValue (bool bIsNull, bool 
 {
     FdoBooleanValue* ret;
 
-    if (0 != m_stack->mBooleanPool.size ())
+    if (0 != mBooleanPool.size ())
     {
-        ret = m_stack->mBooleanPool.back ();
-        m_stack->mBooleanPool.pop_back ();
+        ret = mBooleanPool.back ();
+        mBooleanPool.pop_back ();
         if (bIsNull)
             ret->SetNull();
         else
@@ -572,15 +528,15 @@ FdoBooleanValue* FdoExpressionEngineImp::ObtainBooleanValue (bool bIsNull, bool 
         return ret;
     }
 
-    if (0 != m_stack->mPotentialBooleanPool.size ())
+    if (0 != mPotentialBooleanPool.size ())
     {
-        int  size = (int) m_stack->mPotentialBooleanPool.size();
+        int  size = (int) mPotentialBooleanPool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialBooleanPool[i];
+            ret = mPotentialBooleanPool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialBooleanPool.erase(m_stack->mPotentialBooleanPool.begin() + i);
+                mPotentialBooleanPool.erase(mPotentialBooleanPool.begin() + i);
                 if (bIsNull)
                     ret->SetNull();
                 else
@@ -602,10 +558,10 @@ FdoByteValue* FdoExpressionEngineImp::ObtainByteValue (bool bIsNull, FdoByte val
 {
     FdoByteValue* ret;
 
-    if (0 != m_stack->mBytePool.size ())
+    if (0 != mBytePool.size ())
     {
-        ret = m_stack->mBytePool.back ();
-        m_stack->mBytePool.pop_back ();
+        ret = mBytePool.back ();
+        mBytePool.pop_back ();
         if (bIsNull)
             ret->SetNull();
         else
@@ -613,15 +569,15 @@ FdoByteValue* FdoExpressionEngineImp::ObtainByteValue (bool bIsNull, FdoByte val
         return ret;
     }
 
-    if (0 != m_stack->mPotentialBytePool.size ())
+    if (0 != mPotentialBytePool.size ())
     {
-        int  size = (int) m_stack->mPotentialBytePool.size();
+        int  size = (int) mPotentialBytePool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialBytePool[i];
+            ret = mPotentialBytePool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialBytePool.erase(m_stack->mPotentialBytePool.begin() + i);
+                mPotentialBytePool.erase(mPotentialBytePool.begin() + i);
                 if (bIsNull)
                     ret->SetNull();
                 else
@@ -644,10 +600,10 @@ FdoDateTimeValue* FdoExpressionEngineImp::ObtainDateTimeValue (bool bIsNull, Fdo
 {
     FdoDateTimeValue* ret;
 
-    if (0 != m_stack->mDateTimePool.size ())
+    if (0 != mDateTimePool.size ())
     {
-        ret = m_stack->mDateTimePool.back ();
-        m_stack->mDateTimePool.pop_back ();
+        ret = mDateTimePool.back ();
+        mDateTimePool.pop_back ();
         if (bIsNull)
             ret->SetNull();
         else
@@ -655,15 +611,15 @@ FdoDateTimeValue* FdoExpressionEngineImp::ObtainDateTimeValue (bool bIsNull, Fdo
         return ret;
     }
 
-    if (0 != m_stack->mPotentialDateTimePool.size ())
+    if (0 != mPotentialDateTimePool.size ())
     {
-        int  size = (int) m_stack->mPotentialDateTimePool.size();
+        int  size = (int) mPotentialDateTimePool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialDateTimePool[i];
+            ret = mPotentialDateTimePool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialDateTimePool.erase(m_stack->mPotentialDateTimePool.begin() + i);
+                mPotentialDateTimePool.erase(mPotentialDateTimePool.begin() + i);
                 if (bIsNull)
                     ret->SetNull();
                 else
@@ -685,10 +641,10 @@ FdoDecimalValue* FdoExpressionEngineImp::ObtainDecimalValue (bool bIsNull, doubl
 {
     FdoDecimalValue* ret;
 
-    if (0 != m_stack->mDecimalPool.size ())
+    if (0 != mDecimalPool.size ())
     {
-        ret = m_stack->mDecimalPool.back ();
-        m_stack->mDecimalPool.pop_back ();
+        ret = mDecimalPool.back ();
+        mDecimalPool.pop_back ();
         if (bIsNull)
             ret->SetNull();
         else
@@ -696,15 +652,15 @@ FdoDecimalValue* FdoExpressionEngineImp::ObtainDecimalValue (bool bIsNull, doubl
         return ret;
     }
 
-    if (0 != m_stack->mPotentialDecimalPool.size ())
+    if (0 != mPotentialDecimalPool.size ())
     {
-        int  size = (int) m_stack->mPotentialDecimalPool.size();
+        int  size = (int) mPotentialDecimalPool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialDecimalPool[i];
+            ret = mPotentialDecimalPool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialDecimalPool.erase(m_stack->mPotentialDecimalPool.begin() + i);
+                mPotentialDecimalPool.erase(mPotentialDecimalPool.begin() + i);
                 if (bIsNull)
                     ret->SetNull();
                 else
@@ -726,10 +682,10 @@ FdoDoubleValue* FdoExpressionEngineImp::ObtainDoubleValue (bool bIsNull, double 
 {
     FdoDoubleValue* ret;
 
-    if (0 != m_stack->mDoublePool.size ())
+    if (0 != mDoublePool.size ())
     {
-        ret = m_stack->mDoublePool.back ();
-        m_stack->mDoublePool.pop_back ();
+        ret = mDoublePool.back ();
+        mDoublePool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -737,15 +693,15 @@ FdoDoubleValue* FdoExpressionEngineImp::ObtainDoubleValue (bool bIsNull, double 
         return ret;
     }
 
-    if (0 != m_stack->mPotentialDoublePool.size ())
+    if (0 != mPotentialDoublePool.size ())
     {
-        int  size = (int) m_stack->mPotentialDoublePool.size();
+        int  size = (int) mPotentialDoublePool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialDoublePool[i];
+            ret = mPotentialDoublePool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialDoublePool.erase(m_stack->mPotentialDoublePool.begin() + i);
+                mPotentialDoublePool.erase(mPotentialDoublePool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -767,10 +723,10 @@ FdoInt16Value* FdoExpressionEngineImp::ObtainInt16Value (bool bIsNull, FdoInt16 
 {
     FdoInt16Value* ret;
 
-    if (0 != m_stack->mInt16Pool.size ())
+    if (0 != mInt16Pool.size ())
     {
-        ret = m_stack->mInt16Pool.back ();
-        m_stack->mInt16Pool.pop_back ();
+        ret = mInt16Pool.back ();
+        mInt16Pool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -778,15 +734,15 @@ FdoInt16Value* FdoExpressionEngineImp::ObtainInt16Value (bool bIsNull, FdoInt16 
         return ret;
     }
 
-    if (0 != m_stack->mPotentialInt16Pool.size ())
+    if (0 != mPotentialInt16Pool.size ())
     {
-        int  size = (int) m_stack->mPotentialInt16Pool.size();
+        int  size = (int) mPotentialInt16Pool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialInt16Pool[i];
+            ret = mPotentialInt16Pool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialInt16Pool.erase(m_stack->mPotentialInt16Pool.begin() + i);
+                mPotentialInt16Pool.erase(mPotentialInt16Pool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -808,25 +764,25 @@ FdoInt32Value* FdoExpressionEngineImp::ObtainInt32Value (bool bIsNull, FdoInt32 
 {
     FdoInt32Value* ret;
 
-    if (0 != m_stack->mInt32Pool.size ())
+    if (0 != mInt32Pool.size ())
     {
-        ret = m_stack->mInt32Pool.back ();
-        m_stack->mInt32Pool.pop_back ();
+        ret = mInt32Pool.back ();
+        mInt32Pool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
             ret->SetInt32 (value);
         return ret;
     }
-    if (0 != m_stack->mPotentialInt32Pool.size ())
+    if (0 != mPotentialInt32Pool.size ())
     {
-        int  size = (int) m_stack->mPotentialInt32Pool.size();
+        int  size = (int) mPotentialInt32Pool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialInt32Pool[i];
+            ret = mPotentialInt32Pool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialInt32Pool.erase(m_stack->mPotentialInt32Pool.begin() + i);
+                mPotentialInt32Pool.erase(mPotentialInt32Pool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -848,10 +804,10 @@ FdoInt64Value* FdoExpressionEngineImp::ObtainInt64Value (bool bIsNull, FdoInt64 
 {
     FdoInt64Value* ret;
 
-    if (0 != m_stack->mInt64Pool.size ())
+    if (0 != mInt64Pool.size ())
     {
-        ret = m_stack->mInt64Pool.back ();
-        m_stack->mInt64Pool.pop_back ();
+        ret = mInt64Pool.back ();
+        mInt64Pool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -859,15 +815,15 @@ FdoInt64Value* FdoExpressionEngineImp::ObtainInt64Value (bool bIsNull, FdoInt64 
         return ret;
     }
 
-    if (0 != m_stack->mPotentialInt64Pool.size ())
+    if (0 != mPotentialInt64Pool.size ())
     {
-        int  size = (int) m_stack->mPotentialInt64Pool.size();
+        int  size = (int) mPotentialInt64Pool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialInt64Pool[i];
+            ret = mPotentialInt64Pool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialInt64Pool.erase(m_stack->mPotentialInt64Pool.begin() + i);
+                mPotentialInt64Pool.erase(mPotentialInt64Pool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -889,10 +845,10 @@ FdoSingleValue* FdoExpressionEngineImp::ObtainSingleValue (bool bIsNull, float v
 {
     FdoSingleValue* ret;
 
-    if (0 != m_stack->mSinglePool.size ())
+    if (0 != mSinglePool.size ())
     {
-        ret = m_stack->mSinglePool.back ();
-        m_stack->mSinglePool.pop_back ();
+        ret = mSinglePool.back ();
+        mSinglePool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -900,15 +856,15 @@ FdoSingleValue* FdoExpressionEngineImp::ObtainSingleValue (bool bIsNull, float v
         return ret;
     }
 
-    if (0 != m_stack->mPotentialSinglePool.size ())
+    if (0 != mPotentialSinglePool.size ())
     {
-        int  size = (int) m_stack->mPotentialSinglePool.size();
+        int  size = (int) mPotentialSinglePool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialSinglePool[i];
+            ret = mPotentialSinglePool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialSinglePool.erase(m_stack->mPotentialSinglePool.begin() + i);
+                mPotentialSinglePool.erase(mPotentialSinglePool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -930,10 +886,10 @@ FdoStringValue* FdoExpressionEngineImp::ObtainStringValue (bool bIsNull, FdoStri
 {
     FdoStringValue* ret;
 
-    if (0 != m_stack->mStringPool.size ())
+    if (0 != mStringPool.size ())
     {
-        ret = m_stack->mStringPool.back ();
-        m_stack->mStringPool.pop_back ();
+        ret = mStringPool.back ();
+        mStringPool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -941,15 +897,15 @@ FdoStringValue* FdoExpressionEngineImp::ObtainStringValue (bool bIsNull, FdoStri
         return ret;
     }
 
-    if (0 != m_stack->mPotentialStringPool.size ())
+    if (0 != mPotentialStringPool.size ())
     {
-        int  size = (int) m_stack->mPotentialStringPool.size();
+        int  size = (int) mPotentialStringPool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialStringPool[i];
+            ret = mPotentialStringPool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialStringPool.erase(m_stack->mPotentialStringPool.begin() + i);
+                mPotentialStringPool.erase(mPotentialStringPool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -970,10 +926,10 @@ FdoBLOBValue* FdoExpressionEngineImp::ObtainBLOBValue (bool bIsNull, FdoByteArra
 {
     FdoBLOBValue* ret;
 
-    if (0 != m_stack->mBLOBPool.size ())
+    if (0 != mBLOBPool.size ())
     {
-        ret = m_stack->mBLOBPool.back ();
-        m_stack->mBLOBPool.pop_back ();
+        ret = mBLOBPool.back ();
+        mBLOBPool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -981,15 +937,15 @@ FdoBLOBValue* FdoExpressionEngineImp::ObtainBLOBValue (bool bIsNull, FdoByteArra
         return ret;
     }
 
-    if (0 != m_stack->mPotentialBLOBPool.size ())
+    if (0 != mPotentialBLOBPool.size ())
     {
-        int  size = (int) m_stack->mPotentialBLOBPool.size();
+        int  size = (int) mPotentialBLOBPool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialBLOBPool[i];
+            ret = mPotentialBLOBPool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialBLOBPool.erase(m_stack->mPotentialBLOBPool.begin() + i);
+                mPotentialBLOBPool.erase(mPotentialBLOBPool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -1011,10 +967,10 @@ FdoCLOBValue* FdoExpressionEngineImp::ObtainCLOBValue (bool bIsNull, FdoByteArra
 {
     FdoCLOBValue* ret;
 
-    if (0 != m_stack->mCLOBPool.size ())
+    if (0 != mCLOBPool.size ())
     {
-        ret = m_stack->mCLOBPool.back ();
-        m_stack->mCLOBPool.pop_back ();
+        ret = mCLOBPool.back ();
+        mCLOBPool.pop_back ();
         if (bIsNull)
             ret->SetNull ();
         else
@@ -1022,15 +978,15 @@ FdoCLOBValue* FdoExpressionEngineImp::ObtainCLOBValue (bool bIsNull, FdoByteArra
         return ret;
     }
 
-    if (0 != m_stack->mPotentialCLOBPool.size ())
+    if (0 != mPotentialCLOBPool.size ())
     {
-        int  size = (int) m_stack->mPotentialCLOBPool.size();
+        int  size = (int) mPotentialCLOBPool.size();
         for (int i=0; i<size; i++)
         {
-            ret = m_stack->mPotentialCLOBPool[i];
+            ret = mPotentialCLOBPool[i];
             if (ret->GetRefCount() == 1)
             {
-                m_stack->mPotentialCLOBPool.erase(m_stack->mPotentialCLOBPool.begin() + i);
+                mPotentialCLOBPool.erase(mPotentialCLOBPool.begin() + i);
                 if (bIsNull)
                     ret->SetNull ();
                 else
@@ -1052,15 +1008,15 @@ FdoLiteralValueCollection* FdoExpressionEngineImp::ObtainLiteralValueCollection 
 {
     FdoLiteralValueCollection* ret;
 
-    if (0 == m_stack->mLiteralValueCollectionPool.size ())
+    if (0 == mLiteralValueCollectionPool.size ())
     {
         // if the pool is empty, create new
         ret = FdoLiteralValueCollection::Create();
     }
     else
     {  // otherwise get an object from the pool and initialize it
-        ret = m_stack->mLiteralValueCollectionPool.back ();
-        m_stack->mLiteralValueCollectionPool.pop_back ();
+        ret = mLiteralValueCollectionPool.back ();
+        mLiteralValueCollectionPool.pop_back ();
     }
 
     return (ret);
@@ -1087,40 +1043,40 @@ void FdoExpressionEngineImp::RelinquishDataValue (FdoLiteralValue* data)
         switch (((FdoDataValue*)data)->GetDataType ())
         {
             case FdoDataType_Boolean:
-                m_stack->mBooleanPool.push_back ((FdoBooleanValue*)data);
+                mBooleanPool.push_back ((FdoBooleanValue*)data);
                 break;
             case FdoDataType_Byte:
-                m_stack->mBytePool.push_back ((FdoByteValue*)data);
+                mBytePool.push_back ((FdoByteValue*)data);
                 break;
             case FdoDataType_DateTime:
-                m_stack->mDateTimePool.push_back ((FdoDateTimeValue*)data);
+                mDateTimePool.push_back ((FdoDateTimeValue*)data);
                 break;
             case FdoDataType_Decimal:
-                m_stack->mDecimalPool.push_back ((FdoDecimalValue*)data);
+                mDecimalPool.push_back ((FdoDecimalValue*)data);
                 break;
             case FdoDataType_Double:
-                m_stack->mDoublePool.push_back ((FdoDoubleValue*)data);
+                mDoublePool.push_back ((FdoDoubleValue*)data);
                 break;
             case FdoDataType_Int16:
-                m_stack->mInt16Pool.push_back ((FdoInt16Value*)data);
+                mInt16Pool.push_back ((FdoInt16Value*)data);
                 break;
             case FdoDataType_Int32:
-                m_stack->mInt32Pool.push_back ((FdoInt32Value*)data);
+                mInt32Pool.push_back ((FdoInt32Value*)data);
                 break;
             case FdoDataType_Int64:
-                m_stack->mInt64Pool.push_back ((FdoInt64Value*)data);
+                mInt64Pool.push_back ((FdoInt64Value*)data);
                 break;
             case FdoDataType_Single:
-                m_stack->mSinglePool.push_back ((FdoSingleValue*)data);
+                mSinglePool.push_back ((FdoSingleValue*)data);
                 break;
             case FdoDataType_String:
-                m_stack->mStringPool.push_back ((FdoStringValue*)data);
+                mStringPool.push_back ((FdoStringValue*)data);
                 break;
             case FdoDataType_BLOB:
-                m_stack->mBLOBPool.push_back ((FdoBLOBValue*)data);
+                mBLOBPool.push_back ((FdoBLOBValue*)data);
                 break;
             case FdoDataType_CLOB:
-                m_stack->mCLOBPool.push_back ((FdoCLOBValue*)data);
+                mCLOBPool.push_back ((FdoCLOBValue*)data);
                 break;
             default:
                 data->Release ();
@@ -1136,7 +1092,7 @@ void FdoExpressionEngineImp::RelinquishDataValue (FdoLiteralValue* data)
 
 void FdoExpressionEngineImp::RelinquishLiteralValueCollection(FdoLiteralValueCollection* literals)
 {
-     m_stack->mLiteralValueCollectionPool.push_back(literals);
+     mLiteralValueCollectionPool.push_back(literals);
 }
 
 void FdoExpressionEngineImp::ProcessBinaryLogicalOperator (FdoBinaryLogicalOperator& filter)
@@ -1150,7 +1106,7 @@ void FdoExpressionEngineImp::ProcessBinaryLogicalOperator (FdoBinaryLogicalOpera
     bool argLeft = GetBooleanResult (bIsNull);
     if (bIsNull)
     {
-        m_stack->m_retvals.push_back (ObtainBooleanValue (true, false));
+        m_retvals.push_back (ObtainBooleanValue (true, false));
         return;
     }
 
@@ -1158,12 +1114,12 @@ void FdoExpressionEngineImp::ProcessBinaryLogicalOperator (FdoBinaryLogicalOpera
     // if we have to evaluate the right one also
     if (argLeft && filter.GetOperation () == FdoBinaryLogicalOperations_Or)
     {
-        m_stack->m_retvals.push_back (ObtainBooleanValue (false, true));
+        m_retvals.push_back (ObtainBooleanValue (false, true));
         return;
     }
     else if (!argLeft && filter.GetOperation () == FdoBinaryLogicalOperations_And)
     {
-        m_stack->m_retvals.push_back (ObtainBooleanValue (false, false));
+        m_retvals.push_back (ObtainBooleanValue (false, false));
         return;
     }
     
@@ -1171,14 +1127,14 @@ void FdoExpressionEngineImp::ProcessBinaryLogicalOperator (FdoBinaryLogicalOpera
     right->Process (this);
     bool argRight = GetBooleanResult (bIsNull);
     if (bIsNull)
-        m_stack->m_retvals.push_back (ObtainBooleanValue (true, false));
+        m_retvals.push_back (ObtainBooleanValue (true, false));
     else switch (filter.GetOperation ())
     {
         case FdoBinaryLogicalOperations_And: 
-            m_stack->m_retvals.push_back (ObtainBooleanValue (false, argLeft && argRight)); 
+            m_retvals.push_back (ObtainBooleanValue (false, argLeft && argRight)); 
             break;
         case FdoBinaryLogicalOperations_Or : 
-            m_stack->m_retvals.push_back (ObtainBooleanValue (false, argLeft || argRight));
+            m_retvals.push_back (ObtainBooleanValue (false, argLeft || argRight));
             break;
         default: 
             throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_82_UNSUPPORTED_LOGICAL_OPERATION)));
@@ -1200,7 +1156,7 @@ void FdoExpressionEngineImp::ProcessUnaryLogicalOperator (FdoUnaryLogicalOperato
     switch (filter.GetOperation ())
     {
         case FdoUnaryLogicalOperations_Not: 
-            m_stack->m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : !argRight)); 
+            m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : !argRight)); 
             break;
         default: 
             throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_82_UNSUPPORTED_LOGICAL_OPERATION)));break;
@@ -1216,35 +1172,35 @@ void FdoExpressionEngineImp::ProcessComparisonCondition (FdoComparisonCondition&
     left->Process (this);
     
     //get Process() results from return value stack
-    FdoDataValue* argLeft = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
-    FdoDataValue* argRight = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* argLeft = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
+    FdoDataValue* argRight = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     if (argLeft->IsNull() || argRight->IsNull())
-        m_stack->m_retvals.push_back (ObtainBooleanValue (true, false));
+        m_retvals.push_back (ObtainBooleanValue (true, false));
     else switch (filter.GetOperation ())
     {
         case FdoComparisonOperations_EqualTo : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsEqualTo (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsEqualTo (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_NotEqualTo : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsEqualTo (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsEqualTo (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_GreaterThan : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsGreaterThan (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsGreaterThan (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_GreaterThanOrEqualTo : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsLessThan (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsLessThan (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_LessThan : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsLessThan (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, FdoCommonMiscUtil::IsLessThan (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_LessThanOrEqualTo : 
-			m_stack->m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsGreaterThan (argLeft, argRight))); 
+			m_retvals.push_back (ObtainBooleanValue (false, !FdoCommonMiscUtil::IsGreaterThan (argLeft, argRight))); 
             break;
         case FdoComparisonOperations_Like :
-            m_stack->m_retvals.push_back (ObtainBooleanValue (false, Like (argLeft, argRight)));
+            m_retvals.push_back (ObtainBooleanValue (false, Like (argLeft, argRight)));
             break;    
         default:
             RelinquishDataValue (argRight);
@@ -1263,8 +1219,8 @@ void FdoExpressionEngineImp::ProcessInCondition (FdoInCondition& filter)
     ProcessIdentifier (*(prop.p));
 
     //get the property value off the stack
-    FdoDataValue* argLeft = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* argLeft = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     FdoPtr<FdoValueExpressionCollection> vals = filter.GetValues ();
 
@@ -1277,8 +1233,8 @@ void FdoExpressionEngineImp::ProcessInCondition (FdoInCondition& filter)
         FdoPtr<FdoValueExpression> expr = vals->GetItem (i);
         expr->Process (this);
 
-        FdoDataValue* argRight = (FdoDataValue*)m_stack->m_retvals.back ();
-        m_stack->m_retvals.pop_back ();
+        FdoDataValue* argRight = (FdoDataValue*)m_retvals.back ();
+        m_retvals.pop_back ();
 
 		if (FdoCommonMiscUtil::IsEqualTo (argLeft, argRight))
             result = true;
@@ -1290,7 +1246,7 @@ void FdoExpressionEngineImp::ProcessInCondition (FdoInCondition& filter)
     }
 
     //if prop val is not IN the val collection, push false on the stack
-    m_stack->m_retvals.push_back (ObtainBooleanValue (false, result));
+    m_retvals.push_back (ObtainBooleanValue (false, result));
 
     RelinquishDataValue (argLeft);
 }
@@ -1302,7 +1258,7 @@ void FdoExpressionEngineImp::ProcessNullCondition (FdoNullCondition& filter)
     
     bool isNull = m_reader->IsNull (prop->GetName ());
 
-    m_stack->m_retvals.push_back (ObtainBooleanValue (false, isNull));
+    m_retvals.push_back (ObtainBooleanValue (false, isNull));
 }
 
 void FdoExpressionEngineImp::ProcessSpatialCondition (FdoSpatialCondition& filter)
@@ -1310,14 +1266,14 @@ void FdoExpressionEngineImp::ProcessSpatialCondition (FdoSpatialCondition& filte
     FdoPtr<FdoIdentifier> idName = filter.GetPropertyName ();
     if( m_reader->IsNull(idName->GetName ()))
     {
-        m_stack->m_retvals.push_back (ObtainBooleanValue (false, false));
+        m_retvals.push_back (ObtainBooleanValue (false, false));
         return;
     }
     FdoPtr<FdoByteArray> fgf = m_reader->GetGeometry (idName->GetName ());
 
     //no geometry? trivially false.
     if (fgf->GetCount () == 0)
-        m_stack->m_retvals.push_back (ObtainBooleanValue (false, false));
+        m_retvals.push_back (ObtainBooleanValue (false, false));
 
     FdoPtr<FdoExpression> exprRight = filter.GetGeometry ();
     FdoGeometryValue* gvRight = dynamic_cast<FdoGeometryValue*>(exprRight.p);
@@ -1334,7 +1290,7 @@ void FdoExpressionEngineImp::ProcessSpatialCondition (FdoSpatialCondition& filte
     //call on the geometry utility to evaluate the spatial operation
     bool ret = FdoSpatialUtility::Evaluate (geomLeft, filter.GetOperation (), geomRight);
     
-    m_stack->m_retvals.push_back (ObtainBooleanValue (false, ret));            
+    m_retvals.push_back (ObtainBooleanValue (false, ret));            
 }
 
 void FdoExpressionEngineImp::ProcessDistanceCondition (FdoDistanceCondition& filter)
@@ -1354,24 +1310,24 @@ void FdoExpressionEngineImp::ProcessBinaryExpression (FdoBinaryExpression& expr)
     left->Process (this);
 
     //get Process() results from return value stack
-    FdoDataValue* argLeft = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
-    FdoDataValue* argRight = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* argLeft = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
+    FdoDataValue* argRight = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     switch (expr.GetOperation ())
     {
         case FdoBinaryOperations_Add: 
-            m_stack->m_retvals.push_back (Add (argLeft, argRight));
+            m_retvals.push_back (Add (argLeft, argRight));
             break;
         case FdoBinaryOperations_Multiply: 
-            m_stack->m_retvals.push_back (Multiply (argLeft, argRight));
+            m_retvals.push_back (Multiply (argLeft, argRight));
             break;
         case FdoBinaryOperations_Subtract: 
-            m_stack->m_retvals.push_back (Subtract (argLeft, argRight));
+            m_retvals.push_back (Subtract (argLeft, argRight));
             break;
         case FdoBinaryOperations_Divide: 
-            m_stack->m_retvals.push_back (Divide (argLeft, argRight));
+            m_retvals.push_back (Divide (argLeft, argRight));
             break;
         default: 
             RelinquishDataValue (argLeft);
@@ -1389,13 +1345,13 @@ void FdoExpressionEngineImp::ProcessUnaryExpression (FdoUnaryExpression& expr)
 
     right->Process (this);
 
-    FdoDataValue* argRight = (FdoDataValue*)m_stack->m_retvals.back ();
-    m_stack->m_retvals.pop_back ();
+    FdoDataValue* argRight = (FdoDataValue*)m_retvals.back ();
+    m_retvals.pop_back ();
 
     switch (expr.GetOperation ())
     {
         case FdoUnaryOperations_Negate:
-            m_stack->m_retvals.push_back (Negate (argRight));
+            m_retvals.push_back (Negate (argRight));
             break;
         default:
             RelinquishDataValue (argRight);
@@ -1524,12 +1480,12 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 
             for (int i=0; i<args->GetCount(); i++)
             {
-    			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_stack->m_retvals.back ();
-				m_stack->m_retvals.pop_back ();
+    			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_retvals.back ();
+				m_retvals.pop_back ();
 				functionParameters->Insert(0, dv);
 			}
 
-			FdoExpressionEngineIAggregateFunction *func = m_stack->m_AggregateFunctions.at(m_CurrentIndex);
+			FdoExpressionEngineIAggregateFunction *func = m_AggregateFunctions.at(m_CurrentIndex);
 			func->Process(functionParameters);
 			for (int i=0; i<functionParameters->GetCount(); i++)
 			{
@@ -1556,7 +1512,7 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
                     {
                         aggrFuncFound = true;
 
-			            FdoExpressionEngineIAggregateFunction *func = m_stack->m_AggregateFunctions.at(i);
+			            FdoExpressionEngineIAggregateFunction *func = m_AggregateFunctions.at(i);
    			            FdoPtr<FdoLiteralValue> value;
                         
                         if (m_dataRead)
@@ -1664,8 +1620,8 @@ void FdoExpressionEngineImp::ProcessFunction (FdoFunction& expr)
 
         for (int i=0; i<args->GetCount(); i++)
         {
-			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_stack->m_retvals.back ();
-			m_stack->m_retvals.pop_back ();
+			FdoPtr<FdoDataValue> dv = (FdoDataValue*)m_retvals.back ();
+			m_retvals.pop_back ();
             functionParameters->Insert(0, dv);
         }
 
@@ -1759,54 +1715,54 @@ void FdoExpressionEngineImp::ProcessIdentifier (FdoString* name)
             switch (definition->m_dataType)
             {
             case FdoDataType_Boolean : 
-                m_stack->m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : m_reader->GetBoolean (name))); 
+                m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : m_reader->GetBoolean (name))); 
                 break;
             case FdoDataType_Byte : 
-                m_stack->m_retvals.push_back (ObtainByteValue (bIsNull, bIsNull ? 0 : m_reader->GetByte (name))); 
+                m_retvals.push_back (ObtainByteValue (bIsNull, bIsNull ? 0 : m_reader->GetByte (name))); 
                 break;
             case FdoDataType_DateTime : 
-                m_stack->m_retvals.push_back (ObtainDateTimeValue (bIsNull, bIsNull ? FdoDateTime() : m_reader->GetDateTime (name))); 
+                m_retvals.push_back (ObtainDateTimeValue (bIsNull, bIsNull ? FdoDateTime() : m_reader->GetDateTime (name))); 
                 break;
             case FdoDataType_Decimal : 
-                m_stack->m_retvals.push_back (ObtainDecimalValue (bIsNull, bIsNull ? 0.0 : m_reader->GetDouble (name))); 
+                m_retvals.push_back (ObtainDecimalValue (bIsNull, bIsNull ? 0.0 : m_reader->GetDouble (name))); 
                 break;
             case FdoDataType_Double : 
-                m_stack->m_retvals.push_back (ObtainDoubleValue (bIsNull, bIsNull ? 0.0 : m_reader->GetDouble (name))); 
+                m_retvals.push_back (ObtainDoubleValue (bIsNull, bIsNull ? 0.0 : m_reader->GetDouble (name))); 
                 break;
             case FdoDataType_Int16 : 
-                m_stack->m_retvals.push_back (ObtainInt16Value (bIsNull, bIsNull ? 0 : m_reader->GetInt16 (name))); 
+                m_retvals.push_back (ObtainInt16Value (bIsNull, bIsNull ? 0 : m_reader->GetInt16 (name))); 
                 break;
             case FdoDataType_Int32 : 
-                m_stack->m_retvals.push_back (ObtainInt32Value (bIsNull, bIsNull ? 0 : m_reader->GetInt32 (name))); 
+                m_retvals.push_back (ObtainInt32Value (bIsNull, bIsNull ? 0 : m_reader->GetInt32 (name))); 
                 break;
             case FdoDataType_Int64 : 
-                m_stack->m_retvals.push_back (ObtainInt64Value (bIsNull, bIsNull ? 0 : m_reader->GetInt64 (name))); 
+                m_retvals.push_back (ObtainInt64Value (bIsNull, bIsNull ? 0 : m_reader->GetInt64 (name))); 
                 break;
             case FdoDataType_Single : 
-                m_stack->m_retvals.push_back (ObtainSingleValue (bIsNull, bIsNull ? 0.0f : m_reader->GetSingle (name))); 
+                m_retvals.push_back (ObtainSingleValue (bIsNull, bIsNull ? 0.0f : m_reader->GetSingle (name))); 
                 break;
             case FdoDataType_String : 
-                m_stack->m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : m_reader->GetString (name))); 
+                m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : m_reader->GetString (name))); 
                 break;
             case FdoDataType_BLOB : 
                 if (!bIsNull)
                 {
                     FdoPtr<FdoLOBValue> blob = m_reader->GetLOB (name);
                     FdoPtr<FdoByteArray> blobBytes = blob->GetData ();
-                    m_stack->m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes)); 
+                    m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes)); 
                 }
                 else
-                    m_stack->m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL)); 
+                    m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL)); 
                 break;
             case FdoDataType_CLOB : 
                 if (!bIsNull)
                 {
                     FdoPtr<FdoLOBValue> clob = m_reader->GetLOB (name);
                     FdoPtr<FdoByteArray> clobBytes = clob->GetData ();
-                    m_stack->m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes)); 
+                    m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes)); 
                 }
                 else
-                    m_stack->m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL)); 
+                    m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL)); 
                 break;
             default:
                 throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_71_DATA_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoDataTypeToString(definition->m_dataType)));
@@ -1818,10 +1774,10 @@ void FdoExpressionEngineImp::ProcessIdentifier (FdoString* name)
             if(!bIsNull)
             {
                 FdoPtr<FdoByteArray> geomBytes = m_reader->GetGeometry(name);
-                m_stack->m_retvals.push_back (ObtainGeometryValue (bIsNull, geomBytes )); 
+                m_retvals.push_back (ObtainGeometryValue (bIsNull, geomBytes )); 
             }
             else
-                m_stack->m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
+                m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
         }
         else
             throw FdoException::Create(FdoException::NLSGetMessage(FDO_NLSID(FDO_70_PROPERTY_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoPropertyTypeToString(definition->m_propertyType)));
@@ -1850,52 +1806,52 @@ void FdoExpressionEngineImp::ProcessParameter (FdoParameter& expr)
 
 void FdoExpressionEngineImp::ProcessBooleanValue (FdoBooleanValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainBooleanValue (expr.IsNull(), expr.IsNull() ? false : expr.GetBoolean ()));
+    m_retvals.push_back (ObtainBooleanValue (expr.IsNull(), expr.IsNull() ? false : expr.GetBoolean ()));
 }
 
 void FdoExpressionEngineImp::ProcessByteValue (FdoByteValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainByteValue (expr.IsNull(), expr.IsNull() ? 0 : expr.GetByte ()));
+    m_retvals.push_back (ObtainByteValue (expr.IsNull(), expr.IsNull() ? 0 : expr.GetByte ()));
 }
 
 void FdoExpressionEngineImp::ProcessDateTimeValue (FdoDateTimeValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainDateTimeValue (expr.IsNull(), expr.IsNull() ? FdoDateTime() : expr.GetDateTime ()));
+    m_retvals.push_back (ObtainDateTimeValue (expr.IsNull(), expr.IsNull() ? FdoDateTime() : expr.GetDateTime ()));
 }
 
 void FdoExpressionEngineImp::ProcessDecimalValue (FdoDecimalValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainDecimalValue (expr.IsNull(), expr.IsNull() ? 0.0 : expr.GetDecimal ()));
+    m_retvals.push_back (ObtainDecimalValue (expr.IsNull(), expr.IsNull() ? 0.0 : expr.GetDecimal ()));
 }
 
 void FdoExpressionEngineImp::ProcessDoubleValue (FdoDoubleValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainDoubleValue (expr.IsNull(), expr.IsNull() ? 0.0 : expr.GetDouble ()));
+    m_retvals.push_back (ObtainDoubleValue (expr.IsNull(), expr.IsNull() ? 0.0 : expr.GetDouble ()));
 }
 
 void FdoExpressionEngineImp::ProcessInt16Value (FdoInt16Value& expr)
 {
-    m_stack->m_retvals.push_back (ObtainInt16Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt16 ()));
+    m_retvals.push_back (ObtainInt16Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt16 ()));
 }
 
 void FdoExpressionEngineImp::ProcessInt32Value (FdoInt32Value& expr)
 {
-    m_stack->m_retvals.push_back (ObtainInt32Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt32 ()));
+    m_retvals.push_back (ObtainInt32Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt32 ()));
 }
 
 void FdoExpressionEngineImp::ProcessInt64Value (FdoInt64Value& expr)
 {
-    m_stack->m_retvals.push_back (ObtainInt64Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt64 ()));
+    m_retvals.push_back (ObtainInt64Value (expr.IsNull(), expr.IsNull() ? 0 : expr.GetInt64 ()));
 }
 
 void FdoExpressionEngineImp::ProcessSingleValue (FdoSingleValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainSingleValue (expr.IsNull(), expr.IsNull() ? 0.0f : expr.GetSingle ()));
+    m_retvals.push_back (ObtainSingleValue (expr.IsNull(), expr.IsNull() ? 0.0f : expr.GetSingle ()));
 }
 
 void FdoExpressionEngineImp::ProcessStringValue (FdoStringValue& expr)
 {
-    m_stack->m_retvals.push_back (ObtainStringValue (expr.IsNull(), expr.IsNull() ? NULL : expr.GetString ()));
+    m_retvals.push_back (ObtainStringValue (expr.IsNull(), expr.IsNull() ? NULL : expr.GetString ()));
 }
 
 void FdoExpressionEngineImp::ProcessBLOBValue (FdoBLOBValue& expr)
@@ -1904,10 +1860,10 @@ void FdoExpressionEngineImp::ProcessBLOBValue (FdoBLOBValue& expr)
     if(!isNull)
     {
         FdoPtr<FdoByteArray> blobBytes = expr.GetData ();
-        m_stack->m_retvals.push_back (ObtainBLOBValue (isNull, blobBytes));
+        m_retvals.push_back (ObtainBLOBValue (isNull, blobBytes));
     }
     else
-        m_stack->m_retvals.push_back (ObtainBLOBValue (isNull, NULL));
+        m_retvals.push_back (ObtainBLOBValue (isNull, NULL));
 }
 
 void FdoExpressionEngineImp::ProcessCLOBValue (FdoCLOBValue& expr)
@@ -1916,10 +1872,10 @@ void FdoExpressionEngineImp::ProcessCLOBValue (FdoCLOBValue& expr)
     if(!isNull)
     {
         FdoPtr<FdoByteArray> clobBytes = expr.GetData ();
-        m_stack->m_retvals.push_back (ObtainCLOBValue (isNull, clobBytes));
+        m_retvals.push_back (ObtainCLOBValue (isNull, clobBytes));
     }
     else
-        m_stack->m_retvals.push_back (ObtainCLOBValue (isNull, NULL));
+        m_retvals.push_back (ObtainCLOBValue (isNull, NULL));
 }
 
 void FdoExpressionEngineImp::ProcessGeometryValue (FdoGeometryValue& expr)
@@ -1928,10 +1884,10 @@ void FdoExpressionEngineImp::ProcessGeometryValue (FdoGeometryValue& expr)
     if(!isNull)
     {
         FdoPtr<FdoByteArray> geomBytes = expr.GetGeometry();
-        m_stack->m_retvals.push_back (ObtainGeometryValue (isNull, geomBytes ));
+        m_retvals.push_back (ObtainGeometryValue (isNull, geomBytes ));
     }
     else
-        m_stack->m_retvals.push_back (ObtainGeometryValue (isNull, NULL));
+        m_retvals.push_back (ObtainGeometryValue (isNull, NULL));
 }
 
 
@@ -2081,9 +2037,11 @@ bool FdoExpressionEngineImp::MatchBracket (const wchar_t* pattern, const wchar_t
 
 bool FdoExpressionEngineImp::Like (FdoDataValue* argLeft, FdoDataValue* argRight)
 {
-    if (FdoDataType_String != argLeft->GetDataType () || FdoDataType_String != argRight->GetDataType ())
-        return false;
-    
+    if (FdoDataType_String != argLeft->GetDataType ())
+        throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
+    if (FdoDataType_String != argRight->GetDataType ())
+        throw FdoException::Create (FdoException::NLSGetMessage (FDO_NLSID (FDO_62_PROPERTYVALUEFETCHTYPEMISMATCH)));
+
     return (MatchesHere (((FdoStringValue*)argRight)->GetString (), ((FdoStringValue*)argLeft)->GetString ()));
 }
 
@@ -4066,27 +4024,27 @@ FdoLiteralValue* FdoExpressionEngineImp::Evaluate(FdoExpression *expression)
     }
 
 	expression->Process (this);
-    FdoLiteralValue* result = (FdoLiteralValue*)m_stack->m_retvals.back ();
+    FdoLiteralValue* result = (FdoLiteralValue*)m_retvals.back ();
     PotentialRelinquishLiteralValue(result);
-	m_stack->m_retvals.pop_back ();
+	m_retvals.pop_back ();
     return result;
 };
 
 FdoLiteralValue *FdoExpressionEngineImp::Evaluate(FdoIdentifier& expr)
 {
 	ProcessIdentifier(expr);
-	FdoLiteralValue* value = (FdoLiteralValue*)m_stack->m_retvals.back ();
+	FdoLiteralValue* value = (FdoLiteralValue*)m_retvals.back ();
     PotentialRelinquishLiteralValue(value);
-	m_stack->m_retvals.pop_back();
+	m_retvals.pop_back();
 	return value;
 }
 
 FdoLiteralValue *FdoExpressionEngineImp::Evaluate(FdoString* name)
 {
     ProcessIdentifier(name);
-    FdoLiteralValue* value = (FdoLiteralValue*)m_stack->m_retvals.back ();
+    FdoLiteralValue* value = (FdoLiteralValue*)m_retvals.back ();
     PotentialRelinquishLiteralValue(value);
-    m_stack->m_retvals.pop_back();
+    m_retvals.pop_back();
     return value;
 }
 
@@ -4142,7 +4100,7 @@ void FdoExpressionEngineImp::ProcessAggregateFunctions()
 			    if (FdoCommonStringUtil::StringCompareNoCase(function->GetName(), func->GetName()) == 0)
 			    {
 				    FdoExpressionEngineIAggregateFunction *aggregateFunction = static_cast<FdoExpressionEngineIAggregateFunction *>(functionExtension.p->CreateObject());
-				    m_stack->m_AggregateFunctions.push_back(aggregateFunction);
+				    m_AggregateFunctions.push_back(aggregateFunction);
 				    break;
 			    }
 		    }
@@ -4163,7 +4121,7 @@ void FdoExpressionEngineImp::ProcessAggregateFunctions()
 			            if (FdoCommonStringUtil::StringCompareNoCase(function->GetName(), func->GetName()) == 0)
 			            {
 				            FdoExpressionEngineIAggregateFunction *aggregateFunction = static_cast<FdoExpressionEngineIAggregateFunction *>(functionDefinition->CreateObject());
-				            m_stack->m_AggregateFunctions.push_back(aggregateFunction);
+				            m_AggregateFunctions.push_back(aggregateFunction);
 				            break;
 			            }
 		            }
@@ -4366,31 +4324,31 @@ void FdoExpressionEngineImp::PushIdentifierValue(FdoIReader* reader, FdoString* 
 	switch (type)
     {
 		case FdoDataType_Boolean : 
-            m_stack->m_retvals.push_back (ObtainBooleanValue (false, m_reader->GetBoolean (name))); 
+            m_retvals.push_back (ObtainBooleanValue (false, m_reader->GetBoolean (name))); 
 			break;
 		case FdoDataType_Byte : 
-			m_stack->m_retvals.push_back(ObtainInt64Value(false, reader->GetByte(name))); 
+			m_retvals.push_back(ObtainInt64Value(false, reader->GetByte(name))); 
 			break;
 		case FdoDataType_DateTime : 
-			m_stack->m_retvals.push_back(ObtainDateTimeValue(false, reader->GetDateTime(name))); 
+			m_retvals.push_back(ObtainDateTimeValue(false, reader->GetDateTime(name))); 
 			break;
 		case FdoDataType_Decimal : 
-			m_stack->m_retvals.push_back(ObtainDoubleValue(false, reader->GetDouble(name))); 
+			m_retvals.push_back(ObtainDoubleValue(false, reader->GetDouble(name))); 
 			break;
 		case FdoDataType_Double : 
-			m_stack->m_retvals.push_back(ObtainDoubleValue(false, reader->GetDouble(name))); 
+			m_retvals.push_back(ObtainDoubleValue(false, reader->GetDouble(name))); 
 			break;
 		case FdoDataType_Int16 : 
-			m_stack->m_retvals.push_back(ObtainInt64Value(false, reader->GetInt16(name))); 
+			m_retvals.push_back(ObtainInt64Value(false, reader->GetInt16(name))); 
 			break;
 		case FdoDataType_Int32 : 
-			m_stack->m_retvals.push_back(ObtainInt64Value(false, reader->GetInt32(name))); 
+			m_retvals.push_back(ObtainInt64Value(false, reader->GetInt32(name))); 
 			break;
 		case FdoDataType_Int64 : 
-			m_stack->m_retvals.push_back(ObtainInt64Value(false, reader->GetInt64(name))); 
+			m_retvals.push_back(ObtainInt64Value(false, reader->GetInt64(name))); 
 			break;
 		case FdoDataType_Single : 
-			m_stack->m_retvals.push_back(ObtainDoubleValue(false, reader->GetSingle(name))); 
+			m_retvals.push_back(ObtainDoubleValue(false, reader->GetSingle(name))); 
 			break;
 		case FdoDataType_String : 
 			{
@@ -4401,7 +4359,7 @@ void FdoExpressionEngineImp::PushIdentifierValue(FdoIReader* reader, FdoString* 
 				val = new wchar_t[wcslen(str)+1];
 				wcscpy(val,str);
 			}
-			m_stack->m_retvals.push_back(ObtainStringValue(false, val)); 
+			m_retvals.push_back(ObtainStringValue(false, val)); 
 			}
 			break;
 		default: 
@@ -4424,52 +4382,52 @@ void FdoExpressionEngineImp::PushLiteralValue(FdoLiteralValue *literalValue )
             {
             
                 case FdoDataType_Boolean : 
-                    m_stack->m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : (static_cast<FdoBooleanValue *>(data))->GetBoolean()));
+                    m_retvals.push_back (ObtainBooleanValue (bIsNull, bIsNull ? false : (static_cast<FdoBooleanValue *>(data))->GetBoolean()));
                     break;
                 case FdoDataType_Byte : 
-                    m_stack->m_retvals.push_back (ObtainByteValue (bIsNull, bIsNull ? 0 : (static_cast<FdoByteValue *>(data))->GetByte()));
+                    m_retvals.push_back (ObtainByteValue (bIsNull, bIsNull ? 0 : (static_cast<FdoByteValue *>(data))->GetByte()));
                     break;
                 case FdoDataType_DateTime : 
-                    m_stack->m_retvals.push_back (ObtainDateTimeValue (bIsNull, bIsNull ? FdoDateTime() : (static_cast<FdoDateTimeValue *>(data))->GetDateTime()));
+                    m_retvals.push_back (ObtainDateTimeValue (bIsNull, bIsNull ? FdoDateTime() : (static_cast<FdoDateTimeValue *>(data))->GetDateTime()));
                     break;
                 case FdoDataType_Decimal : 
-                    m_stack->m_retvals.push_back (ObtainDecimalValue (bIsNull, bIsNull ? 0.0 : (static_cast<FdoDecimalValue *>(data))->GetDecimal()));
+                    m_retvals.push_back (ObtainDecimalValue (bIsNull, bIsNull ? 0.0 : (static_cast<FdoDecimalValue *>(data))->GetDecimal()));
                     break;
                 case FdoDataType_Double : 
-                    m_stack->m_retvals.push_back (ObtainDoubleValue (bIsNull, bIsNull ? 0.0 : (static_cast<FdoDoubleValue *>(data))->GetDouble()));
+                    m_retvals.push_back (ObtainDoubleValue (bIsNull, bIsNull ? 0.0 : (static_cast<FdoDoubleValue *>(data))->GetDouble()));
                     break;
                 case FdoDataType_Int16 : 
-                    m_stack->m_retvals.push_back (ObtainInt16Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt16Value *>(data))->GetInt16()));
+                    m_retvals.push_back (ObtainInt16Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt16Value *>(data))->GetInt16()));
                     break;
                 case FdoDataType_Int32 : 
-                    m_stack->m_retvals.push_back (ObtainInt32Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt32Value *>(data))->GetInt32()));
+                    m_retvals.push_back (ObtainInt32Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt32Value *>(data))->GetInt32()));
                     break;
                 case FdoDataType_Int64 : 
-                    m_stack->m_retvals.push_back (ObtainInt64Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt64Value *>(data))->GetInt64()));
+                    m_retvals.push_back (ObtainInt64Value (bIsNull, bIsNull ? 0 : (static_cast<FdoInt64Value *>(data))->GetInt64()));
                     break;
                 case FdoDataType_Single : 
-                    m_stack->m_retvals.push_back (ObtainSingleValue (bIsNull, bIsNull ? 0.0f : (static_cast<FdoSingleValue *>(data))->GetSingle()));
+                    m_retvals.push_back (ObtainSingleValue (bIsNull, bIsNull ? 0.0f : (static_cast<FdoSingleValue *>(data))->GetSingle()));
                     break;
                 case FdoDataType_String : 
-                    m_stack->m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : (static_cast<FdoStringValue *>(data))->GetString()));
+                    m_retvals.push_back (ObtainStringValue (bIsNull, bIsNull ? NULL : (static_cast<FdoStringValue *>(data))->GetString()));
                     break;
                 case FdoDataType_BLOB : 
                     if (!bIsNull)
                     {
                         FdoPtr<FdoByteArray> blobBytes = (static_cast<FdoBLOBValue *>(data))->GetData();
-                        m_stack->m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes));
+                        m_retvals.push_back (ObtainBLOBValue (bIsNull, blobBytes));
                     }
                     else
-                        m_stack->m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL));
+                        m_retvals.push_back (ObtainBLOBValue (bIsNull, NULL));
                     break;
                 case FdoDataType_CLOB : 
                     if (!bIsNull)
                     {
                         FdoPtr<FdoByteArray> clobBytes = (static_cast<FdoCLOBValue *>(data))->GetData();
-                        m_stack->m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes));
+                        m_retvals.push_back (ObtainCLOBValue (bIsNull, clobBytes));
                     }
                     else
-                        m_stack->m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL));
+                        m_retvals.push_back (ObtainCLOBValue (bIsNull, NULL));
                     break;
                 default:
                     throw FdoException::Create (FdoException::NLSGetMessage(FDO_NLSID(FDO_71_DATA_TYPE_NOT_SUPPORTED), FdoCommonMiscUtil::FdoDataTypeToString(data->GetDataType())));
@@ -4484,10 +4442,10 @@ void FdoExpressionEngineImp::PushLiteralValue(FdoLiteralValue *literalValue )
             if (!bIsNull)
             {
                 FdoPtr<FdoByteArray> geom = geometry->GetGeometry();
-                m_stack->m_retvals.push_back (ObtainGeometryValue (bIsNull, geom)); 
+                m_retvals.push_back (ObtainGeometryValue (bIsNull, geom)); 
             }
             else
-                m_stack->m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
+                m_retvals.push_back (ObtainGeometryValue (bIsNull, NULL)); 
             break;
         }
 
@@ -4637,51 +4595,51 @@ void FdoExpressionEngineImp::PotentialRelinquishLiteralValue(FdoLiteralValue *va
         {
             case FdoDataType_Boolean:
                 value->AddRef();
-                m_stack->mPotentialBooleanPool.push_back ((FdoBooleanValue*)value);
+                mPotentialBooleanPool.push_back ((FdoBooleanValue*)value);
                 break;
             case FdoDataType_Byte:
                 value->AddRef();
-                m_stack->mPotentialBytePool.push_back ((FdoByteValue*)value);
+                mPotentialBytePool.push_back ((FdoByteValue*)value);
                 break;
             case FdoDataType_DateTime:
                 value->AddRef();
-                m_stack->mPotentialDateTimePool.push_back ((FdoDateTimeValue*)value);
+                mPotentialDateTimePool.push_back ((FdoDateTimeValue*)value);
                 break;
             case FdoDataType_Decimal:
                 value->AddRef();
-                m_stack->mPotentialDecimalPool.push_back ((FdoDecimalValue*)value);
+                mPotentialDecimalPool.push_back ((FdoDecimalValue*)value);
                 break;
             case FdoDataType_Double:
                 value->AddRef();
-                m_stack->mPotentialDoublePool.push_back ((FdoDoubleValue*)value);
+                mPotentialDoublePool.push_back ((FdoDoubleValue*)value);
                 break;
             case FdoDataType_Int16:
                 value->AddRef();
-                m_stack->mPotentialInt16Pool.push_back ((FdoInt16Value*)value);
+                mPotentialInt16Pool.push_back ((FdoInt16Value*)value);
                 break;
             case FdoDataType_Int32:
                 value->AddRef();
-                m_stack->mPotentialInt32Pool.push_back ((FdoInt32Value*)value);
+                mPotentialInt32Pool.push_back ((FdoInt32Value*)value);
                 break;
             case FdoDataType_Int64:
                 value->AddRef();
-                m_stack->mPotentialInt64Pool.push_back ((FdoInt64Value*)value);
+                mPotentialInt64Pool.push_back ((FdoInt64Value*)value);
                 break;
             case FdoDataType_Single:
                 value->AddRef();
-                m_stack->mPotentialSinglePool.push_back ((FdoSingleValue*)value);
+                mPotentialSinglePool.push_back ((FdoSingleValue*)value);
                 break;
             case FdoDataType_String:
                 value->AddRef();
-                m_stack->mPotentialStringPool.push_back ((FdoStringValue*)value);
+                mPotentialStringPool.push_back ((FdoStringValue*)value);
                 break;
             case FdoDataType_BLOB:
                 value->AddRef();
-                m_stack->mPotentialBLOBPool.push_back ((FdoBLOBValue*)value);
+                mPotentialBLOBPool.push_back ((FdoBLOBValue*)value);
                 break;
             case FdoDataType_CLOB:
                 value->AddRef();
-                m_stack->mPotentialCLOBPool.push_back ((FdoCLOBValue*)value);
+                mPotentialCLOBPool.push_back ((FdoCLOBValue*)value);
                 break;
         }
     }

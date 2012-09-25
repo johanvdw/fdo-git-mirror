@@ -21,45 +21,22 @@
 #include "../../../../SchemaMgr/Ph/Rd/QueryReader.h"
 
 FdoSmPhRdMySqlIndexReader::FdoSmPhRdMySqlIndexReader(
-    FdoSmPhOwnerP owner,
+    FdoSmPhMgrP mgr,
     FdoSmPhDbObjectP    dbObject
 ) :
     FdoSmPhRdIndexReader((FdoSmPhReader*)NULL),
     mDbObject(dbObject)
 {
-    SetSubReader(
-        MakeReader(
-            owner,
-            DbObject2Objects(dbObject)
-        )
-    );
+    SetSubReader(MakeReader(mgr, (const FdoSmPhOwner*)(dbObject->GetParent()), dbObject));
 }
 
 FdoSmPhRdMySqlIndexReader::FdoSmPhRdMySqlIndexReader(
-    FdoSmPhOwnerP owner,
-    FdoStringsP objectNames
+    FdoSmPhMgrP mgr,
+    FdoSmPhOwnerP    owner
 ) :
     FdoSmPhRdIndexReader((FdoSmPhReader*) NULL)
 {
-    SetSubReader(
-        MakeReader(
-            owner,
-            objectNames
-        )
-    );
-}
-
-FdoSmPhRdMySqlIndexReader::FdoSmPhRdMySqlIndexReader(
-    FdoSmPhOwnerP owner
-) :
-    FdoSmPhRdIndexReader((FdoSmPhReader*) NULL)
-{
-    SetSubReader(
-        MakeReader(
-            owner,
-            DbObject2Objects((FdoSmPhDbObject*)NULL)
-        )
-    );
+    SetSubReader(MakeReader(mgr, (FdoSmPhOwner*)owner, (FdoSmPhDbObject*)NULL));
 }
 
 FdoSmPhRdMySqlIndexReader::~FdoSmPhRdMySqlIndexReader(void)
@@ -67,11 +44,12 @@ FdoSmPhRdMySqlIndexReader::~FdoSmPhRdMySqlIndexReader(void)
 }
 
 FdoSmPhReaderP FdoSmPhRdMySqlIndexReader::MakeReader(
-    FdoSmPhOwnerP owner,
-    FdoStringsP objectNames
+    FdoSmPhMgrP mgr,
+    const FdoSmPhOwner* owner,
+    FdoSmPhDbObjectP    dbObject
 )
 {
-    FdoSmPhMgrP mgr = owner->GetManager();
+    FdoStringP objectName = dbObject ? dbObject->GetName() : L"";
     FdoStringP ownerName = owner->GetName();
 
     //mysql> desc INFORMATION_SCHEMA.statistics;
@@ -106,21 +84,40 @@ FdoSmPhReaderP FdoSmPhRdMySqlIndexReader::MakeReader(
     FdoStringP sql = FdoStringP::Format(
         L"select index_name, table_name, column_name, if(non_unique>0,'NONUNIQUE','UNIQUE') as uniqueness, index_type\n"
         L"  from INFORMATION_SCHEMA.statistics\n"
-        L"  $(WHERE) $(QUALIFICATION)\n"
-        L"  order by table_name collate utf8_bin, index_name collate utf8_bin, seq_in_index"
+        L"  where\n"
+        L"    table_schema collate utf8_bin = ?\n"
+        L"    %ls\n"
+        L"  order by table_name collate utf8_bin, index_name collate utf8_bin, seq_in_index",
+        dbObject ? L"and table_name collate utf8_bin = ?" : L""
     );
 
-    FdoSmPhReaderP reader = FdoSmPhRdIndexReader::MakeQueryReader(
-        L"",
-        mgr,
-        sql,
-        L"table_schema collate utf8_bin",
-        L"table_name collate utf8_bin",
-        ownerName,
-        objectNames,
-        (FdoSmPhRdTableJoin*) NULL
+    // Create a field object for each field in the select list
+    FdoSmPhRowsP rows = MakeRows(mgr);
+
+    // Create and set the bind variables
+    FdoSmPhRowP binds = new FdoSmPhRow( mgr, L"Binds" );
+
+    FdoSmPhFieldP field = new FdoSmPhField(
+        binds,
+        L"table_schema",
+        binds->CreateColumnDbObject(L"table_schema",false)
     );
 
-    return reader;
+    field->SetFieldValue(ownerName);
+
+    if ( dbObject ) {
+        field = new FdoSmPhField(
+            binds,
+            L"table_name",
+            binds->CreateColumnDbObject(L"table_name",false)
+        );
+
+        field->SetFieldValue(objectName);
+    }
+
+//TODO: cache this query to make full use of the binds.
+    FdoSmPhRdGrdQueryReader* reader =
+        new FdoSmPhRdGrdQueryReader( FdoSmPhRowP(rows->GetItem(0)), sql, mgr, binds );
+
+    return( reader );
 }
-

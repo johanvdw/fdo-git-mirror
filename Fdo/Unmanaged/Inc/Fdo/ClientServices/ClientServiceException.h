@@ -1,5 +1,6 @@
 #ifndef _FDOCLIENTSERVICEEXCEPTION_H_
 #define _FDOCLIENTSERVICEEXCEPTION_H_
+/***************************************************************************
 
 //
 // Copyright (C) 2004-2006  Autodesk, Inc.
@@ -18,18 +19,20 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+ *
+ ***************************************************************************/
 #ifdef _WIN32
 #pragma once
 #endif
 
 // Include definitions
 #include <FdoStd.h>
+#include <Fdo/ClientServices/ClientServices.h>
 
 /// \brief
 ///  
 /// An Exception class through which ClientServices errors are transmitted back to
 /// calling applications. Derives from base FdoException class. 
-///
 class FdoClientServiceException : public FdoException
 {
 /// \cond DOXYGEN-IGNORE
@@ -39,11 +42,11 @@ protected:
 
     /// Constructs an instance of a FdoClientServiceException using the exception
     /// message.
-    FdoClientServiceException(FdoString* message);
+    FdoClientServiceException(const wchar_t* message);
 
     /// Constructs an instance of a FdoClientServiceException using the exception
     /// message, and the native error code
-    FdoClientServiceException(FdoString* message, FdoInt64 nativeErrorCode);
+    FdoClientServiceException(const wchar_t* message, FdoInt64 nativeErrorCode);
 
     virtual void Dispose();
 /// \endcond
@@ -75,7 +78,7 @@ public:
     /// \return
     /// Returns an FdoClientServicesException object containing the specified error mesage.
     /// 
-    FDO_API static FdoClientServiceException* Create(FdoString* message);
+    FDO_API static FdoClientServiceException* Create(const wchar_t* message);
 
     /// \brief
     /// Creates an instance of a FdoClientServiceException using the exception message and the native error code. 
@@ -88,7 +91,7 @@ public:
     /// \return
     /// Returns an FdoClientServicesException object containing the specified error mesage.
     /// 
-    FDO_API static FdoClientServiceException* Create(FdoString* message, FdoInt64 nativeErrorCode);
+    FDO_API static FdoClientServiceException* Create(const wchar_t* message, FdoInt64 nativeErrorCode);
 
     /// \brief
     /// Gets the message associated with this exception. If no message and
@@ -99,7 +102,7 @@ public:
     /// Returns the error message.
     /// 
     ///  
-    FDO_API virtual FdoString* ToString();
+    FDO_API virtual const wchar_t* ToString();
 };
 #endif
 

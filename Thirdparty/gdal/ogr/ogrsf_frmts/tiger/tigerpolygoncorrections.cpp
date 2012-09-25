@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpolygoncorrections.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigerpolygoncorrections.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPolygonCorrections, providing access to .RTB files.
@@ -30,11 +30,11 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpolygoncorrections.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigerpolygoncorrections.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #define FILE_CODE       "B"
 
-static const TigerFieldInfo rtB_fields[] = {
+static TigerFieldInfo rtB_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       1,   1,     1 },
@@ -58,7 +58,7 @@ static const TigerFieldInfo rtB_fields[] = {
   { "URCC",       'L', 'A', OFTString,    90,  90,   1,       1,   1,     1 },
   { "RS-B1",      'L', 'A', OFTString,    91,  98,  12,       1,   1,     1 },
 };
-static const TigerRecordInfo rtB_info =
+static TigerRecordInfo rtB_info =
   {
     rtB_fields,
     sizeof(rtB_fields) / sizeof(TigerFieldInfo),
@@ -70,7 +70,7 @@ static const TigerRecordInfo rtB_info =
 /************************************************************************/
 
 TigerPolygonCorrections::TigerPolygonCorrections( OGRTigerDataSource * poDSIn,
-                              const char * pszPrototypeModule ) : TigerFileBase(&rtB_info, FILE_CODE)
+                              const char * pszPrototypeModule )
 
 {
     OGRFieldDefn        oField("",OFTInteger);
@@ -80,9 +80,106 @@ TigerPolygonCorrections::TigerPolygonCorrections( OGRTigerDataSource * poDSIn,
     poFeatureDefn->Reference();
     poFeatureDefn->SetGeomType( wkbNone );
 
+    psRTBInfo = &rtB_info;
+
     /* -------------------------------------------------------------------- */
     /*      Fields from type B record.                                      */
     /* -------------------------------------------------------------------- */
 
-    AddFieldDefns( psRTInfo, poFeatureDefn );
+    AddFieldDefns( psRTBInfo, poFeatureDefn );
+}
+
+/************************************************************************/
+/*                           ~TigerPolygonCorrections()                           */
+/************************************************************************/
+
+TigerPolygonCorrections::~TigerPolygonCorrections()
+
+{
+}
+
+/************************************************************************/
+/*                             SetModule()                              */
+/************************************************************************/
+
+int TigerPolygonCorrections::SetModule( const char * pszModule )
+
+{
+    if( !OpenFile( pszModule, FILE_CODE ) )
+        return FALSE;
+
+    EstablishFeatureCount();
+    
+    return TRUE;
+}
+
+/************************************************************************/
+/*                             GetFeature()                             */
+/************************************************************************/
+
+OGRFeature *TigerPolygonCorrections::GetFeature( int nRecordId )
+
+{
+    char        achRecord[OGR_TIGER_RECBUF_LEN];
+
+    if( nRecordId < 0 || nRecordId >= nFeatures )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Request for out-of-range feature %d of %sZ",
+                  nRecordId, pszModule );
+        return NULL;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Read the raw record data from the file.                         */
+/* -------------------------------------------------------------------- */
+    if( fpPrimary == NULL )
+        return NULL;
+
+    if( VSIFSeek( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Failed to seek to %d of %sZ",
+                  nRecordId * nRecordLength, pszModule );
+        return NULL;
+    }
+
+    if( VSIFRead( achRecord, psRTBInfo->nRecordLength, 1, fpPrimary ) != 1 )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Failed to read record %d of %sZ",
+                  nRecordId, pszModule );
+        return NULL;
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Set fields.                                                     */
+    /* -------------------------------------------------------------------- */
+
+    OGRFeature  *poFeature = new OGRFeature( poFeatureDefn );
+
+    SetFields( psRTBInfo, poFeature, achRecord );
+
+    return poFeature;
+}
+
+/************************************************************************/
+/*                           CreateFeature()                            */
+/************************************************************************/
+
+OGRErr TigerPolygonCorrections::CreateFeature( OGRFeature *poFeature )
+
+{
+    char        szRecord[OGR_TIGER_RECBUF_LEN];
+
+    if( !SetWriteModule( FILE_CODE, psRTBInfo->nRecordLength+2, poFeature ) )
+        return OGRERR_FAILURE;
+
+    memset( szRecord, ' ', psRTBInfo->nRecordLength );
+
+    WriteFields( psRTBInfo, poFeature, szRecord);
+
+    WriteRecord( szRecord, psRTBInfo->nRecordLength, FILE_CODE );
+
+    return OGRERR_NONE;
 }

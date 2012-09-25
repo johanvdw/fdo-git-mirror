@@ -32,8 +32,7 @@ libSQLiteProviderSrc_la_SOURCES = \
    SltSpatialContextReader.cpp \
    SpatialIndexDescriptor.cpp \
    SQLiteSchemaMergeContext.cpp \
-   SltBLOBStreamReader.cpp \
-   SltTransaction.cpp
+   SltBLOBStreamReader.cpp
 
 noinst_HEADERS = $(libSQLiteProviderSrc_la_SOURCES) \
    PropertyNameIndex.h \

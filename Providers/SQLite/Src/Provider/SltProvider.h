@@ -18,9 +18,6 @@
 
 #include "SltCapabilities.h"
 #include "SQLiteProvider.h"
-#ifndef _WIN32
-#include <pthread.h>
-#endif
 
 class SltMetadata;
 class SpatialIndex;
@@ -29,25 +26,8 @@ class RowidIterator;
 class SltExtendedSelect;
 struct NameOrderingPair;
 class StringBuffer;
+class SpatialIndexDescriptor;
 struct DBounds;
-
-#include "SpatialIndexDescriptor.h"
-
-#ifdef _WIN32
-#define STL_CRITICAL_SECTION CRITICAL_SECTION
-#define StlInitializeCriticalSection(a) InitializeCriticalSection(a)
-#define StlDeleteCriticalSection DeleteCriticalSection
-#define StlEnterCriticalSection EnterCriticalSection
-#define StlLeaveCriticalSection LeaveCriticalSection
-#else
-#define STL_CRITICAL_SECTION pthread_mutex_t
-#define StlInitializeCriticalSection(a) pthread_mutex_init(a, NULL)
-#define StlDeleteCriticalSection pthread_mutex_destroy
-#define StlEnterCriticalSection pthread_mutex_lock
-#define StlLeaveCriticalSection pthread_mutex_unlock
-#endif
-
-
 
 // on read connection only the provider can open (internal) transactions
 enum SQLiteActiveTransactionType
@@ -73,14 +53,6 @@ bool operator()(FdoString* _Left, FdoString* _Right) const
 	}
 };
 
-// about usage more details above QueryCacheRecInfo::m_usageCount
-enum SQLiteClearActionType
-{
-    SQLiteClearActionType_All = 0,     // we clean up everything
-    SQLiteClearActionType_ReleaseUsage1 = 1, // we clean up only statements with usage = 1
-    SQLiteClearActionType_RelUsage1DecOthers = 2  // we clean up only with usage = 1 and we decrement usage for others
-};
-
 struct QueryCacheRec
 {
     QueryCacheRec() : stmt(NULL), inUse(false) {}
@@ -89,42 +61,8 @@ struct QueryCacheRec
     sqlite3_stmt* stmt;
     bool inUse;
 };
-
 typedef std::vector<QueryCacheRec> QueryCacheRecList;
-struct QueryCacheRecInfo
-{
-    QueryCacheRecInfo() : m_usageCount(1), m_usedStmt(0) {}
-
-    // this value is incremented each time a statement is used.
-    // in case a statement is only once used, next time we call clean it will be removed.
-    FdoInt64 m_usageCount;
-    FdoInt32 m_usedStmt;
-    QueryCacheRecList m_lst;
-};
-
-class CriticalSectionHolder
-{
-    STL_CRITICAL_SECTION* m_cs;
-public:
-    CriticalSectionHolder(STL_CRITICAL_SECTION* cs)
-    {
-        StlEnterCriticalSection(cs);
-        m_cs = cs;
-    }
-    ~CriticalSectionHolder()
-    {
-        if (m_cs != NULL)
-            StlLeaveCriticalSection(m_cs);
-    }
-    void ForceLeaveCriticalSection()
-    {
-        if (m_cs != NULL)
-            StlLeaveCriticalSection(m_cs);
-        m_cs = NULL;
-    }
-};
-
-typedef std::map<char*, QueryCacheRecInfo*, string_less> QueryCache;
+typedef std::map<char*, QueryCacheRecList, string_less> QueryCache;
 
 typedef std::map<char*, SltMetadata*, string_less> MetadataCache;
 
@@ -298,6 +236,7 @@ public:
     void                ApplySchema            (FdoFeatureSchema* schema, bool ignoreStates);
 
     sqlite3*        GetDbConnection() { return m_dbWrite; }
+    SpatialIndex*   GetSpatialIndex(const char* table);
     bool            GetExtents(const wchar_t* fcname, double ext[4]);
     SltMetadata*    GetMetadata(const char* table);
     SltReader*      CheckForSpatialExtents(FdoIdentifierCollection* props, FdoFeatureClass* fc, FdoFilter* filter, FdoParameterValueCollection*  parmValues);
@@ -305,7 +244,7 @@ public:
     
     sqlite3_stmt*   GetCachedParsedStatement(const char* sql);
     void            ReleaseParsedStatement(const char* sql, sqlite3_stmt* stmt);
-    void            ClearQueryCache(SQLiteClearActionType type = SQLiteClearActionType_All);
+    void            ClearQueryCache();
     
     bool SupportsDetailedGeomType();
     
@@ -325,14 +264,9 @@ public:
     bool AddSupportForTolerance();
     void FreeCachedSchema ();
     void ClearClassFromCachedSchema(const char* table, bool fullDrop);
-    FdoStringCollection* GetDbClasses();
-    static bool IsMetadataTable(const char* table);
-    bool CanUseFdoMetadata() {return m_bUseFdoMetadata && m_bHasFdoMetadata;};
-    bool NeedsMetadataLoaded(const char* table);
-    void AddMetadata(const char* table, SltMetadata* md);
-    SltMetadata* FindMetadata(const char* table);
 
 private :
+
     void AddGeomCol(FdoGeometricPropertyDefinition* gpd, const wchar_t* fcname);
     void AddDataCol(FdoDataPropertyDefinition* dpd, const wchar_t* fcname);
     void AddClassToSchema(FdoClassCollection* classes, FdoClassDefinition* fc);
@@ -371,9 +305,6 @@ private :
 
     sqlite3*                                m_dbWrite;
 
-    STL_CRITICAL_SECTION                    m_csMd;
-    STL_CRITICAL_SECTION                    m_csStm;
-
     std::map<std::wstring, std::wstring>*   m_mProps;
     std::wstring                            m_connStr;
     FdoConnectionState                      m_connState;
@@ -382,7 +313,6 @@ private :
     MetadataCache                           m_mNameToMetadata;
     SpatialIndexCache                       m_mNameToSpatialIndex;
     QueryCache                              m_mCachedQueries;
-    int                                     m_cleanCount;
 
     SltCapabilities*                        m_caps;
 

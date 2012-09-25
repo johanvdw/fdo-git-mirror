@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrociloaderlayer.cpp 22346 2011-05-10 03:02:15Z warmerdam $
+ * $Id: ogrociloaderlayer.cpp 14858 2008-07-08 16:31:55Z mloskot $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILoaderLayer class.  This implements
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrociloaderlayer.cpp 22346 2011-05-10 03:02:15Z warmerdam $");
+CPL_CVSID("$Id: ogrociloaderlayer.cpp 14858 2008-07-08 16:31:55Z mloskot $");
 
 /************************************************************************/
 /*                         OGROCILoaderLayer()                          */
@@ -494,7 +494,7 @@ OGRErr OGROCILoaderLayer::WriteFeatureVariableMode( OGRFeature *poFeature )
     char szLength[9]; 
     size_t  nStringLen = strlen(oLine.GetString());
 
-    sprintf( szLength, "%08d", (int) (nStringLen-8) );
+    sprintf( szLength, "%08d", nStringLen-8 );
     strncpy( oLine.GetString(), szLength, 8 );
 
     if( VSIFWrite( oLine.GetString(), 1, nStringLen, fpData ) != nStringLen )
@@ -668,7 +668,7 @@ void OGROCILoaderLayer::FinalizeNewLayer()
     sDimUpdate.Append( ")" );
 
     sDimUpdate.Appendf( strlen(poFeatureDefn->GetName()) + 100,
-                        " WHERE table_name = UPPER('%s')",
+                        " WHERE table_name = '%s'", 
                         poFeatureDefn->GetName() );
 
 /* -------------------------------------------------------------------- */

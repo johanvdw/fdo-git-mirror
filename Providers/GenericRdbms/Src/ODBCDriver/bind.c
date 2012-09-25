@@ -71,9 +71,6 @@
 *       NULL).  If this pointer is itself NULL, the variable will       *
 *       be presumed to be always not NULL.                              *
 *                                                                       *
-*   typeBind:   input                                                   *
-*       Input=1; Output=4; InputOutput=2; Return=5                      *
-*                                                                       *
 * Function Value                                                        *
 *       An RDBI status integer.   Good  is  RDBI_SUCCESS  (ie 0).       *
 *       See inc/rdbi.h.  If the bound variable cannot be found in       *
@@ -106,8 +103,7 @@ int odbcdr_bind(
 	int 	 datatype,
 	int 	 size,
 	char	*address,
-	SQLLEN	*null_ind,
-    int      typeBind
+	SQLLEN	*null_ind
 	)
 {
 	odbcdr_cursor_def	*c;
@@ -172,27 +168,11 @@ int odbcdr_bind(
             (sql_type != SQL_LONGVARBINARY))
 		)
 	{
-        switch (odbcdr_datatype)
-        {
-        case SQL_C_WCHAR:
-    		sql_type = SQL_WVARCHAR;
-		    col_size = 100;
-		    decimal_digits = 0;
-            break;
-        case SQL_C_CHAR:
-    		sql_type = SQL_VARCHAR;
-		    col_size = 100;
-		    decimal_digits = 0;
-            break;
-        case SQL_C_SBIGINT:
-            sql_type = SQL_BIGINT;
-            col_size = sizeof(double);
-            break;
-        default: // in case we fail to describe the parameter type use the type of the bind value
-            sql_type = odbcdr_datatype;
-            col_size = odbcdr_size;
-            break;
-        }
+		debug3 ("\nError=%d in SQLDescribeParam() for '%s', type=%d. Assuming type = SQL_CHAR, length = 100\n", rc, name, sql_type );
+		// most SQL types can be converted to SQL_CHAR
+		sql_type = SQL_CHAR;
+		col_size = 100;
+		decimal_digits = 0;
 	}
 
 	/*

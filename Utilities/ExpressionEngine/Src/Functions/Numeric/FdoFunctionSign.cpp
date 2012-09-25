@@ -19,7 +19,6 @@
 
 #include <stdafx.h>
 #include <Functions/Numeric/FdoFunctionSign.h>
-#include <math.h>
 
 
 // ----------------------------------------------------------------------------

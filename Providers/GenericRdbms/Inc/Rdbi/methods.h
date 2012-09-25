@@ -84,11 +84,10 @@ typedef struct rdbi_methods_def {
     int  (*execute)(void*,char*,int,int,int*);
     int  (*exec_coc)(void*);
     int  (*define)(void*,char*,char*,int,int,char*,void*);
-    int  (*bind)(void*,char*,char*,int,int,char*,void*,int);
+    int  (*bind)(void*,char*,char*,int,int,char*,void*);
     int  (*fetch)(void*,char*,int,int,int,int*);
     void  (*get_msg)(void*,char*);
     void  (*get_msgW)(void*,wchar_t*);
-    long  (*get_server_rc)(void*);
     int  (*alcnullind)(void*,int,char**);
     void  (*set_null)(void*,void*,int,int);
     void  (*set_nnull)(void*,void*,int,int);
@@ -132,7 +131,6 @@ typedef struct rdbi_methods_def {
     int  (*set_schemaW)(void*,const wchar_t*);
     int  (*vndr_info)(void*, rdbi_vndr_info_def *);
     int  (*geom_srid_set)(void*,char*,char*,long);
-    int  (*geom_version_set)(void*,char*,char*,long);
     int  (*geom_dimens_set)(void*,char*,int);
     int  (*get_geoms_ext)( void *, char *, char *,  pIGeometry_def *);
     int  (*lob_create_ref)(void*,char*,void**);
@@ -145,21 +143,14 @@ typedef struct rdbi_methods_def {
     int  (*term)(void*);
     int  (*run_sql)(void*,const char*,int,int*);
 	int  (*run_sqlW)(void*,const wchar_t*,int,int*);
-#ifdef _WIN32
-    int  (*get_gen_id)(void*,const char*,_int64*);
-    int  (*get_gen_idW)(void*,const wchar_t*,_int64*);
-#else
-    int  (*get_gen_id)(void*,const char*,int64_t*);
-    int  (*get_gen_idW)(void*,const wchar_t*,int64_t*);
-#endif
+    int  (*get_gen_id)(void*,const char*,int*);
+    int  (*get_gen_idW)(void*,const wchar_t*,int*);
     int  (*get_next_seq)(void*,const char*,long*);
     int  (*get_next_seqW)(void*,const wchar_t*,long*);
 	int  (*autocommit_on)(void*);
 	int  (*autocommit_off)(void*);
 	int  (*autocommit_mode)(void*);
     int  (*tran_begin)(void*);
-    int  (*tran_sp)(void*,int,const char*);
-    int  (*tran_spW)(void*,int,const wchar_t*);
     rdbi_driver_capabilities_def    capabilities;
 
 } rdbi_methods_def, *rdbi_methods;

@@ -20,12 +20,6 @@
 #include <Inc/debugext.h>
 #include "proto_p.h"
 
-#ifdef _WIN32
-    typedef _int64  rdbiLong;
-#else
-    typedef int64_t	rdbiLong;
-#endif
-
 int local_odbcdr_sql(odbcdr_context_def  *context, char *cursor, rdbi_string_def* sql, int defer,
 	char *verb, void *ptree, char *cursor_coc);
 
@@ -38,7 +32,7 @@ int local_odbcdr_sql(odbcdr_context_def  *context, char *cursor, rdbi_string_def
 *	#include <Inc/rdbi.h>												*
 *	odbcdr_get_gen_id(table_name, id) 								    *
 *	rdbi_string_def *table_name;										*
-*	int64  *id;														    *
+*	int  *id;														    *
 *																		*
 * Description															*
 *       This function returns the last generated value. 	 		    *
@@ -59,7 +53,7 @@ int local_odbcdr_sql(odbcdr_context_def  *context, char *cursor, rdbi_string_def
 int local_odbcdr_get_gen_id(
     odbcdr_context_def  *context,
 	rdbi_string_def     *table_name_I,
-	rdbiLong  *id_O
+	int  *id_O
 	)
 {
 	wchar_t				    sql_buf[100];
@@ -127,7 +121,6 @@ int local_odbcdr_get_gen_id(
 		    *id_O = connData->identity_id;
         }
 	} else {
-        int identity = 0;
 
 		ODBCDR_RDBI_ERR( odbcdr_est_cursor(context, (char **)&c) );
 
@@ -141,14 +134,14 @@ int local_odbcdr_get_gen_id(
 
 		/* define output locations */
 		ODBCDR_RDBI_ERR( odbcdr_define( context, (char *)c, "1", RDBI_LONG, sizeof(long),
-										(char *) &identity, (SQLLEN *)&null_ind) );
+										(char *) id_O, (SQLLEN *)&null_ind) );
+
 		/* execute the SQL statement */
 		ODBCDR_RDBI_ERR( odbcdr_execute( context, (char *)c, 1, 0, &rows) );
 
 		/* execute the SQL statement & fetch row */
 		ODBCDR_RDBI_ERR( odbcdr_fetch( context, (char *)c, 1, &rows) );
 
-        *id_O = identity;
 		/* Note: it returns null_ind set if no value was generated during this session */
 	}
 
@@ -169,7 +162,7 @@ the_exit:
 int odbcdr_get_gen_id(
     odbcdr_context_def  *context,
 	const char *table_name_I,
-	rdbiLong  *id_O
+	int  *id_O
 	)
 {
     rdbi_string_def str;
@@ -180,7 +173,7 @@ int odbcdr_get_gen_id(
 int odbcdr_get_gen_idW(
     odbcdr_context_def  *context,
 	const wchar_t *table_name_I,
-	rdbiLong  *id_O
+	int  *id_O
 	)
 {
     rdbi_string_def str;

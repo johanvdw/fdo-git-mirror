@@ -1,9 +1,7 @@
 
-GDAL_OBJ =	nitfdataset.obj rpftocdataset.obj nitfwritejpeg.obj \
-	 	nitfwritejpeg_12.obj nitfrasterband.obj ecrgtocdataset.obj
-
-NITFLIB_OBJ  =	nitffile.obj nitfimage.obj mgrs.obj nitfaridpcm.obj \
-		nitfbilevel.obj rpftocfile.obj nitfdes.obj nitf_gcprpc.obj
+GDAL_OBJ	=	nitfdataset.obj rpftocdataset.obj nitfwritejpeg.obj nitfwritejpeg_12.obj
+NITFLIB_OBJ	=	nitffile.obj nitfimage.obj mgrs.obj nitfaridpcm.obj \
+			nitfbilevel.obj rpftocfile.obj
 
 OBJ = $(GDAL_OBJ) $(NITFLIB_OBJ)
 
@@ -31,7 +29,9 @@ default:	$(OBJ)
 clean:
 	-del *.obj
 
-nitfdump.exe:	nitfdump.c $(NITFLIB_OBJ)
-	$(CC) $(CFLAGS) nitfdump.c $(GDALLIB)
-	if exist $@.manifest mt -manifest $@.manifest -outputresource:$@;1
-	del nitfdump.obj
+nitfdump.exe:	nitfdump.obj $(NITFLIB_OBJ)
+	cl nitfdump.obj $(NITFLIB_OBJ) ..\gtiff\tifvsi.obj ..\..\gdal_i.lib $(TIFF_LIB) $(GEOTIFF_LIB)
+
+
+
+

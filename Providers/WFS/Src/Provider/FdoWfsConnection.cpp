@@ -198,11 +198,6 @@ FdoConnectionState FdoWfsConnection::Open ()
     FdoStringP mFeatureServer = dictionary->GetProperty (FdoWfsGlobals::FeatureServer);
     FdoStringP mUserName = dictionary->GetProperty (FdoWfsGlobals::Username);
     FdoStringP mPassword = dictionary->GetProperty (FdoWfsGlobals::Password);
-
-    FdoStringP proxyHost = dictionary->GetProperty (FdoWfsGlobals::ProxyServer);
-    FdoStringP proxyPort = dictionary->GetProperty (FdoWfsGlobals::ProxyPort);
-    FdoStringP proxyUser = dictionary->GetProperty (FdoWfsGlobals::ProxyUsername);
-    FdoStringP proxyPassword = dictionary->GetProperty (FdoWfsGlobals::ProxyPassword);
     
     if (0 == mFeatureServer.GetLength()) 
     {
@@ -222,7 +217,7 @@ FdoConnectionState FdoWfsConnection::Open ()
 	FdoStringP version = _getRequestWFSVersion(mFeatureServer);
 
     // set up the WFS delegate
-    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword, proxyHost, proxyPort, proxyUser, proxyPassword);
+    mDelegate = FdoWfsDelegate::Create(mFeatureServer, mUserName, mPassword);
 
     // try to get the service metadata
     mServiceMetadata = mDelegate->GetCapabilities(version);
@@ -345,7 +340,6 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
         //    be recognized as object property.
         // 6. Set the Class capabilities
         FdoPtr<FdoPhysicalSchemaMappingCollection> mappings = mSchemas->GetXmlSchemaMappings();
-        FdoPtr<FdoFeatureSchemaCollection> schemasToRemove = FdoFeatureSchemaCollection::Create(NULL);
         FdoInt32 count = mSchemas->GetCount();
         for (int i = count - 1; i >= 0; i--) {
             FdoPtr<FdoFeatureSchema> schema = mSchemas->GetItem(i);
@@ -358,12 +352,6 @@ FdoFeatureSchemaCollection* FdoWfsConnection::GetSchemas()
                 // remove schema from schema collection and from schema mapping
                 mappings->Remove(mapping.p);
                 mSchemas->RemoveAt(i);
-
-                // Schema to remove might have elements referenced by schemas not yet processed. When schema is destroyed,
-                // these elements end up with stale parent schemas. This prevents the referencing elements from being
-                // removed from the schemas to process. Add schema to temporary collection to keep it alive long 
-                // enough to properly process the remaining schemas. 
-                schemasToRemove->Add(schema);
                 continue;
             }
 

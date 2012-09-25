@@ -103,22 +103,15 @@ odbcdr_rdbi_init(
         methods->set_schemaW        = (int (*)(void*, const wchar_t*))odbcdr_set_schemaW;
         methods->run_sql            = (int (*)(void*, const char*,int,int*))odbcdr_run_sql;
 		methods->run_sqlW           = (int (*)(void*, const wchar_t*,int,int*))odbcdr_run_sqlW;
-#ifdef _WIN32
-        methods->get_gen_id         = (int (*)(void*, const char*,_int64*))odbcdr_get_gen_id;
-        methods->get_gen_idW        = (int (*)(void*, const wchar_t*,_int64*))odbcdr_get_gen_idW;
-#else
-        methods->get_gen_id         = (int (*)(void*, const char*,int64_t*))odbcdr_get_gen_id;
-        methods->get_gen_idW        = (int (*)(void*, const wchar_t*,int64_t*))odbcdr_get_gen_idW;
-#endif
+        methods->get_gen_id         = (int (*)(void*, const char*,int*))odbcdr_get_gen_id;
+        methods->get_gen_idW        = (int (*)(void*, const wchar_t*,int*))odbcdr_get_gen_idW;
         methods->get_next_seq       = NULL;
         methods->get_next_seqW      = NULL;
 	    methods->get_msg	        = (void (*)(void*, char*))odbcdr_get_msg;
 	    methods->get_msgW	        = (void (*)(void*, wchar_t*))odbcdr_get_msgW;
-        methods->get_server_rc      = (long (*)(void*))odbcdr_get_server_rc;
 	    methods->vndr_name	        = (char*(*)(void*))odbcdr_vndr_name;
 	    methods->vndr_nameW	        = (wchar_t*(*)(void*))odbcdr_vndr_nameW;
         methods->geom_srid_set      = (int  (*)(void*,char*,char*,long))odbcdr_geom_srid_set;
-        methods->geom_version_set   = (int  (*)(void*,char*,char*,long))odbcdr_geom_version_set;
 
         methods->close_cursor       = (int (*)(void*, char*))odbcdr_close_cursor;
 	    methods->disconnect         = (int (*)(void*, char**))odbcdr_disconnect;
@@ -145,17 +138,15 @@ odbcdr_rdbi_init(
         methods->vndr_info          = (int (*)(void*, rdbi_vndr_info_def *))odbcdr_vndr_info;
 	    methods->execute	        = (int (*)(void*, char*, int, int, int*))odbcdr_execute;
 	    methods->fetch       		= (int (*)(void*, char*, int, int, int, int*))odbcdr_fetch2;
-	    methods->bind		        = (int (*)(void*, char*, char*, int, int, char*, void*, int))odbcdr_bind;
+	    methods->bind		        = (int (*)(void*, char*, char*, int, int, char*, void*))odbcdr_bind;
 	    methods->commit 	        = (int (*)(void*, int))odbcdr_commit;
-        methods->tran_sp           = (int (*)(void*,int,const char*))odbcdr_tran_sp;
-        methods->tran_spW          = (int (*)(void*,int,const wchar_t*))odbcdr_tran_spW;
         // Many others are missing...
 		methods->lob_create_ref     = NULL;
 	    methods->exec_coc	        = NULL;
 
         methods->capabilities.supports_sequence = 0;
         methods->capabilities.supports_autoincrement = 1;
-        methods->capabilities.supports_int64_binding = 1;
+        methods->capabilities.supports_int64_binding = 0;
 #ifdef _WIN32
         context->odbcdr_UseUnicode = true;
 		methods->capabilities.supports_unicode = 1;
@@ -251,7 +242,6 @@ static void context_init( odbcdr_context_def *context)
     context->odbcdr_last_autoincrement = INIT_ZERO;
 
     context->odbcdr_last_rc = INIT_ZERO;
-    context->odbcdr_last_server_rc = INIT_ZERO;
 
 	context->odbcdr_last_err_msg[0] = '\0';
 
@@ -302,7 +292,6 @@ static void context_initW( odbcdr_context_def *context)
     wcscpy(context->odbcdr_automatic_logon_userW, INIT_SLASHW );	/* For default logon	*/
 
     context->odbcdr_last_rc = INIT_ZERO;
-    context->odbcdr_last_server_rc = INIT_ZERO;
 
 	context->odbcdr_last_err_msgW[0] = L'\0';
 

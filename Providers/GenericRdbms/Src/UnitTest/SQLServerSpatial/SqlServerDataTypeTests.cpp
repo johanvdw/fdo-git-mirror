@@ -19,7 +19,6 @@
 #include "Pch.h"
 #include "SqlServerDataTypeTests.h"
 #include "UnitTestUtil.h"
-#include "SqlServerConnectionUtil.h"
 #include "../../ODBCDriver/context.h"
 int odbcdr_rdbi_init( odbcdr_context_def **, rdbi_methods	methods );
 
@@ -43,8 +42,7 @@ int SqlServerDataTypeTests::do_rdbi_init ()
 int SqlServerDataTypeTests::do_rdbi_connect (const char* dataStoreName, const char* userName, const char* userPassword)
 {
     FdoStringP odbcConnectString = FdoStringP::Format(
-        L"DRIVER={%ls};MARS_Connection=yes;SERVER=%ls; UID=%hs; PWD=%hs",
-        (FdoString*)SqlServerConnectionUtil::GetNativeClient(),
+        L"DRIVER={SQL Server}; SERVER=%ls; UID=%hs; PWD=%hs", 
         (FdoString*)(UnitTestUtil::GetEnviron("service")), 
         userName, 
         userPassword

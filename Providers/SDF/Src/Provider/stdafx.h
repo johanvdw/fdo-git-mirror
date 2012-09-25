@@ -29,7 +29,6 @@
 #define SDF_API
 #define _ASSERT(x)
 
-#include <stdio.h>
 #include <cstring>
 #include <string.h>
 #define _wcsnicmp wcsncasecmp
@@ -50,9 +49,6 @@ using namespace std;
 #endif //_WIN32
 
 #include <wchar.h>
-
-#include <vector>
-#include <string>
 
 #include "SDF.h"
 

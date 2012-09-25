@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gensql.h 23531 2011-12-11 19:11:56Z rouault $
+ * $Id: ogr_gensql.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to generic implementation of ExecuteSQL().
@@ -31,8 +31,6 @@
 #define _OGR_GENSQL_H_INCLUDED
 
 #include "ogrsf_frmts.h"
-#include "swq.h"
-#include "cpl_hash_set.h"
 
 /************************************************************************/
 /*                        OGRGenSQLResultsLayer                         */
@@ -44,8 +42,6 @@ class CPL_DLL OGRGenSQLResultsLayer : public OGRLayer
     OGRDataSource *poSrcDS;
     OGRLayer    *poSrcLayer;
     void        *pSelectInfo;
-
-    char        *pszWHERE;
 
     OGRLayer   **papoTableLayers;
 
@@ -73,18 +69,11 @@ class CPL_DLL OGRGenSQLResultsLayer : public OGRLayer
     int         Compare( OGRField *pasFirst, OGRField *pasSecond );
 
     void        ClearFilters();
-
-    void        FindAndSetIgnoredFields();
-    void        ExploreExprForIgnoredFields(swq_expr_node* expr, CPLHashSet* hSet);
-    void        AddFieldDefnToSet(int iTable, int iColumn, CPLHashSet* hSet);
-
-    int         ContainGeomSpecialField(swq_expr_node* expr);
+    
   public:
                 OGRGenSQLResultsLayer( OGRDataSource *poSrcDS, 
                                        void *pSelectInfo, 
-                                       OGRGeometry *poSpatFilter,
-                                       const char *pszWHERE,
-                                       const char *pszDialect );
+                                       OGRGeometry *poSpatFilter );
     virtual     ~OGRGenSQLResultsLayer();
 
     virtual OGRGeometry *GetSpatialFilter();

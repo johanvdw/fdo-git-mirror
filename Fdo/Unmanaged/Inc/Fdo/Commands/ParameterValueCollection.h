@@ -31,21 +31,9 @@
 /// The FdoParameterValueCollection class represents a collection of FdoParameterValue objects.
 class FdoParameterValueCollection : public FdoCollection<FdoParameterValue, FdoCommandException>
 {
-/// \cond DOXYGEN-IGNORE
 protected:
-    /// Constructs a default empty instance of an FdoPropertyValueCollection.
-    FdoParameterValueCollection():FdoCollection<FdoParameterValue, FdoCommandException>()
-    {
-    }
-
-    virtual ~FdoParameterValueCollection()
-    {
-    }
-
-    virtual void Dispose()
-    {
-        delete this;
-    }
+/// \cond DOXYGEN-IGNORE
+    virtual void Dispose();
 /// \endcond
 
 public:

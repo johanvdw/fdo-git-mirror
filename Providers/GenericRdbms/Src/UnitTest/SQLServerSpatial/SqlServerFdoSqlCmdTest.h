@@ -25,44 +25,11 @@ class SqlServerFdoSqlCmdTest : public FdoSqlCmdTest
 {
     CPPUNIT_TEST_SUB_SUITE (SqlServerFdoSqlCmdTest, FdoSqlCmdTest);
     CPPUNIT_TEST( CreateAndDrop8bitTable );
-    CPPUNIT_TEST( TestOutParamsStoreProcRetOnly );
-    CPPUNIT_TEST( TestOutParamsStoreProcRetAndIn );
-    CPPUNIT_TEST( TestOutParamsStoreProcRetAndOut );
-    CPPUNIT_TEST( TestOutParamsStoreProcRetAndNullOut );
-    CPPUNIT_TEST( TestOutParamsStoreProcRetAndInAndOut );
-    CPPUNIT_TEST( TestParamInGeom );
-    CPPUNIT_TEST( TestBindNullBlob );
-    CPPUNIT_TEST( TestBindNotNullBlob );
-    CPPUNIT_TEST( TestBindBigBlob );
-    CPPUNIT_TEST( TestGetMaxLenTexts );
-    CPPUNIT_TEST( TestInParamsStoreProcNoRet );
-    CPPUNIT_TEST( TestInParamsStoreProcBigInt );
-    CPPUNIT_TEST( TestInParamsStoreProcVariant );
-    CPPUNIT_TEST( TestNewSequence );
-    CPPUNIT_TEST( TestBigInt );
-    CPPUNIT_TEST( TestUnknownTypeBindParameter );
     CPPUNIT_TEST_SUITE_END ();
 
     void  set_provider();
 	void CreateAndDrop8bitTable ();
 	virtual FdoString *GetGeometrySelectStatement();
-    
-    void TestUnknownTypeBindParameter();
-    void TestOutParamsStoreProcRetOnly();
-    void TestOutParamsStoreProcRetAndIn();
-    void TestOutParamsStoreProcRetAndOut();
-    void TestOutParamsStoreProcRetAndNullOut();
-    void TestOutParamsStoreProcRetAndInAndOut();
-    void TestInParamsStoreProcNoRet();
-    void TestParamInGeom();
-    void TestGetMaxLenTexts();
-    void TestBindNullBlob();
-    void TestBindNotNullBlob();
-    void TestBindBigBlob();
-	void TestInParamsStoreProcBigInt();
-    void TestInParamsStoreProcVariant();
-    void TestNewSequence();
-    void TestBigInt();
 
 	wchar_t *get_datetime_type() 
     { 

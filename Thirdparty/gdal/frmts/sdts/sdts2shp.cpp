@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: sdts2shp.cpp 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: sdts2shp.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Mainline for converting to ArcView Shapefiles.
@@ -31,7 +31,7 @@
 #include "shapefil.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sdts2shp.cpp 19952 2010-07-02 05:44:18Z warmerdam $");
+CPL_CVSID("$Id: sdts2shp.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 static int  bVerbose = FALSE;
 
@@ -552,7 +552,7 @@ static void WritePolygonShapefile( const char * pszShapefile,
 /* -------------------------------------------------------------------- */
 /*      Assemble polygon geometries from all the line layers.           */
 /* -------------------------------------------------------------------- */
-    poPolyReader->AssembleRings( poTransfer, poTransfer->FindLayer(pszMODN) );
+    poPolyReader->AssembleRings( poTransfer );
     
 /* -------------------------------------------------------------------- */
 /*      Create the Shapefile.                                           */

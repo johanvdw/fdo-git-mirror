@@ -752,22 +752,19 @@ FdoGeometricPropertyDefinition* ShpLpClassDefinition::ConvertPhysicalToLogicalGe
                 break;
             case ePolygonShape:
                 geomTypesDest[0] = FdoGeometryType_Polygon;
-                geomTypesDest[1] = FdoGeometryType_MultiPolygon;
-                geomTypeCount=2;
+                geomTypeCount=1;
                 has_z = false;
                 has_m = false;
                 break;
             case ePolygonZShape:
                 geomTypesDest[0] = FdoGeometryType_Polygon;
-                geomTypesDest[1] = FdoGeometryType_MultiPolygon;
-                geomTypeCount=2;
+                geomTypeCount=1;
                 has_z = true;
                 has_m = shp->HasMData ();
                 break;
             case ePolygonMShape:
                 geomTypesDest[0] = FdoGeometryType_Polygon;
-                geomTypesDest[1] = FdoGeometryType_MultiPolygon;
-                geomTypeCount=2;
+                geomTypeCount=1;
                 has_z = false;
                 has_m = true;
                 break;

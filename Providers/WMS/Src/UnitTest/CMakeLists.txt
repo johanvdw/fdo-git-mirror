@@ -33,6 +33,9 @@ target_link_libraries( WMSUnitTest
 	ProvidersCommon
 	${CPPUNIT_LIBRARIES}
 	FDO
+	xerces-c
+	xalan-c
+	xalanMsg
 	pthread_nonshared
 	pthread
 	)

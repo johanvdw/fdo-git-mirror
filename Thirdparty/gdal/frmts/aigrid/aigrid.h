@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aigrid.h 22159 2011-04-14 18:18:54Z warmerdam $
+ * $Id: aigrid.h 11586 2007-06-01 04:27:41Z warmerdam $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Grid file access include file.
@@ -47,8 +47,7 @@ typedef struct {
     GUInt32	*panBlockOffset;
     int		*panBlockSize;
 
-    VSILFILE	*fpGrid;	/* the w001001.adf file */
-    int         bTriedToLoad;
+    FILE	*fpGrid;	/* the w001001.adf file */
 } AIGTileInfo;
 
 typedef struct {
@@ -62,17 +61,16 @@ typedef struct {
 
     char	*pszCoverName; /* path of coverage directory */
 
-    GInt32	nCellType;
-    GInt32      bCompressed;
+    int		nCellType;
 
 #define AIG_CELLTYPE_INT		1
 #define AIG_CELLTYPE_FLOAT		2    
     
-    GInt32	nBlockXSize;
-    GInt32	nBlockYSize;
+    int		nBlockXSize;
+    int		nBlockYSize;
     
-    GInt32	nBlocksPerRow;
-    GInt32	nBlocksPerColumn;
+    int		nBlocksPerRow;
+    int		nBlocksPerColumn;
 
     int         nTileXSize;
     int         nTileYSize;
@@ -103,9 +101,9 @@ typedef struct {
 /* ==================================================================== */
 
 CPLErr AIGAccessTile( AIGInfo_t *psInfo, int iTileX, int iTileY );
-CPLErr AIGReadBlock( VSILFILE * fp, GUInt32 nBlockOffset, int nBlockSize,
+CPLErr AIGReadBlock( FILE * fp, GUInt32 nBlockOffset, int nBlockSize,
                      int nBlockXSize, int nBlockYSize, GInt32 * panData,
-                     int nCellType, int bCompressed );
+                     int nCellType );
 
 CPLErr AIGReadHeader( const char *, AIGInfo_t * );
 CPLErr AIGReadBlockIndex( AIGInfo_t *, AIGTileInfo *, 
@@ -128,7 +126,7 @@ CPLErr 		AIGReadFloatTile( AIGInfo_t *, int, int, float * );
 
 void		AIGClose( AIGInfo_t * );
 
-VSILFILE           *AIGLLOpen( const char *, const char * );
+FILE           *AIGLLOpen( const char *, const char * );
 
 CPL_C_END
 

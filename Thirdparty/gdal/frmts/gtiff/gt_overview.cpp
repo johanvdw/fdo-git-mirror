@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gt_overview.cpp 23497 2011-12-08 20:50:57Z rouault $
+ * $Id: gt_overview.cpp 18243 2009-12-10 17:01:50Z warmerdam $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Code to build overviews of external databases as a TIFF file. 
@@ -31,12 +31,18 @@
 #include "gdal_priv.h"
 #define CPL_SERV_H_INCLUDED
 
-#include "tifvsi.h"
+#include "tiffio.h"
 #include "xtiffio.h"
+#include "geotiff.h"
 #include "gt_overview.h"
-#include "gtiff.h"
 
-CPL_CVSID("$Id: gt_overview.cpp 23497 2011-12-08 20:50:57Z rouault $");
+CPL_CVSID("$Id: gt_overview.cpp 18243 2009-12-10 17:01:50Z warmerdam $");
+
+#define TIFFTAG_GDAL_METADATA  42112
+
+CPL_C_START
+void    GTiffOneTimeInit();
+CPL_C_END
 
 /************************************************************************/
 /*                         GTIFFWriteDirectory()                        */
@@ -53,7 +59,6 @@ toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize
                            int nBlockXSize, int nBlockYSize,
                            int bTiled, int nCompressFlag, int nPhotometric,
                            int nSampleFormat, 
-                           int nPredictor,
                            unsigned short *panRed,
                            unsigned short *panGreen,
                            unsigned short *panBlue,
@@ -103,11 +108,7 @@ toff_t GTIFFWriteDirectory(TIFF *hTIFF, int nSubfileType, int nXSize, int nYSize
     {
         TIFFSetField(hTIFF, TIFFTAG_EXTRASAMPLES, nExtraSamples, panExtraSampleValues );
     }
-
-    if ( nCompressFlag == COMPRESSION_LZW ||
-         nCompressFlag == COMPRESSION_ADOBE_DEFLATE )
-        TIFFSetField( hTIFF, TIFFTAG_PREDICTOR, nPredictor );
-
+    
 /* -------------------------------------------------------------------- */
 /*	Write color table if one is present.				*/
 /* -------------------------------------------------------------------- */
@@ -209,8 +210,7 @@ GTIFFBuildOverviews( const char * pszFilename,
     if( nBands == 0 || nOverviews == 0 )
         return CE_None;
 
-    if (!GTiffOneTimeInit())
-        return CE_Failure;
+    GTiffOneTimeInit();
 
 /* -------------------------------------------------------------------- */
 /*      Verify that the list of bands is suitable for emitting in       */
@@ -331,24 +331,20 @@ GTIFFBuildOverviews( const char * pszFilename,
 
     if( pszCompress != NULL && pszCompress[0] != '\0' )
     {
-        nCompression = GTIFFGetCompressionMethod(pszCompress, "COMPRESS_OVERVIEW");
-        if (nCompression < 0)
-            return CE_Failure;
+        if( EQUAL( pszCompress, "JPEG" ) )
+            nCompression = COMPRESSION_JPEG;
+        else if( EQUAL( pszCompress, "LZW" ) )
+            nCompression = COMPRESSION_LZW;
+        else if( EQUAL( pszCompress, "PACKBITS" ))
+            nCompression = COMPRESSION_PACKBITS;
+        else if( EQUAL( pszCompress, "DEFLATE" ) || EQUAL( pszCompress, "ZIP" ))
+            nCompression = COMPRESSION_ADOBE_DEFLATE;
+        else
+            CPLError( CE_Warning, CPLE_IllegalArg, 
+                      "COMPRESS_OVERVIEW=%s value not recognised, ignoring.",
+                      pszCompress );
     }
     
-    if( nCompression == COMPRESSION_JPEG && nBitsPerPixel > 8 )
-    {  
-        if( nBitsPerPixel > 16 )
-        {
-            CPLError( CE_Failure, CPLE_NotSupported, 
-                      "GTIFFBuildOverviews() doesn't support building"
-                      " JPEG compressed overviews of nBitsPerPixel > 16." );
-            return CE_Failure;
-        }
-
-        nBitsPerPixel = 12;
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Figure out the planar configuration to use.                     */
 /* -------------------------------------------------------------------- */
@@ -458,25 +454,11 @@ GTIFFBuildOverviews( const char * pszFilename,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Figure out the predictor value to use.                          */
-/* -------------------------------------------------------------------- */
-    int nPredictor = PREDICTOR_NONE;
-    if ( nCompression == COMPRESSION_LZW ||
-         nCompression == COMPRESSION_ADOBE_DEFLATE )
-    {
-        const char* pszPredictor = CPLGetConfigOption( "PREDICTOR_OVERVIEW", NULL );
-        if( pszPredictor  != NULL )
-        {
-            nPredictor =  atoi( pszPredictor );
-        }
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Create the file, if it does not already exist.                  */
 /* -------------------------------------------------------------------- */
     VSIStatBufL  sStatBuf;
 
-    if( VSIStatExL( pszFilename, &sStatBuf, VSI_STAT_EXISTS_FLAG ) != 0 )
+    if( VSIStatL( pszFilename, &sStatBuf ) != 0 )
     {
     /* -------------------------------------------------------------------- */
     /*      Compute the uncompressed size.                                  */
@@ -561,13 +543,13 @@ GTIFFBuildOverviews( const char * pszFilename,
         if( bCreateBigTIFF )
             CPLDebug( "GTiff", "File being created as a BigTIFF." );
 
-        hOTIFF = VSI_TIFFOpen( pszFilename, (bCreateBigTIFF) ? "w+8" : "w+" );
+        hOTIFF = XTIFFOpen( pszFilename, (bCreateBigTIFF) ? "w+8" : "w+" );
         if( hOTIFF == NULL )
         {
             if( CPLGetLastErrorNo() == 0 )
                 CPLError( CE_Failure, CPLE_OpenFailed,
                           "Attempt to create new tiff file `%s'\n"
-                          "failed in VSI_TIFFOpen().\n",
+                          "failed in XTIFFOpen().\n",
                           pszFilename );
 
             return CE_Failure;
@@ -578,13 +560,13 @@ GTIFFBuildOverviews( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     else 
     {
-        hOTIFF = VSI_TIFFOpen( pszFilename, "r+" );
+        hOTIFF = XTIFFOpen( pszFilename, "r+" );
         if( hOTIFF == NULL )
         {
             if( CPLGetLastErrorNo() == 0 )
                 CPLError( CE_Failure, CPLE_OpenFailed,
                           "Attempt to create new tiff file `%s'\n"
-                          "failed in VSI_TIFFOpen().\n",
+                          "failed in XTIFFOpen().\n",
                           pszFilename );
 
             return CE_Failure;
@@ -637,8 +619,6 @@ GTIFFBuildOverviews( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Loop, creating overviews.                                       */
 /* -------------------------------------------------------------------- */
-    int nOvrBlockXSize, nOvrBlockYSize;
-    GTIFFGetOverviewBlockSize(&nOvrBlockXSize, &nOvrBlockYSize);
     for( iOverview = 0; iOverview < nOverviews; iOverview++ )
     {
         int    nOXSize, nOYSize;
@@ -651,8 +631,8 @@ GTIFFBuildOverviews( const char * pszFilename,
         GTIFFWriteDirectory(hOTIFF, FILETYPE_REDUCEDIMAGE,
                             nOXSize, nOYSize, nBitsPerPixel, 
                             nPlanarConfig, nBands,
-                            nOvrBlockXSize, nOvrBlockYSize, TRUE, nCompression,
-                            nPhotometric, nSampleFormat, nPredictor,
+                            128, 128, TRUE, nCompression,
+                            nPhotometric, nSampleFormat, 
                             panRed, panGreen, panBlue,
                             0, NULL, /* FIXME? how can we fetch extrasamples */
                             osMetadata );
@@ -687,10 +667,8 @@ GTIFFBuildOverviews( const char * pszFilename,
     if( nCompression == COMPRESSION_JPEG 
         && CPLGetConfigOption( "JPEG_QUALITY_OVERVIEW", NULL ) != NULL )
     {
-        int nJpegQuality = atoi(CPLGetConfigOption("JPEG_QUALITY_OVERVIEW","75"));
         TIFFSetField( hTIFF, TIFFTAG_JPEGQUALITY, 
-                      nJpegQuality );
-        GTIFFSetJpegQuality((GDALDatasetH)hODS, nJpegQuality);
+                      atoi(CPLGetConfigOption("JPEG_QUALITY_OVERVIEW","75")) );
     }
 
 /* -------------------------------------------------------------------- */

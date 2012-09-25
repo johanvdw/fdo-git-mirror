@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili1layer.cpp 22143 2011-04-12 13:32:38Z pka $
+ * $Id: ogrili1layer.cpp 16925 2009-05-03 14:16:49Z rouault $
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1Layer class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_geos.h"
 
-CPL_CVSID("$Id: ogrili1layer.cpp 22143 2011-04-12 13:32:38Z pka $");
+CPL_CVSID("$Id: ogrili1layer.cpp 16925 2009-05-03 14:16:49Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI1Layer()                              */
@@ -522,12 +522,7 @@ void OGRILI1Layer::PolygonizeAreaLayer()
     poAreaReferenceLayer->ResetReading();
     while (OGRFeature *feature = poAreaReferenceLayer->GetNextFeatureRef())
     {
-        OGRGeometry* geomRef = feature->GetGeometryRef();
-        if( !geomRef )
-        {
-            continue;
-        }
-        GEOSGeom point = (GEOSGeom)(geomRef->exportToGEOS());
+        GEOSGeom point = (GEOSGeom)feature->GetGeometryRef()->exportToGEOS();
         for (i = 0; i < polys->getNumGeometries(); i++ )
         {
             if (ahInGeoms[i] && GEOSWithin(point, ahInGeoms[i]))

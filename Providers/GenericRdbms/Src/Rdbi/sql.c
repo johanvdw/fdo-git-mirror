@@ -65,7 +65,7 @@
 
 #include <Inc/Rdbi/context.h>
 
-int local_rdbi_sql(rdbi_context_def *context, int sqlid, rdbi_string_def *sql, int defer, int type);
+int local_rdbi_sql(rdbi_context_def *context, int sqlid, rdbi_string_def *sql, int defer);
 
 int rdbi_sql(
 	rdbi_context_def *context,
@@ -74,7 +74,7 @@ int rdbi_sql(
 {
     rdbi_string_def str;
     str.ccString = sql;
-    return local_rdbi_sql(context, sqlid, &str, FALSE, 0);
+    return local_rdbi_sql(context, sqlid, &str, FALSE);
 }
 
 int rdbi_sqlW(
@@ -84,29 +84,7 @@ int rdbi_sqlW(
 {
     rdbi_string_def str;
     str.cwString = sql;
-    return local_rdbi_sql(context, sqlid, &str, FALSE, 0);
-}
-
-int rdbi_sqlWt(
-	rdbi_context_def *context,
-    int     sqlid,
-    const char *sql,
-    int type )
-{
-    rdbi_string_def str;
-    str.ccString = sql;
-    return local_rdbi_sql(context, sqlid, &str, FALSE, type);
-}
-
-int rdbi_sqlWWt(
-	rdbi_context_def *context,
-    int     sqlid,
-    const wchar_t *sql,
-    int type)
-{
-    rdbi_string_def str;
-    str.cwString = sql;
-    return local_rdbi_sql(context, sqlid, &str, FALSE, type);
+    return local_rdbi_sql(context, sqlid, &str, FALSE);
 }
 
 int rdbi_sql_d(
@@ -116,7 +94,7 @@ int rdbi_sql_d(
 {
     rdbi_string_def str;
     str.ccString = sql;
-    return local_rdbi_sql(context, sqlid, &str, TRUE, 0);
+    return local_rdbi_sql(context, sqlid, &str, TRUE);
 }
 
 int rdbi_sql_dW(
@@ -126,14 +104,14 @@ int rdbi_sql_dW(
 {
     rdbi_string_def str;
     str.cwString = sql;
-    return local_rdbi_sql(context, sqlid, &str, TRUE, 0);
+    return local_rdbi_sql(context, sqlid, &str, TRUE);
 }
 
 /*
  *  Extract first word (delimited by a space, tab, or newline)
  *  from the SQL statement.
  */
-static void local_parse (const char *sql, char *verb, int type)
+static void local_parse (const char *sql, char *verb)
 {
 #define WORD_LEN    31
     const char *p = sql;
@@ -149,14 +127,9 @@ static void local_parse (const char *sql, char *verb, int type)
             verb[i] = *p;
     }
     verb[i] = '\0';
-
-    // to avoid changing too many things we add the value after verb
-    // this way callers which are not aware about it will ignore the type
-    if (type == 1 && i == 6 && verb[0] == 'i' && verb[5] == 't')
-        verb[i+1] = 1;
 }
 
-static void local_parseW (const wchar_t *sql, char *verb, int type)
+static void local_parseW (const wchar_t *sql, char *verb)
 {
 #define WORD_LEN    31
     const wchar_t *p = sql;
@@ -173,19 +146,13 @@ static void local_parseW (const wchar_t *sql, char *verb, int type)
             verb[i] = (char)*p;  
     }
     verb[i] = '\0';
-
-    // to avoid changing too many things we add the value after verb
-    // this way callers which are not aware about it will ignore the type
-    if (type == 1 && i == 6 && verb[0] == 'i' && verb[5] == 't')
-        verb[i+1] = 1;
 }
 
 int local_rdbi_sql(
 	rdbi_context_def *context,
     int     sqlid,
     rdbi_string_def* sql,
-    int     defer,
-    int type )
+    int     defer )
 {
 
 
@@ -266,14 +233,14 @@ int local_rdbi_sql(
     /* get the verb */
 	if (context->dispatch.capabilities.supports_unicode == 1)
     {
-        local_parseW (sql->cwString, cursor->verb, type);
+        local_parseW (sql->cwString, cursor->verb);
 		cursor->status = (*(context->dispatch.sqlW))(context->drvr, cursor->vendor_data, sql->cwString, defer,
                                 cursor->verb, NULL, cursor_coc == (rdbi_cursor_def *) NULL ?
                                 (char *) NULL : cursor_coc->vendor_data);
     }
     else
     {
-		local_parse (sql->ccString, cursor->verb, type);
+		local_parse (sql->ccString, cursor->verb);
 		cursor->status = (*(context->dispatch.sql))(context->drvr, cursor->vendor_data, sql->ccString, defer,
                                 cursor->verb, NULL, cursor_coc == (rdbi_cursor_def *) NULL ?
                                 (char *) NULL : cursor_coc->vendor_data);

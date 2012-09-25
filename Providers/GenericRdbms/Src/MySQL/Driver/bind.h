@@ -32,14 +32,7 @@ int mysql_bind (
     int datatype,
     int size,
     char *address,
-    my_bool *null_ind,
-    int      typeBind);
-
-int mysql_binds_alloc( 
-    mysql_cursor_def *curs,
-    int count);
-
-
+    my_bool *null_ind);
 
 #endif // BIND_H
 

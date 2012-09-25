@@ -28,14 +28,15 @@ int mysql_bind (
     int datatype,
     int size,
     char *address,
-    my_bool *null_ind,
-    int      typeBind)
+    my_bool *null_ind)
 {
     MYSQL *mysql;
     mysql_cursor_def *curs;
     MYSQL_STMT *statement;
     int index;
     int type;
+    MYSQL_BIND *binds;
+	int		*srids;
     int ret;
 
     if (-1 == context->mysql_current_connect)
@@ -67,9 +68,36 @@ int mysql_bind (
                             ret = RDBI_INVLD_DESCR_OBJTYPE; 
                         else
                         {
-                            int ret2 = mysql_binds_alloc(curs, index + 1);
-                            if (ret2 != RDBI_SUCCESS)
-                                ret = ret2;
+                            if (index >= curs->bind_count)
+                            {
+                                binds = (MYSQL_BIND *)malloc ((index + 1) * sizeof (MYSQL_BIND));
+								srids = (int*)malloc((index + 1) * sizeof(int));
+                                if ((MYSQL_BIND*)NULL == binds || (int*)NULL == srids)
+                                {
+                                    if ((MYSQL_BIND*)NULL != curs->binds)
+                                        free (curs->binds);
+									if ((int*)NULL != curs->srids)
+										free (curs->srids);
+                                    curs->bind_count = 0;
+                                }
+                                else
+                                {
+                                    memset (binds, 0, (index + 1) * sizeof (MYSQL_BIND));
+									memset (srids, 0, (index + 1) * sizeof (int));
+                                    if ((MYSQL_BIND*)NULL != curs->binds)
+                                    {
+                                        memcpy (binds, curs->binds, curs->bind_count * sizeof (MYSQL_BIND));
+										free (curs->binds);
+										memcpy (srids, curs->srids, curs->bind_count * sizeof (int));
+										free (curs->srids);
+                                    }
+                                    curs->bind_count = index + 1;
+                                    curs->binds = binds;
+									curs->srids = srids;
+                                }
+                            }
+                            if (index >= curs->bind_count)
+                                ret = RDBI_MALLOC_FAILED;
                             else
                             {
                                 curs->binds[index].buffer_type = (enum enum_field_types)type;
@@ -90,46 +118,3 @@ int mysql_bind (
 
     return (ret);
 }
-
-int mysql_binds_alloc( 
-    mysql_cursor_def *curs,
-    int count)
-{
-    MYSQL_BIND *binds;
-	int		*srids;
-    int ret = RDBI_SUCCESS;
-    
-    if (count > curs->bind_count)
-    {
-        binds = (MYSQL_BIND *)malloc (count * sizeof (MYSQL_BIND));
-		srids = (int*)malloc(count * sizeof(int));
-        if ((MYSQL_BIND*)NULL == binds || (int*)NULL == srids)
-        {
-            if ((MYSQL_BIND*)NULL != curs->binds)
-                free (curs->binds);
-			if ((int*)NULL != curs->srids)
-				free (curs->srids);
-            curs->bind_count = 0;
-        }
-        else
-        {
-            memset (binds, 0, count * sizeof (MYSQL_BIND));
-			memset (srids, 0, count * sizeof (int));
-            if ((MYSQL_BIND*)NULL != curs->binds)
-            {
-                memcpy (binds, curs->binds, curs->bind_count * sizeof (MYSQL_BIND));
-				free (curs->binds);
-				memcpy (srids, curs->srids, curs->bind_count * sizeof (int));
-				free (curs->srids);
-            }
-            curs->bind_count = count;
-            curs->binds = binds;
-			curs->srids = srids;
-        }
-    }
-    if (count > curs->bind_count)
-        ret = RDBI_MALLOC_FAILED;
- 
-    return ret;
-}
-
