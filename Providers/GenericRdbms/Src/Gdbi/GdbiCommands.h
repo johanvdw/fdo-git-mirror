@@ -259,16 +259,7 @@ public:
 	int geom_srid_set(
 			int				sqlid,
 			char			*geom_col_name,
-#ifdef _WIN32
-	_int64			srid);
-#else
-	int64_t			srid);
-#endif
-
-	int geom_type_set(
-			int				sqlid,
-			char			*geom_col_name,
-	        char	        type);
+			long			srid );
 
 	int geom_version_set(
 			int				sqlid,

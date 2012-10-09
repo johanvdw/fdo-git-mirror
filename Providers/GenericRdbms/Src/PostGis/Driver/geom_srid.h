@@ -29,10 +29,6 @@ int postgis_geom_srid_set (
 	postgis_context_def	*context,
     char   *cursor,                     /* cursor associated with SQL stmnt */
 	char	*geom_col_name,
-#ifdef _WIN32
-    _int64 srid ) ;
-#else
-    int64_t srid ) ;
-#endif
+    long srid ) ;
 
 #endif // GEOM_SRID_H

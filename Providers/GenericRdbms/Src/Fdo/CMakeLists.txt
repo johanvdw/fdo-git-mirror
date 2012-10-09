@@ -53,7 +53,6 @@ set( FdoRdbms_FeatureCommands_STAT_SRCS
    FeatureCommands/FdoRdbmsSimpleUpdateCommand.cpp
    FeatureCommands/FdoRdbmsSimpleSelectCommand.cpp
    FeatureCommands/FdoRdbmsSimpleInsertCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleDeleteCommand.cpp
    FeatureCommands/FdoRdbmsSimpleFeatureReader.cpp
 )
 

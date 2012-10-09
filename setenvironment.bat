@@ -59,7 +59,6 @@ if exist %ACTIVEPATHCHECK% goto VSExist
 call %ACTIVEPATHCHECK%\vcvarsall.bat %PARAM1%
 
 :setfdovars
-SET FDOROOT=%cd%
 SET FDO=%cd%\Fdo
 SET ACTIVEPATHCHECK=%FDO%
 SET ACTIVENAMECHECK="FDO"

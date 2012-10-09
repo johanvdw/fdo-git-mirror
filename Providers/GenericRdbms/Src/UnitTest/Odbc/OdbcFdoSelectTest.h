@@ -188,7 +188,6 @@ class OdbcAccessFdoSelectTest : public OdbcFdoSelectTest
     CPPUNIT_TEST (View1Test);
     CPPUNIT_TEST (View2Test);
     CPPUNIT_TEST (ComparisonFilterTable1Test);
-    CPPUNIT_TEST (SpatialFilterTable1Test);
     CPPUNIT_TEST (RestrictedPropertiesTable1Test);
     CPPUNIT_TEST (TestDateFilter);
     CPPUNIT_TEST (TestDefect779194);
@@ -203,7 +202,6 @@ public:
     void View1Test();
     void View2Test();
     void ComparisonFilterTable1Test();  // Contains a spatial query
-    void SpatialFilterTable1Test();
     void RestrictedPropertiesTable1Test();
     void TestDefect779194();
     virtual void spatial_or_attribute_query ();
