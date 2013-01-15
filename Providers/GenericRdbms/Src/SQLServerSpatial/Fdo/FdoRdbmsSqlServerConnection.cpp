@@ -32,7 +32,6 @@
 #include "FdoRdbmsSimpleInsertCommand.h"
 #include "FdoRdbmsSimpleUpdateCommand.h"
 #include "FdoRdbmsSimpleSelectCommand.h"
-#include "FdoRdbmsSimpleDeleteCommand.h"
 
 #include "../SchemaMgr/SchemaManager.h"
 #include "../SchemaMgr/Ph/Mgr.h"
@@ -52,6 +51,7 @@
 #include <Inc/Rdbi/proto.h>
 #include "../ODBCDriver/context.h"
 int odbcdr_rdbi_init( odbcdr_context_def **, rdbi_methods	methods );
+
 
 wchar_t* getComDir (); // in SqlServer.cpp
 #define OD_MAX_RETRY_COUNT 10
@@ -92,7 +92,7 @@ FdoICommand *FdoRdbmsSqlServerConnection::CreateCommand (FdoInt32 commandType)
              break;
 
 		case FdoCommandType_Delete:
-             ret = FdoRdbmsSimpleDeleteCommand::Create(this);
+             ret = new FdoRdbmsSqlServerDeleteCommand (this);
              break;
 
         case FdoCommandType_Insert:
@@ -589,16 +589,6 @@ FdoStringP FdoRdbmsSqlServerConnection::GenConnectionStringParm( FdoStringP conn
 			}
             else
                 newCs += L";Trusted_Connection=yes";
-			
-            FdoStringP database = dict->GetProperty(FDO_RDBMS_CONNECTION_DATASTORE);
-			if (database.GetLength() > 0)
-			{
-                GetDbiConnection()->SetAvoidSetSchema(true);
-				newCs += L";DATABASE=";
-				newCs += database;
-			}
-            else
-                GetDbiConnection()->SetAvoidSetSchema(false);
         }
     }
 
@@ -784,15 +774,6 @@ FdoRdbmsSqlBuilder* FdoRdbmsSqlServerConnection::GetSqlBuilder()
     // and we avoid using this builder.
     return new FdoRdbmsSqlServerSqlBuilder (this);
 }
-
-FdoInt64 FdoRdbmsSqlServerConnection::GetProcessedSRID(FdoString* typeName, FdoInt64 srid)
-{
-    // SQL server is using a Int32 SRI, we use an upper flag to inform lower interfaces 
-    // that we have a geography or a geometry. This is important for SQL Server only
-    // ane we wanted to avoid adding extra flags and functions.
-    return (FdoCommonStringUtil::StringCompareNoCase(L"geometry", typeName) == 0) ? srid : (srid | 0x100000000);
-}
-
 // mixing SQL_CURSOR_STATIC with 'SET NOCOUNT OFF' will make all calls to store procedure 
 // to retun null results this is mainly because with results from a store procedure 
 // we can move only FORWARD! On SQL_CURSOR_STATIC we can re-bind and move to a 

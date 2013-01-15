@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdal_fillnodata.py 23153 2011-10-01 13:40:24Z rouault $
+#  $Id: gdal_sieve.py 15700 2008-11-10 15:29:13Z warmerdam $
 # 
 #  Project:  GDAL Python Interface
 #  Purpose:  Application for filling nodata areas in a raster by interpolation
@@ -45,9 +45,9 @@ def CopyBand( srcband, dstband ):
         
 def Usage():
     print("""
-gdal_fillnodata [-q] [-md max_distance] [-si smooth_iterations]
+gdal_nodatafill [-q] [-md max_distance] [-si smooth_iterations]
                 [-o name=value] [-b band]
-                srcfile [-nomask] [-mask filename] [-of format] [-co name=value]* [dstfile]
+                srcfile [-nomask] [-mask filename] [-of format] [dstfile]
 """)
     sys.exit(1)
     
@@ -64,7 +64,6 @@ src_band = 1
 
 dst_filename = None
 format = 'GTiff'
-creation_options = []
 
 mask = 'default'
 
@@ -81,10 +80,6 @@ while i < len(argv):
     if arg == '-of':
         i = i + 1
         format = argv[i]
-
-    elif arg == '-co':
-        i = i + 1
-        creation_options.append(argv[i])
 
     elif arg == '-q' or arg == '-quiet':
         quiet_flag = 1
@@ -151,7 +146,7 @@ else:
     src_ds = gdal.Open( src_filename, gdal.GA_ReadOnly )
     
 if src_ds is None:
-    print('Unable to open %s' % src_filename)
+    print('Unable to open ', src_filename)
     sys.exit(1)
 
 srcband = src_ds.GetRasterBand(src_band)
@@ -172,7 +167,7 @@ if dst_filename is not None:
 
     drv = gdal.GetDriverByName(format)
     dst_ds = drv.Create( dst_filename,src_ds.RasterXSize, src_ds.RasterYSize,1,
-                         srcband.DataType, creation_options )
+                         srcband.DataType )
     wkt = src_ds.GetProjection()
     if wkt != '':
         dst_ds.SetProjection( wkt )
@@ -198,7 +193,7 @@ result = gdal.FillNodata( dstband, maskband,
                           callback = prog_func )
 
 
-src_ds = None
-dst_ds = None
-mask_ds = None
+
+
+
 

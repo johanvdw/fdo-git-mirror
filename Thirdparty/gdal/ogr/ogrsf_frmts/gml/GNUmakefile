@@ -3,26 +3,25 @@
 include ../../../GDALmake.opt
 
 CORE_OBJ =	gmlpropertydefn.o gmlfeatureclass.o gmlfeature.o gmlreader.o \
-		parsexsd.o resolvexlinks.o hugefileresolver.o gmlutils.o \
-		gmlreadstate.o gmlhandler.o trstring.o gfstemplate.o
+		parsexsd.o
 
 OGR_OBJ =	ogrgmldriver.o ogrgmldatasource.o ogrgmllayer.o
 
 OBJ =	$(CORE_OBJ) $(OGR_OBJ)
 
-CPPFLAGS :=	-I.. -I../.. $(GDAL_INCLUDE) $(XERCES_INCLUDE) $(EXPAT_INCLUDE) $(SQLITE_INC) $(CPPFLAGS)
+CPPFLAGS :=	-I.. -I../.. $(GDAL_INCLUDE) $(XERCES_INCLUDE) $(EXPAT_INCLUDE) $(CPPFLAGS)
 #CFLAGS	:=	$(filter-out -Wall,$(CFLAGS))
 
 ifeq ($(HAVE_XERCES),yes)
-CPPFLAGS +=  -DHAVE_XERCES
-endif
-
+CORE_OBJ :=	$(CORE_OBJ) gmlreadstate.o gmlhandler.o trstring.o
+CPPFLAGS +=  -DHAVE_XERCES=1
+else
 ifeq ($(HAVE_EXPAT),yes)
-CPPFLAGS +=  -DHAVE_EXPAT
+CORE_OBJ :=	$(CORE_OBJ) gmlreadstate.o gmlhandler.o
+CPPFLAGS +=  -DHAVE_XERCES=0 -DHAVE_EXPAT
+else
+CPPFLAGS +=  -DHAVE_XERCES=0
 endif
-
-ifeq ($(HAVE_SQLITE),yes)
-CPPFLAGS +=  -DHAVE_SQLITE
 endif
 
 # By default, XML validation is disabled.  Uncomment the following line to

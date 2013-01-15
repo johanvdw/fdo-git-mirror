@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: memdataset.cpp 21803 2011-02-22 22:12:22Z warmerdam $
+ * $Id: memdataset.cpp 17837 2009-10-15 21:20:09Z rouault $
  *
  * Project:  Memory Array Translator
  * Purpose:  Complete implementation.
@@ -30,7 +30,7 @@
 #include "memdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: memdataset.cpp 21803 2011-02-22 22:12:22Z warmerdam $");
+CPL_CVSID("$Id: memdataset.cpp 17837 2009-10-15 21:20:09Z rouault $");
 
 /************************************************************************/
 /*                        MEMCreateRasterBand()                         */
@@ -54,7 +54,7 @@ GDALRasterBandH MEMCreateRasterBand( GDALDataset *poDS, int nBand,
 MEMRasterBand::MEMRasterBand( GDALDataset *poDS, int nBand,
                               GByte *pabyDataIn, GDALDataType eTypeIn, 
                               int nPixelOffsetIn, int nLineOffsetIn,
-                              int bAssumeOwnership, const char * pszPixelType)
+                              int bAssumeOwnership )
 
 {
     //CPLDebug( "MEM", "MEMRasterBand(%p)", this );
@@ -91,10 +91,6 @@ MEMRasterBand::MEMRasterBand( GDALDataset *poDS, int nBand,
     dfOffset = 0.0;
     dfScale = 1.0;
     pszUnitType = NULL;
-    psSavedHistograms = NULL;
-
-    if( pszPixelType && EQUAL(pszPixelType,"SIGNEDBYTE") )
-        this->SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
 }
 
 /************************************************************************/
@@ -361,90 +357,6 @@ CPLErr MEMRasterBand::SetCategoryNames( char ** papszNewNames )
     papszCategoryNames = CSLDuplicate( papszNewNames );
 
     return CE_None;
-}
-
-/************************************************************************/
-/*                        SetDefaultHistogram()                         */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetDefaultHistogram( double dfMin, double dfMax, 
-                                           int nBuckets, int *panHistogram)
-
-{
-    CPLXMLNode *psNode;
-
-/* -------------------------------------------------------------------- */
-/*      Do we have a matching histogram we should replace?              */
-/* -------------------------------------------------------------------- */
-    psNode = PamFindMatchingHistogram( psSavedHistograms, 
-                                       dfMin, dfMax, nBuckets,
-                                       TRUE, TRUE );
-    if( psNode != NULL )
-    {
-        /* blow this one away */
-        CPLRemoveXMLChild( psSavedHistograms, psNode );
-        CPLDestroyXMLNode( psNode );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Translate into a histogram XML tree.                            */
-/* -------------------------------------------------------------------- */
-    CPLXMLNode *psHistItem;
-
-    psHistItem = PamHistogramToXMLTree( dfMin, dfMax, nBuckets, 
-                                        panHistogram, TRUE, FALSE );
-
-/* -------------------------------------------------------------------- */
-/*      Insert our new default histogram at the front of the            */
-/*      histogram list so that it will be the default histogram.        */
-/* -------------------------------------------------------------------- */
-
-    if( psSavedHistograms == NULL )
-        psSavedHistograms = CPLCreateXMLNode( NULL, CXT_Element,
-                                              "Histograms" );
-            
-    psHistItem->psNext = psSavedHistograms->psChild;
-    psSavedHistograms->psChild = psHistItem;
-    
-    return CE_None;
-}
-/************************************************************************/
-/*                        GetDefaultHistogram()                         */
-/************************************************************************/
-
-CPLErr 
-MEMRasterBand::GetDefaultHistogram( double *pdfMin, double *pdfMax, 
-                                    int *pnBuckets, int **ppanHistogram, 
-                                    int bForce,
-                                    GDALProgressFunc pfnProgress, 
-                                    void *pProgressData )
-    
-{
-    if( psSavedHistograms != NULL )
-    {
-        CPLXMLNode *psXMLHist;
-
-        for( psXMLHist = psSavedHistograms->psChild;
-             psXMLHist != NULL; psXMLHist = psXMLHist->psNext )
-        {
-            int bApprox, bIncludeOutOfRange;
-
-            if( psXMLHist->eType != CXT_Element
-                || !EQUAL(psXMLHist->pszValue,"HistItem") )
-                continue;
-
-            if( PamParseHistogram( psXMLHist, pdfMin, pdfMax, pnBuckets, 
-                                   ppanHistogram, &bIncludeOutOfRange,
-                                   &bApprox ) )
-                return CE_None;
-            else
-                return CE_Failure;
-        }
-    }
-
-    return GDALRasterBand::GetDefaultHistogram( pdfMin, pdfMax, pnBuckets, 
-                                                ppanHistogram, bForce, 
-                                                pfnProgress,pProgressData);
 }
 
 /************************************************************************/
@@ -845,70 +757,46 @@ GDALDataset *MEMDataset::Open( GDALOpenInfo * poOpenInfo )
 GDALDataset *MEMDataset::Create( const char * pszFilename,
                                  int nXSize, int nYSize, int nBands,
                                  GDALDataType eType,
-                                 char **papszOptions )
+                                 char ** /* notdef: papszParmList */ )
 
 {
-
-/* -------------------------------------------------------------------- */
-/*      Do we want a pixel interleaved buffer?  I mostly care about     */
-/*      this to test pixel interleaved io in other contexts, but it     */
-/*      could be useful to create a directly accessable buffer for      */
-/*      some apps.                                                      */
-/* -------------------------------------------------------------------- */
-    int bPixelInterleaved = FALSE;
-    const char *pszOption = CSLFetchNameValue( papszOptions, "INTERLEAVE" );
-    if( pszOption && EQUAL(pszOption,"PIXEL") )
-        bPixelInterleaved = TRUE;
-        
 /* -------------------------------------------------------------------- */
 /*      First allocate band data, verifying that we can get enough      */
 /*      memory.                                                         */
 /* -------------------------------------------------------------------- */
-    std::vector<GByte*> apbyBandData;
+    GByte  	**papBandData;
     int   	iBand;
     int         nWordSize = GDALGetDataTypeSize(eType) / 8;
-    int         bAllocOK = TRUE;
 
-    if( bPixelInterleaved )
+    papBandData = (GByte **) VSICalloc(sizeof(void *),nBands);
+    if (papBandData == NULL)
     {
-        apbyBandData.push_back( 
-            (GByte *) VSIMalloc3( nWordSize * nBands, nXSize, nYSize ) );
-
-        if( apbyBandData[0] == NULL )
-            bAllocOK = FALSE;
-        else
-    {
-            memset(apbyBandData[0], 0, ((size_t)nWordSize) * nBands * nXSize * nYSize);
-            for( iBand = 1; iBand < nBands; iBand++ )
-                apbyBandData.push_back( apbyBandData[0] + iBand * nWordSize );
-        }
+        CPLError( CE_Failure, CPLE_OutOfMemory,
+                      "Unable to create band arrays ... out of memory." );
+        return NULL;
     }
+
+    for( iBand = 0; iBand < nBands; iBand++ )
+    {
+        size_t nMulResult = ((size_t)nXSize) * nYSize;
+        if ( nMulResult / nXSize != (size_t)nYSize )
+            papBandData[iBand] = NULL;
         else
+            papBandData[iBand] = (GByte *) VSICalloc( nWordSize, nMulResult );
+        if( papBandData[iBand] == NULL )
         {
             for( iBand = 0; iBand < nBands; iBand++ )
             {
-            apbyBandData.push_back( 
-                (GByte *) VSIMalloc3( nWordSize, nXSize, nYSize ) );
-            if( apbyBandData[iBand] == NULL )
-            {
-                bAllocOK = FALSE;
-                break;
-            }
-            memset(apbyBandData[iBand], 0, ((size_t)nWordSize) * nXSize * nYSize);
-        }
+                if( papBandData[iBand] )
+                    VSIFree( papBandData[iBand] );
             }
 
-    if( !bAllocOK )
-    {
-        for( iBand = 0; iBand < (int) apbyBandData.size(); iBand++ )
-        {
-            if( apbyBandData[iBand] )
-                VSIFree( apbyBandData[iBand] );
-        }
+            CPLFree( papBandData );
             CPLError( CE_Failure, CPLE_OutOfMemory,
                       "Unable to create band arrays ... out of memory." );
             return NULL;
         }
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Create the new GTiffDataset object.                             */
@@ -921,30 +809,17 @@ GDALDataset *MEMDataset::Create( const char * pszFilename,
     poDS->nRasterYSize = nYSize;
     poDS->eAccess = GA_Update;
 
-    const char *pszPixelType = CSLFetchNameValue( papszOptions, "PIXELTYPE" );
-    if( pszPixelType && EQUAL(pszPixelType,"SIGNEDBYTE") )
-        poDS->SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
-
-    if( bPixelInterleaved )
-        poDS->SetMetadataItem( "INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE" );
-
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
     for( iBand = 0; iBand < nBands; iBand++ )
     {
-        MEMRasterBand *poNewBand;
-
-        if( bPixelInterleaved )
-            poNewBand = new MEMRasterBand( poDS, iBand+1, apbyBandData[iBand],
-                                           eType, nWordSize * nBands, 0, 
-                                           iBand == 0 );
-        else
-            poNewBand = new MEMRasterBand( poDS, iBand+1, apbyBandData[iBand],
-                                           eType, 0, 0, TRUE );
-
-        poDS->SetBand( iBand+1, poNewBand );
+        poDS->SetBand( iBand+1, 
+                       new MEMRasterBand( poDS, iBand+1, papBandData[iBand],
+                                          eType, 0, 0, TRUE ) );
     }
+
+    CPLFree( papBandData );
 
 /* -------------------------------------------------------------------- */
 /*      Try to return a regular handle on the file.                     */
@@ -990,14 +865,6 @@ void GDALRegister_MEM()
                                    "In Memory Raster" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 CInt16 CInt32 CFloat32 CFloat64" );
-
-        poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
-"<CreationOptionList>"
-"   <Option name='INTERLEAVE' type='string-select' default='BAND'>"
-"       <Value>BAND</Value>"
-"       <Value>PIXEL</Value>"
-"   </Option>"
-"</CreationOptionList>" );
 
 /* Define GDAL_NO_OPEN_FOR_MEM_DRIVER macro to undefine Open() method for MEM driver. */
 /* Otherwise, bad user input can trigger easily a GDAL crash as random pointers can be passed as a string. */

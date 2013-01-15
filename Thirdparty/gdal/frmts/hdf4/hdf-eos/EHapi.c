@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: EHapi.c 22144 2011-04-12 15:37:38Z warmerdam $
+ * $Id: EHapi.c 12769 2007-11-14 15:12:27Z dron $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.
@@ -3365,7 +3365,7 @@ EHinquire(char *filename, char *type, char *objectlist, int32 * strbufsize)
     int32           nobj = 0;	/* Number of HDFEOS objects in file */
     int32           slen;	/* String length */
 
-    char            name[512];	/* Object name */
+    char            name[80];	/* Object name */
     char            class[80];	/* Object class */
 
 

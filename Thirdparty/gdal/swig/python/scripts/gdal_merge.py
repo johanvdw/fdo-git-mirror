@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: gdal_merge.py 22325 2011-05-07 19:50:58Z rouault $
+# $Id: gdal_merge.py 18669 2010-01-27 02:07:32Z chaitanya $
 #
 # Project:  InSAR Peppers
 # Purpose:  Module to extract data from many rasters into one output.
@@ -24,26 +24,15 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 ###############################################################################
-# changes 29Apr2011
-# if the input image is a multi-band one, use all 
-# the channels in building the stack
-# anssi.pekkarinen@fao.org
-
 
 try:
     from osgeo import gdal
+    gdal.TermProgress = gdal.TermProgress_nocb
 except ImportError:
     import gdal
 
-try:
-    progress = gdal.TermProgress_nocb
-except:
-    progress = gdal.TermProgress
-
-
 import sys
 import glob
-import math
 
 __version__ = '$id$'[5:-1]
 verbose = 0
@@ -70,7 +59,7 @@ def raster_copy( s_fh, s_xoff, s_yoff, s_xsize, s_ysize, s_band_n,
     t_band = t_fh.GetRasterBand( t_band_n )
 
     data = s_band.ReadRaster( s_xoff, s_yoff, s_xsize, s_ysize,
-                             t_xsize, t_ysize, t_band.DataType )
+                              t_xsize, t_ysize, t_band.DataType )
     t_band.WriteRaster( t_xoff, t_yoff, t_xsize, t_ysize,
                         data, t_xsize, t_ysize, t_band.DataType )
         
@@ -100,7 +89,7 @@ def raster_copy_with_nodata( s_fh, s_xoff, s_yoff, s_xsize, s_ysize, s_band_n,
 
     nodata_test = Numeric.equal(data_src,nodata)
     to_write = Numeric.choose( nodata_test, (data_src, data_dst) )
-
+                               
     t_band.WriteArray( to_write, t_xoff, t_yoff )
 
     return 0
@@ -245,9 +234,8 @@ class file_info:
 # =============================================================================
 def Usage():
     print('Usage: gdal_merge.py [-o out_filename] [-of out_format] [-co NAME=VALUE]*')
-    print('                     [-ps pixelsize_x pixelsize_y] [-tap] [-separate] [-q] [-v] [-pct]')
-    print('                     [-ul_lr ulx uly lrx lry] [-init "value [value...]"]')
-    print('                     [-n nodata_value] [-a_nodata output_nodata_value]')
+    print('                     [-ps pixelsize_x pixelsize_y] [-separate] [-q] [-v] [-pct]')
+    print('                     [-ul_lr ulx uly lrx lry] [-n nodata_value] [-init "value [value...]"]')
     print('                     [-ot datatype] [-createonly] input_files')
     print('                     [--help-general]')
     print('')
@@ -271,12 +259,10 @@ def main( argv=None ):
     separate = 0
     copy_pct = 0
     nodata = None
-    a_nodata = None
     create_options = []
     pre_init = []
     band_type = None
     createonly = 0
-    bTargetAlignedPixels = False
     
     gdal.AllRegister()
     if argv is None:
@@ -316,7 +302,7 @@ def main( argv=None ):
             i = i + 1
             band_type = gdal.GetDataTypeByName( argv[i] )
             if band_type == gdal.GDT_Unknown:
-                print('Unknown GDAL data type: %s' % argv[i])
+                print('Unknown GDAL data type: ', argv[i])
                 sys.exit( 1 )
 
         elif arg == '-init':
@@ -328,10 +314,6 @@ def main( argv=None ):
         elif arg == '-n':
             i = i + 1
             nodata = float(argv[i])
-
-        elif arg == '-a_nodata':
-            i = i + 1
-            a_nodata = float(argv[i])
 
         elif arg == '-f':
             # for backward compatibility.
@@ -351,9 +333,6 @@ def main( argv=None ):
             psize_y = -1 * abs(float(argv[i+2]))
             i = i + 2
 
-        elif arg == '-tap':
-            bTargetAlignedPixels = True
-
         elif arg == '-ul_lr':
             ulx = float(argv[i+1])
             uly = float(argv[i+2])
@@ -362,7 +341,7 @@ def main( argv=None ):
             i = i + 4
 
         elif arg[:1] == '-':
-            print('Unrecognised command option: %s' % arg)
+            print('Unrecognised command option: ', arg)
             Usage()
             sys.exit( 1 )
 
@@ -418,27 +397,15 @@ def main( argv=None ):
     
     # Create output file if it does not already exist.
     if t_fh is None:
-    
-        if bTargetAlignedPixels:
-            ulx = math.floor(ulx / psize_x) * psize_x
-            lrx = math.ceil(lrx / psize_x) * psize_x
-            lry = math.floor(lry / -psize_y) * -psize_y
-            uly = math.ceil(uly / -psize_y) * -psize_y
-    
         geotransform = [ulx, psize_x, 0, uly, 0, psize_y]
 
         xsize = int((lrx - ulx) / geotransform[1] + 0.5)
         ysize = int((lry - uly) / geotransform[5] + 0.5)
 
-
         if separate != 0:
-            bands=0
-
-            for fi in file_infos:
-                bands=bands + fi.bands
+            bands = len(file_infos)
         else:
             bands = file_infos[0].bands
-
 
         t_fh = Driver.Create( out_file, xsize, ysize, bands,
                               band_type, create_options )
@@ -453,19 +420,12 @@ def main( argv=None ):
             t_fh.GetRasterBand(1).SetRasterColorTable(file_infos[0].ct)
     else:
         if separate != 0:
-            bands=0
-            for fi in file_infos:
-                bands=bands + fi.bands            
+            bands = len(file_infos)
             if t_fh.RasterCount < bands :
-                print('Existing output file has less bands than the input files. You should delete it before. Terminating gdal_merge.')
+                print('Existing output file has less bands than the number of input files. You should delete it before. Terminating gdal_merge.')
                 sys.exit( 1 )
         else:
             bands = min(file_infos[0].bands,t_fh.RasterCount)
-
-    # Do we need to set nodata value ?
-    if a_nodata is not None:
-        for i in range(t_fh.RasterCount):
-            t_fh.GetRasterBand(i+1).SetNoDataValue(a_nodata)
 
     # Do we need to pre-initialize the whole mosaic file to some value?
     if pre_init is not None:
@@ -480,7 +440,7 @@ def main( argv=None ):
     t_band = 1
 
     if quiet == 0 and verbose == 0:
-        progress( 0.0 )
+        gdal.TermProgress( 0.0 )
     fi_processed = 0
     
     for fi in file_infos:
@@ -498,13 +458,12 @@ def main( argv=None ):
             for band in range(1, bands+1):
                 fi.copy_into( t_fh, band, band, nodata )
         else:
-            for band in range(1, fi.bands+1):
-                fi.copy_into( t_fh, band, t_band, nodata )
-                t_band = t_band+1
+            fi.copy_into( t_fh, 1, t_band, nodata )
+            t_band = t_band+1
             
         fi_processed = fi_processed+1
         if quiet == 0 and verbose == 0:
-            progress( fi_processed / float(len(file_infos))  )
+            gdal.TermProgress( fi_processed / float(len(file_infos))  )
     
     # Force file to be closed.
     t_fh = None

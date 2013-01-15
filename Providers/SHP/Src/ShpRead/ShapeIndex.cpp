@@ -183,7 +183,7 @@ void ShapeIndex::WriteRecordHeader (ULONG ulIndexOffset, ULONG nOffset, int nCon
  * Notes        : N/A
  *
  *****************************************************************************/
-bool ShapeIndex::GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLength, bool allowExc)
+void ShapeIndex::GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLength)
 {
     _FDORPT0(0, ">>>>>>>>>> GetObjectAt() <<<<<<<<<<\n");
     long nRowsLengthRead;
@@ -196,12 +196,7 @@ bool ShapeIndex::GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLengt
         if ( SetFilePointer64( (FdoInt64)(RECORD_START_OFFSET + nObjectNum * RECORD_HEADER_SIZE) ))
         {
             if (!ReadFile (m_szRowBuffer, SHP_FILE_READ_CACHE_SIZE * RECORD_HEADER_SIZE, &nRowsLengthRead))
-            {
-                if (allowExc)
-                    throw FdoCommonFile::LastErrorToException (L"ShapeIndex::GetObjectAt(ReadHeaders)");
-                else 
-                    return false;
-            }
+                throw FdoCommonFile::LastErrorToException (L"ShapeIndex::GetObjectAt(ReadHeaders)");
             nNumNewRows = nRowsLengthRead /sizeof(SHPIndexRecordHeader);
 
             // Refresh the cache
@@ -210,15 +205,9 @@ bool ShapeIndex::GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLengt
 
             // Check again the cache. 
             if ( !GetRowIndexFromCache( nObjectNum, nOffset, nContentLength ) )
-            {
-                if (allowExc)
-                    throw FdoException::Create (NlsMsgGet(SHP_END_OF_FILE_ERROR, "End of file occured reading shape at offset %1$ld for file '%2$ls'.", RECORD_START_OFFSET + nObjectNum * RECORD_HEADER_SIZE, FileName ()));
-                else
-                    return false;
-            }
+                throw FdoException::Create (NlsMsgGet(SHP_END_OF_FILE_ERROR, "End of file occured reading shape at offset %1$ld for file '%2$ls'.", RECORD_START_OFFSET + nObjectNum * RECORD_HEADER_SIZE, FileName ()));
         }
     }
-    return true;
 }
 
 

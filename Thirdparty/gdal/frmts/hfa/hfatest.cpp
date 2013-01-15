@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatest.cpp 22802 2011-07-24 14:16:58Z rouault $
+ * $Id: hfatest.cpp 18178 2009-12-05 00:29:57Z warmerdam $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Testing mainline for HFA services - transitory.
@@ -28,9 +28,8 @@
  ****************************************************************************/
 
 #include "hfa_p.h"
-#include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: hfatest.cpp 22802 2011-07-24 14:16:58Z rouault $");
+CPL_CVSID("$Id: hfatest.cpp 18178 2009-12-05 00:29:57Z warmerdam $");
 
 /************************************************************************/
 /*                               Usage()                                */
@@ -46,7 +45,7 @@ static void Usage()
 /* Stub for HFAPCSStructToWKT, defined in hfadataset.cpp but used by    */
 /* hfaopen.cpp                                                          */
 /************************************************************************/
-#ifndef WIN32
+
 char *
 HFAPCSStructToWKT( const Eprj_Datum *psDatum,
                    const Eprj_ProParameters *psPro,
@@ -55,7 +54,6 @@ HFAPCSStructToWKT( const Eprj_Datum *psDatum,
 {
     return NULL;
 }
-#endif
 
 /************************************************************************/
 /*                                main()                                */
@@ -219,9 +217,6 @@ int main( int argc, char ** argv )
     psDatum = HFAGetDatum( hHFA );
     
     HFAClose( hHFA );
-
-    VSICleanupFileManager();
-    CPLCleanupTLS();
 
 #ifdef DBMALLOC
     malloc_dump(1);

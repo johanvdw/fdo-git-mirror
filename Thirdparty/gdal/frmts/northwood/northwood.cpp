@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: northwood.cpp 23577 2011-12-15 19:45:36Z rouault $
+ * $Id: northwood.cpp 18354 2009-12-20 10:42:15Z rouault $
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Format basic implementation
@@ -125,13 +125,13 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 
     pGrd->iZUnits = nwtHeader[512];
 
-    if( nwtHeader[513] & 0x80 )
+    if( nwtHeader[513] && 0x80 )
         pGrd->bShowGradient = true;
 
-    if( nwtHeader[513] & 0x40 )
+    if( nwtHeader[513] && 0x40 )
         pGrd->bShowHillShade = true;
 
-    if( nwtHeader[513] & 0x20 )
+    if( nwtHeader[513] && 0x20 )
         pGrd->bHillShadeExists = true;
 
     memcpy( (void *) &pGrd->iNumColorInflections, (void *) &nwtHeader[516],
@@ -141,7 +141,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
     if (pGrd->iNumColorInflections > 32)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Corrupt header");
-        pGrd->iNumColorInflections = (unsigned short)i;
+        pGrd->iNumColorInflections = i;
         return FALSE;
     }
     
@@ -183,11 +183,11 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
 
     if( pGrd->cFormat & 0x80 )        // if is GRC load the Dictionary
     {
-        VSIFSeekL( pGrd->fp,
+        fseek( pGrd->fp,
                1024 + (pGrd->nXSide * pGrd->nYSide) * pGrd->nBitsPerPixel / 8,
                SEEK_SET );
 
-        if( !VSIFReadL( &usTmp, 2, 1, pGrd->fp) )
+        if( !fread( &usTmp, 2, 1, pGrd->fp) )
             return FALSE;
         CPL_LSBPTR16(&usTmp);
         pGrd->stClassDict =
@@ -206,7 +206,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
         {
             pGrd->stClassDict->stClassifedItem[usTmp] =
               (NWT_CLASSIFIED_ITEM *) calloc( sizeof(NWT_CLASSIFIED_ITEM), 1 );
-            if( !VSIFReadL( &cTmp, 9, 1, pGrd->fp ) )
+            if( !fread( &cTmp, 9, 1, pGrd->fp ) )
                 return FALSE;
             memcpy( (void *) &pGrd->stClassDict->
                     stClassifedItem[usTmp]->usPixVal, (void *) &cTmp[0], 2 );
@@ -228,7 +228,7 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
             if ( pGrd->stClassDict->stClassifedItem[usTmp]->usLen > 256)
                 return FALSE;
 
-            if( !VSIFReadL( &pGrd->stClassDict->stClassifedItem[usTmp]->szClassName,
+            if( !fread( &pGrd->stClassDict->stClassifedItem[usTmp]->szClassName,
                         pGrd->stClassDict->stClassifedItem[usTmp]->usLen,
                         1, pGrd->fp ) )
                 return FALSE;
@@ -287,14 +287,14 @@ int nwt_LoadColors( NWT_RGB * pMap, int mapSize, NWT_GRID * pGrd )
     }
     else
     {
-        int index = 0;
+        int index;
         for( ; i < pGrd->iNumColorInflections; i++ )
         {
             if( pGrd->fZMax < pGrd->stInflection[i].zVal )
             {
                 // then we must be between i and i-1
                 linearColor( &sColor, &pGrd->stInflection[i - 1],
-                                      &pGrd->stInflection[i], pGrd->fZMax );
+                                      &pGrd->stInflection[i], pGrd->fZMin );
                 index = mapSize - 1;
                 createIP( index, sColor.r, sColor.g, sColor.b, pMap,
                            &nWarkerMark );
@@ -410,15 +410,15 @@ NWT_GRID *nwtOpenGrid( char *filename )
 {
     NWT_GRID *pGrd;
     char nwtHeader[1024];
-    VSILFILE *fp;
+    FILE *fp;
 
-    if( (fp = VSIFOpenL( filename, "rb" )) == NULL )
+    if( (fp = fopen( filename, "rb" )) == NULL )
     {
         fprintf( stderr, "\nCan't open %s\n", filename );
         return NULL;
     }
 
-    if( !VSIFReadL( nwtHeader, 1024, 1, fp ) )
+    if( !fread( nwtHeader, 1024, 1, fp ) )
         return NULL;
 
     if( nwtHeader[0] != 'H' ||
@@ -464,7 +464,7 @@ void nwtCloseGrid( NWT_GRID * pGrd )
         free( pGrd->stClassDict );
     }
     if( pGrd->fp )
-        VSIFCloseL( pGrd->fp );
+        fclose( pGrd->fp );
     free( pGrd );
         return;
 }
@@ -507,8 +507,8 @@ void nwtPrintGridHeader( NWT_GRID * pGrd )
         }
     }
     printf( "\nDim (x,y) = (%d,%d)", pGrd->nXSide, pGrd->nYSide );
-    printf( "\nStep Size = %f", pGrd->dfStepSize );
-    printf( "\nBounds = (%f,%f) (%f,%f)", pGrd->dfMinX, pGrd->dfMinY,
+    printf( "\nStep Size = %lf", pGrd->dfStepSize );
+    printf( "\nBounds = (%lf,%lf) (%lf,%lf)", pGrd->dfMinX, pGrd->dfMinY,
             pGrd->dfMaxX, pGrd->dfMaxY );
     printf( "\nCoordinate System = %s", pGrd->cMICoordSys );
 
@@ -574,8 +574,8 @@ HLS RGBtoHLS( NWT_RGB rgb )
     B = rgb.b;
 
     /* calculate lightness */
-    cMax = (unsigned char) MAX( MAX(R,G), B );
-    cMin = (unsigned char) MIN( MIN(R,G), B );
+    cMax = MAX( MAX(R,G), B );
+    cMin = MIN( MIN(R,G), B );
     hls.l = (((cMax + cMin) * HLSMAX) + RGBMAX) / (2 * RGBMAX);
 
     if( cMax == cMin )
@@ -647,7 +647,7 @@ NWT_RGB HLStoRGB( HLS hls )
 
     if( hls.s == 0 )
     {                            /* achromatic case */
-        rgb.r = rgb.g = rgb.b = (unsigned char) ((hls.l * RGBMAX) / HLSMAX);
+        rgb.r = rgb.g = rgb.b = (hls.l * RGBMAX) / HLSMAX;
         if( hls.h != UNDEFINED )
         {
             /* ERROR */
@@ -663,9 +663,12 @@ NWT_RGB HLStoRGB( HLS hls )
         Magic1 = 2 * hls.l - Magic2;
 
         /* get RGB, change units from HLSMAX to RGBMAX */
-        rgb.r = (unsigned char) ((HueToRGB (Magic1, Magic2, hls.h + (HLSMAX / 3)) * RGBMAX + (HLSMAX / 2)) / HLSMAX);
-        rgb.g = (unsigned char) ((HueToRGB (Magic1, Magic2, hls.h) * RGBMAX + (HLSMAX / 2)) / HLSMAX);
-        rgb.b = (unsigned char) ((HueToRGB (Magic1, Magic2, hls.h - (HLSMAX / 3)) * RGBMAX + (HLSMAX / 2)) / HLSMAX);
+        rgb.r = (HueToRGB (Magic1, Magic2, hls.h + (HLSMAX / 3)) * RGBMAX +
+                 (HLSMAX / 2)) / HLSMAX;
+        rgb.g = (HueToRGB (Magic1, Magic2, hls.h) * RGBMAX + (HLSMAX / 2)) /
+                  HLSMAX;
+        rgb.b = (HueToRGB (Magic1, Magic2, hls.h - (HLSMAX / 3)) * RGBMAX +
+                 (HLSMAX / 2)) / HLSMAX;
     }
 
     return rgb;

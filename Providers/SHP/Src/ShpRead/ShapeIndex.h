@@ -36,7 +36,7 @@ public:
 
     // Data access methods
     // note, these offsets and lengths are bytes not words
-    bool GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLength, bool allowExc = true);
+    void GetObjectAt (int nObjectNum, ULONG& nOffset, int& nContentLength);
     void SetObjectAt (int nObjectNum, ULONG nOffset, int nContentLength, bool batch = false);
     int GetNumObjects ();
 

@@ -453,8 +453,6 @@ WARN_LOGFILE           =
 INPUT                  = . \
                          ogrsf_frmts \
                          ogrsf_frmts/generic \
-                         ogrsf_frmts/geojson/ogrgeojsonwriter.cpp \
-                         ogrsf_frmts/kml/ogr2kmlgeometry.cpp \
                          ../port
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -577,15 +575,6 @@ REFERENCED_BY_RELATION = YES
 # called/used by that function will be listed.
 
 REFERENCES_RELATION    = YES
-
-# If the REFERENCES_LINK_SOURCE tag is set to YES (the default) 
-# and SOURCE_BROWSER tag is set to YES, then the hyperlinks from 
-# functions in REFERENCES_RELATION and REFERENCED_BY_RELATION lists will 
-# link to the source code.  Otherwise they will link to the documentation. 
-#
-# http://trac.osgeo.org/gdal/ticket/2723
-
-REFERENCES_LINK_SOURCE = NO 
 
 # If the VERBATIM_HEADERS tag is set to YES (the default) then Doxygen 
 # will generate a verbatim copy of the header file for each class for 
@@ -1008,8 +997,7 @@ PREDEFINED             = HAVE_DLFCN_H \
                          CPL_C_START \
                          CPL_C_END \
                          __cplusplus \
-                         DOXYGEN_SKIP \
-                         HAVE_CURL
+                         DOXYGEN_SKIP 
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

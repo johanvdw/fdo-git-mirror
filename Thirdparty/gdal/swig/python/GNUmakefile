@@ -48,16 +48,18 @@ osr_wrap.cpp: ../include/python/osr_python.i
 gdal_array_wrap.cpp:  ../include/gdal_array.i ../include/python/typemaps_python.i
 	$(SWIG) $(SWIGARGS) $(SWIGDEFINES) -I$(GDAL_ROOT) -c++ -$(BINDING) -o $(SWIGOUTPUTDIR)$@ gdal_array.i
 
-# A few hacks (cat, mv) : the first one for SWIG < 1.3.36 and the second one for SWIG <= 1.3.39 python 3.X on 64bit platforms
-# The python3.2.patch is from https://sourceforge.net/tracker/?func=detail&aid=3057804&group_id=1645&atid=101645
-# and is no longer necessary with swig 2.0.4
+# Remove the following hack (cat, mv) as soon we have upgraded to SWIG >= 1.3.36
 generate: ${WRAPPERS} gdal_array_wrap.cpp
-	for i in gdal_wrap.cpp gdalconst_wrap.c ogr_wrap.cpp osr_wrap.cpp gdal_array_wrap.cpp; do sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/$$i | sed "s/int len;/Py_ssize_t len;/" > ${SWIGOUTPUTDIR}/$$i.tmp; mv -f ${SWIGOUTPUTDIR}/$$i.tmp ${SWIGOUTPUTDIR}/$$i; done
-	-grep "1\.3\.40" extensions/gdal_wrap.cpp >/dev/null && patch -p0 < python3.2.patch
-	-grep "1\.3\.40" extensions/gdal_wrap.cpp >/dev/null && cat python3.2.patch | sed "s/gdal_wrap/ogr_wrap/" | patch -p0
-	-grep "1\.3\.40" extensions/gdal_wrap.cpp >/dev/null && cat python3.2.patch | sed "s/gdal_wrap/osr_wrap/" | patch -p0
-	-grep "1\.3\.40" extensions/gdal_wrap.cpp >/dev/null && cat python3.2.patch | sed "s/gdal_wrap\.cpp/gdalconst_wrap\.c/" | patch -p0
-	-grep "1\.3\.40" extensions/gdal_wrap.cpp >/dev/null && cat python3.2.patch | sed "s/gdal_wrap/gdal_array_wrap/" | patch -p0
+	sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/gdal_wrap.cpp > ${SWIGOUTPUTDIR}/gdal_wrap.cpp.tmp
+	mv -f ${SWIGOUTPUTDIR}/gdal_wrap.cpp.tmp ${SWIGOUTPUTDIR}/gdal_wrap.cpp
+	sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/gdalconst_wrap.c > ${SWIGOUTPUTDIR}/gdalconst_wrap.c.tmp
+	mv -f ${SWIGOUTPUTDIR}/gdalconst_wrap.c.tmp ${SWIGOUTPUTDIR}/gdalconst_wrap.c
+	sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/ogr_wrap.cpp > ${SWIGOUTPUTDIR}/ogr_wrap.cpp.tmp
+	mv -f ${SWIGOUTPUTDIR}/ogr_wrap.cpp.tmp ${SWIGOUTPUTDIR}/ogr_wrap.cpp
+	sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/osr_wrap.cpp > ${SWIGOUTPUTDIR}/osr_wrap.cpp.tmp
+	mv -f ${SWIGOUTPUTDIR}/osr_wrap.cpp.tmp ${SWIGOUTPUTDIR}/osr_wrap.cpp
+	sed "s/PyErr_Format(PyExc_RuntimeError, mesg)/PyErr_SetString(PyExc_RuntimeError, mesg)/" ${SWIGOUTPUTDIR}/gdal_array_wrap.cpp > ${SWIGOUTPUTDIR}/gdal_array_wrap.cpp.tmp
+	mv -f ${SWIGOUTPUTDIR}/gdal_array_wrap.cpp.tmp ${SWIGOUTPUTDIR}/gdal_array_wrap.cpp
     
 build:
 	$(PYTHON) setup.py build
@@ -90,6 +92,3 @@ docs:
 	$(PYTHON) ../include/python/docs/doxy2swig.py ../../ogr/xml/ogrfeaturedefn_8cpp.xml ../include/python/docs/ogr_featuredef_docs.i OGRFeatureDefnShadow OGR_FD_
 
 	$(PYTHON) ../include/python/docs/doxy2swig.py ../../ogr/xml/ogrfielddefn_8cpp.xml ../include/python/docs/ogr_fielddef_docs.i OGRFieldDefnShadow OGR_Fld_
-
-epydoc: generate
-	epydoc --config epydoc.conf

@@ -40,9 +40,5 @@ int postgis_bind (
     char *null_ind,
     int typeBind);
 
-int postgis_binds_alloc( 
-    postgis_cursor_def *curs,
-    int count);
-
 #endif /* POSTGIS_BIND_H */
 

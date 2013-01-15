@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cs 19470 2010-04-20 20:22:42Z tamas $
+ * $Id: ogrinfo.cs 16310 2009-02-13 11:05:46Z tamas $
  *
  * Name:     ogrinfo.cs
  * Project:  GDAL CSharp Interface
@@ -122,7 +122,7 @@ class OGRInfo {
 		/* -------------------------------------------------------------------- */
 		/*      Reading the spatial reference                                   */
 		/* -------------------------------------------------------------------- */
-        OSGeo.OSR.SpatialReference sr = layer.GetSpatialRef();
+		SpatialReference sr = layer.GetSpatialRef();
 		string srs_wkt;
 		if ( sr != null ) 
 		{

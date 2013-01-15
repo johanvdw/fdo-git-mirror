@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aitest.c 22159 2011-04-14 18:18:54Z warmerdam $
+ * $Id: aitest.c 11596 2007-06-06 04:26:30Z warmerdam $
  *
  * Project:  Arc/Info Binary Grid Translator
  * Purpose:  Test mainline for examining AIGrid files.
@@ -29,7 +29,7 @@
 
 #include "aigrid.h"
 
-CPL_CVSID("$Id: aitest.c 22159 2011-04-14 18:18:54Z warmerdam $");
+CPL_CVSID("$Id: aitest.c 11596 2007-06-06 04:26:30Z warmerdam $");
 
 /************************************************************************/
 /*                             DumpMagic()                              */
@@ -56,7 +56,7 @@ static void DumpMagic( AIGInfo_t * psInfo, int bVerbose )
         VSIFSeekL( psTInfo->fpGrid, psTInfo->panBlockOffset[i], SEEK_SET );
         VSIFReadL( abyBlockSize, 2, 1, psTInfo->fpGrid );
 
-        if( psInfo->nCellType == AIG_CELLTYPE_INT && psInfo->bCompressed )
+        if( psInfo->nCellType == AIG_CELLTYPE_INT )
         {
             VSIFReadL( &byMagic, 1, 1, psTInfo->fpGrid );
 
@@ -113,10 +113,9 @@ int main( int argc, char ** argv )
 
 {
     AIGInfo_t	*psInfo;
-    GInt32 	*panRaster;
+    GUInt32 	*panRaster;
     int		i, j;
     int		bMagic = FALSE, bSupressMagic = FALSE;
-    int         iTestTileX = 0, iTestTileY = 0;
 
 /* -------------------------------------------------------------------- */
 /*      Process arguments.                                              */
@@ -128,14 +127,6 @@ int main( int argc, char ** argv )
 
         else if( EQUAL(argv[1],"-nomagic") )
             bSupressMagic = TRUE;
-
-        else if( EQUAL(argv[1],"-t") && argc > 2 )
-        {
-            iTestTileX = atoi(argv[2]);
-            iTestTileY = atoi(argv[3]);
-            argc -= 2;
-            argv += 2;
-        }
 
         argc--;
         argv++;
@@ -153,7 +144,7 @@ int main( int argc, char ** argv )
     if( psInfo == NULL )
         exit( 1 );
 
-    AIGAccessTile( psInfo, iTestTileX, iTestTileY );
+    AIGAccessTile( psInfo, 0, 0 );
 
 /* -------------------------------------------------------------------- */
 /*      Dump general information                                        */
@@ -166,12 +157,10 @@ int main( int argc, char ** argv )
             psInfo->dfURY );
 
     if( psInfo->nCellType == AIG_CELLTYPE_INT )
-        printf( "%s Integer coverage, %dx%d blocks.\n",
-                psInfo->bCompressed ? "Compressed" : "Uncompressed",
+        printf( "Integer coverage, %dx%d blocks.\n",
                 psInfo->nBlockXSize, psInfo->nBlockYSize );
     else
-        printf( "%s Floating point coverage, %dx%d blocks.\n",
-                psInfo->bCompressed ? "Compressed" : "Uncompressed",
+        printf( "Floating point coverage, %dx%d blocks.\n",
                 psInfo->nBlockXSize, psInfo->nBlockYSize );
 
     printf( "Stats - Min=%f, Max=%f, Mean=%f, StdDev=%f\n",
@@ -190,7 +179,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Read a block, and report it's contents.                         */
 /* -------------------------------------------------------------------- */
-    panRaster = (GInt32 *)
+    panRaster = (GUInt32 *)
         CPLMalloc(psInfo->nBlockXSize * psInfo->nBlockYSize * 4);
     
     while( argc > 2 && (atoi(argv[2]) > 0 || argv[2][0] == '0') )
@@ -206,7 +195,7 @@ int main( int argc, char ** argv )
                              psTInfo->panBlockOffset[nBlock],
                              psTInfo->panBlockSize[nBlock],
                              psInfo->nBlockXSize, psInfo->nBlockYSize,
-                             panRaster, psInfo->nCellType, psInfo->bCompressed);
+                             panRaster, psInfo->nCellType );
 
         printf( "\nBlock %d:\n", nBlock );
 

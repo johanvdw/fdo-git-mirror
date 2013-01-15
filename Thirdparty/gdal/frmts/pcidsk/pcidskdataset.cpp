@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcidskdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: pcidskdataset.cpp 18241 2009-12-10 15:58:39Z warmerdam $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software
@@ -29,7 +29,7 @@
 
 #include "gdal_pcidsk.h"
 
-CPL_CVSID("$Id: pcidskdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: pcidskdataset.cpp 18241 2009-12-10 15:58:39Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_PCIDSK(void);
@@ -640,7 +640,7 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
         vsi_l_offset    nPixelOffset = 0, nLineOffset = 0, nLineSize = 0;
         int             bNativeOrder;
         int             i;
-        VSILFILE       *fp = poDS->fp;
+        FILE            *fp = poDS->fp;
 
         VSIFSeekL( poDS->fp, nImgHdrOffset, SEEK_SET );
         if ( VSIFReadL( szTemp, 1, 1024, poDS->fp ) != 1024 )
@@ -732,9 +732,9 @@ GDALDataset *PCIDSKDataset::Open( GDALOpenInfo * poOpenInfo )
                   }
 
                   poDS->nBandFileCount++;
-                  poDS->pafpBandFiles = (VSILFILE **)
+                  poDS->pafpBandFiles = (FILE **)
                       CPLRealloc( poDS->pafpBandFiles,
-                                  poDS->nBandFileCount * sizeof(VSILFILE*) );
+                                  poDS->nBandFileCount * sizeof(FILE*) );
                   poDS->pafpBandFiles[poDS->nBandFileCount-1] = fp;
               }
 
@@ -1247,7 +1247,7 @@ GDALDataset *PCIDSKDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to create the file.                                         */
 /* -------------------------------------------------------------------- */
-    VSILFILE        *fp = VSIFOpenL( pszFilename, "wb" );
+    FILE        *fp = VSIFOpenL( pszFilename, "wb" );
 
     if( fp == NULL )
     {

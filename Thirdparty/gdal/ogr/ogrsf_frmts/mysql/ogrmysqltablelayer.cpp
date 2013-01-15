@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqltablelayer.cpp 22123 2011-04-05 19:41:27Z rouault $
+ * $Id: ogrmysqltablelayer.cpp 14430 2008-05-10 18:42:32Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLTableLayer class.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_mysql.h"
 
-CPL_CVSID("$Id: ogrmysqltablelayer.cpp 22123 2011-04-05 19:41:27Z rouault $");
+CPL_CVSID("$Id: ogrmysqltablelayer.cpp 14430 2008-05-10 18:42:32Z warmerdam $");
 
 /************************************************************************/
 /*                         OGRMySQLTableLayer()                         */
@@ -104,14 +104,14 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
 
 {
     MYSQL_RES    *hResult;
-    CPLString     osCommand;
+    char         szCommand[1024];
     
 /* -------------------------------------------------------------------- */
 /*      Fire off commands to get back the schema of the table.          */
 /* -------------------------------------------------------------------- */
-    osCommand.Printf("DESCRIBE `%s`", pszTable );
+    sprintf( szCommand, "DESCRIBE `%s`", pszTable );
     pszGeomColumnTable = CPLStrdup(pszTable);
-    if( mysql_query( poDS->GetConn(), osCommand ) )
+    if( mysql_query( poDS->GetConn(), szCommand ) )
     {
         poDS->ReportError( "DESCRIBE Failed" );
         return FALSE;
@@ -129,7 +129,6 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
 /* -------------------------------------------------------------------- */
     OGRFeatureDefn *poDefn = new OGRFeatureDefn( pszTable );
     char           **papszRow;
-    OGRwkbGeometryType eForcedGeomType = wkbUnknown;
 
     poDefn->Reference();
 
@@ -137,23 +136,20 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
     {
         const char      *pszType;
         OGRFieldDefn    oField( papszRow[0], OFTString);
-        int             nLenType;
 
         pszType = papszRow[1];
 
         if( pszType == NULL )
             continue;
 
-        nLenType = (int)strlen(pszType);
-
         if( EQUAL(pszType,"varbinary")
-            || (nLenType>=4 && EQUAL(pszType+nLenType-4,"blob")))
+            || (strlen(pszType)>3 && EQUAL(pszType+strlen(pszType)-4,"blob")))
         {
             oField.SetType( OFTBinary );
         }
         else if( EQUAL(pszType,"varchar") 
-                 || (nLenType>=4 && EQUAL(pszType+nLenType-4,"enum"))
-                 || (nLenType>=3 && EQUAL(pszType+nLenType-3,"set")) )
+                 || EQUAL(pszType+strlen(pszType)-4,"enum") 
+                 || EQUAL(pszType+strlen(pszType)-4,"set") )
         {
             oField.SetType( OFTString );
 
@@ -164,18 +160,16 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
             char ** papszTokens;
 
             papszTokens = CSLTokenizeString2(pszType,"(),",0);
-            if (CSLCount(papszTokens) >= 2)
-            {
-                /* width is the second */
-                oField.SetWidth(atoi(papszTokens[1]));
-            }
+            
+            /* width is the second */
+            oField.SetWidth(atoi(papszTokens[1]));
 
             CSLDestroy( papszTokens );
             oField.SetType( OFTString );
 
         }
         
-        if(nLenType>=4 && EQUAL(pszType+nLenType-4,"text"))
+        if(strlen(pszType)>3 && EQUAL(pszType+strlen(pszType)-4,"text"))
         {
             oField.SetType( OFTString );            
         }
@@ -190,11 +184,9 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
             char ** papszTokens;
 
             papszTokens = CSLTokenizeString2(pszType,"(),",0);
-            if (CSLCount(papszTokens) >= 2)
-            {
-                /* width is the second */
-                oField.SetWidth(atoi(papszTokens[1]));
-            }
+            
+            /* width is the second */
+            oField.SetWidth(atoi(papszTokens[1]));
 
             CSLDestroy( papszTokens );
             oField.SetType( OFTString );
@@ -229,12 +221,10 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
             char ** papszTokens;
 
             papszTokens = CSLTokenizeString2(pszType,"(),",0);
-            if (CSLCount(papszTokens) >= 3)
-            {
-                /* width is the second and precision is the third */
-                oField.SetWidth(atoi(papszTokens[1]));
-                oField.SetPrecision(atoi(papszTokens[2]));
-            }
+            
+            /* width is the second and precision is the third */
+            oField.SetWidth(atoi(papszTokens[1]));
+            oField.SetPrecision(atoi(papszTokens[2]));
             CSLDestroy( papszTokens );
 
 
@@ -256,12 +246,9 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
             
             char ** papszTokens=NULL;
             papszTokens = CSLTokenizeString2(pszType,"(),",0);
-            if (CSLCount(papszTokens) >= 3)
-            {
-                /* width is the second and precision is the third */
-                oField.SetWidth(atoi(papszTokens[1]));
-                oField.SetPrecision(atoi(papszTokens[2]));
-            }
+            /* width is the second and precision is the third */
+            oField.SetWidth(atoi(papszTokens[1]));
+            oField.SetPrecision(atoi(papszTokens[2]));
             CSLDestroy( papszTokens );  
 
             oField.SetType( OFTReal );
@@ -288,20 +275,9 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
             oField.SetType( OFTString );
             oField.SetWidth( 10 );
         }
-        else if( EQUAL(pszType, "geometry") ||
-                 OGRFromOGCGeomType(pszType) != wkbUnknown)
+        else if( EQUAL(pszType, "geometry") ) 
         {
-            if (pszGeomColumn == NULL)
-            {
-                pszGeomColumn = CPLStrdup(papszRow[0]);
-                eForcedGeomType = OGRFromOGCGeomType(pszType);
-            }
-            else
-            {
-                CPLDebug("MYSQL",
-                         "Ignoring %s as geometry column. Another one(%s) has already been found before",
-                         papszRow[0], pszGeomColumn);
-            }
+            pszGeomColumn = CPLStrdup(papszRow[0]);
             continue;
         }
         // Is this an integer primary key field?
@@ -340,12 +316,11 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
         // set to unknown first
         poDefn->SetGeomType( wkbUnknown );
         
-        osCommand = "SELECT type, coord_dimension FROM geometry_columns WHERE f_table_name='";
-        osCommand += pszTable;
-        osCommand += "'";
+        sprintf(szCommand, "SELECT type, coord_dimension FROM geometry_columns WHERE f_table_name='%s'",
+                pszTable );
         
         hResult = NULL;
-        if( !mysql_query( poDS->GetConn(), osCommand ) )
+        if( !mysql_query( poDS->GetConn(), szCommand ) )
             hResult = mysql_store_result( poDS->GetConn() );
 
         papszRow = NULL;
@@ -357,16 +332,30 @@ OGRFeatureDefn *OGRMySQLTableLayer::ReadTableDefinition( const char *pszTable )
 
             pszType = papszRow[0];
 
-            OGRwkbGeometryType nGeomType = OGRFromOGCGeomType(pszType);
+            OGRwkbGeometryType nGeomType = wkbUnknown;
+
+            // check only standard OGC geometry types
+            if ( EQUAL(pszType, "POINT") )
+                nGeomType = wkbPoint;
+            else if ( EQUAL(pszType,"LINESTRING"))
+                nGeomType = wkbLineString;
+            else if ( EQUAL(pszType,"POLYGON"))
+                nGeomType = wkbPolygon;
+            else if ( EQUAL(pszType,"MULTIPOINT"))
+                nGeomType = wkbMultiPoint;
+            else if ( EQUAL(pszType,"MULTILINESTRING"))
+                nGeomType = wkbMultiLineString;
+            else if ( EQUAL(pszType,"MULTIPOLYGON"))
+                nGeomType = wkbMultiPolygon;
+            else if ( EQUAL(pszType,"GEOMETRYCOLLECTION"))
+                nGeomType = wkbGeometryCollection;
 
             if( papszRow[1] != NULL && atoi(papszRow[1]) == 3 )
                 nGeomType = (OGRwkbGeometryType) (nGeomType | wkb25DBit);
 
             poDefn->SetGeomType( nGeomType );
 
-        }
-        else if (eForcedGeomType != wkbUnknown)
-            poDefn->SetGeomType(eForcedGeomType);
+        } 
 
         if( hResult != NULL )
             mysql_free_result( hResult );   //Free our query results for finding type.
@@ -874,7 +863,7 @@ OGRErr OGRMySQLTableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
 {
 
     MYSQL_RES           *hResult=NULL;
-    CPLString            osCommand;
+    char        		szCommand[1024];
     
     char                szFieldType[256];
     OGRFieldDefn        oField( poFieldIn );
@@ -957,13 +946,13 @@ OGRErr OGRMySQLTableLayer::CreateField( OGRFieldDefn *poFieldIn, int bApproxOK )
         return OGRERR_FAILURE;
     }
 
-    osCommand.Printf(
+    sprintf( szCommand,
              "ALTER TABLE `%s` ADD COLUMN `%s` %s",
              poFeatureDefn->GetName(), oField.GetNameRef(), szFieldType );
 
-    if( mysql_query(poDS->GetConn(), osCommand ) )
+    if( mysql_query(poDS->GetConn(), szCommand ) )
     {
-        poDS->ReportError( osCommand );
+        poDS->ReportError( szCommand );
         return OGRERR_FAILURE;
     }
 
@@ -999,9 +988,9 @@ OGRFeature *OGRMySQLTableLayer::GetFeature( long nFeatureId )
 /*      interest.                                                       */
 /* -------------------------------------------------------------------- */
     char        *pszFieldList = BuildFields();
-    CPLString    osCommand;
+    char        *pszCommand = (char *) CPLMalloc(strlen(pszFieldList)+2000);
 
-    osCommand.Printf(
+    sprintf( pszCommand, 
              "SELECT %s FROM `%s` WHERE `%s` = %ld", 
              pszFieldList, poFeatureDefn->GetName(), pszFIDColumn, 
              nFeatureId );
@@ -1010,11 +999,12 @@ OGRFeature *OGRMySQLTableLayer::GetFeature( long nFeatureId )
 /* -------------------------------------------------------------------- */
 /*      Issue the command.                                              */
 /* -------------------------------------------------------------------- */
-    if( mysql_query( poDS->GetConn(), osCommand ) )
+    if( mysql_query( poDS->GetConn(), pszCommand ) )
     {
-        poDS->ReportError( osCommand );
+        poDS->ReportError( pszCommand );
         return NULL;
     }
+    CPLFree( pszCommand );
 
     hResultSet = mysql_store_result( poDS->GetConn() );
     if( hResultSet == NULL )

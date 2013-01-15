@@ -1,5 +1,5 @@
 dnl ***************************************************************************
-dnl $Id: geos.m4 23370 2011-11-13 13:21:30Z rouault $
+dnl $Id: geos.m4 13275 2007-12-06 19:00:50Z mloskot $
 dnl
 dnl Project:  GDAL
 dnl Purpose:  Test for GEOS library presence
@@ -136,10 +136,6 @@ AC_DEFUN([GEOS_INIT],[
         [HAVE_GEOS="no"],
         []
       )
-
-      if test x"$HAVE_GEOS" = "xno"; then
-          GEOS_CFLAGS=""
-      fi
 
       CFLAGS="${ax_save_CFLAGS}"
       LIBS="${ax_save_LIBS}"

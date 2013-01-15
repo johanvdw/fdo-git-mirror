@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_bna.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogr_bna.h 10646 2007-01-18 02:38:10Z warmerdam $
  *
  * Project:  BNA Translator
  * Purpose:  Definition of classes for OGR .bna driver.
@@ -58,7 +58,7 @@ class OGRBNALayer : public OGRLayer
     int                failed;
     int                curLine;
     int                nNextFID;
-    VSILFILE*              fpBNA;
+    FILE*              fpBNA;
     int                nFeatures;
     int                partialIndexTable;
     OffsetAndLine*     offsetAndLineFeaturesTable;
@@ -67,8 +67,7 @@ class OGRBNALayer : public OGRLayer
 
     OGRFeature *       BuildFeatureFromBNARecord (BNARecord* record, long fid);
     void               FastParseUntil ( int interestFID);
-    void               WriteFeatureAttributes(VSILFILE* fp, OGRFeature *poFeature);
-    void               WriteCoord(VSILFILE* fp, double dfX, double dfY);
+    void               WriteFeatureAttributes(FILE* fp, OGRFeature *poFeature);
     
   public:
                         OGRBNALayer(const char *pszFilename,
@@ -112,7 +111,7 @@ class OGRBNADataSource : public OGRDataSource
     int                 bUpdate;
     
     /*  Export related */
-    VSILFILE                *fpOutput; /* Virtual file API */
+    FILE                *fpOutput;
     int                 bUseCRLF;
     int                 bMultiLine;
     int                 nbOutID;
@@ -125,7 +124,7 @@ class OGRBNADataSource : public OGRDataSource
                         OGRBNADataSource();
                         ~OGRBNADataSource();
 
-    VSILFILE                *GetOutputFP() { return fpOutput; }
+    FILE                *GetOutputFP() { return fpOutput; }
     int                 GetUseCRLF() { return bUseCRLF; }
     int                 GetMultiLine() { return bMultiLine; }
     int                 GetNbOutId() { return nbOutID; }

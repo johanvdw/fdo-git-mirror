@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrbnaparser.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ogrbnaparser.h
  *
  * Project:  BNA Parser header
  * Purpose:  Definition of structures, enums and functions of BNA parser
@@ -31,7 +31,7 @@
 #ifndef _OGR_BNA_PARSER_INCLUDED
 #define _OGR_BNA_PARSER_INCLUDED
 
-#include "cpl_vsi.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -65,7 +65,7 @@ typedef struct
 } BNARecord;
 
 /** Get the next BNA record in the file
-   @param f open BNA files (VSI Large API handle)
+   @param f open BNA files
    @param ok (out) set to TRUE if reading was OK (or EOF detected)
    @param curLine (in/out) incremenet number line
    @param verbose if TRUE, errors will be reported
@@ -75,7 +75,7 @@ typedef struct
                               the record will be parsed as fast as possible (tabCoords not allocated)
    @return the parsed BNA record or NULL if EOF or error
 */
-BNARecord* BNA_GetNextRecord(VSILFILE* f, int* ok, int* curLine, int verbose, BNAFeatureType interestFeatureType);
+BNARecord* BNA_GetNextRecord(FILE* f, int* ok, int* curLine, int verbose, BNAFeatureType interestFeatureType);
 
 /** Free a record obtained by BNA_GetNextRecord */
 void BNA_FreeRecord(BNARecord* record);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dods.h 20634 2010-09-16 22:02:29Z rouault $
+ * $Id: ogr_dods.h 15583 2008-10-23 00:04:33Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/DODS driver.
@@ -61,14 +61,7 @@
 #include <Sequence.h>
 #include <Grid.h>
 
-#ifdef LIBDAP_310
-/* AISConnect.h/AISConnect class was renamed to Connect.h/Connect in libdap 3.10 */
-#include <Connect.h>
-#define AISConnect Connect
-#else
-#include <AISConnect.h>
-#endif
-
+#include <AISConnect.h>		
 #include <DDS.h>
 #include <DAS.h>
 #include <BaseTypeFactory.h>
@@ -169,7 +162,7 @@ private:
     OGRDODSFieldDefn    oYField;
     OGRDODSFieldDefn    oZField;
 
-    const char         *pszSubSeqPath;
+    char               *pszSubSeqPath;
 
     Sequence           *poSuperSeq;
 

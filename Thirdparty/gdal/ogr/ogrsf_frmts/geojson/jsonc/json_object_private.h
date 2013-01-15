@@ -35,7 +35,6 @@ struct json_object
     struct array_list *c_array;
     char *c_string;
   } o;
-  int _precision; /* GDAL addition */
 };
 
 /* CAW: added for ANSI C iteration correctness */

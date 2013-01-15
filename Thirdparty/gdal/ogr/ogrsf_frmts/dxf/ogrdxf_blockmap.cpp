@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxf_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $
+ * $Id: ogrdxf_blockmap.cpp 18223 2009-12-09 01:15:31Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements BlockMap reading and management portion of 
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxf_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 18223 2009-12-09 01:15:31Z warmerdam $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -44,11 +44,8 @@ void OGRDXFDataSource::ReadBlocksSection()
 {
     char szLineBuf[257];
     int  nCode;
-    OGRDXFLayer *poReaderLayer = (OGRDXFLayer *) GetLayerByName( "Entities" );
-    int bMergeBlockGeometries = CSLTestBoolean(
-        CPLGetConfigOption( "DXF_MERGE_BLOCK_GEOMETRIES", "TRUE" ) );
 
-    iEntitiesSectionOffset = oReader.iSrcBufferFileOffset + oReader.iSrcBufferOffset;
+    iEntitiesSectionOffset = iSrcBufferFileOffset + iSrcBufferOffset;
 
     while( (nCode = ReadValue( szLineBuf, sizeof(szLineBuf) )) > -1 
            && !EQUAL(szLineBuf,"ENDSEC") )
@@ -82,11 +79,10 @@ void OGRDXFDataSource::ReadBlocksSection()
         OGRGeometryCollection *poColl = new OGRGeometryCollection();
         std::vector<OGRFeature*> apoFeatures;
 
-        while( (poFeature = poReaderLayer->GetNextUnfilteredFeature()) != NULL )
+        while( (poFeature = apoLayers[0]->GetNextUnfilteredFeature()) != NULL )
         {
-            if( (poFeature->GetStyleString() != NULL
-                 && strstr(poFeature->GetStyleString(),"LABEL") != NULL)
-                || !bMergeBlockGeometries )
+            if( poFeature->GetStyleString() != NULL
+                && strstr(poFeature->GetStyleString(),"LABEL") != NULL )
             {
                 apoFeatures.push_back( poFeature );
             }
