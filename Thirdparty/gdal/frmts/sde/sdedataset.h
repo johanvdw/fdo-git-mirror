@@ -11,7 +11,7 @@ class SDEDataset : public GDALDataset
     private:
         
 
-        LONG                nSubDataCount;
+        long                nSubDataCount;
         char*               pszWKT;
         
         double              dfMinX, dfMaxX, dfMinY, dfMaxY;

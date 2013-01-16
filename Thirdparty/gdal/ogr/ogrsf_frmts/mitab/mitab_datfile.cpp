@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: mitab_datfile.cpp,v 1.22 2010-07-07 19:00:15 aboudreault Exp $
+ * $Id: mitab_datfile.cpp,v 1.19 2008/01/29 20:46:32 dmorissette Exp $
  *
  * Name:     mitab_datfile.cpp
  * Project:  MapInfo TAB Read/Write library
@@ -31,17 +31,6 @@
  **********************************************************************
  *
  * $Log: mitab_datfile.cpp,v $
- * Revision 1.22  2010-07-07 19:00:15  aboudreault
- * Cleanup Win32 Compile Warnings (GDAL bug #2930)
- *
- * Revision 1.21  2009-06-08 20:30:46  dmorissette
- * Fixed threading issue (static buffer) in Date and DateTime code (GDAL
- * ticket #1883)
- *
- * Revision 1.20  2008-11-27 20:50:22  aboudreault
- * Improved support for OGR date/time types. New Read/Write methods (bug 1948)
- * Added support of OGR date/time types for MIF features.
- *
  * Revision 1.19  2008/01/29 20:46:32  dmorissette
  * Added support for v9 Time and DateTime fields (byg 1754)
  *
@@ -434,8 +423,8 @@ int  TABDATFile::WriteHeader()
     m_poHeaderBlock->WriteByte(9);     // Last update day
 
     m_poHeaderBlock->WriteInt32(m_numRecords);
-    m_poHeaderBlock->WriteInt16((GInt16)m_nFirstRecordPtr);
-    m_poHeaderBlock->WriteInt16((GInt16)m_nRecordSize);
+    m_poHeaderBlock->WriteInt16(m_nFirstRecordPtr);
+    m_poHeaderBlock->WriteInt16(m_nRecordSize);
 
     m_poHeaderBlock->WriteZeros(20);    // Pad rest with zeros
 
@@ -939,7 +928,7 @@ GInt16 TABDATFile::ReadSmallIntField(int nWidth)
     }
 
     if (m_eTableType == TABTableDBF)
-        return (GInt16)atoi(ReadCharField(nWidth));
+        return atoi(ReadCharField(nWidth));
 
     return m_poRecordBlock->ReadInt16();
 }
@@ -1036,49 +1025,36 @@ const char *TABDATFile::ReadLogicalField(int nWidth)
  **********************************************************************/
 const char *TABDATFile::ReadDateField(int nWidth)
 {
-    int nDay, nMonth, nYear, status;
-    nDay = nMonth = nYear = 0;
+    int nDay, nMonth, nYear;
 
-    if ((status = ReadDateField(nWidth, &nYear, &nMonth, &nDay)) == -1)
-       return "";
-
-    sprintf(m_szBuffer, "%4.4d%2.2d%2.2d", nYear, nMonth, nDay);
-  
-    return m_szBuffer;
-}
-
-int TABDATFile::ReadDateField(int nWidth, int *nYear, int *nMonth, int *nDay)
-{
     // If current record has been deleted, then return an acceptable 
     // default value.
     if (m_bCurRecordDeletedFlag)
-        return -1;
+        return "";
 
     if (m_poRecordBlock == NULL)
     {
         CPLError(CE_Failure, CPLE_AssertionFailed,
                  "Can't read field value: file is not opened.");
-        return -1;
+        return "";
     }
 
-    // With .DBF files, the value should already be 
-    // stored in YYYYMMDD format according to DBF specs.
+    // With .DBF files, there is nothing to do... the value should already
+    // be stored in YYYYMMDD format according to DBF specs.
     if (m_eTableType == TABTableDBF)
-    {
-       strcpy(m_szBuffer,ReadCharField(nWidth));
-       sscanf(m_szBuffer, "%4d%2d%2d", nYear, nMonth, nDay);
-    }
-    else
-    {
-       *nYear  = m_poRecordBlock->ReadInt16();
-       *nMonth = m_poRecordBlock->ReadByte();
-       *nDay   = m_poRecordBlock->ReadByte();
-    }
-    
-    if (CPLGetLastErrorNo() != 0 || (*nYear==0 && *nMonth==0 && *nDay==0))
-       return -1;
-   
-    return 0;
+        return ReadCharField(nWidth);
+
+
+    nYear  = m_poRecordBlock->ReadInt16();
+    nMonth = m_poRecordBlock->ReadByte();
+    nDay   = m_poRecordBlock->ReadByte();
+
+    if (CPLGetLastErrorNo() != 0 || (nYear==0 && nMonth==0 && nDay==0))
+        return "";
+
+    sprintf(m_szBuffer, "%4.4d%2.2d%2.2d", nYear, nMonth, nDay);
+
+    return m_szBuffer;
 }
 
 /**********************************************************************
@@ -1100,56 +1076,40 @@ int TABDATFile::ReadDateField(int nWidth, int *nYear, int *nMonth, int *nDay)
  **********************************************************************/
 const char *TABDATFile::ReadTimeField(int nWidth)
 {
-    int nHour, nMinute, nSecond, nMS, status;
-    nHour = nMinute = nSecond = nMS = 0;
+    GInt32 nS;
+    static char szBuf[20];
 
-    if ((status = ReadTimeField(nWidth, &nHour, &nMinute, &nSecond, &nMS)) == -1)
-       return "";
-
-    sprintf(m_szBuffer, "%2.2d%2.2d%2.2d%3.3d", nHour, nMinute, nSecond, nMS);
-    
-    return m_szBuffer;
-}
-
-int TABDATFile::ReadTimeField(int nWidth, int *nHour, int *nMinute, 
-                              int *nSecond, int *nMS)
-{
-    GInt32 nS = 0;
     // If current record has been deleted, then return an acceptable 
     // default value.
     if (m_bCurRecordDeletedFlag)
-        return -1;
+        return "";
 
     if (m_poRecordBlock == NULL)
     {
         CPLError(CE_Failure, CPLE_AssertionFailed,
                  "Can't read field value: file is not opened.");
-        return -1;
+        return "";
     }
 
-    // With .DBF files, the value should already be stored in 
-    // HHMMSSMMM format according to DBF specs.
+    // With .DBF files, there is nothing to do... the value should already
+    // be stored in HHMMSSMMM format according to DBF specs.
     if (m_eTableType == TABTableDBF)
-    {
-       strcpy(m_szBuffer,ReadCharField(nWidth));
-       sscanf(m_szBuffer,"%2d%2d%2d%3d",
-              nHour, nMinute, nSecond, nMS);
-    }
-    else
-    {
-       nS  = m_poRecordBlock->ReadInt32(); // Convert time from ms to sec
-    }
+        return ReadCharField(nWidth);
+
+
+    nS  = m_poRecordBlock->ReadInt32(); // Convert time from ms to sec
 
     // nS is set to -1 when the value is 'not set'
     if (CPLGetLastErrorNo() != 0 || nS < 0 || (nS>86400000))
-       return -1;
+        return "";
 
-    *nHour = int(nS/3600000);
-    *nMinute  = int((nS/1000 - *nHour*3600)/60);
-    *nSecond  = int(nS/1000 - *nHour*3600 - *nMinute*60);
-    *nMS   = int(nS-*nHour*3600000-*nMinute*60000-*nSecond*1000);
+    int nHour = int(nS/3600000);
+    int nMin  = int((nS/1000 - nHour*3600)/60);
+    int nSec  = int(nS/1000 - nHour*3600 - nMin*60);
+    int nMS   = int(nS-nHour*3600000-nMin*60000-nSec*1000);
+    sprintf(szBuf, "%2.2d%2.2d%2.2d%3.3d", nHour, nMin, nSec, nMS);
 
-    return 0;
+    return szBuf;
 }
 
 /**********************************************************************
@@ -1172,61 +1132,46 @@ int TABDATFile::ReadTimeField(int nWidth, int *nHour, int *nMinute,
  **********************************************************************/
 const char *TABDATFile::ReadDateTimeField(int nWidth)
 {
-    int nDay, nMonth, nYear, nHour, nMinute, nSecond, nMS, status;
-    nDay = nMonth = nYear = nHour = nMinute = nSecond = nMS = 0;
-    
-    if ((status = ReadDateTimeField(nWidth, &nYear, &nMonth, &nDay, &nHour, 
-                                    &nMinute, &nSecond, &nMS)) == -1)
-       return "";
+    int nDay, nMonth, nYear;
+    GInt32 nS;
+    static char szBuf[20];
 
-    sprintf(m_szBuffer, "%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d%3.3d", 
-            nYear, nMonth, nDay, nHour, nMinute, nSecond, nMS);
-
-    return m_szBuffer;
-}
-
-int TABDATFile::ReadDateTimeField(int nWidth, int *nYear, int *nMonth, int *nDay,
-                                 int *nHour, int *nMinute, int *nSecond, int *nMS)
-{
-    GInt32 nS = 0;
     // If current record has been deleted, then return an acceptable 
     // default value.
     if (m_bCurRecordDeletedFlag)
-        return -1;
+        return "";
 
     if (m_poRecordBlock == NULL)
     {
         CPLError(CE_Failure, CPLE_AssertionFailed,
                  "Can't read field value: file is not opened.");
-        return -1;
+        return "";
     }
 
-    // With .DBF files, the value should already be stored in 
-    // YYYYMMDD format according to DBF specs.
+    // With .DBF files, there is nothing to do... the value should already
+    // be stored in YYYYMMDD format according to DBF specs.
     if (m_eTableType == TABTableDBF)
-    {
-       strcpy(m_szBuffer,ReadCharField(nWidth));
-       sscanf(m_szBuffer, "%4d%2d%2d%2d%2d%2d%3d",
-              nYear, nMonth, nDay, nHour, nMinute, nSecond, nMS);
-    }
-    else
-    { 
-       *nYear  = m_poRecordBlock->ReadInt16();
-       *nMonth = m_poRecordBlock->ReadByte();
-       *nDay   = m_poRecordBlock->ReadByte();
-       nS      = m_poRecordBlock->ReadInt32();
-    }
+        return ReadCharField(nWidth);
+
+
+    nYear  = m_poRecordBlock->ReadInt16();
+    nMonth = m_poRecordBlock->ReadByte();
+    nDay   = m_poRecordBlock->ReadByte();
+    nS     = m_poRecordBlock->ReadInt32();
 
     if (CPLGetLastErrorNo() != 0 || 
-        (*nYear==0 && *nMonth==0 && *nDay==0) || (nS>86400000))
-        return -1;
+        (nYear==0 && nMonth==0 && nDay==0) || (nS>86400000))
+        return "";
 
-    *nHour = int(nS/3600000);
-    *nMinute  = int((nS/1000 - *nHour*3600)/60);
-    *nSecond  = int(nS/1000 - *nHour*3600 - *nMinute*60);
-    *nMS   = int(nS-*nHour*3600000-*nMinute*60000-*nSecond*1000);
+    int nHour = int(nS/3600000);
+    int nMin  = int((nS/1000 - nHour*3600)/60);
+    int nSec  = int(nS/1000 - nHour*3600 - nMin*60);
+    int nMS   = int(nS-nHour*3600000-nMin*60000-nSec*1000);
 
-    return 0;
+    sprintf(szBuf, "%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d%3.3d", 
+            nYear, nMonth, nDay, nHour, nMin, nSec, nMS);
+
+    return szBuf;
 }
 
 /**********************************************************************
@@ -1461,6 +1406,13 @@ int TABDATFile::WriteDateField(const char *pszValue,
     int nDay, nMonth, nYear;
     char **papszTok = NULL;
 
+    if (m_poRecordBlock == NULL)
+    {
+        CPLError(CE_Failure, CPLE_AssertionFailed,
+            "Can't write field value: GetRecordBlock() has not been called.");
+        return -1;
+    }
+
     /*-----------------------------------------------------------------
      * Get rid of leading spaces.
      *----------------------------------------------------------------*/
@@ -1521,22 +1473,9 @@ int TABDATFile::WriteDateField(const char *pszValue,
     }
     CSLDestroy(papszTok);
 
-    return WriteDateField(nYear, nMonth, nDay, poINDFile, nIndexNo);
-}
-
-int TABDATFile::WriteDateField(int nYear, int nMonth, int nDay,
-                               TABINDFile *poINDFile, int nIndexNo)
-{
-    if (m_poRecordBlock == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-                 "Can't write field value: GetRecordBlock() has not been called.");
-        return -1;
-    }
-    
-    m_poRecordBlock->WriteInt16((GInt16)nYear);
-    m_poRecordBlock->WriteByte((GByte)nMonth);
-    m_poRecordBlock->WriteByte((GByte)nDay);
+    m_poRecordBlock->WriteInt16(nYear);
+    m_poRecordBlock->WriteByte(nMonth);
+    m_poRecordBlock->WriteByte(nDay);
 
     if (CPLGetLastErrorNo() != 0)
         return -1;
@@ -1572,7 +1511,15 @@ int TABDATFile::WriteTimeField(const char *pszValue,
                                TABINDFile *poINDFile, int nIndexNo)
 {
     int nHour, nMin, nSec, nMS;
+    GInt32 nS = -1;
     char **papszTok = NULL;
+
+    if (m_poRecordBlock == NULL)
+    {
+        CPLError(CE_Failure, CPLE_AssertionFailed,
+            "Can't write field value: GetRecordBlock() has not been called.");
+        return -1;
+    }
 
     /*-----------------------------------------------------------------
      * Get rid of leading spaces.
@@ -1597,6 +1544,8 @@ int TABDATFile::WriteTimeField(const char *pszValue,
         nMin  = atoi(szBuf+3);
         nSec  = atoi(szBuf+6);
         nMS   = 0;
+
+        nS = (nHour*3600+nMin*60+nSec)*1000+nMS;
     }
     else if (strlen(pszValue) == 9)
     {
@@ -1619,10 +1568,12 @@ int TABDATFile::WriteTimeField(const char *pszValue,
         strncpy(szBuf,pszValue+6,3);
         szBuf[3]=0;
         nMS = atoi(szBuf);
+
+        nS = (nHour*3600+nMin*60+nSec)*1000+nMS;
     }
     else if (strlen(pszValue) == 0)
     {
-       nHour = nMin = nSec = nMS = -1;  // Write -1 to .DAT file if value is not set
+        nS = -1;  // Write -1 to .DAT file if value is not set
     }
     else
     {
@@ -1635,26 +1586,8 @@ int TABDATFile::WriteTimeField(const char *pszValue,
     }
     CSLDestroy(papszTok);
 
-    return WriteTimeField(nHour, nMin, nSec, nMS, poINDFile, nIndexNo);
-}
-
-int TABDATFile::WriteTimeField(int nHour, int nMinute, int nSecond, int nMS, 
-                               TABINDFile *poINDFile, int nIndexNo)
-{
-    GInt32 nS = -1;
-
-    if (m_poRecordBlock == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-            "Can't write field value: GetRecordBlock() has not been called.");
-        return -1;
-    }
-    
-    nS = (nHour*3600+nMinute*60+nSecond)*1000+nMS;
-    if (nS < 0)
-       nS = -1;
     m_poRecordBlock->WriteInt32(nS);
-    
+
     if (CPLGetLastErrorNo() != 0)
         return -1;
 
@@ -1676,8 +1609,7 @@ int TABDATFile::WriteTimeField(int nHour, int nMinute, int nSecond, int nMS,
  * block.
  *
  * A datetime field is a 8 bytes binary value in which the first byte is
- * the day, followe
-d by 1 byte for the month, and 2 bytes for the year.
+ * the day, followed by 1 byte for the month, and 2 bytes for the year.
  * After this the time value is stored as a 4 byte integer 
  * (milliseconds since midnight)
  *
@@ -1692,6 +1624,13 @@ int TABDATFile::WriteDateTimeField(const char *pszValue,
 {
     int nDay, nMonth, nYear, nHour, nMin, nSec, nMS;
     char **papszTok = NULL;
+
+    if (m_poRecordBlock == NULL)
+    {
+        CPLError(CE_Failure, CPLE_AssertionFailed,
+            "Can't write field value: GetRecordBlock() has not been called.");
+        return -1;
+    }
 
     /*-----------------------------------------------------------------
      * Get rid of leading spaces.
@@ -1771,26 +1710,11 @@ int TABDATFile::WriteDateTimeField(const char *pszValue,
     }
     CSLDestroy(papszTok);
 
-    return WriteDateTimeField(nYear, nMonth, nDay, nHour, nMin, nSec, nMS,
-                              poINDFile, nIndexNo);
-}
+    GInt32 nS = (nHour*3600+nMin*60+nSec)*1000+nMS;
 
-int TABDATFile::WriteDateTimeField(int nYear, int nMonth, int nDay, 
-                                   int nHour, int nMinute, int nSecond, int nMS,
-                                   TABINDFile *poINDFile, int nIndexNo)
-{
-    GInt32 nS = (nHour*3600+nMinute*60+nSecond)*1000+nMS;
-
-    if (m_poRecordBlock == NULL)
-    {
-        CPLError(CE_Failure, CPLE_AssertionFailed,
-            "Can't write field value: GetRecordBlock() has not been called.");
-        return -1;
-    }
-
-    m_poRecordBlock->WriteInt16((GInt16)nYear);
-    m_poRecordBlock->WriteByte((GByte)nMonth);
-    m_poRecordBlock->WriteByte((GByte)nDay);
+    m_poRecordBlock->WriteInt16(nYear);
+    m_poRecordBlock->WriteByte(nMonth);
+    m_poRecordBlock->WriteByte(nDay);
     m_poRecordBlock->WriteInt32(nS);
 
     if (CPLGetLastErrorNo() != 0)

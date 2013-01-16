@@ -34,15 +34,19 @@
 #include "gdal_pam.h"
 #include "cpl_csv.h"
 #include "ogr_spatialref.h"
+//#include "Windows.h"
+#include <string>
+#include <map>
 
 #ifdef WIN32
 #include  <io.h>
 #endif
 
-#include  <cstdio>
-#include  <cstdlib>
-#include <string>
-#include <map>
+#include  <stdio.h>
+#include  <stdlib.h>
+
+
+using namespace std;
 
 CPL_C_START
 void	GDALRegister_ILWIS(void);
@@ -67,8 +71,8 @@ class ValueRange
 public:
     ValueRange(double min, double max);	// step = 1
     ValueRange(double min, double max, double step);	
-    ValueRange(std::string str);
-    std::string ToString();
+    ValueRange(string str);
+    string ToString();
     ilwisStoreType get_NeededStoreType() { return st; }
     double get_rLo() { return _rLo; }
     double get_rHi() { return _rHi; }
@@ -100,7 +104,7 @@ struct ILWISInfo
     bool bUseValueRange;
     ValueRange vr;
     ilwisStoreType stStoreType;
-    std::string stDomain;
+    string stDomain;
 };
 
 /************************************************************************/
@@ -113,14 +117,14 @@ class ILWISRasterBand : public GDALPamRasterBand
 {
     friend class ILWISDataset;
 public:
-    VSILFILE *fpRaw;
+    FILE *fpRaw;
     ILWISInfo psInfo;
     int nSizePerPixel;
 
     ILWISRasterBand( ILWISDataset *, int );
     ~ILWISRasterBand();
-    CPLErr GetILWISInfo(std::string pszFileName);
-    void ILWISOpen( std::string pszFilename);
+    CPLErr GetILWISInfo(string pszFileName);
+    void ILWISOpen( string pszFilename);
 				
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * ); 
@@ -130,7 +134,7 @@ private:
     void FillWithNoData(void * pImage);
     void SetValue(void *pImage, int i, double rV);
     double GetValue(void *pImage, int i);
-    void ReadValueDomainProperties(std::string pszFileName);
+    void ReadValueDomainProperties(string pszFileName);
 };
 
 /************************************************************************/
@@ -140,16 +144,16 @@ class ILWISDataset : public GDALPamDataset
 {
     friend class ILWISRasterBand;
     CPLString osFileName;
-    std::string pszIlwFileName;
+    string pszIlwFileName;
     char	 *pszProjection;
     double adfGeoTransform[6];
     int    bGeoDirty;
     int		 bNewDataset;            /* product of Create() */
-    std::string pszFileType; //indicating the input dataset: Map/MapList
-    CPLErr ReadProjection( std::string csyFileName);
+    string pszFileType; //indicating the input dataset: Map/MapList
+    CPLErr ReadProjection( string csyFileName);
     CPLErr WriteProjection();
     CPLErr WriteGeoReference();
-    void   CollectTransformCoef(std::string &pszRefFile );
+    void   CollectTransformCoef(string &pszRefFile );
 		
 public:
     ILWISDataset();
@@ -181,29 +185,31 @@ public:
 // 
 //////////////////////////////////////////////////////////////////////
 
+using std::map;
+
 class CompareAsNum
 {
 public:
-    bool operator() (const std::string&, const std::string&) const;
+    bool operator() (const string&, const string&) const;
 };
 
-typedef std::map<std::string, std::string>          SectionEntries;
-typedef std::map<std::string, SectionEntries*> Sections;
+typedef map<string, string>          SectionEntries;
+typedef map<string, SectionEntries*> Sections;
 
 class IniFile  
 {
 public:
-    IniFile(const std::string& filename);
+    IniFile(const string& filename);
     virtual ~IniFile();
 
-    void SetKeyValue(const std::string& section, const std::string& key, const std::string& value);
-    std::string GetKeyValue(const std::string& section, const std::string& key);
+    void SetKeyValue(const string& section, const string& key, const string& value);
+    string GetKeyValue(const string& section, const string& key);
 
-    void RemoveKeyValue(const std::string& section, const std::string& key);
-    void RemoveSection(const std::string& section);
+    void RemoveKeyValue(const string& section, const string& key);
+    void RemoveSection(const string& section);
 
 private:
-    std::string filename;
+    string filename;
     Sections sections;
     bool bChanged;
 

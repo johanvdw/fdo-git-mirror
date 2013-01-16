@@ -106,7 +106,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-// CPL_CVSID("$Id: terragendataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
+// CPL_CVSID("$Id: terragendataset.cpp 18240 2009-12-10 15:53:48Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_Terragen(void);
@@ -166,7 +166,7 @@ class TerragenDataset : public GDALPamDataset
 				m_span_m[2], 
 				m_span_px[2];
 
-    VSILFILE*			m_fp;
+    FILE*			m_fp;
     vsi_l_offset	m_nDataOffset;
 
     GInt16		m_nHeightScale;
@@ -621,7 +621,7 @@ bool TerragenDataset::write_header()
 	// Increase the heightscale until the physical span
 	// fits within a 16-bit range. The smaller the logical span,
 	// the more necessary this becomes.
-	int hs, bh=0;
+	int hs, bh;
 	for(hs = m_nHeightScale; hs <= 32767; hs++)
 	{
 		double prevdelta = 1.0e30;
@@ -659,8 +659,8 @@ bool TerragenDataset::write_header()
         return false;
 	}
 		
-	m_nHeightScale = (GInt16) hs;
-	m_nBaseHeight = (GInt16) bh;
+	m_nHeightScale = hs;
+	m_nBaseHeight = bh;
 
 
 	// m_nHeightScale is the one that gives us the 

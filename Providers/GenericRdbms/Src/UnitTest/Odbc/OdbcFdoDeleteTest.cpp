@@ -101,7 +101,7 @@ void OdbcBaseFdoDeleteTest::FeatureDelete ()
 
         FdoPtr<FdoIDelete> deleteCommand = (FdoIDelete *) mConnection->CreateCommand(FdoCommandType_Delete);
 
-        deleteCommand->SetFeatureClassName(GetClassNameCities());
+        deleteCommand->SetFeatureClassName(mSetup.GetClassNameCities());
         deleteCommand->SetFilter( filter );
 
         int count = deleteCommand->Execute();
@@ -110,7 +110,7 @@ void OdbcBaseFdoDeleteTest::FeatureDelete ()
         // Now put it back so that other tests will work if they depend on this row.
         FdoPtr<FdoIInsert> insertCommand =
             (FdoIInsert *) mConnection->CreateCommand(FdoCommandType_Insert);
-        insertCommand->SetFeatureClassName(GetClassNameCities());
+        insertCommand->SetFeatureClassName(mSetup.GetClassNameCities());
         FdoPtr<FdoPropertyValueCollection> propertyValues =
             insertCommand->GetPropertyValues();
         FdoPtr<FdoDataValue> dataValue;

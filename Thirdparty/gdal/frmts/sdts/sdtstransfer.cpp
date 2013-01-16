@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtstransfer.cpp 21298 2010-12-20 10:58:34Z rouault $
+ * $Id: sdtstransfer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSTransfer class.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtstransfer.cpp 21298 2010-12-20 10:58:34Z rouault $");
+CPL_CVSID("$Id: sdtstransfer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                            SDTSTransfer()                            */
@@ -619,7 +619,7 @@ int SDTSTransfer::GetBounds( double *pdfMinX, double *pdfMinY,
                 continue;
             
             poLayer->Rewind();
-            while( (poPoint = (SDTSRawPoint*) poLayer->GetNextFeature()) != NULL )
+            while( (poPoint = (SDTSRawPoint*) poLayer->GetNextFeature()) )
             {
                 if( bFirst )
                 {

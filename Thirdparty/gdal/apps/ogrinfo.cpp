@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cpp 23119 2011-09-24 16:15:21Z rouault $
+ * $Id: ogrinfo.cpp 18306 2009-12-15 18:57:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrinfo.cpp 23119 2011-09-24 16:15:21Z rouault $");
+CPL_CVSID("$Id: ogrinfo.cpp 18306 2009-12-15 18:57:11Z rouault $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -60,7 +60,6 @@ int main( int nArgc, char ** papszArgv )
     int         nRepeatCount = 1, bAllLayers = FALSE;
     const char  *pszSQLStatement = NULL;
     const char  *pszDialect = NULL;
-    int          nRet = 0;
     
     /* Check strict compilation and runtime library version as we use C++ API */
     if (! GDAL_CHECK_VERSION(papszArgv[0]))
@@ -199,8 +198,7 @@ int main( int nArgc, char ** papszArgv )
             printf( "  -> %s\n", poR->GetDriver(iDriver)->GetName() );
         }
 
-        nRet = 1;
-        goto end;
+        exit( 1 );
     }
 
     CPLAssert( poDriver != NULL);
@@ -238,13 +236,7 @@ int main( int nArgc, char ** papszArgv )
         if( poResultSet != NULL )
         {
             if( pszWHERE != NULL )
-            {
-                if (poResultSet->SetAttributeFilter( pszWHERE ) != OGRERR_NONE )
-                {
-                    printf( "FAILURE: SetAttributeFilter(%s) failed.\n", pszWHERE );
-                    exit(1);
-                }
-            }
+                poResultSet->SetAttributeFilter( pszWHERE );
 
             ReportOnLayer( poResultSet, NULL, NULL );
             poDS->ReleaseResultSet( poResultSet );
@@ -275,12 +267,12 @@ int main( int nArgc, char ** papszArgv )
                 {
                     printf( "%d: %s",
                             iLayer+1,
-                            poLayer->GetName() );
+                            poLayer->GetLayerDefn()->GetName() );
 
-                    if( poLayer->GetGeomType() != wkbUnknown )
+                    if( poLayer->GetLayerDefn()->GetGeomType() != wkbUnknown )
                         printf( " (%s)", 
                                 OGRGeometryTypeToName( 
-                                    poLayer->GetGeomType() ) );
+                                    poLayer->GetLayerDefn()->GetGeomType() ) );
 
                     printf( "\n" );
                 }
@@ -321,7 +313,6 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
 /*      Close down.                                                     */
 /* -------------------------------------------------------------------- */
-end:
     CSLDestroy( papszArgv );
     CSLDestroy( papszLayers );
     CSLDestroy( papszOptions );
@@ -331,7 +322,7 @@ end:
 
     OGRCleanupAll();
 
-    return nRet;
+    return 0;
 }
 
 /************************************************************************/
@@ -343,7 +334,7 @@ static void Usage()
 {
     printf( "Usage: ogrinfo [--help-general] [-ro] [-q] [-where restricted_where]\n"
             "               [-spat xmin ymin xmax ymax] [-fid fid]\n"
-            "               [-sql statement] [-dialect sql_dialect] [-al] [-so] [-fields={YES/NO}]\n"
+            "               [-sql statement] [-al] [-so] [-fields={YES/NO}]\n"
             "               [-geom={YES/NO/SUMMARY}][--formats]\n"
             "               datasource_name [layer [layer ...]]\n");
     exit( 1 );
@@ -363,13 +354,7 @@ static void ReportOnLayer( OGRLayer * poLayer, const char *pszWHERE,
 /*      Set filters if provided.                                        */
 /* -------------------------------------------------------------------- */
     if( pszWHERE != NULL )
-    {
-        if (poLayer->SetAttributeFilter( pszWHERE ) != OGRERR_NONE )
-        {
-            printf( "FAILURE: SetAttributeFilter(%s) failed.\n", pszWHERE );
-            exit(1);
-        }
-    }
+        poLayer->SetAttributeFilter( pszWHERE );
 
     if( poSpatialFilter != NULL )
         poLayer->SetSpatialFilter( poSpatialFilter );
@@ -379,12 +364,12 @@ static void ReportOnLayer( OGRLayer * poLayer, const char *pszWHERE,
 /* -------------------------------------------------------------------- */
     printf( "\n" );
     
-    printf( "Layer name: %s\n", poLayer->GetName() );
+    printf( "Layer name: %s\n", poDefn->GetName() );
 
     if( bVerbose )
     {
         printf( "Geometry: %s\n", 
-                OGRGeometryTypeToName( poLayer->GetGeomType() ) );
+                OGRGeometryTypeToName( poDefn->GetGeomType() ) );
         
         printf( "Feature Count: %d\n", poLayer->GetFeatureCount() );
         

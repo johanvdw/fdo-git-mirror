@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 22466 2011-05-30 09:24:55Z rouault $
+ * $Id: ogrpolygon.cpp 16898 2009-05-01 12:23:36Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -32,7 +32,7 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 22466 2011-05-30 09:24:55Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 16898 2009-05-01 12:23:36Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -522,11 +522,19 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
 {
     char        szToken[OGR_WKT_TOKEN_MAX];
     const char  *pszInput = *ppszInput;
+    int         iRing;
 
 /* -------------------------------------------------------------------- */
 /*      Clear existing rings.                                           */
 /* -------------------------------------------------------------------- */
-    empty();
+    if( nRingCount > 0 )
+    {
+        for( iRing = 0; iRing < nRingCount; iRing++ )
+            delete papoRings[iRing];
+        
+        nRingCount = 0;
+        CPLFree( papoRings );
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Read and verify the ``POLYGON'' keyword token.                  */
@@ -537,78 +545,34 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
         return OGRERR_CORRUPT_DATA;
 
 /* -------------------------------------------------------------------- */
-/*      Check for EMPTY ...                                             */
+/*      The next character should be a ( indicating the start of the    */
+/*      list of rings.  We also need to support POLYGON EMPTY and       */
+/*      POLYGON(EMPTY).                                                 */
 /* -------------------------------------------------------------------- */
-    const char *pszPreScan;
-    int bHasZ = FALSE, bHasM = FALSE;
+    pszInput = OGRWktReadToken( pszInput, szToken );
 
-    pszPreScan = OGRWktReadToken( pszInput, szToken );
     if( EQUAL(szToken,"EMPTY") )
     {
-        *ppszInput = (char *) pszPreScan;
-        empty();
+        *ppszInput = (char *) pszInput;
         return OGRERR_NONE;
     }
 
-/* -------------------------------------------------------------------- */
-/*      Check for Z, M or ZM. Will ignore the Measure                   */
-/* -------------------------------------------------------------------- */
-    else if( EQUAL(szToken,"Z") )
-    {
-        bHasZ = TRUE;
-    }
-    else if( EQUAL(szToken,"M") )
-    {
-        bHasM = TRUE;
-    }
-    else if( EQUAL(szToken,"ZM") )
-    {
-        bHasZ = TRUE;
-        bHasM = TRUE;
-    }
-
-    if (bHasZ || bHasM)
-    {
-        pszInput = pszPreScan;
-        pszPreScan = OGRWktReadToken( pszInput, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            *ppszInput = (char *) pszPreScan;
-            empty();
-            /* FIXME?: In theory we should store the dimension and M presence */
-            /* if we want to allow round-trip with ExportToWKT v1.2 */
-            return OGRERR_NONE;
-        }
-    }
-
-    if( !EQUAL(szToken,"(") )
+    if( szToken[0] != '(' )
         return OGRERR_CORRUPT_DATA;
 
-    if ( !bHasZ && !bHasM )
+    OGRWktReadToken( pszInput, szToken );
+    if( EQUAL(szToken,"EMPTY") )
     {
-        /* Test for old-style POLYGON(EMPTY) */
-        pszPreScan = OGRWktReadToken( pszPreScan, szToken );
-        if( EQUAL(szToken,"EMPTY") )
-        {
-            pszPreScan = OGRWktReadToken( pszPreScan, szToken );
+        pszInput = OGRWktReadToken( pszInput, szToken );
+        pszInput = OGRWktReadToken( pszInput, szToken );
+        
+        *ppszInput = (char *) pszInput;
 
-            if( EQUAL(szToken,",") )
-            {
-                /* This is OK according to SFSQL SPEC. */
-            }
-            else if( !EQUAL(szToken,")") )
-                return OGRERR_CORRUPT_DATA;
-            else
-            {
-                *ppszInput = (char *) pszPreScan;
-                empty();
-                return OGRERR_NONE;
-            }
-        }
+        if( !EQUAL(szToken,")") )
+            return OGRERR_CORRUPT_DATA;
+        else
+            return OGRERR_NONE;
     }
-
-    /* Skip first '(' */
-    pszInput = OGRWktReadToken( pszInput, szToken );
 
 /* ==================================================================== */
 /*      Read each ring in turn.  Note that we try to reuse the same     */
@@ -625,35 +589,13 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
     {
         int     nPoints = 0;
 
-        const char* pszNext = OGRWktReadToken( pszInput, szToken );
-        if (EQUAL(szToken,"EMPTY"))
-        {
-/* -------------------------------------------------------------------- */
-/*      Do we need to grow the ring array?                              */
-/* -------------------------------------------------------------------- */
-            if( nRingCount == nMaxRings )
-            {
-                nMaxRings = nMaxRings * 2 + 1;
-                papoRings = (OGRLinearRing **)
-                    CPLRealloc(papoRings, nMaxRings * sizeof(OGRLinearRing*));
-            }
-            papoRings[nRingCount] = new OGRLinearRing();
-            nRingCount++;
-
-            pszInput = OGRWktReadToken( pszNext, szToken );
-            if ( !EQUAL(szToken, ",") )
-                break;
-
-            continue;
-        }
-
 /* -------------------------------------------------------------------- */
 /*      Read points for one ring from input.                            */
 /* -------------------------------------------------------------------- */
         pszInput = OGRWktReadPoints( pszInput, &paoPoints, &padfZ, &nMaxPoints,
                                      &nPoints );
 
-        if( pszInput == NULL || nPoints == 0 )
+        if( pszInput == NULL )
         {
             CPLFree( paoPoints );
             return OGRERR_CORRUPT_DATA;
@@ -673,15 +615,11 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
 /*      Create the new ring, and assign to ring list.                   */
 /* -------------------------------------------------------------------- */
         papoRings[nRingCount] = new OGRLinearRing();
-        /* Ignore Z array when we have a POLYGON M */
-        if (bHasM && !bHasZ)
-            papoRings[nRingCount]->setPoints( nPoints, paoPoints, NULL );
-        else
-            papoRings[nRingCount]->setPoints( nPoints, paoPoints, padfZ );
+        papoRings[nRingCount]->setPoints( nPoints, paoPoints, padfZ );
 
         nRingCount++;
 
-        if( padfZ && !(bHasM && !bHasZ) )
+        if( padfZ )
             nCoordDimension = 3;
 
 /* -------------------------------------------------------------------- */
@@ -804,6 +742,95 @@ error:
 }
 
 /************************************************************************/
+/*                              Centroid()                              */
+/************************************************************************/
+
+/**
+ * \brief Compute the polygon centroid.
+ *
+ * The centroid location is applied to the passed in OGRPoint object.
+ *
+ * @return OGRERR_NONE on success or OGRERR_FAILURE on error.
+ */
+
+int OGRPolygon::Centroid( OGRPoint *poPoint ) const
+
+{
+    if( poPoint == NULL )
+        return OGRERR_FAILURE;
+
+#ifndef HAVE_GEOS
+    // notdef ... not implemented yet.
+    
+    return OGRERR_FAILURE;
+
+#else
+
+    GEOSGeom hThisGeosGeom = NULL;
+    GEOSGeom hOtherGeosGeom = NULL;
+    
+    hThisGeosGeom = exportToGEOS();
+
+    if( hThisGeosGeom != NULL )
+    {
+    	hOtherGeosGeom = GEOSGetCentroid( hThisGeosGeom );
+        OGRPoint *poCentroid = (OGRPoint *) 
+            OGRGeometryFactory::createFromGEOS( hOtherGeosGeom );
+
+        GEOSGeom_destroy( hThisGeosGeom );
+        GEOSGeom_destroy( hOtherGeosGeom );
+
+        if( poPoint == NULL 
+            || wkbFlatten(poPoint->getGeometryType()) != wkbPoint )
+            return OGRERR_FAILURE;
+
+	poPoint->setX( poCentroid->getX() );
+	poPoint->setY( poCentroid->getY() );
+
+        delete poCentroid;
+
+    	return OGRERR_NONE;
+    }
+    else
+    {
+    	return OGRERR_FAILURE;
+    }
+
+#endif /* HAVE_GEOS */
+}
+
+/************************************************************************/
+/*                           OGR_G_Centroid()                           */
+/************************************************************************/
+
+int OGR_G_Centroid( OGRGeometryH hPolygon, OGRGeometryH hCentroidPoint )
+
+{
+    OGRPolygon *poPoly = ((OGRPolygon *) hPolygon);
+    OGRPoint *poCentroid = ((OGRPoint *) hCentroidPoint);
+    
+    if( poCentroid == NULL )
+        return OGRERR_FAILURE;
+
+    if( wkbFlatten(poCentroid->getGeometryType()) != wkbPoint )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Passed wrong geometry type as centroid argument." );
+        return OGRERR_FAILURE;
+    }
+
+    if( wkbFlatten(poPoly->getGeometryType()) != wkbPolygon )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Invoked Centroid() on non-Polygon." );
+        return OGRERR_FAILURE;
+    }
+                            
+    return poPoly->Centroid( poCentroid );
+}
+
+
+/************************************************************************/
 /*                           PointOnSurface()                           */
 /************************************************************************/
 
@@ -824,29 +851,20 @@ int OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
     if( hThisGeosGeom != NULL )
     {
      	hOtherGeosGeom = GEOSPointOnSurface( hThisGeosGeom );
-        GEOSGeom_destroy( hThisGeosGeom );
-
-        if( hOtherGeosGeom == NULL )
-            return OGRERR_FAILURE;
-
-        OGRGeometry *poInsidePointGeom = (OGRGeometry *) 
+        OGRPoint *poInsidePoint = (OGRPoint *) 
             OGRGeometryFactory::createFromGEOS( hOtherGeosGeom );
  
+        GEOSGeom_destroy( hThisGeosGeom );
         GEOSGeom_destroy( hOtherGeosGeom );
-
-        if (poInsidePointGeom == NULL)
+ 
+        if( poPoint == NULL 
+            || wkbFlatten(poPoint->getGeometryType()) != wkbPoint )
             return OGRERR_FAILURE;
-        if (wkbFlatten(poInsidePointGeom->getGeometryType()) != wkbPoint)
-        {
-            delete poInsidePointGeom;
-            return OGRERR_FAILURE;
-        }
-
-        OGRPoint *poInsidePoint = (OGRPoint *) poInsidePointGeom;
+ 
  	poPoint->setX( poInsidePoint->getX() );
  	poPoint->setY( poInsidePoint->getY() );
  
-        delete poInsidePointGeom;
+        delete poInsidePoint;
  
      	return OGRERR_NONE;
     }
@@ -861,89 +879,29 @@ int OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
 /************************************************************************/
 /*                            getEnvelope()                             */
 /************************************************************************/
-
+ 
 void OGRPolygon::getEnvelope( OGREnvelope * psEnvelope ) const
 
 {
     OGREnvelope         oRingEnv;
-    int                 bExtentSet = FALSE;
+    
+    if( nRingCount == 0 )
+        return;
 
-    for( int iRing = 0; iRing < nRingCount; iRing++ )
+    papoRings[0]->getEnvelope( psEnvelope );
+
+    for( int iRing = 1; iRing < nRingCount; iRing++ )
     {
-        if (!papoRings[iRing]->IsEmpty())
-        {
-            if (!bExtentSet)
-            {
-                papoRings[iRing]->getEnvelope( psEnvelope );
-                bExtentSet = TRUE;
-            }
-            else
-            {
-                papoRings[iRing]->getEnvelope( &oRingEnv );
+        papoRings[iRing]->getEnvelope( &oRingEnv );
 
-                if( psEnvelope->MinX > oRingEnv.MinX )
-                    psEnvelope->MinX = oRingEnv.MinX;
-                if( psEnvelope->MinY > oRingEnv.MinY )
-                    psEnvelope->MinY = oRingEnv.MinY;
-                if( psEnvelope->MaxX < oRingEnv.MaxX )
-                    psEnvelope->MaxX = oRingEnv.MaxX;
-                if( psEnvelope->MaxY < oRingEnv.MaxY )
-                    psEnvelope->MaxY = oRingEnv.MaxY;
-            }
-        }
-    }
-
-    if (!bExtentSet)
-    {
-        psEnvelope->MinX = psEnvelope->MinY = 0;
-        psEnvelope->MaxX = psEnvelope->MaxY = 0;
-    }
-}
-
-/************************************************************************/
-/*                            getEnvelope()                             */
-/************************************************************************/
- 
-void OGRPolygon::getEnvelope( OGREnvelope3D * psEnvelope ) const
-
-{
-    OGREnvelope3D       oRingEnv;
-    int                 bExtentSet = FALSE;
-
-    for( int iRing = 0; iRing < nRingCount; iRing++ )
-    {
-        if (!papoRings[iRing]->IsEmpty())
-        {
-            if (!bExtentSet)
-            {
-                papoRings[iRing]->getEnvelope( psEnvelope );
-                bExtentSet = TRUE;
-            }
-            else
-            {
-                papoRings[iRing]->getEnvelope( &oRingEnv );
-
-                if( psEnvelope->MinX > oRingEnv.MinX )
-                    psEnvelope->MinX = oRingEnv.MinX;
-                if( psEnvelope->MinY > oRingEnv.MinY )
-                    psEnvelope->MinY = oRingEnv.MinY;
-                if( psEnvelope->MaxX < oRingEnv.MaxX )
-                    psEnvelope->MaxX = oRingEnv.MaxX;
-                if( psEnvelope->MaxY < oRingEnv.MaxY )
-                    psEnvelope->MaxY = oRingEnv.MaxY;
-
-                if( psEnvelope->MinZ > oRingEnv.MinZ )
-                    psEnvelope->MinZ = oRingEnv.MinZ;
-                if( psEnvelope->MaxZ < oRingEnv.MaxZ )
-                    psEnvelope->MaxZ = oRingEnv.MaxZ;
-            }
-        }
-    }
-
-    if (!bExtentSet)
-    {
-        psEnvelope->MinX = psEnvelope->MinY = psEnvelope->MinZ = 0;
-        psEnvelope->MaxX = psEnvelope->MaxY = psEnvelope->MaxZ = 0;
+        if( psEnvelope->MinX > oRingEnv.MinX )
+            psEnvelope->MinX = oRingEnv.MinX;
+        if( psEnvelope->MinY > oRingEnv.MinY )
+            psEnvelope->MinY = oRingEnv.MinY;
+        if( psEnvelope->MaxX < oRingEnv.MaxX )
+            psEnvelope->MaxX = oRingEnv.MaxX;
+        if( psEnvelope->MaxY < oRingEnv.MaxY )
+            psEnvelope->MaxY = oRingEnv.MaxY;
     }
 }
 
@@ -1116,14 +1074,4 @@ void OGRPolygon::segmentize( double dfMaxLength )
 {
     for( int iRing = 0; iRing < nRingCount; iRing++ )
         papoRings[iRing]->segmentize(dfMaxLength);
-}
-
-/************************************************************************/
-/*                               swapXY()                               */
-/************************************************************************/
-
-void OGRPolygon::swapXY()
-{
-    for( int iRing = 0; iRing < nRingCount; iRing++ )
-        papoRings[iRing]->swapXY();
 }

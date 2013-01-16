@@ -29,8 +29,7 @@ FdoRdbmsOdbcFilterCapabilities.cpp \
 FdoRdbmsOdbcFilterProcessor.cpp \
 FdoRdbmsOdbcSchemaCapabilities.cpp \
 FdoRdbmsOdbcSpatialManager.cpp \
-FdoRdbmsOdbcSpatialSqlFilter.cpp \
-FdoRdbmsOdbcSpatialSecondaryFilterLocal.cpp
+FdoRdbmsOdbcSpatialSqlFilter.cpp
 
 noinst_HEADERS = $(libFdoRdbmsODBC_Fdo_la_SOURCES) \
   FdoRdbmsOdbcCommandCapabilities.h \
@@ -46,8 +45,7 @@ noinst_HEADERS = $(libFdoRdbmsODBC_Fdo_la_SOURCES) \
   FdoRdbmsOdbcProviderInfo.h \
   FdoRdbmsOdbcSchemaCapabilities.h \
   FdoRdbmsOdbcSpatialManager.h \
-  FdoRdbmsOdbcSpatialSqlFilter.h \
-  FdoRdbmsOdbcSpatialSecondaryFilterLocal.h
+  FdoRdbmsOdbcSpatialSqlFilter.h
 
 INCLUDES = \
   -I../ \

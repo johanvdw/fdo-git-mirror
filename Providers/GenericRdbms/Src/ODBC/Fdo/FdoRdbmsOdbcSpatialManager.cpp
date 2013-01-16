@@ -20,7 +20,6 @@
 #include "stdafx.h"
 #include "FdoRdbmsOdbcSpatialManager.h"
 #include "FdoRdbmsOdbcSpatialSqlFilter.h"
-#include "FdoRdbmsOdbcSpatialSecondaryFilterLocal.h"
 
 
 FdoRdbmsOdbcSpatialManager *
@@ -52,10 +51,7 @@ FdoRdbmsOdbcSpatialManager::GetSecondaryFilter(
     const FdoSmLpGeometricPropertyDefinition * geometricProperty,
     const FdoGeometricCondition * geometricCondition)
 {
-    FdoRdbmsSpatialSecondaryFilter * scf = FdoRdbmsOdbcSpatialSecondaryFilterLocal::Create(
-        NULL, geometricProperty, geometricCondition);
-
-    return scf;
+    return NULL;
 }
 
 

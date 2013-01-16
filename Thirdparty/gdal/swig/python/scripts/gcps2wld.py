@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gcps2wld.py 18952 2010-02-28 11:59:53Z rouault $
+#  $Id: gcps2wld.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Name:     gcps2wld
 #  Project:  GDAL Python Interface
@@ -47,7 +47,7 @@ if len(sys.argv) < 2:
 filename = sys.argv[1]
 dataset = gdal.Open( filename )
 if dataset is None:
-    print('Unable to open %s' % filename)
+    print('Unable to open ', filename)
     sys.exit(1)
 
 gcps = dataset.GetGCPs()

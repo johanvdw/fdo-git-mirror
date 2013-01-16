@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fitsdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: fitsdataset.cpp 15409 2008-09-22 19:08:15Z rouault $
  *
  * Project:  FITS Driver
  * Purpose:  Implement FITS raster read/write support
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <string.h>
 
-CPL_CVSID("$Id: fitsdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: fitsdataset.cpp 15409 2008-09-22 19:08:15Z rouault $");
 
 CPL_C_START
 #include <fitsio.h>
@@ -405,14 +405,11 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
   // This process understands the CONTINUE standard for long strings.
   // We don't bother to capture header names that duplicate information
   // already captured elsewhere (e.g. image dimensions and type)
-  int keyNum;
+  int keyNum = 1;
   char key[100];
   char value[100];
-
-  int nKeys = 0, nMoreKeys = 0;
-  fits_get_hdrspace(hFITS, &nKeys, &nMoreKeys, &status);
-  for(keyNum = 1; keyNum <= nKeys; keyNum++)
-  {
+  bool endReached = false;
+  do {
     fits_read_keyn(hFITS, keyNum, key, value, 0, &status);
     if (status) {
       CPLError(CE_Failure, CPLE_AppDefined,
@@ -420,11 +417,10 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
 	       keyNum, GetDescription(), status);
       return CE_Failure;
     }
+    // What we do next depends upon the key and the value
     if (strcmp(key, "END") == 0) {
-        /* we shouldn't get here in principle since the END */
-        /* keyword shouldn't be counted in nKeys, but who knows... */
-        break;
-    } 
+      endReached = true;
+    }
     else if (isIgnorableFITSHeader(key)) {
       // Ignore it!
     }
@@ -454,7 +450,8 @@ CPLErr FITSDataset::Init(fitsfile* hFITS_, bool isExistingFile_) {
 	SetMetadataItem(key, newValue);
       }
     }
-  }
+    ++keyNum;
+  } while (!endReached);
   
   return CE_None;
 }
@@ -507,11 +504,6 @@ GDALDataset* FITSDataset::Open(GDALOpenInfo* poOpenInfo) {
 /* -------------------------------------------------------------------- */
       dataset->SetDescription( poOpenInfo->pszFilename );
       dataset->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-      dataset->oOvManager.Initialize( dataset, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
       return dataset;
   }

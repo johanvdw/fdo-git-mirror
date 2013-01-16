@@ -110,23 +110,9 @@ typedef struct bindname_map_def {
 
 typedef struct geom_srid_map_def {
 	int		            position; 						/* position of the bind variable	*/
-#ifdef _WIN32
-	_int64		            geom_srid_value;				/* srid value for the geom variable */
-#else
-	int64_t		            geom_srid_value;				/* srid value for the geom variable */
-#endif
+	int		            geom_srid_value;				/* srid value for the geom variable */
     geom_srid_map_def*  next;
 } geom_srid_map;
-
-/*
-** Mapping of a geometry and type of the geometry (geometry or geography).
-** This structure is used for select variables
-*/
-typedef struct geom_type_map_def {
-	int		            position;   					/* position of the geom */
-	char	            geom_type_value;				/* type for the geom 0 - geometry; 1 - geography */
-    geom_type_map_def*  next;
-} geom_type_map;
 
 typedef struct len_idf_map_def {
 	int		            position; 					/* position of the bind variable	*/
@@ -158,7 +144,6 @@ typedef struct cursor_def {					/* Statement linked list		*/
     int                 odbcdr_blob_tmp_size;
     void*               odbcdr_geom_handle;
     geom_srid_map*      geom_srid_maping;
-    geom_type_map*      geom_type_maping;
     long                geom_version_value;
 
     PBYTE               odbcdr_blob;    /* define a working area for fething blobs */

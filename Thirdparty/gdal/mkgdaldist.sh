@@ -1,16 +1,15 @@
 #!/bin/sh
 #
-# $Id: mkgdaldist.sh 22675 2011-07-09 16:34:23Z warmerdam $
+# $Id: mkgdaldist.sh 18737 2010-02-05 16:12:23Z hobu $
 #
 # mkgdaldist.sh - prepares GDAL source distribution package
 #
 if [ $# -lt 1 ] ; then
-  echo "Usage: mkgdaldist.sh <version> [-date date] [-branch branch] [-rc n]"
+  echo "Usage: mkgdaldist.sh <version> [-date date] [-branch branch]"
   echo " <version> - version number used in name of generated archive."
   echo " -date     - date of package generation, current date used if not provided"
   echo " -branch   - path to SVN branch, trunk is used if not provided"
-  echo " -rc       - gives a release candidate id to embed in filenames"
-  echo "Example: mkgdaldist.sh 1.1.4 -branch branches/1.8 -rc RC2"
+  echo "Example: mkgdaldist.sh 1.1.4"
   exit
 fi
 
@@ -30,18 +29,8 @@ fi
 
 if test "$2" = "-branch"; then
   forcebranch=$3
-  shift
-  shift
 else
   forcebranch="trunk"
-fi
- 
-if test "$2" = "-rc"; then
-  RC=$3
-  shift
-  shift
-else
-  RC=""
 fi
  
 #
@@ -58,11 +47,8 @@ SVNMODULE="gdal"
 
 echo "Generating package '${GDAL_VERSION}' from '${SVNBRANCH}' branch"
 echo
-
-# Disable for now, seems to depend on modern SVN versions.
-#SVN_CONFIG="--config-option config:miscellany:use-commit-times=yes"
-
-svn checkout ${SVNURL}/${SVNBRANCH}/${SVNMODULE} ${SVNMODULE} ${SVN_CONFIG}
+ 
+svn checkout ${SVNURL}/${SVNBRANCH}/${SVNMODULE} ${SVNMODULE}
 
 if [ \! -d gdal ] ; then
 	echo "svn checkout reported an error ... abandoning mkgdaldist"
@@ -117,11 +103,8 @@ cd ${CWD}
 echo "* Generating SWIG Perl interfaces..."
 CWD=${PWD}
 cd gdal/swig/perl
-
 rm *wrap*
-touch ../../GDALmake.opt
 make generate
-rm -f ../../GDALmake.opt
 cd ${CWD}
 
 #
@@ -136,11 +119,11 @@ echo $GDAL_VERSION > gdal/VERSION
 
 mv gdal gdal-${GDAL_VERSION}
 
-rm -f ../gdal-${GDAL_VERSION}${RC}.tar.gz ../gdal${COMPRESSED_VERSION}${RC}.zip
+rm -f ../gdal-${GDAL_VERSION}.tar.gz ../gdal${COMPRESSED_VERSION}.zip
 
-tar cf ../gdal-${GDAL_VERSION}${RC}.tar gdal-${GDAL_VERSION}
-gzip -9 ../gdal-${GDAL_VERSION}${RC}.tar
-zip -r ../gdal${COMPRESSED_VERSION}${RC}.zip gdal-${GDAL_VERSION}
+tar cf ../gdal-${GDAL_VERSION}.tar gdal-${GDAL_VERSION}
+gzip -9 ../gdal-${GDAL_VERSION}.tar
+zip -r ../gdal${COMPRESSED_VERSION}.zip gdal-${GDAL_VERSION}
 
 echo "* Generating MD5 sums ..."
 
@@ -151,8 +134,8 @@ else
 MD5=md5sum
 fi
 
-$MD5 ../gdal-${GDAL_VERSION}${RC}.tar.gz > ../gdal-${GDAL_VERSION}${RC}.tar.gz.md5
-$MD5 ../gdal${COMPRESSED_VERSION}${RC}.zip > ../gdal${COMPRESSED_VERSION}${RC}.zip.md5
+$MD5 ../gdal-${GDAL_VERSION}.tar.gz > ../gdal-${GDAL_VERSION}.tar.gz.md5
+$MD5 ../gdal${COMPRESSED_VERSION}.zip > ../gdal${COMPRESSED_VERSION}.zip.md5
 
 echo "* Cleaning..."
 cd ..

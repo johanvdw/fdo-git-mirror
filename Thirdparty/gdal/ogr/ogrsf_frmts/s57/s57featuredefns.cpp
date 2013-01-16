@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57featuredefns.cpp 21268 2010-12-14 23:33:34Z warmerdam $
+ * $Id: s57featuredefns.cpp 13460 2007-12-30 14:02:04Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements methods to create OGRFeatureDefns for various
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57featuredefns.cpp 21268 2010-12-14 23:33:34Z warmerdam $");
+CPL_CVSID("$Id: s57featuredefns.cpp 13460 2007-12-30 14:02:04Z warmerdam $");
 
 
 /************************************************************************/
@@ -238,7 +238,7 @@ S57GenerateVectorPrimitiveFeatureDefn( int nRCNM, int nOptionFlags )
     else if( nRCNM == RCNM_VE )
     {
         poFDefn = new OGRFeatureDefn( OGRN_VE );
-        poFDefn->SetGeomType( wkbUnknown );
+        poFDefn->SetGeomType( wkbLineString );
     }
     else if( nRCNM == RCNM_VF )
     {
@@ -365,8 +365,7 @@ OGRFeatureDefn *S57GenerateObjectClassDefn( S57ClassRegistrar *poCR,
     }
     else if( papszGeomPrim[0][0] == 'L' )
     {
-        // unfortunately this could be a multilinestring
-        poFDefn->SetGeomType( wkbUnknown );
+        poFDefn->SetGeomType( wkbLineString );
     }
     
 /* -------------------------------------------------------------------- */
@@ -387,7 +386,7 @@ OGRFeatureDefn *S57GenerateObjectClassDefn( S57ClassRegistrar *poCR,
 
         if( iAttrIndex == -1 )
         {
-            CPLDebug( "S57", "Can't find attribute %s from class %s:%s.",
+            CPLDebug( "S57", "Can't find attribute %s from class %s:%s.\n",
                       papszAttrList[iAttr],
                       poCR->GetAcronym(),
                       poCR->GetDescription() );

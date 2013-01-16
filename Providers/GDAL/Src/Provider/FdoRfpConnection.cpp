@@ -159,13 +159,6 @@ void FdoRfpConnection::SetConnectionString(FdoString* value)
     connDict->UpdateFromConnectionString(m_connectionString);
 }
 
-/// <summary>Gets the resampling method for the connection.</summary>
-/// <returns>Returns the resampling method</returns> 
-FdoString* FdoRfpConnection::GetResamplingMethod()
-{
-    return m_resamplingMethod;
-}
-
 void FdoRfpConnection::_validateOpen()
 {
     if (m_state != FdoConnectionState_Open) {
@@ -345,8 +338,7 @@ FdoConnectionState FdoRfpConnection::Open()
     FdoPtr<FdoCommonConnPropDictionary> dictionary = dynamic_cast<FdoCommonConnPropDictionary*>(info->GetConnectionProperties ());
 
     m_defaultRasterLocation = dictionary->GetProperty (FdoGrfpGlobals::DefaultRasterFileLocation);
-    m_resamplingMethod = dictionary->GetProperty (FdoGrfpGlobals::ResamplingMethod);
-     
+    
     FdoCommonConnStringParser parser (NULL, GetConnectionString ());
     // check the validity of the connection string, i.e. it doesn’t contain unknown properties 
     // e.g. DefaultFLocation instead of DefaultFileLocation
@@ -412,7 +404,6 @@ void FdoRfpConnection::Close()
     m_spatialContexts = NULL;
     m_activeSpatialContext = L"";
     m_defaultRasterLocation = L"";
-    m_resamplingMethod = L"";
     m_connectionString = L"";
     m_datasetCache = NULL;
     m_state = FdoConnectionState_Closed;

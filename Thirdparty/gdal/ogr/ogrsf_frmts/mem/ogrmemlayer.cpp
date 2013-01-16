@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmemlayer.cpp 23064 2011-09-05 20:39:52Z rouault $
+ * $Id: ogrmemlayer.cpp 17807 2009-10-13 18:18:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMemLayer class.
@@ -29,9 +29,8 @@
 
 #include "ogr_mem.h"
 #include "cpl_conv.h"
-#include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmemlayer.cpp 23064 2011-09-05 20:39:52Z rouault $");
+CPL_CVSID("$Id: ogrmemlayer.cpp 17807 2009-10-13 18:18:09Z rouault $");
 
 /************************************************************************/
 /*                            OGRMemLayer()                             */
@@ -133,7 +132,7 @@ OGRErr OGRMemLayer::SetNextByIndex( long nIndex )
     if( m_poFilterGeom != NULL || m_poAttrQuery != NULL )
         return OGRLayer::SetNextByIndex( nIndex );
         
-    if (nIndex < 0 || nIndex >= nMaxFeatureCount)
+    if (iNextReadFID < 0 || iNextReadFID >= nMaxFeatureCount)
         return OGRERR_FAILURE;
 
     iNextReadFID = nIndex;
@@ -294,10 +293,7 @@ int OGRMemLayer::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,OLCDeleteFeature) )
         return TRUE;
 
-    else if( EQUAL(pszCap,OLCCreateField) ||
-             EQUAL(pszCap,OLCDeleteField) ||
-             EQUAL(pszCap,OLCReorderFields) ||
-             EQUAL(pszCap,OLCAlterFieldDefn) )
+    else if( EQUAL(pszCap,OLCCreateField) )
         return TRUE;
 
     else if( EQUAL(pszCap,OLCFastSetNextByIndex) )
@@ -351,137 +347,6 @@ OGRErr OGRMemLayer::CreateField( OGRFieldDefn *poField, int bApproxOK )
     }
 
     CPLFree( panRemap );
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                            DeleteField()                             */
-/************************************************************************/
-
-OGRErr OGRMemLayer::DeleteField( int iField )
-{
-    if (iField < 0 || iField >= poFeatureDefn->GetFieldCount())
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "Invalid field index");
-        return OGRERR_FAILURE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Update all the internal features.  Hopefully there aren't any   */
-/*      external features referring to our OGRFeatureDefn!              */
-/* -------------------------------------------------------------------- */
-    for( int i = 0; i < nMaxFeatureCount; i++ )
-    {
-        if( papoFeatures[i] == NULL )
-            continue;
-
-        OGRField* poFieldRaw = papoFeatures[i]->GetRawFieldRef(iField);
-        if( papoFeatures[i]->IsFieldSet(iField) )
-        {
-            /* Little trick to unallocate the field */
-            OGRField sField;
-            sField.Set.nMarker1 = OGRUnsetMarker;
-            sField.Set.nMarker2 = OGRUnsetMarker;
-            papoFeatures[i]->SetField(iField, &sField);
-        }
-
-        if (iField < poFeatureDefn->GetFieldCount() - 1)
-        {
-            memmove( poFieldRaw, poFieldRaw + 1,
-                     sizeof(OGRField) * (poFeatureDefn->GetFieldCount() - 1 - iField) );
-        }
-    }
-
-    return poFeatureDefn->DeleteFieldDefn( iField );
-}
-
-/************************************************************************/
-/*                           ReorderFields()                            */
-/************************************************************************/
-
-OGRErr OGRMemLayer::ReorderFields( int* panMap )
-{
-    if (poFeatureDefn->GetFieldCount() == 0)
-        return OGRERR_NONE;
-
-    OGRErr eErr = OGRCheckPermutation(panMap, poFeatureDefn->GetFieldCount());
-    if (eErr != OGRERR_NONE)
-        return eErr;
-
-/* -------------------------------------------------------------------- */
-/*      Remap all the internal features.  Hopefully there aren't any    */
-/*      external features referring to our OGRFeatureDefn!              */
-/* -------------------------------------------------------------------- */
-    for( int i = 0; i < nMaxFeatureCount; i++ )
-    {
-        if( papoFeatures[i] != NULL )
-            papoFeatures[i]->RemapFields( NULL, panMap );
-    }
-
-    return poFeatureDefn->ReorderFieldDefns( panMap );
-}
-
-/************************************************************************/
-/*                           AlterFieldDefn()                           */
-/************************************************************************/
-
-OGRErr OGRMemLayer::AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags )
-{
-    if (iField < 0 || iField >= poFeatureDefn->GetFieldCount())
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "Invalid field index");
-        return OGRERR_FAILURE;
-    }
-
-    OGRFieldDefn* poFieldDefn = poFeatureDefn->GetFieldDefn(iField);
-
-    if ((nFlags & ALTER_TYPE_FLAG) &&
-        poFieldDefn->GetType() != poNewFieldDefn->GetType())
-    {
-        if (poNewFieldDefn->GetType() != OFTString)
-        {
-            CPLError( CE_Failure, CPLE_NotSupported,
-                      "Can only convert to OFTString");
-            return OGRERR_FAILURE;
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Update all the internal features.  Hopefully there aren't any   */
-/*      external features referring to our OGRFeatureDefn!              */
-/* -------------------------------------------------------------------- */
-        for( int i = 0; i < nMaxFeatureCount; i++ )
-        {
-            if( papoFeatures[i] == NULL )
-                continue;
-
-            OGRField* poFieldRaw = papoFeatures[i]->GetRawFieldRef(iField);
-            if( papoFeatures[i]->IsFieldSet(iField) )
-            {
-                char* pszVal = CPLStrdup(papoFeatures[i]->GetFieldAsString(iField));
-
-                /* Little trick to unallocate the field */
-                OGRField sField;
-                sField.Set.nMarker1 = OGRUnsetMarker;
-                sField.Set.nMarker2 = OGRUnsetMarker;
-                papoFeatures[i]->SetField(iField, &sField);
-
-                poFieldRaw->String = pszVal;
-            }
-        }
-
-        poFieldDefn->SetType(poNewFieldDefn->GetType());
-    }
-
-    if (nFlags & ALTER_NAME_FLAG)
-        poFieldDefn->SetName(poNewFieldDefn->GetNameRef());
-    if (nFlags & ALTER_WIDTH_PRECISION_FLAG)
-    {
-        poFieldDefn->SetWidth(poNewFieldDefn->GetWidth());
-        poFieldDefn->SetPrecision(poNewFieldDefn->GetPrecision());
-    }
 
     return OGRERR_NONE;
 }

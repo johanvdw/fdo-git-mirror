@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_ozi.cpp 22510 2011-06-07 13:33:40Z warmerdam $
+ * $Id: ogr_srs_ozi.cpp 18063 2009-11-21 21:11:49Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation from OziExplorer
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_ozi.cpp 22510 2011-06-07 13:33:40Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_ozi.cpp 18063 2009-11-21 21:11:49Z warmerdam $");
 
 /************************************************************************/
 /*  Correspondence between Ozi and EPSG datum codes.                    */
@@ -46,12 +46,11 @@ typedef struct
 
 static const OZIDatums aoDatums[] =
 {
-    { "WGS 72", 4322 },             // WGS, 1972
+    { "WGS 72", 4322 },             // WGS, 1984
     { "WGS 84", 4326 },             // WGS, 1984
     { "Pulkovo 1942 (1)", 4284 },   // Pulkovo 1942
     { "Pulkovo 1942 (2)", 4284 },   // Pulkovo 1942, XXX: What is a difference
                                     // with the previous one?
-    { "Potsdam Rauenberg DHDN", 31467 }, // Gauss-Krueger GK3 Central_Meridian 9 deg
     { NULL, 0 }
 };
 
@@ -121,10 +120,8 @@ OGRErr OGRSpatialReference::importFromOzi( const char *pszDatum,
     else if ( EQUALN(papszProj[1], "Mercator", 8) )
     {
         if (CSLCount(papszProjParms) < 6) goto not_enough_data;
-        double dfScale = CPLAtof(papszProjParms[3]);
-        if (papszProjParms[3][0] == 0) dfScale = 1; /* if unset, default to scale = 1 */
         SetMercator( CPLAtof(papszProjParms[1]), CPLAtof(papszProjParms[2]),
-                     dfScale,
+                     CPLAtof(papszProjParms[3]),
                      CPLAtof(papszProjParms[4]), CPLAtof(papszProjParms[5]) );
     }
 

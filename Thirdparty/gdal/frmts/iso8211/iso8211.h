@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iso8211.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: iso8211.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Main declarations for ISO 8211.
@@ -31,7 +31,6 @@
 #define _ISO8211_H_INCLUDED
 
 #include "cpl_port.h"
-#include "cpl_vsi.h"
 
 /**
   General data type
@@ -116,10 +115,10 @@ class CPL_ODLL DDFModule
     void        RemoveCloneRecord( DDFRecord * );
     
     // This is just for DDFRecord.
-    VSILFILE   *GetFP() { return fpDDF; }
+    FILE        *GetFP() { return fpDDF; }
     
   private:
-    VSILFILE    *fpDDF;
+    FILE        *fpDDF;
     int         bReadOnly;
     long        nFirstRecordOffset;
 

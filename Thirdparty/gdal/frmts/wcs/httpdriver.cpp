@@ -30,39 +30,8 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 #include "cpl_http.h"
-#include "cpl_atomic_ops.h"
 
 CPL_CVSID("$Id: wcsdataset.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
-
-
-/************************************************************************/
-/*               HTTPFetchContentDispositionFilename()                 */
-/************************************************************************/
-
-static const char* HTTPFetchContentDispositionFilename(char** papszHeaders)
-{
-    char** papszIter = papszHeaders;
-    while(papszIter && *papszIter)
-    {
-        /* For multipart, we have in raw format, but without end-of-line characters */
-        if (strncmp(*papszIter, "Content-Disposition: attachment; filename=", 42) == 0)
-        {
-            return *papszIter + 42;
-        }
-        /* For single part, the headers are in KEY=VAL format, but with e-o-l ... */
-        else if (strncmp(*papszIter, "Content-Disposition=attachment; filename=", 41) == 0)
-        {
-            char* pszVal = (char*)(*papszIter + 41);
-            char* pszEOL = strchr(pszVal, '\r');
-            if (pszEOL) *pszEOL = 0;
-            pszEOL = strchr(pszVal, '\n');
-            if (pszEOL) *pszEOL = 0;
-            return pszVal;
-        }
-        papszIter ++;
-    }
-    return NULL;
-}
 
 /************************************************************************/
 /*                              HTTPOpen()                              */
@@ -71,8 +40,6 @@ static const char* HTTPFetchContentDispositionFilename(char** papszHeaders)
 static GDALDataset *HTTPOpen( GDALOpenInfo * poOpenInfo )
 
 {
-    static volatile int nCounter = 0;
-
     if( poOpenInfo->nHeaderBytes != 0 )
         return NULL;
 
@@ -101,23 +68,15 @@ static GDALDataset *HTTPOpen( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a memory file from the result.                           */
 /* -------------------------------------------------------------------- */
+    // Eventually we should be looking at mime info and stuff to figure
+    // out an optimal filename, but for now we just use a fixed one.
+
     CPLString osResultFilename;
 
-    int nNewCounter = CPLAtomicInc(&nCounter);
+    osResultFilename.Printf( "/vsimem/http/%p.dat", 
+                             psResult->pabyData );
 
-    const char* pszFilename = HTTPFetchContentDispositionFilename(psResult->papszHeaders);
-    if (pszFilename == NULL)
-    {
-        pszFilename = CPLGetFilename(poOpenInfo->pszFilename);
-        /* If we have special characters, let's default to a fixed name */
-        if (strchr(pszFilename, '?') || strchr(pszFilename, '&'))
-            pszFilename = "file.dat";
-    }
-
-    osResultFilename.Printf( "/vsimem/http_%d/%s",
-                             nNewCounter, pszFilename );
-
-    VSILFILE *fp = VSIFileFromMemBuffer( osResultFilename,
+    FILE *fp = VSIFileFromMemBuffer( osResultFilename, 
                                      psResult->pabyData, 
                                      psResult->nDataLen, 
                                      TRUE );

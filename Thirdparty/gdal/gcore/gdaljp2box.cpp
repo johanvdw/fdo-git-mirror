@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2box.cpp 23076 2011-09-07 18:28:51Z rouault $
+ * $Id: gdaljp2box.cpp 17636 2009-09-12 23:19:18Z warmerdam $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Box Implementation - Low level JP2 box reader.
@@ -30,13 +30,13 @@
 #include "gdaljp2metadata.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 23076 2011-09-07 18:28:51Z rouault $");
+CPL_CVSID("$Id: gdaljp2box.cpp 17636 2009-09-12 23:19:18Z warmerdam $");
 
 /************************************************************************/
 /*                             GDALJP2Box()                             */
 /************************************************************************/
 
-GDALJP2Box::GDALJP2Box( VSILFILE *fpIn )
+GDALJP2Box::GDALJP2Box( FILE *fpIn )
 
 {
     fpVSIL = fpIn;
@@ -96,7 +96,6 @@ int GDALJP2Box::ReadNext()
 int GDALJP2Box::ReadFirstChild( GDALJP2Box *poSuperBox )
 
 {
-    szBoxType[0] = '\0';
     if( !poSuperBox->IsSuperBox() )
         return FALSE;
 
@@ -193,8 +192,7 @@ int GDALJP2Box::ReadBox()
 int GDALJP2Box::IsSuperBox()
 
 {
-    if( EQUAL(GetType(),"asoc") || EQUAL(GetType(),"jp2h")
-        || EQUAL(GetType(),"res ") )
+    if( EQUAL(GetType(),"asoc") || EQUAL(GetType(),"jp2h") )
         return TRUE;
     else
         return FALSE;
@@ -245,26 +243,9 @@ int GDALJP2Box::DumpReadable( FILE *fpOut )
              (int)(nBoxLength - (nDataOffset - nBoxOffset)) );
 
     if( IsSuperBox() )
-    {
         fprintf( fpOut, " (super)" );
-    }
 
     fprintf( fpOut, "\n" );
-    
-    if( IsSuperBox() ) 
-    {
-        GDALJP2Box oSubBox( GetFILE() );
-
-        for( oSubBox.ReadFirstChild( this );
-             strlen(oSubBox.GetType()) > 0;
-             oSubBox.ReadNextChild( this ) )
-        {
-            oSubBox.DumpReadable( fpOut );
-        }
-
-        printf( "  (end of %s subboxes)\n", szBoxType );
-    }
-
     if( EQUAL(GetType(),"uuid") )
     {
         char *pszHex = CPLBinaryToHex( 16, GetUUID() );
@@ -278,7 +259,6 @@ int GDALJP2Box::DumpReadable( FILE *fpOut )
 
         fprintf( fpOut, "\n" );
     }
-
     return 0;
 }
 
@@ -291,7 +271,10 @@ void GDALJP2Box::SetType( const char *pszType )
 {
     CPLAssert( strlen(pszType) == 4 );
 
-    memcpy(szBoxType, pszType, 4);
+    szBoxType[0] = pszType[3];
+    szBoxType[1] = pszType[2];
+    szBoxType[2] = pszType[1];
+    szBoxType[3] = pszType[0];
     szBoxType[4] = '\0';
 }
 
@@ -362,13 +345,15 @@ GDALJP2Box *GDALJP2Box::CreateAsocBox( int nCount, GDALJP2Box **papoBoxes )
 /* -------------------------------------------------------------------- */
     for( iBox = 0; iBox < nCount; iBox++ )
     {
-        GUInt32   nLBox;
+        GUInt32   nLBox, nTBox;
 
         nLBox = CPL_MSBWORD32(papoBoxes[iBox]->nBoxLength);
         memcpy( pabyNext, &nLBox, 4 );
         pabyNext += 4;
 
-        memcpy( pabyNext, papoBoxes[iBox]->szBoxType, 4 );
+        memcpy( &nTBox, papoBoxes[iBox]->szBoxType, 4 );
+        nTBox = CPL_MSBWORD32( nTBox );
+        memcpy( pabyNext, &nTBox, 4 );
         pabyNext += 4;
 
         memcpy( pabyNext, papoBoxes[iBox]->pabyData, 

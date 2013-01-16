@@ -27,17 +27,14 @@ libFDOSpatial_la_SOURCES = \
   SpatialUtility.cpp \
   SpatialUtilityGeometryExtents.cpp \
   SpatialUtilityCircularArc.cpp \
-  SpatialGeometryConverter.cpp \
-  SpatialIndex.cpp \
-  rtree.cpp
+  SpatialGeometryConverter.cpp
 
 noinst_HEADERS = $(libFDOSpatial_la_SOURCES) \
   MathUtility.h \
   SpatialEnvelope.h\
   SpatialUtilityCircularArc.h \
   SpatialUtilityGeometryExtents.h \
-  SpatialUtilityVectorAngle.h \
-  rtree.h
+  SpatialUtilityVectorAngle.h
 
 INCLUDES = -I../../Inc
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdts_al.h 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: sdts_al.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.
@@ -326,7 +326,7 @@ class SDTSLineReader : public SDTSIndexedReader
     
     SDTSFeature *GetNextRawFeature( void ) { return GetNextLine(); }
 
-    void        AttachToPolygons( SDTSTransfer *, int iPolyLayer  );
+    void        AttachToPolygons( SDTSTransfer * );
 };
 
 /************************************************************************/
@@ -527,7 +527,7 @@ class SDTSPolygonReader : public SDTSIndexedReader
 
     SDTSFeature *GetNextRawFeature( void ) { return GetNextPolygon(); }
 
-    void        AssembleRings( SDTSTransfer *, int iPolyLayer );
+    void        AssembleRings( SDTSTransfer * );
 };
 
 /************************************************************************/

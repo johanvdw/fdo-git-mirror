@@ -106,7 +106,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>FDORFP.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
-      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
@@ -128,7 +128,7 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Versioning GRFPProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -147,7 +147,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>FDORFP.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
-      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -169,7 +169,7 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Versioning GRFPProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -186,7 +186,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>FDORFP.h</PrecompiledHeaderFile>
-      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -210,7 +210,7 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Versioning GRFPProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -230,7 +230,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>FDORFP.h</PrecompiledHeaderFile>
-      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -254,7 +254,7 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Versioning GRFPProvider.dll</Message>
-      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.8.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
+      <Command>$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -v"..\SubDoc\Providers.version" -f"3.7.0.0%PROVIDERS_VERSION%" $(OutDir)GRFPProvider.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -300,7 +300,6 @@
     <ClCompile Include="FdoRfpSpatialContext.cpp" />
     <ClCompile Include="FdoRfpSpatialContextReader.cpp" />
     <ClCompile Include="FdoRfpStreamReaderByTile.cpp" />
-    <ClCompile Include="FdoRfpStreamReaderByTileResample.cpp" />
     <ClCompile Include="FdoRfpStreamReaderRGB24.cpp" />
     <ClCompile Include="FdoRfpVariant.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -362,7 +361,6 @@
     <ClInclude Include="FdoRfpSelectCommand.h" />
     <ClInclude Include="FdoRfpSpatialContext.h" />
     <ClInclude Include="FdoRfpSpatialContextReader.h" />
-    <ClInclude Include="FdoRfpStreamReaderByTileResample.h" />
     <ClInclude Include="FdoRfpStreamReaderByTile.h" />
     <ClInclude Include="FdoRfpStreamReaderRGB24.h" />
     <ClInclude Include="..\FdoRfpUtil.h" />

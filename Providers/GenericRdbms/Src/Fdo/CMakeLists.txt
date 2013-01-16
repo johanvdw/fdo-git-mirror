@@ -53,14 +53,12 @@ set( FdoRdbms_FeatureCommands_STAT_SRCS
    FeatureCommands/FdoRdbmsSimpleUpdateCommand.cpp
    FeatureCommands/FdoRdbmsSimpleSelectCommand.cpp
    FeatureCommands/FdoRdbmsSimpleInsertCommand.cpp
-   FeatureCommands/FdoRdbmsSimpleDeleteCommand.cpp
    FeatureCommands/FdoRdbmsSimpleFeatureReader.cpp
 )
 
 set( FdoRdbms_Filter_STAT_SRCS
    Filter/FdoRdbmsFilterProcessor.cpp
    Filter/FdoRdbmsFilterUtil.cpp
-   Filter/FdoRdbmsFunctionIsValid.cpp
 )
 
 set( FdoRdbms_Lock_STAT_SRCS
@@ -102,7 +100,6 @@ set( FdoRdbms_Other_STAT_SRCS
 )
 
 set( FdoRdbms_Pvc_STAT_SRCS
-   Pvc/FdoRdbmsPropBindHelper.cpp
    Pvc/FdoRdbmsPvcHandler.cpp
    Pvc/FdoRdbmsPvcInsertHandler.cpp
    Pvc/FdoRdbmsPvcProcessor.cpp

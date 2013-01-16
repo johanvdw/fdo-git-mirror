@@ -14,12 +14,12 @@ OBJ	=	\
 
 GDAL_ROOT	=	..\..\..
 
-EXTRAFLAGS      = -DDEFAULT_MAX_MEM=500000000L $(SOFTWARNFLAGS)
+EXTRAFLAGS      = -DDEFAULT_MAX_MEM=500000000L
 
 default:	$(OBJ)
         lib /out:libjpeg.lib $(OBJ)
 	xcopy /D  /Y *.obj ..\..\o
 
 clean:
-	-del *.lib
 	-del *.obj
+

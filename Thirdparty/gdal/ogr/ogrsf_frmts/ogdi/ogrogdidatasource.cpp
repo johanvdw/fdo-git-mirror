@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrogdidatasource.cpp 19711 2010-05-14 21:26:42Z rouault $
+ * $Id: ogrogdidatasource.cpp 16861 2009-04-26 19:22:29Z rouault $
  *
  * Project:  OGDI Bridge
  * Purpose:  Implements OGROGDIDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrogdidatasource.cpp 19711 2010-05-14 21:26:42Z rouault $");
+CPL_CVSID("$Id: ogrogdidatasource.cpp 16861 2009-04-26 19:22:29Z rouault $");
 
 /************************************************************************/
 /*                         OGROGDIDataSource()                          */
@@ -47,8 +47,6 @@ OGROGDIDataSource::OGROGDIDataSource()
     m_nClientID = -1;
     m_poSpatialRef = NULL;
     m_poCurrentLayer = NULL;
-    m_bLaunderLayerNames =
-            CSLTestBoolean(CPLGetConfigOption("OGR_OGDI_LAUNDER_LAYER_NAMES", "NO"));
 }
 
 /************************************************************************/

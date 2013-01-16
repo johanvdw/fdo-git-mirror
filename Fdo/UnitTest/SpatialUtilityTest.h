@@ -20,8 +20,6 @@
 #ifndef CPP_UNIT_SPATIALUTILITY_H
 #define CPP_UNIT_SPATIALUTILITY_H
 
-#include <Spatial/SpatialIndex.h>
-
 // Test cases for FdoSpatialUtility.
 class SpatialUtilityTest : public CppUnit::TestCase
 {
@@ -79,11 +77,7 @@ class SpatialUtilityTest : public CppUnit::TestCase
     // Test FdoSpatialUtility::GetPolygonVertexOrderAction
 	FDO_CPPUNIT_DEFINE(testGetPolygonVertexOrderAction);
 
-    // Test FdoSpatialIndex
-	FDO_CPPUNIT_DEFINE(testSpatialIndexMaster);
-
     CPPUNIT_TEST_SUITE(SpatialUtilityTest);
-
 	CPPUNIT_TEST(testValidateGeometryByType);
 	CPPUNIT_TEST(testLinearizePoint);
 	CPPUNIT_TEST(testLinearizeLineString);
@@ -103,8 +97,6 @@ class SpatialUtilityTest : public CppUnit::TestCase
 	CPPUNIT_TEST(testReversePolygonVertexOrder);
 	CPPUNIT_TEST(testCheckPolygonVertexOrder);
 	CPPUNIT_TEST(testGetPolygonVertexOrderAction);
-	CPPUNIT_TEST(testSpatialIndexMaster);
-
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -132,14 +124,8 @@ protected:
 	void testReversePolygonVertexOrder();
 	void testCheckPolygonVertexOrder();
 	void testGetPolygonVertexOrderAction();
-	void testSpatialIndexMaster();
 
 	FdoInt32 testGetExtentsMalformedSubsets(FdoByteArray * ba);
-
-private:
-	void testSpatialIndexErrors(FdoString* geomText);
-	void testSpatialIndex(FdoString* geomText, double* rect, int expectedSegCount);
-	void testSpatialIndexErase(FdoSpatialIndex* si, FdoInt64 featId, double* rect);
 };
 
 #endif

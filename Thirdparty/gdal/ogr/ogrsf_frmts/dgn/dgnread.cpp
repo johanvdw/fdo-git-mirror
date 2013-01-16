@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dgnread.cpp 21684 2011-02-11 22:14:01Z warmerdam $
+ * $Id: dgnread.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  Microstation DGN Access Library
  * Purpose:  DGN Access Library element reading code.
@@ -29,7 +29,7 @@
 
 #include "dgnlibp.h"
 
-CPL_CVSID("$Id: dgnread.cpp 21684 2011-02-11 22:14:01Z warmerdam $");
+CPL_CVSID("$Id: dgnread.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 static DGNElemCore *DGNParseTCB( DGNInfo * );
 static DGNElemCore *DGNParseColorTable( DGNInfo * );
@@ -926,7 +926,7 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
       case DGNT_BSPLINE_SURFACE_BOUNDARY:
         {
           DGNElemBSplineSurfaceBoundary *psBounds;
-          short numverts = psDGN->abyElem[38] + psDGN->abyElem[39]*256;
+          int numverts = psDGN->abyElem[38] + psDGN->abyElem[39]*256;
 
           psBounds = (DGNElemBSplineSurfaceBoundary *)
             CPLCalloc(sizeof(DGNElemBSplineSurfaceBoundary)+
@@ -965,8 +965,8 @@ static DGNElemCore *DGNProcessElement( DGNInfo *psDGN, int nType, int nLevel )
 
           // Read array
           for (int i=0;i<numelems;i++) {
-            psArray->array[i] =
-              1.0f * DGN_INT32(psDGN->abyElem + 36 + i*4) / ((1UL << 31) - 1);
+            psArray->array[i] = 
+              1.0f * DGN_INT32(psDGN->abyElem + 36 + i*4) / ((1L << 31) - 1);
           }
         }
       break;

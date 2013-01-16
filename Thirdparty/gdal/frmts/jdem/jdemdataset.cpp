@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jdemdataset.cpp 21837 2011-02-24 21:16:42Z rouault $
+ * $Id: jdemdataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $
  *
  * Project:  JDEM Reader
  * Purpose:  All code for Japanese DEM Reader
@@ -29,7 +29,7 @@
 
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: jdemdataset.cpp 21837 2011-02-24 21:16:42Z rouault $");
+CPL_CVSID("$Id: jdemdataset.cpp 16706 2009-04-02 03:44:07Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_JDEM(void);
@@ -85,15 +85,13 @@ class JDEMDataset : public GDALPamDataset
 {
     friend class JDEMRasterBand;
 
-    VSILFILE	*fp;
+    FILE	*fp;
     GByte	abyHeader[1012];
 
   public:
-                     JDEMDataset();
-                    ~JDEMDataset();
+		~JDEMDataset();
     
     static GDALDataset *Open( GDALOpenInfo * );
-    static int Identify( GDALOpenInfo * );
 
     CPLErr 	GetGeoTransform( double * padfTransform );
     const char *GetProjectionRef();
@@ -210,17 +208,7 @@ CPLErr JDEMRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /************************************************************************/
 
 /************************************************************************/
-/*                            JDEMDataset()                             */
-/************************************************************************/
-
-JDEMDataset::JDEMDataset() : fp(NULL)
-
-{
-    fp = NULL;
-}
-
-/************************************************************************/
-/*                           ~JDEMDataset()                             */
+/*                            ~JDEMDataset()                             */
 /************************************************************************/
 
 JDEMDataset::~JDEMDataset()
@@ -268,10 +256,10 @@ const char *JDEMDataset::GetProjectionRef()
 }
 
 /************************************************************************/
-/*                              Identify()                              */
+/*                                Open()                                */
 /************************************************************************/
 
-int JDEMDataset::Identify( GDALOpenInfo * poOpenInfo )
+GDALDataset *JDEMDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
 /* -------------------------------------------------------------------- */
@@ -279,7 +267,7 @@ int JDEMDataset::Identify( GDALOpenInfo * poOpenInfo )
 /*      expected locations.  Sadly this is a relatively weak test.      */
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->nHeaderBytes < 50 )
-        return FALSE;
+        return NULL;
 
     /* check if century values seem reasonable */
     if( (!EQUALN((char *)poOpenInfo->pabyHeader+11,"19",2)
@@ -289,22 +277,9 @@ int JDEMDataset::Identify( GDALOpenInfo * poOpenInfo )
         || (!EQUALN((char *)poOpenInfo->pabyHeader+19,"19",2)
              && !EQUALN((char *)poOpenInfo->pabyHeader+19,"20",2)) )
     {
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                                Open()                                */
-/************************************************************************/
-
-GDALDataset *JDEMDataset::Open( GDALOpenInfo * poOpenInfo )
-
-{
-    if (!Identify(poOpenInfo))
         return NULL;
-
+    }
+    
 /* -------------------------------------------------------------------- */
 /*      Confirm the requested access is supported.                      */
 /* -------------------------------------------------------------------- */
@@ -324,11 +299,6 @@ GDALDataset *JDEMDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS = new JDEMDataset();
 
     poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, "rb" );
-    if (poDS->fp == NULL)
-    {
-        delete poDS;
-        return NULL;
-    }
     
 /* -------------------------------------------------------------------- */
 /*      Read the header.                                                */
@@ -384,10 +354,8 @@ void GDALRegister_JDEM()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#JDEM" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "mem" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = JDEMDataset::Open;
-        poDriver->pfnIdentify = JDEMDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

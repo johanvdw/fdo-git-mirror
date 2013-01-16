@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1reader.cpp 20142 2010-07-27 18:43:49Z rouault $
+ * $Id: ili1reader.cpp 17904 2009-10-26 19:22:46Z chaitanya $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Implementation of ILI1Reader class.
@@ -50,7 +50,7 @@
 #  endif
 #endif
 
-CPL_CVSID("$Id: ili1reader.cpp 20142 2010-07-27 18:43:49Z rouault $");
+CPL_CVSID("$Id: ili1reader.cpp 17904 2009-10-26 19:22:46Z chaitanya $");
 
 
 //
@@ -319,14 +319,14 @@ int ILI1Reader::ReadModel(const char *pszModelFilename) {
         char* geomlayername = '\0';
         OGRILI1Layer* layer = NULL;
 
-        for(size_t i=0; i<attributes.size(); i++) {
+        for(int i=0; i<attributes.size(); i++) {
           IOM_OBJECT obj = attributes.at(i);
           const char* typenam = GetTypeName(model, obj);
           if (EQUAL(typenam, "iom04.metamodel.CoordType")  || EQUAL(typenam, "iom04.metamodel.AreaType")) {
             feature = OGRFeature::CreateFeature(metaLayer->GetLayerDefn());
             feature->SetFID(j+1);
             feature->SetField("layername", layername);
-            feature->SetField("geomIdx", (int)i);
+            feature->SetField("geomIdx", i);
 
             if(multiple > 0) {
               geomlayername = GetPointLayerName(layername, iom_getattrvalue(obj, "name"));
@@ -351,7 +351,7 @@ int ILI1Reader::ReadModel(const char *pszModelFilename) {
         OGRFieldDefn fieldDef("_TID", OFTString);
         layer->GetLayerDefn()->AddFieldDefn(&fieldDef);
 
-        for(size_t i=0; i<attributes.size(); i++) {
+        for(int i=0; i<attributes.size(); i++) {
           IOM_OBJECT obj = attributes.at(i);
           AddField(layer, model, obj);
         }
@@ -515,7 +515,7 @@ int ILI1Reader::ReadTable(const char *layername) {
     int ret = TRUE;
     int warned = FALSE;
     int fIndex;
-    int geomIdx = 0;
+    int geomIdx;
 
     // curLayer is NULL if we have more than one
     // point geometry column

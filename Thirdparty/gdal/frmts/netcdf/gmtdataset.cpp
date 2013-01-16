@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmtdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
+ * $Id: gmtdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library for GMT Grids.
@@ -31,7 +31,7 @@
 #include "gdal_frmts.h"
 #include "netcdf.h"
 
-CPL_CVSID("$Id: gmtdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
+CPL_CVSID("$Id: gmtdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -129,7 +129,7 @@ CPLErr GMTRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
 {
     size_t start[2], edge[2];
-    int    nErr = NC_NOERR;
+    int    nErr;
     int    cdfid = ((GMTDataset *) poDS)->cdfid;
 
     start[0] = nBlockYOff * nBlockXSize;
@@ -357,11 +357,6 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
-
-/* -------------------------------------------------------------------- */
-/*      Check for external overviews.                                   */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return( poDS );
 }

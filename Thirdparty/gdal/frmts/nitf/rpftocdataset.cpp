@@ -42,7 +42,7 @@
 #define GEOTRSFRM_ROTATION_PARAM2      4
 #define GEOTRSFRM_NS_RES               5
 
-CPL_CVSID("$Id: rpftocdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: rpftocdataset.cpp 17929 2009-10-30 19:51:58Z rouault $");
 
 
 /** Overview of used classes :
@@ -914,7 +914,7 @@ int RPFTOCDataset::IsNonNITFFileTOC(GDALOpenInfo * poOpenInfo, const char* pszFi
     else
     {
         char buffer[48];
-        VSILFILE* fp = NULL;
+        FILE* fp = NULL;
         fp = VSIFOpenL( pszFilename, "rb" );
         if( fp == NULL )
         {
@@ -960,7 +960,7 @@ GDALDataset* RPFTOCDataset::OpenFileTOC(NITFFile *psFile,
                                         const char* openInformationName)
 {
     char buffer[48];
-    VSILFILE* fp = NULL;
+    FILE* fp = NULL;
     if (psFile == NULL)
     {
         fp = VSIFOpenL( pszFilename, "rb" );
@@ -1243,7 +1243,6 @@ void GDALRegister_RPFTOC()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#RPFTOC" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "toc" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

@@ -1,6 +1,6 @@
 /*-*-C++-*-*/
 /******************************************************************************
- * $Id: ogr_tiger.h 23423 2011-11-26 18:40:30Z rouault $
+ * $Id: ogr_tiger.h 17224 2009-06-07 20:20:23Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Main declarations for Tiger translator.
@@ -90,23 +90,23 @@ const char * TigerVersionString( TigerVersion );
 /*****************************************************************************/
 
 typedef struct TigerFieldInfo {
-  char          pszFieldName[11];  // name of the field
+  const char    *pszFieldName;  // name of the field
   char          cFmt;           // format of the field ('L' or 'R')
   char          cType;          // type of the field ('A' or 'N')
-  char          OGRtype;        // OFTType of the field (OFTInteger, OFTString, ...?)
-  unsigned char nBeg;           // beginning column number for field
-  unsigned char nEnd;           // ending column number for field
-  unsigned char nLen;           // length of field
+  OGRFieldType  OGRtype;        // OFTType of the field (OFTInteger, OFTString, ...?)
+  int           nBeg;           // beginning column number for field
+  int           nEnd;           // ending column number for field
+  int           nLen;           // length of field
 
-  int           bDefine:1;        // whether to add this field to the FeatureDefn
-  int           bSet:1;           // whether to set this field in GetFeature()
-  int           bWrite:1;         // whether to write this field in CreateFeature()
+  int           bDefine;        // whether to add this field to the FeatureDefn
+  int           bSet;           // whether to set this field in GetFeature()
+  int           bWrite;         // whether to write this field in CreateFeature()
 } TigerFieldInfo;
 
 typedef struct TigerRecordInfo {
-  const TigerFieldInfo *pasFields;
-  unsigned char        nFieldCount;
-  unsigned char        nRecordLength;
+  TigerFieldInfo *pasFields;
+  int             nFieldCount;
+  int             nRecordLength;
 } TigerRecordInfo;
 
 // OGR_TIGER_RECBUF_LEN should be a number that is larger than the
@@ -150,8 +150,7 @@ protected:
   TigerVersion        nVersion;
 
 public:
-                      TigerFileBase( const TigerRecordInfo *psRTInfoIn = NULL,
-                                     const char            *m_pszFileCodeIn = NULL );
+                      TigerFileBase();
   virtual            ~TigerFileBase();
 
   TigerVersion        GetVersion() { return nVersion; }
@@ -159,13 +158,18 @@ public:
 
   virtual const char *GetShortModule() { return pszShortModule; }
   virtual const char *GetModule() { return pszModule; }
+  virtual int         SetModule( const char * ) = 0;
   virtual int         SetWriteModule( const char *, int, OGRFeature * );
 
   virtual int         GetFeatureCount() { return nFeatures; }
+  virtual OGRFeature *GetFeature( int ) = 0;
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature )
+                                { return OGRERR_FAILURE; }
 
   OGRFeatureDefn     *GetFeatureDefn() { return poFeatureDefn; }
 
-  static const char*  GetField( const char *, int, int );
+  static CPLString    GetField( const char *, int, int );
   static void         SetField( OGRFeature *, const char *, const char *,
                                 int, int );
 
@@ -176,26 +180,19 @@ public:
   int                 WritePoint( char *pachRecord, int nStart,
                                   double dfX, double dfY );
 
-  virtual int         SetModule( const char * pszModule );
-  virtual OGRFeature *GetFeature( int nRecordId );
-  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
-
  protected:
-  void                WriteFields(const TigerRecordInfo *psRTInfo,
+  void                WriteFields(TigerRecordInfo *psRTInfo,
                                   OGRFeature      *poFeature,
                                   char            *szRecord);
 
-  void                AddFieldDefns(const TigerRecordInfo *psRTInfo,
+  void                AddFieldDefns(TigerRecordInfo *psRTInfo,
                                     OGRFeatureDefn  *poFeatureDefn);
 
 
-  void                SetFields(const TigerRecordInfo *psRTInfo,
+  void                SetFields(TigerRecordInfo *psRTInfo,
                                 OGRFeature      *poFeature,
                                 char            *achRecord);
 
-
-  const TigerRecordInfo *psRTInfo;
-  const char            *m_pszFileCode;
 };
 
 /************************************************************************/
@@ -222,9 +219,9 @@ class TigerCompleteChain : public TigerFileBase
   OGRFeature         *GetFeature2002( int );
   void                AddFieldDefns2002();
 
-  const TigerRecordInfo    *psRT1Info;
-  const TigerRecordInfo    *psRT2Info;
-  const TigerRecordInfo    *psRT3Info;
+  TigerRecordInfo    *psRT1Info;
+  TigerRecordInfo    *psRT2Info;
+  TigerRecordInfo    *psRT3Info;
 
 public:
                       TigerCompleteChain( OGRTigerDataSource *,
@@ -246,9 +243,15 @@ public:
 
 class TigerAltName : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRT4Info;
+
  public:
                       TigerAltName( OGRTigerDataSource *,
                                           const char * );
+  virtual            ~TigerAltName();
+
+  virtual int         SetModule( const char * );
 
   virtual OGRFeature *GetFeature( int );
 
@@ -261,9 +264,19 @@ class TigerAltName : public TigerFileBase
 
 class TigerFeatureIds : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRT5Info;
+
  public:
                       TigerFeatureIds( OGRTigerDataSource *,
                                        const char * );
+  virtual            ~TigerFeatureIds();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -272,8 +285,18 @@ class TigerFeatureIds : public TigerFileBase
 
 class TigerZipCodes : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRT6Info;
+
 public:
                       TigerZipCodes( OGRTigerDataSource *, const char * );
+  virtual            ~TigerZipCodes();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -287,9 +310,7 @@ public:
 class TigerPoint : public TigerFileBase
 {
  protected:
-                      TigerPoint(int bRequireGeom,
-                                 const TigerRecordInfo *psRTInfoIn = NULL,
-                                 const char            *m_pszFileCodeIn = NULL);
+                      TigerPoint(int bRequireGeom);
 
                       // The boolean bRequireGeom indicates whether
                       // the layer requires each feature to actual
@@ -297,19 +318,25 @@ class TigerPoint : public TigerFileBase
                       // decide whether to report an error when a
                       // missing geom is detected.
 
+  virtual             ~TigerPoint();
+
  private:
  int                  bRequireGeom;
 
  public:
-  virtual OGRFeature *GetFeature( int nFID) { return TigerFileBase::GetFeature(nFID); } /* to avoid -Woverloaded-virtual warnings */
-  OGRFeature *GetFeature( int              nRecordId,
+  virtual int         SetModule( const char *,
+                                 const char *pszFileCode );
+
+  virtual OGRFeature *GetFeature( int              nRecordId,
+                                  TigerRecordInfo *psRTInfo,
                                   int nX0, int nX1,
                                   int nY0, int nY1 );
 
 
-  virtual OGRErr CreateFeature( OGRFeature      *poFeature) { return TigerFileBase::CreateFeature(poFeature); } /* to avoid -Woverloaded-virtual warnings */
-  OGRErr CreateFeature( OGRFeature      *poFeature,
-                                int nIndex );
+  virtual OGRErr CreateFeature( OGRFeature      *poFeature,
+                                TigerRecordInfo *psRTInfo,
+                                int nIndex,
+                                const char *pszFileCode );
 
 };
 
@@ -319,8 +346,14 @@ class TigerPoint : public TigerFileBase
 
 class TigerLandmarks : public TigerPoint
 {
+ private:
+  TigerRecordInfo    *psRT7Info;
+
  public:
                       TigerLandmarks( OGRTigerDataSource *, const char * );
+  virtual            ~TigerLandmarks();
+
+  virtual int         SetModule( const char * );
 
   virtual OGRFeature *GetFeature( int );
 
@@ -333,8 +366,18 @@ class TigerLandmarks : public TigerPoint
 
 class TigerAreaLandmarks : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRT8Info;
+
 public:
                       TigerAreaLandmarks( OGRTigerDataSource *, const char * );
+  virtual            ~TigerAreaLandmarks();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -343,8 +386,18 @@ public:
 
 class TigerKeyFeatures : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRT9Info;
+
 public:
                       TigerKeyFeatures( OGRTigerDataSource *, const char * );
+  virtual            ~TigerKeyFeatures();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -354,8 +407,8 @@ public:
 class TigerPolygon : public TigerFileBase
 {
  private:
-  const TigerRecordInfo    *psRTAInfo;
-  const TigerRecordInfo    *psRTSInfo;
+  TigerRecordInfo    *psRTAInfo;
+  TigerRecordInfo    *psRTSInfo;
 
   FILE               *fpRTS;
   int                 bUsingRTS;
@@ -379,8 +432,18 @@ public:
 
 class TigerPolygonCorrections : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTBInfo;
+
 public:
                       TigerPolygonCorrections( OGRTigerDataSource *, const char * );
+  virtual            ~TigerPolygonCorrections();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -389,8 +452,18 @@ public:
 
 class TigerEntityNames : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTCInfo;
+
 public:
                       TigerEntityNames( OGRTigerDataSource *, const char * );
+  virtual            ~TigerEntityNames();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -399,9 +472,18 @@ public:
 
 class TigerPolygonEconomic : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTEInfo;
+
 public:
                       TigerPolygonEconomic( OGRTigerDataSource *, const char * );
+  virtual            ~TigerPolygonEconomic();
 
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -410,8 +492,18 @@ public:
 
 class TigerIDHistory : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTHInfo;
+
 public:
                       TigerIDHistory( OGRTigerDataSource *, const char * );
+  virtual            ~TigerIDHistory();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -420,8 +512,18 @@ public:
 
 class TigerPolyChainLink : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTIInfo;
+
 public:
                       TigerPolyChainLink( OGRTigerDataSource *, const char * );
+  virtual            ~TigerPolyChainLink();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -430,8 +532,18 @@ public:
 
 class TigerSpatialMetadata : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTMInfo;
+
 public:
                       TigerSpatialMetadata( OGRTigerDataSource *, const char * );
+  virtual            ~TigerSpatialMetadata();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -440,8 +552,14 @@ public:
 
 class TigerPIP : public TigerPoint
 {
+ private:
+  TigerRecordInfo    *psRTPInfo;
+
 public:
                       TigerPIP( OGRTigerDataSource *, const char * );
+  virtual            ~TigerPIP();
+
+  virtual int         SetModule( const char * );
 
   virtual OGRFeature *GetFeature( int );
 
@@ -454,8 +572,18 @@ public:
 
 class TigerTLIDRange : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTRInfo;
+
 public:
                       TigerTLIDRange( OGRTigerDataSource *, const char * );
+  virtual            ~TigerTLIDRange();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -464,8 +592,18 @@ public:
 
 class TigerZeroCellID : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTTInfo;
+
 public:
                       TigerZeroCellID( OGRTigerDataSource *, const char * );
+  virtual            ~TigerZeroCellID();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/
@@ -474,8 +612,14 @@ public:
 
 class TigerOverUnder : public TigerPoint
 {
+ private:
+  TigerRecordInfo    *psRTUInfo;
+
 public:
                       TigerOverUnder( OGRTigerDataSource *, const char * );
+  virtual            ~TigerOverUnder();
+
+  virtual int         SetModule( const char * );
 
   virtual OGRFeature *GetFeature( int );
 
@@ -488,8 +632,18 @@ public:
 
 class TigerZipPlus4 : public TigerFileBase
 {
+ private:
+  TigerRecordInfo    *psRTZInfo;
+
  public:
                       TigerZipPlus4( OGRTigerDataSource *, const char * );
+  virtual            ~TigerZipPlus4();
+
+  virtual int         SetModule( const char * );
+
+  virtual OGRFeature *GetFeature( int );
+
+  virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 };
 
 /************************************************************************/

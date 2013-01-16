@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: minidriver_tms.cpp 22021 2011-03-23 21:51:19Z rouault $
+ * $Id: minidriver_tms.cpp 18589 2010-01-19 18:54:53Z warmerdam $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -94,10 +94,4 @@ void GDALWMSMiniDriver_TMS::TiledImageRequest(CPLString *url, const GDALWMSImage
     URLSearchAndReplace(url, "${x}", "%d", tiri.m_x);
     URLSearchAndReplace(url, "${y}", "%d", tms_y);
     URLSearchAndReplace(url, "${z}", "%d", tiri.m_level);
-
-    /* Hack for some TMS like servers that require tile numbers split into 3 groups of */
-    /* 3 digits, like http://tile8.geo.admin.ch/geoadmin/ch.swisstopo.pixelkarte-farbe */
-    URLSearchAndReplace(url, "${xxx}", "%03d/%03d/%03d", tiri.m_x / 1000000, (tiri.m_x / 1000) % 1000, tiri.m_x % 1000);
-    URLSearchAndReplace(url, "${yyy}", "%03d/%03d/%03d", tms_y / 1000000, (tms_y / 1000) % 1000, tms_y % 1000);
-
 }
