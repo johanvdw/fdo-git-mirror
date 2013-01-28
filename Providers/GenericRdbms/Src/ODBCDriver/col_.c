@@ -228,12 +228,8 @@ int local_odbcdr_col_act(
     long                i;
     int                 found;
     odbcdr_NameListEntry_col_def *     nle;
-    wchar_t             szDebugBuf[ODBCDR_MAX_BUFF_SIZE];
-    rdbi_string_def     szDebug;
-
-	szSql.wString = (wchar_t *)szSqlBuf;
+    szSql.wString = (wchar_t *)szSqlBuf;
     szColumnName.wString = (wchar_t *)szColumnNameBuf;
-	szDebug.wString = (wchar_t*)szDebugBuf;
 
 #ifdef _DEBUG
     if (context->odbcdr_UseUnicode){
@@ -294,7 +290,6 @@ int local_odbcdr_col_act(
                 goto the_exit;
             (void) odbcdr_swprintf(szSql.wString, ODBCDR_MAX_BUFF_SIZE, formatStr, object_name->cwString);
         }
-		debug_trace(NULL, szSql.wString, NULL);
     }
     else
     {
@@ -316,7 +311,6 @@ int local_odbcdr_col_act(
                 goto the_exit;
             (void) sprintf(szSql.cString, formatStr, object_name->ccString);
         }
-		debug_trace(szSql.cString, NULL, NULL);
     }
     ODBCDR_RDBI_ERR( local_odbcdr_sql( context, (char *) c, &szSql, TRUE, NULL, NULL, NULL ) );
     ODBCDR_RDBI_ERR( odbcdr_execute( context, (char *) c, 1, 0, &rows_processed ) );
@@ -324,9 +318,6 @@ int local_odbcdr_col_act(
     ODBCDR_ODBC_ERR( SQLNumResultCols(c->hStmt, &num_cols) , 
         SQL_HANDLE_STMT, c->hStmt,
 		"SQLDescribeCol", "get columns" );
-
-	sprintf(szDebug.cString, "SQLNumResultsCols: counted %d columns", num_cols);
-	debug_trace(szDebug.cString, NULL, NULL);
 
     for (position=1;  position <= num_cols;  position++)
     {
@@ -362,9 +353,6 @@ int local_odbcdr_col_act(
                 NULL  ),
                 SQL_HANDLE_STMT, c->hStmt, "SQLColAttribute", "Getting column name" );
             (void) wcscpy(newNle.nameW, szColumnName.cwString);
-
-			swprintf(szDebug.wString, ODBCDR_MAX_BUFF_SIZE - 1, L"SQLColAttribute: found column '%ls'", szColumnName.cwString);
-			debug_trace(NULL, szDebug.wString, NULL);
 
             ODBCDR_ODBC_ERR( SQLColAttributeW(
                 c->hStmt,
@@ -494,9 +482,6 @@ int local_odbcdr_col_act(
                 NULL  ),
                 SQL_HANDLE_STMT, c->hStmt, "SQLColAttribute", "Getting column name" );
             (void) strcpy(newNle.name, szColumnName.ccString);
-
-			sprintf(szDebug.cString, "SQLColAttribute: found column '%s'", szColumnName.ccString);
-			debug_trace(szDebug.cString, NULL, NULL);
 
             ODBCDR_ODBC_ERR( SQLColAttribute(
                 c->hStmt,
