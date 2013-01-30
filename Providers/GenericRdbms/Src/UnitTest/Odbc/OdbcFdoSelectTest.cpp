@@ -376,7 +376,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
 
             FdoPtr<FdoISelect> selectCmd = (FdoISelect*)mConnection->CreateCommand(FdoCommandType_Select);
 
-            selectCmd->SetFeatureClassName(L"Fdo:table3");
+            selectCmd->SetFeatureClassName(L"guest:table3");
 
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
@@ -403,7 +403,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
             // close the reader
             reader->Close();
 
-            selectCmd->SetFeatureClassName(L"Fdo:cities");
+            selectCmd->SetFeatureClassName(L"guest:cities");
 
             reader = selectCmd->Execute();
 
@@ -439,7 +439,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
                     break;
 
                 default:
-                    CPPUNIT_FAIL("Unexpected value for Fdo.cities.cityid");
+                    CPPUNIT_FAIL("Unexpected value for guest.cities.cityid");
                     break;
                 }
                 numFeatures++;
