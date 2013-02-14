@@ -278,11 +278,10 @@ void OdbcMySqlFdoSelectTest::View1Test()
                 {
                     FdoPtr<FdoDataPropertyDefinition> idPropDef = idPropDefs->GetItem(i);
                     printf("    Found identity property '%ls'.\n", idPropDef->GetName());
-                    // Shouldn't get here anymore. 
                     CPPUNIT_ASSERT_MESSAGE("Expected identity property named featid1", 0==wcscmp(L"featid1", idPropDef->GetName()));
                 }
                 printf("  Found total %d identity properties.\n", numIdProps);
-                CPPUNIT_ASSERT_MESSAGE("Expected 0 identity properties", 0==numIdProps);
+                CPPUNIT_ASSERT_MESSAGE("Expected 1 identity property", 1==numIdProps);
             }
 
             // read through all the features
@@ -330,11 +329,10 @@ void OdbcSqlServerFdoSelectTest::View1Test()
                 {
                     FdoPtr<FdoDataPropertyDefinition> idPropDef = idPropDefs->GetItem(i);
                     printf("    Found identity property '%ls'.\n", idPropDef->GetName());
-                    // Shouldn't get here any more 
                     CPPUNIT_ASSERT_MESSAGE("Expected identity property named featid1", 0==wcscmp(L"featid1", idPropDef->GetName()));
                 }
                 printf("  Found total %d identity properties.\n", numIdProps);
-                CPPUNIT_ASSERT_MESSAGE("Expected 0 identity property", 0==numIdProps);
+                CPPUNIT_ASSERT_MESSAGE("Expected 1 identity property", 1==numIdProps);
             }
 
             // read through all the features
@@ -378,7 +376,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
 
             FdoPtr<FdoISelect> selectCmd = (FdoISelect*)mConnection->CreateCommand(FdoCommandType_Select);
 
-            selectCmd->SetFeatureClassName(L"Fdo:table3");
+            selectCmd->SetFeatureClassName(L"guest:table3");
 
             FdoPtr<FdoIFeatureReader> reader = selectCmd->Execute();
 
@@ -405,7 +403,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
             // close the reader
             reader->Close();
 
-            selectCmd->SetFeatureClassName(L"Fdo:cities");
+            selectCmd->SetFeatureClassName(L"guest:cities");
 
             reader = selectCmd->Execute();
 
@@ -441,7 +439,7 @@ void OdbcSqlServerFdoSelectTest::MultiSchemaTest()
                     break;
 
                 default:
-                    CPPUNIT_FAIL("Unexpected value for Fdo.cities.cityid");
+                    CPPUNIT_FAIL("Unexpected value for guest.cities.cityid");
                     break;
                 }
                 numFeatures++;
