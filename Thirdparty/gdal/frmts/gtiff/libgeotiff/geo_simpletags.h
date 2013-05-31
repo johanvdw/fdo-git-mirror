@@ -31,6 +31,7 @@
 #define __geo_simpletags_h_
 
 #include "geotiff.h"
+#include "cpl_serv.h"
 
 #if defined(__cplusplus)
 extern "C" {

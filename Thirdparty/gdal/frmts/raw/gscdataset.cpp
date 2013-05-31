@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gscdataset.cpp 21715 2011-02-13 19:18:59Z rouault $
+ * $Id: gscdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
  *
  * Project:  GSC Geogrid format driver.
  * Purpose:  Implements support for reading and writing GSC Geogrid format.
@@ -30,7 +30,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gscdataset.cpp 21715 2011-02-13 19:18:59Z rouault $");
+CPL_CVSID("$Id: gscdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -40,7 +40,7 @@ CPL_CVSID("$Id: gscdataset.cpp 21715 2011-02-13 19:18:59Z rouault $");
 
 class GSCDataset : public RawDataset
 {
-    VSILFILE	*fpImage;	// image data file.
+    FILE	*fpImage;	// image data file.
     
     double	adfGeoTransform[6];
 
@@ -77,7 +77,7 @@ GSCDataset::~GSCDataset()
 {
     FlushCache();
     if( fpImage != NULL )
-        VSIFCloseL( fpImage );
+        VSIFClose( fpImage );
 }
 
 /************************************************************************/
@@ -104,7 +104,7 @@ GDALDataset *GSCDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Does this plausible look like a GSC Geogrid file?               */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 20 )
+    if( poOpenInfo->nHeaderBytes < 20 || poOpenInfo->fp == NULL )
         return NULL;
 
     if( poOpenInfo->pabyHeader[12] != 0x02
@@ -149,20 +149,16 @@ GDALDataset *GSCDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Assume ownership of the file handled from the GDALOpenInfo.     */
 /* -------------------------------------------------------------------- */
-    poDS->fpImage = VSIFOpenL(poOpenInfo->pszFilename, "rb");
-    if (poDS->fpImage == NULL)
-    {
-        delete poDS;
-        return NULL;
-    }
+    poDS->fpImage = poOpenInfo->fp;
+    poOpenInfo->fp = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Read the header information in the second record. 		*/
 /* -------------------------------------------------------------------- */
     float	afHeaderInfo[8];
 
-    if( VSIFSeekL( poDS->fpImage, nRecordLen + 12, SEEK_SET ) != 0
-        || VSIFReadL( afHeaderInfo, sizeof(float), 8, poDS->fpImage ) != 8 )
+    if( VSIFSeek( poDS->fpImage, nRecordLen + 12, SEEK_SET ) != 0
+        || VSIFRead( afHeaderInfo, sizeof(float), 8, poDS->fpImage ) != 8 )
     {
         CPLError( CE_Failure, CPLE_FileIO, 
                   "Failure reading second record of GSC file with %d record length.",
@@ -196,7 +192,7 @@ GDALDataset *GSCDataset::Open( GDALOpenInfo * poOpenInfo )
     poBand = new RawRasterBand( poDS, 1, poDS->fpImage,
                                 nRecordLen * 2 + 4,
                                 sizeof(float), nRecordLen,
-                                GDT_Float32, bNative, TRUE );
+                                GDT_Float32, bNative, FALSE );
     poDS->SetBand( 1, poBand );
 
     poBand->SetNoDataValue( -1.0000000150474662199e+30 );
@@ -233,7 +229,6 @@ void GDALRegister_GSC()
                                    "GSC Geogrid" );
 //        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
 //                                   "frmt_various.html#GSC" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = GSCDataset::Open;
 

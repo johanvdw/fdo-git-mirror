@@ -85,8 +85,6 @@ private:
 
     int mIndex;
 
-    bool mAvoidSetSchema;
-
 public:
     FDORDBMS_TEST DbiConnection( );
     FDORDBMS_TEST ~DbiConnection(void);
@@ -95,9 +93,6 @@ public:
 
     void SetConnectionState (FdoConnectionState state);
     void SetConnectData (FdoString *datasource, FdoString *user, FdoString *password, FdoString *schema, FdoString *connectionString, FdoString *defaultGeometryWanted);
-
-    void SetAvoidSetSchema(bool value) {mAvoidSetSchema = value;}
-    bool GetAvoidSetSchema() {return mAvoidSetSchema;}
 
     void InitRdbi( initializer* driver )
     {

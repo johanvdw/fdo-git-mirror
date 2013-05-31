@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr.java 23515 2011-12-10 21:14:02Z rouault $
+ * $Id: ogr2ogr.java 17157 2009-06-01 10:36:47Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Java port of a simple client for translating between formats.
@@ -30,7 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-import java.io.File;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
@@ -82,14 +81,6 @@ public class ogr2ogr
     static final int OGRNullFID = -1;
     static int nFIDToFetch = OGRNullFID;
 
-    static class GeomOperation
-    {
-        private GeomOperation() {}
-        public static GeomOperation NONE = new GeomOperation();
-        public static GeomOperation SEGMENTIZE = new GeomOperation();
-        public static GeomOperation SIMPLIFY_PRESERVE_TOPOLOGY = new GeomOperation();
-    }
-
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
@@ -111,31 +102,13 @@ public class ogr2ogr
         String pszWHERE = null;
         Geometry poSpatialFilter = null;
         String pszSelect;
-        Vector papszSelFields = null;
+        Vector papszSelFields = new Vector();
         String pszSQLStatement = null;
         int    eGType = -2;
-        GeomOperation eGeomOp = GeomOperation.NONE;
-        double dfGeomOpParam = 0;
+        double dfMaxSegmentLength = 0;
         Vector papszFieldTypesToString = new Vector();
         boolean bDisplayProgress = false;
         ProgressCallback pfnProgress = null;
-        boolean  bClipSrc = false;
-        Geometry poClipSrc = null;
-        String pszClipSrcDS = null;
-        String pszClipSrcSQL = null;
-        String pszClipSrcLayer = null;
-        String pszClipSrcWhere = null;
-        Geometry poClipDst = null;
-        String pszClipDstDS = null;
-        String pszClipDstSQL = null;
-        String pszClipDstLayer = null;
-        String pszClipDstWhere = null;
-        String pszSrcEncoding = null;
-        String pszDstEncoding = null;
-        boolean bExplodeCollections = false;
-        String pszZField = null;
-
-        ogr.DontUseExceptions();
 
     /* -------------------------------------------------------------------- */
     /*      Register format(s).                                             */
@@ -179,12 +152,10 @@ public class ogr2ogr
             else if( args[iArg].equalsIgnoreCase("-append") )
             {
                 bAppend = true;
-                bUpdate = true;
             }
             else if( args[iArg].equalsIgnoreCase("-overwrite") )
             {
                 bOverwrite = true;
-                bUpdate = true;
             }
             else if( args[iArg].equalsIgnoreCase("-update") )
             {
@@ -287,19 +258,12 @@ public class ogr2ogr
             {
                 pszSelect = args[++iArg];
                 StringTokenizer tokenizer = new StringTokenizer(pszSelect, " ,");
-                papszSelFields = new Vector();
                 while(tokenizer.hasMoreElements())
                     papszSelFields.addElement(tokenizer.nextToken());
             }
-            else if( args[iArg].equalsIgnoreCase("-simplify") && iArg < args.length-1 )
-            {
-                eGeomOp = GeomOperation.SIMPLIFY_PRESERVE_TOPOLOGY;
-                dfGeomOpParam = new Double(args[++iArg]).doubleValue();
-            }
             else if( args[iArg].equalsIgnoreCase("-segmentize") && iArg < args.length-1 )
             {
-                eGeomOp = GeomOperation.SEGMENTIZE;
-                dfGeomOpParam = new Double(args[++iArg]).doubleValue();
+                dfMaxSegmentLength = new Double(args[++iArg]).doubleValue();
             }
             else if( args[iArg].equalsIgnoreCase("-fieldTypeToString") && iArg < args.length-1 )
             {
@@ -337,129 +301,6 @@ public class ogr2ogr
             {
                 bDisplayProgress = true;
             }
-            /*else if( args[iArg].equalsIgnoreCase("-wrapdateline") )
-            {
-                bWrapDateline = true;
-            }
-            */
-            else if( args[iArg].equalsIgnoreCase("-clipsrc") && iArg < args.length-1 )
-            {
-                bClipSrc = true;
-                if ( IsNumber(args[iArg+1]) && iArg < args.length - 4 )
-                {
-                    Geometry oRing = new Geometry(ogrConstants.wkbLinearRing);
-                    double xmin = new Double(args[++iArg]).doubleValue();
-                    double ymin = new Double(args[++iArg]).doubleValue();
-                    double xmax = new Double(args[++iArg]).doubleValue();
-                    double ymax = new Double(args[++iArg]).doubleValue();
-                    oRing.AddPoint(xmin, ymin);
-                    oRing.AddPoint(xmin, ymax);
-                    oRing.AddPoint(xmax, ymax);
-                    oRing.AddPoint(xmax, ymin);
-                    oRing.AddPoint(xmin, ymin);
-                    
-                    poClipSrc = new Geometry(ogrConstants.wkbPolygon);
-                    poClipSrc.AddGeometry(oRing);
-                }
-                else if( (args[iArg+1].length() >= 7 && args[iArg+1].substring(0, 7).equalsIgnoreCase("POLYGON") ) ||
-                         (args[iArg+1].length() >= 12 && args[iArg+1].substring(0, 12).equalsIgnoreCase("MULTIPOLYGON") ) )
-                {
-                    poClipSrc = Geometry.CreateFromWkt(args[iArg+1]);
-                    if (poClipSrc == null)
-                    {
-                        System.err.print("FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
-                        Usage();
-                    }
-                    iArg ++;
-                }
-                else if (args[iArg+1].equalsIgnoreCase("spat_extent") )
-                {
-                    iArg ++;
-                }
-                else
-                {
-                    pszClipSrcDS = args[iArg+1];
-                    iArg ++;
-                }
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipsrcsql") && iArg < args.length-1 )
-            {
-                pszClipSrcSQL = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipsrclayer") && iArg < args.length-1 )
-            {
-                pszClipSrcLayer = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipsrcwhere") && iArg < args.length-1 )
-            {
-                pszClipSrcWhere = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipdst") && iArg < args.length-1 )
-            {
-                if ( IsNumber(args[iArg+1]) && iArg < args.length - 4 )
-                {
-                    Geometry oRing = new Geometry(ogrConstants.wkbLinearRing);
-                    double xmin = new Double(args[++iArg]).doubleValue();
-                    double ymin = new Double(args[++iArg]).doubleValue();
-                    double xmax = new Double(args[++iArg]).doubleValue();
-                    double ymax = new Double(args[++iArg]).doubleValue();
-                    oRing.AddPoint(xmin, ymin);
-                    oRing.AddPoint(xmin, ymax);
-                    oRing.AddPoint(xmax, ymax);
-                    oRing.AddPoint(xmax, ymin);
-                    oRing.AddPoint(xmin, ymin);
-                    
-                    poClipDst = new Geometry(ogrConstants.wkbPolygon);
-                    poClipDst.AddGeometry(oRing);
-                }
-                else if( (args[iArg+1].length() >= 7 && args[iArg+1].substring(0, 7).equalsIgnoreCase("POLYGON") ) ||
-                         (args[iArg+1].length() >= 12 && args[iArg+1].substring(0, 12).equalsIgnoreCase("MULTIPOLYGON") ) )
-                {
-                    poClipDst = Geometry.CreateFromWkt(args[iArg+1]);
-                    if (poClipDst == null)
-                    {
-                        System.err.print("FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
-                        Usage();
-                    }
-                    iArg ++;
-                }
-                else if (args[iArg+1].equalsIgnoreCase("spat_extent") )
-                {
-                    iArg ++;
-                }
-                else
-                {
-                    pszClipDstDS = args[iArg+1];
-                    iArg ++;
-                }
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipdstsql") && iArg < args.length-1 )
-            {
-                pszClipDstSQL = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipdstlayer") && iArg < args.length-1 )
-            {
-                pszClipDstLayer = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-clipdstwhere") && iArg < args.length-1 )
-            {
-                pszClipDstWhere = args[iArg+1];
-                iArg ++;
-            }
-            else if( args[iArg].equalsIgnoreCase("-explodecollections") )
-            {
-                bExplodeCollections = true;
-            }
-            else if( args[iArg].equalsIgnoreCase("-zfield") && iArg < args.length-1 )
-            {
-                pszZField = args[iArg+1];
-                iArg ++;
-            }
             else if( args[iArg].charAt(0) == '-' )
             {
                 Usage();
@@ -474,43 +315,7 @@ public class ogr2ogr
     
         if( pszDataSource == null )
             Usage();
-
-        if( bPreserveFID && bExplodeCollections )
-        {
-            System.err.print("FAILURE: cannot use -preserve_fid and -explodecollections at the same time\n\n" );
-            Usage();
-        }
-
-        if( bClipSrc && pszClipSrcDS != null)
-        {
-            poClipSrc = LoadGeometry(pszClipSrcDS, pszClipSrcSQL, pszClipSrcLayer, pszClipSrcWhere);
-            if (poClipSrc == null)
-            {
-                System.err.print("FAILURE: cannot load source clip geometry\n\n" );
-                Usage();
-            }
-        }
-        else if( bClipSrc && poClipSrc == null )
-        {
-            if (poSpatialFilter != null)
-                poClipSrc = poSpatialFilter.Clone();
-            if (poClipSrc == null)
-            {
-                System.err.print("FAILURE: -clipsrc must be used with -spat option or a\n" +
-                                "bounding box, WKT string or datasource must be specified\n\n");
-                Usage();
-            }
-        }
-        
-        if( pszClipDstDS != null)
-        {
-            poClipDst = LoadGeometry(pszClipDstDS, pszClipDstSQL, pszClipDstLayer, pszClipDstWhere);
-            if (poClipDst == null)
-            {
-                System.err.print("FAILURE: cannot load dest clip geometry\n\n" );
-                Usage();
-            }
-        }
+    
     /* -------------------------------------------------------------------- */
     /*      Open data source.                                               */
     /* -------------------------------------------------------------------- */
@@ -537,55 +342,43 @@ public class ogr2ogr
     /* -------------------------------------------------------------------- */
     /*      Try opening the output datasource as an existing, writable      */
     /* -------------------------------------------------------------------- */
-        DataSource       poODS = null;
-        Driver poDriver = null;
+        DataSource       poODS;
         
         if( bUpdate )
         {
             poODS = ogr.Open( pszDestDataSource, true );
             if( poODS == null )
             {
-                if (bOverwrite || bAppend)
-                {
-                    poODS = ogr.Open( pszDestDataSource, false );
-                    if ( poODS == null )
-                    {
-                        /* ok the datasource doesn't exist at all */
-                        bUpdate = false;
-                    }
-                    else
-                    {
-                        poODS.delete();
-                        poODS = null;
-                    }
-                }
-
-                if (bUpdate)
-                {
-                    System.err.println("FAILURE:\n" +
-                            "Unable to open existing output datasource `" + pszDestDataSource + "'.");
-                    System.exit( 1 );
-                }
+                System.err.println("FAILURE:\n" +
+                        "Unable to open existing output datasource `" + pszDestDataSource + "'.");
+                System.exit( 1 );
             }
     
-            else if( papszDSCO.size() > 0 )
+            if( papszDSCO.size() > 0 )
             {
                 System.err.println("WARNING: Datasource creation options ignored since an existing datasource\n" +
                         "         being updated." );
             }
-
-            if (poODS != null)
-                poDriver = poODS.GetDriver();
         }
     
     /* -------------------------------------------------------------------- */
     /*      Find the output driver.                                         */
     /* -------------------------------------------------------------------- */
-        if( !bUpdate )
+        else
         {
+            Driver          poDriver = null;
             int                  iDriver;
     
-            poDriver = ogr.GetDriverByName(pszFormat);
+            for( iDriver = 0;
+                iDriver < ogr.GetDriverCount() && poDriver == null;
+                iDriver++ )
+            {
+                if( ogr.GetDriver(iDriver).GetName().equalsIgnoreCase(pszFormat) )
+                {
+                    poDriver = ogr.GetDriver(iDriver);
+                }
+            }
+    
             if( poDriver == null )
             {
                 System.err.println("Unable to find driver `" + pszFormat +"'." );
@@ -603,35 +396,7 @@ public class ogr2ogr
                 System.err.println( pszFormat + " driver does not support data source creation.");
                 System.exit( 1 );
             }
-
-    /* -------------------------------------------------------------------- */
-    /*      Special case to improve user experience when translating        */
-    /*      a datasource with multiple layers into a shapefile. If the      */
-    /*      user gives a target datasource with .shp and it does not exist, */
-    /*      the shapefile driver will try to create a file, but this is not */
-    /*      appropriate because here we have several layers, so create      */
-    /*      a directory instead.                                            */
-    /* -------------------------------------------------------------------- */
-            if (poDriver.GetName().equalsIgnoreCase("ESRI Shapefile") &&
-                pszSQLStatement == null &&
-                (papszLayers.size() > 1 ||
-                 (papszLayers.size() == 0 && poDS.GetLayerCount() > 1)) &&
-                pszNewLayerName == null &&
-                (pszDestDataSource.endsWith(".shp") || pszDestDataSource.endsWith(".SHP")))
-            {
-                File f = new File(pszDestDataSource);
-                if (!f.exists())
-                {
-                    if (!f.mkdir())
-                    {
-                        System.err.println(
-                            "Failed to create directory " + pszDestDataSource + "\n" +
-                            "for shapefile datastore.");
-                        System.exit(1);
-                    }
-                }
-            }
-
+    
     /* -------------------------------------------------------------------- */
     /*      Create the output data source.                                  */
     /* -------------------------------------------------------------------- */
@@ -700,31 +465,11 @@ public class ogr2ogr
                         pfnProgress = new TermProgressCallback();
                     }
                 }
-
-/* -------------------------------------------------------------------- */
-/*      Special case to improve user experience when translating into   */
-/*      single file shapefile and source has only one layer, and that   */
-/*      the layer name isn't specified                                  */
-/* -------------------------------------------------------------------- */
-                if (poDriver.GetName().equalsIgnoreCase("ESRI Shapefile") &&
-                    pszNewLayerName == null)
-                {
-                    File f = new File(pszDestDataSource);
-                    if (f.exists() && f.listFiles() == null)
-                    {
-                        pszNewLayerName = f.getName();
-                        int posPoint = pszNewLayerName.lastIndexOf('.');
-                        if (posPoint != -1)
-                            pszNewLayerName = pszNewLayerName.substring(0, posPoint);
-                    }
-                }
-
                 if( !TranslateLayer( poDS, poResultSet, poODS, papszLCO, 
                                     pszNewLayerName, bTransform, poOutputSRS,
                                     poSourceSRS, papszSelFields, bAppend, eGType,
-                                    bOverwrite, eGeomOp, dfGeomOpParam, papszFieldTypesToString,
-                                    nCountLayerFeatures, poClipSrc, poClipDst, bExplodeCollections,
-                                    pszZField, pszWHERE, pfnProgress ))
+                                    bOverwrite, dfMaxSegmentLength, papszFieldTypesToString,
+                                    nCountLayerFeatures, pfnProgress ))
                 {
                     System.err.println(
                             "Terminating translation prematurely after failed\n" +
@@ -787,24 +532,6 @@ public class ogr2ogr
                 }
             }
 
-/* -------------------------------------------------------------------- */
-/*      Special case to improve user experience when translating into   */
-/*      single file shapefile and source has only one layer, and that   */
-/*      the layer name isn't specified                                  */
-/* -------------------------------------------------------------------- */
-            if (poDriver.GetName().equalsIgnoreCase("ESRI Shapefile") &&
-                nLayerCount == 1 && pszNewLayerName == null)
-            {
-                File f = new File(pszDestDataSource);
-                if (f.exists() && f.listFiles() == null)
-                {
-                    pszNewLayerName = f.getName();
-                    int posPoint = pszNewLayerName.lastIndexOf('.');
-                    if (posPoint != -1)
-                        pszNewLayerName = pszNewLayerName.substring(0, posPoint);
-                }
-            }
-
             long[] panLayerCountFeatures = new long[nLayerCount];
             long nCountLayersFeatures = 0;
             long nAccCountFeatures = 0;
@@ -817,14 +544,7 @@ public class ogr2ogr
                 Layer        poLayer = papoLayers[iLayer];
 
                 if( pszWHERE != null )
-                {
-                    if( poLayer.SetAttributeFilter( pszWHERE ) != ogr.OGRERR_NONE )
-                    {
-                        System.err.println("FAILURE: SetAttributeFilter(" + pszWHERE + ") failed.");
-                        if (!bSkipFailures)
-                            System.exit( 1 );
-                    }
-                }
+                    poLayer.SetAttributeFilter( pszWHERE );
 
                 if( poSpatialFilter != null )
                     poLayer.SetSpatialFilter( poSpatialFilter );
@@ -864,9 +584,8 @@ public class ogr2ogr
                 if( !TranslateLayer( poDS, poLayer, poODS, papszLCO, 
                                     pszNewLayerName, bTransform, poOutputSRS,
                                     poSourceSRS, papszSelFields, bAppend, eGType,
-                                    bOverwrite, eGeomOp, dfGeomOpParam, papszFieldTypesToString,
-                                    panLayerCountFeatures[iLayer], poClipSrc, poClipDst, bExplodeCollections,
-                                    pszZField, pszWHERE, pfnProgress) 
+                                    bOverwrite, dfMaxSegmentLength, papszFieldTypesToString,
+                                    panLayerCountFeatures[iLayer], pfnProgress) 
                     && !bSkipFailures )
                 {
                     System.err.println(
@@ -900,9 +619,7 @@ public class ogr2ogr
                 "               [-spat xmin ymin xmax ymax] [-preserve_fid] [-fid FID]\n" +
                 "               [-a_srs srs_def] [-t_srs srs_def] [-s_srs srs_def]\n" +
                 "               [-f format_name] [-overwrite] [[-dsco NAME=VALUE] ...]\n" +
-                "               [-simplify tolerance]\n" +
-                // "               [-segmentize max_dist] [-fieldTypeToString All|(type1[,type2]*)]\n" +
-                "               [-fieldTypeToString All|(type1[,type2]*)] [-explodecollections]\n" +
+                "               [-segmentize max_dist] [-fieldTypeToString All|(type1[,type2]*)]\n" +
                 "               dst_datasource_name src_datasource_name\n" +
                 "               [-lco NAME=VALUE] [-nln name] [-nlt type] [layer [layer ...]]\n" +
                 "\n" +
@@ -927,9 +644,8 @@ public class ogr2ogr
                 " -skipfailures: skip features or layers that fail to convert\n" +
                 " -gt n: group n features per transaction (default 200)\n" +
                 " -spat xmin ymin xmax ymax: spatial query extents\n" +
-                " -simplify tolerance: distance tolerance for simplification.\n" +
-                //" -segmentize max_dist: maximum distance between 2 nodes.\n" +
-                //"                       Used to create intermediate points\n" +
+                " -segmentize max_dist: maximum distance between 2 nodes.\n" +
+                "                       Used to create intermediate points\n" +
                 " -dsco NAME=VALUE: Dataset creation option (format specific)\n" +
                 " -lco  NAME=VALUE: Layer creation option (format specific)\n" +
                 " -nln name: Assign an alternate name to the new layer\n" +
@@ -967,137 +683,6 @@ public class ogr2ogr
         return -1;
     }
 
-    
-    static boolean IsNumber(String pszStr)
-    {
-        try
-        {
-            Double.parseDouble(pszStr);
-            return true;
-        }
-        catch(Exception ex)
-        {
-            return false;
-        }
-    }
-    
-    static Geometry LoadGeometry( String pszDS,
-                                  String pszSQL,
-                                  String pszLyr,
-                                  String pszWhere)
-    {
-        DataSource       poDS;
-        Layer            poLyr;
-        Feature          poFeat;
-        Geometry         poGeom = null;
-            
-        poDS = ogr.Open( pszDS, false );
-        if (poDS == null)
-            return null;
-    
-        if (pszSQL != null)
-            poLyr = poDS.ExecuteSQL( pszSQL, null, null ); 
-        else if (pszLyr != null)
-            poLyr = poDS.GetLayerByName(pszLyr);
-        else
-            poLyr = poDS.GetLayer(0);
-            
-        if (poLyr == null)
-        {
-            System.err.print("Failed to identify source layer from datasource.\n");
-            poDS.delete();
-            return null;
-        }
-        
-        if (pszWhere != null)
-            poLyr.SetAttributeFilter(pszWhere);
-            
-        while ((poFeat = poLyr.GetNextFeature()) != null)
-        {
-            Geometry poSrcGeom = poFeat.GetGeometryRef();
-            if (poSrcGeom != null)
-            {
-                int eType = wkbFlatten(poSrcGeom.GetGeometryType());
-                
-                if (poGeom == null)
-                    poGeom = new Geometry( ogr.wkbMultiPolygon );
-    
-                if( eType == ogr.wkbPolygon )
-                    poGeom.AddGeometry( poSrcGeom );
-                else if( eType == ogr.wkbMultiPolygon )
-                {
-                    int iGeom;
-                    int nGeomCount = poSrcGeom.GetGeometryCount();
-    
-                    for( iGeom = 0; iGeom < nGeomCount; iGeom++ )
-                    {
-                        poGeom.AddGeometry(poSrcGeom.GetGeometryRef(iGeom) );
-                    }
-                }
-                else
-                {
-                    System.err.print("ERROR: Geometry not of polygon type.\n" );
-                    if( pszSQL != null )
-                        poDS.ReleaseResultSet( poLyr );
-                    poDS.delete();
-                    return null;
-                }
-            }
-        }
-
-        if( pszSQL != null )
-            poDS.ReleaseResultSet( poLyr );
-        poDS.delete();
-
-        return poGeom;
-    }
-
-
-    static int wkbFlatten(int eType)
-    {
-        return eType & (~ogrConstants.wkb25DBit);
-    }
-
-    /************************************************************************/
-    /*                               SetZ()                                 */
-    /************************************************************************/
-    static void SetZ (Geometry poGeom, double dfZ )
-    {
-        if (poGeom == null)
-            return;
-        switch (wkbFlatten(poGeom.GetGeometryType()))
-        {
-            case ogr.wkbPoint:
-                poGeom.SetPoint(0, poGeom.GetX(), poGeom.GetY(), dfZ);
-                break;
-
-            case ogr.wkbLineString:
-            case ogr.wkbLinearRing:
-            {
-                int i;
-                for(i=0;i<poGeom.GetPointCount();i++)
-                    poGeom.SetPoint(i, poGeom.GetX(i), poGeom.GetY(i), dfZ);
-                break;
-            }
-
-            case ogr.wkbPolygon:
-            case ogr.wkbMultiPoint:
-            case ogr.wkbMultiLineString:
-            case ogr.wkbMultiPolygon:
-            case ogr.wkbGeometryCollection:
-            {
-                int i;
-                for(i=0;i<poGeom.GetGeometryCount();i++)
-                    SetZ(poGeom.GetGeometryRef(i), dfZ);
-                break;
-            }
-
-            default:
-                break;
-        }
-    }
-
-
     /************************************************************************/
     /*                           TranslateLayer()                           */
     /************************************************************************/
@@ -1112,34 +697,25 @@ public class ogr2ogr
                             SpatialReference poSourceSRS,
                             Vector papszSelFields,
                             boolean bAppend, int eGType, boolean bOverwrite,
-                            GeomOperation eGeomOp,
-                            double dfGeomOpParam,
+                            double dfMaxSegmentLength,
                             Vector papszFieldTypesToString,
                             long nCountLayerFeatures,
-                            Geometry poClipSrc,
-                            Geometry poClipDst,
-                            boolean bExplodeCollections,
-                            String pszZField,
-                            String pszWHERE,
                             ProgressCallback pfnProgress)
     
     {
         Layer    poDstLayer;
-        FeatureDefn poSrcFDefn;
+        FeatureDefn poFDefn;
         int      eErr;
         boolean         bForceToPolygon = false;
         boolean         bForceToMultiPolygon = false;
-        boolean         bForceToMultiLineString = false;
     
         if( pszNewLayerName == null )
             pszNewLayerName = poSrcLayer.GetLayerDefn().GetName();
     
-        if( wkbFlatten(eGType) == ogr.wkbPolygon )
+        /*if( wkbFlatten(eGType) == ogr.wkbPolygon )
             bForceToPolygon = true;
         else if( wkbFlatten(eGType) == ogr.wkbMultiPolygon )
-            bForceToMultiPolygon = true;
-        else if( wkbFlatten(eGType) == ogr.wkbMultiLineString )
-            bForceToMultiLineString = true;
+            bForceToMultiPolygon = true;*/
     
     /* -------------------------------------------------------------------- */
     /*      Setup coordinate transformation if we need it.                  */
@@ -1183,7 +759,7 @@ public class ogr2ogr
     /* -------------------------------------------------------------------- */
     /*      Get other info.                                                 */
     /* -------------------------------------------------------------------- */
-        poSrcFDefn = poSrcLayer.GetLayerDefn();
+        poFDefn = poSrcLayer.GetLayerDefn();
         
         if( poOutputSRS == null )
             poOutputSRS = poSrcLayer.GetSpatialRef();
@@ -1191,36 +767,21 @@ public class ogr2ogr
     /* -------------------------------------------------------------------- */
     /*      Find the layer.                                                 */
     /* -------------------------------------------------------------------- */
-
-        /* GetLayerByName() can instanciate layers that would have been */
-        /* 'hidden' otherwise, for example, non-spatial tables in a */
-        /* Postgis-enabled database, so this apparently useless command is */
-        /* not useless... (#4012) */
-        gdal.PushErrorHandler("CPLQuietErrorHandler");
-        poDstLayer = poDstDS.GetLayerByName(pszNewLayerName);
-        gdal.PopErrorHandler();
-        gdal.ErrorReset();
-
         int iLayer = -1;
-        if( poDstLayer != null )
+        poDstLayer = null;
+    
+        for( iLayer = 0; iLayer < poDstDS.GetLayerCount(); iLayer++ )
         {
-            int nLayerCount = poDstDS.GetLayerCount();
-            for( iLayer = 0; iLayer < nLayerCount; iLayer++ )
+            Layer        poLayer = poDstDS.GetLayer(iLayer);
+    
+            if( poLayer != null 
+                && poLayer.GetLayerDefn().GetName().equalsIgnoreCase(pszNewLayerName) )
             {
-                Layer        poLayer = poDstDS.GetLayer(iLayer);
-
-                if( poLayer != null
-                    && poLayer.GetName().equals(poDstLayer.GetName()) )
-                {
-                    break;
-                }
+                poDstLayer = poLayer;
+                break;
             }
-
-            if (iLayer == nLayerCount)
-                /* shouldn't happen with an ideal driver */
-                poDstLayer = null;
         }
-
+        
     /* -------------------------------------------------------------------- */
     /*      If the user requested overwrite, and we have the layer in       */
     /*      question we need to delete it now so it will get recreated      */
@@ -1243,33 +804,7 @@ public class ogr2ogr
         if( poDstLayer == null )
         {
             if( eGType == -2 )
-            {
-                eGType = poSrcFDefn.GetGeomType();
-
-                if ( bExplodeCollections )
-                {
-                    int n25DBit = eGType & ogr.wkb25DBit;
-                    if (wkbFlatten(eGType) == ogr.wkbMultiPoint)
-                    {
-                        eGType = ogr.wkbPoint | n25DBit;
-                    }
-                    else if (wkbFlatten(eGType) == ogr.wkbMultiLineString)
-                    {
-                        eGType = ogr.wkbLineString | n25DBit;
-                    }
-                    else if (wkbFlatten(eGType) == ogr.wkbMultiPolygon)
-                    {
-                        eGType = ogr.wkbPolygon | n25DBit;
-                    }
-                    else if (wkbFlatten(eGType) == ogr.wkbGeometryCollection)
-                    {
-                        eGType = ogr.wkbUnknown | n25DBit;
-                    }
-                }
-
-                if ( pszZField != null )
-                    eGType |= ogr.wkb25DBit;
-            }
+                eGType = poFDefn.GetGeomType();
     
             if( poDstDS.TestCapability( ogr.ODsCCreateLayer ) == false)
             {
@@ -1314,66 +849,25 @@ public class ogr2ogr
     /*      selected.                                                       */
     /* -------------------------------------------------------------------- */
         int         iField;
-
-        /* Initialize the index-to-index map to -1's */
-        int nSrcFieldCount = poSrcFDefn.GetFieldCount();
-        int[] panMap = new int [nSrcFieldCount];
-        for( iField=0; iField < nSrcFieldCount; iField++)
-            panMap[iField] = -1;
-
-        FeatureDefn poDstFDefn = poDstLayer.GetLayerDefn();
-
-        if (papszSelFields != null && !bAppend )
+    
+        if (papszSelFields.size() > 0 && !bAppend )
         {
-            int  nDstFieldCount = 0;
-            if (poDstFDefn != null)
-                nDstFieldCount = poDstFDefn.GetFieldCount();
-
             for( iField=0; iField < papszSelFields.size(); iField++)
             {
-                int iSrcField = poSrcFDefn.GetFieldIndex((String)papszSelFields.get(iField));
+                int iSrcField = poFDefn.GetFieldIndex((String)papszSelFields.get(iField));
                 if (iSrcField >= 0)
                 {
-                    FieldDefn poSrcFieldDefn = poSrcFDefn.GetFieldDefn(iSrcField);
-                    FieldDefn oFieldDefn = new FieldDefn( poSrcFieldDefn.GetNameRef(),
-                                                poSrcFieldDefn.GetFieldType() );
-                    oFieldDefn.SetWidth( poSrcFieldDefn.GetWidth() );
-                    oFieldDefn.SetPrecision( poSrcFieldDefn.GetPrecision() );
-
                     if (papszFieldTypesToString != null &&
                         (CSLFindString(papszFieldTypesToString, "All") != -1 ||
                         CSLFindString(papszFieldTypesToString,
-                                    ogr.GetFieldTypeName(poSrcFDefn.GetFieldDefn(iSrcField).GetFieldType())) != -1))
+                                    ogr.GetFieldTypeName(poFDefn.GetFieldDefn(iSrcField).GetFieldType())) != -1))
+                    {
+                        FieldDefn oFieldDefn = new FieldDefn( poFDefn.GetFieldDefn(iSrcField).GetName() );
                         oFieldDefn.SetType(ogr.OFTString);
-
-                    /* The field may have been already created at layer creation */
-                    int iDstField = -1;
-                    if (poDstFDefn != null)
-                        iDstField = poDstFDefn.GetFieldIndex(oFieldDefn.GetNameRef());
-                    if (iDstField >= 0)
-                    {
-                        panMap[iSrcField] = iDstField;
+                        poDstLayer.CreateField( oFieldDefn );
                     }
-                    else if (poDstLayer.CreateField( oFieldDefn ) == 0)
-                    {
-                        /* now that we've created a field, GetLayerDefn() won't return NULL */
-                        if (poDstFDefn == null)
-                            poDstFDefn = poDstLayer.GetLayerDefn();
-
-                        /* Sanity check : if it fails, the driver is buggy */
-                        if (poDstFDefn != null &&
-                            poDstFDefn.GetFieldCount() != nDstFieldCount + 1)
-                        {
-                            System.err.println(
-                                    "The output driver has claimed to have added the " + oFieldDefn.GetNameRef() + " field, but it did not!");
-                        }
-                        else
-                        {
-                            panMap[iSrcField] = nDstFieldCount;
-                            nDstFieldCount ++;
-                        }
-                    }
-
+                    else
+                        poDstLayer.CreateField( poFDefn.GetFieldDefn(iSrcField) );
                 }
                 else
                 {
@@ -1382,106 +876,22 @@ public class ogr2ogr
                             return false;
                 }
             }
-
-            /* -------------------------------------------------------------------- */
-            /* Use SetIgnoredFields() on source layer if available                  */
-            /* -------------------------------------------------------------------- */
-
-            /* Here we differ from the ogr2ogr.cpp implementation since the OGRFeatureQuery */
-            /* isn't mapped to swig. So in that case just don't use SetIgnoredFields() */
-            /* to avoid issue raised in #4015 */
-            if (poSrcLayer.TestCapability(ogr.OLCIgnoreFields) && pszWHERE == null)
-            {
-                int iSrcField;
-                Vector papszIgnoredFields = new Vector();
-                for(iSrcField=0;iSrcField<nSrcFieldCount;iSrcField++)
-                {
-                    String pszFieldName =
-                        poSrcFDefn.GetFieldDefn(iSrcField).GetNameRef();
-                    boolean bFieldRequested = false;
-                    for( iField=0; iField < papszSelFields.size(); iField++)
-                    {
-                        if (pszFieldName.equals((String)papszSelFields.get(iField)))
-                        {
-                            bFieldRequested = true;
-                            break;
-                        }
-                    }
-
-                    if (pszZField != null && pszFieldName.equals(pszZField))
-                        bFieldRequested = true;
-
-                    /* If source field not requested, add it to ignored files list */
-                    if (!bFieldRequested)
-                        papszIgnoredFields.addElement(pszFieldName);
-                }
-                poSrcLayer.SetIgnoredFields(papszIgnoredFields);
-            }
         }
         else if( !bAppend )
         {
-            int nDstFieldCount = 0;
-            if (poDstFDefn != null)
-                nDstFieldCount = poDstFDefn.GetFieldCount();
-            for( iField = 0; iField < nSrcFieldCount; iField++ )
+            for( iField = 0; iField < poFDefn.GetFieldCount(); iField++ )
             {
-                FieldDefn poSrcFieldDefn = poSrcFDefn.GetFieldDefn(iField);
-                FieldDefn oFieldDefn = new FieldDefn( poSrcFieldDefn.GetNameRef(),
-                                            poSrcFieldDefn.GetFieldType() );
-                oFieldDefn.SetWidth( poSrcFieldDefn.GetWidth() );
-                oFieldDefn.SetPrecision( poSrcFieldDefn.GetPrecision() );
-
                 if (papszFieldTypesToString != null &&
                     (CSLFindString(papszFieldTypesToString, "All") != -1 ||
                     CSLFindString(papszFieldTypesToString,
-                                ogr.GetFieldTypeName(poSrcFDefn.GetFieldDefn(iField).GetFieldType())) != -1))
+                                ogr.GetFieldTypeName(poFDefn.GetFieldDefn(iField).GetFieldType())) != -1))
+                {
+                    FieldDefn oFieldDefn = new FieldDefn( poFDefn.GetFieldDefn(iField).GetName() );
                     oFieldDefn.SetType(ogr.OFTString);
-
-                /* The field may have been already created at layer creation */
-                int iDstField = -1;
-                if (poDstFDefn != null)
-                    iDstField = poDstFDefn.GetFieldIndex(oFieldDefn.GetNameRef());
-                if (iDstField >= 0)
-                {
-                    panMap[iField] = iDstField;
+                    poDstLayer.CreateField( oFieldDefn );
                 }
-                else if (poDstLayer.CreateField( oFieldDefn ) == 0)
-                {
-                    /* now that we've created a field, GetLayerDefn() won't return NULL */
-                    if (poDstFDefn == null)
-                        poDstFDefn = poDstLayer.GetLayerDefn();
-
-                    /* Sanity check : if it fails, the driver is buggy */
-                    if (poDstFDefn != null &&
-                        poDstFDefn.GetFieldCount() != nDstFieldCount + 1)
-                    {
-                        System.err.println(
-                                "The output driver has claimed to have added the " + oFieldDefn.GetNameRef() + " field, but it did not!");
-                    }
-                    else
-                    {
-                        panMap[iField] = nDstFieldCount;
-                        nDstFieldCount ++;
-                    }
-                }
-            }
-        }
-        else
-        {
-            /* For an existing layer, build the map by fetching the index in the destination */
-            /* layer for each source field */
-            if (poDstFDefn == null)
-            {
-                System.err.println("poDstFDefn == NULL.\n" );
-                return false;
-            }
-
-            for( iField = 0; iField < nSrcFieldCount; iField++ )
-            {
-                FieldDefn poSrcFieldDefn = poSrcFDefn.GetFieldDefn(iField);
-                int iDstField = poDstFDefn.GetFieldIndex(poSrcFieldDefn.GetNameRef());
-                if (iDstField >= 0)
-                    panMap[iField] = iDstField;
+                else
+                    poDstLayer.CreateField( poFDefn.GetFieldDefn(iField) );
             }
         }
     
@@ -1491,13 +901,7 @@ public class ogr2ogr
         Feature  poFeature;
         int         nFeaturesInTransaction = 0;
         long        nCount = 0;
-
-        int iSrcZField = -1;
-        if (pszZField != null)
-        {
-            iSrcZField = poSrcFDefn.GetFieldIndex(pszZField);
-        }
-
+        
         poSrcLayer.ResetReading();
     
         if( nGroupTransactions > 0)
@@ -1520,187 +924,90 @@ public class ogr2ogr
             
             if( poFeature == null )
                 break;
-
-            int nParts = 0;
-            int nIters = 1;
-            if (bExplodeCollections)
-            {
-                Geometry poSrcGeometry = poFeature.GetGeometryRef();
-                if (poSrcGeometry != null)
-                {
-                    switch (wkbFlatten(poSrcGeometry.GetGeometryType()))
-                    {
-                        case ogr.wkbMultiPoint:
-                        case ogr.wkbMultiLineString:
-                        case ogr.wkbMultiPolygon:
-                        case ogr.wkbGeometryCollection:
-                            nParts = poSrcGeometry.GetGeometryCount();
-                            nIters = nParts;
-                            if (nIters == 0)
-                                nIters = 1;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            for(int iPart = 0; iPart < nIters; iPart++)
-            {
     
-                if( ++nFeaturesInTransaction == nGroupTransactions )
-                {
+            if( ++nFeaturesInTransaction == nGroupTransactions )
+            {
+                poDstLayer.CommitTransaction();
+                poDstLayer.StartTransaction();
+                nFeaturesInTransaction = 0;
+            }
+    
+            gdal.ErrorReset();
+            poDstFeature = new Feature( poDstLayer.GetLayerDefn() );
+    
+            if( poDstFeature.SetFrom( poFeature, 1 ) != 0 )
+            {
+                if( nGroupTransactions > 0)
                     poDstLayer.CommitTransaction();
-                    poDstLayer.StartTransaction();
-                    nFeaturesInTransaction = 0;
-                }
-
-                gdal.ErrorReset();
-                poDstFeature = new Feature( poDstLayer.GetLayerDefn() );
-
-                if( poDstFeature.SetFromWithMap( poFeature, 1, panMap ) != 0 )
+                
+                System.err.println(
+                        "Unable to translate feature " + poFeature.GetFID() + " from layer " +
+                        poFDefn.GetName() );
+                
+                poFeature.delete();
+                poFeature = null;
+                poDstFeature.delete();
+                poDstFeature = null;
+                return false;
+            }
+    
+            if( bPreserveFID )
+                poDstFeature.SetFID( poFeature.GetFID() );
+    
+            /*if (poDstFeature.GetGeometryRef() != null && dfMaxSegmentLength > 0)
+                poDstFeature.GetGeometryRef().segmentize(dfMaxSegmentLength);*/
+    
+            if( poCT != null && poDstFeature.GetGeometryRef() != null )
+            {
+                eErr = poDstFeature.GetGeometryRef().Transform( poCT );
+                if( eErr != 0 )
                 {
                     if( nGroupTransactions > 0)
                         poDstLayer.CommitTransaction();
-
-                    System.err.println(
-                            "Unable to translate feature " + poFeature.GetFID() + " from layer " +
-                            poSrcFDefn.GetName() );
-
-                    poFeature.delete();
-                    poFeature = null;
-                    poDstFeature.delete();
-                    poDstFeature = null;
-                    return false;
-                }
-
-                if( bPreserveFID )
-                    poDstFeature.SetFID( poFeature.GetFID() );
-
-                Geometry poDstGeometry = poDstFeature.GetGeometryRef();
-                if (poDstGeometry != null)
-                {
-                    if (nParts > 0)
+    
+                    System.err.println("Failed to reproject feature" + poFeature.GetFID() + " (geometry probably out of source or destination SRS).");
+                    if( !bSkipFailures )
                     {
-                        /* For -explodecollections, extract the iPart(th) of the geometry */
-                        Geometry poPart = poDstGeometry.GetGeometryRef(iPart).Clone();
-                        poDstFeature.SetGeometryDirectly(poPart);
-                        poDstGeometry = poPart;
-                    }
-
-                    if (iSrcZField != -1)
-                    {
-                        SetZ(poDstGeometry, poFeature.GetFieldAsDouble(iSrcZField));
-                        /* This will correct the coordinate dimension to 3 */
-                        Geometry poDupGeometry = poDstGeometry.Clone();
-                        poDstFeature.SetGeometryDirectly(poDupGeometry);
-                        poDstGeometry = poDupGeometry;
-                    }
-
-                    if (eGeomOp == GeomOperation.SEGMENTIZE)
-                    {
-                /*if (poDstFeature.GetGeometryRef() != null && dfGeomOpParam > 0)
-                    poDstFeature.GetGeometryRef().segmentize(dfGeomOpParam);*/
-                    }
-                    else if (eGeomOp == GeomOperation.SIMPLIFY_PRESERVE_TOPOLOGY && dfGeomOpParam > 0)
-                    {
-                        Geometry poNewGeom = poDstGeometry.SimplifyPreserveTopology(dfGeomOpParam);
-                        if (poNewGeom != null)
-                        {
-                            poDstFeature.SetGeometryDirectly(poNewGeom);
-                            poDstGeometry = poNewGeom;
-                        }
-                    }
-
-                    if (poClipSrc != null)
-                    {
-                        Geometry poClipped = poDstGeometry.Intersection(poClipSrc);
-                        if (poClipped == null || poClipped.IsEmpty())
-                        {
-                            /* Report progress */
-                            nCount ++;
-                            if (pfnProgress != null)
-                                pfnProgress.run(nCount * 1.0 / nCountLayerFeatures, "");
-                            poDstFeature.delete();
-                            continue;
-                        }
-                        poDstFeature.SetGeometryDirectly(poClipped);
-                        poDstGeometry = poClipped;
-                    }
-
-                    if( poCT != null )
-                    {
-                        eErr = poDstGeometry.Transform( poCT );
-                        if( eErr != 0 )
-                        {
-                            if( nGroupTransactions > 0)
-                                poDstLayer.CommitTransaction();
-
-                            System.err.println("Failed to reproject feature" + poFeature.GetFID() + " (geometry probably out of source or destination SRS).");
-                            if( !bSkipFailures )
-                            {
-                                poFeature.delete();
-                                poFeature = null;
-                                poDstFeature.delete();
-                                poDstFeature = null;
-                                return false;
-                            }
-                        }
-                    }
-                    else if (poOutputSRS != null)
-                    {
-                        poDstGeometry.AssignSpatialReference(poOutputSRS);
-                    }
-
-                    if (poClipDst != null)
-                    {
-                        Geometry poClipped = poDstGeometry.Intersection(poClipDst);
-                        if (poClipped == null || poClipped.IsEmpty())
-                        {
-                            /* Report progress */
-                            nCount ++;
-                            if (pfnProgress != null)
-                                pfnProgress.run(nCount * 1.0 / nCountLayerFeatures, "");
-                            poDstFeature.delete();
-                            continue;
-                        }
-                        poDstFeature.SetGeometryDirectly(poClipped);
-                        poDstGeometry = poClipped;
-                    }
-
-                    if( bForceToPolygon )
-                    {
-                        poDstFeature.SetGeometryDirectly(ogr.ForceToPolygon(poDstGeometry));
-                    }
-
-                    else if( bForceToMultiPolygon )
-                    {
-                        poDstFeature.SetGeometryDirectly(ogr.ForceToMultiPolygon(poDstGeometry));
-                    }
-
-                    else if ( bForceToMultiLineString )
-                    {
-                        poDstFeature.SetGeometryDirectly(ogr.ForceToMultiLineString(poDstGeometry));
+                        poFeature.delete();
+                        poFeature = null;
+                        poDstFeature.delete();
+                        poDstFeature = null;
+                        return false;
                     }
                 }
-
-                gdal.ErrorReset();
-                if( poDstLayer.CreateFeature( poDstFeature ) != 0
-                    && !bSkipFailures )
-                {
-                    if( nGroupTransactions > 0 )
-                        poDstLayer.RollbackTransaction();
-
-                    poDstFeature.delete();
-                    poDstFeature = null;
-                    return false;
-                }
-
-                poDstFeature.delete();
-                poDstFeature = null;
             }
-
+    
+            /*
+            if( poDstFeature.GetGeometryRef() != null && bForceToPolygon )
+            {
+                poDstFeature.SetGeometry( 
+                    OGRGeometryFactory::forceToPolygon(poDstFeature ) );
+            }
+                        
+            if( poDstFeature.GetGeometryRef() != null && bForceToMultiPolygon )
+            {
+                poDstFeature.SetGeometry( 
+                    OGRGeometryFactory::forceToMultiPolygon(
+                        poDstFeature ) );
+            }*/
+                        
             poFeature.delete();
             poFeature = null;
+    
+            gdal.ErrorReset();
+            if( poDstLayer.CreateFeature( poDstFeature ) != 0 
+                && !bSkipFailures )
+            {
+                if( nGroupTransactions > 0 )
+                    poDstLayer.RollbackTransaction();
+    
+                poDstFeature.delete();
+                poDstFeature = null;
+                return false;
+            }
+    
+            poDstFeature.delete();
+            poDstFeature = null;
 
             /* Report progress */
             nCount ++;

@@ -1591,8 +1591,7 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
         );
 
     case FdoSmPhColType_Date:
-        {
-            FdoSmPhColumnP ret = NewColumnDate(
+        return NewColumnDate(
             colRdr->GetString(L"",L"name"),
             FdoSchemaElementState_Unchanged,
             colRdr->GetBoolean(L"",L"nullable"),
@@ -1600,11 +1599,6 @@ FdoSmPhColumnP FdoSmPhDbObject::NewColumn(
 			defaultValue,
             colRdr
         );
-            FdoSmPhFieldP fld = colRdr->GetField(L"",L"is_autoincremented");
-            if (fld != NULL && colRdr->GetBoolean(L"",L"is_autoincremented"))
-                ret->SetReadOnly(true);
-            return ret;
-        }
 
     case FdoSmPhColType_Decimal:
         return NewColumnDecimal(

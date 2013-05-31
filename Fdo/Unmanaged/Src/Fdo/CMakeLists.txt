@@ -14,7 +14,6 @@ include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/Raster
 	${CMAKE_CURRENT_SOURCE_DIR}/Filter
 	${UNMANAGED_INCLUDE_DIR}
-	${XERCESC_INCLUDE_DIR}
 	)
 
 # Generate header

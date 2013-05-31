@@ -157,25 +157,10 @@ bool FdoSmPhRdSqsSpatialContextReader::ReadNext()
         // Check if SRID was encoded into spatial index name,
         FdoInt64 srid = static_cast<FdoSmPhSqsMgr*>(GetManager().p)->IndexName2Srid( FdoSmPhReader::GetString(L"", L"indexname") );
         
-        bool hasPartSchSpContext = (!mOwner->GetHasMetaSchema() && mOwner->GetHasSCGroupInfoMetaSchema() && mOwner->GetHasSCGeomInfoMetaSchema() && mOwner->GetHasSCMetaSchema());
-
-        if (hasPartSchSpContext)
-        {
-            if ( srid == -1 ) // at least for spatial context reader we can skip the views
-                srid = FdoSmPhReader::GetInt64(L"", L"srid");
-
-            // If not encoded in name then determine associated SRID by sampling 
-            // first geometry for the column.
-            if ( srid == -1 && !mIsDerived) // we can skip the views
-                srid = mOwner->SampleColumnSrid( mGeomTableName, mGeomColumnName );
-        }
-        else // keep old behavior
-        {
-            // If not encoded in name then determine associated SRID by sampling 
-            // first geometry for the column.
-            if ( srid == -1)
-                srid = mOwner->SampleColumnSrid( mGeomTableName, mGeomColumnName, mIsDerived );
-        }
+        // If not encoded in name then determine associated SRID by sampling 
+        // first geometry for the column.
+        if ( srid == -1 ) 
+            srid = mOwner->SampleColumnSrid( mGeomTableName, mGeomColumnName );
 
         mSrid = 0;
         mWKT = L"";
@@ -300,7 +285,7 @@ FdoSmPhReaderP FdoSmPhRdSqsSpatialContextReader::MakeQueryReader( FdoSmPhOwnerP 
                     L"  LEFT OUTER JOIN %ls.sys.spatial_index_tessellations e ON ( d.object_id = e.object_id and d.index_id = e.index_id ) \n"
                     L"  INNER JOIN %ls.sys.types  f ON ( b.user_type_id = f.user_type_id ) \n"
                     L"  LEFT OUTER JOIN %ls.sys.indexes g ON ( a.object_id = g.object_id and d.index_id = g.index_id ) \n"
-                    L" where ((f.name in ( 'geometry','geography' ) or e.object_id is not null) AND a.type  <> 'if') %ls %ls\n"
+                    L" where (f.name in ( 'geometry','geography' ) or e.object_id is not null) %ls %ls\n"
                     L" order by c.name collate latin1_general_bin asc, a.name collate latin1_general_bin asc, b.column_id asc",
                 (FdoString*)(owner->GetDbName()),
                 (FdoString*)(owner->GetDbName()),

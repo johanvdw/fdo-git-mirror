@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: stuff.cpp 22177 2011-04-16 19:45:11Z rouault $
+ * $Id: stuff.cpp 18020 2009-11-14 14:33:20Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -51,20 +51,7 @@ CPLString ProjToWKT(const CPLString &proj) {
     OGRSpatialReference sr;
     CPLString srs;
 
-    /* We could of course recognize OSGEO:41001 to SetFromUserInput(), but this hackish SRS */
-    /* is almost only used in the context of WMS */
-    if (strcmp(proj.c_str(),"OSGEO:41001") == 0)
-    {
-        if (sr.SetFromUserInput("EPSG:3857") != OGRERR_NONE) return srs;
-    }
-    else if (EQUAL(proj.c_str(),"EPSG:NONE"))
-    {
-        return srs;
-    }
-    else
-    {
-        if (sr.SetFromUserInput(proj.c_str()) != OGRERR_NONE) return srs;
-    }
+    if (sr.SetFromUserInput(proj.c_str()) != OGRERR_NONE) return srs;
     sr.exportToWkt(&wkt);
     srs = wkt;
     OGRFree(wkt);
@@ -99,7 +86,7 @@ CPLString BufferToVSIFile(GByte *buffer, size_t size) {
     CPLString file_name;
 
     file_name.Printf("/vsimem/wms/%p/wmsresult.dat", buffer);
-    VSILFILE *f = VSIFileFromMemBuffer(file_name.c_str(), buffer, size, false);
+    FILE *f = VSIFileFromMemBuffer(file_name.c_str(), buffer, size, false);
     if (f == NULL) return CPLString();
     VSIFCloseL(f);
     return file_name;

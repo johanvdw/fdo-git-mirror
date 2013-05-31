@@ -1,6 +1,6 @@
 
 LINKFLAGS =	/Zi /MTd
-EXTRAFLAGS =	-DWIN32 -I. -Iogrsf_frmts -I..\frmts\gtiff\libgeotiff -I..\frmts\zlib \
+EXTRAFLAGS =	-DWIN32 -I. -Iogrsf_frmts -I..\frmts\gtiff\libgeotiff \
 		$(PROJ_FLAGS) $(PROJ_INCLUDE) $(GEOS_CFLAGS)
 
 GDAL_ROOT = 	..
@@ -23,15 +23,12 @@ OBJ_OGR	=	ogrgeometryfactory.obj ogrpoint.obj ogrcurve.obj ogr_api.obj \
 		ogrmultipolygon.obj ogrmultilinestring.obj ogr_opt.obj \
                 ogrmultipoint.obj ogrfeature.obj ogrfeaturedefn.obj \
 		ogrfielddefn.obj ogr_srsnode.obj ogrspatialreference.obj \
-		ogr_srs_proj4.obj ogr_fromepsg.obj ogrct.obj \
+		ogr_srs_proj4.obj ogr_fromepsg.obj ogrct.obj swq.obj \
 		ogrfeaturestyle.obj ogr_srs_esri.obj ogrfeaturequery.obj \
 		ogr_srs_validate.obj ogr_srs_xml.obj ograssemblepolygon.obj \
 		ogr2gmlgeometry.obj gml2ogrgeometry.obj ogr_srs_pci.obj \
 		ogr_srs_usgs.obj ogr_srs_dict.obj ogr_srs_panorama.obj \
-		ogr_srs_ozi.obj ogr_srs_erm.obj ogr_expat.obj \
-		swq.obj swq_parser.obj swq_select.obj swq_op_registrar.obj \
-		swq_op_general.obj swq_expr_node.obj ogrpgeogeometry.obj \
-		ogrgeomediageometry.obj
+		ogr_srs_ozi.obj ogr_srs_erm.obj ogr_expat.obj
 
 default:        ogr.lib 
 
@@ -61,9 +58,4 @@ allclean:	clean
 	cd ogrsf_frmts
 	$(MAKE) /f makefile.vc clean
 	cd ..
-
-# special override to avoid some warnings with this generated code.
-
-swq_parser.obj:	swq_parser.cpp
-	$(CC) $(CFLAGS) $(SOFTWARNFLAGS) /c $*.cpp
 

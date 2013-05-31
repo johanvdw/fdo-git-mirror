@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalopeninfo.cpp 21991 2011-03-20 16:45:19Z rouault $
+ * $Id: gdalopeninfo.cpp 14752 2008-06-22 18:35:16Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -30,11 +30,7 @@
 #include "gdal_priv.h"
 #include "cpl_conv.h"
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-CPL_CVSID("$Id: gdalopeninfo.cpp 21991 2011-03-20 16:45:19Z rouault $");
+CPL_CVSID("$Id: gdalopeninfo.cpp 14752 2008-06-22 18:35:16Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -77,21 +73,13 @@ GDALOpenInfo::GDALOpenInfo( const char * pszFilenameIn, GDALAccess eAccessIn,
     bStatOK = FALSE;
     eAccess = eAccessIn;
     fp = NULL;
-
-#ifdef HAVE_READLINK
-    int  bHasRetried = FALSE;
-#endif
-
+    
 /* -------------------------------------------------------------------- */
 /*      Collect information about the file.                             */
 /* -------------------------------------------------------------------- */
     VSIStatBufL  sStat;
 
-#ifdef HAVE_READLINK
-retry:
-#endif
-    if( VSIStatExL( pszFilename, &sStat,
-                    VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG ) == 0 )
+    if( VSIStatL( pszFilename, &sStat ) == 0 )
     {
         bStatOK = TRUE;
 
@@ -122,36 +110,18 @@ retry:
 #endif
                      )
             {
-                VSILFILE* fpL = VSIFOpenL( pszFilename, "rb" );
-                if( fpL != NULL )
+                fp = VSIFOpenL( pszFilename, "rb" );
+                if( fp != NULL )
                 {
-                    nHeaderBytes = (int) VSIFReadL( pabyHeader, 1, 1024, fpL );
-                    VSIFCloseL( fpL );
+                    nHeaderBytes = (int) VSIFReadL( pabyHeader, 1, 1024, fp );
+                    VSIFCloseL( fp );
+                    fp = NULL;
                 }
             }
         }
         else if( VSI_ISDIR( sStat.st_mode ) )
             bIsDirectory = TRUE;
     }
-#ifdef HAVE_READLINK
-    else if (!bHasRetried)
-    {
-        /* If someone creates a file with "ln -sf /vsicurl/http://download.osgeo.org/gdal/data/gtiff/utm.tif my_remote_utm.tif" */
-        /* we will be able to open it by passing my_remote_utm.tif */
-        /* This helps a lot for GDAL based readers that only provide file explorers to open datasets */
-        char szPointerFilename[2048];
-        int nBytes = readlink(pszFilename, szPointerFilename, sizeof(szPointerFilename));
-        if (nBytes != -1)
-        {
-            szPointerFilename[MIN(nBytes, (int)sizeof(szPointerFilename)-1)] = 0;
-            CPLFree(pszFilename);
-            pszFilename = CPLStrdup(szPointerFilename);
-            papszSiblingsIn = NULL;
-            bHasRetried = TRUE;
-            goto retry;
-        }
-    }
-#endif
 
 /* -------------------------------------------------------------------- */
 /*      Capture sibling list either from passed in values, or by        */
@@ -163,13 +133,8 @@ retry:
     }
     else if( bStatOK && !bIsDirectory )
     {
-        const char* pszOptionVal =
-            CPLGetConfigOption( "GDAL_DISABLE_READDIR_ON_OPEN", "NO" );
-        if (EQUAL(pszOptionVal, "EMPTY_DIR"))
-        {
-            papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
-        }
-        else if( CSLTestBoolean(pszOptionVal) )
+        if( CSLTestBoolean( 
+                CPLGetConfigOption( "GDAL_DISABLE_READDIR_ON_OPEN", "NO" )) )
         {
             /* skip reading the directory */
             papszSiblingFiles = NULL;

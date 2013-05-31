@@ -20,8 +20,7 @@ public:
     NASAKeywordHandler();
     ~NASAKeywordHandler();
 
-    int     Ingest( VSILFILE *fp, int nOffset );
+    int     Ingest( FILE *fp, int nOffset );
 
     const char *GetKeyword( const char *pszPath, const char *pszDefault );
-    char **GetKeywordList();
 };

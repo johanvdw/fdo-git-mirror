@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfielddefn.cpp 21018 2010-10-30 11:30:51Z rouault $
+ * $Id: ogrfielddefn.cpp 16574 2009-03-14 13:09:10Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFieldDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfielddefn.cpp 21018 2010-10-30 11:30:51Z rouault $");
+CPL_CVSID("$Id: ogrfielddefn.cpp 16574 2009-03-14 13:09:10Z rouault $");
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */
@@ -71,7 +71,6 @@ OGRFieldDefn::OGRFieldDefn( OGRFieldDefn *poPrototype )
     SetWidth( poPrototype->GetWidth() );
     SetPrecision( poPrototype->GetPrecision() );
 //    SetDefault( poPrototype->GetDefaultRef() );
-    bIgnore = FALSE;
 }
 
 /************************************************************************/
@@ -640,68 +639,4 @@ void OGR_Fld_Set( OGRFieldDefnH hDefn, const char *pszNameIn,
 {
     ((OGRFieldDefn *) hDefn)->Set( pszNameIn, eTypeIn, nWidthIn, 
                                    nPrecisionIn, eJustifyIn );
-}
-
-/************************************************************************/
-/*                             IsIgnored()                              */
-/************************************************************************/
-
-/**
- * \fn int OGRFieldDefn::IsIgnored();
- *
- * \brief Return whether this field should be omitted when fetching features
- *
- * This method is the same as the C function OGR_Fld_IsIgnored().
- *
- * @return ignore state
- */
-
-/************************************************************************/
-/*                         OGR_Fld_IsIgnored()                          */
-/************************************************************************/
-
-/**
- * \brief Return whether this field should be omitted when fetching features
- *
- * This method is the same as the C++ method OGRFieldDefn::IsIgnored().
- *
- * @param hDefn handle to the field definition
- * @return ignore state
- */
-
-int OGR_Fld_IsIgnored( OGRFieldDefnH hDefn )
-{
-    return ((OGRFieldDefn *) hDefn)->IsIgnored();
-}
-
-/************************************************************************/
-/*                            SetIgnored()                              */
-/************************************************************************/
-
-/**
- * \fn void OGRFieldDefn::SetIgnored( int ignore );
- *
- * \brief Set whether this field should be omitted when fetching features
- *
- * This method is the same as the C function OGR_Fld_SetIgnored().
- *
- * @param ignore ignore state
- */
-
-/************************************************************************/
-/*                        OGR_Fld_SetIgnored()                          */
-/************************************************************************/
-
-/**
- * \brief Set whether this field should be omitted when fetching features
- *
- * This method is the same as the C function OGRFieldDefn::SetIgnored().
- *
- * @param hDefn handle to the field definition
- * @param ignore ignore state
- */
-
-void OGR_Fld_SetIgnored( OGRFieldDefnH hDefn, int ignore )
-{
-    ((OGRFieldDefn *) hDefn)->SetIgnored( ignore );
 }

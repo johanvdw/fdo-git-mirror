@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsbdataset.cpp 23113 2011-09-23 23:24:19Z rouault $
+ * $Id: bsbdataset.cpp 18181 2009-12-05 01:07:47Z warmerdam $
  *
  * Project:  BSB Reader
  * Purpose:  BSBDataset implementation for BSB format.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: bsbdataset.cpp 23113 2011-09-23 23:24:19Z rouault $");
+CPL_CVSID("$Id: bsbdataset.cpp 18181 2009-12-05 01:07:47Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_BSB(void);
@@ -61,9 +61,6 @@ class BSBDataset : public GDALPamDataset
     void        ScanForGCPs( bool isNos, const char *pszFilename );
     void        ScanForGCPsNos( const char *pszFilename );
     void        ScanForGCPsBSB();
-
-    static int IdentifyInternal( GDALOpenInfo *, bool & isNosOut );
-
   public:
                 BSBDataset();
 		~BSBDataset();
@@ -71,7 +68,6 @@ class BSBDataset : public GDALPamDataset
     BSBInfo     *psInfo;
 
     static GDALDataset *Open( GDALOpenInfo * );
-    static int Identify( GDALOpenInfo * );
 
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
@@ -144,13 +140,7 @@ CPLErr BSBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     if( BSBReadScanline( poGDS->psInfo, nBlockYOff, pabyScanline ) )
     {
         for( int i = 0; i < nBlockXSize; i++ )
-        {
-            /* The indices start at 1, except in case of some charts */
-            /* where there are missing values, which are filled to 0 */
-            /* by BSBReadScanline */
-            if (pabyScanline[i] > 0)
-                pabyScanline[i] -= 1;
-        }
+            pabyScanline[i] -= 1;
 
         return CE_None;
     }
@@ -391,127 +381,37 @@ void BSBDataset::ScanForGCPs( bool isNos, const char *pszFilename )
         GDALHeuristicDatelineWrapGCPs( nGCPCount, pasGCPList );
 
 /* -------------------------------------------------------------------- */
-/*      Collect coordinate system related parameters from header.       */
-/* -------------------------------------------------------------------- */
-    int i;
-    const char *pszKNP=NULL, *pszKNQ=NULL;
-
-    for( i = 0; psInfo->papszHeader[i] != NULL; i++ )
-    {
-        if( EQUALN(psInfo->papszHeader[i],"KNP/",4) )
-        {
-            pszKNP = psInfo->papszHeader[i];
-            SetMetadataItem( "BSB_KNP", pszKNP + 4 );
-        }
-        if( EQUALN(psInfo->papszHeader[i],"KNQ/",4) )
-        {
-            pszKNQ = psInfo->papszHeader[i]; 
-            SetMetadataItem( "BSB_KNQ", pszKNQ + 4 );
-        }
-    }
-
-    
-/* -------------------------------------------------------------------- */
 /*      Can we derive a reasonable coordinate system definition for     */
 /*      this file?  For now we keep it simple, just handling            */
 /*      mercator. In the future we should consider others.              */
 /* -------------------------------------------------------------------- */
     CPLString osUnderlyingSRS;
-    if( pszKNP != NULL )
+    int i;
+
+    for( i = 0; psInfo->papszHeader[i] != NULL; i++ )
     {
-        const char *pszPR = strstr(pszKNP,"PR=");
-        const char *pszGD = strstr(pszKNP,"GD=");
-        const char *pszValue, *pszEnd = NULL;
-        const char *pszGEOGCS = "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]]";
-        CPLString osPP;
-        
-        // Capture the PP string.
-        pszValue = strstr(pszKNP,"PP=");
-        if( pszValue )
-            pszEnd = strstr(pszValue,",");
-        if( pszValue && pszEnd )
-            osPP.assign(pszValue+3,pszEnd-pszValue-3);
-        
-        // Look at the datum
-        if( pszGD == NULL )
+        if( EQUALN(psInfo->papszHeader[i],"KNP/",4) )
         {
-            /* no match. We'll default to EPSG:4326 */
-        }
-        else if( EQUALN(pszGD,"GD=European 1950", 16) )
-        {
-            pszGEOGCS = "GEOGCS[\"ED50\",DATUM[\"European_Datum_1950\",SPHEROID[\"International 1924\",6378388,297,AUTHORITY[\"EPSG\",\"7022\"]],TOWGS84[-87,-98,-121,0,0,0,0],AUTHORITY[\"EPSG\",\"6230\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4230\"]]";
-        }
+            const char *pszPR = strstr(psInfo->papszHeader[i],"PR=");
 
-        // Look at the projection
-        if( pszPR == NULL )
-        {
-            /* no match */
-        }
-        else if( EQUALN(pszPR,"PR=MERCATOR", 11) )
-        {
-            // We somewhat arbitrarily select our first GCPX as our 
-            // central meridian.  This is mostly helpful to ensure 
-            // that regions crossing the dateline will be contiguous 
-            // in mercator.
-            osUnderlyingSRS.Printf( "PROJCS[\"Global Mercator\",%s,PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",%d],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1]]",
-                pszGEOGCS, (int) pasGCPList[0].dfGCPX );
-        }
+            // Capture whole line as metadata so some apps can do more
+            // specific processing.
+            SetMetadataItem( "BSB_KNP", psInfo->papszHeader[i] + 4 );
 
-        else if( EQUALN(pszPR,"PR=TRANSVERSE MERCATOR", 22)
-                 && osPP.size() > 0 )
-        {
-            
-            osUnderlyingSRS.Printf( 
-                "PROJCS[\"unnamed\",%s,PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",%s],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0]]",
-                pszGEOGCS, osPP.c_str() );
-        }
-
-        else if( EQUALN(pszPR,"PR=UNIVERSAL TRANSVERSE MERCATOR", 32)
-                 && osPP.size() > 0 )
-        {
-            // This is not *really* UTM unless the central meridian 
-            // matches a zone which it does not in some (most?) maps. 
-            osUnderlyingSRS.Printf( 
-                "PROJCS[\"unnamed\",%s,PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",%s],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0]]", 
-                pszGEOGCS, osPP.c_str() );
-        }
-
-        else if( EQUALN(pszPR,"PR=POLYCONIC", 12) && osPP.size() > 0 )
-        {
-            osUnderlyingSRS.Printf( 
-                "PROJCS[\"unnamed\",%s,PROJECTION[\"Polyconic\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",%s],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0]]", 
-                pszGEOGCS, osPP.c_str() );
-        }
-        
-        else if( EQUALN(pszPR,"PR=LAMBERT CONFORMAL CONIC", 26) 
-                 && osPP.size() > 0 && pszKNQ != NULL )
-        {
-            CPLString osP2, osP3;
-        
-            // Capture the KNQ/P2 string.
-            pszValue = strstr(pszKNQ,"P2=");
-            if( pszValue )
-                pszEnd = strstr(pszValue,",");
-            if( pszValue && pszEnd )
-                osP2.assign(pszValue+3,pszEnd-pszValue-3);
-            
-            // Capture the KNQ/P3 string.
-            pszValue = strstr(pszKNQ,"P3=");
-            if( pszValue )
-                pszEnd = strstr(pszValue,",");
-            if( pszValue )
+            if( pszPR == NULL )
             {
-                if( pszEnd )
-                    osP3.assign(pszValue+3,pszEnd-pszValue-3);
-                else
-                    osP3.assign(pszValue+3);
+                /* no match */
             }
-
-            if( osP2.size() > 0 && osP3.size() > 0 )
-                osUnderlyingSRS.Printf( 
-                    "PROJCS[\"unnamed\",%s,PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"standard_parallel_1\",%s],PARAMETER[\"standard_parallel_2\",%s],PARAMETER[\"latitude_of_origin\",0.0],PARAMETER[\"central_meridian\",%s],PARAMETER[\"false_easting\",0.0],PARAMETER[\"false_northing\",0.0]]",
-                    pszGEOGCS, osP2.c_str(), osP3.c_str(), osPP.c_str() );
-
+            else if( EQUALN(pszPR,"PR=MERCATOR", 11) )
+            {
+                // We somewhat arbitrarily select our first GCPX as our 
+                // central meridian.  This is mostly helpful to ensure 
+                // that regions crossing the dateline will be contiguous 
+                // in mercator.
+                osUnderlyingSRS.Printf( "PROJCS[\"Global Mercator\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.01745329251994328]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",%d],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1]]", (int) pasGCPList[0].dfGCPX );
+            }
+            
+            break;
         }
     }
 
@@ -521,13 +421,13 @@ void BSBDataset::ScanForGCPs( bool isNos, const char *pszFilename )
 /* -------------------------------------------------------------------- */
     if( osUnderlyingSRS.length() > 0 )
     {
-        OGRSpatialReference oGeog_SRS, oProjected_SRS;
+        OGRSpatialReference oWGS84_SRS, oProjected_SRS;
         OGRCoordinateTransformation *poCT;
         
+        oWGS84_SRS.SetWellKnownGeogCS( "WGS84" );
         oProjected_SRS.SetFromUserInput( osUnderlyingSRS );
-        oGeog_SRS.CopyGeogCSFrom( &oProjected_SRS );
         
-        poCT = OGRCreateCoordinateTransformation( &oGeog_SRS, 
+        poCT = OGRCreateCoordinateTransformation( &oWGS84_SRS, 
                                                   &oProjected_SRS );
         if( poCT != NULL )
         {
@@ -698,78 +598,53 @@ void BSBDataset::ScanForGCPsBSB()
 }
 
 /************************************************************************/
-/*                          IdentifyInternal()                          */
-/************************************************************************/
-
-int BSBDataset::IdentifyInternal( GDALOpenInfo * poOpenInfo, bool& isNosOut )
-
-{
-/* -------------------------------------------------------------------- */
-/*      Check for BSB/ keyword.                                         */
-/* -------------------------------------------------------------------- */
-    int     i;
-    isNosOut = false;
-
-    if( poOpenInfo->nHeaderBytes < 1000 )
-        return NULL;
-
-    for( i = 0; i < poOpenInfo->nHeaderBytes - 4; i++ )
-    {
-        if( poOpenInfo->pabyHeader[i+0] == 'B'
-            && poOpenInfo->pabyHeader[i+1] == 'S'
-            && poOpenInfo->pabyHeader[i+2] == 'B'
-            && poOpenInfo->pabyHeader[i+3] == '/' )
-            break;
-        if( poOpenInfo->pabyHeader[i+0] == 'N'
-            && poOpenInfo->pabyHeader[i+1] == 'O'
-            && poOpenInfo->pabyHeader[i+2] == 'S'
-            && poOpenInfo->pabyHeader[i+3] == '/' )
-        {
-            isNosOut = true;
-            break;
-        }
-        if( poOpenInfo->pabyHeader[i+0] == 'W'
-            && poOpenInfo->pabyHeader[i+1] == 'X'
-            && poOpenInfo->pabyHeader[i+2] == '\\'
-            && poOpenInfo->pabyHeader[i+3] == '8' )
-            break;
-    }
-
-    if( i == poOpenInfo->nHeaderBytes - 4 )
-        return FALSE;
-
-    /* Additional test to avoid false positive. See #2881 */
-    const char* pszRA = strstr((const char*)poOpenInfo->pabyHeader + i, "RA=");
-    if (pszRA == NULL) /* This may be a NO1 file */
-        pszRA = strstr((const char*)poOpenInfo->pabyHeader + i, "[JF");
-    if (pszRA == NULL || pszRA - ((const char*)poOpenInfo->pabyHeader + i) > 100 )
-        return FALSE;
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int BSBDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-    bool isNos;
-    return IdentifyInternal(poOpenInfo, isNos);
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
 GDALDataset *BSBDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
+/* -------------------------------------------------------------------- */
+/*      Check for BSB/ keyword.                                         */
+/* -------------------------------------------------------------------- */
+    int		i;
     bool        isNos = false;
-    if (!IdentifyInternal(poOpenInfo, isNos))
+
+    if( poOpenInfo->nHeaderBytes < 1000 )
         return NULL;
 
+    for( i = 0; i < poOpenInfo->nHeaderBytes - 4; i++ )
+    {
+        if( poOpenInfo->pabyHeader[i+0] == 'B' 
+            && poOpenInfo->pabyHeader[i+1] == 'S' 
+            && poOpenInfo->pabyHeader[i+2] == 'B' 
+            && poOpenInfo->pabyHeader[i+3] == '/' )
+            break;
+        if( poOpenInfo->pabyHeader[i+0] == 'N' 
+            && poOpenInfo->pabyHeader[i+1] == 'O' 
+            && poOpenInfo->pabyHeader[i+2] == 'S' 
+            && poOpenInfo->pabyHeader[i+3] == '/' )
+        {
+            isNos = true;
+            break;
+        }
+        if( poOpenInfo->pabyHeader[i+0] == 'W' 
+            && poOpenInfo->pabyHeader[i+1] == 'X' 
+            && poOpenInfo->pabyHeader[i+2] == '\\' 
+            && poOpenInfo->pabyHeader[i+3] == '8' )
+            break;
+    }
+
+    if( i == poOpenInfo->nHeaderBytes - 4 )
+        return NULL;
+
+    /* Additional test to avoid false positive. See #2881 */
+    const char* pszRA = strstr((const char*)poOpenInfo->pabyHeader + i, "RA=");
+    if (pszRA == NULL) /* This may be a NO1 file */
+        pszRA = strstr((const char*)poOpenInfo->pabyHeader + i, "[JF");
+    if (pszRA == NULL || pszRA - ((const char*)poOpenInfo->pabyHeader + i) > 100 )
+        return NULL;
+        
     if( poOpenInfo->eAccess == GA_Update )
     {
         CPLError( CE_Failure, CPLE_NotSupported, 
@@ -1190,12 +1065,10 @@ void GDALRegister_BSB()
                                    "Maptech BSB Nautical Charts" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#BSB" );
-        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 #ifdef BSB_CREATE
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
 #endif
         poDriver->pfnOpen = BSBDataset::Open;
-        poDriver->pfnIdentify = BSBDataset::Identify;
 #ifdef BSB_CREATE
         poDriver->pfnCreateCopy = BSBCreateCopy;
 #endif

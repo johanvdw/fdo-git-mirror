@@ -74,7 +74,7 @@ else
 swig-target:    swig-modules;
 endif
 
-swig-modules:	lib-target
+swig-modules:
 	(cd swig; $(MAKE) build)
 
 clean:	lclean
@@ -118,8 +118,8 @@ docs:
 	doxygen -w html html/header.html html/footer.html html/stylesheet.css
 	sed -e 's,iso-8859-1,utf-8,g' html/header.html > html/header_ru.html
 	cp html/header.html html/header_br.html
-	(cd doc/ru ; doxygen ; cp html/*.* ../../html/. )
-	(cd doc/br ; doxygen ; cp html/*.* ../../html/. )
+	(cat Doxyfile ; echo "HTML_HEADER=html/header_ru.html"; echo "INPUT=doc/ru"; echo "OUTPUT_LANGUAGE=Russian") | doxygen -
+	(cat Doxyfile ; echo "HTML_HEADER=html/header_br.html"; echo "INPUT=doc/br"; echo "OUTPUT_LANGUAGE=Portuguese") | doxygen -
 # Generate HTML docs
 	doxygen Doxyfile
 	cp data/gdalicon.png html
@@ -127,7 +127,6 @@ docs:
 	cp doc/grid/*.png html
 	cp frmts/*.html frmts/*/frmt_*.html html
 	cp frmts/wms/frmt_wms_*.xml html
-	cp frmts/wms/frmt_twms_*.xml html
 
 man:
 # Generate man pages

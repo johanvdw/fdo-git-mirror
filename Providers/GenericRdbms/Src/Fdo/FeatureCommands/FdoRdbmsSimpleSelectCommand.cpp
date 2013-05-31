@@ -29,7 +29,6 @@
 #include "FdoRdbmsSimpleFeatureReader.h"
 #include "Fdo/Pvc/FdoRdbmsPropBindHelper.h"
 #include "FdoRdbmsSimpleSelectCommand.h"
-#include "FdoCommonOSUtil.h"
 
 FdoRdbmsSimpleSelectCommand::FdoRdbmsSimpleSelectCommand ()
 {
@@ -39,7 +38,6 @@ FdoRdbmsSimpleSelectCommand::FdoRdbmsSimpleSelectCommand ()
     mContainsObjectProperties = false;
     mIsObjectObject = false;
     mBindHelper = NULL;
-    mSqlBuilder = NULL;
     mBackupCmd = NULL;
     mFilter = NULL;
     m_pParmeterValues = NULL;
@@ -58,7 +56,6 @@ FdoRdbmsSimpleSelectCommand::FdoRdbmsSimpleSelectCommand (FdoIConnection *connec
     mContainsObjectProperties = false;
     mIsObjectObject = false;
     mBindHelper = NULL;
-    mSqlBuilder = NULL;
     mClassName = NULL;
     mBackupCmd = NULL;
     mFilter = NULL;
@@ -75,7 +72,6 @@ FdoRdbmsSimpleSelectCommand::~FdoRdbmsSimpleSelectCommand()
     FDO_SAFE_RELEASE(mClassName);
     FDO_SAFE_RELEASE(mBackupCmd);
     delete mBindHelper;
-    FDO_SAFE_RELEASE(mSqlBuilder);
 
     FDO_SAFE_RELEASE(m_pParmeterValues);
     FDO_SAFE_RELEASE(mFilter);
@@ -116,14 +112,11 @@ void FdoRdbmsSimpleSelectCommand::PrepareSelect (const FdoSmLpClassDefinition* c
     if (mContainsObjectProperties)
         return;
 
-    if (mSqlBuilder == NULL)
-        mSqlBuilder = mFdoConnection->GetSqlBuilder();
-
-    if (mSqlBuilder)
+    FdoPtr<FdoRdbmsSqlBuilder> sqlBuilder = mFdoConnection->GetSqlBuilder();
+    if (sqlBuilder)
     {
-        mSqlBuilder->Reset();
         std::vector<NameOrderingPair> ordering;
-        mSqlBuilder->SetParameterValues(m_pParmeterValues);
+        sqlBuilder->SetParameterValues(m_pParmeterValues);
         if (m_orderingProps && m_orderingProps->GetCount())
         {
             for (int i=0; i<m_orderingProps->GetCount(); i++)
@@ -142,7 +135,7 @@ void FdoRdbmsSimpleSelectCommand::PrepareSelect (const FdoSmLpClassDefinition* c
         if (m_pParmeterValues != NULL)
             m_pParmeterValues->SetCollectionChanged(false);
 
-        FdoString* sqlString = mSqlBuilder->ToSelectSqlString(mClassName, m_alias, mFilter, m_properties, ordering, m_joinCriteria);
+        FdoString* sqlString = sqlBuilder->ToSelectSqlString(mClassName, m_alias, mFilter, m_properties, ordering, m_joinCriteria);
         if (sqlString != NULL && *sqlString != '\0')
         {
             mSelectSql = sqlString;
@@ -151,7 +144,7 @@ void FdoRdbmsSimpleSelectCommand::PrepareSelect (const FdoSmLpClassDefinition* c
                 mBindHelper = new FdoRdbmsPropBindHelper(mFdoConnection);
 
             FdoInt32 cnt = (m_pParmeterValues != NULL) ? m_pParmeterValues->GetCount() : 0;
-            std::vector< std::pair< FdoLiteralValue*, FdoInt64 > >* paramsUsed = mSqlBuilder->GetUsedParameterValues();
+            std::vector< std::pair< FdoLiteralValue*, FdoInt64 > >* paramsUsed = sqlBuilder->GetUsedParameterValues();
             if (paramsUsed != NULL && paramsUsed->size())
             {
                 for(size_t i = 0; i < paramsUsed->size(); i++)
@@ -321,17 +314,6 @@ FdoIFeatureReader* FdoRdbmsSimpleSelectCommand::Execute()
 #endif
     {
         mConnection->GetGdbiCommands()->sql ((wchar_t *)(const wchar_t *)mSelectSql.c_str(), &qid);
-
-        std::vector< std::pair< int, char > >* types = mSqlBuilder != NULL ? mSqlBuilder->GetSelectGeometryTypes() : NULL;
-        if (types != NULL)
-        {
-            char temp[32];
-            for (std::vector< std::pair< int, char > >::iterator it = types->begin(); it < types->end(); it++)
-            {
-                FdoCommonOSUtil::ltoa(it->first+1, temp);
-                mConnection->GetGdbiCommands()->geom_type_set(qid, temp, it->second);
-            }
-        }
         statement = new GdbiQueryIdentifier(gdbiConn->GetCommands(), qid);
 #if 0
         //mStatements.push_back(statement);

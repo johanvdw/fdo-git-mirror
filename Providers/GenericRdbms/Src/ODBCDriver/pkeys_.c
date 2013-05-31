@@ -79,8 +79,6 @@ int local_odbcdr_pkeys_act(
     rdbi_string_def szColumnName;
     SQLWCHAR    szTypeNameBuf[ODBCDR_MAX_BUFF_SIZE];
     rdbi_string_def szTypeName;
-    SQLWCHAR     szDebugBuf[ODBCDR_MAX_BUFF_SIZE];
-    rdbi_string_def szDebug;
 	odbcdr_cursor_def	*c;
 	odbcdr_connData_def	*connData = NULL;
 	int 		rdbi_status = RDBI_GENERIC_ERROR;
@@ -95,7 +93,6 @@ int local_odbcdr_pkeys_act(
     SQLSMALLINT charType;
     szColumnName.wString = (wchar_t *)szColumnNameBuf;
     szTypeName.wString = (wchar_t *)szTypeNameBuf;
-    szDebug.wString = (wchar_t *)szDebugBuf;
     dbaselink.wString = NULL;
 
 	debug_on("odbcdr_pkeys_act");
@@ -134,48 +131,12 @@ int local_odbcdr_pkeys_act(
     if (context->odbcdr_UseUnicode)
     {
         charType = SQL_C_WCHAR;
-
-		swprintf(
-			szDebug.wString, 
-			ODBCDR_MAX_BUFF_SIZE - 1, 
-			L"SQLPrimaryKeysW((odbc_cursor_handle_def*) %lx, NULL, 0, NULL, 0, '%ls',  SQL_NTS)",
-			c->hStmt,
-			(object->cwString != NULL) ? object->cwString : L"(NULL)"
-        );
-		debug_trace(NULL, szDebug.wString, NULL);
-
-        ret = SQLPrimaryKeysW( 
-            c->hStmt, 
-            NULL, 
-            0, 
-            (SQLWCHAR*)owner->cwString, 
-            (owner->cwString == NULL) ? 0 : SQL_NTS, 
-            (SQLWCHAR*)object->cwString,  
-            SQL_NTS
-        );
+        ret = SQLPrimaryKeysW( c->hStmt, NULL, 0, NULL, 0, (SQLWCHAR*)object->cwString,  SQL_NTS);
     }
     else
     {
         charType = SQL_C_CHAR;
-
-		sprintf(
-			szDebug.cString, 
-			"SQLPrimaryKeys((odbc_cursor_handle_def*) %lx, NULL, 0, NULL, 0, '%s',  SQL_NTS)",
-			c->hStmt,
-			(object->ccString != NULL) ? object->ccString : "(NULL)"
-        );
-		debug_trace(szDebug.cString, NULL, NULL);
-
         ret = SQLPrimaryKeys( c->hStmt, NULL, 0, NULL, 0, (SQLCHAR*)object->ccString,  SQL_NTS);
-        ret = SQLPrimaryKeys(
-            c->hStmt, 
-            NULL, 
-            0, 
-            (SQLCHAR*)owner->ccString, 
-            (owner->ccString == NULL) ? 0 : SQL_NTS, 
-            (SQLCHAR*)object->ccString,  
-            SQL_NTS
-        );
     }
 
     if (ret == SQL_SUCCESS)
@@ -205,18 +166,7 @@ int local_odbcdr_pkeys_act(
             }
             bFoundIdentityProperties = true;
         }
-
-	    sprintf(
-			szDebug.cString, 
-			"SQLPrimaryKeys[W] found %d primary key columns",
-			context->odbcdr_nameList_pkeys.size
-	    );
-		debug_trace(szDebug.cString, NULL, NULL);
     }
-	else
-	{
-		debug_trace("SQLPrimaryKeys[W] failed", NULL, NULL);
-	}
 
 
     /*********************************************************************************
@@ -329,32 +279,11 @@ int local_odbcdr_pkeys_act(
              * specified. Applications should be prepared for this case and request
              * SQL_NO_NULLS only if it is absolutely required. */
             if (context->odbcdr_UseUnicode)
-			{
-				swprintf(
-					szDebug.wString, 
-					ODBCDR_MAX_BUFF_SIZE - 1, 
-					L"SQLSpecialColumnsW((odbc_cursor_handle_def*) %lx, , SQL_BEST_ROWID, NULL, 0, NULL, 0, '%ls', SQL_NTS, SQL_SCOPE_CURROW, SQL_NULLABLE)",
-					c->hStmt,
-					(object->cwString != NULL) ? object->cwString : L"(NULL)"
-				);
-				debug_trace(NULL, szDebug.wString, NULL);
-
                 ret = SQLSpecialColumnsW(c->hStmt, SQL_BEST_ROWID, NULL, 0, NULL, 
                     0, (SQLWCHAR*)object->cwString, SQL_NTS, SQL_SCOPE_CURROW, SQL_NULLABLE);
-			}
             else
-			{
-				sprintf(
-					szDebug.cString, 
-					"SQLSpecialColumns((odbc_cursor_handle_def*) %lx, , SQL_BEST_ROWID, NULL, 0, NULL, 0, '%s', SQL_NTS, SQL_SCOPE_CURROW, SQL_NULLABLE)",
-					c->hStmt,
-					(object->ccString != NULL) ? object->ccString : "(NULL)"
-				);
-				debug_trace(szDebug.cString, NULL, NULL);
-
                 ret = SQLSpecialColumns(c->hStmt, SQL_BEST_ROWID, NULL, 0, NULL, 
                     0, (SQLCHAR*)object->ccString, SQL_NTS, SQL_SCOPE_CURROW, SQL_NULLABLE);
-			}
 
             /* We do not exit with error if ret != SQL_SUCCESS because some drivers do
              * not support SQLSpecialColumns.
@@ -452,18 +381,7 @@ int local_odbcdr_pkeys_act(
                         bFoundIdentityProperties = true;
                     }
                 }
-
-				sprintf(
-					szDebug.cString, 
-					"SQLSpecialColumns[W] found %d primary key columns",
-					context->odbcdr_nameList_pkeys.size
-				);
-				debug_trace(szDebug.cString, NULL, NULL);
             }
-			else
-			{
-				debug_trace("SQLSpecialColumns[W] failed", NULL, NULL);
-			}
         }
     }
 
@@ -497,6 +415,53 @@ int local_odbcdr_pkeys_act(
 	            );
 
             if (!eof && rdbi_status == RDBI_SUCCESS && is_autoincrement)
+            {
+                odbcdr_NameListEntry_pkey_def newNle;
+                ODBCDRV_STRING_COPY_RST(newNle.name, &szColumnName);
+                if (NULL == ut_da_append( &context->odbcdr_nameList_pkeys, 1L, (void *) &newNle ))
+                {
+                    rdbi_status = RDBI_MALLOC_FAILED;
+                    goto the_exit;
+                }
+                bFoundIdentityProperties = true;
+            }
+        }
+
+        ODBCDR_RDBI_ERR( odbcdr_col_deac(context) );
+    }
+
+    /*********************************************************************************
+     * Approach #5: Find all non-nullable columns and use them as the identity property.
+	 *
+	 * Do not use this approach for Teradata sources since it pick a wrong key for views.
+     *********************************************************************************/
+
+    if ((!bFoundIdentityProperties) && !(ODBCDriverType_Teradata == connData->driver_type ))
+    {
+	    int  length;
+	    int  scale;
+	    int  nullable;
+        int  is_autoincrement;
+	    int  position;
+	    int  eof = FALSE;
+
+        ODBCDR_RDBI_ERR( local_odbcdr_col_act( context, owner, object, &dbaselink ) );
+
+        while (!eof && rdbi_status == RDBI_SUCCESS)
+        {
+            rdbi_status = local_odbcdr_col_get(
+                context,
+	            &szColumnName,
+	            &szTypeName,
+	            &length,
+	            &scale,
+	            &nullable,
+                &is_autoincrement,
+	            &position,
+	            &eof
+	            );
+
+            if (!eof && rdbi_status == RDBI_SUCCESS && !nullable)
             {
                 odbcdr_NameListEntry_pkey_def newNle;
                 ODBCDRV_STRING_COPY_RST(newNle.name, &szColumnName);

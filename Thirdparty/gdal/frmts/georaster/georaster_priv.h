@@ -36,72 +36,50 @@
 #include "gdal_rat.h"
 #include "ogr_spatialref.h"
 #include "cpl_minixml.h"
-#include "cpl_list.h"
 
 //  ---------------------------------------------------------------------------
-//  DEFLATE compression support
+//  Compression libraries
 //  ---------------------------------------------------------------------------
+
+// DEFLATE compression support
 
 #include <zlib.h>
 
-//  ---------------------------------------------------------------------------
-//  JPEG compression support
-//  ---------------------------------------------------------------------------
+// JPEG compression support
 
 CPL_C_START
 #include <jpeglib.h>
 CPL_C_END
 
-void jpeg_vsiio_src (j_decompress_ptr cinfo, VSILFILE * infile);
-void jpeg_vsiio_dest (j_compress_ptr cinfo, VSILFILE * outfile);
+void jpeg_vsiio_src (j_decompress_ptr cinfo, FILE * infile);
+void jpeg_vsiio_dest (j_compress_ptr cinfo, FILE * outfile);
+
+//  ---------------------------------------------------------------------------
+//  Calculate the row index where a block is stored
+//  ---------------------------------------------------------------------------
+
+#define CALCULATEBLOCK( bn, xo, yo, bb, tc, tr ) \
+    ( ( (int) ceil( (double) ( ( bn - 1 ) / bb ) ) * tc * tr ) + ( yo * tc ) + xo )
 
 //  ---------------------------------------------------------------------------
 //  System constants
 //  ---------------------------------------------------------------------------
 
-//  VAT maximum string len
-
-#define MAXLEN_VATSTR 128
-
 //  Geographic system without EPSG parameters
 
 #define UNKNOWN_CRS 999999
 
-//  Bitmap Mask for the whole dataset start with -99999
+// Bitmap Mask for the whole dataset start with -99999
 
 #define DEFAULT_BMP_MASK -99999
 
-//  Default block size
-
-#define DEFAULT_BLOCK_ROWS 256
-#define DEFAULT_BLOCK_COLUMNS 256
-
-//  Default Model Coordinate Location (internal pixel geo-reference)
+/***************************************************************************/
+/*                            default Model Coordinate Location is CENTER  */
+/***************************************************************************/
 
 #define MCL_CENTER      0
 #define MCL_UPPERLEFT   1
 #define MCL_DEFAULT     MCL_CENTER
-
-struct hLevelDetails {
-    int             nColumnBlockSize;
-    int             nRowBlockSize;
-    int             nTotalColumnBlocks;
-    int             nTotalRowBlocks;
-    unsigned long   nBlockCount;
-    unsigned long   nBlockBytes;
-    unsigned long   nGDALBlockBytes;
-    unsigned long   nOffset;
-};
-
-//  ---------------------------------------------------------------------------
-//  Support for multi-values NoData support
-//  ---------------------------------------------------------------------------
-
-struct hNoDataItem {
-    int             nBand;
-    double          dfLower;
-    double          dfUpper;
-};
 
 //  ---------------------------------------------------------------------------
 //  GeoRaster wrapper classe definitions
@@ -109,9 +87,34 @@ struct hNoDataItem {
 
 #include "oci_wrapper.h"
 
+class GeoRasterDriver;
 class GeoRasterDataset;
 class GeoRasterRasterBand;
 class GeoRasterWrapper;
+
+//  ---------------------------------------------------------------------------
+//  GeoRasterDriver, extends GDALDriver to support GeoRaster Server Connections
+//  ---------------------------------------------------------------------------
+
+class GeoRasterDriver : public GDALDriver
+{
+    friend class GeoRasterDataset;
+
+public:
+                        GeoRasterDriver();
+    virtual            ~GeoRasterDriver();
+
+private:
+
+    OWConnection**      papoConnection;
+    int                 nRefCount;
+
+public:
+
+    OWConnection*       GetConnection( const char* pszUser,
+                            const char* pszPassword,
+                            const char* pszServer );
+};
 
 //  ---------------------------------------------------------------------------
 //  GeoRasterDataset, extends GDALDataset to support GeoRaster Datasets
@@ -137,8 +140,6 @@ private:
     GDAL_GCP*           pasGCPList;
     GeoRasterRasterBand*
                         poMaskBand;
-    bool                bApplyNoDataArray;
-
 public:
 
     void                SetSubdatasets( GeoRasterWrapper* poGRW );
@@ -182,13 +183,11 @@ public:
                             const char* pszResampling,
                             int nOverviews,
                             int* panOverviewList,
-                            int nListBandsover,
+                            int nListBands,
                             int* panBandList,
                             GDALProgressFunc pfnProgress,
-                            void* pProgresoversData );
+                            void* pProgressData );
     virtual CPLErr      CreateMaskBand( int nFlags );
-    void                AssignGeoRaster( GeoRasterWrapper* poGRW );
-
 };
 
 //  ---------------------------------------------------------------------------
@@ -220,12 +219,7 @@ private:
     char*               pszVATName;
     int                 nOverviewLevel;
     GeoRasterRasterBand** papoOverviews;
-    int                 nOverviewCount;
-    hNoDataItem*        pahNoDataArray;
-    int                 nNoDataArraySz;
-    bool                bHasNoDataArray;
-    
-    void                ApplyNoDataArry( void* pBuffer );
+    int                 nOverviews;
 
 public:
 
@@ -273,38 +267,27 @@ public:
 private:
 
     OCILobLocator**     pahLocator;
-    unsigned long       nBlockCount;
+    int                 nBlockCount;
     unsigned long       nBlockBytes;
     unsigned long       nGDALBlockBytes;
     GByte*              pabyBlockBuf;
-    GByte*              pabyCompressBuf;
-    OWStatement*        poBlockStmt;
+    GByte*              pabyBlockBuf2;
+    OWStatement*        poStmtRead;
     OWStatement*        poStmtWrite;
 
+    int                 nCurrentBlock;
     int                 nCurrentLevel;
-    long                nLevelOffset;
-
-    long                nCacheBlockId;
-    bool                bFlushBlock;
-    unsigned long       nFlushBlockSize;
-
-    bool                bWriteOnly;
-
-    hLevelDetails*      pahLevels;
+    bool                bOrderlyAccess;
 
     int                 nCellSizeBits;
     int                 nGDALCellBytes;
 
-    bool                bUpdate;
-    bool                bInitializeIO;
+    bool                bIOInitialized;
     bool                bFlushMetadata;
 
-    void                InitializeLayersNode( void );
-    bool                InitializeIO( void );
-    void                InitializeLevel( int nLevel );
-    bool                FlushMetadata( void );
-
-    void                LoadNoDataValues( void );
+    void                InitializeLayersNode();
+    bool                InitializeIO( int nLevel, bool bUpdate = false );
+    bool                FlushMetadata();
 
     void                UnpackNBits( GByte* pabyData );
     void                PackNBits( GByte* pabyData );
@@ -321,15 +304,14 @@ public:
 
     static char**       ParseIdentificator( const char* pszStringID );
     static GeoRasterWrapper*
-                        Open( 
-                            const char* pszStringID,
-                            bool bUpdate );
+                        Open( const char* pszStringID );
     bool                Create(
                             char* pszDescription,
                             char* pszInsert,
                             bool bUpdate );
     bool                Delete( void );
     void                GetRasterInfo( void );
+    bool                GetImageExtent( double *padfTransform );
     bool                GetStatistics( int nBand,
                             double dfMin,
                             double dfMax,
@@ -344,6 +326,8 @@ public:
     void                GetColorMap( int nBand, GDALColorTable* poCT );
     void                SetColorMap( int nBand, GDALColorTable* poCT );
     void                SetGeoReference( int nSRIDIn );
+    void                SetCompression( const char* pszType, int nQualityn );
+    char*               GetWKText( int nSRIDin );
     bool                GetDataBlock(
                             int nBand,
                             int nLevel,
@@ -356,66 +340,49 @@ public:
                             int nXOffset,
                             int nYOffset,
                             void* pData );
-    long                GetBlockNumber( int nB, int nX, int nY )
-                        {
-                            return nLevelOffset +
-                                   (long) ( ( ceil( (double)
-                                   ( ( nB - 1 ) / nBandBlockSize ) ) *
-                                   nTotalColumnBlocks * nTotalRowBlocks ) +
-                                   ( nY * nTotalColumnBlocks ) + nX );
-                        }
-
-    bool                FlushBlock( long nCacheBlock );
-    bool                GetNoData( int nLayer, double* pdfNoDataValue );
-    bool                SetNoData( int nLayer, const char* pszValue );
+    bool                GetNoData( double* pdfNoDataValue );
+    bool                SetNoData( double dfNoDataValue );
     CPLXMLNode*         GetMetadata() { return phMetadata; };
     bool                SetVAT( int nBand, const char* pszName );
     char*               GetVAT( int nBand );
     bool                GeneratePyramid(
                             int nLevels,
                             const char* pszResampling,
-                            bool bInternal = false );
-    bool                DeletePyramid();
+                            bool bNodata = false );
     void                PrepareToOverwrite( void );
-    bool                InitializeMask( int nLevel,
+    bool                InitializePyramidLevel( int nLevel,
                                                 int nBlockColumns,
                                                 int nBlockRows,
                                                 int nColumnBlocks,
                                                 int nRowBlocks,
                                                 int nBandBlocks );
-    void                SetWriteOnly( bool value ) { bWriteOnly = value; };
 
 public:
 
     OWConnection*       poConnection;
 
-    CPLString           sTable;
-    CPLString           sSchema;
-    CPLString           sOwner;
-    CPLString           sColumn;
-    CPLString           sDataTable;
+    char*               pszTable;
+    char*               pszSchema;
+    char*               pszOwner;
+    char*               pszColumn;
+    char*               pszDataTable;
     int                 nRasterId;
-    CPLString           sWhere;
-    CPLString           sValueAttributeTab;
+    char*               pszWhere;
+
+    bool                bRDTRIDOnly;
 
     int                 nSRID;
     CPLXMLNode*         phMetadata;
-    CPLString           sCellDepth;
-    CPLString           sCompressionType;
+    char*               pszCellDepth;
+    char*               pszCompressionType;
     int                 nCompressQuality;
-    CPLString           sWKText;
-    CPLString           sAuthority;
-    CPLList*            psNoDataList;
 
     int                 nRasterColumns;
     int                 nRasterRows;
     int                 nRasterBands;
 
-    CPLString           sInterleaving;
+    char                szInterleaving[4];
     bool                bIsReferenced;
-
-    bool                bBlocking;
-    bool                bAutoBlocking;
 
     double              dfXCoefficient[3];
     double              dfYCoefficient[3];
@@ -435,10 +402,14 @@ public:
     int                 nPyramidMaxLevel;
 
     bool                bHasBitmapMask;
-    bool                bUniqueFound;
-    
+
     int                 eModelCoordLocation;
-    unsigned int        anULTCoordinate[3];
+    int                 eForceCoordLocation;
+
+    void                SetOrdelyAccess( bool bValue )
+                        {
+                            bOrderlyAccess = bValue;
+                        };
 };
 
 #endif /* ifndef _GEORASTER_PRIV_H_INCLUDED */

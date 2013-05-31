@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbctablelayer.cpp 20579 2010-09-12 11:43:35Z rouault $
+ * $Id: ogrodbctablelayer.cpp 17870 2009-10-22 04:47:29Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCTableLayer class, access to an existing table.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id: ogrodbctablelayer.cpp 20579 2010-09-12 11:43:35Z rouault $");
+CPL_CVSID("$Id: ogrodbctablelayer.cpp 17870 2009-10-22 04:47:29Z warmerdam $");
 /************************************************************************/
 /*                          OGRODBCTableLayer()                         */
 /************************************************************************/
@@ -287,7 +287,7 @@ OGRFeature *OGRODBCTableLayer::GetFeature( long nFeatureId )
     poStmt = new CPLODBCStatement( poDS->GetSession() );
     poStmt->Append( "SELECT * FROM " );
     poStmt->Append( poFeatureDefn->GetName() );
-    poStmt->Appendf( " WHERE %s = %ld", pszFIDColumn, nFeatureId );
+    poStmt->Appendf( " WHERE %s = %d", pszFIDColumn, nFeatureId );
 
     if( !poStmt->ExecuteSQL() )
     {

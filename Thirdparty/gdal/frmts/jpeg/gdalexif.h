@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalexif.h 22639 2011-07-03 15:51:39Z rouault $
+ * $Id: gdalexif.h 17443 2009-07-25 09:27:02Z rouault $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -33,9 +33,6 @@
 #define GPSOFFSETTAG     0x8825
 #define MAXSTRINGLENGTH 65535
 
-#ifdef RENAME_INTERNAL_LIBTIFF_SYMBOLS
-#include "gdal_libtiff_symbol_rename.h"
-#endif
 
 static const struct gpsname {
     GUInt16     tag;

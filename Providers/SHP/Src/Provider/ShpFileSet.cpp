@@ -171,7 +171,6 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
                 wcscat (shx_file, SHX_EXTENSION);
                 mShx = new ShapeIndex (shx_file, GetShapeFile (), tmp_dir);
             }
-            mShp->SetShapeIndex(mShx);
         }
 
         if (NULL != cpg_file)
@@ -287,7 +286,6 @@ ShpFileSet::ShpFileSet (FdoString* base_name, FdoString* tmp_dir) :
                 {
                     mShx = new ShapeIndex (temp, GetShapeFile (), tmp_dir);
                     mShx->SetTemporaryFile (true);
-                    mShp->SetShapeIndex(mShx);
                 }
                 else
                     throw FdoException::Create (NlsMsgGet(SHP_TEMPORARY_FILE_PROBLEM, "A temporary file could not be created in directory '%1$ls'.", tmp_dir));
@@ -546,7 +544,7 @@ void ShpFileSet::PopulateRTree ()
 		if (length < 0)
 			continue;
 
-        shape = GetShapeFile ()->GetObjectAt (i, offset, type);
+        shape = GetShapeFile ()->GetObjectAt (offset, type);
         if (eNullShape != type)
         {
             shape->GetBoundingBoxEx (box);
@@ -574,7 +572,7 @@ void ShpFileSet::GetObjectAt (RowData** row, eShapeTypes& type, Shape** shape, i
         {
             try
             {
-                *shape = GetShapeFile ()->GetObjectAt (nRecordNumber, offset, type);
+                *shape = GetShapeFile ()->GetObjectAt (offset, type);
             }
             catch (FdoException* ex)
             {
@@ -617,7 +615,7 @@ bool ShpFileSet::AdjustExtents (Shape* shape, bool remove, bool useCopyFiles)
     {   // update or delete,
         // so delete the old bounding box from the spatial index
         shx->GetObjectAt (record, offset, length);
-        old_shape = shp->GetObjectAt (record, offset, type);
+        old_shape = shp->GetObjectAt (offset, type);
         try
         {
             if (eNullShape != old_shape->GetShapeType ())
@@ -898,7 +896,7 @@ void ShpFileSet::DeleteObjectAt (int nRecordNumber)
 
     // update the spatial index
     GetShapeIndexFile ()->GetObjectAt (nRecordNumber, offset, length);
-    shape = GetShapeFile ()->GetObjectAt (nRecordNumber, offset, type);
+    shape = GetShapeFile ()->GetObjectAt (offset, type);
     try
     {
         AdjustExtents (shape, true, false);

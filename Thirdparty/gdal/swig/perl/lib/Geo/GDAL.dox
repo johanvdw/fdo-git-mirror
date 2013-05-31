@@ -10,7 +10,6 @@
 ## @ignore STORE
 ## @ignore this
 ## @ignore UseExceptions
-## @ignore DontUseExceptions
 ## @ignore PushErrorHandler
 ## @ignore PopErrorHandler
 ## @ignore Debug
@@ -19,52 +18,7 @@
 ## @ignore GetLastErrorNo
 ## @ignore GetLastErrorType
 ## @ignore GetLastErrorMsg
-## @ignore ApplyGeoTransform
-## @ignore ContourGenerate
-## @ignore EscapeString
-## @ignore FileFromMemBuffer
-## @ignore FillNodata
-## @ignore GDALDestroyDriverManager
-## @ignore HasThreadSupport
-## @ignore InvGeoTransform
-## @ignore Mkdir
-## @ignore Rename
-## @ignore Rmdir
-## @ignore TermProgress
-## @ignore TermProgress_nocb
-## @ignore Unlink
-## @ignore callback_d_cp_vp 
-
-## @fn @ReadDir($dir)
-# @return Contents of the directory.
-
-## @fn @Stat($filename)
-# @return ($filemode, $filesize). filemode is f for a plain file, d
-# for a directory, l for a symbolic link, p for a named pipe (FIFO), S
-# for a socket, b for a block special file, and c for a character
-# special file.
-
-## @fn Unlink($filename)
-# @param filename The file to delete.
-# @return 0 on success and -1 on an error.
-
-## @fn $VSIFOpenL($filename, $mode)
-# @param filename Name of the file to open. For example "/vsimem/x".
-# @param mode Access mode. 'r', 'r+', 'w', etc.
-# @return A file handle on success.
-
-## @fn VSIFCloseL($file)
-# @param file The file handle.
-
-## @fn $VSIFWriteL($scalar, $file)
-# @param scalar The byte string to write to the file.
-# @param file The file handle.
-# @return Number of bytes written into the file.
-
-## @fn $VSIFReadL($count, $file)
-# @param count The number of bytes to read from the file.
-# @param file The file handle.
-# @return A byte string.
+## @ignore ReadDir
 
 ## @fn $VersionInfo($request = 'VERSION_NUM')
 # @param request A string specifying the request. Currently either
@@ -84,7 +38,8 @@
 # Clear the set of support file search paths.
 
 ## @fn $FindFile($class, $basename)
-# Search for GDAL support files.
+#
+# \brief Search for GDAL support files.
 #
 # An example:
 # \code
@@ -227,7 +182,7 @@
 
 ## @fn Geo::GDAL::Driver Driver($driver)
 # Create a driver object for the internal GDAL driver.
-# \note a.k.a. GetDriver
+# \note aka GetDriver
 # @param driver The name or number of the driver.
 # @return a new Geo::GDAL::Driver object
 
@@ -241,7 +196,7 @@
 # @return a new Geo::GDAL::Driver object
 
 ## @fn ComputeMedianCutPCT($red, $green, $blue, $num_colors, $colors, $callback, $callback_data)
-# Compute an "optimal" color table for a three band image.
+# \brief Compute an "optimal" color table for a three band image.
 # @param red a Geo::GDAL::Band object
 # @param green a Geo::GDAL::Band object
 # @param blue a Geo::GDAL::Band object
@@ -250,11 +205,9 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn DitherRGB2PCT($red, $green, $blue, $target, $colors, $callback, $callback_data)
-# Dither a three band image into one band using a color table.
+# \brief Dither a three band image into one band using a color table.
 # @param red a Geo::GDAL::Band object
 # @param green a Geo::GDAL::Band object
 # @param blue a Geo::GDAL::Band object
@@ -263,8 +216,6 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn ReprojectImage($src_ds, $dst_ds, $src_wkt=undef, $dst_wkt=undef, $ResampleAlg='NearestNeighbour', $WarpMemoryLimit=0, $maxerror=0.0, $callback, $callback_data)
 # @param src_ds Source dataset.
@@ -277,11 +228,8 @@
 # allowed in approximating the transformation. Default is 0.0, i.e.,
 # exact calculations.
 # @param callback [optional] a reference to a subroutine, which will
-# be called with parameters (number progress, string msg, callback_data).
-# Reprojection is terminated if the progress function returns 0.
+# be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdalwarper_8h.html">Documentation for GDAL warper</a>
 
 ## @fn Geo::GDAL::Dataset AutoCreateWarpedVRT(Geo::GDAL::Dataset src, $src_wkt=undef, $dst_wkt=undef, $ResampleAlg='NearestNeighbour', $maxerror=0.0)
 # @param src
@@ -290,8 +238,6 @@
 # @param ResampleAlg one of 'NearestNeighbour', 'Bilinear', 'Cubic', or 'CubicSpline'.
 # @param maxerror
 # @return a new Geo::GDAL::Dataset object
-#
-# <a href="http://www.gdal.org/gdalwarper_8h.html">Documentation for GDAL warper</a>
 
 ## @fn ComputeProximity(Geo::GDAL::Band src, Geo::GDAL::Band proximity, \%options, $callback, $callback_data)
 # @param src The raster from which the proximities are computed from.
@@ -317,8 +263,6 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn RasterizeLayer(Geo::GDAL::Dataset ds, \@bands, Geo::OGR::Layer layer, $transformer, $arg, \@burn_values, \%options, $callback, $callback_data)
 # @param ds
@@ -331,8 +275,6 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn Polygonize(Geo::GDAL::Band src, Geo::GDAL::Band mask, Geo::OGR::Layer out, $PixValField, \%options, $callback, $callback_data)
 # @param src
@@ -346,8 +288,6 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn SieveFilter(Geo::GDAL::Band src, Geo::GDAL::Band mask, Geo::GDAL::Band dst, $threshold, $connectedness, \%options, $callback, $callback_data)
 # Removes small raster polygons.
@@ -360,8 +300,6 @@
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
 
 ## @fn RegenerateOverviews(Geo::GDAL::Band src, \@overviews, $resampling, $callback, $callback_data)
 # @todo This is not yet available
@@ -430,17 +368,11 @@
 # @return
 
 
-## @class Geo::GDAL::AsyncReader
-# @isa (Geo::GDAL)
-# This class is not yet documented not tested in the GDAL Perl wrappers
-
-## @ignore GetNextUpdatedRegion
-## @ignore LockBuffer
-## @ignore UnlockBuffer
-
-
 ## @class Geo::GDAL::MajorObject
 # @isa (Geo::GDAL)
+
+## @ignore DISOWN
+## @ignore ACQUIRE
 
 ## @attr DOMAINS
 # a class specific list, well known metadata domains
@@ -458,22 +390,16 @@
 ## @method SetDescription($NewDesc)
 # @param NewDesc
 
-## @ignore SetMetadataItem
-
-## @ignore GetMetadataItem
-
 ## @method \%Metadata(\%metadata = undef, $domain = '')
 # @param metadata
 # @param domain
 # @return the metadata in a non-void context.
 
 ## @method \%GetMetadata($domain = "")
-# @note see Metadata
 # @param domain
 # @return
 
 ## @method SetMetadata(\%metadata, $domain = "")
-# @note see Metadata
 # @param metadata
 # @param domain
 
@@ -481,11 +407,12 @@
 ## @class Geo::GDAL::Driver
 # @isa (Geo::GDAL::MajorObject Geo::GDAL)
 
-## @ignore Register
+## @ignore DISOWN
+## @ignore ACQUIRE
 
-## @ignore Deregister
+## @ignore Register()
 
-## @ignore CopyFiles
+## @ignore Deregister()
 
 ## @attr ShortName
 # $driver->{ShortName}
@@ -508,7 +435,6 @@
 # @return A list of capabilities. The class method returns a list of
 # all potential capabilities a driver may have; the object method
 # returns a list of all capabilities the driver has.
-# Currently capabilities are 'Create' and 'CreateCopy'.
 # Examples.
 # \code
 # @all_capabilities = Geo::GDAL::Driver::Capabilities;
@@ -517,7 +443,7 @@
 
 ## @method $TestCapability($cap)
 # Test whether the driver has the specified capability.
-# @param cap A capability string (one of those returned by Capabilities).
+# @param cap A capability string.
 # @return a boolean value.
 
 ## @method $Extension()
@@ -536,26 +462,20 @@
 
 ## @method Geo::GDAL::Dataset Create($name, $xsize, $ysize, $bands =1, $type = 'Byte', \%options = undef)
 # Create a GDAL dataset using this driver.
-# \note a.k.a. CreateDataset
-# Create a new Geo::GDAL::Dataset
+# \note aka CreateDataset
+# @brief Create a new Geo::GDAL::Dataset
 # @param name
 # @param xsize
 # @param ysize
 # @param bands
 # @param type One of the data types this driver supports.
 # @param options An anonymous hash of driver specific parameters.
-#
-# Usage:
-# \code
-# $ds = Geo::GDAL::Dataset::Create(...arguments...);
-# \endcode
 # @return a new Geo::GDAL::Dataset object
 
-## @ignore CreateCopy
-
 ## @method Geo::GDAL::Dataset Copy($name, $src, $strict = 1, \%options = undef)
-# Create a new Geo::GDAL::Dataset as a copy of an existing dataset.
-# @note a.k.a. CreateCopy 
+# Copy a GDAL dataset.
+# \note aka CopyDataset
+# @brief Create a new Geo::GDAL::Dataset as a copy of an existing dataset.
 # @param name
 # @param src A Geo::GDAL::Dataset object.
 # @param strict
@@ -568,6 +488,10 @@
 
 ## @class Geo::GDAL::GCP
 # @isa (Geo::GDAL)
+
+## @ignore DISOWN
+## @ignore ACQUIRE
+## @ignore DESTROY
 
 ## @cmethod $new($x = 0.0, $y = 0.0, $z = 0.0, $pixel = 0.0, $line = 0.0, $info = "", $id = "")
 # @param x
@@ -606,6 +530,10 @@
 ## @class Geo::GDAL::Dataset
 # @isa (Geo::GDAL::MajorObject Geo::GDAL)
 
+## @ignore DISOWN
+## @ignore ACQUIRE
+## @ignore DESTROY
+
 ## @attr RasterXSize
 # scalar (access as $dataset->{RasterXSize})
 
@@ -630,9 +558,6 @@
 # @param access Either ReadOnly or Update.
 # @return a new Geo::GDAL::Dataset object.
 
-## @method @GetFileList()
-# @return list of files GDAL believes to be part of this dataset.
-
 ## @method @Size()
 # @return (width, height)
 
@@ -641,7 +566,7 @@
 
 ## @method Geo::GDAL::Band Band($index)
 # Create a band object for the band within the dataset.
-# \note a.k.a. GetRasterBand
+# \note aka GetRasterBand
 # @param index 1...RasterCount
 # @return a new Geo::GDAL::Band object
 
@@ -656,7 +581,8 @@
 ## @method $GetProjection()
 # @return the projection as WKT
 
-## @ignore GetProjectionRef
+## @ignore $GetProjectionRef()
+# @return the projection as WKT
 
 ## @method $SetProjection($proj)
 # @param proj projection as WKT
@@ -746,7 +672,8 @@
 ## @class Geo::GDAL::Band
 # @isa ( Geo::GDAL::MajorObject Geo::GDAL )
 
-## @attr list COLOR_INTERPRETATIONS
+## @ignore DISOWN
+## @ignore ACQUIRE
 
 ## @attr XSize
 # scalar (access as $band->{XSize})
@@ -754,16 +681,9 @@
 ## @attr YSize
 # scalar (access as $band->{YSize})
 
-## @ignore GetBand
-
-## @method $GetBandNumber()
-# @note a.k.a. GetBand
-# @return the number of this band.
-
 ## @method $DataType()
 # @return a data type string (Byte, UInt16, Int16, UInt32, Int32, Float32,
 # Float64, CInt16, CInt32, CFloat32, or CFloat64).
-
 ## @method @Size()
 # @return the size of the band as a list (width, height).
 
@@ -771,51 +691,26 @@
 # @return the size of a preferred i/o raster blocks as a list (width,
 # height).
 
-## @ignore GetRasterColorInterpretation
-## @ignore SetRasterColorInterpretation
-## @ignore GetColorInterpretation
-## @ignore SetColorInterpretation
-
 ## @method $ColorInterpretation($color_interpretation)
-# @note a.k.a. GetRasterColorInterpretation and GetColorInterpretation
-# (get only and returns an integer), SetRasterColorInterpretation and
-# SetColorInterpretation (set only and requires an integer)
-# @param color_interpretation [optional] new color interpretation, one
-# of \@Geo::GDAL::Band::COLOR_INTERPRETATIONS
-# @return color interpretation, one of \@Geo::GDAL::Band::COLOR_INTERPRETATIONS
-
-## @ignore GetNoDataValue
-## @ignore SetNoDataValue
+# Color interpretation is currently one of Undefined GrayIndex
+# PaletteIndex RedBand GreenBand BlueBand AlphaBand HueBand
+# SaturationBand LightnessBand CyanBand MagentaBand YellowBand
+# BlackBand
+# @param color_interpretation [optional] new color interpretation
+# @return color interpretation
 
 ## @method $NoDataValue($NoDataValue)
-# @note a.k.a. GetNoDataValue (get only), SetNoDataValue (set only)
 # @param NoDataValue [optional]
 # Get or set the no data value.
 # @note There does not exist a good way to clear the no data
 # value. $band->NoDataValue(undef) does not do what you want.
 # @return the nodata value.
 
-## @ignore GetUnitType
-## @ignore SetUnitType
+## @method $GetNoDataValue()
+# @return number (the "no data" value) or undef (there is no "no data" value).
 
-## @method Unit($type)
-# @param [optional] the unit (a string).
-# @return the unit (a string).
-# @since version 1.9 of the bindings.
-
-## @ignore GetScale
-## @ignore SetScale
-## @ignore GetOffset
-## @ignore SetOffset
-
-## @method ScaleAndOffset($scale, $offset)
-# Scale and offset are used to transform raw pixel values into the
-# units returned by GetUnits(). The conversion function is:
-# \code
-# Units value = (raw value * scale) + offset
-# \endcode
-# @return ($scale, $offset)
-# @since version 1.9 of the bindings.
+## @method SetNoDataValue($NoDataValue)
+# @param NoDataValue A number. undef does not do what it should do.
 
 ## @method $GetMinimum()
 # @return statistical minimum of the band or undef if statistics are
@@ -825,10 +720,21 @@
 # @return statistical minimum of the band or undef if statistics are
 # not kept or computed.
 
-## @method @ComputeStatistics($approx_ok)
-# @param approx_ok Whether it is allowed to compute the statistics
-# based on overviews or similar.
-# @return a list ($min, $max, $mean, $stddev).
+## @method $GetOffset()
+# Scale and offset used to store data values in transformed form. The
+# conversion function is:
+# \code
+# Units value = (raw value * scale) + offset
+# \endcode
+# @return offset or undef.
+
+## @method $GetScale()
+# Scale and offset are used to store data values in transformed form. The
+# conversion function is:
+# \code
+# Units value = (raw value * scale) + offset
+# \endcode
+# @return scale or undef.
 
 ## @method @GetStatistics($approx_ok, $force)
 # @param approx_ok Whether it is allowed to compute the statistics
@@ -850,9 +756,6 @@
 ## @method Geo::GDAL::Band GetOverview($band)
 # @param band 0..GetOverviewCount-1
 # @return a new Geo::GDAL::Band object.
-
-## @method HasArbitraryOverviews()
-# @return true or false.
 
 ## @method $Checksum($xoff = 0, $yoff = 0, $xsize = undef, $ysize = undef)
 # Computes a checksum from the raster or a part of it.
@@ -881,11 +784,6 @@
 # @param yoff
 
 ## @method \@ReadTile($xoff = 0, $yoff = 0, $xsize = <width>, $ysize = <height>)
-#
-# Usage example:
-# \code
-# print "@$_\n" for ( @{ $band->ReadTile() } );
-# \endcode
 # @param xoff
 # @param yoff
 # @param xsize
@@ -921,26 +819,14 @@
 # - \a Min the lower bound, default is -0.5
 # - \a Max the upper bound, default is 255.5
 # - \a Buckets the number of buckets in the histogram, default is 256
-# - \a IncludeOutOfRange whether to use the first and last values in the returned list
-# for out of range values, default is false;
+# - \a IncludeOutOfRange whether to use $histogram[0] and
+# $histogram[$#histogram] for out of range values, default is false;
 # the bucket size is (Max-Min) / Buckets if this is false and
 # (Max-Min) / (Buckets-2) if this is true
 # - \a ApproxOK if histogram can be computed from overviews, default is false
 # - \a Progress an optional progress function, the default is undef
 # - \a ProgressData data for the progress function, the default is undef
 # @return a list which contains the count of values in each bucket
-
-## @method @GetDefaultHistogram($force = 1, $callback = undef, $callback_data = undef)
-# @param force true to force the computation
-# @param callback [optional] a reference to a subroutine, which will
-# be called with parameters (number progress, string msg, callback_data)
-# @param callback_data [optional]
-# @return a list: ($min, $max, arrayref histogram).
-
-## @method @SetDefaultHistogram($min, $max, $histogram)
-# @param min
-# @param max
-# @param histogram reference to an array containing the histogram
 
 ## @method FlushCache()
 # Write cached data to disk. There is usually no need to call this
@@ -951,16 +837,10 @@
 # @param ColorTable [optional] a Geo::GDAL::ColorTable object
 # @return a new Geo::GDAL::ColorTable object in a non-void context.
 
-## @ignore GetRasterColorTable
-
-## @method Geo::GDAL::ColorTable GetColorTable()
-# @note a.k.a. GetRasterColorTable, see also ColorTable
+## @method Geo::GDAL::ColorTable GetRasterColorTable()
 # @return a color table object.
 
-## @ignore SetRasterColorTable
-
-## @method SetColorTable($ColorTable)
-# @note a.k.a. SetRasterColorTable, see also ColorTable
+## @method SetRasterColorTable($ColorTable)
 # @param ColorTable A color table object.
 
 ## @method CreateMaskBand()
@@ -973,16 +853,10 @@
 # @param names [optional]
 # @return
 
-## @ignore GetCategoryNames
-
 ## @method $GetRasterCategoryNames()
-# @note a.k.a. GetCategoryNames, see also CategoryNames
-# @return names
-
-## @ignore SetCategoryNames
+# @return
 
 ## @method SetRasterCategoryNames($names)
-# @note a.k.a. SetCategoryNames, see also CategoryNames
 # @param names
 
 ## @method Geo::GDAL::RasterAttributeTable AttributeTable($AttributeTable)
@@ -999,11 +873,8 @@
 ## @method SetDefaultRAT($AttributeTable)
 # @param AttributeTable a Geo::GDAL::RasterAttributeTable object
 
-## @ignore ContourGenerate
-
 ## @method Geo::OGR::Layer Contours($DataSource, \%LayerConstructor, $ContourInterval, $ContourBase, \@FixedLevels, $NoDataValue, $IDField, $ElevField, $callback, $callback_data)
 # Generate contours for this raster band. This method can also be used with named parameters.
-# @note This method is a wrapper for ContourGenerate.
 # @param DataSource a Geo::OGR::DataSource object, default is a Memory data source
 # @param LayerConstructor data for Geo::OGR::DataSource::CreateLayer, default is {Name => 'contours'}
 # @param ContourInterval default is 100
@@ -1017,33 +888,25 @@
 # @param callback_data [optional]
 # @return
 
-## @method FillNodata($mask, $max_search_dist = 10, $smoothing_iterations = 0, $options = {}, $callback, $callback_data)
-# @note This is a wrapper for Geo::GDAL::FillNodata.
-# @param mask a mask band indicating pixels to be interpolated (zero valued)
-# @param max_search_dist [optional] the maximum number of pixels to
-# search in all directions to find values to interpolate from.
-# @param smoothing_iterations [optional] the number of 3x3 smoothing filter passes to run (0 or more).
-# @param options [optional] A reference to a hash. No options have been defined so far for this algorithm.
-# @param callback [optional] a reference to a subroutine, which will
-# be called with parameters (number progress, string msg, callback_data)
-# @param callback_data [optional]
-#
-# <a href="http://www.gdal.org/gdal__alg_8h.html">Documentation for GDAL algorithms</a>
+## @method $GetRasterColorInterpretation()
+# @deprecated use Geo::GDAL::Band::ColorInterpretation, which understands strings
+
+## @method SetRasterColorInterpretation()
+# @deprecated use Geo::GDAL::Band::ColorInterpretation, which understands strings
 
 
 ## @class Geo::GDAL::ColorTable
 # @isa ( Geo::GDAL::MajorObject Geo::GDAL )
+
+## @ignore DISOWN
+## @ignore ACQUIRE
+## @ignore DESTROY
 
 ## @cmethod Geo::GDAL::ColorTable new($GDALPaletteInterp = $Geo::GDAL::Const::GPI_RGB)
 # @deprecated use Geo::GDAL::ColorTable::create, which uses string constants
 # @return a new Geo::GDAL::ColorTable object
 
 ## @cmethod Geo::GDAL::ColorTable create($GDALPaletteInterp = 'RGB')
-#
-# Usage:
-# \code
-# $ct = Geo::GDAL::ColorTable->create(...arguments...);
-# \endcode
 # @return a new Geo::GDAL::ColorTable object
 
 ## @method Geo::GDAL::ColorTable Clone()
@@ -1087,6 +950,10 @@
 
 ## @class Geo::GDAL::RasterAttributeTable
 # @isa = ( Geo::GDAL::MajorObject Geo::GDAL )
+
+## @ignore DISOWN
+## @ignore ACQUIRE
+## @ignore DESTROY
 
 ## @cmethod Geo::GDAL::RasterAttributeTable new()
 # @return a new Geo::GDAL::RasterAttributeTable object
@@ -1174,15 +1041,3 @@
 # @param row
 # @param column
 # @param value
-
-## @ignore GetLinearBinning
-## @ignore SetLinearBinning
-
-## @method LinearBinning($Row0MinIn, $BinSizeIn)
-# @param Row0MinIn [optional] the lower bound (pixel value) of the first category.
-# @param BinSizeIn [optional] the width of each category (in pixel value units).
-# @return ($Row0MinIn, $BinSizeIn) or an empty list if LinearBinning is not set.
-
-
-## @class Geo::GDAL::Transformer
-# This class is not yet documented for the GDAL Perl bindings.

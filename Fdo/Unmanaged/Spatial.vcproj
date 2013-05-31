@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOSpatial.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.8.1.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -197,7 +197,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOSpatial.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.8.1.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -286,7 +286,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOSpatial.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.8.1.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -376,7 +376,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Versioning FDOSpatial.dll"
-				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.8.1.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
+				CommandLine="$(FDOTHIRDPARTY)\util\stampver\StampVer.exe -f&quot;3.7.0.0%FDO_VERSION%&quot; -v&quot;..\SubDoc\Fdo.version&quot; $(OutDir)\FDOSpatial.dll"
 			/>
 		</Configuration>
 		<Configuration
@@ -676,14 +676,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\Spatial\rtree.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Spatial\rtree.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\Spatial\SpatialEnvelope.cpp"
 				>
 			</File>
@@ -697,10 +689,6 @@
 			</File>
 			<File
 				RelativePath=".\Src\Spatial\SpatialGridTransform.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Spatial\SpatialIndex.cpp"
 				>
 			</File>
 			<File
@@ -746,10 +734,6 @@
 			</File>
 			<File
 				RelativePath=".\Inc\Spatial\SpatialGridTransform.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Inc\Spatial\SpatialIndex.h"
 				>
 			</File>
 			<File

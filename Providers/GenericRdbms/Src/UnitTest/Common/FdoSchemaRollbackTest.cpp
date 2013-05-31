@@ -243,11 +243,9 @@ void FdoSchemaRollbackTest::DoTest ( bool bPreClear, const wchar_t* schemaName, 
 	}
 	catch ( FdoException* e ) 
 	{
-        if ( staticConn ) 
-            delete staticConn;
+        delete staticConn;
 		try {
-            if ( connection ) 
-    			connection->Close(); 
+			connection->Close(); 
 		}
 		catch ( ... ) 
 		{
@@ -256,18 +254,14 @@ void FdoSchemaRollbackTest::DoTest ( bool bPreClear, const wchar_t* schemaName, 
 	}
 	catch ( CppUnit::Exception e ) 
 	{
-        if ( staticConn ) 
-            delete staticConn;
-		if ( connection )
-            connection->Close(); 
+        delete staticConn;
+		connection->Close(); 
 		throw;
 	}
    	catch (...)
    	{
-        if ( staticConn ) 
-            delete staticConn;
-		if ( connection )
-            connection->Close(); 
+        delete staticConn;
+		connection->Close(); 
    		CPPUNIT_FAIL ("caught unexpected exception");
    	}
 		

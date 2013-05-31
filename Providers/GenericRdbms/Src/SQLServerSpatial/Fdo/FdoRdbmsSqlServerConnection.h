@@ -155,7 +155,6 @@ public:
     virtual void EndStoredProcedure();
 
     virtual FdoRdbmsSqlBuilder* GetSqlBuilder();
-    virtual FdoInt64 GetProcessedSRID(FdoString* typeName, FdoInt64 srid);
 
     bool GetServerSideFunctionCollection (FdoFunctionDefinitionCollection* coll);
 };

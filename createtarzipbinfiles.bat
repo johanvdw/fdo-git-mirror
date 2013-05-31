@@ -34,8 +34,8 @@ SET ODBCENABLE=yes
 SET SQLSPATIALENABLE=yes
 SET SHOWHELP=no
 SET FDOTARZIPFOLDER=c:\OpenSource_FDO
-SET FDOBUILDNUMBER=L00X
-SET FDORELNUMBER=3.8.1
+SET FDOBUILDNUMBER=J00X
+SET FDORELNUMBER=3.7.0
 SET FDOZIPTEMP=7zTemp
 
 :study_params
@@ -202,7 +202,7 @@ if "%FDOCOREENABLE%"=="no" goto start_zip_shp
    copy "%FDOROOT%\Bin\XalanMessages_1_11.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\boost_date_time-vc100-mt-1_42.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\boost_thread-vc100-mt-1_42.dll" %FDOZIPTEMP%\Bin\
-   copy "%FDOROOT%\Bin\gdal19.dll" %FDOZIPTEMP%\Bin\
+   copy "%FDOROOT%\Bin\gdal17.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOMessage.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOCommon.dll" %FDOZIPTEMP%\Bin\
    copy "%FDOROOT%\Bin\FDOGeometry.dll" %FDOZIPTEMP%\Bin\

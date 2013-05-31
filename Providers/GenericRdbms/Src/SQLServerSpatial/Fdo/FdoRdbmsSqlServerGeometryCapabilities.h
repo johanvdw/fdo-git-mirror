@@ -69,14 +69,11 @@ public:
     {
         static FdoGeometryComponentType  rdbmsGeomCompTypes[] = {
                                             FdoGeometryComponentType_LinearRing,
+                                            FdoGeometryComponentType_CircularArcSegment,
                                             FdoGeometryComponentType_LineStringSegment,
-                                            FdoGeometryComponentType_Ring,
-                                            FdoGeometryComponentType_CircularArcSegment
+                                            FdoGeometryComponentType_Ring
                                     };
-        if (mGeomVersion >= 2)
-            length = sizeof( rdbmsGeomCompTypes )/sizeof( FdoGeometryComponentType );
-        else
-            length = 2;
+        length = sizeof( rdbmsGeomCompTypes )/sizeof( FdoGeometryComponentType );
         return rdbmsGeomCompTypes;
     }
 

@@ -58,6 +58,9 @@ else( CMAKE_COMPILER_IS_GNUCXX )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
 target_link_libraries( FdoMySQL
+	xalan-c
+	xalanMsg
+	xerces-c
 	${MYSQL_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	FDO

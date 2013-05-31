@@ -20,7 +20,7 @@
 *                        geometry srid (Spatial Reference Id)           *
 *                                                                       *
 * Synopsis                                                              *
-*   rdbi_geom_srid_set( int64 srid)                                      *
+*   rdbi_geom_srid_set( long srid)                                      *
 *       srid - input                                                    *                                                                    *
 *                                                                       *
 * Description                                                           *
@@ -41,39 +41,16 @@
 #include <Inc/Rdbi/cursor.h>   
 #include	<Inc/Rdbi/context.h>
 
-int rdbi_geom_srid_set ( rdbi_context_def *context, int sqlid, char *col_name, 
-#ifdef _WIN32
-    _int64 srid ) 
-#else
-    int64_t srid ) 
-#endif
+int rdbi_geom_srid_set ( rdbi_context_def *context, int sqlid, char *col_name, long srid ) 
 {
     rdbi_cursor_def *cursor;        /* for convenience          */
     int     rc = FALSE;
 
-    debug_on1("rdbi_geom_srid_set", "sqlid: %dd", sqlid);
+    debug_on1("rdbi_geom_srid_set", "sqlid: %d", sqlid);
 
     cursor = context->rdbi_cursor_ptrs[sqlid];
-    if (context->dispatch.geom_srid_set != NULL)
-        rc = (*(context->dispatch.geom_srid_set))( context->drvr, cursor->vendor_data, col_name, srid );
-    else
-        rc = TRUE;
-
-    debug_return(NULL, rc );
-}
-
-int rdbi_geom_type_set ( rdbi_context_def *context, int sqlid, char *col_name, char type ) 
-{
-    rdbi_cursor_def *cursor;        /* for convenience          */
-    int     rc = FALSE;
-
-    debug_on1("rdbi_geom_type_set", "sqlid: %d", sqlid);
-
-    cursor = context->rdbi_cursor_ptrs[sqlid];
-    if (context->dispatch.geom_type_set != NULL)
-        rc = (*(context->dispatch.geom_type_set))( context->drvr, cursor->vendor_data, col_name, type );
-    else
-        rc = TRUE;
+     
+    rc = (*(context->dispatch.geom_srid_set))( context->drvr, cursor->vendor_data, col_name, srid );
 
     debug_return(NULL, rc );
 }

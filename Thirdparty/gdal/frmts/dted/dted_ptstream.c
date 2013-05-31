@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_ptstream.c 23425 2011-11-26 19:14:25Z rouault $
+ * $Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  DTED Translator
  * Purpose:  DTED Point Stream Writer.
@@ -29,7 +29,7 @@
 
 #include "dted_api.h"
 
-CPL_CVSID("$Id: dted_ptstream.c 23425 2011-11-26 19:14:25Z rouault $");
+CPL_CVSID("$Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $");
 
 typedef struct {
     char     *pszFilename;
@@ -563,7 +563,7 @@ void DTEDPtStreamSetMetadata( void *hStream, DTEDMetaDataCode eCode,
 {
     DTEDPtStream *psStream = (DTEDPtStream *) hStream;
 
-    if( (int)eCode >= 0 && eCode < DTEDMD_MAX+1 )
+    if( eCode >= 0 && eCode < DTEDMD_MAX+1 )
     {
         CPLFree( psStream->apszMetadata[eCode] );
         psStream->apszMetadata[eCode] = CPLStrdup( pszValue );

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.cpp 23589 2011-12-17 14:21:01Z rouault $
+ * $Id: kml.cpp 17946 2009-11-01 18:31:43Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -213,15 +213,6 @@ void XMLCALL KML::startElement(void* pUserData, const char* pszName, const char*
     if(poKML->poTrunk_ == NULL 
     || (poKML->poCurrent_->getName()).compare("description") != 0)
     {
-        if (poKML->nDepth_ == 1024)
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "Too big depth level (%d) while parsing KML.",
-                      poKML->nDepth_ );
-            XML_StopParser(poKML->oCurrentParser, XML_FALSE);
-            return;
-        }
-
         poMynew = new KMLNode();
             poMynew->setName(pszName);
         poMynew->setLevel(poKML->nDepth_);
@@ -472,20 +463,12 @@ void XMLCALL KML::dataHandler(void* pUserData, const char* pszData, int nLen)
         XML_StopParser(poKML->oCurrentParser, XML_FALSE);
     }
 
-    try
-    {
-        std::string sData(pszData, nLen);
+    std::string sData(pszData, nLen);
 
-        if(poKML->poCurrent_->numContent() == 0)
-            poKML->poCurrent_->addContent(sData);
-        else
-            poKML->poCurrent_->appendContent(sData);
-    }
-    catch(const std::exception& ex)
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "libstdc++ exception : %s", ex.what());
-        XML_StopParser(poKML->oCurrentParser, XML_FALSE);
-    }
+    if(poKML->poCurrent_->numContent() == 0)
+        poKML->poCurrent_->addContent(sData);
+    else
+        poKML->poCurrent_->appendContent(sData);
 }
 
 bool KML::isValid()
@@ -504,9 +487,9 @@ std::string KML::getError() const
 	return sError_;
 }
 
-int KML::classifyNodes()
+void KML::classifyNodes()
 {
-    return poTrunk_->classify(this);
+    poTrunk_->classify(this);
 }
 
 void KML::eliminateEmpty()

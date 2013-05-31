@@ -789,25 +789,9 @@ int GdbiCommands::geom_from_fgf (
 int GdbiCommands::geom_srid_set(
 	int				sqlid,
 	char			*geom_col_name,
-#ifdef _WIN32
-	_int64			srid)
-#else
-	int64_t			srid)
-#endif
+	long			srid)
 {
 	int rc = ::rdbi_geom_srid_set(m_pRdbiContext, sqlid, geom_col_name, srid);
-	if (rc == RDBI_SUCCESS)
-		return rc;
-
-	return RDBI_GENERIC_ERROR;
-}
-
-int GdbiCommands::geom_type_set(
-	int				sqlid,
-	char			*geom_col_name,
-	char			type)
-{
-	int rc = ::rdbi_geom_type_set(m_pRdbiContext, sqlid, geom_col_name, type);
 	if (rc == RDBI_SUCCESS)
 		return rc;
 

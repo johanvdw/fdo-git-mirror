@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerentitynames.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigerentitynames.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerEntityNames, providing access to .RTC files.
@@ -30,11 +30,11 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerentitynames.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigerentitynames.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #define FILE_CODE "C"
 
-static const TigerFieldInfo rtC_2002_fields[] = {
+static TigerFieldInfo rtC_2002_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "STATE",      'L', 'N', OFTInteger,    6,   7,   2,       1,   1,     1 },
@@ -55,14 +55,14 @@ static const TigerFieldInfo rtC_2002_fields[] = {
   { "RS_C2",      'L', 'N', OFTInteger,   55,  62,   8,       1,   1,     1 },
   { "NAME",       'L', 'A', OFTString,    63, 122,  60,       1,   1,     1 },
 };
-static const TigerRecordInfo rtC_2002_info =
+static TigerRecordInfo rtC_2002_info =
   {
     rtC_2002_fields,
     sizeof(rtC_2002_fields) / sizeof(TigerFieldInfo),
     122
   };
 
-static const TigerFieldInfo rtC_2000_Redistricting_fields[] = {
+static TigerFieldInfo rtC_2000_Redistricting_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "STATE",      'L', 'N', OFTInteger,    6,   7,   2,       1,   1,     1 },
@@ -81,14 +81,14 @@ static const TigerFieldInfo rtC_2000_Redistricting_fields[] = {
   { "AITSCE",     'L', 'N', OFTInteger,   50,  52,   3,       1,   1,     1 },
   { "NAME",       'L', 'A', OFTString,    53, 112,  66,       1,   1,     1 }
 };
-static const TigerRecordInfo rtC_2000_Redistricting_info =
+static TigerRecordInfo rtC_2000_Redistricting_info =
   {
     rtC_2000_Redistricting_fields,
     sizeof(rtC_2000_Redistricting_fields) / sizeof(TigerFieldInfo),
     112
   };
 
-static const TigerFieldInfo rtC_fields[] = {
+static TigerFieldInfo rtC_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "STATE",      'L', 'N', OFTInteger,    6,   7,   2,       1,   1,     1 },
@@ -106,7 +106,7 @@ static const TigerFieldInfo rtC_fields[] = {
   { "UA",         'L', 'N', OFTInteger,   43,  46,   4,       1,   1,     1 },
   { "NAME",       'L', 'A', OFTString,    47, 112,  66,       1,   1,     1 }
 };
-static const TigerRecordInfo rtC_info =
+static TigerRecordInfo rtC_info =
   {
     rtC_fields,
     sizeof(rtC_fields) / sizeof(TigerFieldInfo),
@@ -119,7 +119,7 @@ static const TigerRecordInfo rtC_info =
 /************************************************************************/
 
 TigerEntityNames::TigerEntityNames( OGRTigerDataSource * poDSIn,
-                            const char * pszPrototypeModule ) : TigerFileBase(NULL, FILE_CODE)
+                            const char * pszPrototypeModule )
 
 {
     poDS = poDSIn;
@@ -128,12 +128,108 @@ TigerEntityNames::TigerEntityNames( OGRTigerDataSource * poDSIn,
     poFeatureDefn->SetGeomType( wkbPoint );
 
     if( poDS->GetVersion() >= TIGER_2002 ) {
-      psRTInfo = &rtC_2002_info;
+      psRTCInfo = &rtC_2002_info;
     } else if( poDS->GetVersion() >= TIGER_2000_Redistricting ) {
-      psRTInfo = &rtC_2000_Redistricting_info;
+      psRTCInfo = &rtC_2000_Redistricting_info;
     } else {
-      psRTInfo = &rtC_info;
+      psRTCInfo = &rtC_info;
     }
 
-    AddFieldDefns( psRTInfo, poFeatureDefn );
+    AddFieldDefns( psRTCInfo, poFeatureDefn );
+}
+
+/************************************************************************/
+/*                         ~TigerEntityNames()                          */
+/************************************************************************/
+
+TigerEntityNames::~TigerEntityNames()
+
+{
+}
+
+/************************************************************************/
+/*                             SetModule()                              */
+/************************************************************************/
+
+int TigerEntityNames::SetModule( const char * pszModule )
+
+{
+    if( !OpenFile( pszModule, "C" ) )
+        return FALSE;
+
+    EstablishFeatureCount();
+    
+    return TRUE;
+}
+
+/************************************************************************/
+/*                             GetFeature()                             */
+/************************************************************************/
+
+OGRFeature *TigerEntityNames::GetFeature( int nRecordId )
+
+{
+    char        achRecord[OGR_TIGER_RECBUF_LEN];
+
+    if( nRecordId < 0 || nRecordId >= nFeatures )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Request for out-of-range feature %d of %sC",
+                  nRecordId, pszModule );
+        return NULL;
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Read the raw record data from the file.                         */
+    /* -------------------------------------------------------------------- */
+
+    if( fpPrimary == NULL )
+        return NULL;
+
+    if( VSIFSeek( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Failed to seek to %d of %sC",
+                  nRecordId * nRecordLength, pszModule );
+        return NULL;
+    }
+
+    if( VSIFRead( achRecord, psRTCInfo->nRecordLength, 1, fpPrimary ) != 1 )
+    {
+        CPLError( CE_Failure, CPLE_FileIO,
+                  "Failed to read record %d of %sC",
+                  nRecordId, pszModule );
+        return NULL;
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Set fields.                                                     */
+    /* -------------------------------------------------------------------- */
+
+    OGRFeature  *poFeature = new OGRFeature( poFeatureDefn );
+
+    SetFields( psRTCInfo, poFeature, achRecord );
+
+    return poFeature;
+}
+
+/************************************************************************/
+/*                           CreateFeature()                            */
+/************************************************************************/
+
+OGRErr TigerEntityNames::CreateFeature( OGRFeature *poFeature )
+
+{
+    char        szRecord[OGR_TIGER_RECBUF_LEN];
+
+    if( !SetWriteModule( FILE_CODE, psRTCInfo->nRecordLength+2, poFeature ) )
+        return OGRERR_FAILURE;
+
+    memset( szRecord, ' ', psRTCInfo->nRecordLength );
+
+    WriteFields( psRTCInfo, poFeature, szRecord );
+
+    WriteRecord( szRecord, psRTCInfo->nRecordLength, FILE_CODE );
+
+    return OGRERR_NONE;
 }

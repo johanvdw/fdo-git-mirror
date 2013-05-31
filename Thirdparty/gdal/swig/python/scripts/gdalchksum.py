@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdalchksum.py 18952 2010-02-28 11:59:53Z rouault $
+#  $Id: gdalchksum.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Project:  GDAL
 #  Purpose:  Application to checksum a GDAL image file.
@@ -82,7 +82,7 @@ if filename is None:
 
 ds = gdal.Open( filename )
 if ds is None:
-    print('Unable to open %s' % filename)
+    print('Unable to open ', filename)
     sys.exit(1)
 
 # Default values

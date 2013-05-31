@@ -6,8 +6,6 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/Nls
         ${CMAKE_CURRENT_SOURCE_DIR}/Geometry
 		${CMAKE_CURRENT_BINARY_DIR}/Message
-	${XERCESC_INCLUDE_DIR}
-	${XALANC_INCLUDE_DIR}
 		)
 	
 if( UNIX )
@@ -227,7 +225,6 @@ set( FDOCommon_SRCS
 	Common/Xsl/XML885915Transcoder.cpp
 	Common/Gml212/Schema.cpp
 	Common/Gml212/Gml212.cpp
-	Common/Gml311/Gml311.cpp
 )
 
 set( FDOSpatial_SRCS
@@ -237,8 +234,6 @@ set( FDOSpatial_SRCS
 	Spatial/SpatialUtilityGeometryExtents.cpp
 	Spatial/SpatialUtilityCircularArc.cpp
 	Spatial/SpatialGeometryConverter.cpp
-	Spatial/SpatialIndex.cpp
-	Spatial/rtree.cpp
 )
 
 set( FDOGeometry_SRCS
@@ -292,8 +287,9 @@ add_dependencies( FDO
 	ProcessedFiles )
 
 target_link_libraries( FDO
-	${XALANC_LIBRARIES}
-	${XERCESC_LIBRARIES}
+	xalan-c
+	xalanMsg
+	xerces-c
 	pthread
 	dl
 	)

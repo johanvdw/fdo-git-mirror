@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_java.i 22044 2011-03-26 14:47:20Z rouault $
+ * $Id: typemaps_java.i 18044 2009-11-18 21:26:29Z rouault $
  *
  * Name:     typemaps_java.i
  * Project:  GDAL SWIG Interface
@@ -1112,14 +1112,14 @@
 
 
 /***************************************************
- * Typemaps for char** CSL
+ * Typemaps for char **out_ppsz_and_free
  ***************************************************/
 
 /* Almost same as %typemap(out) char **options */
 /* but we CSLDestroy the char** pointer at the end */
-%typemap(out) char **CSL
+%typemap(out) char **out_ppsz_and_free
 {
-  /* %typemap(out) char **CSL -> vector of strings */
+  /* %typemap(out) char **out_ppsz_and_free -> vector of strings */
   char **stringarray = $1;
   const jclass vector = jenv->FindClass("java/util/Vector");
   const jmethodID constructor = jenv->GetMethodID(vector, "<init>", "()V");
@@ -1138,11 +1138,11 @@
   CSLDestroy($1);
 }
 
-%typemap(jni) (char **CSL) "jobject"
-%typemap(jtype) (char **CSL) "java.util.Vector"
-%typemap(jstype) (char **CSL) "java.util.Vector"
-%typemap(javain) (char **CSL) "$javainput"
-%typemap(javaout) (char **CSL) {
+%typemap(jni) (char **out_ppsz_and_free) "jobject"
+%typemap(jtype) (char **out_ppsz_and_free) "java.util.Vector"
+%typemap(jstype) (char **out_ppsz_and_free) "java.util.Vector"
+%typemap(javain) (char **out_ppsz_and_free) "$javainput"
+%typemap(javaout) (char **out_ppsz_and_free) {
     return $jnicall;
   }
 
@@ -1611,6 +1611,7 @@ DEFINE_REGULAR_ARRAY_IN(double, jdouble, GetDoubleArrayElements, ReleaseDoubleAr
     return $jnicall;
   }
 
+
 /***************************************************
  * Typemaps for ( int *panSuccess )
  ***************************************************/
@@ -1648,62 +1649,5 @@ DEFINE_REGULAR_ARRAY_IN(double, jdouble, GetDoubleArrayElements, ReleaseDoubleAr
 %typemap(jstype) ( int *panSuccess ) "int[]"
 %typemap(javain) ( int *panSuccess ) "$javainput"
 %typemap(javaout) ( int *panSuccess ) {
-    return $jnicall;
-  }
-
-/***************************************************
- * Typemaps for Gemetry.GetPoints()
- ***************************************************/
-
-%typemap(in,numinputs=0) (int* pnCount, double** ppadfXY, double** ppadfZ) ( int nPoints = 0, double* padfXY = NULL, double* padfZ = NULL)
-{
-  /* %typemap(in,numinputs=0) (int* pnCount, double** ppadfXY, double** ppadfZ) */
-  $1 = &nPoints;
-  $2 = &padfXY;
-  $3 = &padfZ;
-}
-
-%typemap(argout)  (int* pnCount, double** ppadfXY, double** ppadfZ)
-{
-  /* %typemap(out)  (int* pnCount, double** ppadfXY, double** ppadfZ) */
-
-  int nPointCount = *($1);
-  if (nPointCount == 0)
-  {
-    $result = 0;
-  }
-  else
-  {
-    int nDimensions = (*$3 != NULL) ? 3 : 2;
-    $result = jenv->NewObjectArray(nPointCount, jenv->FindClass("java/lang/Object"), NULL);
-    for( int i=0; i< nPointCount; i++ )
-    {
-        jdoubleArray dblArray = jenv->NewDoubleArray(nDimensions);
-        jenv->SetDoubleArrayRegion(dblArray, 0, 2, &( (*$2)[2*i] ));
-        if (nDimensions == 3)
-            jenv->SetDoubleArrayRegion(dblArray, 2, 1, &( (*$3)[i] ));
-        jenv->SetObjectArrayElement($result, (jsize)i, dblArray);
-        jenv->DeleteLocalRef(dblArray);
-    }
-  }
-}
-
-%typemap(freearg)  (int* pnCount, double** ppadfXY, double** ppadfZ)
-{
-    /* %typemap(freearg)  (int* pnCount, double** ppadfXY, double** ppadfZ) */
-    VSIFree(*$2);
-    VSIFree(*$3);
-}
-
-%typemap(argout)  (retGetPoints*)
-{
-    /* foo */
-}
-
-%typemap(jni) ( retGetPoints* ) "jobjectArray"
-%typemap(jtype) ( retGetPoints* ) "double[][]"
-%typemap(jstype) ( retGetPoints* ) "double[][]"
-%typemap(javain) ( retGetPoints* ) "$javainput"
-%typemap(javaout) ( retGetPoints* ) {
     return $jnicall;
   }

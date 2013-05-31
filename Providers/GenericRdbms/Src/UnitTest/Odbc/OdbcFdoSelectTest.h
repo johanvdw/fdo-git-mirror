@@ -50,10 +50,7 @@ public:
 
     virtual int numPropertiesInPolylineClass() { return 16; };
 
-
 protected:
-    void ValidateGeometryRead(FdoIFeatureReader* reader, FdoString* geomName, FdoString* expectedValue);
-
     OdbcBaseSetup mSetup;
 };
 
@@ -163,7 +160,6 @@ class OdbcSqlServerFdoSelectTest : public OdbcFdoSelectTest
 {
     CPPUNIT_TEST_SUB_SUITE (OdbcSqlServerFdoSelectTest, OdbcFdoSelectTest);
     CPPUNIT_TEST (View1Test);
-    CPPUNIT_TEST (MultiSchemaTest);
     CPPUNIT_TEST_SUITE_END ();
 
     virtual void concurrent_select() {};    // Need to set up "testClass" class to run this.
@@ -181,7 +177,6 @@ class OdbcSqlServerFdoSelectTest : public OdbcFdoSelectTest
     virtual int numPropertiesInPolylineClass() { return 17; };
 
     virtual void View1Test();
-    virtual void MultiSchemaTest();
 };
 
 class OdbcAccessFdoSelectTest : public OdbcFdoSelectTest
@@ -193,7 +188,6 @@ class OdbcAccessFdoSelectTest : public OdbcFdoSelectTest
     CPPUNIT_TEST (View1Test);
     CPPUNIT_TEST (View2Test);
     CPPUNIT_TEST (ComparisonFilterTable1Test);
-    CPPUNIT_TEST (SpatialFilterTable1Test);
     CPPUNIT_TEST (RestrictedPropertiesTable1Test);
     CPPUNIT_TEST (TestDateFilter);
     CPPUNIT_TEST (TestDefect779194);
@@ -208,7 +202,6 @@ public:
     void View1Test();
     void View2Test();
     void ComparisonFilterTable1Test();  // Contains a spatial query
-    void SpatialFilterTable1Test();
     void RestrictedPropertiesTable1Test();
     void TestDefect779194();
     virtual void spatial_or_attribute_query ();

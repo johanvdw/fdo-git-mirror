@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: epsg_tr.py 19102 2010-03-15 23:41:44Z warmerdam $
+#  $Id: epsg_tr.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Project:  CFS OGC MapServer
 #  Purpose:  Script to create WKT and PROJ.4 dictionaries for EPSG GCS/PCS
@@ -57,13 +57,13 @@ def trHandleCode(code, gen_dict_line, report_error, output_format):
         err = 1
 
     if err != 0 and report_error:
-        print('Unable to lookup %d, either not a valid EPSG' % code)
+        print('Unable to lookup ',code,', either not a valid EPSG')
         print('code, or it the EPSG csv files are not accessable.')
         sys.exit(2)
     else:
         if output_format == '-pretty_wkt':
             if gen_dict_line:
-                print('EPSG:%d' % code)
+                print('EPSG:',code)
 
             print(prj_srs.ExportToPrettyWkt())
 
@@ -72,7 +72,7 @@ def trHandleCode(code, gen_dict_line, report_error, output_format):
             
         if output_format == '-wkt':
             if gen_dict_line:
-                print('EPSG:%d' % code)
+                print('EPSG:',code)
                     
             print(prj_srs.ExportToWkt())
                 
@@ -115,20 +115,7 @@ def trHandleCode(code, gen_dict_line, report_error, output_format):
                 proj4text = gdal.EscapeString(proj4text,scheme=gdal.CPLES_SQL)
                 print('INSERT INTO "spatial_ref_sys" ("srid","auth_name","auth_srid","srtext","proj4text") VALUES (%s,\'EPSG\',%s,\'%s\',\'%s\');' % \
                       (str(code),str(code),wkt,proj4text))
-
-        # INGRES COPY command input.
-        if output_format == '-copy':
             
-            try:
-                wkt = prj_srs.ExportToWkt()
-                proj4text = prj_srs.ExportToProj4()
-
-                print( '%d\t%d%s\t%d\t%d%s\t%d%s\n' \
-                       % (code,4,'EPSG',code,len(wkt),wkt,
-                          len(proj4text),proj4text))
-            except:
-                pass
-
 # =============================================================================
 
 if __name__ == '__main__':
@@ -150,7 +137,7 @@ if __name__ == '__main__':
         arg = argv[i]
 
         if arg == '-wkt' or arg == '-pretty_wkt' or arg == '-proj4' \
-           or arg == '-postgis' or arg == '-xml' or arg == '-copy':
+           or arg == '-postgis' or arg == '-xml':
             output_format = arg
 
         elif arg[:5] == '-skip':

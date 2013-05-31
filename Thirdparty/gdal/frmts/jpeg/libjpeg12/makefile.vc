@@ -14,7 +14,7 @@ OBJ	=	\
 
 GDAL_ROOT	=	..\..\..
 
-EXTRAFLAGS      = -DDEFAULT_MAX_MEM=500000000L $(SOFTWARNFLAGS) 
+EXTRAFLAGS      = -DDEFAULT_MAX_MEM=500000000L
 
 default:	jcapimin12.c $(OBJ)
 	xcopy /D  /Y *.obj ..\..\o
@@ -69,8 +69,11 @@ jcapimin12.c:	../libjpeg/jcapimin.c
 	ren jquant1.c jquant112.c
 	ren jquant2.c jquant212.c
 	ren jutils.c jutils12.c
+	
 
 clean:
 	-del *.obj
 	-del *.c
 	-del *.h
+
+

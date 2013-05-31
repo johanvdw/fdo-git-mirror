@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: createdata.cs 19757 2010-05-22 18:37:08Z rouault $
+ * $Id: createdata.cs 18217 2009-12-08 19:49:17Z rouault $
  *
  * Name:     createdata.cs
  * Project:  GDAL CSharp Interface
@@ -101,18 +101,6 @@ class CreateData {
         /* -------------------------------------------------------------------- */
 
         Layer layer;
-        
-        int i;
-        for(i=0;i<ds.GetLayerCount();i++)
-        {
-            layer = ds.GetLayerByIndex( i );
-            if( layer != null && layer.GetLayerDefn().GetName() == args[1])
-            {
-                Console.WriteLine("Layer already existed. Recreating it.\n");
-                ds.DeleteLayer(i);
-                break;
-            }
-        }
 
         layer = ds.CreateLayer( args[1], null, wkbGeometryType.wkbPoint, new string[] {} );
         if( layer == null )
@@ -196,7 +184,7 @@ class CreateData {
 		/* -------------------------------------------------------------------- */
 		/*      Reading the spatial reference                                   */
 		/* -------------------------------------------------------------------- */
-        OSGeo.OSR.SpatialReference sr = layer.GetSpatialRef();
+		SpatialReference sr = layer.GetSpatialRef();
 		string srs_wkt;
 		if ( sr != null ) 
 		{

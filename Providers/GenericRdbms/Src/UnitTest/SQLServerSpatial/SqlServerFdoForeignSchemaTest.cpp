@@ -38,11 +38,10 @@ void SqlServerFdoForeignSchemaTest::create_foreign_datastore()
     connection->SetConnectionString ( userConnectString);
     connection->Open();
 	FdoStringP sqlStmt;
-    FdoStringP databaseName = (FdoString*)(UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX));
 
 	if (dbExists)
 	{
-		sqlStmt = FdoStringP::Format(L"drop database \"%ls\"", (FdoString*)databaseName);
+		sqlStmt = FdoStringP::Format(L"drop database \"%ls\"", (FdoString*)(UnitTestUtil::GetEnviron("datastore", DB_NAME_SUFFIX)));
 		UnitTestUtil::Sql2Db(sqlStmt, connection);
 	}
 	sqlStmt = FdoStringP::Format(
@@ -53,23 +52,11 @@ void SqlServerFdoForeignSchemaTest::create_foreign_datastore()
 	userConnectString = UnitTestUtil::GetConnectionString(Connection_WithDatastore, DB_NAME_SUFFIX);
     connection->SetConnectionString (userConnectString);
     connection->Open ();
-    
-    try
-    {
-        databaseName += L".dbo";
-        sqlStmt = FdoStringP::Format(
-		    L"create table %ls.device_tbl (id decimal(20), string varchar(64), install_date datetime, int32 int, bigstring nvarchar(max), bigchars varchar(max) constraint device_tbl_pk primary key (id, string, install_date))", (FdoString*)databaseName);
-	    UnitTestUtil::Sql2Db(sqlStmt, connection);
-    }
-    catch(FdoException* e)
-    {
-        printf ("Exceptio: %ls\n", e->GetExceptionMessage());
-        e->Release();
-    }
-    catch(...)
-    {
-        printf ("Unknown exceptio!\n");
-    }
+
+	sqlStmt = FdoStringP::Format(
+		L"create table device_tbl (id decimal(20), string varchar(64), install_date datetime, int32 int, bigstring nvarchar(max), bigchars varchar(max) constraint device_tbl_pk primary key (id, string, install_date))");
+	UnitTestUtil::Sql2Db(sqlStmt, connection);
+
 	connection->Close();
 }
 

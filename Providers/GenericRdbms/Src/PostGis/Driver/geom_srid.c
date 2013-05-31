@@ -17,18 +17,13 @@
  */
 #include "stdafx.h"
 #include "local.h"
-#include "bind.h"
 #include <stdlib.h>
 
 int postgis_geom_srid_set ( 
 	postgis_context_def	*context,
     char   *cursor,                     /* cursor associated with SQL stmnt */
 	char	*geom_col_name,
-#ifdef _WIN32
-    _int64 srid ) 
-#else
-    int64_t srid ) 
-#endif
+    long srid ) 
 {
     postgis_cursor_def    *curs;
 	int index;
@@ -43,18 +38,13 @@ int postgis_geom_srid_set (
 		{
 			index = atoi (geom_col_name); /* numeric position */
             /* need an error if columns have not been bound yet */
-            if (index <= 0)
+            if (index <= 0 || curs->bind_count < index)
                 rc = RDBI_GENERIC_ERROR; /* need an error for unknown name */
             else
             {
-                rc = postgis_binds_alloc(curs, index);
-
-                if ( rc == RDBI_SUCCESS )
-                {
-                    index--; /* make it zero based */
-				    if (curs->srids != (int*)NULL)
-					    curs->srids[index] = (int)srid;
-                }
+                index--; /* make it zero based */
+				if (curs->srids != (int*)NULL)
+					curs->srids[index] = (int)srid;
 			}
 		}
 	}

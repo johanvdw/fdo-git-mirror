@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceostest.c 20504 2010-09-02 02:40:49Z warmerdam $
+ * $Id: ceostest.c 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  CEOS Translator
  * Purpose:  Test mainline.
@@ -46,14 +46,14 @@ int main( int nArgc, char ** papszArgv )
     else
         pszFilename = "imag_01.dat";
 
-    fp = VSIFOpenL( pszFilename, "rb" );
+    fp = VSIFOpen( pszFilename, "rb" );
     if( fp == NULL )
     {
         fprintf( stderr, "Can't open %s at all.\n", pszFilename );
         exit( 1 );
     }
 
-    while( !VSIFEofL(fp) 
+    while( !VSIFEof(fp) 
            && (psRecord = CEOSReadRecord( fp )) != NULL )
     {
         printf( "%9d:%4d:%8x:%d\n", 
@@ -61,9 +61,9 @@ int main( int nArgc, char ** papszArgv )
                 psRecord->nRecordType, psRecord->nLength );
         CEOSDestroyRecord( psRecord );
 
-        nPosition = (int) VSIFTellL( fp );
+        nPosition = (int) VSIFTell( fp );
     }
-    VSIFCloseL( fp );
+    VSIFClose( fp );
 
     exit( 0 );
 }

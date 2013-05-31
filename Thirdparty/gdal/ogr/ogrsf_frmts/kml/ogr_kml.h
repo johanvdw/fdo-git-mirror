@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_kml.h 23022 2011-09-01 19:10:17Z rouault $
+ * $Id: ogr_kml.h 16908 2009-05-02 14:53:26Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Declarations for OGR wrapper classes for KML, and OGR->KML
@@ -72,8 +72,6 @@ public:
     //
     void SetLayerNumber( int nLayer );
 
-    void SetClosedForWriting() { bClosedForWriting = TRUE; }
-
 private:
     OGRKMLDataSource* poDS_;
     OGRSpatialReference* poSRS_;
@@ -86,7 +84,6 @@ private:
     int bWriter_;
     int nLayerNumber_;
     int nWroteFeatureCount_;
-    int bClosedForWriting;
     char* pszName_;
 
     int nLastAsked;
@@ -123,7 +120,7 @@ public:
     const char* GetNameField() const { return pszNameField_; }
     const char* GetDescriptionField() const { return pszDescriptionField_; }
     const char* GetAltitudeMode() { return pszAltitudeMode_; }
-    VSILFILE* GetOutputFP() { return fpOutput_; }
+    FILE* GetOutputFP() { return fpOutput_; }
     void GrowExtents( OGREnvelope *psGeomBounds );
 #ifdef HAVE_EXPAT
     KML* GetKMLFile() { return poKMLFile_; };
@@ -153,9 +150,10 @@ private:
     char** papszCreateOptions_;
 
     // output related parameters 
-    VSILFILE* fpOutput_;
+    FILE* fpOutput_;
 
     OGREnvelope oEnvelope_;
+    int nSchemaInsertLocation_;
 	
 	//Have we issued a coordinate transformation already for this datasource
 	bool bIssuedCTError_;		

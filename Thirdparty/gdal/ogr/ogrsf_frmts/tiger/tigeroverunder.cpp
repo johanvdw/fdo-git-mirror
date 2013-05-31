@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigeroverunder.cpp 22961 2011-08-20 17:09:59Z rouault $
+ * $Id: tigeroverunder.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerOverUnder, providing access to .RTU files.
@@ -30,11 +30,11 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigeroverunder.cpp 22961 2011-08-20 17:09:59Z rouault $");
+CPL_CVSID("$Id: tigeroverunder.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 #define FILE_CODE       "U"
 
-static const TigerFieldInfo rtU_fields[] = {
+static TigerFieldInfo rtU_fields[] = {
   // fieldname    fmt  type OFTType      beg  end  len  bDefine bSet bWrite
   { "MODULE",     ' ', ' ', OFTString,     0,   0,   8,       1,   0,     0 },
   { "FILE",       'L', 'N', OFTInteger,    6,  10,   5,       1,   1,     1 },
@@ -47,7 +47,7 @@ static const TigerFieldInfo rtU_fields[] = {
   { "FRLONG",     'R', 'N', OFTInteger,   62,  71,  10,       1,   1,     1 },
   { "FRLAT",      'R', 'N', OFTInteger,   72,  80,   9,       1,   1,     1 },
 };
-static const TigerRecordInfo rtU_info =
+static TigerRecordInfo rtU_info =
   {
     rtU_fields,
     sizeof(rtU_fields) / sizeof(TigerFieldInfo),
@@ -60,20 +60,35 @@ static const TigerRecordInfo rtU_info =
 /************************************************************************/
 
 TigerOverUnder::TigerOverUnder( OGRTigerDataSource * poDSIn,
-                              const char * pszPrototypeModule ) : TigerPoint(TRUE, &rtU_info, FILE_CODE)
+                              const char * pszPrototypeModule )
+  : TigerPoint(TRUE)
 {
+    OGRFieldDefn        oField("",OFTInteger);
+
     poDS = poDSIn;
     poFeatureDefn = new OGRFeatureDefn( "OverUnder" );
     poFeatureDefn->Reference();
     poFeatureDefn->SetGeomType( wkbNone );
 
-    AddFieldDefns( psRTInfo, poFeatureDefn );
+    psRTUInfo = &rtU_info;
 
+    AddFieldDefns( psRTUInfo, poFeatureDefn );
+
+}
+
+/************************************************************************/
+TigerOverUnder::~TigerOverUnder()
+{}
+
+int TigerOverUnder::SetModule( const char * pszModule )
+{
+  return TigerPoint::SetModule( pszModule, FILE_CODE );
 }
 
 OGRFeature *TigerOverUnder::GetFeature( int nRecordId )
 {
   return TigerPoint::GetFeature( nRecordId,
+                                 psRTUInfo,
                                  62, 71,
                                  72, 80 );
 }
@@ -81,5 +96,7 @@ OGRFeature *TigerOverUnder::GetFeature( int nRecordId )
 OGRErr TigerOverUnder::CreateFeature( OGRFeature *poFeature )
 {
   return TigerPoint::CreateFeature( poFeature, 
-                                    62 );
+                                    psRTUInfo,
+                                    62,
+                                    FILE_CODE );
 }

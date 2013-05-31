@@ -1,10 +1,10 @@
 /******************************************************************************
- * $Id: geotiff_proj4.c 1979 2011-02-24 22:17:39Z warmerdam $
+ * $Id: geotiff_proj4.c 1670 2009-10-09 16:29:38Z hobu $
  *
  * Project:  libgeotiff
  * Purpose:  Code to convert a normalized GeoTIFF definition into a PROJ.4
  *           (OGDI) compatible projection string.
- * Author:   Frank Warmerdam, warmerdam@pobox.com
+ * Author:   Frank Warmerdam, warmerda@home.com
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
@@ -115,7 +115,7 @@ static char **OSRProj4Tokenize( const char *pszFull )
 static const char *OSR_GSV( char **papszNV, const char * pszField )
 
 {
-    size_t field_len = strlen(pszField);
+    int field_len = strlen(pszField);
     int i;
     
     if( !papszNV )
@@ -157,7 +157,7 @@ static double OSR_GDV( char **papszNV, const char * pszField,
     if( pszValue == NULL )
         return dfDefaultValue;
     else
-        return GTIFAtof(pszValue);
+        return atof(pszValue);
 }
 
 /************************************************************************/
@@ -811,7 +811,7 @@ int GTIFSetFromProj4( GTIF *gtif, const char *proj4 )
             GTIFKeySet( gtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, 
                         KvUserDefined );
             GTIFKeySet( gtif, ProjLinearUnitSizeGeoKey, TYPE_DOUBLE, 1, 
-                        GTIFAtof(value) );
+                        atof(value) );
         }
     }
     else if( EQUAL(value,"meter") || EQUAL(value,"m") )
@@ -1299,7 +1299,7 @@ char * GTIFGetProj4Defn( GTIFDefn * psDefn )
     return( strdup( szProjection ) );
 }
 
-#if !defined(HAVE_LIBPROJ)
+#if !defined(HAVE_LIBPROJ) || !defined(HAVE_PROJECTS_H)
 
 int GTIFProj4ToLatLong( GTIFDefn * psDefn, int nPoints,
                         double *padfX, double *padfY )
@@ -1330,7 +1330,11 @@ int GTIFProj4FromLatLong( GTIFDefn * psDefn, int nPoints,
 }
 #else
 
-#include "proj_api.h"
+#include "projects.h"
+
+#ifdef USE_PROJUV
+#  define UV projUV
+#endif
 
 /************************************************************************/
 /*                        GTIFProj4FromLatLong()                        */
@@ -1344,7 +1348,7 @@ int GTIFProj4FromLatLong( GTIFDefn * psDefn, int nPoints,
 
 {
     char	*pszProjection, **papszArgs;
-    projPJ	*psPJ;
+    PJ		*psPJ;
     int		i;
     
 /* -------------------------------------------------------------------- */
@@ -1376,7 +1380,7 @@ int GTIFProj4FromLatLong( GTIFDefn * psDefn, int nPoints,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nPoints; i++ )
     {
-        projUV	sUV;
+        UV	sUV;
 
         sUV.u = padfX[i] * DEG_TO_RAD;
         sUV.v = padfY[i] * DEG_TO_RAD;
@@ -1404,7 +1408,7 @@ int GTIFProj4ToLatLong( GTIFDefn * psDefn, int nPoints,
 
 {
     char	*pszProjection, **papszArgs;
-    projPJ	*psPJ;
+    PJ		*psPJ;
     int		i;
     
 /* -------------------------------------------------------------------- */
@@ -1436,7 +1440,7 @@ int GTIFProj4ToLatLong( GTIFDefn * psDefn, int nPoints,
 /* -------------------------------------------------------------------- */
     for( i = 0; i < nPoints; i++ )
     {
-        projUV	sUV;
+        UV	sUV;
 
         sUV.u = padfX[i];
         sUV.v = padfY[i];
@@ -1452,5 +1456,5 @@ int GTIFProj4ToLatLong( GTIFDefn * psDefn, int nPoints,
     return TRUE;
 }
 
-#endif /* has proj_api.h and -lproj */
+#endif /* has projects.h and -lproj */
 

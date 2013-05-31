@@ -246,10 +246,7 @@ void SpatialIndex::Insert(unsigned int fid, Bounds& b)
             counts[i] = index+1;
 
         //expand bounds of node at this level
-        if (i==0)
-            n->b = b; //for leafs, set instead of add
-        else
-            Bounds::Add(&n->b, &b); 
+        Bounds::Add(&n->b, &b); 
 
         if (index == 0)
         {

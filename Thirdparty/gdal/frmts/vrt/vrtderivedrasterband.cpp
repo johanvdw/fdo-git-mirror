@@ -30,15 +30,16 @@
 #include "vrtdataset.h"
 #include "cpl_minixml.h"
 #include "cpl_string.h"
-#include <map>
-
-static std::map<CPLString, GDALDerivedPixelFunc> osMapPixelFunction;
 
 /************************************************************************/
 /* ==================================================================== */
 /*                          VRTDerivedRasterBand                        */
 /* ==================================================================== */
 /************************************************************************/
+
+static int nFunctions = 0;
+static GDALDerivedPixelFunc *papfnPixelFunctions = NULL;
+static char **papszNames = NULL;
 
 /************************************************************************/
 /*                        VRTDerivedRasterBand()                        */
@@ -102,14 +103,31 @@ VRTDerivedRasterBand::~VRTDerivedRasterBand()
 CPLErr CPL_STDCALL GDALAddDerivedBandPixelFunc
 (const char *pszFuncName, GDALDerivedPixelFunc pfnNewFunction)
 {
+    int ii;
+
     /* ---- Init ---- */
-    if ((pszFuncName == NULL) || (pszFuncName[0] == '\0') ||
-        (pfnNewFunction == NULL))
-    {
-      return CE_None;
+    if ((pszFuncName == NULL) || (pfnNewFunction == NULL)) {
+	return CE_None;
     }
 
-    osMapPixelFunction[pszFuncName] = pfnNewFunction;
+    /* ---- Check for match with fn already on list, and replace ---- */
+    for (ii = 0; ii < nFunctions; ii++) {
+	if (strcmp(pszFuncName, papszNames[ii]) == 0) {
+	    papfnPixelFunctions[ii] = pfnNewFunction;
+	    return CE_None;
+	}
+    }
+
+    /* ---- Increment pixel function counter and add name/fn to lists ---- */
+    nFunctions++;
+
+    papfnPixelFunctions = (GDALDerivedPixelFunc *) 
+        CPLRealloc(papfnPixelFunctions, sizeof(void*) * nFunctions);
+    papfnPixelFunctions[nFunctions - 1] = pfnNewFunction;
+
+    papszNames = (char **)
+	CPLRealloc(papszNames, sizeof(void*) * nFunctions);
+    papszNames[nFunctions - 1] = (char *)pszFuncName;
 
     return CE_None;
 }
@@ -148,19 +166,19 @@ CPLErr VRTDerivedRasterBand::AddPixelFunction
 GDALDerivedPixelFunc VRTDerivedRasterBand::GetPixelFunction
 (const char *pszFuncName)
 {
+    int ii;
+
     /* ---- Init ---- */
-    if ((pszFuncName == NULL) || (pszFuncName[0] == '\0'))
-    {
-        return NULL;
+    if ((pszFuncName == NULL) || (pszFuncName[0] == '\0')) return NULL;
+
+    /* ---- Check for match with fn added with AddPixelFunction ---- */
+    for (ii = 0; ii < nFunctions; ii++) {
+	if (strcmp(pszFuncName, papszNames[ii]) == 0) {
+	    return papfnPixelFunctions[ii];
+	}
     }
 
-    std::map<CPLString, GDALDerivedPixelFunc>::iterator oIter =
-        osMapPixelFunction.find(pszFuncName);
-
-    if( oIter == osMapPixelFunction.end())
-        return NULL;
-
-    return oIter->second;
+    return NULL;
 }
 
 /************************************************************************/
@@ -341,35 +359,17 @@ CPLErr VRTDerivedRasterBand::IRasterIO(GDALRWFlag eRWFlag,
     pBuffers = (void **) CPLMalloc(sizeof(void *) * nSources);
     for (iSource = 0; iSource < nSources; iSource++) {
         pBuffers[iSource] = (void *) 
-            VSIMalloc(sourcesize * nBufXSize * nBufYSize);
-        if (pBuffers[iSource] == NULL)
-        {
+	    malloc(sourcesize * nBufXSize * nBufYSize);
+        if (pBuffers[iSource] == NULL) {
             for (ii = 0; ii < iSource; ii++) {
-                VSIFree(pBuffers[iSource]);
-            }
-            CPLError( CE_Failure, CPLE_OutOfMemory,
-                "VRTDerivedRasterBand::IRasterIO:" \
-                "Out of memory allocating %d bytes.\n",
-                nPixelSpace * nBufXSize * nBufYSize);
-            return CE_Failure;
-        }
-
-        /* ------------------------------------------------------------ */
-        /* #4045: Initialize the newly allocated buffers before handing */
-        /* them off to the sources. These buffers are packed, so we     */
-        /* don't need any special line-by-line handling when a nonzero  */
-        /* nodata value is set.                                         */
-        /* ------------------------------------------------------------ */
-        if ( !bNoDataValueSet || dfNoDataValue == 0 )
-        {
-            memset( pBuffers[iSource], 0, sourcesize * nBufXSize * nBufYSize );
-        }
-        else
-        {
-            GDALCopyWords( &dfNoDataValue, GDT_Float64, 0,
-                           (GByte *) pBuffers[iSource], eSrcType, sourcesize,
-                           nBufXSize * nBufYSize);
-        }
+                free(pBuffers[iSource]);
+	    }
+	    CPLError( CE_Failure, CPLE_OutOfMemory, 
+		      "VRTDerivedRasterBand::IRasterIO:" \
+		      "Out of memory allocating %d bytes.\n",
+		      nPixelSpace * nBufXSize * nBufYSize);
+	    return CE_Failure;
+	}
     }
 
     /* ---- Load values for sources into packed buffers ---- */
@@ -390,7 +390,7 @@ CPLErr VRTDerivedRasterBand::IRasterIO(GDALRWFlag eRWFlag,
 
     /* ---- Release buffers ---- */
     for (iSource = 0; iSource < nSources; iSource++) {
-        VSIFree(pBuffers[iSource]);
+        free(pBuffers[iSource]);
     }
     CPLFree(pBuffers);
 

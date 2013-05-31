@@ -18,7 +18,6 @@
  *
  */
 #include "Fdo/Pvc/FdoRdbmsPvcHandler.h"
-#include "Fdo/Pvc/FdoRdbmsPropBindHelper.h"
 #include <Sm/Lp/AssociationPropertyDefinition.h>
 
 
@@ -30,10 +29,8 @@ class FdoRdbmsConnection;
 typedef  struct _insert_cache_ {
       wchar_t       tableName[GDBI_SCHEMA_ELEMENT_NAME_SIZE];
       int           qid;
-      FdoRdbmsPropBindHelper* bindHelper;
-      std::vector< std::pair< FdoLiteralValue*, FdoInt64 > >* bindProps;
-      FdoStringsP   bindPropNames;
-      FdoPtr<FdoDataValueCollection> specialValues;
+      int           count;
+      FdoRdbmsPvcBindDef   *bind;
 } InsertQueryDef;
 
 
@@ -80,9 +77,9 @@ protected:
 	virtual void GetStartInsertString( FdoStringP& insertStartString, const wchar_t* tableName );
 
 	virtual void SetAditionalBindVariables(const FdoSmLpClassDefinition *currentClass, 
-						  const wchar_t *scope, 
+						  const wchar_t *scope, int &bind_no, 
 						  FdoPropertyValueCollection  *propValCollection, 
-						  InsertQueryDef *queryDef, int gid);
+						  FdoRdbmsPvcBindDef *bind, int gid);
 
 public:
 	FdoRdbmsPvcInsertHandler( );
@@ -96,6 +93,10 @@ public:
     virtual long Execute( const FdoSmLpClassDefinition *classDefinition, FdoPropertyValueCollection  *propValCollection, bool revisionNumberUpdate = false, bool handleForeignAutoincrementedId=false );
 
 private:
+	void SetBindValues(const FdoSmLpClassDefinition *classDefinition, 
+						   FdoPropertyValueCollection  *propValCollection, InsertQueryDef *insertQuery,
+                           bool handleForeignAutoincrementedId);
+
 	void CreateInsertString(const FdoSmLpClassDefinition *currentClass,
                            FdoPropertyValueCollection  *propValCollection,
                            FdoStringP& insertString,
@@ -106,16 +107,9 @@ private:
     
 
 	void SetBindVariables(const FdoSmLpClassDefinition *currentClass, 
-						  const wchar_t *scope, FdoPropertyValueCollection  *propValCollection, InsertQueryDef *queryDef);
+						  const wchar_t *scope, int &bind_no, FdoPropertyValueCollection  *propValCollection, FdoRdbmsPvcBindDef *bind, int gid);
 
-    void SetBindVariable( const FdoSmLpClassDefinition *currentClass, 
-	              		  const wchar_t *scope, FdoPropertyValueCollection  *propValCollection, InsertQueryDef *queryDef,
-                          const FdoSmLpPropertyDefinition *propertyDefinition,
-                          FdoString* columnName = NULL);
-
-    bool BindThisValue( FdoString* propName, FdoPropertyValueCollection  *propValCollection,FdoPtr<FdoValueExpression>& exp );
-    
-    InsertQueryDef *GetInsertQuery( const wchar_t *tableName, bool alloc_new = false );
+	InsertQueryDef *GetInsertQuery( const wchar_t *tableName, bool alloc_new = false );
 
 	void AssociationConstrainCheck( const FdoSmLpAssociationPropertyDefinition* propertyDefinition,
                                     FdoPropertyValueCollection  *propValCollection );
