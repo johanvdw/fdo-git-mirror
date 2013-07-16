@@ -27,8 +27,8 @@ context_before_license(const fileview& v, fileview::const_iterator start,
 {
   char last_char = '\0';
   while (start != v.begin() && context_lines >= 0) {
-    if ((*start == '\r') || (*start == '\n')
-        && ((last_char == *start) || ((last_char != '\r') && (last_char != '\n'))))
+    if (*start == '\r' || *start == '\n'
+        && (last_char == *start || (last_char != '\r' && last_char != '\n')))
         --context_lines;
 
     last_char = *start;
@@ -239,10 +239,10 @@ void bcp_implementation::scan_license(const fs::path& p, const fileview& v)
        // Perform the actual conversion
        if (m_bsl_convert_mode) {
           try{
-             std::ofstream out((m_boost_path / p).string().c_str());
+            std::ofstream out((m_boost_path / p).native_file_string().c_str());
             if (!out) {
                std::string msg("Cannot open file for license conversion: ");
-               msg += p.string();
+               msg += p.native_file_string();
                std::runtime_error e(msg);
                boost::throw_exception(e);
             }

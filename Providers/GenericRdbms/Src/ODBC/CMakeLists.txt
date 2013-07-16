@@ -11,10 +11,10 @@ set( FdoODBC_LIB_SRCS
    stdafx.cpp
 )
 
-add_library( FdoODBC-${FDO_VERSION} SHARED ${FdoODBC_LIB_SRCS} )
+add_library( FdoODBC SHARED ${FdoODBC_LIB_SRCS} )
 
 if( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( FdoODBC-${FDO_VERSION}
+	target_link_libraries( FdoODBC
 		-Wl,-whole-archive
 		genericrdbms_util
 		rdbi
@@ -34,12 +34,10 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 		SmPhCfgGrd
 		SmPhGrd
 		SmPhRdGrd
-		ProvidersCommon
-		SchemaMgr
 		-Wl,-no-whole-archive
  )
 else( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( FdoODBC-${FDO_VERSION}
+	target_link_libraries( FdoODBC
 		FdoRdbms
 		FdoRdbmsODBC_Fdo
 		FdoRdbmsODBC_SchemaMgr_Lp
@@ -57,22 +55,25 @@ else( CMAKE_COMPILER_IS_GNUCXX )
 		SmPhCfgGrd
 		SmPhGrd
 		SmPhRdGrd
-		ProvidersCommon
-		SchemaMgr
  )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
-target_link_libraries( FdoODBC-${FDO_VERSION}
+target_link_libraries( FdoODBC
 	${ODBC_LIBRARY}
 	${ODBCINST_LIBRARY}
-	FDO-${FDO_VERSION}
-	ExpressionEngine-${FDO_VERSION}
-	SchemaMgr_OV-${FDO_VERSION}
+	FDO
+	ExpressionEngine
+	ProvidersCommon
+	SchemaMgr_OV
+	SchemaMgr
 	rdbi
 	Gdbi
 	FdoRdbms
-)
+	)
 
-install( TARGETS FdoODBC-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+
+
+set_target_properties( FdoODBC PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+install( TARGETS FdoODBC DESTINATION ${LIB_INSTALL_DIR} )
 
 

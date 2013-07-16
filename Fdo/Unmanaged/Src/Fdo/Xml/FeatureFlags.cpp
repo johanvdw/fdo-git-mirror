@@ -31,8 +31,7 @@ FdoXmlFeatureFlags::FdoXmlFeatureFlags()
       mCollectionUri(FdoXml::mGmlUri),
       mCollectionName(FdoXml::mFeatureCollectionName),
       mMemberUri(FdoXml::mGmlUri),
-      mMemberName(FdoXml::mFeatureMemberName),
-      mTransform(NULL)
+      mMemberName(FdoXml::mFeatureMemberName)
 {
     mNamespaces = FdoStringCollection::Create();
     mSchemaLocations = FdoStringCollection::Create();
@@ -46,8 +45,7 @@ FdoXmlFeatureFlags::FdoXmlFeatureFlags(FdoString* url, ErrorLevel errorLevel, Fd
       mCollectionUri(FdoXml::mGmlUri),
       mCollectionName(FdoXml::mFeatureCollectionName),
       mMemberUri(FdoXml::mGmlUri),
-      mMemberName(FdoXml::mFeatureMemberName),
-      mTransform(NULL)
+      mMemberName(FdoXml::mFeatureMemberName)
 {
     mNamespaces = FdoStringCollection::Create();
     mSchemaLocations = FdoStringCollection::Create();
@@ -55,7 +53,6 @@ FdoXmlFeatureFlags::FdoXmlFeatureFlags(FdoString* url, ErrorLevel errorLevel, Fd
 
 FdoXmlFeatureFlags::~FdoXmlFeatureFlags()
 {
-    FDO_SAFE_RELEASE(mTransform);
 }
 
 FdoXmlFeatureFlags* FdoXmlFeatureFlags::Create(FdoString* url, ErrorLevel errorLevel, FdoBoolean nameAdjust, ConflictOption conflictOption) 
@@ -217,26 +214,4 @@ FdoString* FdoXmlFeatureFlags::GetGmlDescriptionRelatePropertyName() {
     return mGmlDescriptionRelatePropertyName;
 }
 
-void FdoXmlFeatureFlags::SetSrsName(FdoString* srsName) {
-    mSrsName = srsName;
-}
-
-FdoString* FdoXmlFeatureFlags::GetSrsName() {
-    return mSrsName;
-}
-
-void FdoXmlFeatureFlags::SetCoordinateSystemTransform(FdoCoordinateSystemTransform *transform) {
-    FDO_SAFE_RELEASE(mTransform);
-    mTransform = FDO_SAFE_ADDREF(transform);
-}
-
-FdoCoordinateSystemTransform* FdoXmlFeatureFlags::GetCoordinateSystemTransform() {
-    return FDO_SAFE_ADDREF(mTransform);
-}
-
-FdoIDirectPosition* FdoCoordinateSystemTransform::CoordinateSystemTransform(FdoIDirectPosition* sourceGeometry)
-{
-    //coordinate system transformation is not available in FDO, just return the original value.
-    return FDO_SAFE_ADDREF(sourceGeometry);
-}
 

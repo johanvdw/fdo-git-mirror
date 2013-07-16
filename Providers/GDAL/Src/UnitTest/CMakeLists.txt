@@ -20,7 +20,6 @@ set( GDALUnitTest_SRCS
    RfpTestGeotiff.cpp
    RfpTestGetRaster.cpp
    RfpTestMosaic.cpp
-   RfpTestResample.cpp
    RfpTestSpatialContext.cpp
    RfpTestThorough.cpp
    RfpUnitTest.cpp
@@ -44,8 +43,8 @@ set_target_properties( GDALUnitTest
 	PROPERTIES OUTPUT_NAME "UnitTest" )
 
 target_link_libraries( GDALUnitTest
-	GRFPOverrides-${FDO_VERSION}
+	GRFPOverrides
 	ProvidersCommon
 	${CPPUNIT_LIBRARIES}
-	FDO-${FDO_VERSION}
+	FDO
 	)

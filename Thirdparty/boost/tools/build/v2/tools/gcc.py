@@ -23,15 +23,12 @@ import re
 import bjam
 
 from b2.tools import unix, common, rc, pch, builtin
-from b2.build import feature, type, toolset, generators, property_set
-from b2.build.property import Property
+from b2.build import feature, type, toolset, generators
 from b2.util.utility import os_name, on_windows
 from b2.manager import get_manager
 from b2.build.generators import Generator
 from b2.build.toolset import flags
 from b2.util.utility import to_seq
-
-
 
 __debug = None
 
@@ -225,12 +222,12 @@ class GccPchGenerator(pch.PchGenerator):
         # Find the header in sources. Ignore any CPP sources.
         header = None
         for s in sources:
-            if type.is_derived(s.type(), 'H'):
+            if type.is_derived(s.type, 'H'):
                 header = s
 
         # Error handling: Base header file name should be the same as the base
         # precompiled header name.
-        header_name = header.name()
+        header_name = header.name
         header_basename = os.path.basename(header_name).rsplit('.', 1)[0]
         if header_basename != name:
             location = project.project_module
@@ -242,15 +239,14 @@ class GccPchGenerator(pch.PchGenerator):
 
         # return result of base class and pch-file property as usage-requirements
         # FIXME: what about multiple results from generator.run?
-        return (property_set.create([Property('pch-file', pch_file[0]),
-                                     Property('cflags', '-Winvalid-pch')]),
+        return (property_set.create('<pch-file>' + pch_file[0], '<cflags>-Winvalid-pch'),
                 pch_file)
 
     # Calls the base version specifying source's name as the name of the created
     # target. As result, the PCH will be named whatever.hpp.gch, and not
     # whatever.gch.
     def generated_targets(self, sources, prop_set, project, name = None):
-        name = sources[0].name()
+        name = sources[0].name
         return Generator.generated_targets(self, sources,
             prop_set, project, name)
 
@@ -282,9 +278,7 @@ flags('gcc.compile', 'OPTIONS', ['<warnings-as-errors>on'], ['-Werror'])
 
 flags('gcc.compile', 'OPTIONS', ['<debug-symbols>on'], ['-g'])
 flags('gcc.compile', 'OPTIONS', ['<profiling>on'], ['-pg'])
-
-flags('gcc.compile.c++', 'OPTIONS', ['<rtti>off'], ['-fno-rtti'])
-flags('gcc.compile.c++', 'OPTIONS', ['<exception-handling>off'], ['-fno-exceptions'])
+flags('gcc.compile', 'OPTIONS', ['<rtti>off'], ['-fno-rtti'])
 
 # On cygwin and mingw, gcc generates position independent code by default, and
 # warns if -fPIC is specified. This might not be the right way of checking if
@@ -293,6 +287,7 @@ flags('gcc.compile.c++', 'OPTIONS', ['<exception-handling>off'], ['-fno-exceptio
 # In that case we'll just add another parameter to 'init' and move this login
 # inside 'init'.
 if not os_name () in ['CYGWIN', 'NT']:
+    print "osname:", os_name()
     # This logic will add -fPIC for all compilations:
     #
     # lib a : a.cpp b ;
@@ -384,7 +379,7 @@ class GccLinkingGenerator(unix.UnixLinkingGenerator):
         property while creating or using shared library, since it's not supported by
         gcc/libc.
     """
-    def run(self, project, name, ps, sources):
+    def run(self, project, name, prop_set, sources):
         # TODO: Replace this with the use of a target-os property.
 
         no_static_link = False
@@ -398,9 +393,10 @@ class GccLinkingGenerator(unix.UnixLinkingGenerator):
 ##            }
 ##        }
 
+        properties = prop_set.raw()
         reason = None
-        if no_static_link and ps.get('runtime-link') == 'static':
-            if ps.get('link') == 'shared':
+        if no_static_link and '<runtime-link>static' in properties:
+            if '<link>shared' in properties:
                 reason = "On gcc, DLL can't be build with '<runtime-link>static'."
             elif type.is_derived(self.target_types[0], 'EXE'):
                 for s in sources:
@@ -416,7 +412,7 @@ class GccLinkingGenerator(unix.UnixLinkingGenerator):
             return
         else:
             generated_targets = unix.UnixLinkingGenerator.run(self, project,
-                name, ps, sources)
+                name, prop_set, sources)
             return generated_targets
 
 if on_windows():
@@ -630,7 +626,7 @@ def gcc_archive(targets, sources, properties):
     engine.set_target_variable('LOCATE', clean, bjam.call('get-target-variable', targets, 'LOCATE'))
     engine.add_dependency(clean, sources)
     engine.add_dependency(targets, clean)
-    engine.set_update_action('common.RmTemps', clean, targets)
+    engine.set_update_action('common.RmTemps', clean, targets, None)
 
 # Declare action for creating static libraries.
 # The letter 'r' means to add files to the archive with replacement. Since we
@@ -647,8 +643,6 @@ def gcc_link_dll(targets, sources, properties):
     engine = get_manager().engine()
     engine.set_target_variable(targets, 'SPACE', ' ')
     engine.set_target_variable(targets, 'JAM_SEMAPHORE', '<s>gcc-link-semaphore')
-    engine.set_target_variable(targets, "HAVE_SONAME", HAVE_SONAME)
-    engine.set_target_variable(targets, "SONAME_OPTION", SONAME_OPTION)
 
 engine.register_action(
     'gcc.link.dll',
@@ -711,10 +705,10 @@ def cpu_flags(toolset, variable, architecture, instruction_set, values, default=
 # x86 and compatible
 flags('gcc', 'OPTIONS', ['<architecture>x86/<address-model>32'], ['-m32'])
 flags('gcc', 'OPTIONS', ['<architecture>x86/<address-model>64'], ['-m64'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'native', ['-march=native'])
+cpu_flags('gcc', 'OPTIONS', 'x86', 'i386', ['-march=i386'], default=True)
 cpu_flags('gcc', 'OPTIONS', 'x86', 'i486', ['-march=i486'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'i586', ['-march=i586'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'i686', ['-march=i686'], default=True)
+cpu_flags('gcc', 'OPTIONS', 'x86', 'i686', ['-march=i686'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'pentium', ['-march=pentium'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'pentium-mmx', ['-march=pentium-mmx'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'pentiumpro', ['-march=pentiumpro'])
@@ -726,25 +720,6 @@ cpu_flags('gcc', 'OPTIONS', 'x86', 'pentium4', ['-march=pentium4'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'pentium4m', ['-march=pentium4m'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'prescott', ['-march=prescott'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'nocona', ['-march=nocona'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'core2', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'conroe', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'conroe-xe', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'conroe-l', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'allendale', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'wolfdale', ['-march=core2', '-msse4.1'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'merom', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'merom-xe', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'kentsfield', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'kentsfield-xe', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'yorksfield', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'penryn', ['-march=core2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'corei7', ['-march=corei7'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'nehalem', ['-march=corei7'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'corei7-avx', ['-march=corei7-avx'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'sandy-bridge', ['-march=corei7-avx'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'core-avx-i', ['-march=core-avx-i'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'ivy-bridge', ['-march=core-avx-i'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'haswell', ['-march=core-avx-i', '-mavx2', '-mfma', '-mbmi', '-mbmi2', '-mlzcnt'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'k6', ['-march=k6'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'k6-2', ['-march=k6-2'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'k6-3', ['-march=k6-3'])
@@ -758,22 +733,10 @@ cpu_flags('gcc', 'OPTIONS', 'x86', 'k8', ['-march=k8'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'opteron', ['-march=opteron'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'athlon64', ['-march=athlon64'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'athlon-fx', ['-march=athlon-fx'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'k8-sse3', ['-march=k8-sse3'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'opteron-sse3', ['-march=opteron-sse3'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'athlon64-sse3', ['-march=athlon64-sse3'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'amdfam10', ['-march=amdfam10'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'barcelona', ['-march=barcelona'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'bdver1', ['-march=bdver1'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'bdver2', ['-march=bdver2'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'bdver3', ['-march=bdver3'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'btver1', ['-march=btver1'])
-cpu_flags('gcc', 'OPTIONS', 'x86', 'btver2', ['-march=btver2'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'winchip-c6', ['-march=winchip-c6'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'winchip2', ['-march=winchip2'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'c3', ['-march=c3'])
 cpu_flags('gcc', 'OPTIONS', 'x86', 'c3-2', ['-march=c3-2'])
-##
-cpu_flags('gcc', 'OPTIONS', 'x86', 'atom', ['-march=atom'])
 # Sparc
 flags('gcc', 'OPTIONS', ['<architecture>sparc/<address-model>32'], ['-m32'])
 flags('gcc', 'OPTIONS', ['<architecture>sparc/<address-model>64'], ['-m64'])

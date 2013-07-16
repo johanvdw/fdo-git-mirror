@@ -31,7 +31,6 @@
 
 import property
 import bjam
-import os
 from b2.exceptions import *
 from b2.manager import get_manager
 
@@ -104,7 +103,7 @@ class Scanner:
 # Common scanner class, which can be used when there's only one
 # kind of includes (unlike C, where "" and <> includes have different
 # search paths).
-class CommonScanner(Scanner):
+def CommonScanner(Scanner):
 
     def __init__ (self, includes):
         Scanner.__init__(self)
@@ -115,8 +114,8 @@ class CommonScanner(Scanner):
         target_path = os.path.normpath(os.path.dirname(binding[0]))
         bjam.call("mark-included", target, matches)
 
-        get_manager().engine().set_target_variable(matches, "SEARCH",
-                                                   [target_path] + self.includes)
+        engine.set_target_variable(matches, "SEARCH",
+                                   [target_path] + self.includes_)
         get_manager().scanners().propagate(self, matches)
 
 class ScannerRegistry:

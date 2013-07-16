@@ -16,17 +16,16 @@ namespace boost { namespace program_options {
     std::string
     typed_value<T, charT>::name() const
     {
-        std::string const& var = (m_value_name.empty() ? arg : m_value_name);
         if (!m_implicit_value.empty() && !m_implicit_value_as_text.empty()) {
-            std::string msg = "[=" + var + "(=" + m_implicit_value_as_text + ")]";
+            std::string msg = "[=arg(=" + m_implicit_value_as_text + ")]";
             if (!m_default_value.empty() && !m_default_value_as_text.empty())
                 msg += " (=" + m_default_value_as_text + ")";
             return msg;
         }
         else if (!m_default_value.empty() && !m_default_value_as_text.empty()) {
-            return var + " (=" + m_default_value_as_text + ")";
+            return arg + " (=" + m_default_value_as_text + ")";
         } else {
-            return var;
+            return arg;
         }
     }
 
@@ -144,9 +143,9 @@ namespace boost { namespace program_options {
                    a validator for class T, we use it even
                    when parsing vector<T>.  */
                 boost::any a;
-                std::vector<std::basic_string<charT> > cv;
-                cv.push_back(s[i]);
-                validate(a, cv, (T*)0, 0);                
+                std::vector<std::basic_string<charT> > v;
+                v.push_back(s[i]);
+                validate(a, v, (T*)0, 0);                
                 tv->push_back(boost::any_cast<T>(a));
             }
             catch(const bad_lexical_cast& /*e*/) {

@@ -1,11 +1,10 @@
 # Copyright 2002, 2003, 2004, 2005 Dave Abrahams
-# Copyright 2002, 2005, 2006, 2007, 2010 Rene Rivera
+# Copyright 2002, 2005, 2006, 2007 Rene Rivera
 # Copyright 2006 Juergen Hunold
 # Copyright 2005 Toon Knapen
 # Copyright 2002, 2003, 2004, 2005, 2006 Vladimir Prus
 # Distributed under the Boost Software License, Version 1.0.
-# (See accompanying file LICENSE_1_0.txt or copy at
-# http://www.boost.org/LICENSE_1_0.txt)
+# (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 
 # Defines standard features and rules.
 
@@ -27,7 +26,6 @@ import stage ;
 import symlink ;
 import toolset ;
 import type ;
-import targets ;
 import types/register ;
 import utility ;
 import virtual-target ;
@@ -40,13 +38,13 @@ import convert ;
 import generate ;
 
 
-.os-names = aix bsd cygwin darwin freebsd hpux iphone linux netbsd openbsd osf
-    qnx qnxnto sgi solaris unix unixware windows
-    elf  # Not actually an OS -- used for targeting bare metal where object
-         # format is ELF.  This catches both -elf and -eabi gcc targets and well
-         # as other compilers targeting ELF. It is not clear how often we need
-         # the 'elf' key as opposed to other bare metal targets, but let us
-         # stick with gcc naming.
+.os-names = aix bsd cygwin darwin freebsd hpux iphone linux netbsd
+    openbsd osf qnx qnxnto sgi solaris unix unixware windows 
+    elf # Not actually an OS -- used for targeting bare metal where
+        # object format is ELF.  This catches both -elf and -eabi gcc
+        # targets and well as other compilers targeting ELF. It is not
+        # clear how often do we need to key of ELF specifically as opposed
+        # to other bare metal targets, but let's stick with gcc naming.
     ;
 
 # Feature used to determine which OS we're on. New <target-os> and <host-os>
@@ -79,7 +77,7 @@ local rule default-host-os ( )
             case MACOSX       : host-os = darwin  ;
             case KFREEBSD     : host-os = freebsd ;
             case LINUX        : host-os = linux   ;
-            case SUNOS        :
+            case SUNOS        : 
               ECHO "SunOS is not a supported operating system." ;
               ECHO "We believe last version of SunOS was released in 1992, " ;
               ECHO "so if you get this message, something is very wrong with configuration logic. " ;
@@ -123,12 +121,6 @@ feature.feature asynch-exceptions  : off on          : propagated ;
 feature.feature extern-c-nothrow   : off on          : propagated ;
 
 feature.feature debug-symbols      : on off          : propagated ;
-# Controls whether the binary should be stripped -- that is have
-# everything not necessary to running removed. This option should
-# not be very often needed. Also, this feature will show up in
-# target paths of everything, not just binaries. Should fix that
-# when impelementing feature relevance.
-feature.feature strip              : off on          : propagated ;
 feature.feature define             :                 : free ;
 feature.feature undef              :                 : free ;
 feature.feature "include"          :                 : free path ; #order-sensitive ;
@@ -272,12 +264,11 @@ feature.feature architecture :
 # The specific instruction set in an architecture to compile.
 feature.feature instruction-set :
     # x86 and x86-64
-    native i486 i586 i686 pentium pentium-mmx pentiumpro pentium2 pentium3
-    pentium3m pentium-m pentium4 pentium4m prescott nocona core2 corei7 corei7-avx core-avx-i
-    conroe conroe-xe conroe-l allendale merom merom-xe kentsfield kentsfield-xe penryn wolfdale
-    yorksfield nehalem sandy-bridge ivy-bridge haswell k6 k6-2 k6-3 athlon athlon-tbird athlon-4 athlon-xp
-    athlon-mp k8 opteron athlon64 athlon-fx k8-sse3 opteron-sse3 athlon64-sse3 amdfam10 barcelona
-    bdver1 bdver2 bdver3 btver1 btver2 winchip-c6 winchip2 c3 c3-2 atom
+    native i386 i486 i586 i686 pentium pentium-mmx pentiumpro pentium2 pentium3
+    pentium3m pentium-m pentium4 pentium4m prescott nocona core2 conroe conroe-xe
+    conroe-l allendale mermon mermon-xe kentsfield kentsfield-xe penryn wolfdale
+    yorksfield nehalem k6 k6-2 k6-3 athlon athlon-tbird athlon-4 athlon-xp
+    athlon-mp k8 opteron athlon64 athlon-fx winchip-c6 winchip2 c3 c3-2
 
     # ia64
     itanium itanium1 merced itanium2 mckinley
@@ -301,7 +292,6 @@ feature.feature instruction-set :
 
     # Advanced RISC Machines
     armv2 armv2a armv3 armv3m armv4 armv4t armv5 armv5t armv5te armv6 armv6j iwmmxt ep9312
-	armv7 armv7s
 
     : propagated optional ;
 
@@ -433,6 +423,86 @@ class searched-lib-target : abstract-file-target
 }
 
 
+class c-scanner : scanner
+{
+    import path ;
+    import regex ;
+    import scanner ;
+    import sequence ;
+    import virtual-target ;
+
+    rule __init__ ( includes * )
+    {
+        scanner.__init__ ;
+
+        for local i in $(includes)
+        {
+            self.includes += [ sequence.transform path.native
+                                : [ regex.split $(i:G=) "&&" ] ] ;
+        }
+    }
+
+    rule pattern ( )
+    {
+        return "#[ \t]*include[ ]*(<(.*)>|\"(.*)\")" ;
+    }
+
+    rule process ( target : matches * : binding )
+    {
+        local angle  = [ regex.transform $(matches) : "<(.*)>"   ] ;
+        angle = [ sequence.transform path.native : $(angle) ] ;
+        local quoted = [ regex.transform $(matches) : "\"(.*)\"" ] ;
+        quoted = [ sequence.transform path.native : $(quoted) ] ;
+
+        # CONSIDER: the new scoping rule seem to defeat "on target" variables.
+        local g = [ on $(target) return $(HDRGRIST) ] ;
+        local b = [ NORMALIZE_PATH $(binding:D) ] ;
+
+        # Attach binding of including file to included targets. When a target is
+        # directly created from virtual target this extra information is
+        # unnecessary. But in other cases, it allows us to distinguish between
+        # two headers of the same name included from different places. We do not
+        # need this extra information for angle includes, since they should not
+        # depend on including file (we can not get literal "." in include path).
+        local g2 = $(g)"#"$(b) ;
+
+        angle = $(angle:G=$(g)) ;
+        quoted = $(quoted:G=$(g2)) ;
+
+        local all = $(angle) $(quoted) ;
+
+        INCLUDES $(target) : $(all) ;
+        NOCARE $(all) ;
+        SEARCH on $(angle) = $(self.includes:G=) ;
+        SEARCH on $(quoted) = $(b) $(self.includes:G=) ;
+
+        # Just propagate the current scanner to includes in hope that includes
+        # do not change scanners.
+        scanner.propagate $(__name__) : $(angle) $(quoted) : $(target) ;
+
+        ISFILE $(angle) $(quoted) ;
+    }
+}
+
+
+type.register H   : h ;
+type.register HPP : hpp : H ;
+type.register C   : c ;
+
+scanner.register c-scanner : include ;
+
+# It most cases where a CPP file or a H file is a source of some action, we
+# should rebuild the result if any of files included by CPP/H are changed. One
+# case when this is not needed is installation, which is handled specifically.
+type.set-scanner CPP : c-scanner ;
+type.set-scanner C   : c-scanner ;
+# One case where scanning of H/HPP files is necessary is PCH generation -- if
+# any header included by HPP being precompiled changes, we need to recompile the
+# header.
+type.set-scanner H   : c-scanner ;
+type.set-scanner HPP : c-scanner ;
+
+
 # The generator class for libraries (target type LIB). Depending on properties
 # it will request building of the appropriate specific library type --
 # -- SHARED_LIB, STATIC_LIB or SHARED_LIB.
@@ -441,9 +511,7 @@ class lib-generator : generator
 {
     rule __init__ ( * : * )
     {
-        generator.__init__ $(1) : $(2) : $(3) : $(4) : $(5) : $(6) : $(7) : $(8)
-            : $(9) : $(10) : $(11) : $(12) : $(13) : $(14) : $(15) : $(16) :
-            $(17) : $(18) : $(19) ;
+        generator.__init__ $(1) : $(2) : $(3) : $(4) : $(5) : $(6) : $(7) : $(8) : $(9) ;
     }
 
     rule run ( project name ? : property-set : sources * )
@@ -547,7 +615,7 @@ class searched-lib-generator : generator
 
     rule __init__ ( )
     {
-        # The requirements cause the generators to be tried *only* when we are
+        # The requirements cause the generators to be tried *only* when we're
         # building a lib target with a 'search' feature. This seems ugly --- all
         # we want is to make sure searched-lib-generator is not invoked deep
         # inside transformation search to produce intermediate targets.
@@ -594,9 +662,7 @@ class prebuilt-lib-generator : generator
 {
     rule __init__ ( * : * )
     {
-        generator.__init__ $(1) : $(2) : $(3) : $(4) : $(5) : $(6) : $(7) : $(8)
-            : $(9) : $(10) : $(11) : $(12) : $(13) : $(14) : $(15) : $(16) :
-            $(17) : $(18) : $(19) ;
+        generator.__init__ $(1) : $(2) : $(3) : $(4) : $(5) : $(6) : $(7) : $(8) : $(9) ;
     }
 
     rule run ( project name ? : property-set : sources * )
@@ -611,48 +677,6 @@ generators.register
 
 generators.override builtin.prebuilt : builtin.lib-generator ;
 
-class preprocessed-target-class : basic-target
-{
-    import generators ;
-    rule construct ( name : sources * : property-set )
-    {
-        local result = [ generators.construct [ project ]
-            $(name) : PREPROCESSED_CPP : $(property-set) : $(sources) ] ;
-        if ! $(result)
-        {
-            result = [ generators.construct [ project ]
-                $(name) : PREPROCESSED_C : $(property-set) : $(sources) ] ;
-        }
-        if ! $(result)
-        {
-            local s ;
-            for x in $(sources)
-            {
-                s += [ $(x).name ] ;
-            }
-            local p = [ project ] ;
-            errors.user-error
-                "In project" [ $(p).name ] :
-                "Could not construct preprocessed file \"$(name)\" from $(s:J=, )." ;
-        }
-        return $(result) ;
-    }
-}
-
-rule preprocessed ( name : sources * : requirements * : default-build * :
-    usage-requirements * )
-{
-    local project = [ project.current ] ;
-    return [ targets.main-target-alternative
-        [ new preprocessed-target-class $(name) : $(project)
-            : [ targets.main-target-sources $(sources) : $(name) ]
-            : [ targets.main-target-requirements $(requirements) : $(project) ]
-            : [ targets.main-target-default-build $(default-build) : $(project) ]
-            : [ targets.main-target-usage-requirements $(usage-requirements) : $(project) ]
-        ] ] ;
-}
-
-IMPORT $(__name__) : preprocessed : : preprocessed ;
 
 class compile-action : action
 {
@@ -669,15 +693,8 @@ class compile-action : action
     rule adjust-properties ( property-set )
     {
         local s = [ $(self.targets[1]).creating-subvariant ] ;
-        if $(s)
-        {
-            return [ $(property-set).add-raw
-              [ $(s).implicit-includes "include" : H ] ] ;
-        }
-        else
-        {
-            return $(property-set) ;
-        }
+        return [ $(property-set).add-raw
+          [ $(s).implicit-includes "include" : H ] ] ;
     }
 }
 

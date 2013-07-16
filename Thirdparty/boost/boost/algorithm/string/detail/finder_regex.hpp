@@ -60,14 +60,14 @@ namespace boost {
                     return *this;
                 }
 
-                // Match result retrieval
+                // Match result retrival
                 const match_results_type& match_results() const
                 {
                     return m_MatchResults;
                 }
 
             private:
-                // Saved match result
+                // Saved matchresult
                 match_results_type m_MatchResults;
             };
 

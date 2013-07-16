@@ -29,7 +29,6 @@ set( GRFPProvider_SRCS
    FdoRfpRasterPropertyDictionary.cpp
    FdoRfpRasterUtil.cpp
    FdoRfpStreamReaderByTile.cpp
-   FdoRfpStreamReaderByTileResample.cpp
    FdoRfpRect.cpp
    FdoRfpSchemaCapabilities.cpp
    FdoRfpSchemaData.cpp
@@ -50,13 +49,14 @@ set( GRFPProvider_SRCS
    stdafx.cpp
 )
 
-add_library( GRFPProvider-${FDO_VERSION} SHARED ${GRFPProvider_SRCS} )
+add_library( GRFPProvider SHARED ${GRFPProvider_SRCS} )
 
-target_link_libraries( GRFPProvider-${FDO_VERSION}
-	GRFPOverrides-${FDO_VERSION}
+target_link_libraries( GRFPProvider
+	GRFPOverrides
 	ProvidersCommon
-	FDO-${FDO_VERSION}
+	FDO
 	${GDAL_LIBRARY}
  )
 
-install( TARGETS GRFPProvider-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( GRFPProvider PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+install( TARGETS GRFPProvider DESTINATION ${LIB_INSTALL_DIR} )

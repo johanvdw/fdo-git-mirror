@@ -15,14 +15,15 @@ set( WMSOverrides_SRCS
    FdoWmsOverrides.cpp
 )
 
-add_library( WMSOverrides-${FDO_VERSION} SHARED ${WMSOverrides_SRCS} )
+add_library( WMSOverrides SHARED ${WMSOverrides_SRCS} )
 
-target_link_libraries( WMSOverrides-${FDO_VERSION}
+target_link_libraries( WMSOverrides
 	ProvidersCommon
-	FDO-${FDO_VERSION}
+	FDO
  )
 
-add_dependencies( WMSOverrides-${FDO_VERSION} FdoWmsMessage )
+add_dependencies( WMSOverrides FdoWmsMessage )
 
-install( TARGETS WMSOverrides-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( WMSOverrides PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+install( TARGETS WMSOverrides DESTINATION ${LIB_INSTALL_DIR} )
 

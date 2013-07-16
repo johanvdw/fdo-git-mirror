@@ -1,11 +1,11 @@
-//Copyright (c) 2006-2010 Emil Dotchevski and Reverge Studios, Inc.
+//Copyright (c) 2006-2009 Emil Dotchevski and Reverge Studios, Inc.
 
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #ifndef UUID_8D22C4CA9CC811DCAA9133D256D89593
 #define UUID_8D22C4CA9CC811DCAA9133D256D89593
-#if (__GNUC__*100+__GNUC_MINOR__>301) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
+#if defined(__GNUC__) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
 #pragma GCC system_header
 #endif
 #if defined(_MSC_VER) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
@@ -24,18 +24,10 @@ boost
     {
     template <class Tag,class T>
     inline
-    std::string
-    error_info_name( error_info<Tag,T> const & x )
-        {
-        return tag_type_name<Tag>();
-        }
-
-    template <class Tag,class T>
-    inline
-    std::string
+    typename enable_if<has_to_string<T>,std::string>::type
     to_string( error_info<Tag,T> const & x )
         {
-        return '[' + error_info_name(x) + "] = " + to_string_stub(x.value()) + '\n';
+        return to_string(x.value());
         }
 
     template <class Tag,class T>
@@ -55,9 +47,18 @@ boost
 
     template <class Tag,class T>
     inline
+    char const *
+    error_info<Tag,T>::
+    tag_typeid_name() const
+        {
+        return tag_type_name<Tag>();
+        }
+
+    template <class Tag,class T>
+    inline
     std::string
     error_info<Tag,T>::
-    name_value_string() const
+    value_as_string() const
         {
         return to_string_stub(*this);
         }
@@ -96,7 +97,7 @@ boost
                     {
                     shared_ptr<error_info_base> const & p = i->second;
 #ifndef BOOST_NO_RTTI
-                    BOOST_ASSERT( *BOOST_EXCEPTION_DYNAMIC_TYPEID(*p).type_==*ti.type_ );
+                    BOOST_ASSERT( BOOST_EXCEPTION_DYNAMIC_TYPEID(*p).type_==ti.type_ );
 #endif
                     return p;
                     }
@@ -108,12 +109,13 @@ boost
                 {
                 if( header )
                     {
+                    BOOST_ASSERT(*header!=0);
                     std::ostringstream tmp;
                     tmp << header;
                     for( error_info_map::const_iterator i=info_.begin(),end=info_.end(); i!=end; ++i )
                         {
-                        error_info_base const & x = *i->second;
-                        tmp << x.name_value_string();
+                        shared_ptr<error_info_base const> const & x = i->second;
+                        tmp << '[' << x->tag_typeid_name() << "] = " << x->value_as_string() << '\n';
                         }
                     tmp.str().swap(diagnostic_info_str_);
                     }
@@ -129,66 +131,33 @@ boost
             mutable std::string diagnostic_info_str_;
             mutable int count_;
 
-            error_info_container_impl( error_info_container_impl const & );
-            error_info_container_impl & operator=( error_info_container const & );
-
             void
             add_ref() const
                 {
                 ++count_;
                 }
 
-            bool
+            void
             release() const
                 {
-                if( --count_ )
-                    return false;
-                else
-                    {
+                if( !--count_ )
                     delete this;
-                    return true;
-                    }
                 }
-
-            refcount_ptr<error_info_container>
-            clone() const
-                {
-                refcount_ptr<error_info_container> p;
-                error_info_container_impl * c=new error_info_container_impl;
-                p.adopt(c);
-                c->info_ = info_;
-                return p;
-                }
-            };
-
-        template <class E,class Tag,class T>
-        inline
-        E const &
-        set_info( E const & x, error_info<Tag,T> const & v )
-            {
-            typedef error_info<Tag,T> error_info_tag_t;
-            shared_ptr<error_info_tag_t> p( new error_info_tag_t(v) );
-            exception_detail::error_info_container * c=x.data_.get();
-            if( !c )
-                x.data_.adopt(c=new exception_detail::error_info_container_impl);
-            c->set(p,BOOST_EXCEPTION_STATIC_TYPEID(error_info_tag_t));
-            return x;
-            }
-
-        template <class T>
-        struct
-        derives_boost_exception
-            {
-            enum e { value = (sizeof(dispatch_boost_exception((T*)0))==sizeof(large_size)) };
             };
         }
 
     template <class E,class Tag,class T>
     inline
-    typename enable_if<exception_detail::derives_boost_exception<E>,E const &>::type
+    E const &
     operator<<( E const & x, error_info<Tag,T> const & v )
         {
-        return exception_detail::set_info(x,v);
+        typedef error_info<Tag,T> error_info_tag_t;
+        shared_ptr<error_info_tag_t> p( new error_info_tag_t(v) );
+        exception_detail::error_info_container * c=x.data_.get();
+        if( !c )
+            x.data_.adopt(c=new exception_detail::error_info_container_impl);
+        c->set(p,BOOST_EXCEPTION_STATIC_TYPEID(error_info_tag_t));
+        return x;
         }
     }
 

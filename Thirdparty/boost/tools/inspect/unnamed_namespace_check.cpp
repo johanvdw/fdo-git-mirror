@@ -51,7 +51,8 @@ namespace boost
         const string::size_type
          ln = std::count( contents.begin(), (*cur)[0].first, '\n' ) + 1;
 
-        error( library_name, full_path, "Unnamed namespace", ln );
+        error( library_name, full_path, string(name()) + " unnamed namespace at line "
+            + lexical_cast<string>(ln) );
       }
 
 

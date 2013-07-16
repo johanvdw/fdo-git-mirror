@@ -8,15 +8,13 @@
 
 #if defined(BOOST_HAS_WINTHREADS) && (defined(BOOST_THREAD_BUILD_LIB) || defined(BOOST_THREAD_TEST) || defined(UNDER_CE)) && (!defined(_MSC_VER) || defined(UNDER_CE))
 
-namespace boost
-{
     /*
     This file is a "null" implementation of tss cleanup; it's
     purpose is to to eliminate link errors in cases
     where it is known that tss cleanup is not needed.
     */
 
-    void tss_cleanup_implemented(void)
+    extern "C" void tss_cleanup_implemented(void)
     {
         /*
         This function's sole purpose is to cause a link error in cases where
@@ -32,7 +30,5 @@ namespace boost
         longer needed and can be removed.
         */
     }
-
-}
 
 #endif //defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_LIB) && !defined(_MSC_VER)

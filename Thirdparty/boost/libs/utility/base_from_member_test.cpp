@@ -281,7 +281,7 @@ object_id_compare::operator ()
         }
         else
         {
-            return a.second->before( *b.second ) != 0;
+            return a.second->before( *b.second );
         }
     }
 }
